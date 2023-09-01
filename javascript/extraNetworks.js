@@ -1,6 +1,9 @@
 let globalPopup = null;
 let globalPopupInner = null;
+let previousCard = null;
 const activePromptTextarea = {};
+const re_extranet = /<([^:]+:[^:]+):[\d\.]+>/;
+const re_extranet_g = /\s+<([^:]+:[^:]+):[\d\.]+>/g;
 
 const getENActiveTab = () => gradioApp().getElementById('tab_txt2img').style.display === 'block' ? 'txt2img' : 'img2img';
 
@@ -25,6 +28,112 @@ function requestGet(url, data, handler, errorHandler) {
   };
   const js = JSON.stringify(data);
   xhr.send(js);
+}
+
+function popup(contents) {
+  if (!globalPopup) {
+    globalPopup = document.createElement('div');
+    globalPopup.onclick = () => { globalPopup.style.display = 'none'; };
+    globalPopup.classList.add('global-popup');
+    const close = document.createElement('div');
+    close.classList.add('global-popup-close');
+    close.onclick = () => { globalPopup.style.display = 'none'; };
+    close.title = 'Close';
+    globalPopup.appendChild(close);
+    globalPopupInner = document.createElement('div');
+    globalPopupInner.onclick = (event) => { event.stopPropagation(); return false; };
+    globalPopupInner.classList.add('global-popup-inner');
+    globalPopup.appendChild(globalPopupInner);
+    gradioApp().appendChild(globalPopup);
+  }
+  globalPopupInner.innerHTML = '';
+  globalPopupInner.appendChild(contents);
+  globalPopup.style.display = 'flex';
+}
+
+function readCardMetadata(event, extraPage, cardName) {
+  requestGet('./sd_extra_networks/metadata', { page: extraPage, item: cardName }, (data) => {
+    if (data?.metadata) {
+      if (typeof (data?.metadata) !== 'string') data.metadata = JSON.stringify(data.metadata, null, 2);
+      const elem = document.createElement('pre');
+      elem.classList.add('popup-metadata');
+      elem.textContent = data.metadata;
+      popup(elem);
+    }
+  }, () => { });
+  event.stopPropagation();
+  event.preventDefault();
+}
+
+function readCardTags(el, tags) {
+  const clickTag = (e, tag) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const textarea = activePromptTextarea[getENActiveTab()];
+    if (textarea.value.indexOf(tag) !== -1) textarea.value = textarea.value.replace(tag, '');
+    else textarea.value += ` ${tag}`;
+    updateInput(textarea);
+  };
+  if (tags.length === 0) return;
+  const cardTags = tags.split('|');
+  if (cardTags.length === 0) return;
+  const tagsEl = el.getElementsByClassName('tags')[0];
+  if (tagsEl.children.length > 0) return;
+  for (const tag of cardTags) {
+    const span = document.createElement('span');
+    span.classList.add('tag');
+    span.textContent = tag;
+    span.onclick = (e) => clickTag(e, tag);
+    tagsEl.appendChild(span);
+  }
+}
+
+function readCardInformation(event, extraPage, cardName) {
+  requestGet('./sd_extra_networks/info', { page: extraPage, item: cardName }, (data) => {
+    if (data?.info && (typeof (data?.info) === 'string')) {
+      const elem = document.createElement('pre');
+      elem.classList.add('popup-metadata');
+      elem.textContent = data.info;
+      popup(elem);
+    }
+  }, () => { });
+  event.stopPropagation();
+  event.preventDefault();
+}
+
+function readCardDescription(filename, descript) {
+  const tabname = getENActiveTab();
+  const fn = gradioApp().querySelector(`#${tabname}_description_filename  > label > textarea`);
+  const description = gradioApp().querySelector(`#${tabname}_description > label > textarea`);
+  fn.value = filename;
+  description.value = descript?.trim() || '';
+  description.focus();
+  updateInput(fn);
+  updateInput(description);
+}
+
+function saveCardPreview(event) {
+  const tabname = getENActiveTab();
+  const textarea = gradioApp().querySelector(`#${tabname}_preview_filename  > label > textarea`);
+  const button = gradioApp().getElementById(`${tabname}_save_preview`);
+  const el = event?.target?.parentElement?.parentElement?.parentElement;
+  if (el?.classList?.contains('card')) {
+    textarea.value = el.dataset.filename;
+    updateInput(textarea);
+    button.click();
+  }
+  event.stopPropagation();
+  event.preventDefault();
+}
+
+function saveCardDescription(event) {
+  const tabname = getENActiveTab();
+  const el = event?.target?.parentElement?.parentElement?.parentElement;
+  if (el?.classList?.contains('card')) el.dataset.description = gradioApp().getElementById(`${tabname}_description`)?.children[0].children[1].value;
+  const button = gradioApp().getElementById(`${tabname}_save_description`);
+  button.click();
+  event.stopPropagation();
+  event.preventDefault();
 }
 
 function setupExtraNetworksForTab(tabname) {
@@ -52,6 +161,17 @@ function setupExtraNetworksForTab(tabname) {
       elem.style.display = text.indexOf(searchTerm) === -1 ? 'none' : '';
     });
   });
+
+  gradioApp().getElementById(`${tabname}_extra_tabs`).onmouseover = (e) => {
+    const el = e?.target?.parentElement;
+    if (!el?.classList?.contains('card')) return;
+    if (el.title === previousCard) return;
+    readCardDescription(el.dataset.filename, el.dataset.description);
+    readCardTags(el, el.dataset.tags);
+    e.stopPropagation();
+    e.preventDefault();
+    previousCard = el.title;
+  };
 
   const intersectionObserver = new IntersectionObserver((entries) => {
     if (!en) return;
@@ -107,10 +227,6 @@ function setupExtraNetworks() {
   log('initExtraNetworks');
 }
 
-onUiLoaded(setupExtraNetworks);
-const re_extranet = /<([^:]+:[^:]+):[\d\.]+>/;
-const re_extranet_g = /\s+<([^:]+:[^:]+):[\d\.]+>/g;
-
 function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
   let m = text.match(re_extranet);
   let replaced = false;
@@ -148,46 +264,9 @@ function refreshExtraNetworks(tabname) {
 function cardClicked(textToAdd, allowNegativePrompt) {
   const tabname = getENActiveTab();
   const textarea = allowNegativePrompt ? activePromptTextarea[tabname] : gradioApp().querySelector(`#${tabname}_prompt > label > textarea`);
-  if (!tryToRemoveExtraNetworkFromPrompt(textarea, textToAdd)) textarea.value = textarea.value + opts.extra_networks_add_text_separator + textToAdd;
+  if (textarea.value.indexOf(textToAdd) !== -1) textarea.value = textarea.value.replace(textToAdd, '');
+  else textarea.value += textToAdd;
   updateInput(textarea);
-}
-
-function saveCardPreview(event, filename) {
-  const tabname = getENActiveTab();
-  const textarea = gradioApp().querySelector(`#${tabname}_preview_filename  > label > textarea`);
-  const button = gradioApp().getElementById(`${tabname}_save_preview`);
-  textarea.value = filename;
-  updateInput(textarea);
-  button.click();
-  event.stopPropagation();
-  event.preventDefault();
-}
-
-function saveCardDescription(event, filename, descript) {
-  const tabname = getENActiveTab();
-  const textarea = gradioApp().querySelector(`#${tabname}_description_filename  > label > textarea`);
-  const button = gradioApp().getElementById(`${tabname}_save_description`);
-  const description = gradioApp().getElementById(`${tabname}_description`);
-  textarea.value = filename;
-  description.value = descript;
-  updateInput(textarea);
-  button.click();
-  event.stopPropagation();
-  event.preventDefault();
-}
-
-function readCardDescription(event, filename, descript, extraPage, cardName) {
-  const tabname = getENActiveTab();
-  const textarea = gradioApp().querySelector(`#${tabname}_description_filename  > label > textarea`);
-  const description = gradioApp().querySelector(`#${tabname}_description > label > textarea`);
-  const button = gradioApp().getElementById(`${tabname}_read_description`);
-  textarea.value = filename;
-  description.value = descript?.trim() || '';
-  updateInput(textarea);
-  updateInput(description);
-  button.click();
-  event.stopPropagation();
-  event.preventDefault();
 }
 
 function extraNetworksSearchButton(event) {
@@ -199,60 +278,4 @@ function extraNetworksSearchButton(event) {
   updateInput(searchTextarea);
 }
 
-function popup(contents) {
-  if (!globalPopup) {
-    globalPopup = document.createElement('div');
-    globalPopup.onclick = () => { globalPopup.style.display = 'none'; };
-    globalPopup.classList.add('global-popup');
-    const close = document.createElement('div');
-    close.classList.add('global-popup-close');
-    close.onclick = () => { globalPopup.style.display = 'none'; };
-    close.title = 'Close';
-    globalPopup.appendChild(close);
-    globalPopupInner = document.createElement('div');
-    globalPopupInner.onclick = (event) => { event.stopPropagation(); return false; };
-    globalPopupInner.classList.add('global-popup-inner');
-    globalPopup.appendChild(globalPopupInner);
-    gradioApp().appendChild(globalPopup);
-  }
-  globalPopupInner.innerHTML = '';
-  globalPopupInner.appendChild(contents);
-  globalPopup.style.display = 'flex';
-}
-
-function readCardMetadata(event, extraPage, cardName) {
-  requestGet('./sd_extra_networks/metadata', { page: extraPage, item: cardName }, (data) => {
-    if (data?.metadata) {
-      if (typeof (data?.metadata) !== 'string') data.metadata = JSON.stringify(data.metadata, null, 2);
-      const elem = document.createElement('pre');
-      elem.classList.add('popup-metadata');
-      elem.textContent = data.metadata;
-      popup(elem);
-    }
-  }, () => {});
-  event.stopPropagation();
-  event.preventDefault();
-}
-
-function readCardTags(event, extraPage, cardTags) {
-  if ((cardTags || []).length === 0) return;
-  const textarea = activePromptTextarea[getENActiveTab()];
-  const textToAdd = cardTags.join(' ');
-  if (!tryToRemoveExtraNetworkFromPrompt(textarea, textToAdd)) textarea.value = textarea.value + opts.extra_networks_add_text_separator + textToAdd;
-  updateInput(textarea);
-  event.stopPropagation();
-  event.preventDefault();
-}
-
-function readCardInformation(event, extraPage, cardName) {
-  requestGet('./sd_extra_networks/info', { page: extraPage, item: cardName }, (data) => {
-    if (data?.info && (typeof (data?.info) === 'string')) {
-      const elem = document.createElement('pre');
-      elem.classList.add('popup-metadata');
-      elem.textContent = data.info;
-      popup(elem);
-    }
-  }, () => {});
-  event.stopPropagation();
-  event.preventDefault();
-}
+onUiLoaded(setupExtraNetworks);

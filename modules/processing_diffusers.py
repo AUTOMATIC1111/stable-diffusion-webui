@@ -1,3 +1,4 @@
+import time
 import inspect
 import typing
 import torch
@@ -54,6 +55,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         shared.state.current_latent = latents
         if shared.state.interrupted or shared.state.skipped:
             raise AssertionError('Interrupted...')
+        if shared.state.paused:
+            shared.log.debug('Sampling paused')
+            while shared.state.paused:
+                if shared.state.interrupted or shared.state.skipped:
+                    raise AssertionError('Interrupted...')
+                time.sleep(0.1)
 
     def full_vae_decode(latents, model):
         shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)} images={latents.shape[0]}')

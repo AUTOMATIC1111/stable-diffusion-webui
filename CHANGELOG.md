@@ -1,7 +1,12 @@
 # Change Log for SD.Next
 
-## Update for 2023-08-31
+## Update for 2023-09-01
 
+- extra networks:
+  - support for **tags**  
+    search by tag, list tags, add to prompt, etc.  
+  - simplified handling of **descriptions**  
+    now shows on-mouse-over without the need for user interaction  
 - diffusers:
   - ability to interrupt (stop/skip) model generate  
   - add `diffusers_force_zeros` setting  

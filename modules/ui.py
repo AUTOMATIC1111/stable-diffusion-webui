@@ -911,7 +911,7 @@ def create_ui(startup_timer = None):
 
         info = opts.data_labels[key]
         t = type(info.default)
-        args = info.component_args() if callable(info.component_args) else info.component_args
+        args = (info.component_args() if callable(info.component_args) else info.component_args) or {}
         if info.component is not None:
             comp = info.component
         elif t == str:
@@ -925,21 +925,21 @@ def create_ui(startup_timer = None):
         elem_id = f"setting_{key}"
 
         if not is_quicksettings:
-            dirtyable_setting = gr.Group(elem_classes="dirtyable", visible=(args or {}).get("visible", True))
+            dirtyable_setting = gr.Group(elem_classes="dirtyable", visible=args.get("visible", True))
             dirtyable_setting.__enter__()
             dirty_indicator = gr.Button("", elem_classes="modification-indicator", elem_id="modification_indicator_" + key)
 
         if info.refresh is not None:
             if is_quicksettings:
-                res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
-                create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
+                res = comp(label=info.label, value=fun(), elem_id=elem_id, **args)
+                create_refresh_button(res, info.refresh, args, f"refresh_{key}")
             else:
                 with FormRow():
-                    res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
-                    create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
+                    res = comp(label=info.label, value=fun(), elem_id=elem_id, **args)
+                    create_refresh_button(res, info.refresh, args, f"refresh_{key}")
         else:
             try:
-                res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
+                res = comp(label=info.label, value=fun(), elem_id=elem_id, **args)
             except Exception as e:
                 log.error(f'Error creating setting: {key} {e}')
                 res = None

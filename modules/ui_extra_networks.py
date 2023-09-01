@@ -37,7 +37,7 @@ def listdir(path):
 
 
 def register_page(page):
-    """registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions"""
+    # registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions
     extra_pages.append(page)
     allowed_dirs.clear()
     allowed_dirs.update(set(sum([x.allowed_directories_for_previews() for x in extra_pages], [])))
@@ -93,19 +93,17 @@ class ExtraNetworksPage:
         self.missing_thumbs = []
         # class additional is to keep old extensions happy
         self.card = '''
-            <div class='card' onclick={card_click} title='{title}'>
+            <div class='card' onclick={card_click} title='{title}' data-filename='{local_preview}' data-description='{description}' data-tags='{tags}'>
                 <div class='overlay'>
                     <span style="display:none" class='search_term'>{search_term}</span>
                     <div class='name'>{name}</div>
-                    <div class='description'>{description}</div>
+                    <div class='tags'></div>
                     <div class='actions'>
                         <div class='additional'><ul></ul></div>
-                        <span title="Save current image as preview image" onclick={card_save_preview}>💙</span>
-                        <span title="Read description" onclick={card_read_desc}>📖</span>
+                        <span title="Save current image as preview image" onclick={card_save_preview}>⏺️</span>
                         <span title="Save current description" onclick={card_save_desc}>🛅</span>
                         <span title="Read metadata" onclick={card_read_meta}>📘</span>
                         <span title="Read info" onclick={card_read_info}>ℹ️</span>
-                        <span title="Read tags" onclick={card_read_tags}>#️</span>
                     </div>
                 </div>
                 <img class='preview' src='{preview}' style='width: {width}px; height: {height}px; object-fit: {fit}' loading='{loading}'></img>
@@ -237,32 +235,28 @@ class ExtraNetworksPage:
 
     def create_html_for_item(self, item, tabname):
         try:
-            tags = [item.get("tags")] if isinstance(item.get("tags", {}), str) else list(item.get("tags", {}).keys())
             args = {
+                "tabname": json.dumps(tabname),
+                "name": item["name"],
+                "title": item["name"],
+                "tags": '|'.join([item.get("tags")] if isinstance(item.get("tags", {}), str) else list(item.get("tags", {}).keys())),
                 "preview": html.escape(item.get("preview", None)),
                 "width": shared.opts.extra_networks_card_size,
                 "height": shared.opts.extra_networks_card_size if shared.opts.extra_networks_card_square else 'auto',
                 "fit": shared.opts.extra_networks_card_fit,
-                "prompt": item.get("prompt", None),
-                "tabname": json.dumps(tabname),
-                "local_preview": json.dumps(item["local_preview"]),
-                "name": item["name"],
-                "description": (item.get("description") or ""),
-                "search_term": item.get("search_term", ""),
                 "loading": "lazy" if shared.opts.extra_networks_card_lazy else "eager",
-                "card_click": item.get("onclick", '"' + html.escape(f"""return cardClicked({item.get("prompt", None)}, {"true" if self.allow_negative_prompt else "false"})""") + '"'),
-                "card_read_desc": '"' + html.escape(f"""return readCardDescription(event, {json.dumps(item["local_preview"])}, {json.dumps(item.get("description", ""))})""") + '"',
-                "card_save_desc": '"' + html.escape(f"""return saveCardDescription(event, {json.dumps(item["local_preview"])})""") + '"',
-                "card_read_meta": '"' + html.escape(f"""return readCardMetadata(event, {json.dumps(self.name)}, {json.dumps(item["name"])})""") + '"',
-                "card_read_info": '"' + html.escape(f"""return readCardInformation(event, {json.dumps(self.name)}, {json.dumps(item["name"])})""") + '"',
-                "card_read_tags": '"' + html.escape(f"""return readCardTags(event, {json.dumps(self.name)}, {json.dumps(tags)})""") + '"',
-                "card_save_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(item["local_preview"])})""") + '"',
-                "title": f'Name: {item["name"]}',
+                "prompt": item.get("prompt", None),
+                "search_term": item.get("search_term", ""),
+                "description": item.get("description") or "",
+                "local_preview": item["local_preview"],
+                "card_click": item.get("onclick", '"' + html.escape(f'return cardClicked({item.get("prompt", None)}, {"true" if self.allow_negative_prompt else "false"})') + '"'),
+                "card_save_preview": '"' + html.escape('return saveCardPreview(event)') + '"',
+                "card_save_desc": '"' + html.escape('return saveCardDescription(event)') + '"',
+                "card_read_meta": '"' + html.escape(f'return readCardMetadata(event, {json.dumps(self.name)}, {json.dumps(item["name"])})') + '"',
+                "card_read_info": '"' + html.escape(f'return readCardInformation(event, {json.dumps(self.name)}, {json.dumps(item["name"])})') + '"',
             }
             if item.get("alias", None) is not None:
                 args['title'] += f'\nAlias: {item["alias"]}'
-            if item.get("tags", None) is not None:
-                args['title'] += f'\nTags: {", ".join(tags)}'
             return self.card.format(**args)
         except Exception as e:
             shared.log.error(f'Extra networks item error: page={tabname} item={item["name"]} {e}')
@@ -329,6 +323,7 @@ class ExtraNetworksUi:
         self.button_read_description = None
         self.description_target_filename = None
         self.description = None
+        self.tags = None
         self.tabname = None
         self.search = None
 
@@ -357,12 +352,10 @@ def create_ui(container, button, tabname, skip_indexing = False):
         button_close = ToolButton(close_symbol, elem_id=tabname+"_extra_close")
         ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", elem_classes="textbox", lines=1)
         ui.description = gr.TextArea('', show_label=False, elem_id=tabname+"_description", placeholder="Save/Replace Extra Network Description...", elem_classes="textbox", lines=1)
-
-        ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
         ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
-        ui.button_save_description = gr.Button('Save description', elem_id=tabname+"_save_description", visible=False)
-        ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
+        ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
         ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
+        ui.button_save_description = gr.Button('Save description', elem_id=tabname+"_save_description", visible=False)
 
         for page in ui.stored_extra_pages:
             shared.log.debug(f"Extra network page: {page.title} tab={tabname}")
@@ -432,21 +425,21 @@ def setup_ui(ui, gallery):
     )
 
     # write description to a file
-    def save_description(filename,descrip):
+    def save_description(filename, desc):
         lastDotIndex = filename.rindex('.')
-        filename = filename[0:lastDotIndex]+".description.txt"
-        if descrip != "":
+        filename = filename[0:lastDotIndex]+".txt"
+        if desc != "":
             try:
                 with open(filename,'w', encoding='utf-8') as f:
-                    f.write(descrip)
-                shared.log.info(f'Extra network save description: {filename}')
+                    f.write(desc)
+                shared.log.info(f'Extra network save description: {filename} {desc}')
             except Exception as e:
-                shared.log.error(f'Extra network save preview: {filename} {e}')
+                shared.log.error(f'Extra network save description: {filename} {e}')
         return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
 
     ui.button_save_description.click(
         fn=save_description,
-        _js="function(x,y){return [x,y]}",
+        _js="function(x,y) {return [x,y]}",
         inputs=[ui.description_target_filename, ui.description],
         outputs=[*ui.pages]
     )
