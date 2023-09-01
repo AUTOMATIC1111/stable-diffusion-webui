@@ -201,6 +201,13 @@ function restoreProgressImg2img() {
 onUiLoaded(function() {
     showRestoreProgressButton('txt2img', localGet("txt2img_task_id"));
     showRestoreProgressButton('img2img', localGet("img2img_task_id"));
+
+    /* temporary fix to put style apply button in tools row */
+    for (const mode of ['txt2img', 'img2img']) {
+        const apply_style_btn = gradioApp().getElementById(`${mode}_style_apply`);
+        const tools = gradioApp().querySelector(`#${mode}_tools .form`);
+        tools.append(apply_style_btn);
+    }
 });
 
 
