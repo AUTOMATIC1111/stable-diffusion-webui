@@ -104,7 +104,7 @@ class UiPromptStyles:
             outputs=[main_ui_prompt, main_ui_negative_prompt, self.dropdown],
             show_progress=False,
         ).then(fn=None, _js="function(){update_"+tabname+"_tokens(); closePopup();}", show_progress=False)
-        
+
         self.copy.click(
             fn=lambda p, n: (p, n),
             inputs=[main_ui_prompt, main_ui_negative_prompt],
