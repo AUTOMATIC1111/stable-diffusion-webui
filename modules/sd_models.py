@@ -818,7 +818,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     sd_model.unet.training = False
                     sd_model.vae.training = False
                     sd_model.unet = torch.xpu.optimize(sd_model.unet, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
-                    sd_model.vae = torch.xpu.optimize(sd_model.vae, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+                    sd_model.vae = torch.xpu.optimize(sd_model.vae, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
                     shared.log.info("Applied IPEX Optimize.")
             except Exception as err:
                 shared.log.warning(f"IPEX Optimize not supported: {err}")

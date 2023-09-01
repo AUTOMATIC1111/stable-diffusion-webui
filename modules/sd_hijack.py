@@ -189,10 +189,10 @@ class StableDiffusionModelHijack:
                 shared.log.info(f"Compiling pipeline={m.model.__class__.__name__} mode={opts.cuda_compile_backend}")
                 import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
                 if shared.opts.cuda_compile_backend == "openvino_fx":
-                    torch._dynamo.reset()
-                    from modules.intel.openvino import openvino_fx, openvino_clear_caches, model_state # pylint: disable=unused-import
+                    torch._dynamo.reset() # pylint: disable=protected-access
+                    from modules.intel.openvino import openvino_fx, openvino_clear_caches # pylint: disable=unused-import
                     openvino_clear_caches()
-                    model_state.partition_id = 0
+                    torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
                 log_level = logging.WARNING if opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
                 if hasattr(torch, '_logging'):
                     torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
