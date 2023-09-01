@@ -80,7 +80,7 @@ def get_tmp_local_path(remoting_path: str, dir=None):
     return get_local_path(remoting_path, dst)
 
 
-def upload_files(is_tmp, *files):
+def upload_files(is_tmp, *files, dirname=None):
     keys = []
     if files:
         date = datetime.today().strftime('%Y/%m/%d')
@@ -88,6 +88,8 @@ def upload_files(is_tmp, *files):
         bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
         file_storage_system = FileStorageCls()
         relative = S3Tmp if is_tmp else S3SDWEB
+        if dirname:
+            relative = os.path.join(relative, dirname)
 
         for f in files:
             name = os.path.basename(f)

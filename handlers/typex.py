@@ -25,6 +25,7 @@ class ModelType(IntEnum):
     CheckPoint = 1
     Lora = 2
     Embedding = 3
+    LyCORIS = 4
 
 
 class OutImageType(IntEnum):
@@ -36,13 +37,15 @@ class OutImageType(IntEnum):
 ModelLocation = {
     ModelType.Embedding: 'embeddings',
     ModelType.CheckPoint: 'models/Stable-diffusion',
-    ModelType.Lora: 'models/Lora'
+    ModelType.Lora: 'models/Lora',
+    ModelType.LyCORIS: 'models/LyCORIS'
 }
 
 UserModelLocation = {
     ModelType.Embedding: 'embendings',
     ModelType.CheckPoint: 'user-models/Stable-diffusion',
-    ModelType.Lora: 'user-models/Lora'
+    ModelType.Lora: 'user-models/Lora',
+    ModelType.LyCORIS: 'user-models/LyCORIS'
 }
 
 ForbiddenCoverKey = 'sd-web/resources/403_blur.png'

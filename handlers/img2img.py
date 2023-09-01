@@ -102,7 +102,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  denoising_strength: float = 0.75,  # 重绘幅度（含手涂和上传）
                  select_script_name: str = None,  # 选择下拉框脚本名
                  select_script_args: typing.Sequence = None,  # 选择下拉框脚本参数
-                 select_script_nets: typing.Sequence[typing.Mapping] = None,   # 选择下拉框脚本涉及的模型信息
+                 select_script_nets: typing.Sequence[typing.Mapping] = None,  # 选择下拉框脚本涉及的模型信息
                  alwayson_scripts: AlwaysonScriptsType = None,  # 插件脚本，object格式： {插件名: {'args': [参数列表]}}
                  img2img_batch_input_dir: str = None,
                  img2img_batch_output_dir: str = None,
@@ -112,6 +112,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  scale_by=-1,  # 图形放大，大于0生效。
                  lora_models: typing.Sequence[str] = None,  # 使用LORA，用户和系统全部LORA列表
                  embeddings: typing.Sequence[str] = None,  # embeddings，用户和系统全部embedding列表
+                 lycoris_models: typing.Sequence[str] = None,  # lycoris，用户和系统全部lycoris列表
                  **kwargs):
         override_settings = create_override_settings_dict(override_settings_texts or [])
         image = None
@@ -258,6 +259,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         self.kwargs = kwargs
         self.loras = lora_models
         self.embedding = embeddings
+        self.lycoris_models = lycoris_models
         self.select_script_nets = select_script_nets
 
         if mask:
@@ -490,11 +492,18 @@ class Img2ImgTaskHandler(TaskHandler):
         return False
 
     def _get_local_loras(self, loras: typing.Sequence[str]) -> typing.Sequence[str]:
-        # loras = [get_model_local_path(p, ModelType.Lora) for p in loras]
         loras = batch_model_local_paths(ModelType.Lora, *loras)
-        os.popen(f'touch {" ".join(loras)}')
+        local_models = [p for p in loras if p and os.path.isfile(p)]
+        os.popen(f'touch {" ".join(local_models)}')
 
-        return [p for p in loras if p and os.path.isfile(p)]
+        return local_models
+
+    def _get_local_lycoris(self, lycoris: typing.Sequence[str]) -> typing.Sequence[str]:
+        local_models = batch_model_local_paths(ModelType.LyCORIS, *lycoris)
+        local_models = [p for p in local_models if p and os.path.isfile(p)]
+        os.popen(f'touch {" ".join(local_models)}')
+
+        return local_models
 
     def _set_little_models(self, process_args):
         if process_args.loras:
@@ -594,7 +603,8 @@ class Img2ImgTaskHandler(TaskHandler):
             p += job_no / (progress.task['n_iter'] * progress.task['batch_size'])
             # p += (shared.state.job_no) / shared.state.job_count
         if shared.state.sampling_steps > 0:
-            p += 1 / (progress.task['n_iter'] * progress.task['batch_size']) * shared.state.sampling_step / shared.state.sampling_steps
+            p += 1 / (progress.task['n_iter'] * progress.task[
+                'batch_size']) * shared.state.sampling_step / shared.state.sampling_steps
 
         current_progress = min(p * 100, 99)
         if current_progress < progress.task_progress:
