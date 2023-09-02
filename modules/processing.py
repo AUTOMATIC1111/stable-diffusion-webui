@@ -932,7 +932,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if self.hr_upscaler is not None:
             self.extra_generation_params["Hires upscaler"] = self.hr_upscaler
         self.extra_generation_params["Secondary sampler"] = self.latent_sampler
-        shared.log.debug(f'Init hires: upscaler={self.hr_upscaler} sampler={self.latent_sampler} width={self.hr_upscale_to_x} height={self.hr_upscale_to_y}')
+        shared.log.debug(f'Init hires: upscaler={self.hr_upscaler} sampler={self.latent_sampler} resize={self.hr_resize_x}x{self.hr_resize_y} upscale={self.hr_upscale_to_x}x{self.hr_upscale_to_y}')
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
 

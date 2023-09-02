@@ -1018,13 +1018,11 @@ def create_ui(startup_timer = None):
         with gr.Tabs(elem_id="system") as system_tabs:
             global ui_system_tabs # pylint: disable=global-statement
             ui_system_tabs = system_tabs
-            with gr.TabItem("Settings", id="system_settings", elem_id="system_settings_tab"):
-
+            with gr.TabItem("Settings", id="system_settings", elem_id="tab_settings"):
                 with gr.Row():
                     settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
                     preview_theme = gr.Button(value="Preview theme", variant='primary', elem_id="settings_preview_theme")
                     defaults_submit = gr.Button(value="Restore defaults", variant='primary', elem_id="defaults_submit")
-
                 with gr.Row():
                     _settings_search = gr.Text(label="Search", elem_id="settings_search")
 

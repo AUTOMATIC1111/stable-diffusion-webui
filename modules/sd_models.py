@@ -145,7 +145,10 @@ def checkpoint_tiles(use_short=False): # pylint: disable=unused-argument
 def list_models():
     checkpoints_list.clear()
     checkpoint_aliases.clear()
-    ext_filter=[".safetensors"] if shared.opts.sd_disable_ckpt else [".ckpt", ".safetensors"]
+    if shared.opts.sd_disable_ckpt or shared.backend == shared.Backend.DIFFUSERS:
+        ext_filter = [".safetensors"]
+    else:
+        ext_filter = [".ckpt", ".safetensors"]
     model_list = modelloader.load_models(model_path=model_path, model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=ext_filter, download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
     if shared.backend == shared.Backend.DIFFUSERS:
         model_list += modelloader.load_diffusers_models(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir)
@@ -1125,11 +1128,12 @@ def unload_model_weights(op='model'):
 
 def apply_token_merging(sd_model, token_merging_ratio=0):
     current_token_merging_ratio = getattr(sd_model, 'applied_token_merged_ratio', 0)
-    if token_merging_ratio is None or current_token_merging_ratio == token_merging_ratio:
+    if token_merging_ratio is None or current_token_merging_ratio is None or current_token_merging_ratio == token_merging_ratio:
         return
     if current_token_merging_ratio > 0:
         tomesd.remove_patch(sd_model)
     if token_merging_ratio > 0:
+        shared.log.debug(f'Applying token merging: ratio={token_merging_ratio}')
         tomesd.apply_patch(
             sd_model,
             ratio=token_merging_ratio,
