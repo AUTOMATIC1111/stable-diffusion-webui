@@ -207,8 +207,8 @@ function saveCardPreview(event, tabname, filename) {
 
 function extraNetworksSearchButton(tabs_id, event) {
     var searchTextarea = gradioApp().querySelector("#" + tabs_id + ' > label > textarea');
-    var button = event.target;
-    var text = button.classList.contains("search-all") ? "" : button.textContent.trim();
+    var button = event.target.closest("button") ?? event.target;
+    var text = button.classList.contains("search-all") ? "" : (button.dataset?.value ?? button.textContent.trim());
 
     searchTextarea.value = text;
     updateInput(searchTextarea);
