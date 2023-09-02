@@ -63,6 +63,7 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/10516
 --ckpt 		| CKPT   | model.ckpt        				 | Path to checkpoint of Stable Diffusion model; if specified, this checkpoint will be added to the list of checkpoints and loaded. |
 --ckpt-dir 	| CKPT_DIR | None   				 | Path to directory with Stable Diffusion checkpoints. |
 --no-download-sd-model | None | False | Don't download SD1.5 model even if no model is found. |
+--do-not-download-clip | None | False | do not download CLIP model even if it's not included in the checkpoint |
 --vae-dir | VAE_PATH | None  					| Path to Variational Autoencoders model | disables all settings related to VAE.
 --vae-path | VAE_PATH | None | Checkpoint to use as VAE; setting this argument
 --gfpgan-dir| GFPGAN_DIR | GFPGAN/			 | GFPGAN directory. |
@@ -118,6 +119,10 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/10516
 --skip-python-version-check | None | False | Do not check versions of Python. |
 --skip-torch-cuda-test | None | False | Do not check if CUDA is able to work properly. |
 --skip-install | None | False | Skip installation of packages. |
+--loglevel | None | None | log level; one of: CRITICAL, ERROR, WARNING, INFO, DEBUG
+--log-startup | None | False | launch.py argument: print a detailed log of what's happening at startup |
+--api-server-stop | None | False | enable server stop/restart/kill via api |
+--timeout-keep-alive | int | 30 | set timeout_keep_alive for uvicorn |
 | **PERFORMANCE** |
 --xformers | None | False           					| Enable xformers for cross attention layers. |
 --force-enable-xformers	| None | False				| Enable xformers for cross attention layers regardless of whether the checking code thinks you can run it; ***do not make bug reports if this fails to work***. |
@@ -140,9 +145,10 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/10516
 --no-half-vae | None | False         				 | Do not switch the VAE model to 16-bit floats. |
 --upcast-sampling | None | False | Upcast sampling. No effect with `--no-half`. Usually produces similar results to `--no-half` with better performance while using less memory.
 --medvram    | None | False          				 | Enable Stable Diffusion model optimizations for sacrificing a some performance for low VRAM usage. |
+-medvram-sdxl | None | False                         | enable `--medvram` optimization just for SDXL models
 --lowvram    | None | False          				 | Enable Stable Diffusion model optimizations for sacrificing a lot of speed for very low VRAM usage. |
 --lowram     | None | False         				 | Load Stable Diffusion checkpoint weights to VRAM instead of RAM.
---always-batch-cond-uncond | None | False			 | Disables cond/uncond batching that is enabled to save memory with `--medvram` or `--lowvram`.
+--disable-model-loading-ram-optimization | None | False | disable an optimization that reduces RAM use when loading a model |
 | **FEATURES** |
 --autolaunch | None | False         					| Open the web UI URL in the system's default browser upon launch. |
 --theme | None | Unset         					| Open the web UI with the specified theme (`light` or `dark`). If not specified, uses the default browser theme. |
@@ -156,6 +162,9 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/10516
 --reinstall-torch | None | False | Force-reinstall torch. Useful for upgrading - but remove it after upgrading or you'll reinstall torch perpetually. |
 --tests | TESTS | False | Run test to validate web UI functionality, see wiki topic for more details.
 --no-tests | None | False | Do not run tests even if `--tests` option is specified.
+--dump-sysinfo | None | False | launch.py argument: dump limited sysinfo file (without information about extensions, options) to disk and quit
+--disable-all-extensions | None | False | disable all non-built-in extensions from running
+--disable-extra-extensions | None | False | disable all extensions from running 
 | **DEFUNCT OPTIONS** |
 --show-negative-prompt | None | False 					| No longer has an effect. |
 --deepdanbooru | None | False 					| No longer has an effect. |
@@ -163,3 +172,5 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/10516
 --gradio-img2img-tool | GRADIO_IMG2IMG_TOOL | None | No longer has an effect. |
 --gradio-inpaint-tool | GRADIO_INPAINT_TOOL | None | No longer has an effect. |
 --gradio-queue | None | False | No longer has an effect. |
+--add-stop-route | None | False | No longer has an effect. |
+--always-batch-cond-uncond | None | False			 | No longer has an effect, move into UI under `Setting > Optimizations` |
