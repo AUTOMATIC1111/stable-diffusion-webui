@@ -265,13 +265,23 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     use_refiner_start = (is_refiner_enabled and not p.is_hr_pass and not is_img2img and p.refiner_start > 0 and p.refiner_start < 1)
     use_denoise_start = (is_img2img and p.refiner_start > 0 and p.refiner_start < 1)
 
+    def calculate_base_steps():
+        if use_refiner_start:
+            return int(p.steps // p.refiner_start + 1)
+        elif use_denoise_start and shared.sd_model_type == 'sdxl':
+            return int(p.steps // (1 - p.refiner_start))
+        elif is_img2img:
+            return int(p.steps // p.denoising_strength + 1)
+        else:
+            return p.steps
+
     base_args = set_pipeline_args(
         model=shared.sd_model,
         prompts=prompts,
         negative_prompts=negative_prompts,
         prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
         negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
-        num_inference_steps=int(p.steps // p.refiner_start + 1) if use_refiner_start else int(p.steps // (1 - p.refiner_start)) if use_denoise_start else int(p.steps // p.denoising_strength + 1) if is_img2img else p.steps,
+        num_inference_steps=calculate_base_steps(),
         eta=shared.opts.eta_ddim,
         guidance_rescale=p.diffusers_guidance_rescale,
         denoising_start=0 if use_refiner_start else p.refiner_start if use_denoise_start else None,

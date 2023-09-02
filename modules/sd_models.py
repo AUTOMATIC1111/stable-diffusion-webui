@@ -816,9 +816,13 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             try:
                 if shared.opts.ipex_optimize:
                     sd_model.unet.training = False
-                    sd_model.vae.training = False
                     sd_model.unet = torch.xpu.optimize(sd_model.unet, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
-                    sd_model.vae = torch.xpu.optimize(sd_model.vae, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+                    if hasattr(sd_model, 'vae'):
+                        sd_model.vae.training = False
+                        sd_model.vae = torch.xpu.optimize(sd_model.vae, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+                    if hasattr(sd_model, 'movq'):
+                        sd_model.movq.training = False
+                        sd_model.movq = torch.xpu.optimize(sd_model.movq, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
                     shared.log.info("Applied IPEX Optimize.")
             except Exception as err:
                 shared.log.warning(f"IPEX Optimize not supported: {err}")
@@ -839,7 +843,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     torch._dynamo.config.verbose = shared.opts.cuda_compile_verbose # pylint: disable=protected-access
                     torch._dynamo.config.suppress_errors = shared.opts.cuda_compile_errors # pylint: disable=protected-access
                     sd_model.unet = torch.compile(sd_model.unet, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
-                    sd_model.vae.decode = torch.compile(sd_model.vae.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
+                    if hasattr(sd_model, 'vae'):
+                        sd_model.vae.decode = torch.compile(sd_model.vae.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
+                    if hasattr(sd_model, 'movq'):
+                        sd_model.movq.decode = torch.compile(sd_model.movq.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
                     if shared.opts.cuda_compile_precompile:
                         sd_model("dummy prompt")
                     shared.log.info("Complilation done.")
