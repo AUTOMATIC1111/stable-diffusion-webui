@@ -1356,8 +1356,8 @@ def setup_ui_api(app):
     def download_sysinfo(attachment=False):
         from fastapi.responses import PlainTextResponse
 
-        text = sysinfo.get()
-        filename = f"sysinfo-{datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M')}.txt"
+        text, check_sum_4 = sysinfo.get()
+        filename = f"sysinfo-{datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M')}_{check_sum_4}.json"
 
         return PlainTextResponse(text, headers={'Content-Disposition': f'{"attachment" if attachment else "inline"}; filename="{filename}"'})
 

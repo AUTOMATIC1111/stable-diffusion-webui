@@ -50,10 +50,10 @@ def get():
 
     text = json.dumps(res, ensure_ascii=False, indent=4)
 
-    h = hashlib.sha256(text.encode("utf8"))
-    text = text.replace(checksum_token, h.hexdigest())
+    checksum_hex = hashlib.sha256(text.encode("utf8")).hexdigest()
+    text = text.replace(checksum_token, checksum_hex)
 
-    return text
+    return text, checksum_hex[:4]
 
 
 re_checksum = re.compile(r'"Checksum": "([0-9a-fA-F]{64})"')
