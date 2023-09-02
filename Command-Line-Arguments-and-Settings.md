@@ -145,7 +145,7 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/10516
 --no-half-vae | None | False         				 | Do not switch the VAE model to 16-bit floats. |
 --upcast-sampling | None | False | Upcast sampling. No effect with `--no-half`. Usually produces similar results to `--no-half` with better performance while using less memory.
 --medvram    | None | False          				 | Enable Stable Diffusion model optimizations for sacrificing a some performance for low VRAM usage. |
--medvram-sdxl | None | False                         | enable `--medvram` optimization just for SDXL models
+--medvram-sdxl | None | False                         | enable `--medvram` optimization just for SDXL models
 --lowvram    | None | False          				 | Enable Stable Diffusion model optimizations for sacrificing a lot of speed for very low VRAM usage. |
 --lowram     | None | False         				 | Load Stable Diffusion checkpoint weights to VRAM instead of RAM.
 --disable-model-loading-ram-optimization | None | False | disable an optimization that reduces RAM use when loading a model |
