@@ -12,20 +12,16 @@ Stuff to be fixed, in no particular order...
 Stuff to be added, in no particular order...
 
 - Diffusers:
-  - Add Hires
   - Add Lora/Lyco mixer
   - Add ControlNet
   - Add SD and SD-XL Pix2Pix
   - Fix DeepFloyd IF model
-  - Redo Prompt parser for diffusers
   - Add unCLIP model
-  - Add ToMe support
   - Add Training support
 - Technical debt:
   - Port **A1111** stuff
   - Port `p.all_hr_prompts`
   - Import core repos to reduce dependencies
-  - Update `gradio`
   - Parse StabilityAI `modelspec` metadata
 - Non-technical:
   - Create additional themes

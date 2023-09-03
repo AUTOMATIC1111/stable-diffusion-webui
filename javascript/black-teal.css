@@ -1,23 +1,23 @@
 /* generic html tags */
 :root, .light, .dark {
-  --font: "Source Sans Pro", 'ui-sans-serif', 'system-ui', "Roboto", sans-serif;
-  --font-mono: 'IBM Plex Mono', 'ui-monospace', 'Consolas', monospace;
+  --font: 'system-ui', 'ui-sans-serif', 'system-ui', "Roboto", sans-serif;
+  --font-mono: 'ui-monospace', 'Consolas', monospace;
   --font-size: 16px;
   --left-column: 490px;
-  --highlight-color: #ce6400;
-  --inactive-color: #4e1400;
-  --background-color: #000000;
-  --primary-50: #fff7ed;
-  --primary-100: #ffedd5;
-  --primary-200: #fed7aa;
-  --primary-300: #fdba74;
-  --primary-400: #fb923c;
-  --primary-500: #f97316;
-  --primary-600: #ea580c;
-  --primary-700: #c2410c;
-  --primary-800: #9a3412;
-  --primary-900: #7c2d12;
-  --primary-950: #6c2e12;
+  --primary-50: #7dffff;
+  --primary-100: #72e8e8;
+  --primary-200: #67d2d2;
+  --primary-300: #5dbcbc;
+  --primary-400: #52a7a7;
+  --primary-500: #489292;
+  --primary-600: #3e7d7d;
+  --primary-700: #356969;
+  --primary-800: #2b5656;
+  --primary-900: #224444;
+  --primary-950: #193232;
+  --highlight-color: var(--primary-200);
+  --inactive-color: var(--primary--800);
+  --background-color: #000000;           
 }
 .light, .dark {
   --input-padding: 4px;
@@ -113,7 +113,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #txt2img_results, #img2img_results, #extras_results { background-color: var(--background-color); padding: 0; }
 #txt2img_settings { min-width: var(--left-column); max-width: var(--left-column); background-color: #111111; padding-top: 16px; }
 #pnginfo_html2_info { margin-top: -18px; background-color: var(--input-background-fill); padding: var(--input-padding) }
-#txt2img_tools > div > button, #img2img_tools > div > button { filter: hue-rotate(180deg) saturate(0.5); }
+#txt2img_tools > div > button, #img2img_tools > div > button { filter: hue-rotate(340deg) saturate(0.5); }
 #txt2img_tools, #img2img_tools { margin-top: -4px; margin-bottom: -4px; } 
 #txt2img_styles_row, #img2img_styles_row { margin-top: -6px; }
 

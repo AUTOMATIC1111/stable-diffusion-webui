@@ -2,8 +2,11 @@
 
 ## Update for 2023-09-03
 
-- full python 3.11 support  
-  note that changing python version does require reinstall  
+- system:
+  - new default theme: **black-teal**
+  - full **python 3.11** support  
+    note that changing python version does require reinstall  
+    and if you're already on python 3.10, really no need to upgrade  
 - extra networks:
   - support for **tags**  
     show tags on hover, search by tag, list tags, add to prompt, etc.  
