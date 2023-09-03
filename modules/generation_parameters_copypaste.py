@@ -370,14 +370,6 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
                     prompt = file.read()
 
         params = parse_generation_parameters(prompt)
-        
-        # This sanitizes unsavory prompt words when copying from another image
-        # for my own sanity. This is not intended to be contributed to the main repo,
-        # it's just so I don't have to see anything I'm not interested in when batch
-        # reproducing images from civit.ai or elsewhere when working on loras
-        # todo: make this work with the callback instead of forcing it here, this can be an extension when I feel like putting it together :D
-        from modules import custom_statics
-        params = custom_statics.CustomStatics.mass_replace_strings(params)
         script_callbacks.infotext_pasted_callback(prompt, params)
         res = []
 
