@@ -31,8 +31,9 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
         }
 
     def list_items(self):
-        for index, name in enumerate(shared.hypernetworks):
-            yield self.create_item(name, index)
+        with self.thread_lock:
+            for index, name in enumerate(shared.hypernetworks):
+                yield self.create_item(name, index)
 
     def allowed_directories_for_previews(self):
         return [shared.cmd_opts.hypernetwork_dir]
