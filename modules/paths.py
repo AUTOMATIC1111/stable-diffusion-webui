@@ -50,29 +50,37 @@ for d, must_exist, what, _options in path_dirs:
         paths[what] = d
 
 
-def create_paths(opts):
+def create_paths(opts, log=None):
     def create_path(folder):
         if folder is None or folder == '':
             return
         if not os.path.exists(folder):
             try:
                 os.makedirs(folder, exist_ok=True)
-            except Exception:
-                pass
+                if log is not None:
+                    log.debug(f'Create path: {folder}')
+            except Exception as e:
+                if log is not None:
+                    log.error(f'Failed to create path: {folder} {e}')
 
     def fix_path(folder):
-        if opts.data.get(folder, None) is None or opts.data[folder] is None or opts.data[folder] == '':
+        tgt = opts.data.get(folder, None) or opts.data_labels[folder].default
+        if tgt is None or tgt == '':
             return
-        if os.path.isabs(opts.data[folder]) or (len(data_path) > 0 and opts.data[folder].startswith(data_path)) and not opts.data[folder].startswith(script_path):
+        if os.path.isabs(tgt) or (len(data_path) > 0 and tgt.startswith(data_path)) and not tgt.startswith(script_path):
             return
-        fullpath = os.path.join(data_path, opts.data[folder])
+        fullpath = os.path.join(data_path, tgt)
         relpath = os.path.relpath(fullpath, script_path)
         opts.data[folder] = relpath
         return
 
-    create_path(fix_path('temp_dir'))
+    create_path(data_path)
+    create_path(script_path)
+    create_path(models_path)
+    create_path(sd_configs_path)
     create_path(extensions_dir)
     create_path(extensions_builtin_dir)
+    create_path(fix_path('temp_dir'))
     create_path(fix_path('hypernetwork_dir'))
     create_path(fix_path('ckpt_dir'))
     create_path(fix_path('vae_dir'))
@@ -86,6 +94,7 @@ def create_paths(opts):
     create_path(fix_path('outdir_txt2img_grids'))
     create_path(fix_path('outdir_img2img_grids'))
     create_path(fix_path('outdir_save'))
+    create_path(fix_path('styles_dir'))
 
 
 class Prioritize:

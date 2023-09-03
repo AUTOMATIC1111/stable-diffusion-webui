@@ -120,10 +120,10 @@ class EmbeddingDatabase:
         return embedding
 
     def get_expected_shape(self):
+        if shared.backend == shared.Backend.DIFFUSERS:
+            return 0
         if shared.sd_model is None:
             shared.log.error('Model not loaded')
-            return 0
-        if shared.backend == shared.Backend.DIFFUSERS:
             return 0
         vec = shared.sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
         return vec.shape[1]
@@ -213,11 +213,14 @@ class EmbeddingDatabase:
             self.skipped_embeddings[name] = embedding
 
     def load_from_dir(self, embdir):
+        if sd_models.model_data.sd_model is None:
+            shared.log.info('Skipping embeddings load: model not loaded')
+            return
         if not os.path.isdir(embdir.path):
             return
 
         is_ext = extension_filter(['.PNG', '.WEBP', '.JXL', '.AVIF', '.BIN', '.PT', '.SAFETENSORS'])
-        is_not_preview = lambda fp: not next(iter(os.path.splitext(fp))).upper().endswith('.PREVIEW')
+        is_not_preview = lambda fp: not next(iter(os.path.splitext(fp))).upper().endswith('.PREVIEW') # pylint: disable=unnecessary-lambda-assignment
 
         for file_path in [*filter(lambda fp: is_ext(fp) and is_not_preview(fp), directory_files(embdir.path))]:
             try:

@@ -242,7 +242,7 @@ def start_common():
         log.info(f'Using data path: {shared.cmd_opts.data_dir}')
     if shared.cmd_opts.models_dir is not None and len(shared.cmd_opts.models_dir) > 0:
         log.info(f'Using models path: {shared.cmd_opts.data_dir}')
-    create_paths(opts)
+    create_paths(opts, log)
     async_policy()
     initialize()
     if shared.opts.clean_temp_dir_at_start:

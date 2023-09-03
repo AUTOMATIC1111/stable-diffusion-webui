@@ -329,12 +329,15 @@ def read_metadata_from_safetensors(filename):
             json_data = json_start + file.read(metadata_len-2)
             json_obj = json.loads(json_data)
             for k, v in json_obj.get("__metadata__", {}).items():
-                res[k] = v
+                if k == 'format' and v == 'pt':
+                    continue
                 if isinstance(v, str) and v[0:1] == '{':
                     try:
                         res[k] = json.loads(v)
                     except Exception:
                         pass
+                else:
+                    res[k] = v
         sd_metadata[filename] = res
         global sd_metadata_pending # pylint: disable=global-statement
         sd_metadata_pending += 1

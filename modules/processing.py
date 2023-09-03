@@ -536,7 +536,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         return None
     stored_opts = {}
     for k in p.override_settings.keys():
-        stored_opts[k] = shared.opts.data.get(k, None)
+        stored_opts[k] = shared.opts.data.get(k, None) or shared.opts.data_labels[k].default
     try:
         # if no checkpoint override or the override checkpoint can't be found, remove override entry and load opts checkpoint
         if p.override_settings.get('sd_model_checkpoint', None) is not None and sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
@@ -574,6 +574,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             for k, v in stored_opts.items():
                 setattr(shared.opts, k, v)
                 if k == 'sd_model_checkpoint':
+                    sd_models.reload_model_weights()
+                if k == 'sd_model_refiner':
                     sd_models.reload_model_weights()
                 if k == 'sd_vae':
                     sd_vae.reload_vae_weights()

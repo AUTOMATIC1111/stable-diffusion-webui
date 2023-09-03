@@ -478,6 +478,10 @@ def check_modified_files():
         res = git('status --porcelain')
         files = [x[2:].strip() for x in res.split('\n')]
         files = [x for x in files if len(x) > 0 and (not x.startswith('extensions')) and (not x.startswith('wiki')) and (not x.endswith('.json')) and ('.log' not in x)]
+        deleted = [x for x in files if not os.path.exists(x)]
+        if len(deleted) > 0:
+            log.warning(f'Deleted files: {files}')
+        files = [x for x in files if os.path.exists(x) and not os.path.isdir(x)]
         if len(files) > 0:
             log.warning(f'Modified files: {files}')
     except Exception:

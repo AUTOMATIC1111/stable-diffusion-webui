@@ -278,4 +278,21 @@ function extraNetworksSearchButton(event) {
   updateInput(searchTextarea);
 }
 
+let desiredStyle = '';
+function selectStyle(name) {
+  desiredStyle = name;
+  const tabname = getENActiveTab();
+  const button = gradioApp().querySelector(`#${tabname}_styles_select`);
+  button.click();
+}
+
+function applyStyles(styles) {
+  let newStyles = [];
+  if (styles) newStyles = Array.isArray(styles) ? styles : [styles];
+  const index = newStyles.indexOf(desiredStyle);
+  if (index > -1) newStyles.splice(index, 1);
+  else newStyles.push(desiredStyle);
+  return newStyles.join('|');
+}
+
 onUiLoaded(setupExtraNetworks);

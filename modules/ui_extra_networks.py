@@ -91,6 +91,7 @@ class ExtraNetworksPage:
         self.html = ''
         self.items = []
         self.missing_thumbs = []
+        self.refresh_time = None
         # class additional is to keep old extensions happy
         self.card = '''
             <div class='card' onclick={card_click} title='{title}' data-filename='{local_preview}' data-description='{description}' data-tags='{tags}'>
@@ -102,13 +103,12 @@ class ExtraNetworksPage:
                         <div class='additional'><ul></ul></div>
                         <span title="Save current image as preview image" onclick={card_save_preview}>⏺️</span>
                         <span title="Save current description" onclick={card_save_desc}>🛅</span>
-                        <span title="Read metadata" onclick={card_read_meta}>📘</span>
-                        <span title="Read info" onclick={card_read_info}>ℹ️</span>
+                        {card_extra}
                     </div>
                 </div>
                 <img class='preview' src='{preview}' style='width: {width}px; height: {height}px; object-fit: {fit}' loading='{loading}'></img>
             </div>
-        '''  # noqa: RUF001
+        '''
 
     def refresh(self):
         pass
@@ -168,11 +168,11 @@ class ExtraNetworksPage:
                     created += 1
             except Exception as e:
                 shared.log.error(f'Extra network error creating thumbnail: {f} {e}')
-        if len(self.missing_thumbs) > 0:
+        if created > 0:
             shared.log.info(f"Extra network created thumbnails: {self.name} {created}")
             self.missing_thumbs.clear()
 
-    def create_html(self, tabname, skip = False):
+    def create_page(self, tabname, skip = False):
         t0 = time.time()
         self_name_id = self.name.replace(" ", "_")
         if skip:
@@ -197,35 +197,35 @@ class ExtraNetworksPage:
             <button class='lg secondary gradio-button custom-button{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton(event)'>
                 {html.escape(subdir) if subdir!="" else "all"}
             </button><br>""" for subdir in subdirs])
-        try:
-            if len(self.html) > 0:
-                res = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
-                return res
-            self.html = ''
+        # try:
+        if len(self.html) > 0:
+            res = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
+            return res
+        self.html = ''
+        if self.refresh_time is None or len(self.items) == 0:
             try:
                 self.items = list(self.list_items())
             except Exception as e:
                 self.items = []
                 shared.log.error(f'Extra networks error listing items: class={self.__class__} tab={tabname} {e}')
-            self.create_xyz_grid()
-            htmls = []
-            items = self.items
-            for item in items:
-                self.metadata[item["name"]] = item.get("metadata", {})
-                self.info[item["name"]] = self.find_info(item['filename'])
-                htmls.append(self.create_html_for_item(item, tabname))
-            self.html += ''.join(htmls)
-            if len(subdirs_html) > 0 or len(self.html) > 0:
-                res = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
-            else:
-                return ''
-            t1 = time.time()
-            shared.log.debug(f'Extra networks: {self.name} items={len(self.items)} subdirs={len(subdirs)} time={round(t1-t0, 2)}')
-            threading.Thread(target=self.create_thumb).start()
-            return res
-        except Exception as e:
-            shared.log.error(f'Extra networks page error: title={self.title} tab={tabname} class={e.__class__.__name__} {e}')
-            return f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'></div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>Extra network error<br>{e}</div>"
+        self.create_xyz_grid()
+        htmls = []
+        for item in self.items:
+            self.metadata[item["name"]] = item.get("metadata", {})
+            self.info[item["name"]] = item.get('info', None) or self.find_info(item['filename'])
+            htmls.append(self.create_html(item, tabname))
+        self.html += ''.join(htmls)
+        if len(subdirs_html) > 0 or len(self.html) > 0:
+            res = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
+        else:
+            return ''
+        t1 = time.time()
+        shared.log.debug(f'Extra networks: {self.name} items={len(self.items)} subdirs={len(subdirs)} time={round(t1-t0, 2)}')
+        threading.Thread(target=self.create_thumb).start()
+        return res
+        # except Exception as e:
+        #    shared.log.error(f'Extra networks page error: title={self.title} tab={tabname} class={e.__class__.__name__} {e}')
+        #    return f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'></div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>Extra network error<br>{e}</div>"
 
     def list_items(self):
         raise NotImplementedError
@@ -233,7 +233,7 @@ class ExtraNetworksPage:
     def allowed_directories_for_previews(self):
         return []
 
-    def create_html_for_item(self, item, tabname):
+    def create_html(self, item, tabname):
         try:
             args = {
                 "tabname": json.dumps(tabname),
@@ -252,11 +252,19 @@ class ExtraNetworksPage:
                 "card_click": item.get("onclick", '"' + html.escape(f'return cardClicked({item.get("prompt", None)}, {"true" if self.allow_negative_prompt else "false"})') + '"'),
                 "card_save_preview": '"' + html.escape('return saveCardPreview(event)') + '"',
                 "card_save_desc": '"' + html.escape('return saveCardDescription(event)') + '"',
-                "card_read_meta": '"' + html.escape(f'return readCardMetadata(event, {json.dumps(self.name)}, {json.dumps(item["name"])})') + '"',
-                "card_read_info": '"' + html.escape(f'return readCardInformation(event, {json.dumps(self.name)}, {json.dumps(item["name"])})') + '"',
+                "card_extra": "",
             }
-            if item.get("alias", None) is not None:
-                args['title'] += f'\nAlias: {item["alias"]}'
+            metadata = item.get("metadata", None)
+            if metadata is not None and len(metadata) > 0:
+                card_read_meta = '"' + html.escape(f'return readCardMetadata(event, {json.dumps(self.name)}, {json.dumps(item["name"])})') + '"'
+                args['card_extra'] += f'<span title="Read metadata" onclick={card_read_meta}>📘</span>'
+            info = item.get("info", None)
+            if info is not None and len(info) > 0:
+                card_read_info = '"' + html.escape(f'return readCardInformation(event, {json.dumps(self.name)}, {json.dumps(item["name"])})') + '"'
+                args['card_extra'] += f'<span title="Read info" onclick={card_read_info}>ℹ️</span>' # noqa
+            alias = item.get("alias", None)
+            if alias is not None:
+                args['title'] += f'\nAlias: {alias}'
             return self.card.format(**args)
         except Exception as e:
             shared.log.error(f'Extra networks item error: page={tabname} item={item["name"]} {e}')
@@ -308,9 +316,11 @@ def register_default_pages():
     from modules.ui_extra_networks_textual_inversion import ExtraNetworksPageTextualInversion
     from modules.ui_extra_networks_hypernets import ExtraNetworksPageHypernetworks
     from modules.ui_extra_networks_checkpoints import ExtraNetworksPageCheckpoints
+    from modules.ui_extra_networks_styles import ExtraNetworksPageStyles
+    register_page(ExtraNetworksPageCheckpoints())
+    register_page(ExtraNetworksPageStyles())
     register_page(ExtraNetworksPageTextualInversion())
     register_page(ExtraNetworksPageHypernetworks())
-    register_page(ExtraNetworksPageCheckpoints())
 
 
 class ExtraNetworksUi:
@@ -328,24 +338,10 @@ class ExtraNetworksUi:
         self.search = None
 
 
-def sort_extra_pages(pages):
-    tab_order = [x.lower().strip() for x in shared.opts.ui_extra_networks_tab_reorder.split(",")]
-
-    def tab_name_score(name):
-        name = name.lower()
-        for i, possible_match in enumerate(tab_order):
-            if possible_match in name:
-                return i
-        return len(pages)
-
-    tab_scores = {page.name: (tab_name_score(page.name), original_index) for original_index, page in enumerate(pages)}
-    return sorted(pages, key=lambda x: tab_scores[x.name])
-
-
 def create_ui(container, button, tabname, skip_indexing = False):
     ui = ExtraNetworksUi()
     ui.pages = []
-    ui.stored_extra_pages = sort_extra_pages(extra_pages)
+    ui.stored_extra_pages = extra_pages
     ui.tabname = tabname
     with gr.Tabs(elem_id=tabname+"_extra_tabs"):
         button_refresh = ToolButton(refresh_symbol, elem_id=tabname+"_extra_refresh")
@@ -359,9 +355,9 @@ def create_ui(container, button, tabname, skip_indexing = False):
 
         for page in ui.stored_extra_pages:
             shared.log.debug(f"Extra network page: {page.title} tab={tabname}")
-            page_html = page.create_html(ui.tabname, skip_indexing)
+            page_html = page.create_page(ui.tabname, skip_indexing)
             with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab"):
-                page_elem = gr.HTML(page_html, elem_id=tabname+page.name+"_extra_page", elem_classes="extra-networks-page")
+                page_elem = gr.HTML(page_html, elem_id=f'{tabname}{page.name}_extra_page', elem_classes="extra-networks-page")
                 page_elem.change(fn=lambda: None, _js=f'() => refreshExtraNetworks("{tabname}")', inputs=[], outputs=[])
                 ui.pages.append(page_elem)
 
@@ -378,8 +374,9 @@ def create_ui(container, button, tabname, skip_indexing = False):
         res = []
         for pg in ui.stored_extra_pages:
             pg.html = ''
+            pg.refresh_time = None
             pg.refresh()
-            res.append(pg.create_html(ui.tabname))
+            res.append(pg.create_page(ui.tabname))
         ui.search.update(value = ui.search.value)
         return res
 
@@ -396,7 +393,7 @@ def path_is_parent(parent_path, child_path):
 def setup_ui(ui, gallery):
     def save_preview(index, images, filename):
         if len(images) == 0:
-            return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
+            return [page.create_page(ui.tabname) for page in ui.stored_extra_pages]
         index = int(index)
         index = 0 if index < 0 else index
         index = len(images) - 1 if index >= len(images) else index
@@ -415,11 +412,11 @@ def setup_ui(ui, gallery):
             shared.log.debug(f'Extra network delete thumbnail: {thumb}')
             os.remove(thumb)
         shared.log.info(f'Extra network save preview: {filename}')
-        return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
+        return [page.create_page(ui.tabname) for page in ui.stored_extra_pages]
 
     ui.button_save_preview.click(
         fn=save_preview,
-        _js="function(x, y, z){return [selected_gallery_index(), y, z]}",
+        _js="function(x, y, z) {return [selected_gallery_index(), y, z]}",
         inputs=[ui.preview_target_filename, gallery, ui.preview_target_filename],
         outputs=[*ui.pages]
     )
@@ -435,11 +432,11 @@ def setup_ui(ui, gallery):
                 shared.log.info(f'Extra network save description: {filename} {desc}')
             except Exception as e:
                 shared.log.error(f'Extra network save description: {filename} {e}')
-        return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
+        return [page.create_page(ui.tabname) for page in ui.stored_extra_pages]
 
     ui.button_save_description.click(
         fn=save_description,
-        _js="function(x,y) {return [x,y]}",
+        _js="function(x, y) { return [x, y] }",
         inputs=[ui.description_target_filename, ui.description],
         outputs=[*ui.pages]
     )

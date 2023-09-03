@@ -4,15 +4,23 @@
 
 - extra networks:
   - support for **tags**  
-    search by tag, list tags, add to prompt, etc.  
+    show tags on hover, search by tag, list tags, add to prompt, etc.  
+  - **styles** are now also listed as part of extra networks  
+    existing `styles.csv` is converted upon startup to individual styles inside `models/style`  
+    this is stage one of new styles functionality  
+    old styles interface is still available, but will be removed in future  
+  - cache file lists for much faster startup  
   - simplified handling of **descriptions**  
     now shows on-mouse-over without the need for user interaction  
+  - **metadata** and **info** buttons only show if there is actual content  
 - diffusers:
   - ability to interrupt (stop/skip) model generate  
   - add `diffusers_force_zeros` setting  
     create zero-tensor for prompt if prompt is empty (positive or negative)  
   - add `diffusers_aesthetics_score` setting  
     automatically guide unet towards higher pleasing images  
+- fixes:
+  - pre-create all system folders on startup
 
 ## Update for 2023-08-30
 

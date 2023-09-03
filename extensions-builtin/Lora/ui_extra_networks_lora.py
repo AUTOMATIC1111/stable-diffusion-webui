@@ -37,6 +37,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 "hash": lora_on_disk.shorthash,
                 "preview": self.find_preview(path),
                 "description": self.find_description(path),
+                "info": self.find_info(path),
                 "search_term": self.search_terms_from_path(lora_on_disk.filename) + ' '.join(tags.keys()),
                 "prompt": prompt,
                 "local_preview": f"{path}.{shared.opts.samples_format}",
