@@ -1,7 +1,9 @@
 # Change Log for SD.Next
 
-## Update for 2023-09-01
+## Update for 2023-09-03
 
+- full python 3.11 support  
+  note that changing python version does require reinstall  
 - extra networks:
   - support for **tags**  
     show tags on hover, search by tag, list tags, add to prompt, etc.  
@@ -19,7 +21,8 @@
     create zero-tensor for prompt if prompt is empty (positive or negative)  
   - add `diffusers_aesthetics_score` setting  
     automatically guide unet towards higher pleasing images  
-- fixes:
+- general:
+  - `rembg` remove backgrounds support for **is-net** model  
   - pre-create all system folders on startup
 
 ## Update for 2023-08-30

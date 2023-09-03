@@ -267,11 +267,9 @@ def clone(url, folder, commithash=None):
 
 # check python version
 def check_python():
-    supported_minors = [9, 10]
+    supported_minors = [9, 10, 11]
     if args.quick:
         return
-    if args.experimental:
-        supported_minors.append(11)
     log.info(f'Python {platform.python_version()} on {platform.system()}')
     if not (int(sys.version_info.major) == 3 and int(sys.version_info.minor) in supported_minors):
         log.error(f"Incompatible Python version: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} required 3.{supported_minors}")

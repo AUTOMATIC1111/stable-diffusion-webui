@@ -26,7 +26,7 @@
   ignore = dirty
 [submodule "extensions-builtin/stable-diffusion-webui-rembg"]
   path = extensions-builtin/stable-diffusion-webui-rembg
-  url = https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg
+  url = https://github.com/vladmandic/sd-extension-rembg
   ignore = dirty
 [submodule "extensions-builtin/a1111-sd-webui-lycoris"]
   path = extensions-builtin/a1111-sd-webui-lycoris
