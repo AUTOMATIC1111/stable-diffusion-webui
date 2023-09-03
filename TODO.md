@@ -4,27 +4,26 @@
 
 Stuff to be fixed, in no particular order...
 
-- Mysterious Extra network corruptions
-- Unet type mismatch/autocast issues on some platforms
+N/A
 
 ## Features
 
 Stuff to be added, in no particular order...
 
 - Diffusers:
-  - Add Lora/Lyco mixer
+  - Add Lyco support
   - Add ControlNet
   - Add SD and SD-XL Pix2Pix
   - Fix DeepFloyd IF model
   - Add unCLIP model
   - Add Training support
+  - Add long prompts
 - Technical debt:
   - Port **A1111** stuff
   - Port `p.all_hr_prompts`
   - Import core repos to reduce dependencies
   - Parse StabilityAI `modelspec` metadata
 - Non-technical:
-  - Create additional themes
   - Update Wiki
   - Get more high-quality upscalers
   - Rename repo: **automatic** -> **sdnext**

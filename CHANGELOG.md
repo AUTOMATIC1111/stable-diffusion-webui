@@ -24,6 +24,7 @@
     create zero-tensor for prompt if prompt is empty (positive or negative)  
   - add `diffusers_aesthetics_score` setting  
     automatically guide unet towards higher pleasing images  
+    highly recommended for simple prompts  
 - general:
   - `rembg` remove backgrounds support for **is-net** model  
   - pre-create all system folders on startup
