@@ -718,7 +718,12 @@ def read_info_from_image(image: Image.Image) -> tuple[str | None, dict]:
     geninfo = items.pop('parameters', None)
 
     if "exif" in items:
-        exif = piexif.load(items["exif"])
+        exif_data = items["exif"]
+        try:
+            exif = piexif.load(exif_data)
+        except OSError:
+            # memory / exif was not valid so piexif tried to read from a file
+            exif = None
         exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
         try:
             exif_comment = piexif.helper.UserComment.load(exif_comment)
