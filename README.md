@@ -29,7 +29,7 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
 - Support for multiple diffusion models!  
   Stable Diffusion, SD-XL, Kandinsky, DeepFloyd IF, etc.  
 - Fully multiplatform with platform specific autodetection and tuning performed on install  
-  Windows / Linux / MacOS with CPU / nVidia / AMD / IntelArc / DirectML
+  Windows / Linux / MacOS with CPU / nVidia / AMD / Intel / DirectML
 - Improved prompt parser  
 - Enhanced *Lora*/*Locon*/*Lyco* code supporting latest trends in training  
 - Built-in queue management  
