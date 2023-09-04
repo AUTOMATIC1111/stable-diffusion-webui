@@ -113,9 +113,16 @@ class TaskReceiverRecorder:
                     }))
             self.dump_ts = int(time.time())
 
+    def idle_time(self):
+        with open(self.file_path) as f:
+            d = json.loads(f.readline())
+            if d['status'] == TaskReceiverState.Idle.value:
+                return int(time.time()) - d['timestamp']
+
 
 def register_worker(worker_id):
     try:
+
         pool = RedisPool()
         conn = pool.get_connection()
         conn.setex(worker_id, 300, 60)
@@ -167,6 +174,8 @@ class TaskReceiver:
 
         self.timer.add_job(register_worker, 'interval', seconds=30, args=[self.worker_id])
         self.timer.start()
+        self.exception_ts = 0
+        self.closed = False
 
     def _worker_id(self):
         group_id = get_worker_group()
@@ -331,6 +340,7 @@ class TaskReceiver:
         locker = redis_lock.Lock(rds, "task-lock-" + queue_name, expire=10)
         locked = False
         try:
+            # logger.debug("===> acquire locker: task-lock-" + queue_name)
             locker.acquire(blocking=True, timeout=3)
             locked = True
             for _ in range(retry):
@@ -392,7 +402,7 @@ class TaskReceiver:
                 return t
 
     def get_one_task(self, block: bool = True, sleep_time: float = 4) -> typing.Optional[Task]:
-        while 1:
+        while not self.closed:
             st = time.time()
             if self.train_only:
                 task = self._search_train_task()
@@ -412,7 +422,7 @@ class TaskReceiver:
             self.register_worker()
 
     def task_iter(self, sleep_time: float = 2) -> typing.Iterable[Task]:
-        while 1:
+        while not self.closed:
             try:
                 st = time.time()
 
@@ -440,13 +450,19 @@ class TaskReceiver:
                 if wait > 0:
                     self._clean_tmp_files()
                     time.sleep(wait)
-
+                self.register_worker()
+                self.write_worker_state()
+                self.exception_ts = -1
             except:
                 time.sleep(1)
                 logger.exception("get task err")
+                self.exception_ts = time.time()
             finally:
-                self.register_worker()
-                self.write_worker_state()
+                if self.exception_ts > 0 and time.time() - self.exception_ts > 900:
+                    # 超过15分钟自动退出~
+                    logger.warning(f'auto exit, catch error at:{self.exception_ts}')
+                    self.close()
+                    break
 
     def register_worker(self):
         if time.time() - self.register_time > 120:
@@ -520,4 +536,9 @@ class TaskReceiver:
         return self.release_flag
 
     def close(self):
+        if self.closed:
+            return
+
+        self.closed = True
         self.timer.shutdown()
+        self.redis_pool.close()

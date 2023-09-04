@@ -6,6 +6,7 @@
 # @File    : executor.py
 # @Software: Hifive
 import os.path
+import queue
 import random
 import time
 import typing
@@ -39,7 +40,7 @@ class TaskExecutor(Thread):
         super(TaskExecutor, self).__init__(group, target, name, args, kwargs, daemon=daemon)
 
     def _close(self):
-        for h in self._handlers:
+        for h in self._handlers.values():
             h.close()
         self.receiver.close()
 
@@ -75,7 +76,7 @@ class TaskExecutor(Thread):
         logger.info(f"executor start with:{','.join(handlers)}")
         while not self.__stop:
             try:
-                task = self.queue.get()
+                task = self.queue.get(timeout=10)
                 logger.info(f"====>>> receive task:{task.desc()}")
                 logger.info(f"====>>> model history:{self.recorder.history()}")
 
@@ -96,6 +97,8 @@ class TaskExecutor(Thread):
                     system_exit(free, total)
                     # 释放磁盘空间
                     self._clean_disk()
+            except queue.Empty:
+                continue
             except Exception:
                 logger.exception("executor err")
                 self.nofity()
@@ -104,7 +107,7 @@ class TaskExecutor(Thread):
         self._close()
 
     def _get_task(self):
-        while self.is_alive():
+        while self.is_alive() and not self.receiver.closed:
             with self.not_busy:
                 if not self.queue.full():
                     for task in self.receiver.task_iter():
@@ -118,6 +121,7 @@ class TaskExecutor(Thread):
                 else:
                     self.not_busy.wait()
         logger.info("=======> task receiver quit!!!!!!")
+        self.__stop = True
 
     def _is_timeout(self, task: Task) -> bool:
         if task.create_at <= 0:
@@ -148,7 +152,6 @@ class TaskExecutor(Thread):
                         os.remove(full)
                     except:
                         logger.exception(f'cannot remove file:{full}')
-
 
     def run(self) -> None:
         self._get_task()

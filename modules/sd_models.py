@@ -27,8 +27,10 @@ model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
 checkpoints_list = {}
 checkpoint_alisases = {}
 checkpoints_loaded = collections.OrderedDict()
+# tss 模型
 user_loras = []
 user_embedding_dirs = []
+user_lycoris = []
 
 
 class CheckpointInfo:

@@ -12,8 +12,17 @@ import uuid
 import oss2
 
 from filestorage.storage import FileStorage
+from tools.processor import MultiThreadWorker
 from tools.environment import get_file_storage_system_env, Env_EndponitKey, \
     Env_AccessKey, Env_SecretKey
+
+
+def download(obj, bucket, local_path, tmp):
+    if not os.path.isfile(local_path):
+        tmp_file = os.path.join(tmp, os.path.basename(obj.key))
+        oss2.resumable_download(bucket, obj.key, tmp_file)
+        if os.path.isfile(tmp_file):
+            shutil.move(tmp_file, local_path)
 
 
 class OssFileStorage(FileStorage):
@@ -96,22 +105,29 @@ class OssFileStorage(FileStorage):
 
     def download_dir(self, remoting_dir: str, local_dir: str) -> bool:
         super(OssFileStorage, self).download_dir(remoting_dir, local_dir)
-        bucket, key = self.extract_buack_key_from_path(remoting_dir)
-        bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
+        bucket_name, key = self.extract_buack_key_from_path(remoting_dir)
+        bucket = oss2.Bucket(self.auth, self.endpoint, bucket_name)
 
         tmp = os.path.join(self.tmp_dir, str(uuid.uuid4()))
         os.makedirs(tmp, exist_ok=True)
 
+        args = []
+        # 获取OBJ列表
         for i, obj in enumerate(oss2.ObjectIteratorV2(bucket, prefix=key)):
             if i >= 200:
                 break
-            tmp_file = os.path.join(tmp, os.path.basename(obj.key))
             local_path = os.path.join(local_dir, os.path.basename(obj.key))
-            oss2.resumable_download(bucket, key, tmp_file)
-            if os.path.isfile(tmp_file):
-                shutil.move(tmp_file, local_path)
-            else:
+            args.append((obj, bucket, local_path, tmp))
 
-                raise OSError(f'cannot download file from oss, {obj.key}')
+        # 下载列表~
+        worker = MultiThreadWorker(args, download, 4)
+        worker.run()
 
-        return False
+        for item in args:
+            local_path = item[2]
+            if not os.path.isfile(local_path):
+                shutil.rmtree(tmp)
+
+                return False
+
+        return True

@@ -61,6 +61,7 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  override_settings_texts=None,  # 自定义设置 TEXT,如: ['Clip skip: 2', 'ENSD: 31337', 'sd_vae': 'None']
                  lora_models: typing.Sequence[str] = None,  # 使用LORA，用户和系统全部LORA列表
                  embeddings: typing.Sequence[str] = None,  # embeddings，用户和系统全部mbending列表
+                 lycoris_models: typing.Sequence[str] = None,  # lycoris，用户和系统全部lycoris列表
                  compress_pnginfo: bool = True,  # 使用GZIP压缩图片信息（默认开启）
                  hr_sampler_name: str = None,  # hr sampler
                  hr_prompt: str = None,
@@ -117,6 +118,7 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
         self.kwargs = kwargs
         self.loras = lora_models
         self.embedding = embeddings
+        self.lycoris = lycoris_models
         self.select_script_nets = select_script_nets
 
     def close(self):

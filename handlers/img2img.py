@@ -259,7 +259,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         self.kwargs = kwargs
         self.loras = lora_models
         self.embedding = embeddings
-        self.lycoris_models = lycoris_models
+        self.lycoris = lycoris_models
         self.select_script_nets = select_script_nets
 
         if mask:
@@ -517,6 +517,10 @@ class Img2ImgTaskHandler(TaskHandler):
             sd_models.user_embedding_dirs = set(embedding_dirs)
         else:
             sd_models.user_embedding_dirs = []
+
+        if process_args.lycoris:
+            pass
+
 
     def _exec_img2img(self, task: Task) -> typing.Iterable[TaskProgress]:
 
