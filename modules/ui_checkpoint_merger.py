@@ -1,19 +1,22 @@
-
 import gradio as gr
 
 from modules import sd_models, sd_vae, errors, extras, call_queue
 from modules.ui_components import FormRow
 from modules.ui_common import create_refresh_button
 
+interp_description_css = "<p style='margin-bottom: 2.5em'>{}</p>"
+interp_descriptions = {
+    "No interpolation": interp_description_css.format("No interpolation will be used. Requires one model; A. Allows for format conversion and VAE baking."),
+    "Weighted sum": interp_description_css.format("A weighted sum will be used for interpolation. Requires two models; A and B. The result is calculated as A * (1 - M) + B * M"),
+    "Add difference": interp_description_css.format("The difference between the last two models will be added to the first. Requires three models; A, B and C. The result is calculated as A + (B - C) * M")
+}
+
 
 def update_interp_description(value):
-    interp_description_css = "<p style='margin-bottom: 2.5em'>{}</p>"
-    interp_descriptions = {
-        "No interpolation": interp_description_css.format("No interpolation will be used. Requires one model; A. Allows for format conversion and VAE baking."),
-        "Weighted sum": interp_description_css.format("A weighted sum will be used for interpolation. Requires two models; A and B. The result is calculated as A * (1 - M) + B * M"),
-        "Add difference": interp_description_css.format("The difference between the last two models will be added to the first. Requires three models; A, B and C. The result is calculated as A + (B - C) * M")
-    }
-    return interp_descriptions[value]
+    try:
+        return interp_descriptions.get(value, "")
+    except TypeError:
+        return ""
 
 
 def modelmerger(*args):
