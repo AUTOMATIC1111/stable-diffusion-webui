@@ -8,11 +8,12 @@ from modules import timer, errors
 initialized = False
 logging.getLogger("DeepSpeed").disabled = True
 import torch # pylint: disable=C0411
+errors.log.debug(f'Loaded Torch=={torch.__version__}')
 try:
     import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
+    errors.log.debug(f'Loaded IPEX=={ipex.__version__}')
 except Exception:
     pass
-errors.log.debug(f'Loaded Torch=={torch.__version__}')
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 import torchvision # pylint: disable=W0611,C0411
 import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them # pylint: disable=W0611,C0411

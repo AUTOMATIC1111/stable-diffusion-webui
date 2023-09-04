@@ -318,5 +318,4 @@ ldm.models.diffusion.ddim.DDIMSampler.register_buffer = register_buffer
 ldm.models.diffusion.plms.PLMSSampler.register_buffer = register_buffer
 
 # Ensure samping from Guassian for DDPM follows types
-if not devices.backend == 'ipex':
-    ldm.modules.distributions.distributions.DiagonalGaussianDistribution.sample = lambda self: self.mean.to(self.parameters.dtype) + self.std.to(self.parameters.dtype) * torch.randn(self.mean.shape, dtype=self.parameters.dtype).to(device=self.parameters.device)
+ldm.modules.distributions.distributions.DiagonalGaussianDistribution.sample = lambda self: self.mean.to(self.parameters.dtype) + self.std.to(self.parameters.dtype) * torch.randn(self.mean.shape, dtype=self.parameters.dtype).to(device=self.parameters.device)

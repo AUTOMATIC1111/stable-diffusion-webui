@@ -64,7 +64,6 @@ def ipex_init():
     torch.cuda.ByteStorage = torch.xpu.ByteStorage
     torch.cuda.set_stream = torch.xpu.set_stream
     torch.cuda.BoolStorage = torch.xpu.BoolStorage
-    torch.cuda.get_device_capability = torch.xpu.get_device_capability
     torch.cuda.os = torch.xpu.os
     torch.cuda.torch = torch.xpu.torch
     torch.cuda.BFloat16Storage = torch.xpu.BFloat16Storage
@@ -154,6 +153,7 @@ def ipex_init():
     torch.cuda.has_half = True
     torch.cuda.is_bf16_supported = True
     #torch.version.cuda = "11.7" #Breaks System Info
+    torch.cuda.get_device_capability = lambda: [11,7]
     torch.cuda.get_device_properties.major = 11
     torch.cuda.get_device_properties.minor = 7
     torch.backends.cuda.sdp_kernel = return_null_context
