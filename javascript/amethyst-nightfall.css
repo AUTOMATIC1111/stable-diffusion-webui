@@ -119,7 +119,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #txt2img_subseed_strength { margin-top: 0; }
 #pnginfo_html2_info { margin-top: -18px; background-color: var(--input-background-fill); padding: var(--input-padding) }
 #txt2img_tools > div > button, #img2img_tools > div > button { filter: hue-rotate(180deg) saturate(0.5); }
-#txt2img_tools, #img2img_tools { margin-top: -4px; margin-bottom: -4px; } 
+#txt2img_tools, #img2img_tools { margin-top: -4px; margin-bottom: -4px; }
 #txt2img_styles_row { margin-top: -6px; }
 
 /* custom elements overrides */
@@ -322,4 +322,3 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --size-9: 64px;
   --size-14: 64px;
 }
-

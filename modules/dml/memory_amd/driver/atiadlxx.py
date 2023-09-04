@@ -26,7 +26,7 @@ class ATIADLxx(object):
 
         if ADL2_Adapter_MemoryInfo2_Get(self.context, adapterIndex, C.byref(info)) != ADL_OK:
             raise RuntimeError("ADL2: Failed to get MemoryInfo2")
-        
+
         return info
 
     def get_dedicated_vram_usage(self, index: int) -> int:
