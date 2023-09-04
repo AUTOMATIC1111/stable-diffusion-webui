@@ -244,12 +244,9 @@ def directory_has_changed(dir:str, *, recursive:bool=True) -> bool: # pylint: di
 def directory_directories(dir:str, *, recursive:bool=True) -> dict[str,tuple[float,list[str]]]: # pylint: disable=redefined-builtin
     dir = os.path.abspath(dir)
     if directory_has_changed(dir, recursive=recursive):
-        for _dir in modelloader_directories:
-            try:
-                if (os.path.exists(_dir) and os.path.isdir(_dir)):
-                    continue
-            except Exception:
-                pass
+        for _dir in list(modelloader_directories):
+            if os.path.exists(_dir) or os.path.isdir(_dir):
+                continue
             del modelloader_directories[_dir]
         for _dir, _files in walk(dir, lambda e, path: shared.log.debug(f"FS walk error: {e} {path}")):
             try:

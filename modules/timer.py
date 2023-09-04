@@ -21,18 +21,15 @@ class Timer:
         self.records[category] += e + extra_time
         self.total += e + extra_time
 
-    def summary(self):
-        res = f"{self.total:.1f}s"
-
-        additions = [x for x in self.records.items() if x[1] >= 0.05]
+    def summary(self, min_time=0.05):
+        res = f"{self.total:.2f}s"
+        additions = [x for x in self.records.items() if x[1] >= min_time]
         if not additions:
             return res
-
-        res += " ("
-        res += " ".join([f"{category}={time_taken:.1f}s" for category, time_taken in additions])
-        res += ")"
-
+        res += " { " + " ".join([f"{category}={time_taken:.2f}s" for category, time_taken in additions]) + " }"
         return res
 
     def reset(self):
         self.__init__()
+
+startup = Timer()

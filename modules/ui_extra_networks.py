@@ -13,14 +13,12 @@ from starlette.responses import FileResponse, JSONResponse
 from modules import shared, scripts, modelloader
 from modules.generation_parameters_copypaste import image_from_url_text
 from modules.ui_components import ToolButton
+import modules.ui_symbols as symbols
 
 
 extra_pages = []
 allowed_dirs = set()
 dir_cache = {} # key=path, value=(mtime, listdir(path))
-
-refresh_symbol = '\U0001f504'  # 🔄
-close_symbol = '\U0000274C'  # ❌
 
 
 def listdir(path):
@@ -344,8 +342,8 @@ def create_ui(container, button, tabname, skip_indexing = False):
     ui.stored_extra_pages = extra_pages
     ui.tabname = tabname
     with gr.Tabs(elem_id=tabname+"_extra_tabs"):
-        button_refresh = ToolButton(refresh_symbol, elem_id=tabname+"_extra_refresh")
-        button_close = ToolButton(close_symbol, elem_id=tabname+"_extra_close")
+        button_refresh = ToolButton(symbols.refresh, elem_id=tabname+"_extra_refresh")
+        button_close = ToolButton(symbols.close, elem_id=tabname+"_extra_close")
         ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", elem_classes="textbox", lines=1)
         ui.description = gr.TextArea('', show_label=False, elem_id=tabname+"_description", placeholder="Save/Replace Extra Network Description...", elem_classes="textbox", lines=1)
         ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)

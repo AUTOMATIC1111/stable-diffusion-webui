@@ -403,7 +403,8 @@ def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, 
     try:
         model.load_state_dict(state_dict, strict=False)
     except Exception as e:
-        shared.log.error(f'Error loading model weights: {checkpoint_info.filename} {e}')
+        shared.log.error(f'Error loading model weights: {checkpoint_info.filename}')
+        shared.log.error(' '.join(str(e).splitlines()[:2]))
         return False
     del state_dict
     timer.record("apply")
@@ -813,7 +814,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                             shared.opts.diffusers_move_base=True
                             shared.opts.diffusers_move_refiner=True
                     shared.log.debug('Moving base model to CPU')
-                    model_data.sd_model.to(devices.cpu)
+                    if model_data.sd_model is not None:
+                        model_data.sd_model.to(devices.cpu)
                     devices.torch_gc(force=True)
                     sd_model.to(devices.device)
                     base_sent_to_cpu=True
@@ -1007,7 +1009,10 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
         model_data.sd_model = sd_model
         current_checkpoint_info = None
         unload_model_weights(op=op)
-        shared.log.debug(f'Model weights unloaded: {memory_stats()}')
+        shared.log.debug(f'Model weights unloaded: {memory_stats()} op={op}')
+        if op == 'refiner':
+            # shared.opts.data['sd_model_refiner'] = 'None'
+            shared.opts.sd_model_refiner = 'None'
         return
     else:
         shared.log.debug(f'Model weights loaded: {memory_stats()}')
@@ -1062,12 +1067,12 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
                 lowvram.send_everything_to_cpu()
             else:
                 sd_model.to(devices.cpu)
-    if (reuse_dict or (shared.opts.model_reuse_dict and sd_model is not None)) and not sd_model.has_accelerate:
-        shared.log.info('Reusing previous model dictionary')
-        sd_hijack.model_hijack.undo_hijack(sd_model)
-    else:
-        unload_model_weights(op=op)
-        sd_model = None
+        if (reuse_dict or shared.opts.model_reuse_dict) and not sd_model.has_accelerate:
+            shared.log.info('Reusing previous model dictionary')
+            sd_hijack.model_hijack.undo_hijack(sd_model)
+        else:
+            unload_model_weights(op=op)
+            sd_model = None
     timer = Timer()
     state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
     checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
@@ -1095,7 +1100,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         timer.record("hijack")
         script_callbacks.model_loaded_callback(sd_model)
         timer.record("callbacks")
-        if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and not sd_model.has_accelerate:
+        if sd_model is not None and not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and not sd_model.has_accelerate:
             sd_model.to(devices.device)
             timer.record("device")
     shared.log.info(f"Weights loaded in {timer.summary()}")

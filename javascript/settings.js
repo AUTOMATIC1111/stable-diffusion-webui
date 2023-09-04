@@ -45,6 +45,7 @@ function markIfModified(setting_name, value) {
   const changed_value = previous_value !== current_value;
   if (changed_value) elem.title = `click to revert to previous value: ${previous_value}`;
   const is_stored = opts_metadata[setting_name].is_stored;
+  if (is_stored) console.log('A', opts_metadata[setting_name]);
   if (is_stored) elem.title = 'custom value';
   elem.disabled = !changed_value && !is_stored;
   elem.classList.toggle('changed', changed_value);

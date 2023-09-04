@@ -27,6 +27,7 @@
     highly recommended for simple prompts  
 - general:
   - `rembg` remove backgrounds support for **is-net** model  
+  - **settings** now show markers for all items set to non-default values  
   - pre-create all system folders on startup
 
 ## Update for 2023-08-30

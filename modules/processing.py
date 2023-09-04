@@ -27,6 +27,9 @@ import modules.sd_models as sd_models
 import modules.sd_vae as sd_vae
 
 
+opt_C = 4
+opt_f = 8
+
 def setup_color_correction(image):
     shared.log.debug("Calibrating color correction.")
     correction_target = cv2.cvtColor(np.asarray(image.copy()), cv2.COLOR_RGB2LAB)
@@ -933,8 +936,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             self.extra_generation_params["Hires steps"] = self.hr_second_pass_steps
         if self.hr_upscaler is not None:
             self.extra_generation_params["Hires upscaler"] = self.hr_upscaler
+            shared.log.debug(f'Init hires: upscaler={self.hr_upscaler} sampler={self.latent_sampler} resize={self.hr_resize_x}x{self.hr_resize_y} upscale={self.hr_upscale_to_x}x{self.hr_upscale_to_y}')
         self.extra_generation_params["Secondary sampler"] = self.latent_sampler
-        shared.log.debug(f'Init hires: upscaler={self.hr_upscaler} sampler={self.latent_sampler} resize={self.hr_resize_x}x{self.hr_resize_y} upscale={self.hr_upscale_to_x}x{self.hr_upscale_to_y}')
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
 

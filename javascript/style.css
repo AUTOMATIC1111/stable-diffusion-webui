@@ -239,7 +239,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-network-cards .card { height: fit-content; margin: 0.5em; position: relative; scroll-snap-align: start; scroll-margin-top: 0; }
 .extra-network-cards .card .overlay { position: absolute; bottom: 0; padding: 0.2em; z-index: 10; width: 100%; background: none; }
 .extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
-.extra-network-cards .card .overlay .name { font-size: 1.2em; font-weight: bold; line-break: anywhere; text-shadow: 1px 1px black; color: white; }
+.extra-network-cards .card .overlay .name { font-size: 1.1em; font-weight: bold; text-shadow: 1px 1px black; color: white; }
 .extra-network-cards .card .overlay .tags { margin: 4px; display: none; overflow-wrap: break-word; }
 .extra-network-cards .card .overlay .tag { padding: 2px; margin: 2px; background: var(--neutral-700); cursor: pointer; display: inline-block; }
 .extra-network-cards .card .overlay .actions { font-size: 2.2em; display: none; text-align-last: center; cursor: pointer; font-variant: unicase; height: 0.8em }

@@ -7,10 +7,8 @@ import subprocess
 import gradio as gr
 from modules import call_queue, shared
 from modules.generation_parameters_copypaste import image_from_url_text
+import modules.ui_symbols as symbols
 import modules.images
-
-
-folder_symbol = '\U0001f4c2'  # 📂
 
 
 def update_generation_info(generation_info, html_info, img_index):
@@ -224,7 +222,6 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
         return gr.update(**(args or {}))
 
     from modules.ui_components import ToolButton
-    refresh_symbol = '\U0001f504'  # 🔄
-    refresh_button = ToolButton(value=refresh_symbol, elem_id=elem_id)
+    refresh_button = ToolButton(value=symbols.refresh, elem_id=elem_id)
     refresh_button.click(fn=refresh, inputs=[], outputs=[refresh_component])
     return refresh_button
