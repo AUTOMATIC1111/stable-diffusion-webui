@@ -26,8 +26,6 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
   Including built-in support for `torch.compile`
 - Support for multiple backends!  
   **original** and **diffusers**
-<<<<<<< HEAD
-<<<<<<< HEAD
 - Support for multiple diffusion models!  
   Stable Diffusion, SD-XL, Kandinsky, DeepFloyd IF, etc.  
 - Fully multiplatform with platform specific autodetection and tuning performed on install  
@@ -41,36 +39,6 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
 - Broad compatibility with existing extensions ecosystem and new extensions manager  
 - Built in installer with automatic updates and dependency management  
 - Modernized UI (still based on Gradio) with theme support  
-=======
-- Support for multiple diffusion models!
-  Stable Diffusion, SD-XL, Kandinsky, DeepFloyd IF, etc.
-- Fully multiplatform with platform specific autodetection and tuning performed on install
-  Windows / Linux / MacOS with CPU / nVidia / AMD / IntelArc / DirectML
-- Improved prompt parser
-- Enhanced *Lora*/*Locon*/*Lyco* code supporting latest trends in training
-- Built-in queue management
-- Advanced metadata caching and handling to speed up operations
-- Enterprise level logging and hardened API
-- Modern localization and hints engine
-- Broad compatibility with existing extensions ecosystem and new extensions manager
-- Built in installer with automatic updates and dependency management
-- Modernized UI (still based on Gradio) with theme support
->>>>>>> 26aee894 (Add pre-commit.)
-=======
-- Support for multiple diffusion models!  
-  Stable Diffusion, SD-XL, Kandinsky, DeepFloyd IF, etc.  
-- Fully multiplatform with platform specific autodetection and tuning performed on install  
-  Windows / Linux / MacOS with CPU / nVidia / AMD / Intel / DirectML
-- Improved prompt parser  
-- Enhanced *Lora*/*Locon*/*Lyco* code supporting latest trends in training  
-- Built-in queue management  
-- Advanced metadata caching and handling to speed up operations  
-- Enterprise level logging and hardened API  
-- Modern localization and hints engine  
-- Broad compatibility with existing extensions ecosystem and new extensions manager  
-- Built in installer with automatic updates and dependency management  
-- Modernized UI (still based on Gradio) with theme support  
->>>>>>> 75d5f19f (Exclude *.md from trailing-whitespace hook.)
 
 ## Backend support
 
