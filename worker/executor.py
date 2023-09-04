@@ -104,6 +104,7 @@ class TaskExecutor(Thread):
                 self.nofity()
 
         logger.info('executor stopping...')
+        write_healthy(False)
         self._close()
 
     def _get_task(self):
