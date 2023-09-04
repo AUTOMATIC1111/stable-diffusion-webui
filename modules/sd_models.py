@@ -518,7 +518,7 @@ class ModelData:
                     elif shared.backend == shared.Backend.DIFFUSERS:
                         load_diffuser(op='model')
                     else:
-                        shared.log.error(f"Unknown Stable Diffusion backend: {shared.backend}")
+                        shared.log.error(f"Unknown Execution backend: {shared.backend}")
                     self.initial = False
                 except Exception as e:
                     shared.log.error("Failed to load stable diffusion model")
@@ -538,7 +538,7 @@ class ModelData:
                     elif shared.backend == shared.Backend.DIFFUSERS:
                         load_diffuser(op='refiner')
                     else:
-                        shared.log.error(f"Unknown Stable Diffusion backend: {shared.backend}")
+                        shared.log.error(f"Unknown Execution backend: {shared.backend}")
                     self.initial = False
                 except Exception as e:
                     shared.log.error("Failed to load stable diffusion model")
@@ -547,7 +547,6 @@ class ModelData:
         return self.sd_refiner
 
     def set_sd_refiner(self, v):
-        shared.log.debug(f"Class refiner: {v}")
         self.sd_refiner = v
 
 model_data = ModelData()
@@ -580,16 +579,13 @@ def detect_pipeline(f: str, op: str = 'model'):
                     shared.log.warning(f'Model detected as SD-XL refiner model, but attempting to load using backend=original: {f} size={size} GB')
                 if op == 'model':
                     shared.log.warning(f'Model detected as SD-XL refiner model, but attempting to load a base model: {f} size={size} GB')
-                else:
-                    guess = 'Stable Diffusion XL'
+                guess = 'Stable Diffusion XL'
             elif size < 7:
                 if shared.backend == shared.Backend.ORIGINAL:
                     shared.log.warning(f'Model detected as SD-XL base model, but attempting to load using backend=original: {f} size={size} GB')
-                if op == 'refiner':
-                    shared.log.warning(f'Model size matches SD-XL base model, but attempting to load a refiner model: {f} size={size} GB')
-                else:
-                    guess = 'Stable Diffusion XL'
+                guess = 'Stable Diffusion XL'
             else:
+                guess = 'Unknown'
                 shared.log.error(f'Model autodetect failed, set diffuser pipeline manually: {f}')
                 return None, None
             shared.log.debug(f'Model autodetect {op}: {f} pipeline={guess} size={size} GB')

@@ -218,7 +218,7 @@ axis_options = [
     AxisOption("Clip skip", int, apply_clip_skip),
     AxisOption("Denoising", float, apply_field("denoising_strength")),
     AxisOptionTxt2Img("Hires steps", int, apply_field("hr_second_pass_steps")),
-    AxisOptionImg2Img("Image CFG Scale", float, apply_field("image_cfg_scale")),
+    AxisOptionImg2Img("Image CFG scale", float, apply_field("image_cfg_scale")),
     AxisOption("Prompt order", str_permutations, apply_order, fmt=format_value_join_list),
     AxisOption("Sampler Sigma Churn", float, apply_field("s_churn")),
     AxisOption("Sampler Sigma min", float, apply_field("s_tmin")),
@@ -235,7 +235,7 @@ axis_options = [
     AxisOption("SecondPass Sampler", str, apply_latent_sampler, fmt=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
     AxisOption("SecondPass Denoising Strength", float, apply_field("denoising_strength")),
     AxisOption("SecondPass Steps", int, apply_field("hr_second_pass_steps")),
-    AxisOption("SecondPass CFG Scale", float, apply_field("image_cfg_scale")),
+    AxisOption("SecondPass CFG scale", float, apply_field("image_cfg_scale")),
     AxisOption("SecondPass Guidance Rescale", float, apply_field("diffusers_guidance_rescale")),
     AxisOption("SecondPass Refiner Start", float, apply_field("refiner_start")),
 ]

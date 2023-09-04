@@ -61,9 +61,9 @@ def compel_encode_prompts(
         prompt_embeds = torch.cat(prompt_embeds, dim=0)
     if negative_embeds is not None:
         negative_embeds = torch.cat(negative_embeds, dim=0)
-    if positive_pooleds is not None and shared.sd_model_type == "sdxl":
+    if positive_pooleds is not None and 'XL' in pipeline.__class__.__name__:
         positive_pooleds = torch.cat(positive_pooleds, dim=0)
-    if negative_pooleds is not None and shared.sd_model_type == "sdxl":
+    if negative_pooleds is not None and 'XL' in pipeline.__class__.__name__:
         negative_pooleds = torch.cat(negative_pooleds, dim=0)
     return prompt_embeds, positive_pooleds, negative_embeds, negative_pooleds
 
@@ -81,11 +81,11 @@ def compel_encode_prompt(
         shared.log.warning(f"Prompt parser: Compel not supported: {type(pipeline).__name__}")
         return (None, None, None, None)
 
-    if not is_refiner and shared.sd_model_type == "sdxl":
+    if not is_refiner and 'XL' in pipeline.__class__.__name__:
         embedding_type = ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED
         if clip_skip is not None and clip_skip > 1:
             shared.log.warning(f"Prompt parser SDXL unsupported: clip_skip={clip_skip}")
-    elif is_refiner and shared.sd_refiner_type == "sdxl":
+    elif is_refiner and 'XL' in pipeline.__class__.__name__:
         embedding_type = ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED
         if clip_skip is not None and clip_skip > 1:
             shared.log.warning(f"Prompt parser SDXL unsupported: clip_skip={clip_skip}")
@@ -109,7 +109,7 @@ def compel_encode_prompt(
         device=shared.device
     )
 
-    if not is_refiner and shared.sd_model_type == "sdxl":
+    if 'XL' in pipeline.__class__.__name__ and not is_refiner:
         compel_te2 = Compel(tokenizer=pipeline.tokenizer_2, text_encoder=pipeline.text_encoder_2, returned_embeddings_type=embedding_type, requires_pooled=True, device=shared.device)
         positive_te1 = compel_te1(prompt)
         positive_te2, positive_pooled = compel_te2(prompt_2)
@@ -123,7 +123,7 @@ def compel_encode_prompt(
         [prompt_embed, negative_embed] = compel_te2.pad_conditioning_tensors_to_same_length([positive, negative])
         return prompt_embed, positive_pooled, negative_embed, negative_pooled
 
-    if is_refiner and shared.sd_refiner_type == "sdxl":
+    elif 'XL' in pipeline.__class__.__name__ and is_refiner:
         compel_te2 = Compel(tokenizer=pipeline.tokenizer_2, text_encoder=pipeline.text_encoder_2, returned_embeddings_type=embedding_type, requires_pooled=True, device=shared.device)
         positive, positive_pooled = compel_te2(prompt)
         negative, negative_pooled = compel_te2(negative_prompt)
@@ -133,7 +133,7 @@ def compel_encode_prompt(
         [prompt_embed, negative_embed] = compel_te2.pad_conditioning_tensors_to_same_length([positive, negative])
         return prompt_embed, positive_pooled, negative_embed, negative_pooled
 
-    # neither base+sdxl nor refiner+sdxl
-    positive, negative = compel_te1(prompt), compel_te1(negative_prompt)
-    [prompt_embed, negative_embed] = compel_te1.pad_conditioning_tensors_to_same_length([positive, negative])
-    return prompt_embed, None, negative_embed, None
+    else:
+        positive, negative = compel_te1(prompt), compel_te1(negative_prompt)
+        [prompt_embed, negative_embed] = compel_te1.pad_conditioning_tensors_to_same_length([positive, negative])
+        return prompt_embed, None, negative_embed, None

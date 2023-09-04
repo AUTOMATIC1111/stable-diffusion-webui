@@ -20,15 +20,29 @@
   - **metadata** and **info** buttons only show if there is actual content  
 - diffusers:
   - ability to interrupt (stop/skip) model generate  
-  - add `diffusers_force_zeros` setting  
-    create zero-tensor for prompt if prompt is empty (positive or negative)  
-  - add `diffusers_aesthetics_score` setting  
+  - mix&match **base** and **refiner** models (*experimental*):  
+    most of those are "because why not" and can result in corrupt images, but some are actually useful  
+    also note that if you're not using actual refiner model, you need to bump refiner steps  
+    as normal models are not designed to work with low step count  
+    and if you're having issues, try setting prompt parser to "fixed attention" as majority of problems  
+    are due to token mismatches when using prompt attention  
+    - any sd15 + any sd15
+    - any sd15 + sdxl-refiner
+    - any sdxl-base + sdxl-refiner
+    - any sdxl-base + any sd15
+    - any sdxl-base + any sdxl-base
+  - add `diffusers_aesthetics_score` setting (for sdxl)  
     automatically guide unet towards higher pleasing images  
     highly recommended for simple prompts  
+  - add `diffusers_force_zeros` setting  
+    create zero-tensor for prompt if prompt is empty (positive or negative)  
 - general:
   - `rembg` remove backgrounds support for **is-net** model  
   - **settings** now show markers for all items set to non-default values  
-  - pre-create all system folders on startup
+  - **metadata** refactored how/what/when metadata is added to images  
+    should result in much cleaner and more complete metadata  
+  - pre-create all system folders on startup  
+  - handle model load errors gracefully  
 
 ## Update for 2023-08-30
 

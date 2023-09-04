@@ -385,6 +385,8 @@ class FilenameGenerator:
 
     def apply(self, x):
         res = ''
+        if self.p is None:
+            return res
         for m in re_pattern.finditer(x):
             text, pattern = m.groups()
             if pattern is None:
@@ -629,7 +631,7 @@ def read_info_from_image(image):
                 for key, val in subkey.items():
                     if isinstance(val, bytes): # decode bytestring
                         val = safe_decode_string(val)
-                    if isinstance(val, tuple) and isinstance(val[0], int) and isinstance(val[1], int): # convert camera ratios
+                    if isinstance(val, tuple) and isinstance(val[0], int) and isinstance(val[1], int) and val[1] > 0: # convert camera ratios
                         val = round(val[0] / val[1], 2)
                     if val is not None and key in ExifTags.TAGS: # add known tags
                         if ExifTags.TAGS[key] == 'UserComment': # add geninfo from UserComment

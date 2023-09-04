@@ -216,7 +216,7 @@
   {"id":"","label":"Only masked padding, pixels","localized":"","hint":""},
   {"id":"","label":"Scale","localized":"","hint":""},
   {"id":"","label":"Unused","localized":"","hint":""},
-  {"id":"","label":"Image CFG Scale","localized":"","hint":""}
+  {"id":"","label":"Image CFG scale","localized":"","hint":""}
 ],
 "models tabs": [
   {"id":"","label":"Convert","localized":"","hint":""},

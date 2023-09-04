@@ -348,8 +348,8 @@ elif devices.backend == "rocm":
 else: # cuda
     cross_attention_optimization_default ="Scaled-Dot-Product"
 
-options_templates.update(options_section(('sd', "Stable Diffusion"), {
-    "sd_backend": OptionInfo("diffusers" if cmd_opts.use_openvino else "original", "Stable Diffusion backend", gr.Radio, lambda: {"choices": ["original", "diffusers"] }),
+options_templates.update(options_section(('sd', "Execution & Models"), {
+    "sd_backend": OptionInfo("diffusers" if cmd_opts.use_openvino else "original", "Execution backend", gr.Radio, lambda: {"choices": ["original", "diffusers"] }),
     "sd_checkpoint_autoload": OptionInfo(True, "Model autoload on server start"),
     "sd_model_checkpoint": OptionInfo(default_checkpoint, "Base model", gr.Dropdown, lambda: {"choices": list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "sd_model_refiner": OptionInfo('None', "Refiner model", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
@@ -520,7 +520,7 @@ options_templates.update(options_section(('ui', "User Interface"), {
     "keyedit_precision_attention": OptionInfo(0.1, "Ctrl+up/down precision when editing (attention:1.1)", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_delimiters": OptionInfo(".,\/!?%^*;:{}=`~()", "Ctrl+up/down word delimiters"), # pylint: disable=anomalous-backslash-in-string
-    "quicksettings_list": OptionInfo(["sd_model_checkpoint"], "Quicksettings list", ui_components.DropdownMulti, lambda: {"choices": list(opts.data_labels.keys())}),
+    "quicksettings_list": OptionInfo(["sd_model_checkpoint"] if backend == Backend.ORIGINAL else ["sd_model_checkpoint", "sd_model_refiner"], "Quicksettings list", ui_components.DropdownMulti, lambda: {"choices": list(opts.data_labels.keys())}),
     "ui_scripts_reorder": OptionInfo("", "UI scripts order"),
 }))
 
@@ -574,8 +574,8 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
 options_templates.update(options_section(('postprocessing', "Postprocessing"), {
     'postprocessing_enable_in_main_ui': OptionInfo([], "Enable addtional postprocessing operations", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
     'postprocessing_operation_order': OptionInfo([], "Postprocessing operation order", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
-    "use_old_hires_fix_width_height": OptionInfo(False, "Hires fix uses width & height to set final resolution"),
-    "dont_fix_second_order_samplers_schedule": OptionInfo(False, "Do not fix prompt schedule for second order samplers"),
+    # "use_old_hires_fix_width_height": OptionInfo(False, "Hires fix uses width & height to set final resolution"),
+    # "dont_fix_second_order_samplers_schedule": OptionInfo(False, "Do not fix prompt schedule for second order samplers"),
 
     "postprocessing_sep_img2img": OptionInfo("<h2>Img2Img & Inpainting</h2>", "", gr.HTML),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to match original colors"),

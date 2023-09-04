@@ -378,10 +378,10 @@ def create_ui(startup_timer = None):
 
                 with FormGroup(visible=show_advanced.value, elem_id="txt2img_advanced") as advanced_group:
                     with FormRow():
-                        cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='CFG Scale', value=6.0, elem_id="txt2img_cfg_scale")
+                        cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='CFG scale', value=6.0, elem_id="txt2img_cfg_scale")
                         clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=14, step=1, elem_id='txt2img_clip_skip', interactive=True)
                     with FormRow(elem_id="guidence_scale_row", variant="compact"):
-                        image_cfg_scale = gr.Slider(minimum=1.1, maximum=30.0, step=0.1, label='Secondary CFG Scale', value=6.0, elem_id="txt2img_image_cfg_scale")
+                        image_cfg_scale = gr.Slider(minimum=1.1, maximum=30.0, step=0.1, label='Secondary CFG scale', value=6.0, elem_id="txt2img_image_cfg_scale")
                         diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
                     with FormRow(elem_classes="checkboxes-row", variant="compact"):
                         full_quality = gr.Checkbox(label='Full quality', value=True, elem_id="txt2img_full_quality")
@@ -680,11 +680,11 @@ def create_ui(startup_timer = None):
 
                 with FormGroup(visible=show_advanced.value, elem_id=f"{tab}_advanced_group") as advanced_group:
                     with FormRow():
-                        cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=6.0, elem_id="img2img_cfg_scale")
-                        image_cfg_scale = gr.Slider(minimum=0, maximum=30.0, step=0.05, label='Image CFG Scale', value=1.5, elem_id="img2img_image_cfg_scale")
+                        cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG scale', value=6.0, elem_id="img2img_cfg_scale")
+                        image_cfg_scale = gr.Slider(minimum=0, maximum=30.0, step=0.05, label='Image CFG scale', value=1.5, elem_id="img2img_image_cfg_scale")
                     with FormRow():
                         clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=4, step=1, elem_id='img2img_clip_skip', interactive=True)
-                        diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance Rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
+                        diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
                     with FormRow(elem_classes="img2img_checkboxes_row", variant="compact"):
                         full_quality = gr.Checkbox(label='Full quality', value=True, elem_id="img2img_full_quality")
                         restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(modules.shared.face_restorers) > 1, elem_id="img2img_restore_faces")
