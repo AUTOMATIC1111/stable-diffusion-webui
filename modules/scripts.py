@@ -491,9 +491,22 @@ class ScriptRunner:
 
             arg_info = api_models.ScriptArg(label=control.label or "")
 
-            for field in ("value", "minimum", "maximum", "step", "choices"):
+            for field, types in zip(("value", "minimum", "maximum", "step", "choices"), (None, (int, float), (int, float), (int, float), [str])):
                 v = getattr(control, field, None)
                 if v is not None:
+                    if types is not None:
+                        # if type is list, then recursively check if all elements are of the specified type
+                        if isinstance(types, list):
+                            if not all(isinstance(x, types[0]) for x in v):
+                                # cast all elements to the specified type
+                                if all(isinstance(x, tuple) and len(x) == 2 for x in v):
+                                    # key-value pairs
+                                    v = [item[0] for item in v]
+                                else:
+                                    print(f"Invalid type for {field} in {script.filename}, value {v} is not {types}, casting")
+                                    v = [types[0](x) for x in v] # 
+                        elif not isinstance(v, types):
+                            print(f"Invalid type for {field} in {script.filename}, value {v} is not {types}")
                     setattr(arg_info, field, v)
 
             api_args.append(arg_info)
