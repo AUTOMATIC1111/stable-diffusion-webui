@@ -1,25 +1,24 @@
 /* generic html tags */
-:root {
-  --font: "Source Sans Pro", 'ui-sans-serif', 'system-ui', sans-serif;
-  --font-size: 16px;
+:root, .light, .dark {
+  --font: "Source Sans Pro", 'ui-sans-serif', 'system-ui', "Roboto", sans-serif;
+  --font-mono: 'IBM Plex Mono', 'ui-monospace', 'Consolas', monospace;
+  --font-size: 14px;
   --left-column: 490px;
-  --highlight-color: #8a3df6; /* Purple color */
-  --inactive-color: #404040; /* Darker shade of gray */
-  --background-color: #000000; /* Black */
-  --primary-50: #eff6ff; /* Lighter shade of purple */
-  --primary-100: #dbeafe; /* Lighter shade of purple */
-  --primary-200: #bfdbfe; /* Lighter shade of purple */
-  --primary-300: #93c5fd; /* Lighter shade of purple */
-  --primary-400: #60a5fa; /* Lighter shade of purple */
-  --primary-500: #8a3df6; /* Purple color */
-  --primary-600: #6629eb; /* Darker shade of purple */
-  --primary-700: #1d4ed8; /* Even darker shade of purple */
-  --primary-800: #1e40af; /* Dark purple */
-  --primary-900: #1e3a8a; /* Darker purple */
-  --primary-950: #1d3660; /* Darkest purple */
+  --highlight-color: #ff00f2;
+  --inactive-color: #005485;
+  --background-color: #000000;
+  --primary-50: #f5daea;
+  --primary-100: #ffc4f2;
+  --primary-200: #fc9ff4;
+  --primary-300: #fd74eb;
+  --primary-400: #fb3cf1;
+  --primary-500: #f916c0;
+  --primary-600: #c50cea;
+  --primary-700: #c20cb9;
+  --primary-800: #9a1293;
+  --primary-900: #7c1277;
+  --primary-950: #6c1268;
 }
-
-
 .light, .dark {
   --input-padding: 4px;
   --radius-lg: 2px;
@@ -27,11 +26,12 @@
   --spacing-md: 4px;
   --spacing-xxl: 12px;
   --line-sm: 1.3em;
+  --line-md: 1.3em;
 }
 
 html { font-size: var(--font-size); }
 body, button, input, select, textarea { font-family: var(--font);}
-button { font-size: 1.2rem; }
+button { font-size: 1.2rem; max-width: 400px; }
 img { background-color: var(--background-color); }
 input[type=checkbox] { background-color: transparent !important; }
 input[type=range] { height: var(--line-sm); appearance: none; margin-top: 0; min-width: 160px; background-color: var(--background-color); width: 100%; background: transparent; }
@@ -40,24 +40,24 @@ input[type=range]::-moz-range-track { width: 100%; height: 18px; cursor: pointer
 input[type=range]::-webkit-slider-thumb { box-shadow: 2px 2px 3px #111111; border: 0px solid #000000; height: 18px; width: 40px; border-radius: var(--radius-lg); background: var(--highlight-color); cursor: pointer; appearance: none; margin-top: 0px; }
 input[type=range]::-moz-range-thumb { box-shadow: 2px 2px 3px #111111; border: 0px solid #000000; height: 18px; width: 40px; border-radius: var(--radius-lg); background: var(--highlight-color); cursor: pointer; appearance: none; margin-top: 0px; }
 ::-webkit-scrollbar { width: 12px; }
-::-webkit-scrollbar-track { background: #333333; }
+::-webkit-scrollbar-track { background: #3a343a; }
 ::-webkit-scrollbar-thumb { background-color: var(--highlight-color); border-radius: var(--radius-lg); border-width: 0; box-shadow: 2px 2px 3px #111111; }
-div.form { border-width: 0; box-shadow: none; background: transparent; overflow: visible; gap: 1em; margin-bottom: 6px; }
+div.form { border-width: 0; box-shadow: none; background: transparent; overflow: visible; margin-bottom: 6px; }
 div.compact { gap: 1em; }
 
 /* gradio style classes */
 fieldset .gr-block.gr-box, label.block span { padding: 0; margin-top: -4px; }
 .border-2 { border-width: 0; }
 .border-b-2 { border-bottom-width: 2px; border-color: var(--highlight-color) !important; padding-bottom: 2px; margin-bottom: 8px; }
-.bg-white { color: lightyellow; background-color: var(--inactive-color); }
-.gr-box { border-radius: var(--radius-sm) !important; background-color: #111111 !important; box-shadow: 2px 2px 3px #000000; border-width: 0; padding: 4px; margin: 12px 0px 12px 0px }
+.bg-white { color: rgb(255, 255, 255); background-color: var(--inactive-color); }
+.gr-box { border-radius: var(--radius-sm) !important; background-color: #111111 !important; box-shadow: 2px 2px 3px #111111; border-width: 0; padding: 4px; margin: 12px 0px 12px 0px }
 .gr-button { font-weight: normal; box-shadow: 2px 2px 3px #111111; font-size: 0.8rem; min-width: 32px; min-height: 32px; padding: 3px; margin: 3px; }
-.gr-check-radio { background-color: var(--inactive-color); border-width: 0; border-radius: var(--radius-lg); box-shadow: 2px 2px 3px #000000; }
+.gr-check-radio { background-color: var(--inactive-color); border-width: 0; border-radius: var(--radius-lg); box-shadow: 2px 2px 3px #111111; }
 .gr-check-radio:checked { background-color: var(--highlight-color); }
 .gr-compact { background-color: var(--background-color); }
 .gr-form { border-width: 0; }
 .gr-input { background-color: #333333 !important; padding: 4px; margin: 4px; }
-.gr-input-label { color: lightyellow; border-width: 0; background: transparent; padding: 2px !important; }
+.gr-input-label { color: rgb(255, 255, 255); border-width: 0; background: transparent; padding: 2px !important; }
 .gr-panel { background-color: var(--background-color); }
 .eta-bar { display: none !important }
 svg.feather.feather-image, .feather .feather-image { display: none }
@@ -95,7 +95,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #img2img_settings { min-width: calc(2 * var(--left-column)); max-width: calc(2 * var(--left-column)); background-color: #111111; padding-top: 16px; }
 #interrogate, #deepbooru { margin: 0 0px 10px 0px; max-width: 80px; max-height: 80px; font-weight: normal; font-size: 0.95em; }
 #quicksettings .gr-button-tool { font-size: 1.6rem; box-shadow: none; margin-left: -20px; margin-top: -2px; height: 2.4em; }
-#quicksettings > div, #quicksettings > fieldset { min-width: 24em; max-width: 26em; line-height: 1.6em; margin-top: 0.4em; }
+#quicksettings > div, #quicksettings > fieldset { line-height: 1.4em; margin-top: 0.4em; }
 #open_folder_extras, #footer, #style_pos_col, #style_neg_col, #roll_col, #extras_upscaler_2, #extras_upscaler_2_visibility, #txt2img_seed_resize_from_w, #txt2img_seed_resize_from_h { display: none; }
 #save-animation { border-radius: var(--radius-sm) !important; margin-bottom: 16px; background-color: #111111; }
 #script_list { padding: 4px; margin-top: 20px; margin-bottom: 20px; }
@@ -104,7 +104,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #txt2img_cfg_scale { min-width: 200px; }
 #txt2img_checkboxes, #img2img_checkboxes { background-color: transparent; }
 #txt2img_checkboxes, #img2img_checkboxes { margin-bottom: 0.2em; }
-#txt2img_gallery, #img2img_gallery, #extras_gallery { padding: 0; margin: 0; object-fit: contain; box-shadow: none; min-height: 0; }
 #txt2img_actions_column, #img2img_actions_column { flex-flow: wrap; justify-content: space-between; }
 #txt2img_enqueue_wrapper, #img2img_enqueue_wrapper { min-width: unset; width: 48%; }
 #txt2img_generate_box, #img2img_generate_box { min-width: unset; width: 48%; }
@@ -112,13 +111,9 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #extras_upscale { margin-top: 10px }
 #txt2img_progress_row > div { min-width: var(--left-column); max-width: var(--left-column); }
 #txt2img_results, #img2img_results, #extras_results { background-color: var(--background-color); padding: 0; }
-#txt2img_seed_row { padding: 0; margin-top: 8px; }
 #txt2img_settings { min-width: var(--left-column); max-width: var(--left-column); background-color: #111111; padding-top: 16px; }
-#txt2img_subseed_row { padding: 0; margin-top: 16px; }
-#txt2img_subseed_show, #img2img_subseed_show { display: None }
-#txt2img_subseed_strength { margin-top: 0; }
 #pnginfo_html2_info { margin-top: -18px; background-color: var(--input-background-fill); padding: var(--input-padding) }
-.gradio-button.tool { filter: hue-rotate(180deg) saturate(0.5); }
+.gradio-button.tool { filter: hue-rotate(120deg) saturate(0.5); }
 #txt2img_tools, #img2img_tools { margin-top: -4px; margin-bottom: -4px; }
 #txt2img_styles_row, #img2img_styles_row { margin-top: -6px; }
 
@@ -127,17 +122,17 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 
 /* based on gradio built-in dark theme */
 :root, .light, .dark {
-  --body-background-fill: #000000; /* Black */
-  --body-text-color: #ffffff; /* White */
+  --body-background-fill: var(--background-color);
+  --body-text-color: var(--neutral-100);
   --color-accent-soft: var(--neutral-700);
-  --background-fill-primary: #222222; /* Dark gray */
+  --background-fill-primary: #222222;
   --background-fill-secondary: none;
   --border-color-accent: var(--background-color);
   --border-color-primary: var(--background-color);
-  --link-text-color-active: #8a3df6; /* Purple color */
-  --link-text-color: #8a3df6; /* Purple color */
-  --link-text-color-hover: #6629eb; /* Darker shade of purple */
-  --link-text-color-visited: #401e99; /* Even darker shade of purple */
+  --link-text-color-active: var(--secondary-500);
+  --link-text-color: var(--secondary-500);
+  --link-text-color-hover: var(--secondary-400);
+  --link-text-color-visited: var(--secondary-600);
   --body-text-color-subdued: var(--neutral-400);
   --shadow-spread: 1px;
   --block-background-fill: None;
@@ -147,7 +142,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --block-label-background-fill: var(--background-fill-secondary);
   --block-label-border-color: var(--border-color-primary);
   --block_label_border_width: None;
-  --block-label-text-color: #ffffff; /* White */
+  --block-label-text-color: var(--neutral-200);
   --block_shadow: None;
   --block_title_background_fill: None;
   --block_title_border_color: None;
@@ -156,14 +151,14 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --panel-background-fill: var(--background-fill-secondary);
   --panel-border-color: var(--border-color-primary);
   --panel_border_width: None;
-  --checkbox-background-color: #707070; /* Dark gray color */
+  --checkbox-background-color: var(--neutral-800);
   --checkbox-background-color-focus: var(--checkbox-background-color);
   --checkbox-background-color-hover: var(--checkbox-background-color);
-  --checkbox-background-color-selected: #8a3df6; /* Purple color */
+  --checkbox-background-color-selected: var(--secondary-600);
   --checkbox-border-color: var(--neutral-700);
-  --checkbox-border-color-focus: #8a3df6; /* Purple color */
-  --checkbox-border-color-hover: #606060; /* Darker shade of gray */
-  --checkbox-border-color-selected: #8a3df6; /* Purple color */
+  --checkbox-border-color-focus: var(--secondary-500);
+  --checkbox-border-color-hover: var(--neutral-600);
+  --checkbox-border-color-selected: var(--secondary-600);
   --checkbox-border-width: var(--input-border-width);
   --checkbox-label-background-fill: None;
   --checkbox-label-background-fill-hover: None;
@@ -173,15 +168,15 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --checkbox-label-border-width: var(--input-border-width);
   --checkbox-label-text-color: var(--body-text-color);
   --checkbox-label-text-color-selected: var(--checkbox-label-text-color);
-  --error-background-fill: #222222; /* Darker shade of background-fill-primary (black) */
+  --error-background-fill: var(--background-fill-primary);
   --error-border-color: var(--border-color-primary);
   --error_border_width: None;
   --error-text-color: #ef4444;
-  --input-background-fill: #0e0420; /* Dark gray color */
-  --input-background-fill-focus: #8a3df6; /* Purple color */
+  --input-background-fill: var(--neutral-800);
+  --input-background-fill-focus: var(--secondary-600);
   --input-background-fill-hover: var(--input-background-fill);
   --input-border-color: var(--border-color-primary);
-  --input-border-color-focus: #404040; /* Darker shade of gray */
+  --input-border-color-focus: var(--neutral-700);
   --input-border-color-hover: var(--input-border-color);
   --input_border_width: None;
   --input-placeholder-color: var(--neutral-500);
@@ -189,27 +184,27 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --input-shadow-focus: 2px 2px 2px 2px #111111;
   --loader_color: None;
   --slider_color: None;
-  --stat-background-fill: linear-gradient(to right, #8a3df6, #6629eb); /* Purple to darker shade of purple */
+  --stat-background-fill: linear-gradient(to right, var(--primary-400), var(--primary-600));
   --table-border-color: var(--neutral-700);
-  --table-even-background-fill: #222222; /* Darker shade of background-fill-primary (black) */
-  --table-odd-background-fill: #333333; /* Even darker shade of background-fill-primary (black) */
+  --table-even-background-fill: #222222;
+  --table-odd-background-fill: #333333;
   --table-row-focus: var(--color-accent-soft);
   --button-border-width: var(--input-border-width);
-  --button-cancel-background-fill: linear-gradient(to bottom right, #8a3df6, #6629eb); /* Purple to darker shade of purple */
-  --button-cancel-background-fill-hover: linear-gradient(to bottom right, #8a3df6, #6629eb); /* Purple to darker shade of purple */
-  --button-cancel-border-color: #8a3df6; /* Purple color */
+  --button-cancel-background-fill: linear-gradient(to bottom right, #dc2626, #b91c1c);
+  --button-cancel-background-fill-hover: linear-gradient(to bottom right, #dc2626, #dc2626);
+  --button-cancel-border-color: #dc2626;
   --button-cancel-border-color-hover: var(--button-cancel-border-color);
   --button-cancel-text-color: white;
   --button-cancel-text-color-hover: var(--button-cancel-text-color);
-  --button-primary-background-fill: linear-gradient(to bottom right, #8a3df6, #6629eb); /* Purple to darker shade of purple */
-  --button-primary-background-fill-hover: linear-gradient(to bottom right, #8a3df6, #401e99); /* Purple to even darker shade of purple */
-  --button-primary-border-color: #8a3df6; /* Purple color */
+  --button-primary-background-fill: linear-gradient(to bottom right, var(--primary-500), var(--primary-800));
+  --button-primary-background-fill-hover: linear-gradient(to bottom right, var(--primary-500), var(--primary-300));
+  --button-primary-border-color: var(--primary-500);
   --button-primary-border-color-hover: var(--button-primary-border-color);
   --button-primary-text-color: white;
   --button-primary-text-color-hover: var(--button-primary-text-color);
-  --button-secondary-background-fill: linear-gradient(to bottom right, #866bd1, #1e0c25); /* Dark gray to darkest shade of gray */
-  --button-secondary-background-fill-hover: linear-gradient(to bottom right, #606060, #404040); /* Dark gray to darkest shade of gray */
-  --button-secondary-border-color: #606060; /* Dark gray color */
+  --button-secondary-background-fill: linear-gradient(to bottom right, var(--neutral-600), var(--neutral-800));
+  --button-secondary-background-fill-hover: linear-gradient(to bottom right, var(--neutral-600), var(--neutral-400));
+  --button-secondary-border-color: var(--neutral-600);
   --button-secondary-border-color-hover: var(--button-secondary-border-color);
   --button-secondary-text-color: white;
   --button-secondary-text-color-hover: var(--button-secondary-text-color);
@@ -218,23 +213,23 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --secondary-200: #bfdbfe;
   --secondary-300: #93c5fd;
   --secondary-400: #60a5fa;
-  --secondary-500: #8a3df6; /* Purple color */
-  --secondary-600: #6629eb; /* Darker shade of purple */
+  --secondary-500: #3b82f6;
+  --secondary-600: #2563eb;
   --secondary-700: #1d4ed8;
   --secondary-800: #1e40af;
   --secondary-900: #1e3a8a;
   --secondary-950: #1d3660;
-  --neutral-50: #f0f0f0;
-  --neutral-100: #e0e0e0;
-  --neutral-200: #d0d0d0;
-  --neutral-300: #b0b0b0;
-  --neutral-400: #909090;
-  --neutral-500: #707070;
+  --neutral-50: #e7d1ee;
+  --neutral-100: #dbbfe0;
+  --neutral-200: #c3acce;
+  --neutral-300: #a892ad;
+  --neutral-400: #8d7896;
+  --neutral-500: #6c6074;
   --neutral-600: #606060;
-  --neutral-700: #404040;
-  --neutral-800: #333333;
-  --neutral-900: #111827;
-  --neutral-950: #0b0f19;
+  --neutral-700: #433b46;
+  --neutral-800: #322c35;
+  --neutral-900: #1b1127;
+  --neutral-950: #140b19;
   --spacing-xxs: 1px;
   --spacing-xs: 2px;
   --spacing-sm: 4px;
@@ -252,12 +247,10 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --text-lg: 16px;
   --text-xl: 22px;
   --text-xxl: 26px;
-  --font: 'Source Sans Pro', 'ui-sans-serif', 'system-ui', sans-serif;
-  --font-mono: 'IBM Plex Mono', 'ui-monospace', 'Consolas', monospace;
   --body-text-size: var(--text-md);
   --body-text-weight: 400;
   --embed-radius: var(--radius-lg);
-  --color-accent: #8a3df6; /* Purple color */
+  --color-accent: var(--primary-500);
   --shadow-drop: 0;
   --shadow-drop-lg: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-inset: rgba(0,0,0,0.05) 0px 2px 4px 0px inset;
@@ -311,9 +304,9 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --button-large-radius: var(--radius-lg);
   --button-large-text-size: var(--text-lg);
   --button-large-text-weight: 400;
-  --button-shadow: 4px 4px 4px 0px #333333;
-  --button-shadow-active: 1px 1px 4px 0px #555555;
-  --button-shadow-hover: 1px 1px 4px 0px #555555;
+  --button-shadow: 4px 4px 4px 0px #39353a;
+  --button-shadow-active: 1px 1px 4px 0px #564c58;
+  --button-shadow-hover: 1px 1px 4px 0px #564c58;
   --button-small-padding: var(--spacing-sm) calc(2 * var(--spacing-sm));
   --button-small-radius: var(--radius-lg);
   --button-small-text-size: var(--text-md);
@@ -322,3 +315,4 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --size-9: 64px;
   --size-14: 64px;
 }
+/*Midnight-Barbie, By Nyxxia*/

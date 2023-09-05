@@ -37,6 +37,8 @@
   - add `diffusers_force_zeros` setting  
     create zero-tensor for prompt if prompt is empty (positive or negative)  
 - general:
+  - new additional theme: **midnight-barbie**  
+    thanks @nyxia  
   - `rembg` remove backgrounds support for **is-net** model  
   - **settings** now show markers for all items set to non-default values  
   - **metadata** refactored how/what/when metadata is added to images  

@@ -188,10 +188,9 @@ class EmbeddingDatabase:
         # diffuser concepts
         elif type(data) == dict and type(next(iter(data.values()))) == torch.Tensor:
             if len(data.keys()) != 1:
-                shared.log.warning(f"Embedding file has multiple terms in it: {filename}")
-                shared.log.warning(f"Skipping embedding: {filename}")
+                shared.log.warning(f"Skipping embedding: {filename} multiple keys found")
+                self.skipped_embeddings[name] = Embedding(None, name)
                 return
-
             emb = next(iter(data.values()))
             if len(emb.shape) == 1:
                 emb = emb.unsqueeze(0)
@@ -260,7 +259,7 @@ class EmbeddingDatabase:
         displayed_embeddings = (tuple(self.word_embeddings.keys()), tuple(self.skipped_embeddings.keys()))
         if self.previously_displayed_embeddings != displayed_embeddings:
             self.previously_displayed_embeddings = displayed_embeddings
-            shared.log.info(f"Embeddings: loaded={len(self.word_embeddings)} skipped={len(self.skipped_embeddings)}")
+            shared.log.info(f"Loaded embeddings: loaded={len(self.word_embeddings)} skipped={len(self.skipped_embeddings)}")
 
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]

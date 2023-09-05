@@ -5,6 +5,7 @@ import io
 import sys
 import json
 import time
+import logging
 import threading
 from os import mkdir
 from urllib import request
@@ -626,7 +627,6 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     import torch # pylint: disable=reimported,redefined-outer-name
     if timer is None:
         timer = Timer()
-    import logging
     logging.getLogger("diffusers").setLevel(logging.ERROR)
     timer.record("diffusers")
     devices.set_cuda_params()
@@ -892,7 +892,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     shared.log.info(f"Model loaded in {timer.summary()} native={get_native(sd_model)}")
     devices.torch_gc(force=True)
     script_callbacks.model_loaded_callback(sd_model)
-    shared.log.info(f'Model load finished: {memory_stats()}')
+    shared.log.info(f'Model load finished {op}: {memory_stats()}')
 
 
 class DiffusersTaskType(Enum):
