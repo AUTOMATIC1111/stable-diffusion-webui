@@ -1,6 +1,8 @@
 # Change Log for SD.Next
 
-## Update for 2023-09-03
+## Update for 2023-09-05
+
+One week later, another large update!
 
 - system:
   - new default theme: **black-teal**
@@ -21,7 +23,6 @@
     now shows on-mouse-over without the need for user interaction  
   - **metadata** and **info** buttons only show if there is actual content  
 - diffusers:
-  - ability to interrupt (stop/skip) model generate  
   - add full support for **textual inversions** (embeddings)  
     this applies to both sd15 and sdxl  
     thanks @ai-casanova for porting compel/sdxl code
@@ -36,10 +37,11 @@
     - any sdxl-base + sdxl-refiner
     - any sdxl-base + any sd15
     - any sdxl-base + any sdxl-base
-  - add `diffusers_aesthetics_score` setting (for sdxl)  
-    automatically guide unet towards higher pleasing images  
+  - ability to **interrupt** (stop/skip) model generate  
+  - added **aesthetics score** setting (for sdxl)  
+    used to automatically guide unet towards higher pleasing images  
     highly recommended for simple prompts  
-  - add `diffusers_force_zeros` setting  
+  - added **force zeros** setting  
     create zero-tensor for prompt if prompt is empty (positive or negative)  
 - general:
   - new additional theme: **midnight-barbie**  
