@@ -2,8 +2,10 @@ import os
 import typing
 import torch
 from compel import Compel, ReturnedEmbeddingsType
+from compel.embeddings_provider import BaseTextualInversionManager
 import modules.shared as shared
 import modules.prompt_parser as prompt_parser
+from typing import Callable, Dict, List, Optional, Union
 
 debug_output = os.environ.get('SD_PROMPT_DEBUG', None)
 debug = shared.log.info if debug_output is not None else lambda *args, **kwargs: None
@@ -31,6 +33,83 @@ CLIP_SKIP_MAPPING = {
     2: ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NORMALIZED,
 }
 
+
+
+#from https://github.com/damian0815/compel/blob/main/src/compel/diffusers_textual_inversion_manager.py
+class DiffusersTextualInversionManager(BaseTextualInversionManager):
+    """
+    A textual inversion manager for use with diffusers.
+    """
+    def __init__(self, pipe):
+        self.pipe = pipe
+    
+    #from https://github.com/huggingface/diffusers/blob/705c592ea98ba4e288d837b9cba2767623c78603/src/diffusers/loaders.py#L599
+    def maybe_convert_prompt(self, prompt: Union[str, List[str]], tokenizer: "PreTrainedTokenizer"):
+            r"""
+            Processes prompts that include a special token corresponding to a multi-vector textual inversion embedding to
+            be replaced with multiple special tokens each corresponding to one of the vectors. If the prompt has no textual
+            inversion token or if the textual inversion token is a single vector, the input prompt is returned.
+
+            Parameters:
+                prompt (`str` or list of `str`):
+                    The prompt or prompts to guide the image generation.
+                tokenizer (`PreTrainedTokenizer`):
+                    The tokenizer responsible for encoding the prompt into input tokens.
+
+            Returns:
+                `str` or list of `str`: The converted prompt
+            """
+            if not isinstance(prompt, List):
+                prompts = [prompt]
+            else:
+                prompts = prompt
+
+            prompts = [self._maybe_convert_prompt(p, tokenizer) for p in prompts]
+
+            if not isinstance(prompt, List):
+                return prompts[0]
+
+            return prompts
+
+    def _maybe_convert_prompt(self, prompt: str, tokenizer: "PreTrainedTokenizer"):
+            r"""
+            Maybe convert a prompt into a "multi vector"-compatible prompt. If the prompt includes a token that corresponds
+            to a multi-vector textual inversion embedding, this function will process the prompt so that the special token
+            is replaced with multiple special tokens each corresponding to one of the vectors. If the prompt has no textual
+            inversion token or a textual inversion token that is a single vector, the input prompt is simply returned.
+
+            Parameters:
+                prompt (`str`):
+                    The prompt to guide the image generation.
+                tokenizer (`PreTrainedTokenizer`):
+                    The tokenizer responsible for encoding the prompt into input tokens.
+
+            Returns:
+                `str`: The converted prompt
+            """
+            tokens = tokenizer.tokenize(prompt)
+            unique_tokens = set(tokens)
+            for token in unique_tokens:
+                if token in tokenizer.added_tokens_encoder:
+                    replacement = token
+                    i = 1
+                    while f"{token}_{i}" in tokenizer.added_tokens_encoder:
+                        replacement += f" {token}_{i}"
+                        i += 1
+
+                    prompt = prompt.replace(token, replacement)
+
+            return prompt
+    #end of Diffusers code
+
+    def expand_textual_inversion_token_ids_if_necessary(self, token_ids: List[int]) -> List[int]:
+        if len(token_ids) == 0:
+            return token_ids
+
+        prompt = self.pipe.tokenizer.decode(token_ids)
+        prompt = self.maybe_convert_prompt(prompt, self.pipe.tokenizer)
+        return self.pipe.tokenizer.encode(prompt, add_special_tokens=False)
+    #end of Compel code
 
 def compel_encode_prompts(
     pipeline,
@@ -61,9 +140,9 @@ def compel_encode_prompts(
         prompt_embeds = torch.cat(prompt_embeds, dim=0)
     if negative_embeds is not None:
         negative_embeds = torch.cat(negative_embeds, dim=0)
-    if positive_pooleds is not None and 'XL' in pipeline.__class__.__name__:
+    if positive_pooleds is not None and shared.sd_model_type == "sdxl":
         positive_pooleds = torch.cat(positive_pooleds, dim=0)
-    if negative_pooleds is not None and 'XL' in pipeline.__class__.__name__:
+    if negative_pooleds is not None and shared.sd_model_type == "sdxl":
         negative_pooleds = torch.cat(negative_pooleds, dim=0)
     return prompt_embeds, positive_pooleds, negative_embeds, negative_pooleds
 
@@ -81,11 +160,11 @@ def compel_encode_prompt(
         shared.log.warning(f"Prompt parser: Compel not supported: {type(pipeline).__name__}")
         return (None, None, None, None)
 
-    if not is_refiner and 'XL' in pipeline.__class__.__name__:
+    if not is_refiner and shared.sd_model_type == "sdxl":
         embedding_type = ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED
         if clip_skip is not None and clip_skip > 1:
             shared.log.warning(f"Prompt parser SDXL unsupported: clip_skip={clip_skip}")
-    elif is_refiner and 'XL' in pipeline.__class__.__name__:
+    elif is_refiner and shared.sd_refiner_type == "sdxl":
         embedding_type = ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED
         if clip_skip is not None and clip_skip > 1:
             shared.log.warning(f"Prompt parser SDXL unsupported: clip_skip={clip_skip}")
@@ -100,17 +179,20 @@ def compel_encode_prompt(
         prompt_2 = convert_to_compel(prompt_2)
         negative_prompt_2 = convert_to_compel(negative_prompt_2)
 
+    textual_inversion_manager = DiffusersTextualInversionManager(pipeline)
+
     compel_te1 = Compel(
         tokenizer=pipeline.tokenizer,
         text_encoder=pipeline.text_encoder,
         returned_embeddings_type=embedding_type,
         requires_pooled=False,
         # truncate_long_prompts=False,
-        device=shared.device
+        device=shared.device,
+        textual_inversion_manager=textual_inversion_manager
     )
 
-    if 'XL' in pipeline.__class__.__name__ and not is_refiner:
-        compel_te2 = Compel(tokenizer=pipeline.tokenizer_2, text_encoder=pipeline.text_encoder_2, returned_embeddings_type=embedding_type, requires_pooled=True, device=shared.device)
+    if not is_refiner and shared.sd_model_type == "sdxl":
+        compel_te2 = Compel(tokenizer=pipeline.tokenizer_2, text_encoder=pipeline.text_encoder_2, returned_embeddings_type=embedding_type, requires_pooled=True, device=shared.device, textual_inversion_manager=textual_inversion_manager)
         positive_te1 = compel_te1(prompt)
         positive_te2, positive_pooled = compel_te2(prompt_2)
         positive = torch.cat((positive_te1, positive_te2), dim=-1)
@@ -123,8 +205,8 @@ def compel_encode_prompt(
         [prompt_embed, negative_embed] = compel_te2.pad_conditioning_tensors_to_same_length([positive, negative])
         return prompt_embed, positive_pooled, negative_embed, negative_pooled
 
-    elif 'XL' in pipeline.__class__.__name__ and is_refiner:
-        compel_te2 = Compel(tokenizer=pipeline.tokenizer_2, text_encoder=pipeline.text_encoder_2, returned_embeddings_type=embedding_type, requires_pooled=True, device=shared.device)
+    if is_refiner and shared.sd_refiner_type == "sdxl":
+        compel_te2 = Compel(tokenizer=pipeline.tokenizer_2, text_encoder=pipeline.text_encoder_2, returned_embeddings_type=embedding_type, requires_pooled=True, device=shared.device, textual_inversion_manager=textual_inversion_manager)
         positive, positive_pooled = compel_te2(prompt)
         negative, negative_pooled = compel_te2(negative_prompt)
 
@@ -133,7 +215,7 @@ def compel_encode_prompt(
         [prompt_embed, negative_embed] = compel_te2.pad_conditioning_tensors_to_same_length([positive, negative])
         return prompt_embed, positive_pooled, negative_embed, negative_pooled
 
-    else:
-        positive, negative = compel_te1(prompt), compel_te1(negative_prompt)
-        [prompt_embed, negative_embed] = compel_te1.pad_conditioning_tensors_to_same_length([positive, negative])
-        return prompt_embed, None, negative_embed, None
+    # neither base+sdxl nor refiner+sdxl
+    positive, negative = compel_te1(prompt), compel_te1(negative_prompt)
+    [prompt_embed, negative_embed] = compel_te1.pad_conditioning_tensors_to_same_length([positive, negative])
+    return prompt_embed, None, negative_embed, None
