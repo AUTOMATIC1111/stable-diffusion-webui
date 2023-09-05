@@ -647,14 +647,16 @@ def train_auto(
                 target = os.path.join(process_dir, os.path.basename(f))
                 shutil.copy(full, target)
     # # 优化图片数量
+    contents = os.listdir(train_dir)
     if use_wd:
-        contents = os.listdir(train_dir)
         pic_nums = len(contents)
-        repeats_n = int(30 * 40 / pic_nums)
+
     else:
-        contents = os.listdir(train_dir)
         pic_nums = len(contents) / 2
-        repeats_n = int(30 * 40 / pic_nums)
+
+    max_repeats = 40
+    repeats_n = min(int(20 * max_repeats / pic_nums), max_repeats)
+
     # 2.tagger反推
     if use_wd:
         onnx = os.path.join(general_model_path, "tag_models/wd_onnx")
