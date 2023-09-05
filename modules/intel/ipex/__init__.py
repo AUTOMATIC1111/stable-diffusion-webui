@@ -30,6 +30,7 @@ def ipex_init():
     torch.cuda.init = torch.xpu.init
     torch.cuda.is_available = torch.xpu.is_available
     torch.cuda.is_initialized = torch.xpu.is_initialized
+    torch.cuda.is_current_stream_capturing = lambda: False
     torch.cuda.set_device = torch.xpu.set_device
     torch.cuda.stream = torch.xpu.stream
     torch.cuda.synchronize = torch.xpu.synchronize
@@ -139,7 +140,9 @@ def ipex_init():
     try:
         torch.cuda.amp.GradScaler = torch.xpu.amp.GradScaler
     except Exception:
-        torch.cuda.amp.GradScaler = ipex.cpu.autocast._grad_scaler.GradScaler
+        from .gradscaler import gradscaler_init
+        gradscaler_init()
+        torch.cuda.amp.GradScaler = torch.xpu.amp.GradScaler
 
     #C
     torch._C._cuda_getCurrentRawStream = ipex._C._getCurrentStream

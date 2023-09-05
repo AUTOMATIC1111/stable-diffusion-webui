@@ -161,7 +161,7 @@ class EmbeddingDatabase:
                     pipe.text_encoder.get_input_embeddings().weight.data[token_id] = embeddings_dict["clip_l"][i]
                     pipe.text_encoder_2.get_input_embeddings().weight.data[token_id] = embeddings_dict["clip_g"][i]
             else:
-              raise NotImplementedError            
+              raise NotImplementedError
             self.word_embeddings[name] = embedding
         except Exception:
             self.skipped_embeddings[name] = embedding
