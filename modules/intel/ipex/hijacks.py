@@ -90,6 +90,10 @@ def ipex_hijacks():
     CondFunc('torch.nn.modules.GroupNorm.forward',
         lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
         lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
+    #Hypernetwork training:
+    CondFunc('torch.nn.modules.linear.Linear.forward',
+        lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
+        lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
     #Embedding FP32:
     CondFunc('torch.bmm',
         lambda orig_func, input, mat2, *args, **kwargs: orig_func(input, mat2.to(input.dtype), *args, **kwargs),
