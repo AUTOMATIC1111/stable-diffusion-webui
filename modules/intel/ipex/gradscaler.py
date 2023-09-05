@@ -41,16 +41,17 @@ def _unscale_grads_(self, optimizer, inv_scale, found_inf, allow_fp16):
                     to_unscale = param.grad
 
                 # TODO: is there a way to split by device and dtype without appending in the inner loop?
+                to_unscale = to_unscale.to("cpu")
                 per_device_and_dtype_grads[to_unscale.device][
                     to_unscale.dtype
                 ].append(to_unscale)
 
-        for device, per_dtype_grads in per_device_and_dtype_grads.items():
+        for _, per_dtype_grads in per_device_and_dtype_grads.items():
             for grads in per_dtype_grads.values():
                 core._amp_foreach_non_finite_check_and_unscale_(
                     grads,
-                    per_device_found_inf.get(device),
-                    per_device_inv_scale.get(device),
+                    per_device_found_inf.get("cpu"),
+                    per_device_inv_scale.get("cpu"),
                 )
 
     return per_device_found_inf._per_device_tensors
@@ -94,7 +95,7 @@ def unscale_(self, optimizer):
 
     # FP32 division can be imprecise for certain compile options, so we carry out the reciprocal in FP64.
     assert self._scale is not None
-    inv_scale = self._scale.double().reciprocal().float()
+    inv_scale = self._scale.to("cpu").double().reciprocal().float().to(self._scale.device)
     found_inf = torch.full(
         (1,), 0.0, dtype=torch.float32, device=self._scale.device
     )
@@ -139,7 +140,7 @@ def update(self, new_scale=None):
         # Consume shared inf/nan data collected from optimizers to update the scale.
         # If all found_inf tensors are on the same device as self._scale, this operation is asynchronous.
         found_infs = [
-            found_inf.to(device=_scale.device, non_blocking=True)
+            found_inf.to(device="cpu", non_blocking=True)
             for state in self._per_optimizer_states.values()
             for found_inf in state["found_inf_per_device"].values()
         ]
@@ -151,6 +152,10 @@ def update(self, new_scale=None):
             for i in range(1, len(found_infs)):
                 found_inf_combined += found_infs[i]
 
+        to_device = _scale.device
+        _scale = _scale.to("cpu")
+        _growth_tracker = _growth_tracker.to("cpu")
+
         core._amp_update_scale_(
             _scale,
             _growth_tracker,
@@ -160,6 +165,8 @@ def update(self, new_scale=None):
             self._growth_interval,
         )
 
+        _scale = _scale.to(to_device)
+        _growth_tracker = _growth_tracker.to(to_device)
     # To prepare for next iteration, clear the data collected from optimizers this iteration.
     self._per_optimizer_states = defaultdict(_refresh_per_optimizer_state)
 
