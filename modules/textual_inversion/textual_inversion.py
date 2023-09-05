@@ -140,7 +140,28 @@ class EmbeddingDatabase:
         name = os.path.basename(fn)
         embedding = Embedding(vec=None, name=name)
         try:
-            pipe.load_textual_inversion(path, cache_dir=shared.opts.diffusers_dir, local_files_only=True)
+            if hasattr(pipe,"load_textual_inversion"):
+                pipe.load_textual_inversion(path, cache_dir=shared.opts.diffusers_dir, local_files_only=True)
+            elif "safetensors" in path:
+                embeddings_dict = {}
+                from safetensors.torch import safe_open
+
+                with safe_open(path, framework="pt") as f:
+                    for k in f.keys():
+                        embeddings_dict[k] = f.get_tensor(k)
+                for i in range(len(embeddings_dict["clip_l"])):
+                    if i == 0:
+                        token = name
+                    else:
+                        token = f"{name}_{i}"
+                    pipe.tokenizer.add_tokens(token)
+                    token_id = pipe.tokenizer.convert_tokens_to_ids(token)
+                    pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
+                    pipe.text_encoder_2.resize_token_embeddings(len(pipe.tokenizer))
+                    pipe.text_encoder.get_input_embeddings().weight.data[token_id] = embeddings_dict["clip_l"][i]
+                    pipe.text_encoder_2.get_input_embeddings().weight.data[token_id] = embeddings_dict["clip_g"][i]
+            else:
+              raise NotImplementedError            
             self.word_embeddings[name] = embedding
         except Exception:
             self.skipped_embeddings[name] = embedding
