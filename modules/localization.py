@@ -1,7 +1,7 @@
 import json
 import os
 
-from modules import errors
+from modules import errors, scripts
 
 localizations = {}
 
@@ -17,7 +17,6 @@ def list_localizations(dirname):
         fn = fn.replace(" ", "").replace("(", "_").replace(")","")
         localizations[fn] = [os.path.join(dirname, file)]
 
-    from modules import scripts
     for file in scripts.list_scripts("localizations", ".json"):
         fn, ext = os.path.splitext(file.filename)
         fn = fn.replace(" ", "").replace("(", "_").replace(")","")
