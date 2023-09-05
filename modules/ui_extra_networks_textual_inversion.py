@@ -1,7 +1,7 @@
 import json
 import os
 
-from modules import ui_extra_networks, sd_hijack, shared
+from modules import shared, sd_hijack, sd_models, ui_extra_networks
 from modules.textual_inversion.textual_inversion import Embedding
 
 
@@ -14,14 +14,20 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
         sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)
 
     def list_items(self):
-        embeddings = list(sd_hijack.model_hijack.embedding_db.word_embeddings.values())
-        if len(embeddings) == 0: # maybe not loaded yet, so lets just look them up
+        if sd_models.model_data.sd_model is None:
+            embeddings = []
             for root, _dirs, fns in os.walk(shared.opts.embeddings_dir, followlinks=True):
                 for fn in fns:
-                    if fn.lower().endswith(".pt"):
+                    if fn.lower().endswith(".pt") or fn.lower().endswith(".safetensors"):
                         embedding = Embedding(0, fn)
                         embedding.filename = os.path.join(root, fn)
                         embeddings.append(embedding)
+        elif shared.backend == shared.Backend.ORIGINAL:
+            embeddings = list(sd_hijack.model_hijack.embedding_db.word_embeddings.values())
+        elif hasattr(sd_models.model_data.sd_model, 'embedding_db'):
+            embeddings = list(sd_models.model_data.sd_model.embedding_db.word_embeddings.values())
+        else:
+            embeddings = []
         for embedding in embeddings:
             path, _ext = os.path.splitext(embedding.filename)
             yield {

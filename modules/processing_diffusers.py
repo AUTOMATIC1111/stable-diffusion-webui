@@ -304,6 +304,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     except AssertionError as e:
         shared.log.info(e)
 
+    if hasattr(shared.sd_model, 'embedding_db') and len(shared.sd_model.embedding_db.embeddings_used) > 0:
+        p.extra_generation_params['Embeddings'] = ', '.join(shared.sd_model.embedding_db.embeddings_used)
+
     if lora_state['active']:
         p.extra_generation_params['LoRA method'] = shared.opts.diffusers_lora_loader
         unload_diffusers_lora()

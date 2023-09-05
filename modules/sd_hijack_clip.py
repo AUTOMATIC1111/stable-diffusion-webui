@@ -179,9 +179,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
                     used_embeddings[embedding.name] = embedding
             z = self.process_tokens(tokens, multipliers)
             zs.append(z)
-        if len(used_embeddings) > 0:
-            embeddings_list = ", ".join([f'{name} [{embedding.checksum()}]' for name, embedding in used_embeddings.items()])
-            self.hijack.comments.append(f"Used embeddings: {embeddings_list}")
+        self.hijack.embedding_db.embeddings_used = [name for name, embedding in used_embeddings.items()]
         return torch.hstack(zs)
 
     def process_tokens(self, remade_batch_tokens, batch_multipliers):

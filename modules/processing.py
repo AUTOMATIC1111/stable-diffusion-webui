@@ -17,7 +17,6 @@ from blendmodes.blend import blendLayers, BlendType
 from installer import git_commit
 import modules.sd_hijack
 from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks, sd_vae_approx, scripts, sd_samplers_common # pylint: disable=unused-import
-from modules.sd_hijack import model_hijack
 import modules.shared as shared
 import modules.paths as paths
 import modules.face_restoration
@@ -515,6 +514,8 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
     if 'color' in p.ops:
         args["Color correction"] = True
 
+    if hasattr(modules.sd_hijack.model_hijack, 'embedding_db') and len(modules.sd_hijack.model_hijack.embedding_db.embeddings_used) > 0: # this is for original hijaacked models only, diffusers are handled separately
+        args["Embeddings"] = ', '.join(modules.sd_hijack.model_hijack.embedding_db.embeddings_used)
 
     # tome
     token_merging_ratio = p.get_token_merging_ratio()
@@ -661,9 +662,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         p.all_subseeds = subseed
     else:
         p.all_subseeds = [int(subseed) + x for x in range(len(p.all_prompts))]
-
     if os.path.exists(shared.opts.embeddings_dir) and not p.do_not_reload_embeddings:
-        model_hijack.embedding_db.load_textual_inversion_embeddings()
+        modules.sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
     if p.scripts is not None:
         p.scripts.process(p)
     infotexts = []
@@ -736,8 +736,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if shared.backend == shared.Backend.ORIGINAL:
                 uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, p.negative_prompts, p.steps * step_multiplier, cached_uc)
                 c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, p.prompts, p.steps * step_multiplier, cached_c)
-                if len(model_hijack.comments) > 0:
-                    for comment in model_hijack.comments:
+                if len(modules.sd_hijack.model_hijack.comments) > 0:
+                    for comment in modules.sd_hijack.model_hijack.comments:
                         comments[comment] = 1
                 with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
                     samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=p.seeds, subseeds=p.subseeds, subseed_strength=p.subseed_strength, prompts=p.prompts)
@@ -1119,10 +1119,15 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 self.width = image.width
                 self.height = image.height
             if image_mask is not None:
-                image_masked = Image.new('RGBa', (image.width, image.height))
-                image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')) if self.mask_for_overlay is not None else None)
+                try:
+                    image_masked = Image.new('RGBa', (image.width, image.height))
+                    image_to_paste = image.convert("RGBA").convert("RGBa")
+                    image_to_mask = ImageOps.invert(self.mask_for_overlay.convert('L')) if self.mask_for_overlay is not None else None
+                    image_masked.paste(image_to_paste, mask=image_to_mask)
+                    self.overlay_images.append(image_masked.convert('RGBA'))
+                except Exception as e:
+                    shared.log.error(f"Failed to apply mask to image: {e}")
                 self.mask = image_mask # assign early for diffusers
-                self.overlay_images.append(image_masked.convert('RGBA'))
             # crop_region is not None if we are doing inpaint full res
             if crop_region is not None:
                 image = image.crop(crop_region)

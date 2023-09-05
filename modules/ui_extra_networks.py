@@ -188,14 +188,9 @@ class ExtraNetworksPage:
                     subdir = subdir[1:]
                 if not self.is_empty(tgt):
                     subdirs[subdir] = 1
-        if subdirs:
-            subdirs = OrderedDict(sorted(subdirs.items()))
-            subdirs = {"": 1, **subdirs}
-        subdirs_html = "".join([f"""
-            <button class='lg secondary gradio-button custom-button{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton(event)'>
-                {html.escape(subdir) if subdir!="" else "all"}
-            </button><br>""" for subdir in subdirs])
-        # try:
+        subdirs = OrderedDict(sorted(subdirs.items()))
+        subdirs_html = "<button class='lg secondary gradio-button custom-button search-all' onclick='extraNetworksSearchButton(event)'>all</button><br>"
+        subdirs_html += "".join([f"<button class='lg secondary gradio-button custom-button' onclick='extraNetworksSearchButton(event)'>{html.escape(subdir)}</button><br>" for subdir in subdirs if subdir != ''])
         if len(self.html) > 0:
             res = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
             return res
@@ -221,9 +216,6 @@ class ExtraNetworksPage:
         shared.log.debug(f'Extra networks: {self.name} items={len(self.items)} subdirs={len(subdirs)} time={round(t1-t0, 2)}')
         threading.Thread(target=self.create_thumb).start()
         return res
-        # except Exception as e:
-        #    shared.log.error(f'Extra networks page error: title={self.title} tab={tabname} class={e.__class__.__name__} {e}')
-        #    return f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'></div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>Extra network error<br>{e}</div>"
 
     def list_items(self):
         raise NotImplementedError

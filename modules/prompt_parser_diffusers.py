@@ -38,6 +38,8 @@ CLIP_SKIP_MAPPING = {
 class DiffusersTextualInversionManager(BaseTextualInversionManager):
     def __init__(self, pipe):
         self.pipe = pipe
+        if hasattr(self.pipe, 'embedding_db'):
+            self.pipe.embedding_db.embeddings_used.clear()
 
     #from https://github.com/huggingface/diffusers/blob/705c592ea98ba4e288d837b9cba2767623c78603/src/diffusers/loaders.py#L599
     def maybe_convert_prompt(self, prompt: typing.Union[str, typing.List[str]], tokenizer = "PreTrainedTokenizer"):
@@ -52,12 +54,15 @@ class DiffusersTextualInversionManager(BaseTextualInversionManager):
         unique_tokens = set(tokens)
         for token in unique_tokens:
             if token in tokenizer.added_tokens_encoder:
+                if hasattr(self.pipe, 'embedding_db'):
+                    self.pipe.embedding_db.embeddings_used.append(token)
                 replacement = token
                 i = 1
                 while f"{token}_{i}" in tokenizer.added_tokens_encoder:
                     replacement += f" {token}_{i}"
                     i += 1
                 prompt = prompt.replace(token, replacement)
+                self.pipe.embedding_db.embeddings_used = list(set(self.pipe.embedding_db.embeddings_used))
         return prompt
 
     def expand_textual_inversion_token_ids_if_necessary(self, token_ids: typing.List[int]) -> typing.List[int]:

@@ -878,15 +878,14 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         shared.log.error("Failed to load diffusers model")
         errors.display(e, "loading Diffusers model")
 
+    from modules.textual_inversion import textual_inversion
+    sd_model.embedding_db = textual_inversion.EmbeddingDatabase()
     if op == 'refiner':
         model_data.sd_refiner = sd_model
     else:
         model_data.sd_model = sd_model
-
-    from modules.textual_inversion import textual_inversion
-    embedding_db = textual_inversion.EmbeddingDatabase()
-    embedding_db.add_embedding_dir(shared.opts.embeddings_dir)
-    embedding_db.load_textual_inversion_embeddings(force_reload=True)
+    sd_model.embedding_db.add_embedding_dir(shared.opts.embeddings_dir)
+    sd_model.embedding_db.load_textual_inversion_embeddings(force_reload=True)
 
     timer.record("load")
     shared.log.info(f"Model loaded in {timer.summary()} native={get_native(sd_model)}")

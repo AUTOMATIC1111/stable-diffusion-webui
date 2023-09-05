@@ -14,7 +14,7 @@ from einops import rearrange, repeat
 from ldm.util import default
 from modules import devices, processing, sd_models, shared, sd_samplers, hashes, sd_hijack_checkpoint, errors
 import modules.textual_inversion.dataset
-from modules.textual_inversion import textual_inversion, logging
+from modules.textual_inversion import textual_inversion, ti_logging
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
 
@@ -438,13 +438,13 @@ def statistics(data):
         std = 0
     else:
         std = stdev(data)
-    total_information = f"loss:{mean(data):.3f}" + u"\u00B1" + f"({std/ (len(data) ** 0.5):.3f})"
+    total_information = f"loss:{mean(data):.3f}" + "\u00B1" + f"({std/ (len(data) ** 0.5):.3f})"
     recent_data = data[-32:]
     if len(recent_data) < 2:
         std = 0
     else:
         std = stdev(recent_data)
-    recent_information = f"recent 32 loss:{mean(recent_data):.3f}" + u"\u00B1" + f"({std / (len(recent_data) ** 0.5):.3f})"
+    recent_information = f"recent 32 loss:{mean(recent_data):.3f}" + "\u00B1" + f"({std / (len(recent_data) ** 0.5):.3f})"
     return total_information, recent_information
 
 
@@ -557,7 +557,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
             model_name=checkpoint.model_name, model_hash=checkpoint.shorthash, num_of_dataset_images=len(ds),
             **{field: getattr(hypernetwork, field) for field in ['layer_structure', 'activation_func', 'weight_init', 'add_layer_norm', 'use_dropout', ]}
         )
-        logging.save_settings_to_file(log_directory, {**saved_params, **locals()})
+        ti_logging.save_settings_to_file(log_directory, {**saved_params, **locals()})
 
     latent_sampling_method = ds.latent_sampling_method
 
