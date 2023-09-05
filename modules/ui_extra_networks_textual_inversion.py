@@ -11,7 +11,12 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
         self.allow_negative_prompt = True
 
     def refresh(self):
-        sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)
+        if sd_models.model_data.sd_model is None:
+            return
+        if shared.backend == shared.Backend.ORIGINAL:
+            sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)
+        elif hasattr(sd_models.model_data.sd_model, 'embedding_db'):
+            sd_models.model_data.sd_model.embedding_db.load_textual_inversion_embeddings(force_reload=True)
 
     def list_items(self):
         if sd_models.model_data.sd_model is None:

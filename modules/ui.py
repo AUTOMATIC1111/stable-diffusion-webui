@@ -1,6 +1,6 @@
+import os
 import json
 import mimetypes
-import os
 from functools import reduce
 
 import gradio as gr

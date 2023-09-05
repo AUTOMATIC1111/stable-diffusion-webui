@@ -278,6 +278,12 @@ function extraNetworksSearchButton(event) {
   updateInput(searchTextarea);
 }
 
+function extraNetworksRefreshButton() {
+  const tabname = getENActiveTab();
+  const page = gradioApp().querySelector(`#${tabname}_extra_networks > .tabs > .tab-nav > .selected`);
+  return page ? page.innerText : '';
+}
+
 let desiredStyle = '';
 function selectStyle(name) {
   desiredStyle = name;

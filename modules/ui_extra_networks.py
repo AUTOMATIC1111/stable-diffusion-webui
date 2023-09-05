@@ -19,6 +19,7 @@ import modules.ui_symbols as symbols
 extra_pages = []
 allowed_dirs = set()
 dir_cache = {} # key=path, value=(mtime, listdir(path))
+refresh_time = None
 
 
 def listdir(path):
@@ -171,6 +172,9 @@ class ExtraNetworksPage:
             self.missing_thumbs.clear()
 
     def create_page(self, tabname, skip = False):
+        if self.refresh_time is not None and self.refresh_time > refresh_time:
+            # shared.log.debug(f'Extra networks: {self.name} items={len(self.items)} tab={tabname} cached')
+            return self.html
         t0 = time.time()
         self_name_id = self.name.replace(" ", "_")
         if skip:
@@ -191,16 +195,13 @@ class ExtraNetworksPage:
         subdirs = OrderedDict(sorted(subdirs.items()))
         subdirs_html = "<button class='lg secondary gradio-button custom-button search-all' onclick='extraNetworksSearchButton(event)'>all</button><br>"
         subdirs_html += "".join([f"<button class='lg secondary gradio-button custom-button' onclick='extraNetworksSearchButton(event)'>{html.escape(subdir)}</button><br>" for subdir in subdirs if subdir != ''])
-        if len(self.html) > 0:
-            res = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
-            return res
         self.html = ''
-        if self.refresh_time is None or len(self.items) == 0:
-            try:
-                self.items = list(self.list_items())
-            except Exception as e:
-                self.items = []
-                shared.log.error(f'Extra networks error listing items: class={self.__class__} tab={tabname} {e}')
+        try:
+            self.items = list(self.list_items())
+            self.refresh_time = time.time()
+        except Exception as e:
+            self.items = []
+            shared.log.error(f'Extra networks error listing items: class={self.__class__} tab={tabname} {e}')
         self.create_xyz_grid()
         htmls = []
         for item in self.items:
@@ -209,13 +210,12 @@ class ExtraNetworksPage:
             htmls.append(self.create_html(item, tabname))
         self.html += ''.join(htmls)
         if len(subdirs_html) > 0 or len(self.html) > 0:
-            res = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
+            self.html = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
         else:
             return ''
         t1 = time.time()
-        shared.log.debug(f'Extra networks: {self.name} items={len(self.items)} subdirs={len(subdirs)} time={round(t1-t0, 2)}')
+        shared.log.debug(f'Extra networks: {self.name} items={len(self.items)} subdirs={len(subdirs)} tab={tabname} time={round(t1-t0, 2)}')
         threading.Thread(target=self.create_thumb).start()
-        return res
 
     def list_items(self):
         raise NotImplementedError
@@ -316,7 +316,6 @@ def register_default_pages():
 class ExtraNetworksUi:
     def __init__(self):
         self.pages = None
-        self.stored_extra_pages = []
         self.button_save_preview = None
         self.preview_target_filename = None
         self.button_save_description = None
@@ -331,7 +330,6 @@ class ExtraNetworksUi:
 def create_ui(container, button, tabname, skip_indexing = False):
     ui = ExtraNetworksUi()
     ui.pages = []
-    ui.stored_extra_pages = extra_pages
     ui.tabname = tabname
     with gr.Tabs(elem_id=tabname+"_extra_tabs"):
         button_refresh = ToolButton(symbols.refresh, elem_id=tabname+"_extra_refresh")
@@ -343,11 +341,13 @@ def create_ui(container, button, tabname, skip_indexing = False):
         ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
         ui.button_save_description = gr.Button('Save description', elem_id=tabname+"_save_description", visible=False)
 
-        for page in ui.stored_extra_pages:
-            shared.log.debug(f"Extra network page: {page.title} tab={tabname}")
-            page_html = page.create_page(ui.tabname, skip_indexing)
+        if ui.tabname == 'txt2img': # refresh only once
+            global refresh_time # pylint: disable=global-statement
+            refresh_time = time.time()
+        for page in extra_pages:
+            page.create_page(ui.tabname, skip_indexing)
             with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab"):
-                page_elem = gr.HTML(page_html, elem_id=f'{tabname}{page.name}_extra_page', elem_classes="extra-networks-page")
+                page_elem = gr.HTML(page.html, elem_id=f'{tabname}{page.name}_extra_page', elem_classes="extra-networks-page")
                 page_elem.change(fn=lambda: None, _js=f'() => refreshExtraNetworks("{tabname}")', inputs=[], outputs=[])
                 ui.pages.append(page_elem)
 
@@ -359,18 +359,18 @@ def create_ui(container, button, tabname, skip_indexing = False):
     button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button])
     button_close.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
 
-    def refresh():
-        shared.log.debug("Refreshing UI Extra Networks Pages")
+    def refresh(title):
         res = []
-        for pg in ui.stored_extra_pages:
-            pg.html = ''
-            pg.refresh_time = None
-            pg.refresh()
-            res.append(pg.create_page(ui.tabname))
+        for page in extra_pages:
+            if title == '' or title == page.title:
+                shared.log.debug(f"Refreshing Extra networks: page={page.title} tab={ui.tabname}")
+                page.refresh()
+                page.create_page(ui.tabname)
+            res.append(page.html)
         ui.search.update(value = ui.search.value)
         return res
 
-    button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
+    button_refresh.click(_js='extraNetworksRefreshButton', fn=refresh, inputs=[ui.search], outputs=ui.pages)
     return ui
 
 
@@ -381,16 +381,19 @@ def path_is_parent(parent_path, child_path):
 
 
 def setup_ui(ui, gallery):
+
     def save_preview(index, images, filename):
         if len(images) == 0:
-            return [page.create_page(ui.tabname) for page in ui.stored_extra_pages]
+            for page in extra_pages:
+                page.create_page(ui.tabname)
+            return [page.html for page in extra_pages]
         index = int(index)
         index = 0 if index < 0 else index
         index = len(images) - 1 if index >= len(images) else index
         img_info = images[index if index >= 0 else 0]
         image = image_from_url_text(img_info)
         is_allowed = False
-        for extra_page in ui.stored_extra_pages:
+        for extra_page in extra_pages:
             if any(path_is_parent(x, filename) for x in extra_page.allowed_directories_for_previews()):
                 is_allowed = True
                 break
@@ -402,7 +405,7 @@ def setup_ui(ui, gallery):
             shared.log.debug(f'Extra network delete thumbnail: {thumb}')
             os.remove(thumb)
         shared.log.info(f'Extra network save preview: {filename}')
-        return [page.create_page(ui.tabname) for page in ui.stored_extra_pages]
+        return [page.create_page(ui.tabname) for page in extra_pages]
 
     ui.button_save_preview.click(
         fn=save_preview,
@@ -422,7 +425,7 @@ def setup_ui(ui, gallery):
                 shared.log.info(f'Extra network save description: {filename} {desc}')
             except Exception as e:
                 shared.log.error(f'Extra network save description: {filename} {e}')
-        return [page.create_page(ui.tabname) for page in ui.stored_extra_pages]
+        return [page.create_page(ui.tabname) for page in extra_pages]
 
     ui.button_save_description.click(
         fn=save_description,

@@ -15,11 +15,16 @@
     this is stage one of new styles functionality  
     old styles interface is still available, but will be removed in future  
   - cache file lists for much faster startup  
+    speedups are 50+% for large number of extra networks
+  - ui refresh button now refreshes selected page, not all pages
   - simplified handling of **descriptions**  
     now shows on-mouse-over without the need for user interaction  
   - **metadata** and **info** buttons only show if there is actual content  
 - diffusers:
   - ability to interrupt (stop/skip) model generate  
+  - add full support for **textual inversions** (embeddings)  
+    this applies to both sd15 and sdxl  
+    thanks @ai-casanova for porting compel/sdxl code
   - mix&match **base** and **refiner** models (*experimental*):  
     most of those are "because why not" and can result in corrupt images, but some are actually useful  
     also note that if you're not using actual refiner model, you need to bump refiner steps  
