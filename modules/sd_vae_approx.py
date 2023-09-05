@@ -81,6 +81,6 @@ def cheap_approximation(sample):
 
     coefs = torch.tensor(coeffs).to(sample.device)
 
-    x_sample = torch.einsum("lxy,lr -> rxy", sample, coefs)
+    x_sample = torch.einsum("...lxy,lr -> ...rxy", sample, coefs)
 
     return x_sample

@@ -1,11 +1,12 @@
 import json
+import os
 import os.path
 import threading
 import time
 
 from modules.paths import data_path, script_path
 
-cache_filename = os.path.join(data_path, "cache.json")
+cache_filename = os.environ.get('SD_WEBUI_CACHE_FILE', os.path.join(data_path, "cache.json"))
 cache_data = None
 cache_lock = threading.Lock()
 
@@ -29,8 +30,11 @@ def dump_cache():
             time.sleep(1)
 
         with cache_lock:
-            with open(cache_filename, "w", encoding="utf8") as file:
+            cache_filename_tmp = cache_filename + "-"
+            with open(cache_filename_tmp, "w", encoding="utf8") as file:
                 json.dump(cache_data, file, indent=4)
+
+            os.replace(cache_filename_tmp, cache_filename)
 
             dump_cache_after = None
             dump_cache_thread = None

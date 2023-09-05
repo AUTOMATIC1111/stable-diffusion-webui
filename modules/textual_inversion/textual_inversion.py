@@ -13,7 +13,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 from torch.utils.tensorboard import SummaryWriter
 
-from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers, sd_hijack_checkpoint, errors, hashes
+from modules import shared, devices, sd_hijack, sd_models, images, sd_samplers, sd_hijack_checkpoint, errors, hashes
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
@@ -181,29 +181,38 @@ class EmbeddingDatabase:
         else:
             return
 
+
         # textual inversion embeddings
         if 'string_to_param' in data:
             param_dict = data['string_to_param']
             param_dict = getattr(param_dict, '_parameters', param_dict)  # fix for torch 1.12.1 loading saved file from torch 1.11
             assert len(param_dict) == 1, 'embedding file has multiple terms in it'
             emb = next(iter(param_dict.items()))[1]
-        # diffuser concepts
-        elif type(data) == dict and type(next(iter(data.values()))) == torch.Tensor:
+            vec = emb.detach().to(devices.device, dtype=torch.float32)
+            shape = vec.shape[-1]
+            vectors = vec.shape[0]
+        elif type(data) == dict and 'clip_g' in data and 'clip_l' in data:  # SDXL embedding
+            vec = {k: v.detach().to(devices.device, dtype=torch.float32) for k, v in data.items()}
+            shape = data['clip_g'].shape[-1] + data['clip_l'].shape[-1]
+            vectors = data['clip_g'].shape[0]
+        elif type(data) == dict and type(next(iter(data.values()))) == torch.Tensor: # diffuser concepts
             assert len(data.keys()) == 1, 'embedding file has multiple terms in it'
 
             emb = next(iter(data.values()))
             if len(emb.shape) == 1:
                 emb = emb.unsqueeze(0)
+            vec = emb.detach().to(devices.device, dtype=torch.float32)
+            shape = vec.shape[-1]
+            vectors = vec.shape[0]
         else:
             raise Exception(f"Couldn't identify {filename} as neither textual inversion embedding nor diffuser concept.")
 
-        vec = emb.detach().to(devices.device, dtype=torch.float32)
         embedding = Embedding(vec, name)
         embedding.step = data.get('step', None)
         embedding.sd_checkpoint = data.get('sd_checkpoint', None)
         embedding.sd_checkpoint_name = data.get('sd_checkpoint_name', None)
-        embedding.vectors = vec.shape[0]
-        embedding.shape = vec.shape[-1]
+        embedding.vectors = vectors
+        embedding.shape = shape
         embedding.filename = path
         embedding.set_hash(hashes.sha256(embedding.filename, "textual_inversion/" + name) or '')
 
@@ -378,6 +387,8 @@ def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, dat
 
 
 def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_step, data_root, log_directory, training_width, training_height, varsize, steps, clip_grad_mode, clip_grad_value, shuffle_tags, tag_drop_out, latent_sampling_method, use_weight, create_image_every, save_embedding_every, template_filename, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+    from modules import processing
+
     save_embedding_every = save_embedding_every or 0
     create_image_every = create_image_every or 0
     template_file = textual_inversion_templates.get(template_filename, None)
