@@ -504,7 +504,7 @@ class ScriptRunner:
                                     v = [item[0] for item in v]
                                 else:
                                     print(f"Invalid type for {field} in {script.filename}, value {v} is not {types}, casting")
-                                    v = [types[0](x) for x in v] # 
+                                    v = [types[0](x) for x in v]
                         elif not isinstance(v, types):
                             print(f"Invalid type for {field} in {script.filename}, value {v} is not {types}")
                     setattr(arg_info, field, v)
