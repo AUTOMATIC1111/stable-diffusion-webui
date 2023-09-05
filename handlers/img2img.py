@@ -424,8 +424,7 @@ class Img2ImgTaskHandler(TaskHandler):
         progress = TaskProgress.new_prepare(task, f"0%")
 
         # 脚本任务，不需要再下载生图的大模型了~
-        if not self._get_select_script_models(progress):
-            raise ValueError('download select script models failed.')
+        self._get_select_script_models(progress)
 
         def progress_callback(*args):
             if len(args) < 2:
