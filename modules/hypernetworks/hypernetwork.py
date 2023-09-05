@@ -499,7 +499,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
     save_hypernetwork_every = save_hypernetwork_every or 0
     create_image_every = create_image_every or 0
     template_file = textual_inversion.textual_inversion_templates.get(template_filename, None)
-    textual_inversion.validate_train_inputs(hypernetwork_name, learn_rate, batch_size, gradient_step, data_root, template_file, template_filename, steps, save_hypernetwork_every, create_image_every, log_directory, name="hypernetwork")
+    textual_inversion.validate_train_inputs(hypernetwork_name, learn_rate, batch_size, gradient_step, data_root, template_file, template_filename, steps, save_hypernetwork_every, create_image_every, name="hypernetwork")
     template_file = template_file.path
 
     path = shared.hypernetworks.get(hypernetwork_name, None)
