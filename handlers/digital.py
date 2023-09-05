@@ -66,11 +66,13 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
             yield progress
             p.close()
 
-        grid = modules.images.image_grid(images, len(images))
-        images.insert(0, grid)
-        processed.index_of_first_image = 1
-        processed.index_of_end_image = len(images)
-        processed.images = images
+        # 开启宫格图
+        if task.get('grid_enable', False):
+            grid = modules.images.image_grid(images, len(images))
+            images.insert(0, grid)
+            processed.index_of_first_image = 1
+            processed.index_of_end_image = len(images)
+            processed.images = images
 
         progress.status = TaskStatus.Uploading
         yield progress

@@ -66,6 +66,26 @@ class SingleUpscalerTask:
         else:
             raise OSError(f'cannot found image:{image}')
 
+    def check_upscale_size(self):
+        if self.upscaling_resize > 0:
+            h, w = self.image.size
+            if h * w * self.upscaling_resize > 2048**2*8:
+                raise ValueError(
+                    f'upscale resize error, resolution:{h * w * self.upscaling_resize} and max resolution:{2048**2*8}')
+        elif self.upscaling_crop:
+            h, w = self.image.size
+            upscaling_resize = max(self.upscaling_resize_w/w, self.upscaling_resize_h/h)
+            if h * w * upscaling_resize > 2048 ** 2 * 8:
+                raise ValueError(
+                    f'upscale resize error, resolution:{h * w * self.upscaling_resize} and max resolution:{2048**2*8}')
+        else:
+            h, w = self.upscaling_resize_w, self.upscaling_resize_h
+            if h * w > 2048 ** 2 * 8:
+                raise ValueError(
+                    f'upscale resize error, resolution:{h * w} and max resolution:{2048 ** 2 * 8}')
+
+        return True
+
     @classmethod
     def exec_task(cls, task: Task):
         t = SingleUpscalerTask(
@@ -82,6 +102,9 @@ class SingleUpscalerTask:
             task.get('extras_upscaler_2'),
             task.get('extras_upscaler_2_visibility', 0)
         )
+
+        # t.check_upscale_size()
+
         return run_extras(t.extras_mode, t.resize_mode, t.image, t.image_folder, t.input_dir, t.output_dir,
                           t.show_extras_results, t.gfpgan_visibility, t.codeformer_visibility,
                           t.codeformer_weight, t.upscaling_resize, t.upscaling_resize_w,
