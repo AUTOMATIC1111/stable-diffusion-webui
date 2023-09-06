@@ -33,7 +33,7 @@ function extensions_check() {
 
 
     var id = randomId();
-    requestProgress(id, gradioApp().getElementById('extensions_installed_top'), null, function() {
+    requestProgress(id, gradioApp().getElementById('extensions_installed_html'), null, function() {
 
     });
 

@@ -69,7 +69,6 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     var dateStart = new Date();
     var wasEverActive = false;
     var parentProgressbar = progressbarContainer.parentNode;
-    var parentGallery = gallery ? gallery.parentNode : null;
 
     var divProgress = document.createElement('div');
     divProgress.className = 'progressDiv';
@@ -80,30 +79,24 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     divProgress.appendChild(divInner);
     parentProgressbar.insertBefore(divProgress, progressbarContainer);
 
-    if (parentGallery) {
-        var livePreview = document.createElement('div');
-        livePreview.className = 'livePreview';
-        parentGallery.insertBefore(livePreview, gallery);
-    }
+    var livePreview = null;
 
     var removeProgressBar = function() {
+        if (!divProgress) return;
+
         setTitle("");
         parentProgressbar.removeChild(divProgress);
-        if (parentGallery) parentGallery.removeChild(livePreview);
+        if (gallery && livePreview) gallery.removeChild(livePreview);
         atEnd();
+
+        divProgress = null;
     };
 
-    var fun = function(id_task, id_live_preview) {
-        request("./internal/progress", {id_task: id_task, id_live_preview: id_live_preview}, function(res) {
+    var funProgress = function(id_task) {
+        request("./internal/progress", {id_task: id_task, live_preview: false}, function(res) {
             if (res.completed) {
                 removeProgressBar();
                 return;
-            }
-
-            var rect = progressbarContainer.getBoundingClientRect();
-
-            if (rect.width) {
-                divProgress.style.width = rect.width + "px";
             }
 
             let progressText = "";
@@ -118,7 +111,6 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
             if (res.eta) {
                 progressText += " ETA: " + formatTime(res.eta);
             }
-
 
             setTitle(progressText);
 
@@ -142,16 +134,33 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
                 return;
             }
 
+            if (onProgress) {
+                onProgress(res);
+            }
+
+            setTimeout(() => {
+                funProgress(id_task, res.id_live_preview);
+            }, opts.live_preview_refresh_period || 500);
+        }, function() {
+            removeProgressBar();
+        });
+    };
+
+    var funLivePreview = function(id_task, id_live_preview) {
+        request("./internal/progress", {id_task: id_task, id_live_preview: id_live_preview}, function(res) {
+            if (!divProgress) {
+                return;
+            }
 
             if (res.live_preview && gallery) {
-                rect = gallery.getBoundingClientRect();
-                if (rect.width) {
-                    livePreview.style.width = rect.width + "px";
-                    livePreview.style.height = rect.height + "px";
-                }
-
                 var img = new Image();
                 img.onload = function() {
+                    if (!livePreview) {
+                        livePreview = document.createElement('div');
+                        livePreview.className = 'livePreview';
+                        gallery.insertBefore(livePreview, gallery.firstElementChild);
+                    }
+
                     livePreview.appendChild(img);
                     if (livePreview.childElementCount > 2) {
                         livePreview.removeChild(livePreview.firstElementChild);
@@ -160,18 +169,18 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
                 img.src = res.live_preview;
             }
 
-
-            if (onProgress) {
-                onProgress(res);
-            }
-
             setTimeout(() => {
-                fun(id_task, res.id_live_preview);
+                funLivePreview(id_task, res.id_live_preview);
             }, opts.live_preview_refresh_period || 500);
         }, function() {
             removeProgressBar();
         });
     };
 
-    fun(id_task, 0);
+    funProgress(id_task, 0);
+
+    if (gallery) {
+        funLivePreview(id_task, 0);
+    }
+
 }
