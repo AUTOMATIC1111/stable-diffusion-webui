@@ -1,5 +1,5 @@
 name: Bug Report
-description: You think somethings is broken in the UI
+description: You think something is broken in the UI
 title: "[Bug]: "
 labels: ["bug-report"]
 
@@ -7,9 +7,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        > The title the bug report should be short and descriptive
-        > Use relevant keywords for searchability
-        > Don't leave it blank but also don't put the entire error log in it
+        > The title of the bug report should be short and descriptive.
+        > Use relevant keywords for searchability.
+        > Do not leave it blank, but also do not put an entire error log in it.
   - type: checkboxes
     attributes:
       label: Checklist
@@ -17,32 +17,32 @@ body:
         Please perform basic debugging to see if extensions or configuration is the cause of the issue.
         Basic debug procedure
         　1. Disable all third-party extensions - check if extension is the cause
-        　2. Update extensions and webui - sometimes thing just need to be updated
-        　3. Backup and remove your config.json and ui-config.json - check if the issue is caused bed configuration
-        　4. delete venv with third-party extensions disable - sometimes extensions might cause wrong libraries to be installed
-        　5. try a fresh installation webui in a different directory - see if a clean installation solves the issue
-        Before making a issue report please check that the issue hasn't been reported recently
+        　2. Update extensions and webui - sometimes things just need to be updated
+        　3. Backup and remove your config.json and ui-config.json - check if the issue is caused by bad configuration
+        　4. Delete venv with third-party extensions disabled - sometimes extensions might cause wrong libraries to be installed
+        　5. Try a fresh installation webui in a different directory - see if a clean installation solves the issue
+        Before making a issue report please, check that the issue hasn't been reported recently.
       options:
-        - label: The issue exist after disabling all extensions
-        - label: The issue exist on a clean installation of webui
-        - label: The issue is caused by an extension but it is caused by a bug in webui
-        - label: The issue exist in current version of webui
-        - label: The issue haven't been reported before recently
-        - label: The issue has been reported before but hasn't been fixed yet
+        - label: The issue exists after disabling all extensions
+        - label: The issue exists on a clean installation of webui
+        - label: The issue is caused by an extension, but I believe it is caused by a bug in the webui
+        - label: The issue exists in the current version of the webui
+        - label: The issue has not been reported before recently
+        - label: The issue has been reported before but has not been fixed yet
   - type: markdown
     attributes:
       value: |
-        > Please fill this form with as much information as possible, don't forget to "Upload Sysinfo" and "What browsers" and provide screenshots if possible
+        > Please fill this form with as much information as possible. Don't forget to "Upload Sysinfo" and "What browsers" and provide screenshots if possible
   - type: textarea
     id: what-did
     attributes:
       label: What happened?
       description: Tell us what happened in a very clear and simple way
       placeholder: |
-        I tried to use txt2img with XYZ grid with Sampler DPM++ SDE,DPM++ 2M SDE
-        it should generate a grid of 2 images but I only got 1
+        I tried to use txt2img with the XYZ grid script, with DPM++ SDE, DPM++ 2M SDE samplers.
+        It should generate a grid of 2 images but I only got 1.
         
-        add screenshot or screen recording if necessary
+        (add screenshot or screen recording if necessary)
     validations:
       required: true
   - type: textarea
@@ -51,9 +51,9 @@ body:
       label: Steps to reproduce the problem
       description: Please provide us with precise step by step instructions on how to reproduce the bug
       placeholder: |
-        1. Go to txt2img tab Select XYZ grid 
-        2. Set axis type Sampler and select DPM++ 2M SDE, DPM++ 3M SDE
-        3. Set Sampling steps to 1 and click Generate button
+        1. Go to txt2img tab, select XYZ grid script
+        2. Set axis type to `Sampler`, and select DPM++ 2M SDE, DPM++ 3M SDE
+        3. Set `Sampling steps` to 1, click generate button
     validations:
       required: true
   - type: textarea
@@ -62,8 +62,8 @@ body:
       label: What should have happened?
       description: Tell us what you think the normal behavior should be
       placeholder: |
-        It should generate a grid of 2 images
-        this was working in webui version 1.x.x
+        It should generate a grid of 2 images.
+        This was working in webui version 1.x.x
     validations:
       required: true
   - type: dropdown
@@ -86,15 +86,15 @@ body:
       label: Sysinfo
       description: System info file, generated by WebUI. You can generate it in settings, on the Sysinfo page. Drag the file into the field to upload it. If you submit your report without including the sysinfo file, the report will be closed. If needed, review the report to make sure it includes no personal information you don't want to share. If you can't start WebUI, you can use --dump-sysinfo commandline argument to generate the file.
       placeholder: |
-        Upload the Sysinfo as a attached file
-        Don't paste it in as text
+        Upload the Sysinfo as a attached file.
+        Do not paste it in as text.
     validations:
       required: true
   - type: textarea
     id: logs
     attributes:
       label: Console logs
-      description: Please provide **full** cmd/terminal logs from the moment you started UI to the end of it, after your bug happened. If it's very long, provide a link to pastebin or similar service.
+      description: Please provide **full** cmd/terminal logs from the moment you started UI to the end of it, after the bug occured. If it's very long, provide a link to pastebin or similar service.
       render: Shell
       placeholder: |
         generating image for xyz plot: UnboundLocalError
@@ -126,7 +126,7 @@ body:
       label: Additional information
       description: Please provide us with any relevant additional info or context.
       placeholder: |
-        Examples
-        I have updated the GPU driver recently
-        I suspect the issue is caused by XXXXX
-        I am using a VPN
+        Examples:
+        I have updated the GPU driver recently.
+        I suspect the issue is caused by XXXXX.
+        I am using a VPN.
