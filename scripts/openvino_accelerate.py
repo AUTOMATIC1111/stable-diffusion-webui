@@ -215,14 +215,14 @@ class OpenVINOGraphModule(torch.nn.Module):
         self.perm_fallback = False
 
     def __call__(self, *args):
-        if self.perm_fallback:
-            return self.gm(*args)
+        #if self.perm_fallback:
+        #    return self.gm(*args)
 
-        try:
-            result = openvino_execute(self.gm, *args, executor_parameters=self.executor_parameters, partition_id=self.partition_id, file_name=self.file_name)
-        except Exception:
-            self.perm_fallback = True
-            return self.gm(*args)
+        #try:
+        result = openvino_execute(self.gm, *args, executor_parameters=self.executor_parameters, partition_id=self.partition_id, file_name=self.file_name)
+        #except Exception:
+        #    self.perm_fallback = True
+        #    return self.gm(*args)
 
         return result
 
@@ -777,7 +777,6 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_
                 images_list=control_images,
             )
             p.scripts.postprocess(p, control_res)
-            control_image = control_images[0]
             mode = 3
 
     infotexts = []
@@ -880,7 +879,7 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_
                 })
             elif (mode == 3):
                  custom_inputs.update({
-                    'image': control_image,
+                    'image': control_images,
                     'width': p.width,
                     'height': p.height,
                 })
@@ -942,7 +941,8 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_
                     image.info["parameters"] = text
                 output_images.append(image)
                 if ('ControlNet' in p.extra_generation_params and cn_model != "None"):
-                    output_images.append(control_image)
+                    for cn_image in control_images:
+                        output_images.append(cn_image)
 
                 if hasattr(p, 'mask_for_overlay') and p.mask_for_overlay and any([opts.save_mask, opts.save_mask_composite, opts.return_mask, opts.return_mask_composite]):
                     image_mask = p.mask_for_overlay.convert('RGB')
