@@ -1,29 +1,39 @@
+import os
 import json
 import math
-import os
+import time
 import hashlib
 import random
 from contextlib import nullcontext
 from typing import Any, Dict, List
 import torch
 import numpy as np
-from PIL import Image, ImageFilter, ImageOps
 import cv2
+from PIL import Image, ImageFilter, ImageOps
 from skimage import exposure
 from ldm.data.util import AddMiDaS
 from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
 from installer import git_commit
-import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks, sd_vae_approx, scripts, sd_samplers_common # pylint: disable=unused-import
-import modules.shared as shared
-import modules.paths as paths
+from modules import shared, devices
+import modules.memstats
+import modules.lowvram
+import modules.masking
+import modules.paths
+import modules.scripts
+import modules.prompt_parser
+import modules.extra_networks
 import modules.face_restoration
 import modules.images as images
 import modules.styles
-import modules.sd_models as sd_models
-import modules.sd_vae as sd_vae
+import modules.sd_hijack
+import modules.sd_samplers
+import modules.sd_samplers_common
+import modules.sd_models
+import modules.sd_vae
+import modules.sd_vae_approx
+import modules.generation_parameters_copypaste
 
 
 opt_C = 4
@@ -451,7 +461,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         index = position_in_batch + iteration * p.batch_size
     if all_negative_prompts is None:
         all_negative_prompts = p.all_negative_prompts
-    vae = (None if not shared.opts.add_model_name_to_info or sd_vae.loaded_vae_file is None else os.path.splitext(os.path.basename(sd_vae.loaded_vae_file))[0]) if p.full_quality else 'TAESD'
+    vae = (None if not shared.opts.add_model_name_to_info or modules.sd_vae.loaded_vae_file is None else os.path.splitext(os.path.basename(modules.sd_vae.loaded_vae_file))[0]) if p.full_quality else 'TAESD'
     comment = ', '.join(comments) if comments is not None and type(comments) is list else None
 
     args = {
@@ -473,7 +483,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Prompt2": p.refiner_prompt if len(p.refiner_prompt) > 0 else None,
         "Negative2": p.refiner_negative if len(p.refiner_negative) > 0 else None,
         # other
-        "ENSD": shared.opts.eta_noise_seed_delta if shared.opts.eta_noise_seed_delta != 0 and sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p) else None,
+        "ENSD": shared.opts.eta_noise_seed_delta if shared.opts.eta_noise_seed_delta != 0 and modules.sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p) else None,
         "Tiling": p.tiling if p.tiling else None,
         # sdnext
         "Backend": 'Diffusers' if shared.backend == shared.Backend.DIFFUSERS else 'Original',
@@ -524,7 +534,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
     args['Token merging ratio hr'] = token_merging_ratio_hr if token_merging_ratio_hr != 0 else None
 
     args.update(p.extra_generation_params)
-    params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in args.items() if v is not None])
+    params_text = ", ".join([k if k == v else f'{k}: {modules.generation_parameters_copypaste.quote(v)}' for k, v in args.items() if v is not None])
     negative_prompt_text = f"\nNegative prompt: {all_negative_prompts[index]}" if all_negative_prompts[index] else ""
     infotext = f"{all_prompts[index]}{negative_prompt_text}\n{params_text}".strip()
     return infotext
@@ -568,18 +578,18 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         stored_opts[k] = shared.opts.data.get(k, None) or shared.opts.data_labels[k].default
     try:
         # if no checkpoint override or the override checkpoint can't be found, remove override entry and load opts checkpoint
-        if p.override_settings.get('sd_model_checkpoint', None) is not None and sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
+        if p.override_settings.get('sd_model_checkpoint', None) is not None and modules.sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
             p.override_settings.pop('sd_model_checkpoint', None)
-            sd_models.reload_model_weights()
+            modules.sd_models.reload_model_weights()
         for k, v in p.override_settings.items():
             setattr(shared.opts, k, v)
             if k == 'sd_model_checkpoint':
-                sd_models.reload_model_weights()
+                modules.sd_models.reload_model_weights()
             if k == 'sd_vae':
-                sd_vae.reload_vae_weights()
+                modules.sd_vae.reload_vae_weights()
 
         if not shared.opts.cuda_compile:
-            sd_models.apply_token_merging(p.sd_model, p.get_token_merging_ratio())
+            modules.sd_models.apply_token_merging(p.sd_model, p.get_token_merging_ratio())
 
         if shared.cmd_opts.profile:
             """
@@ -598,16 +608,16 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             res = process_images_inner(p)
     finally:
         if not shared.opts.cuda_compile:
-            sd_models.apply_token_merging(p.sd_model, 0)
+            modules.sd_models.apply_token_merging(p.sd_model, 0)
         if p.override_settings_restore_afterwards: # restore opts to original state
             for k, v in stored_opts.items():
                 setattr(shared.opts, k, v)
                 if k == 'sd_model_checkpoint':
-                    sd_models.reload_model_weights()
+                    modules.sd_models.reload_model_weights()
                 if k == 'sd_model_refiner':
-                    sd_models.reload_model_weights()
+                    modules.sd_models.reload_model_weights()
                 if k == 'sd_vae':
-                    sd_vae.reload_vae_weights()
+                    modules.sd_vae.reload_vae_weights()
     return res
 
 
@@ -672,15 +682,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     cached_c = [None, None]
 
     def get_conds_with_caching(function, required_prompts, steps, cache):
-        """
-        Returns the result of calling function(shared.sd_model, required_prompts, steps)
-        using a cache to store the result if the same arguments have been used before.
-
-        cache is an array containing two elements. The first element is a tuple
-        representing the previously used arguments, or None if no arguments
-        have been used before. The second element is where the previously
-        computed result is stored.
-        """
         if cache[0] is not None and (required_prompts, steps) == cache[0]:
             return cache[1]
         with devices.autocast():
@@ -692,11 +693,12 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         return ''
 
     ema_scope_context = p.sd_model.ema_scope if shared.backend == shared.Backend.ORIGINAL else nullcontext
-    with torch.no_grad(), ema_scope_context():
+    with torch.inference_mode(), ema_scope_context():
+        t0 = time.time()
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
             if shared.opts.live_previews_enable and shared.opts.show_progress_type == "Approximate NN" and shared.backend == shared.Backend.ORIGINAL:
-                sd_vae_approx.model()
+                modules.sd_vae_approx.model()
         if shared.state.job_count == -1:
             shared.state.job_count = p.n_iter
         extra_network_data = None
@@ -717,25 +719,25 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 p.scripts.before_process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
             if len(p.prompts) == 0:
                 break
-            p.prompts, extra_network_data = extra_networks.parse_prompts(p.prompts)
+            p.prompts, extra_network_data = modules.extra_networks.parse_prompts(p.prompts)
             if not p.disable_extra_networks:
                 with devices.autocast():
-                    extra_networks.activate(p, extra_network_data)
+                    modules.extra_networks.activate(p, extra_network_data)
             if p.scripts is not None:
                 p.scripts.process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
             if n == 0:
-                with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
+                with open(os.path.join(modules.paths.data_path, "params.txt"), "w", encoding="utf8") as file:
                     processed = Processed(p, [], p.seed, "")
                     file.write(processed.infotext(p, 0))
             step_multiplier = 1
-            sampler_config = sd_samplers.find_sampler_config(p.sampler_name)
+            sampler_config = modules.sd_samplers.find_sampler_config(p.sampler_name)
             step_multiplier = 2 if sampler_config and sampler_config.options.get("second_order", False) else 1
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
             if shared.backend == shared.Backend.ORIGINAL:
-                uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, p.negative_prompts, p.steps * step_multiplier, cached_uc)
-                c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, p.prompts, p.steps * step_multiplier, cached_c)
+                uc = get_conds_with_caching(modules.prompt_parser.get_learned_conditioning, p.negative_prompts, p.steps * step_multiplier, cached_uc)
+                c = get_conds_with_caching(modules.prompt_parser.get_multicond_learned_conditioning, p.prompts, p.steps * step_multiplier, cached_c)
                 if len(modules.sd_hijack.model_hijack.comments) > 0:
                     for comment in modules.sd_hijack.model_hijack.comments:
                         comments[comment] = 1
@@ -749,8 +751,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     if not shared.opts.no_half and not shared.opts.no_half_vae and shared.cmd_opts.rollback_vae:
                         shared.log.warning('Tensor with all NaNs was produced in VAE')
                         devices.dtype_vae = torch.bfloat16
-                        vae_file, vae_source = sd_vae.resolve_vae(p.sd_model.sd_model_checkpoint)
-                        sd_vae.load_vae(p.sd_model, vae_file, vae_source)
+                        vae_file, vae_source = modules.sd_vae.resolve_vae(p.sd_model.sd_model_checkpoint)
+                        modules.sd_vae.load_vae(p.sd_model, vae_file, vae_source)
                         x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
                         for x in x_samples_ddim:
                             devices.test_for_nans(x, "vae")
@@ -768,14 +770,14 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 raise ValueError(f"Unknown backend {shared.backend}")
 
             if shared.cmd_opts.lowvram or shared.cmd_opts.medvram and shared.backend == shared.Backend.ORIGINAL:
-                lowvram.send_everything_to_cpu()
+                modules.lowvram.send_everything_to_cpu()
                 devices.torch_gc()
             if p.scripts is not None:
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
             if p.scripts is not None:
                 p.prompts = p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
                 p.negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
-                batch_params = scripts.PostprocessBatchListArgs(list(x_samples_ddim))
+                batch_params = modules.scripts.PostprocessBatchListArgs(list(x_samples_ddim))
                 p.scripts.postprocess_batch_list(p, batch_params, batch_number=n)
                 x_samples_ddim = batch_params.images
 
@@ -797,7 +799,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     x_sample = modules.face_restoration.restore_faces(x_sample)
                 image = Image.fromarray(x_sample)
                 if p.scripts is not None:
-                    pp = scripts.PostprocessImageArgs(image)
+                    pp = modules.scripts.PostprocessImageArgs(image)
                     p.scripts.postprocess_image(p, pp)
                     image = pp.image
                 if p.color_corrections is not None and i < len(p.color_corrections):
@@ -832,6 +834,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             devices.torch_gc()
             shared.state.nextjob()
 
+        t1 = time.time()
+        shared.log.info(f'Processed: images={len(output_images)} time={t1 - t0:.2f}s its={(p.steps * len(output_images)) / (t1 - t0):.2f} memory={modules.memstats.memory_stats()}')
+
         p.color_corrections = None
         index_of_first_image = 0
         unwanted_grid_because_of_img_count = len(output_images) < 2 and shared.opts.grid_only_if_multiple
@@ -848,7 +853,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     images.save_image(grid, p.outpath_grids, "grid", p.all_seeds[0], p.all_prompts[0], shared.opts.grid_format, info=infotext(), short_filename=not shared.opts.grid_extended_filename, p=p, grid=True)
 
     if not p.disable_extra_networks and extra_network_data:
-        extra_networks.deactivate(p, extra_network_data)
+        modules.extra_networks.deactivate(p, extra_network_data)
 
     res = Processed(
         p,
@@ -905,7 +910,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if shared.backend == shared.Backend.DIFFUSERS:
-            sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
+            modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.TEXT_2_IMAGE)
 
         self.width = self.width or 512
         self.height = self.height or 512
@@ -953,7 +958,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             if not shared.opts.save or self.do_not_save_samples or not shared.opts.save_images_before_highres_fix:
                 return
             if not isinstance(image, Image.Image):
-                image = sd_samplers.sample_to_image(image, index, approximation=0)
+                image = modules.sd_samplers.sample_to_image(image, index, approximation=0)
             orig1 = self.extra_generation_params
             orig2 = self.restore_faces
             self.extra_generation_params = {}
@@ -964,10 +969,10 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], shared.opts.samples_format, info=info, suffix="-before-highres-fix")
 
         if shared.backend == shared.Backend.DIFFUSERS:
-            sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
+            modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.TEXT_2_IMAGE)
 
         self.ops.append('txt2img')
-        self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
+        self.sampler = modules.sd_samplers.create_sampler(self.sampler_name, self.sd_model)
         latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "None")
         if self.enable_hr and latent_scale_mode is None:
             if len([x for x in shared.sd_upscalers if x.name == self.hr_upscaler]) == 0:
@@ -1020,14 +1025,14 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             shared.state.nextjob()
             if self.latent_sampler == "PLMS":
                 self.latent_sampler = 'UniPC'
-            self.sampler = sd_samplers.create_sampler(self.latent_sampler or self.sampler_name, self.sd_model)
+            self.sampler = modules.sd_samplers.create_sampler(self.latent_sampler or self.sampler_name, self.sd_model)
             samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
             noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
             x = None
             devices.torch_gc() # GC now before running the next img2img to prevent running out of memory
-            sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio(for_hr=True))
+            modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio(for_hr=True))
             samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
-            sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio())
+            modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio())
             self.is_hr_pass = False
 
         return samples
@@ -1065,14 +1070,14 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if shared.backend == shared.Backend.DIFFUSERS and self.image_mask is None:
-            sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
+            modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
         elif shared.backend == shared.Backend.DIFFUSERS and self.image_mask is not None:
-            sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.INPAINTING)
+            modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.INPAINTING)
             self.sd_model.dtype = self.sd_model.unet.dtype
 
         if self.sampler_name == "PLMS":
             self.sampler_name = 'UniPC'
-        self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
+        self.sampler = modules.sd_samplers.create_sampler(self.sampler_name, self.sd_model)
 
         if self.image_mask is not None:
             self.ops.append('inpaint')
@@ -1089,8 +1094,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if self.inpaint_full_res:
                 self.mask_for_overlay = image_mask
                 mask = image_mask.convert('L')
-                crop_region = masking.get_crop_region(np.array(mask), self.inpaint_full_res_padding)
-                crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
+                crop_region = modules.masking.get_crop_region(np.array(mask), self.inpaint_full_res_padding)
+                crop_region = modules.masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
                 x1, y1, x2, y2 = crop_region
                 mask = mask.crop(crop_region)
                 image_mask = images.resize_image(3, mask, self.width, self.height)
@@ -1137,7 +1142,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.init_images = [image] # assign early for diffusers
             if image_mask is not None:
                 if self.inpainting_fill != 1:
-                    image = masking.fill(image, latent_mask)
+                    image = modules.masking.fill(image, latent_mask)
             if add_color_corrections:
                 self.color_corrections.append(setup_color_correction(image))
             image = np.array(image).astype(np.float32) / 255.0
@@ -1183,9 +1188,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
         if shared.backend == shared.Backend.DIFFUSERS:
             if self.init_mask is None: # pylint: disable=no-member
-                sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
+                modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
             else:
-                sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.INPAINTING)
+                modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.INPAINTING)
                 self.sd_model.dtype = self.sd_model.unet.dtype
 
         x = create_random_tensors([4, self.height // 8, self.width // 8], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)

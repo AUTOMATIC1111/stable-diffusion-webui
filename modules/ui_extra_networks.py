@@ -17,7 +17,7 @@ import modules.ui_symbols as symbols
 
 
 extra_pages = []
-allowed_dirs = set()
+allowed_dirs = []
 dir_cache = {} # key=path, value=(mtime, listdir(path))
 refresh_time = None
 
@@ -39,16 +39,21 @@ def register_page(page):
     # registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions
     extra_pages.append(page)
     allowed_dirs.clear()
-    allowed_dirs.update(set(sum([x.allowed_directories_for_previews() for x in extra_pages], [])))
+    for page in extra_pages:
+        for folder in page.allowed_directories_for_previews():
+            if folder not in allowed_dirs:
+                allowed_dirs.append(os.path.abspath(folder))
 
 
 def fetch_file(filename: str = ""):
-    if filename.startswith('html/'):
+    if not os.path.exists(filename):
+        return JSONResponse({ "error": f"file {filename}: not found" }, status_code=404)
+    if filename.startswith('html/') or filename.startswith('models/'):
         return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
-    if not any(Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs):
-        return JSONResponse({"error": f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages."})
+    if not any(Path(folder).absolute() in Path(filename).absolute().parents for folder in allowed_dirs):
+        return JSONResponse({ "error": f"file {filename}: must be in one of allowed directories" }, status_code=403)
     if os.path.splitext(filename)[1].lower() not in (".png", ".jpg", ".jpeg", ".webp"):
-        return JSONResponse({"error": f"File cannot be fetched: {filename}. Only png and jpg and webp."})
+        return JSONResponse({"error": f"file {filename}: not an image file"}, status_code=403)
     return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
 
 
@@ -362,7 +367,7 @@ def create_ui(container, button, tabname, skip_indexing = False):
     def refresh(title):
         res = []
         for page in extra_pages:
-            if title == '' or title == page.title:
+            if title == '' or title == page.title or len(page.html) == 0:
                 shared.log.debug(f"Refreshing Extra networks: page={page.title} tab={ui.tabname}")
                 page.refresh()
                 page.create_page(ui.tabname)

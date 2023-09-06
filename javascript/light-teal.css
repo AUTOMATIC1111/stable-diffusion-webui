@@ -1,44 +1,50 @@
 /* generic html tags */
 :root, .light, .dark {
-  --font: "Source Sans Pro", 'ui-sans-serif', 'system-ui', "Roboto", sans-serif;
-  --font-mono: 'IBM Plex Mono', 'ui-monospace', 'Consolas', monospace;
+  --font: 'system-ui', 'ui-sans-serif', 'system-ui', "Roboto", sans-serif;
+  --font-mono: 'ui-monospace', 'Consolas', monospace;
   --font-size: 16px;
   --left-column: 490px;
-  --highlight-color: #ce6400;
-  --inactive-color: #4e1400;
-  --background-color: #000000;
-  --primary-50: #fff7ed;
-  --primary-100: #ffedd5;
-  --primary-200: #fed7aa;
-  --primary-300: #fdba74;
-  --primary-400: #fb923c;
-  --primary-500: #f97316;
-  --primary-600: #ea580c;
-  --primary-700: #c2410c;
-  --primary-800: #9a3412;
-  --primary-900: #7c2d12;
-  --primary-950: #6c2e12;
-}
-.light, .dark {
+  --primary-50: #7dffff;
+  --primary-100: #72e8e8;
+  --primary-200: #67d2d2;
+  --primary-300: #5dbcbc;
+  --primary-400: #52a7a7;
+  --primary-500: #489292;
+  --primary-600: #3e7d7d;
+  --primary-700: #356969;
+  --primary-800: #2b5656;
+  --primary-900: #224444;
+  --primary-950: #193232;
+  --highlight-color: var(--primary-200);
+  --inactive-color: var(--primary--800);
+  --body-text-color: var(--neutral-800);
+  --body-text-color-subdued: var(--neutral-600);
+  --background-color: #FFFFFF;
+  --background-fill-primary: var(--neutral-400);
   --input-padding: 4px;
-  --radius-lg: 2px;
-  --radius-sm: 1px;
+  --input-background-fill: var(--neutral-300);
+  --input-shadow: 2px 2px 2px 2px var(--neutral-500);
+  --button-secondary-text-color: black;
+  --button-secondary-background-fill: linear-gradient(to bottom right, var(--neutral-200), var(--neutral-500));
+  --button-secondary-background-fill-hover: linear-gradient(to bottom right, var(--neutral-500), var(--neutral-200));
+  --block-title-text-color: var(--neutral-900);
+  --radius-sm: 2px;
+  --radius-lg: 4px;
   --spacing-md: 4px;
-  --spacing-xxl: 12px;
-  --line-sm: 1.3em;
-  --line-md: 1.3em;
+  --spacing-xxl: 8px;
+  --line-sm: 1.2em;
+  --line-md: 1.4em;
 }
 
 html { font-size: var(--font-size); }
 body, button, input, select, textarea { font-family: var(--font);}
 button { font-size: 1.2rem; max-width: 400px; }
 img { background-color: var(--background-color); }
-input[type=checkbox] { background-color: transparent !important; }
 input[type=range] { height: var(--line-sm); appearance: none; margin-top: 0; min-width: 160px; background-color: var(--background-color); width: 100%; background: transparent; }
-input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 18px; cursor: pointer; box-shadow: 2px 2px 3px #111111; background: var(--input-background-fill); border-radius: var(--radius-lg); border: 0px solid #222222; }
-input[type=range]::-moz-range-track { width: 100%; height: 18px; cursor: pointer; box-shadow: 2px 2px 3px #111111; background: var(--input-background-fill); border-radius: var(--radius-lg); border: 0px solid #222222; }
-input[type=range]::-webkit-slider-thumb { box-shadow: 2px 2px 3px #111111; border: 0px solid #000000; height: 18px; width: 40px; border-radius: var(--radius-lg); background: var(--highlight-color); cursor: pointer; appearance: none; margin-top: 0px; }
-input[type=range]::-moz-range-thumb { box-shadow: 2px 2px 3px #111111; border: 0px solid #000000; height: 18px; width: 40px; border-radius: var(--radius-lg); background: var(--highlight-color); cursor: pointer; appearance: none; margin-top: 0px; }
+input[type=range]::-webkit-slider-runnable-track { width: 100%; height: var(--line-sm); cursor: pointer; box-shadow: 2px 2px 3px #111111; background: var(--input-background-fill); border-radius: var(--radius-lg); border: 0px solid #222222; }
+input[type=range]::-moz-range-track { width: 100%; height: var(--line-sm); cursor: pointer; box-shadow: 2px 2px 3px #111111; background: var(--input-background-fill); border-radius: var(--radius-lg); border: 0px solid #222222; }
+input[type=range]::-webkit-slider-thumb { box-shadow: 2px 2px 3px #111111; border: 0px solid #000000; height: var(--line-sm); width: var(--line-sm); border-radius: var(--radius-lg); background: var(--highlight-color); cursor: pointer; appearance: none; margin-top: 0px; }
+input[type=range]::-moz-range-thumb { box-shadow: 2px 2px 3px #111111; border: 0px solid #000000; height: var(--line-sm); width: var(--line-sm); border-radius: var(--radius-lg); background: var(--highlight-color); cursor: pointer; appearance: none; margin-top: 0px; }
 ::-webkit-scrollbar { width: 12px; }
 ::-webkit-scrollbar-track { background: #333333; }
 ::-webkit-scrollbar-thumb { background-color: var(--highlight-color); border-radius: var(--radius-lg); border-width: 0; box-shadow: 2px 2px 3px #111111; }
@@ -70,11 +76,11 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .px-4 { padding-lefT: 1rem; padding-right: 1rem; }
 .py-6 { padding-bottom: 0; }
 .tabs { background-color: var(--background-color); }
-.block.token-counter span { background-color: #222 !important; box-shadow: 2px 2px 2px #111; border: none !important; font-size: 0.8rem; }
+.block.token-counter span { background-color: var(--input-background-fill) !important; box-shadow: 2px 2px 2px #111; border: none !important; font-size: 0.8rem; }
 .tab-nav { zoom: 120%; margin-bottom: 10px; border-bottom: 2px solid var(--highlight-color) !important; padding-bottom: 2px; }
 .label-wrap { margin: 16px 0px 8px 0px; }
 .gradio-slider input[type="number"] { width: 4.5em; font-size: 0.8rem; height: 20px; }
-.gradio-button.tool { border: none; background: none; box-shadow: none; }
+.gradio-button.tool { border: none; background: none; box-shadow: none; filter: hue-rotate(340deg) saturate(0.5); }
 #tab_extensions table td, #tab_extensions table th { border: none; padding: 0.5em; }
 #tab_extensions table { width: 96vw }
 #tab_extensions table thead { background-color: var(--neutral-700); }
@@ -85,7 +91,9 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .gallery-item { box-shadow: none !important; }
 .performance { color: #888; }
 .extra-networks { border-left: 2px solid var(--highlight-color) !important; padding-left: 4px; }
-.image-buttons { gap: 10px !important}
+.image-buttons { gap: 10px !important; justify-content: center; }
+.image-buttons > button { max-width: 160px; }
+#system_row > button, #settings_row > button, #config_row > button { max-width: 190px; }
 
 /* gradio elements overrides */
 #div.gradio-container { overflow-x: hidden; }
@@ -113,7 +121,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #txt2img_results, #img2img_results, #extras_results { background-color: var(--background-color); padding: 0; }
 #txt2img_settings { min-width: var(--left-column); max-width: var(--left-column); background-color: #111111; padding-top: 16px; }
 #pnginfo_html2_info { margin-top: -18px; background-color: var(--input-background-fill); padding: var(--input-padding) }
-.gradio-button.tool { filter: hue-rotate(180deg) saturate(0.5); }
 #txt2img_tools, #img2img_tools { margin-top: -4px; margin-bottom: -4px; }
 #txt2img_styles_row, #img2img_styles_row { margin-top: -6px; }
 
@@ -123,9 +130,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 /* based on gradio built-in dark theme */
 :root, .light, .dark {
   --body-background-fill: var(--background-color);
-  --body-text-color: var(--neutral-100);
   --color-accent-soft: var(--neutral-700);
-  --background-fill-primary: #222222;
   --background-fill-secondary: none;
   --border-color-accent: var(--background-color);
   --border-color-primary: var(--background-color);
@@ -133,7 +138,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --link-text-color: var(--secondary-500);
   --link-text-color-hover: var(--secondary-400);
   --link-text-color-visited: var(--secondary-600);
-  --body-text-color-subdued: var(--neutral-400);
   --shadow-spread: 1px;
   --block-background-fill: None;
   --block-border-color: var(--border-color-primary);
@@ -147,15 +151,14 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --block_title_background_fill: None;
   --block_title_border_color: None;
   --block_title_border_width: None;
-  --block-title-text-color: white;
   --panel-background-fill: var(--background-fill-secondary);
   --panel-border-color: var(--border-color-primary);
   --panel_border_width: None;
-  --checkbox-background-color: var(--neutral-800);
+  --checkbox-background-color: var(--neutral-500);
   --checkbox-background-color-focus: var(--checkbox-background-color);
   --checkbox-background-color-hover: var(--checkbox-background-color);
-  --checkbox-background-color-selected: var(--secondary-600);
-  --checkbox-border-color: var(--neutral-700);
+  --checkbox-background-color-selected: var(--primary-500);
+  --checkbox-border-color: transparent;
   --checkbox-border-color-focus: var(--secondary-500);
   --checkbox-border-color-hover: var(--neutral-600);
   --checkbox-border-color-selected: var(--primary-600);
@@ -172,7 +175,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --error-border-color: var(--border-color-primary);
   --error_border_width: None;
   --error-text-color: #ef4444;
-  --input-background-fill: var(--neutral-800);
   --input-background-fill-focus: var(--secondary-600);
   --input-background-fill-hover: var(--input-background-fill);
   --input-border-color: var(--border-color-primary);
@@ -180,7 +182,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --input-border-color-hover: var(--input-border-color);
   --input_border_width: None;
   --input-placeholder-color: var(--neutral-500);
-  --input-shadow: 2px 2px 2px 2px #111111;
   --input-shadow-focus: 2px 2px 2px 2px #111111;
   --loader_color: None;
   --slider_color: None;
@@ -202,11 +203,8 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --button-primary-border-color-hover: var(--button-primary-border-color);
   --button-primary-text-color: white;
   --button-primary-text-color-hover: var(--button-primary-text-color);
-  --button-secondary-background-fill: linear-gradient(to bottom right, var(--neutral-600), var(--neutral-800));
-  --button-secondary-background-fill-hover: linear-gradient(to bottom right, var(--neutral-600), var(--neutral-400));
   --button-secondary-border-color: var(--neutral-600);
   --button-secondary-border-color-hover: var(--button-secondary-border-color);
-  --button-secondary-text-color: white;
   --button-secondary-text-color-hover: var(--button-secondary-text-color);
   --secondary-50: #eff6ff;
   --secondary-100: #dbeafe;

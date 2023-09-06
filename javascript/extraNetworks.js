@@ -187,7 +187,7 @@ function setupExtraNetworksForTab(tabname) {
         gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset';
       } else if (window.opts.extra_networks_card_cover === 'sidebar') {
         en.style.transition = 'width 0.2s ease';
-        en.style.zIndex = 0;
+        en.style.zIndex = 9999;
         en.style.position = 'absolute';
         en.style.right = '0';
         en.style.width = `${window.opts.extra_networks_sidebar_width}vw`;

@@ -5,10 +5,14 @@
 One week later, another large update!
 
 - system:
-  - new default theme: **black-teal**
   - full **python 3.11** support  
     note that changing python version does require reinstall  
     and if you're already on python 3.10, really no need to upgrade  
+- themes:
+  - new default theme: **black-teal**
+  - new light theme: **light-teal**
+  - new additional theme: **midnight-barbie**  
+    thanks @nyxia  
 - extra networks:
   - support for **tags**  
     show tags on hover, search by tag, list tags, add to prompt, etc.  
@@ -44,8 +48,6 @@ One week later, another large update!
   - added **force zeros** setting  
     create zero-tensor for prompt if prompt is empty (positive or negative)  
 - general:
-  - new additional theme: **midnight-barbie**  
-    thanks @nyxia  
   - `rembg` remove backgrounds support for **is-net** model  
   - **settings** now show markers for all items set to non-default values  
   - **metadata** refactored how/what/when metadata is added to images  

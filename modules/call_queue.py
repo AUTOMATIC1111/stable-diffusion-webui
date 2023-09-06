@@ -47,10 +47,8 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
 def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
     def f(*args, extra_outputs_array=extra_outputs, **kwargs):
-        run_memmon = shared.opts.memmon_poll_rate > 0 and not shared.mem_mon.disabled and add_stats
-        if run_memmon:
-            shared.mem_mon.monitor()
         t = time.perf_counter()
+        shared.mem_mon.reset()
         try:
             if shared.cmd_opts.profile:
                 pr = cProfile.Profile()
@@ -83,18 +81,11 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
         elapsed = time.perf_counter() - t
         elapsed_m = int(elapsed // 60)
         elapsed_s = elapsed % 60
-        elapsed_text = f"{elapsed_s:.2f}s"
-        if elapsed_m > 0:
-            elapsed_text = f"{elapsed_m}m "+elapsed_text
-        if run_memmon:
-            mem_stats = {k: -(v//-(1024*1024)) for k, v in shared.mem_mon.stop().items()}
-            active_peak = mem_stats['active_peak']
-            reserved_peak = mem_stats['reserved_peak']
-            sys_peak = mem_stats['system_peak']
-            sys_total = mem_stats['total']
-            vram_html = f" | <p class='vram'>GPU active {active_peak} MB reserved {reserved_peak} MB | System peak {sys_peak} MB total {sys_total} MB</p>"
-        else:
-            vram_html = ''
-        res[-1] += f"<div class='performance'><p class='time'>Time taken: {elapsed_text}</p>{vram_html}</div>"
+        elapsed_text = f"{elapsed_m}m {elapsed_s:.2f}s" if elapsed_m > 0 else f"{elapsed_s:.2f}s"
+        vram_html = ''
+        if not shared.mem_mon.disabled:
+            vram = {k: -(v//-(1024*1024)) for k, v in shared.mem_mon.read().items()}
+            vram_html += f" | <p class='vram'>GPU active {max(vram['active_peak'], vram['reserved_peak'])} MB reserved {vram['reserved']} | used {vram['used']} MB free {vram['free']} MB total {vram['total']} MB | retries {vram['retries']} oom {vram['oom']}</p>"
+        res[-1] += f"<div class='performance'><p class='time'>Time: {elapsed_text}</p>{vram_html}</div>"
         return tuple(res)
     return f

@@ -378,7 +378,7 @@ options_templates.update(options_section(('optimizations', "Optimizations"), {
 }))
 
 options_templates.update(options_section(('cuda', "Compute Settings"), {
-    "memmon_poll_rate": OptionInfo(2, "VRAM usage polls per second during generation", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
+    # "memmon_poll_rate": OptionInfo(2, "VRAM usage polls per second during generation", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
     "precision": OptionInfo("Autocast", "Precision type", gr.Radio, lambda: {"choices": ["Autocast", "Full"]}),
     "cuda_dtype": OptionInfo("FP32" if sys.platform == "darwin" or cmd_opts.use_openvino else "BF16" if devices.backend == "ipex" else "FP16", "Device precision type", gr.Radio, lambda: {"choices": ["FP32", "FP16", "BF16"]}),
     "no_half": OptionInfo(False, "Use full precision for model (--no-half)", None, None, None),
@@ -825,8 +825,7 @@ devices.device, devices.device_interrogate, devices.device_gfpgan, devices.devic
 device = devices.device
 batch_cond_uncond = opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram
-mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
-mem_mon.start()
+mem_mon = modules.memmon.MemUsageMonitor("MemMon", devices.device)
 if devices.backend == "directml":
     directml_do_hijack()
 
@@ -916,7 +915,7 @@ def restart_server(restart=True):
         demo.server.close()
         demo.fns = []
         # os._exit(0)
-    except Exception as e:
+    except (Exception, BaseException) as e:
         log.error(f'Server shutdown error: {e}')
     if restart:
         log.info('Server will restart')

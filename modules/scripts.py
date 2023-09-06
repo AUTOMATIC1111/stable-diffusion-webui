@@ -276,6 +276,25 @@ def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
     return default
 
 
+class ScriptSummary:
+    def __init__(self, op):
+        self.start = time.time()
+        self.update = time.time()
+        self.op = op
+        self.time = {}
+
+    def record(self, script):
+        self.update = time.time()
+        self.time[script] = round(time.time() - self.update, 2)
+
+    def report(self):
+        total = sum(self.time.values())
+        if total == 0:
+            return
+        scripts = [f'{k}:{v}s' for k, v in self.time.items() if v > 0]
+        log.debug(f'Script: op={self.op} total={total}s scripts={scripts}')
+
+
 class ScriptRunner:
     def __init__(self):
         self.scripts = []
@@ -405,6 +424,7 @@ class ScriptRunner:
         return inputs
 
     def run(self, p, *args):
+        s = ScriptSummary('run')
         script_index = args[0]
         if script_index == 0:
             return None
@@ -412,117 +432,111 @@ class ScriptRunner:
         if script is None:
             return None
         parsed = p.per_script_args.get(script.title(), args[script.args_from:script.args_to])
-        t0 = time.time()
         processed = script.run(p, *parsed)
-        log.debug(f'Script run: {script.title()}:{round(time.time()-t0, 2)}s')
+        s.record(script.title())
+        s.report()
         return processed
 
     def process(self, p, **kwargs):
-        s = []
+        s = ScriptSummary('process')
         for script in self.alwayson_scripts:
             try:
-                t0 = time.time()
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
                 script.process(p, *args, **kwargs)
-                s.append(f'{script.title()}:{round(time.time()-t0, 2)}s')
             except Exception as e:
                 errors.display(e, f'Running script process: {script.filename}')
-        log.debug(f'Script process: {s}')
+            s.record(script.title())
+        s.report()
 
     def before_process_batch(self, p, **kwargs):
-        s = []
+        s = ScriptSummary('before-process-batch')
         for script in self.alwayson_scripts:
             try:
-                t0 = time.time()
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
                 script.before_process_batch(p, *args, **kwargs)
-                s.append(f'{script.title()}:{round(time.time()-t0, 2)}s')
             except Exception as e:
                 errors.display(e, f'Running script before process batch: {script.filename}')
-        log.debug(f'Script before-process-batch: {s}')
+            s.record(script.title())
+        s.report()
 
     def process_batch(self, p, **kwargs):
-        s = []
+        s = ScriptSummary('process-batch')
         for script in self.alwayson_scripts:
             try:
-                t0 = time.time()
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
                 script.process_batch(p, *args, **kwargs)
-                s.append(f'{script.title()}:{round(time.time()-t0, 2)}s')
             except Exception as e:
                 errors.display(e, f'Running script process batch: {script.filename}')
-        log.debug(f'Script process-batch: {s}')
+            s.record(script.title())
+        s.report()
 
     def postprocess(self, p, processed):
-        s = []
+        s = ScriptSummary('postprocess')
         for script in self.alwayson_scripts:
             try:
-                t0 = time.time()
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
                 script.postprocess(p, processed, *args)
-                s.append(f'{script.title()}:{round(time.time()-t0, 2)}s')
             except Exception as e:
                 errors.display(e, f'Running script postprocess: {script.filename}')
-        log.debug(f'Script postprocess: {s}')
+            s.record(script.title())
+        s.report()
 
     def postprocess_batch(self, p, images, **kwargs):
-        s = []
+        s = ScriptSummary('postprocess-batch')
         for script in self.alwayson_scripts:
             try:
-                t0 = time.time()
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
                 script.postprocess_batch(p, *args, images=images, **kwargs)
-                s.append(f'{script.title()}:{round(time.time()-t0, 2)}s')
             except Exception as e:
                 errors.display(e, f'Running script before postprocess batch: {script.filename}')
-        log.debug(f'Script postprocess-batch: {s}')
+            s.record(script.title())
+        s.report()
 
     def postprocess_batch_list(self, p, pp: PostprocessBatchListArgs, **kwargs):
-        s = []
+        s = ScriptSummary('postprocess-batch-list')
         for script in self.alwayson_scripts:
             try:
-                t0 = time.time()
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
                 script.postprocess_batch_list(p, pp, *args, **kwargs)
-                s.append(f'{script.title()}:{round(time.time()-t0, 2)}s')
             except Exception as e:
                 errors.display(e, f'Running script before postprocess batch list: {script.filename}')
-        log.debug(f'Script postprocess-batch-list: {s}')
+            s.record(script.title())
+        s.report()
 
     def postprocess_image(self, p, pp: PostprocessImageArgs):
-        s = []
+        s = ScriptSummary('postprocess-image')
         for script in self.alwayson_scripts:
             try:
-                t0 = time.time()
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
                 script.postprocess_image(p, pp, *args)
-                s.append(f'{script.title()}:{round(time.time()-t0, 2)}s')
             except Exception as e:
                 errors.display(e, f'Running script postprocess image: {script.filename}')
-        log.debug(f'Script postprocess-image: {s}')
+            s.record(script.title())
+        s.report()
 
     def before_component(self, component, **kwargs):
+        s = ScriptSummary('before-component')
         for script in self.scripts:
             try:
-                t0 = time.time()
                 script.before_component(component, **kwargs)
-                time_component[script.title()] = time_component.get(script.title(), 0) + (time.time()-t0)
             except Exception as e:
                 errors.display(e, f'Running script before component: {script.filename}')
+            s.record(script.title())
+        s.report()
 
     def after_component(self, component, **kwargs):
+        s = ScriptSummary('after-component')
         for script in self.scripts:
             try:
-                t0 = time.time()
                 script.after_component(component, **kwargs)
-                time_component[script.title()] = time_component.get(script.title(), 0) + (time.time()-t0)
             except Exception as e:
                 errors.display(e, f'Running script after component: {script.filename}')
+            s.record(script.title())
+        s.report()
 
     def reload_sources(self, cache):
-        s = []
+        s = ScriptSummary('reload-sources')
         for si, script in list(enumerate(self.scripts)):
-            t0 = time.time()
             args_from = script.args_from
             args_to = script.args_to
             filename = script.filename
@@ -536,8 +550,8 @@ class ScriptRunner:
                     self.scripts[si].filename = filename
                     self.scripts[si].args_from = args_from
                     self.scripts[si].args_to = args_to
-            s.append(f'{script.title()}:{round(time.time()-t0, 2)}s')
-        log.debug(f'Script reload-sources: {s}')
+            s.record(script.title())
+        s.report()
 
 
 scripts_txt2img: ScriptRunner = None
