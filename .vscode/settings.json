@@ -10,6 +10,5 @@
     "./repositories/stable-diffusion-stability-ai",
     "./repositories/stable-diffusion-stability-ai/ldm"
   ],
-  "python.analysis.typeCheckingMode": "off",
-  "editor.tabCompletion": "on"
+  "python.analysis.typeCheckingMode": "off"
 }
