@@ -481,12 +481,9 @@ class Img2ImgTaskHandler(TaskHandler):
                     shutil.copy(local, dst)
                 logger.debug(f'{local} copy to {dst}')
                 os.popen(f'touch {local} {dst}')
-                if model_info.type == ModelType.CheckPoint:
-                    basename = os.path.basename(model_info.key)
-                    sha256, _ = os.path.splitext(basename)
-                    checkpoint_info = CheckpointInfo(dst, sha256)
-                    checkpoint_info.register()
 
+                # 修改路径
+                task['select_script_nets'][i]['local'] = dst
             return True
         return False
 
@@ -505,6 +502,29 @@ class Img2ImgTaskHandler(TaskHandler):
         return local_models
 
     def _set_little_models(self, process_args):
+        select_script_nets = getattr(process_args, 'select_script_nets', [])
+        # 下拉脚本生效
+        if select_script_nets:
+            loras, embeddings = [], []
+            for net in select_script_nets:
+                dst = net['local']
+                model_info = ModelInfo(**net)
+                print(f'select script nets:{dst}')
+
+                if model_info.type == ModelType.CheckPoint:
+                    basename = os.path.basename(model_info.key)
+                    sha256, _ = os.path.splitext(basename)
+                    checkpoint_info = CheckpointInfo(dst, sha256)
+                    checkpoint_info.register()
+                elif model_info.type == ModelType.Embedding:
+                    embeddings.append(dst)
+                elif model_info.type == ModelType.Lora:
+                    loras.append(dst)
+            loras.extend(process_args.loras or [])
+            embeddings.extend(process_args.embedding or [])
+            process_args.loras = loras
+            process_args.embedding = embeddings
+
         if process_args.loras:
             # 设置LORA，具体实施在modules/exta_networks.py 中activate函数。
             sd_models.user_loras = self._get_local_loras(process_args.loras)
@@ -520,9 +540,7 @@ class Img2ImgTaskHandler(TaskHandler):
         if process_args.lycoris:
             pass
 
-
     def _exec_img2img(self, task: Task) -> typing.Iterable[TaskProgress]:
-
         base_model_path = self._get_local_checkpoint(task)
         load_sd_model_weights(base_model_path, task.model_hash)
         progress = TaskProgress.new_ready(task, f'model loaded, run i2i...')
