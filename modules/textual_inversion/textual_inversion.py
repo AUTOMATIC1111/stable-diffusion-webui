@@ -12,7 +12,7 @@ from modules import shared, devices, sd_hijack, processing, sd_models, images, s
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from modules.textual_inversion.image_embedding import embedding_to_b64, embedding_from_b64, insert_image_data_embed, extract_image_data_embed, caption_image_overlay
-from modules.textual_inversion.logging import save_settings_to_file
+from modules.textual_inversion.ti_logging import save_settings_to_file
 from modules.modelloader import directory_files, extension_filter, directory_mtime
 
 TextualInversionTemplate = namedtuple("TextualInversionTemplate", ["name", "path"])
@@ -53,9 +53,7 @@ class Embedding:
             "sd_checkpoint": self.sd_checkpoint,
             "sd_checkpoint_name": self.sd_checkpoint_name,
         }
-
         torch.save(embedding_data, filename)
-
         if shared.opts.save_optimizer_state and self.optimizer_state_dict is not None:
             optimizer_saved_dict = {
                 'hash': self.checksum(),
@@ -66,13 +64,11 @@ class Embedding:
     def checksum(self):
         if self.cached_checksum is not None:
             return self.cached_checksum
-
         def const_hash(a):
             r = 0
             for v in a:
                 r = (r * 281 ^ int(v) * 997) & 0xFFFFFFFF
             return r
-
         self.cached_checksum = f'{const_hash(self.vec.reshape(-1) * 100) & 0xffff:04x}'
         return self.cached_checksum
 
@@ -103,6 +99,7 @@ class EmbeddingDatabase:
         self.expected_shape = -1
         self.embedding_dirs = {}
         self.previously_displayed_embeddings = ()
+        self.embeddings_used = []
 
     def add_embedding_dir(self, path):
         self.embedding_dirs[path] = DirWithTextualInversionEmbeddings(path)
@@ -120,10 +117,10 @@ class EmbeddingDatabase:
         return embedding
 
     def get_expected_shape(self):
+        if shared.backend == shared.Backend.DIFFUSERS:
+            return 0
         if shared.sd_model is None:
             shared.log.error('Model not loaded')
-            return 0
-        if shared.backend == shared.Backend.DIFFUSERS:
             return 0
         vec = shared.sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
         return vec.shape[1]
@@ -139,9 +136,31 @@ class EmbeddingDatabase:
             return
         name = os.path.basename(fn)
         embedding = Embedding(vec=None, name=name)
+        embedding.filename = path
         try:
-            pipe.load_textual_inversion(path, cache_dir=shared.opts.diffusers_dir, local_files_only=True)
-            self.word_embeddings[name] = embedding
+            if hasattr(pipe,"load_textual_inversion"):
+                pipe.load_textual_inversion(path, cache_dir=shared.opts.diffusers_dir, local_files_only=True)
+            elif "safetensors" in path:
+                embeddings_dict = {}
+                from safetensors.torch import safe_open
+                with safe_open(path, framework="pt") as f:
+                    for k in f.keys():
+                        embeddings_dict[k] = f.get_tensor(k)
+                for i in range(len(embeddings_dict["clip_l"])):
+                    if i == 0:
+                        token = name
+                    else:
+                        token = f"{name}_{i}"
+                    pipe.tokenizer.add_tokens(token)
+                    token_id = pipe.tokenizer.convert_tokens_to_ids(token)
+                    pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
+                    pipe.text_encoder_2.resize_token_embeddings(len(pipe.tokenizer))
+                    pipe.text_encoder.get_input_embeddings().weight.data[token_id] = embeddings_dict["clip_l"][i]
+                    pipe.text_encoder_2.get_input_embeddings().weight.data[token_id] = embeddings_dict["clip_g"][i]
+            else:
+                raise NotImplementedError
+            # self.word_embeddings[name] = embedding
+            self.register_embedding(embedding, shared.sd_model)
         except Exception:
             self.skipped_embeddings[name] = embedding
         try:
@@ -188,10 +207,9 @@ class EmbeddingDatabase:
         # diffuser concepts
         elif type(data) == dict and type(next(iter(data.values()))) == torch.Tensor:
             if len(data.keys()) != 1:
-                shared.log.warning(f"Embedding file has multiple terms in it: {filename}")
-                shared.log.warning(f"Skipping embedding: {filename}")
+                # shared.log.warning(f"Skipping embedding: {filename} multiple keys found")
+                self.skipped_embeddings[name] = Embedding(None, name)
                 return
-
             emb = next(iter(data.values()))
             if len(emb.shape) == 1:
                 emb = emb.unsqueeze(0)
@@ -206,19 +224,19 @@ class EmbeddingDatabase:
         embedding.vectors = vec.shape[0]
         embedding.shape = vec.shape[-1]
         embedding.filename = path
-
         if self.expected_shape == -1 or self.expected_shape == embedding.shape:
             self.register_embedding(embedding, shared.sd_model)
         else:
             self.skipped_embeddings[name] = embedding
 
     def load_from_dir(self, embdir):
+        if sd_models.model_data.sd_model is None:
+            shared.log.info('Skipping embeddings load: model not loaded')
+            return
         if not os.path.isdir(embdir.path):
             return
-
         is_ext = extension_filter(['.PNG', '.WEBP', '.JXL', '.AVIF', '.BIN', '.PT', '.SAFETENSORS'])
-        is_not_preview = lambda fp: not next(iter(os.path.splitext(fp))).upper().endswith('.PREVIEW')
-
+        is_not_preview = lambda fp: not next(iter(os.path.splitext(fp))).upper().endswith('.PREVIEW') # pylint: disable=unnecessary-lambda-assignment
         for file_path in [*filter(lambda fp: is_ext(fp) and is_not_preview(fp), directory_files(embdir.path))]:
             try:
                 if os.stat(file_path).st_size == 0:
@@ -238,12 +256,11 @@ class EmbeddingDatabase:
                     break
             if not need_reload:
                 return
-
         self.ids_lookup.clear()
         self.word_embeddings.clear()
         self.skipped_embeddings.clear()
+        self.embeddings_used.clear()
         self.expected_shape = self.get_expected_shape()
-
         for embdir in self.embedding_dirs.values():
             self.load_from_dir(embdir)
             embdir.update()
@@ -257,7 +274,7 @@ class EmbeddingDatabase:
         displayed_embeddings = (tuple(self.word_embeddings.keys()), tuple(self.skipped_embeddings.keys()))
         if self.previously_displayed_embeddings != displayed_embeddings:
             self.previously_displayed_embeddings = displayed_embeddings
-            shared.log.info(f"Embeddings: loaded={len(self.word_embeddings)} skipped={len(self.skipped_embeddings)}")
+            shared.log.info(f"Loaded embeddings: loaded={len(self.word_embeddings)} skipped={len(self.skipped_embeddings)}")
 
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]

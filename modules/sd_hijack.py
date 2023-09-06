@@ -200,7 +200,7 @@ class StableDiffusionModelHijack:
                 torch._dynamo.config.suppress_errors = opts.cuda_compile_errors # pylint: disable=protected-access
                 torch.backends.cudnn.benchmark = True
                 if opts.cuda_compile_backend == 'hidet':
-                    import hidet
+                    import hidet # pylint: disable=import-error
                     hidet.torch.dynamo_config.use_tensor_core(True)
                     hidet.torch.dynamo_config.search_space(2)
                 m.model = torch.compile(m.model, mode=opts.cuda_compile_mode, backend=opts.cuda_compile_backend, fullgraph=opts.cuda_compile_fullgraph, dynamic=False)
@@ -209,7 +209,6 @@ class StableDiffusionModelHijack:
                 shared.log.warning(f"Model compile not supported: {err}")
 
         self.optimization_method = apply_optimizations()
-
         self.clip = m.cond_stage_model
 
         def flatten(el):
@@ -226,20 +225,16 @@ class StableDiffusionModelHijack:
             return # not ldm model
         if type(m.cond_stage_model) == xlmr.BertSeriesModelWithTransformation:
             m.cond_stage_model = m.cond_stage_model.wrapped
-
         elif type(m.cond_stage_model) == sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords:
             m.cond_stage_model = m.cond_stage_model.wrapped
-
             model_embeddings = m.cond_stage_model.transformer.text_model.embeddings
             if type(model_embeddings.token_embedding) == EmbeddingsWithFixes:
                 model_embeddings.token_embedding = model_embeddings.token_embedding.wrapped
         elif type(m.cond_stage_model) == sd_hijack_open_clip.FrozenOpenCLIPEmbedderWithCustomWords:
             m.cond_stage_model.wrapped.model.token_embedding = m.cond_stage_model.wrapped.model.token_embedding.wrapped
             m.cond_stage_model = m.cond_stage_model.wrapped
-
         undo_optimizations()
         undo_weighted_forward(m)
-
         self.apply_circular(False)
         self.layers = None
         self.clip = None
@@ -247,9 +242,7 @@ class StableDiffusionModelHijack:
     def apply_circular(self, enable):
         if self.circular_enabled == enable:
             return
-
         self.circular_enabled = enable
-
         for layer in [layer for layer in self.layers if type(layer) == torch.nn.Conv2d]:
             layer.padding_mode = 'circular' if enable else 'zeros'
 
@@ -318,5 +311,4 @@ ldm.models.diffusion.ddim.DDIMSampler.register_buffer = register_buffer
 ldm.models.diffusion.plms.PLMSSampler.register_buffer = register_buffer
 
 # Ensure samping from Guassian for DDPM follows types
-if not devices.backend == 'ipex':
-    ldm.modules.distributions.distributions.DiagonalGaussianDistribution.sample = lambda self: self.mean.to(self.parameters.dtype) + self.std.to(self.parameters.dtype) * torch.randn(self.mean.shape, dtype=self.parameters.dtype).to(device=self.parameters.device)
+ldm.modules.distributions.distributions.DiagonalGaussianDistribution.sample = lambda self: self.mean.to(self.parameters.dtype) + self.std.to(self.parameters.dtype) * torch.randn(self.mean.shape, dtype=self.parameters.dtype).to(device=self.parameters.device)

@@ -8,7 +8,6 @@ from urllib.parse import urlparse
 from enum import Enum
 import gradio as gr
 import tqdm
-import requests
 import fasteners
 from modules import errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
@@ -288,6 +287,7 @@ def disable_extensions():
 
 
 def refresh_themes():
+    import requests
     try:
         req = requests.get('https://huggingface.co/datasets/freddyaboulton/gradio-theme-subdomains/resolve/main/subdomains.json', timeout=5)
         if req.status_code == 200:
@@ -348,8 +348,8 @@ elif devices.backend == "rocm":
 else: # cuda
     cross_attention_optimization_default ="Scaled-Dot-Product"
 
-options_templates.update(options_section(('sd', "Stable Diffusion"), {
-    "sd_backend": OptionInfo("diffusers" if cmd_opts.use_openvino else "original", "Stable Diffusion backend", gr.Radio, lambda: {"choices": ["original", "diffusers"] }),
+options_templates.update(options_section(('sd', "Execution & Models"), {
+    "sd_backend": OptionInfo("diffusers" if cmd_opts.use_openvino else "original", "Execution backend", gr.Radio, lambda: {"choices": ["original", "diffusers"] }),
     "sd_checkpoint_autoload": OptionInfo(True, "Model autoload on server start"),
     "sd_model_checkpoint": OptionInfo(default_checkpoint, "Base model", gr.Dropdown, lambda: {"choices": list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "sd_model_refiner": OptionInfo('None', "Refiner model", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
@@ -378,7 +378,7 @@ options_templates.update(options_section(('optimizations', "Optimizations"), {
 }))
 
 options_templates.update(options_section(('cuda', "Compute Settings"), {
-    "memmon_poll_rate": OptionInfo(2, "VRAM usage polls per second during generation", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
+    # "memmon_poll_rate": OptionInfo(2, "VRAM usage polls per second during generation", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
     "precision": OptionInfo("Autocast", "Precision type", gr.Radio, lambda: {"choices": ["Autocast", "Full"]}),
     "cuda_dtype": OptionInfo("FP32" if sys.platform == "darwin" or cmd_opts.use_openvino else "BF16" if devices.backend == "ipex" else "FP16", "Device precision type", gr.Radio, lambda: {"choices": ["FP32", "FP16", "BF16"]}),
     "no_half": OptionInfo(False, "Use full precision for model (--no-half)", None, None, None),
@@ -392,9 +392,9 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cudnn_benchmark": OptionInfo(False, "Enable full-depth cuDNN benchmark feature"),
     # "cuda_allow_tf32": OptionInfo(True, "Allow TF32 math ops"),
     # "cuda_allow_tf16_reduced": OptionInfo(True, "Allow TF16 reduced precision math ops"),
-    "cuda_compile": OptionInfo(True if cmd_opts.use_openvino else False, "Enable model compile (experimental)"),
-    "cuda_compile_backend": OptionInfo("openvino_fx" if cmd_opts.use_openvino else "none", "Model compile backend (experimental)", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx']}),
-    "cuda_compile_mode": OptionInfo("default", "Model compile mode (experimental)", gr.Radio, lambda: {"choices": ['default', 'reduce-overhead', 'max-autotune']}),
+    "cuda_compile": OptionInfo(True if cmd_opts.use_openvino else False, "Enable model compile"),
+    "cuda_compile_backend": OptionInfo("openvino_fx" if cmd_opts.use_openvino else "none", "Model compile backend", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx']}),
+    "cuda_compile_mode": OptionInfo("default", "Model compile mode", gr.Radio, lambda: {"choices": ['default', 'reduce-overhead', 'max-autotune']}),
     "cuda_compile_fullgraph": OptionInfo(False, "Model compile fullgraph"),
     "cuda_compile_precompile": OptionInfo(False, "Model compile precompile"),
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
@@ -448,64 +448,66 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
 options_templates.update(options_section(('saving-images', "Image Options"), {
     "samples_save": OptionInfo(True, "Always save all generated images"),
     "samples_format": OptionInfo('jpg', 'File format for generated images', gr.Dropdown, lambda: {"choices": ["jpg", "png", "webp", "tiff", "jp2"]}),
-    "image_metadata": OptionInfo(True, "Include metadata in saved images"),
-    "image_watermark_enabled": OptionInfo(False, "Include watermark in saved images"),
-    "image_watermark": OptionInfo('', "Image watermark string"),
-    "samples_filename_pattern": OptionInfo("[seq]-[prompt_words]", "Images filename pattern", component_args=hide_dirs),
-    "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 99, "step": 1, **hide_dirs}),
-    "save_images_add_number": OptionInfo(True, "Add number to filename when saving", component_args=hide_dirs),
+    "jpeg_quality": OptionInfo(90, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
+    "img_max_size_mp": OptionInfo(250, "Maximum allowed image size in megapixels", gr.Number),
+    "webp_lossless": OptionInfo(False, "Use lossless compression for webp images"),
+    "save_selected_only": OptionInfo(True, "When using 'Save' button, only save a single selected image"),
     "samples_save_zip": OptionInfo(True, "Create zip archive when downloading multiple images"),
-    "grid_save": OptionInfo(True, "Always save all generated image grids"),
-    "grid_format": OptionInfo('jpg', 'File format for grids', gr.Dropdown, lambda: {"choices": ["jpg", "png", "webp", "tiff", "jp2"]}),
-    "grid_extended_filename": OptionInfo(True, "Add extended info (seed, prompt) to filename when saving grid"),
-    "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
-    "grid_prevent_empty_spots": OptionInfo(True, "Prevent empty spots in grid (when set to autodetect)"),
-    "n_rows": OptionInfo(-1, "Grid row count", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
+
+    "image_sep_metadata": OptionInfo("<h2>Metadata/Logging</h2>", "", gr.HTML),
+    "image_metadata": OptionInfo(True, "Include metadata in saved images"),
     "save_txt": OptionInfo(False, "Create text file next to every image with generation parameters"),
     "save_log_fn": OptionInfo("", "Create JSON log file for each saved image", component_args=hide_dirs),
+    "image_watermark_enabled": OptionInfo(False, "Include watermark in saved images"),
+    "image_watermark": OptionInfo('', "Image watermark string"),
+    "image_sep_grid": OptionInfo("<h2>Grid Options</h2>", "", gr.HTML),
+    "grid_save": OptionInfo(True, "Always save all generated image grids"),
+    "grid_format": OptionInfo('jpg', 'File format for grids', gr.Dropdown, lambda: {"choices": ["jpg", "png", "webp", "tiff", "jp2"]}),
+    "n_rows": OptionInfo(-1, "Grid row count", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
+    "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
+    "grid_prevent_empty_spots": OptionInfo(True, "Prevent empty spots in grid (when set to autodetect)"),
+
+    "save_sep_options": OptionInfo("<h2>Intermediate Image Saving</h2>", "", gr.HTML),
+    "save_init_img": OptionInfo(True, "Save copy of img2img init images (helps track workflow)"),
     "save_images_before_highres_fix": OptionInfo(False, "Save copy of image before applying highres fix"),
     "save_images_before_refiner": OptionInfo(False, "Save copy of image before running refiner"),
     "save_images_before_face_restoration": OptionInfo(False, "Save copy of image before doing face restoration"),
     "save_images_before_color_correction": OptionInfo(False, "Save copy of image before applying color correction"),
     "save_mask": OptionInfo(False, "Save copy of the inpainting greyscale mask"),
     "save_mask_composite": OptionInfo(False, "Save copy of inpainting masked composite"),
-    "save_init_img": OptionInfo(False, "Save copy of processing init images"),
-    "jpeg_quality": OptionInfo(90, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
-    "webp_lossless": OptionInfo(False, "Use lossless compression for webp images"),
-    "img_max_size_mp": OptionInfo(250, "Maximum allowed image size in megapixels", gr.Number),
+
+}))
+
+options_templates.update(options_section(('saving-paths', "Image Naming & Paths"), {
+    "saving_sep_images": OptionInfo("<h2>Images</h2>", "", gr.HTML),
+    "save_images_add_number": OptionInfo(True, "Add number to filename when saving", component_args=hide_dirs),
     "use_original_name_batch": OptionInfo(True, "Use original name for output filename during batch process"),
     "use_upscaler_name_as_suffix": OptionInfo(True, "Use upscaler name as filename suffix in the extras tab"),
-    "save_selected_only": OptionInfo(True, "When using 'Save' button, only save a single selected image"),
+    "samples_filename_pattern": OptionInfo("[seq]-[prompt_words]", "Images filename pattern", component_args=hide_dirs),
+
+    "outdir_sep_dirs": OptionInfo("<h2>Directories</h2>", "", gr.HTML),
     "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
-    "grid_save_to_dirs": OptionInfo(False, "Save grids to a subdirectory"),
     "use_save_to_dirs_for_ui": OptionInfo(False, "Save images to a subdirectory when using Save button"),
     "directories_filename_pattern": OptionInfo("[date]", "Directory name pattern", component_args=hide_dirs),
-}))
-
-options_templates.update(options_section(('image-processing', "Image Processing"), {
-    "img2img_color_correction": OptionInfo(False, "Apply color correction to match original colors"),
-    "img2img_fix_steps": OptionInfo(False, "For image processing do exact number of steps as specified"),
-    "img2img_background_color": OptionInfo("#ffffff", "Image transparent color fill", ui_components.FormColorPicker, {}),
-    "inpainting_mask_weight": OptionInfo(1.0, "Inpainting conditioning mask strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    "initial_noise_multiplier": OptionInfo(1.0, "Noise multiplier for image processing", gr.Slider, {"minimum": 0.1, "maximum": 1.5, "step": 0.01}),
-    "CLIP_stop_at_last_layers": OptionInfo(1, "Clip skip", gr.Slider, {"minimum": 1, "maximum": 8, "step": 1, "visible": False}),
-}))
-
-
-options_templates.update(options_section(('saving-paths', "Image Paths"), {
+    "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 99, "step": 1, **hide_dirs}),
     "outdir_samples": OptionInfo("", "Output directory for images", component_args=hide_dirs),
     "outdir_txt2img_samples": OptionInfo("outputs/text", 'Output directory for txt2img images', component_args=hide_dirs),
     "outdir_img2img_samples": OptionInfo("outputs/image", 'Output directory for img2img images', component_args=hide_dirs),
     "outdir_extras_samples": OptionInfo("outputs/extras", 'Output directory for images from extras tab', component_args=hide_dirs),
+    "outdir_save": OptionInfo("outputs/save", "Directory for saving images using the Save button", component_args=hide_dirs),
+    "outdir_init_images": OptionInfo("outputs/init-images", "Directory for saving init images when using img2img", component_args=hide_dirs),
+
+    "outdir_sep_grids": OptionInfo("<h2>Grids</h2>", "", gr.HTML),
+    "grid_extended_filename": OptionInfo(True, "Add extended info (seed, prompt) to filename when saving grid"),
+    "grid_save_to_dirs": OptionInfo(False, "Save grids to a subdirectory"),
     "outdir_grids": OptionInfo("", "Output directory for grids", component_args=hide_dirs),
     "outdir_txt2img_grids": OptionInfo("outputs/grids", 'Output directory for txt2img grids', component_args=hide_dirs),
     "outdir_img2img_grids": OptionInfo("outputs/grids", 'Output directory for img2img grids', component_args=hide_dirs),
-    "outdir_save": OptionInfo("outputs/save", "Directory for saving images using the Save button", component_args=hide_dirs),
-    "outdir_init_images": OptionInfo("outputs/init-images", "Directory for saving init images when using img2img", component_args=hide_dirs),
+
 }))
 
 options_templates.update(options_section(('ui', "User Interface"), {
-    "gradio_theme": OptionInfo("black-orange", "UI theme", gr.Dropdown, lambda: {"choices": list_themes()}, refresh=refresh_themes),
+    "gradio_theme": OptionInfo("black-teal", "UI theme", gr.Dropdown, lambda: {"choices": list_themes()}, refresh=refresh_themes),
     "theme_style": OptionInfo("Auto", "Theme mode", gr.Radio, {"choices": ["Auto", "Dark", "Light"]}),
     "tooltips": OptionInfo("UI Tooltips", "UI tooltips", gr.Radio, {"choices": ["None", "Browser default", "UI tooltips"]}),
     "return_grid": OptionInfo(True, "Show grid in results for web"),
@@ -518,9 +520,7 @@ options_templates.update(options_section(('ui', "User Interface"), {
     "keyedit_precision_attention": OptionInfo(0.1, "Ctrl+up/down precision when editing (attention:1.1)", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_delimiters": OptionInfo(".,\/!?%^*;:{}=`~()", "Ctrl+up/down word delimiters"), # pylint: disable=anomalous-backslash-in-string
-    "quicksettings_list": OptionInfo(["sd_model_checkpoint"], "Quicksettings list", ui_components.DropdownMulti, lambda: {"choices": list(opts.data_labels.keys())}),
-    # "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": list(tab_names)}),
-    # "ui_tab_reorder": OptionInfo("From Text, From Image, Process Image", "UI tabs order"),
+    "quicksettings_list": OptionInfo(["sd_model_checkpoint"] if backend == Backend.ORIGINAL else ["sd_model_checkpoint", "sd_model_refiner"], "Quicksettings list", ui_components.DropdownMulti, lambda: {"choices": list(opts.data_labels.keys())}),
     "ui_scripts_reorder": OptionInfo("", "UI scripts order"),
 }))
 
@@ -540,8 +540,6 @@ options_templates.update(options_section(('live-preview', "Live Previews"), {
 
 options_templates.update(options_section(('sampler-params', "Sampler Settings"), {
     "show_samplers": OptionInfo(["Default", "Euler a", "UniPC", "DEIS", "DDIM", "DPM 1S", "DPM 2M", "DPM++ 2M SDE", "DPM++ 2M SDE Karras", "DPM2 Karras", "DPM++ 2M Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers() if x.name != "PLMS"]}),
-    # "fallback_sampler": OptionInfo("Euler a", "Secondary sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
-    # "force_latent_sampler": OptionInfo("None", "Force latent upscaler sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
     'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "bh2", "vary_coeff"]}),
     'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}),
     'eta_noise_seed_delta': OptionInfo(0, "Noise seed delta (eta)", gr.Number, {"precision": 0}),
@@ -576,7 +574,30 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
 options_templates.update(options_section(('postprocessing', "Postprocessing"), {
     'postprocessing_enable_in_main_ui': OptionInfo([], "Enable addtional postprocessing operations", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
     'postprocessing_operation_order': OptionInfo([], "Postprocessing operation order", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
+    # "use_old_hires_fix_width_height": OptionInfo(False, "Hires fix uses width & height to set final resolution"),
+    # "dont_fix_second_order_samplers_schedule": OptionInfo(False, "Do not fix prompt schedule for second order samplers"),
+
+    "postprocessing_sep_img2img": OptionInfo("<h2>Img2Img & Inpainting</h2>", "", gr.HTML),
+    "img2img_color_correction": OptionInfo(False, "Apply color correction to match original colors"),
+    "img2img_fix_steps": OptionInfo(False, "For image processing do exact number of steps as specified"),
+    "img2img_background_color": OptionInfo("#ffffff", "Image transparent color fill", ui_components.FormColorPicker, {}),
+    "inpainting_mask_weight": OptionInfo(1.0, "Inpainting conditioning mask strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    "initial_noise_multiplier": OptionInfo(1.0, "Noise multiplier for image processing", gr.Slider, {"minimum": 0.1, "maximum": 1.5, "step": 0.01}),
+    "CLIP_stop_at_last_layers": OptionInfo(1, "Clip skip", gr.Slider, {"minimum": 1, "maximum": 8, "step": 1, "visible": False}),
+
+    "postprocessing_sep_face_restoration": OptionInfo("<h2>Face Restoration</h2>", "", gr.HTML),
+    "face_restoration_model": OptionInfo("CodeFormer", "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
+    "code_former_weight": OptionInfo(0.2, "CodeFormer weight parameter", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
+    "face_restoration_unload": OptionInfo(False, "Move face restoration model from VRAM into RAM after processing"),
+
+    "postprocessing_sep_upscalers": OptionInfo("<h2>Upscaling</h2>", "", gr.HTML),
     'upscaling_max_images_in_cache': OptionInfo(5, "Maximum number of images in upscaling cache", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
+    "upscaler_for_img2img": OptionInfo("None", "Default upscaler for image resize operations", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers]}),
+    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Real-ESRGAN available models", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
+    "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
+    "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap in pixels for ESRGAN upscalers", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
+    "SCUNET_tile": OptionInfo(256, "Tile size for SCUNET upscalers", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
+    "SCUNET_tile_overlap": OptionInfo(8, "Tile overlap for SCUNET upscalers", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),
 }))
 
 options_templates.update(options_section(('training', "Training"), {
@@ -609,36 +630,19 @@ options_templates.update(options_section(('interrogate', "Interrogate"), {
     "deepbooru_filter_tags": OptionInfo("", "Filter out tags from deepbooru output"),
 }))
 
-options_templates.update(options_section(('upscaling', "Upscaling"), {
-    "face_restoration_model": OptionInfo("CodeFormer", "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
-    "code_former_weight": OptionInfo(0.2, "CodeFormer weight parameter", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
-    "face_restoration_unload": OptionInfo(False, "Move face restoration model from VRAM into RAM after processing"),
-    "upscaler_for_img2img": OptionInfo("None", "Default upscaler for image resize operations", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers]}),
-    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Real-ESRGAN available models", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
-    "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
-    "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap in pixels for ESRGAN upscalers", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
-    "SCUNET_tile": OptionInfo(256, "Tile size for SCUNET upscalers", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
-    "SCUNET_tile_overlap": OptionInfo(8, "Tile overlap for SCUNET upscalers", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),
-    "use_old_hires_fix_width_height": OptionInfo(False, "Hires fix uses width & height to set final resolution"),
-    "dont_fix_second_order_samplers_schedule": OptionInfo(False, "Do not fix prompt schedule for second order samplers"),
-}))
-
 options_templates.update(options_section(('extra_networks', "Extra Networks"), {
-    "ui_extra_networks_tab_reorder": OptionInfo("Checkpoints, Lora, LyCORIS, Textual Inversion, Hypernetworks", "Extra networks tab order"),
     "extra_networks_card_cover": OptionInfo("sidebar", "UI position", gr.Radio, lambda: {"choices": ["cover", "inline", "sidebar"]}),
     "extra_networks_height": OptionInfo(53, "UI height (%)", gr.Slider, {"minimum": 10, "maximum": 100, "step": 1}),
     "extra_networks_sidebar_width": OptionInfo(35, "UI sidebar width (%)", gr.Slider, {"minimum": 10, "maximum": 80, "step": 1}),
     "extra_networks_card_lazy": OptionInfo(True, "UI card preview lazy loading"),
-    "extra_networks_card_size": OptionInfo(200, "UI card size (px)", gr.Slider, {"minimum": 20, "maximum": 2000, "step": 1}),
+    "extra_networks_card_size": OptionInfo(160, "UI card size (px)", gr.Slider, {"minimum": 20, "maximum": 2000, "step": 1}),
     "extra_networks_card_square": OptionInfo(True, "UI disable variable aspect ratio"),
     "extra_networks_card_fit": OptionInfo("cover", "UI image contain method", gr.Radio, lambda: {"choices": ["contain", "cover", "fill"]}),
     "extra_network_skip_indexing": OptionInfo(False, "Do not automatically build extra network pages", gr.Checkbox),
     "lyco_patch_lora": OptionInfo(False, "Use LyCoris handler for all LoRA types", gr.Checkbox),
-    # "lora_disable": OptionInfo(False, "Disable built-in Lora handler", gr.Checkbox, { "visible": True }, onchange=disable_extensions),
     "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple LoRA", gr.Checkbox),
-    "extra_networks_add_text_separator": OptionInfo(" ", "Extra text to add before <...> when adding extra network to prompt", gr.Text, { "visible": False }),
     "extra_networks_default_multiplier": OptionInfo(1.0, "Multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: {"choices": ["None"] + list(hypernetworks.keys())}, refresh=reload_hypernetworks),
+    "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: { "choices": ["None"] + list(hypernetworks.keys()), "visible": False }, refresh=reload_hypernetworks),
 }))
 
 options_templates.update(options_section((None, "Hidden options"), {
@@ -763,7 +767,7 @@ class Options:
         d = {k: self.data.get(k, self.data_labels.get(k).default) for k in self.data_labels.keys()}
         metadata = {
             k: {
-                "is_stored": k in self.data,
+                "is_stored": k in self.data and self.data[k] != self.data_labels[k].default,
                 "tab_name": v.section[0]
             } for k, v in self.data_labels.items()
         }
@@ -815,14 +819,13 @@ opts.data['uni_pc_lower_order_final'] = opts.schedulers_use_loworder
 opts.data['uni_pc_order'] = opts.schedulers_solver_order
 log.info(f'Engine: backend={backend}')
 
-prompt_styles = modules.styles.StyleDatabase(opts.styles_dir)
+prompt_styles = modules.styles.StyleDatabase(opts)
 cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or (cmd_opts.server_name or False)) and not cmd_opts.insecure
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_esrgan, devices.device_codeformer = (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'esrgan', 'codeformer'])
 device = devices.device
 batch_cond_uncond = opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram
-mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
-mem_mon.start()
+mem_mon = modules.memmon.MemUsageMonitor("MemMon", devices.device)
 if devices.backend == "directml":
     directml_do_hijack()
 
@@ -912,7 +915,7 @@ def restart_server(restart=True):
         demo.server.close()
         demo.fns = []
         # os._exit(0)
-    except Exception as e:
+    except (Exception, BaseException) as e:
         log.error(f'Server shutdown error: {e}')
     if restart:
         log.info('Server will restart')

@@ -3,7 +3,8 @@ import numpy as np
 import gradio as gr
 from modules import scripts_postprocessing, shared
 from modules.ui_components import FormRow, ToolButton
-from modules.ui import switch_values_symbol
+import modules.ui_symbols as symbols
+
 
 upscale_cache = {}
 
@@ -26,7 +27,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
                             with gr.Row(elem_id="upscaling_column_size", scale=4):
                                 upscaling_resize_w = gr.Slider(minimum=64, maximum=4096, step=8, label="Width", value=512, elem_id="extras_upscaling_resize_w")
                                 upscaling_resize_h = gr.Slider(minimum=64, maximum=4096, step=8, label="Height", value=512, elem_id="extras_upscaling_resize_h")
-                                upscaling_res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="upscaling_res_switch_btn")
+                                upscaling_res_switch_btn = ToolButton(value=symbols.switch, elem_id="upscaling_res_switch_btn")
                                 upscaling_crop = gr.Checkbox(label='Crop to fit', value=True, elem_id="extras_upscaling_crop")
 
             with FormRow():
@@ -114,7 +115,6 @@ class ScriptPostprocessingUpscaleSimple(ScriptPostprocessingUpscale):
         with FormRow():
             upscaler_name = gr.Dropdown(label='Upscaler', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
             upscale_by = gr.Slider(minimum=0.05, maximum=8.0, step=0.05, label="Upscale by", value=2)
-
         return {
             "upscale_by": upscale_by,
             "upscaler_name": upscaler_name,
@@ -123,10 +123,8 @@ class ScriptPostprocessingUpscaleSimple(ScriptPostprocessingUpscale):
     def process(self, pp: scripts_postprocessing.PostprocessedImage, upscale_by=2.0, upscaler_name=None): # pylint: disable=arguments-differ
         if upscaler_name is None or upscaler_name == "None":
             return
-
         upscaler1 = next(iter([x for x in shared.sd_upscalers if x.name == upscaler_name]), None)
         if upscaler1 is None:
             shared.log.debug(f"Upscaler not found: {upscaler_name}")
-
         pp.image = self.upscale(pp.image, pp.info, upscaler1, 0, upscale_by, 0, 0, False)
         pp.info["Postprocess upscaler"] = upscaler1.name

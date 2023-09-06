@@ -1,51 +1,18 @@
-from __future__ import annotations
 import os
-import re
 import sys
 import glob
 import signal
 import asyncio
 import logging
-import warnings
 import importlib
 from threading import Thread
-import urllib3
+import modules.loader
+import torch # pylint: disable=wrong-import-order
 from modules import timer, errors, paths # pylint: disable=unused-import
 
-startup_timer = timer.Timer()
 local_url = None
-
-logging.getLogger("DeepSpeed").disabled = True
-import torch # pylint: disable=C0411
-try:
-    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-except Exception:
-    pass
-errors.log.debug(f'Loaded Torch=={torch.__version__}')
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-import torchvision # pylint: disable=W0611,C0411
-import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them # pylint: disable=W0611,C0411
-if ".dev" in torch.__version__ or "+git" in torch.__version__:
-    torch.__long_version__ = torch.__version__
-    torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
-logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
-logging.getLogger("pytorch_lightning").disabled = True
-warnings.filterwarnings(action="ignore", category=DeprecationWarning)
-warnings.filterwarnings(action="ignore", category=FutureWarning)
-warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
-startup_timer.record("torch")
-
-from fastapi import FastAPI # pylint: disable=W0611,C0411
-import gradio # pylint: disable=W0611,C0411
-errors.log.debug(f'Loaded Gradio=={gradio.__version__}')
-startup_timer.record("gradio")
-errors.install([gradio])
-
-import diffusers # pylint: disable=W0611,C0411
-errors.log.debug(f'Loaded Diffusers=={diffusers.__version__}')
-startup_timer.record("diffusers")
-
-errors.log.debug('Loading Modules')
+if not modules.loader.initialized:
+    errors.log.debug('Loading modules')
 from installer import log, setup_logging, git_commit
 import ldm.modules.encoders.modules # pylint: disable=W0611,C0411,E0401
 from modules.call_queue import queue_lock, wrap_queued_call, wrap_gradio_gpu_call # pylint: disable=W0611,C0411,C0412
@@ -71,10 +38,12 @@ import modules.ui
 from modules.shared import cmd_opts, opts
 import modules.hypernetworks.hypernetwork
 from modules.middleware import setup_middleware
-startup_timer.record("libraries")
-log.info('Libraries loaded')
-log.setLevel(logging.DEBUG if cmd_opts.debug else logging.INFO)
-logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
+
+if not modules.loader.initialized:
+    timer.startup.record("libraries")
+    log.info('Loaded librareis')
+    log.setLevel(logging.DEBUG if cmd_opts.debug else logging.INFO)
+    logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
 if cmd_opts.server_name:
     server_name = cmd_opts.server_name
 else:
@@ -92,7 +61,7 @@ fastapi_args = {
         "deepLinking": False,
     }
 }
-
+modules.loader.initialized = True
 
 def check_rollback_vae():
     if shared.cmd_opts.rollback_vae:
@@ -113,37 +82,38 @@ def initialize():
     check_rollback_vae()
 
     modules.sd_samplers.list_samplers()
-    startup_timer.record("samplers")
+    timer.startup.record("samplers")
 
     modules.sd_vae.refresh_vae_list()
-    startup_timer.record("vae")
+    timer.startup.record("vae")
 
     extensions.list_extensions()
-    startup_timer.record("extensions")
+    timer.startup.record("extensions")
 
     modelloader.cleanup_models()
     modules.sd_models.setup_model()
-    startup_timer.record("models")
+    timer.startup.record("models")
 
     codeformer.setup_model(opts.codeformer_models_path)
-    startup_timer.record("codeformer")
+    timer.startup.record("codeformer")
 
     gfpgan.setup_model(opts.gfpgan_models_path)
-    startup_timer.record("gfpgan")
+    timer.startup.record("gfpgan")
 
-    log.debug('Loading scripts')
-    modules.scripts.load_scripts()
-    startup_timer.record("scripts")
+    log.debug('Loading extensions')
+    t_timer, t_total = modules.scripts.load_scripts()
+    timer.startup.record("extensions")
+    timer.startup.records["extensions"] = t_total # scripts can reset the time
+    setup_logging() # reset since scripts can hijaack logging
+    log.info(f'Extensions time: {t_timer.summary()}')
 
     modelloader.load_upscalers()
-    startup_timer.record("upscalers")
-
-    setup_logging() # needs a reset since scripts can hijaack logging
+    timer.startup.record("upscalers")
 
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
     shared.opts.onchange("gradio_theme", shared.reload_gradio_theme)
-    startup_timer.record("onchange")
+    timer.startup.record("onchange")
 
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
     shared.reload_hypernetworks()
@@ -152,7 +122,7 @@ def initialize():
     ui_extra_networks.register_default_pages()
     extra_networks.initialize()
     extra_networks.register_default_extra_networks()
-    startup_timer.record("extra-networks")
+    timer.startup.record("extra-networks")
 
     if cmd_opts.tls_keyfile is not None and cmd_opts.tls_certfile is not None:
         try:
@@ -165,7 +135,7 @@ def initialize():
             log.error("TLS setup invalid, running webui without TLS")
         else:
             log.info("Running with TLS")
-        startup_timer.record("tls")
+        timer.startup.record("tls")
 
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(_sig, _frame):
@@ -198,7 +168,7 @@ def load_model():
     shared.opts.onchange("sd_model_dict", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(op='dict')), call=False)
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_backend", wrap_queued_call(lambda: modules.sd_models.change_backend()), call=False)
-    startup_timer.record("checkpoint")
+    timer.startup.record("checkpoint")
 
 
 def create_api(app):
@@ -242,20 +212,20 @@ def start_common():
         log.info(f'Using data path: {shared.cmd_opts.data_dir}')
     if shared.cmd_opts.models_dir is not None and len(shared.cmd_opts.models_dir) > 0:
         log.info(f'Using models path: {shared.cmd_opts.data_dir}')
-    create_paths(opts)
+    create_paths(opts, log)
     async_policy()
     initialize()
     if shared.opts.clean_temp_dir_at_start:
         ui_tempdir.cleanup_tmpdr()
-        startup_timer.record("cleanup")
+        timer.startup.record("cleanup")
 
 
 def start_ui():
     log.debug('Creating UI')
     modules.script_callbacks.before_ui_callback()
-    startup_timer.record("before-ui")
-    shared.demo = modules.ui.create_ui(startup_timer)
-    startup_timer.record("ui")
+    timer.startup.record("before-ui")
+    shared.demo = modules.ui.create_ui(timer.startup)
+    timer.startup.record("ui")
     if cmd_opts.disable_queue:
         log.info('Server queues disabled')
         shared.demo.progress_tracking = False
@@ -303,19 +273,20 @@ def start_ui():
     setup_middleware(app, cmd_opts)
 
     if cmd_opts.subpath:
+        import gradio
         gradio.mount_gradio_app(app, shared.demo, path=f"/{cmd_opts.subpath}")
         shared.log.info(f'Redirector mounted: /{cmd_opts.subpath}')
 
-    startup_timer.record("launch")
+    timer.startup.record("launch")
 
     modules.progress.setup_progress_api(app)
     create_api(app)
-    startup_timer.record("api")
+    timer.startup.record("api")
 
     ui_extra_networks.add_pages_to_demo(app)
 
     modules.script_callbacks.app_started_callback(shared.demo, app)
-    startup_timer.record("app-started")
+    timer.startup.record("app-started")
 
     time_setup = [f'{k}:{round(v,3)}s' for (k,v) in modules.scripts.time_setup.items() if v > 0.005]
     shared.log.debug(f'Scripts setup: {time_setup}')
@@ -333,7 +304,7 @@ def webui(restart=False):
     modules.sd_models.write_metadata()
     load_model()
     shared.opts.save(shared.config_filename)
-    log.info(f"Startup time: {startup_timer.summary()}")
+    log.info(f"Startup time: {timer.startup.summary()}")
 
     if not restart:
         # override all loggers to use the same handlers as the main logger
@@ -356,13 +327,14 @@ def webui(restart=False):
 
 def api_only():
     start_common()
+    from fastapi import FastAPI
     app = FastAPI(**fastapi_args)
     setup_middleware(app, cmd_opts)
     api = create_api(app)
     api.wants_restart = False
     modules.script_callbacks.app_started_callback(None, app)
     modules.sd_models.write_metadata()
-    log.info(f"Startup time: {startup_timer.summary()}")
+    log.info(f"Startup time: {timer.startup.summary()}")
     server = api.launch()
     return server
 

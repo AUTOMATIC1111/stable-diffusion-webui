@@ -27,9 +27,9 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
 - Support for multiple backends!  
   **original** and **diffusers**
 - Support for multiple diffusion models!  
-  Stable Diffusion, SD-XL, Kandinsky, DeepFloyd IF, etc.  
+  Stable Diffusion, SD-XL, Kandinsky, DeepFloyd IF, UniDiffusion, SD-Distilled, etc.  
 - Fully multiplatform with platform specific autodetection and tuning performed on install  
-  Windows / Linux / MacOS with CPU / nVidia / AMD / Intel / DirectML
+  Windows / Linux / MacOS with CPU / nVidia / AMD / Intel / DirectML / OpenVINO  
 - Improved prompt parser  
 - Enhanced *Lora*/*Locon*/*Lyco* code supporting latest trends in training  
 - Built-in queue management  
@@ -54,21 +54,21 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
 
 Additional models will be added as they become available and there is public interest in them
 
-- Stable Diffusion 1.x and 2.x including all variants
+- Stable Diffusion 1.x and 2.x *(all variants)*
 - Stable Diffusion XL
 - Kandinsky 2.1 and 2.2
 - DeepFloyd IF
 - UniDiffusion
-- SD-Distilled (all variants)
+- SD-Distilled *(all variants)*
 
 ## Platform support
 
 - *nVidia* GPUs using **CUDA** libraries on both *Windows and Linux*
 - *AMD* GPUs using **ROCm** libraries on *Linux*.  
   Support will be extended to *Windows* once AMD releases ROCm for Windows
-- *Intel Arc* GPUs using **OneAPI** with *IPEX XPU* libraries on both *Windows and Linux*
 - Any GPU compatibile with *DirectX* on *Windows* using **DirectML** libraries.  
   This includes support for AMD GPUs that are not supported by native ROCm libraries
+- *Intel Arc* GPUs using **OneAPI** with *IPEX XPU* libraries on both *Windows and Linux*
 - *Intel* GPUs using **OpenVINO** libraries on both *Windows and Linux*
 - *Apple M1/M2* on *OSX* using built-in support in Torch with **MPS** optimizations
 
@@ -111,7 +111,7 @@ Below is partial list of all available parameters, run `webui --help` for the fu
       --upgrade                        Upgrade main repository to latest version, default: False
       --safe                           Run in safe mode with no user extensions
 
-<br>![screenshot](html/black-orange.jpg)<br>
+<br>![screenshot](html/black-teal.jpg)<br>
 
 ## Notes
 

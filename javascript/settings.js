@@ -100,11 +100,8 @@ onAfterUiUpdate(async () => {
       gradioApp().querySelectorAll('#tab_settings .tabitem').forEach((section) => {
         section.querySelectorAll('.dirtyable').forEach((setting) => {
           const visible = setting.innerText.toLowerCase().includes(e.target.value.toLowerCase()) || setting.id.toLowerCase().includes(e.target.value.toLowerCase());
-          if (!visible) {
-            setting.style.display = 'none';
-          } else {
-            setting.style.removeProperty('display');
-          }
+          if (!visible) setting.style.display = 'none';
+          else setting.style.removeProperty('display');
         });
       });
     }, 50);

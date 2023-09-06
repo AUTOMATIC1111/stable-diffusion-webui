@@ -1,35 +1,43 @@
+import os
 import json
 import math
-import os
+import time
 import hashlib
 import random
 from contextlib import nullcontext
 from typing import Any, Dict, List
 import torch
 import numpy as np
-from PIL import Image, ImageFilter, ImageOps
 import cv2
+from PIL import Image, ImageFilter, ImageOps
 from skimage import exposure
 from ldm.data.util import AddMiDaS
 from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
 from installer import git_commit
-import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks, sd_vae_approx, scripts, sd_samplers_common # pylint: disable=unused-import
-from modules.sd_hijack import model_hijack
-import modules.shared as shared
-import modules.paths as paths
+from modules import shared, devices
+import modules.memstats
+import modules.lowvram
+import modules.masking
+import modules.paths
+import modules.scripts
+import modules.prompt_parser
+import modules.extra_networks
 import modules.face_restoration
 import modules.images as images
 import modules.styles
-import modules.sd_models as sd_models
-import modules.sd_vae as sd_vae
+import modules.sd_hijack
+import modules.sd_samplers
+import modules.sd_samplers_common
+import modules.sd_models
+import modules.sd_vae
+import modules.sd_vae_approx
+import modules.generation_parameters_copypaste
 
 
 opt_C = 4
 opt_f = 8
-
 
 def setup_color_correction(image):
     shared.log.debug("Calibrating color correction.")
@@ -453,10 +461,11 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         index = position_in_batch + iteration * p.batch_size
     if all_negative_prompts is None:
         all_negative_prompts = p.all_negative_prompts
-    vae = (None if not shared.opts.add_model_name_to_info or sd_vae.loaded_vae_file is None else os.path.splitext(os.path.basename(sd_vae.loaded_vae_file))[0]) if p.full_quality else 'TAESD'
+    vae = (None if not shared.opts.add_model_name_to_info or modules.sd_vae.loaded_vae_file is None else os.path.splitext(os.path.basename(modules.sd_vae.loaded_vae_file))[0]) if p.full_quality else 'TAESD'
     comment = ', '.join(comments) if comments is not None and type(comments) is list else None
 
-    generation_params = {
+    args = {
+        # basic
         "Steps": p.steps,
         "Seed": all_seeds[index],
         "Sampler": p.sampler_name,
@@ -466,42 +475,68 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Parser": shared.opts.prompt_attention,
         "Model": None if (not shared.opts.add_model_name_to_info) or (not shared.sd_model.sd_checkpoint_info.model_name) else shared.sd_model.sd_checkpoint_info.model_name.replace(',', '').replace(':', ''),
         "Model hash": getattr(p, 'sd_model_hash', None if (not shared.opts.add_model_hash_to_info) or (not shared.sd_model.sd_model_hash) else shared.sd_model.sd_model_hash),
-        "Refiner": None if (not shared.opts.add_model_name_to_info) or (not shared.sd_refiner) or (not shared.sd_refiner.sd_checkpoint_info.model_name) else shared.sd_refiner.sd_checkpoint_info.model_name.replace(',', '').replace(':', ''),
         "VAE": vae,
-        # subseed
         "Variation seed": None if p.subseed_strength == 0 else all_subseeds[index],
         "Variation strength": None if p.subseed_strength == 0 else p.subseed_strength,
-        # seed resize
         "Seed resize from": None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}",
-        "Init image hash": getattr(p, 'init_img_hash', None),
-        "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
-        # clip skip
         "Clip skip": p.clip_skip if p.clip_skip > 1 else None,
-        # ensd
-        "ENSD": shared.opts.eta_noise_seed_delta if shared.opts.eta_noise_seed_delta != 0 and sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p) else None,
-        # restore_faces, tiling
-        "Face restoration": shared.opts.face_restoration_model if p.restore_faces else None,
+        "Prompt2": p.refiner_prompt if len(p.refiner_prompt) > 0 else None,
+        "Negative2": p.refiner_negative if len(p.refiner_negative) > 0 else None,
+        # other
+        "ENSD": shared.opts.eta_noise_seed_delta if shared.opts.eta_noise_seed_delta != 0 and modules.sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p) else None,
         "Tiling": p.tiling if p.tiling else None,
-        # enable_hr
-        "Prompt2": p.refiner_prompt if p.enable_hr and len(p.refiner_prompt) > 0 else None,
-        "Negative2": p.refiner_negative if p.enable_hr and len(p.refiner_negative) > 0 else None,
-        "Latent sampler": p.latent_sampler if p.enable_hr and p.latent_sampler != p.sampler_name else None,
-        "Denoising strength": p.denoising_strength if p.enable_hr else None,
-        "Image CFG Scale": p.image_cfg_scale,
         # sdnext
         "Backend": 'Diffusers' if shared.backend == shared.Backend.DIFFUSERS else 'Original',
         "Version": git_commit,
         "Comment": comment,
-        "Operations": ', '.join(list(set(p.ops))) if len(p.ops) > 0 else None,
+        "Operations": ', '.join(list(set(p.ops))).replace('"', '') if len(p.ops) > 0 else None,
     }
+    if 'txt2img' in p.ops:
+        pass
+    if 'hires' in p.ops:
+        args["Hires steps"] = p.hr_second_pass_steps
+        args["Hires upscaler"] = p.hr_upscaler
+        args["Hires upscale"] = p.hr_scale
+        args["Hires resize"] = f"{p.hr_resize_x}x{p.hr_resize_y}"
+        args["Hires size"] = f"{p.hr_upscale_to_x}x{p.hr_upscale_to_y}"
+        args["Denoising strength"] = p.denoising_strength
+        args["Latent sampler"] = p.latent_sampler
+        args["Image CFG scale"] = p.image_cfg_scale
+        args["CFG rescale"] = p.diffusers_guidance_rescale if shared.backend == shared.Backend.DIFFUSERS else None
+    if 'refine' in p.ops:
+        args["Refiner"] = None if (not shared.opts.add_model_name_to_info) or (not shared.sd_refiner) or (not shared.sd_refiner.sd_checkpoint_info.model_name) else shared.sd_refiner.sd_checkpoint_info.model_name.replace(',', '').replace(':', '')
+        args['Image CFG scale'] = p.image_cfg_scale
+        args['Refiner steps'] = p.refiner_steps
+        args['Refiner start'] = p.refiner_start
+        args["Hires steps"] = p.hr_second_pass_steps
+        args["Latent sampler"] = p.latent_sampler
+        args["CFG rescale"] = p.diffusers_guidance_rescale if shared.backend == shared.Backend.DIFFUSERS else None
+    if 'img2img' in p.ops or 'inpaint' in p.ops:
+        args["Init image size"] = f"{getattr(p, 'init_img_width', 0)}x{getattr(p, 'init_img_height', 0)}"
+        args["Init image hash"] = getattr(p, 'init_img_hash', None)
+        args["Conditional mask weight"] = getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None
+        args['Resize mode'] = p.resize_mode
+        args["Mask blur"] = p.mask_blur if p.mask is not None and p.mask_blur > 0 else None
+        args["Noise multiplier"] = p.initial_noise_multiplier if p.initial_noise_multiplier != 1.0 else None
+        args["Denoising strength"] = p.denoising_strength
+    if 'face' in p.ops:
+        args["Face restoration"] = shared.opts.face_restoration_model
+    if 'color' in p.ops:
+        args["Color correction"] = True
+
+    if hasattr(modules.sd_hijack.model_hijack, 'embedding_db') and len(modules.sd_hijack.model_hijack.embedding_db.embeddings_used) > 0: # this is for original hijaacked models only, diffusers are handled separately
+        args["Embeddings"] = ', '.join(modules.sd_hijack.model_hijack.embedding_db.embeddings_used)
+
+    # tome
     token_merging_ratio = p.get_token_merging_ratio()
     token_merging_ratio_hr = p.get_token_merging_ratio(for_hr=True) if p.enable_hr else None
-    generation_params['Token merging ratio'] = token_merging_ratio if token_merging_ratio != 0 else None
-    generation_params['Token merging ratio hr'] = token_merging_ratio_hr if token_merging_ratio_hr != 0 else None
-    generation_params.update(p.extra_generation_params)
-    generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
+    args['Token merging ratio'] = token_merging_ratio if token_merging_ratio != 0 else None
+    args['Token merging ratio hr'] = token_merging_ratio_hr if token_merging_ratio_hr != 0 else None
+
+    args.update(p.extra_generation_params)
+    params_text = ", ".join([k if k == v else f'{k}: {modules.generation_parameters_copypaste.quote(v)}' for k, v in args.items() if v is not None])
     negative_prompt_text = f"\nNegative prompt: {all_negative_prompts[index]}" if all_negative_prompts[index] else ""
-    infotext = f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
+    infotext = f"{all_prompts[index]}{negative_prompt_text}\n{params_text}".strip()
     return infotext
 
 
@@ -540,21 +575,21 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         return None
     stored_opts = {}
     for k in p.override_settings.keys():
-        stored_opts[k] = shared.opts.data.get(k, None)
+        stored_opts[k] = shared.opts.data.get(k, None) or shared.opts.data_labels[k].default
     try:
         # if no checkpoint override or the override checkpoint can't be found, remove override entry and load opts checkpoint
-        if p.override_settings.get('sd_model_checkpoint', None) is not None and sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
+        if p.override_settings.get('sd_model_checkpoint', None) is not None and modules.sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
             p.override_settings.pop('sd_model_checkpoint', None)
-            sd_models.reload_model_weights()
+            modules.sd_models.reload_model_weights()
         for k, v in p.override_settings.items():
             setattr(shared.opts, k, v)
             if k == 'sd_model_checkpoint':
-                sd_models.reload_model_weights()
+                modules.sd_models.reload_model_weights()
             if k == 'sd_vae':
-                sd_vae.reload_vae_weights()
+                modules.sd_vae.reload_vae_weights()
 
         if not shared.opts.cuda_compile:
-            sd_models.apply_token_merging(p.sd_model, p.get_token_merging_ratio())
+            modules.sd_models.apply_token_merging(p.sd_model, p.get_token_merging_ratio())
 
         if shared.cmd_opts.profile:
             """
@@ -573,14 +608,16 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             res = process_images_inner(p)
     finally:
         if not shared.opts.cuda_compile:
-            sd_models.apply_token_merging(p.sd_model, 0)
+            modules.sd_models.apply_token_merging(p.sd_model, 0)
         if p.override_settings_restore_afterwards: # restore opts to original state
             for k, v in stored_opts.items():
                 setattr(shared.opts, k, v)
                 if k == 'sd_model_checkpoint':
-                    sd_models.reload_model_weights()
+                    modules.sd_models.reload_model_weights()
+                if k == 'sd_model_refiner':
+                    modules.sd_models.reload_model_weights()
                 if k == 'sd_vae':
-                    sd_vae.reload_vae_weights()
+                    modules.sd_vae.reload_vae_weights()
     return res
 
 
@@ -635,9 +672,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         p.all_subseeds = subseed
     else:
         p.all_subseeds = [int(subseed) + x for x in range(len(p.all_prompts))]
-
     if os.path.exists(shared.opts.embeddings_dir) and not p.do_not_reload_embeddings:
-        model_hijack.embedding_db.load_textual_inversion_embeddings()
+        modules.sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
     if p.scripts is not None:
         p.scripts.process(p)
     infotexts = []
@@ -646,15 +682,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     cached_c = [None, None]
 
     def get_conds_with_caching(function, required_prompts, steps, cache):
-        """
-        Returns the result of calling function(shared.sd_model, required_prompts, steps)
-        using a cache to store the result if the same arguments have been used before.
-
-        cache is an array containing two elements. The first element is a tuple
-        representing the previously used arguments, or None if no arguments
-        have been used before. The second element is where the previously
-        computed result is stored.
-        """
         if cache[0] is not None and (required_prompts, steps) == cache[0]:
             return cache[1]
         with devices.autocast():
@@ -666,11 +693,12 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         return ''
 
     ema_scope_context = p.sd_model.ema_scope if shared.backend == shared.Backend.ORIGINAL else nullcontext
-    with torch.no_grad(), ema_scope_context():
+    with torch.inference_mode(), ema_scope_context():
+        t0 = time.time()
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
             if shared.opts.live_previews_enable and shared.opts.show_progress_type == "Approximate NN" and shared.backend == shared.Backend.ORIGINAL:
-                sd_vae_approx.model()
+                modules.sd_vae_approx.model()
         if shared.state.job_count == -1:
             shared.state.job_count = p.n_iter
         extra_network_data = None
@@ -691,27 +719,27 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 p.scripts.before_process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
             if len(p.prompts) == 0:
                 break
-            p.prompts, extra_network_data = extra_networks.parse_prompts(p.prompts)
+            p.prompts, extra_network_data = modules.extra_networks.parse_prompts(p.prompts)
             if not p.disable_extra_networks:
                 with devices.autocast():
-                    extra_networks.activate(p, extra_network_data)
+                    modules.extra_networks.activate(p, extra_network_data)
             if p.scripts is not None:
                 p.scripts.process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
             if n == 0:
-                with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
+                with open(os.path.join(modules.paths.data_path, "params.txt"), "w", encoding="utf8") as file:
                     processed = Processed(p, [], p.seed, "")
                     file.write(processed.infotext(p, 0))
             step_multiplier = 1
-            sampler_config = sd_samplers.find_sampler_config(p.sampler_name)
+            sampler_config = modules.sd_samplers.find_sampler_config(p.sampler_name)
             step_multiplier = 2 if sampler_config and sampler_config.options.get("second_order", False) else 1
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
             if shared.backend == shared.Backend.ORIGINAL:
-                uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, p.negative_prompts, p.steps * step_multiplier, cached_uc)
-                c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, p.prompts, p.steps * step_multiplier, cached_c)
-                if len(model_hijack.comments) > 0:
-                    for comment in model_hijack.comments:
+                uc = get_conds_with_caching(modules.prompt_parser.get_learned_conditioning, p.negative_prompts, p.steps * step_multiplier, cached_uc)
+                c = get_conds_with_caching(modules.prompt_parser.get_multicond_learned_conditioning, p.prompts, p.steps * step_multiplier, cached_c)
+                if len(modules.sd_hijack.model_hijack.comments) > 0:
+                    for comment in modules.sd_hijack.model_hijack.comments:
                         comments[comment] = 1
                 with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
                     samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=p.seeds, subseeds=p.subseeds, subseed_strength=p.subseed_strength, prompts=p.prompts)
@@ -723,8 +751,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     if not shared.opts.no_half and not shared.opts.no_half_vae and shared.cmd_opts.rollback_vae:
                         shared.log.warning('Tensor with all NaNs was produced in VAE')
                         devices.dtype_vae = torch.bfloat16
-                        vae_file, vae_source = sd_vae.resolve_vae(p.sd_model.sd_model_checkpoint)
-                        sd_vae.load_vae(p.sd_model, vae_file, vae_source)
+                        vae_file, vae_source = modules.sd_vae.resolve_vae(p.sd_model.sd_model_checkpoint)
+                        modules.sd_vae.load_vae(p.sd_model, vae_file, vae_source)
                         x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
                         for x in x_samples_ddim:
                             devices.test_for_nans(x, "vae")
@@ -742,14 +770,14 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 raise ValueError(f"Unknown backend {shared.backend}")
 
             if shared.cmd_opts.lowvram or shared.cmd_opts.medvram and shared.backend == shared.Backend.ORIGINAL:
-                lowvram.send_everything_to_cpu()
+                modules.lowvram.send_everything_to_cpu()
                 devices.torch_gc()
             if p.scripts is not None:
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
             if p.scripts is not None:
                 p.prompts = p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
                 p.negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
-                batch_params = scripts.PostprocessBatchListArgs(list(x_samples_ddim))
+                batch_params = modules.scripts.PostprocessBatchListArgs(list(x_samples_ddim))
                 p.scripts.postprocess_batch_list(p, batch_params, batch_number=n)
                 x_samples_ddim = batch_params.images
 
@@ -771,7 +799,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     x_sample = modules.face_restoration.restore_faces(x_sample)
                 image = Image.fromarray(x_sample)
                 if p.scripts is not None:
-                    pp = scripts.PostprocessImageArgs(image)
+                    pp = modules.scripts.PostprocessImageArgs(image)
                     p.scripts.postprocess_image(p, pp)
                     image = pp.image
                 if p.color_corrections is not None and i < len(p.color_corrections):
@@ -806,6 +834,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             devices.torch_gc()
             shared.state.nextjob()
 
+        t1 = time.time()
+        shared.log.info(f'Processed: images={len(output_images)} time={t1 - t0:.2f}s its={(p.steps * len(output_images)) / (t1 - t0):.2f} memory={modules.memstats.memory_stats()}')
+
         p.color_corrections = None
         index_of_first_image = 0
         unwanted_grid_because_of_img_count = len(output_images) < 2 and shared.opts.grid_only_if_multiple
@@ -822,7 +853,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     images.save_image(grid, p.outpath_grids, "grid", p.all_seeds[0], p.all_prompts[0], shared.opts.grid_format, info=infotext(), short_filename=not shared.opts.grid_extended_filename, p=p, grid=True)
 
     if not p.disable_extra_networks and extra_network_data:
-        extra_networks.deactivate(p, extra_network_data)
+        modules.extra_networks.deactivate(p, extra_network_data)
 
     res = Processed(
         p,
@@ -879,25 +910,16 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if shared.backend == shared.Backend.DIFFUSERS:
-            sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
+            modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.TEXT_2_IMAGE)
 
         self.width = self.width or 512
         self.height = self.height or 512
 
     def init_hr(self):
-        if shared.opts.use_old_hires_fix_width_height and self.applied_old_hires_behavior_to != (self.width, self.height):
-            self.hr_resize_x = self.width
-            self.hr_resize_y = self.height
-            self.hr_upscale_to_x = self.width
-            self.hr_upscale_to_y = self.height
-            self.width, self.height = old_hires_fix_first_pass_dimensions(self.width, self.height)
-            self.applied_old_hires_behavior_to = (self.width, self.height)
         if self.hr_resize_x == 0 and self.hr_resize_y == 0:
-            self.extra_generation_params["Hires upscale"] = self.hr_scale
             self.hr_upscale_to_x = int(self.width * self.hr_scale)
             self.hr_upscale_to_y = int(self.height * self.hr_scale)
         else:
-            self.extra_generation_params["Hires resize"] = f"{self.hr_resize_x}x{self.hr_resize_y}"
             if self.hr_resize_y == 0:
                 self.hr_upscale_to_x = self.hr_resize_x
                 self.hr_upscale_to_y = self.hr_resize_x * self.height // self.width
@@ -915,23 +937,19 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 else:
                     self.hr_upscale_to_x = self.hr_resize_y * self.width // self.height
                     self.hr_upscale_to_y = self.hr_resize_y
-                self.truncate_x = (self.hr_upscale_to_x - target_w) // opt_f
-                self.truncate_y = (self.hr_upscale_to_y - target_h) // opt_f
+                self.truncate_x = (self.hr_upscale_to_x - target_w) // 8
+                self.truncate_y = (self.hr_upscale_to_y - target_h) // 8
         # special case: the user has chosen to do nothing
-        if self.hr_upscale_to_x == self.width and self.hr_upscale_to_y == self.height:
-            self.extra_generation_params.pop("Hires upscale", None)
-            self.extra_generation_params.pop("Hires resize", None)
+        if (self.hr_upscale_to_x == self.width and self.hr_upscale_to_y == self.height) or self.hr_upscaler is None or self.hr_upscaler == 'None':
+            self.is_hr_pass = False
             return
+        self.is_hr_pass = True
         if not shared.state.processing_has_refined_job_count:
             if shared.state.job_count == -1:
                 shared.state.job_count = self.n_iter
             shared.state.job_count = shared.state.job_count * 2
             shared.state.processing_has_refined_job_count = True
-        if self.hr_second_pass_steps:
-            self.extra_generation_params["Hires steps"] = self.hr_second_pass_steps
-        if self.hr_upscaler is not None:
-            self.extra_generation_params["Hires upscaler"] = self.hr_upscaler
-        self.extra_generation_params["Secondary sampler"] = self.latent_sampler
+        shared.log.debug(f'Init hires: upscaler={self.hr_upscaler} sampler={self.latent_sampler} resize={self.hr_resize_x}x{self.hr_resize_y} upscale={self.hr_upscale_to_x}x{self.hr_upscale_to_y}')
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
 
@@ -940,7 +958,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             if not shared.opts.save or self.do_not_save_samples or not shared.opts.save_images_before_highres_fix:
                 return
             if not isinstance(image, Image.Image):
-                image = sd_samplers.sample_to_image(image, index, approximation=0)
+                image = modules.sd_samplers.sample_to_image(image, index, approximation=0)
             orig1 = self.extra_generation_params
             orig2 = self.restore_faces
             self.extra_generation_params = {}
@@ -951,70 +969,72 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], shared.opts.samples_format, info=info, suffix="-before-highres-fix")
 
         if shared.backend == shared.Backend.DIFFUSERS:
-            sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
+            modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.TEXT_2_IMAGE)
 
         self.ops.append('txt2img')
-        self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
-        latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "nearest")
+        self.sampler = modules.sd_samplers.create_sampler(self.sampler_name, self.sd_model)
+        latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "None")
         if self.enable_hr and latent_scale_mode is None:
             if len([x for x in shared.sd_upscalers if x.name == self.hr_upscaler]) == 0:
                 shared.log.warning("Could not find upscaler to use with hrfix")
                 self.enable_hr = False
-        x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
+        x = create_random_tensors([4, self.height // 8, self.width // 8], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
         samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
         if not self.enable_hr or shared.state.interrupted or shared.state.skipped:
             return samples
-        self.is_hr_pass = True
-        self.init_hr()
-        self.ops.append('hires')
-        target_width = self.hr_upscale_to_x
-        target_height = self.hr_upscale_to_y
 
-        if latent_scale_mode is not None:
-            for i in range(samples.shape[0]):
-                save_intermediate(samples, i)
-            samples = torch.nn.functional.interpolate(samples, size=(target_height // opt_f, target_width // opt_f), mode=latent_scale_mode["mode"], antialias=latent_scale_mode["antialias"])
-            if getattr(self, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) < 1.0:
-                image_conditioning = self.img2img_image_conditioning(decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae)), samples)
+        self.init_hr()
+        if self.is_hr_pass:
+            self.ops.append('hires')
+            target_width = self.hr_upscale_to_x
+            target_height = self.hr_upscale_to_y
+
+            if latent_scale_mode is not None:
+                for i in range(samples.shape[0]):
+                    save_intermediate(samples, i)
+                samples = torch.nn.functional.interpolate(samples, size=(target_height // 8, target_width // 8), mode=latent_scale_mode["mode"], antialias=latent_scale_mode["antialias"])
+                if getattr(self, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) < 1.0:
+                    image_conditioning = self.img2img_image_conditioning(decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae)), samples)
+                else:
+                    image_conditioning = self.txt2img_image_conditioning(samples.to(dtype=devices.dtype_vae))
             else:
-                image_conditioning = self.txt2img_image_conditioning(samples.to(dtype=devices.dtype_vae))
-        else:
-            decoded_samples = decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae))
-            lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
-            batch_images = []
-            for i, x_sample in enumerate(lowres_samples):
-                x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
-                x_sample = validate_sample(x_sample)
-                image = Image.fromarray(x_sample)
-                save_intermediate(image, i)
-                image = images.resize_image(1, image, target_width, target_height, upscaler_name=self.hr_upscaler)
-                image = np.array(image).astype(np.float32) / 255.0
-                image = np.moveaxis(image, 2, 0)
-                batch_images.append(image)
-            decoded_samples = torch.from_numpy(np.array(batch_images))
-            decoded_samples = decoded_samples.to(device=shared.device, dtype=devices.dtype_vae)
-            decoded_samples = 2. * decoded_samples - 1.
-            if shared.opts.sd_vae_sliced_encode and len(decoded_samples) > 1:
-                samples = torch.stack([
-                    self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(torch.unsqueeze(decoded_sample, 0)))[0]
-                    for decoded_sample
-                    in decoded_samples
-                ])
-            else:
-                samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
-            image_conditioning = self.img2img_image_conditioning(decoded_samples, samples)
-        shared.state.nextjob()
-        if self.latent_sampler == "PLMS":
-            self.latent_sampler = 'UniPC'
-        self.sampler = sd_samplers.create_sampler(self.latent_sampler or self.sampler_name, self.sd_model)
-        samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
-        noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
-        x = None
-        devices.torch_gc() # GC now before running the next img2img to prevent running out of memory
-        sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio(for_hr=True))
-        samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
-        sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio())
-        self.is_hr_pass = False
+                decoded_samples = decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae))
+                lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
+                batch_images = []
+                for i, x_sample in enumerate(lowres_samples):
+                    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
+                    x_sample = validate_sample(x_sample)
+                    image = Image.fromarray(x_sample)
+                    save_intermediate(image, i)
+                    image = images.resize_image(1, image, target_width, target_height, upscaler_name=self.hr_upscaler)
+                    image = np.array(image).astype(np.float32) / 255.0
+                    image = np.moveaxis(image, 2, 0)
+                    batch_images.append(image)
+                decoded_samples = torch.from_numpy(np.array(batch_images))
+                decoded_samples = decoded_samples.to(device=shared.device, dtype=devices.dtype_vae)
+                decoded_samples = 2. * decoded_samples - 1.
+                if shared.opts.sd_vae_sliced_encode and len(decoded_samples) > 1:
+                    samples = torch.stack([
+                        self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(torch.unsqueeze(decoded_sample, 0)))[0]
+                        for decoded_sample
+                        in decoded_samples
+                    ])
+                else:
+                    samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
+                image_conditioning = self.img2img_image_conditioning(decoded_samples, samples)
+            shared.state.nextjob()
+            if self.latent_sampler == "PLMS":
+                self.latent_sampler = 'UniPC'
+            self.sampler = modules.sd_samplers.create_sampler(self.latent_sampler or self.sampler_name, self.sd_model)
+            samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
+            noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
+            x = None
+            devices.torch_gc() # GC now before running the next img2img to prevent running out of memory
+            modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio(for_hr=True))
+            samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
+            modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio())
+            self.is_hr_pass = False
+
         return samples
 
 
@@ -1050,14 +1070,14 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if shared.backend == shared.Backend.DIFFUSERS and self.image_mask is None:
-            sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
+            modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
         elif shared.backend == shared.Backend.DIFFUSERS and self.image_mask is not None:
-            sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.INPAINTING)
+            modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.INPAINTING)
             self.sd_model.dtype = self.sd_model.unet.dtype
 
         if self.sampler_name == "PLMS":
             self.sampler_name = 'UniPC'
-        self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
+        self.sampler = modules.sd_samplers.create_sampler(self.sampler_name, self.sd_model)
 
         if self.image_mask is not None:
             self.ops.append('inpaint')
@@ -1074,8 +1094,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if self.inpaint_full_res:
                 self.mask_for_overlay = image_mask
                 mask = image_mask.convert('L')
-                crop_region = masking.get_crop_region(np.array(mask), self.inpaint_full_res_padding)
-                crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
+                crop_region = modules.masking.get_crop_region(np.array(mask), self.inpaint_full_res_padding)
+                crop_region = modules.masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
                 x1, y1, x2, y2 = crop_region
                 mask = mask.crop(crop_region)
                 image_mask = images.resize_image(3, mask, self.width, self.height)
@@ -1093,9 +1113,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         imgs = []
         unprocessed = []
         for img in self.init_images:
-            # Save init image
+            self.init_img_hash = hashlib.sha256(img.tobytes()).hexdigest()[0:8] # pylint: disable=attribute-defined-outside-init
+            self.init_img_width = img.width # pylint: disable=attribute-defined-outside-init
+            self.init_img_height = img.height # pylint: disable=attribute-defined-outside-init
             if shared.opts.save_init_img:
-                self.init_img_hash = hashlib.sha256(img.tobytes()).hexdigest()[0:8] # pylint: disable=attribute-defined-outside-init
                 images.save_image(img, path=shared.opts.outdir_init_images, basename=None, forced_filename=self.init_img_hash, save_to_dirs=False)
             image = images.flatten(img, shared.opts.img2img_background_color)
             if crop_region is None and self.resize_mode != 4:
@@ -1103,10 +1124,15 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 self.width = image.width
                 self.height = image.height
             if image_mask is not None:
-                image_masked = Image.new('RGBa', (image.width, image.height))
-                image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')) if self.mask_for_overlay is not None else None)
+                try:
+                    image_masked = Image.new('RGBa', (image.width, image.height))
+                    image_to_paste = image.convert("RGBA").convert("RGBa")
+                    image_to_mask = ImageOps.invert(self.mask_for_overlay.convert('L')) if self.mask_for_overlay is not None else None
+                    image_masked.paste(image_to_paste, mask=image_to_mask)
+                    self.overlay_images.append(image_masked.convert('RGBA'))
+                except Exception as e:
+                    shared.log.error(f"Failed to apply mask to image: {e}")
                 self.mask = image_mask # assign early for diffusers
-                self.overlay_images.append(image_masked.convert('RGBA'))
             # crop_region is not None if we are doing inpaint full res
             if crop_region is not None:
                 image = image.crop(crop_region)
@@ -1116,7 +1142,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.init_images = [image] # assign early for diffusers
             if image_mask is not None:
                 if self.inpainting_fill != 1:
-                    image = masking.fill(image, latent_mask)
+                    image = modules.masking.fill(image, latent_mask)
             if add_color_corrections:
                 self.color_corrections.append(setup_color_correction(image))
             image = np.array(image).astype(np.float32) / 255.0
@@ -1143,7 +1169,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         image = image.to(device=shared.device, dtype=devices.dtype_vae)
         self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
         if self.resize_mode == 4:
-            self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
+            self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // 8, self.width // 8), mode="bilinear")
         if image_mask is not None:
             init_mask = latent_mask
             latmask = init_mask.convert('RGB').resize((self.init_latent.shape[3], self.init_latent.shape[2]))
@@ -1162,15 +1188,13 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
         if shared.backend == shared.Backend.DIFFUSERS:
             if self.init_mask is None: # pylint: disable=no-member
-                sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
+                modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
             else:
-                sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.INPAINTING)
+                modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.INPAINTING)
                 self.sd_model.dtype = self.sd_model.unet.dtype
 
-        x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
-        if self.initial_noise_multiplier != 1.0:
-            self.extra_generation_params["Noise multiplier"] = self.initial_noise_multiplier
-            x *= self.initial_noise_multiplier
+        x = create_random_tensors([4, self.height // 8, self.width // 8], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
+        x *= self.initial_noise_multiplier
         samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning)
         if self.mask is not None:
             samples = samples * self.nmask + self.init_latent * self.mask

@@ -5,6 +5,7 @@ import io
 import sys
 import json
 import time
+import logging
 import threading
 from os import mkdir
 from urllib import request
@@ -145,7 +146,10 @@ def checkpoint_tiles(use_short=False): # pylint: disable=unused-argument
 def list_models():
     checkpoints_list.clear()
     checkpoint_aliases.clear()
-    ext_filter=[".safetensors"] if shared.opts.sd_disable_ckpt else [".ckpt", ".safetensors"]
+    if shared.opts.sd_disable_ckpt or shared.backend == shared.Backend.DIFFUSERS:
+        ext_filter = [".safetensors"]
+    else:
+        ext_filter = [".ckpt", ".safetensors"]
     model_list = modelloader.load_models(model_path=model_path, model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=ext_filter, download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
     if shared.backend == shared.Backend.DIFFUSERS:
         model_list += modelloader.load_diffusers_models(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir)
@@ -326,12 +330,15 @@ def read_metadata_from_safetensors(filename):
             json_data = json_start + file.read(metadata_len-2)
             json_obj = json.loads(json_data)
             for k, v in json_obj.get("__metadata__", {}).items():
-                res[k] = v
+                if k == 'format' and v == 'pt':
+                    continue
                 if isinstance(v, str) and v[0:1] == '{':
                     try:
                         res[k] = json.loads(v)
                     except Exception:
                         pass
+                else:
+                    res[k] = v
         sd_metadata[filename] = res
         global sd_metadata_pending # pylint: disable=global-statement
         sd_metadata_pending += 1
@@ -348,7 +355,7 @@ def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unuse
         return None
     try:
         pl_sd = None
-        with progress.open(checkpoint_file, 'rb', description=f'Loading weights: [cyan]{checkpoint_file}', auto_refresh=True) as f:
+        with progress.open(checkpoint_file, 'rb', description=f'[cyan]Loading weights: [yellow]{checkpoint_file}', auto_refresh=True) as f:
             _, extension = os.path.splitext(checkpoint_file)
             if extension.lower() == ".ckpt" and shared.opts.sd_disable_ckpt:
                 shared.log.warning(f"Checkpoint loading disabled: {checkpoint_file}")
@@ -397,7 +404,8 @@ def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, 
     try:
         model.load_state_dict(state_dict, strict=False)
     except Exception as e:
-        shared.log.error(f'Error loading model weights: {checkpoint_info.filename} {e}')
+        shared.log.error(f'Error loading model weights: {checkpoint_info.filename}')
+        shared.log.error(' '.join(str(e).splitlines()[:2]))
         return False
     del state_dict
     timer.record("apply")
@@ -511,7 +519,7 @@ class ModelData:
                     elif shared.backend == shared.Backend.DIFFUSERS:
                         load_diffuser(op='model')
                     else:
-                        shared.log.error(f"Unknown Stable Diffusion backend: {shared.backend}")
+                        shared.log.error(f"Unknown Execution backend: {shared.backend}")
                     self.initial = False
                 except Exception as e:
                     shared.log.error("Failed to load stable diffusion model")
@@ -531,7 +539,7 @@ class ModelData:
                     elif shared.backend == shared.Backend.DIFFUSERS:
                         load_diffuser(op='refiner')
                     else:
-                        shared.log.error(f"Unknown Stable Diffusion backend: {shared.backend}")
+                        shared.log.error(f"Unknown Execution backend: {shared.backend}")
                     self.initial = False
                 except Exception as e:
                     shared.log.error("Failed to load stable diffusion model")
@@ -540,7 +548,6 @@ class ModelData:
         return self.sd_refiner
 
     def set_sd_refiner(self, v):
-        shared.log.debug(f"Class refiner: {v}")
         self.sd_refiner = v
 
 model_data = ModelData()
@@ -573,16 +580,13 @@ def detect_pipeline(f: str, op: str = 'model'):
                     shared.log.warning(f'Model detected as SD-XL refiner model, but attempting to load using backend=original: {f} size={size} GB')
                 if op == 'model':
                     shared.log.warning(f'Model detected as SD-XL refiner model, but attempting to load a base model: {f} size={size} GB')
-                else:
-                    guess = 'Stable Diffusion XL'
+                guess = 'Stable Diffusion XL'
             elif size < 7:
                 if shared.backend == shared.Backend.ORIGINAL:
                     shared.log.warning(f'Model detected as SD-XL base model, but attempting to load using backend=original: {f} size={size} GB')
-                if op == 'refiner':
-                    shared.log.warning(f'Model size matches SD-XL base model, but attempting to load a refiner model: {f} size={size} GB')
-                else:
-                    guess = 'Stable Diffusion XL'
+                guess = 'Stable Diffusion XL'
             else:
+                guess = 'Unknown'
                 shared.log.error(f'Model autodetect failed, set diffuser pipeline manually: {f}')
                 return None, None
             shared.log.debug(f'Model autodetect {op}: {f} pipeline={guess} size={size} GB')
@@ -623,7 +627,6 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     import torch # pylint: disable=reimported,redefined-outer-name
     if timer is None:
         timer = Timer()
-    import logging
     logging.getLogger("diffusers").setLevel(logging.ERROR)
     timer.record("diffusers")
     devices.set_cuda_params()
@@ -807,7 +810,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                             shared.opts.diffusers_move_base=True
                             shared.opts.diffusers_move_refiner=True
                     shared.log.debug('Moving base model to CPU')
-                    model_data.sd_model.to(devices.cpu)
+                    if model_data.sd_model is not None:
+                        model_data.sd_model.to(devices.cpu)
                     devices.torch_gc(force=True)
                     sd_model.to(devices.device)
                     base_sent_to_cpu=True
@@ -874,21 +878,20 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         shared.log.error("Failed to load diffusers model")
         errors.display(e, "loading Diffusers model")
 
+    from modules.textual_inversion import textual_inversion
+    sd_model.embedding_db = textual_inversion.EmbeddingDatabase()
     if op == 'refiner':
         model_data.sd_refiner = sd_model
     else:
         model_data.sd_model = sd_model
-
-    from modules.textual_inversion import textual_inversion
-    embedding_db = textual_inversion.EmbeddingDatabase()
-    embedding_db.add_embedding_dir(shared.opts.embeddings_dir)
-    embedding_db.load_textual_inversion_embeddings(force_reload=True)
+    sd_model.embedding_db.add_embedding_dir(shared.opts.embeddings_dir)
+    sd_model.embedding_db.load_textual_inversion_embeddings(force_reload=True)
 
     timer.record("load")
     shared.log.info(f"Model loaded in {timer.summary()} native={get_native(sd_model)}")
     devices.torch_gc(force=True)
     script_callbacks.model_loaded_callback(sd_model)
-    shared.log.info(f'Model load finished: {memory_stats()}')
+    shared.log.info(f'Model load finished {op}: {memory_stats()}')
 
 
 class DiffusersTaskType(Enum):
@@ -1001,7 +1004,10 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
         model_data.sd_model = sd_model
         current_checkpoint_info = None
         unload_model_weights(op=op)
-        shared.log.debug(f'Model weights unloaded: {memory_stats()}')
+        shared.log.debug(f'Model weights unloaded: {memory_stats()} op={op}')
+        if op == 'refiner':
+            # shared.opts.data['sd_model_refiner'] = 'None'
+            shared.opts.sd_model_refiner = 'None'
         return
     else:
         shared.log.debug(f'Model weights loaded: {memory_stats()}')
@@ -1056,12 +1062,12 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
                 lowvram.send_everything_to_cpu()
             else:
                 sd_model.to(devices.cpu)
-    if (reuse_dict or (shared.opts.model_reuse_dict and sd_model is not None)) and not sd_model.has_accelerate:
-        shared.log.info('Reusing previous model dictionary')
-        sd_hijack.model_hijack.undo_hijack(sd_model)
-    else:
-        unload_model_weights(op=op)
-        sd_model = None
+        if (reuse_dict or shared.opts.model_reuse_dict) and not sd_model.has_accelerate:
+            shared.log.info('Reusing previous model dictionary')
+            sd_hijack.model_hijack.undo_hijack(sd_model)
+        else:
+            unload_model_weights(op=op)
+            sd_model = None
     timer = Timer()
     state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
     checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
@@ -1089,7 +1095,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         timer.record("hijack")
         script_callbacks.model_loaded_callback(sd_model)
         timer.record("callbacks")
-        if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and not sd_model.has_accelerate:
+        if sd_model is not None and not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and not sd_model.has_accelerate:
             sd_model.to(devices.device)
             timer.record("device")
     shared.log.info(f"Weights loaded in {timer.summary()}")
@@ -1132,11 +1138,12 @@ def unload_model_weights(op='model'):
 
 def apply_token_merging(sd_model, token_merging_ratio=0):
     current_token_merging_ratio = getattr(sd_model, 'applied_token_merged_ratio', 0)
-    if token_merging_ratio is None or current_token_merging_ratio == token_merging_ratio:
+    if token_merging_ratio is None or current_token_merging_ratio is None or current_token_merging_ratio == token_merging_ratio:
         return
     if current_token_merging_ratio > 0:
         tomesd.remove_patch(sd_model)
     if token_merging_ratio > 0:
+        shared.log.debug(f'Applying token merging: ratio={token_merging_ratio}')
         tomesd.apply_patch(
             sd_model,
             ratio=token_merging_ratio,

@@ -113,7 +113,7 @@ function createPanZoom(domElement, options) {
     dispose: dispose,
     moveBy: internalMoveBy,
     moveTo: moveTo,
-    smoothMoveTo: smoothMoveTo, 
+    smoothMoveTo: smoothMoveTo,
     centerOn: centerOn,
     zoomTo: publicZoomTo,
     zoomAbs: zoomAbs,
@@ -141,7 +141,7 @@ function createPanZoom(domElement, options) {
   };
 
   eventify(api);
-  
+
   var initialX = typeof options.initialX === 'number' ? options.initialX : transform.x;
   var initialY = typeof options.initialY === 'number' ? options.initialY : transform.y;
   var initialZoom = typeof options.initialZoom === 'number' ? options.initialZoom : transform.scale;
@@ -1049,7 +1049,7 @@ function autoRun() {
 }
 
 autoRun();
-	
+
 },{"./lib/createTextSelectionInterceptor.js":2,"./lib/domController.js":3,"./lib/kinetic.js":4,"./lib/svgController.js":5,"./lib/transform.js":6,"amator":7,"ngraph.events":9,"wheel":10}],2:[function(require,module,exports){
 /**
  * Disallows selecting text.
@@ -1087,7 +1087,7 @@ function createTextSelectionInterceptor(useFake) {
 
   function release() {
     if (!wasCaptured) return;
-    
+
     wasCaptured = false;
     window.document.onselectstart = prevSelectStart;
     if (dragObject) dragObject.ondragstart = prevDragStart;
@@ -1107,14 +1107,14 @@ module.exports = makeDomController
 module.exports.canAttach = isDomElement;
 
 function makeDomController(domElement, options) {
-  var elementValid = isDomElement(domElement); 
+  var elementValid = isDomElement(domElement);
   if (!elementValid) {
     throw new Error('panzoom requires DOM element to be attached to the DOM tree')
   }
 
   var owner = domElement.parentElement;
   domElement.scrollTop = 0;
-  
+
   if (!options.disableKeyboardInteraction) {
     owner.setAttribute('tabindex', 0);
   }
@@ -1124,7 +1124,7 @@ function makeDomController(domElement, options) {
     getOwner: getOwner,
     applyTransform: applyTransform,
   }
-  
+
   return api
 
   function getOwner() {
@@ -1320,7 +1320,7 @@ function makeSvgController(svgElement, options) {
     applyTransform: applyTransform,
     initTransform: initTransform
   }
-  
+
   return api
 
   function getOwner() {

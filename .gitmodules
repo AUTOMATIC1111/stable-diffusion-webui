@@ -26,14 +26,14 @@
   ignore = dirty
 [submodule "extensions-builtin/stable-diffusion-webui-rembg"]
   path = extensions-builtin/stable-diffusion-webui-rembg
-  url = https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg
+  url = https://github.com/vladmandic/sd-extension-rembg
   ignore = dirty
 [submodule "extensions-builtin/a1111-sd-webui-lycoris"]
   path = extensions-builtin/a1111-sd-webui-lycoris
   url = https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris
   ignore = dirty
 [submodule "extensions-builtin/multidiffusion-upscaler-for-automatic1111"]
-  path = extensions-builtin/multidiffusion-upscaler-for-automatic1111 
+  path = extensions-builtin/multidiffusion-upscaler-for-automatic1111
   url = https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111
   ignore = dirty
 [submodule "extensions-builtin/sd-webui-agent-scheduler"]

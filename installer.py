@@ -267,11 +267,9 @@ def clone(url, folder, commithash=None):
 
 # check python version
 def check_python():
-    supported_minors = [9, 10]
+    supported_minors = [9, 10, 11]
     if args.quick:
         return
-    if args.experimental:
-        supported_minors.append(11)
     log.info(f'Python {platform.python_version()} on {platform.system()}')
     if not (int(sys.version_info.major) == 3 and int(sys.version_info.minor) in supported_minors):
         log.error(f"Incompatible Python version: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} required 3.{supported_minors}")
@@ -478,6 +476,10 @@ def check_modified_files():
         res = git('status --porcelain')
         files = [x[2:].strip() for x in res.split('\n')]
         files = [x for x in files if len(x) > 0 and (not x.startswith('extensions')) and (not x.startswith('wiki')) and (not x.endswith('.json')) and ('.log' not in x)]
+        deleted = [x for x in files if not os.path.exists(x)]
+        if len(deleted) > 0:
+            log.warning(f'Deleted files: {files}')
+        files = [x for x in files if os.path.exists(x) and not os.path.isdir(x)]
         if len(files) > 0:
             log.warning(f'Modified files: {files}')
     except Exception:

@@ -1,7 +1,7 @@
 import torch
 import intel_extension_for_pytorch as ipex
 import torch.nn.functional as F
-import diffusers #1.19.3
+import diffusers #0.20.2
 
 Attention = diffusers.models.attention_processor.Attention
 

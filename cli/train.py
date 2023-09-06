@@ -70,7 +70,6 @@ def parse_args():
     global args # pylint: disable=global-statement
     parser = argparse.ArgumentParser(description = 'SD.Next Train')
 
-
     group_server = parser.add_argument_group('Server')
     group_server.add_argument('--server', type=str, default='http://127.0.0.1:7860', required=False, help='server url, default: %(default)s')
     group_server.add_argument('--user', type=str, default=None, required=False, help='server url, default: %(default)s')

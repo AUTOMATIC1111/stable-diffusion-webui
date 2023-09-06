@@ -174,7 +174,7 @@ class UiLoadsave:
     def create_ui(self):
         """creates ui elements for editing defaults UI, without adding any logic to them"""
         gr.HTML(f"Review changed values and apply them as new user interface defaults<br>Config file: {self.filename}")
-        with gr.Row():
+        with gr.Row(elem_id="config_row"):
             self.ui_defaults_view = gr.Button(value='View changes', elem_id="ui_defaults_view", variant="secondary")
             self.ui_defaults_apply = gr.Button(value='Set new defaults', elem_id="ui_defaults_apply", variant="primary")
             self.ui_defaults_restore = gr.Button(value='Restore system defaults', elem_id="ui_defaults_restore", variant="primary")

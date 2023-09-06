@@ -18,6 +18,7 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
                 "filename": path,
                 "preview": self.find_preview(path),
                 "description": self.find_description(path),
+                "info": self.find_info(path),
                 "search_term": self.search_terms_from_path(path),
                 "prompt": json.dumps(f"<hypernet:{name}:{shared.opts.extra_networks_default_multiplier}>"),
                 "local_preview": f"{path}.preview.{shared.opts.samples_format}",

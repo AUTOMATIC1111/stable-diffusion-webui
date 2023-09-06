@@ -15,9 +15,7 @@ import modules.shared as shared
 from modules import images, sd_samplers, processing, sd_models, sd_vae
 from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
 from modules.ui_components import ToolButton
-
-fill_values_symbol = "\U0001f4d2"  # 📒
-AxisInfo = namedtuple('AxisInfo', ['axis', 'values'])
+import modules.ui_symbols as symbols
 
 
 def apply_field(field):
@@ -220,7 +218,7 @@ axis_options = [
     AxisOption("Clip skip", int, apply_clip_skip),
     AxisOption("Denoising", float, apply_field("denoising_strength")),
     AxisOptionTxt2Img("Hires steps", int, apply_field("hr_second_pass_steps")),
-    AxisOptionImg2Img("Image CFG Scale", float, apply_field("image_cfg_scale")),
+    AxisOptionImg2Img("Image CFG scale", float, apply_field("image_cfg_scale")),
     AxisOption("Prompt order", str_permutations, apply_order, fmt=format_value_join_list),
     AxisOption("Sampler Sigma Churn", float, apply_field("s_churn")),
     AxisOption("Sampler Sigma min", float, apply_field("s_tmin")),
@@ -237,7 +235,7 @@ axis_options = [
     AxisOption("SecondPass Sampler", str, apply_latent_sampler, fmt=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
     AxisOption("SecondPass Denoising Strength", float, apply_field("denoising_strength")),
     AxisOption("SecondPass Steps", int, apply_field("hr_second_pass_steps")),
-    AxisOption("SecondPass CFG Scale", float, apply_field("image_cfg_scale")),
+    AxisOption("SecondPass CFG scale", float, apply_field("image_cfg_scale")),
     AxisOption("SecondPass Guidance Rescale", float, apply_field("diffusers_guidance_rescale")),
     AxisOption("SecondPass Refiner Start", float, apply_field("refiner_start")),
 ]
@@ -387,19 +385,19 @@ class Script(scripts.Script):
                     x_type = gr.Dropdown(label="X type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("x_type"))
                     x_values = gr.Textbox(label="X values", lines=1, elem_id=self.elem_id("x_values"))
                     x_values_dropdown = gr.Dropdown(label="X values",visible=False,multiselect=True,interactive=True)
-                    fill_x_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_x_tool_button", visible=False)
+                    fill_x_button = ToolButton(value=symbols.fill, elem_id="xyz_grid_fill_x_tool_button", visible=False)
 
                 with gr.Row():
                     y_type = gr.Dropdown(label="Y type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("y_type"))
                     y_values = gr.Textbox(label="Y values", lines=1, elem_id=self.elem_id("y_values"))
                     y_values_dropdown = gr.Dropdown(label="Y values",visible=False,multiselect=True,interactive=True)
-                    fill_y_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_y_tool_button", visible=False)
+                    fill_y_button = ToolButton(value=symbols.fill, elem_id="xyz_grid_fill_y_tool_button", visible=False)
 
                 with gr.Row():
                     z_type = gr.Dropdown(label="Z type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("z_type"))
                     z_values = gr.Textbox(label="Z values", lines=1, elem_id=self.elem_id("z_values"))
                     z_values_dropdown = gr.Dropdown(label="Z values",visible=False,multiselect=True,interactive=True)
-                    fill_z_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_z_tool_button", visible=False)
+                    fill_z_button = ToolButton(value=symbols.fill, elem_id="xyz_grid_fill_z_tool_button", visible=False)
         with gr.Row(variant="compact", elem_id="axis_options"):
             draw_legend = gr.Checkbox(label='Draw legend', value=True, elem_id=self.elem_id("draw_legend"))
             no_fixed_seeds = gr.Checkbox(label='Keep random for seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"))
@@ -570,6 +568,7 @@ class Script(scripts.Script):
         total_steps *= p.n_iter
         image_cell_count = p.n_iter * p.batch_size
         shared.log.info(f"XYZ grid: images={len(xs)*len(ys)*len(zs)*image_cell_count} grid={len(zs)} {len(xs)}x{len(ys)} cells={len(zs)} steps={total_steps}")
+        AxisInfo = namedtuple('AxisInfo', ['axis', 'values'])
         shared.state.xyz_plot_x = AxisInfo(x_opt, xs)
         shared.state.xyz_plot_y = AxisInfo(y_opt, ys)
         shared.state.xyz_plot_z = AxisInfo(z_opt, zs)

@@ -1,3 +1,4 @@
+import time
 import inspect
 import typing
 import torch
@@ -43,8 +44,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             from modules.processing import create_infotext
             info=create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, [], iteration=p.iteration, position_in_batch=i)
             decoded = vae_decode(latents=latents, model=shared.sd_model, output_type='pil', full_quality=p.full_quality)
-            for i in range(len(decoded)):
-                images.save_image(decoded[i], path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix=suffix)
+            for j in range(len(decoded)):
+                images.save_image(decoded[j], path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix=suffix)
 
     def diffusers_callback(_step: int, _timestep: int, latents: torch.FloatTensor):
         shared.state.sampling_step += 1
@@ -54,6 +55,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         shared.state.current_latent = latents
         if shared.state.interrupted or shared.state.skipped:
             raise AssertionError('Interrupted...')
+        if shared.state.paused:
+            shared.log.debug('Sampling paused')
+            while shared.state.paused:
+                if shared.state.interrupted or shared.state.skipped:
+                    raise AssertionError('Interrupted...')
+                time.sleep(0.1)
 
     def full_vae_decode(latents, model):
         shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)} images={latents.shape[0]}')
@@ -116,12 +123,15 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 negative_prompts_2.append(negative_prompts_2[-1])
         return prompts, negative_prompts, prompts_2, negative_prompts_2
 
-    def set_pipeline_args(model, prompts: list, negative_prompts: list, prompts_2: typing.Optional[list]=None, negative_prompts_2: typing.Optional[list]=None, is_refiner: bool=False, desc:str='', **kwargs):
+    def set_pipeline_args(model, prompts: list, negative_prompts: list, prompts_2: typing.Optional[list]=None, negative_prompts_2: typing.Optional[list]=None, desc:str='', **kwargs):
+        try:
+            is_refiner = model.text_encoder.__class__.__name__ != 'CLIPTextModel'
+        except Exception:
+            is_refiner = False
         if hasattr(model, "set_progress_bar_config"):
             model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining} '+desc, ncols=80, colour='#327fba')
         args = {}
-        pipeline = model
-        signature = inspect.signature(type(pipeline).__call__)
+        signature = inspect.signature(type(model).__call__)
         possible = signature.parameters.keys()
         generator_device = devices.cpu if shared.opts.diffusers_generator_device == "cpu" else shared.device
         generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
@@ -134,24 +144,20 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompts(model, prompts, negative_prompts, prompts_2, negative_prompts_2, is_refiner, kwargs.pop("clip_skip", None))
         if 'prompt' in possible:
             if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and prompt_embed is not None:
+                if type(pooled) == list:
+                    pooled = pooled[0]
+                if type(negative_pooled) == list:
+                    negative_pooled = negative_pooled[0]
                 args['prompt_embeds'] = prompt_embed
-                if not is_refiner and shared.sd_model_type == "sdxl":
+                if 'XL' in model.__class__.__name__:
                     args['pooled_prompt_embeds'] = pooled
-                    # args['prompt_2'] = None # Cannot pass prompts when passing embeds
-                if is_refiner and shared.sd_refiner_type == "sdxl":
-                    args['pooled_prompt_embeds'] = pooled
-                    # args['prompt_2'] = None # Cannot pass prompts when passing embeds
             else:
                 args['prompt'] = prompts
         if 'negative_prompt' in possible:
             if hasattr(model, 'text_encoder') and 'negative_prompt_embeds' in possible and negative_embed is not None:
                 args['negative_prompt_embeds'] = negative_embed
-                if not is_refiner and shared.sd_model_type == "sdxl":
+                if 'XL' in model.__class__.__name__:
                     args['negative_pooled_prompt_embeds'] = negative_pooled
-                    # args['negative_prompt_2'] = None
-                if is_refiner and shared.sd_refiner_type == "sdxl":
-                    args['negative_pooled_prompt_embeds'] = negative_pooled
-                    # args['negative_prompt_2'] = None
             else:
                 args['negative_prompt'] = negative_prompts
         if 'guidance_scale' in possible:
@@ -191,7 +197,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if 'negative_pooled_prompt_embeds' in clean:
             clean['negative_pooled_prompt_embeds'] = clean['negative_pooled_prompt_embeds'].shape if torch.is_tensor(clean['negative_pooled_prompt_embeds']) else type(clean['negative_pooled_prompt_embeds'])
         clean['generator'] = generator_device
-        shared.log.debug(f'Diffuser pipeline: {pipeline.__class__.__name__} task={sd_models.get_diffusers_task(model)} set={clean}')
+        shared.log.debug(f'Diffuser pipeline: {model.__class__.__name__} task={sd_models.get_diffusers_task(model)} set={clean}')
         return args
 
     def recompile_model(hires=False):
@@ -287,7 +293,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         denoising_start=0 if use_refiner_start else p.refiner_start if use_denoise_start else None,
         denoising_end=p.refiner_start if use_refiner_start else 1 if use_denoise_start else None,
         output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
-        is_refiner=False,
         clip_skip=p.clip_skip,
         desc='Base',
         **task_specific_kwargs
@@ -298,6 +303,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         output = shared.sd_model(**base_args) # pylint: disable=not-callable
     except AssertionError as e:
         shared.log.info(e)
+
+    if hasattr(shared.sd_model, 'embedding_db') and len(shared.sd_model.embedding_db.embeddings_used) > 0:
+        p.extra_generation_params['Embeddings'] = ', '.join(shared.sd_model.embedding_db.embeddings_used)
 
     if lora_state['active']:
         p.extra_generation_params['LoRA method'] = shared.opts.diffusers_lora_loader
@@ -327,7 +335,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 guidance_scale=p.image_cfg_scale if p.image_cfg_scale is not None else p.cfg_scale,
                 guidance_rescale=p.diffusers_guidance_rescale,
                 output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
-                is_refiner=False,
                 clip_skip=p.clip_skip,
                 image=p.init_images,
                 strength=p.denoising_strength,
@@ -374,7 +381,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 denoising_end=1 if p.refiner_start > 0 and p.refiner_start < 1 else None,
                 image=output.images[i],
                 output_type='latent' if hasattr(shared.sd_refiner, 'vae') else 'np',
-                is_refiner=True,
                 clip_skip=p.clip_skip,
                 desc='Refiner',
             )
@@ -382,12 +388,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 refiner_output = shared.sd_refiner(**refiner_args) # pylint: disable=not-callable
             except AssertionError as e:
                 shared.log.info(e)
-
-            p.extra_generation_params['Image CFG scale'] = p.image_cfg_scale if p.image_cfg_scale is not None else None
-            p.extra_generation_params['Refiner steps'] = p.refiner_steps
-            p.extra_generation_params['Refiner start'] = p.refiner_start
-            p.extra_generation_params["Hires steps"] = p.hr_second_pass_steps
-            p.extra_generation_params["Secondary sampler"] = p.latent_sampler
 
             if not shared.state.interrupted and not shared.state.skipped:
                 refiner_images = vae_decode(latents=refiner_output.images, model=shared.sd_refiner, full_quality=True)

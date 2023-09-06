@@ -1,6 +1,7 @@
 /* generic html tags */
-:root {
+:root, .light, .dark {
   --font: "Source Sans Pro", 'ui-sans-serif', 'system-ui', "Roboto", sans-serif;
+  --font-mono: 'IBM Plex Mono', 'ui-monospace', 'Consolas', monospace;
   --font-size: 16px;
   --left-column: 490px;
   --highlight-color: #ce6400;
@@ -30,7 +31,7 @@
 
 html { font-size: var(--font-size); }
 body, button, input, select, textarea { font-family: var(--font);}
-button { font-size: 1.2rem; }
+button { font-size: 1.2rem; max-width: 400px; }
 img { background-color: var(--background-color); }
 input[type=checkbox] { background-color: transparent !important; }
 input[type=range] { height: var(--line-sm); appearance: none; margin-top: 0; min-width: 160px; background-color: var(--background-color); width: 100%; background: transparent; }
@@ -112,9 +113,9 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #txt2img_results, #img2img_results, #extras_results { background-color: var(--background-color); padding: 0; }
 #txt2img_settings { min-width: var(--left-column); max-width: var(--left-column); background-color: #111111; padding-top: 16px; }
 #pnginfo_html2_info { margin-top: -18px; background-color: var(--input-background-fill); padding: var(--input-padding) }
-#txt2img_tools > div > button, #img2img_tools > div > button { filter: hue-rotate(180deg) saturate(0.5); }
-#txt2img_tools, #img2img_tools { margin-top: -4px; margin-bottom: -4px; } 
-#txt2img_styles_row { margin-top: -6px; }
+.gradio-button.tool { filter: hue-rotate(180deg) saturate(0.5); }
+#txt2img_tools, #img2img_tools { margin-top: -4px; margin-bottom: -4px; }
+#txt2img_styles_row, #img2img_styles_row { margin-top: -6px; }
 
 /* custom elements overrides */
 #steps-animation, #controlnet { border-width: 0; }
@@ -157,7 +158,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --checkbox-border-color: var(--neutral-700);
   --checkbox-border-color-focus: var(--secondary-500);
   --checkbox-border-color-hover: var(--neutral-600);
-  --checkbox-border-color-selected: var(--secondary-600);
+  --checkbox-border-color-selected: var(--primary-600);
   --checkbox-border-width: var(--input-border-width);
   --checkbox-label-background-fill: None;
   --checkbox-label-background-fill-hover: None;
@@ -246,8 +247,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --text-lg: 16px;
   --text-xl: 22px;
   --text-xxl: 26px;
-  --font: 'Source Sans Pro', 'ui-sans-serif', 'system-ui', sans-serif;
-  --font-mono: 'IBM Plex Mono', 'ui-monospace', 'Consolas', monospace;
   --body-text-size: var(--text-md);
   --body-text-weight: 400;
   --embed-radius: var(--radius-lg);

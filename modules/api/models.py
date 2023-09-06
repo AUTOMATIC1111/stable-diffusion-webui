@@ -204,7 +204,7 @@ class PreprocessResponse(BaseModel):
 
 fields = {}
 for key, metadata in shared.opts.data_labels.items():
-    value = shared.opts.data.get(key)
+    value = shared.opts.data.get(key) or shared.opts.data_labels[key].default
     optType = shared.opts.typemap.get(type(metadata.default), type(value))
 
     if metadata is not None:
