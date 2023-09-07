@@ -45,7 +45,7 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
 
     p.user = request.username
 
-    if cmd_opts.enable_console_prompts:
+    if shared.opts.enable_console_prompts or cmd_opts.enable_console_prompts:
         print(f"\ntxt2img: {prompt}", file=shared.progress_print_out)
 
     with closing(p):
