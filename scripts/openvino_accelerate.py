@@ -1,7 +1,6 @@
 # Copyright (C) 2023 Intel Corporation
 # SPDX-License-Identifier: AGPL-3.0
 
-from ast import arg
 import cv2
 import os
 import torch
@@ -604,7 +603,7 @@ def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching,
         checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
         print("OpenVINO Script:  created model from config : " + checkpoint_config)
         if(is_xl_ckpt):
-            
+
             if model_config != "None":
                 local_config_file = os.path.join(curr_dir_path, 'configs', model_config)
                 sd_model = StableDiffusionXLPipeline.from_single_file(checkpoint_path, local_config_file=local_config_file, use_safetensors=True)
@@ -946,7 +945,7 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
                     'height': p.height,
                 })
 
-            if refiner_ckpt != "None" and is_xl_ckpt == True:
+            if refiner_ckpt != "None" and is_xl_ckpt is True:
                 print("here")
                 base_output_type = "latent"
                 custom_inputs.update({
@@ -1148,7 +1147,7 @@ class Script(scripts.Script):
                 refiner_ckpt = gr.Dropdown(label="Refiner Model", choices=get_refiner_list(), value="None")
                 create_refresh_button(refiner_ckpt, get_refiner_list,lambda: {"choices": get_refiner_list()},"refresh_refiner_directory" )
                 refiner_frac = gr.Slider(minimum=0, maximum=1, step=0.1, label='Refiner Denosing Fraction:', value=0.8)
-                
+
         override_sampler = gr.Checkbox(label="Override the sampling selection from the main UI (Recommended as only below sampling methods have been validated for OpenVINO)", value=True)
         sampler_name = gr.Radio(label="Select a sampling method", choices=["Euler a", "Euler", "LMS", "Heun", "DPM++ 2M", "LMS Karras", "DPM++ 2M Karras", "DDIM", "PLMS"], value="Euler a")
         enable_caching = gr.Checkbox(label="Cache the compiled models on disk for faster model load in subsequent launches (Recommended)", value=True, elem_id=self.elem_id("enable_caching"))
