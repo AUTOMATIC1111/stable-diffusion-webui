@@ -30,11 +30,11 @@ def single_sample_to_image(sample, approximation=None):
     elif approximation == 1:
         x_sample = sd_vae_approx.model()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach() * 0.5 + 0.5
         if shared.sd_model_type == "sdxl":
-            x_sample = x_sample[[2,1,0],:,:] #BGR to RGB
+            x_sample = x_sample[[2,1,0],:,:] # BGR to RGB
     elif approximation == 2:
         x_sample = sd_vae_approx.cheap_approximation(sample) * 0.5 + 0.5
         if shared.sd_model_type == "sdxl":
-            x_sample = x_sample[[2,1,0],:,:] #BGR to RGB
+            x_sample = x_sample[[2,1,0],:,:] # BGR to RGB
     elif approximation == 3:
         # x_sample = sample * 1.5
         # x_sample = sd_vae_taesd.model()(x_sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()

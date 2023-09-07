@@ -121,10 +121,7 @@ class VanillaStableDiffusionSampler:
         return x, ts, cond, unconditional_conditioning
 
     def update_step(self, last_latent):
-        if self.mask is not None:
-            self.last_latent = self.init_latent * self.mask + self.nmask * last_latent
-        else:
-            self.last_latent = last_latent
+        self.last_latent = self.init_latent * self.mask + self.nmask * last_latent if self.mask is not None else last_latent
         sd_samplers_common.store_latent(self.last_latent)
         self.step += 1
         state.sampling_step = self.step

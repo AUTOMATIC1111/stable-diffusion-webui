@@ -27,7 +27,7 @@
   --button-secondary-text-color: white;
   --button-secondary-background-fill: linear-gradient(to bottom right, var(--neutral-400), var(--neutral-700));
   --button-secondary-background-fill-hover: linear-gradient(to bottom right, var(--neutral-700), var(--neutral-400));
-  --block-title-text-color: var(--neutral-900);
+  --block-title-text-color: var(--neutral-300);
   --radius-sm: 2px;
   --radius-lg: 4px;
   --spacing-md: 4px;
@@ -134,7 +134,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --background-fill-secondary: none;
   --border-color-accent: var(--background-color);
   --border-color-primary: var(--background-color);
-  --link-text-color-active: var(--secondary-500);
+  --link-text-color-active: var(--primary-500);
   --link-text-color: var(--secondary-500);
   --link-text-color-hover: var(--secondary-400);
   --link-text-color-visited: var(--secondary-600);

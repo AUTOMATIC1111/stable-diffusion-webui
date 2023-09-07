@@ -28,10 +28,12 @@ def model(model_class = 'sd', model_type = 'decoder'):
         model_path = os.path.join(paths_internal.models_path, "TAESD", f"tae{model_class}_{model_type}.pth")
         download_model(model_path)
         if os.path.exists(model_path):
+            from modules.shared import log
             taesd_models[f'{model_class}-{model_type}'] = TAESD(decoder_path=model_path, encoder_path=None) if model_type == 'decoder' else TAESD(encoder_path=model_path, decoder_path=None)
             vae = taesd_models[f'{model_class}-{model_type}']
             vae.eval()
             vae.to(devices.device, devices.dtype_vae)
+            log.info(f"Loaded VAE-approx model: {model_path}")
         else:
             raise FileNotFoundError('TAESD model not found')
     if vae is None:
