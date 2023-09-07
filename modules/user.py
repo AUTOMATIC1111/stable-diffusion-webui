@@ -37,6 +37,7 @@ def authorization(user, password):
         tss_token = getattr(opts, 'tu-token', {}).get('token')
         if tss_token:
             res['tss_token'] = tss_token
+            print(f"set tss token cookies:{tss_token}")
 
     elif user in auths and auths.get(user) == password:
         res['expire_time'] = 3600 * 24 + int(time.time())

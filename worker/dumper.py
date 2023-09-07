@@ -17,6 +17,7 @@ from tools.host import get_host_ip
 from tools.redis import RedisPool
 from worker.task import TaskProgress
 from tools.environment import pod_host
+from datetime import datetime
 
 
 class DumpInfo:
@@ -74,7 +75,8 @@ class TaskDumper(Thread):
     def _set_cache(self, info: DumpInfo):
         try:
             rds = self.redis_pool.get_connection()
-            rds.set(info.id.replace("task_id=", ""), json.dumps(info.set['$set']), 1200)
+            data = dict(((k, v) for (k, v) in info.set['$set'].items() if not isinstance(v, datetime)))
+            rds.set(info.id.replace("task_id=", ""), json.dumps(data), 1200)
         except Exception as err:
             logger.exception('cannot write to redis')
 
@@ -184,6 +186,7 @@ class MongoTaskDumper(TaskDumper):
             {
                 "task_id": task_progress.task.id,
                 "ip": self.ip,
+                "update_at": datetime.now()
             }
         )
 
@@ -210,6 +213,7 @@ class MongoTaskDumper(TaskDumper):
             tasks = list(tasks)
             for task in tasks:
                 task['status'] = -1
+                task['update_at'] = datetime.now()
                 task['task_desc'] = 'task timeout(auto clean).'
                 self.db.update(
                     {"task_id": task['task_id']},
@@ -230,6 +234,7 @@ class MongoTaskDumper(TaskDumper):
                          'user_id': task_progress.task.user_id, 'create_at': task_progress.task['create_at'],
                          'task_type': task_progress.task.task_type, 'minor_type': task_progress.task.minor_type,
                          'group_id': "", 'index': index, 'low_image': sample, 'image_type': 'grid',
+                         'update_at': datetime.now(),
                          'high_image': r['grids']['high'][i]}
                     flatten_images.append(t)
                     index += 1
@@ -242,6 +247,7 @@ class MongoTaskDumper(TaskDumper):
                          'high_image': r['samples']['high'][i],
                          'seed': task_progress.task['all_seed'][i],
                          'sub_seed': task_progress.task['all_sub_seed'][i],
+                         'update_at': datetime.now(),
                          }
                     flatten_images.append(t)
                     index += 1
@@ -252,6 +258,7 @@ class MongoTaskDumper(TaskDumper):
                          'task_type': task_progress.task.task_type, 'minor_type': task_progress.task.minor_type,
                          'group_id': "", 'index': index, 'low_image': sample, 'image_type': 'sample',
                          'high_image': r['all']['high'][i],
+                         'update_at': datetime.now(),
                          }
                     flatten_images.append(t)
                     index += 1
