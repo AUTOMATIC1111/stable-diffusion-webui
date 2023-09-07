@@ -65,7 +65,7 @@ class StyleDatabase:
     def reload(self):
         self.styles.clear()
         for fn in os.listdir(self.path):
-            if not fn.endswith(".json"):
+            if not fn.lower().endswith(".json"):
                 continue
             with open(os.path.join(self.path, fn), 'r', encoding='utf-8') as f:
                 try:

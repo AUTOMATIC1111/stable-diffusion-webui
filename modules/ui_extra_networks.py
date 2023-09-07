@@ -369,6 +369,7 @@ def create_ui(container, button, tabname, skip_indexing = False):
         for page in extra_pages:
             if title == '' or title == page.title or len(page.html) == 0:
                 page.refresh()
+                page.refresh_time = None
                 page.create_page(ui.tabname)
                 shared.log.debug(f"Refreshing Extra networks: page={page.title} items={len(page.items)} tab={ui.tabname}")
             res.append(page.html)
