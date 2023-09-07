@@ -168,7 +168,7 @@ def compel_encode_prompt(
         return prompt_embed, positive_pooled, negative_embed, negative_pooled
 
     elif 'XL' in pipeline.__class__.__name__ and is_refiner:
-        compel_te2 = Compel(tokenizer=pipeline.tokenizer_2, text_encoder=pipeline.text_encoder_2, returned_embeddings_type=embedding_type, requires_pooled=True, device=shared.device, textual_inversion_manager=textual_inversion_manager)
+        compel_te2 = Compel(tokenizer=pipeline.tokenizer_2, text_encoder=pipeline.text_encoder_2, returned_embeddings_type=embedding_type, requires_pooled=True, device=shared.device)
         positive, positive_pooled = compel_te2(prompt)
         negative, negative_pooled = compel_te2(negative_prompt)
 
