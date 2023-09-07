@@ -162,15 +162,21 @@ function setupExtraNetworksForTab(tabname) {
     });
   });
 
+  let hoverTimer = null;
   gradioApp().getElementById(`${tabname}_extra_tabs`).onmouseover = (e) => {
-    const el = e?.target?.parentElement;
-    if (!el?.classList?.contains('card')) return;
-    if (el.title === previousCard) return;
-    readCardDescription(el.dataset.filename, el.dataset.description);
-    readCardTags(el, el.dataset.tags);
-    e.stopPropagation();
-    e.preventDefault();
-    previousCard = el.title;
+    const el = e.target.closest('.card'); // bubble-up to card
+    if (!el || (el.title === previousCard)) return;
+    if (!hoverTimer) {
+      hoverTimer = setTimeout(() => {
+        readCardDescription(el.dataset.filename, el.dataset.description);
+        readCardTags(el, el.dataset.tags);
+        previousCard = el.title;
+      }, 300);
+    }
+    el.onmouseout = () => {
+      clearTimeout(hoverTimer);
+      hoverTimer = null;
+    };
   };
 
   const intersectionObserver = new IntersectionObserver((entries) => {
