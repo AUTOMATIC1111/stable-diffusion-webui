@@ -175,6 +175,7 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
 
 
 def load_diffusers_models(model_path: str, command_path: str = None):
+    t0 = time.time()
     import huggingface_hub as hf
     places = []
     places.append(model_path)
@@ -194,7 +195,7 @@ def load_diffusers_models(model_path: str, command_path: str = None):
                     output.append(str(r.repo_id))
         except Exception as e:
             shared.log.error(f"Error listing diffusers: {place} {e}")
-    shared.log.debug(f'Scanning diffusers cache: {model_path} {command_path} items={len(output)}')
+    shared.log.debug(f'Scanning diffusers cache: {model_path} {command_path} items={len(output)} time={time.time()-t0:.2f}s')
     return output
 
 

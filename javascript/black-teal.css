@@ -122,7 +122,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #txt2img_settings { min-width: var(--left-column); max-width: var(--left-column); background-color: #111111; padding-top: 16px; }
 #pnginfo_html2_info { margin-top: -18px; background-color: var(--input-background-fill); padding: var(--input-padding) }
 #txt2img_tools, #img2img_tools { margin-top: -4px; margin-bottom: -4px; }
-#txt2img_styles_row, #img2img_styles_row { margin-top: -6px; }
+#txt2img_styles_row, #img2img_styles_row { margin-top: -6px; z-index: 200; }
 
 /* custom elements overrides */
 #steps-animation, #controlnet { border-width: 0; }

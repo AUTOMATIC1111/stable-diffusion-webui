@@ -339,8 +339,8 @@ def create_ui(container, button, tabname, skip_indexing = False):
     with gr.Tabs(elem_id=tabname+"_extra_tabs"):
         button_refresh = ToolButton(symbols.refresh, elem_id=tabname+"_extra_refresh")
         button_close = ToolButton(symbols.close, elem_id=tabname+"_extra_close")
-        ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", elem_classes="textbox", lines=1)
-        ui.description = gr.TextArea('', show_label=False, elem_id=tabname+"_description", placeholder="Save/Replace Extra Network Description...", elem_classes="textbox", lines=1)
+        ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", elem_classes="textbox", lines=2)
+        ui.description = gr.Textbox('', show_label=False, elem_id=tabname+"_description", placeholder="Save/Replace Extra Network Description...", elem_classes="textbox", lines=2)
         ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
         ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
         ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
@@ -368,9 +368,9 @@ def create_ui(container, button, tabname, skip_indexing = False):
         res = []
         for page in extra_pages:
             if title == '' or title == page.title or len(page.html) == 0:
-                shared.log.debug(f"Refreshing Extra networks: page={page.title} tab={ui.tabname}")
                 page.refresh()
                 page.create_page(ui.tabname)
+                shared.log.debug(f"Refreshing Extra networks: page={page.title} items={len(page.items)} tab={ui.tabname}")
             res.append(page.html)
         ui.search.update(value = ui.search.value)
         return res

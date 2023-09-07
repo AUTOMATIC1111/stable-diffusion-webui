@@ -487,6 +487,7 @@ def create_ui(startup_timer = None):
                 (height, "Size-2"),
                 (subseed, "Variation seed"),
                 (subseed_strength, "Variation strength"),
+                (full_quality, "Full quality"),
                 (clip_skip, "Clip skip"),
                 (latent_index, "Latent sampler"),
                 (latent_index, "Secondary sampler"),
@@ -847,6 +848,7 @@ def create_ui(startup_timer = None):
                 (height, "Size-2"),
                 (subseed, "Variation seed"),
                 (subseed_strength, "Variation strength"),
+                (full_quality, "Full quality"),
                 (clip_skip, "Clip skip"),
                 (latent_index, "Latent sampler"),
                 (latent_index, "Secondary sampler"),
@@ -965,9 +967,10 @@ def create_ui(startup_timer = None):
     def run_settings(*args):
         changed = []
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
-            assert comp == dummy_component or opts.same_type(value, opts.data_labels[key].default), f"Bad value for setting {key}: {value}; expecting {type(opts.data_labels[key].default).__name__}"
-        for key, value, comp in zip(opts.data_labels.keys(), args, components):
             if comp == dummy_component:
+                continue
+            elif not opts.same_type(value, opts.data_labels[key].default):
+                log.error(f'Setting bad value: {key}={value} expecting={type(opts.data_labels[key].default).__name__}')
                 continue
             if opts.set(key, value):
                 changed.append(key)

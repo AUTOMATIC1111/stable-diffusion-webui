@@ -272,18 +272,17 @@ def list_themes():
     return themes
 
 
-def disable_extensions():
-    if opts.lyco_patch_lora and backend != Backend.DIFFUSERS:
-        if 'Lora' not in opts.disabled_extensions:
-            opts.data['disabled_extensions'].append('Lora')
-        opts.data['sd_lora'] = ''
-    else:
-        opts.data['disabled_extensions'] = [x for x in opts.disabled_extensions if x != 'Lora']
+def temp_disable_extensions():
+    disabled = []
     if backend == Backend.DIFFUSERS:
         for ext in ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris']:
             if ext not in opts.disabled_extensions:
-                log.warning(f'Diffusers disabling uncompatible extension: {ext}')
-                opts.data['disabled_extensions'].append(ext)
+                disabled.append(ext)
+        log.warning(f'Diffusers disabling uncompatible extensions: {disabled}')
+    if opts.lyco_patch_lora and backend != Backend.DIFFUSERS:
+        if 'Lora' not in opts.disabled_extensions:
+            disabled.append('Lora')
+    return disabled
 
 
 def refresh_themes():
@@ -429,6 +428,7 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Path to directory with stable diffusion checkpoints"),
     "diffusers_dir": OptionInfo(os.path.join(paths.models_path, 'Diffusers'), "Path to directory with stable diffusion diffusers"),
     "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Path to directory with VAE files"),
+    "sd_lora": OptionInfo("", "Add LoRA to prompt", gr.CheckboxGroup, {"choices": [], "visible": False}),
     "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Path to directory with LoRA network(s)"),
     "lyco_dir": OptionInfo(os.path.join(paths.models_path, 'LyCORIS'), "Path to directory with LyCORIS network(s)"),
     "styles_dir": OptionInfo(os.path.join(paths.data_path, 'styles.csv'), "Path to user-defined styles file"),

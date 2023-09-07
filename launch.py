@@ -216,7 +216,7 @@ if __name__ == "__main__":
             alive = False
             requests = 0
         if round(time.time()) % 120 == 0:
-            installer.log.debug(f'Server alive={alive} Requests={requests} memory {get_memory_stats()} ')
+            installer.log.debug(f'Server alive={alive} requests={requests} memory {get_memory_stats()} ')
         if not alive:
             if instance.wants_restart:
                 installer.log.info('Server restarting...')

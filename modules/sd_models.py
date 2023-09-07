@@ -144,6 +144,7 @@ def checkpoint_tiles(use_short=False): # pylint: disable=unused-argument
 
 
 def list_models():
+    t0 = time.time()
     checkpoints_list.clear()
     checkpoint_aliases.clear()
     if shared.opts.sd_disable_ckpt or shared.backend == shared.Backend.DIFFUSERS:
@@ -168,7 +169,7 @@ def list_models():
                 shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
     elif shared.cmd_opts.ckpt != shared.default_sd_model_file and shared.cmd_opts.ckpt is not None:
         shared.log.warning(f"Checkpoint not found: {shared.cmd_opts.ckpt}")
-    shared.log.info(f'Available models: {shared.opts.ckpt_dir} items={len(checkpoints_list)}')
+    shared.log.info(f'Available models: {shared.opts.ckpt_dir} items={len(checkpoints_list)} time={time.time()-t0:.2f}s')
 
     if len(checkpoints_list) == 0:
         if not shared.cmd_opts.no_download:
