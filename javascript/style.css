@@ -236,7 +236,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-networks .custom-button { width: 120px; width: 100%; background: none; justify-content: left; text-align: left; padding: 2px 8px 2px 16px; text-indent: -8px; box-shadow: none; line-break: auto; }
 .extra-networks .custom-button:hover { background: var(--button-primary-background-fill) }
 .extra-network-cards { display: flex; flex-wrap: wrap; overflow-y: auto; overflow-x: hidden; align-content: flex-start; width: -webkit-fill-available; }
-.extra-network-cards .card { height: fit-content; margin: 0.5em; position: relative; scroll-snap-align: start; scroll-margin-top: 0; }
+.extra-network-cards .card { height: fit-content; margin: 0 0 0.5em 0.5em; position: relative; scroll-snap-align: start; scroll-margin-top: 0; }
 .extra-network-cards .card .overlay { position: absolute; bottom: 0; padding: 0.2em; z-index: 10; width: 100%; background: none; }
 .extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
 .extra-network-cards .card .overlay .name { font-size: 1.1em; font-weight: bold; text-shadow: 1px 1px black; color: white; }
@@ -249,7 +249,9 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-network-cards .card:hover .overlay .actions { display: block; }
 .extra-network-cards .card:hover .overlay .tags { display: block; }
 .extra-network-cards .card:hover .overlay .description { display: block; }
-.extra-network-cards .card:hover .preview { box-shadow: none; }
+.extra-network-cards .card:hover .preview { box-shadow: none; filter: grayscale(100%); }
+#txt2img_description, #img2img_description { max-height: 63px; overflow-y: auto !important; } 
+#txt2img_description > label > textarea, #img2img_description > label > textarea { font-size: 0.9em } 
 
 /* controlnet */
 .controlnet_control_type .controlnet_control_type_filter_group .wrap:last-of-type { display: grid; grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); }

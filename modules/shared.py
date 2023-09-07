@@ -274,14 +274,14 @@ def list_themes():
 
 def temp_disable_extensions():
     disabled = []
-    if opts.lyco_patch_lora and backend != Backend.DIFFUSERS:
-        if 'Lora' not in opts.disabled_extensions:
-            disabled.append('Lora')
     if backend == Backend.DIFFUSERS:
         for ext in ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris']:
             if ext not in opts.disabled_extensions:
-                log.warning(f'Diffusers disabling uncompatible extension: {ext}')
                 disabled.append(ext)
+        log.warning(f'Diffusers disabling uncompatible extensions: {disabled}')
+    if opts.lyco_patch_lora and backend != Backend.DIFFUSERS:
+        if 'Lora' not in opts.disabled_extensions:
+            disabled.append('Lora')
     return disabled
 
 
