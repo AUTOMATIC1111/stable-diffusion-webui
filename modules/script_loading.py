@@ -21,8 +21,6 @@ def preload_extensions(extensions_dir, parser):
     if not os.path.isdir(extensions_dir):
         return
     for dirname in sorted(os.listdir(extensions_dir)):
-        # if dirname in opts.get('disabled_extensions', []): # TODO: preload happens before opts are parsed
-        #    continue
         if dirname in preloaded:
             continue
         preloaded.append(dirname)

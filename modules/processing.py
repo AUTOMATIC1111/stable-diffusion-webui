@@ -461,7 +461,6 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         index = position_in_batch + iteration * p.batch_size
     if all_negative_prompts is None:
         all_negative_prompts = p.all_negative_prompts
-    vae = (None if not shared.opts.add_model_name_to_info or modules.sd_vae.loaded_vae_file is None else os.path.splitext(os.path.basename(modules.sd_vae.loaded_vae_file))[0]) if p.full_quality else 'TAESD'
     comment = ', '.join(comments) if comments is not None and type(comments) is list else None
 
     args = {
@@ -475,7 +474,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Parser": shared.opts.prompt_attention,
         "Model": None if (not shared.opts.add_model_name_to_info) or (not shared.sd_model.sd_checkpoint_info.model_name) else shared.sd_model.sd_checkpoint_info.model_name.replace(',', '').replace(':', ''),
         "Model hash": getattr(p, 'sd_model_hash', None if (not shared.opts.add_model_hash_to_info) or (not shared.sd_model.sd_model_hash) else shared.sd_model.sd_model_hash),
-        "VAE": vae,
+        "VAE": (None if not shared.opts.add_model_name_to_info or modules.sd_vae.loaded_vae_file is None else os.path.splitext(os.path.basename(modules.sd_vae.loaded_vae_file))[0]) if p.full_quality else 'TAESD',
         "Variation seed": None if p.subseed_strength == 0 else all_subseeds[index],
         "Variation strength": None if p.subseed_strength == 0 else p.subseed_strength,
         "Seed resize from": None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}",
@@ -574,13 +573,28 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     if not hasattr(p.sd_model, 'sd_checkpoint_info'):
         return None
     stored_opts = {}
+    for k, v in p.override_settings.copy().items():
+        orig = shared.opts.data.get(k, None) or shared.opts.data_labels[k].default
+        if orig == v or os.path.splitext(orig)[0] == v:
+            p.override_settings.pop(k, None)
     for k in p.override_settings.keys():
         stored_opts[k] = shared.opts.data.get(k, None) or shared.opts.data_labels[k].default
     try:
         # if no checkpoint override or the override checkpoint can't be found, remove override entry and load opts checkpoint
         if p.override_settings.get('sd_model_checkpoint', None) is not None and modules.sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
+            shared.log.warning(f"Override not found: checkpoint={p.override_settings.get('sd_model_checkpoint', None)}")
             p.override_settings.pop('sd_model_checkpoint', None)
             modules.sd_models.reload_model_weights()
+        if p.override_settings.get('sd_model_refiner', None) is not None and modules.sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_refiner')) is None:
+            shared.log.warning(f"Override not found: refiner={p.override_settings.get('sd_model_refiner', None)}")
+            p.override_settings.pop('sd_model_refiner', None)
+            modules.sd_models.reload_model_weights()
+        if p.override_settings.get('sd_vae', None) is not None:
+            if p.override_settings.get('sd_vae', None) == 'TAESD':
+                p.full_quality = False
+                # p.override_settings.pop('sd_vae', None)
+        if len(p.override_settings.keys()) > 0:
+            shared.log.debug(f'Override: {p.override_settings}')
         for k, v in p.override_settings.items():
             setattr(shared.opts, k, v)
             if k == 'sd_model_checkpoint':
