@@ -612,9 +612,9 @@ def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching,
             else:
                 sd_model = StableDiffusionXLPipeline.from_single_file(checkpoint_path, local_config_file=checkpoint_config, use_safetensors=True)
             if (mode == 1):
-                sd_model = StableDiffusionXLImg2ImgPipeline.from_single_file(**sd_model.components)
+                sd_model = StableDiffusionXLImg2ImgPipeline(**sd_model.components)
             elif (mode == 2):
-                sd_model = StableDiffusionXLInpaintPipeline.from_single_file(**sd_model.components)
+                sd_model = StableDiffusionXLInpaintPipeline(**sd_model.components)
             elif (mode == 3):
                 controlnet = ControlNetModel.from_pretrained("lllyasviel/" + model_state.cn_model)
                 sd_model = StableDiffusionXLControlNetPipeline(**sd_model.components, controlnet=controlnet)
