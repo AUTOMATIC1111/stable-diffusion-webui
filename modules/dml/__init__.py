@@ -1,12 +1,12 @@
-from platform import system
-import torch
+import platform
 from typing import NamedTuple, Callable, Optional
+import torch
 
 from modules.sd_hijack_utils import CondFunc
 
 memory_providers = ["None", "atiadlxx (AMD only)"]
 default_memory_provider = "None"
-if system() == "Windows":
+if platform.system() == "Windows":
     memory_providers.append("Performance Counter")
     default_memory_provider = "Performance Counter"
 do_nothing = lambda: None
@@ -36,27 +36,31 @@ def _set_memory_provider():
     torch.cuda.mem_get_info = torch.dml.mem_get_info
 
 def directml_init():
-    from modules.dml.backend import DirectML # pylint: disable=ungrouped-imports
-    # Alternative of torch.cuda for DirectML.
-    torch.dml = DirectML
+    try:
+        from modules.dml.backend import DirectML # pylint: disable=ungrouped-imports
+        # Alternative of torch.cuda for DirectML.
+        torch.dml = DirectML
 
-    torch.cuda.is_available = lambda: False
-    torch.cuda.device = torch.dml.device
-    torch.cuda.device_count = torch.dml.device_count
-    torch.cuda.current_device = torch.dml.current_device
-    torch.cuda.get_device_name = torch.dml.get_device_name
-    torch.cuda.get_device_properties = torch.dml.get_device_properties
+        torch.cuda.is_available = lambda: False
+        torch.cuda.device = torch.dml.device
+        torch.cuda.device_count = torch.dml.device_count
+        torch.cuda.current_device = torch.dml.current_device
+        torch.cuda.get_device_name = torch.dml.get_device_name
+        torch.cuda.get_device_properties = torch.dml.get_device_properties
 
-    torch.cuda.empty_cache = do_nothing
-    torch.cuda.ipc_collect = do_nothing
-    torch.cuda.memory_stats = torch.dml.memory_stats
-    torch.cuda.mem_get_info = torch.dml.mem_get_info
-    torch.cuda.memory_allocated = torch.dml.memory_allocated
-    torch.cuda.max_memory_allocated = torch.dml.max_memory_allocated
-    torch.cuda.reset_peak_memory_stats = torch.dml.reset_peak_memory_stats
-    torch.cuda.utilization = lambda: 0
+        torch.cuda.empty_cache = do_nothing
+        torch.cuda.ipc_collect = do_nothing
+        torch.cuda.memory_stats = torch.dml.memory_stats
+        torch.cuda.mem_get_info = torch.dml.mem_get_info
+        torch.cuda.memory_allocated = torch.dml.memory_allocated
+        torch.cuda.max_memory_allocated = torch.dml.max_memory_allocated
+        torch.cuda.reset_peak_memory_stats = torch.dml.reset_peak_memory_stats
+        torch.cuda.utilization = lambda: 0
 
-    torch.Tensor.directml = lambda self: self.to(torch.dml.current_device())
+        torch.Tensor.directml = lambda self: self.to(torch.dml.current_device())
+    except Exception as e:
+        return False, e
+    return True, None
 
 def directml_do_hijack():
     import modules.dml.hijack

@@ -168,11 +168,17 @@ args = cmd_args.parser.parse_args()
 if args.use_ipex or (hasattr(torch, 'xpu') and torch.xpu.is_available()):
     backend = 'ipex'
     from modules.intel.ipex import ipex_init
-    ipex_init()
+    ok, e = ipex_init()
+    if not ok:
+        shared.log.error('IPEX initialization failed: {e}')
+        backend = 'cpu'
 elif args.use_directml:
     backend = 'directml'
     from modules.dml import directml_init
-    directml_init()
+    ok, e = directml_init()
+    if not ok:
+        shared.log.error('DirectML initialization failed: {e}')
+        backend = 'cpu'
 elif torch.cuda.is_available() and torch.version.cuda:
     backend = 'cuda'
 elif torch.cuda.is_available() and torch.version.hip:
