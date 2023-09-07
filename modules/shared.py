@@ -137,19 +137,20 @@ class State:
         }
         return obj
 
-    def begin(self):
-        self.sampling_step = 0
-        self.job_count = -1
-        self.processing_has_refined_job_count = False
-        self.job_no = 0
-        self.job_timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        self.current_latent = None
+    def begin(self, title=""):
         self.current_image = None
         self.current_image_sampling_step = 0
+        self.current_latent = None
         self.id_live_preview = 0
-        self.skipped = False
         self.interrupted = False
+        self.job = title
+        self.job_count = -1
+        self.job_no = 0
+        self.job_timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         self.paused = False
+        self.processing_has_refined_job_count = False
+        self.sampling_step = 0
+        self.skipped = False
         self.textinfo = None
         self.time_start = time.time()
         devices.torch_gc()
@@ -157,7 +158,10 @@ class State:
     def end(self):
         self.job = ""
         self.job_count = 0
+        self.job_no = 0
         self.paused = False
+        self.interrupted = False
+        self.skipped = False
         devices.torch_gc()
 
     def set_current_image(self):
@@ -278,8 +282,9 @@ def temp_disable_extensions():
         for ext in ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris']:
             if ext not in opts.disabled_extensions:
                 disabled.append(ext)
-        log.warning(f'Diffusers disabling uncompatible extensions: {disabled}')
+        log.info(f'Diffusers disabling uncompatible extensions: {disabled}')
     if opts.lyco_patch_lora and backend != Backend.DIFFUSERS:
+        cmd_opts.lyco_dir = opts.lora_dir
         if 'Lora' not in opts.disabled_extensions:
             disabled.append('Lora')
     return disabled
@@ -428,7 +433,7 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Path to directory with stable diffusion checkpoints"),
     "diffusers_dir": OptionInfo(os.path.join(paths.models_path, 'Diffusers'), "Path to directory with stable diffusion diffusers"),
     "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Path to directory with VAE files"),
-    "sd_lora": OptionInfo("", "Add LoRA to prompt", gr.CheckboxGroup, {"choices": [], "visible": False}),
+    "sd_lora": OptionInfo("", "Add LoRA to prompt", gr.Textbox, {"choices": [], "visible": False}),
     "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Path to directory with LoRA network(s)"),
     "lyco_dir": OptionInfo(os.path.join(paths.models_path, 'LyCORIS'), "Path to directory with LyCORIS network(s)"),
     "styles_dir": OptionInfo(os.path.join(paths.data_path, 'styles.csv'), "Path to user-defined styles file"),

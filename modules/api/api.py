@@ -263,7 +263,7 @@ class Api:
             p.scripts = script_runner
             p.outpath_grids = shared.opts.outdir_grids or shared.opts.outdir_txt2img_grids
             p.outpath_samples = shared.opts.outdir_samples or shared.opts.outdir_txt2img_samples
-            shared.state.begin()
+            shared.state.begin('api-txt2img')
             script_args = self.init_script_args(p, txt2imgreq, self.default_script_arg_txt2img, selectable_scripts, selectable_script_idx, script_runner)
             if selectable_scripts is not None:
                 processed = scripts.scripts_txt2img.run(p, *script_args) # Need to pass args as list here
@@ -311,7 +311,7 @@ class Api:
             p.scripts = script_runner
             p.outpath_grids = shared.opts.outdir_img2img_grids
             p.outpath_samples = shared.opts.outdir_img2img_samples
-            shared.state.begin()
+            shared.state.begin('api-img2img')
             script_args = self.init_script_args(p, img2imgreq, self.default_script_arg_img2img, selectable_scripts, selectable_script_idx, script_runner)
             if selectable_scripts is not None:
                 processed = scripts.scripts_img2img.run(p, *script_args) # Need to pass args as list here
@@ -513,7 +513,7 @@ class Api:
 
     def create_embedding(self, args: dict):
         try:
-            shared.state.begin()
+            shared.state.begin('api-create-embedding')
             filename = create_embedding(**args) # create empty embedding
             sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings() # reload embeddings so new one can be immediately used
             shared.state.end()
@@ -524,7 +524,7 @@ class Api:
 
     def create_hypernetwork(self, args: dict):
         try:
-            shared.state.begin()
+            shared.state.begin('api-create-hypernetwork')
             filename = create_hypernetwork(**args) # create empty embedding # pylint: disable=E1111
             shared.state.end()
             return models.CreateResponse(info = f"create hypernetwork filename: {filename}")
@@ -534,7 +534,7 @@ class Api:
 
     def preprocess(self, args: dict):
         try:
-            shared.state.begin()
+            shared.state.begin('api-preprocess')
             preprocess(**args) # quick operation unless blip/booru interrogation is enabled
             shared.state.end()
             return models.PreprocessResponse(info = 'preprocess complete')
@@ -550,7 +550,7 @@ class Api:
 
     def train_embedding(self, args: dict):
         try:
-            shared.state.begin()
+            shared.state.begin('api-train-embedding')
             apply_optimizations = False
             error = None
             filename = ''
@@ -571,7 +571,7 @@ class Api:
 
     def train_hypernetwork(self, args: dict):
         try:
-            shared.state.begin()
+            shared.state.begin('api-train-hypernetwork')
             shared.loaded_hypernetworks = []
             apply_optimizations = False
             error = None

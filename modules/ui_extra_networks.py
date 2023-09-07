@@ -219,7 +219,7 @@ class ExtraNetworksPage:
         else:
             return ''
         t1 = time.time()
-        shared.log.debug(f'Extra networks: {self.name} items={len(self.items)} subdirs={len(subdirs)} tab={tabname} time={round(t1-t0, 2)}')
+        shared.log.debug(f'Extra networks: page={self.name} items={len(self.items)} subdirs={len(subdirs)} tab={tabname} dirs={self.allowed_directories_for_previews()} time={round(t1-t0, 2)}')
         threading.Thread(target=self.create_thumb).start()
 
     def list_items(self):

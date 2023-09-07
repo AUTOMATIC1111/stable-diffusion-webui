@@ -10,8 +10,7 @@ from modules.shared import opts
 
 def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemporaryFile], input_dir, output_dir, show_extras_results, *args, save_output: bool = True):
     devices.torch_gc()
-    shared.state.begin()
-    shared.state.job = 'extras'
+    shared.state.begin('extras')
     image_data = []
     image_names = []
     image_ext = []

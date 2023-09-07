@@ -39,6 +39,7 @@ from modules.shared import cmd_opts, opts
 import modules.hypernetworks.hypernetwork
 from modules.middleware import setup_middleware
 
+state = shared.state
 if not modules.loader.initialized:
     timer.startup.record("libraries")
     log.info('Loaded librareis')
@@ -152,8 +153,7 @@ def initialize():
 
 def load_model():
     if opts.sd_checkpoint_autoload:
-        shared.state.begin()
-        shared.state.job = 'load model'
+        shared.state.begin('load model')
         thread_model = Thread(target=lambda: shared.sd_model)
         thread_model.start()
         thread_refiner = Thread(target=lambda: shared.sd_refiner)

@@ -150,12 +150,12 @@ def start_server(immediate=True, server=None):
         server.wants_restart = False
     else:
         if args.api_only:
-            server = server.api_only()
+            uvicorn = server.api_only()
         else:
-            server = server.webui(restart=not immediate)
+            uvicorn = server.webui(restart=not immediate)
     if args.profile:
         installer.print_profile(pr, 'WebUI')
-    return server
+    return uvicorn, server
 
 
 if __name__ == "__main__":
@@ -207,20 +207,21 @@ if __name__ == "__main__":
     # installer.log.debug(f"Args: {vars(args)}")
     logging.disable(logging.NOTSET if args.debug else logging.DEBUG)
 
-    instance = start_server(immediate=True, server=None)
+    uv, instance = start_server(immediate=True, server=None)
     while True:
         try:
-            alive = instance.thread.is_alive()
-            requests = instance.server_state.total_requests if hasattr(instance, 'server_state') else 0
+            alive = uv.thread.is_alive()
+            requests = uv.server_state.total_requests if hasattr(uv, 'server_state') else 0
         except Exception:
             alive = False
             requests = 0
         if round(time.time()) % 120 == 0:
-            installer.log.debug(f'Server alive={alive} requests={requests} memory {get_memory_stats()} ')
+            state = f'job="{instance.state.job}" {instance.state.job_no}/{instance.state.job_count}'
+            installer.log.debug(f'Server alive={alive} requests={requests} memory {get_memory_stats()} {state}')
         if not alive:
             if instance.wants_restart:
                 installer.log.info('Server restarting...')
-                instance = start_server(immediate=False, server=instance)
+                uv, instance = start_server(immediate=False, server=instance)
             else:
                 installer.log.info('Exiting...')
                 break

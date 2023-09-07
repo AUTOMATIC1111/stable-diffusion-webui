@@ -232,6 +232,8 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
     from modules import lowvram, sd_hijack
     if not sd_model:
         sd_model = shared.sd_model
+    if sd_model is None:
+        return
     global checkpoint_info # pylint: disable=global-statement
     checkpoint_info = sd_model.sd_checkpoint_info
     checkpoint_file = checkpoint_info.filename
