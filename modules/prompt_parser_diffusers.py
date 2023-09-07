@@ -118,15 +118,15 @@ def compel_encode_prompt(
     is_refiner: bool = None,
     clip_skip: typing.Optional[int] = None,
 ):
-    if shared.sd_model_type not in {"sd", "sdxl"}:
-        shared.log.warning(f"Prompt parser: Compel not supported: {type(pipeline).__name__}")
+    if 'StableDiffusion' not in pipeline.__class__.__name__:
+        shared.log.warning(f"Prompt parser: Compel not supported: {pipeline.__class__.__name__}")
         return (None, None, None, None)
 
-    if not is_refiner and shared.sd_model_type == "sdxl":
+    if 'XL' in pipeline.__class__.__name__ and not is_refiner:
         embedding_type = ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED
         if clip_skip is not None and clip_skip > 1:
             shared.log.warning(f"Prompt parser SDXL unsupported: clip_skip={clip_skip}")
-    elif is_refiner and shared.sd_refiner_type == "sdxl":
+    elif 'XL' in pipeline.__class__.__name__ and is_refiner:
         embedding_type = ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED
         if clip_skip is not None and clip_skip > 1:
             shared.log.warning(f"Prompt parser SDXL unsupported: clip_skip={clip_skip}")

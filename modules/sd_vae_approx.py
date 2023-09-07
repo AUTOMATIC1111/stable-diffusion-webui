@@ -36,6 +36,7 @@ def model():
     global sd_vae_approx_model # pylint: disable=global-statement
 
     if sd_vae_approx_model is None:
+        from modules.shared import log
         model_path = os.path.join(paths.models_path, "VAE-approx", "model.pt")
         sd_vae_approx_model = VAEApprox()
         if not os.path.exists(model_path):
@@ -43,13 +44,13 @@ def model():
         sd_vae_approx_model.load_state_dict(torch.load(model_path, map_location='cpu' if devices.device.type != 'cuda' else None))
         sd_vae_approx_model.eval()
         sd_vae_approx_model.to(devices.device, devices.dtype)
+        log.info(f"Loaded VAE-approx model: {model_path}")
 
     return sd_vae_approx_model
 
 
 def cheap_approximation(sample):
     # https://discuss.huggingface.co/t/decoding-latents-to-rgb-without-upscaling/23204/2
-
     coefs = torch.tensor([
         [0.298, 0.207, 0.208],
         [0.187, 0.286, 0.173],
