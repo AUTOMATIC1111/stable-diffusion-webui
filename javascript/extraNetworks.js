@@ -179,7 +179,7 @@ function setupExtraNetworksForTab(tabname) {
     if (entries[0].intersectionRatio > 0) {
       if (window.opts.extra_networks_card_cover === 'cover') {
         en.style.transition = '';
-        en.style.zIndex = 9999;
+        en.style.zIndex = 100;
         en.style.position = 'absolute';
         en.style.right = 'unset';
         en.style.width = 'unset';
@@ -187,7 +187,7 @@ function setupExtraNetworksForTab(tabname) {
         gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset';
       } else if (window.opts.extra_networks_card_cover === 'sidebar') {
         en.style.transition = 'width 0.2s ease';
-        en.style.zIndex = 9999;
+        en.style.zIndex = 100;
         en.style.position = 'absolute';
         en.style.right = '0';
         en.style.width = `${window.opts.extra_networks_sidebar_width}vw`;
