@@ -26,7 +26,7 @@ import tempfile
 # )
 from accelerate import Accelerator
 # from library.lpw_stable_diffusion import StableDiffusionLongPromptWeightingPipeline
-from train_network_all_auto import train_with_params, train_callback
+from sd_scripts.train_network_all_auto import train_with_params, train_callback
 
 # from prompts_generate import txt2img_prompts
 
@@ -829,23 +829,23 @@ def train_auto(
     )
 
     return os.path.join(lora_path, lora_name + ".safetensors")
-
-#MODEL_PATH = "/data/qll/stable-diffusion-webui/models/Stable-diffusion/AWPortrait_v1.2.safetensors"
-#PIC_SAVE_PATH = "/data/qll/pics/yijian_sanciyuan_train"
-#LORA_PATH = "/data/qll/stable-diffusion-webui/models/Lora"
-# model_p = "/data/qll/stable-diffusion-webui/models"
-# trigger_word = f"liuxiangxzai"
-# undesired_tags = ""  # 待测试五官
-# train_data_dir = "/moba_expert_data/qll/pics/liuxiang"
-# for i in range(3):
-#    train_auto(
-#        train_data_dir=train_data_dir,  # 训练的图片路径
-#        train_type=0,  # 训练的类别
-#        task_id="test",   # 任务id,作为Lora名称
-#        sd_model_path=MODEL_PATH, # 底模路径
-#        lora_path=LORA_PATH, # 文件夹名字
-#        general_model_path=model_p, # 通用路径,
-#        train_callback=train_callback, # callback函数
-#        other_args=None # 预留一个，以备用
-#    )
+if __name__ == '__main__':
+    MODEL_PATH = "/data/qll/stable-diffusion-webui/models/Stable-diffusion/AWPortrait_v1.2.safetensors"
+    PIC_SAVE_PATH = "/data/qll/pics/yijian_sanciyuan_train"
+    LORA_PATH = "/data/qll/stable-diffusion-webui/models/Lora"
+    model_p = "/data/qll/stable-diffusion-webui/models"
+    trigger_word = f"liuxiangxzai"
+    undesired_tags = ""  # 待测试五官
+    train_data_dir = "/moba_expert_data/qll/pics/liuxiang"
+    for i in range(3):
+        train_auto(
+       train_data_dir=train_data_dir,  # 训练的图片路径
+       train_type=0,  # 训练的类别
+       task_id="test",   # 任务id,作为Lora名称
+       sd_model_path=MODEL_PATH, # 底模路径
+       lora_path=LORA_PATH, # 文件夹名字
+       general_model_path=model_p, # 通用路径,
+       train_callback=train_callback, # callback函数
+       other_args=None # 预留一个，以备用
+        )
 

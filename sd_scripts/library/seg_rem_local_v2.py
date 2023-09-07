@@ -98,7 +98,7 @@ def get_max_box(boxes):
     return max_box
 
 class MySeg:
-    def __init__(self, models_path):
+    def __init__(self,models_path):
         self.models_path = models_path
         # sd_sam_model_dir = os.path.join(models_path, "sam")
         sd_dino_model_dir = os.path.join(models_path, "local_groundingdino/config/GroundingDINO_SwinT_OGC.py")
@@ -108,23 +108,16 @@ class MySeg:
 
         ckpt_filenmae = os.path.join(models_path, "grounding-dino/groundingdino_swint_ogc.pth")
         parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        path = os.path.join(parent_dir, "local_groundingdino/config/GroundingDINO_SwinT_OGC.py")
-
-        if os.path.isfile(path):
-            self.groundingdino_model = self.load_model(path, ckpt_filenmae, 'cuda')
-        elif os.path.isfile("local_groundingdino/config/GroundingDINO_SwinT_OGC.py"):
-            path = "local_groundingdino/config/GroundingDINO_SwinT_OGC.py"
-            self.groundingdino_model = self.load_model(path, ckpt_filenmae, 'cuda')
-
+        path =  os.path.join(parent_dir, "local_groundingdino/config/GroundingDINO_SwinT_OGC.py")
+        self.groundingdino_model = self.load_model(path, ckpt_filenmae, 'cuda')
         print(f'init groundingdino_model success')
         # rembg
         # rembg_model_name = 'u2net_human_seg'
-
-        if os.path.isdir(os.path.join(models_path, "U2NET")):
-            os.environ['U2NET_HOME'] = os.path.join(models_path, "U2NET")
+        os.environ['U2NET_HOME'] = os.path.join(models_path,"U2NET")
         rembg_model_name = 'u2net'
         self.sess = session_factory.new_session(rembg_model_name)
-
+        
+    
     def load_model(self, model_config_path, model_checkpoint_path, device="cpu"):
         args = SLConfig.fromfile(model_config_path)
         args.device = device
