@@ -693,7 +693,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         return ''
 
     ema_scope_context = p.sd_model.ema_scope if shared.backend == shared.Backend.ORIGINAL else nullcontext
-    with torch.inference_mode(), ema_scope_context():
+    with torch.no_grad(), ema_scope_context():
         t0 = time.time()
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
