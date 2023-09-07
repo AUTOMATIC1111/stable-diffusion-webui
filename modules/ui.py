@@ -1085,7 +1085,7 @@ def create_ui(startup_timer = None):
         unload_sd_model.click(fn=unload_sd_weights, inputs=[], outputs=[])
         reload_sd_model.click(fn=reload_sd_weights, inputs=[], outputs=[])
         request_notifications.click(fn=lambda: None, inputs=[], outputs=[], _js='function(){}')
-        preview_theme.click(fn=None, _js='preview_theme', inputs=[dummy_component], outputs=[dummy_component])
+        preview_theme.click(fn=None, _js='previewTheme', inputs=[], outputs=[])
 
     timer.startup.record("ui-settings")
 

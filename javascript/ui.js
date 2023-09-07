@@ -361,19 +361,21 @@ function create_theme_element() {
   return el;
 }
 
-async function preview_theme() {
+function previewTheme() {
   let name = gradioApp().getElementById('setting_gradio_theme').querySelectorAll('input')?.[0].value || '';
-  const res = await fetch('/file=html/themes.json');
-  const themes = await res.json();
-  const theme = themes.find((t) => t.id === name);
-  if (theme) {
-    window.open(theme.subdomain, '_blank');
-  } else {
-    const el = document.getElementById('theme-preview') || create_theme_element();
-    el.style.display = el.style.display === 'block' ? 'none' : 'block';
-    name = name.replace('/', '-');
-    el.src = `/file=html/${name}.jpg`;
-  }
+  fetch('/file=html/themes.json').then((res) => {
+    res.json().then((themes) => {
+      const theme = themes.find((t) => t.id === name);
+      if (theme) {
+        window.open(theme.subdomain, '_blank');
+      } else {
+        const el = document.getElementById('theme-preview') || create_theme_element();
+        el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        name = name.replace('/', '-');
+        el.src = `/file=html/${name}.jpg`;
+      }
+    });
+  });
 }
 
 async function reconnectUI() {

@@ -1,5 +1,9 @@
 # Change Log for SD.Next
 
+## Update for 2023-09-07
+
+Service release with many fixes
+
 ## Update for 2023-09-06
 
 One week later, another large update!

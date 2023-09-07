@@ -248,32 +248,16 @@ def refresh_checkpoints():
     import modules.sd_models # pylint: disable=W0621
     return modules.sd_models.list_models()
 
+
 def refresh_vaes():
     import modules.sd_vae # pylint: disable=W0621
     modules.sd_vae.refresh_vae_list()
+
 
 def list_samplers():
     import modules.sd_samplers # pylint: disable=W0621
     modules.sd_samplers.set_samplers()
     return modules.sd_samplers.all_samplers
-
-def list_builtin_themes():
-    files = [os.path.splitext(f)[0] for f in os.listdir('javascript') if f.endswith('.css')]
-    return files
-
-def list_themes():
-    fn = os.path.join('html', 'themes.json')
-    if not os.path.exists(fn):
-        refresh_themes()
-    if os.path.exists(fn):
-        with open(fn, mode='r', encoding='utf=8') as f:
-            res = json.loads(f.read())
-    else:
-        res = []
-    list_builtin_themes()
-    builtin = list_builtin_themes() + ["gradio/default", "gradio/base", "gradio/glass", "gradio/monochrome", "gradio/soft"]
-    themes = sorted(builtin) + sorted({x['id'] for x in res if x['status'] == 'RUNNING' and 'test' not in x['id'].lower()}, key=str.casefold)
-    return themes
 
 
 def temp_disable_extensions():
@@ -290,6 +274,28 @@ def temp_disable_extensions():
     return disabled
 
 
+def list_builtin_themes():
+    files = [os.path.splitext(f)[0] for f in os.listdir('javascript') if f.endswith('.css')]
+    return files
+
+
+def list_themes():
+    fn = os.path.join('html', 'themes.json')
+    if not os.path.exists(fn):
+        refresh_themes()
+    if os.path.exists(fn):
+        with open(fn, mode='r', encoding='utf=8') as f:
+            res = json.loads(f.read())
+    else:
+        res = []
+    builtin = list_builtin_themes()
+    default = ["gradio/default", "gradio/base", "gradio/glass", "gradio/monochrome", "gradio/soft"]
+    external = {x['id'] for x in res if x['status'] == 'RUNNING' and 'test' not in x['id'].lower()}
+    log.info(f'Themes list: builtin={len(builtin)} default={len(default)} external={len(external)}')
+    themes = sorted(builtin) + sorted(default) + sorted(external, key=str.casefold)
+    return themes
+
+
 def refresh_themes():
     import requests
     try:
@@ -297,8 +303,8 @@ def refresh_themes():
         if req.status_code == 200:
             res = req.json()
             fn = os.path.join('html', 'themes.json')
-            with open(fn, mode='w', encoding='utf=8') as f:
-                f.write(json.dumps(res))
+            writefile(res, fn)
+            list_themes()
         else:
             log.error('Error refreshing UI themes')
     except Exception:
