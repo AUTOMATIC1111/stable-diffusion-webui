@@ -145,6 +145,7 @@ def start_server(immediate=True, server=None):
     installer.log.info(f"Server arguments: {sys.argv[1:]}")
     get_custom_args()
     module_spec.loader.exec_module(server)
+    uvicorn = None
     if args.test:
         installer.log.info("Test only")
         server.wants_restart = False
