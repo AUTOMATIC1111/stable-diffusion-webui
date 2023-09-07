@@ -29,6 +29,7 @@ Env_MgoUser = 'MgoUser'
 Env_MgoPass = 'MgoPass'
 Env_MgoPort = 'MgoPort'
 Env_MgoDB = 'MgoDB'
+Env_MgoDocExp = "MgoDocExpSec"
 Env_MgoCollect = 'MgoCollect'
 Env_EndponitKey = 'StorageEndponit'
 Env_AccessKey = 'StorageAK'
@@ -48,6 +49,7 @@ Env_Worker_State_File = "WORKER_STATE_FILE_PATH"
 Env_GSS_Count_API = "GSS_COUNT_API"
 Env_HostName = "hostname"
 Env_WorkerRunTrainRatio = "RUN_TRAIN_RATIO"
+
 cache = {}
 
 
@@ -57,6 +59,18 @@ def is_flexible_worker():
 
 def pod_host():
     return os.getenv(Env_HostName)
+
+
+def mongo_doc_expire_seconds():
+    '''
+    获取MONGO文档过期时间，0代表不过期
+    '''
+    try:
+        exp = os.getenv(Env_MgoDocExp, 0)
+        exp = int(exp)
+    except:
+        exp = 0
+    return exp
 
 
 def run_train_ratio():

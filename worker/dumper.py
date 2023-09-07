@@ -12,12 +12,12 @@ import time
 import typing
 from loguru import logger
 from threading import Thread
+from datetime import datetime
 from tools.mgo import MongoClient
 from tools.host import get_host_ip
 from tools.redis import RedisPool
 from worker.task import TaskProgress
-from tools.environment import pod_host
-from datetime import datetime
+from tools.environment import pod_host, mongo_doc_expire_seconds
 
 
 class DumpInfo:
@@ -176,6 +176,10 @@ class MongoTaskDumper(TaskDumper):
         image_cols.create_index('model_hash')
         image_cols.create_index('image_type')
         image_cols.create_index('group_id')
+        doc_exp = mongo_doc_expire_seconds()
+        if doc_exp > 0:
+            logger.warning(f"set mongo doc expire after {doc_exp} seconds!")
+            image_cols.create_index([("update_at", 1), ('expireAfterSeconds', doc_exp)])
 
         self.clean_time = 0
         super(MongoTaskDumper, self).__init__(mgo)
