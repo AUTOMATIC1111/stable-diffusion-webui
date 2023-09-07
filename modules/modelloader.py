@@ -173,7 +173,6 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
 
 def load_diffusers_models(model_path: str, command_path: str = None):
     t0 = time.time()
-    import huggingface_hub as hf
     places = []
     places.append(model_path)
     if command_path is not None and command_path != model_path:
@@ -184,12 +183,32 @@ def load_diffusers_models(model_path: str, command_path: str = None):
         if not os.path.isdir(place):
             continue
         try:
+            """
+            import huggingface_hub as hf
             res = hf.scan_cache_dir(cache_dir=place)
             for r in list(res.repos):
                 cache_path = os.path.join(r.repo_path, "snapshots", list(r.revisions)[-1].commit_hash)
                 diffuser_repos.append({ 'name': r.repo_id, 'filename': r.repo_id, 'path': cache_path, 'size': r.size_on_disk, 'mtime': r.last_modified, 'hash': list(r.revisions)[-1].commit_hash, 'model_info': str(os.path.join(cache_path, "model_info.json")) })
                 if not os.path.isfile(os.path.join(cache_path, "hidden")):
                     output.append(str(r.repo_id))
+            """
+            for folder in os.listdir(place):
+                if "--" not in folder:
+                    continue
+                _, name = folder.split("--", maxsplit=1)
+                name = name.replace("--", "/")
+                snapshots = os.listdir(os.path.join(place, folder, "snapshots"))
+                if len(snapshots) == 0:
+                    shared.log.warning(f"Diffusers folder has no snapshots: location={place} folder={folder} name={name}")
+                    continue
+                commit = snapshots[-1]
+                folder = os.path.join(place, folder, 'snapshots', commit)
+                mtime = os.path.getmtime(folder)
+                info = os.path.join(folder, "model_info.json")
+                diffuser_repos.append({ 'name': name, 'filename': name, 'path': folder, 'hash': commit, 'mtime': mtime, 'model_info': info })
+                if os.path.exists(os.path.join(place, folder, 'snapshots', commit, "hidden")):
+                    continue
+                output.append(name)
         except Exception as e:
             shared.log.error(f"Error listing diffusers: {place} {e}")
     shared.log.debug(f'Scanning diffusers cache: {model_path} {command_path} items={len(output)} time={time.time()-t0:.2f}s')
