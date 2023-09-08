@@ -49,11 +49,12 @@ class CheckpointInfo:
     def __init__(self, filename):
         self.filename = filename
         abspath = os.path.abspath(filename)
+        abs_ckpt_dir = os.path.abspath(shared.cmd_opts.ckpt_dir) if shared.cmd_opts.ckpt_dir is not None else None
 
         self.is_safetensors = os.path.splitext(filename)[1].lower() == ".safetensors"
 
-        if shared.cmd_opts.ckpt_dir is not None and abspath.startswith(shared.cmd_opts.ckpt_dir):
-            name = abspath.replace(shared.cmd_opts.ckpt_dir, '')
+        if abs_ckpt_dir and abspath.startswith(abs_ckpt_dir):
+            name = abspath.replace(abs_ckpt_dir, '')
         elif abspath.startswith(model_path):
             name = abspath.replace(model_path, '')
         else:
