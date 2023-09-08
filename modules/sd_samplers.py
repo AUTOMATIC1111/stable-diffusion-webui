@@ -34,18 +34,10 @@ def find_sampler_config(name):
     return config
 
 
-last_sampler = None
-
-
 def create_sampler(name, model):
-    global last_sampler # pylint: disable=global-statement
-    if last_sampler is not None and last_sampler.name == name:
-        return last_sampler
     if name == 'Default' and hasattr(model, 'scheduler'):
         config = {k: v for k, v in model.scheduler.config.items() if not k.startswith('_')}
         shared.log.debug(f'Sampler default {type(model.scheduler).__name__}: {config}')
-        last_sampler = model.scheduler
-        last_sampler.name = type(model.scheduler).__name__
         return model.scheduler
     config = find_sampler_config(name)
     if config is None:
@@ -56,8 +48,6 @@ def create_sampler(name, model):
         sampler.config = config
         sampler.name = name
         shared.log.debug(f'Sampler: sampler={sampler.name} config={sampler.config.options}')
-        last_sampler = sampler
-        last_sampler.name = sampler.name
         return sampler
     elif shared.backend == shared.Backend.DIFFUSERS:
         sampler = config.constructor(model)
@@ -65,8 +55,6 @@ def create_sampler(name, model):
             model.scheduler_config = sampler.sampler.config.copy()
         model.scheduler = sampler.sampler
         shared.log.debug(f'Sampler: sampler={sampler.name} config={sampler.config}')
-        last_sampler = sampler.sampler
-        last_sampler.name = sampler.name
         return sampler.sampler
     else:
         return None
