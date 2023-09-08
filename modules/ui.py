@@ -522,7 +522,7 @@ def create_ui(startup_timer = None):
             negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[txt2img_negative_prompt, steps], outputs=[negative_token_counter])
 
             ui_extra_networks.setup_ui(extra_networks_ui, txt2img_gallery)
-            log.debug(f'UI interface: tab=txt2img batch={show_batch.value} seed={show_seed.value} advanced={show_advanced.value} second_pass={show_second_pass.value}')
+            # log.debug(f'UI interface: tab=txt2img batch={show_batch.value} seed={show_seed.value} advanced={show_advanced.value} second_pass={show_second_pass.value}')
 
     timer.startup.record("ui-txt2img")
 
@@ -882,8 +882,7 @@ def create_ui(startup_timer = None):
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
                 paste_button=img2img_paste, tabname="img2img", source_text_component=img2img_prompt, source_image_component=None,
             ))
-
-            log.debug(f'UI interface: tab=img2img seed={show_seed.value} resize={show_resize.value} batch={show_batch.value} denoise={show_denoise.value} advanced={show_advanced.value}')
+            # log.debug(f'UI interface: tab=img2img seed={show_seed.value} resize={show_resize.value} batch={show_batch.value} denoise={show_denoise.value} advanced={show_advanced.value}')
 
     timer.startup.record("ui-img2img")
 

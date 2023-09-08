@@ -138,7 +138,6 @@ def test_fp16():
         x = torch.tensor([[1.5,.0,.0,.0]]).to(device).half()
         layerNorm = torch.nn.LayerNorm(4, eps=0.00001, elementwise_affine=True, dtype=torch.float16, device=device)
         _y = layerNorm(x)
-        shared.log.debug('Torch FP16 test passed')
         return True
     except Exception as ex:
         shared.log.warning(f'Torch FP16 test failed: Forcing FP32 operations: {ex}')
@@ -206,7 +205,7 @@ def set_cuda_params():
     unet_needs_upcast = shared.opts.upcast_sampling
     inference_context = torch.inference_mode if shared.opts.inference_mode == 'inference-mode' else torch.no_grad
     shared.log.debug(f'Desired Torch parameters: dtype={shared.opts.cuda_dtype} no-half={shared.opts.no_half} no-half-vae={shared.opts.no_half_vae} upscast={shared.opts.upcast_sampling}')
-    shared.log.info(f'Setting Torch parameters: dtype={dtype} vae={dtype_vae} unet={dtype_unet} context={inference_context.__name__}')
+    shared.log.info(f'Setting Torch parameters: dtype={dtype} vae={dtype_vae} unet={dtype_unet} context={inference_context.__name__} fp16={fp16_ok}')
     shared.log.debug(f'Torch default device: {torch.device(get_optimal_device_name())}')
 
 

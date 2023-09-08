@@ -295,7 +295,7 @@ def list_themes():
     builtin = list_builtin_themes()
     default = ["gradio/default", "gradio/base", "gradio/glass", "gradio/monochrome", "gradio/soft"]
     external = {x['id'] for x in res if x['status'] == 'RUNNING' and 'test' not in x['id'].lower()}
-    log.info(f'Themes list: builtin={len(builtin)} default={len(default)} external={len(external)}')
+    log.info(f'Themes: builtin={len(builtin)} default={len(default)} external={len(external)}')
     themes = sorted(builtin) + sorted(default) + sorted(external, key=str.casefold)
     return themes
 

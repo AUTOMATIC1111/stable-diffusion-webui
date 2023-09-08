@@ -604,7 +604,7 @@ def list_extensions_folder(folder, quiet=False):
     disabled_extensions = opts.get('disabled_extensions', [])
     enabled_extensions = [x for x in os.listdir(folder) if x not in disabled_extensions and not x.startswith('.')]
     if not quiet:
-        log.info(f'Enabled {name}: {enabled_extensions}')
+        log.info(f'Extensions: enabled={enabled_extensions} {name}')
     return enabled_extensions
 
 
@@ -737,9 +737,9 @@ def check_extensions():
     extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
     disabled_extensions_all = opts.get('disable_all_extensions', 'none')
     if disabled_extensions_all != 'none':
-        log.info(f'Disabled extensions: {disabled_extensions_all}')
+        log.info(f'Extensions: disabled={disabled_extensions_all}')
     else:
-        log.info(f'Disabled extensions: {opts.get("disabled_extensions", [])}')
+        log.info(f'Extensions: disabled={opts.get("disabled_extensions", [])}')
     for folder in extension_folders:
         if not os.path.isdir(folder):
             continue

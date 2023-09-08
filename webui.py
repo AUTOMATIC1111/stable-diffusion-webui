@@ -291,7 +291,8 @@ def start_ui():
     time_setup = [f'{k}:{round(v,3)}s' for (k,v) in modules.scripts.time_setup.items() if v > 0.005]
     shared.log.debug(f'Scripts setup: {time_setup}')
     time_component = [f'{k}:{round(v,3)}s' for (k,v) in modules.scripts.time_component.items() if v > 0.005]
-    shared.log.debug(f'Scripts components: {time_component}')
+    if len(time_component) > 0:
+        shared.log.debug(f'Scripts components: {time_component}')
 
 
 def webui(restart=False):
