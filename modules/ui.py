@@ -928,11 +928,11 @@ def create_ui(startup_timer = None):
         if info.refresh is not None:
             if is_quicksettings:
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, **args)
-                create_refresh_button(res, info.refresh, args, f"refresh_{key}")
+                create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
             else:
                 with FormRow():
                     res = comp(label=info.label, value=fun(), elem_id=elem_id, **args)
-                    create_refresh_button(res, info.refresh, args, f"refresh_{key}")
+                    create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
         else:
             try:
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, **args)

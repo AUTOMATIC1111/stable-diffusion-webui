@@ -140,7 +140,6 @@ def checkpoint_tiles(use_short=False): # pylint: disable=unused-argument
         return int(name) if name.isdigit() else name.lower()
     def alphanumeric_key(key):
         return [convert(c) for c in re.split('([0-9]+)', key)]
-    print('HERE', len(checkpoints_list.values()))
     return sorted([x.title for x in checkpoints_list.values()], key=alphanumeric_key)
 
 

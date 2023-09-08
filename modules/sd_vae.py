@@ -52,7 +52,6 @@ def get_filename(filepath):
 
 
 def refresh_vae_list():
-    print('HERE')
     global vae_path # pylint: disable=global-statement
     vae_path = shared.opts.vae_dir
     vae_dict.clear()
