@@ -264,8 +264,7 @@ class Script(scripts.Script):
         all_images = all_processed_images
 
         combined_grid_image = images.image_grid(all_processed_images)
-        unwanted_grid_because_of_img_count = len(all_processed_images) < 2 and opts.grid_only_if_multiple
-        if opts.return_grid and not unwanted_grid_because_of_img_count:
+        if opts.return_grid and len(all_processed_images) > 1:
             all_images = [combined_grid_image] + all_processed_images
 
         res = Processed(p, all_images, initial_seed_and_info[0], initial_seed_and_info[1])
@@ -274,7 +273,7 @@ class Script(scripts.Script):
             for img in all_processed_images:
                 images.save_image(img, p.outpath_samples, "", res.seed, p.prompt, opts.samples_format, info=res.info, p=p)
 
-        if opts.grid_save and not unwanted_grid_because_of_img_count:
+        if opts.grid_save and len(all_processed_images) > 1:
             images.save_image(combined_grid_image, p.outpath_grids, "grid", res.seed, p.prompt, opts.samples_format, info=res.info, short_filename=not opts.grid_extended_filename, grid=True, p=p)
 
         return res

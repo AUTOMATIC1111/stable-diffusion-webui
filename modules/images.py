@@ -44,13 +44,10 @@ def image_grid(imgs, batch_size=1, rows=None):
             rows = shared.opts.n_rows
         elif shared.opts.n_rows == 0:
             rows = batch_size
-        elif shared.opts.grid_prevent_empty_spots:
+        else:
             rows = math.floor(math.sqrt(len(imgs)))
             while len(imgs) % rows != 0:
                 rows -= 1
-        else:
-            rows = math.sqrt(len(imgs))
-            rows = round(rows)
     if rows > len(imgs):
         rows = len(imgs)
     cols = math.ceil(len(imgs) / rows)

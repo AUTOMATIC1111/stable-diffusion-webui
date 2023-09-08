@@ -853,8 +853,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
         p.color_corrections = None
         index_of_first_image = 0
-        unwanted_grid_because_of_img_count = len(output_images) < 2 and shared.opts.grid_only_if_multiple
-        if (shared.opts.return_grid or shared.opts.grid_save) and not p.do_not_save_grid and not unwanted_grid_because_of_img_count:
+        if (shared.opts.return_grid or shared.opts.grid_save) and not p.do_not_save_grid and len(output_images) > 2:
             if images.check_grid_size(output_images):
                 grid = images.image_grid(output_images, p.batch_size)
                 if shared.opts.return_grid:

@@ -475,8 +475,8 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
     "grid_save": OptionInfo(True, "Always save all generated image grids"),
     "grid_format": OptionInfo('jpg', 'File format for grids', gr.Dropdown, lambda: {"choices": ["jpg", "png", "webp", "tiff", "jp2"]}),
     "n_rows": OptionInfo(-1, "Grid row count", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
-    "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
-    "grid_prevent_empty_spots": OptionInfo(True, "Prevent empty spots in grid (when set to autodetect)"),
+    # "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
+    # "grid_prevent_empty_spots": OptionInfo(True, "Prevent empty spots in grid (when set to autodetect)"),
 
     "save_sep_options": OptionInfo("<h2>Intermediate Image Saving</h2>", "", gr.HTML),
     "save_init_img": OptionInfo(True, "Save copy of img2img init images (helps track workflow)"),
