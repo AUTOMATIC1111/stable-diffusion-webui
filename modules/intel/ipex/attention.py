@@ -1,10 +1,7 @@
 import torch
 import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-import diffusers #0.20.2 # pylint: disable=import-error
 
 # pylint: disable=protected-access, missing-function-docstring, line-too-long
-
-Attention = diffusers.models.attention_processor.Attention
 
 original_torch_bmm = torch.bmm
 def torch_bmm(input, mat2, *, out=None):
