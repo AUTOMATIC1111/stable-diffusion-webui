@@ -9,6 +9,7 @@ Mostly a service release
     new option is `torch.inference_only` which is slightly faster and uses less vram, but only works on some gpus  
 - cache samplers between run  
   reduces overhead between generate calls slightly  
+- updated gradio
 - clean-up logging  
   - capture system info in startup log  
   - capture extension output  
