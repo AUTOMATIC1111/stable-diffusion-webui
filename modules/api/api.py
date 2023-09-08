@@ -341,7 +341,6 @@ class Api:
                 print("---------------------------更换模型",sd_model_checkpoint)
                 shared.opts.sd_model_checkpoint = sd_model_checkpoint
                 reload_model_weights(shared.sd_model)
-                print("-----------------模型切换完成") 
             else:
                 print("-----------------模型相同，无需更换", sd_model_checkpoint)
 

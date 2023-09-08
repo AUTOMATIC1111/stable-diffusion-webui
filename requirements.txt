@@ -31,3 +31,5 @@ torch
 torchdiffeq
 torchsde
 transformers==4.25.1
+tensorflow==2.13.0
+xformers==0.0.20
