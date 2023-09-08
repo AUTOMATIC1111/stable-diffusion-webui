@@ -72,7 +72,10 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
             images.insert(0, grid)
             processed.index_of_first_image = 1
             processed.index_of_end_image = len(images)
-            processed.images = images
+        else:
+            processed.index_of_first_image = 0
+            processed.index_of_end_image = len(images) - 1
+        processed.images = images
 
         progress.status = TaskStatus.Uploading
         yield progress
