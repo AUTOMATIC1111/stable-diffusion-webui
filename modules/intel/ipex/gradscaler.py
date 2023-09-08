@@ -1,14 +1,15 @@
-import torch
 from collections import defaultdict
-import intel_extension_for_pytorch as ipex
-import intel_extension_for_pytorch._C as core
-from modules import shared
+import torch
+import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
+import intel_extension_for_pytorch._C as core # pylint: disable=import-error, unused-import
+
+# pylint: disable=protected-access, missing-function-docstring, line-too-long
 
 OptState = ipex.cpu.autocast._grad_scaler.OptState
 _MultiDeviceReplicator = ipex.cpu.autocast._grad_scaler._MultiDeviceReplicator
 _refresh_per_optimizer_state = ipex.cpu.autocast._grad_scaler._refresh_per_optimizer_state
 
-def _unscale_grads_(self, optimizer, inv_scale, found_inf, allow_fp16):
+def _unscale_grads_(self, optimizer, inv_scale, found_inf, allow_fp16): # pylint: disable=unused-argument
     per_device_inv_scale = _MultiDeviceReplicator(inv_scale)
     per_device_found_inf = _MultiDeviceReplicator(found_inf)
 
@@ -40,7 +41,7 @@ def _unscale_grads_(self, optimizer, inv_scale, found_inf, allow_fp16):
                 else:
                     to_unscale = param.grad
 
-                # TODO: is there a way to split by device and dtype without appending in the inner loop?
+                # -: is there a way to split by device and dtype without appending in the inner loop?
                 to_unscale = to_unscale.to("cpu")
                 per_device_and_dtype_grads[to_unscale.device][
                     to_unscale.dtype
@@ -86,7 +87,7 @@ def unscale_(self, optimizer):
 
     optimizer_state = self._per_optimizer_states[id(optimizer)]
 
-    if optimizer_state["stage"] is OptState.UNSCALED:
+    if optimizer_state["stage"] is OptState.UNSCALED: # pylint: disable=no-else-raise
         raise RuntimeError(
             "unscale_() has already been called on this optimizer since the last update()."
         )
@@ -175,5 +176,4 @@ def gradscaler_init():
     torch.xpu.amp.GradScaler._unscale_grads_ = _unscale_grads_
     torch.xpu.amp.GradScaler.unscale_ = unscale_
     torch.xpu.amp.GradScaler.update = update
-
-
+    return torch.xpu.amp.GradScaler

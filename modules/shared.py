@@ -350,7 +350,7 @@ if devices.backend == "cpu":
 elif devices.backend == "mps":
     cross_attention_optimization_default = "Doggettx's"
 elif devices.backend == "ipex":
-    cross_attention_optimization_default = "Sub-quadratic"
+    cross_attention_optimization_default = "Scaled-Dot-Product"
 elif devices.backend == "directml":
     cross_attention_optimization_default = "Sub-quadratic"
 elif devices.backend == "rocm":
