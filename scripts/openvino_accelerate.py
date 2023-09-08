@@ -14,7 +14,7 @@ import modules
 import modules.paths as paths
 import modules.scripts as scripts
 
-from modules import images, devices, extra_networks, masking, shared, sd_models_config
+from modules import images, devices, extra_networks, masking, shared, sd_models_config, prompt_parser
 from modules.processing import (
     StableDiffusionProcessing, Processed, apply_overlay, apply_color_correction,
     get_fixed_seed, create_infotext, setup_color_correction,
@@ -884,8 +884,12 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_
                     'height': p.height,
                 })
 
+            #apply A1111 styled prompt weighting
+            cond = prompt_parser.SdConditioning(p.prompts, width=p.width, height=p.height)
+            prompt_embeds = p.sd_model.get_learned_conditioning(cond)
+
             output = shared.sd_diffusers_model(
-                    prompt=p.prompts,
+                    prompt_embeds=prompt_embeds,
                     negative_prompt=p.negative_prompts,
                     num_inference_steps=p.steps,
                     guidance_scale=p.cfg_scale,
