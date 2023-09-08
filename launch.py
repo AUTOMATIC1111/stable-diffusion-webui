@@ -220,7 +220,7 @@ if __name__ == "__main__":
             state = f'job="{instance.state.job}" {instance.state.job_no}/{instance.state.job_count}'
             installer.log.debug(f'Server alive={alive} requests={requests} memory {get_memory_stats()} {state}')
         if not alive:
-            if instance.wants_restart:
+            if uv.wants_restart:
                 installer.log.info('Server restarting...')
                 uv, instance = start_server(immediate=False, server=instance)
             else:
