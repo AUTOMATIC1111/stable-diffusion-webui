@@ -256,7 +256,7 @@ def select_checkpoint(op='model'):
     if checkpoint_info is not None:
         shared.log.debug(f'Select checkpoint: {op} {checkpoint_info.title if checkpoint_info is not None else None}')
         return checkpoint_info
-    if len(checkpoints_list) == 0:
+    if len(checkpoints_list) == 0 and not shared.cmd_opts.no_download:
         shared.log.error("Cannot run without a checkpoint")
         shared.log.error("Use --ckpt <path-to-checkpoint> to force using existing checkpoint")
         return None
