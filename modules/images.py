@@ -382,8 +382,6 @@ class FilenameGenerator:
 
     def apply(self, x):
         res = ''
-        if self.p is None:
-            return res
         for m in re_pattern.finditer(x):
             text, pattern = m.groups()
             if pattern is None:
@@ -509,7 +507,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
             The base filename which will be applied to `filename pattern`.
         seed, prompt, short_filename,
         extension (`str`):
-            Image file extension, default is `png`.
+            Image file extension, default is `jpg`.
         pngsectionname (`str`):
             Specify the name of the section which `info` will be saved in.
         info (`str` or `PngImagePlugin.iTXt`):
@@ -550,7 +548,10 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
             file_decoration = shared.opts.samples_filename_pattern
         else:
             file_decoration = "[seq]-[prompt_words]"
-        file_decoration = namegen.apply(file_decoration).strip(' ').strip('-') + suffix
+        file_decoration = namegen.apply(file_decoration).strip(' ').strip('-')
+        if len(file_decoration) == 0:
+            file_decoration = namegen.apply('[seq]').strip(' ').strip('-')
+        file_decoration += suffix
         if shared.opts.save_images_add_number:
             if '[seq]' not in file_decoration:
                 file_decoration = f"[seq]-{file_decoration}"

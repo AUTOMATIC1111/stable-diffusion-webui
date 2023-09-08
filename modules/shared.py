@@ -928,17 +928,11 @@ def restart_server(restart=True):
         stdout = io.StringIO()
         stderr = io.StringIO()
         with contextlib.redirect_stdout(stdout), contextlib.redirect_stdout(stderr):
-            print('HERE1')
             demo.server.wants_restart = restart
-            print('HERE2')
             demo.server.should_exit = True
-            print('HERE3')
             demo.server.force_exit = True
-            print('HERE4')
             demo.close(verbose=False)
-            print('HERE5')
             demo.server.close()
-            print('HERE6')
             demo.fns = []
         time.sleep(1)
         sys.tracebacklimit = 100
