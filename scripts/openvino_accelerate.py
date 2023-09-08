@@ -887,10 +887,12 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_
             #apply A1111 styled prompt weighting
             cond = prompt_parser.SdConditioning(p.prompts, width=p.width, height=p.height)
             prompt_embeds = p.sd_model.get_learned_conditioning(cond)
+            negative_cond = prompt_parser.SdConditioning(p.negative_prompts, width=p.width, height=p.height, is_negative_prompt=True)
+            negative_prompt_embeds = p.sd_model.get_learned_conditioning(negative_cond)
 
             output = shared.sd_diffusers_model(
                     prompt_embeds=prompt_embeds,
-                    negative_prompt=p.negative_prompts,
+                    negative_prompt_embeds=negative_prompt_embeds,
                     num_inference_steps=p.steps,
                     guidance_scale=p.cfg_scale,
                     generator=generator,
