@@ -187,13 +187,15 @@ def set_cuda_params():
         dtype = torch.bfloat16 if bf16_ok else torch.float16
         dtype_vae = torch.bfloat16 if bf16_ok else torch.float16
         dtype_unet = torch.bfloat16 if bf16_ok else torch.float16
+    else:
+        bf16_ok = False
     if shared.opts.cuda_dtype == 'FP16' or dtype == torch.float16:
         fp16_ok = test_fp16()
         dtype = torch.float16 if fp16_ok else torch.float32
         dtype_vae = torch.float16 if fp16_ok else torch.float32
         dtype_unet = torch.float16 if fp16_ok else torch.float32
     else:
-        pass
+        fp16_ok = False
     if shared.opts.no_half:
         shared.log.info('Torch override dtype: no-half set')
         dtype = torch.float32
@@ -205,7 +207,7 @@ def set_cuda_params():
     unet_needs_upcast = shared.opts.upcast_sampling
     inference_context = torch.inference_mode if shared.opts.inference_mode == 'inference-mode' else torch.no_grad
     shared.log.debug(f'Desired Torch parameters: dtype={shared.opts.cuda_dtype} no-half={shared.opts.no_half} no-half-vae={shared.opts.no_half_vae} upscast={shared.opts.upcast_sampling}')
-    shared.log.info(f'Setting Torch parameters: dtype={dtype} vae={dtype_vae} unet={dtype_unet} context={inference_context.__name__} fp16={fp16_ok}')
+    shared.log.info(f'Setting Torch parameters: dtype={dtype} vae={dtype_vae} unet={dtype_unet} context={inference_context.__name__} fp16={fp16_ok} bf16={bf16_ok}')
     shared.log.debug(f'Torch default device: {torch.device(get_optimal_device_name())}')
 
 
