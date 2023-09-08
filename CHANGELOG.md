@@ -2,7 +2,19 @@
 
 ## Update for 2023-09-07
 
-Service release with many fixes
+Mostly a service release  
+- tons of fixes  
+- new option **inference mode**  
+  - default is standard `torch.no_grad`  
+    new option is `torch.inference_only` which is slightly faster and uses less vram, but only works on some gpus  
+- cache samplers between run  
+  reduces overhead between generate calls slightly  
+- clean-up logging  
+  - capture system info in startup log  
+  - capture extension output  
+  - capture ldm output  
+  - cleaner server restart  
+
 
 ## Update for 2023-09-06
 

@@ -17,6 +17,51 @@ def has_mps() -> bool:
         return mac_specific.has_mps
 
 
+def get_gpu_info():
+    def get_driver():
+        import os
+        import subprocess
+        if torch.cuda.is_available() and torch.version.cuda:
+            try:
+                result = subprocess.run('nvidia-smi --query-gpu=driver_version --format=csv,noheader', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                version = result.stdout.decode(encoding="utf8", errors="ignore").strip()
+                return version
+            except Exception:
+                return ''
+        else:
+            return ''
+
+    if not torch.cuda.is_available():
+        return {}
+    else:
+        try:
+            if torch.version.cuda:
+                return {
+                    'device': f'{torch.cuda.get_device_name(torch.cuda.current_device())} ({str(torch.cuda.device_count())}) ({torch.cuda.get_arch_list()[-1]}) {str(torch.cuda.get_device_capability(device))}',
+                    'cuda': torch.version.cuda,
+                    'cudnn': torch.backends.cudnn.version(),
+                    'driver': get_driver(),
+                }
+            elif torch.version.hip:
+                return {
+                    'device': f'{torch.cuda.get_device_name(torch.cuda.current_device())} ({str(torch.cuda.device_count())})',
+                    'hip': torch.version.hip,
+                }
+            else:
+                try:
+                    import intel_extension_for_pytorch as ipex# pylint: disable=import-error, unused-import
+                    return {
+                        'device': f'{torch.xpu.get_device_name(torch.xpu.current_device())} ({str(torch.xpu.device_count())})',
+                        'ipex': ipex.__version__,
+                    }
+                except Exception:
+                    return {
+                        'device': 'unknown'
+                    }
+        except Exception as ex:
+            return { 'error': ex }
+
+
 def extract_device_id(args, name): # pylint: disable=redefined-outer-name
     for x in range(len(args)):
         if name in args[x]:
@@ -95,8 +140,8 @@ def test_fp16():
         _y = layerNorm(x)
         shared.log.debug('Torch FP16 test passed')
         return True
-    except Exception as e:
-        shared.log.warning(f'Torch FP16 test failed: Forcing FP32 operations: {e}')
+    except Exception as ex:
+        shared.log.warning(f'Torch FP16 test failed: Forcing FP32 operations: {ex}')
         shared.opts.cuda_dtype = 'FP32'
         shared.opts.no_half = True
         shared.opts.no_half_vae = True
@@ -133,7 +178,7 @@ def set_cuda_params():
                 torch.backends.cudnn.allow_tf32 = True
             except Exception:
                 pass
-    global dtype, dtype_vae, dtype_unet, unet_needs_upcast # pylint: disable=global-statement
+    global dtype, dtype_vae, dtype_unet, unet_needs_upcast, inference_context # pylint: disable=global-statement
     if shared.opts.cuda_dtype == 'FP32':
         dtype = torch.float32
         dtype_vae = torch.float32
@@ -159,12 +204,14 @@ def set_cuda_params():
         shared.log.info('Torch override VAE dtype: no-half set')
         dtype_vae = torch.float32
     unet_needs_upcast = shared.opts.upcast_sampling
+    inference_context = torch.inference_mode if shared.opts.inference_mode == 'inference-mode' else torch.no_grad
     shared.log.debug(f'Desired Torch parameters: dtype={shared.opts.cuda_dtype} no-half={shared.opts.no_half} no-half-vae={shared.opts.no_half_vae} upscast={shared.opts.upcast_sampling}')
-    shared.log.info(f'Setting Torch parameters: dtype={dtype} vae={dtype_vae} unet={dtype_unet}')
+    shared.log.info(f'Setting Torch parameters: dtype={dtype} vae={dtype_vae} unet={dtype_unet} context={inference_context.__name__}')
     shared.log.debug(f'Torch default device: {torch.device(get_optimal_device_name())}')
 
 
 args = cmd_args.parser.parse_args()
+backend = 'not set'
 if args.use_ipex or (hasattr(torch, 'xpu') and torch.xpu.is_available()):
     backend = 'ipex'
     from modules.intel.ipex import ipex_init
@@ -188,6 +235,7 @@ elif sys.platform == 'darwin':
 else:
     backend = 'cpu'
 
+inference_context = torch.no_grad
 cuda_ok = torch.cuda.is_available()
 cpu = torch.device("cpu")
 device = device_interrogate = device_gfpgan = device_esrgan = device_codeformer = None

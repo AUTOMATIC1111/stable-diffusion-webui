@@ -1,9 +1,10 @@
 import torch
-
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.modules.diffusionmodules.util import noise_like
+import modules.devices as devices
 
-@torch.no_grad()
+
+@devices.inference_context()
 def p_sample_ddim(self, x, c, t, index, repeat_noise=False, use_original_steps=False, quantize_denoised=False,
                     temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None,
                     unconditional_guidance_scale=1., unconditional_conditioning=None,

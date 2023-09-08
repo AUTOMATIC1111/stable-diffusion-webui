@@ -364,10 +364,10 @@ def create_ui(container, button, tabname, skip_indexing = False):
     button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button])
     button_close.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
 
-    def refresh(title):
+    def en_refresh(title):
         res = []
         for page in extra_pages:
-            if title == '' or title == page.title or len(page.html) == 0:
+            if title is None or title == '' or title == page.title or len(page.html) == 0:
                 page.refresh()
                 page.refresh_time = None
                 page.create_page(ui.tabname)
@@ -376,7 +376,7 @@ def create_ui(container, button, tabname, skip_indexing = False):
         ui.search.update(value = ui.search.value)
         return res
 
-    button_refresh.click(_js='extraNetworksRefreshButton', fn=refresh, inputs=[ui.search], outputs=ui.pages)
+    button_refresh.click(_js='extraNetworksRefreshButton', fn=en_refresh, inputs=[ui.search], outputs=ui.pages)
     return ui
 
 

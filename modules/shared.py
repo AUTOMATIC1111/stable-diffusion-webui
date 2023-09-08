@@ -1,8 +1,10 @@
+import io
 import os
 import sys
 import time
 import json
 import datetime
+import contextlib
 import urllib.request
 from urllib.parse import urlparse
 from enum import Enum
@@ -17,6 +19,7 @@ import modules.memmon
 import modules.styles
 import modules.devices as devices # pylint: disable=R0402
 import modules.paths_internal as paths
+from installer import print_dict
 from installer import log as central_logger # pylint: disable=E0611
 
 
@@ -271,6 +274,7 @@ def temp_disable_extensions():
         cmd_opts.lyco_dir = opts.lora_dir
         if 'Lora' not in opts.disabled_extensions:
             disabled.append('Lora')
+    cmd_opts.controlnet_loglevel = 'WARNING'
     return disabled
 
 
@@ -358,6 +362,7 @@ elif devices.backend == "rocm":
 else: # cuda
     cross_attention_optimization_default ="Scaled-Dot-Product"
 
+
 options_templates.update(options_section(('sd', "Execution & Models"), {
     "sd_backend": OptionInfo("diffusers" if cmd_opts.use_openvino else "original", "Execution backend", gr.Radio, lambda: {"choices": ["original", "diffusers"] }),
     "sd_checkpoint_autoload": OptionInfo(True, "Model autoload on server start"),
@@ -384,6 +389,7 @@ options_templates.update(options_section(('optimizations', "Optimizations"), {
     "token_merging_ratio": OptionInfo(0.0, "Token merging ratio", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
     "token_merging_ratio_img2img": OptionInfo(0.0, "Token merging ratio for img2img", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
     "token_merging_ratio_hr": OptionInfo(0.0, "Token merging ratio for hires pass", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
+    "inference_mode": OptionInfo("no-grad", "Torch inference mode", gr.Radio, lambda: {"choices": ["no-grad", "inference-only"]}),
     "sd_vae_sliced_encode": OptionInfo(False, "VAE Slicing (original)"),
 }))
 
@@ -400,8 +406,9 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "rollback_vae": OptionInfo(False, "Attempt VAE roll back when produced NaN values (experimental)"),
     "opt_channelslast": OptionInfo(False, "Use channels last as torch memory format "),
     "cudnn_benchmark": OptionInfo(False, "Enable full-depth cuDNN benchmark feature"),
-    # "cuda_allow_tf32": OptionInfo(True, "Allow TF32 math ops"),
-    # "cuda_allow_tf16_reduced": OptionInfo(True, "Allow TF16 reduced precision math ops"),
+    "ipex_optimize": OptionInfo(True if devices.backend == "ipex" else False, "Enable IPEX Optimize for Intel GPUs"),
+    "directml_memory_provider": OptionInfo(default_memory_provider, 'DirectML memory stats provider', gr.Radio, lambda: {"choices": memory_providers}),
+    "cuda_compile_sep": OptionInfo("<h2>Model Compile</h2>", "", gr.HTML),
     "cuda_compile": OptionInfo(True if cmd_opts.use_openvino else False, "Enable model compile"),
     "cuda_compile_backend": OptionInfo("openvino_fx" if cmd_opts.use_openvino else "none", "Model compile backend", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx']}),
     "cuda_compile_mode": OptionInfo("default", "Model compile mode", gr.Radio, lambda: {"choices": ['default', 'reduce-overhead', 'max-autotune']}),
@@ -409,8 +416,6 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_compile_precompile": OptionInfo(False, "Model compile precompile"),
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
     "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
-    "ipex_optimize": OptionInfo(True if devices.backend == "ipex" else False, "Enable IPEX Optimize for Intel GPUs"),
-    "directml_memory_provider": OptionInfo(default_memory_provider, 'DirectML memory stats provider', gr.Dropdown, lambda: {"choices": memory_providers}),
 }))
 
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
@@ -439,7 +444,7 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Path to directory with stable diffusion checkpoints"),
     "diffusers_dir": OptionInfo(os.path.join(paths.models_path, 'Diffusers'), "Path to directory with stable diffusion diffusers"),
     "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Path to directory with VAE files"),
-    "sd_lora": OptionInfo("", "Add LoRA to prompt", gr.Textbox, {"choices": [], "visible": False}),
+    "sd_lora": OptionInfo("", "Add LoRA to prompt", gr.Textbox, {"visible": False}),
     "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Path to directory with LoRA network(s)"),
     "lyco_dir": OptionInfo(os.path.join(paths.models_path, 'LyCORIS'), "Path to directory with LyCORIS network(s)"),
     "styles_dir": OptionInfo(os.path.join(paths.data_path, 'styles.csv'), "Path to user-defined styles file"),
@@ -816,7 +821,6 @@ class Options:
             value = expected_type(value)
         return value
 
-
 opts = Options()
 config_filename = cmd_opts.config
 opts.load(config_filename)
@@ -828,7 +832,8 @@ else:
 opts.data['sd_backend'] = 'diffusers' if backend == Backend.DIFFUSERS else 'original'
 opts.data['uni_pc_lower_order_final'] = opts.schedulers_use_loworder
 opts.data['uni_pc_order'] = opts.schedulers_solver_order
-log.info(f'Engine: backend={backend}')
+log.info(f'Engine: backend={backend} compute={devices.backend} mode={devices.inference_context.__name__} device={devices.get_optimal_device_name()}')
+log.info(f'Device: {print_dict(devices.get_gpu_info())}')
 
 prompt_styles = modules.styles.StyleDatabase(opts)
 cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or (cmd_opts.server_name or False)) and not cmd_opts.insecure
@@ -917,14 +922,26 @@ total_tqdm = TotalTQDM()
 def restart_server(restart=True):
     if demo is None:
         return
-    log.info('Server shutdown requested')
+    log.warning('Server shutdown requested')
     try:
-        demo.server.wants_restart = restart
-        demo.server.should_exit = True
-        demo.server.force_exit = True
-        demo.close(verbose=False)
-        demo.server.close()
-        demo.fns = []
+        sys.tracebacklimit = 0
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stdout(stderr):
+            print('HERE1')
+            demo.server.wants_restart = restart
+            print('HERE2')
+            demo.server.should_exit = True
+            print('HERE3')
+            demo.server.force_exit = True
+            print('HERE4')
+            demo.close(verbose=False)
+            print('HERE5')
+            demo.server.close()
+            print('HERE6')
+            demo.fns = []
+        time.sleep(1)
+        sys.tracebacklimit = 100
         # os._exit(0)
     except (Exception, BaseException) as e:
         log.error(f'Server shutdown error: {e}')

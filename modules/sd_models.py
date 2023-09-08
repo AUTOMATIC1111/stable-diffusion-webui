@@ -1,5 +1,3 @@
-import collections
-import os.path
 import re
 import io
 import sys
@@ -7,6 +5,9 @@ import json
 import time
 import logging
 import threading
+import contextlib
+import collections
+import os.path
 from os import mkdir
 from urllib import request
 from enum import Enum
@@ -990,13 +991,17 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
     timer.record("config")
     shared.log.debug(f'Model config loaded: {memory_stats()}')
     sd_model = None
-    # shared.log.debug(f'Model config: {sd_config.model.get("params", dict())}')
-    try:
-        clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
-        with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
+    stdout = io.StringIO()
+    with contextlib.redirect_stdout(stdout):
+        try:
+            clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
+            with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
+                sd_model = instantiate_from_config(sd_config.model)
+        except Exception:
             sd_model = instantiate_from_config(sd_config.model)
-    except Exception:
-        sd_model = instantiate_from_config(sd_config.model)
+    for line in stdout.getvalue().splitlines():
+        if len(line) > 0:
+            shared.log.info(f'LDM: {line.strip()}')
     shared.log.debug(f"Model created from config: {checkpoint_config}")
     sd_model.used_config = checkpoint_config
     timer.record("create")

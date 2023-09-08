@@ -1,3 +1,4 @@
+import io
 import os
 import sys
 import glob
@@ -5,19 +6,18 @@ import signal
 import asyncio
 import logging
 import importlib
+import contextlib
 from threading import Thread
 import modules.loader
 import torch # pylint: disable=wrong-import-order
 from modules import timer, errors, paths # pylint: disable=unused-import
 
 local_url = None
-if not modules.loader.initialized:
-    errors.log.debug('Loading modules')
-from installer import log, setup_logging, git_commit
+from installer import log, git_commit, print_dict
 import ldm.modules.encoders.modules # pylint: disable=W0611,C0411,E0401
-from modules.call_queue import queue_lock, wrap_queued_call, wrap_gradio_gpu_call # pylint: disable=W0611,C0411,C0412
+from modules import shared, extensions, extra_networks, ui_tempdir, ui_extra_networks, modelloader # pylint: disable=ungrouped-imports
 from modules.paths import create_paths
-from modules import shared, extensions, extra_networks, ui_tempdir, ui_extra_networks, modelloader
+from modules.call_queue import queue_lock, wrap_queued_call, wrap_gradio_gpu_call # pylint: disable=W0611,C0411,C0412
 import modules.devices
 import modules.sd_samplers
 import modules.upscaler
@@ -42,7 +42,6 @@ from modules.middleware import setup_middleware
 state = shared.state
 if not modules.loader.initialized:
     timer.startup.record("libraries")
-    log.info('Loaded librareis')
     log.setLevel(logging.DEBUG if cmd_opts.debug else logging.INFO)
     logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
 if cmd_opts.server_name:
@@ -78,7 +77,7 @@ def check_rollback_vae():
 
 
 def initialize():
-    log.debug('Entering initialize')
+    log.debug('Initializing')
 
     check_rollback_vae()
 
@@ -105,7 +104,6 @@ def initialize():
     t_timer, t_total = modules.scripts.load_scripts()
     timer.startup.record("extensions")
     timer.startup.records["extensions"] = t_total # scripts can reset the time
-    setup_logging() # reset since scripts can hijaack logging
     log.info(f'Extensions time: {t_timer.summary()}')
 
     modelloader.load_upscalers()
@@ -206,12 +204,12 @@ def async_policy():
 def start_common():
     log.debug('Entering start sequence')
     if cmd_opts.debug and hasattr(shared, 'get_version'):
-        log.debug(f'Version: {shared.get_version()}')
+        log.debug(f'Version: {print_dict(shared.get_version())}')
     logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
     if shared.cmd_opts.data_dir is not None and len(shared.cmd_opts.data_dir) > 0:
         log.info(f'Using data path: {shared.cmd_opts.data_dir}')
-    if shared.cmd_opts.models_dir is not None and len(shared.cmd_opts.models_dir) > 0:
-        log.info(f'Using models path: {shared.cmd_opts.data_dir}')
+    if shared.cmd_opts.models_dir is not None and len(shared.cmd_opts.models_dir) > 0 and shared.cmd_opts.models_dir != 'models':
+        log.info(f'Using models path: {shared.cmd_opts.models_dir}')
     create_paths(opts, log)
     async_policy()
     initialize()
@@ -244,23 +242,25 @@ def start_ui():
                     gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
 
     global local_url # pylint: disable=global-statement
-    app, local_url, share_url = shared.demo.launch( # app is FastAPI(Starlette) instance
-        share=cmd_opts.share,
-        server_name=server_name,
-        server_port=cmd_opts.port if cmd_opts.port != 7860 else None,
-        ssl_keyfile=cmd_opts.tls_keyfile,
-        ssl_certfile=cmd_opts.tls_certfile,
-        ssl_verify=not cmd_opts.tls_selfsign,
-        debug=False,
-        auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
-        prevent_thread_lock=True,
-        max_threads=64,
-        show_api=False,
-        quiet=True,
-        favicon_path='html/logo.ico',
-        allowed_paths=[os.path.dirname(__file__), cmd_opts.data_dir],
-        app_kwargs=fastapi_args,
-    )
+    stdout = io.StringIO()
+    with contextlib.redirect_stdout(stdout):
+        app, local_url, share_url = shared.demo.launch( # app is FastAPI(Starlette) instance
+            share=cmd_opts.share,
+            server_name=server_name,
+            server_port=cmd_opts.port if cmd_opts.port != 7860 else None,
+            ssl_keyfile=cmd_opts.tls_keyfile,
+            ssl_certfile=cmd_opts.tls_certfile,
+            ssl_verify=not cmd_opts.tls_selfsign,
+            debug=False,
+            auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
+            prevent_thread_lock=True,
+            max_threads=64,
+            show_api=False,
+            quiet=True,
+            favicon_path='html/logo.ico',
+            allowed_paths=[os.path.dirname(__file__), cmd_opts.data_dir],
+            app_kwargs=fastapi_args,
+        )
     if cmd_opts.data_dir is not None:
         ui_tempdir.register_tmp_file(shared.demo, os.path.join(cmd_opts.data_dir, 'x'))
     shared.log.info(f'Local URL: {local_url}')

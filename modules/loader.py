@@ -8,7 +8,6 @@ from modules import timer, errors
 initialized = False
 logging.getLogger("DeepSpeed").disabled = True
 import torch # pylint: disable=C0411
-errors.log.debug(f'Loaded Torch=={torch.__version__}')
 try:
     import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
     errors.log.debug(f'Loaded IPEX=={ipex.__version__}')
@@ -29,10 +28,9 @@ timer.startup.record("torch")
 
 from fastapi import FastAPI # pylint: disable=W0611,C0411
 import gradio # pylint: disable=W0611,C0411
-errors.log.debug(f'Loaded Gradio=={gradio.__version__}')
 timer.startup.record("gradio")
 errors.install([gradio])
 
 import diffusers # pylint: disable=W0611,C0411
-errors.log.debug(f'Loaded Diffusers=={diffusers.__version__}')
 timer.startup.record("diffusers")
+errors.log.debug(f'Loaded packages: torch={torch.__version__} diffusers={diffusers.__version__} gradio={gradio.__version__}')

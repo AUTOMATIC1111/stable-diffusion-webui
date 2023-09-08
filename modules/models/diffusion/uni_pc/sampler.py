@@ -21,7 +21,7 @@ class UniPCSampler(object):
         # persist steps so we can eventually find denoising strength
         self.inflated_steps = ddim_num_steps
 
-    @torch.no_grad()
+    @devices.inference_context()
     def stochastic_encode(self, x0, t, use_original_steps=False, noise=None):
         if noise is None:
             noise = torch.randn_like(x0)
@@ -119,7 +119,7 @@ class UniPCSampler(object):
         self.after_sample = after_sample
         self.after_update = after_update
 
-    @torch.no_grad()
+    @devices.inference_context()
     def sample(self,
                S,
                batch_size,

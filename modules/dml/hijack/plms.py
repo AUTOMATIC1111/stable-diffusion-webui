@@ -1,11 +1,10 @@
 import torch
-
 from ldm.models.diffusion.ddim import noise_like
-
 import modules.sd_hijack_inpainting as plms_hijack
+import modules.devices as devices
 
 
-@torch.no_grad()
+@devices.inference_context()
 def p_sample_plms(self, x, c, t, index, repeat_noise=False, use_original_steps=False, quantize_denoised=False,
                   temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None,
                   unconditional_guidance_scale=1., unconditional_conditioning=None, old_eps=None, t_next=None, dynamic_threshold=None):

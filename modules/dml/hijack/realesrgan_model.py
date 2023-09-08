@@ -1,6 +1,5 @@
 import math
 import torch
-
 from realesrgan import RealESRGANer
 
 

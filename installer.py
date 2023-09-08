@@ -108,6 +108,10 @@ def setup_logging():
     # logging.getLogger("DeepSpeed").handlers = log.handlers
 
 
+def print_dict(d):
+    return ' '.join([f'{k}={v}' for k, v in d.items()])
+
+
 def print_profile(profile: cProfile.Profile, msg: str):
     try:
         from rich import print # pylint: disable=redefined-builtin
@@ -263,6 +267,26 @@ def clone(url, folder, commithash=None):
         git(f'clone "{url}" "{folder}"')
         if commithash is not None:
             git(f'-C "{folder}" checkout {commithash}')
+
+
+def get_platform():
+    try:
+        if platform.system() == 'Windows':
+            release = platform.platform(aliased = True, terse = False)
+        else:
+            release = platform.release()
+        return {
+            # 'host': platform.node(),
+            'arch': platform.machine(),
+            'cpu': platform.processor(),
+            'system': platform.system(),
+            'release': release,
+            # 'platform': platform.platform(aliased = True, terse = False),
+            # 'version': platform.version(),
+            'python': platform.python_version(),
+        }
+    except Exception as e:
+        return { 'error': e }
 
 
 # check python version
@@ -873,11 +897,13 @@ def extensions_preload(parser):
         from modules.script_loading import preload_extensions
         from modules.paths_internal import extensions_builtin_dir, extensions_dir
         extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
+        preload_time = {}
         for ext_dir in extension_folders:
             t0 = time.time()
             preload_extensions(ext_dir, parser)
             t1 = time.time()
-            log.info(f'Extension preload: {round(t1 - t0, 1)}s {ext_dir}')
+            preload_time[ext_dir] = round(t1 - t0, 2)
+        log.info(f'Extension preload: {preload_time}')
     except Exception:
         log.error('Error running extension preloading')
     if args.profile:

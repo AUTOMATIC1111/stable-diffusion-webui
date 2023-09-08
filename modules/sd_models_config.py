@@ -2,7 +2,7 @@ import os
 
 import torch
 
-from modules import paths, sd_disable_initialization
+from modules import paths, sd_disable_initialization, devices
 
 sd_repo_configs_path = os.path.join(paths.paths['Stable Diffusion'], "configs", "stable-diffusion")
 config_default = paths.sd_default_config
@@ -47,7 +47,7 @@ def is_using_v_parameterization_for_sd2(state_dict):
         )
         unet.eval()
 
-    with torch.no_grad():
+    with devices.inference_context():
         unet_sd = {k.replace("model.diffusion_model.", ""): v for k, v in state_dict.items() if "model.diffusion_model." in k}
         unet.load_state_dict(unet_sd, strict=True)
         unet.to(device=device, dtype=torch.float)

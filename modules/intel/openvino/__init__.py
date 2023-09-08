@@ -8,7 +8,7 @@ from torch._dynamo.backends.registry import register_backend
 from torch.fx.experimental.proxy_tensor import make_fx
 from torch._inductor.compile_fx import compile_fx
 from hashlib import sha256
-from modules import shared
+from modules import shared, devices
 
 @register_backend
 @fake_tensor_unsupported
@@ -89,7 +89,7 @@ def openvino_fx(subgraph, example_inputs):
     else:
         example_inputs.reverse()
         model = make_fx(subgraph)(*example_inputs)
-        with torch.no_grad():
+        with devices.inference_context():
             model.eval()
         partitioner = Partitioner()
         compiled_model = partitioner.make_partitions(model)

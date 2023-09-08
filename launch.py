@@ -40,7 +40,7 @@ def get_custom_args():
         current = getattr(args, arg)
         if current != default:
             custom[arg] = getattr(args, arg)
-    installer.log.info(f'Command line args: {custom}')
+    installer.log.info(f'Command line args: {installer.print_dict(custom)}')
 
 
 @lru_cache()
@@ -137,7 +137,8 @@ def start_server(immediate=True, server=None):
         collected = gc.collect()
     if not immediate:
         time.sleep(3)
-    installer.log.debug(f'Memory {get_memory_stats()} Collected {collected}')
+    if collected > 0:
+        installer.log.debug(f'Memory {get_memory_stats()} Collected {collected}')
     module_spec = importlib.util.spec_from_file_location('webui', 'webui.py')
     # installer.log.debug(f'Loading module: {module_spec}')
     server = importlib.util.module_from_spec(module_spec)
@@ -174,6 +175,7 @@ if __name__ == "__main__":
     if args.skip_git:
         installer.log.info('Skipping GIT operations')
     installer.check_version()
+    installer.log.info(f'Platform: {installer.print_dict(installer.get_platform())}')
     installer.set_environment()
     installer.check_torch()
     installer.check_modified_files()
