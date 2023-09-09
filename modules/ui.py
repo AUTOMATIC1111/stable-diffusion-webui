@@ -1348,7 +1348,6 @@ checkpoint: <a id="sd_checkpoint_hash">N/A</a>
 
 def setup_ui_api(app):
     from pydantic import BaseModel, Field
-    from typing import List
 
     class QuicksettingsHint(BaseModel):
         name: str = Field(title="Name of the quicksettings field")
@@ -1357,7 +1356,7 @@ def setup_ui_api(app):
     def quicksettings_hint():
         return [QuicksettingsHint(name=k, label=v.label) for k, v in opts.data_labels.items()]
 
-    app.add_api_route("/internal/quicksettings-hint", quicksettings_hint, methods=["GET"], response_model=List[QuicksettingsHint])
+    app.add_api_route("/internal/quicksettings-hint", quicksettings_hint, methods=["GET"], response_model=list[QuicksettingsHint])
 
     app.add_api_route("/internal/ping", lambda: {}, methods=["GET"])
 
