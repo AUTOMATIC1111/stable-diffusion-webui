@@ -131,7 +131,7 @@ class Api:
         self.add_api_route("/sdapi/v1/hypernetworks", self.get_hypernetworks, methods=["GET"], response_model=List[models.HypernetworkItem])
         self.add_api_route("/sdapi/v1/face-restorers", self.get_face_restorers, methods=["GET"], response_model=List[models.FaceRestorerItem])
         self.add_api_route("/sdapi/v1/realesrgan-models", self.get_realesrgan_models, methods=["GET"], response_model=List[models.RealesrganItem])
-        self.add_api_route("/sdapi/v1/prompt-styles", self.get_prompt_styles, methods=["GET"], response_model=List[models.PromptStyleItem])
+        self.add_api_route("/sdapi/v1/prompt-styles", self.get_prompt_styles, methods=["GET"], response_model=List[models.StyleItem])
         self.add_api_route("/sdapi/v1/embeddings", self.get_embeddings, methods=["GET"], response_model=models.EmbeddingsResponse)
         self.add_api_route("/sdapi/v1/refresh-checkpoints", self.refresh_checkpoints, methods=["POST"])
         self.add_api_route("/sdapi/v1/sd-vae", self.get_sd_vaes, methods=["GET"], response_model=List[models.SDVaeItem])
@@ -479,10 +479,8 @@ class Api:
 
     def get_prompt_styles(self):
         styleList = []
-        for k in shared.prompt_styles.styles:
-            style = shared.prompt_styles.styles[k]
-            styleList.append({"name":style[0], "prompt": style[1], "negative_prompt": style[2]})
-
+        for _k, v in shared.prompt_styles.styles.items():
+            styleList.append(v)
         return styleList
 
     def get_embeddings(self):

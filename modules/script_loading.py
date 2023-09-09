@@ -19,7 +19,7 @@ def load_module(path):
         setup_logging() # reset since scripts can hijaack logging
         for line in stdout.getvalue().splitlines():
             if len(line) > 0:
-                errors.log.info(f'Extension: script={os.path.relpath(path)} {line.strip()}')
+                errors.log.info(f"Extension: script='{os.path.relpath(path)}' {line.strip()}")
     except Exception as e:
         errors.display(e, f'Module load: {path}')
     return module

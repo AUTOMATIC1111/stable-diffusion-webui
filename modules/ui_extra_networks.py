@@ -64,7 +64,7 @@ def get_metadata(page: str = "", item: str = ""):
     metadata = page.metadata.get(item, 'none')
     if metadata is None:
         metadata = ''
-    shared.log.debug(f'Extra networks metadata: page={page} item={item} len={len(metadata)}')
+    shared.log.debug(f"Extra networks metadata: page='{page}' item={item} len={len(metadata)}")
     return JSONResponse({"metadata": metadata})
 
 
@@ -75,7 +75,7 @@ def get_info(page: str = "", item: str = ""):
     info = page.info.get(item, 'none')
     if info is None:
         info = ''
-    shared.log.debug(f'Extra networks info: page={page} item={item} len={len(info)}')
+    shared.log.debug(f"Extra networks info: page='{page}' item={item} len={len(info)}")
     return JSONResponse({"info": info})
 
 
@@ -150,7 +150,7 @@ class ExtraNetworksPage:
     def is_empty(self, folder):
         for f in listdir(folder):
             _fn, ext = os.path.splitext(f)
-            if ext.lower() in ['.ckpt', '.safetensors', '.pt'] or os.path.isdir(os.path.join(folder, f)):
+            if ext.lower() in ['.ckpt', '.safetensors', '.pt', '.json'] or os.path.isdir(os.path.join(folder, f)):
                 return False
         return True
 
@@ -164,21 +164,20 @@ class ExtraNetworksPage:
                 continue
             try:
                 img = Image.open(f)
-                if img.width > 1024 or img.height > 1024 or os.path.getsize(f) > 70000:
+                if img.width > 1024 or img.height > 1024 or os.path.getsize(f) > 65536:
                     img = img.convert('RGB')
                     img.thumbnail((512, 512), Image.HAMMING)
-                    img.save(fn)
+                    img.save(fn, quality=50)
                     img.close()
                     created += 1
             except Exception as e:
                 shared.log.error(f'Extra network error creating thumbnail: {f} {e}')
         if created > 0:
-            shared.log.info(f"Extra network created thumbnails: {self.name} {created}")
+            shared.log.info(f"Extra network thumbnails: {self.name} created={created}")
             self.missing_thumbs.clear()
 
     def create_page(self, tabname, skip = False):
-        if self.refresh_time is not None and self.refresh_time > refresh_time:
-            # shared.log.debug(f'Extra networks: {self.name} items={len(self.items)} tab={tabname} cached')
+        if self.refresh_time is not None and self.refresh_time > refresh_time: # cached page
             return self.html
         t0 = time.time()
         self_name_id = self.name.replace(" ", "_")
@@ -219,7 +218,7 @@ class ExtraNetworksPage:
         else:
             return ''
         t1 = time.time()
-        shared.log.debug(f'Extra networks: page={self.name} items={len(self.items)} subdirs={len(subdirs)} tab={tabname} dirs={self.allowed_directories_for_previews()} time={round(t1-t0, 2)}')
+        shared.log.debug(f"Extra networks: page='{self.name}' items={len(self.items)} subdirs={len(subdirs)} tab={tabname} dirs={self.allowed_directories_for_previews()} time={round(t1-t0, 2)}")
         threading.Thread(target=self.create_thumb).start()
 
     def list_items(self):
@@ -302,12 +301,48 @@ class ExtraNetworksPage:
                     pass
         return ''
 
+    def save_preview(self, index, images, filename):
+        try:
+            image = image_from_url_text(images[int(index)])
+        except Exception as e:
+            shared.log.error(f'Extra network save preview: {filename} {e}')
+            return
+        is_allowed = False
+        for page in extra_pages:
+            if any(path_is_parent(x, filename) for x in page.allowed_directories_for_previews()):
+                is_allowed = True
+                break
+        if not is_allowed:
+            shared.log.error(f'Extra network save preview: {filename} not allowed')
+            return
+        if image.width > 512 or image.height > 512:
+            image = image.convert('RGB')
+            image.thumbnail((512, 512), Image.HAMMING)
+        image.save(filename, quality=50)
+        fn, _ext = os.path.splitext(filename)
+        thumb = fn + '.thumb.jpg'
+        if os.path.exists(thumb):
+            shared.log.debug(f'Extra network delete thumbnail: {thumb}')
+            os.remove(thumb)
+        shared.log.info(f'Extra network save preview: {filename}')
+
+    def save_description(self, filename, desc):
+        lastDotIndex = filename.rindex('.')
+        filename = filename[0:lastDotIndex]+".txt"
+        if desc != "":
+            try:
+                with open(filename, 'w', encoding='utf-8') as f:
+                    f.write(desc)
+                shared.log.info(f'Extra network save description: {filename} {desc}')
+            except Exception as e:
+                shared.log.error(f'Extra network save description: {filename} {e}')
+
 
 def initialize():
     extra_pages.clear()
 
 
-def register_default_pages():
+def register_pages():
     from modules.ui_extra_networks_textual_inversion import ExtraNetworksPageTextualInversion
     from modules.ui_extra_networks_hypernets import ExtraNetworksPageHypernetworks
     from modules.ui_extra_networks_checkpoints import ExtraNetworksPageCheckpoints
@@ -360,10 +395,6 @@ def create_ui(container, button, tabname, skip_indexing = False):
         is_visible = not is_visible
         return is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary"))
 
-    state_visible = gr.State(value=False) # pylint: disable=abstract-class-instantiated
-    button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button])
-    button_close.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
-
     def en_refresh(title):
         res = []
         for page in extra_pages:
@@ -371,12 +402,15 @@ def create_ui(container, button, tabname, skip_indexing = False):
                 page.refresh()
                 page.refresh_time = None
                 page.create_page(ui.tabname)
-                shared.log.debug(f"Refreshing Extra networks: page={page.title} items={len(page.items)} tab={ui.tabname}")
+                shared.log.debug(f"Refreshing Extra networks: page='{page.title}' items={len(page.items)} tab={ui.tabname}")
             res.append(page.html)
         ui.search.update(value = ui.search.value)
         return res
 
-    button_refresh.click(_js='extraNetworksRefreshButton', fn=en_refresh, inputs=[ui.search], outputs=ui.pages)
+    state_visible = gr.State(value=False) # pylint: disable=abstract-class-instantiated
+    button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button])
+    button_close.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
+    button_refresh.click(_js='getENActivePage', fn=en_refresh, inputs=[ui.search], outputs=ui.pages)
     return ui
 
 
@@ -388,54 +422,37 @@ def path_is_parent(parent_path, child_path):
 
 def setup_ui(ui, gallery):
 
-    def save_preview(index, images, filename):
-        if len(images) == 0:
-            for page in extra_pages:
-                page.create_page(ui.tabname)
-            return [page.html for page in extra_pages]
-        index = int(index)
-        index = 0 if index < 0 else index
-        index = len(images) - 1 if index >= len(images) else index
-        img_info = images[index if index >= 0 else 0]
-        image = image_from_url_text(img_info)
-        is_allowed = False
-        for extra_page in extra_pages:
-            if any(path_is_parent(x, filename) for x in extra_page.allowed_directories_for_previews()):
-                is_allowed = True
-                break
-        assert is_allowed, f'writing to {filename} is not allowed'
-        image.save(filename)
-        fn, _ext = os.path.splitext(filename)
-        thumb = fn + '.thumb.jpg'
-        if os.path.exists(thumb):
-            shared.log.debug(f'Extra network delete thumbnail: {thumb}')
-            os.remove(thumb)
-        shared.log.info(f'Extra network save preview: {filename}')
-        return [page.create_page(ui.tabname) for page in extra_pages]
+    def save_preview(pagename, index, images, filename):
+        res = []
+        for page in extra_pages:
+            if pagename is None or pagename == '' or pagename == page.title or len(page.html) == 0:
+                page.save_preview(index, images, filename)
+                res.append(page.create_page(ui.tabname))
+            else:
+                res.append(page.html)
+        return res
+
 
     ui.button_save_preview.click(
         fn=save_preview,
-        _js="function(x, y, z) {return [selected_gallery_index(), y, z]}",
-        inputs=[ui.preview_target_filename, gallery, ui.preview_target_filename],
-        outputs=[*ui.pages]
+        _js="function(t, i, y, z) {return [getENActivePage(), selected_gallery_index(), y, z]}",
+        inputs=[ui.search, ui.preview_target_filename, gallery, ui.preview_target_filename],
+        outputs=ui.pages
     )
 
-    # write description to a file
-    def save_description(filename, desc):
-        lastDotIndex = filename.rindex('.')
-        filename = filename[0:lastDotIndex]+".txt"
-        if desc != "":
-            try:
-                with open(filename,'w', encoding='utf-8') as f:
-                    f.write(desc)
-                shared.log.info(f'Extra network save description: {filename} {desc}')
-            except Exception as e:
-                shared.log.error(f'Extra network save description: {filename} {e}')
-        return [page.create_page(ui.tabname) for page in extra_pages]
+    def save_description(pagename, filename, desc):
+        res = []
+        for page in extra_pages:
+            if pagename is None or pagename == '' or pagename == page.title or len(page.html) == 0:
+                page.save_description(filename, desc)
+                res.append(page.create_page(ui.tabname))
+            else:
+                res.append(page.html)
+        return res
 
     ui.button_save_description.click(
         fn=save_description,
-        _js="function(x, y) { return [x, y] }",
-        inputs=[ui.description_target_filename, ui.description],
-        outputs=[*ui.pages]
+        _js="function(t, x, y) { return [getENActivePage(), x, y] }",
+        inputs=[ui.search, ui.description_target_filename, ui.description],
+        outputs=ui.pages
     )

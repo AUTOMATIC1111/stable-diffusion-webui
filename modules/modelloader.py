@@ -434,6 +434,6 @@ def load_upscalers():
         datas += scaler.scalers
     shared.sd_upscalers = sorted(
         datas,
-        # Special case for UpscalerNone keeps it at the beginning of the list.
-        key=lambda x: x.name.lower() if not isinstance(x.scaler, (UpscalerNone, UpscalerLanczos, UpscalerNearest)) else ""
+        key=lambda x: x.name.lower() if not isinstance(x.scaler, (UpscalerNone, UpscalerLanczos, UpscalerNearest)) else "" # Special case for UpscalerNone keeps it at the beginning of the list.
     )
+    shared.log.debug(f"Loaded upscalers: items={len(shared.sd_upscalers)}")

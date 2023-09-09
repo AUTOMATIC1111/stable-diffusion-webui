@@ -8,8 +8,10 @@ Mostly a service release
   - default is standard `torch.no_grad`  
     new option is `torch.inference_only` which is slightly faster and uses less vram, but only works on some gpus  
 - updated gradio
+- styles support for subfolders
 - clean-up logging  
   - capture system info in startup log  
+  - better diagnostic output
   - capture extension output  
   - capture ldm output  
   - cleaner server restart  

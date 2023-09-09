@@ -13,7 +13,7 @@ import torch # pylint: disable=wrong-import-order
 from modules import timer, errors, paths # pylint: disable=unused-import
 
 local_url = None
-from installer import log, git_commit, print_dict
+from installer import log, git_commit
 import ldm.modules.encoders.modules # pylint: disable=W0611,C0411,E0401
 from modules import shared, extensions, extra_networks, ui_tempdir, ui_extra_networks, modelloader # pylint: disable=ungrouped-imports
 from modules.paths import create_paths
@@ -116,9 +116,10 @@ def initialize():
 
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
     shared.reload_hypernetworks()
+    shared.prompt_styles.reload()
 
     ui_extra_networks.initialize()
-    ui_extra_networks.register_default_pages()
+    ui_extra_networks.register_pages()
     extra_networks.initialize()
     extra_networks.register_default_extra_networks()
     timer.startup.record("extra-networks")
@@ -196,15 +197,13 @@ def async_policy():
             super().__init__()
             self.loop = self.get_event_loop()
             self.loop.set_exception_handler(self.handle_exception)
-            log.debug(f"Event loop: {self.loop}")
+            # log.debug(f"Event loop: {self.loop}")
 
     asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
 
 
 def start_common():
     log.debug('Entering start sequence')
-    if cmd_opts.debug and hasattr(shared, 'get_version'):
-        log.debug(f'Version: {print_dict(shared.get_version())}')
     logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
     if shared.cmd_opts.data_dir is not None and len(shared.cmd_opts.data_dir) > 0:
         log.info(f'Using data path: {shared.cmd_opts.data_dir}')
@@ -265,7 +264,7 @@ def start_ui():
         ui_tempdir.register_tmp_file(shared.demo, os.path.join(cmd_opts.data_dir, 'x'))
     shared.log.info(f'Local URL: {local_url}')
     if cmd_opts.docs:
-        shared.log.info(f'API Docs: {local_url[:-1]}/docs') # {local_url[:-1]}?view=api
+        shared.log.info(f'API Docs: {local_url[:-1]}/docs') # pylint: disable=unsubscriptable-object
     if share_url is not None:
         shared.log.info(f'Share URL: {share_url}')
     shared.log.debug(f'Gradio registered functions: {len(shared.demo.fns)}')

@@ -760,6 +760,28 @@ def check_extensions():
     return round(newest_all)
 
 
+def get_version():
+    version = None
+    if version is None:
+        try:
+            res = subprocess.run('git log --pretty=format:"%h %ad" -1 --date=short', stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True, check=True)
+            ver = res.stdout.decode(encoding = 'utf8', errors='ignore') if len(res.stdout) > 0 else '  '
+            githash, updated = ver.split(' ')
+            res = subprocess.run('git remote get-url origin', stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True, check=True)
+            origin = res.stdout.decode(encoding = 'utf8', errors='ignore') if len(res.stdout) > 0 else ''
+            res = subprocess.run('git rev-parse --abbrev-ref HEAD', stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True, check=True)
+            branch_name = res.stdout.decode(encoding = 'utf8', errors='ignore') if len(res.stdout) > 0 else ''
+            version = {
+                'app': 'sd.next',
+                'updated': updated,
+                'hash': githash,
+                'url': origin.replace('\n', '') + '/tree/' + branch_name.replace('\n', '')
+            }
+        except Exception:
+            version = { 'app': 'sd.next', 'version': 'unknown' }
+    return version
+
+
 # check version of the main repo and optionally upgrade it
 def check_version(offline=False, reset=True): # pylint: disable=unused-argument
     if args.skip_all:
@@ -768,8 +790,7 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
         log.error('Not a git repository')
         if not args.ignore:
             sys.exit(1)
-    ver = git('log -1 --pretty=format:"%h %ad"')
-    log.info(f'Version: {ver}')
+    log.info(f'Version: {print_dict(get_version())}')
     if args.version or args.skip_git:
         return
     commit = git('rev-parse HEAD')

@@ -94,6 +94,7 @@ class State:
     job = ""
     job_no = 0
     job_count = 0
+    total_jobs = 0
     processing_has_refined_job_count = False
     job_timestamp = '0'
     sampling_step = 0
@@ -141,6 +142,7 @@ class State:
         return obj
 
     def begin(self, title=""):
+        self.total_jobs += 1
         self.current_image = None
         self.current_image_sampling_step = 0
         self.current_latent = None

@@ -284,7 +284,7 @@ function extraNetworksSearchButton(event) {
   updateInput(searchTextarea);
 }
 
-function extraNetworksRefreshButton() {
+function getENActivePage() {
   const tabname = getENActiveTab();
   const page = gradioApp().querySelector(`#${tabname}_extra_networks > .tabs > .tab-nav > .selected`);
   return page ? page.innerText : '';

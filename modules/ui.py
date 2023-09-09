@@ -73,7 +73,7 @@ def send_gradio_gallery_to_image(x):
 def add_style(name: str, prompt: str, negative_prompt: str):
     if name is None:
         return [gr_show() for x in range(4)]
-    style = modules.styles.PromptStyle(name, prompt, negative_prompt)
+    style = modules.styles.Style(name, prompt, negative_prompt)
     modules.shared.prompt_styles.styles[style.name] = style
     modules.shared.prompt_styles.save_styles(modules.shared.opts.styles_dir)
     return [gr.Dropdown.update(visible=True, choices=list(modules.shared.prompt_styles.styles)) for _ in range(2)]
@@ -235,11 +235,11 @@ def create_toprow(is_img2img):
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=3, placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
+                        prompt = gr.Textbox(elem_id=f"{id_part}_prompt", show_label=False, lines=3, placeholder="Prompt", elem_classes=["prompt"])
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
+                        negative_prompt = gr.Textbox(elem_id=f"{id_part}_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt", elem_classes=["prompt"])
         button_interrogate = None
         button_deepbooru = None
         if is_img2img:
@@ -270,7 +270,7 @@ def create_toprow(is_img2img):
                 negative_token_button = gr.Button(visible=False, elem_id=f"{id_part}_negative_token_button")
             with gr.Row(elem_id=f"{id_part}_styles_row"):
                 prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[k for k, v in modules.shared.prompt_styles.styles.items()], value=[], multiselect=True)
-                create_refresh_button(prompt_styles, modules.shared.prompt_styles.reload, lambda: {"choices": [k for k, v in modules.shared.prompt_styles.styles.items()]}, f"refresh_{id_part}_styles")
+                # create_refresh_button(prompt_styles, modules.shared.prompt_styles.reload, lambda: {"choices": [k for k, v in modules.shared.prompt_styles.styles.items()]}, f"refresh_{id_part}_styles")
                 prompt_styles_btn = gr.Button('Apply', elem_id=f"{id_part}_styles_select", visible=False)
                 prompt_styles_btn.click(_js="applyStyles", fn=parse_style, inputs=[prompt_styles], outputs=[prompt_styles])
     return prompt, prompt_styles, negative_prompt, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button

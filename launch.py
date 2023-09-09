@@ -40,7 +40,7 @@ def get_custom_args():
         current = getattr(args, arg)
         if current != default:
             custom[arg] = getattr(args, arg)
-    installer.log.info(f'Command line args: {installer.print_dict(custom)}')
+    installer.log.info(f'Command line args: {sys.argv[1:]} {installer.print_dict(custom)}')
 
 
 @lru_cache()
@@ -121,7 +121,7 @@ def get_memory_stats():
     process = psutil.Process(os.getpid())
     res = process.memory_info()
     ram_total = 100 * res.rss / process.memory_percent()
-    return f'used: {gb(res.rss)} total: {gb(ram_total)}'
+    return f'used={gb(res.rss)} total={gb(ram_total)}'
 
 
 def start_server(immediate=True, server=None):
@@ -143,7 +143,6 @@ def start_server(immediate=True, server=None):
     # installer.log.debug(f'Loading module: {module_spec}')
     server = importlib.util.module_from_spec(module_spec)
     installer.log.debug(f'Starting module: {server}')
-    installer.log.info(f"Server arguments: {sys.argv[1:]}")
     get_custom_args()
     module_spec.loader.exec_module(server)
     uvicorn = None
@@ -218,9 +217,10 @@ if __name__ == "__main__":
         except Exception:
             alive = False
             requests = 0
-        if round(time.time()) % 120 == 0:
-            state = f'job="{instance.state.job}" {instance.state.job_no}/{instance.state.job_count}'
-            installer.log.debug(f'Server alive={alive} requests={requests} memory {get_memory_stats()} {state}')
+        if round(time.time()) % 10 == 0:
+            state = f'job="{instance.state.job}" {instance.state.job_no}/{instance.state.job_count}' if instance.state.job != '' or instance.state.job_no != 0 or instance.state.job_count != 0 else 'idle'
+            uptime = round(time.time() - instance.state.server_start)
+            installer.log.debug(f'Server alive={alive} jobs={instance.state.total_jobs} requests={requests} uptime={uptime}s memory {get_memory_stats()} {state}')
         if not alive:
             if uv is not None and uv.wants_restart:
                 installer.log.info('Server restarting...')
