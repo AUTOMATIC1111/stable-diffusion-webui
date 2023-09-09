@@ -29,7 +29,8 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
         }
 
     def list_items(self):
-        for index, name in enumerate(sd_hijack.model_hijack.embedding_db.word_embeddings):
+        names = list(sd_hijack.model_hijack.embedding_db.word_embeddings)
+        for index, name in enumerate(names):
             yield self.create_item(name, index)
 
     def allowed_directories_for_previews(self):
