@@ -661,15 +661,13 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
         save_image_with_geninfo(image_to_save, info, temp_file_path, extension, existing_pnginfo=params.pnginfo, pnginfo_section_name=pnginfo_section_name)
 
-        full_file_name = filename_without_extension + extension
-        if shared.opts.save_images_add_number_suffix and os.path.exists(full_file_name):
-            count = 1
-            while True:
-                full_file_name = f"{filename_without_extension}_{count}{extension}"
-                if not os.path.exists(full_file_name):
-                    break
-                count += 1
-        os.replace(temp_file_path, full_file_name)
+        filename = filename_without_extension + extension
+        if shared.opts.save_images_replace_action != "Replace":
+            n = 0
+            while os.path.exists(filename):
+                n += 1
+                filename = f"{filename_without_extension}-{n}{extension}"
+        os.replace(temp_file_path, filename)
 
     fullfn_without_extension, extension = os.path.splitext(params.filename)
     if hasattr(os, 'statvfs'):
