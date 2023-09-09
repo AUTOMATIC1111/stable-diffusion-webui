@@ -332,7 +332,7 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
             module = net.modules.get(network_layer_name, None)
             if module is not None and hasattr(self, 'weight'):
                 try:
-                    with torch.no_grad():
+                    with devices.torch_context():
                         updown, ex_bias = module.calc_updown(self.weight)
 
                         if len(self.weight.shape) == 4 and self.weight.shape[1] == 9:
@@ -358,7 +358,7 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
 
             if isinstance(self, torch.nn.MultiheadAttention) and module_q and module_k and module_v and module_out:
                 try:
-                    with torch.no_grad():
+                    with devices.torch_context():
                         updown_q, _ = module_q.calc_updown(self.in_proj_weight)
                         updown_k, _ = module_k.calc_updown(self.in_proj_weight)
                         updown_v, _ = module_v.calc_updown(self.in_proj_weight)

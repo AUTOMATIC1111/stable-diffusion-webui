@@ -50,7 +50,7 @@ class NetworkModuleLora(network.NetworkModule):
         else:
             raise AssertionError(f'Lora layer {self.network_key} matched a layer with unsupported type: {type(self.sd_module).__name__}')
 
-        with torch.no_grad():
+        with devices.torch_context():
             if weight.shape != module.weight.shape:
                 weight = weight.reshape(module.weight.shape)
             module.weight.copy_(weight)

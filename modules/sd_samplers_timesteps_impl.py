@@ -3,11 +3,11 @@ import tqdm
 import k_diffusion.sampling
 import numpy as np
 
-from modules import shared
+from modules import devices, shared
 from modules.models.diffusion.uni_pc import uni_pc
 
 
-@torch.no_grad()
+@devices.torch_context()
 def ddim(model, x, timesteps, extra_args=None, callback=None, disable=None, eta=0.0):
     alphas_cumprod = model.inner_model.inner_model.alphas_cumprod
     alphas = alphas_cumprod[timesteps]
@@ -39,7 +39,7 @@ def ddim(model, x, timesteps, extra_args=None, callback=None, disable=None, eta=
     return x
 
 
-@torch.no_grad()
+@devices.torch_context()
 def plms(model, x, timesteps, extra_args=None, callback=None, disable=None):
     alphas_cumprod = model.inner_model.inner_model.alphas_cumprod
     alphas = alphas_cumprod[timesteps]

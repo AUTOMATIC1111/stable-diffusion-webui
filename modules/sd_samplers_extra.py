@@ -1,9 +1,10 @@
 import torch
 import tqdm
 import k_diffusion.sampling
+from modules import devices
 
 
-@torch.no_grad()
+@devices.torch_context()
 def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=None, s_noise=1., restart_list=None):
     """Implements restart sampling in Restart Sampling for Improving Generative Processes (2023)
     Restart_list format: {min_sigma: [ restart_steps, restart_times, max_sigma]}

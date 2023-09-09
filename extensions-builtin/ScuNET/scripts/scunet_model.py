@@ -43,7 +43,7 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         self.scalers = scalers
 
     @staticmethod
-    @torch.no_grad()
+    @devices.torch_context()
     def tiled_inference(img, model):
         # test the image tile by tile
         h, w = img.shape[2:]

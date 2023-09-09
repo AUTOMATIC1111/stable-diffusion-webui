@@ -172,7 +172,7 @@ def get_cond(selected_path):
     return example
 
 
-@torch.no_grad()
+@devices.torch_context()
 def convsample_ddim(model, cond, steps, shape, eta=1.0, callback=None, normals_sequence=None,
                     mask=None, x0=None, quantize_x0=False, temperature=1., score_corrector=None,
                     corrector_kwargs=None, x_t=None
@@ -190,7 +190,7 @@ def convsample_ddim(model, cond, steps, shape, eta=1.0, callback=None, normals_s
     return samples, intermediates
 
 
-@torch.no_grad()
+@devices.torch_context()
 def make_convolutional_sample(batch, model, custom_steps=None, eta=1.0, quantize_x0=False, custom_shape=None, temperature=1., noise_dropout=0., corrector=None,
                               corrector_kwargs=None, x_T=None, ddim_use_x0_pred=False):
     log = {}

@@ -79,6 +79,7 @@ dtype: torch.dtype = torch.float16
 dtype_vae: torch.dtype = torch.float16
 dtype_unet: torch.dtype = torch.float16
 unet_needs_upcast = False
+torch_context = getattr(torch, shared.cmd_opts.torch_context)
 
 
 def cond_cast_unet(input):

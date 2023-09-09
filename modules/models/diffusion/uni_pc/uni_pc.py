@@ -2,6 +2,7 @@ import torch
 import math
 import tqdm
 
+from modules import devices
 
 class NoiseScheduleVP:
     def __init__(
@@ -755,7 +756,7 @@ class UniPC:
             timesteps = self.get_time_steps(skip_type=skip_type, t_T=t_T, t_0=t_0, N=steps, device=device)
             #print(f"Running UniPC Sampling with {timesteps.shape[0]} timesteps, order {order}")
             assert timesteps.shape[0] - 1 == steps
-            with torch.no_grad():
+            with devices.torch_context():
                 vec_t = timesteps[0].expand((x.shape[0]))
                 model_prev_list = [self.model_fn(x, vec_t)]
                 t_prev_list = [vec_t]

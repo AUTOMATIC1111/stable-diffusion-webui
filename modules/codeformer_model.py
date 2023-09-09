@@ -95,7 +95,7 @@ def setup_model(dirname):
                     cropped_face_t = cropped_face_t.unsqueeze(0).to(devices.device_codeformer)
 
                     try:
-                        with torch.no_grad():
+                        with devices.torch_context():
                             output = self.net(cropped_face_t, w=w if w is not None else shared.opts.code_former_weight, adain=True)[0]
                             restored_face = tensor2img(output, rgb2bgr=True, min_max=(-1, 1))
                         del output

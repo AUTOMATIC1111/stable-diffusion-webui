@@ -56,7 +56,7 @@ class DeepDanbooru:
         pic = images.resize_image(2, pil_image.convert("RGB"), 512, 512)
         a = np.expand_dims(np.array(pic, dtype=np.float32), 0) / 255
 
-        with torch.no_grad(), devices.autocast():
+        with devices.torch_context(), devices.autocast():
             x = torch.from_numpy(a).to(devices.device)
             y = self.model(x)[0].detach().cpu().numpy()
 

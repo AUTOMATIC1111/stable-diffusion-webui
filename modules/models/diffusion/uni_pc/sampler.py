@@ -26,7 +26,7 @@ class UniPCSampler(object):
         self.after_sample = after_sample
         self.after_update = after_update
 
-    @torch.no_grad()
+    @devices.torch_context()
     def sample(self,
                S,
                batch_size,
