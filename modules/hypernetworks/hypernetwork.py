@@ -468,7 +468,7 @@ def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None,
     shared.reload_hypernetworks()
 
 
-def train_hypernetwork(id_task, hypernetwork_name:str, learn_rate:float, batch_size:int, gradient_step:int, data_root:str, log_directory:str, training_width:int, training_height:int, varsize:bool, steps:int, clip_grad_mode:str, clip_grad_value:float, shuffle_tags:bool, tag_drop_out:bool, latent_sampling_method:str, use_weight:bool, create_image_every:int, save_hypernetwork_every:int, template_filename:str, preview_from_txt2img:bool, preview_prompt:str, preview_negative_prompt:str, preview_steps:int, preview_sampler_name:str, preview_cfg_scale:float, preview_seed:int, preview_width:int, preview_height:int):
+def train_hypernetwork(id_task, hypernetwork_name: str, learn_rate: float, batch_size: int, gradient_step: int, data_root: str, log_directory: str, training_width: int, training_height: int, varsize: bool, steps: int, clip_grad_mode: str, clip_grad_value: float, shuffle_tags: bool, tag_drop_out: bool, latent_sampling_method: str, use_weight: bool, create_image_every: int, save_hypernetwork_every: int, template_filename: str, preview_from_txt2img: bool, preview_prompt: str, preview_negative_prompt: str, preview_steps: int, preview_sampler_name: str, preview_cfg_scale: float, preview_seed: int, preview_width: int, preview_height: int):
     from modules import images, processing
 
     save_hypernetwork_every = save_hypernetwork_every or 0
