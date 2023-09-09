@@ -498,7 +498,7 @@ class ScriptRunner:
 
             choices = getattr(control, 'choices', None)  # as of gradio 3.41, some items in choices are strings, and some are tuples where the first elem is the string
             if choices is not None:
-                setattr(arg_info, 'choices', [x[0] if isinstance(x, tuple) else x for x in choices])
+                arg_info.choices = [x[0] if isinstance(x, tuple) else x for x in choices]
 
             api_args.append(arg_info)
 
