@@ -199,7 +199,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
 
     p.user = request.username
 
-    if shared.opts.enable_console_prompts or shared.cmd_opts.enable_console_prompts:
+    if shared.opts.enable_console_prompts:
         print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
 
     if mask:
