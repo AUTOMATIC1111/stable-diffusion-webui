@@ -87,7 +87,7 @@ class UiSettings:
         if not opts.same_type(value, opts.data_labels[key].default):
             return gr.update(visible=True), opts.dumpjson()
 
-        if not opts.set(key, value):
+        if value is None or not opts.set(key, value):
             return gr.update(value=getattr(opts, key)), opts.dumpjson()
 
         opts.save(shared.config_filename)
@@ -158,7 +158,7 @@ class UiSettings:
                     loadsave.create_ui()
 
                 with gr.TabItem("Sysinfo", id="sysinfo", elem_id="settings_tab_sysinfo"):
-                    gr.HTML('<a href="./internal/sysinfo-download" class="sysinfo_big_link" download>Download system info</a><br /><a href="./internal/sysinfo">(or open as text in a new page)</a>', elem_id="sysinfo_download")
+                    gr.HTML('<a href="./internal/sysinfo-download" class="sysinfo_big_link" download>Download system info</a><br /><a href="./internal/sysinfo" target="_blank">(or open as text in a new page)</a>', elem_id="sysinfo_download")
 
                     with gr.Row():
                         with gr.Column(scale=1):
