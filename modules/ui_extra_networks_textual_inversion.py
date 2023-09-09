@@ -35,6 +35,9 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
             embeddings = []
         for embedding in embeddings:
             path, _ext = os.path.splitext(embedding.filename)
+            tags = {}
+            if embedding.tag is not None:
+                tags[embedding.tag]=1
             yield {
                 "name": os.path.splitext(embedding.name)[0],
                 "filename": embedding.filename,
@@ -44,6 +47,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
                 "search_term": self.search_terms_from_path(embedding.filename),
                 "prompt": json.dumps(os.path.splitext(embedding.name)[0]),
                 "local_preview": f"{path}.preview.{shared.opts.samples_format}",
+                "tags": tags,
             }
 
     def allowed_directories_for_previews(self):

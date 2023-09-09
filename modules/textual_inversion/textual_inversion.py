@@ -21,13 +21,10 @@ textual_inversion_templates = {}
 
 def list_textual_inversion_templates():
     textual_inversion_templates.clear()
-
     for root, _dirs, fns in os.walk(shared.opts.embeddings_templates_dir):
         for fn in fns:
             path = os.path.join(root, fn)
-
             textual_inversion_templates[fn] = TextualInversionTemplate(fn, path)
-
     return textual_inversion_templates
 
 
@@ -35,6 +32,7 @@ class Embedding:
     def __init__(self, vec, name, step=None):
         self.vec = vec
         self.name = name
+        self.tag = name
         self.step = step
         self.shape = None
         self.vectors = 0
@@ -81,13 +79,11 @@ class DirWithTextualInversionEmbeddings:
     def has_changed(self):
         if not os.path.isdir(self.path):
             return False
-
         return directory_mtime(self.path) != self.mtime
 
     def update(self):
         if not os.path.isdir(self.path):
             return
-
         self.mtime = directory_mtime(self.path)
 
 
@@ -177,19 +173,14 @@ class EmbeddingDatabase:
             return
 
         if ext in ['.PNG', '.WEBP', '.JXL', '.AVIF']:
-            _, second_ext = os.path.splitext(name)
-            if second_ext.upper() == '.PREVIEW':
+            if '.preview' in filename.lower():
                 return
             embed_image = Image.open(path)
             if hasattr(embed_image, 'text') and 'sd-ti-embedding' in embed_image.text:
                 data = embedding_from_b64(embed_image.text['sd-ti-embedding'])
-                name = data.get('name', name)
             else:
                 data = extract_image_data_embed(embed_image)
-                if data:
-                    name = data.get('name', name)
-                else:
-                    # if data is None, means this is not an embeding, just a preview image
+                if not data: # if data is None, means this is not an embeding, just a preview image
                     return
         elif ext in ['.BIN', '.PT']:
             data = torch.load(path, map_location="cpu")
@@ -207,17 +198,18 @@ class EmbeddingDatabase:
         # diffuser concepts
         elif type(data) == dict and type(next(iter(data.values()))) == torch.Tensor:
             if len(data.keys()) != 1:
-                # shared.log.warning(f"Skipping embedding: {filename} multiple keys found")
                 self.skipped_embeddings[name] = Embedding(None, name)
                 return
             emb = next(iter(data.values()))
             if len(emb.shape) == 1:
                 emb = emb.unsqueeze(0)
         else:
-            raise RuntimeError(f"Couldn't identify {filename} as neither textual inversion embedding nor diffuser concept.")
+            raise RuntimeError(f"Couldn't identify {filename} as textual inversion embedding")
 
         vec = emb.detach().to(devices.device, dtype=torch.float32)
+        # name = data.get('name', name)
         embedding = Embedding(vec, name)
+        embedding.tag = data.get('name', None)
         embedding.step = data.get('step', None)
         embedding.sd_checkpoint = data.get('sd_checkpoint', None)
         embedding.sd_checkpoint_name = data.get('sd_checkpoint_name', None)

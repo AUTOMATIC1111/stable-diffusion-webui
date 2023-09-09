@@ -62,7 +62,8 @@ class DiffusersTextualInversionManager(BaseTextualInversionManager):
                     replacement += f" {token}_{i}"
                     i += 1
                 prompt = prompt.replace(token, replacement)
-                self.pipe.embedding_db.embeddings_used = list(set(self.pipe.embedding_db.embeddings_used))
+                if hasattr(self.pipe, 'embedding_db'):
+                    self.pipe.embedding_db.embeddings_used = list(set(self.pipe.embedding_db.embeddings_used))
         return prompt
 
     def expand_textual_inversion_token_ids_if_necessary(self, token_ids: typing.List[int]) -> typing.List[int]:
