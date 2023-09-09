@@ -53,6 +53,8 @@ def refresh_styles():
 class UiPromptStyles:
     def __init__(self, tabname, main_ui_prompt, main_ui_negative_prompt):
         self.tabname = tabname
+        self.main_ui_prompt = main_ui_prompt
+        self.main_ui_negative_prompt = main_ui_negative_prompt
 
         with gr.Row(elem_id=f"{tabname}_styles_row"):
             self.dropdown = gr.Dropdown(label="Styles", show_label=False, elem_id=f"{tabname}_styles", choices=list(shared.prompt_styles.styles), value=[], multiselect=True, tooltip="Styles")
@@ -62,7 +64,7 @@ class UiPromptStyles:
             with gr.Row():
                 self.selection = gr.Dropdown(label="Styles", elem_id=f"{tabname}_styles_edit_select", choices=list(shared.prompt_styles.styles), value=[], allow_custom_value=True, info="Styles allow you to add custom text to prompt. Use the {prompt} token in style text, and it will be replaced with user's prompt when applying style. Otherwise, style's text will be added to the end of the prompt.")
                 ui_common.create_refresh_button([self.dropdown, self.selection], shared.prompt_styles.reload, lambda: {"choices": list(shared.prompt_styles.styles)}, f"refresh_{tabname}_styles")
-                self.materialize = ui_components.ToolButton(value=styles_materialize_symbol, elem_id=f"{tabname}_style_apply", tooltip="Apply all selected styles from the style selction dropdown in main UI to the prompt.")
+                self.materialize = ui_components.ToolButton(value=styles_materialize_symbol, elem_id=f"{tabname}_style_apply_dialog", tooltip="Apply all selected styles from the style selction dropdown in main UI to the prompt.")
                 self.copy = ui_components.ToolButton(value=styles_copy_symbol, elem_id=f"{tabname}_style_copy", tooltip="Copy main UI prompt to style.")
 
             with gr.Row():
@@ -98,12 +100,7 @@ class UiPromptStyles:
             show_progress=False,
         ).then(refresh_styles, outputs=[self.dropdown, self.selection], show_progress=False)
 
-        self.materialize.click(
-            fn=materialize_styles,
-            inputs=[main_ui_prompt, main_ui_negative_prompt, self.dropdown],
-            outputs=[main_ui_prompt, main_ui_negative_prompt, self.dropdown],
-            show_progress=False,
-        ).then(fn=None, _js="function(){update_"+tabname+"_tokens(); closePopup();}", show_progress=False)
+        self.setup_apply_button(self.materialize)
 
         self.copy.click(
             fn=lambda p, n: (p, n),
@@ -114,6 +111,10 @@ class UiPromptStyles:
 
         ui_common.setup_dialog(button_show=edit_button, dialog=styles_dialog, button_close=self.close)
 
-
-
-
+    def setup_apply_button(self, button):
+        button.click(
+            fn=materialize_styles,
+            inputs=[self.main_ui_prompt, self.main_ui_negative_prompt, self.dropdown],
+            outputs=[self.main_ui_prompt, self.main_ui_negative_prompt, self.dropdown],
+            show_progress=False,
+        ).then(fn=None, _js="function(){update_"+self.tabname+"_tokens(); closePopup();}", show_progress=False)
