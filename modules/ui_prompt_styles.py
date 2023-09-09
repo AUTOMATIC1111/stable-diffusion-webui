@@ -4,6 +4,7 @@ from modules import shared, ui_common, ui_components, styles
 
 styles_edit_symbol = '\U0001f58c\uFE0F'  # 🖌️
 styles_materialize_symbol = '\U0001f4cb'  # 📋
+styles_copy_symbol = '\U0001f4dd'  # 📝
 
 
 def select_style(name):
@@ -62,6 +63,7 @@ class UiPromptStyles:
                 self.selection = gr.Dropdown(label="Styles", elem_id=f"{tabname}_styles_edit_select", choices=list(shared.prompt_styles.styles), value=[], allow_custom_value=True, info="Styles allow you to add custom text to prompt. Use the {prompt} token in style text, and it will be replaced with user's prompt when applying style. Otherwise, style's text will be added to the end of the prompt.")
                 ui_common.create_refresh_button([self.dropdown, self.selection], shared.prompt_styles.reload, lambda: {"choices": list(shared.prompt_styles.styles)}, f"refresh_{tabname}_styles")
                 self.materialize = ui_components.ToolButton(value=styles_materialize_symbol, elem_id=f"{tabname}_style_apply", tooltip="Apply all selected styles from the style selction dropdown in main UI to the prompt.")
+                self.copy = ui_components.ToolButton(value=styles_copy_symbol, elem_id=f"{tabname}_style_copy", tooltip="Copy main UI prompt to style.")
 
             with gr.Row():
                 self.prompt = gr.Textbox(label="Prompt", show_label=True, elem_id=f"{tabname}_edit_style_prompt", lines=3)
@@ -102,6 +104,13 @@ class UiPromptStyles:
             outputs=[main_ui_prompt, main_ui_negative_prompt, self.dropdown],
             show_progress=False,
         ).then(fn=None, _js="function(){update_"+tabname+"_tokens(); closePopup();}", show_progress=False)
+
+        self.copy.click(
+            fn=lambda p, n: (p, n),
+            inputs=[main_ui_prompt, main_ui_negative_prompt],
+            outputs=[self.prompt, self.neg_prompt],
+            show_progress=False,
+        )
 
         ui_common.setup_dialog(button_show=edit_button, dialog=styles_dialog, button_close=self.close)
 
