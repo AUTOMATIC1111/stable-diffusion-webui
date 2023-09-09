@@ -1,7 +1,6 @@
 import os.path
 import urllib.parse
 from pathlib import Path
-from threading import Lock
 
 from modules import shared, ui_extra_networks_user_metadata, errors, extra_networks
 from modules.images import read_info_from_image, save_image_with_geninfo
@@ -95,7 +94,6 @@ class ExtraNetworksPage:
         self.allow_negative_prompt = False
         self.metadata = {}
         self.items = {}
-        self.thread_lock = Lock()
 
     def refresh(self):
         pass

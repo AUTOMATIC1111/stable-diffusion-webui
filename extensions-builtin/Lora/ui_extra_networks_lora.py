@@ -66,11 +66,11 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         return item
 
     def list_items(self):
-        with self.thread_lock:
-            for index, name in enumerate(networks.available_networks):
-                item = self.create_item(name, index)
-                if item is not None:
-                    yield item
+        for index, name in enumerate(networks.available_networks):
+            item = self.create_item(name, index)
+
+            if item is not None:
+                yield item
 
     def allowed_directories_for_previews(self):
         return [shared.cmd_opts.lora_dir, shared.cmd_opts.lyco_dir_backcompat]
