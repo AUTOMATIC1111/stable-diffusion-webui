@@ -17,6 +17,8 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
 
     def create_item(self, name, index=None, enable_filter=True):
         lora_on_disk = networks.available_networks.get(name)
+        if lora_on_disk is None:
+            return
 
         path, ext = os.path.splitext(lora_on_disk.filename)
 
@@ -69,7 +71,6 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         names = list(networks.available_networks)
         for index, name in enumerate(names):
             item = self.create_item(name, index)
-
             if item is not None:
                 yield item
 
