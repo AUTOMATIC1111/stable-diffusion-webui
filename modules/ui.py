@@ -1,4 +1,5 @@
 import datetime
+import functools
 import mimetypes
 import os
 import sys
@@ -151,11 +152,14 @@ def connect_clear_prompt(button):
     )
 
 
-def update_token_counter(text, steps):
+def update_token_counter(text, steps, is_positive=True):
     try:
         text, _ = extra_networks.parse_prompt(text)
 
-        _, prompt_flat_list, _ = prompt_parser.get_multicond_prompt_list([text])
+        if is_positive:
+            _, prompt_flat_list, _ = prompt_parser.get_multicond_prompt_list([text])
+        else:
+            prompt_flat_list = [text]
         prompt_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(prompt_flat_list, steps)
 
     except Exception:
@@ -533,7 +537,7 @@ def create_ui():
             ]
 
             toprow.token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[toprow.prompt, steps], outputs=[toprow.token_counter])
-            toprow.negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[toprow.negative_prompt, steps], outputs=[toprow.negative_token_counter])
+            toprow.negative_token_button.click(fn=wrap_queued_call(functools.partial(update_token_counter, is_positive=False)), inputs=[toprow.negative_prompt, steps], outputs=[toprow.negative_token_counter])
 
         extra_networks_ui = ui_extra_networks.create_ui(txt2img_interface, [txt2img_generation_tab], 'txt2img')
         ui_extra_networks.setup_ui(extra_networks_ui, txt2img_gallery)
