@@ -140,7 +140,7 @@ function setupExtraNetworks() {
 
 onUiLoaded(setupExtraNetworks);
 
-var re_extranet =   /<([^:^>]+:[^:]+):[\d.]+>(.*)/;
+var re_extranet = /<([^:^>]+:[^:]+):[\d.]+>(.*)/;
 var re_extranet_g = /<([^:^>]+:[^:]+):[\d.]+>/g;
 
 function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
