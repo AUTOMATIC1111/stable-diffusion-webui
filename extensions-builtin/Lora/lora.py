@@ -77,19 +77,16 @@ class LoraOnDisk:
         self.filename = filename
         self.metadata = {}
         self.is_safetensors = os.path.splitext(filename)[1].lower() == ".safetensors"
-
         if self.is_safetensors:
             try:
                 self.metadata = sd_models.read_metadata_from_safetensors(filename)
             except Exception as e:
                 errors.display(e, f"reading lora metadata: {filename}")
-
         if self.metadata:
             m = {}
             for k, v in sorted(self.metadata.items(), key=lambda x: metadata_tags_order.get(x[0], 999)):
                 m[k] = v
             self.metadata = m
-
         self.ssmd_cover_images = self.metadata.pop('ssmd_cover_images', None)  # those are cover images and they are too big to display in UI as text
         self.alias = self.metadata.get('ss_output_name', self.name)
         self.hash = None
@@ -442,19 +439,13 @@ def list_available_loras():
     forbidden_lora_aliases.clear()
     available_lora_hash_lookup.clear()
     forbidden_lora_aliases.update({"none": 1, "Addams": 1})
-
     os.makedirs(shared.cmd_opts.lora_dir, exist_ok=True)
-
     for filename in sorted([*filter(extension_filter(['.PT', '.CKPT', '.SAFETENSORS']), directory_files(shared.cmd_opts.lora_dir))], key=str.lower):
-
         name = os.path.splitext(os.path.basename(filename))[0]
         entry = LoraOnDisk(name, filename)
-
         available_loras[name] = entry
-
         if entry.alias in available_lora_aliases:
             forbidden_lora_aliases[entry.alias.lower()] = 1
-
         available_lora_aliases[name] = entry
         available_lora_aliases[entry.alias] = entry
 

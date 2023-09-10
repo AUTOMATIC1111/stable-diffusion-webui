@@ -36,6 +36,7 @@ group.add_argument("--tls-certfile", type=str, help="Enable TLS and specify cert
 group.add_argument("--tls-selfsign", action="store_true", help="Enable TLS with self-signed certificates, default: %(default)s", default=None)
 group.add_argument("--server-name", type=str, help="Sets hostname of server, default: %(default)s", default=None)
 group.add_argument("--no-hashing", action='store_true', help="Disable hashing of checkpoints, default: %(default)s", default=False)
+group.add_argument("--no-metadata", action='store_true', help="Disable reading of metadata from models, default: %(default)s", default=False)
 group.add_argument("--no-download", action='store_true', help="Disable download of default model, default: %(default)s", default=False)
 group.add_argument("--profile", action='store_true', help="Run profiler, default: %(default)s")
 group.add_argument("--disable-queue", action='store_true', help="Disable queues, default: %(default)s")

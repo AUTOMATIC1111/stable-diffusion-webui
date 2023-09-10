@@ -1,17 +1,19 @@
 # Change Log for SD.Next
 
-## Update for 2023-09-07
+## Update for 2023-09-10
 
 Mostly a service release  
 - tons of fixes  
 - new option **inference mode**  
   - default is standard `torch.no_grad`  
     new option is `torch.inference_only` which is slightly faster and uses less vram, but only works on some gpus  
-- updated gradio
-- styles support for subfolders
+- new cmdline param `--no-metadata`  
+  skips reading metadata from models that are not already cached  
+- updated gradio  
+- styles support for subfolders  
 - clean-up logging  
   - capture system info in startup log  
-  - better diagnostic output
+  - better diagnostic output  
   - capture extension output  
   - capture ldm output  
   - cleaner server restart  

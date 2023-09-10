@@ -321,6 +321,8 @@ def read_metadata_from_safetensors(filename):
     if res is not None:
         return res
     res = {}
+    if shared.cmd_opts.no_metadata:
+        return {}
     try:
         t0 = time.time()
         with open(filename, mode="rb") as file:
