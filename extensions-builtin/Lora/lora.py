@@ -95,7 +95,7 @@ class LoraOnDisk:
 
     def set_hash(self, v):
         self.hash = v
-        self.shorthash = self.hash[0:12]
+        self.shorthash = self.hash[0:10]
         if self.shorthash:
             available_lora_hash_lookup[self.shorthash] = self
 

@@ -21,12 +21,17 @@ def cache(subsection):
     return s
 
 
-def calculate_sha256(filename):
+def calculate_sha256(filename, quiet=False):
     hash_sha256 = hashlib.sha256()
     blksize = 1024 * 1024
-    with progress.open(filename, 'rb', description=f'Calculating model hash: [cyan]{filename}', auto_refresh=True) as f:
-        for chunk in iter(lambda: f.read(blksize), b""):
-            hash_sha256.update(chunk)
+    if not quiet:
+        with progress.open(filename, 'rb', description=f'Calculating model hash: [cyan]{filename}', auto_refresh=True) as f:
+            for chunk in iter(lambda: f.read(blksize), b""):
+                hash_sha256.update(chunk)
+    else:
+        with open(filename, 'rb') as f:
+            for chunk in iter(lambda: f.read(blksize), b""):
+                hash_sha256.update(chunk)
     return hash_sha256.hexdigest()
 
 

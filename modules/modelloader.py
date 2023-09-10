@@ -4,6 +4,7 @@ import shutil
 import importlib
 from typing import Dict
 from urllib.parse import urlparse
+import PIL.Image as Image
 from modules import shared
 from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone
 from modules.paths import script_path, models_path
@@ -59,12 +60,13 @@ def download_civit_preview(model_path: str, preview_url: str):
     import rich.progress as p
     _, ext = os.path.splitext(preview_url)
     model_name, _ = os.path.splitext(os.path.basename(model_path))
-    preview_file = os.path.splitext(model_path)[0] + ext
+    preview_file = f'{os.path.splitext(model_path)[0]}{ext}' if '.safetensors' in model_path.lower() else f'{model_path}{ext}'
     res = f'CivitAI download: name={model_name} url={preview_url}'
     req = requests.get(preview_url, stream=True, timeout=30)
     total_size = int(req.headers.get('content-length', 0))
     block_size = 16384 # 16KB blocks
     written = 0
+    img = None
     shared.state.begin('civitai-download-preview')
     try:
         with open(preview_file, 'wb') as f:
@@ -77,13 +79,14 @@ def download_civit_preview(model_path: str, preview_url: str):
         if written < 1024: # min threshold
             os.remove(preview_file)
             raise ValueError(f'removed invalid download: bytes={written}')
+        img = Image.open(preview_file)
     except Exception as e:
         shared.log.error(f'CivitAI download error: name={model_name} url={preview_url} {e}')
-    if total_size == written:
-        shared.log.info(f'{res} size={total_size}')
-    else:
-        shared.log.error(f'{res} size={total_size} written={written}')
     shared.state.end()
+    if img is None:
+        return res
+    shared.log.info(f'{res} size={total_size} image={img.size}')
+    img.close()
     return res
 
 
@@ -114,7 +117,7 @@ def download_civit_model(model_url: str, model_name: str, model_path: str, model
                     written = written + len(data)
                     f.write(data)
                     progress.update(task, advance=block_size, description="Downloading")
-        if written < 1024 * 1024 * 1024: # min threshold
+        if written < 1024 * 1024: # min threshold
             os.remove(model_file)
             raise ValueError(f'removed invalid download: bytes={written}')
         if preview is not None:
@@ -160,17 +163,16 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
     except Exception as e:
         shared.log.error(f"Diffusers download error: {hub_id} {e}")
     try:
-        model_info_dict = hf.model_info(hub_id).cardData # pylint: disable=no-member # TODO Diffusers is this real error?
+        model_info_dict = hf.model_info(hub_id).cardData if pipeline_dir is not None else None # pylint: disable=no-member # TODO Diffusers is this real error?
     except Exception:
         model_info_dict = None
-    # some checkpoints need to be downloaded as "hidden" as they just serve as pre- or post-pipelines of other pipelines
-    if model_info_dict is not None and "prior" in model_info_dict:
+    if model_info_dict is not None and "prior" in model_info_dict: # some checkpoints need to be downloaded as "hidden" as they just serve as pre- or post-pipelines of other pipelines
         download_dir = DiffusionPipeline.download(model_info_dict["prior"][0], **download_config)
         model_info_dict["prior"] = download_dir
-        # mark prior as hidden
-        with open(os.path.join(download_dir, "hidden"), "w", encoding="utf-8") as f:
+        with open(os.path.join(download_dir, "hidden"), "w", encoding="utf-8") as f: # mark prior as hidden
             f.write("True")
-    shared.writefile(model_info_dict, os.path.join(pipeline_dir, "model_info.json"))
+    if pipeline_dir is not None:
+        shared.writefile(model_info_dict, os.path.join(pipeline_dir, "model_info.json"))
     shared.state.end()
     return pipeline_dir
 
@@ -323,7 +325,7 @@ def extension_filter(ext_filter=None, ext_blacklist=None):
         return (not ext_filter or any(fp.upper().endswith(ew) for ew in ext_filter)) and (not ext_blacklist or not any(fp.upper().endswith(ew) for ew in ext_blacklist))
     return filter
 
-def load_file_from_url(url: str, *, model_dir: str, progress: bool = True, file_name: str | None = None) -> str:
+def load_file_from_url(url: str, *, model_dir: str, progress: bool = True, file_name = None):
     """Download a file from url into model_dir, using the file present if possible. Returns the path to the downloaded file."""
     os.makedirs(model_dir, exist_ok=True)
     if not file_name:

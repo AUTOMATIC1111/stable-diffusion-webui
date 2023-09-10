@@ -4,15 +4,18 @@
 
 Mostly a service release  
 - tons of fixes  
-- update ui hints
+- update **ui hints**
+- updated **models -> civitai**
+  - search and download loras  
+  - find previews for already downloaded models or loras  
 - new option **inference mode**  
   - default is standard `torch.no_grad`  
     new option is `torch.inference_only` which is slightly faster and uses less vram, but only works on some gpus  
 - new cmdline param `--no-metadata`  
   skips reading metadata from models that are not already cached  
-- updated gradio  
-- styles support for subfolders  
-- clean-up logging  
+- updated **gradio**  
+- **styles** support for subfolders  
+- clean-up **logging**  
   - capture system info in startup log  
   - better diagnostic output  
   - capture extension output  
