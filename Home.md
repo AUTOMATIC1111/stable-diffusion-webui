@@ -1,27 +1,34 @@
 **Stable Diffusion web UI** is a browser interface for Stable Diffusion based on Gradio library.
 
-- [Features](Features)
-  - [Textual Inversion](Textual-Inversion)
-  - [Negative prompt](Negative-prompt)
-- [Seed breaking changes](Seed-breaking-changes)
-- [Dependencies](Dependencies)
-  - [Xformers](Xformers)
 - [Install and run on NVidia GPUs](Install-and-Run-on-NVidia-GPUs)
 - [Install and run on AMD GPUs](Install-and-Run-on-AMD-GPUs)
 - [Install and run on Apple Silicon](Installation-on-Apple-Silicon) 
 - [Install and run on Intel Silicon (external wiki page)](https://github.com/openvinotoolkit/stable-diffusion-webui/wiki/Installation-on-Intel-Silicon)
+- [Run via online services](Online-Services)
+
+---
+
+- [Seed breaking changes](Seed-breaking-changes)
+  - [Still can't reproduce results? Try this first.](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/13093)
+
+---
+
+
+- [Features](Features)
 - [Command Line Arguments and Settings](Command-Line-Arguments-and-Settings)
 - [Optimizations](Optimizations)
-- [Custom scripts](Custom-Scripts)
-  - [Developing custom scripts](Developing-custom-scripts)
-- [Extensions](Extensions)
-  - [Developing extensions](Developing-extensions)
-- [Troubleshooting](Troubleshooting)
-- [Contributing](Contributing)
-- [Online Services](Online-Services)
-- [Localization](Localization)
 - [Custom Filename Name and Subdirectory](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Images-Filename-Name-and-Subdirectory)
 - [Change model folder location e.g. external disk](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Change-model-folder-location)
-- [API](API)
-- [Tests](Tests)
+
+---
+
 - [Guides and Tutorials](Guides-and-Tutorials)
+- [Dependencies](Dependencies)
+  - [xFormers](Xformers)
+- [Developing custom scripts](Developing-custom-scripts)
+- [Developing extensions](Developing-extensions)
+- [API](API)
+- [Localization](Localization)
+- [Troubleshooting](Troubleshooting)
+- [Contributing](Contributing)
+- [Tests](Tests)
