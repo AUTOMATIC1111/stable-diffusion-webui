@@ -213,7 +213,7 @@ def create_ui():
 
                 with gr.Column(scale=6):
                     with gr.Row():
-                        hf_search_text = gr.Textbox('', label = 'Seach models', placeholder='search huggingface models')
+                        hf_search_text = gr.Textbox('', label = 'Search models', placeholder='search huggingface models')
                         hf_search_btn = ToolButton(value="🔍", label="Search")
                     with gr.Row():
                         with gr.Column(scale=2):
@@ -365,7 +365,7 @@ def create_ui():
                         civit_model_type = gr.Dropdown(label='Model type', choices=['SD 1.5', 'SD XL', 'LoRA', 'Other'], value='LoRA')
                     with gr.Column(scale=15):
                         with gr.Row():
-                            civit_search_text = gr.Textbox('', label = 'Seach models', placeholder='keyword')
+                            civit_search_text = gr.Textbox('', label = 'Search models', placeholder='keyword')
                             civit_search_tag = gr.Textbox('', label = '', placeholder='tags')
                             civit_search_btn = ToolButton(value="🔍", label="Search", interactive=False)
                 with gr.Row():

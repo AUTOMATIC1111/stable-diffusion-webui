@@ -1153,7 +1153,7 @@ def create_ui(startup_timer = None):
                 show_progress=info.refresh is not None,
             )
 
-        button_set_checkpoint = gr.Button('Change checkpoint', elem_id='change_checkpoint', visible=False)
+        button_set_checkpoint = gr.Button('Change model', elem_id='change_checkpoint', visible=False)
         button_set_checkpoint.click(
             fn=lambda value, _: run_settings_single(value, key='sd_model_checkpoint'),
             _js="function(v){ var res = desiredCheckpointName; desiredCheckpointName = ''; return [res || v, null]; }",

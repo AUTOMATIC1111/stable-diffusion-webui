@@ -93,6 +93,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .extra-networks { border-left: 2px solid var(--highlight-color) !important; padding-left: 4px; }
 .image-buttons { gap: 10px !important; justify-content: center; }
 .image-buttons > button { max-width: 160px; }
+.tooltip { background: var(--primary-300); color: black; border: none; border-radius: var(--radius-lg) }
 #system_row > button, #settings_row > button, #config_row > button { max-width: 190px; }
 
 /* gradio elements overrides */

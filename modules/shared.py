@@ -373,7 +373,7 @@ options_templates.update(options_section(('sd', "Execution & Models"), {
     "sd_checkpoint_cache": OptionInfo(0, "Number of cached models", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae_checkpoint_cache": OptionInfo(0, "Number of cached VAEs", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae": OptionInfo("Automatic", "VAE model", gr.Dropdown, lambda: {"choices": shared_items.sd_vae_items()}, refresh=shared_items.refresh_vae_list),
-    "sd_model_dict": OptionInfo('None', "Use dict from model", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
+    "sd_model_dict": OptionInfo('None', "Use baseline data from a different model", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "stream_load": OptionInfo(False, "Load models using stream loading method"),
     "model_reuse_dict": OptionInfo(False, "When loading models attempt to reuse previous model dictionary"),
     "prompt_attention": OptionInfo("Full parser", "Prompt attention parser", gr.Radio, lambda: {"choices": ["Full parser", "Compel parser", "A1111 parser", "Fixed attention"] }),
@@ -391,7 +391,7 @@ options_templates.update(options_section(('optimizations', "Optimizations"), {
     "token_merging_ratio": OptionInfo(0.0, "Token merging ratio", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
     "token_merging_ratio_img2img": OptionInfo(0.0, "Token merging ratio for img2img", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
     "token_merging_ratio_hr": OptionInfo(0.0, "Token merging ratio for hires pass", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
-    "inference_mode": OptionInfo("no-grad", "Torch inference mode", gr.Radio, lambda: {"choices": ["no-grad", "inference-mode"]}),
+    "inference_mode": OptionInfo("no-grad", "Torch inference mode", gr.Radio, lambda: {"choices": ["no-grad", "inference-mode", "none"]}),
     "sd_vae_sliced_encode": OptionInfo(False, "VAE Slicing (original)"),
 }))
 
@@ -482,11 +482,9 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
     "grid_save": OptionInfo(True, "Always save all generated image grids"),
     "grid_format": OptionInfo('jpg', 'File format for grids', gr.Dropdown, lambda: {"choices": ["jpg", "png", "webp", "tiff", "jp2"]}),
     "n_rows": OptionInfo(-1, "Grid row count", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
-    # "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
-    # "grid_prevent_empty_spots": OptionInfo(True, "Prevent empty spots in grid (when set to autodetect)"),
 
     "save_sep_options": OptionInfo("<h2>Intermediate Image Saving</h2>", "", gr.HTML),
-    "save_init_img": OptionInfo(True, "Save copy of img2img init images (helps track workflow)"),
+    "save_init_img": OptionInfo(True, "Save copy of img2img init images"),
     "save_images_before_highres_fix": OptionInfo(False, "Save copy of image before applying highres fix"),
     "save_images_before_refiner": OptionInfo(False, "Save copy of image before running refiner"),
     "save_images_before_face_restoration": OptionInfo(False, "Save copy of image before doing face restoration"),
@@ -551,9 +549,9 @@ options_templates.update(options_section(('live-preview', "Live Previews"), {
     "show_progress_every_n_steps": OptionInfo(1, "Live preview display period", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
     "show_progress_type": OptionInfo("Approximate NN", "Live preview method", gr.Radio, {"choices": ["Full VAE", "Approximate NN", "Approximate simple", "TAESD"]}),
     "live_preview_content": OptionInfo("Combined", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
-    "live_preview_refresh_period": OptionInfo(500, "Progressbar/preview update period, in milliseconds", gr.Slider, {"minimum": 0, "maximum": 5000, "step": 25}),
+    "live_preview_refresh_period": OptionInfo(500, "Progress update period", gr.Slider, {"minimum": 0, "maximum": 5000, "step": 25}),
     "logmonitor_show": OptionInfo(True, "Show log view"),
-    "logmonitor_refresh_period": OptionInfo(5000, "Log view update period, in milliseconds", gr.Slider, {"minimum": 0, "maximum": 30000, "step": 25}),
+    "logmonitor_refresh_period": OptionInfo(5000, "Log view update period", gr.Slider, {"minimum": 0, "maximum": 30000, "step": 25}),
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler Settings"), {
@@ -566,9 +564,9 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
 
     "schedulers_sep_diffusers": OptionInfo("<h2>Diffusers specific config</h2>", "", gr.HTML),
     "schedulers_prediction_type": OptionInfo("default", "Samplers override model prediction type", gr.Radio, lambda: {"choices": ['default', 'epsilon', 'sample', 'v-prediction']}),
-    "schedulers_use_karras": OptionInfo(True, "Samplers should use Karras sigmas where applicable"),
-    "schedulers_use_loworder": OptionInfo(True, "Samplers should use use lower-order solvers in the final steps where applicable"),
-    "schedulers_use_thresholding": OptionInfo(False, "Samplers should use dynamic thresholding where applicable"),
+    "schedulers_use_karras": OptionInfo(True, "Samplers use Karras sigmas where applicable"),
+    "schedulers_use_loworder": OptionInfo(True, "Samplers use simplified solvers in final steps where applicable"),
+    "schedulers_use_thresholding": OptionInfo(False, "Samplers use dynamic thresholding where applicable"),
     "schedulers_dpm_solver": OptionInfo("sde-dpmsolver++", "Samplers DPM solver algorithm", gr.Radio, lambda: {"choices": ['dpmsolver', 'dpmsolver++', 'sde-dpmsolver++']}),
     "schedulers_beta_schedule": OptionInfo("default", "Samplers override beta schedule", gr.Radio, lambda: {"choices": ['default', 'linear', 'scaled_linear', 'squaredcos_cap_v2']}),
     'schedulers_beta_start': OptionInfo(0, "Samplers override beta start", gr.Number, {}),
@@ -590,11 +588,8 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
 }))
 
 options_templates.update(options_section(('postprocessing', "Postprocessing"), {
-    'postprocessing_enable_in_main_ui': OptionInfo([], "Enable addtional postprocessing operations", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
+    'postprocessing_enable_in_main_ui': OptionInfo([], "Enable additional postprocessing operations", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
     'postprocessing_operation_order': OptionInfo([], "Postprocessing operation order", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
-    # "use_old_hires_fix_width_height": OptionInfo(False, "Hires fix uses width & height to set final resolution"),
-    # "dont_fix_second_order_samplers_schedule": OptionInfo(False, "Do not fix prompt schedule for second order samplers"),
-
     "postprocessing_sep_img2img": OptionInfo("<h2>Img2Img & Inpainting</h2>", "", gr.HTML),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to match original colors"),
     "img2img_fix_steps": OptionInfo(False, "For image processing do exact number of steps as specified"),

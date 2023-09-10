@@ -352,7 +352,7 @@ def read_metadata_from_safetensors(filename):
                     v = 'data'
                 if k == 'format' and v == 'pt':
                     continue
-                large = True if len(v) > 4096 else False
+                large = True if len(v) > 2048 else False
                 if large and k == 'ss_datasets':
                     continue
                 if large and k == 'workflow':

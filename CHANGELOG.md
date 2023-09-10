@@ -4,6 +4,7 @@
 
 Mostly a service release  
 - tons of fixes  
+- update ui hints
 - new option **inference mode**  
   - default is standard `torch.no_grad`  
     new option is `torch.inference_only` which is slightly faster and uses less vram, but only works on some gpus  

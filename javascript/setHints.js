@@ -87,7 +87,7 @@ async function setHints() {
   log('setHints', { type: localeData.type, elements: elements.length, localized, hints, data: localeData.data.length, time: t1 - t0 });
   // sortUIElements();
   removeSplash();
-  // validateHints(elements, localeData.data)
+  // validateHints(elements, localeData.data);
 }
 
 onAfterUiUpdate(async () => {

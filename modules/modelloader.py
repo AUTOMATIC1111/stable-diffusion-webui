@@ -316,6 +316,19 @@ def extension_filter(ext_filter=None, ext_blacklist=None):
         return (not ext_filter or any(fp.upper().endswith(ew) for ew in ext_filter)) and (not ext_blacklist or not any(fp.upper().endswith(ew) for ew in ext_blacklist))
     return filter
 
+def load_file_from_url(url: str, *, model_dir: str, progress: bool = True, file_name: str | None = None) -> str:
+    """Download a file from url into model_dir, using the file present if possible. Returns the path to the downloaded file."""
+    os.makedirs(model_dir, exist_ok=True)
+    if not file_name:
+        parts = urlparse(url)
+        file_name = os.path.basename(parts.path)
+    cached_file = os.path.abspath(os.path.join(model_dir, file_name))
+    if not os.path.exists(cached_file):
+        shared.log.info(f'Downloading: url="{url}" file={cached_file}')
+        from torch.hub import download_url_to_file
+        download_url_to_file(url, cached_file, progress=progress)
+    return cached_file
+
 
 def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None, ext_blacklist=None) -> list:
     """
@@ -402,7 +415,6 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
                 shutil.rmtree(src_path, True)
     except Exception:
         pass
-
 
 
 def load_upscalers():
