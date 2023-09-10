@@ -201,7 +201,7 @@ def upscale_without_tiling(model, img):
     img = img.unsqueeze(0).to(devices.device_esrgan)
     with devices.inference_context():
         output = model(img)
-    output = output.squeeze().float().cpu().clamp_(0, 1).numpy()
+    output = output.squeeze().float().cpu().clamp_(0, 1).detach().numpy()
     output = 255. * np.moveaxis(output, 0, 2)
     output = output.astype(np.uint8)
     output = output[:, :, ::-1]
