@@ -1,7 +1,7 @@
 ## Google Colab
 
 > ℹ️ **Note:**
-> As of 2023-09-09, Google seems to be intentionally restricting Colab usage of Stable Diffusion for all users server-side, regardless if you are a paid user or not. Use these with caution as they could potentially ban your usage of Colab entirely.
+> As of 2023-09-09, Google seems to be intentionally restricting Colab usage of any form of Stable Diffusion (not only the web UI) for all users server-side, regardless if you are a paid user or not. Use these with caution as they could potentially ban your usage of Colab entirely.
 
    - [Maintained by TheLastBen](https://colab.research.google.com/github/TheLastBen/fast-stable-diffusion/blob/main/fast_stable_diffusion_AUTOMATIC1111.ipynb)
    - [Maintained by camenduru](https://github.com/camenduru/stable-diffusion-webui-colab)
