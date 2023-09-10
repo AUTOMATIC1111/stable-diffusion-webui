@@ -1,3 +1,6 @@
+> ℹ️ **Note:**
+> As of 2023-09-09, this guide is currently not maintained, and information is likely out of date. Note that the internal docs can always be accessed via the `/docs` endpoint (i.e. http://127.0.0.1:7860/docs)
+
 ## API guide by [@Kilvoctu](https://github.com/Kilvoctu)
 
 - First, of course, is to run web ui with `--api` commandline argument
