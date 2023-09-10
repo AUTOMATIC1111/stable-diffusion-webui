@@ -7,7 +7,6 @@
    - [Maintained by camenduru](https://github.com/camenduru/stable-diffusion-webui-colab)
    - [Maintained by ddPn08](https://github.com/ddPn08/automatic1111-colab)
    - [Maintained by Akaibu](https://colab.research.google.com/drive/1kw3egmSn-KgWsikYvOMjJkVDsPLjEMzl)
-   - [Maintained by NoCrypt](https://colab.research.google.com/drive/1wEa-tS10h4LlDykd87TF5zzpXIIQoCmq)
    - [Colab, original by me, outdated](https://colab.research.google.com/drive/1Iy-xW9t1-OQWhb0hNxueGij8phCyluOh)
 
 
