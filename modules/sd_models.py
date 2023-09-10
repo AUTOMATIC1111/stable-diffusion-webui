@@ -310,6 +310,20 @@ def write_metadata():
     sd_metadata_pending = 0
 
 
+def scrub_dict(dict_obj, keys):
+    for key in list(dict_obj.keys()):
+        if not isinstance(dict_obj, dict):
+            continue
+        elif key in keys:
+            dict_obj.pop(key, None)
+        elif isinstance(dict_obj[key], dict):
+            scrub_dict(dict_obj[key], keys)
+        elif isinstance(dict_obj[key], list):
+            for item in dict_obj[key]:
+                scrub_dict(item, keys)
+    return
+
+
 def read_metadata_from_safetensors(filename):
     global sd_metadata # pylint: disable=global-statement
     if sd_metadata is None:
@@ -334,15 +348,26 @@ def read_metadata_from_safetensors(filename):
             json_data = json_start + file.read(metadata_len-2)
             json_obj = json.loads(json_data)
             for k, v in json_obj.get("__metadata__", {}).items():
+                if v.startswith("data:"):
+                    v = 'data'
                 if k == 'format' and v == 'pt':
                     continue
-                if isinstance(v, str) and v[0:1] == '{':
-                    try:
-                        res[k] = json.loads(v)
-                    except Exception:
-                        pass
-                else:
-                    res[k] = v
+                large = True if len(v) > 4096 else False
+                if large and k == 'ss_datasets':
+                    continue
+                if large and k == 'workflow':
+                    continue
+                if large and k == 'prompt':
+                    continue
+                if large and k == 'ss_bucket_info':
+                    continue
+                if v[0:1] == '{':
+                    v = json.loads(v)
+                    if large and k == 'ss_tag_frequency':
+                        v = { i: len(j) for i, j in v.items() }
+                    if large and k == 'sd_merge_models':
+                        scrub_dict(v, ['sd_merge_recipe'])
+                res[k] = v
         sd_metadata[filename] = res
         global sd_metadata_pending # pylint: disable=global-statement
         sd_metadata_pending += 1

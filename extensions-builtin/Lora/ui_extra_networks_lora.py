@@ -22,14 +22,10 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
             possible_tags = l.metadata.get('ss_tag_frequency', {}) if l.metadata is not None else {}
             if isinstance(possible_tags, str):
                 possible_tags = {}
-                shared.log.debug(f'Lora has invalid metadata: {path}')
             tags = {}
-            for tag in possible_tags.keys():
-                if '_' not in tag:
-                    tag = f'0_{tag}'
-                words = tag.split('_', 1)
+            for k, v in possible_tags.items():
+                words = k.split('_', 1) if '_' in k else [v, k]
                 tags[' '.join(words[1:])] = words[0]
-            # shared.log.debug(f'Lora: {path}: name={name} alias={alias} tags={tags}')
             yield {
                 "name": name,
                 "filename": path,

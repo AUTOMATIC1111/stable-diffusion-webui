@@ -19,7 +19,7 @@ div.gradio-html.min{ min-height: 0; }
 .gradio-dropdown label span:not(.has-info), .gradio-textbox label span:not(.has-info), .gradio-number label span:not(.has-info) { margin-bottom: 0; }
 .gradio-dropdown ul.options li.item { padding: 0.05em 0; }
 .gradio-dropdown ul.options li.item:not(:has(.hide)) { background-color: var(--neutral-100); }
-.gradio-dropdown ul.options { z-index: 3000; min-width: fit-content; max-width: fit-content; max-height: 25vh !important; white-space: nowrap; }
+.gradio-dropdown ul.options { z-index: 3000; min-width: fit-content; max-height: 25vh !important; white-space: nowrap; }
 .gradio-dropdown:not(.multiselect) .wrap-inner.wrap-inner.wrap-inner{ flex-wrap: unset; }
 .gradio-dropdown.multiselect .token-remove.remove-all.remove-all{ display: flex; }
 .gradio-dropdown.multiselect div.wrap-inner {	overflow-x: hidden; overflow-y: auto; max-height: 50vh; overflow-wrap: anywhere; }
@@ -30,10 +30,10 @@ footer { display: none; }
 td { border-bottom: none !important; }
 
 /* general styled components */
-.gradio-button.tool{ max-width: 1em; min-width: 1em !important; align-self: end; font-size: 1.4em }
-.gradio-button.secondary-down{ background: var(--button-secondary-background-fill); color: var(--button-secondary-text-color); }
-.gradio-button.secondary-down, .gradio-button.secondary-down:hover{ box-shadow: 1px 1px 1px rgba(0,0,0,0.25) inset, 0px 0px 3px rgba(0,0,0,0.15) inset; }
-.gradio-button.secondary-down:hover{ background: var(--button-secondary-background-fill-hover); color: var(--button-secondary-text-color-hover); }
+.gradio-button.tool { max-width: min-content; min-width: min-content !important; align-self: end; font-size: 1.4em; color: var(--body-text-color) !important; }
+.gradio-button.secondary-down { background: var(--button-secondary-background-fill); color: var(--button-secondary-text-color); }
+.gradio-button.secondary-down, .gradio-button.secondary-down:hover { box-shadow: 1px 1px 1px rgba(0,0,0,0.25) inset, 0px 0px 3px rgba(0,0,0,0.15) inset; }
+.gradio-button.secondary-down:hover { background: var(--button-secondary-background-fill-hover); color: var(--button-secondary-text-color-hover); }
 .checkboxes-row { margin-bottom: 1em; gap: 0 !important; justify-content: space-around; flex-wrap: unset !important; }
 .checkboxes-row > div{ flex: 0; white-space: nowrap; min-width: auto; }
 
@@ -115,9 +115,8 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 /* settings */
 #si-sparkline-memo, #si-sparkline-load { background-color: #111; }
 .licenses { display: block !important; }
-#quicksettings { width: fit-content; align-items: end; }
-#quicksettings > div, #quicksettings > fieldset{ max-width: 20em; min-width: 24em; padding: 0; border: none; box-shadow: none; background: none; }
-#quicksettings > button { margin-left: -0.5em; }
+#quicksettings { width: fit-content; margin-top: 1em; }
+#quicksettings > button { padding: 0 1em 0 0 }
 
 #settings { display: flex; gap: var(--layout-gap); }
 #settings div { border: none; gap: 0.5em; width: fit-content; }
@@ -239,7 +238,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-network-cards .card { height: fit-content; margin: 0 0 0.5em 0.5em; position: relative; scroll-snap-align: start; scroll-margin-top: 0; }
 .extra-network-cards .card .overlay { position: absolute; bottom: 0; padding: 0.2em; z-index: 10; width: 100%; background: none; }
 .extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
-.extra-network-cards .card .overlay .name { font-size: 1.1em; font-weight: bold; text-shadow: 1px 1px black; color: white; }
+.extra-network-cards .card .overlay .name { font-size: 1.1em; font-weight: bold; text-shadow: 1px 1px black; color: white; overflow-wrap: break-word; }
 .extra-network-cards .card .overlay .tags { margin: 4px; display: none; overflow-wrap: break-word; }
 .extra-network-cards .card .overlay .tag { padding: 2px; margin: 2px; background: var(--neutral-700); cursor: pointer; display: inline-block; }
 .extra-network-cards .card .overlay .actions { font-size: 2.2em; display: none; text-align-last: center; cursor: pointer; font-variant: unicase; height: 0.8em }
