@@ -5,6 +5,7 @@
 - [Install and run on AMD GPUs](Install-and-Run-on-AMD-GPUs)
 - [Install and run on Apple Silicon](Installation-on-Apple-Silicon) 
 - [Install and run on Intel Silicon (external wiki page)](https://github.com/openvinotoolkit/stable-diffusion-webui/wiki/Installation-on-Intel-Silicon)
+- [Install and run via container (i.e. Docker)](Containers)
 - [Run via online services](Online-Services)
 
 ---
