@@ -2,6 +2,8 @@ import time
 import inspect
 import typing
 import torch
+import numpy as np
+from PIL import Image
 import modules.devices as devices
 import modules.shared as shared
 import modules.sd_samplers as sd_samplers
@@ -315,15 +317,14 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         return results
 
     # optional hires pass
+    latent_scale_mode = shared.latent_upscale_modes.get(p.hr_upscaler, None) if p.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "None")
     if p.is_hr_pass:
         p.init_hr()
-        latent_scale_mode = shared.latent_upscale_modes.get(p.hr_upscaler, None) if p.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "None")
-        print('HERE1', latent_scale_mode)
         if p.width != p.hr_upscale_to_x or p.height != p.hr_upscale_to_y:
             if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_highres_fix and hasattr(shared.sd_model, 'vae'):
                 save_intermediate(latents=output.images, suffix="-before-hires")
-            p.ops.append('hires')
             if latent_scale_mode is not None:
+                p.ops.append('hires')
                 recompile_model(hires=True)
                 hires_resize(latents=output.images)
                 sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
@@ -347,33 +348,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     output = shared.sd_model(**hires_args) # pylint: disable=not-callable
                 except AssertionError as e:
                     shared.log.info(e)
-            else:
-                """
-                decoded_samples = decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae))
-                lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
-                batch_images = []
-                for i, x_sample in enumerate(lowres_samples):
-                    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
-                    x_sample = validate_sample(x_sample)
-                    image = Image.fromarray(x_sample)
-                    save_intermediate(image, i)
-                    image = images.resize_image(1, image, target_width, target_height, upscaler_name=self.hr_upscaler)
-                    image = np.array(image).astype(np.float32) / 255.0
-                    image = np.moveaxis(image, 2, 0)
-                    batch_images.append(image)
-                decoded_samples = torch.from_numpy(np.array(batch_images))
-                decoded_samples = decoded_samples.to(device=shared.device, dtype=devices.dtype_vae)
-                decoded_samples = 2. * decoded_samples - 1.
-                if shared.opts.sd_vae_sliced_encode and len(decoded_samples) > 1:
-                    samples = torch.stack([
-                        self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(torch.unsqueeze(decoded_sample, 0)))[0]
-                        for decoded_sample
-                        in decoded_samples
-                    ])
-                else:
-                    samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
-                image_conditioning = self.img2img_image_conditioning(decoded_samples, samples)
-                """
 
     # optional refiner pass or decode
     if is_refiner_enabled:
@@ -428,6 +402,20 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             shared.log.debug('Moving to CPU: model=refiner')
             shared.sd_refiner.to(devices.cpu)
             devices.torch_gc()
+
+    if p.is_hr_pass and latent_scale_mode is None:
+        if p.width != p.hr_upscale_to_x or p.height != p.hr_upscale_to_y:
+            p.ops.append('upscale')
+            if not is_refiner_enabled:
+                results = vae_decode(latents=output.images, model=shared.sd_model, full_quality=p.full_quality)
+            upscaled = []
+            for image in results:
+                image = (image * 255.0).astype(np.uint8)
+                image = Image.fromarray(image)
+                image = images.resize_image(1, image, p.hr_upscale_to_x, p.hr_upscale_to_y, upscaler_name=p.hr_upscaler)
+                image = np.array(image).astype(np.float32) / 255.0
+                upscaled.append(image)
+            return upscaled
 
     # final decode since there is no refiner
     if not is_refiner_enabled:
