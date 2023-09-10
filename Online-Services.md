@@ -20,10 +20,13 @@
    - [Maintained by roguewild](https://www.kaggle.com/code/roguewild/automatic1111-s-stable-diffusion-webui)
    - [Maintained by camenduru](https://www.kaggle.com/code/camenduru/stable-diffusion-webui-kaggle)
 
+## Runpod
+   - [Official guide](https://blog.runpod.io/stable-diffusion-ui-on-runpod/)
+   - [Maintained by camenduru](https://github.com/camenduru/stable-diffusion-webui-runpod)
+
 ## SageMaker Studio Lab
    - [Maintained by fractality](https://github.com/Miraculix200/StableDiffusionUI_SageMakerSL/blob/main/StableDiffusionUI_SageMakerSL.ipynb)
 
 ## Other
    - [Azure ML](https://vladiliescu.net/stable-diffusion-web-ui-on-azure-ml/)
-   - [Runpod](https://www.runpod.io/gpu-instance/pricing)
-   - [vast.ai](https://cloud.vast.ai/create/)
+   - [vast.ai](https://vast.ai/docs/guides/stable-diffusion)
