@@ -98,7 +98,9 @@ class StyleDatabase:
                 "extra": "",
                 "preview": "",
             }
-            fn = os.path.join(path, name + ".json")
+            keepcharacters = (' ','.','_')
+            fn = "".join(c for c in name if c.isalnum() or c in keepcharacters).rstrip()
+            fn = os.path.join(path, fn + ".json")
             try:
                 with open(fn, 'w', encoding='utf-8') as f:
                     json.dump(style, f, indent=2)
