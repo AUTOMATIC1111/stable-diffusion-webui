@@ -154,7 +154,11 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
     if token is not None and len(token) > 2:
         shared.log.debug(f"Diffusers authentication: {token}")
         hf.login(token)
-    pipeline_dir = DiffusionPipeline.download(hub_id, **download_config)
+    pipeline_dir = None
+    try:
+        pipeline_dir = DiffusionPipeline.download(hub_id, **download_config)
+    except Exception as e:
+        shared.log.error(f"Diffusers download error: {hub_id} {e}")
     try:
         model_info_dict = hf.model_info(hub_id).cardData # pylint: disable=no-member # TODO Diffusers is this real error?
     except Exception:
@@ -193,22 +197,25 @@ def load_diffusers_models(model_path: str, command_path: str = None):
                     output.append(str(r.repo_id))
             """
             for folder in os.listdir(place):
-                if "--" not in folder:
-                    continue
-                _, name = folder.split("--", maxsplit=1)
-                name = name.replace("--", "/")
-                snapshots = os.listdir(os.path.join(place, folder, "snapshots"))
-                if len(snapshots) == 0:
-                    shared.log.warning(f"Diffusers folder has no snapshots: location={place} folder={folder} name={name}")
-                    continue
-                commit = snapshots[-1]
-                folder = os.path.join(place, folder, 'snapshots', commit)
-                mtime = os.path.getmtime(folder)
-                info = os.path.join(folder, "model_info.json")
-                diffuser_repos.append({ 'name': name, 'filename': name, 'path': folder, 'hash': commit, 'mtime': mtime, 'model_info': info })
-                if os.path.exists(os.path.join(place, folder, 'snapshots', commit, "hidden")):
-                    continue
-                output.append(name)
+                try:
+                    if "--" not in folder:
+                        continue
+                    _, name = folder.split("--", maxsplit=1)
+                    name = name.replace("--", "/")
+                    snapshots = os.listdir(os.path.join(place, folder, "snapshots"))
+                    if len(snapshots) == 0:
+                        shared.log.warning(f"Diffusers folder has no snapshots: location={place} folder={folder} name={name}")
+                        continue
+                    commit = snapshots[-1]
+                    folder = os.path.join(place, folder, 'snapshots', commit)
+                    mtime = os.path.getmtime(folder)
+                    info = os.path.join(folder, "model_info.json")
+                    diffuser_repos.append({ 'name': name, 'filename': name, 'path': folder, 'hash': commit, 'mtime': mtime, 'model_info': info })
+                    if os.path.exists(os.path.join(place, folder, 'snapshots', commit, "hidden")):
+                        continue
+                    output.append(name)
+                except Exception as e:
+                    shared.log.error(f"Error analyzing diffusers model: {place}/{folder} {e}")
         except Exception as e:
             shared.log.error(f"Error listing diffusers: {place} {e}")
     shared.log.debug(f'Scanning diffusers cache: {model_path} {command_path} items={len(output)} time={time.time()-t0:.2f}s')
@@ -346,8 +353,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
         output:list = [*filter(extension_filter(ext_filter, ext_blacklist), directory_files(*places))]
         if model_url is not None and len(output) == 0:
             if download_name is not None:
-                from basicsr.utils.download_util import load_file_from_url
-                dl = load_file_from_url(model_url, places[0], True, download_name)
+                dl = load_file_from_url(model_url, model_dir=places[0], progress=True, file_name=download_name)
                 output.append(dl)
             else:
                 output.append(model_url)
