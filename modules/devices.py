@@ -207,10 +207,10 @@ def set_cuda_params():
     unet_needs_upcast = shared.opts.upcast_sampling
     if shared.opts.inference_mode == 'inference-mode':
         inference_context = torch.inference_mode
-    elif shared.opts.inference_mode == 'no-grad':
-        inference_context = torch.no_grad
-    else:
+    elif shared.opts.inference_mode == 'none':
         inference_context = contextlib.nullcontext
+    else:
+        inference_context = torch.no_grad
     shared.log.debug(f'Desired Torch parameters: dtype={shared.opts.cuda_dtype} no-half={shared.opts.no_half} no-half-vae={shared.opts.no_half_vae} upscast={shared.opts.upcast_sampling}')
     shared.log.info(f'Setting Torch parameters: dtype={dtype} vae={dtype_vae} unet={dtype_unet} context={inference_context.__name__} fp16={fp16_ok} bf16={bf16_ok}')
     shared.log.debug(f'Torch default device: {torch.device(get_optimal_device_name())}')

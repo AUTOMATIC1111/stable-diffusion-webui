@@ -1000,7 +1000,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             self.ops.append('hires')
             target_width = self.hr_upscale_to_x
             target_height = self.hr_upscale_to_y
-
             if latent_scale_mode is not None:
                 for i in range(samples.shape[0]):
                     save_intermediate(samples, i)
@@ -1009,6 +1008,16 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                     image_conditioning = self.img2img_image_conditioning(decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae)), samples)
                 else:
                     image_conditioning = self.txt2img_image_conditioning(samples.to(dtype=devices.dtype_vae))
+                if self.latent_sampler == "PLMS":
+                    self.latent_sampler = 'UniPC'
+                self.sampler = modules.sd_samplers.create_sampler(self.latent_sampler or self.sampler_name, self.sd_model)
+                samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
+                noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
+                x = None
+                devices.torch_gc() # GC now before running the next img2img to prevent running out of memory
+                modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio(for_hr=True))
+                samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
+                modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio())
             else:
                 decoded_samples = decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae))
                 lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
@@ -1035,16 +1044,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                     samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
                 image_conditioning = self.img2img_image_conditioning(decoded_samples, samples)
             shared.state.nextjob()
-            if self.latent_sampler == "PLMS":
-                self.latent_sampler = 'UniPC'
-            self.sampler = modules.sd_samplers.create_sampler(self.latent_sampler or self.sampler_name, self.sd_model)
-            samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
-            noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
-            x = None
-            devices.torch_gc() # GC now before running the next img2img to prevent running out of memory
-            modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio(for_hr=True))
-            samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
-            modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio())
             self.is_hr_pass = False
 
         return samples
