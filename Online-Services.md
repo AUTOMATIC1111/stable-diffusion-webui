@@ -23,5 +23,7 @@
 ## SageMaker Studio Lab
    - [Maintained by fractality](https://github.com/Miraculix200/StableDiffusionUI_SageMakerSL/blob/main/StableDiffusionUI_SageMakerSL.ipynb)
 
-## Installation Guides
+## Other
    - [Azure ML](https://vladiliescu.net/stable-diffusion-web-ui-on-azure-ml/)
+   - [Runpod](https://www.runpod.io/gpu-instance/pricing)
+   - [vast.ai](https://cloud.vast.ai/create/)
