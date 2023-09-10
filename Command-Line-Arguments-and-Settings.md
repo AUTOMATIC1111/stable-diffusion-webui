@@ -13,6 +13,10 @@
 | CUDA_VISIBLE_DEVICES   | Select GPU to use for your instance on a system with multiple GPUs. For example, if you want to use secondary GPU, put "1".<br>(add a new line to webui-user.bat not in COMMANDLINE_ARGS): `set CUDA_VISIBLE_DEVICES=0`<br>Alternatively, just use `--device-id` flag in `COMMANDLINE_ARGS`. |
 | SD_WEBUI_LOG_LEVEL   | Log verbosity. Supports any valid logging level supported by Python's built-in `logging` module. Defaults to `INFO` if not set. |
 | SD_WEBUI_CACHE_FILE   | Cache file path. Defaults to `cache.json` in the root directory if not set. |
+| SD_WEBUI_RESTAR | A value set by `launcher script` (like webui.bat webui.sh) informing Webui that restart function is available |
+| SD_WEBUI_RESTARTING | A internal value signifying if webui is currently restarting / reloading, if this value set to an non blank value Webui will not perform certain actions such as auto launching browser during reload |
+
+
 
 ### webui-user
 The recommended way to specify environment variables is by editing `webui-user.bat` (Windows) and `webui-user.sh` (Linux):
