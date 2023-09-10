@@ -478,10 +478,7 @@ class Api:
         return [{"name":x.name,"path":x.data_path, "scale":x.scale} for x in get_realesrgan_models(None)]
 
     def get_prompt_styles(self):
-        styleList = []
-        for _k, v in shared.prompt_styles.styles.items():
-            styleList.append(v)
-        return styleList
+        return [{ 'name': v.name, 'prompt': v.prompt, 'negative_prompt': v.negative_prompt, 'extra': v.extra, 'filename': v.filename, 'preview': v.preview} for v in shared.prompt_styles.styles.values()]
 
     def get_embeddings(self):
         db = sd_hijack.model_hijack.embedding_db

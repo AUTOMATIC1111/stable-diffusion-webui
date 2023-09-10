@@ -317,33 +317,63 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     # optional hires pass
     if p.is_hr_pass:
         p.init_hr()
-        recompile_model(hires=True)
+        latent_scale_mode = shared.latent_upscale_modes.get(p.hr_upscaler, None) if p.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "None")
+        print('HERE1', latent_scale_mode)
         if p.width != p.hr_upscale_to_x or p.height != p.hr_upscale_to_y:
             if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_highres_fix and hasattr(shared.sd_model, 'vae'):
                 save_intermediate(latents=output.images, suffix="-before-hires")
-            hires_resize(latents=output.images)
-            sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
             p.ops.append('hires')
-            hires_args = set_pipeline_args(
-                model=shared.sd_model,
-                prompts=prompts,
-                negative_prompts=negative_prompts,
-                prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
-                negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
-                num_inference_steps=int(p.hr_second_pass_steps // p.denoising_strength + 1),
-                eta=shared.opts.eta_ddim,
-                guidance_scale=p.image_cfg_scale if p.image_cfg_scale is not None else p.cfg_scale,
-                guidance_rescale=p.diffusers_guidance_rescale,
-                output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
-                clip_skip=p.clip_skip,
-                image=p.init_images,
-                strength=p.denoising_strength,
-                desc='Hires',
-            )
-            try:
-                output = shared.sd_model(**hires_args) # pylint: disable=not-callable
-            except AssertionError as e:
-                shared.log.info(e)
+            if latent_scale_mode is not None:
+                recompile_model(hires=True)
+                hires_resize(latents=output.images)
+                sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
+                hires_args = set_pipeline_args(
+                    model=shared.sd_model,
+                    prompts=prompts,
+                    negative_prompts=negative_prompts,
+                    prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
+                    negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
+                    num_inference_steps=int(p.hr_second_pass_steps // p.denoising_strength + 1),
+                    eta=shared.opts.eta_ddim,
+                    guidance_scale=p.image_cfg_scale if p.image_cfg_scale is not None else p.cfg_scale,
+                    guidance_rescale=p.diffusers_guidance_rescale,
+                    output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
+                    clip_skip=p.clip_skip,
+                    image=p.init_images,
+                    strength=p.denoising_strength,
+                    desc='Hires',
+                )
+                try:
+                    output = shared.sd_model(**hires_args) # pylint: disable=not-callable
+                except AssertionError as e:
+                    shared.log.info(e)
+            else:
+                """
+                decoded_samples = decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae))
+                lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
+                batch_images = []
+                for i, x_sample in enumerate(lowres_samples):
+                    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
+                    x_sample = validate_sample(x_sample)
+                    image = Image.fromarray(x_sample)
+                    save_intermediate(image, i)
+                    image = images.resize_image(1, image, target_width, target_height, upscaler_name=self.hr_upscaler)
+                    image = np.array(image).astype(np.float32) / 255.0
+                    image = np.moveaxis(image, 2, 0)
+                    batch_images.append(image)
+                decoded_samples = torch.from_numpy(np.array(batch_images))
+                decoded_samples = decoded_samples.to(device=shared.device, dtype=devices.dtype_vae)
+                decoded_samples = 2. * decoded_samples - 1.
+                if shared.opts.sd_vae_sliced_encode and len(decoded_samples) > 1:
+                    samples = torch.stack([
+                        self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(torch.unsqueeze(decoded_sample, 0)))[0]
+                        for decoded_sample
+                        in decoded_samples
+                    ])
+                else:
+                    samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
+                image_conditioning = self.img2img_image_conditioning(decoded_samples, samples)
+                """
 
     # optional refiner pass or decode
     if is_refiner_enabled:
