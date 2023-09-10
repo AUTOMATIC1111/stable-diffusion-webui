@@ -119,7 +119,7 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 #quicksettings > button { padding: 0 1em 0 0 }
 
 #settings { display: flex; gap: var(--layout-gap); }
-#settings div { border: none; gap: 0.5em; width: fit-content; }
+#settings div { border: none; gap: 0.5em; width: fit-content; display: inline-flex; }
 #settings > div.tab-content { flex: 10 0 75%; display: grid; }
 
 #settings > div.tab-content > div { border: none; padding: 0; }

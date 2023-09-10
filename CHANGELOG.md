@@ -18,6 +18,7 @@ Mostly a service release
   skips reading metadata from models that are not already cached  
 - updated **gradio**  
 - **styles** support for subfolders  
+- **css** optimizations
 - clean-up **logging**  
   - capture system info in startup log  
   - better diagnostic output  
