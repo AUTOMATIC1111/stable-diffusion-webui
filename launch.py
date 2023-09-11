@@ -217,7 +217,7 @@ if __name__ == "__main__":
         except Exception:
             alive = False
             requests = 0
-        if round(time.time()) % 10 == 0:
+        if round(time.time()) % 120 == 0:
             state = f'job="{instance.state.job}" {instance.state.job_no}/{instance.state.job_count}' if instance.state.job != '' or instance.state.job_no != 0 or instance.state.job_count != 0 else 'idle'
             uptime = round(time.time() - instance.state.server_start)
             installer.log.debug(f'Server alive={alive} jobs={instance.state.total_jobs} requests={requests} uptime={uptime}s memory {get_memory_stats()} {state}')

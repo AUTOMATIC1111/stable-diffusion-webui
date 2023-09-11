@@ -30,6 +30,7 @@ Stuff to be added, in no particular order...
   - [Localization](https://app.transifex.com/signup/open-source/)
 - New Minor
   - Prompt padding for positive/negative
+  - Add EN provider for VAEs
   - XYZ grid upscalers
   - Built-in `motd`-style notifications
   - Docker PR
