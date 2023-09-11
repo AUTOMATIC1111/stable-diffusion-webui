@@ -492,7 +492,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
     }
     if 'txt2img' in p.ops:
         pass
-    if 'hires' or 'upscale' in p.ops:
+    if 'hires' in p.ops or 'upscale' in p.ops:
         args["Hires steps"] = p.hr_second_pass_steps
         args["Hires upscaler"] = p.hr_upscaler
         args["Hires upscale"] = p.hr_scale
