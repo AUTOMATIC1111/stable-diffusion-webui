@@ -158,6 +158,7 @@ class StableDiffusionProcessing:
         self.clip_skip = clip_skip
         self.iteration = 0
         self.is_hr_pass = False
+        self.hr_force = False
         self.enable_hr = None
         self.refiner_steps = 5
         self.refiner_start = 0
@@ -895,13 +896,14 @@ def old_hires_fix_first_pass_dimensions(width, height):
 
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
-    def __init__(self, enable_hr: bool = False, denoising_strength: float = 0.75, firstphase_width: int = 0, firstphase_height: int = 0, hr_scale: float = 2.0, hr_upscaler: str = None, hr_second_pass_steps: int = 0, hr_resize_x: int = 0, hr_resize_y: int = 0, refiner_steps: int = 5, refiner_start: float = 0, refiner_prompt: str = '', refiner_negative: str = '', **kwargs):
+    def __init__(self, enable_hr: bool = False, denoising_strength: float = 0.75, firstphase_width: int = 0, firstphase_height: int = 0, hr_scale: float = 2.0, hr_force: bool = False, hr_upscaler: str = None, hr_second_pass_steps: int = 0, hr_resize_x: int = 0, hr_resize_y: int = 0, refiner_steps: int = 5, refiner_start: float = 0, refiner_prompt: str = '', refiner_negative: str = '', **kwargs):
 
         super().__init__(**kwargs)
         self.enable_hr = enable_hr
         self.denoising_strength = denoising_strength
         self.hr_scale = hr_scale
         self.hr_upscaler = hr_upscaler
+        self.hr_force = hr_force
         self.hr_second_pass_steps = hr_second_pass_steps
         self.hr_resize_x = hr_resize_x
         self.hr_resize_y = hr_resize_y
@@ -983,13 +985,14 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if shared.backend == shared.Backend.DIFFUSERS:
             modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.TEXT_2_IMAGE)
 
+        latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "None")
+        if self.enable_hr and (latent_scale_mode is None or self.hr_force):
+            if len([x for x in shared.sd_upscalers if x.name == self.hr_upscaler]) == 0:
+                shared.log.warning(f"Cannot find upscaler for hires: {self.hr_upscaler}")
+                self.enable_hr = False
+
         self.ops.append('txt2img')
         self.sampler = modules.sd_samplers.create_sampler(self.sampler_name, self.sd_model)
-        latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "None")
-        if self.enable_hr and latent_scale_mode is None:
-            if len([x for x in shared.sd_upscalers if x.name == self.hr_upscaler]) == 0:
-                shared.log.warning("Could not find upscaler to use with hrfix")
-                self.enable_hr = False
         x = create_random_tensors([4, self.height // 8, self.width // 8], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
         samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
         if not self.enable_hr or shared.state.interrupted or shared.state.skipped:
@@ -1000,25 +1003,9 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             self.ops.append('hires')
             target_width = self.hr_upscale_to_x
             target_height = self.hr_upscale_to_y
-            if latent_scale_mode is not None:
-                for i in range(samples.shape[0]):
-                    save_intermediate(samples, i)
-                samples = torch.nn.functional.interpolate(samples, size=(target_height // 8, target_width // 8), mode=latent_scale_mode["mode"], antialias=latent_scale_mode["antialias"])
-                if getattr(self, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) < 1.0:
-                    image_conditioning = self.img2img_image_conditioning(decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae)), samples)
-                else:
-                    image_conditioning = self.txt2img_image_conditioning(samples.to(dtype=devices.dtype_vae))
-                if self.latent_sampler == "PLMS":
-                    self.latent_sampler = 'UniPC'
-                self.sampler = modules.sd_samplers.create_sampler(self.latent_sampler or self.sampler_name, self.sd_model)
-                samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
-                noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
-                x = None
-                devices.torch_gc() # GC now before running the next img2img to prevent running out of memory
-                modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio(for_hr=True))
-                samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
-                modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio())
-            else:
+            for i in range(samples.shape[0]):
+                save_intermediate(samples, i)
+            if latent_scale_mode is None or self.hr_force: # non-latent upscaling
                 decoded_samples = decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae))
                 lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
                 batch_images = []
@@ -1043,6 +1030,23 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 else:
                     samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
                 image_conditioning = self.img2img_image_conditioning(decoded_samples, samples)
+            else:
+                samples = torch.nn.functional.interpolate(samples, size=(target_height // 8, target_width // 8), mode=latent_scale_mode["mode"], antialias=latent_scale_mode["antialias"])
+                if getattr(self, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) < 1.0:
+                    image_conditioning = self.img2img_image_conditioning(decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae)), samples)
+                else:
+                    image_conditioning = self.txt2img_image_conditioning(samples.to(dtype=devices.dtype_vae))
+                if self.latent_sampler == "PLMS":
+                    self.latent_sampler = 'UniPC'
+            if self.hr_force or latent_scale_mode is not None:
+                devices.torch_gc() # GC now before running the next img2img to prevent running out of memory
+                self.sampler = modules.sd_samplers.create_sampler(self.latent_sampler or self.sampler_name, self.sd_model)
+                samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
+                noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
+                modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio(for_hr=True))
+                samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
+                modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio())
+            x = None
             shared.state.nextjob()
             self.is_hr_pass = False
 

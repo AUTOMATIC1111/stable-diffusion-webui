@@ -2,8 +2,6 @@ import time
 import inspect
 import typing
 import torch
-import numpy as np
-from PIL import Image
 import modules.devices as devices
 import modules.shared as shared
 import modules.sd_samplers as sd_samplers
@@ -26,7 +24,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     results = []
     if p.enable_hr and p.hr_upscaler != 'None' and p.denoising_strength > 0 and len(getattr(p, 'init_images', [])) == 0:
         p.is_hr_pass = True
-    is_refiner_enabled = p.enable_hr and p.refiner_steps > 0 and shared.sd_refiner is not None
+    is_refiner_enabled = p.enable_hr and p.refiner_steps > 0 and p.refiner_start > 0 and p.refiner_start < 1 and shared.sd_refiner is not None
 
     def hires_resize(latents): # input=latents output=pil
         latent_upscaler = shared.latent_upscale_modes.get(p.hr_upscaler, None)
@@ -36,10 +34,11 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         first_pass_images = vae_decode(latents=latents, model=shared.sd_model, full_quality=True, output_type='pil')
         p.init_images = []
         for first_pass_image in first_pass_images:
-            init_image = images.resize_image(1, first_pass_image, p.hr_upscale_to_x, p.hr_upscale_to_y, upscaler_name=p.hr_upscaler) if latent_upscaler is None else first_pass_image
+            if latent_upscaler is None:
+                init_image = images.resize_image(1, first_pass_image, p.hr_upscale_to_x, p.hr_upscale_to_y, upscaler_name=p.hr_upscaler)
+            else:
+                init_image = first_pass_image
             p.init_images.append(init_image)
-        p.width = p.hr_upscale_to_x
-        p.height = p.hr_upscale_to_y
 
     def save_intermediate(latents, suffix):
         for i in range(len(latents)):
@@ -321,12 +320,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if p.is_hr_pass:
         p.init_hr()
         if p.width != p.hr_upscale_to_x or p.height != p.hr_upscale_to_y:
+            p.ops.append('upscale')
             if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_highres_fix and hasattr(shared.sd_model, 'vae'):
                 save_intermediate(latents=output.images, suffix="-before-hires")
-            if latent_scale_mode is not None:
-                p.ops.append('hires')
+            hires_resize(latents=output.images)
+            if latent_scale_mode is not None or p.hr_force:
                 recompile_model(hires=True)
-                hires_resize(latents=output.images)
                 sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                 hires_args = set_pipeline_args(
                     model=shared.sd_model,
@@ -372,6 +371,11 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         refiner_is_sdxl = bool("StableDiffusionXL" in shared.sd_refiner.__class__.__name__)
         p.ops.append('refine')
         for i in range(len(output.images)):
+            image = output.images[i]
+            if (image.shape[2] == 3) and (image.shape[0] % 8 != 0 or image.shape[1] % 8 != 0):
+                shared.log.warning(f'Refiner requires image size to be divisible by 8: {image.shape}')
+                results.append(image)
+                return results
             refiner_args = set_pipeline_args(
                 model=shared.sd_refiner,
                 prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts[i],
@@ -383,7 +387,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 guidance_rescale=p.diffusers_guidance_rescale,
                 denoising_start=p.refiner_start if p.refiner_start > 0 and p.refiner_start < 1 else None,
                 denoising_end=1 if p.refiner_start > 0 and p.refiner_start < 1 else None,
-                image=output.images[i],
+                image=image,
                 output_type='latent' if hasattr(shared.sd_refiner, 'vae') else 'np',
                 clip_skip=p.clip_skip,
                 desc='Refiner',
@@ -402,20 +406,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             shared.log.debug('Moving to CPU: model=refiner')
             shared.sd_refiner.to(devices.cpu)
             devices.torch_gc()
-
-    if p.is_hr_pass and latent_scale_mode is None:
-        if p.width != p.hr_upscale_to_x or p.height != p.hr_upscale_to_y:
-            p.ops.append('upscale')
-            if not is_refiner_enabled:
-                results = vae_decode(latents=output.images, model=shared.sd_model, full_quality=p.full_quality)
-            upscaled = []
-            for image in results:
-                image = (image * 255.0).astype(np.uint8)
-                image = Image.fromarray(image)
-                image = images.resize_image(1, image, p.hr_upscale_to_x, p.hr_upscale_to_y, upscaler_name=p.hr_upscaler)
-                image = np.array(image).astype(np.float32) / 255.0
-                upscaled.append(image)
-            return upscaled
 
     # final decode since there is no refiner
     if not is_refiner_enabled:

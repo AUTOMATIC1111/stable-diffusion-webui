@@ -396,8 +396,9 @@ def create_ui(startup_timer = None):
                         hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
                     with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
                         hr_upscaler = gr.Dropdown(label="Upscaler", elem_id="txt2img_hr_upscaler", choices=[*modules.shared.latent_upscale_modes, *[x.name for x in modules.shared.sd_upscalers]], value=modules.shared.latent_upscale_default_mode)
-                        hr_second_pass_steps = gr.Slider(minimum=0, maximum=99, step=1, label='Hires steps', elem_id="txt2img_steps_alt", value=20)
+                        hr_force = gr.Checkbox(label='Force Hires', value=False, elem_id="txt2img_hr_force")
                     with FormRow(elem_id="txt2img_hires_fix_row2", variant="compact"):
+                        hr_second_pass_steps = gr.Slider(minimum=0, maximum=99, step=1, label='Hires steps', elem_id="txt2img_steps_alt", value=20)
                         hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=2.0, elem_id="txt2img_hr_scale")
                     with FormRow(elem_id="txt2img_hires_fix_row3", variant="compact"):
                         hr_resize_x = gr.Slider(minimum=0, maximum=4096, step=8, label="Resize width to", value=0, elem_id="txt2img_hr_resize_x")
@@ -450,7 +451,7 @@ def create_ui(startup_timer = None):
                     seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
                     height, width,
                     show_second_pass, denoising_strength,
-                    hr_scale, hr_upscaler, hr_second_pass_steps, hr_resize_x, hr_resize_y,
+                    hr_scale, hr_upscaler, hr_force, hr_second_pass_steps, hr_resize_x, hr_resize_y,
                     refiner_steps, refiner_start, refiner_prompt, refiner_negative,
                     override_settings,
                 ] + custom_inputs,

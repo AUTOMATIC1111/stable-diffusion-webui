@@ -4,14 +4,17 @@
 
 Mostly a service release  
 - tons of fixes  
+- changes to **hires**
+  - enable non-latent upscale modes (standard upscalers)  
+  - when using latent upscale, hires pass is run automatically  
+  - when using non-latent upscalers, hires pass is skipped by default  
+    enabled using **force hires** option in ui  
+    hires was not designed to work with standard upscalers, but i understand this is a common workflow  
+  - when using refiner, upscale/hires runs before refiner pass  
 - update **ui hints**
 - updated **models -> civitai**
   - search and download loras  
   - find previews for already downloaded models or loras  
-- **hires** enable non-latent upscale modes (standard upscalers)  
-  for both *original* and *diffusers* backend  
-  - when using non-latent upscalers, hires is now skipped - hires is only used for latent upscale  
-  - when using refiner, latent upscale works before refiner pass, but non-latent upscale works after refiner pass  
 - new option **inference mode**  
   - default is standard `torch.no_grad`  
     new option is `torch.inference_only` which is slightly faster and uses less vram, but only works on some gpus  

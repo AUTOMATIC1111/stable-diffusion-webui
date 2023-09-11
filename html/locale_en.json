@@ -140,6 +140,7 @@
   {"id":"","label":"Hires steps","localized":"","hint":"Number of sampling steps for upscaled picture. If 0, uses same as for original"},
   {"id":"","label":"Upscaler","localized":"","hint":"Which pre-trained model to use for the upscaling process."},
   {"id":"","label":"Upscale by","localized":"","hint":"Adjusts the size of the image by multiplying the original width and height by the selected value. Ignored if either Resize width to or Resize height to are non-zero"},
+  {"id":"","label":"Force Hires","localized":"","hint":"Hires runs automatically when Latent upscale is selected, but its skipped when using non-latent upscalers. Enable force hires to run hires with non-latent upscalers"},
   {"id":"","label":"Resize width to","localized":"","hint":"Resizes image to this width. If 0, width is inferred from either of two nearby sliders"},
   {"id":"","label":"Resize height to","localized":"","hint":"Resizes image to this height. If 0, height is inferred from either of two nearby sliders"},
   {"id":"","label":"Secondary sampler","localized":"","hint":"Use specific sampler as fallback sampler if primary is not supported for specific operation"},
