@@ -144,9 +144,9 @@ class EmbeddingDatabase:
                         embeddings_dict[k] = f.get_tensor(k)
                 for i in range(len(embeddings_dict["clip_l"])):
                     if i == 0:
-                        token = name
+                        token = name.lower()
                     else:
-                        token = f"{name}_{i}"
+                        token = f"{name.lower()}_{i}"
                     pipe.tokenizer.add_tokens(token)
                     token_id = pipe.tokenizer.convert_tokens_to_ids(token)
                     pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
