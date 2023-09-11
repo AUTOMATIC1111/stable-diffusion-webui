@@ -10,7 +10,8 @@ Mostly a service release
   - find previews for already downloaded models or loras  
 - **hires** enable non-latent upscale modes (standard upscalers)  
   for both *original* and *diffusers* backend  
-  note: when using refiner, latent upscale works before refiner pass, but non-latent upscale works after refiner pass
+  - when using non-latent upscalers, hires is now skipped - hires is only used for latent upscale  
+  - when using refiner, latent upscale works before refiner pass, but non-latent upscale works after refiner pass  
 - new option **inference mode**  
   - default is standard `torch.no_grad`  
     new option is `torch.inference_only` which is slightly faster and uses less vram, but only works on some gpus  
