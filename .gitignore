@@ -3,6 +3,7 @@ __pycache__
 .ruff_cache
 /cache.json
 /*.json
+/*.yaml
 /params.txt
 /styles.csv
 /user.css

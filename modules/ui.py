@@ -391,7 +391,7 @@ def create_ui(startup_timer = None):
                 with FormGroup(visible=show_second_pass.value, elem_id="txt2img_second_pass") as second_pass_group:
                     with FormRow(elem_id="sampler_selection_txt2img_alt_row1"):
                         latent_index = gr.Dropdown(label='Secondary sampler', elem_id="txt2img_sampling_alt", choices=[x.name for x in modules.sd_samplers.samplers], value='Default', type="index")
-                        denoising_strength = gr.Slider(minimum=0.05, maximum=1.0, step=0.01, label='Denoising strength', value=0.3, elem_id="txt2img_denoising_strength")
+                        denoising_strength = gr.Slider(minimum=0.05, maximum=1.0, step=0.01, label='Denoising strength', value=0.5, elem_id="txt2img_denoising_strength")
                     with FormRow(elem_id="txt2img_hires_finalres", variant="compact"):
                         hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
                     with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):

@@ -33,7 +33,6 @@ Stuff to be added, in no particular order...
   - XYZ grid upscalers
   - Built-in `motd`-style notifications
   - Docker PR
-  - Add force hires
 - New Major
   - Style editor
   - Profile manager (for `config.json` and `ui-config.json`)
