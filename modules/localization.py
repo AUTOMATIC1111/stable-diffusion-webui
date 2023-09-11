@@ -14,12 +14,10 @@ def list_localizations(dirname):
         if ext.lower() != ".json":
             continue
 
-        fn = fn.replace(" ", "").replace("(", "_").replace(")","")
         localizations[fn] = [os.path.join(dirname, file)]
 
     for file in scripts.list_scripts("localizations", ".json"):
         fn, ext = os.path.splitext(file.filename)
-        fn = fn.replace(" ", "").replace("(", "_").replace(")","")
         if fn not in localizations:
             localizations[fn] = []
         localizations[fn].append(file.path)
