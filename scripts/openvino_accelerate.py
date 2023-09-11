@@ -85,7 +85,7 @@ class ModelState:
         self.cn_model = "None"
         self.lora_model = "None"
         self.vae_ckpt = "None"
-        self.refiner_ckpt = ""
+        self.refiner_ckpt = "None"
 
 
 model_state = ModelState()
@@ -150,7 +150,6 @@ def openvino_fx(subgraph, example_inputs):
                                             if (str(input_data1.size()).strip() == str(shape).strip()):
                                                 args_reordered.append(args[idx1])
                             args = args_reordered
-
                         res = execute_cached(compiled_model, *args)
                         model_state.partition_id = model_state.partition_id + 1
                         return res
@@ -591,6 +590,11 @@ def set_scheduler(sd_model, sampler_name):
 
     return sd_model.scheduler
 
+#sdxl invisible-watermark pixel artifact workaround
+class NoWatermark:
+    def apply_watermark(self, img):
+        return img
+
 def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching, openvino_device, mode, is_xl_ckpt, refiner_ckpt, refiner_frac):
     if (model_state.recompile == 1):
         model_state.partition_id = 0
@@ -605,12 +609,11 @@ def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching,
         checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
         print("OpenVINO Script:  created model from config : " + checkpoint_config)
         if(is_xl_ckpt):
-
             if model_config != "None":
                 local_config_file = os.path.join(curr_dir_path, 'configs', model_config)
-                sd_model = StableDiffusionXLPipeline.from_single_file(checkpoint_path, local_config_file=local_config_file, use_safetensors=True)
+                sd_model = StableDiffusionXLPipeline.from_single_file(checkpoint_path, local_config_file=local_config_file, use_safetensors=True, add_watermark=False, variant="fp32", dtype=torch.float32)
             else:
-                sd_model = StableDiffusionXLPipeline.from_single_file(checkpoint_path, local_config_file=checkpoint_config, use_safetensors=True)
+                sd_model = StableDiffusionXLPipeline.from_single_file(checkpoint_path, local_config_file=checkpoint_config, use_safetensors=True, add_watermark=False, variant="fp32", dtype=torch.float32)
             if (mode == 1):
                 sd_model = StableDiffusionXLImg2ImgPipeline(**sd_model.components)
             elif (mode == 2):
@@ -623,9 +626,9 @@ def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching,
 
             if model_config != "None":
                 local_config_file = os.path.join(curr_dir_path, 'configs', model_config)
-                sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, local_config_file=local_config_file, use_safetensors=True)
+                sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, local_config_file=local_config_file, use_safetensors=True, variant="fp32", dtype=torch.float32)
             else:
-                sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, local_config_file=checkpoint_config, use_safetensors=True)
+                sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, local_config_file=checkpoint_config, use_safetensors=True, variant="fp32", dtype=torch.float32)
             if (mode == 1):
                 sd_model = StableDiffusionImg2ImgPipeline(**sd_model.components)
             elif (mode == 2):
@@ -651,6 +654,8 @@ def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching,
             controlnet = ControlNetModel.from_pretrained("lllyasviel/" + model_state.cn_model)
             sd_model = StableDiffusionControlNetPipeline(**sd_model.components, controlnet=controlnet)
             sd_model.controlnet = torch.compile(sd_model.controlnet, backend="openvino_fx")
+
+        sd_model.watermark = NoWatermark()
         sd_model.sd_checkpoint_info = checkpoint_info
         sd_model.sd_model_hash = checkpoint_info.calculate_shorthash()
         #sd_model.safety_checker = None
@@ -661,14 +666,12 @@ def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching,
         if vae_ckpt == "Disable-VAE-Acceleration":
             sd_model.vae.decode = sd_model.vae.decode
         elif vae_ckpt == "None":
-            #os.environ["INFERENCE_PRECISION_HINT"] = "f32"
             sd_model.vae.decode = torch.compile(sd_model.vae.decode, backend="openvino_fx")
         else:
             vae_path = os.path.join(curr_dir_path, 'models', 'VAE', vae_ckpt)
             print("OpenVINO Script:  loading vae from : " + vae_path)
-            sd_model.vae = AutoencoderKL.from_single_file(vae_path, local_files_only=True)
-            #os.environ["INFERENCE_PRECISION_HINT"] = "f32"
-            sd_model.vae = torch.compile(sd_model.vae,  backend="openvino_fx")
+            sd_model.vae = AutoencoderKL.from_single_file(vae_path, local_files_only=True, variant="fp16", dtype=torch.float16)
+            sd_model.vae.decode = torch.compile(sd_model.vae.decode, backend="openvino_fx")
         shared.sd_diffusers_model = sd_model
         del sd_model
     return shared.sd_diffusers_model
@@ -681,10 +684,12 @@ def get_diffusers_sd_refiner_model(model_config, vae_ckpt, sampler_name, enable_
         if refiner_ckpt != "None":
             refiner_checkpoint_path= os.path.join(curr_dir_path, 'models', 'Stable-diffusion', refiner_ckpt)
             refiner_checkpoint_info = CheckpointInfo(refiner_checkpoint_path)
-            refiner_model = StableDiffusionXLImg2ImgPipeline.from_single_file(refiner_checkpoint_path, use_safetensors=True)
+            refiner_model = StableDiffusionXLImg2ImgPipeline.from_single_file(refiner_checkpoint_path, use_safetensors=True, add_watermark=False, torch_dtype=torch.float32)
+            refiner_model.watermark = NoWatermark()
             refiner_model.sd_checkpoint_info = refiner_checkpoint_info
             refiner_model.sd_model_hash = refiner_checkpoint_info.calculate_shorthash()
             refiner_model.unet = torch.compile(refiner_model.unet,  backend="openvino_fx")
+            refiner_model.vae.decode = shared.sd_diffusers_model.vae.decode
         shared.sd_refiner_model = refiner_model
         del refiner_model
     return shared.sd_refiner_model
@@ -952,7 +957,6 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
 
 
             if refiner_ckpt != "None" and is_xl_ckpt is True:
-                print("here")
                 base_output_type = "latent"
                 custom_inputs.update({
                     'denoising_end': refiner_frac
@@ -981,7 +985,6 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
                         image=output.images[0][None, :],
                         output_type="np"
                 )
-                print("% " + str(refiner_frac))
 
             model_state.recompile = 0
 
