@@ -730,6 +730,7 @@ def reload_model_weights(sd_model=None, info=None):
             return sd_model
 
     sd_model = reuse_model_from_already_loaded(sd_model, checkpoint_info, timer)
+    sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)
     if sd_model is not None and sd_model.sd_checkpoint_info.filename == checkpoint_info.filename:
         return sd_model
 
