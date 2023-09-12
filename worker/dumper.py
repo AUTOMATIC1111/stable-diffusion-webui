@@ -179,7 +179,8 @@ class MongoTaskDumper(TaskDumper):
         doc_exp = mongo_doc_expire_seconds()
         if doc_exp > 0:
             logger.warning(f"set mongo doc expire after {doc_exp} seconds!")
-            image_cols.create_index([("update_at", 1), ('expireAfterSeconds', doc_exp)])
+            image_cols.create_index([("update_at", 1), ('expireAfterSeconds', doc_exp//2)])
+            mgo.collect.create_index([("update_at", 1), ('expireAfterSeconds', doc_exp)])
 
         self.clean_time = 0
         super(MongoTaskDumper, self).__init__(mgo)
