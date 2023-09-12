@@ -108,6 +108,18 @@ def setup_logging():
     # logging.getLogger("DeepSpeed").handlers = log.handlers
 
 
+def custom_excepthook(exc_type, exc_value, exc_traceback):
+    import traceback
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    log.error(f"Uncaught exception occurred: type={exc_type} value={exc_value}")
+    if exc_traceback:
+        format_exception = traceback.format_tb(exc_traceback)
+        for line in format_exception:
+            log.error(repr(line))
+
+
 def print_dict(d):
     return ' '.join([f'{k}={v}' for k, v in d.items()])
 

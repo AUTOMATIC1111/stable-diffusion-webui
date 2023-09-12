@@ -466,13 +466,14 @@ def create_ui(startup_timer = None):
             txt2img_prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
 
-            def enable_hr_change(visible: bool):
-                return {"visible": visible, "__type__": "update"}, f'Refiner: {"disabled" if modules.shared.opts.sd_model_refiner == "None" else "enabled"}'
+            def enable_hr_change(visible: bool, refiner_start):
+                enabled = modules.shared.opts.sd_model_refiner != "None" and refiner_start > 0 and refiner_start < 1
+                return {"visible": visible, "__type__": "update"}, f'Refiner: {"enabled" if enabled else "disabled"}'
 
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
             batch_switch_btn.click(lambda w, h: (h, w), inputs=[batch_count, batch_size], outputs=[batch_count, batch_size], show_progress=False)
             txt_prompt_img.change(fn=modules.images.image_data, inputs=[txt_prompt_img], outputs=[txt2img_prompt, txt_prompt_img])
-            show_second_pass.change(enable_hr_change, inputs=[show_second_pass], outputs=[second_pass_group, hr_refiner], show_progress = False)
+            show_second_pass.change(enable_hr_change, inputs=[show_second_pass, refiner_start], outputs=[second_pass_group, hr_refiner], show_progress = False)
             show_seed.change(gr_show, inputs=[show_seed], outputs=[seed_group], show_progress = False)
             show_batch.change(gr_show, inputs=[show_batch], outputs=[batch_group], show_progress = False)
             show_advanced.change(gr_show, inputs=[show_advanced], outputs=[advanced_group], show_progress = False)

@@ -11,9 +11,8 @@ from threading import Thread
 import modules.loader
 import torch # pylint: disable=wrong-import-order
 from modules import timer, errors, paths # pylint: disable=unused-import
-
 local_url = None
-from installer import log, git_commit
+from installer import log, git_commit, custom_excepthook
 import ldm.modules.encoders.modules # pylint: disable=W0611,C0411,E0401
 from modules import shared, extensions, extra_networks, ui_tempdir, ui_extra_networks, modelloader # pylint: disable=ungrouped-imports
 from modules.paths import create_paths
@@ -39,6 +38,8 @@ from modules.shared import cmd_opts, opts
 import modules.hypernetworks.hypernetwork
 from modules.middleware import setup_middleware
 
+
+sys.excepthook = custom_excepthook
 state = shared.state
 if not modules.loader.initialized:
     timer.startup.record("libraries")
@@ -62,6 +63,7 @@ fastapi_args = {
     }
 }
 modules.loader.initialized = True
+
 
 def check_rollback_vae():
     if shared.cmd_opts.rollback_vae:

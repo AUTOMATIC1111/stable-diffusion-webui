@@ -165,6 +165,7 @@ if __name__ == "__main__":
     installer.args = args
     installer.setup_logging()
     installer.log.info('Starting SD.Next')
+    sys.excepthook = installer.custom_excepthook
     installer.read_options()
     if args.skip_all:
         args.quick = True

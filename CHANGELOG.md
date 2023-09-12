@@ -1,8 +1,9 @@
 # Change Log for SD.Next
 
-## Update for 2023-09-10
+## Update for 2023-09-12
 
-Mostly a service release  
+Mostly a service release, but with some changes in behavior, especially in HiRes area of the code...
+  
 - tons of fixes  
 - changes to **hires**
   - enable non-latent upscale modes (standard upscalers)  
@@ -11,6 +12,12 @@ Mostly a service release
     enabled using **force hires** option in ui  
     hires was not designed to work with standard upscalers, but i understand this is a common workflow  
   - when using refiner, upscale/hires runs before refiner pass  
+  - second pass can now also utilize full/quick vae quality  
+  - note that when combining non-latent upscale, hires and refiner output quality is maximum,  
+    but operations are really resource intensive as it includes: *base->decode->upscale->encode->hires->refine*
+  - all combinations of: decode full/quick + upscale none/latent/non-latent + hires on/off + refiner on/off  
+    should be supported, but given the number of combinations, issues are possible  
+  - all operations are captured in image medata
 - update **ui hints**
 - updated **models -> civitai**
   - search and download loras  
@@ -29,6 +36,7 @@ Mostly a service release
   - capture extension output  
   - capture ldm output  
   - cleaner server restart  
+  - custom exception handling
 
 
 ## Update for 2023-09-06

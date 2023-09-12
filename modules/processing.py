@@ -488,7 +488,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Backend": 'Diffusers' if shared.backend == shared.Backend.DIFFUSERS else 'Original',
         "Version": git_commit,
         "Comment": comment,
-        "Operations": ', '.join(list(set(p.ops))).replace('"', '') if len(p.ops) > 0 else None,
+        "Operations": '; '.join(p.ops).replace('"', '') if len(p.ops) > 0 else 'none',
     }
     if 'txt2img' in p.ops:
         pass
@@ -800,8 +800,13 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             for i, x_sample in enumerate(x_samples_ddim):
                 p.batch_index = i
-                x_sample = 255. * (np.moveaxis(x_sample.cpu().numpy(), 0, 2) if shared.backend == shared.Backend.ORIGINAL else x_sample)
-                x_sample = validate_sample(x_sample)
+                if type(x_sample) == Image.Image:
+                    image = x_sample
+                    x_sample = np.array(x_sample)
+                else:
+                    x_sample = 255. * (np.moveaxis(x_sample.cpu().numpy(), 0, 2) if shared.backend == shared.Backend.ORIGINAL else x_sample)
+                    x_sample = validate_sample(x_sample)
+                    image = Image.fromarray(x_sample)
                 if p.restore_faces:
                     if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_face_restoration:
                         orig = p.restore_faces
@@ -811,7 +816,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                         images.save_image(Image.fromarray(x_sample), path=p.outpath_samples, basename="", seed=p.seeds[i], prompt=p.prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix="-before-face-restoration")
                     p.ops.append('face')
                     x_sample = modules.face_restoration.restore_faces(x_sample)
-                image = Image.fromarray(x_sample)
+                    image = Image.fromarray(x_sample)
                 if p.scripts is not None:
                     pp = modules.scripts.PostprocessImageArgs(image)
                     p.scripts.postprocess_image(p, pp)
