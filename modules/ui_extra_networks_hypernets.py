@@ -34,6 +34,7 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
         }
 
     def list_items(self):
+        # instantiate a list to protect against concurrent modification
         names = list(shared.hypernetworks)
         for index, name in enumerate(names):
             item = self.create_item(name, index)
