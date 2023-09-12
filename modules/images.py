@@ -291,7 +291,7 @@ def sanitize_filename_part(text, replace_spaces=True):
 
 class FilenameGenerator:
     replacements = {
-        'batch_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.batch_size == 1 else self.p.batch_index + 1,
+        'batch_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p is None or self.p.batch_size == 1 else self.p.batch_index + 1,
         'cfg': lambda self: self.p and self.p.cfg_scale,
         'clip_skip': lambda self: self.p and self.p.clip_skip,
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
