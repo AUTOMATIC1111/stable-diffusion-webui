@@ -9,6 +9,7 @@ from modules import call_queue, shared
 from modules.generation_parameters_copypaste import image_from_url_text
 import modules.ui_symbols as symbols
 import modules.images
+import modules.script_callbacks
 
 
 def update_generation_info(generation_info, html_info, img_index):
@@ -115,6 +116,8 @@ def save_files(js_data, images, html_info, index):
                 os.makedirs(destination, exist_ok = True)
             shutil.copy(fullfn, destination)
             shared.log.info(f"Copying image: {fullfn} -> {destination}")
+            tgt_filename = os.path.join(destination, os.path.basename(fullfn))
+            modules.script_callbacks.image_save_btn_callback(tgt_filename)
         else:
             image = image_from_url_text(filedata)
             info = p.infotexts[i + 1] if len(p.infotexts) > len(p.all_seeds) else p.infotexts[i] # infotexts may be offset by 1 because the first image is the grid
@@ -127,6 +130,7 @@ def save_files(js_data, images, html_info, index):
             if txt_fullfn:
                 filenames.append(os.path.basename(txt_fullfn))
                 fullfns.append(txt_fullfn)
+            modules.script_callbacks.image_save_btn_callback(filename)
     if shared.opts.samples_save_zip and len(fullfns) > 1:
         zip_filepath = os.path.join(shared.opts.outdir_save, "images.zip")
         from zipfile import ZipFile

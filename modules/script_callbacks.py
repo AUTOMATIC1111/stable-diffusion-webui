@@ -98,6 +98,7 @@ callback_map = dict(
     callbacks_ui_settings=[],
     callbacks_before_image_saved=[],
     callbacks_image_saved=[],
+    callbacks_image_save_btn=[],
     callbacks_cfg_denoiser=[],
     callbacks_cfg_denoised=[],
     callbacks_cfg_after_cfg=[],
@@ -203,6 +204,16 @@ def image_saved_callback(params: ImageSaveParams):
             timer(t0, c.script, 'image_saved')
         except Exception as e:
             report_exception(e, c, 'image_saved_callback')
+
+
+def image_save_btn_callback(filename: str):
+    for c in callback_map['callbacks_image_save_btn']:
+        try:
+            t0 = time.time()
+            c.callback(filename)
+            timer(t0, c.script, 'image_save_btn')
+        except Exception as e:
+            report_exception(e, c, 'image_save_btn_callback')
 
 
 def cfg_denoiser_callback(params: CFGDenoiserParams):
@@ -374,6 +385,14 @@ def on_image_saved(callback):
         - params: ImageSaveParams - parameters the image was saved with. Changing fields in this object does nothing.
     """
     add_callback(callback_map['callbacks_image_saved'], callback)
+
+
+def on_image_save_btn(callback):
+    """register a function to be called after an image save button is pressed.
+    The callback is called with one argument:
+        - params: ImageSaveParams - parameters the image was saved with. Changing fields in this object does nothing.
+    """
+    add_callback(callback_map['callbacks_image_save_btn'], callback)
 
 
 def on_cfg_denoiser(callback):
