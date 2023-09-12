@@ -362,11 +362,14 @@ def read_metadata_from_safetensors(filename):
                 if large and k == 'ss_bucket_info':
                     continue
                 if v[0:1] == '{':
-                    v = json.loads(v)
-                    if large and k == 'ss_tag_frequency':
-                        v = { i: len(j) for i, j in v.items() }
-                    if large and k == 'sd_merge_models':
-                        scrub_dict(v, ['sd_merge_recipe'])
+                    try:
+                        v = json.loads(v)
+                        if large and k == 'ss_tag_frequency':
+                            v = { i: len(j) for i, j in v.items() }
+                        if large and k == 'sd_merge_models':
+                            scrub_dict(v, ['sd_merge_recipe'])
+                    except Exception:
+                        pass
                 res[k] = v
         sd_metadata[filename] = res
         global sd_metadata_pending # pylint: disable=global-statement
