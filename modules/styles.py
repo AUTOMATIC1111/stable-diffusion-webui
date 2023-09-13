@@ -41,22 +41,19 @@ class StyleDatabase:
     def __init__(self, opts):
         self.no_style = Style("None")
         self.styles = {}
-        self.path = opts.styles_dir
-        if os.path.isfile(opts.styles_dir):
+        if os.path.isfile(opts.styles_dir) or opts.styles_dir.endswith(".csv"):
             legacy_file = opts.styles_dir
             self.load_csv(legacy_file)
             opts.styles_dir = os.path.join(paths.models_path, "styles")
             self.path = opts.styles_dir
-            self.mkdir()
+            os.makedirs(opts.styles_dir, exist_ok=True)
             self.save_styles(opts.styles_dir, verbose=True)
-            log.debug(f'Migrated styles: file={legacy_file} folder={self.path}')
+            log.debug(f'Migrated styles: file={legacy_file} folder={opts.styles_dir}')
             self.reload()
-        self.mkdir()
-
-    def mkdir(self):
-        if not os.path.isdir(self.path):
-            os.makedirs(self.path, exist_ok=True)
-            log.debug(f'Created styles: folder={self.path}')
+        if not os.path.isdir(opts.styles_dir):
+            opts.styles_dir = os.path.join(paths.models_path, "styles")
+            self.path = opts.styles_dir
+            os.makedirs(opts.styles_dir, exist_ok=True)
 
     def reload(self):
         self.styles.clear()
@@ -108,9 +105,13 @@ class StyleDatabase:
                         log.debug(f'Saved style: name={name} file={fn}')
             except Exception as e:
                 log.error(f'Failed to save style: name={name} file={path} error={e}')
-        log.debug(f'Saved styles: {path} {len(self.styles.keys())}')
+        count = len(list(self.styles))
+        if count > 0:
+            log.debug(f'Saved styles: {path} {count}')
 
     def load_csv(self, legacy_file):
+        if not os.path.isfile(legacy_file):
+            return
         with open(legacy_file, "r", encoding="utf-8-sig", newline='') as file:
             reader = csv.DictReader(file, skipinitialspace=True)
             for row in reader:
