@@ -96,6 +96,7 @@ parser.add_argument("--worker", action='store_true', help="run worker", default=
 # parser.add_argument("--lyco-dir", type=str, help="lycoris dir.", default="user-models/LyCORIS")
 # parser.add_argument("--lyco-patch-lora", type=str, help="lycoris dir.", default="off")
 parser.add_argument("--logo", type=str, help="show logo image", default="")
+parser.add_argument("--disable-tss-def-alwayson", action='store_true', help="disable tss default alwayson script args", default=False)
 parser.add_argument("--train-only", action='store_true', help="run worker and exec train task only", default=False)
 parser.add_argument("--noauth", action='store_true', help="no auth", default=False)
 parser.add_argument('--no-notice', action='store_true', help="no footer notice", default=False)

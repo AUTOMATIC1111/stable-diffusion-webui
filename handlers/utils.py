@@ -18,6 +18,7 @@ from worker.task_recv import Tmp
 from PIL.PngImagePlugin import PngInfo
 from tools.encryptor import des_encrypt
 from tools.wrapper import FuncExecTimeWrapper
+from modules.shared import cmd_opts
 from modules.processing import Processed
 from modules.scripts import Script, ScriptRunner
 from modules.sd_models import reload_model_weights, CheckpointInfo
@@ -206,7 +207,10 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
         script_args[0] = selectable_idx + 1
 
     alwayson_scripts = alwayson_scripts or {}
-    alwayson_scripts.update(default_alwayson_scripts)
+    if not getattr(cmd_opts, 'disable_tss_def_alwayson', False):
+        alwayson_scripts.update(default_alwayson_scripts)
+    else:
+        logger.debug('====> disable tss adetailer plugin!')
     # Now check for always on scripts
     if alwayson_scripts:
 
