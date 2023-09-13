@@ -188,6 +188,7 @@ def script_name_to_index(name, scripts):
     except:
         raise Exception(f"Script '{name}' not found")
 
+
 ADetailer = 'ADetailer'
 default_alwayson_scripts = {
     ADetailer: {
@@ -200,7 +201,7 @@ default_alwayson_scripts = {
 
 def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: StrMapMap, selectable_scripts: Script,
                      selectable_idx: int, request_script_args: typing.Sequence, script_runner: ScriptRunner,
-                     enable_def_adetailer: bool=True):
+                     enable_def_adetailer: bool = True):
     script_args = [x for x in default_script_args]
 
     if selectable_scripts:
@@ -306,7 +307,7 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, scrip
         pnginfo_data = PngInfo()
         pnginfo_data.add_text('by', 'xingzhe')
         size = f"{processed_image.width}*{processed_image.height}"
-        infotexts = proc.infotexts[n].replace('-automatic1111', "-xingzhe")\
+        infotexts = proc.infotexts[n].replace('-automatic1111', "-xingzhe") \
             if proc.infotexts and n < len(proc.infotexts) else ''
         for k, v in processed_image.info.items():
             if 'parameters' == k:
