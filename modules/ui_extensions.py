@@ -290,7 +290,7 @@ def refresh_extensions_list_from_data(search_text, sort_column):
                 <th>Current version</th>
                 <th></th>
             </tr>
-        </thead>
+            </thead>
         <tbody>"""
     if len(extensions_list) == 0:
         update_extension_list()

@@ -21,12 +21,18 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
     def list_items(self):
         if sd_models.model_data.sd_model is None:
             embeddings = []
-            for root, _dirs, fns in os.walk(shared.opts.embeddings_dir, followlinks=True):
-                for fn in fns:
-                    if fn.lower().endswith(".pt") or fn.lower().endswith(".safetensors"):
-                        embedding = Embedding(0, fn)
-                        embedding.filename = os.path.join(root, fn)
+
+            def list_folder(folder):
+                for filename in os.listdir(folder):
+                    fn = os.path.join(folder, filename)
+                    if os.path.isfile(fn) and (fn.lower().endswith(".pt") or fn.lower().endswith(".safetensors")):
+                        embedding = Embedding(0, os.path.basename(fn))
+                        embedding.filename = fn
                         embeddings.append(embedding)
+                    elif os.path.isdir(fn) and not fn.startswith('.'):
+                        list_folder(fn)
+
+            list_folder(shared.opts.embeddings_dir)
         elif shared.backend == shared.Backend.ORIGINAL:
             embeddings = list(sd_hijack.model_hijack.embedding_db.word_embeddings.values())
         elif hasattr(sd_models.model_data.sd_model, 'embedding_db'):

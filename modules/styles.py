@@ -71,7 +71,7 @@ class StyleDatabase:
                             self.styles[style["name"]] = Style(style["name"], style.get("prompt", ""), style.get("negative", ""), style.get("extra", ""), fn, style.get("preview", ""))
                         except Exception as e:
                             log.error(f'Failed to load style: file={fn} error={e}')
-                elif os.path.isdir(fn):
+                elif os.path.isdir(fn) and not fn.startswith('.'):
                     list_folder(fn)
 
         list_folder(self.path)

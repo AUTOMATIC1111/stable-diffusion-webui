@@ -149,7 +149,6 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 .global-popup-close:before { content: "×"; }
 .global-popup-close{ position: fixed; right: 0.5em; top: 0; cursor: pointer; color: white; font-size: 32pt; }
 .global-popup-inner{ display: inline-block; margin: auto; padding: 2em; }
-.ui-defaults-none{ color: #aaa !important; }
 
 /* fullpage image viewer */
 
@@ -210,8 +209,8 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .context-menu-items a:hover { background: #a55000; }
 
 /* extensions */
-#tab_extensions table{ border-collapse: collapse; }
-#tab_extensions table td, #tab_extensions table th { border: 1px solid #ccc; padding: 0.25em 0.5em; }
+#tab_extensions table, #tab_config table{ border-collapse: collapse; }
+#tab_extensions table td, #tab_extensions table th, #tab_config table td, #tab_config table th { border: 1px solid #ccc; padding: 0.25em 0.5em; }
 #tab_extensions table input[type="checkbox"] { margin-right: 0.5em; appearance: checkbox; }
 #tab_extensions button{ max-width: 16em; }
 #tab_extensions input[disabled="disabled"]{ opacity: 0.5; }

@@ -81,9 +81,10 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .label-wrap { margin: 16px 0px 8px 0px; }
 .gradio-slider input[type="number"] { width: 4.5em; font-size: 0.8rem; height: 20px; }
 .gradio-button.tool { border: none; background: none; box-shadow: none; filter: hue-rotate(340deg) saturate(0.5); }
-#tab_extensions table td, #tab_extensions table th { border: none; padding: 0.5em; }
-#tab_extensions table { width: 96vw }
-#tab_extensions table thead { background-color: var(--neutral-700); }
+#tab_extensions table td, #tab_extensions table th, #tab_config table td, #tab_config table th { border: none; padding: 0.5em; }
+#tab_extensions table, #tab_config table { width: 96vw }
+#tab_extensions table thead, #tab_config table thead { background-color: var(--neutral-700); }
+#tab_extensions table, #tab_config table { background-color: #222222; }
 
 /* automatic style classes */
 .progressDiv { border-radius: var(--radius-sm) !important; position: fixed; top: 44px; right: 26px; max-width: 262px; height: 48px; z-index: 99; box-shadow: var(--button-shadow); }
@@ -108,7 +109,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #save-animation { border-radius: var(--radius-sm) !important; margin-bottom: 16px; background-color: #111111; }
 #script_list { padding: 4px; margin-top: 20px; margin-bottom: 20px; }
 #settings > div.flex-wrap { width: 15em; }
-#tab_extensions table { background-color: #222222; }
 #txt2img_cfg_scale { min-width: 200px; }
 #txt2img_checkboxes, #img2img_checkboxes { background-color: transparent; }
 #txt2img_checkboxes, #img2img_checkboxes { margin-bottom: 0.2em; }

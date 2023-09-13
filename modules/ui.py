@@ -235,11 +235,11 @@ def create_toprow(is_img2img):
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        prompt = gr.Textbox(elem_id=f"{id_part}_prompt", show_label=False, lines=3, placeholder="Prompt", elem_classes=["prompt"])
+                        prompt = gr.Textbox(elem_id=f"{id_part}_prompt", label="Prompt", show_label=False, lines=3, placeholder="Prompt", elem_classes=["prompt"])
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        negative_prompt = gr.Textbox(elem_id=f"{id_part}_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt", elem_classes=["prompt"])
+                        negative_prompt = gr.Textbox(elem_id=f"{id_part}_neg_prompt", label="Negative prompt", show_label=False, lines=3, placeholder="Negative prompt", elem_classes=["prompt"])
         button_interrogate = None
         button_deepbooru = None
         if is_img2img:
@@ -1068,7 +1068,7 @@ def create_ui(startup_timer = None):
                     with gr.TabItem("Show all pages", variant='primary', elem_id="settings_show_all_pages"):
                         create_dirty_indicator("show_all_pages", [], interactive=False)
 
-            with gr.TabItem("UI Config", id="system_config", elem_id="system_config_tab"):
+            with gr.TabItem("UI Config", id="system_config", elem_id="tab_config"):
                 loadsave.create_ui()
                 create_dirty_indicator("tab_defaults", [], interactive=False)
 
