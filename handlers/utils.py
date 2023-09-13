@@ -188,9 +188,9 @@ def script_name_to_index(name, scripts):
     except:
         raise Exception(f"Script '{name}' not found")
 
-
+ADetailer = 'ADetailer'
 default_alwayson_scripts = {
-    'ADetailer': {
+    ADetailer: {
         'args': [{
             'ad_model': 'mediapipe_face_full'
         }]
@@ -199,7 +199,8 @@ default_alwayson_scripts = {
 
 
 def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: StrMapMap, selectable_scripts: Script,
-                     selectable_idx: int, request_script_args: typing.Sequence, script_runner: ScriptRunner):
+                     selectable_idx: int, request_script_args: typing.Sequence, script_runner: ScriptRunner,
+                     enable_def_adetailer: bool=True):
     script_args = [x for x in default_script_args]
 
     if selectable_scripts:
@@ -211,6 +212,8 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
         alwayson_scripts.update(default_alwayson_scripts)
     else:
         logger.debug('====> disable tss adetailer plugin!')
+    if not enable_def_adetailer and ADetailer in alwayson_scripts:
+        del alwayson_scripts[ADetailer]
     # Now check for always on scripts
     if alwayson_scripts:
 
