@@ -142,7 +142,7 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 .progressDiv{ position: relative; height: 20px; background: #b4c0cc; margin-bottom: -3px; }
 .dark .progressDiv{ background: #424c5b; }
 .progressDiv .progress{ width: 0%; height: 20px; background: #0060df; color: white; font-weight: bold; line-height: 20px; padding: 0 8px 0 0; text-align: right; overflow: visible; white-space: nowrap; padding: 0 0.5em; }
-.livePreview { position: absolute; z-index: 300; background-color: transparent; width: -webkit-fill-available; }
+.livePreview { position: absolute; z-index: 300; background-color: transparent; width: -moz-available; width: -webkit-fill-available; }
 .livePreview img { position: absolute; object-fit: contain; width: 100%; height: 100%; }
 .dark .livePreview { background-color: rgb(17 24 39 / var(--tw-bg-opacity)); }
 .popup-metadata { color: white; background: #0000; display: inline-block; white-space: pre-wrap; font-size: 0.75em; }
@@ -225,16 +225,16 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 
 /* extra networks */
 .extra-networks > div { margin: 0; gap: 0.2em; border-bottom: none !important; }
-.extra-networks .second-line { display: flex; width: -webkit-fill-available; gap: 0.3em; box-shadow: var(--input-shadow); }
+.extra-networks .second-line { display: flex; width: -moz-available; width: -webkit-fill-available; gap: 0.3em; box-shadow: var(--input-shadow); }
 .extra-networks .search { flex: 1; }
 .extra-networks .description { flex: 3; }
 .extra-networks .tab-nav > button { margin-right: 0; height: 24px; padding: 2px 4px 2px 4px; }
 .extra-networks-tab { padding: 0 !important; }
-.extra-network-subdirs { background: var(--input-background-fill); overflow-x: hidden; overflow-y: auto; min-width: 120px; padding-top: 0.5em; }
+.extra-network-subdirs { background: var(--input-background-fill); overflow-x: hidden; overflow-y: auto; min-width: 20%; padding-top: 0.5em; }
 .extra-networks-page { display: flex }
 .extra-networks .custom-button { width: 120px; width: 100%; background: none; justify-content: left; text-align: left; padding: 2px 8px 2px 16px; text-indent: -8px; box-shadow: none; line-break: auto; }
 .extra-networks .custom-button:hover { background: var(--button-primary-background-fill) }
-.extra-network-cards { display: flex; flex-wrap: wrap; overflow-y: auto; overflow-x: hidden; align-content: flex-start; width: -webkit-fill-available; }
+.extra-network-cards { display: flex; flex-wrap: wrap; overflow-y: auto; overflow-x: hidden; align-content: flex-start; width: -moz-available; width: -webkit-fill-available; }
 .extra-network-cards .card { height: fit-content; margin: 0 0 0.5em 0.5em; position: relative; scroll-snap-align: start; scroll-margin-top: 0; }
 .extra-network-cards .card .overlay { position: absolute; bottom: 0; padding: 0.2em; z-index: 10; width: 100%; background: none; }
 .extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
