@@ -41,6 +41,7 @@ class StyleDatabase:
     def __init__(self, opts):
         self.no_style = Style("None")
         self.styles = {}
+        self.path = opts.styles_dir
         if os.path.isfile(opts.styles_dir) or opts.styles_dir.endswith(".csv"):
             legacy_file = opts.styles_dir
             self.load_csv(legacy_file)

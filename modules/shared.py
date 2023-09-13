@@ -11,6 +11,7 @@ from enum import Enum
 import gradio as gr
 import tqdm
 import fasteners
+from rich.console import Console
 from modules import errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 from modules.dml import memory_providers, default_memory_provider, directml_do_hijack
@@ -69,7 +70,7 @@ restricted_opts = {
     "outdir_init_images"
 }
 compatibility_opts = ['clip_skip', 'uni_pc_lower_order_final', 'uni_pc_order']
-
+console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
 
 def is_url(string):
     parsed_url = urlparse(string)

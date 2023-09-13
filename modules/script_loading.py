@@ -13,8 +13,8 @@ def load_module(path):
     module_spec = importlib.util.spec_from_file_location(os.path.basename(path), path)
     module = importlib.util.module_from_spec(module_spec)
     try:
-        stdout = io.StringIO()
-        with contextlib.redirect_stdout(stdout):
+        # stdout = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()) as stdout:
             module_spec.loader.exec_module(module)
         setup_logging() # reset since scripts can hijaack logging
         for line in stdout.getvalue().splitlines():

@@ -224,7 +224,7 @@ class Hypernetwork:
         self.filename = filename
         if self.name is None:
             self.name = os.path.splitext(os.path.basename(filename))[0]
-        with progress.open(filename, 'rb', description=f'Loading hypernetwork: [cyan]{filename}', auto_refresh=True) as f:
+        with progress.open(filename, 'rb', description=f'Loading hypernetwork: [cyan]{filename}', auto_refresh=True, console=shared.console) as f:
             state_dict = torch.load(f, map_location='cpu')
         self.layer_structure = state_dict.get('layer_structure', [1, 2, 1])
         self.optional_info = state_dict.get('optional_info', None)

@@ -70,7 +70,7 @@ def download_civit_preview(model_path: str, preview_url: str):
     shared.state.begin('civitai-download-preview')
     try:
         with open(preview_file, 'wb') as f:
-            with p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn()) as progress:
+            with p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn(), console=shared.console) as progress:
                 task = progress.add_task(description="Download starting", total=total_size)
                 for data in req.iter_content(block_size):
                     written = written + len(data)
@@ -110,7 +110,7 @@ def download_civit_model(model_url: str, model_name: str, model_path: str, model
     shared.state.begin('civitai-download-model')
     try:
         with open(model_file, 'wb') as f:
-            with p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn()) as progress:
+            with p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn(), console=shared.console) as progress:
                 task = progress.add_task(description="Download starting", total=total_size)
                 # for data in tqdm(req.iter_content(block_size), total=total_size//1024, unit='KB', unit_scale=False):
                 for data in req.iter_content(block_size):
