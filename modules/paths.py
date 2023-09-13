@@ -68,8 +68,11 @@ def create_paths(opts, log=None):
         fullpath = os.path.join(data_path, tgt)
         if len(data_path) > 0 and os.path.isabs(data_path):
             return fullpath
-        relpath = os.path.relpath(fullpath, script_path)
-        opts.data[folder] = relpath
+        try:
+            relpath = os.path.relpath(fullpath, script_path)
+            opts.data[folder] = relpath
+        except:
+            opts.data[folder] = fullpath
         return relpath
 
     create_path(data_path)
