@@ -23,9 +23,12 @@ from trainx.lora import *
 
 
 def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
+    p = TaskProgress.new_prepare(job, 'prepare')
+    p.eta_relative = 41 * 60
+    yield p
+    
     task = DigitalDoppelgangerTask(job)
-    p = TaskProgress.new_ready(job, 'ready preprocess')
-    p.eta_relative = 40 * 60
+    p = TaskProgress.new_ready(job, 'ready preprocess', 40 * 60)
     yield p
 
     logger.debug(">> download images...")
@@ -39,22 +42,20 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
         p = TaskProgress.new_running(job, 'train running.')
         p.eta_relative = 35 * 60
         yield p
-        time_start = time.time()
 
         def train_progress_callback(progress):
             progress = progress if progress > 1 else progress * 100
             if progress - p.task_progress >= 2:
-                time_since_start = time.time() - time_start
+
                 free, total = vram_mon.cuda_mem_get_info()
                 logger.info(f'[VRAM] free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
 
                 p.task_progress = min(progress, 97)
-                eta = (time_since_start*100 / p.task_progress)
-                p.eta_relative = int(eta - time_since_start)
+                p.calc_eta_relative()
                 #  time_since_start = time.time() - shared.state.time_start
                 #         eta = (time_since_start / progress)
                 #         eta_relative = eta - time_since_start
-                logger.info(f"eta: {p.eta_relative}S ({eta} - {time_since_start}) ")
+                # logger.info(f"eta: {p.eta_relative}S ({eta} - {time_since_start}) ")
                 if callable(dump_func):
                     dump_func(p)
 
