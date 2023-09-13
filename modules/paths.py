@@ -68,7 +68,7 @@ def create_paths(opts, log=None):
         fullpath = os.path.join(data_path, tgt)
         relpath = os.path.relpath(fullpath, script_path)
         opts.data[folder] = relpath
-        return
+        return relpath
 
     create_path(data_path)
     create_path(script_path)

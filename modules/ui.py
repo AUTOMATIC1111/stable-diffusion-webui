@@ -929,11 +929,15 @@ def create_ui(startup_timer = None):
         if info.refresh is not None:
             if is_quicksettings:
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, **args)
-                create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
+                ui_common.create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
             else:
                 with FormRow():
                     res = comp(label=info.label, value=fun(), elem_id=elem_id, **args)
-                    create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
+                    ui_common.create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
+        elif info.folder is not None:
+            with FormRow():
+                res = comp(label=info.label, value=fun(), elem_id=elem_id, elem_classes="folder-selector", **args)
+                ui_common.create_browse_button(res, f"folder_{key}")
         else:
             try:
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, **args)

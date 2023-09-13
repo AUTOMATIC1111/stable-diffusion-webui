@@ -276,6 +276,9 @@ div.controlnet_main_options { display: grid; grid-template-columns: 1fr 1fr; gri
 .log-monitor { display: none; justify-content: unset !important; overflow: hidden; padding: 0; margin-top: auto; font-family: monospace; font-size: 0.85em; }
 .log-monitor td, .log-monitor th { padding-left: 1em; }
 
+/* custom component */
+.folder-selector textarea { height: 2em !important; padding: 6px !important; }
+
 /* Workaround for Gradio dropdowns capturing clicks during and after fadeout */
 .gradio-dropdown > label > div > div:first-child:not(.showOptions) ~ ul.options { pointer-events: none; }
 

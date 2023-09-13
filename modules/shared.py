@@ -203,7 +203,7 @@ else:
 
 
 class OptionInfo:
-    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None, submit=None, comment_before='', comment_after=''):
+    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None, folder=None, submit=None, comment_before='', comment_after=''):
         self.default = default
         self.label = label
         self.component = component
@@ -211,6 +211,7 @@ class OptionInfo:
         self.onchange = onchange
         self.section = section
         self.refresh = refresh
+        self.folder = folder
         self.comment_before = comment_before # HTML text that will be added after label in UI
         self.comment_after = comment_after # HTML text that will be added before label in UI
         self.submit = submit
@@ -441,26 +442,26 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
 }))
 
 options_templates.update(options_section(('system-paths', "System Paths"), {
-    "temp_dir": OptionInfo("", "Directory for temporary images; leave empty for default"),
+    "temp_dir": OptionInfo("", "Directory for temporary images; leave empty for default", folder=True),
     "clean_temp_dir_at_start": OptionInfo(True, "Cleanup non-default temporary directory when starting webui"),
-    "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Folder with stable diffusion models"),
-    "diffusers_dir": OptionInfo(os.path.join(paths.models_path, 'Diffusers'), "Folder with Hugggingface models"),
-    "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Folder with VAE files"),
+    "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Folder with stable diffusion models", folder=True),
+    "diffusers_dir": OptionInfo(os.path.join(paths.models_path, 'Diffusers'), "Folder with Hugggingface models", folder=True),
+    "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Folder with VAE files", folder=True),
     "sd_lora": OptionInfo("", "Add LoRA to prompt", gr.Textbox, {"visible": False}),
-    "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Folder with LoRA network(s)"),
-    "lyco_dir": OptionInfo(os.path.join(paths.models_path, 'LyCORIS'), "Folder with LyCORIS network(s)"),
-    "styles_dir": OptionInfo(os.path.join(paths.data_path, 'styles.csv'), "File or Folder with user-defined styles"),
-    "embeddings_dir": OptionInfo(os.path.join(paths.models_path, 'embeddings'), "Folder with textual inversion embeddings"),
-    "hypernetwork_dir": OptionInfo(os.path.join(paths.models_path, 'hypernetworks'), "Folder with Hypernetwork models"),
-    "codeformer_models_path": OptionInfo(os.path.join(paths.models_path, 'Codeformer'), "Folder with codeformer models"),
-    "gfpgan_models_path": OptionInfo(os.path.join(paths.models_path, 'GFPGAN'), "Folder with GFPGAN models"),
-    "esrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'ESRGAN'), "Folder with ESRGAN models"),
-    "bsrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'BSRGAN'), "Folder with BSRGAN models"),
-    "realesrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'RealESRGAN'), "Folder with RealESRGAN models"),
-    "scunet_models_path": OptionInfo(os.path.join(paths.models_path, 'ScuNET'), "Folder with ScuNET models"),
-    "swinir_models_path": OptionInfo(os.path.join(paths.models_path, 'SwinIR'), "Folder with SwinIR models"),
-    "ldsr_models_path": OptionInfo(os.path.join(paths.models_path, 'LDSR'), "Folder with LDSR models"),
-    "clip_models_path": OptionInfo(os.path.join(paths.models_path, 'CLIP'), "Folder with CLIP models"),
+    "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Folder with LoRA network(s)", folder=True),
+    "lyco_dir": OptionInfo(os.path.join(paths.models_path, 'LyCORIS'), "Folder with LyCORIS network(s)", folder=True),
+    "styles_dir": OptionInfo(os.path.join(paths.data_path, 'styles.csv'), "File or Folder with user-defined styles", folder=True),
+    "embeddings_dir": OptionInfo(os.path.join(paths.models_path, 'embeddings'), "Folder with textual inversion embeddings", folder=True),
+    "hypernetwork_dir": OptionInfo(os.path.join(paths.models_path, 'hypernetworks'), "Folder with Hypernetwork models", folder=True),
+    "codeformer_models_path": OptionInfo(os.path.join(paths.models_path, 'Codeformer'), "Folder with codeformer models", folder=True),
+    "gfpgan_models_path": OptionInfo(os.path.join(paths.models_path, 'GFPGAN'), "Folder with GFPGAN models", folder=True),
+    "esrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'ESRGAN'), "Folder with ESRGAN models", folder=True),
+    "bsrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'BSRGAN'), "Folder with BSRGAN models", folder=True),
+    "realesrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'RealESRGAN'), "Folder with RealESRGAN models", folder=True),
+    "scunet_models_path": OptionInfo(os.path.join(paths.models_path, 'ScuNET'), "Folder with ScuNET models", folder=True),
+    "swinir_models_path": OptionInfo(os.path.join(paths.models_path, 'SwinIR'), "Folder with SwinIR models", folder=True),
+    "ldsr_models_path": OptionInfo(os.path.join(paths.models_path, 'LDSR'), "Folder with LDSR models", folder=True),
+    "clip_models_path": OptionInfo(os.path.join(paths.models_path, 'CLIP'), "Folder with CLIP models", folder=True),
 }))
 
 options_templates.update(options_section(('saving-images', "Image Options"), {
@@ -506,19 +507,19 @@ options_templates.update(options_section(('saving-paths', "Image Naming & Paths"
     "use_save_to_dirs_for_ui": OptionInfo(False, "Save images to a subdirectory when using Save button"),
     "directories_filename_pattern": OptionInfo("[date]", "Directory name pattern", component_args=hide_dirs),
     "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 99, "step": 1, **hide_dirs}),
-    "outdir_samples": OptionInfo("", "Output directory for images", component_args=hide_dirs),
-    "outdir_txt2img_samples": OptionInfo("outputs/text", 'Output directory for txt2img images', component_args=hide_dirs),
-    "outdir_img2img_samples": OptionInfo("outputs/image", 'Output directory for img2img images', component_args=hide_dirs),
-    "outdir_extras_samples": OptionInfo("outputs/extras", 'Output directory for images from extras tab', component_args=hide_dirs),
-    "outdir_save": OptionInfo("outputs/save", "Directory for saving images using the Save button", component_args=hide_dirs),
-    "outdir_init_images": OptionInfo("outputs/init-images", "Directory for saving init images when using img2img", component_args=hide_dirs),
+    "outdir_samples": OptionInfo("", "Output directory for images", component_args=hide_dirs, folder=True),
+    "outdir_txt2img_samples": OptionInfo("outputs/text", 'Output directory for txt2img images', component_args=hide_dirs, folder=True),
+    "outdir_img2img_samples": OptionInfo("outputs/image", 'Output directory for img2img images', component_args=hide_dirs, folder=True),
+    "outdir_extras_samples": OptionInfo("outputs/extras", 'Output directory for images from extras tab', component_args=hide_dirs, folder=True),
+    "outdir_save": OptionInfo("outputs/save", "Directory for saving images using the Save button", component_args=hide_dirs, folder=True),
+    "outdir_init_images": OptionInfo("outputs/init-images", "Directory for saving init images when using img2img", component_args=hide_dirs, folder=True),
 
     "outdir_sep_grids": OptionInfo("<h2>Grids</h2>", "", gr.HTML),
     "grid_extended_filename": OptionInfo(True, "Add extended info (seed, prompt) to filename when saving grid"),
     "grid_save_to_dirs": OptionInfo(False, "Save grids to a subdirectory"),
-    "outdir_grids": OptionInfo("", "Output directory for grids", component_args=hide_dirs),
-    "outdir_txt2img_grids": OptionInfo("outputs/grids", 'Output directory for txt2img grids', component_args=hide_dirs),
-    "outdir_img2img_grids": OptionInfo("outputs/grids", 'Output directory for img2img grids', component_args=hide_dirs),
+    "outdir_grids": OptionInfo("", "Output directory for grids", component_args=hide_dirs, folder=True),
+    "outdir_txt2img_grids": OptionInfo("outputs/grids", 'Output directory for txt2img grids', component_args=hide_dirs, folder=True),
+    "outdir_img2img_grids": OptionInfo("outputs/grids", 'Output directory for img2img grids', component_args=hide_dirs, folder=True),
 
 }))
 
@@ -545,7 +546,7 @@ options_templates.update(options_section(('live-preview', "Live Previews"), {
     "live_previews_enable": OptionInfo(True, "Show live previews of the created image"),
     "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
     "notification_audio_enable": OptionInfo(False, "Play a sound when images are finished generating"),
-    "notification_audio_path": OptionInfo("html/notification.mp3","Path to notification sound", component_args=hide_dirs),
+    "notification_audio_path": OptionInfo("html/notification.mp3","Path to notification sound", component_args=hide_dirs, folder=True),
     "show_progress_every_n_steps": OptionInfo(1, "Live preview display period", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
     "show_progress_type": OptionInfo("Approximate NN", "Live preview method", gr.Radio, {"choices": ["Full VAE", "Approximate NN", "Approximate simple", "TAESD"]}),
     "live_preview_content": OptionInfo("Combined", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
@@ -620,7 +621,7 @@ options_templates.update(options_section(('training', "Training"), {
     "save_training_settings_to_txt": OptionInfo(True, "Save training settings to a text file on training start"),
     "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
     "dataset_filename_join_string": OptionInfo(" ", "Filename join string"),
-    "embeddings_templates_dir": OptionInfo(os.path.join(paths.script_path, 'train', 'templates'), "Embeddings train templates directory"),
+    "embeddings_templates_dir": OptionInfo(os.path.join(paths.script_path, 'train', 'templates'), "Embeddings train templates directory", folder=True),
     "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch", gr.Number, {"precision": 0}),
     "training_write_csv_every": OptionInfo(0, "Save CSV file containing the loss to log directory"),
     "training_enable_tensorboard": OptionInfo(False, "Enable tensorboard logging"),

@@ -229,3 +229,17 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
     refresh_button = ToolButton(value=symbols.refresh, elem_id=elem_id)
     refresh_button.click(fn=refresh, inputs=[], outputs=[refresh_component])
     return refresh_button
+
+def create_browse_button(browse_component, elem_id):
+
+    def browse(folder):
+        # import subprocess
+        if folder is not None:
+            return gr.update(value = folder)
+        return gr.update()
+
+    from modules.ui_components import ToolButton
+    browse_button = ToolButton(value=symbols.folder, elem_id=elem_id)
+    browse_button.click(fn=browse, _js="async () => await browseFolder()", inputs=[browse_component], outputs=[browse_component])
+    # browse_button.click(fn=browse, inputs=[browse_component], outputs=[browse_component])
+    return browse_button

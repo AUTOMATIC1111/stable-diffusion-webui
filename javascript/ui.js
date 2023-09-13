@@ -378,6 +378,12 @@ function previewTheme() {
   });
 }
 
+async function browseFolder() {
+  const f = await window.showDirectoryPicker();
+  if (f && f.kind === 'directory') return f.name;
+  return null;
+}
+
 async function reconnectUI() {
   const gallery = gradioApp().getElementById('txt2img_gallery');
   if (!gallery) return;
