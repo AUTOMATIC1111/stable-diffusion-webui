@@ -198,9 +198,10 @@ class TaskProgress(SerializationObj):
         self.task = task
         self._result = None
         self.task_progress = 0
-        self.eta_relative = 0
+        self.eta_relative = 60
         self.train = TrainTaskInfo()
         self.preview = None
+        self.start_time = time.time()
 
     @property
     def completed(self):
@@ -222,17 +223,27 @@ class TaskProgress(SerializationObj):
         self.status = TaskStatus.Finish if not is_train_task else TaskStatus.TrainCompleted
         self.task_desc = 'ok'
         self.task_progress = 100 if not is_train_task else 99
+        self.eta_relative = 0
 
     def update_seed(self, seed, sub_seed):
         if isinstance(self.task, Task):
             self.task['all_seed'] = seed
             self.task['all_sub_seed'] = sub_seed
 
+    def calc_eta_relative(self, offset: int = 0, default=0):
+        if self.task_progress > 0:
+            time_since_start = time.time() - self.start_time
+            eta = (time_since_start / self.task_progress) * 100
+            self.eta_relative = int(eta - time_since_start) + offset
+        else:
+            self.eta_relative = default
+        return self.eta_relative
+
     @classmethod
     def new_failed(cls, task: Task, desc: str, trace: str = None):
         task.update(
             {
-                "end_at": int(time.time()) - task.create_at,
+                "end_at": int(time.time())
             }
         )
         p = cls(task)
@@ -251,10 +262,11 @@ class TaskProgress(SerializationObj):
         return p
 
     @classmethod
-    def new_ready(cls, task: Task, desc: str):
+    def new_ready(cls, task: Task, desc: str, eta_relative: int = 0):
         p = cls(task)
         p.status = TaskStatus.Ready
         p.task_desc = desc
+        p.eta_relative = eta_relative
         return p
 
     @classmethod
@@ -267,6 +279,8 @@ class TaskProgress(SerializationObj):
         p = cls(task)
         p.status = TaskStatus.Prepare
         p.task_desc = desc
+        p.start_time = time.time()
+
         return p
 
     @classmethod

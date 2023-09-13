@@ -22,8 +22,8 @@ def write_healthy(status: bool):
 
 
 def system_exit(free, total, threshold=0.4):
-    if free < threshold*total:
-        logger.info("CUDA out of memory, quit...")
+    if free < threshold*total and free / 2 ** 30 < 3:
+        logger.info(f"CUDA out of memory({free}/{total}), quit...")
         # kill process
         from ctypes import CDLL
         from ctypes.util import find_library
