@@ -417,8 +417,7 @@ def create_ui(startup_timer = None):
                 with FormRow(elem_id="txt2img_override_settings_row") as row:
                     override_settings = create_override_settings_dropdown('txt2img', row)
 
-                with FormGroup(elem_id="txt2img_script_container"):
-                    custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
+                custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
 
             hr_resolution_preview_inputs = [show_second_pass, width, height, hr_scale, hr_resize_x, hr_resize_y, hr_upscaler]
             for preview_input in hr_resolution_preview_inputs:

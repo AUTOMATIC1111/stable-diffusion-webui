@@ -25,6 +25,7 @@ div.gradio-html.min{ min-height: 0; }
 .gradio-dropdown.multiselect div.wrap-inner {	overflow-x: hidden; overflow-y: auto; max-height: 50vh; overflow-wrap: anywhere; }
 .gradio-html div.wrap{ height: 100%; }
 .gradio-slider input[type="number"]{ width: 6em; margin-left: 0.5em; }
+.gradio-accordion { padding-top: var(--spacing-md) !important; padding-right: 0 !important; padding-bottom: 0 !important; color: var(--body-text-color); }
 .hidden { display: none; }
 footer { display: none; }
 td { border-bottom: none !important; }
@@ -265,7 +266,11 @@ div.controlnet_main_options { display: grid; grid-template-columns: 1fr 1fr; gri
 
 /* specific elements */
 #modelmerger_interp_description { margin-top: 1em; margin-bottom: 1em; }
-#scripts_alwayson_txt2img, #scripts_alwayson_img2img { display: grid }
+#scripts_alwayson_txt2img, #scripts_alwayson_img2img { display: grid; padding: 0 }
+#scripts_alwayson_txt2img > .label-wrap, #scripts_alwayson_img2img > .label-wrap { background: var(--input-background-fill); padding: 0; margin: 0; border-radius: var(--radius-lg); }
+#scripts_alwayson_txt2img > .label-wrap > span, #scripts_alwayson_img2img > .label-wrap > span { padding: var(--spacing-xxl); }
+#script_txt2img_agent_scheduler { display: none; }
+
 #extras_generate, #extras_interrupt, #extras_skip { display: block !important; position: relative; height: 36px; }
 #extras_upscale { margin-top: 10px }
 #refresh_tac_refreshTempFiles { display: none; }

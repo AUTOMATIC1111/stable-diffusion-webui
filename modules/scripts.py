@@ -343,7 +343,7 @@ class ScriptRunner:
     def setup_ui(self):
         import modules.api.models as api_models
         self.titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in self.selectable_scripts]
-        inputs = [None]
+        inputs = []
         inputs_alwayson = [True]
 
         def create_script_ui(script, inputs, inputs_alwayson):
@@ -377,38 +377,28 @@ class ScriptRunner:
             inputs_alwayson += [script.alwayson for _ in controls]
             script.args_to = len(inputs)
 
-        with gr.Group(elem_id='scripts_alwayson_img2img' if self.is_img2img else 'scripts_alwayson_txt2img'):
-            for script in self.alwayson_scripts:
-                t0 = time.time()
-                elem_id = f'script_{"txt2img" if script.is_txt2img else "img2img"}_{script.title().lower().replace(" ", "_")}'
-                with gr.Group(elem_id=elem_id) as group:
-                    create_script_ui(script, inputs, inputs_alwayson)
-                script.group = group
-                time_setup[script.title()] = time_setup.get(script.title(), 0) + (time.time()-t0)
-
         dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None", type="index")
-        inputs[0] = dropdown
+        inputs.insert(0, dropdown)
         for script in self.selectable_scripts:
             with gr.Group(visible=False) as group:
                 t0 = time.time()
                 create_script_ui(script, inputs, inputs_alwayson)
                 time_setup[script.title()] = time_setup.get(script.title(), 0) + (time.time()-t0)
-            script.group = group
+                script.group = group
 
         def select_script(script_index):
             selected_script = self.selectable_scripts[script_index - 1] if script_index > 0 else None
             return [gr.update(visible=selected_script == s) for s in self.selectable_scripts]
 
         def init_field(title):
-            """called when an initial value is set from ui-config.json to show script's UI components"""
-            if title == 'None':
+            if title == 'None': # called when an initial value is set from ui-config.json to show script's UI components
                 return
             script_index = self.titles.index(title)
             self.selectable_scripts[script_index].group.visible = True
 
         dropdown.init_field = init_field
         dropdown.change(fn=select_script, inputs=[dropdown], outputs=[script.group for script in self.selectable_scripts])
-
+        
         def onload_script_visibility(params):
             title = params.get('Script', None)
             if title:
@@ -418,6 +408,16 @@ class ScriptRunner:
                 return gr.update(visible=visibility)
             else:
                 return gr.update(visible=False)
+
+        # with gr.Group(elem_id='scripts_alwayson_img2img' if self.is_img2img else 'scripts_alwayson_txt2img'):
+        with gr.Accordion(label="Extensions", elem_id='scripts_alwayson_img2img' if self.is_img2img else 'scripts_alwayson_txt2img'):
+            for script in self.alwayson_scripts:
+                t0 = time.time()
+                elem_id = f'script_{"txt2img" if script.is_txt2img else "img2img"}_{script.title().lower().replace(" ", "_")}'
+                with gr.Group(elem_id=elem_id) as group:
+                    create_script_ui(script, inputs, inputs_alwayson)
+                script.group = group
+                time_setup[script.title()] = time_setup.get(script.title(), 0) + (time.time()-t0)
 
         self.infotext_fields.append( (dropdown, lambda x: gr.update(value=x.get('Script', 'None'))) )
         self.infotext_fields.extend( [(script.group, onload_script_visibility) for script in self.selectable_scripts] )

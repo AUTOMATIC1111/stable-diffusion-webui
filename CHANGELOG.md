@@ -1,11 +1,11 @@
 # Change Log for SD.Next
 
-## Update for 2023-09-12
+## Update for 2023-09-13
 
 Mostly a service release, but with some changes in behavior, especially in HiRes area of the code...
   
 - tons of fixes  
-- changes to **hires**
+- changes to **hires**  
   - enable non-latent upscale modes (standard upscalers)  
   - when using latent upscale, hires pass is run automatically  
   - when using non-latent upscalers, hires pass is skipped by default  
@@ -18,8 +18,9 @@ Mostly a service release, but with some changes in behavior, especially in HiRes
   - all combinations of: decode full/quick + upscale none/latent/non-latent + hires on/off + refiner on/off  
     should be supported, but given the number of combinations, issues are possible  
   - all operations are captured in image medata
-- update **ui hints**
-- updated **models -> civitai**
+- minor re-layout of the main ui  
+- update **ui hints**  
+- updated **models -> civitai**  
   - search and download loras  
   - find previews for already downloaded models or loras  
 - new option **inference mode**  
