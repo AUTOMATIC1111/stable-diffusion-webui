@@ -73,7 +73,7 @@ def create_paths(opts, log=None):
             opts.data[folder] = relpath
         except:
             opts.data[folder] = fullpath
-        return relpath
+        return opts.data[folder]
 
     create_path(data_path)
     create_path(script_path)
