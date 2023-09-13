@@ -179,7 +179,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
                     used_embeddings[embedding.name] = embedding
             z = self.process_tokens(tokens, multipliers)
             zs.append(z)
-        self.hijack.embedding_db.embeddings_used = [name for name in used_embeddings.keys()]
+        self.hijack.embedding_db.embeddings_used = list(used_embeddings)
         return torch.hstack(zs)
 
     def process_tokens(self, remade_batch_tokens, batch_multipliers):

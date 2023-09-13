@@ -37,21 +37,21 @@ def get_gpu_info():
         try:
             if torch.version.cuda:
                 return {
-                    'device': f'{torch.cuda.get_device_name(torch.cuda.current_device())} ({str(torch.cuda.device_count())}) ({torch.cuda.get_arch_list()[-1]}) {str(torch.cuda.get_device_capability(device))}',
+                    'device': f'{torch.cuda.get_device_name(torch.cuda.current_device())} n={torch.cuda.device_count()} arch={torch.cuda.get_arch_list()[-1]} cap={torch.cuda.get_device_capability(device)}',
                     'cuda': torch.version.cuda,
                     'cudnn': torch.backends.cudnn.version(),
                     'driver': get_driver(),
                 }
             elif torch.version.hip:
                 return {
-                    'device': f'{torch.cuda.get_device_name(torch.cuda.current_device())} ({str(torch.cuda.device_count())})',
+                    'device': f'{torch.cuda.get_device_name(torch.cuda.current_device())} n={torch.cuda.device_count()}',
                     'hip': torch.version.hip,
                 }
             else:
                 try:
                     import intel_extension_for_pytorch as ipex# pylint: disable=import-error, unused-import
                     return {
-                        'device': f'{torch.xpu.get_device_name(torch.xpu.current_device())} ({str(torch.xpu.device_count())})',
+                        'device': f'{torch.xpu.get_device_name(torch.xpu.current_device())} n={torch.xpu.device_count()}',
                         'ipex': ipex.__version__,
                     }
                 except Exception:
