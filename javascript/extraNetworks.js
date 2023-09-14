@@ -153,13 +153,18 @@ function setupExtraNetworksForTab(tabname) {
   tabs.appendChild(div);
   div.appendChild(search);
   div.appendChild(description);
+  let searchTimer = null;
   search.addEventListener('input', (evt) => {
-    const searchTerm = search.value.toLowerCase();
-    gradioApp().querySelectorAll(`#${tabname}_extra_tabs div.card`).forEach((elem) => {
-      let text = `${elem.querySelector('.name').textContent.toLowerCase()} ${elem.querySelector('.search_term').textContent.toLowerCase()}`;
-      text = text.replace('models--', 'Diffusers');
-      elem.style.display = text.indexOf(searchTerm) === -1 ? 'none' : '';
-    });
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      const searchTerm = search.value.toLowerCase();
+      gradioApp().querySelectorAll(`#${tabname}_extra_tabs div.card`).forEach((elem) => {
+        let text = `${elem.querySelector('.name').textContent.toLowerCase()} ${elem.querySelector('.search_term').textContent.toLowerCase()}`;
+        text = text.replace('models--', 'Diffusers');
+        elem.style.display = text.indexOf(searchTerm) === -1 ? 'none' : '';
+      });
+      searchTimer = null;
+    }, 100);
   });
 
   let hoverTimer = null;

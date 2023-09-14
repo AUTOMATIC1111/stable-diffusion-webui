@@ -719,7 +719,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             if vae is not None:
                 diffusers_load_config["vae"] = vae
 
-        shared.log.info(f'Loading diffuser {op}: {checkpoint_info.filename}')
+        # shared.log.info(f'Loading diffuser {op}: {checkpoint_info.filename}')
         if not os.path.isfile(checkpoint_info.path):
             try:
                 # shared.log.debug(f'Diffusers load {op} config: {diffusers_load_config}')

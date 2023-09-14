@@ -18,6 +18,8 @@ Mostly a service release, but with some changes in behavior, especially in HiRes
   - all combinations of: decode full/quick + upscale none/latent/non-latent + hires on/off + refiner on/off  
     should be supported, but given the number of combinations, issues are possible  
   - all operations are captured in image medata
+- diffusers:
+  - allow loading of sd/sdxl models from safetensors without online connectivity
 - minor re-layout of the main ui  
 - update **ui hints**  
 - updated **models -> civitai**  

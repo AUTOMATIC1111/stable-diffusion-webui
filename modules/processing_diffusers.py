@@ -68,7 +68,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 time.sleep(0.1)
 
     def full_vae_decode(latents, model):
-        shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)} images={latents.shape[0]} latents={latents.shape}')
+        t0 = time.time()
         if shared.opts.diffusers_move_unet and not model.has_accelerate:
             shared.log.debug('Moving to CPU: model=UNet')
             unet_device = model.unet.device
@@ -80,6 +80,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
         if shared.opts.diffusers_move_unet and not model.has_accelerate:
             model.unet.to(unet_device)
+        t1 = time.time()
+        shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)} images={latents.shape[0]} latents={latents.shape} time={round(t1-t0, 3)}s')
         return decoded
 
     def full_vae_encode(image, model):
@@ -168,7 +170,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         except Exception:
             is_refiner = False
         if hasattr(model, "set_progress_bar_config"):
-            model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining} '+desc, ncols=80, colour='#327fba')
+            model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining} ' + '\x1b[38;5;71m' + desc, ncols=80, colour='#327fba')
         args = {}
         signature = inspect.signature(type(model).__call__)
         possible = signature.parameters.keys()
