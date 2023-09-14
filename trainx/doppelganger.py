@@ -26,7 +26,7 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
     p = TaskProgress.new_prepare(job, 'prepare')
     p.eta_relative = 41 * 60
     yield p
-    
+
     task = DigitalDoppelgangerTask(job)
     p = TaskProgress.new_ready(job, 'ready preprocess', 40 * 60)
     yield p
@@ -51,7 +51,13 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
                 logger.info(f'[VRAM] free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
 
                 p.task_progress = min(progress, 97)
+
                 p.calc_eta_relative()
+
+                epoch = progress // 10  # 控制的是10epoch
+                if epoch < 4 and p.eta_relative < 1800:
+                    p.eta_relative = 2100 - epoch * 60
+
                 #  time_since_start = time.time() - shared.state.time_start
                 #         eta = (time_since_start / progress)
                 #         eta_relative = eta - time_since_start

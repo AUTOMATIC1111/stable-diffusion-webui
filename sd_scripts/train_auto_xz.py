@@ -627,19 +627,6 @@ def train_auto(
                      filter_tags=undesired_tags, additional_tags=trigger_word)
     train_callback(2)
 
-    train_preprocess(process_src=head_list, process_dst=train_dir, process_width=head_width, process_height=head_height,
-                     preprocess_txt_action='ignore', process_keep_original_size=False,
-                     process_split=False, process_flip=False, process_caption=True,
-                     process_caption_deepbooru=not use_wd, split_threshold=0.5,
-                     overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
-                     process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
-                     process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
-                     process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
-                     process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
-                     model_path=general_model_path,
-                     filter_tags=undesired_tags, additional_tags=trigger_word)
-    train_callback(2)
-
     if use_wd and os.getenv("DO_NOT_TRAIN_COPY_ORIGIN", "1") != "1":
         for f in os.listdir(train_dir):
             full = os.path.join(train_dir, f)
@@ -673,7 +660,7 @@ def train_auto(
         )
 
         if callable(train_callback):
-            train_callback(2)
+            train_callback(4)
 
     lora_name = f"{task_id}"
 
