@@ -18,6 +18,7 @@ from modules.processing import StableDiffusionProcessingImg2Img, process_images,
 from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, \
     load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path
 from copy import deepcopy
+from loguru import logger
 
 
 # conversion_actiob={"线稿":'line',"黑白":'black_white',"色块":'color','草图':'sketch','蜡笔':'crayon'}
@@ -308,24 +309,29 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         return proc
 
     def _exec_conversion(self, task: Task) -> typing.Iterable[TaskProgress]:
-
+        logger.info("one press conversion func starting...")
         full_task, is_img2img, full_canny, part_canny = ConversionTask.exec_task(task)
-        print(full_task)
+        logger.info("download model...")
         # 加载模型
         base_model_path = self._get_local_checkpoint(full_task)
+        logger.info(f"load model:{base_model_path}")
         load_sd_model_weights(base_model_path, full_task.model_hash)
 
         # 第一阶段 上色
         progress = TaskProgress.new_ready(full_task, f'model loaded, run onepress_paint...')
         yield progress
+
+        logger.info("download network models...")
         process_args = self._build_img2img_arg(progress) if is_img2img else self._build_txt2img_arg(progress)
         self._set_little_models(process_args)
         progress.status = TaskStatus.Running
         progress.task_desc = f'onepress task({task.id}) running'
         yield progress
+
+        logger.info("step 1, colour...")
         shared.state.begin()
         processed = process_images(process_args)
-
+        logger.info("step 1 > ok")
         # 第二阶段 细化
         if part_canny or full_canny:
             alwayson_scripts = {}
@@ -334,11 +340,15 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
             if full_canny:
                 alwayson_scripts.update(get_multidiffusion_args())
             # i2i
+            logger.info("step 2, canny...")
             processed_i2i_1 = self._build_gen_canny_i2i_args(process_args, processed)
             processed_i2i = self._canny_process_i2i(processed_i2i_1, alwayson_scripts)
             processed.images = processed_i2i.images
+        logger.info("step 2 > ok")
         shared.state.end()
         process_args.close()
+
+        logger.info("step 3, upload images...")
         progress.status = TaskStatus.Uploading
         yield progress
 
@@ -350,6 +360,7 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
                                        process_args.outpath_scripts,
                                        task.id,
                                        inspect=process_args.kwargs.get("need_audit", False))
+        logger.info("step 3 > ok")
         progress = TaskProgress.new_finish(task, images)
         progress.update_seed(processed.all_seeds, processed.all_subseeds)
 

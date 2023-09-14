@@ -97,17 +97,28 @@ class TaskDumper(Thread):
         return infos
 
     def run(self) -> None:
+        counter = 0
         while not self._stop_flag:
-            now = time.time()
-            if self._dump_now or now - self._last_dump_time > self.send_delay:
-                self._last_dump_time = now
-                if not self.queue.empty():
-                    array = self._get_queue_all()
-                    for info in array.values():
-                        info.update_db(self.db)
-                self._dump_now = False
-            time.sleep(1)
-            self.do_others()
+            try:
+                now = time.time()
+                if counter % 60 == 0:
+                    logger.info("dumper waiting db record.")
+                if counter > 120:
+                    counter = 0
+                if self._dump_now or now - self._last_dump_time > self.send_delay:
+                    self._last_dump_time = now
+                    if not self.queue.empty():
+                        array = self._get_queue_all()
+                        for info in array.values():
+                            info.update_db(self.db)
+                    self._dump_now = False
+                    counter = 0
+                time.sleep(1)
+                self.do_others()
+            except:
+                logger.exception("unhandle err at dumper")
+            finally:
+                counter += 1
 
     def dump_task_progress(self, task_progress: TaskProgress):
         # try:
