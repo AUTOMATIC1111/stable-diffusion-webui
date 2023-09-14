@@ -202,9 +202,10 @@ def load_network(name, network_on_disk):
 
 
 def purge_networks_from_memory():
-    while len(networks_in_memory) > shared.opts.lora_in_memory_limit and len(networks_in_memory) > 0:
-        name = next(iter(networks_in_memory))
-        networks_in_memory.pop(name, None)
+    if (shared.opts.lora_in_memory_limit):
+        while len(networks_in_memory) > shared.opts.lora_in_memory_limit and len(networks_in_memory) > 0:
+            name = next(iter(networks_in_memory))
+            networks_in_memory.pop(name, None)
 
     devices.torch_gc()
 
