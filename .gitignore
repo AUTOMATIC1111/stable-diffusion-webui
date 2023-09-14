@@ -37,3 +37,6 @@ notification.mp3
 /node_modules
 /package-lock.json
 /.coverage*
+
+# ignore files only in root of repo which are version numbers
+/*.*.*
