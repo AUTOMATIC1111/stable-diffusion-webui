@@ -131,7 +131,7 @@ class NoWatermark:
 
 def setup_model():
     if not os.path.exists(model_path):
-        os.makedirs(model_path)
+        os.makedirs(model_path, exist_ok=True)
     list_models()
     enable_midas_autodownload()
 
