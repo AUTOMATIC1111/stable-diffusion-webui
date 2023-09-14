@@ -14,9 +14,7 @@
 | SD_WEBUI_LOG_LEVEL   | Log verbosity. Supports any valid logging level supported by Python's built-in `logging` module. Defaults to `INFO` if not set. |
 | SD_WEBUI_CACHE_FILE   | Cache file path. Defaults to `cache.json` in the root directory if not set. |
 | SD_WEBUI_RESTAR | A value set by `launcher script` (like webui.bat webui.sh) informing Webui that restart function is available |
-| SD_WEBUI_RESTARTING | A internal value signifying if webui is currently restarting / reloading, if this value set to an non blank value Webui will not perform certain actions such as auto launching browser during reload |
-
-
+| SD_WEBUI_RESTARTING | A internal value signifying if webui is currently restarting or reloading, used for disabling certain actions asuch as auto launching browser.<br>set to `1` disables auto launching browser<br>set to `0` enables auto launch even when restarting<br>Certain extensions might use this value for similar purpose. |
 
 ### webui-user
 The recommended way to specify environment variables is by editing `webui-user.bat` (Windows) and `webui-user.sh` (Linux):
