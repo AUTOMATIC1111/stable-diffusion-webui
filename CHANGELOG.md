@@ -2,8 +2,9 @@
 
 ## Update for 2023-09-13
 
-Mostly a service release, but with some changes in behavior, especially in HiRes area of the code...
-  
+Started as a mostly a service release with quite a few fixes, but then...  
+Major changes how **hires** works as well as support for a very interesting new model [wuerstchen](https://huggingface.co/blog/wuertschen)  
+
 - tons of fixes  
 - changes to **hires**  
   - enable non-latent upscale modes (standard upscalers)  
@@ -20,6 +21,10 @@ Mostly a service release, but with some changes in behavior, especially in HiRes
   - all operations are captured in image medata
 - diffusers:
   - allow loading of sd/sdxl models from safetensors without online connectivity
+  - support for new model: [wuerstchen](https://huggingface.co/warp-ai/wuerstchen)  
+    its a high-resolution model (1024px+) that nearly doubls performance of sd-xl with much lower resource requirements  
+    go to *models -> huggingface -> search "warp-ai/wuerstchen" -> download*  
+    its nearly 12gb in size, so be patient :)
 - minor re-layout of the main ui  
 - update **ui hints**  
 - updated **models -> civitai**  

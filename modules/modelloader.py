@@ -213,7 +213,7 @@ def load_diffusers_models(model_path: str, command_path: str = None):
                     mtime = os.path.getmtime(folder)
                     info = os.path.join(folder, "model_info.json")
                     diffuser_repos.append({ 'name': name, 'filename': name, 'path': folder, 'hash': commit, 'mtime': mtime, 'model_info': info })
-                    if os.path.exists(os.path.join(place, folder, 'snapshots', commit, "hidden")):
+                    if os.path.exists(os.path.join(folder, 'hidden')):
                         continue
                     output.append(name)
                 except Exception as e:

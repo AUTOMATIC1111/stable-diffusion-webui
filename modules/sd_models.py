@@ -701,6 +701,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 try:
                     shared.log.debug(f'Model load {op} config: {diffusers_load_config}')
                     sd_model = diffusers.DiffusionPipeline.from_pretrained(model_file, **diffusers_load_config)
+                    sd_model.model_type = sd_model.__class__.__name__
                 except Exception as e:
                     shared.log.error(f'Failed loading model: {model_file} {e}')
                 list_models() # rescan for downloaded model
@@ -722,10 +723,16 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         # shared.log.info(f'Loading diffuser {op}: {checkpoint_info.filename}')
         if not os.path.isfile(checkpoint_info.path):
             try:
+                # os.environ.setdefault('HUGGINGFACE_HUB_CACHE', shared.opts.diffusers_dir) # evalulated only on initial diffusers load
+                # diffusers_load_config["cache_dir "] = shared.opts.diffusers_dir # ignored for connected pipelines such as kandinsky-prior
+                # diffusers.utils.constants.DIFFUSERS_CACHE = shared.opts.diffusers_dir
                 # shared.log.debug(f'Diffusers load {op} config: {diffusers_load_config}')
-                sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, **diffusers_load_config)
+                # sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, **diffusers_load_config)
+                sd_model = diffusers.AutoPipelineForText2Image.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+                sd_model.model_type = sd_model.__class__.__name__
             except Exception as e:
                 shared.log.error(f'Failed loading model {op}: {checkpoint_info.path} {e}')
+                return
         else:
             diffusers_load_config["local_files_only "] = True
             diffusers_load_config["extract_ema"] = shared.opts.diffusers_extract_ema
@@ -1184,7 +1191,7 @@ def apply_token_merging(sd_model, token_merging_ratio=0):
         return
     if current_token_merging_ratio > 0:
         tomesd.remove_patch(sd_model)
-    if token_merging_ratio > 0:
+    if token_merging_ratio > 0 and sd_model.model_type in ['ldm', 'sd', 'sdxl']:
         shared.log.debug(f'Applying token merging: ratio={token_merging_ratio}')
         tomesd.apply_patch(
             sd_model,
@@ -1194,4 +1201,4 @@ def apply_token_merging(sd_model, token_merging_ratio=0):
             merge_crossattn=False,
             merge_mlp=False
         )
-    sd_model.applied_token_merged_ratio = token_merging_ratio
+        sd_model.applied_token_merged_ratio = token_merging_ratio

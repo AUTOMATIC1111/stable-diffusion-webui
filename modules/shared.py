@@ -185,8 +185,9 @@ class State:
             image = modules.sd_samplers.samples_to_image_grid(self.current_latent) if opts.show_progress_grid else modules.sd_samplers.sample_to_image(self.current_latent)
             self.assign_current_image(image)
             self.current_image_sampling_step = self.sampling_step
-        except Exception as e:
-            log.error(f'Error setting current image: step={self.sampling_step} {e}')
+        except Exception:
+            # log.error(f'Error setting current image: step={self.sampling_step} {e}')
+            pass
 
     def assign_current_image(self, image):
         self.current_image = image
