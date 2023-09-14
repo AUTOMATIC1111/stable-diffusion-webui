@@ -1,6 +1,7 @@
 import torch
 import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-import diffusers #0.20.2 # pylint: disable=import-error
+import diffusers #0.21.1 # pylint: disable=import-error
+from diffusers.models.attention_processor import Attention
 
 # pylint: disable=protected-access, missing-function-docstring, line-too-long
 
@@ -17,7 +18,7 @@ class SlicedAttnProcessor: # pylint: disable=too-few-public-methods
     def __init__(self, slice_size):
         self.slice_size = slice_size
 
-    def __call__(self, attn: diffusers.models.attention_processor.Attention, hidden_states, encoder_hidden_states=None, attention_mask=None): # pylint: disable=too-many-statements, too-many-locals, too-many-branches
+    def __call__(self, attn: Attention, hidden_states, encoder_hidden_states=None, attention_mask=None): # pylint: disable=too-many-statements, too-many-locals, too-many-branches
         residual = hidden_states
 
         input_ndim = hidden_states.ndim
