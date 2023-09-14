@@ -160,7 +160,7 @@ function setupExtraNetworksForTab(tabname) {
       const searchTerm = search.value.toLowerCase();
       gradioApp().querySelectorAll(`#${tabname}_extra_tabs div.card`).forEach((elem) => {
         let text = `${elem.querySelector('.name').textContent.toLowerCase()} ${elem.querySelector('.search_term').textContent.toLowerCase()}`;
-        text = text.replace('models--', 'Diffusers');
+        text = text.replace('models--', 'Diffusers').replace('\\', '/');
         elem.style.display = text.indexOf(searchTerm) === -1 ? 'none' : '';
       });
       searchTimer = null;
