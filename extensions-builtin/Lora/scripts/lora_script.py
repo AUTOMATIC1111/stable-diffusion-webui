@@ -1,57 +1,30 @@
 import re
 
-import torch
 import gradio as gr
 from fastapi import FastAPI
 
 import network
 import networks
 import lora  # noqa:F401
+import lora_patches
 import extra_networks_lora
 import ui_extra_networks_lora
 from modules import script_callbacks, ui_extra_networks, extra_networks, shared
 
+
 def unload():
-    torch.nn.Linear.forward = torch.nn.Linear_forward_before_network
-    torch.nn.Linear._load_from_state_dict = torch.nn.Linear_load_state_dict_before_network
-    torch.nn.Conv2d.forward = torch.nn.Conv2d_forward_before_network
-    torch.nn.Conv2d._load_from_state_dict = torch.nn.Conv2d_load_state_dict_before_network
-    torch.nn.MultiheadAttention.forward = torch.nn.MultiheadAttention_forward_before_network
-    torch.nn.MultiheadAttention._load_from_state_dict = torch.nn.MultiheadAttention_load_state_dict_before_network
+    networks.originals.undo()
 
 
 def before_ui():
     ui_extra_networks.register_page(ui_extra_networks_lora.ExtraNetworksPageLora())
 
-    extra_network = extra_networks_lora.ExtraNetworkLora()
-    extra_networks.register_extra_network(extra_network)
-    extra_networks.register_extra_network_alias(extra_network, "lyco")
+    networks.extra_network_lora = extra_networks_lora.ExtraNetworkLora()
+    extra_networks.register_extra_network(networks.extra_network_lora)
+    extra_networks.register_extra_network_alias(networks.extra_network_lora, "lyco")
 
 
-if not hasattr(torch.nn, 'Linear_forward_before_network'):
-    torch.nn.Linear_forward_before_network = torch.nn.Linear.forward
-
-if not hasattr(torch.nn, 'Linear_load_state_dict_before_network'):
-    torch.nn.Linear_load_state_dict_before_network = torch.nn.Linear._load_from_state_dict
-
-if not hasattr(torch.nn, 'Conv2d_forward_before_network'):
-    torch.nn.Conv2d_forward_before_network = torch.nn.Conv2d.forward
-
-if not hasattr(torch.nn, 'Conv2d_load_state_dict_before_network'):
-    torch.nn.Conv2d_load_state_dict_before_network = torch.nn.Conv2d._load_from_state_dict
-
-if not hasattr(torch.nn, 'MultiheadAttention_forward_before_network'):
-    torch.nn.MultiheadAttention_forward_before_network = torch.nn.MultiheadAttention.forward
-
-if not hasattr(torch.nn, 'MultiheadAttention_load_state_dict_before_network'):
-    torch.nn.MultiheadAttention_load_state_dict_before_network = torch.nn.MultiheadAttention._load_from_state_dict
-
-torch.nn.Linear.forward = networks.network_Linear_forward
-torch.nn.Linear._load_from_state_dict = networks.network_Linear_load_state_dict
-torch.nn.Conv2d.forward = networks.network_Conv2d_forward
-torch.nn.Conv2d._load_from_state_dict = networks.network_Conv2d_load_state_dict
-torch.nn.MultiheadAttention.forward = networks.network_MultiheadAttention_forward
-torch.nn.MultiheadAttention._load_from_state_dict = networks.network_MultiheadAttention_load_state_dict
+networks.originals = lora_patches.LoraPatches()
 
 script_callbacks.on_model_loaded(networks.assign_network_names_to_compvis_modules)
 script_callbacks.on_script_unloaded(unload)
@@ -65,6 +38,7 @@ shared.options_templates.update(shared.options_section(('extra_networks', "Extra
     "lora_add_hashes_to_infotext": shared.OptionInfo(True, "Add Lora hashes to infotext"),
     "lora_show_all": shared.OptionInfo(False, "Always show all networks on the Lora page").info("otherwise, those detected as for incompatible version of Stable Diffusion will be hidden"),
     "lora_hide_unknown_for_versions": shared.OptionInfo([], "Hide networks of unknown versions for model versions", gr.CheckboxGroup, {"choices": ["SD1", "SD2", "SDXL"]}),
+    "lora_in_memory_limit": shared.OptionInfo(0, "Number of Lora networks to keep cached in memory", gr.Number, {"precision": 0}),
 }))
 
 
@@ -121,3 +95,5 @@ def infotext_pasted(infotext, d):
 
 
 script_callbacks.on_infotext_pasted(infotext_pasted)
+
+shared.opts.onchange("lora_in_memory_limit", networks.purge_networks_from_memory)
