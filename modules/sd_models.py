@@ -557,6 +557,7 @@ class ModelData:
                     shared.log.error("Failed to load stable diffusion model")
                     errors.display(e, "loading stable diffusion model")
                     self.sd_model = None
+            self.sd_model.model_type = shared.sd_model_type
         return self.sd_model
 
     def set_sd_model(self, v):
@@ -577,6 +578,7 @@ class ModelData:
                     shared.log.error("Failed to load stable diffusion model")
                     errors.display(e, "loading stable diffusion model")
                     self.sd_refiner = None
+            self.sd_refiner.model_type = shared.sd_refiner_type
         return self.sd_refiner
 
     def set_sd_refiner(self, v):
@@ -701,7 +703,6 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 try:
                     shared.log.debug(f'Model load {op} config: {diffusers_load_config}')
                     sd_model = diffusers.DiffusionPipeline.from_pretrained(model_file, **diffusers_load_config)
-                    sd_model.model_type = sd_model.__class__.__name__
                 except Exception as e:
                     shared.log.error(f'Failed loading model: {model_file} {e}')
                 list_models() # rescan for downloaded model
@@ -830,6 +831,9 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 else:
                     sd_model.vae.config["force_upcast"] = False
                     sd_model.vae.config.force_upcast = False
+                if shared.opts.no_half_vae:
+                    devices.dtype_vae = torch.float32
+                    sd_model.vae.to(devices.dtype_vae)
             shared.log.debug(f'Model {op} VAE: name={sd_vae.loaded_vae_file} upcast={sd_model.vae.config.get("force_upcast", None)}')
         if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):
             sd_model.enable_xformers_memory_efficient_attention()
