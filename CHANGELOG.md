@@ -46,6 +46,7 @@ Major changes how **hires** works as well as support for a very interesting new 
   - cleaner server restart  
   - custom exception handling
 
+Note: **wuerstchen** is pending critical bugfix in `diffusers=0.21.1`
 
 ## Update for 2023-09-06
 

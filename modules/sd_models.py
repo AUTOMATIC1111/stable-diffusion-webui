@@ -557,7 +557,6 @@ class ModelData:
                     shared.log.error("Failed to load stable diffusion model")
                     errors.display(e, "loading stable diffusion model")
                     self.sd_model = None
-            self.sd_model.model_type = shared.sd_model_type
         return self.sd_model
 
     def set_sd_model(self, v):
@@ -578,7 +577,6 @@ class ModelData:
                     shared.log.error("Failed to load stable diffusion model")
                     errors.display(e, "loading stable diffusion model")
                     self.sd_refiner = None
-            self.sd_refiner.model_type = shared.sd_refiner_type
         return self.sd_refiner
 
     def set_sd_refiner(self, v):
@@ -732,7 +730,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 sd_model = diffusers.AutoPipelineForText2Image.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
                 sd_model.model_type = sd_model.__class__.__name__
             except Exception as e:
-                shared.log.error(f'Failed loading model {op}: {checkpoint_info.path} {e}')
+                shared.log.error(f'Failed loading {op}: {checkpoint_info.path} {e}')
                 return
         else:
             diffusers_load_config["local_files_only "] = True
@@ -1193,16 +1191,22 @@ def apply_token_merging(sd_model, token_merging_ratio=0):
     current_token_merging_ratio = getattr(sd_model, 'applied_token_merged_ratio', 0)
     if token_merging_ratio is None or current_token_merging_ratio is None or current_token_merging_ratio == token_merging_ratio:
         return
-    if current_token_merging_ratio > 0:
-        tomesd.remove_patch(sd_model)
-    if token_merging_ratio > 0 and sd_model.model_type in ['ldm', 'sd', 'sdxl']:
-        shared.log.debug(f'Applying token merging: ratio={token_merging_ratio}')
-        tomesd.apply_patch(
-            sd_model,
-            ratio=token_merging_ratio,
-            use_rand=False,  # can cause issues with some samplers
-            merge_attn=True,
-            merge_crossattn=False,
-            merge_mlp=False
-        )
-        sd_model.applied_token_merged_ratio = token_merging_ratio
+    try:
+        if current_token_merging_ratio > 0:
+            tomesd.remove_patch(sd_model)
+    except Exception:
+        pass
+    if token_merging_ratio > 0:
+        try:
+            tomesd.apply_patch(
+                sd_model,
+                ratio=token_merging_ratio,
+                use_rand=False,  # can cause issues with some samplers
+                merge_attn=True,
+                merge_crossattn=False,
+                merge_mlp=False
+            )
+            shared.log.debug(f'Applying token merging: ratio={token_merging_ratio}')
+            sd_model.applied_token_merged_ratio = token_merging_ratio
+        except:
+            shared.log.warning(f'Token merging not supported: pipeline={sd_model.__class__.__name__}')
