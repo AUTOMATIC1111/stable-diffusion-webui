@@ -77,6 +77,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload:
             model.vae.to(devices.device)
         latents.to(model.vae.device)
+
+        needs_upcasting = model.vae.dtype == torch.float16 and model.vae.config.force_upcast
+        if needs_upcasting: # this is done by diffusers automatically if output_type != 'latent'
+            model.upcast_vae()
+            latents = latents.to(next(iter(model.vae.post_quant_conv.parameters())).dtype)
+
         decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
         if shared.opts.diffusers_move_unet and not model.has_accelerate:
             model.unet.to(unet_device)

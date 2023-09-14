@@ -3,7 +3,7 @@
 ## Update for 2023-09-13
 
 Started as a mostly a service release with quite a few fixes, but then...  
-Major changes how **hires** works as well as support for a very interesting new model [wuerstchen](https://huggingface.co/blog/wuertschen)  
+Major changes how **hires** works as well as support for a very interesting new model [Wuerstchen](https://huggingface.co/blog/wuertschen)  
 
 - tons of fixes  
 - changes to **hires**  
@@ -45,8 +45,6 @@ Major changes how **hires** works as well as support for a very interesting new 
   - capture ldm output  
   - cleaner server restart  
   - custom exception handling
-
-Note: **wuerstchen** is pending critical bugfix in `diffusers=0.21.1`
 
 ## Update for 2023-09-06
 
