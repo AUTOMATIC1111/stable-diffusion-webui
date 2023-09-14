@@ -1,14 +1,17 @@
+import io
 import os
 import sys
 import time
 import json
 import datetime
+import contextlib
 import urllib.request
 from urllib.parse import urlparse
 from enum import Enum
 import gradio as gr
 import tqdm
 import fasteners
+from rich.console import Console
 from modules import errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 from modules.dml import memory_providers, default_memory_provider, directml_do_hijack
@@ -17,6 +20,7 @@ import modules.memmon
 import modules.styles
 import modules.devices as devices # pylint: disable=R0402
 import modules.paths_internal as paths
+from installer import print_dict
 from installer import log as central_logger # pylint: disable=E0611
 
 
@@ -66,7 +70,7 @@ restricted_opts = {
     "outdir_init_images"
 }
 compatibility_opts = ['clip_skip', 'uni_pc_lower_order_final', 'uni_pc_order']
-
+console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
 
 def is_url(string):
     parsed_url = urlparse(string)
@@ -91,6 +95,7 @@ class State:
     job = ""
     job_no = 0
     job_count = 0
+    total_jobs = 0
     processing_has_refined_job_count = False
     job_timestamp = '0'
     sampling_step = 0
@@ -137,19 +142,21 @@ class State:
         }
         return obj
 
-    def begin(self):
-        self.sampling_step = 0
-        self.job_count = -1
-        self.processing_has_refined_job_count = False
-        self.job_no = 0
-        self.job_timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        self.current_latent = None
+    def begin(self, title=""):
+        self.total_jobs += 1
         self.current_image = None
         self.current_image_sampling_step = 0
+        self.current_latent = None
         self.id_live_preview = 0
-        self.skipped = False
         self.interrupted = False
+        self.job = title
+        self.job_count = -1
+        self.job_no = 0
+        self.job_timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         self.paused = False
+        self.processing_has_refined_job_count = False
+        self.sampling_step = 0
+        self.skipped = False
         self.textinfo = None
         self.time_start = time.time()
         devices.torch_gc()
@@ -157,7 +164,10 @@ class State:
     def end(self):
         self.job = ""
         self.job_count = 0
+        self.job_no = 0
         self.paused = False
+        self.interrupted = False
+        self.skipped = False
         devices.torch_gc()
 
     def set_current_image(self):
@@ -175,8 +185,9 @@ class State:
             image = modules.sd_samplers.samples_to_image_grid(self.current_latent) if opts.show_progress_grid else modules.sd_samplers.sample_to_image(self.current_latent)
             self.assign_current_image(image)
             self.current_image_sampling_step = self.sampling_step
-        except Exception as e:
-            log.error(f'Error setting current image: step={self.sampling_step} {e}')
+        except Exception:
+            # log.error(f'Error setting current image: step={self.sampling_step} {e}')
+            pass
 
     def assign_current_image(self, image):
         self.current_image = image
@@ -194,7 +205,7 @@ else:
 
 
 class OptionInfo:
-    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None, submit=None, comment_before='', comment_after=''):
+    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None, folder=None, submit=None, comment_before='', comment_after=''):
         self.default = default
         self.label = label
         self.component = component
@@ -202,6 +213,7 @@ class OptionInfo:
         self.onchange = onchange
         self.section = section
         self.refresh = refresh
+        self.folder = folder
         self.comment_before = comment_before # HTML text that will be added after label in UI
         self.comment_after = comment_after # HTML text that will be added before label in UI
         self.submit = submit
@@ -244,18 +256,37 @@ def refresh_checkpoints():
     import modules.sd_models # pylint: disable=W0621
     return modules.sd_models.list_models()
 
+
 def refresh_vaes():
     import modules.sd_vae # pylint: disable=W0621
     modules.sd_vae.refresh_vae_list()
+
 
 def list_samplers():
     import modules.sd_samplers # pylint: disable=W0621
     modules.sd_samplers.set_samplers()
     return modules.sd_samplers.all_samplers
 
+
+def temp_disable_extensions():
+    disabled = []
+    if backend == Backend.DIFFUSERS:
+        for ext in ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris']:
+            if ext not in opts.disabled_extensions:
+                disabled.append(ext)
+        log.info(f'Diffusers disabling uncompatible extensions: {disabled}')
+    if opts.lyco_patch_lora and backend != Backend.DIFFUSERS:
+        cmd_opts.lyco_dir = opts.lora_dir
+        if 'Lora' not in opts.disabled_extensions:
+            disabled.append('Lora')
+    cmd_opts.controlnet_loglevel = 'WARNING'
+    return disabled
+
+
 def list_builtin_themes():
     files = [os.path.splitext(f)[0] for f in os.listdir('javascript') if f.endswith('.css')]
     return files
+
 
 def list_themes():
     fn = os.path.join('html', 'themes.json')
@@ -266,23 +297,12 @@ def list_themes():
             res = json.loads(f.read())
     else:
         res = []
-    list_builtin_themes()
-    builtin = list_builtin_themes() + ["gradio/default", "gradio/base", "gradio/glass", "gradio/monochrome", "gradio/soft"]
-    themes = sorted(builtin) + sorted({x['id'] for x in res if x['status'] == 'RUNNING' and 'test' not in x['id'].lower()}, key=str.casefold)
+    builtin = list_builtin_themes()
+    default = ["gradio/default", "gradio/base", "gradio/glass", "gradio/monochrome", "gradio/soft"]
+    external = {x['id'] for x in res if x['status'] == 'RUNNING' and 'test' not in x['id'].lower()}
+    log.info(f'Themes: builtin={len(builtin)} default={len(default)} external={len(external)}')
+    themes = sorted(builtin) + sorted(default) + sorted(external, key=str.casefold)
     return themes
-
-
-def temp_disable_extensions():
-    disabled = []
-    if backend == Backend.DIFFUSERS:
-        for ext in ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris']:
-            if ext not in opts.disabled_extensions:
-                disabled.append(ext)
-        log.warning(f'Diffusers disabling uncompatible extensions: {disabled}')
-    if opts.lyco_patch_lora and backend != Backend.DIFFUSERS:
-        if 'Lora' not in opts.disabled_extensions:
-            disabled.append('Lora')
-    return disabled
 
 
 def refresh_themes():
@@ -292,8 +312,8 @@ def refresh_themes():
         if req.status_code == 200:
             res = req.json()
             fn = os.path.join('html', 'themes.json')
-            with open(fn, mode='w', encoding='utf=8') as f:
-                f.write(json.dumps(res))
+            writefile(res, fn)
+            list_themes()
         else:
             log.error('Error refreshing UI themes')
     except Exception:
@@ -339,13 +359,14 @@ if devices.backend == "cpu":
 elif devices.backend == "mps":
     cross_attention_optimization_default = "Doggettx's"
 elif devices.backend == "ipex":
-    cross_attention_optimization_default = "Sub-quadratic"
+    cross_attention_optimization_default = "Scaled-Dot-Product"
 elif devices.backend == "directml":
     cross_attention_optimization_default = "Sub-quadratic"
 elif devices.backend == "rocm":
     cross_attention_optimization_default = "Sub-quadratic"
 else: # cuda
     cross_attention_optimization_default ="Scaled-Dot-Product"
+
 
 options_templates.update(options_section(('sd', "Execution & Models"), {
     "sd_backend": OptionInfo("diffusers" if cmd_opts.use_openvino else "original", "Execution backend", gr.Radio, lambda: {"choices": ["original", "diffusers"] }),
@@ -355,7 +376,7 @@ options_templates.update(options_section(('sd', "Execution & Models"), {
     "sd_checkpoint_cache": OptionInfo(0, "Number of cached models", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae_checkpoint_cache": OptionInfo(0, "Number of cached VAEs", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae": OptionInfo("Automatic", "VAE model", gr.Dropdown, lambda: {"choices": shared_items.sd_vae_items()}, refresh=shared_items.refresh_vae_list),
-    "sd_model_dict": OptionInfo('None', "Use dict from model", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
+    "sd_model_dict": OptionInfo('None', "Use baseline data from a different model", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "stream_load": OptionInfo(False, "Load models using stream loading method"),
     "model_reuse_dict": OptionInfo(False, "When loading models attempt to reuse previous model dictionary"),
     "prompt_attention": OptionInfo("Full parser", "Prompt attention parser", gr.Radio, lambda: {"choices": ["Full parser", "Compel parser", "A1111 parser", "Fixed attention"] }),
@@ -373,6 +394,7 @@ options_templates.update(options_section(('optimizations', "Optimizations"), {
     "token_merging_ratio": OptionInfo(0.0, "Token merging ratio", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
     "token_merging_ratio_img2img": OptionInfo(0.0, "Token merging ratio for img2img", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
     "token_merging_ratio_hr": OptionInfo(0.0, "Token merging ratio for hires pass", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
+    "inference_mode": OptionInfo("no-grad", "Torch inference mode", gr.Radio, lambda: {"choices": ["no-grad", "inference-mode", "none"]}),
     "sd_vae_sliced_encode": OptionInfo(False, "VAE Slicing (original)"),
 }))
 
@@ -389,8 +411,9 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "rollback_vae": OptionInfo(False, "Attempt VAE roll back when produced NaN values (experimental)"),
     "opt_channelslast": OptionInfo(False, "Use channels last as torch memory format "),
     "cudnn_benchmark": OptionInfo(False, "Enable full-depth cuDNN benchmark feature"),
-    # "cuda_allow_tf32": OptionInfo(True, "Allow TF32 math ops"),
-    # "cuda_allow_tf16_reduced": OptionInfo(True, "Allow TF16 reduced precision math ops"),
+    "ipex_optimize": OptionInfo(True if devices.backend == "ipex" else False, "Enable IPEX Optimize for Intel GPUs"),
+    "directml_memory_provider": OptionInfo(default_memory_provider, 'DirectML memory stats provider', gr.Radio, lambda: {"choices": memory_providers}),
+    "cuda_compile_sep": OptionInfo("<h2>Model Compile</h2>", "", gr.HTML),
     "cuda_compile": OptionInfo(True if cmd_opts.use_openvino else False, "Enable model compile"),
     "cuda_compile_backend": OptionInfo("openvino_fx" if cmd_opts.use_openvino else "none", "Model compile backend", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx']}),
     "cuda_compile_mode": OptionInfo("default", "Model compile mode", gr.Radio, lambda: {"choices": ['default', 'reduce-overhead', 'max-autotune']}),
@@ -398,8 +421,6 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_compile_precompile": OptionInfo(False, "Model compile precompile"),
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
     "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
-    "ipex_optimize": OptionInfo(True if devices.backend == "ipex" else False, "Enable IPEX Optimize for Intel GPUs"),
-    "directml_memory_provider": OptionInfo(default_memory_provider, 'DirectML memory stats provider', gr.Dropdown, lambda: {"choices": memory_providers}),
 }))
 
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
@@ -423,26 +444,26 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
 }))
 
 options_templates.update(options_section(('system-paths', "System Paths"), {
-    "temp_dir": OptionInfo("", "Directory for temporary images; leave empty for default"),
+    "temp_dir": OptionInfo("", "Directory for temporary images; leave empty for default", folder=True),
     "clean_temp_dir_at_start": OptionInfo(True, "Cleanup non-default temporary directory when starting webui"),
-    "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Path to directory with stable diffusion checkpoints"),
-    "diffusers_dir": OptionInfo(os.path.join(paths.models_path, 'Diffusers'), "Path to directory with stable diffusion diffusers"),
-    "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Path to directory with VAE files"),
-    "sd_lora": OptionInfo("", "Add LoRA to prompt", gr.CheckboxGroup, {"choices": [], "visible": False}),
-    "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Path to directory with LoRA network(s)"),
-    "lyco_dir": OptionInfo(os.path.join(paths.models_path, 'LyCORIS'), "Path to directory with LyCORIS network(s)"),
-    "styles_dir": OptionInfo(os.path.join(paths.data_path, 'styles.csv'), "Path to user-defined styles file"),
-    "embeddings_dir": OptionInfo(os.path.join(paths.models_path, 'embeddings'), "Embeddings directory for textual inversion"),
-    "hypernetwork_dir": OptionInfo(os.path.join(paths.models_path, 'hypernetworks'), "Hypernetwork directory"),
-    "codeformer_models_path": OptionInfo(os.path.join(paths.models_path, 'Codeformer'), "Path to directory with codeformer model file(s)"),
-    "gfpgan_models_path": OptionInfo(os.path.join(paths.models_path, 'GFPGAN'), "Path to directory with GFPGAN model file(s)"),
-    "esrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'ESRGAN'), "Path to directory with ESRGAN model file(s)"),
-    "bsrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'BSRGAN'), "Path to directory with BSRGAN model file(s)"),
-    "realesrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'RealESRGAN'), "Path to directory with RealESRGAN model file(s)"),
-    "scunet_models_path": OptionInfo(os.path.join(paths.models_path, 'ScuNET'), "Path to directory with ScuNET model file(s)"),
-    "swinir_models_path": OptionInfo(os.path.join(paths.models_path, 'SwinIR'), "Path to directory with SwinIR model file(s)"),
-    "ldsr_models_path": OptionInfo(os.path.join(paths.models_path, 'LDSR'), "Path to directory with LDSR model file(s)"),
-    "clip_models_path": OptionInfo(os.path.join(paths.models_path, 'CLIP'), "Path to directory with CLIP model file(s)"),
+    "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Folder with stable diffusion models", folder=True),
+    "diffusers_dir": OptionInfo(os.path.join(paths.models_path, 'Diffusers'), "Folder with Hugggingface models", folder=True),
+    "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Folder with VAE files", folder=True),
+    "sd_lora": OptionInfo("", "Add LoRA to prompt", gr.Textbox, {"visible": False}),
+    "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Folder with LoRA network(s)", folder=True),
+    "lyco_dir": OptionInfo(os.path.join(paths.models_path, 'LyCORIS'), "Folder with LyCORIS network(s)", folder=True),
+    "styles_dir": OptionInfo(os.path.join(paths.data_path, 'styles.csv'), "File or Folder with user-defined styles", folder=True),
+    "embeddings_dir": OptionInfo(os.path.join(paths.models_path, 'embeddings'), "Folder with textual inversion embeddings", folder=True),
+    "hypernetwork_dir": OptionInfo(os.path.join(paths.models_path, 'hypernetworks'), "Folder with Hypernetwork models", folder=True),
+    "codeformer_models_path": OptionInfo(os.path.join(paths.models_path, 'Codeformer'), "Folder with codeformer models", folder=True),
+    "gfpgan_models_path": OptionInfo(os.path.join(paths.models_path, 'GFPGAN'), "Folder with GFPGAN models", folder=True),
+    "esrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'ESRGAN'), "Folder with ESRGAN models", folder=True),
+    "bsrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'BSRGAN'), "Folder with BSRGAN models", folder=True),
+    "realesrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'RealESRGAN'), "Folder with RealESRGAN models", folder=True),
+    "scunet_models_path": OptionInfo(os.path.join(paths.models_path, 'ScuNET'), "Folder with ScuNET models", folder=True),
+    "swinir_models_path": OptionInfo(os.path.join(paths.models_path, 'SwinIR'), "Folder with SwinIR models", folder=True),
+    "ldsr_models_path": OptionInfo(os.path.join(paths.models_path, 'LDSR'), "Folder with LDSR models", folder=True),
+    "clip_models_path": OptionInfo(os.path.join(paths.models_path, 'CLIP'), "Folder with CLIP models", folder=True),
 }))
 
 options_templates.update(options_section(('saving-images', "Image Options"), {
@@ -464,11 +485,9 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
     "grid_save": OptionInfo(True, "Always save all generated image grids"),
     "grid_format": OptionInfo('jpg', 'File format for grids', gr.Dropdown, lambda: {"choices": ["jpg", "png", "webp", "tiff", "jp2"]}),
     "n_rows": OptionInfo(-1, "Grid row count", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
-    "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
-    "grid_prevent_empty_spots": OptionInfo(True, "Prevent empty spots in grid (when set to autodetect)"),
 
     "save_sep_options": OptionInfo("<h2>Intermediate Image Saving</h2>", "", gr.HTML),
-    "save_init_img": OptionInfo(True, "Save copy of img2img init images (helps track workflow)"),
+    "save_init_img": OptionInfo(True, "Save copy of img2img init images"),
     "save_images_before_highres_fix": OptionInfo(False, "Save copy of image before applying highres fix"),
     "save_images_before_refiner": OptionInfo(False, "Save copy of image before running refiner"),
     "save_images_before_face_restoration": OptionInfo(False, "Save copy of image before doing face restoration"),
@@ -490,19 +509,19 @@ options_templates.update(options_section(('saving-paths', "Image Naming & Paths"
     "use_save_to_dirs_for_ui": OptionInfo(False, "Save images to a subdirectory when using Save button"),
     "directories_filename_pattern": OptionInfo("[date]", "Directory name pattern", component_args=hide_dirs),
     "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 99, "step": 1, **hide_dirs}),
-    "outdir_samples": OptionInfo("", "Output directory for images", component_args=hide_dirs),
-    "outdir_txt2img_samples": OptionInfo("outputs/text", 'Output directory for txt2img images', component_args=hide_dirs),
-    "outdir_img2img_samples": OptionInfo("outputs/image", 'Output directory for img2img images', component_args=hide_dirs),
-    "outdir_extras_samples": OptionInfo("outputs/extras", 'Output directory for images from extras tab', component_args=hide_dirs),
-    "outdir_save": OptionInfo("outputs/save", "Directory for saving images using the Save button", component_args=hide_dirs),
-    "outdir_init_images": OptionInfo("outputs/init-images", "Directory for saving init images when using img2img", component_args=hide_dirs),
+    "outdir_samples": OptionInfo("", "Output directory for images", component_args=hide_dirs, folder=True),
+    "outdir_txt2img_samples": OptionInfo("outputs/text", 'Output directory for txt2img images', component_args=hide_dirs, folder=True),
+    "outdir_img2img_samples": OptionInfo("outputs/image", 'Output directory for img2img images', component_args=hide_dirs, folder=True),
+    "outdir_extras_samples": OptionInfo("outputs/extras", 'Output directory for images from extras tab', component_args=hide_dirs, folder=True),
+    "outdir_save": OptionInfo("outputs/save", "Directory for saving images using the Save button", component_args=hide_dirs, folder=True),
+    "outdir_init_images": OptionInfo("outputs/init-images", "Directory for saving init images when using img2img", component_args=hide_dirs, folder=True),
 
     "outdir_sep_grids": OptionInfo("<h2>Grids</h2>", "", gr.HTML),
     "grid_extended_filename": OptionInfo(True, "Add extended info (seed, prompt) to filename when saving grid"),
     "grid_save_to_dirs": OptionInfo(False, "Save grids to a subdirectory"),
-    "outdir_grids": OptionInfo("", "Output directory for grids", component_args=hide_dirs),
-    "outdir_txt2img_grids": OptionInfo("outputs/grids", 'Output directory for txt2img grids', component_args=hide_dirs),
-    "outdir_img2img_grids": OptionInfo("outputs/grids", 'Output directory for img2img grids', component_args=hide_dirs),
+    "outdir_grids": OptionInfo("", "Output directory for grids", component_args=hide_dirs, folder=True),
+    "outdir_txt2img_grids": OptionInfo("outputs/grids", 'Output directory for txt2img grids', component_args=hide_dirs, folder=True),
+    "outdir_img2img_grids": OptionInfo("outputs/grids", 'Output directory for img2img grids', component_args=hide_dirs, folder=True),
 
 }))
 
@@ -529,13 +548,13 @@ options_templates.update(options_section(('live-preview', "Live Previews"), {
     "live_previews_enable": OptionInfo(True, "Show live previews of the created image"),
     "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
     "notification_audio_enable": OptionInfo(False, "Play a sound when images are finished generating"),
-    "notification_audio_path": OptionInfo("html/notification.mp3","Path to notification sound", component_args=hide_dirs),
+    "notification_audio_path": OptionInfo("html/notification.mp3","Path to notification sound", component_args=hide_dirs, folder=True),
     "show_progress_every_n_steps": OptionInfo(1, "Live preview display period", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
     "show_progress_type": OptionInfo("Approximate NN", "Live preview method", gr.Radio, {"choices": ["Full VAE", "Approximate NN", "Approximate simple", "TAESD"]}),
     "live_preview_content": OptionInfo("Combined", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
-    "live_preview_refresh_period": OptionInfo(500, "Progressbar/preview update period, in milliseconds", gr.Slider, {"minimum": 0, "maximum": 5000, "step": 25}),
+    "live_preview_refresh_period": OptionInfo(500, "Progress update period", gr.Slider, {"minimum": 0, "maximum": 5000, "step": 25}),
     "logmonitor_show": OptionInfo(True, "Show log view"),
-    "logmonitor_refresh_period": OptionInfo(5000, "Log view update period, in milliseconds", gr.Slider, {"minimum": 0, "maximum": 30000, "step": 25}),
+    "logmonitor_refresh_period": OptionInfo(5000, "Log view update period", gr.Slider, {"minimum": 0, "maximum": 30000, "step": 25}),
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler Settings"), {
@@ -548,9 +567,9 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
 
     "schedulers_sep_diffusers": OptionInfo("<h2>Diffusers specific config</h2>", "", gr.HTML),
     "schedulers_prediction_type": OptionInfo("default", "Samplers override model prediction type", gr.Radio, lambda: {"choices": ['default', 'epsilon', 'sample', 'v-prediction']}),
-    "schedulers_use_karras": OptionInfo(True, "Samplers should use Karras sigmas where applicable"),
-    "schedulers_use_loworder": OptionInfo(True, "Samplers should use use lower-order solvers in the final steps where applicable"),
-    "schedulers_use_thresholding": OptionInfo(False, "Samplers should use dynamic thresholding where applicable"),
+    "schedulers_use_karras": OptionInfo(True, "Samplers use Karras sigmas where applicable"),
+    "schedulers_use_loworder": OptionInfo(True, "Samplers use simplified solvers in final steps where applicable"),
+    "schedulers_use_thresholding": OptionInfo(False, "Samplers use dynamic thresholding where applicable"),
     "schedulers_dpm_solver": OptionInfo("sde-dpmsolver++", "Samplers DPM solver algorithm", gr.Radio, lambda: {"choices": ['dpmsolver', 'dpmsolver++', 'sde-dpmsolver++']}),
     "schedulers_beta_schedule": OptionInfo("default", "Samplers override beta schedule", gr.Radio, lambda: {"choices": ['default', 'linear', 'scaled_linear', 'squaredcos_cap_v2']}),
     'schedulers_beta_start': OptionInfo(0, "Samplers override beta start", gr.Number, {}),
@@ -572,11 +591,8 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
 }))
 
 options_templates.update(options_section(('postprocessing', "Postprocessing"), {
-    'postprocessing_enable_in_main_ui': OptionInfo([], "Enable addtional postprocessing operations", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
+    'postprocessing_enable_in_main_ui': OptionInfo([], "Enable additional postprocessing operations", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
     'postprocessing_operation_order': OptionInfo([], "Postprocessing operation order", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
-    # "use_old_hires_fix_width_height": OptionInfo(False, "Hires fix uses width & height to set final resolution"),
-    # "dont_fix_second_order_samplers_schedule": OptionInfo(False, "Do not fix prompt schedule for second order samplers"),
-
     "postprocessing_sep_img2img": OptionInfo("<h2>Img2Img & Inpainting</h2>", "", gr.HTML),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to match original colors"),
     "img2img_fix_steps": OptionInfo(False, "For image processing do exact number of steps as specified"),
@@ -607,7 +623,7 @@ options_templates.update(options_section(('training', "Training"), {
     "save_training_settings_to_txt": OptionInfo(True, "Save training settings to a text file on training start"),
     "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
     "dataset_filename_join_string": OptionInfo(" ", "Filename join string"),
-    "embeddings_templates_dir": OptionInfo(os.path.join(paths.script_path, 'train', 'templates'), "Embeddings train templates directory"),
+    "embeddings_templates_dir": OptionInfo(os.path.join(paths.script_path, 'train', 'templates'), "Embeddings train templates directory", folder=True),
     "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch", gr.Number, {"precision": 0}),
     "training_write_csv_every": OptionInfo(0, "Save CSV file containing the loss to log directory"),
     "training_enable_tensorboard": OptionInfo(False, "Enable tensorboard logging"),
@@ -622,7 +638,7 @@ options_templates.update(options_section(('interrogate', "Interrogate"), {
     "interrogate_clip_min_length": OptionInfo(32, "Interrogate: minimum description length", gr.Slider, {"minimum": 1, "maximum": 128, "step": 1}),
     "interrogate_clip_max_length": OptionInfo(192, "Interrogate: maximum description length", gr.Slider, {"minimum": 1, "maximum": 256, "step": 1}),
     "interrogate_clip_dict_limit": OptionInfo(2048, "CLIP: maximum number of lines in text file"),
-    "interrogate_clip_skip_categories": OptionInfo(["artists", "movements", "flavors"], "CLIP: skip inquire categories", gr.CheckboxGroup, lambda: {"choices": modules.interrogate.category_types()}, refresh=modules.interrogate.category_types),
+    "interrogate_clip_skip_categories": OptionInfo(["artists", "movements", "flavors"], "Interrogate: skip categories", gr.CheckboxGroup, lambda: {"choices": modules.interrogate.category_types()}, refresh=modules.interrogate.category_types),
     "interrogate_deepbooru_score_threshold": OptionInfo(0.65, "Interrogate: deepbooru score threshold", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
     "deepbooru_sort_alpha": OptionInfo(False, "Interrogate: deepbooru sort alphabetically"),
     "deepbooru_use_spaces": OptionInfo(False, "Use spaces for tags in deepbooru"),
@@ -805,7 +821,6 @@ class Options:
             value = expected_type(value)
         return value
 
-
 opts = Options()
 config_filename = cmd_opts.config
 opts.load(config_filename)
@@ -817,7 +832,8 @@ else:
 opts.data['sd_backend'] = 'diffusers' if backend == Backend.DIFFUSERS else 'original'
 opts.data['uni_pc_lower_order_final'] = opts.schedulers_use_loworder
 opts.data['uni_pc_order'] = opts.schedulers_solver_order
-log.info(f'Engine: backend={backend}')
+log.info(f'Engine: backend={backend} compute={devices.backend} mode={devices.inference_context.__name__} device={devices.get_optimal_device_name()}')
+log.info(f'Device: {print_dict(devices.get_gpu_info())}')
 
 prompt_styles = modules.styles.StyleDatabase(opts)
 cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or (cmd_opts.server_name or False)) and not cmd_opts.insecure
@@ -906,14 +922,20 @@ total_tqdm = TotalTQDM()
 def restart_server(restart=True):
     if demo is None:
         return
-    log.info('Server shutdown requested')
+    log.warning('Server shutdown requested')
     try:
-        demo.server.wants_restart = restart
-        demo.server.should_exit = True
-        demo.server.force_exit = True
-        demo.close(verbose=False)
-        demo.server.close()
-        demo.fns = []
+        sys.tracebacklimit = 0
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stdout(stderr):
+            demo.server.wants_restart = restart
+            demo.server.should_exit = True
+            demo.server.force_exit = True
+            demo.close(verbose=False)
+            demo.server.close()
+            demo.fns = []
+        time.sleep(1)
+        sys.tracebacklimit = 100
         # os._exit(0)
     except (Exception, BaseException) as e:
         log.error(f'Server shutdown error: {e}')

@@ -375,7 +375,7 @@ re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+
 
 class Script(scripts.Script):
     def title(self):
-        return "X/Y/Z grid"
+        return "X/Y/Z Grid"
 
     def ui(self, is_img2img):
         self.current_axis_options = [x for x in axis_options if type(x) == AxisOption or x.is_img2img == is_img2img]
@@ -400,10 +400,10 @@ class Script(scripts.Script):
                     fill_z_button = ToolButton(value=symbols.fill, elem_id="xyz_grid_fill_z_tool_button", visible=False)
         with gr.Row(variant="compact", elem_id="axis_options"):
             draw_legend = gr.Checkbox(label='Draw legend', value=True, elem_id=self.elem_id("draw_legend"))
-            no_fixed_seeds = gr.Checkbox(label='Keep random for seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"))
-            no_grid = gr.Checkbox(label='Do not create grid', value=False, elem_id=self.elem_id("no_xyz_grid"))
-            include_lone_images = gr.Checkbox(label='Include Sub Images', value=False, elem_id=self.elem_id("include_lone_images"))
-            include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
+            no_fixed_seeds = gr.Checkbox(label='Keep random seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"))
+            no_grid = gr.Checkbox(label='Skip grid', value=False, elem_id=self.elem_id("no_xyz_grid"))
+            include_lone_images = gr.Checkbox(label='Include sub images', value=False, elem_id=self.elem_id("include_lone_images"))
+            include_sub_grids = gr.Checkbox(label='Include sub grids', value=False, elem_id=self.elem_id("include_sub_grids"))
         with gr.Row(variant="compact", elem_id="axis_options"):
             margin_size = gr.Slider(label="Grid margins", minimum=0, maximum=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
         with gr.Row(variant="compact", elem_id="swap_axes"):

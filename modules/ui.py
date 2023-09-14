@@ -73,7 +73,7 @@ def send_gradio_gallery_to_image(x):
 def add_style(name: str, prompt: str, negative_prompt: str):
     if name is None:
         return [gr_show() for x in range(4)]
-    style = modules.styles.PromptStyle(name, prompt, negative_prompt)
+    style = modules.styles.Style(name, prompt, negative_prompt)
     modules.shared.prompt_styles.styles[style.name] = style
     modules.shared.prompt_styles.save_styles(modules.shared.opts.styles_dir)
     return [gr.Dropdown.update(visible=True, choices=list(modules.shared.prompt_styles.styles)) for _ in range(2)]
@@ -235,11 +235,11 @@ def create_toprow(is_img2img):
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=3, placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
+                        prompt = gr.Textbox(elem_id=f"{id_part}_prompt", label="Prompt", show_label=False, lines=3, placeholder="Prompt", elem_classes=["prompt"])
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
+                        negative_prompt = gr.Textbox(elem_id=f"{id_part}_neg_prompt", label="Negative prompt", show_label=False, lines=3, placeholder="Negative prompt", elem_classes=["prompt"])
         button_interrogate = None
         button_deepbooru = None
         if is_img2img:
@@ -270,7 +270,7 @@ def create_toprow(is_img2img):
                 negative_token_button = gr.Button(visible=False, elem_id=f"{id_part}_negative_token_button")
             with gr.Row(elem_id=f"{id_part}_styles_row"):
                 prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[k for k, v in modules.shared.prompt_styles.styles.items()], value=[], multiselect=True)
-                create_refresh_button(prompt_styles, modules.shared.prompt_styles.reload, lambda: {"choices": [k for k, v in modules.shared.prompt_styles.styles.items()]}, f"refresh_{id_part}_styles")
+                # create_refresh_button(prompt_styles, modules.shared.prompt_styles.reload, lambda: {"choices": [k for k, v in modules.shared.prompt_styles.styles.items()]}, f"refresh_{id_part}_styles")
                 prompt_styles_btn = gr.Button('Apply', elem_id=f"{id_part}_styles_select", visible=False)
                 prompt_styles_btn.click(_js="applyStyles", fn=parse_style, inputs=[prompt_styles], outputs=[prompt_styles])
     return prompt, prompt_styles, negative_prompt, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button
@@ -389,35 +389,36 @@ def create_ui(startup_timer = None):
                         tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
 
                 with FormGroup(visible=show_second_pass.value, elem_id="txt2img_second_pass") as second_pass_group:
-                    with FormRow(elem_id="sampler_selection_txt2img_alt_row1"):
-                        latent_index = gr.Dropdown(label='Secondary sampler', elem_id="txt2img_sampling_alt", choices=[x.name for x in modules.sd_samplers.samplers], value='Default', type="index")
-                        denoising_strength = gr.Slider(minimum=0.05, maximum=1.0, step=0.01, label='Denoising strength', value=0.3, elem_id="txt2img_denoising_strength")
-                    with FormRow(elem_id="txt2img_hires_finalres", variant="compact"):
-                        hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
-                    with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
-                        hr_upscaler = gr.Dropdown(label="Upscaler", elem_id="txt2img_hr_upscaler", choices=[*modules.shared.latent_upscale_modes, *[x.name for x in modules.shared.sd_upscalers]], value=modules.shared.latent_upscale_default_mode)
-                        hr_second_pass_steps = gr.Slider(minimum=0, maximum=99, step=1, label='Hires steps', elem_id="txt2img_steps_alt", value=20)
-                    with FormRow(elem_id="txt2img_hires_fix_row2", variant="compact"):
-                        hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=2.0, elem_id="txt2img_hr_scale")
-                    with FormRow(elem_id="txt2img_hires_fix_row3", variant="compact"):
-                        hr_resize_x = gr.Slider(minimum=0, maximum=4096, step=8, label="Resize width to", value=0, elem_id="txt2img_hr_resize_x")
-                        hr_resize_y = gr.Slider(minimum=0, maximum=4096, step=8, label="Resize height to", value=0, elem_id="txt2img_hr_resize_y")
-
-                    with FormRow():
-                        hr_refiner = FormHTML(value="Refiner", elem_id="txtimg_hr_refiner", interactive=False)
-                    with FormRow(elem_id="txt2img_refiner_row1", variant="compact"):
-                        refiner_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Refiner start', value=0.8, elem_id="txt2img_refiner_start")
-                        refiner_steps = gr.Slider(minimum=0, maximum=99, step=1, label="Refiner steps", elem_id="txt2img_refiner_steps", value=5)
-                    with FormRow(elem_id="txt2img_refiner_row3", variant="compact"):
-                        refiner_prompt = gr.Textbox(value='', label='Secondary Prompt')
-                    with FormRow(elem_id="txt2img_refiner_row4", variant="compact"):
-                        refiner_negative = gr.Textbox(value='', label='Secondary negative prompt')
+                    with FormGroup():
+                        with FormRow(elem_id="sampler_selection_txt2img_alt_row1"):
+                            latent_index = gr.Dropdown(label='Secondary sampler', elem_id="txt2img_sampling_alt", choices=[x.name for x in modules.sd_samplers.samplers], value='Default', type="index")
+                            denoising_strength = gr.Slider(minimum=0.05, maximum=1.0, step=0.01, label='Denoising strength', value=0.5, elem_id="txt2img_denoising_strength")
+                        with FormRow(elem_id="txt2img_hires_finalres", variant="compact"):
+                            hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
+                        with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
+                            hr_upscaler = gr.Dropdown(label="Upscaler", elem_id="txt2img_hr_upscaler", choices=[*modules.shared.latent_upscale_modes, *[x.name for x in modules.shared.sd_upscalers]], value=modules.shared.latent_upscale_default_mode)
+                            hr_force = gr.Checkbox(label='Force Hires', value=False, elem_id="txt2img_hr_force")
+                        with FormRow(elem_id="txt2img_hires_fix_row2", variant="compact"):
+                            hr_second_pass_steps = gr.Slider(minimum=0, maximum=99, step=1, label='Hires steps', elem_id="txt2img_steps_alt", value=20)
+                            hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=2.0, elem_id="txt2img_hr_scale")
+                        with FormRow(elem_id="txt2img_hires_fix_row3", variant="compact"):
+                            hr_resize_x = gr.Slider(minimum=0, maximum=4096, step=8, label="Resize width to", value=0, elem_id="txt2img_hr_resize_x")
+                            hr_resize_y = gr.Slider(minimum=0, maximum=4096, step=8, label="Resize height to", value=0, elem_id="txt2img_hr_resize_y")
+                    with FormGroup(visible=modules.shared.backend == modules.shared.Backend.DIFFUSERS):
+                        with FormRow():
+                            hr_refiner = FormHTML(value="Refiner", elem_id="txtimg_hr_refiner", interactive=False)
+                        with FormRow(elem_id="txt2img_refiner_row1", variant="compact"):
+                            refiner_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Refiner start', value=0.8, elem_id="txt2img_refiner_start")
+                            refiner_steps = gr.Slider(minimum=0, maximum=99, step=1, label="Refiner steps", elem_id="txt2img_refiner_steps", value=5)
+                        with FormRow(elem_id="txt2img_refiner_row3", variant="compact"):
+                            refiner_prompt = gr.Textbox(value='', label='Secondary Prompt')
+                        with FormRow(elem_id="txt2img_refiner_row4", variant="compact"):
+                            refiner_negative = gr.Textbox(value='', label='Secondary negative prompt')
 
                 with FormRow(elem_id="txt2img_override_settings_row") as row:
                     override_settings = create_override_settings_dropdown('txt2img', row)
 
-                with FormGroup(elem_id="txt2img_script_container"):
-                    custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
+                custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
 
             hr_resolution_preview_inputs = [show_second_pass, width, height, hr_scale, hr_resize_x, hr_resize_y, hr_upscaler]
             for preview_input in hr_resolution_preview_inputs:
@@ -450,7 +451,7 @@ def create_ui(startup_timer = None):
                     seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
                     height, width,
                     show_second_pass, denoising_strength,
-                    hr_scale, hr_upscaler, hr_second_pass_steps, hr_resize_x, hr_resize_y,
+                    hr_scale, hr_upscaler, hr_force, hr_second_pass_steps, hr_resize_x, hr_resize_y,
                     refiner_steps, refiner_start, refiner_prompt, refiner_negative,
                     override_settings,
                 ] + custom_inputs,
@@ -465,13 +466,14 @@ def create_ui(startup_timer = None):
             txt2img_prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
 
-            def enable_hr_change(visible: bool):
-                return {"visible": visible, "__type__": "update"}, f'Refiner: {"disabled" if modules.shared.opts.sd_model_refiner == "None" else "enabled"}'
+            def enable_hr_change(visible: bool, refiner_start):
+                enabled = modules.shared.opts.sd_model_refiner != "None" and refiner_start > 0 and refiner_start < 1
+                return {"visible": visible, "__type__": "update"}, f'Refiner: {"enabled" if enabled else "disabled"}'
 
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
             batch_switch_btn.click(lambda w, h: (h, w), inputs=[batch_count, batch_size], outputs=[batch_count, batch_size], show_progress=False)
             txt_prompt_img.change(fn=modules.images.image_data, inputs=[txt_prompt_img], outputs=[txt2img_prompt, txt_prompt_img])
-            show_second_pass.change(enable_hr_change, inputs=[show_second_pass], outputs=[second_pass_group, hr_refiner], show_progress = False)
+            show_second_pass.change(enable_hr_change, inputs=[show_second_pass, refiner_start], outputs=[second_pass_group, hr_refiner], show_progress = False)
             show_seed.change(gr_show, inputs=[show_seed], outputs=[seed_group], show_progress = False)
             show_batch.change(gr_show, inputs=[show_batch], outputs=[batch_group], show_progress = False)
             show_advanced.change(gr_show, inputs=[show_advanced], outputs=[advanced_group], show_progress = False)
@@ -522,7 +524,7 @@ def create_ui(startup_timer = None):
             negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[txt2img_negative_prompt, steps], outputs=[negative_token_counter])
 
             ui_extra_networks.setup_ui(extra_networks_ui, txt2img_gallery)
-            log.debug(f'UI interface: tab=txt2img batch={show_batch.value} seed={show_seed.value} advanced={show_advanced.value} second_pass={show_second_pass.value}')
+            # log.debug(f'UI interface: tab=txt2img batch={show_batch.value} seed={show_seed.value} advanced={show_advanced.value} second_pass={show_second_pass.value}')
 
     timer.startup.record("ui-txt2img")
 
@@ -882,8 +884,7 @@ def create_ui(startup_timer = None):
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
                 paste_button=img2img_paste, tabname="img2img", source_text_component=img2img_prompt, source_image_component=None,
             ))
-
-            log.debug(f'UI interface: tab=img2img seed={show_seed.value} resize={show_resize.value} batch={show_batch.value} denoise={show_denoise.value} advanced={show_advanced.value}')
+            # log.debug(f'UI interface: tab=img2img seed={show_seed.value} resize={show_resize.value} batch={show_batch.value} denoise={show_denoise.value} advanced={show_advanced.value}')
 
     timer.startup.record("ui-img2img")
 
@@ -928,11 +929,15 @@ def create_ui(startup_timer = None):
         if info.refresh is not None:
             if is_quicksettings:
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, **args)
-                create_refresh_button(res, info.refresh, args, f"refresh_{key}")
+                ui_common.create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
             else:
                 with FormRow():
                     res = comp(label=info.label, value=fun(), elem_id=elem_id, **args)
-                    create_refresh_button(res, info.refresh, args, f"refresh_{key}")
+                    ui_common.create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
+        elif info.folder is not None:
+            with FormRow():
+                res = comp(label=info.label, value=fun(), elem_id=elem_id, elem_classes="folder-selector", **args)
+                ui_common.create_browse_button(res, f"folder_{key}")
         else:
             try:
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, **args)
@@ -1067,7 +1072,7 @@ def create_ui(startup_timer = None):
                     with gr.TabItem("Show all pages", variant='primary', elem_id="settings_show_all_pages"):
                         create_dirty_indicator("show_all_pages", [], interactive=False)
 
-            with gr.TabItem("UI Config", id="system_config", elem_id="system_config_tab"):
+            with gr.TabItem("UI Config", id="system_config", elem_id="tab_config"):
                 loadsave.create_ui()
                 create_dirty_indicator("tab_defaults", [], interactive=False)
 
@@ -1085,7 +1090,7 @@ def create_ui(startup_timer = None):
         unload_sd_model.click(fn=unload_sd_weights, inputs=[], outputs=[])
         reload_sd_model.click(fn=reload_sd_weights, inputs=[], outputs=[])
         request_notifications.click(fn=lambda: None, inputs=[], outputs=[], _js='function(){}')
-        preview_theme.click(fn=None, _js='preview_theme', inputs=[dummy_component], outputs=[dummy_component])
+        preview_theme.click(fn=None, _js='previewTheme', inputs=[], outputs=[])
 
     timer.startup.record("ui-settings")
 
@@ -1154,7 +1159,7 @@ def create_ui(startup_timer = None):
                 show_progress=info.refresh is not None,
             )
 
-        button_set_checkpoint = gr.Button('Change checkpoint', elem_id='change_checkpoint', visible=False)
+        button_set_checkpoint = gr.Button('Change model', elem_id='change_checkpoint', visible=False)
         button_set_checkpoint.click(
             fn=lambda value, _: run_settings_single(value, key='sd_model_checkpoint'),
             _js="function(v){ var res = desiredCheckpointName; desiredCheckpointName = ''; return [res || v, null]; }",

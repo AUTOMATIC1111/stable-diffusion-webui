@@ -46,20 +46,23 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
 
 - **Original**: Based on [LDM](https://github.com/Stability-AI/stablediffusion) reference implementation and significantly expanded on by [A1111](https://github.com/AUTOMATIC1111/stable-diffusion-webui)  
   This is the default backend and it is fully compatible with all existing functionality and extensions  
+  It supports **SD 1.x** and **SD 2.x** models  
 - **Diffusers**: Based on new [Huggingface Diffusers](https://huggingface.co/docs/diffusers/index) implementation  
-  It is also the only backend that supports **Stable Diffusion XL** model  
+  It supports All models listed below  
+  It is also the *only backend* that supports **Stable Diffusion XL** model  
   See [wiki article](https://github.com/vladmandic/automatic/wiki/Diffusers) for more information  
 
 ## Model support
 
 Additional models will be added as they become available and there is public interest in them
 
-- Stable Diffusion 1.x and 2.x *(all variants)*
-- Stable Diffusion XL
-- Kandinsky 2.1 and 2.2
-- DeepFloyd IF
-- UniDiffusion
-- SD-Distilled *(all variants)*
+- [Stable Diffusion](https://github.com/Stability-AI/stablediffusion/) 1.x and 2.x *(all variants)*
+- [Stable Diffusion XL](https://github.com/Stability-AI/generative-models)
+- [Kandinsky](https://github.com/ai-forever/Kandinsky-2) 2.1 and 2.2
+- [DeepFloyd IF](https://github.com/deep-floyd/IF)
+- [UniDiffusion](https://github.com/thu-ml/unidiffuser)
+- [SD-Distilled](https://huggingface.co/blog/sd_distillation) *(all variants)*
+- [Wuerstchen](https://huggingface.co/blog/wuertschen)  
 
 ## Platform support
 

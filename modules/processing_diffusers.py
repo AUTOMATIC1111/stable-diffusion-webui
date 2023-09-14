@@ -2,6 +2,7 @@ import time
 import inspect
 import typing
 import torch
+import torchvision.transforms.functional as TF
 import modules.devices as devices
 import modules.shared as shared
 import modules.sd_samplers as sd_samplers
@@ -24,20 +25,24 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     results = []
     if p.enable_hr and p.hr_upscaler != 'None' and p.denoising_strength > 0 and len(getattr(p, 'init_images', [])) == 0:
         p.is_hr_pass = True
-    is_refiner_enabled = p.enable_hr and p.refiner_steps > 0 and shared.sd_refiner is not None
+    is_refiner_enabled = p.enable_hr and p.refiner_steps > 0 and p.refiner_start > 0 and p.refiner_start < 1 and shared.sd_refiner is not None
 
     def hires_resize(latents): # input=latents output=pil
         latent_upscaler = shared.latent_upscale_modes.get(p.hr_upscaler, None)
         shared.log.info(f'Hires: upscaler={p.hr_upscaler} width={p.hr_upscale_to_x} height={p.hr_upscale_to_y} images={latents.shape[0]}')
         if latent_upscaler is not None:
             latents = torch.nn.functional.interpolate(latents, size=(p.hr_upscale_to_y // 8, p.hr_upscale_to_x // 8), mode=latent_upscaler["mode"], antialias=latent_upscaler["antialias"])
-        first_pass_images = vae_decode(latents=latents, model=shared.sd_model, full_quality=True, output_type='pil')
+        first_pass_images = vae_decode(latents=latents, model=shared.sd_model, full_quality=p.full_quality, output_type='pil')
         p.init_images = []
         for first_pass_image in first_pass_images:
-            init_image = images.resize_image(1, first_pass_image, p.hr_upscale_to_x, p.hr_upscale_to_y, upscaler_name=p.hr_upscaler) if latent_upscaler is None else first_pass_image
+            if latent_upscaler is None:
+                init_image = images.resize_image(1, first_pass_image, p.hr_upscale_to_x, p.hr_upscale_to_y, upscaler_name=p.hr_upscaler)
+            else:
+                init_image = first_pass_image
+            # if is_refiner_enabled:
+            #    init_image = vae_encode(init_image, model=shared.sd_model, full_quality=p.full_quality)
             p.init_images.append(init_image)
-        p.width = p.hr_upscale_to_x
-        p.height = p.hr_upscale_to_y
+        return p.init_images
 
     def save_intermediate(latents, suffix):
         for i in range(len(latents)):
@@ -63,7 +68,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 time.sleep(0.1)
 
     def full_vae_decode(latents, model):
-        shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)} images={latents.shape[0]}')
+        t0 = time.time()
         if shared.opts.diffusers_move_unet and not model.has_accelerate:
             shared.log.debug('Moving to CPU: model=UNet')
             unet_device = model.unet.device
@@ -72,17 +77,46 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload:
             model.vae.to(devices.device)
         latents.to(model.vae.device)
+
+        needs_upcasting = model.vae.dtype == torch.float16 and model.vae.config.force_upcast
+        if needs_upcasting: # this is done by diffusers automatically if output_type != 'latent'
+            model.upcast_vae()
+            latents = latents.to(next(iter(model.vae.post_quant_conv.parameters())).dtype)
+
         decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
         if shared.opts.diffusers_move_unet and not model.has_accelerate:
             model.unet.to(unet_device)
+        t1 = time.time()
+        shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)} images={latents.shape[0]} latents={latents.shape} time={round(t1-t0, 3)}s')
         return decoded
 
+    def full_vae_encode(image, model):
+        shared.log.debug(f'VAE encode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)}')
+        if shared.opts.diffusers_move_unet and not model.has_accelerate:
+            shared.log.debug('Moving to CPU: model=UNet')
+            unet_device = model.unet.device
+            model.unet.to(devices.cpu)
+            devices.torch_gc()
+        if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload:
+            model.vae.to(devices.device)
+        encoded = model.vae.encode(image.to(model.vae.device, model.vae.dtype))
+        if shared.opts.diffusers_move_unet and not model.has_accelerate:
+            model.unet.to(unet_device)
+        return encoded
+
     def taesd_vae_decode(latents):
-        shared.log.debug(f'VAE decode: name=TAESD images={latents.shape[0]}')
-        decoded = torch.zeros((len(latents), 3, p.height, p.width), dtype=devices.dtype_vae, device=devices.device)
+        shared.log.debug(f'VAE decode: name=TAESD images={len(latents)} latents={latents.shape}')
+        if len(latents) == 0:
+            return []
+        decoded = torch.zeros((len(latents), 3, latents.shape[2] * 8, latents.shape[3] * 8), dtype=devices.dtype_vae, device=devices.device)
         for i in range(len(output.images)):
             decoded[i] = (sd_vae_taesd.decode(latents[i]) * 2.0) - 1.0
         return decoded
+
+    def taesd_vae_encode(image):
+        shared.log.debug(f'VAE encode: name=TAESD image={image.shape}')
+        encoded = sd_vae_taesd.encode(image)
+        return encoded
 
     def vae_decode(latents, model, output_type='np', full_quality=True):
         if not torch.is_tensor(latents): # already decoded
@@ -103,6 +137,19 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             decoded = taesd_vae_decode(latents=latents)
         imgs = model.image_processor.postprocess(decoded, output_type=output_type)
         return imgs
+
+    def vae_encode(image, model, full_quality=True): # pylint: disable=unused-variable
+        if shared.state.interrupted or shared.state.skipped:
+            return []
+        if not hasattr(model, 'vae'):
+            shared.log.error('VAE not found in model')
+            return []
+        tensor = TF.to_tensor(image.convert("RGB")).unsqueeze(0).to(devices.device, devices.dtype_vae)
+        if full_quality:
+            latents = full_vae_encode(image=tensor, model=shared.sd_model)
+        else:
+            latents = taesd_vae_encode(image=tensor)
+        return latents
 
     def fix_prompts(prompts, negative_prompts, prompts_2, negative_prompts_2):
         if type(prompts) is str:
@@ -129,7 +176,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         except Exception:
             is_refiner = False
         if hasattr(model, "set_progress_bar_config"):
-            model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining} '+desc, ncols=80, colour='#327fba')
+            model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining} ' + '\x1b[38;5;71m' + desc, ncols=80, colour='#327fba')
         args = {}
         signature = inspect.signature(type(model).__call__)
         possible = signature.parameters.keys()
@@ -140,7 +187,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         negative_embed = None
         negative_pooled = None
         prompts, negative_prompts, prompts_2, negative_prompts_2 = fix_prompts(prompts, negative_prompts, prompts_2, negative_prompts_2)
-        if shared.opts.prompt_attention in {'Compel parser', 'Full parser'}:
+        if shared.opts.prompt_attention in {'Compel parser', 'Full parser'} and 'StableDiffusion' in model.__class__.__name__:
             prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompts(model, prompts, negative_prompts, prompts_2, negative_prompts_2, is_refiner, kwargs.pop("clip_skip", None))
         if 'prompt' in possible:
             if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and prompt_embed is not None:
@@ -315,35 +362,38 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         return results
 
     # optional hires pass
+    latent_scale_mode = shared.latent_upscale_modes.get(p.hr_upscaler, None) if (hasattr(p, "hr_upscaler") and p.hr_upscaler is not None) else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "None")
     if p.is_hr_pass:
         p.init_hr()
-        recompile_model(hires=True)
         if p.width != p.hr_upscale_to_x or p.height != p.hr_upscale_to_y:
+            p.ops.append('upscale')
             if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_highres_fix and hasattr(shared.sd_model, 'vae'):
                 save_intermediate(latents=output.images, suffix="-before-hires")
-            hires_resize(latents=output.images)
-            sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
-            p.ops.append('hires')
-            hires_args = set_pipeline_args(
-                model=shared.sd_model,
-                prompts=prompts,
-                negative_prompts=negative_prompts,
-                prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
-                negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
-                num_inference_steps=int(p.hr_second_pass_steps // p.denoising_strength + 1),
-                eta=shared.opts.eta_ddim,
-                guidance_scale=p.image_cfg_scale if p.image_cfg_scale is not None else p.cfg_scale,
-                guidance_rescale=p.diffusers_guidance_rescale,
-                output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
-                clip_skip=p.clip_skip,
-                image=p.init_images,
-                strength=p.denoising_strength,
-                desc='Hires',
-            )
-            try:
-                output = shared.sd_model(**hires_args) # pylint: disable=not-callable
-            except AssertionError as e:
-                shared.log.info(e)
+            output.images = hires_resize(latents=output.images)
+            if latent_scale_mode is not None or p.hr_force:
+                p.ops.append('hires')
+                recompile_model(hires=True)
+                sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
+                hires_args = set_pipeline_args(
+                    model=shared.sd_model,
+                    prompts=prompts,
+                    negative_prompts=negative_prompts,
+                    prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
+                    negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
+                    num_inference_steps=int(p.hr_second_pass_steps // p.denoising_strength + 1),
+                    eta=shared.opts.eta_ddim,
+                    guidance_scale=p.image_cfg_scale if p.image_cfg_scale is not None else p.cfg_scale,
+                    guidance_rescale=p.diffusers_guidance_rescale,
+                    output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
+                    clip_skip=p.clip_skip,
+                    image=p.init_images,
+                    strength=p.denoising_strength,
+                    desc='Hires',
+                )
+                try:
+                    output = shared.sd_model(**hires_args) # pylint: disable=not-callable
+                except AssertionError as e:
+                    shared.log.info(e)
 
     # optional refiner pass or decode
     if is_refiner_enabled:
@@ -368,6 +418,11 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         refiner_is_sdxl = bool("StableDiffusionXL" in shared.sd_refiner.__class__.__name__)
         p.ops.append('refine')
         for i in range(len(output.images)):
+            image = output.images[i]
+            # if (image.shape[2] == 3) and (image.shape[0] % 8 != 0 or image.shape[1] % 8 != 0):
+            #    shared.log.warning(f'Refiner requires image size to be divisible by 8: {image.shape}')
+            #    results.append(image)
+            #    return results
             refiner_args = set_pipeline_args(
                 model=shared.sd_refiner,
                 prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts[i],
@@ -379,7 +434,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 guidance_rescale=p.diffusers_guidance_rescale,
                 denoising_start=p.refiner_start if p.refiner_start > 0 and p.refiner_start < 1 else None,
                 denoising_end=1 if p.refiner_start > 0 and p.refiner_start < 1 else None,
-                image=output.images[i],
+                image=image,
                 output_type='latent' if hasattr(shared.sd_refiner, 'vae') else 'np',
                 clip_skip=p.clip_skip,
                 desc='Refiner',

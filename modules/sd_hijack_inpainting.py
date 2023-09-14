@@ -1,8 +1,11 @@
+import io
+import contextlib
 import torch
-
-import ldm.models.diffusion.ddpm
-import ldm.models.diffusion.ddim
-import ldm.models.diffusion.plms
+stdout = io.StringIO()
+with contextlib.redirect_stdout(stdout):
+    import ldm.models.diffusion.ddpm
+    import ldm.models.diffusion.ddim
+    import ldm.models.diffusion.plms
 
 from ldm.models.diffusion.ddpm import LatentDiffusion # pylint: disable=unused-import
 from ldm.models.diffusion.plms import PLMSSampler # pylint: disable=unused-import

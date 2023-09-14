@@ -19,6 +19,7 @@ def wrap_queued_call(func):
 
 
 def wrap_gradio_gpu_call(func, extra_outputs=None):
+    name = func.__name__
     def f(*args, **kwargs):
         # if the first argument is a string that says "task(...)", it is treated as a job id
         if len(args) > 0 and type(args[0]) == str and args[0][0:5] == "task(" and args[0][-1] == ")":
@@ -27,7 +28,6 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
         else:
             id_task = None
         with queue_lock:
-            shared.state.begin()
             progress.start_task(id_task)
             res = [None, '', '', '']
             try:
@@ -42,13 +42,15 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
                 progress.finish_task(id_task)
             shared.state.end()
         return res
-    return wrap_gradio_call(f, extra_outputs=extra_outputs, add_stats=True)
+    return wrap_gradio_call(f, extra_outputs=extra_outputs, add_stats=True, name=name)
 
 
-def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
+def wrap_gradio_call(func, extra_outputs=None, add_stats=False, name=None):
+    job_name = name if name is not None else func.__name__
     def f(*args, extra_outputs_array=extra_outputs, **kwargs):
         t = time.perf_counter()
         shared.mem_mon.reset()
+        shared.state.begin(job_name)
         try:
             if shared.cmd_opts.profile:
                 pr = cProfile.Profile()
@@ -67,15 +69,10 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
                 print('Profile Exec:', s.getvalue())
         except Exception as e:
             errors.display(e, 'gradio call')
-            shared.state.job = ""
-            shared.state.job_count = 0
             if extra_outputs_array is None:
                 extra_outputs_array = [None, '']
             res = extra_outputs_array + [f"<div class='error'>{html.escape(type(e).__name__+': '+str(e))}</div>"]
-        shared.state.skipped = False
-        shared.state.interrupted = False
-        shared.state.paused = False
-        shared.state.job_count = 0
+        shared.state.end()
         if not add_stats:
             return tuple(res)
         elapsed = time.perf_counter() - t

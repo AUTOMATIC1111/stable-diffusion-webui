@@ -153,24 +153,35 @@ function setupExtraNetworksForTab(tabname) {
   tabs.appendChild(div);
   div.appendChild(search);
   div.appendChild(description);
+  let searchTimer = null;
   search.addEventListener('input', (evt) => {
-    const searchTerm = search.value.toLowerCase();
-    gradioApp().querySelectorAll(`#${tabname}_extra_tabs div.card`).forEach((elem) => {
-      let text = `${elem.querySelector('.name').textContent.toLowerCase()} ${elem.querySelector('.search_term').textContent.toLowerCase()}`;
-      text = text.replace('models--', 'Diffusers');
-      elem.style.display = text.indexOf(searchTerm) === -1 ? 'none' : '';
-    });
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      const searchTerm = search.value.toLowerCase();
+      gradioApp().querySelectorAll(`#${tabname}_extra_tabs div.card`).forEach((elem) => {
+        let text = `${elem.querySelector('.name').textContent.toLowerCase()} ${elem.querySelector('.search_term').textContent.toLowerCase()}`;
+        text = text.replace('models--', 'Diffusers');
+        elem.style.display = text.indexOf(searchTerm) === -1 ? 'none' : '';
+      });
+      searchTimer = null;
+    }, 100);
   });
 
+  let hoverTimer = null;
   gradioApp().getElementById(`${tabname}_extra_tabs`).onmouseover = (e) => {
-    const el = e?.target?.parentElement;
-    if (!el?.classList?.contains('card')) return;
-    if (el.title === previousCard) return;
-    readCardDescription(el.dataset.filename, el.dataset.description);
-    readCardTags(el, el.dataset.tags);
-    e.stopPropagation();
-    e.preventDefault();
-    previousCard = el.title;
+    const el = e.target.closest('.card'); // bubble-up to card
+    if (!el || (el.title === previousCard)) return;
+    if (!hoverTimer) {
+      hoverTimer = setTimeout(() => {
+        readCardDescription(el.dataset.filename, el.dataset.description);
+        readCardTags(el, el.dataset.tags);
+        previousCard = el.title;
+      }, 300);
+    }
+    el.onmouseout = () => {
+      clearTimeout(hoverTimer);
+      hoverTimer = null;
+    };
   };
 
   const intersectionObserver = new IntersectionObserver((entries) => {
@@ -278,7 +289,7 @@ function extraNetworksSearchButton(event) {
   updateInput(searchTextarea);
 }
 
-function extraNetworksRefreshButton() {
+function getENActivePage() {
   const tabname = getENActiveTab();
   const page = gradioApp().querySelector(`#${tabname}_extra_networks > .tabs > .tab-nav > .selected`);
   return page ? page.innerText : '';

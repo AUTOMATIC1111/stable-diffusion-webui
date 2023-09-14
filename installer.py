@@ -108,6 +108,22 @@ def setup_logging():
     # logging.getLogger("DeepSpeed").handlers = log.handlers
 
 
+def custom_excepthook(exc_type, exc_value, exc_traceback):
+    import traceback
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    log.error(f"Uncaught exception occurred: type={exc_type} value={exc_value}")
+    if exc_traceback:
+        format_exception = traceback.format_tb(exc_traceback)
+        for line in format_exception:
+            log.error(repr(line))
+
+
+def print_dict(d):
+    return ' '.join([f'{k}={v}' for k, v in d.items()])
+
+
 def print_profile(profile: cProfile.Profile, msg: str):
     try:
         from rich import print # pylint: disable=redefined-builtin
@@ -263,6 +279,26 @@ def clone(url, folder, commithash=None):
         git(f'clone "{url}" "{folder}"')
         if commithash is not None:
             git(f'-C "{folder}" checkout {commithash}')
+
+
+def get_platform():
+    try:
+        if platform.system() == 'Windows':
+            release = platform.platform(aliased = True, terse = False)
+        else:
+            release = platform.release()
+        return {
+            # 'host': platform.node(),
+            'arch': platform.machine(),
+            'cpu': platform.processor(),
+            'system': platform.system(),
+            'release': release,
+            # 'platform': platform.platform(aliased = True, terse = False),
+            # 'version': platform.version(),
+            'python': platform.python_version(),
+        }
+    except Exception as e:
+        return { 'error': e }
 
 
 # check python version
@@ -580,7 +616,7 @@ def list_extensions_folder(folder, quiet=False):
     disabled_extensions = opts.get('disabled_extensions', [])
     enabled_extensions = [x for x in os.listdir(folder) if x not in disabled_extensions and not x.startswith('.')]
     if not quiet:
-        log.info(f'Enabled {name}: {enabled_extensions}')
+        log.info(f'Extensions: enabled={enabled_extensions} {name}')
     return enabled_extensions
 
 
@@ -713,9 +749,9 @@ def check_extensions():
     extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
     disabled_extensions_all = opts.get('disable_all_extensions', 'none')
     if disabled_extensions_all != 'none':
-        log.info(f'Disabled extensions: {disabled_extensions_all}')
+        log.info(f'Extensions: disabled={disabled_extensions_all}')
     else:
-        log.info(f'Disabled extensions: {opts.get("disabled_extensions", [])}')
+        log.info(f'Extensions: disabled={opts.get("disabled_extensions", [])}')
     for folder in extension_folders:
         if not os.path.isdir(folder):
             continue
@@ -736,6 +772,28 @@ def check_extensions():
     return round(newest_all)
 
 
+def get_version():
+    version = None
+    if version is None:
+        try:
+            res = subprocess.run('git log --pretty=format:"%h %ad" -1 --date=short', stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True, check=True)
+            ver = res.stdout.decode(encoding = 'utf8', errors='ignore') if len(res.stdout) > 0 else '  '
+            githash, updated = ver.split(' ')
+            res = subprocess.run('git remote get-url origin', stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True, check=True)
+            origin = res.stdout.decode(encoding = 'utf8', errors='ignore') if len(res.stdout) > 0 else ''
+            res = subprocess.run('git rev-parse --abbrev-ref HEAD', stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True, check=True)
+            branch_name = res.stdout.decode(encoding = 'utf8', errors='ignore') if len(res.stdout) > 0 else ''
+            version = {
+                'app': 'sd.next',
+                'updated': updated,
+                'hash': githash,
+                'url': origin.replace('\n', '') + '/tree/' + branch_name.replace('\n', '')
+            }
+        except Exception:
+            version = { 'app': 'sd.next', 'version': 'unknown' }
+    return version
+
+
 # check version of the main repo and optionally upgrade it
 def check_version(offline=False, reset=True): # pylint: disable=unused-argument
     if args.skip_all:
@@ -744,8 +802,7 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
         log.error('Not a git repository')
         if not args.ignore:
             sys.exit(1)
-    ver = git('log -1 --pretty=format:"%h %ad"')
-    log.info(f'Version: {ver}')
+    log.info(f'Version: {print_dict(get_version())}')
     if args.version or args.skip_git:
         return
     commit = git('rev-parse HEAD')
@@ -873,11 +930,13 @@ def extensions_preload(parser):
         from modules.script_loading import preload_extensions
         from modules.paths_internal import extensions_builtin_dir, extensions_dir
         extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
+        preload_time = {}
         for ext_dir in extension_folders:
             t0 = time.time()
             preload_extensions(ext_dir, parser)
             t1 = time.time()
-            log.info(f'Extension preload: {round(t1 - t0, 1)}s {ext_dir}')
+            preload_time[ext_dir] = round(t1 - t0, 2)
+        log.info(f'Extension preload: {preload_time}')
     except Exception:
         log.error('Error running extension preloading')
     if args.profile:

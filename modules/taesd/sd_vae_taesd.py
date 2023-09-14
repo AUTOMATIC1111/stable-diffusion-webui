@@ -61,3 +61,22 @@ def decode(latents):
     enc = latents.unsqueeze(0).to(devices.device, devices.dtype_vae)
     image = vae.decoder(enc).clamp(0, 1).detach()
     return image[0]
+
+def encode(image):
+    from modules import shared
+    model_class = shared.sd_model_type
+    if model_class == 'ldm':
+        model_class = 'sd'
+    if 'sd' not in model_class:
+        shared.log.warning(f'TAESD unsupported model type: {model_class}')
+        return Image.new('RGB', (8, 8), color = (0, 0, 0))
+    vae = taesd_models[f'{model_class}-encoder']
+    if vae is None:
+        model_path = os.path.join(paths_internal.models_path, "TAESD", f"tae{model_class}_encoder.pth")
+        download_model(model_path)
+        if os.path.exists(model_path):
+            taesd_models[f'{model_class}-encoder'] = TAESD(encoder_path=model_path, decoder_path=None)
+            vae = taesd_models[f'{model_class}-encoder']
+            vae.to(devices.device, devices.dtype_vae)
+    latents = vae.encoder(image).detach()
+    return latents

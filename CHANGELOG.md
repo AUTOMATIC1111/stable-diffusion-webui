@@ -1,5 +1,51 @@
 # Change Log for SD.Next
 
+## Update for 2023-09-13
+
+Started as a mostly a service release with quite a few fixes, but then...  
+Major changes how **hires** works as well as support for a very interesting new model [Wuerstchen](https://huggingface.co/blog/wuertschen)  
+
+- tons of fixes  
+- changes to **hires**  
+  - enable non-latent upscale modes (standard upscalers)  
+  - when using latent upscale, hires pass is run automatically  
+  - when using non-latent upscalers, hires pass is skipped by default  
+    enabled using **force hires** option in ui  
+    hires was not designed to work with standard upscalers, but i understand this is a common workflow  
+  - when using refiner, upscale/hires runs before refiner pass  
+  - second pass can now also utilize full/quick vae quality  
+  - note that when combining non-latent upscale, hires and refiner output quality is maximum,  
+    but operations are really resource intensive as it includes: *base->decode->upscale->encode->hires->refine*
+  - all combinations of: decode full/quick + upscale none/latent/non-latent + hires on/off + refiner on/off  
+    should be supported, but given the number of combinations, issues are possible  
+  - all operations are captured in image medata
+- diffusers:
+  - allow loading of sd/sdxl models from safetensors without online connectivity
+  - support for new model: [wuerstchen](https://huggingface.co/warp-ai/wuerstchen)  
+    its a high-resolution model (1024px+) that nearly doubls performance of sd-xl with much lower resource requirements  
+    go to *models -> huggingface -> search "warp-ai/wuerstchen" -> download*  
+    its nearly 12gb in size, so be patient :)
+- minor re-layout of the main ui  
+- update **ui hints**  
+- updated **models -> civitai**  
+  - search and download loras  
+  - find previews for already downloaded models or loras  
+- new option **inference mode**  
+  - default is standard `torch.no_grad`  
+    new option is `torch.inference_only` which is slightly faster and uses less vram, but only works on some gpus  
+- new cmdline param `--no-metadata`  
+  skips reading metadata from models that are not already cached  
+- updated **gradio**  
+- **styles** support for subfolders  
+- **css** optimizations
+- clean-up **logging**  
+  - capture system info in startup log  
+  - better diagnostic output  
+  - capture extension output  
+  - capture ldm output  
+  - cleaner server restart  
+  - custom exception handling
+
 ## Update for 2023-09-06
 
 One week later, another large update!

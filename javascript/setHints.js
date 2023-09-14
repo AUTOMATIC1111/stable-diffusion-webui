@@ -52,6 +52,7 @@ async function setHints() {
     const res = await fetch('/file=html/locale_en.json');
     const json = await res.json();
     localeData.data = Object.values(json).flat();
+    for (const e of localeData.data) e.label = e.label.toLowerCase().trim();
   }
   const elements = [
     ...Array.from(gradioApp().querySelectorAll('button')),
@@ -65,7 +66,7 @@ async function setHints() {
   localeData.finished = true;
   const t0 = performance.now();
   for (const el of elements) {
-    const found = localeData.data.find((l) => l.label === el.textContent.trim());
+    const found = localeData.data.find((l) => l.label === el.textContent.toLowerCase().trim());
     if (found?.localized?.length > 0) {
       localized++;
       el.textContent = found.localized;
@@ -87,7 +88,7 @@ async function setHints() {
   log('setHints', { type: localeData.type, elements: elements.length, localized, hints, data: localeData.data.length, time: t1 - t0 });
   // sortUIElements();
   removeSplash();
-  // validateHints(elements, localeData.data)
+  // validateHints(elements, localeData.data);
 }
 
 onAfterUiUpdate(async () => {

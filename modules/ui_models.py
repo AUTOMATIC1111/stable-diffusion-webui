@@ -8,6 +8,7 @@ from modules.ui_common import create_refresh_button
 from modules.call_queue import wrap_gradio_gpu_call
 from modules.shared import opts, log
 import modules.errors
+import modules.hashes
 
 
 def create_ui():
@@ -201,19 +202,15 @@ def create_ui():
 
                 def hf_download_model(hub_id: str, token, variant, revision, mirror):
                     from modules.modelloader import download_diffusers_model
-                    try:
-                        download_diffusers_model(hub_id, cache_dir=opts.diffusers_dir, token=token, variant=variant, revision=revision, mirror=mirror)
-                    except Exception as e:
-                        log.error(f"Diffuser model downloaded error: model={hub_id} {e}")
-                        return f"Diffuser model downloaded error: model={hub_id} {e}"
+                    download_diffusers_model(hub_id, cache_dir=opts.diffusers_dir, token=token, variant=variant, revision=revision, mirror=mirror)
                     from modules.sd_models import list_models # pylint: disable=W0621
                     list_models()
-                    log.info(f"Diffuser model downloaded: model={hub_id}")
-                    return f'Diffuser model downloaded: model={hub_id}'
+                    log.info(f'Diffuser model downloaded: model="{hub_id}"')
+                    return f'Diffuser model downloaded: model="{hub_id}"'
 
                 with gr.Column(scale=6):
                     with gr.Row():
-                        hf_search_text = gr.Textbox('', label = 'Seach models', placeholder='search huggingface models')
+                        hf_search_text = gr.Textbox('', label = 'Search models', placeholder='search huggingface models')
                         hf_search_btn = ToolButton(value="🔍", label="Search")
                     with gr.Row():
                         with gr.Column(scale=2):
@@ -252,7 +249,7 @@ def create_ui():
                     if tag is not None and len(tag) > 0:
                         url += f'&tag={tag}'
                     r = requests.get(url, timeout=60, headers=headers)
-                    log.debug(f'CivitAI search: name={name} tag={tag} status={r.status_code}')
+                    log.debug(f'CivitAI search: name="{name}" tag={tag or "none"} status={r.status_code}')
                     if r.status_code != 200:
                         return [], [], []
                     body = r.json()
@@ -261,6 +258,8 @@ def create_ui():
                     data1 = []
                     for model in data:
                         found = 0
+                        if model_type == 'LoRA' and model['type'] == 'LORA':
+                            found += 1
                         for variant in model['modelVersions']:
                             if model_type == 'SD 1.5':
                                 if 'SD 1.' in variant['baseModel']:
@@ -297,7 +296,7 @@ def create_ui():
                                     d['baseModel'],
                                     d['createdAt'],
                                 ])
-                    log.debug(f'CivitAI select: model={in_data[evt.index[0]]} versions={len(data2)}')
+                    log.debug(f'CivitAI select: model="{in_data[evt.index[0]]}" versions={len(data2)}')
                     return data2, preview_img
 
                 def civit_select2(evt: gr.SelectData, in_data):
@@ -315,7 +314,7 @@ def create_ui():
                                             json.dumps(f['metadata']),
                                             f['downloadUrl'],
                                         ])
-                    log.debug(f'CivitAI select: model={in_data[evt.index[0]]} files={len(data3)}')
+                    log.debug(f'CivitAI select: model="{in_data[evt.index[0]]}" files={len(data3)}')
                     return data3
 
                 def civit_select3(evt: gr.SelectData, in_data):
@@ -336,7 +335,7 @@ def create_ui():
                     list_models()
                     return res
 
-                def civit_download_previews():
+                def civit_download_previews(civit_previews_rehash):
                     import requests
                     from modules.ui_extra_networks import extra_pages
                     from modules.modelloader import download_civit_preview
@@ -347,17 +346,26 @@ def create_ui():
                             if item.get('fullname', None) is None:
                                 continue
                             if 'card-no-preview.png' in item['preview'] and os.path.isfile(item['fullname']):
+                                sha = item.get('hash', None)
                                 if item.get('hash', None) is None:
-                                    log.debug(f'CivitAI skipping item without hash: name={item["name"]}')
+                                    log.debug(f'CivitAI skipping item without hash: name="{item["name"]}"')
                                     continue
-                                url = f'https://civitai.com/api/v1/model-versions/by-hash/{item["hash"]}'
-                                r = requests.get(url, timeout=5, headers=headers)
-                                log.debug(f'CivitAI search: name={item["name"]} hash={item["hash"]} status={r.status_code}')
+                                r = requests.get(f'https://civitai.com/api/v1/model-versions/by-hash/{sha}', timeout=5, headers=headers)
+                                log.debug(f'CivitAI search: name="{item["name"]}" hash={sha} status={r.status_code}')
                                 if r.status_code == 200:
                                     d = r.json()
                                     if d.get('images') is not None and len(d['images']) > 0 and len(d['images'][0]['url']) > 0:
                                         preview_url = d['images'][0]['url']
                                         res += download_civit_preview(item['filename'], preview_url) + '<br>'
+                                elif civit_previews_rehash and os.stat(item['fullname']).st_size < (1024 * 1024 * 1024):
+                                    sha = modules.hashes.calculate_sha256(item['fullname'], quiet=True)
+                                    r = requests.get(f'https://civitai.com/api/v1/model-versions/by-hash/{sha}', timeout=5, headers=headers)
+                                    log.debug(f'CivitAI search: name="{item["name"]}" hash={sha} status={r.status_code}')
+                                    if r.status_code == 200:
+                                        d = r.json()
+                                        if d.get('images') is not None and len(d['images']) > 0 and len(d['images'][0]['url']) > 0:
+                                            preview_url = d['images'][0]['url']
+                                            res += download_civit_preview(item['filename'], preview_url) + '<br>'
                     return res
 
                 with gr.Row():
@@ -365,7 +373,7 @@ def create_ui():
                         civit_model_type = gr.Dropdown(label='Model type', choices=['SD 1.5', 'SD XL', 'LoRA', 'Other'], value='LoRA')
                     with gr.Column(scale=15):
                         with gr.Row():
-                            civit_search_text = gr.Textbox('', label = 'Seach models', placeholder='keyword')
+                            civit_search_text = gr.Textbox('', label = 'Search models', placeholder='keyword')
                             civit_search_tag = gr.Textbox('', label = '', placeholder='tags')
                             civit_search_btn = ToolButton(value="🔍", label="Search", interactive=False)
                 with gr.Row():
@@ -389,6 +397,7 @@ def create_ui():
                     civit_results1 = gr.DataFrame(value = None, label = 'Search results', show_label = True, interactive = False, wrap = True, overflow_row_behaviour = 'paginate', max_rows = 10, headers = civit_headers1, datatype = civit_types1, type='array')
                 with gr.Row():
                     civit_previews_btn = gr.Button(value="Fetch previews for existing models", variant='primary')
+                    civit_previews_rehash = gr.Checkbox(value=False, label="Check alternative hash")
 
                 civit_search_text.submit(fn=civit_search, inputs=[civit_search_text, civit_search_tag, civit_model_type], outputs=[civit_results1, civit_results2, civit_results3])
                 civit_search_tag.submit(fn=civit_search, inputs=[civit_search_text, civit_search_tag, civit_model_type], outputs=[civit_results1, civit_results2, civit_results3])
@@ -397,4 +406,4 @@ def create_ui():
                 civit_results2.select(fn=civit_select2, inputs=[civit_results2], outputs=[civit_results3])
                 civit_results3.select(fn=civit_select3, inputs=[civit_results3], outputs=[civit_selected, civit_name, civit_search_btn])
                 civit_download_model_btn.click(fn=civit_download_model, inputs=[civit_selected, civit_name, civit_path, civit_model_type, models_image], outputs=[models_outcome])
-                civit_previews_btn.click(fn=civit_download_previews, inputs=[], outputs=[models_outcome])
+                civit_previews_btn.click(fn=civit_download_previews, inputs=[civit_previews_rehash], outputs=[models_outcome])

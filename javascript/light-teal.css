@@ -77,7 +77,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .py-6 { padding-bottom: 0; }
 .tabs { background-color: var(--background-color); }
 .block.token-counter span { background-color: var(--input-background-fill) !important; box-shadow: 2px 2px 2px #111; border: none !important; font-size: 0.8rem; }
-.tab-nav { zoom: 120%; margin-bottom: 10px; border-bottom: 2px solid var(--highlight-color) !important; padding-bottom: 2px; }
+.tab-nav { zoom: 120%; margin-top: 10px; margin-bottom: 10px; border-bottom: 2px solid var(--highlight-color) !important; padding-bottom: 2px; }
 .label-wrap { margin: 16px 0px 8px 0px; }
 .gradio-slider input[type="number"] { width: 4.5em; font-size: 0.8rem; height: 20px; }
 .gradio-button.tool { border: none; background: none; box-shadow: none; filter: hue-rotate(340deg) saturate(0.5); }
@@ -103,7 +103,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #img2img_settings { min-width: calc(2 * var(--left-column)); max-width: calc(2 * var(--left-column)); background-color: #111111; padding-top: 16px; }
 #interrogate, #deepbooru { margin: 0 0px 10px 0px; max-width: 80px; max-height: 80px; font-weight: normal; font-size: 0.95em; }
 #quicksettings .gr-button-tool { font-size: 1.6rem; box-shadow: none; margin-left: -20px; margin-top: -2px; height: 2.4em; }
-#quicksettings > div, #quicksettings > fieldset { line-height: 1.4em; margin-top: 0.4em; }
 #open_folder_extras, #footer, #style_pos_col, #style_neg_col, #roll_col, #extras_upscaler_2, #extras_upscaler_2_visibility, #txt2img_seed_resize_from_w, #txt2img_seed_resize_from_h { display: none; }
 #save-animation { border-radius: var(--radius-sm) !important; margin-bottom: 16px; background-color: #111111; }
 #script_list { padding: 4px; margin-top: 20px; margin-bottom: 20px; }

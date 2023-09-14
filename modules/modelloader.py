@@ -4,6 +4,7 @@ import shutil
 import importlib
 from typing import Dict
 from urllib.parse import urlparse
+import PIL.Image as Image
 from modules import shared
 from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone
 from modules.paths import script_path, models_path
@@ -59,17 +60,17 @@ def download_civit_preview(model_path: str, preview_url: str):
     import rich.progress as p
     _, ext = os.path.splitext(preview_url)
     model_name, _ = os.path.splitext(os.path.basename(model_path))
-    preview_file = os.path.splitext(model_path)[0] + ext
+    preview_file = f'{os.path.splitext(model_path)[0]}{ext}' if '.safetensors' in model_path.lower() else f'{model_path}{ext}'
     res = f'CivitAI download: name={model_name} url={preview_url}'
     req = requests.get(preview_url, stream=True, timeout=30)
     total_size = int(req.headers.get('content-length', 0))
     block_size = 16384 # 16KB blocks
     written = 0
-    shared.state.begin()
-    shared.state.job = 'download preview'
+    img = None
+    shared.state.begin('civitai-download-preview')
     try:
         with open(preview_file, 'wb') as f:
-            with p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn()) as progress:
+            with p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn(), console=shared.console) as progress:
                 task = progress.add_task(description="Download starting", total=total_size)
                 for data in req.iter_content(block_size):
                     written = written + len(data)
@@ -78,13 +79,14 @@ def download_civit_preview(model_path: str, preview_url: str):
         if written < 1024: # min threshold
             os.remove(preview_file)
             raise ValueError(f'removed invalid download: bytes={written}')
+        img = Image.open(preview_file)
     except Exception as e:
         shared.log.error(f'CivitAI download error: name={model_name} url={preview_url} {e}')
-    if total_size == written:
-        shared.log.info(f'{res} size={total_size}')
-    else:
-        shared.log.error(f'{res} size={total_size} written={written}')
     shared.state.end()
+    if img is None:
+        return res
+    shared.log.info(f'{res} size={total_size} image={img.size}')
+    img.close()
     return res
 
 
@@ -105,18 +107,17 @@ def download_civit_model(model_url: str, model_name: str, model_path: str, model
     total_size = int(req.headers.get('content-length', 0))
     block_size = 16384 # 16KB blocks
     written = 0
-    shared.state.begin()
-    shared.state.job = 'download model'
+    shared.state.begin('civitai-download-model')
     try:
         with open(model_file, 'wb') as f:
-            with p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn()) as progress:
+            with p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn(), console=shared.console) as progress:
                 task = progress.add_task(description="Download starting", total=total_size)
                 # for data in tqdm(req.iter_content(block_size), total=total_size//1024, unit='KB', unit_scale=False):
                 for data in req.iter_content(block_size):
                     written = written + len(data)
                     f.write(data)
                     progress.update(task, advance=block_size, description="Downloading")
-        if written < 1024 * 1024 * 1024: # min threshold
+        if written < 1024 * 1024: # min threshold
             os.remove(model_file)
             raise ValueError(f'removed invalid download: bytes={written}')
         if preview is not None:
@@ -136,8 +137,7 @@ def download_civit_model(model_url: str, model_name: str, model_path: str, model
 def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config: Dict[str, str] = None, token = None, variant = None, revision = None, mirror = None):
     from diffusers import DiffusionPipeline
     import huggingface_hub as hf
-    shared.state.begin()
-    shared.state.job = 'download model'
+    shared.state.begin('huggingface-download-model')
     if download_config is None:
         download_config = {
             "force_download": False,
@@ -157,26 +157,28 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
     if token is not None and len(token) > 2:
         shared.log.debug(f"Diffusers authentication: {token}")
         hf.login(token)
-    pipeline_dir = DiffusionPipeline.download(hub_id, **download_config)
+    pipeline_dir = None
     try:
-        model_info_dict = hf.model_info(hub_id).cardData # pylint: disable=no-member # TODO Diffusers is this real error?
+        pipeline_dir = DiffusionPipeline.download(hub_id, **download_config)
+    except Exception as e:
+        shared.log.error(f"Diffusers download error: {hub_id} {e}")
+    try:
+        model_info_dict = hf.model_info(hub_id).cardData if pipeline_dir is not None else None # pylint: disable=no-member # TODO Diffusers is this real error?
     except Exception:
         model_info_dict = None
-    # some checkpoints need to be downloaded as "hidden" as they just serve as pre- or post-pipelines of other pipelines
-    if model_info_dict is not None and "prior" in model_info_dict:
+    if model_info_dict is not None and "prior" in model_info_dict: # some checkpoints need to be downloaded as "hidden" as they just serve as pre- or post-pipelines of other pipelines
         download_dir = DiffusionPipeline.download(model_info_dict["prior"][0], **download_config)
         model_info_dict["prior"] = download_dir
-        # mark prior as hidden
-        with open(os.path.join(download_dir, "hidden"), "w", encoding="utf-8") as f:
+        with open(os.path.join(download_dir, "hidden"), "w", encoding="utf-8") as f: # mark prior as hidden
             f.write("True")
-    shared.writefile(model_info_dict, os.path.join(pipeline_dir, "model_info.json"))
+    if pipeline_dir is not None:
+        shared.writefile(model_info_dict, os.path.join(pipeline_dir, "model_info.json"))
     shared.state.end()
     return pipeline_dir
 
 
 def load_diffusers_models(model_path: str, command_path: str = None):
     t0 = time.time()
-    import huggingface_hub as hf
     places = []
     places.append(model_path)
     if command_path is not None and command_path != model_path:
@@ -187,12 +189,35 @@ def load_diffusers_models(model_path: str, command_path: str = None):
         if not os.path.isdir(place):
             continue
         try:
+            """
+            import huggingface_hub as hf
             res = hf.scan_cache_dir(cache_dir=place)
             for r in list(res.repos):
                 cache_path = os.path.join(r.repo_path, "snapshots", list(r.revisions)[-1].commit_hash)
                 diffuser_repos.append({ 'name': r.repo_id, 'filename': r.repo_id, 'path': cache_path, 'size': r.size_on_disk, 'mtime': r.last_modified, 'hash': list(r.revisions)[-1].commit_hash, 'model_info': str(os.path.join(cache_path, "model_info.json")) })
                 if not os.path.isfile(os.path.join(cache_path, "hidden")):
                     output.append(str(r.repo_id))
+            """
+            for folder in os.listdir(place):
+                try:
+                    if "--" not in folder:
+                        continue
+                    _, name = folder.split("--", maxsplit=1)
+                    name = name.replace("--", "/")
+                    snapshots = os.listdir(os.path.join(place, folder, "snapshots"))
+                    if len(snapshots) == 0:
+                        shared.log.warning(f"Diffusers folder has no snapshots: location={place} folder={folder} name={name}")
+                        continue
+                    commit = snapshots[-1]
+                    folder = os.path.join(place, folder, 'snapshots', commit)
+                    mtime = os.path.getmtime(folder)
+                    info = os.path.join(folder, "model_info.json")
+                    diffuser_repos.append({ 'name': name, 'filename': name, 'path': folder, 'hash': commit, 'mtime': mtime, 'model_info': info })
+                    if os.path.exists(os.path.join(folder, 'hidden')):
+                        continue
+                    output.append(name)
+                except Exception as e:
+                    shared.log.error(f"Error analyzing diffusers model: {place}/{folder} {e}")
         except Exception as e:
             shared.log.error(f"Error listing diffusers: {place} {e}")
     shared.log.debug(f'Scanning diffusers cache: {model_path} {command_path} items={len(output)} time={time.time()-t0:.2f}s')
@@ -300,6 +325,19 @@ def extension_filter(ext_filter=None, ext_blacklist=None):
         return (not ext_filter or any(fp.upper().endswith(ew) for ew in ext_filter)) and (not ext_blacklist or not any(fp.upper().endswith(ew) for ew in ext_blacklist))
     return filter
 
+def load_file_from_url(url: str, *, model_dir: str, progress: bool = True, file_name = None):
+    """Download a file from url into model_dir, using the file present if possible. Returns the path to the downloaded file."""
+    os.makedirs(model_dir, exist_ok=True)
+    if not file_name:
+        parts = urlparse(url)
+        file_name = os.path.basename(parts.path)
+    cached_file = os.path.abspath(os.path.join(model_dir, file_name))
+    if not os.path.exists(cached_file):
+        shared.log.info(f'Downloading: url="{url}" file={cached_file}')
+        from torch.hub import download_url_to_file
+        download_url_to_file(url, cached_file, progress=progress)
+    return cached_file
+
 
 def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None, ext_blacklist=None) -> list:
     """
@@ -317,8 +355,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
         output:list = [*filter(extension_filter(ext_filter, ext_blacklist), directory_files(*places))]
         if model_url is not None and len(output) == 0:
             if download_name is not None:
-                from basicsr.utils.download_util import load_file_from_url
-                dl = load_file_from_url(model_url, places[0], True, download_name)
+                dl = load_file_from_url(model_url, model_dir=places[0], progress=True, file_name=download_name)
                 output.append(dl)
             else:
                 output.append(model_url)
@@ -388,7 +425,6 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
         pass
 
 
-
 def load_upscalers():
     # We can only do this 'magic' method to dynamically load upscalers if they are referenced, so we'll try to import any _model.py files before looking in __subclasses__
     modules_dir = os.path.join(shared.script_path, "modules")
@@ -418,6 +454,6 @@ def load_upscalers():
         datas += scaler.scalers
     shared.sd_upscalers = sorted(
         datas,
-        # Special case for UpscalerNone keeps it at the beginning of the list.
-        key=lambda x: x.name.lower() if not isinstance(x.scaler, (UpscalerNone, UpscalerLanczos, UpscalerNearest)) else ""
+        key=lambda x: x.name.lower() if not isinstance(x.scaler, (UpscalerNone, UpscalerLanczos, UpscalerNearest)) else "" # Special case for UpscalerNone keeps it at the beginning of the list.
     )
+    shared.log.debug(f"Loaded upscalers: items={len(shared.sd_upscalers)}")

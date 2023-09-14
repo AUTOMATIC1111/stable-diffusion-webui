@@ -54,9 +54,7 @@ def to_half(tensor, enable):
 
 
 def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_model_name, interp_method, multiplier, save_as_half, custom_name, checkpoint_format, config_source, bake_in_vae, discard_weights, save_metadata): # pylint: disable=unused-argument
-    shared.state.begin()
-    shared.state.job = 'model-merge'
-
+    shared.state.begin('model-merge')
     save_as_half = save_as_half == 0
 
     def fail(message):
@@ -321,9 +319,7 @@ def run_modelconvert(model, checkpoint_formats, precision, conv_type, custom_nam
         "vae": vae_conv,
         "other": others_conv
     }
-    shared.state.begin()
-    shared.state.job = 'model-convert'
-
+    shared.state.begin('model-convert')
     model_info = sd_models.checkpoints_list[model]
     shared.state.textinfo = f"Loading {model_info.filename}..."
     shared.log.info(f"Model convert loading: {model_info.filename}")

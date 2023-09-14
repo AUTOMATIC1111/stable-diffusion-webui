@@ -21,12 +21,18 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
     def list_items(self):
         if sd_models.model_data.sd_model is None:
             embeddings = []
-            for root, _dirs, fns in os.walk(shared.opts.embeddings_dir, followlinks=True):
-                for fn in fns:
-                    if fn.lower().endswith(".pt") or fn.lower().endswith(".safetensors"):
-                        embedding = Embedding(0, fn)
-                        embedding.filename = os.path.join(root, fn)
+
+            def list_folder(folder):
+                for filename in os.listdir(folder):
+                    fn = os.path.join(folder, filename)
+                    if os.path.isfile(fn) and (fn.lower().endswith(".pt") or fn.lower().endswith(".safetensors")):
+                        embedding = Embedding(0, os.path.basename(fn))
+                        embedding.filename = fn
                         embeddings.append(embedding)
+                    elif os.path.isdir(fn) and not fn.startswith('.'):
+                        list_folder(fn)
+
+            list_folder(shared.opts.embeddings_dir)
         elif shared.backend == shared.Backend.ORIGINAL:
             embeddings = list(sd_hijack.model_hijack.embedding_db.word_embeddings.values())
         elif hasattr(sd_models.model_data.sd_model, 'embedding_db'):
@@ -35,6 +41,9 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
             embeddings = []
         for embedding in embeddings:
             path, _ext = os.path.splitext(embedding.filename)
+            tags = {}
+            if embedding.tag is not None:
+                tags[embedding.tag]=1
             yield {
                 "name": os.path.splitext(embedding.name)[0],
                 "filename": embedding.filename,
@@ -44,6 +53,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
                 "search_term": self.search_terms_from_path(embedding.filename),
                 "prompt": json.dumps(os.path.splitext(embedding.name)[0]),
                 "local_preview": f"{path}.preview.{shared.opts.samples_format}",
+                "tags": tags,
             }
 
     def allowed_directories_for_previews(self):

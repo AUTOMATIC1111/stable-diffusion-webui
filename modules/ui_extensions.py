@@ -34,7 +34,7 @@ def update_extension_list():
     try:
         with open(os.path.join(paths.script_path, "html", "extensions.json"), "r", encoding="utf-8") as f:
             extensions_list = json.loads(f.read())
-            shared.log.debug(f'Extensions list loaded: {os.path.join(paths.script_path, "html", "extensions.json")}')
+            # shared.log.debug(f'Extensions list loaded: {os.path.join(paths.script_path, "html", "extensions.json")}')
     except Exception:
         shared.log.debug(f'Extensions list failed to load: {os.path.join(paths.script_path, "html", "extensions.json")}')
     found = []
@@ -290,7 +290,7 @@ def refresh_extensions_list_from_data(search_text, sort_column):
                 <th>Current version</th>
                 <th></th>
             </tr>
-        </thead>
+            </thead>
         <tbody>"""
     if len(extensions_list) == 0:
         update_extension_list()

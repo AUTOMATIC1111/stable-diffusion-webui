@@ -3,7 +3,7 @@ import torch.nn.functional as F
 import math
 import time
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
-from modules import shared
+from modules import shared, devices
 
 
 class NoiseScheduleVP:
@@ -757,10 +757,10 @@ class UniPC:
             #print(f"Running UniPC Sampling with {timesteps.shape[0]} timesteps, order {order}")
             assert steps >= order, "UniPC order must be < sampling steps"
             assert timesteps.shape[0] - 1 == steps
-            with Progress(TextColumn('[cyan]{task.description}'), BarColumn(), TaskProgressColumn(), TimeRemainingColumn(), TimeElapsedColumn()) as progress:
+            with Progress(TextColumn('[cyan]{task.description}'), BarColumn(), TaskProgressColumn(), TimeRemainingColumn(), TimeElapsedColumn(), console=shared.console) as progress:
                 task = progress.add_task(description="Initializing", total=steps)
                 t = time.time()
-                with torch.no_grad():
+                with devices.inference_context():
                     vec_t = timesteps[0].expand((x.shape[0]))
                     model_prev_list = [self.model_fn(x, vec_t)]
                     t_prev_list = [vec_t]

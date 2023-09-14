@@ -518,7 +518,7 @@
   {"id":"","label":"logSNR","localized":"","hint":""},
   {"id":"","label":"UniPC order (must be < sampling steps)","localized":"","hint":""},
   {"id":"","label":"UniPC lower order final","localized":"","hint":""},
-  {"id":"","label":"Enable addtional postprocessing operations","localized":"추가 후처리 작업","hint":""},
+  {"id":"","label":"Enable additional postprocessing operations","localized":"추가 후처리 작업","hint":""},
   {"id":"","label":"Postprocessing operation order","localized":"후처리 작업 순서","hint":""},
   {"id":"","label":"Maximum number of images in upscaling cache","localized":"","hint":""},
   {"id":"","label":"Move VAE and CLIP to RAM when training if possible","localized":"가능하다면 학습 시 VAE와 CLIP 모델을 램으로 이동","hint":""},

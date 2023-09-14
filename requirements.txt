@@ -44,13 +44,13 @@ fasteners
 typing-extensions==4.7.1
 antlr4-python3-runtime==4.9.3
 requests==2.31.0
-tqdm==4.65.0
+tqdm==4.66.1
 accelerate==0.20.3
 opencv-python-headless==4.7.0.72
-diffusers==0.20.2
+diffusers==0.21.1
 einops==0.4.1
-gradio==3.41.2
-huggingface_hub==0.16.4
+gradio==3.43.2
+huggingface_hub==0.17.1
 numexpr==2.8.4
 numpy==1.24.4
 numba==0.57.1

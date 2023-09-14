@@ -5,6 +5,8 @@ Tiny AutoEncoder for Stable Diffusion
 """
 import torch
 import torch.nn as nn
+from modules import devices
+
 
 def conv(n_in, n_out, **kwargs):
     return nn.Conv2d(n_in, n_out, 3, padding=1, **kwargs)
@@ -65,7 +67,7 @@ class TAESD(nn.Module):
         return x.sub(TAESD.latent_shift).mul(2 * TAESD.latent_magnitude)
 
 
-@torch.no_grad()
+@devices.inference_context()
 def main():
     from PIL import Image
     import sys

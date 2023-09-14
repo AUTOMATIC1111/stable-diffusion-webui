@@ -13,32 +13,28 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         lora.list_available_loras()
 
     def list_items(self):
-        for name, lora_on_disk in lora.available_loras.items():
-            path, _ext = os.path.splitext(lora_on_disk.filename)
-            alias = lora_on_disk.get_alias()
+        for name, l in lora.available_loras.items():
+            path, _ext = os.path.splitext(l.filename)
+            alias = l.get_alias()
             prompt = f" <lora:{alias}:{shared.opts.extra_networks_default_multiplier}>"
             prompt = json.dumps(prompt)
-            metadata =  json.dumps(lora_on_disk.metadata, indent=4) if lora_on_disk.metadata else None
-            possible_tags = lora_on_disk.metadata.get('ss_tag_frequency', {}) if lora_on_disk.metadata is not None else {}
+            metadata =  json.dumps(l.metadata, indent=4) if l.metadata else None
+            possible_tags = l.metadata.get('ss_tag_frequency', {}) if l.metadata is not None else {}
             if isinstance(possible_tags, str):
                 possible_tags = {}
-                shared.log.debug(f'Lora has invalid metadata: {path}')
             tags = {}
-            for tag in possible_tags.keys():
-                if '_' not in tag:
-                    tag = f'0_{tag}'
-                words = tag.split('_', 1)
+            for k, v in possible_tags.items():
+                words = k.split('_', 1) if '_' in k else [v, k]
                 tags[' '.join(words[1:])] = words[0]
-            # shared.log.debug(f'Lora: {path}: name={name} alias={alias} tags={tags}')
             yield {
                 "name": name,
                 "filename": path,
-                "fullname": lora_on_disk.filename,
-                "hash": lora_on_disk.shorthash,
+                "fullname": l.filename,
+                "hash": l.shorthash,
                 "preview": self.find_preview(path),
                 "description": self.find_description(path),
                 "info": self.find_info(path),
-                "search_term": self.search_terms_from_path(lora_on_disk.filename) + ' '.join(tags.keys()),
+                "search_term": self.search_terms_from_path(l.filename) + ' '.join(tags.keys()),
                 "prompt": prompt,
                 "local_preview": f"{path}.{shared.opts.samples_format}",
                 "metadata": metadata,

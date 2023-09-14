@@ -264,10 +264,13 @@ class RealesrganItem(BaseModel):
     path: Optional[str] = Field(title="Path")
     scale: Optional[int] = Field(title="Scale")
 
-class PromptStyleItem(BaseModel):
+class StyleItem(BaseModel):
     name: str = Field(title="Name")
     prompt: Optional[str] = Field(title="Prompt")
     negative_prompt: Optional[str] = Field(title="Negative Prompt")
+    extra: Optional[str] = Field(title="Extra")
+    filename: Optional[str] = Field(title="Filename")
+    preview: Optional[str] = Field(title="Preview")
 
 class ArtistItem(BaseModel):
     name: str = Field(title="Name")

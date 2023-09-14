@@ -22,7 +22,6 @@ Stuff to be added, in no particular order...
   - Port **A1111** stuff
   - Port `p.all_hr_prompts`
   - Import core repos to reduce dependencies
-  - Parse StabilityAI `modelspec` metadata
 - Non-technical:
   - Update Wiki
   - Get more high-quality upscalers
@@ -30,14 +29,15 @@ Stuff to be added, in no particular order...
   - [Localization](https://app.transifex.com/signup/open-source/)
 - New Minor
   - Prompt padding for positive/negative
+  - Add EN provider for VAEs
   - XYZ grid upscalers
   - Built-in `motd`-style notifications
   - Docker PR
 - New Major
-  - Style editor (use json format instead of csv)
-  - Profile manager (for config.json and ui-config.json)
+  - Style editor
+  - Profile manager (for `config.json` and `ui-config.json`)
   - Multi-user support
-  - Add [SAG](https://huggingface.co/docs/diffusers/v0.19.3/en/api/pipelines/self_attention_guidance),(https://github.com/ashen-sensored/sd_webui_SAG)
+  - Add [SAG](https://huggingface.co/docs/diffusers/v0.19.3/en/api/pipelines/self_attention_guidance), [SAG](https://github.com/ashen-sensored/sd_webui_SAG)
   - Image phash and hdash using `imagehash`
   - Model merge using `git-rebasin`
   - Enable refiner-style workflow for `ldm` backend
@@ -49,11 +49,9 @@ Stuff to be added, in no particular order...
     - Templates for SD-XL training
     - Lora train UI
 - Redesign
-  - Extensions reporting framework
   - New UI
   - New inpainting canvas controls (move from backend to purely frontend)
   - New image browser (move from backend to purely frontend)
-  - New extra networks (move from backend to purely frontend)
   - Change workflows from static/legacy to steps-based
 
 ## Investigate

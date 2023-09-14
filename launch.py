@@ -40,7 +40,7 @@ def get_custom_args():
         current = getattr(args, arg)
         if current != default:
             custom[arg] = getattr(args, arg)
-    installer.log.info(f'Command line args: {custom}')
+    installer.log.info(f'Command line args: {sys.argv[1:]} {installer.print_dict(custom)}')
 
 
 @lru_cache()
@@ -121,7 +121,7 @@ def get_memory_stats():
     process = psutil.Process(os.getpid())
     res = process.memory_info()
     ram_total = 100 * res.rss / process.memory_percent()
-    return f'used: {gb(res.rss)} total: {gb(ram_total)}'
+    return f'used={gb(res.rss)} total={gb(ram_total)}'
 
 
 def start_server(immediate=True, server=None):
@@ -137,25 +137,26 @@ def start_server(immediate=True, server=None):
         collected = gc.collect()
     if not immediate:
         time.sleep(3)
-    installer.log.debug(f'Memory {get_memory_stats()} Collected {collected}')
+    if collected > 0:
+        installer.log.debug(f'Memory {get_memory_stats()} Collected {collected}')
     module_spec = importlib.util.spec_from_file_location('webui', 'webui.py')
     # installer.log.debug(f'Loading module: {module_spec}')
     server = importlib.util.module_from_spec(module_spec)
     installer.log.debug(f'Starting module: {server}')
-    installer.log.info(f"Server arguments: {sys.argv[1:]}")
     get_custom_args()
     module_spec.loader.exec_module(server)
+    uvicorn = None
     if args.test:
         installer.log.info("Test only")
         server.wants_restart = False
     else:
         if args.api_only:
-            server = server.api_only()
+            uvicorn = server.api_only()
         else:
-            server = server.webui(restart=not immediate)
+            uvicorn = server.webui(restart=not immediate)
     if args.profile:
         installer.print_profile(pr, 'WebUI')
-    return server
+    return uvicorn, server
 
 
 if __name__ == "__main__":
@@ -164,6 +165,7 @@ if __name__ == "__main__":
     installer.args = args
     installer.setup_logging()
     installer.log.info('Starting SD.Next')
+    sys.excepthook = installer.custom_excepthook
     installer.read_options()
     if args.skip_all:
         args.quick = True
@@ -173,6 +175,7 @@ if __name__ == "__main__":
     if args.skip_git:
         installer.log.info('Skipping GIT operations')
     installer.check_version()
+    installer.log.info(f'Platform: {installer.print_dict(installer.get_platform())}')
     installer.set_environment()
     installer.check_torch()
     installer.check_modified_files()
@@ -207,20 +210,22 @@ if __name__ == "__main__":
     # installer.log.debug(f"Args: {vars(args)}")
     logging.disable(logging.NOTSET if args.debug else logging.DEBUG)
 
-    instance = start_server(immediate=True, server=None)
+    uv, instance = start_server(immediate=True, server=None)
     while True:
         try:
-            alive = instance.thread.is_alive()
-            requests = instance.server_state.total_requests if hasattr(instance, 'server_state') else 0
+            alive = uv.thread.is_alive()
+            requests = uv.server_state.total_requests if hasattr(uv, 'server_state') else 0
         except Exception:
             alive = False
             requests = 0
         if round(time.time()) % 120 == 0:
-            installer.log.debug(f'Server alive={alive} requests={requests} memory {get_memory_stats()} ')
+            state = f'job="{instance.state.job}" {instance.state.job_no}/{instance.state.job_count}' if instance.state.job != '' or instance.state.job_no != 0 or instance.state.job_count != 0 else 'idle'
+            uptime = round(time.time() - instance.state.server_start)
+            installer.log.debug(f'Server alive={alive} jobs={instance.state.total_jobs} requests={requests} uptime={uptime}s memory {get_memory_stats()} {state}')
         if not alive:
-            if instance.wants_restart:
+            if uv is not None and uv.wants_restart:
                 installer.log.info('Server restarting...')
-                instance = start_server(immediate=False, server=instance)
+                uv, instance = start_server(immediate=False, server=instance)
             else:
                 installer.log.info('Exiting...')
                 break

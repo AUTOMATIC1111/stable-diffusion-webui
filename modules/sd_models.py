@@ -1,5 +1,3 @@
-import collections
-import os.path
 import re
 import io
 import sys
@@ -7,6 +5,9 @@ import json
 import time
 import logging
 import threading
+import contextlib
+import collections
+import os.path
 from os import mkdir
 from urllib import request
 from enum import Enum
@@ -130,7 +131,7 @@ class NoWatermark:
 
 def setup_model():
     if not os.path.exists(model_path):
-        os.makedirs(model_path)
+        os.makedirs(model_path, exist_ok=True)
     list_models()
     enable_midas_autodownload()
 
@@ -256,7 +257,7 @@ def select_checkpoint(op='model'):
     if checkpoint_info is not None:
         shared.log.debug(f'Select checkpoint: {op} {checkpoint_info.title if checkpoint_info is not None else None}')
         return checkpoint_info
-    if len(checkpoints_list) == 0:
+    if len(checkpoints_list) == 0 and not shared.cmd_opts.no_download:
         shared.log.error("Cannot run without a checkpoint")
         shared.log.error("Use --ckpt <path-to-checkpoint> to force using existing checkpoint")
         return None
@@ -309,6 +310,20 @@ def write_metadata():
     sd_metadata_pending = 0
 
 
+def scrub_dict(dict_obj, keys):
+    for key in list(dict_obj.keys()):
+        if not isinstance(dict_obj, dict):
+            continue
+        elif key in keys:
+            dict_obj.pop(key, None)
+        elif isinstance(dict_obj[key], dict):
+            scrub_dict(dict_obj[key], keys)
+        elif isinstance(dict_obj[key], list):
+            for item in dict_obj[key]:
+                scrub_dict(item, keys)
+    return
+
+
 def read_metadata_from_safetensors(filename):
     global sd_metadata # pylint: disable=global-statement
     if sd_metadata is None:
@@ -320,6 +335,8 @@ def read_metadata_from_safetensors(filename):
     if res is not None:
         return res
     res = {}
+    if shared.cmd_opts.no_metadata:
+        return {}
     try:
         t0 = time.time()
         with open(filename, mode="rb") as file:
@@ -331,15 +348,29 @@ def read_metadata_from_safetensors(filename):
             json_data = json_start + file.read(metadata_len-2)
             json_obj = json.loads(json_data)
             for k, v in json_obj.get("__metadata__", {}).items():
+                if v.startswith("data:"):
+                    v = 'data'
                 if k == 'format' and v == 'pt':
                     continue
-                if isinstance(v, str) and v[0:1] == '{':
+                large = True if len(v) > 2048 else False
+                if large and k == 'ss_datasets':
+                    continue
+                if large and k == 'workflow':
+                    continue
+                if large and k == 'prompt':
+                    continue
+                if large and k == 'ss_bucket_info':
+                    continue
+                if v[0:1] == '{':
                     try:
-                        res[k] = json.loads(v)
+                        v = json.loads(v)
+                        if large and k == 'ss_tag_frequency':
+                            v = { i: len(j) for i, j in v.items() }
+                        if large and k == 'sd_merge_models':
+                            scrub_dict(v, ['sd_merge_recipe'])
                     except Exception:
                         pass
-                else:
-                    res[k] = v
+                res[k] = v
         sd_metadata[filename] = res
         global sd_metadata_pending # pylint: disable=global-statement
         sd_metadata_pending += 1
@@ -356,7 +387,7 @@ def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unuse
         return None
     try:
         pl_sd = None
-        with progress.open(checkpoint_file, 'rb', description=f'[cyan]Loading weights: [yellow]{checkpoint_file}', auto_refresh=True) as f:
+        with progress.open(checkpoint_file, 'rb', description=f'[cyan]Loading weights: [yellow]{checkpoint_file}', auto_refresh=True, console=shared.console) as f:
             _, extension = os.path.splitext(checkpoint_file)
             if extension.lower() == ".ckpt" and shared.opts.sd_disable_ckpt:
                 shared.log.warning(f"Checkpoint loading disabled: {checkpoint_file}")
@@ -688,13 +719,19 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             if vae is not None:
                 diffusers_load_config["vae"] = vae
 
-        shared.log.info(f'Loading diffuser {op}: {checkpoint_info.filename}')
+        # shared.log.info(f'Loading diffuser {op}: {checkpoint_info.filename}')
         if not os.path.isfile(checkpoint_info.path):
             try:
+                # os.environ.setdefault('HUGGINGFACE_HUB_CACHE', shared.opts.diffusers_dir) # evalulated only on initial diffusers load
+                # diffusers_load_config["cache_dir "] = shared.opts.diffusers_dir # ignored for connected pipelines such as kandinsky-prior
+                # diffusers.utils.constants.DIFFUSERS_CACHE = shared.opts.diffusers_dir
                 # shared.log.debug(f'Diffusers load {op} config: {diffusers_load_config}')
-                sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, **diffusers_load_config)
+                # sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, **diffusers_load_config)
+                sd_model = diffusers.AutoPipelineForText2Image.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+                sd_model.model_type = sd_model.__class__.__name__
             except Exception as e:
-                shared.log.error(f'Failed loading model {op}: {checkpoint_info.path} {e}')
+                shared.log.error(f'Failed loading {op}: {checkpoint_info.path} {e}')
+                return
         else:
             diffusers_load_config["local_files_only "] = True
             diffusers_load_config["extract_ema"] = shared.opts.diffusers_extract_ema
@@ -705,7 +742,13 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             try:
                 if model_type.startswith('Stable Diffusion'):
                     diffusers_load_config['force_zeros_for_empty_prompt '] = shared.opts.diffusers_force_zeros
-                    diffusers_load_config['requires_aesthetics_score '] = shared.opts.diffusers_aesthetics_score
+                    diffusers_load_config['requires_aesthetics_score'] = shared.opts.diffusers_aesthetics_score
+                    diffusers_load_config['config_files'] = {
+                        'v1': 'configs/v1-inference.yaml',
+                        'v2': 'configs/v2-inference-768-v.yaml',
+                        'xl': 'configs/sd_xl_base.yaml',
+                        'xl_refiner': 'configs/sd_xl_refiner.yaml',
+                    }
                 if hasattr(pipeline, 'from_single_file'):
                     diffusers_load_config['use_safetensors'] = True
                     sd_model = pipeline.from_single_file(checkpoint_info.path, **diffusers_load_config)
@@ -786,6 +829,9 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 else:
                     sd_model.vae.config["force_upcast"] = False
                     sd_model.vae.config.force_upcast = False
+                if shared.opts.no_half_vae:
+                    devices.dtype_vae = torch.float32
+                    sd_model.vae.to(devices.dtype_vae)
             shared.log.debug(f'Model {op} VAE: name={sd_vae.loaded_vae_file} upcast={sd_model.vae.config.get("force_upcast", None)}')
         if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):
             sd_model.enable_xformers_memory_efficient_attention()
@@ -990,13 +1036,17 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
     timer.record("config")
     shared.log.debug(f'Model config loaded: {memory_stats()}')
     sd_model = None
-    # shared.log.debug(f'Model config: {sd_config.model.get("params", dict())}')
-    try:
-        clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
-        with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
+    stdout = io.StringIO()
+    with contextlib.redirect_stdout(stdout):
+        try:
+            clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
+            with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
+                sd_model = instantiate_from_config(sd_config.model)
+        except Exception:
             sd_model = instantiate_from_config(sd_config.model)
-    except Exception:
-        sd_model = instantiate_from_config(sd_config.model)
+    for line in stdout.getvalue().splitlines():
+        if len(line) > 0:
+            shared.log.info(f'LDM: {line.strip()}')
     shared.log.debug(f"Model created from config: {checkpoint_config}")
     sd_model.used_config = checkpoint_config
     timer.record("create")
@@ -1141,16 +1191,22 @@ def apply_token_merging(sd_model, token_merging_ratio=0):
     current_token_merging_ratio = getattr(sd_model, 'applied_token_merged_ratio', 0)
     if token_merging_ratio is None or current_token_merging_ratio is None or current_token_merging_ratio == token_merging_ratio:
         return
-    if current_token_merging_ratio > 0:
-        tomesd.remove_patch(sd_model)
+    try:
+        if current_token_merging_ratio > 0:
+            tomesd.remove_patch(sd_model)
+    except Exception:
+        pass
     if token_merging_ratio > 0:
-        shared.log.debug(f'Applying token merging: ratio={token_merging_ratio}')
-        tomesd.apply_patch(
-            sd_model,
-            ratio=token_merging_ratio,
-            use_rand=False,  # can cause issues with some samplers
-            merge_attn=True,
-            merge_crossattn=False,
-            merge_mlp=False
-        )
-    sd_model.applied_token_merged_ratio = token_merging_ratio
+        try:
+            tomesd.apply_patch(
+                sd_model,
+                ratio=token_merging_ratio,
+                use_rand=False,  # can cause issues with some samplers
+                merge_attn=True,
+                merge_crossattn=False,
+                merge_mlp=False
+            )
+            shared.log.debug(f'Applying token merging: ratio={token_merging_ratio}')
+            sd_model.applied_token_merged_ratio = token_merging_ratio
+        except:
+            shared.log.warning(f'Token merging not supported: pipeline={sd_model.__class__.__name__}')

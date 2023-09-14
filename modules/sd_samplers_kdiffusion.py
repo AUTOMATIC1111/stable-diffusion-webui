@@ -142,6 +142,16 @@ class CFGDenoiser(torch.nn.Module):
             else:
                 cond_in = torch.cat([tensor, uncond])
 
+            """
+            adjusted_cond_scale = cond_scale # Adjusted cond_scale for uncond
+            last_uncond_steps = max(0, state.sampling_steps - 2) # Determine the last two steps before uncond stops
+            if self.step >= last_uncond_steps: # Check if we're in the last two steps before uncond stops
+                adjusted_cond_scale *= 1.5 # Apply uncond with 150% cond_scale
+            else:
+                if (self.step - last_uncond_steps) % 3 == 0: # Check if it's one of every three steps after uncond stops
+                    adjusted_cond_scale *= 1.5 # Apply uncond with 150% cond_scale
+            """
+
             if shared.batch_cond_uncond:
                 x_out = self.inner_model(x_in, sigma_in, cond=make_condition_dict([cond_in], image_cond_in))
             else:

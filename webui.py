@@ -1,3 +1,4 @@
+import io
 import os
 import sys
 import glob
@@ -5,19 +6,17 @@ import signal
 import asyncio
 import logging
 import importlib
+import contextlib
 from threading import Thread
 import modules.loader
 import torch # pylint: disable=wrong-import-order
 from modules import timer, errors, paths # pylint: disable=unused-import
-
 local_url = None
-if not modules.loader.initialized:
-    errors.log.debug('Loading modules')
-from installer import log, setup_logging, git_commit
+from installer import log, git_commit, custom_excepthook
 import ldm.modules.encoders.modules # pylint: disable=W0611,C0411,E0401
-from modules.call_queue import queue_lock, wrap_queued_call, wrap_gradio_gpu_call # pylint: disable=W0611,C0411,C0412
+from modules import shared, extensions, extra_networks, ui_tempdir, ui_extra_networks, modelloader # pylint: disable=ungrouped-imports
 from modules.paths import create_paths
-from modules import shared, extensions, extra_networks, ui_tempdir, ui_extra_networks, modelloader
+from modules.call_queue import queue_lock, wrap_queued_call, wrap_gradio_gpu_call # pylint: disable=W0611,C0411,C0412
 import modules.devices
 import modules.sd_samplers
 import modules.upscaler
@@ -39,9 +38,11 @@ from modules.shared import cmd_opts, opts
 import modules.hypernetworks.hypernetwork
 from modules.middleware import setup_middleware
 
+
+sys.excepthook = custom_excepthook
+state = shared.state
 if not modules.loader.initialized:
     timer.startup.record("libraries")
-    log.info('Loaded librareis')
     log.setLevel(logging.DEBUG if cmd_opts.debug else logging.INFO)
     logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
 if cmd_opts.server_name:
@@ -63,6 +64,7 @@ fastapi_args = {
 }
 modules.loader.initialized = True
 
+
 def check_rollback_vae():
     if shared.cmd_opts.rollback_vae:
         if not torch.cuda.is_available():
@@ -77,7 +79,7 @@ def check_rollback_vae():
 
 
 def initialize():
-    log.debug('Entering initialize')
+    log.debug('Initializing')
 
     check_rollback_vae()
 
@@ -104,7 +106,6 @@ def initialize():
     t_timer, t_total = modules.scripts.load_scripts()
     timer.startup.record("extensions")
     timer.startup.records["extensions"] = t_total # scripts can reset the time
-    setup_logging() # reset since scripts can hijaack logging
     log.info(f'Extensions time: {t_timer.summary()}')
 
     modelloader.load_upscalers()
@@ -117,9 +118,10 @@ def initialize():
 
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
     shared.reload_hypernetworks()
+    shared.prompt_styles.reload()
 
     ui_extra_networks.initialize()
-    ui_extra_networks.register_default_pages()
+    ui_extra_networks.register_pages()
     extra_networks.initialize()
     extra_networks.register_default_extra_networks()
     timer.startup.record("extra-networks")
@@ -152,8 +154,7 @@ def initialize():
 
 def load_model():
     if opts.sd_checkpoint_autoload:
-        shared.state.begin()
-        shared.state.job = 'load model'
+        shared.state.begin('load model')
         thread_model = Thread(target=lambda: shared.sd_model)
         thread_model.start()
         thread_refiner = Thread(target=lambda: shared.sd_refiner)
@@ -198,20 +199,18 @@ def async_policy():
             super().__init__()
             self.loop = self.get_event_loop()
             self.loop.set_exception_handler(self.handle_exception)
-            log.debug(f"Event loop: {self.loop}")
+            # log.debug(f"Event loop: {self.loop}")
 
     asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
 
 
 def start_common():
     log.debug('Entering start sequence')
-    if cmd_opts.debug and hasattr(shared, 'get_version'):
-        log.debug(f'Version: {shared.get_version()}')
     logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
     if shared.cmd_opts.data_dir is not None and len(shared.cmd_opts.data_dir) > 0:
         log.info(f'Using data path: {shared.cmd_opts.data_dir}')
-    if shared.cmd_opts.models_dir is not None and len(shared.cmd_opts.models_dir) > 0:
-        log.info(f'Using models path: {shared.cmd_opts.data_dir}')
+    if shared.cmd_opts.models_dir is not None and len(shared.cmd_opts.models_dir) > 0 and shared.cmd_opts.models_dir != 'models':
+        log.info(f'Using models path: {shared.cmd_opts.models_dir}')
     create_paths(opts, log)
     async_policy()
     initialize()
@@ -244,28 +243,30 @@ def start_ui():
                     gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
 
     global local_url # pylint: disable=global-statement
-    app, local_url, share_url = shared.demo.launch( # app is FastAPI(Starlette) instance
-        share=cmd_opts.share,
-        server_name=server_name,
-        server_port=cmd_opts.port if cmd_opts.port != 7860 else None,
-        ssl_keyfile=cmd_opts.tls_keyfile,
-        ssl_certfile=cmd_opts.tls_certfile,
-        ssl_verify=not cmd_opts.tls_selfsign,
-        debug=False,
-        auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
-        prevent_thread_lock=True,
-        max_threads=64,
-        show_api=False,
-        quiet=True,
-        favicon_path='html/logo.ico',
-        allowed_paths=[os.path.dirname(__file__), cmd_opts.data_dir],
-        app_kwargs=fastapi_args,
-    )
+    stdout = io.StringIO()
+    with contextlib.redirect_stdout(stdout):
+        app, local_url, share_url = shared.demo.launch( # app is FastAPI(Starlette) instance
+            share=cmd_opts.share,
+            server_name=server_name,
+            server_port=cmd_opts.port if cmd_opts.port != 7860 else None,
+            ssl_keyfile=cmd_opts.tls_keyfile,
+            ssl_certfile=cmd_opts.tls_certfile,
+            ssl_verify=not cmd_opts.tls_selfsign,
+            debug=False,
+            auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
+            prevent_thread_lock=True,
+            max_threads=64,
+            show_api=False,
+            quiet=True,
+            favicon_path='html/logo.ico',
+            allowed_paths=[os.path.dirname(__file__), cmd_opts.data_dir],
+            app_kwargs=fastapi_args,
+        )
     if cmd_opts.data_dir is not None:
         ui_tempdir.register_tmp_file(shared.demo, os.path.join(cmd_opts.data_dir, 'x'))
     shared.log.info(f'Local URL: {local_url}')
     if cmd_opts.docs:
-        shared.log.info(f'API Docs: {local_url[:-1]}/docs') # {local_url[:-1]}?view=api
+        shared.log.info(f'API Docs: {local_url[:-1]}/docs') # pylint: disable=unsubscriptable-object
     if share_url is not None:
         shared.log.info(f'Share URL: {share_url}')
     shared.log.debug(f'Gradio registered functions: {len(shared.demo.fns)}')
@@ -291,7 +292,8 @@ def start_ui():
     time_setup = [f'{k}:{round(v,3)}s' for (k,v) in modules.scripts.time_setup.items() if v > 0.005]
     shared.log.debug(f'Scripts setup: {time_setup}')
     time_component = [f'{k}:{round(v,3)}s' for (k,v) in modules.scripts.time_component.items() if v > 0.005]
-    shared.log.debug(f'Scripts components: {time_component}')
+    if len(time_component) > 0:
+        shared.log.debug(f'Scripts components: {time_component}')
 
 
 def webui(restart=False):
