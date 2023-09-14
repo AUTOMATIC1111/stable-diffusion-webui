@@ -210,6 +210,8 @@ class Options:
 
     def add_option(self, key, info):
         self.data_labels[key] = info
+        if key not in self.data:
+            self.data[key] = info.default
 
     def reorder(self):
         """reorder settings so that all items related to section always go together"""
