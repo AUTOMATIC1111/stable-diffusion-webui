@@ -440,6 +440,7 @@ class Script(scripts.Script):
             with gr.Column():
                 include_lone_images = gr.Checkbox(label='Include Sub Images', value=False, elem_id=self.elem_id("include_lone_images"))
                 include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
+                raw_mode = gr.Checkbox(label='Use raw text lines', value=False, elem_id=self.elem_id("raw_mode"))
             with gr.Column():
                 margin_size = gr.Slider(label="Grid margins (px)", minimum=0, maximum=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
             with gr.Column():
@@ -522,9 +523,9 @@ class Script(scripts.Script):
             (z_values_dropdown, lambda params: get_dropdown_update_from_params("Z", params)),
         )
 
-        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size, csv_mode]
+        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size, csv_mode, raw_mode]
 
-    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size, csv_mode):
+    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size, csv_mode, raw_mode):
         if not no_fixed_seeds:
             modules.processing.fix_seed(p)
 
@@ -539,6 +540,8 @@ class Script(scripts.Script):
                 valslist = vals_dropdown
             elif opt.prepare is not None:
                 valslist = opt.prepare(vals)
+            elif raw_mode and vals.strip().find("\n") != -1:
+                valslist = vals.strip().split("\n")
             else:
                 valslist = csv_string_to_list_strip(vals)
 
