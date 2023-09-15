@@ -78,8 +78,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             model.vae.to(devices.device)
         latents.to(model.vae.device)
 
-        needs_upcasting = model.vae.dtype == torch.float16 and model.vae.config.force_upcast
-        if needs_upcasting: # this is done by diffusers automatically if output_type != 'latent'
+        upcast = (model.vae.dtype == torch.float16) and model.vae.config.force_upcast and hasattr(model, 'upcast_vae')
+        if upcast: # this is done by diffusers automatically if output_type != 'latent'
             model.upcast_vae()
             latents = latents.to(next(iter(model.vae.post_quant_conv.parameters())).dtype)
 
@@ -87,7 +87,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if shared.opts.diffusers_move_unet and not model.has_accelerate:
             model.unet.to(unet_device)
         t1 = time.time()
-        shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)} images={latents.shape[0]} latents={latents.shape} time={round(t1-t0, 3)}s')
+        shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={upcast} images={latents.shape[0]} latents={latents.shape} time={round(t1-t0, 3)}s')
         return decoded
 
     def full_vae_encode(image, model):

@@ -398,7 +398,7 @@ class ScriptRunner:
 
         dropdown.init_field = init_field
         dropdown.change(fn=select_script, inputs=[dropdown], outputs=[script.group for script in self.selectable_scripts])
-        
+
         def onload_script_visibility(params):
             title = params.get('Script', None)
             if title:

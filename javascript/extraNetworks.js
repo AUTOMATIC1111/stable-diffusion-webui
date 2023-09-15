@@ -162,6 +162,7 @@ function setupExtraNetworksForTab(tabname) {
         let text = `${elem.querySelector('.name').textContent.toLowerCase()} ${elem.querySelector('.search_term').textContent.toLowerCase()}`;
         text = text.replace('models--', 'Diffusers').replace('\\', '/');
         elem.style.display = text.indexOf(searchTerm) === -1 ? 'none' : '';
+        console.log({ search: searchTerm, text, display: elem.style.display });
       });
       searchTimer = null;
     }, 100);
