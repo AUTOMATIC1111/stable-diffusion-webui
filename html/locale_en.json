@@ -585,7 +585,7 @@
   {"id":"","label":"Enable attention slicing","localized":"","hint":"Performs attention computation in steps instead of all at once. Slower inference times, but greatly reduced memory usage"},
   {"id":"","label":"Diffusers model loading variant","localized":"","hint":""},
   {"id":"","label":"Diffusers VAE loading variant","localized":"","hint":""},
-  {"id":"","label":"Diffusers LoRA loading variant","localized":"","hint":"'sequential apply' loads and applies each LoRA in order of appearance, 'merge and apply' loads all LoRAs and merges them in-memory before applying to model, 'diffusers default' uses single LoRA loading method"},
+  {"id":"","label":"Diffusers LoRA loading variant","localized":"","hint":"'sequential apply' loads and applies each LoRA in order of appearance, 'merge and apply' loads all LoRAs and merges them in-memory before applying to model, 'diffusers' uses diffusers default LoRA loading method"},
   {"id":"","label":"Torch inference mode","localized":"","hint":"Use torch inference mode"},
   {"id":"","label":"inference-mode","localized":"","hint":"Use torch.inference_mode"},
   {"id":"","label":"no-grad","localized":"","hint":"Use torch.no_grad"},

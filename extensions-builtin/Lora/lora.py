@@ -145,11 +145,11 @@ def assign_lora_names_to_compvis_modules(sd_model):
 
     sd_model.lora_layer_mapping = lora_layer_mapping
 
-def load_diffuser_lora(name, lora_on_disk, multiplier):
+def load_diffuser_lora(name, lora_on_disk, multiplier, num_loras):
     lora = LoraModule(name, lora_on_disk)
     lora.mtime = os.path.getmtime(lora_on_disk.filename)
     from modules.lora_diffusers import load_diffusers_lora
-    load_diffusers_lora(name, lora_on_disk, multiplier)
+    load_diffusers_lora(name, lora_on_disk, multiplier, num_loras)
     return lora
 
 
@@ -241,22 +241,18 @@ def load_loras(names, multipliers=None):
 
     for i, name in enumerate(names):
         lora = already_loaded.get(name, None) if shared.backend == shared.Backend.ORIGINAL else None
-
         lora_on_disk = loras_on_disk[i]
-
         if lora_on_disk is not None:
             if lora is None or os.path.getmtime(lora_on_disk.filename) > lora.mtime:
                 try:
                     if shared.backend == shared.Backend.DIFFUSERS:
-                        lora = load_diffuser_lora(name, lora_on_disk, multipliers[i] if multipliers else 1.0)
+                        lora = load_diffuser_lora(name, lora_on_disk, multipliers[i] if multipliers else 1.0, len(names))
                     else:
                         lora = load_lora(name, lora_on_disk)
                 except Exception as e:
                     errors.display(e, f"loading Lora {lora_on_disk.filename}")
                     continue
-
             lora.mentioned_name = name
-
             lora_on_disk.read_hash()
 
         if lora is None:

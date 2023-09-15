@@ -1,3 +1,4 @@
+import time
 import diffusers
 import diffusers.models.lora as diffusers_lora
 # from modules import shared
@@ -7,13 +8,15 @@ import modules.shared as shared
 lora_state = { # TODO Lora state for Diffusers
     'multiplier': [],
     'active': False,
-    'loaded': 0,
-    'all_loras': []
+    'loaded': [],
+    'all_loras': [],
 }
 def unload_diffusers_lora():
     try:
         pipe = shared.sd_model
-        if shared.opts.diffusers_lora_loader == "diffusers default":
+        if shared.opts.diffusers_lora_loader == "diffusers":
+            if len(lora_state['loaded']) > 1:
+                pipe.unfuse_lora()
             pipe.unload_lora_weights()
             pipe._remove_text_encoder_monkey_patch() # pylint: disable=W0212
             proc_cls_name = next(iter(pipe.unet.attn_processors.values())).__class__.__name__
@@ -29,22 +32,30 @@ def unload_diffusers_lora():
                 if shared.opts.diffusers_lora_loader == "sequential apply":
                     lora_network.unapply_to()
         lora_state['active'] = False
-        lora_state['loaded'] = 0
+        lora_state['loaded'].clear()
         lora_state['all_loras'] = []
         lora_state['multiplier'] = []
-
     except Exception as e:
-        shared.log.error(f"Diffusers LoRA unloading failed: {e}")
+        shared.log.error(f"LoRA unload failed: {e}")
 
 
-def load_diffusers_lora(name, lora, strength = 1.0):
+def load_diffusers_lora(name, lora, strength = 1.0, num_loras = 1):
+    if f'{lora.filename}:{strength}' in lora_state['loaded']:
+        shared.log.info(f'LoRA cached: {name} strength={strength}')
+        return
     try:
+        t0 = time.time()
         pipe = shared.sd_model
         lora_state['active'] = True
-        lora_state['loaded'] += 1
         lora_state['multiplier'].append(strength)
-        if shared.opts.diffusers_lora_loader == "diffusers default":
-            pipe.load_lora_weights(lora.filename, cache_dir=shared.opts.diffusers_dir, local_files_only=True, lora_scale=strength)
+        fuse = 0
+        if shared.opts.diffusers_lora_loader.startswith("diffusers"):
+            pipe.load_lora_weights(lora.filename, cache_dir=shared.opts.diffusers_dir, local_files_only=True, lora_scale=strength, low_cpu_mem_usage=True)
+            if num_loras > 1:
+                t2 = time.time()
+                pipe.fuse_lora(lora_scale=strength)
+                fuse = time.time() - t2
+            lora_state['loaded'].append(f'{lora.filename}:{strength}')
         else:
             from safetensors.torch import load_file
             lora_sd = load_file(lora.filename)
@@ -60,20 +71,24 @@ def load_diffusers_lora(name, lora, strength = 1.0):
                 lora_network.to(shared.device, dtype=pipe.unet.dtype)
                 lora_network.apply_to(multiplier=strength)
             lora_state['all_loras'].append(lora_network)
-        shared.log.info(f"LoRA loaded: {name} strength={strength} loader={shared.opts.diffusers_lora_loader}")
+            lora_state['loaded'].append(f'{lora.filename}:{strength}')
+        t1 = time.time()
+        fuse = f'fuse={fuse:.2f}s' if fuse > 0 else ''
+        shared.log.info(f'LoRA loaded: {name} strength={strength} loader="{shared.opts.diffusers_lora_loader}" lora={t1-t0:.2f}s {fuse}')
     except Exception as e:
-        shared.log.error(f"LoRA loading failed: {name} {e}")
+        lines = str(e).splitlines()
+        shared.log.error(f'LoRA loading failed: {name} loader="{shared.opts.diffusers_lora_loader}" {lines[0]}')
 
 
 # Diffusersで動くLoRA。このファイル単独で完結する。
 # LoRA module for Diffusers. This file works independently.
-import bisect
-import math
-from typing import Any, Dict, List, Mapping, Optional, Union
-from diffusers import UNet2DConditionModel
-from tqdm import tqdm
-from transformers import CLIPTextModel
-import torch
+import bisect # pylint: disable=wrong-import-order
+import math # pylint: disable=wrong-import-order
+from typing import Any, Dict, List, Mapping, Optional, Union # pylint: disable=wrong-import-order
+from diffusers import UNet2DConditionModel # pylint: disable=wrong-import-order
+from tqdm import tqdm # pylint: disable=wrong-import-order
+from transformers import CLIPTextModel # pylint: disable=wrong-import-order
+import torch # pylint: disable=wrong-import-order
 
 
 def make_unet_conversion_map() -> Dict[str, str]:
@@ -496,7 +511,7 @@ class LoRANetwork(torch.nn.Module): # pylint: disable=abstract-method
         for lora in tqdm(self.text_encoder_loras + self.unet_loras):
             lora.restore_from(multiplier)
 
-    def load_state_dict(self, state_dict: Mapping[str, Any], strict: bool = True):
+    def load_state_dict(self, state_dict: Mapping[str, Any], strict: bool = True): # pylint: disable=arguments-differ
         # convert SDXL Stability AI's state dict to Diffusers' based state dict
         map_keys = list(UNET_CONVERSION_MAP.keys())  # prefix of U-Net modules
         map_keys.sort()
@@ -514,7 +529,7 @@ class LoRANetwork(torch.nn.Module): # pylint: disable=abstract-method
         # because V2 LoRA is based on U-Net created by use_linear_projection=False
         my_state_dict = self.state_dict()
         for key in state_dict.keys():
-            if state_dict[key].size() != my_state_dict[key].size():
+            if state_dict[key].size() != my_state_dict[key].size(): # pylint: disable=unsubscriptable-object
                 # print(f"convert {key} from {state_dict[key].size()} to {my_state_dict[key].size()}")
                 state_dict[key] = state_dict[key].view(my_state_dict[key].size())
 

@@ -438,7 +438,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_attention_slicing": OptionInfo(False, "Enable attention slicing"),
     "diffusers_model_load_variant": OptionInfo("default", "Diffusers model loading variant", gr.Radio, lambda: {"choices": ['default', 'fp32', 'fp16']}),
     "diffusers_vae_load_variant": OptionInfo("default", "Diffusers VAE loading variant", gr.Radio, lambda: {"choices": ['default', 'fp32', 'fp16']}),
-    "diffusers_lora_loader": OptionInfo("diffusers default" if cmd_opts.use_openvino else "sequential apply", "Diffusers LoRA loading variant", gr.Radio, lambda: {"choices": ['sequential apply', 'merge and apply', 'diffusers default']}),
+    "diffusers_lora_loader": OptionInfo("diffusers", "Diffusers LoRA loading variant", gr.Radio, lambda: {"choices": ['diffusers', 'sequential apply', 'merge and apply']}),
     "diffusers_force_zeros": OptionInfo(True, "Force zeros for prompts when empty"),
     "diffusers_aesthetics_score": OptionInfo(False, "Require aesthetics score"),
 }))
@@ -832,6 +832,7 @@ else:
 opts.data['sd_backend'] = 'diffusers' if backend == Backend.DIFFUSERS else 'original'
 opts.data['uni_pc_lower_order_final'] = opts.schedulers_use_loworder
 opts.data['uni_pc_order'] = opts.schedulers_solver_order
+opts.data['diffusers_lora_loader'] = 'diffusers' # TODO broken in diffusers=0.21
 log.info(f'Engine: backend={backend} compute={devices.backend} mode={devices.inference_context.__name__} device={devices.get_optimal_device_name()}')
 log.info(f'Device: {print_dict(devices.get_gpu_info())}')
 
@@ -885,37 +886,17 @@ def reload_gradio_theme(theme_name=None):
     log.info(f'Loading UI theme: name={theme_name} style={opts.theme_style}')
 
 
-class TotalTQDM:
+class TotalTQDM: # compatibility with previous global-tqdm
     def __init__(self):
-        self._tqdm = None
-
+        pass
     def reset(self):
-        self._tqdm = tqdm.tqdm(
-            desc="Total",
-            total=state.job_count * state.sampling_steps,
-            position=1,
-        )
-
+        pass
     def update(self):
-        if not opts.multiple_tqdm or cmd_opts.disable_console_progressbars:
-            return
-        if self._tqdm is None:
-            self.reset()
-        self._tqdm.update()
-
+        pass
     def updateTotal(self, new_total):
-        if not opts.multiple_tqdm or cmd_opts.disable_console_progressbars:
-            return
-        if self._tqdm is None:
-            self.reset()
-        self._tqdm.total = new_total
-
+        pass
     def clear(self):
-        if self._tqdm is not None:
-            self._tqdm.refresh()
-            self._tqdm.close()
-            self._tqdm = None
-
+        pass
 total_tqdm = TotalTQDM()
 
 
