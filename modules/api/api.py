@@ -2,7 +2,7 @@ import io
 import time
 import base64
 from io import BytesIO
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from threading import Lock
 from secrets import compare_digest
 from fastapi import FastAPI, APIRouter, Depends
@@ -180,10 +180,12 @@ class Api:
         i2ilist = [script.name for script in scripts.scripts_img2img.scripts if script.name is not None]
         return models.ScriptsList(txt2img = t2ilist, img2img = i2ilist)
 
-    def get_script_info(self):
+    def get_script_info(self, script_name: Optional[str] = None):
         res = []
         for script_list in [scripts.scripts_txt2img.scripts, scripts.scripts_img2img.scripts]:
-            res += [script.api_info for script in script_list if script.api_info is not None]
+            for script in script_list:
+                if script.api_info is not None and (script_name is None or script_name == script.api_info.name):
+                    res.append(script.api_info)
         return res
 
     def get_script(self, script_name, script_runner):
