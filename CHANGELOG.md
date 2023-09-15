@@ -1,5 +1,10 @@
 # Change Log for SD.Next
 
+## Update for 2023-09-15
+
+Downgrade of `diffusers` to 0.20.2 due to critical issue with model offloading  
+This means that new model **Wuerstchen** is not supported until diffusers issue is resolved  
+
 ## Update for 2023-09-13
 
 Started as a mostly a service release with quite a few fixes, but then...  

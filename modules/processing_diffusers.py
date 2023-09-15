@@ -187,8 +187,13 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         negative_embed = None
         negative_pooled = None
         prompts, negative_prompts, prompts_2, negative_prompts_2 = fix_prompts(prompts, negative_prompts, prompts_2, negative_prompts_2)
-        if shared.opts.prompt_attention in {'Compel parser', 'Full parser'} and 'StableDiffusion' in model.__class__.__name__:
-            prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompts(model, prompts, negative_prompts, prompts_2, negative_prompts_2, is_refiner, kwargs.pop("clip_skip", None))
+        parser = 'Fixed attention'
+        if shared.opts.prompt_attention != 'Fixed attention' and 'StableDiffusion' in model.__class__.__name__:
+            try:
+                prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompts(model, prompts, negative_prompts, prompts_2, negative_prompts_2, is_refiner, kwargs.pop("clip_skip", None))
+                parser = shared.opts.prompt_attention
+            except Exception as e:
+                shared.log.error(f'Prompt parser: {e}')
         if 'prompt' in possible:
             if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and prompt_embed is not None:
                 if type(pooled) == list:
@@ -244,7 +249,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if 'negative_pooled_prompt_embeds' in clean:
             clean['negative_pooled_prompt_embeds'] = clean['negative_pooled_prompt_embeds'].shape if torch.is_tensor(clean['negative_pooled_prompt_embeds']) else type(clean['negative_pooled_prompt_embeds'])
         clean['generator'] = generator_device
+        clean['parser'] = parser
         shared.log.debug(f'Diffuser pipeline: {model.__class__.__name__} task={sd_models.get_diffusers_task(model)} set={clean}')
+        # components = [{ k: getattr(v, 'device', None) } for k, v in model.components.items()]
+        # shared.log.debug(f'Diffuser pipeline components: {components}')
         return args
 
     def recompile_model(hires=False):

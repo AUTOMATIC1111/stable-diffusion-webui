@@ -762,6 +762,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     diffusers_load_config.pop('safety_checker', None)
                     diffusers_load_config.pop('requires_safety_checker', None)
                     diffusers_load_config.pop('load_safety_checker', None)
+                    diffusers_load_config.pop('config_files', None)
+                    diffusers_load_config.pop('local_files_only', None)
                     shared.log.debug(f'Setting {op}: pipeline={sd_model.__class__.__name__} config={diffusers_load_config}') # pylint: disable=protected-access
             except Exception as e:
                 shared.log.error(f'Diffusers failed loading model using pipeline: {checkpoint_info.path} {shared.opts.diffusers_pipeline} {e}')
