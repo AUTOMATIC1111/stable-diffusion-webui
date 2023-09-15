@@ -704,7 +704,7 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
     control_images = []
 
     cn_model="None"
-    """
+
     if ('ControlNet 0' in p.extra_generation_params):
         cn_params = p.extra_generation_params['ControlNet 0']
 
@@ -720,7 +720,7 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
             )
             p.scripts.postprocess(p, control_res)
             mode = 3
-    """
+
     infotexts = []
     output_images = []
 
