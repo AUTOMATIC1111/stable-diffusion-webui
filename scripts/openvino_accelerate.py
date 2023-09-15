@@ -17,8 +17,7 @@ import modules.scripts as scripts
 from modules import images, devices, extra_networks, masking, shared, sd_models_config
 from modules.processing import (
     StableDiffusionProcessing, Processed, apply_overlay, apply_color_correction,
-    get_fixed_seed, create_infotext, setup_color_correction,
-    process_images
+    get_fixed_seed, create_infotext, setup_color_correction
 )
 from modules.sd_models import CheckpointInfo, get_checkpoint_state_dict
 from modules.shared import opts, state
@@ -26,7 +25,6 @@ from modules.ui_common import create_refresh_button
 from modules.timer import Timer
 
 from PIL import Image, ImageOps
-from pathlib import Path
 from types import MappingProxyType
 from typing import Optional
 
@@ -65,12 +63,7 @@ from diffusers import (
     AutoencoderKL,
 )
 
-from diffusers.pipelines.stable_diffusion.convert_from_ckpt import download_from_original_stable_diffusion_ckpt
 
-from diffusers.utils import (
-    DIFFUSERS_CACHE,
-    HF_HUB_OFFLINE,
-)
 
 class ModelState:
     def __init__(self):
@@ -438,116 +431,6 @@ def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_na
     compiled = core.compile_model(om, device)
     return compiled
 
-def from_single_file(self, pretrained_model_link_or_path, **kwargs):
-
-    cache_dir = kwargs.pop("cache_dir", DIFFUSERS_CACHE)
-    resume_download = kwargs.pop("resume_download", False)
-    force_download = kwargs.pop("force_download", False)
-    proxies = kwargs.pop("proxies", None)
-    local_files_only = kwargs.pop("local_files_only", HF_HUB_OFFLINE)
-    use_auth_token = kwargs.pop("use_auth_token", None)
-    revision = kwargs.pop("revision", None)
-    extract_ema = kwargs.pop("extract_ema", False)
-    image_size = kwargs.pop("image_size", None)
-    scheduler_type = kwargs.pop("scheduler_type", "pndm")
-    num_in_channels = kwargs.pop("num_in_channels", None)
-    upcast_attention = kwargs.pop("upcast_attention", None)
-    load_safety_checker = kwargs.pop("load_safety_checker", True)
-    prediction_type = kwargs.pop("prediction_type", None)
-    text_encoder = kwargs.pop("text_encoder", None)
-    tokenizer = kwargs.pop("tokenizer", None)
-    local_config_file = kwargs.pop("local_config_file", None)
-
-    torch_dtype = kwargs.pop("torch_dtype", None)
-
-    #use_safetensors = kwargs.pop("use_safetensors", None if is_safetensors_available() else False)
-
-    pipeline_name = self.__name__
-    file_extension = pretrained_model_link_or_path.rsplit(".", 1)[-1]
-    from_safetensors = file_extension == "safetensors"
-
-    #if from_safetensors and use_safetensors is False:
-        #raise ValueError("Make sure to install `safetensors` with `pip install safetensors`.")
-
-    # TODO: For now we only support stable diffusion
-    stable_unclip = None
-    model_type = None
-    controlnet = False
-
-    if pipeline_name == "StableDiffusionControlNetPipeline":
-        # Model type will be inferred from the checkpoint.
-        controlnet = True
-    elif "StableDiffusion" in pipeline_name:
-        # Model type will be inferred from the checkpoint.
-        pass
-    elif pipeline_name == "StableUnCLIPPipeline":
-        model_type = "FrozenOpenCLIPEmbedder"
-        stable_unclip = "txt2img"
-    elif pipeline_name == "StableUnCLIPImg2ImgPipeline":
-        model_type = "FrozenOpenCLIPEmbedder"
-        stable_unclip = "img2img"
-    elif pipeline_name == "PaintByExamplePipeline":
-        model_type = "PaintByExample"
-    elif pipeline_name == "LDMTextToImagePipeline":
-        model_type = "LDMTextToImage"
-    else:
-        raise ValueError(f"Unhandled pipeline class: {pipeline_name}")
-
-    # remove huggingface url
-    for prefix in ["https://huggingface.co/", "huggingface.co/", "hf.co/", "https://hf.co/"]:
-        if pretrained_model_link_or_path.startswith(prefix):
-            pretrained_model_link_or_path = pretrained_model_link_or_path[len(prefix) :]
-    # Code based on diffusers.pipelines.pipeline_utils.DiffusionPipeline.from_pretrained
-    ckpt_path = Path(pretrained_model_link_or_path)
-    if not ckpt_path.is_file():
-        # get repo_id and (potentially nested) file path of ckpt in repo
-        repo_id = "/".join(ckpt_path.parts[:2])
-        file_path = "/".join(ckpt_path.parts[2:])
-
-        if file_path.startswith("blob/"):
-            file_path = file_path[len("blob/") :]
-
-        if file_path.startswith("main/"):
-            file_path = file_path[len("main/") :]
-
-        from huggingface_hub import hf_hub_download
-        pretrained_model_link_or_path = hf_hub_download(
-            repo_id,
-            filename=file_path,
-            cache_dir=cache_dir,
-            resume_download=resume_download,
-            proxies=proxies,
-            local_files_only=local_files_only,
-            use_auth_token=use_auth_token,
-            revision=revision,
-            force_download=force_download,
-        )
-
-    pipe = download_from_original_stable_diffusion_ckpt(
-        pretrained_model_link_or_path,
-        original_config_file=local_config_file,
-        pipeline_class=self,
-        model_type=model_type,
-        stable_unclip=stable_unclip,
-        controlnet=controlnet,
-        from_safetensors=from_safetensors,
-        extract_ema=extract_ema,
-        image_size=image_size,
-        scheduler_type=scheduler_type,
-        num_in_channels=num_in_channels,
-        upcast_attention=upcast_attention,
-        load_safety_checker=load_safety_checker,
-        prediction_type=prediction_type,
-        text_encoder=text_encoder,
-        tokenizer=tokenizer,
-    )
-
-    if torch_dtype is not None:
-        pipe.to(torch_dtype=torch_dtype)
-
-    return pipe
-
-StableDiffusionPipeline.from_single_file = functools.partial(from_single_file, StableDiffusionPipeline)
 
 def openvino_clear_caches():
     global partitioned_modules
@@ -611,9 +494,9 @@ def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching,
         if(is_xl_ckpt):
             if model_config != "None":
                 local_config_file = os.path.join(curr_dir_path, 'configs', model_config)
-                sd_model = StableDiffusionXLPipeline.from_single_file(checkpoint_path, local_config_file=local_config_file, use_safetensors=True, add_watermark=False, variant="fp32", dtype=torch.float32)
+                sd_model = StableDiffusionXLPipeline.from_single_file(checkpoint_path, original_config_file=local_config_file, use_safetensors=True, add_watermark=False, variant="fp32", dtype=torch.float32)
             else:
-                sd_model = StableDiffusionXLPipeline.from_single_file(checkpoint_path, local_config_file=checkpoint_config, use_safetensors=True, add_watermark=False, variant="fp32", dtype=torch.float32)
+                sd_model = StableDiffusionXLPipeline.from_single_file(checkpoint_path, original_config_file=checkpoint_config, use_safetensors=True, add_watermark=False, variant="fp32", dtype=torch.float32)
             if (mode == 1):
                 sd_model = StableDiffusionXLImg2ImgPipeline(**sd_model.components)
             elif (mode == 2):
@@ -626,9 +509,9 @@ def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching,
 
             if model_config != "None":
                 local_config_file = os.path.join(curr_dir_path, 'configs', model_config)
-                sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, local_config_file=local_config_file, use_safetensors=True, variant="fp32", dtype=torch.float32)
+                sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, original_config_file=local_config_file, use_safetensors=True, variant="fp32", dtype=torch.float32)
             else:
-                sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, local_config_file=checkpoint_config, use_safetensors=True, variant="fp32", dtype=torch.float32)
+                sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, original_config_file=checkpoint_config, use_safetensors=True, variant="fp32", dtype=torch.float32)
             if (mode == 1):
                 sd_model = StableDiffusionImg2ImgPipeline(**sd_model.components)
             elif (mode == 2):
@@ -644,21 +527,13 @@ def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching,
             import lora
             if lora.loaded_loras:
                 lora_model = lora.loaded_loras[0]
-                sd_model.load_lora_weights(os.path.join(os.getcwd(), "models", "Lora"), weight_name=lora_model.name + ".safetensors")
+                sd_model.load_lora_weights(os.path.join(os.getcwd(), "models", "Lora"), weight_name=lora_model.name + ".safetensors", low_cpu_mem_usage=True)
 
-        if (mode == 1):
-            sd_model = StableDiffusionImg2ImgPipeline(**sd_model.components)
-        elif (mode == 2):
-            sd_model = StableDiffusionInpaintPipeline(**sd_model.components)
-        elif (mode == 3):
-            controlnet = ControlNetModel.from_pretrained("lllyasviel/" + model_state.cn_model)
-            sd_model = StableDiffusionControlNetPipeline(**sd_model.components, controlnet=controlnet)
-            sd_model.controlnet = torch.compile(sd_model.controlnet, backend="openvino_fx")
 
         sd_model.watermark = NoWatermark()
         sd_model.sd_checkpoint_info = checkpoint_info
         sd_model.sd_model_hash = checkpoint_info.calculate_shorthash()
-        #sd_model.safety_checker = None
+        sd_model.safety_checker = None
         sd_model.cond_stage_key = functools.partial(cond_stage_key, shared.sd_model)
         sd_model.scheduler = set_scheduler(sd_model, sampler_name)
         sd_model.unet = torch.compile(sd_model.unet, backend="openvino_fx")
@@ -792,7 +667,8 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
 
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
     if (mode == 0 and p.enable_hr):
-        return process_images(p)
+        print(p.hr_upscaler)
+        return
 
     if type(p.prompt) == list:
         assert(len(p.prompt) > 0)
@@ -828,8 +704,9 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
     control_images = []
 
     cn_model="None"
-    if ('ControlNet' in p.extra_generation_params):
-        cn_params = p.extra_generation_params['ControlNet']
+    """
+    if ('ControlNet 0' in p.extra_generation_params):
+        cn_params = p.extra_generation_params['ControlNet 0']
 
         cn_param_elements = [part.strip() for part in cn_params.split(', ')]
         for element in cn_param_elements:
@@ -843,9 +720,10 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
             )
             p.scripts.postprocess(p, control_res)
             mode = 3
-
+    """
     infotexts = []
     output_images = []
+
 
     with torch.no_grad():
         with devices.autocast():
@@ -875,6 +753,8 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
             if len(p.prompts) == 0:
                 break
 
+
+
             extra_network_data = p.parse_extra_network_prompts()
 
             if not p.disable_extra_networks:
@@ -890,7 +770,7 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
                     custom_inputs.update(cross_attention_kwargs={"scale" : lora_model.te_multiplier})
 
             if (model_state.height != p.height or model_state.width != p.width or model_state.batch_size != p.batch_size or model_state.lora_model != lora_model_name
-                    or model_state.mode != mode or model_state.model_hash != shared.sd_model.sd_model_hash or model_state.cn_model != cn_model):
+                   or model_state.mode != mode or model_state.model_hash != shared.sd_model.sd_model_hash or model_state.cn_model != cn_model):
                 model_state.recompile = 1
                 model_state.height = p.height
                 model_state.width = p.width
@@ -924,13 +804,13 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
             generator = [torch.Generator(device="cpu").manual_seed(s) for s in p.seeds]
-
             time_stamps = []
 
             def callback(iter, t, latents):
                 time_stamps.append(time.time()) # noqa: B023
 
             time_stamps.append(time.time())
+
 
             if (mode == 0):
                 custom_inputs.update({
