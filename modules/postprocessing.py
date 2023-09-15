@@ -17,6 +17,7 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
     outputs = []
     params = {}
     if extras_mode == 1:
+        shared.log.debug(f'process: mode=batch folder={image_folder}')
         for img in image_folder:
             if isinstance(img, Image.Image):
                 image = img
@@ -29,6 +30,7 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
             image_names.append(fn)
             image_ext.append(ext)
     elif extras_mode == 2:
+        shared.log.debug(f'process: mode=folder folder={input_dir}')
         assert not shared.cmd_opts.hide_ui_dir_config, '--hide-ui-dir-config option must be disabled'
         assert input_dir, 'input directory not selected'
         image_list = shared.listfiles(input_dir)
@@ -50,6 +52,7 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
     else:
         outpath = opts.outdir_samples or opts.outdir_extras_samples
     for image, name, ext in zip(image_data, image_names, image_ext):
+        shared.log.debug(f'process: image={image} {args}')
         infotext = ''
         if shared.state.interrupted:
             shared.log.debug('Postprocess interrupted')
