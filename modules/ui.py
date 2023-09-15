@@ -937,7 +937,7 @@ def create_ui(startup_timer = None):
         elif info.folder is not None:
             with FormRow():
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, elem_classes="folder-selector", **args)
-                ui_common.create_browse_button(res, f"folder_{key}")
+                # ui_common.create_browse_button(res, f"folder_{key}")
         else:
             try:
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, **args)

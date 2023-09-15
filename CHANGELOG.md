@@ -22,11 +22,11 @@ Major changes how **hires** works as well as support for a very interesting new 
 - diffusers:
   - allow loading of sd/sdxl models from safetensors without online connectivity
   - support for new model: [wuerstchen](https://huggingface.co/warp-ai/wuerstchen)  
-    its a high-resolution model (1024px+) that nearly doubls performance of sd-xl with much lower resource requirements  
+    its a high-resolution model (1024px+) thats ~40% faster than sd-xl with a bit lower resource requirements  
     go to *models -> huggingface -> search "warp-ai/wuerstchen" -> download*  
     its nearly 12gb in size, so be patient :)
 - minor re-layout of the main ui  
-- update **ui hints**  
+- updated **ui hints**  
 - updated **models -> civitai**  
   - search and download loras  
   - find previews for already downloaded models or loras  
