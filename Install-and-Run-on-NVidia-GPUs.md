@@ -25,7 +25,7 @@ The default configuration of web UI should run on most modern GPU, but in some c
 3. Some combinations of model and VAE are prone to produce `NansException: A tensor with all NaNs was produced in VAE` resulting in a black image, using the option `--no-half-vae` may help to mitigate this issue.
 
 ### Extra Options
-1. There are several cross attenuation optimization methods such as `--xformers` or `--opt-sdp-attention`, these can drastically increase performance see [Optimizations](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Optimizations) for more details, experiment with different options as different hardware are suited for different optimizations. If you wish to measure your system's performance, try using [sd-extension-system-info](https://github.com/vladmandic/sd-extension-system-info) extension which features a benchmarking tool and a [database](https://vladmandic.github.io/sd-extension-system-info/pages/benchmark.html) of user submitted results.
+1. There are several cross attention optimization methods such as `--xformers` or `--opt-sdp-attention`, these can drastically increase performance see [Optimizations](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Optimizations) for more details, experiment with different options as different hardware are suited for different optimizations. If you wish to measure your system's performance, try using [sd-extension-system-info](https://github.com/vladmandic/sd-extension-system-info) extension which features a benchmarking tool and a [database](https://vladmandic.github.io/sd-extension-system-info/pages/benchmark.html) of user submitted results.
 2. add `--autolaunch` to have web UI launch the web browser automatically after web UI has started up.
 3. add `--update-check` will notify you when there's a new version of webui.
 4. See [Command Line Arguments and Settings
@@ -245,7 +245,7 @@ sudo pacman -S pyenv
 pyenv install 3.10.6
 pyenv local 3.10.6
 
-python -m venv
+python -m venv venv
 ```
 
 </details>
