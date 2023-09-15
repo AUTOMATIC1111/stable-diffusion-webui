@@ -1211,3 +1211,5 @@ def apply_token_merging(sd_model, token_merging_ratio=0):
             sd_model.applied_token_merged_ratio = token_merging_ratio
         except:
             shared.log.warning(f'Token merging not supported: pipeline={sd_model.__class__.__name__}')
+    else:
+        sd_model.applied_token_merged_ratio = 0
