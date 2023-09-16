@@ -123,8 +123,8 @@ class CompiledModelState:
         self.width = 512
         self.batch_size = 1
         self.partition_id = 0
-        self.cn_model = "None"
-        self.lora_model = "None"
+        self.cn_model = []
+        self.lora_model = []
 
 
 class NoWatermark:
@@ -657,6 +657,50 @@ def detect_pipeline(f: str, op: str = 'model'):
         pipeline = None, None
     return pipeline, guess
 
+def compile_diffusers(sd_model):
+    try:
+        if shared.opts.ipex_optimize:
+            import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
+            sd_model.unet.training = False
+            sd_model.unet = ipex.optimize(sd_model.unet, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+            if hasattr(sd_model, 'vae'):
+                sd_model.vae.training = False
+                sd_model.vae = ipex.optimize(sd_model.vae, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+            if hasattr(sd_model, 'movq'):
+                sd_model.movq.training = False
+                sd_model.movq = ipex.optimize(sd_model.movq, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+            shared.log.info("Applied IPEX Optimize.")
+    except Exception as err:
+        shared.log.warning(f"IPEX Optimize not supported: {err}")
+
+    try:
+        if shared.opts.cuda_compile and shared.opts.cuda_compile_backend != 'none':
+            shared.log.info(f"Compiling pipeline={sd_model.__class__.__name__} shape={8 * sd_model.unet.config.sample_size} mode={shared.opts.cuda_compile_backend}")
+            import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
+            if shared.opts.cuda_compile_backend == "openvino_fx":
+                torch._dynamo.reset() # pylint: disable=protected-access
+                from modules.intel.openvino import openvino_fx, openvino_clear_caches # pylint: disable=unused-import
+                openvino_clear_caches()
+                torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
+                if shared.compiled_model_state is None:
+                    shared.compiled_model_state = CompiledModelState()
+                shared.compiled_model_state.first_pass = True if not shared.opts.cuda_compile_precompile else False
+            log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
+            if hasattr(torch, '_logging'):
+                torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
+            torch._dynamo.config.verbose = shared.opts.cuda_compile_verbose # pylint: disable=protected-access
+            torch._dynamo.config.suppress_errors = shared.opts.cuda_compile_errors # pylint: disable=protected-access
+            sd_model.unet = torch.compile(sd_model.unet, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
+            if hasattr(sd_model, 'vae'):
+                sd_model.vae.decode = torch.compile(sd_model.vae.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
+            if hasattr(sd_model, 'movq'):
+                sd_model.movq.decode = torch.compile(sd_model.movq.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
+            if shared.opts.cuda_compile_precompile:
+                sd_model("dummy prompt")
+            shared.log.info("Complilation done.")
+            return sd_model
+    except Exception as err:
+        shared.log.warning(f"Model compile not supported: {err}")
 
 def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'): # pylint: disable=unused-argument
     import torch # pylint: disable=reimported,redefined-outer-name
@@ -869,45 +913,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     base_sent_to_cpu=True
             elif not sd_model.has_accelerate:
                 sd_model.to(devices.device)
-            try:
-                if shared.opts.ipex_optimize:
-                    sd_model.unet.training = False
-                    sd_model.unet = torch.xpu.optimize(sd_model.unet, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
-                    if hasattr(sd_model, 'vae'):
-                        sd_model.vae.training = False
-                        sd_model.vae = torch.xpu.optimize(sd_model.vae, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
-                    if hasattr(sd_model, 'movq'):
-                        sd_model.movq.training = False
-                        sd_model.movq = torch.xpu.optimize(sd_model.movq, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
-                    shared.log.info("Applied IPEX Optimize.")
-            except Exception as err:
-                shared.log.warning(f"IPEX Optimize not supported: {err}")
-            try:
-                if shared.opts.cuda_compile and shared.opts.cuda_compile_backend != 'none':
-                    shared.log.info(f"Compiling pipeline={sd_model.__class__.__name__} shape={8 * sd_model.unet.config.sample_size} mode={shared.opts.cuda_compile_backend}")
-                    import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
-                    if shared.opts.cuda_compile_backend == "openvino_fx":
-                        torch._dynamo.reset() # pylint: disable=protected-access
-                        from modules.intel.openvino import openvino_fx, openvino_clear_caches # pylint: disable=unused-import
-                        openvino_clear_caches()
-                        torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
-                        shared.compiled_model_state = CompiledModelState()
-                        shared.compiled_model_state.first_pass = True if not shared.opts.cuda_compile_precompile else False
-                    log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
-                    if hasattr(torch, '_logging'):
-                        torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
-                    torch._dynamo.config.verbose = shared.opts.cuda_compile_verbose # pylint: disable=protected-access
-                    torch._dynamo.config.suppress_errors = shared.opts.cuda_compile_errors # pylint: disable=protected-access
-                    sd_model.unet = torch.compile(sd_model.unet, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
-                    if hasattr(sd_model, 'vae'):
-                        sd_model.vae.decode = torch.compile(sd_model.vae.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
-                    if hasattr(sd_model, 'movq'):
-                        sd_model.movq.decode = torch.compile(sd_model.movq.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
-                    if shared.opts.cuda_compile_precompile:
-                        sd_model("dummy prompt")
-                    shared.log.info("Complilation done.")
-            except Exception as err:
-                shared.log.warning(f"Model compile not supported: {err}")
+
+            sd_model = compile_diffusers(sd_model)
 
         if sd_model is None:
             shared.log.error('Diffuser model not loaded')

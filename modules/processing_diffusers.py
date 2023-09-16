@@ -260,10 +260,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             if shared.opts.cuda_compile_backend == "openvino_fx":
                 compile_height = p.height if not hires else p.hr_upscale_to_y
                 compile_width = p.width if not hires else p.hr_upscale_to_x
-                if (shared.compiled_model_state is None or (not shared.compiled_model_state.first_pass
-                and (shared.compiled_model_state.height != compile_height or shared.compiled_model_state.width != compile_width
+                if (shared.compiled_model_state is None or
+                (not shared.compiled_model_state.first_pass
+                and (shared.compiled_model_state.height != compile_height
+                or shared.compiled_model_state.width != compile_width
                 or shared.compiled_model_state.batch_size != p.batch_size))):
-                    shared.log.info("OpenVINO: Resolution change detected")
+                    shared.log.info("OpenVINO: Parameter change detected")
                     shared.log.info("OpenVINO: Recompiling base model")
                     sd_models.unload_model_weights(op='model')
                     sd_models.reload_model_weights(op='model')

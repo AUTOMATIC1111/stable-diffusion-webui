@@ -239,6 +239,22 @@ def load_loras(names, multipliers=None):
 
     failed_to_load_loras = []
 
+    recompile_model = False
+    if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx":
+        if len(names) == len(shared.compiled_model_state.lora_model):
+            for i, name in enumerate(names):
+                if shared.compiled_model_state.lora_model[i] != f"{name}:{multipliers[i]}":
+                    recompile_model = True
+                    break
+        else:
+            recompile_model = True
+        shared.compiled_model_state.lora_model = []
+    if recompile_model:
+        sd_models.unload_model_weights(op='model')
+        shared.opts.cuda_compile = False
+        sd_models.reload_model_weights(op='model')
+        shared.opts.cuda_compile = True
+
     for i, name in enumerate(names):
         lora = already_loaded.get(name, None) if shared.backend == shared.Backend.ORIGINAL else None
         lora_on_disk = loras_on_disk[i]
@@ -265,6 +281,10 @@ def load_loras(names, multipliers=None):
 
     if len(failed_to_load_loras) > 0:
         sd_hijack.model_hijack.comments.append("Failed to find Loras: " + ", ".join(failed_to_load_loras))
+    
+    if recompile_model:
+        shared.log.info("Lora: Recompiling model")
+        shared.sd_model = sd_models.compile_diffusers(shared.sd_model)
 
 
 def lora_calc_updown(lora, module, target):
