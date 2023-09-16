@@ -71,7 +71,7 @@ def create_paths(opts, log=None):
         try:
             relpath = os.path.relpath(fullpath, script_path)
             opts.data[folder] = relpath
-        except:
+        except Exception:
             opts.data[folder] = fullpath
         return opts.data[folder]
 
