@@ -1,7 +1,8 @@
 # We need this so Python doesn't complain about the unknown StableDiffusionProcessing-typehint at runtime
 from __future__ import annotations
-import csv
+import re
 import os
+import csv
 import json
 from installer import log
 from modules import paths
@@ -9,7 +10,7 @@ from modules import paths
 
 class Style():
     def __init__(self, name: str, prompt: str = "", negative_prompt: str = "", extra: str = "", filename: str = "", preview: str = ""):
-        self.name = name
+        self.name = re.sub(r'[\t\r\n]', '', name).strip()
         self.prompt = prompt
         self.negative_prompt = negative_prompt
         self.extra = extra
