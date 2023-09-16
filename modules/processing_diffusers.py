@@ -281,9 +281,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             pass #Do nothing if compile is disabled
 
     is_karras_compatible = shared.sd_model.__class__.__init__.__annotations__.get("scheduler", None) == diffusers.schedulers.scheduling_utils.KarrasDiffusionSchedulers
-    use_sampler = p.sampler_name if not p.is_hr_pass else p.latent_sampler
-    if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != use_sampler) and (use_sampler != 'Default') and is_karras_compatible:
-        sampler = sd_samplers.all_samplers_map.get(use_sampler, None)
+    if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != p.sampler_name) and (p.sampler_name != 'Default') and is_karras_compatible:
+        sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)
         if sampler is None:
             sampler = sd_samplers.all_samplers_map.get("UniPC")
         sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
@@ -380,6 +379,11 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             output.images = hires_resize(latents=output.images)
             if latent_scale_mode is not None or p.hr_force:
                 p.ops.append('hires')
+                if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != p.latent_sampler) and (p.latent_sampler != 'Default') and is_karras_compatible:
+                    sampler = sd_samplers.all_samplers_map.get(p.latent_sampler, None)
+                    if sampler is None:
+                        sampler = sd_samplers.all_samplers_map.get("UniPC")
+                    sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
                 recompile_model(hires=True)
                 sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                 hires_args = set_pipeline_args(
@@ -412,7 +416,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             shared.sd_model.to(devices.cpu)
             devices.torch_gc()
 
-        if (not hasattr(shared.sd_refiner.scheduler, 'name')) or (shared.sd_refiner.scheduler.name != p.latent_sampler) and (p.sampler_name != 'Default'):
+        if (not hasattr(shared.sd_refiner.scheduler, 'name')) or (shared.sd_refiner.scheduler.name != p.latent_sampler) and (p.latent_sampler != 'Default'):
             sampler = sd_samplers.all_samplers_map.get(p.latent_sampler, None)
             if sampler is None:
                 sampler = sd_samplers.all_samplers_map.get("UniPC")
