@@ -118,10 +118,13 @@ class CheckpointInfo:
 #Used by OpenVINO, can be used with TensorRT or Olive
 class CompiledModelState:
     def __init__(self):
+        self.first_pass = True
         self.height = 512
         self.width = 512
         self.batch_size = 1
-        self.first_pass = True
+        self.partition_id = 0
+        self.cn_model = "None"
+        self.lora_model = "None"
 
 
 class NoWatermark:
@@ -888,8 +891,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                         from modules.intel.openvino import openvino_fx, openvino_clear_caches # pylint: disable=unused-import
                         openvino_clear_caches()
                         torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
-                        sd_model.compiled_model_state = CompiledModelState()
-                        sd_model.compiled_model_state.first_pass = True if not shared.opts.cuda_compile_precompile else False
+                        shared.compiled_model_state = CompiledModelState()
+                        shared.compiled_model_state.first_pass = True if not shared.opts.cuda_compile_precompile else False
                     log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
                     if hasattr(torch, '_logging'):
                         torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access

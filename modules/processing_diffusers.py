@@ -260,9 +260,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             if shared.opts.cuda_compile_backend == "openvino_fx":
                 compile_height = p.height if not hires else p.hr_upscale_to_y
                 compile_width = p.width if not hires else p.hr_upscale_to_x
-                if (not hasattr(shared.sd_model, "compiled_model_state") or (not shared.sd_model.compiled_model_state.first_pass
-                and (shared.sd_model.compiled_model_state.height != compile_height or shared.sd_model.compiled_model_state.width != compile_width
-                or shared.sd_model.compiled_model_state.batch_size != p.batch_size))):
+                if (shared.compiled_model_state is None or (not shared.compiled_model_state.first_pass
+                and (shared.compiled_model_state.height != compile_height or shared.compiled_model_state.width != compile_width
+                or shared.compiled_model_state.batch_size != p.batch_size))):
                     shared.log.info("OpenVINO: Resolution change detected")
                     shared.log.info("OpenVINO: Recompiling base model")
                     sd_models.unload_model_weights(op='model')
@@ -271,14 +271,16 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                         shared.log.info("OpenVINO: Recompiling refiner")
                         sd_models.unload_model_weights(op='refiner')
                         sd_models.reload_model_weights(op='refiner')
-                shared.sd_model.compiled_model_state.height = compile_height
-                shared.sd_model.compiled_model_state.width = compile_width
-                shared.sd_model.compiled_model_state.batch_size = p.batch_size
-                shared.sd_model.compiled_model_state.first_pass = False
+                shared.compiled_model_state.height = compile_height
+                shared.compiled_model_state.width = compile_width
+                shared.compiled_model_state.batch_size = p.batch_size
+                shared.compiled_model_state.first_pass = False
             else:
                 pass #Can be implemented for TensorRT or Olive
         else:
             pass #Do nothing if compile is disabled
+
+    recompile_model()
 
     is_karras_compatible = shared.sd_model.__class__.__init__.__annotations__.get("scheduler", None) == diffusers.schedulers.scheduling_utils.KarrasDiffusionSchedulers
     if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != p.sampler_name) and (p.sampler_name != 'Default') and is_karras_compatible:
@@ -315,8 +317,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if shared.state.interrupted or shared.state.skipped:
         unload_diffusers_lora()
         return results
-
-    recompile_model()
 
     if shared.opts.diffusers_move_base and not shared.sd_model.has_accelerate:
         shared.sd_model.to(devices.device)
@@ -379,12 +379,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             output.images = hires_resize(latents=output.images)
             if latent_scale_mode is not None or p.hr_force:
                 p.ops.append('hires')
+                recompile_model(hires=True)
                 if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != p.latent_sampler) and (p.latent_sampler != 'Default') and is_karras_compatible:
                     sampler = sd_samplers.all_samplers_map.get(p.latent_sampler, None)
                     if sampler is None:
                         sampler = sd_samplers.all_samplers_map.get("UniPC")
                     sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
-                recompile_model(hires=True)
                 sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                 hires_args = set_pipeline_args(
                     model=shared.sd_model,

@@ -429,8 +429,8 @@ def check_torch():
             torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0a0 intel_extension_for_pytorch==2.0.110+gitba7f6c1 -f https://developer.intel.com/ipex-whl-stable-xpu')
     elif allow_openvino and args.use_openvino:
         #Remove this after 2.1.0 releases
-        log.info('Using OpenVINO with Torch Nightly CPU')
-        torch_command = os.environ.get('TORCH_COMMAND', '--pre torch==2.1.0.dev20230713+cpu torchvision==0.16.0.dev20230713+cpu -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html')
+        log.info('Using OpenVINO')
+        torch_command = os.environ.get('TORCH_COMMAND', '--pre torch==2.1.0.dev20230726+cpu torchvision==0.16.0.dev20230726+cpu -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html')
     else:
         machine = platform.machine()
         if sys.platform == 'darwin':

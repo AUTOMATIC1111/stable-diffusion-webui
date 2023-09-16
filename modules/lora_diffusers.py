@@ -35,6 +35,8 @@ def unload_diffusers_lora():
         lora_state['loaded'].clear()
         lora_state['all_loras'] = []
         lora_state['multiplier'] = []
+        if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx":
+            shared.compiled_model_state.lora_model = "None"
     except Exception as e:
         shared.log.error(f"LoRA unload failed: {e}")
 
@@ -74,6 +76,8 @@ def load_diffusers_lora(name, lora, strength = 1.0, num_loras = 1):
             lora_state['loaded'].append(f'{lora.filename}:{strength}')
         t1 = time.time()
         fuse = f'fuse={fuse:.2f}s' if fuse > 0 else ''
+        if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx":
+            shared.compiled_model_state.lora_model = str(lora_state['loaded'])
         shared.log.info(f'LoRA loaded: {name} strength={strength} loader="{shared.opts.diffusers_lora_loader}" lora={t1-t0:.2f}s {fuse}')
     except Exception as e:
         lines = str(e).splitlines()

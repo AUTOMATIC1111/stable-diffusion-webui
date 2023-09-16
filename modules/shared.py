@@ -1048,4 +1048,5 @@ sd_model = None
 sd_refiner = None
 sd_model_type = ''
 sd_refiner_type = ''
+compiled_model_state = None
 sys.modules[__name__].__class__ = Shared
