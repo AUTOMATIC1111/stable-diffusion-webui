@@ -698,9 +698,9 @@ def compile_diffusers(sd_model):
             if shared.opts.cuda_compile_precompile:
                 sd_model("dummy prompt")
             shared.log.info("Complilation done.")
-            return sd_model
     except Exception as err:
         shared.log.warning(f"Model compile not supported: {err}")
+    return sd_model
 
 def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'): # pylint: disable=unused-argument
     import torch # pylint: disable=reimported,redefined-outer-name
