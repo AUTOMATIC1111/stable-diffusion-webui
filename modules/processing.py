@@ -1017,7 +1017,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                     x_sample = validate_sample(x_sample)
                     image = Image.fromarray(x_sample)
-                    save_intermediate(image, i)
                     image = images.resize_image(1, image, target_width, target_height, upscaler_name=self.hr_upscaler)
                     image = np.array(image).astype(np.float32) / 255.0
                     image = np.moveaxis(image, 2, 0)
