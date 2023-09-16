@@ -74,6 +74,7 @@ class StyleDatabase:
                     list_folder(fn)
 
         list_folder(self.path)
+        self.styles = dict(sorted(self.styles.items(), key=lambda style: style[1].filename))
         log.debug(f'Loaded styles: folder={self.path} items={len(self.styles.keys())}')
 
     def get_style_prompts(self, styles):

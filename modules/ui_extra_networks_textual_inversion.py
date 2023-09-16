@@ -39,6 +39,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
             embeddings = list(sd_models.model_data.sd_model.embedding_db.word_embeddings.values())
         else:
             embeddings = []
+        embeddings = list(sorted(embeddings, key=lambda emb: emb.filename))
         for embedding in embeddings:
             path, _ext = os.path.splitext(embedding.filename)
             tags = {}
