@@ -1,4 +1,5 @@
 import time
+import math
 import inspect
 import typing
 import torch
@@ -305,13 +306,13 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     task_specific_kwargs={}
     if sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE:
         p.ops.append('txt2img')
-        task_specific_kwargs = {"height": p.height, "width": p.width}
+        task_specific_kwargs = {"height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8)}
     elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE:
         p.ops.append('img2img')
         task_specific_kwargs = {"image": p.init_images, "strength": p.denoising_strength}
     elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING:
         p.ops.append('inpaint')
-        task_specific_kwargs = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength, "height": p.height, "width": p.width}
+        task_specific_kwargs = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength, "height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8)}
 
     if shared.state.interrupted or shared.state.skipped:
         unload_diffusers_lora()
