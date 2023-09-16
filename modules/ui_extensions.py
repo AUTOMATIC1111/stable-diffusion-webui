@@ -197,7 +197,7 @@ def update_config_states_table(state_name):
         config_state = config_states.all_config_states[state_name]
 
     config_name = config_state.get("name", "Config")
-    created_date = time.asctime(time.gmtime(config_state["created_at"]))
+    created_date = datetime.fromtimestamp(config_state["created_at"]).strftime('%Y-%m-%d %H:%M:%S')
     filepath = config_state.get("filepath", "<unknown>")
 
     try:
