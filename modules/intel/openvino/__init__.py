@@ -363,7 +363,7 @@ def openvino_fx(subgraph, example_inputs):
     for node in model.graph.nodes:
         if node.target == torch.ops.aten.mul_.Tensor:
             node.target = torch.ops.aten.mul.Tensor
-    with torch.no_grad():
+    with devices.inference_context():
         model.eval()
     partitioner = Partitioner()
     compiled_model = partitioner.make_partitions(model)

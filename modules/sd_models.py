@@ -703,7 +703,6 @@ def compile_diffusers(sd_model):
             shared.log.info("Complilation done.")
     except Exception as err:
         shared.log.warning(f"Model compile not supported: {err}")
-    return sd_model
 
 def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'): # pylint: disable=unused-argument
     import torch # pylint: disable=reimported,redefined-outer-name
@@ -917,7 +916,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             elif not sd_model.has_accelerate:
                 sd_model.to(devices.device)
 
-            sd_model = compile_diffusers(sd_model)
+            compile_diffusers(sd_model)
 
         if sd_model is None:
             shared.log.error('Diffuser model not loaded')

@@ -284,7 +284,7 @@ def load_loras(names, multipliers=None):
     
     if recompile_model:
         shared.log.info("Lora: Recompiling model")
-        shared.sd_model = sd_models.compile_diffusers(shared.sd_model)
+        sd_models.compile_diffusers(shared.sd_model)
 
 
 def lora_calc_updown(lora, module, target):
