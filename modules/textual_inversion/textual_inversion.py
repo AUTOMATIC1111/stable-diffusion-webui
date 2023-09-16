@@ -159,11 +159,6 @@ class EmbeddingDatabase:
             self.register_embedding(embedding, shared.sd_model)
         except Exception:
             self.skipped_embeddings[name] = embedding
-        try:
-            text_inv_tokens = pipe.tokenizer.added_tokens_encoder.keys()
-            text_inv_tokens = [t for t in text_inv_tokens if not (len(t.split("_")) > 1 and t.split("_")[-1].isdigit())]
-        except Exception:
-            text_inv_tokens = []
 
     def load_from_file(self, path, filename):
         name, ext = os.path.splitext(filename)

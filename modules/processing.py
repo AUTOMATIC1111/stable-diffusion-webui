@@ -686,8 +686,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         p.all_subseeds = subseed
     else:
         p.all_subseeds = [int(subseed) + x for x in range(len(p.all_prompts))]
-    if os.path.exists(shared.opts.embeddings_dir) and not p.do_not_reload_embeddings:
-        modules.sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
+    if os.path.exists(shared.opts.embeddings_dir) and not p.do_not_reload_embeddings and shared.backend == shared.Backend.ORIGINAL:
+        modules.sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=False)
     if p.scripts is not None:
         p.scripts.process(p)
     infotexts = []
@@ -990,6 +990,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.TEXT_2_IMAGE)
 
         latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "None")
+        if latent_scale_mode is not None:
+            self.hr_force = False # no need to force anything
         if self.enable_hr and (latent_scale_mode is None or self.hr_force):
             if len([x for x in shared.sd_upscalers if x.name == self.hr_upscaler]) == 0:
                 shared.log.warning(f"Cannot find upscaler for hires: {self.hr_upscaler}")

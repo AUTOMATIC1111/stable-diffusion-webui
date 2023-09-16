@@ -9,7 +9,6 @@ import urllib.request
 from urllib.parse import urlparse
 from enum import Enum
 import gradio as gr
-import tqdm
 import fasteners
 from rich.console import Console
 from modules import errors, ui_components, shared_items, cmd_args
@@ -887,6 +886,7 @@ def reload_gradio_theme(theme_name=None):
 
 
 class TotalTQDM: # compatibility with previous global-tqdm
+    # import tqdm
     def __init__(self):
         pass
     def reset(self):

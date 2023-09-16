@@ -780,7 +780,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 shared.log.error(f'Failed loading {op}: {checkpoint_info.path} {e}')
                 return
         else:
-            diffusers_load_config["local_files_only "] = True
+            diffusers_load_config["local_files_only"] = True
             diffusers_load_config["extract_ema"] = shared.opts.diffusers_extract_ema
             pipeline, model_type = detect_pipeline(checkpoint_info.path, op)
             if pipeline is None:
@@ -873,10 +873,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 sd_model.vae = vae
             if shared.opts.diffusers_vae_upcast != 'default':
                 if shared.opts.diffusers_vae_upcast == 'true':
-                    sd_model.vae.config["force_upcast"] = True
+                    # sd_model.vae.config["force_upcast"] = True
                     sd_model.vae.config.force_upcast = True
                 else:
-                    sd_model.vae.config["force_upcast"] = False
+                    # sd_model.vae.config["force_upcast"] = False
                     sd_model.vae.config.force_upcast = False
                 if shared.opts.no_half_vae:
                     devices.dtype_vae = torch.float32
