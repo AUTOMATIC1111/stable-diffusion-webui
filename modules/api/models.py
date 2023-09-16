@@ -272,6 +272,20 @@ class StyleItem(BaseModel):
     filename: Optional[str] = Field(title="Filename")
     preview: Optional[str] = Field(title="Preview")
 
+class ExtraNetworkItem(BaseModel):
+    name: str = Field(title="Name")
+    type: str = Field(title="Type")
+    title: Optional[str] = Field(title="Title")
+    fullname: Optional[str] = Field(title="Fullname")
+    filename: Optional[str] = Field(title="Filename")
+    hash: Optional[str] = Field(title="Hash")
+    preview: Optional[str] = Field(title="Preview image URL")
+    # description: Optional[str] = Field(title="Description")
+    # info: Optional[str] = Field(title="Information")
+    # metadata: Optional[Any] = Field(title="Metadata")
+    # local: Optional[str] = Field(title="Local")
+
+
 class ArtistItem(BaseModel):
     name: str = Field(title="Name")
     score: float = Field(title="Score")

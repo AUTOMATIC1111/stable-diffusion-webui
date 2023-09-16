@@ -1015,7 +1015,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 decoded_samples = decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae))
                 lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
                 batch_images = []
-                for i, x_sample in enumerate(lowres_samples):
+                for _i, x_sample in enumerate(lowres_samples):
                     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                     x_sample = validate_sample(x_sample)
                     image = Image.fromarray(x_sample)

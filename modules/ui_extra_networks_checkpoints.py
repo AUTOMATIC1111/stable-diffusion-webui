@@ -18,6 +18,7 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
             path, _ext = os.path.splitext(checkpoint.filename)
             yield {
                 "name": checkpoint.name_for_extra,
+                "title": checkpoint.title,
                 "filename": path,
                 "fullname": checkpoint.filename,
                 "hash": checkpoint.shorthash,

@@ -15,7 +15,7 @@ def unload_diffusers_lora():
     try:
         pipe = shared.sd_model
         if shared.opts.diffusers_lora_loader == "diffusers":
-            if len(lora_state['loaded']) > 1:
+            if len(lora_state['loaded']) > 1 and hasattr(pipe, "unfuse_lora"):
                 pipe.unfuse_lora()
             pipe.unload_lora_weights()
             pipe._remove_text_encoder_monkey_patch() # pylint: disable=W0212
@@ -51,7 +51,7 @@ def load_diffusers_lora(name, lora, strength = 1.0, num_loras = 1):
         fuse = 0
         if shared.opts.diffusers_lora_loader.startswith("diffusers"):
             pipe.load_lora_weights(lora.filename, cache_dir=shared.opts.diffusers_dir, local_files_only=True, lora_scale=strength, low_cpu_mem_usage=True)
-            if num_loras > 1:
+            if num_loras > 1 and hasattr(pipe, "fuse_lora"):
                 t2 = time.time()
                 pipe.fuse_lora(lora_scale=strength)
                 fuse = time.time() - t2
@@ -535,6 +535,6 @@ class LoRANetwork(torch.nn.Module): # pylint: disable=abstract-method
         for key in state_dict.keys():
             if state_dict[key].size() != my_state_dict[key].size(): # pylint: disable=unsubscriptable-object
                 # print(f"convert {key} from {state_dict[key].size()} to {my_state_dict[key].size()}")
-                state_dict[key] = state_dict[key].view(my_state_dict[key].size())
+                state_dict[key] = state_dict[key].view(my_state_dict[key].size()) # pylint: disable=unsubscriptable-object
 
         return super().load_state_dict(state_dict, strict)
