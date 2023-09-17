@@ -411,6 +411,7 @@ class ScriptRunner:
         self.scripts = []
         self.selectable_scripts = []
         self.alwayson_scripts = []
+        self.script_organiser = dict()
         self.titles = []
         self.title_map = {}
         self.infotext_fields = []
@@ -429,6 +430,7 @@ class ScriptRunner:
         self.scripts.clear()
         self.alwayson_scripts.clear()
         self.selectable_scripts.clear()
+        self.script_organiser.clear()
 
         auto_processing_scripts = scripts_auto_postprocessing.create_auto_preprocessing_script_data()
 
@@ -444,6 +446,10 @@ class ScriptRunner:
             if visibility == AlwaysVisible:
                 self.scripts.append(script)
                 self.alwayson_scripts.append(script)
+                try:
+                    self.script_organiser[script] = script.CALLBACK_ORDER
+                except AttributeError:
+                    self.script_organiser[script] = dict()
                 script.alwayson = True
 
             elif visibility:
@@ -617,7 +623,7 @@ class ScriptRunner:
                 errors.report(f"Error running before_process: {script.filename}", exc_info=True)
 
     def process(self, p):
-        for script in self.alwayson_scripts:
+        for script in sorted(self.alwayson_scripts, key = lambda x: self.script_organiser.get(x, 50).get("process", 50)):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.process(p, *script_args)
