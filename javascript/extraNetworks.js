@@ -136,6 +136,31 @@ function saveCardDescription(event) {
   event.preventDefault();
 }
 
+async function filterExtraNetworksForTab(tabname, searchTerm) {
+  let found = 0;
+  let items = 0;
+  const t0 = performance.now();
+  const cards = Array.from(gradioApp().querySelectorAll(`#${tabname}_extra_tabs div.card`));
+  cards.forEach((elem) => {
+    items += 1;
+    if (searchTerm === '') {
+      elem.style.display = '';
+    } else {
+      let text = `${elem.querySelector('.name').textContent.toLowerCase()} ${elem.querySelector('.search_term').textContent}`;
+      text = text.toLowerCase().replace('models--', 'Diffusers').replace('\\', '/');
+      if (text.indexOf(searchTerm) === -1) {
+        elem.style.display = 'none';
+      } else {
+        elem.style.display = '';
+        found += 1;
+      }
+    }
+  });
+  const t1 = performance.now();
+  if (found > 0) log(`filterExtraNetworks: text=${searchTerm} items=${items} match=${found} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
+  else log(`filterExtraNetworks: text=all items=${items} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
+}
+
 function setupExtraNetworksForTab(tabname) {
   gradioApp().querySelector(`#${tabname}_extra_tabs`).classList.add('extra-networks');
   const tabs = gradioApp().querySelector(`#${tabname}_extra_tabs > div`);
@@ -157,15 +182,9 @@ function setupExtraNetworksForTab(tabname) {
   search.addEventListener('input', (evt) => {
     if (searchTimer) clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
-      const searchTerm = search.value.toLowerCase();
-      gradioApp().querySelectorAll(`#${tabname}_extra_tabs div.card`).forEach((elem) => {
-        let text = `${elem.querySelector('.name').textContent.toLowerCase()} ${elem.querySelector('.search_term').textContent.toLowerCase()}`;
-        text = text.replace('models--', 'Diffusers').replace('\\', '/');
-        elem.style.display = text.indexOf(searchTerm) === -1 ? 'none' : '';
-        console.log({ search: searchTerm, text, display: elem.style.display });
-      });
+      filterExtraNetworksForTab(tabname, search.value.toLowerCase());
       searchTimer = null;
-    }, 100);
+    }, 150);
   });
 
   let hoverTimer = null;
@@ -273,6 +292,7 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
 }
 
 function refreshExtraNetworks(tabname) {
+  console.log('refreshExtraNetworks', tabname, gradioApp().querySelector(`#${tabname}_extra_networks textarea`)?.value);
   gradioApp().querySelector(`#${tabname}_extra_networks textarea`)?.dispatchEvent(new Event('input'));
 }
 
