@@ -593,7 +593,11 @@ model_data = ModelData()
 
 def change_backend():
     shared.log.info(f'Backend changed: {shared.backend}')
-    unload_model_weights()
+    if shared.backend == shared.Backend.ORIGINAL:
+        change_from = shared.Backend.DIFFUSERS
+    else:
+        change_from = shared.Backend.ORIGINAL
+    unload_model_weights(change_from=change_from)
     checkpoints_loaded.clear()
     from modules.sd_samplers import list_samplers
     list_samplers(shared.backend)
@@ -1176,21 +1180,21 @@ def disable_offload(sd_model):
         remove_hook_from_module(model, recurse=True)
 
 
-def unload_model_weights(op='model'):
+def unload_model_weights(op='model', change_from='none'):
     if op == 'model' or op == 'dict':
         if model_data.sd_model:
-            if shared.backend != shared.Backend.ORIGINAL: # moving from diffusers=>original
+            if (shared.backend == shared.Backend.ORIGINAL and change_from != shared.Backend.DIFFUSERS) or change_from == shared.Backend.ORIGINAL:
                 from modules import sd_hijack
                 model_data.sd_model.to(devices.cpu)
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
-            else: # moving from original=>diffusers
+            else:
                 disable_offload(model_data.sd_model)
                 model_data.sd_model.to('meta')
             model_data.sd_model = None
             shared.log.debug(f'Unload weights {op}: {memory_stats()}')
     else:
         if model_data.sd_refiner:
-            if shared.backend != shared.Backend.ORIGINAL:
+            if (shared.backend == shared.Backend.ORIGINAL and change_from != shared.Backend.DIFFUSERS) or change_from == shared.Backend.ORIGINAL:
                 from modules import sd_hijack
                 model_data.sd_model.to(devices.cpu)
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_refiner)
