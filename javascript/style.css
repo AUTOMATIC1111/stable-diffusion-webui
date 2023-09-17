@@ -249,8 +249,8 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-network-cards .card:hover .overlay .tags { display: block; }
 .extra-network-cards .card:hover .overlay .description { display: block; }
 .extra-network-cards .card:hover .preview { box-shadow: none; filter: grayscale(100%); }
-#txt2img_description, #img2img_description { max-height: 63px; overflow-y: auto !important; } 
-#txt2img_description > label > textarea, #img2img_description > label > textarea { font-size: 0.9em } 
+#txt2img_description, #img2img_description { max-height: 63px; overflow-y: auto !important; }
+#txt2img_description > label > textarea, #img2img_description > label > textarea { font-size: 0.9em }
 
 /* controlnet */
 .controlnet_control_type .controlnet_control_type_filter_group .wrap:last-of-type { display: grid; grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); }

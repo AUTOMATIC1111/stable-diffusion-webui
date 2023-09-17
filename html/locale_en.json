@@ -63,7 +63,7 @@
   {"id":"","label":"UI position","localized":"","hint":"Location of extra networks"},
   {"id":"","label":"cover","localized":"","hint":"cover full area"},
   {"id":"","label":"inline","localized":"","hint":"inline with all additional elelemtns (scrollable)"},
-  {"id":"","label":"sidebar","localized":"","hint":"sidebar on the right side of the screen"},  
+  {"id":"","label":"sidebar","localized":"","hint":"sidebar on the right side of the screen"},
   {"id":"","label":"UI height (%)","localized":"","hint":""},
   {"id":"","label":"UI sidebar width (%)","localized":"","hint":""},
   {"id":"","label":"UI card preview lazy loading","localized":"","hint":""},

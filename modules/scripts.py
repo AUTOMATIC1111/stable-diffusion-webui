@@ -71,7 +71,7 @@ class Script:
         """For AlwaysVisible scripts, this function is called when the processing object is set up, before any processing starts.
         args contains all values returned by components from ui().
         """
-        pass
+        pass # pylint: disable=unnecessary-pass
 
     def before_process(self, p, *args):
         """
@@ -79,7 +79,7 @@ class Script:
         You can modify the processing object (p) here, inject hooks, etc.
         args contains all values returned by components from ui()
         """
-        pass
+        pass # pylint: disable=unnecessary-pass
 
     def process(self, p, *args):
         """

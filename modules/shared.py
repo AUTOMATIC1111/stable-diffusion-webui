@@ -486,14 +486,13 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
     "n_rows": OptionInfo(-1, "Grid row count", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
 
     "save_sep_options": OptionInfo("<h2>Intermediate Image Saving</h2>", "", gr.HTML),
-    "save_init_img": OptionInfo(True, "Save copy of img2img init images"),
+    "save_init_img": OptionInfo(False, "Save copy of img2img init images"),
     "save_images_before_highres_fix": OptionInfo(False, "Save copy of image before applying highres fix"),
     "save_images_before_refiner": OptionInfo(False, "Save copy of image before running refiner"),
     "save_images_before_face_restoration": OptionInfo(False, "Save copy of image before doing face restoration"),
     "save_images_before_color_correction": OptionInfo(False, "Save copy of image before applying color correction"),
     "save_mask": OptionInfo(False, "Save copy of the inpainting greyscale mask"),
     "save_mask_composite": OptionInfo(False, "Save copy of inpainting masked composite"),
-
 }))
 
 options_templates.update(options_section(('saving-paths', "Image Naming & Paths"), {
@@ -521,7 +520,6 @@ options_templates.update(options_section(('saving-paths', "Image Naming & Paths"
     "outdir_grids": OptionInfo("", "Output directory for grids", component_args=hide_dirs, folder=True),
     "outdir_txt2img_grids": OptionInfo("outputs/grids", 'Output directory for txt2img grids', component_args=hide_dirs, folder=True),
     "outdir_img2img_grids": OptionInfo("outputs/grids", 'Output directory for img2img grids', component_args=hide_dirs, folder=True),
-
 }))
 
 options_templates.update(options_section(('ui', "User Interface"), {

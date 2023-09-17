@@ -462,7 +462,8 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
     if all_negative_prompts is None:
         all_negative_prompts = p.all_negative_prompts
     comment = ', '.join(comments) if comments is not None and type(comments) is list else None
-
+    ops = list(set(p.ops))
+    ops.reverse()
     args = {
         # basic
         "Steps": p.steps,
@@ -488,7 +489,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Backend": 'Diffusers' if shared.backend == shared.Backend.DIFFUSERS else 'Original',
         "Version": git_commit,
         "Comment": comment,
-        "Operations": '; '.join(p.ops).replace('"', '') if len(p.ops) > 0 else 'none',
+        "Operations": '; '.join(ops).replace('"', '') if len(p.ops) > 0 else 'none',
     }
     if 'txt2img' in p.ops:
         pass

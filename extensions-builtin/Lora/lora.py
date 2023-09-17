@@ -281,7 +281,7 @@ def load_loras(names, multipliers=None):
 
     if len(failed_to_load_loras) > 0:
         sd_hijack.model_hijack.comments.append("Failed to find Loras: " + ", ".join(failed_to_load_loras))
-    
+
     if recompile_model:
         shared.log.info("Lora: Recompiling model")
         sd_models.compile_diffusers(shared.sd_model)
