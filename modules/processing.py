@@ -572,6 +572,8 @@ def print_profile(profile, msg: str):
 def process_images(p: StableDiffusionProcessing) -> Processed:
     if not hasattr(p.sd_model, 'sd_checkpoint_info'):
         return None
+    if p.scripts is not None:
+        p.scripts.before_process(p)
     stored_opts = {}
     for k, v in p.override_settings.copy().items():
         orig = shared.opts.data.get(k, None) or shared.opts.data_labels[k].default

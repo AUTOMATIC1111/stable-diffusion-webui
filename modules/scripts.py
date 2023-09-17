@@ -67,6 +67,20 @@ class Script:
         """
         pass # pylint: disable=unnecessary-pass
 
+    def setup(self, p, *args):
+        """For AlwaysVisible scripts, this function is called when the processing object is set up, before any processing starts.
+        args contains all values returned by components from ui().
+        """
+        pass
+
+    def before_process(self, p, *args):
+        """
+        This function is called very early during processing begins for AlwaysVisible scripts.
+        You can modify the processing object (p) here, inject hooks, etc.
+        args contains all values returned by components from ui()
+        """
+        pass
+
     def process(self, p, *args):
         """
         This function is called before processing begins for AlwaysVisible scripts.
@@ -436,6 +450,17 @@ class ScriptRunner:
         s.record(script.title())
         s.report()
         return processed
+
+    def before_process(self, p, **kwargs):
+        s = ScriptSummary('before-process')
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.before_process(p, *script_args, **kwargs)
+            except Exception as e:
+                errors.display(e, f"Error running before process: {script.filename}")
+            s.record(script.title())
+        s.report()
 
     def process(self, p, **kwargs):
         s = ScriptSummary('process')
