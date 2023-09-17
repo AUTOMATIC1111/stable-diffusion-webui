@@ -283,7 +283,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     recompile_model()
 
     is_karras_compatible = shared.sd_model.__class__.__init__.__annotations__.get("scheduler", None) == diffusers.schedulers.scheduling_utils.KarrasDiffusionSchedulers
-    if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != p.sampler_name) and (p.sampler_name != 'Default') and is_karras_compatible:
+    if ((not hasattr(shared.sd_model.scheduler, 'name')) or (p.sampler_name == 'DPM SDE') or (shared.sd_model.scheduler.name != p.sampler_name)) and (p.sampler_name != 'Default') and is_karras_compatible:
         sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)
         if sampler is None:
             sampler = sd_samplers.all_samplers_map.get("UniPC")
@@ -380,7 +380,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             if latent_scale_mode is not None or p.hr_force:
                 p.ops.append('hires')
                 recompile_model(hires=True)
-                if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != p.latent_sampler) and (p.latent_sampler != 'Default') and is_karras_compatible:
+                if ((not hasattr(shared.sd_model.scheduler, 'name')) or (p.latent_sampler == 'DPM SDE') or (shared.sd_model.scheduler.name != p.latent_sampler)) and (p.latent_sampler != 'Default') and is_karras_compatible:
                     sampler = sd_samplers.all_samplers_map.get(p.latent_sampler, None)
                     if sampler is None:
                         sampler = sd_samplers.all_samplers_map.get("UniPC")
@@ -416,7 +416,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             shared.sd_model.to(devices.cpu)
             devices.torch_gc()
 
-        if (not hasattr(shared.sd_refiner.scheduler, 'name')) or (shared.sd_refiner.scheduler.name != p.latent_sampler) and (p.latent_sampler != 'Default'):
+        if ((not hasattr(shared.sd_refiner.scheduler, 'name')) or (p.latent_sampler == 'DPM SDE') or (shared.sd_refiner.scheduler.name != p.latent_sampler)) and (p.latent_sampler != 'Default'):
             sampler = sd_samplers.all_samplers_map.get(p.latent_sampler, None)
             if sampler is None:
                 sampler = sd_samplers.all_samplers_map.get("UniPC")

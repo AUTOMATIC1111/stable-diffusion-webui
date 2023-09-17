@@ -65,7 +65,7 @@ original_scaled_dot_product_attention = torch.nn.functional.scaled_dot_product_a
 def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.0, is_causal=False):
     #ARC GPUs can't allocate more than 4GB to a single block, Slice it:
     shape_one, batch_size_attention, query_tokens, shape_four = query.shape
-    block_multiply = 2.4 if query.dtype == torch.float32 else 1.2
+    block_multiply = 3.6 if query.dtype == torch.float32 else 1.8
     block_size = (shape_one * batch_size_attention * query_tokens * shape_four) / 1024 * block_multiply #MB
     split_slice_size = batch_size_attention
     if block_size >= 4000:
