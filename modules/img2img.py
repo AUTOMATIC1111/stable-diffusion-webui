@@ -6,6 +6,7 @@ from modules import sd_samplers, shared, processing, images
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.ui import plaintext_to_html
 from modules.memstats import memory_stats
+import itertools # SBM Batch frames
 
 
 def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args):
@@ -29,40 +30,51 @@ def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args)
     p.do_not_save_grid = True
     p.do_not_save_samples = not save_normally
     shared.state.job_count = len(image_files) * p.n_iter
-    for i, image_file in enumerate(image_files):
-        shared.state.job = f"{i+1} out of {len(image_files)}"
+    # SBM Batch frame mode, take 2.
+    window_size = p.batch_size
+    p.seed = [p.seed] * window_size # SBM MONKEYPATCH: Need to change processing to support a fixed seed value.
+    p.subseed = [p.subseed] * window_size # SBM MONKEYPATCH
+    for i in range(0, len(image_files), window_size):
+        shared.state.job = f"{i+1} to {min(i+window_size, len(image_files))} out of {len(image_files)}"
         if shared.state.skipped:
             shared.state.skipped = False
         if shared.state.interrupted:
             break
-        try:
-            img = Image.open(image_file)
-        except UnidentifiedImageError as e:
-            shared.log.error(f"Image error: {e}")
-            continue
-        img = ImageOps.exif_transpose(img)
-        if p.scale_by != 1:
-            p.width = int(img.width * p.scale_by)
-            p.height = int(img.height * p.scale_by)
-        p.init_images = [img] * p.batch_size
+        batch_image_files = image_files[i:i+window_size]
+        batch_images = []
+        for image_file in batch_image_files:
+            try:
+                img = Image.open(image_file)
+                if p.scale_by != 1:
+                    p.width = int(img.width * p.scale_by)
+                    p.height = int(img.height * p.scale_by)
+            except UnidentifiedImageError as e:
+                shared.log.error(f"Image error: {e}")
+                continue
+            img = ImageOps.exif_transpose(img)
+            batch_images.append(img)
+        p.init_images = batch_images
 
         if is_inpaint_batch:
             # try to find corresponding mask for an image using simple filename matching
-            mask_image_path = os.path.join(inpaint_mask_dir, os.path.basename(image_file))
-            # if not found use first one ("same mask for all images" use-case)
-            if mask_image_path not in inpaint_masks:
-                mask_image_path = inpaint_masks[0]
-            mask_image = Image.open(mask_image_path)
-            p.image_mask = mask_image
+            batch_mask_images = []
+            for image_file in batch_image_files:
+                mask_image_path = os.path.join(inpaint_mask_dir, os.path.basename(image_file))
+                # if not found use first one ("same mask for all images" use-case)
+                if mask_image_path not in inpaint_masks:
+                    mask_image_path = inpaint_masks[0]
+                mask_image = Image.open(mask_image_path)
+                batch_mask_images.append(mask_image)
+            p.image_mask = batch_mask_images
 
         proc = modules.scripts.scripts_img2img.run(p, *args)
         if proc is None:
             proc = processing.process_images(p)
-        for n, image in enumerate(proc.images):
+        for n, (image, image_file) in enumerate(itertools.zip_longest(proc.images,batch_image_files)):
             basename, ext = os.path.splitext(os.path.basename(image_file))
             ext = ext[1:]
             if len(proc.images) > 1:
-                basename = f'{basename}-{n}'
+                basename = f'{basename}-{n + i}'
             if not shared.opts.use_original_name_batch:
                 basename = ''
                 ext = shared.opts.samples_format
@@ -74,7 +86,7 @@ def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args)
             for k, v in items.items():
                 image.info[k] = v
             images.save_image(image, path=output_dir, basename=basename, seed=None, prompt=None, extension=ext, info=geninfo, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=image.info, forced_filename=None)
-        shared.log.debug(f'Processed: images={len(image_files)} memory={memory_stats()} op=batch')
+        shared.log.debug(f'Processed: {len(batch_image_files)} Memory: {memory_stats()} batch')
 
 
 def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_index: int, latent_index: int, mask_blur: int, mask_alpha: float, inpainting_fill: int, full_quality: bool, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, diffusers_guidance_rescale: float, refiner_steps: int, refiner_start: float, clip_skip: int, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, selected_scale_tab: int, height: int, width: int, scale_by: float, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_files: list, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, override_settings_texts, *args): # pylint: disable=unused-argument
