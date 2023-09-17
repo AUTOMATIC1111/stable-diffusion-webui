@@ -487,7 +487,7 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
 
     "save_sep_options": OptionInfo("<h2>Intermediate Image Saving</h2>", "", gr.HTML),
     "save_init_img": OptionInfo(False, "Save copy of img2img init images"),
-    "save_images_before_highres_fix": OptionInfo(False, "Save copy of image before applying highres fix"),
+    "save_images_before_highres_fix": OptionInfo(False, "Save copy of image before applying hires"),
     "save_images_before_refiner": OptionInfo(False, "Save copy of image before running refiner"),
     "save_images_before_face_restoration": OptionInfo(False, "Save copy of image before doing face restoration"),
     "save_images_before_color_correction": OptionInfo(False, "Save copy of image before applying color correction"),

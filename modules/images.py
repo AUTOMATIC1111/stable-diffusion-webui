@@ -273,7 +273,7 @@ re_nonletters = re.compile(r'[\s' + string.punctuation + ']+')
 re_pattern = re.compile(r"(.*?)(?:\[([^\[\]]+)\]|$)")
 re_pattern_arg = re.compile(r"(.*)<([^>]*)>$")
 max_filename_part_length = 128
-NOTHING_AND_SKIP_PREVIOUS_TEXT = object()
+NOTHING = object()
 
 
 def sanitize_filename_part(text, replace_spaces=True):
@@ -291,13 +291,13 @@ def sanitize_filename_part(text, replace_spaces=True):
 
 class FilenameGenerator:
     replacements = {
-        'batch_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p is None or self.p.batch_size == 1 else self.p.batch_index + 1,
+        'batch_number': lambda self: NOTHING if self.index <= 1 else self.index,
         'cfg': lambda self: self.p and self.p.cfg_scale,
         'clip_skip': lambda self: self.p and self.p.clip_skip,
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
         'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
-        'denoising': lambda self: self.p.denoising_strength if self.p and self.p.denoising_strength else NOTHING_AND_SKIP_PREVIOUS_TEXT,
-        'generation_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.n_iter == 1 and self.p.batch_size == 1 else self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
+        'denoising': lambda self: self.p.denoising_strength if self.p and self.p.denoising_strength else NOTHING,
+        'generation_number': lambda self: NOTHING if self.p.n_iter == 1 and self.p.batch_size == 1 else self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
         'hasprompt': lambda self, *args: self.hasprompt(*args),  # accepts formats:[hasprompt<prompt1|default><prompt2>..]
         'height': lambda self: self.image.height,
         'image_hash': lambda self: self.image_hash(),
@@ -320,11 +320,12 @@ class FilenameGenerator:
     }
     default_time_format = '%Y%m%d%H%M%S'
 
-    def __init__(self, p, seed, prompt, image):
+    def __init__(self, p, seed, prompt, image, index):
         self.p = p
         self.seed = seed
         self.prompt = prompt
         self.image = image
+        self.index = index if self.p is None or self.p.batch_size == 1 else self.p.batch_index + 1
 
     def hasprompt(self, *args):
         lower = self.prompt.lower()
@@ -403,7 +404,7 @@ class FilenameGenerator:
                 except Exception as e:
                     replacement = None
                     errors.display(e, 'filename pattern')
-                if replacement == NOTHING_AND_SKIP_PREVIOUS_TEXT:
+                if replacement == NOTHING:
                     continue
                 elif replacement is not None:
                     res += text + str(replacement)
@@ -498,7 +499,7 @@ save_thread = threading.Thread(target=atomically_save_image, daemon=True)
 save_thread.start()
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
+def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None, index=0):
     """Save an image.
     Args:
         image (`PIL.Image`):
@@ -536,7 +537,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
         return None, None
     if path is None or len(path) == 0: # set default path to avoid errors when functions are triggered manually or via api and param is not set
         path = shared.opts.outdir_save
-    namegen = FilenameGenerator(p, seed, prompt, image)
+    namegen = FilenameGenerator(p, seed, prompt, image, index)
     if save_to_dirs is None:
         save_to_dirs = (grid and shared.opts.grid_save_to_dirs) or (not grid and shared.opts.save_to_dirs and not no_prompt)
     if save_to_dirs:

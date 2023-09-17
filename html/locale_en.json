@@ -431,7 +431,7 @@
   {"id":"","label":"Create text file next to every image with generation parameters","localized":"","hint":""},
   {"id":"","label":"Create JSON log file for each saved image","localized":"","hint":"Save image information to a JSON file"},
   {"id":"","label":"Save copy of image before doing face restoration","localized":"","hint":""},
-  {"id":"","label":"Save copy of image before applying highres fix","localized":"","hint":""},
+  {"id":"","label":"Save copy of image before applying hires","localized":"","hint":""},
   {"id":"","label":"Save copy of image before applying color correction","localized":"","hint":""},
   {"id":"","label":"Save copy of the inpainting greyscale mask","localized":"","hint":""},
   {"id":"","label":"Save copy of inpainting masked composite","localized":"","hint":""},
