@@ -3,7 +3,6 @@ import numpy as np
 import torch
 from PIL import Image
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
-from basicsr.utils.download_util import load_file_from_url
 from swinir_model_arch import SwinIR as net
 from swinir_model_arch_v2 import Swin2SR as net2
 from modules import modelloader, devices, script_callbacks, shared
@@ -45,6 +44,7 @@ class UpscalerSwinIR(Upscaler):
 
     def load_model(self, path, scale=4):
         if "http" in path:
+            from modules.modelloader import load_file_from_url
             dl_name = "%s%s" % (self.model_name.replace(" ", "_"), ".pth") # pylint: disable=consider-using-f-string
             filename = load_file_from_url(url=path, model_dir=self.model_download_path, file_name=dl_name, progress=True)
         else:

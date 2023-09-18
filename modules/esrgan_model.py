@@ -3,7 +3,6 @@ import os
 import numpy as np
 import torch
 from PIL import Image
-from basicsr.utils.download_util import load_file_from_url
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
 
 import modules.esrgan_model_arch as arch
@@ -153,6 +152,7 @@ class UpscalerESRGAN(Upscaler):
 
     def load_model(self, path: str):
         if "http" in path:
+            from modules.modelloader import load_file_from_url
             filename = load_file_from_url(
                 url=self.model_url,
                 model_dir=self.model_download_path,
