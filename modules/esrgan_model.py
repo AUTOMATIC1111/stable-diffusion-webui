@@ -4,11 +4,12 @@ import numpy as np
 import torch
 from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
+from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
 
 import modules.esrgan_model_arch as arch
 from modules import modelloader, images, devices
 from modules.upscaler import Upscaler, UpscalerData
-from modules.shared import opts
+from modules.shared import opts, log, console
 
 
 
@@ -161,10 +162,11 @@ class UpscalerESRGAN(Upscaler):
         else:
             filename = path
         if not os.path.exists(filename) or filename is None:
-            print(f"Unable to load {self.model_path} from {filename}")
+            log.error(f"Model failed loading: type=ESRGAN model={filename}")
             return None
 
         state_dict = torch.load(filename, map_location='cpu' if devices.device_esrgan.type == 'mps' else None)
+        log.info(f"Model loaded: type=ESRGAN model={filename}")
 
         if "params_ema" in state_dict:
             state_dict = state_dict["params_ema"]
@@ -216,16 +218,20 @@ def esrgan_upscale(model, img):
     newtiles = []
     scale_factor = 1
 
-    for y, h, row in grid.tiles:
-        newrow = []
-        for tiledata in row:
-            x, w, tile = tiledata
-
-            output = upscale_without_tiling(model, tile)
-            scale_factor = output.width // tile.width
-
-            newrow.append([x * scale_factor, w * scale_factor, output])
-        newtiles.append([y * scale_factor, h * scale_factor, newrow])
+    with Progress(TextColumn('[cyan]{task.description}'), BarColumn(), TaskProgressColumn(), TimeRemainingColumn(), TimeElapsedColumn(), console=console) as progress:
+        total = 0
+        for y, h, row in grid.tiles:
+            total += len(row)
+        task = progress.add_task(description="Upscaling", total=total)
+        for y, h, row in grid.tiles:
+            newrow = []
+            for tiledata in row:
+                x, w, tile = tiledata
+                output = upscale_without_tiling(model, tile)
+                scale_factor = output.width // tile.width
+                newrow.append([x * scale_factor, w * scale_factor, output])
+                progress.update(task, advance=1, description="Upscaling")
+            newtiles.append([y * scale_factor, h * scale_factor, newrow])
 
     newgrid = images.Grid(newtiles, grid.tile_w * scale_factor, grid.tile_h * scale_factor, grid.image_w * scale_factor, grid.image_h * scale_factor, grid.overlap * scale_factor)
     output = images.combine_grid(newgrid)

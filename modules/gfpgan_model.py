@@ -29,12 +29,13 @@ def gfpgann():
         latest_file = max(models, key=os.path.getctime)
         model_file = latest_file
     else:
-        print("Unable to load gfpgan model!")
+        shared.log.error(f"Model failed loading: type=GFPGAN model={model_file}")
         return None
     if hasattr(facexlib.detection.retinaface, 'device'):
         facexlib.detection.retinaface.device = devices.device_gfpgan
     model = gfpgan_constructor(model_path=model_file, upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None, device=devices.device_gfpgan)
     loaded_gfpgan_model = model
+    shared.log.info(f"Model loaded: type=GFPGAN model={model_file}")
 
     return model
 

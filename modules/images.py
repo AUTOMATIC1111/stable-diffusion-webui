@@ -320,7 +320,7 @@ class FilenameGenerator:
     }
     default_time_format = '%Y%m%d%H%M%S'
 
-    def __init__(self, p, seed, prompt, image, index):
+    def __init__(self, p, seed, prompt, image, index = 0):
         self.p = p
         self.seed = seed
         self.prompt = prompt
