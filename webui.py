@@ -45,6 +45,14 @@ def api_only():
     )
 
 
+def webui_auth():
+    from modules.shared_cmd_options import cmd_opts
+    if cmd_opts.ldap_uri:
+        return initialize_util.webui_auth_ldap
+    else:
+        return list(initialize_util.get_gradio_auth_creds()) or None
+
+
 def webui():
     from modules.shared_cmd_options import cmd_opts
 
@@ -67,8 +75,6 @@ def webui():
         if not cmd_opts.no_gradio_queue:
             shared.demo.queue(64)
 
-        gradio_auth_creds = list(initialize_util.get_gradio_auth_creds()) or None
-
         auto_launch_browser = False
         if os.getenv('SD_WEBUI_RESTARTING') != '1':
             if shared.opts.auto_launch_browser == "Remote" or cmd_opts.autolaunch:
@@ -84,7 +90,7 @@ def webui():
             ssl_certfile=cmd_opts.tls_certfile,
             ssl_verify=cmd_opts.disable_tls_verify,
             debug=cmd_opts.gradio_debug,
-            auth=gradio_auth_creds,
+            auth=webui_auth(),
             inbrowser=auto_launch_browser,
             prevent_thread_lock=True,
             allowed_paths=cmd_opts.gradio_allowed_path,
