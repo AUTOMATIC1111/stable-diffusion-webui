@@ -55,6 +55,29 @@ def samples_to_image_grid(samples, approximation=None):
     return images.image_grid([single_sample_to_image(sample, approximation) for sample in samples])
 
 
+def images_tensor_to_samples(image, approximation=None, model=None):
+    '''image[0, 1] -> latent'''
+    if approximation is None:
+        approximation = approximation_indexes.get(shared.opts.show_progress_type, 0)
+    if approximation == 3:
+        image = image.to(devices.device, devices.dtype)
+        x_latent = sd_vae_taesd.encode(image)
+    else:
+        if model is None:
+            model = shared.sd_model
+        model.first_stage_model.to(devices.dtype_vae)
+        image = image.to(shared.device, dtype=devices.dtype_vae)
+        image = image * 2 - 1
+        if len(image) > 1:
+            x_latent = torch.stack([
+                model.get_first_stage_encoding(model.encode_first_stage(torch.unsqueeze(img, 0)))[0]
+                for img in image
+            ])
+        else:
+            x_latent = model.get_first_stage_encoding(model.encode_first_stage(image))
+    return x_latent
+
+
 def store_latent(decoded):
     shared.state.current_latent = decoded
     if shared.opts.live_previews_enable and shared.opts.show_progress_every_n_steps > 0 and shared.state.sampling_step % shared.opts.show_progress_every_n_steps == 0:

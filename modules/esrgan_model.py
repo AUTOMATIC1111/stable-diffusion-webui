@@ -220,7 +220,7 @@ def esrgan_upscale(model, img):
 
     with Progress(TextColumn('[cyan]{task.description}'), BarColumn(), TaskProgressColumn(), TimeRemainingColumn(), TimeElapsedColumn(), console=console) as progress:
         total = 0
-        for y, h, row in grid.tiles:
+        for _y, _h, row in grid.tiles:
             total += len(row)
         task = progress.add_task(description="Upscaling", total=total)
         for y, h, row in grid.tiles:
