@@ -128,7 +128,7 @@ class ExtraNetworksPage:
                     shared.log.error(f'Cannot evaluate extra network prompt: {item["prompt"]} {e}')
 
         if not any(self.title in x.label for x in xyz_grid.axis_options):
-            if self.title == 'Checkpoints':
+            if self.title == 'Model':
                 return
             opt = xyz_grid.AxisOption(f"[Network] {self.title}", str, add_prompt, choices=lambda: [x["name"] for x in self.items])
             xyz_grid.axis_options.append(opt)
