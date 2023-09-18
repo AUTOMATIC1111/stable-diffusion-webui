@@ -441,7 +441,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_attention_slicing": OptionInfo(True if devices.backend == "ipex" else False, "Enable attention slicing"),
     "diffusers_model_load_variant": OptionInfo("default", "Diffusers model loading variant", gr.Radio, lambda: {"choices": ['default', 'fp32', 'fp16']}),
     "diffusers_vae_load_variant": OptionInfo("default", "Diffusers VAE loading variant", gr.Radio, lambda: {"choices": ['default', 'fp32', 'fp16']}),
-    "diffusers_lora_loader": OptionInfo("diffusers", "Diffusers LoRA loading variant", gr.Radio, lambda: {"choices": ['diffusers', 'sequential apply', 'merge and apply']}),
+    "diffusers_lora_loader": OptionInfo("sequential apply", "Diffusers LoRA loading variant", gr.Radio, lambda: {"choices": ['diffusers', 'sequential apply', 'merge and apply']}),
     "diffusers_force_zeros": OptionInfo(True, "Force zeros for prompts when empty"),
     "diffusers_aesthetics_score": OptionInfo(False, "Require aesthetics score"),
 }))
@@ -834,7 +834,7 @@ else:
 opts.data['sd_backend'] = 'diffusers' if backend == Backend.DIFFUSERS else 'original'
 opts.data['uni_pc_lower_order_final'] = opts.schedulers_use_loworder
 opts.data['uni_pc_order'] = opts.schedulers_solver_order
-opts.data['diffusers_lora_loader'] = 'diffusers' # TODO broken in diffusers=0.21
+# opts.data['diffusers_lora_loader'] = 'diffusers' # TODO broken in diffusers=0.21
 log.info(f'Engine: backend={backend} compute={devices.backend} mode={devices.inference_context.__name__} device={devices.get_optimal_device_name()}')
 log.info(f'Device: {print_dict(devices.get_gpu_info())}')
 
