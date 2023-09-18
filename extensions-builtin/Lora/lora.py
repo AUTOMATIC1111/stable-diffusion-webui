@@ -145,11 +145,11 @@ def assign_lora_names_to_compvis_modules(sd_model):
 
     sd_model.lora_layer_mapping = lora_layer_mapping
 
-def load_diffuser_lora(name, lora_on_disk, multiplier):
+def load_diffuser_lora(name, lora_on_disk, multiplier, num_loras):
     lora = LoraModule(name, lora_on_disk)
     lora.mtime = os.path.getmtime(lora_on_disk.filename)
     from modules.lora_diffusers import load_diffusers_lora
-    load_diffusers_lora(name, lora_on_disk, multiplier)
+    load_diffusers_lora(name, lora_on_disk, multiplier, num_loras)
     return lora
 
 
@@ -239,24 +239,36 @@ def load_loras(names, multipliers=None):
 
     failed_to_load_loras = []
 
+    recompile_model = False
+    if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx":
+        if len(names) == len(shared.compiled_model_state.lora_model):
+            for i, name in enumerate(names):
+                if shared.compiled_model_state.lora_model[i] != f"{name}:{multipliers[i]}":
+                    recompile_model = True
+                    break
+        else:
+            recompile_model = True
+        shared.compiled_model_state.lora_model = []
+    if recompile_model:
+        sd_models.unload_model_weights(op='model')
+        shared.opts.cuda_compile = False
+        sd_models.reload_model_weights(op='model')
+        shared.opts.cuda_compile = True
+
     for i, name in enumerate(names):
         lora = already_loaded.get(name, None) if shared.backend == shared.Backend.ORIGINAL else None
-
         lora_on_disk = loras_on_disk[i]
-
         if lora_on_disk is not None:
             if lora is None or os.path.getmtime(lora_on_disk.filename) > lora.mtime:
                 try:
                     if shared.backend == shared.Backend.DIFFUSERS:
-                        lora = load_diffuser_lora(name, lora_on_disk, multipliers[i] if multipliers else 1.0)
+                        lora = load_diffuser_lora(name, lora_on_disk, multipliers[i] if multipliers else 1.0, len(names))
                     else:
                         lora = load_lora(name, lora_on_disk)
                 except Exception as e:
                     errors.display(e, f"loading Lora {lora_on_disk.filename}")
                     continue
-
             lora.mentioned_name = name
-
             lora_on_disk.read_hash()
 
         if lora is None:
@@ -269,6 +281,10 @@ def load_loras(names, multipliers=None):
 
     if len(failed_to_load_loras) > 0:
         sd_hijack.model_hijack.comments.append("Failed to find Loras: " + ", ".join(failed_to_load_loras))
+
+    if recompile_model:
+        shared.log.info("Lora: Recompiling model")
+        sd_models.compile_diffusers(shared.sd_model)
 
 
 def lora_calc_updown(lora, module, target):

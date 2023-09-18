@@ -937,7 +937,7 @@ def create_ui(startup_timer = None):
         elif info.folder is not None:
             with FormRow():
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, elem_classes="folder-selector", **args)
-                ui_common.create_browse_button(res, f"folder_{key}")
+                # ui_common.create_browse_button(res, f"folder_{key}")
         else:
             try:
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, **args)
@@ -1075,6 +1075,11 @@ def create_ui(startup_timer = None):
             with gr.TabItem("UI Config", id="system_config", elem_id="tab_config"):
                 loadsave.create_ui()
                 create_dirty_indicator("tab_defaults", [], interactive=False)
+
+            with gr.TabItem("Change log", id="change_log", elem_id="system_tab_changelog"):
+                with open('CHANGELOG.md', 'r', encoding='utf-8') as f:
+                    md = f.read()
+                gr.Markdown(md)
 
             with gr.TabItem("Licenses", id="system_licenses", elem_id="system_tab_licenses"):
                 gr.HTML(modules.shared.html("licenses.html"), elem_id="licenses", elem_classes="licenses")

@@ -1,5 +1,13 @@
 # Change Log for SD.Next
 
+## Update for 2023-09-18
+
+Downgrade of `diffusers` to 0.20.2 due to critical issue with model offloading  
+This means that new model **Wuerstchen** is not supported until diffusers issue is resolved  
+
+- Added **change log** to UI, see *System -> Changelog*
+- **Extra networks**: faster search, ability to show/hide/sort networks
+
 ## Update for 2023-09-13
 
 Started as a mostly a service release with quite a few fixes, but then...  
@@ -22,11 +30,11 @@ Major changes how **hires** works as well as support for a very interesting new 
 - diffusers:
   - allow loading of sd/sdxl models from safetensors without online connectivity
   - support for new model: [wuerstchen](https://huggingface.co/warp-ai/wuerstchen)  
-    its a high-resolution model (1024px+) that nearly doubls performance of sd-xl with much lower resource requirements  
+    its a high-resolution model (1024px+) thats ~40% faster than sd-xl with a bit lower resource requirements  
     go to *models -> huggingface -> search "warp-ai/wuerstchen" -> download*  
     its nearly 12gb in size, so be patient :)
 - minor re-layout of the main ui  
-- update **ui hints**  
+- updated **ui hints**  
 - updated **models -> civitai**  
   - search and download loras  
   - find previews for already downloaded models or loras  

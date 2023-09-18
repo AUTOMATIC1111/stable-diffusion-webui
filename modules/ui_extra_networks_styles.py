@@ -6,7 +6,7 @@ from modules import shared, ui_extra_networks
 
 class ExtraNetworksPageStyles(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
-        super().__init__('Styles')
+        super().__init__('Style')
 
     def refresh(self):
         shared.prompt_styles.reload()

@@ -9,10 +9,9 @@ import urllib.request
 from urllib.parse import urlparse
 from enum import Enum
 import gradio as gr
-import tqdm
 import fasteners
 from rich.console import Console
-from modules import errors, ui_components, shared_items, cmd_args
+from modules import errors, shared_items, cmd_args, ui_components
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 from modules.dml import memory_providers, default_memory_provider, directml_do_hijack
 import modules.interrogate
@@ -38,6 +37,7 @@ interrogator = modules.interrogate.InterrogateModels("interrogate")
 sd_upscalers = []
 face_restorers = []
 tab_names = []
+extra_networks = []
 options_templates = {}
 hypernetworks = {}
 loaded_hypernetworks = []
@@ -72,20 +72,11 @@ restricted_opts = {
 compatibility_opts = ['clip_skip', 'uni_pc_lower_order_final', 'uni_pc_order']
 console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
 
-def is_url(string):
-    parsed_url = urlparse(string)
-    return all([parsed_url.scheme, parsed_url.netloc])
-
 
 class Backend(Enum):
     ORIGINAL = 1
     DIFFUSERS = 2
 
-
-def reload_hypernetworks():
-    from modules.hypernetworks import hypernetwork
-    global hypernetworks # pylint: disable=W0603
-    hypernetworks = hypernetwork.list_hypernetworks(opts.hypernetwork_dir)
 
 
 class State:
@@ -174,7 +165,7 @@ class State:
         """sets self.current_image from self.current_latent if enough sampling steps have been made after the last call to this"""
         if not parallel_processing_allowed:
             return
-        if self.sampling_step - self.current_image_sampling_step >= opts.show_progress_every_n_steps and opts.live_previews_enable and opts.show_progress_every_n_steps != -1:
+        if abs(self.sampling_step - self.current_image_sampling_step) >= opts.show_progress_every_n_steps and opts.live_previews_enable and opts.show_progress_every_n_steps > 0:
             self.do_set_current_image()
 
     def do_set_current_image(self):
@@ -192,6 +183,7 @@ class State:
     def assign_current_image(self, image):
         self.current_image = image
         self.id_live_preview += 1
+
 
 state = State()
 state.server_start = time.time()
@@ -250,6 +242,17 @@ def list_checkpoint_tiles():
     return modules.sd_models.checkpoint_tiles()
 
 default_checkpoint = list_checkpoint_tiles()[0] if len(list_checkpoint_tiles()) > 0 else "model.ckpt"
+
+
+def is_url(string):
+    parsed_url = urlparse(string)
+    return all([parsed_url.scheme, parsed_url.netloc])
+
+
+def reload_hypernetworks():
+    from modules.hypernetworks import hypernetwork
+    global hypernetworks # pylint: disable=W0603
+    hypernetworks = hypernetwork.list_hypernetworks(opts.hypernetwork_dir)
 
 
 def refresh_checkpoints():
@@ -435,10 +438,10 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_vae_upcast": OptionInfo("default", "VAE upcasting", gr.Radio, lambda: {"choices": ['default', 'true', 'false']}),
     "diffusers_vae_slicing": OptionInfo(True, "Enable VAE slicing"),
     "diffusers_vae_tiling": OptionInfo(False if cmd_opts.use_openvino else True, "Enable VAE tiling"),
-    "diffusers_attention_slicing": OptionInfo(False, "Enable attention slicing"),
+    "diffusers_attention_slicing": OptionInfo(True if devices.backend == "ipex" else False, "Enable attention slicing"),
     "diffusers_model_load_variant": OptionInfo("default", "Diffusers model loading variant", gr.Radio, lambda: {"choices": ['default', 'fp32', 'fp16']}),
     "diffusers_vae_load_variant": OptionInfo("default", "Diffusers VAE loading variant", gr.Radio, lambda: {"choices": ['default', 'fp32', 'fp16']}),
-    "diffusers_lora_loader": OptionInfo("diffusers default" if cmd_opts.use_openvino else "sequential apply", "Diffusers LoRA loading variant", gr.Radio, lambda: {"choices": ['sequential apply', 'merge and apply', 'diffusers default']}),
+    "diffusers_lora_loader": OptionInfo("sequential apply", "Diffusers LoRA loading variant", gr.Radio, lambda: {"choices": ['diffusers', 'sequential apply', 'merge and apply']}),
     "diffusers_force_zeros": OptionInfo(True, "Force zeros for prompts when empty"),
     "diffusers_aesthetics_score": OptionInfo(False, "Require aesthetics score"),
 }))
@@ -487,14 +490,13 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
     "n_rows": OptionInfo(-1, "Grid row count", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
 
     "save_sep_options": OptionInfo("<h2>Intermediate Image Saving</h2>", "", gr.HTML),
-    "save_init_img": OptionInfo(True, "Save copy of img2img init images"),
-    "save_images_before_highres_fix": OptionInfo(False, "Save copy of image before applying highres fix"),
+    "save_init_img": OptionInfo(False, "Save copy of img2img init images"),
+    "save_images_before_highres_fix": OptionInfo(False, "Save copy of image before applying hires"),
     "save_images_before_refiner": OptionInfo(False, "Save copy of image before running refiner"),
     "save_images_before_face_restoration": OptionInfo(False, "Save copy of image before doing face restoration"),
     "save_images_before_color_correction": OptionInfo(False, "Save copy of image before applying color correction"),
     "save_mask": OptionInfo(False, "Save copy of the inpainting greyscale mask"),
     "save_mask_composite": OptionInfo(False, "Save copy of inpainting masked composite"),
-
 }))
 
 options_templates.update(options_section(('saving-paths', "Image Naming & Paths"), {
@@ -522,7 +524,6 @@ options_templates.update(options_section(('saving-paths', "Image Naming & Paths"
     "outdir_grids": OptionInfo("", "Output directory for grids", component_args=hide_dirs, folder=True),
     "outdir_txt2img_grids": OptionInfo("outputs/grids", 'Output directory for txt2img grids', component_args=hide_dirs, folder=True),
     "outdir_img2img_grids": OptionInfo("outputs/grids", 'Output directory for img2img grids', component_args=hide_dirs, folder=True),
-
 }))
 
 options_templates.update(options_section(('ui', "User Interface"), {
@@ -558,7 +559,7 @@ options_templates.update(options_section(('live-preview', "Live Previews"), {
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler Settings"), {
-    "show_samplers": OptionInfo(["Default", "Euler a", "UniPC", "DEIS", "DDIM", "DPM 1S", "DPM 2M", "DPM++ 2M SDE", "DPM++ 2M SDE Karras", "DPM2 Karras", "DPM++ 2M Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers() if x.name != "PLMS"]}),
+    "show_samplers": OptionInfo(["Default", "Euler a", "UniPC", "DEIS", "DDIM", "DPM 1S", "DPM 2M", "DPM SDE", "DPM++ 2M SDE", "DPM++ 2M SDE Karras", "DPM2 Karras", "DPM++ 2M Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers() if x.name != "PLMS"]}),
     'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "bh2", "vary_coeff"]}),
     'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}),
     'eta_noise_seed_delta': OptionInfo(0, "Noise seed delta (eta)", gr.Number, {"precision": 0}),
@@ -570,7 +571,7 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
     "schedulers_use_karras": OptionInfo(True, "Samplers use Karras sigmas where applicable"),
     "schedulers_use_loworder": OptionInfo(True, "Samplers use simplified solvers in final steps where applicable"),
     "schedulers_use_thresholding": OptionInfo(False, "Samplers use dynamic thresholding where applicable"),
-    "schedulers_dpm_solver": OptionInfo("sde-dpmsolver++", "Samplers DPM solver algorithm", gr.Radio, lambda: {"choices": ['dpmsolver', 'dpmsolver++', 'sde-dpmsolver++']}),
+    "schedulers_dpm_solver": OptionInfo("sde-dpmsolver++", "Samplers DPM solver algorithm", gr.Radio, lambda: {"choices": ['dpmsolver', 'dpmsolver++', 'sde-dpmsolver', 'sde-dpmsolver++']}),
     "schedulers_beta_schedule": OptionInfo("default", "Samplers override beta schedule", gr.Radio, lambda: {"choices": ['default', 'linear', 'scaled_linear', 'squaredcos_cap_v2']}),
     'schedulers_beta_start': OptionInfo(0, "Samplers override beta start", gr.Number, {}),
     'schedulers_beta_end': OptionInfo(0, "Samplers override beta end", gr.Number, {}),
@@ -609,7 +610,7 @@ options_templates.update(options_section(('postprocessing', "Postprocessing"), {
     "postprocessing_sep_upscalers": OptionInfo("<h2>Upscaling</h2>", "", gr.HTML),
     'upscaling_max_images_in_cache': OptionInfo(5, "Maximum number of images in upscaling cache", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "upscaler_for_img2img": OptionInfo("None", "Default upscaler for image resize operations", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers]}),
-    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Real-ESRGAN available models", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
+    # "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Real-ESRGAN available models", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
     "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
     "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap in pixels for ESRGAN upscalers", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
     "SCUNET_tile": OptionInfo(256, "Tile size for SCUNET upscalers", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
@@ -647,6 +648,7 @@ options_templates.update(options_section(('interrogate', "Interrogate"), {
 }))
 
 options_templates.update(options_section(('extra_networks', "Extra Networks"), {
+    "extra_networks": OptionInfo(["All"], "Extra networks", ui_components.DropdownMulti, lambda: {"choices": ['All'] + [en.title for en in extra_networks]}),
     "extra_networks_card_cover": OptionInfo("sidebar", "UI position", gr.Radio, lambda: {"choices": ["cover", "inline", "sidebar"]}),
     "extra_networks_height": OptionInfo(53, "UI height (%)", gr.Slider, {"minimum": 10, "maximum": 100, "step": 1}),
     "extra_networks_sidebar_width": OptionInfo(35, "UI sidebar width (%)", gr.Slider, {"minimum": 10, "maximum": 80, "step": 1}),
@@ -656,8 +658,8 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_card_fit": OptionInfo("cover", "UI image contain method", gr.Radio, lambda: {"choices": ["contain", "cover", "fill"]}),
     "extra_network_skip_indexing": OptionInfo(False, "Do not automatically build extra network pages", gr.Checkbox),
     "lyco_patch_lora": OptionInfo(False, "Use LyCoris handler for all LoRA types", gr.Checkbox),
-    "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple LoRA", gr.Checkbox),
-    "extra_networks_default_multiplier": OptionInfo(1.0, "Multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple LoRA", gr.Checkbox, { "visible": False }),
+    "extra_networks_default_multiplier": OptionInfo(1.0, "Multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01, "visible": False}),
     "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: { "choices": ["None"] + list(hypernetworks.keys()), "visible": False }, refresh=reload_hypernetworks),
 }))
 
@@ -832,6 +834,7 @@ else:
 opts.data['sd_backend'] = 'diffusers' if backend == Backend.DIFFUSERS else 'original'
 opts.data['uni_pc_lower_order_final'] = opts.schedulers_use_loworder
 opts.data['uni_pc_order'] = opts.schedulers_solver_order
+# opts.data['diffusers_lora_loader'] = 'diffusers' # TODO broken in diffusers=0.21
 log.info(f'Engine: backend={backend} compute={devices.backend} mode={devices.inference_context.__name__} device={devices.get_optimal_device_name()}')
 log.info(f'Device: {print_dict(devices.get_gpu_info())}')
 
@@ -885,37 +888,18 @@ def reload_gradio_theme(theme_name=None):
     log.info(f'Loading UI theme: name={theme_name} style={opts.theme_style}')
 
 
-class TotalTQDM:
+class TotalTQDM: # compatibility with previous global-tqdm
+    # import tqdm
     def __init__(self):
-        self._tqdm = None
-
+        pass
     def reset(self):
-        self._tqdm = tqdm.tqdm(
-            desc="Total",
-            total=state.job_count * state.sampling_steps,
-            position=1,
-        )
-
+        pass
     def update(self):
-        if not opts.multiple_tqdm or cmd_opts.disable_console_progressbars:
-            return
-        if self._tqdm is None:
-            self.reset()
-        self._tqdm.update()
-
+        pass
     def updateTotal(self, new_total):
-        if not opts.multiple_tqdm or cmd_opts.disable_console_progressbars:
-            return
-        if self._tqdm is None:
-            self.reset()
-        self._tqdm.total = new_total
-
+        pass
     def clear(self):
-        if self._tqdm is not None:
-            self._tqdm.refresh()
-            self._tqdm.close()
-            self._tqdm = None
-
+        pass
 total_tqdm = TotalTQDM()
 
 
@@ -1067,4 +1051,5 @@ sd_model = None
 sd_refiner = None
 sd_model_type = ''
 sd_refiner_type = ''
+compiled_model_state = None
 sys.modules[__name__].__class__ = Shared

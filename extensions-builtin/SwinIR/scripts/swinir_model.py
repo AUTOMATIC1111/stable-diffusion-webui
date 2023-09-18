@@ -2,8 +2,7 @@ import os
 import numpy as np
 import torch
 from PIL import Image
-from basicsr.utils.download_util import load_file_from_url
-from tqdm.rich import tqdm
+from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
 from swinir_model_arch import SwinIR as net
 from swinir_model_arch_v2 import Swin2SR as net2
 from modules import modelloader, devices, script_callbacks, shared
@@ -45,11 +44,13 @@ class UpscalerSwinIR(Upscaler):
 
     def load_model(self, path, scale=4):
         if "http" in path:
-            dl_name = "%s%s" % (self.model_name.replace(" ", "_"), ".pth")
+            from modules.modelloader import load_file_from_url
+            dl_name = "%s%s" % (self.model_name.replace(" ", "_"), ".pth") # pylint: disable=consider-using-f-string
             filename = load_file_from_url(url=path, model_dir=self.model_download_path, file_name=dl_name, progress=True)
         else:
             filename = path
         if filename is None or not os.path.exists(filename):
+            shared.log.error(f"Model failed loading: type=SwinIR model={filename}")
             return None
         model_v2 = net2(
             upscale=scale,
@@ -78,6 +79,8 @@ class UpscalerSwinIR(Upscaler):
             resi_connection="3conv",
         )
         pretrained_model = torch.load(filename)
+        shared.log.info(f"Model loaded: type=SwinIR model={filename}")
+
         for model in [model_v1, model_v2]:
             for param in ["params_ema", "params", None]:
                 try:
@@ -140,7 +143,8 @@ def inference(img, model, tile, tile_overlap, window_size, scale):
     E = torch.zeros(b, c, h * sf, w * sf, dtype=devices.dtype, device=device_swinir).type_as(img)
     W = torch.zeros_like(E, dtype=devices.dtype, device=device_swinir)
 
-    with tqdm(total=len(h_idx_list) * len(w_idx_list), desc="Upscaling SwinIR") as pbar:
+    with Progress(TextColumn('[cyan]{task.description}'), BarColumn(), TaskProgressColumn(), TimeRemainingColumn(), TimeElapsedColumn(), console=shared.console) as progress:
+        task = progress.add_task(description="Upscaling Initializing", total=len(h_idx_list) * len(w_idx_list))
         for h_idx in h_idx_list:
             if state.interrupted or state.skipped:
                 break
@@ -159,7 +163,7 @@ def inference(img, model, tile, tile_overlap, window_size, scale):
                 W[
                 ..., h_idx * sf: (h_idx + tile) * sf, w_idx * sf: (w_idx + tile) * sf
                 ].add_(out_patch_mask)
-                pbar.update(1)
+                progress.update(task, advance=1, description="Upscaling")
     output = E.div_(W)
 
     return output

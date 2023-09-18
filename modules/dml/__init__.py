@@ -9,7 +9,7 @@ default_memory_provider = "None"
 if platform.system() == "Windows":
     memory_providers.append("Performance Counter")
     default_memory_provider = "Performance Counter"
-do_nothing = lambda: None
+do_nothing = lambda: None # pylint: disable=unnecessary-lambda-assignment
 
 def _set_memory_provider():
     from modules.shared import opts, cmd_opts, log
@@ -63,7 +63,7 @@ def directml_init():
     return True, None
 
 def directml_do_hijack():
-    import modules.dml.hijack
+    import modules.dml.hijack # pylint: disable=unused-import
     from modules.devices import device
 
     if not torch.dml.has_float64_support(device):
@@ -79,9 +79,9 @@ class OverrideItem(NamedTuple):
     message: Optional[str]
 
 opts_override_table = {
-    "diffusers_generator_device": OverrideItem("cpu", None, "DirectML does not support torch Generator API."),
-    "diffusers_model_cpu_offload": OverrideItem(False, None, "Diffusers' model CPU offloading does not support DirectML devices."),
-    "diffusers_seq_cpu_offload": OverrideItem(False, lambda opts: opts.diffusers_pipeline != "Stable Diffusion XL", "Diffusers' sequential CPU offloading is available only on StableDiffusionXLPipeline with DirectML devices."),
+    "diffusers_generator_device": OverrideItem("cpu", None, "DirectML does not support torch Generator API"),
+    "diffusers_model_cpu_offload": OverrideItem(False, None, "Diffusers model CPU offloading does not support DirectML devices"),
+    "diffusers_seq_cpu_offload": OverrideItem(False, lambda opts: opts.diffusers_pipeline != "Stable Diffusion XL", "Diffusers sequential CPU offloading is available only on StableDiffusionXLPipeline with DirectML devices"),
 }
 
 def directml_override_opts():
@@ -96,11 +96,9 @@ def directml_override_opts():
         if getattr(shared.opts, key) != item.value and (item.condition is None or item.condition(shared.opts)):
             count += 1
             setattr(shared.opts, key, item.value)
-            if item.message is not None:
-                shared.log.warning(item.message)
-            shared.log.warning(f'{key} is automatically overriden to {item.value}.')
+            shared.log.warning(f'Overriding: {key}={item.value} {item.message if item.message is not None else ""}')
 
     if count > 0:
-        shared.log.info(f'{count} options are automatically overriden. If you want to keep them from overriding, run with --experimental argument.')
+        shared.log.info(f'Options override: count={count}. If you want to keep them from overriding, run with --experimental argument.')
 
     _set_memory_provider()

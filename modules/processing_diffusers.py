@@ -1,8 +1,10 @@
 import time
+import math
 import inspect
 import typing
 import torch
 import torchvision.transforms.functional as TF
+import diffusers
 import modules.devices as devices
 import modules.shared as shared
 import modules.sd_samplers as sd_samplers
@@ -13,12 +15,6 @@ import modules.images as images
 from modules.lora_diffusers import lora_state, unload_diffusers_lora
 from modules.processing import StableDiffusionProcessing
 import modules.prompt_parser_diffusers as prompt_parser_diffusers
-
-
-try:
-    import diffusers
-except Exception as ex:
-    shared.log.error(f'Failed to import diffusers: {ex}')
 
 
 def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_prompts):
@@ -78,8 +74,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             model.vae.to(devices.device)
         latents.to(model.vae.device)
 
-        needs_upcasting = model.vae.dtype == torch.float16 and model.vae.config.force_upcast
-        if needs_upcasting: # this is done by diffusers automatically if output_type != 'latent'
+        upcast = (model.vae.dtype == torch.float16) and model.vae.config.force_upcast and hasattr(model, 'upcast_vae')
+        if upcast: # this is done by diffusers automatically if output_type != 'latent'
             model.upcast_vae()
             latents = latents.to(next(iter(model.vae.post_quant_conv.parameters())).dtype)
 
@@ -87,7 +83,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if shared.opts.diffusers_move_unet and not model.has_accelerate:
             model.unet.to(unet_device)
         t1 = time.time()
-        shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)} images={latents.shape[0]} latents={latents.shape} time={round(t1-t0, 3)}s')
+        shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={upcast} images={latents.shape[0]} latents={latents.shape} time={round(t1-t0, 3)}s')
         return decoded
 
     def full_vae_encode(image, model):
@@ -171,6 +167,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         return prompts, negative_prompts, prompts_2, negative_prompts_2
 
     def set_pipeline_args(model, prompts: list, negative_prompts: list, prompts_2: typing.Optional[list]=None, negative_prompts_2: typing.Optional[list]=None, desc:str='', **kwargs):
+        if hasattr(model, 'embedding_db'):
+            del model.embedding_db
         try:
             is_refiner = model.text_encoder.__class__.__name__ != 'CLIPTextModel'
         except Exception:
@@ -187,8 +185,13 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         negative_embed = None
         negative_pooled = None
         prompts, negative_prompts, prompts_2, negative_prompts_2 = fix_prompts(prompts, negative_prompts, prompts_2, negative_prompts_2)
-        if shared.opts.prompt_attention in {'Compel parser', 'Full parser'} and 'StableDiffusion' in model.__class__.__name__:
-            prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompts(model, prompts, negative_prompts, prompts_2, negative_prompts_2, is_refiner, kwargs.pop("clip_skip", None))
+        parser = 'Fixed attention'
+        if shared.opts.prompt_attention != 'Fixed attention' and 'StableDiffusion' in model.__class__.__name__:
+            try:
+                prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompts(model, prompts, negative_prompts, prompts_2, negative_prompts_2, is_refiner, kwargs.pop("clip_skip", None))
+                parser = shared.opts.prompt_attention
+            except Exception as e:
+                shared.log.error(f'Prompt parser: {e}')
         if 'prompt' in possible:
             if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and prompt_embed is not None:
                 if type(pooled) == list:
@@ -244,7 +247,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if 'negative_pooled_prompt_embeds' in clean:
             clean['negative_pooled_prompt_embeds'] = clean['negative_pooled_prompt_embeds'].shape if torch.is_tensor(clean['negative_pooled_prompt_embeds']) else type(clean['negative_pooled_prompt_embeds'])
         clean['generator'] = generator_device
+        clean['parser'] = parser
         shared.log.debug(f'Diffuser pipeline: {model.__class__.__name__} task={sd_models.get_diffusers_task(model)} set={clean}')
+        # components = [{ k: getattr(v, 'device', None) } for k, v in model.components.items()]
+        # shared.log.debug(f'Diffuser pipeline components: {components}')
         return args
 
     def recompile_model(hires=False):
@@ -252,10 +258,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             if shared.opts.cuda_compile_backend == "openvino_fx":
                 compile_height = p.height if not hires else p.hr_upscale_to_y
                 compile_width = p.width if not hires else p.hr_upscale_to_x
-                if (not hasattr(shared.sd_model, "compiled_model_state") or (not shared.sd_model.compiled_model_state.first_pass
-                and (shared.sd_model.compiled_model_state.height != compile_height or shared.sd_model.compiled_model_state.width != compile_width
-                or shared.sd_model.compiled_model_state.batch_size != p.batch_size))):
-                    shared.log.info("OpenVINO: Resolution change detected")
+                if (shared.compiled_model_state is None or
+                (not shared.compiled_model_state.first_pass
+                and (shared.compiled_model_state.height != compile_height
+                or shared.compiled_model_state.width != compile_width
+                or shared.compiled_model_state.batch_size != p.batch_size))):
+                    shared.log.info("OpenVINO: Parameter change detected")
                     shared.log.info("OpenVINO: Recompiling base model")
                     sd_models.unload_model_weights(op='model')
                     sd_models.reload_model_weights(op='model')
@@ -263,19 +271,20 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                         shared.log.info("OpenVINO: Recompiling refiner")
                         sd_models.unload_model_weights(op='refiner')
                         sd_models.reload_model_weights(op='refiner')
-                shared.sd_model.compiled_model_state.height = compile_height
-                shared.sd_model.compiled_model_state.width = compile_width
-                shared.sd_model.compiled_model_state.batch_size = p.batch_size
-                shared.sd_model.compiled_model_state.first_pass = False
+                shared.compiled_model_state.height = compile_height
+                shared.compiled_model_state.width = compile_width
+                shared.compiled_model_state.batch_size = p.batch_size
+                shared.compiled_model_state.first_pass = False
             else:
                 pass #Can be implemented for TensorRT or Olive
         else:
             pass #Do nothing if compile is disabled
 
+    recompile_model()
+
     is_karras_compatible = shared.sd_model.__class__.__init__.__annotations__.get("scheduler", None) == diffusers.schedulers.scheduling_utils.KarrasDiffusionSchedulers
-    use_sampler = p.sampler_name if not p.is_hr_pass else p.latent_sampler
-    if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != use_sampler) and (use_sampler != 'Default') and is_karras_compatible:
-        sampler = sd_samplers.all_samplers_map.get(use_sampler, None)
+    if ((not hasattr(shared.sd_model.scheduler, 'name')) or (p.sampler_name == 'DPM SDE') or (shared.sd_model.scheduler.name != p.sampler_name)) and (p.sampler_name != 'Default') and is_karras_compatible:
+        sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)
         if sampler is None:
             sampler = sd_samplers.all_samplers_map.get("UniPC")
         sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
@@ -297,19 +306,17 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     task_specific_kwargs={}
     if sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE:
         p.ops.append('txt2img')
-        task_specific_kwargs = {"height": p.height, "width": p.width}
+        task_specific_kwargs = {"height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8)}
     elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE:
         p.ops.append('img2img')
         task_specific_kwargs = {"image": p.init_images, "strength": p.denoising_strength}
     elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING:
         p.ops.append('inpaint')
-        task_specific_kwargs = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength, "height": p.height, "width": p.width}
+        task_specific_kwargs = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength, "height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8)}
 
     if shared.state.interrupted or shared.state.skipped:
         unload_diffusers_lora()
         return results
-
-    recompile_model()
 
     if shared.opts.diffusers_move_base and not shared.sd_model.has_accelerate:
         shared.sd_model.to(devices.device)
@@ -373,6 +380,11 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             if latent_scale_mode is not None or p.hr_force:
                 p.ops.append('hires')
                 recompile_model(hires=True)
+                if ((not hasattr(shared.sd_model.scheduler, 'name')) or (p.latent_sampler == 'DPM SDE') or (shared.sd_model.scheduler.name != p.latent_sampler)) and (p.latent_sampler != 'Default') and is_karras_compatible:
+                    sampler = sd_samplers.all_samplers_map.get(p.latent_sampler, None)
+                    if sampler is None:
+                        sampler = sd_samplers.all_samplers_map.get("UniPC")
+                    sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
                 sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                 hires_args = set_pipeline_args(
                     model=shared.sd_model,
@@ -404,7 +416,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             shared.sd_model.to(devices.cpu)
             devices.torch_gc()
 
-        if (not hasattr(shared.sd_refiner.scheduler, 'name')) or (shared.sd_refiner.scheduler.name != p.latent_sampler) and (p.sampler_name != 'Default'):
+        if ((not hasattr(shared.sd_refiner.scheduler, 'name')) or (p.latent_sampler == 'DPM SDE') or (shared.sd_refiner.scheduler.name != p.latent_sampler)) and (p.latent_sampler != 'Default'):
             sampler = sd_samplers.all_samplers_map.get(p.latent_sampler, None)
             if sampler is None:
                 sampler = sd_samplers.all_samplers_map.get("UniPC")

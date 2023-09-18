@@ -272,6 +272,20 @@ class StyleItem(BaseModel):
     filename: Optional[str] = Field(title="Filename")
     preview: Optional[str] = Field(title="Preview")
 
+class ExtraNetworkItem(BaseModel):
+    name: str = Field(title="Name")
+    type: str = Field(title="Type")
+    title: Optional[str] = Field(title="Title")
+    fullname: Optional[str] = Field(title="Fullname")
+    filename: Optional[str] = Field(title="Filename")
+    hash: Optional[str] = Field(title="Hash")
+    preview: Optional[str] = Field(title="Preview image URL")
+    # description: Optional[str] = Field(title="Description")
+    # info: Optional[str] = Field(title="Information")
+    # metadata: Optional[Any] = Field(title="Metadata")
+    # local: Optional[str] = Field(title="Local")
+
+
 class ArtistItem(BaseModel):
     name: str = Field(title="Name")
     score: float = Field(title="Score")
@@ -303,7 +317,7 @@ class ScriptArg(BaseModel):
     minimum: Optional[Any] = Field(default=None, title="Minimum", description="Minimum allowed value for the argumentin UI")
     maximum: Optional[Any] = Field(default=None, title="Minimum", description="Maximum allowed value for the argumentin UI")
     step: Optional[Any] = Field(default=None, title="Minimum", description="Step for changing value of the argumentin UI")
-    choices: Optional[List[str]] = Field(default=None, title="Choices", description="Possible values for the argument")
+    choices: Optional[Any] = Field(default=None, title="Choices", description="Possible values for the argument")
 
 
 class ScriptInfo(BaseModel):

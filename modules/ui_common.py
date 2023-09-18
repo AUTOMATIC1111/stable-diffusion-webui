@@ -110,7 +110,7 @@ def save_files(js_data, images, html_info, index):
             fullfns.append(fullfn)
             destination = shared.opts.outdir_save
             if shared.opts.use_save_to_dirs_for_ui:
-                namegen = modules.images.FilenameGenerator(p, seed=p.all_seeds[i], prompt=p.all_prompts[i], image=None)  # pylint: disable=no-member
+                namegen = modules.images.FilenameGenerator(p, seed=p.all_seeds[i], prompt=p.all_prompts[i], image=None, index=image_index)  # pylint: disable=no-member
                 dirname = namegen.apply(shared.opts.directories_filename_pattern or "[prompt_words]").lstrip(' ').rstrip('\\ /')
                 destination = os.path.join(destination, dirname)
                 os.makedirs(destination, exist_ok = True)

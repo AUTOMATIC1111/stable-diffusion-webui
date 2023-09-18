@@ -179,6 +179,7 @@ def compel_encode_prompt(
         return prompt_embed, positive_pooled, negative_embed, negative_pooled
 
     # neither base+sdxl nor refiner+sdxl
-    positive, negative = compel_te1(prompt), compel_te1(negative_prompt)
+    positive = compel_te1(prompt)
+    negative = compel_te1(negative_prompt)
     [prompt_embed, negative_embed] = compel_te1.pad_conditioning_tensors_to_same_length([positive, negative])
     return prompt_embed, None, negative_embed, None

@@ -7,7 +7,7 @@ from modules.textual_inversion.textual_inversion import Embedding
 
 class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
-        super().__init__('Textual Inversion')
+        super().__init__('Embedding')
         self.allow_negative_prompt = True
 
     def refresh(self):
@@ -39,6 +39,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
             embeddings = list(sd_models.model_data.sd_model.embedding_db.word_embeddings.values())
         else:
             embeddings = []
+        embeddings = sorted(embeddings, key=lambda emb: emb.filename)
         for embedding in embeddings:
             path, _ext = os.path.splitext(embedding.filename)
             tags = {}

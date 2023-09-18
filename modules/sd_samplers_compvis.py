@@ -45,7 +45,6 @@ class VanillaStableDiffusionSampler:
     def launch_sampling(self, steps, func):
         state.sampling_steps = steps
         state.sampling_step = 0
-
         try:
             return func()
         except sd_samplers_common.InterruptedException:
@@ -53,11 +52,8 @@ class VanillaStableDiffusionSampler:
 
     def p_sample_ddim_hook(self, x_dec, cond, ts, unconditional_conditioning, *args, **kwargs):
         x_dec, ts, cond, unconditional_conditioning = self.before_sample(x_dec, ts, cond, unconditional_conditioning)
-
         res = self.orig_p_sample_ddim(x_dec, cond, ts, *args, unconditional_conditioning=unconditional_conditioning, **kwargs)
-
         x_dec, ts, cond, unconditional_conditioning, res = self.after_sample(x_dec, ts, cond, unconditional_conditioning, res)
-
         return res
 
     def before_sample(self, x, ts, cond, unconditional_conditioning):

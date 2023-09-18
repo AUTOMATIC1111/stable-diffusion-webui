@@ -462,7 +462,8 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
     if all_negative_prompts is None:
         all_negative_prompts = p.all_negative_prompts
     comment = ', '.join(comments) if comments is not None and type(comments) is list else None
-
+    ops = list(set(p.ops))
+    ops.reverse()
     args = {
         # basic
         "Steps": p.steps,
@@ -488,7 +489,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Backend": 'Diffusers' if shared.backend == shared.Backend.DIFFUSERS else 'Original',
         "Version": git_commit,
         "Comment": comment,
-        "Operations": '; '.join(p.ops).replace('"', '') if len(p.ops) > 0 else 'none',
+        "Operations": '; '.join(ops).replace('"', '') if len(p.ops) > 0 else 'none',
     }
     if 'txt2img' in p.ops:
         pass
@@ -572,6 +573,8 @@ def print_profile(profile, msg: str):
 def process_images(p: StableDiffusionProcessing) -> Processed:
     if not hasattr(p.sd_model, 'sd_checkpoint_info'):
         return None
+    if p.scripts is not None:
+        p.scripts.before_process(p)
     stored_opts = {}
     for k, v in p.override_settings.copy().items():
         orig = shared.opts.data.get(k, None) or shared.opts.data_labels[k].default
@@ -686,8 +689,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         p.all_subseeds = subseed
     else:
         p.all_subseeds = [int(subseed) + x for x in range(len(p.all_prompts))]
-    if os.path.exists(shared.opts.embeddings_dir) and not p.do_not_reload_embeddings:
-        modules.sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
+    if os.path.exists(shared.opts.embeddings_dir) and not p.do_not_reload_embeddings and shared.backend == shared.Backend.ORIGINAL:
+        modules.sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=False)
     if p.scripts is not None:
         p.scripts.process(p)
     infotexts = []
@@ -984,12 +987,14 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             info = create_infotext(self, self.all_prompts, self.all_seeds, self.all_subseeds, [], iteration=self.iteration, position_in_batch=index)
             self.extra_generation_params = orig1
             self.restore_faces = orig2
-            images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], shared.opts.samples_format, info=info, suffix="-before-highres-fix")
+            images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], shared.opts.samples_format, info=info, suffix="-before-hires", index=index+1)
 
         if shared.backend == shared.Backend.DIFFUSERS:
             modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.TEXT_2_IMAGE)
 
         latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "None")
+        if latent_scale_mode is not None:
+            self.hr_force = False # no need to force anything
         if self.enable_hr and (latent_scale_mode is None or self.hr_force):
             if len([x for x in shared.sd_upscalers if x.name == self.hr_upscaler]) == 0:
                 shared.log.warning(f"Cannot find upscaler for hires: {self.hr_upscaler}")
@@ -1013,11 +1018,10 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 decoded_samples = decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae))
                 lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
                 batch_images = []
-                for i, x_sample in enumerate(lowres_samples):
+                for _i, x_sample in enumerate(lowres_samples):
                     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                     x_sample = validate_sample(x_sample)
                     image = Image.fromarray(x_sample)
-                    save_intermediate(image, i)
                     image = images.resize_image(1, image, target_width, target_height, upscaler_name=self.hr_upscaler)
                     image = np.array(image).astype(np.float32) / 255.0
                     image = np.moveaxis(image, 2, 0)

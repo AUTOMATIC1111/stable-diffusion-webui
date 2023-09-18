@@ -221,10 +221,10 @@ class Hypernetwork:
             torch.save(optimizer_saved_dict, f"{filename}.optim")
 
     def load(self, filename):
-        self.filename = filename
+        self.filename = filename if os.path.exists(filename) else os.path.join(shared.opts.hypernetwork_dir, filename)
         if self.name is None:
-            self.name = os.path.splitext(os.path.basename(filename))[0]
-        with progress.open(filename, 'rb', description=f'Loading hypernetwork: [cyan]{filename}', auto_refresh=True, console=shared.console) as f:
+            self.name = os.path.splitext(os.path.basename(self.filename))[0]
+        with progress.open(self.filename, 'rb', description=f'Loading hypernetwork: [cyan]{self.filename}', auto_refresh=True, console=shared.console) as f:
             state_dict = torch.load(f, map_location='cpu')
         self.layer_structure = state_dict.get('layer_structure', [1, 2, 1])
         self.optional_info = state_dict.get('optional_info', None)

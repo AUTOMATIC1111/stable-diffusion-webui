@@ -5,7 +5,7 @@ from modules import shared, ui_extra_networks
 
 class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
-        super().__init__('Hypernetworks')
+        super().__init__('Hypernetwork')
 
     def refresh(self):
         shared.reload_hypernetworks()

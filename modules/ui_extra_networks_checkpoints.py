@@ -7,7 +7,7 @@ from modules import shared, ui_extra_networks, sd_models
 
 class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
-        super().__init__('Checkpoints')
+        super().__init__('Model')
 
     def refresh(self):
         shared.refresh_checkpoints()
@@ -18,6 +18,7 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
             path, _ext = os.path.splitext(checkpoint.filename)
             yield {
                 "name": checkpoint.name_for_extra,
+                "title": checkpoint.title,
                 "filename": path,
                 "fullname": checkpoint.filename,
                 "hash": checkpoint.shorthash,

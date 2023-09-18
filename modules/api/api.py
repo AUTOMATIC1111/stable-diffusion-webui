@@ -2,7 +2,7 @@ import io
 import time
 import base64
 from io import BytesIO
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from threading import Lock
 from secrets import compare_digest
 from fastapi import FastAPI, APIRouter, Depends
@@ -148,6 +148,7 @@ class Api:
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
         self.add_api_route("/sdapi/v1/log", self.get_log_buffer, methods=["GET"], response_model=List) # bypass auth
+        self.add_api_route("/sdapi/v1/extra-networks", self.get_extra_networks, methods=["GET"], response_model=List[models.ExtraNetworkItem])
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
 
@@ -180,10 +181,12 @@ class Api:
         i2ilist = [script.name for script in scripts.scripts_img2img.scripts if script.name is not None]
         return models.ScriptsList(txt2img = t2ilist, img2img = i2ilist)
 
-    def get_script_info(self):
+    def get_script_info(self, script_name: Optional[str] = None):
         res = []
         for script_list in [scripts.scripts_txt2img.scripts, scripts.scripts_img2img.scripts]:
-            res += [script.api_info for script in script_list if script.api_info is not None]
+            for script in script_list:
+                if script.api_info is not None and (script_name is None or script_name == script.api_info.name):
+                    res.append(script.api_info)
         return res
 
     def get_script(self, script_name, script_runner):
@@ -499,6 +502,33 @@ class Api:
             "loaded": convert_embeddings(db.word_embeddings),
             "skipped": convert_embeddings(db.skipped_embeddings),
         }
+
+    def get_extra_networks(self, page: Optional[str] = None, name: Optional[str] = None, filename: Optional[str] = None, title: Optional[str] = None, fullname: Optional[str] = None, hash: Optional[str] = None): # pylint: disable=redefined-builtin
+        res = []
+        for pg in shared.extra_networks:
+            if page is not None and pg.name != page.lower():
+                continue
+            for item in pg.items:
+                if name is not None and item.get('name', '') != name:
+                    continue
+                if title is not None and item.get('title', '') != title:
+                    continue
+                if filename is not None and item.get('filename', '') != filename:
+                    continue
+                if fullname is not None and item.get('fullname', '') != fullname:
+                    continue
+                if hash is not None and (item.get('shorthash', None) or item.get('hash')) != hash:
+                    continue
+                res.append({
+                    'name': item.get('name', ''),
+                    'type': pg.name,
+                    'title': item.get('title', None),
+                    'fullname': item.get('fullname', None),
+                    'filename': item.get('filename', None),
+                    'hash': item.get('shorthash', None) or item.get('hash'),
+                    "preview": item.get('preview', None),
+                })
+        return res
 
     def refresh_checkpoints(self):
         return shared.refresh_checkpoints()
