@@ -18,6 +18,7 @@ from worker.task_recv import Tmp
 from PIL.PngImagePlugin import PngInfo
 from tools.encryptor import des_encrypt
 from tools.wrapper import FuncExecTimeWrapper
+from modules.shared import cmd_opts
 from modules.processing import Processed
 from modules.scripts import Script, ScriptRunner
 from modules.sd_models import reload_model_weights, CheckpointInfo
@@ -62,9 +63,12 @@ def batch_model_local_paths(model_type: ModelType, *remoting_paths: str) \
     remoting_key_dst_pairs, loc = [], []
     os.makedirs(ModelLocation[model_type], exist_ok=True)
     for p in remoting_paths:
+        if not p:
+            continue
         if os.path.isfile(p):
             loc.append(p)
             continue
+
         dst = os.path.join(ModelLocation[model_type], os.path.basename(p))
         loc.append(dst)
         if not os.path.isfile(dst):
@@ -188,8 +192,9 @@ def script_name_to_index(name, scripts):
         raise Exception(f"Script '{name}' not found")
 
 
+ADetailer = 'ADetailer'
 default_alwayson_scripts = {
-    'ADetailer': {
+    ADetailer: {
         'args': [{
             'ad_model': 'mediapipe_face_full'
         }]
@@ -198,7 +203,8 @@ default_alwayson_scripts = {
 
 
 def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: StrMapMap, selectable_scripts: Script,
-                     selectable_idx: int, request_script_args: typing.Sequence, script_runner: ScriptRunner):
+                     selectable_idx: int, request_script_args: typing.Sequence, script_runner: ScriptRunner,
+                     enable_def_adetailer: bool = True):
     script_args = [x for x in default_script_args]
 
     if selectable_scripts:
@@ -206,7 +212,12 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
         script_args[0] = selectable_idx + 1
 
     alwayson_scripts = alwayson_scripts or {}
-    alwayson_scripts.update(default_alwayson_scripts)
+    if not getattr(cmd_opts, 'disable_tss_def_alwayson', False):
+        alwayson_scripts.update(default_alwayson_scripts)
+    else:
+        logger.debug('====> disable tss adetailer plugin!')
+    if not enable_def_adetailer and ADetailer in alwayson_scripts:
+        del alwayson_scripts[ADetailer]
     # Now check for always on scripts
     if alwayson_scripts:
 
@@ -299,7 +310,7 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, scrip
         pnginfo_data = PngInfo()
         pnginfo_data.add_text('by', 'xingzhe')
         size = f"{processed_image.width}*{processed_image.height}"
-        infotexts = proc.infotexts[n].replace('-automatic1111', "-xingzhe")\
+        infotexts = proc.infotexts[n].replace('-automatic1111', "-xingzhe") \
             if proc.infotexts and n < len(proc.infotexts) else ''
         for k, v in processed_image.info.items():
             if 'parameters' == k:

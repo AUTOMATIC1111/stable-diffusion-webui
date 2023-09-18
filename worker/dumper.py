@@ -12,11 +12,12 @@ import time
 import typing
 from loguru import logger
 from threading import Thread
+from datetime import datetime
 from tools.mgo import MongoClient
 from tools.host import get_host_ip
 from tools.redis import RedisPool
 from worker.task import TaskProgress
-from tools.environment import pod_host
+from tools.environment import pod_host, mongo_doc_expire_seconds
 
 
 class DumpInfo:
@@ -74,7 +75,8 @@ class TaskDumper(Thread):
     def _set_cache(self, info: DumpInfo):
         try:
             rds = self.redis_pool.get_connection()
-            rds.set(info.id.replace("task_id=", ""), json.dumps(info.set['$set']), 1200)
+            data = dict(((k, v) for (k, v) in info.set['$set'].items() if not isinstance(v, datetime)))
+            rds.set(info.id.replace("task_id=", ""), json.dumps(data), 1200)
         except Exception as err:
             logger.exception('cannot write to redis')
 
@@ -95,17 +97,28 @@ class TaskDumper(Thread):
         return infos
 
     def run(self) -> None:
+        counter = 0
         while not self._stop_flag:
-            now = time.time()
-            if self._dump_now or now - self._last_dump_time > self.send_delay:
-                self._last_dump_time = now
-                if not self.queue.empty():
-                    array = self._get_queue_all()
-                    for info in array.values():
-                        info.update_db(self.db)
-                self._dump_now = False
-            time.sleep(1)
-            self.do_others()
+            try:
+                now = time.time()
+                if counter % 60 == 0:
+                    logger.info("dumper waiting db record.")
+                if counter > 120:
+                    counter = 0
+                if self._dump_now or now - self._last_dump_time > self.send_delay:
+                    self._last_dump_time = now
+                    if not self.queue.empty():
+                        array = self._get_queue_all()
+                        for info in array.values():
+                            info.update_db(self.db)
+                    self._dump_now = False
+                    counter = 0
+                time.sleep(1)
+                self.do_others()
+            except:
+                logger.exception("unhandle err at dumper")
+            finally:
+                counter += 1
 
     def dump_task_progress(self, task_progress: TaskProgress):
         # try:
@@ -174,6 +187,11 @@ class MongoTaskDumper(TaskDumper):
         image_cols.create_index('model_hash')
         image_cols.create_index('image_type')
         image_cols.create_index('group_id')
+        doc_exp = mongo_doc_expire_seconds()
+        if doc_exp > 0:
+            logger.warning(f"set mongo doc expire after {doc_exp} seconds!")
+            image_cols.create_index([("update_at", 1), ('expireAfterSeconds', doc_exp//2)])
+            mgo.collect.create_index([("update_at", 1), ('expireAfterSeconds', doc_exp)])
 
         self.clean_time = 0
         super(MongoTaskDumper, self).__init__(mgo)
@@ -184,6 +202,7 @@ class MongoTaskDumper(TaskDumper):
             {
                 "task_id": task_progress.task.id,
                 "ip": self.ip,
+                "update_at": datetime.now()
             }
         )
 
@@ -210,12 +229,14 @@ class MongoTaskDumper(TaskDumper):
             tasks = list(tasks)
             for task in tasks:
                 task['status'] = -1
+                task['update_at'] = datetime.now()
                 task['task_desc'] = 'task timeout(auto clean).'
                 self.db.update(
                     {"task_id": task['task_id']},
                     {'$set': task},
                     multi=False
                 )
+
 
             self.clean_time = now
 
@@ -230,6 +251,7 @@ class MongoTaskDumper(TaskDumper):
                          'user_id': task_progress.task.user_id, 'create_at': task_progress.task['create_at'],
                          'task_type': task_progress.task.task_type, 'minor_type': task_progress.task.minor_type,
                          'group_id': "", 'index': index, 'low_image': sample, 'image_type': 'grid',
+                         'update_at': datetime.now(),
                          'high_image': r['grids']['high'][i]}
                     flatten_images.append(t)
                     index += 1
@@ -242,6 +264,7 @@ class MongoTaskDumper(TaskDumper):
                          'high_image': r['samples']['high'][i],
                          'seed': task_progress.task['all_seed'][i],
                          'sub_seed': task_progress.task['all_sub_seed'][i],
+                         'update_at': datetime.now(),
                          }
                     flatten_images.append(t)
                     index += 1
@@ -252,6 +275,7 @@ class MongoTaskDumper(TaskDumper):
                          'task_type': task_progress.task.task_type, 'minor_type': task_progress.task.minor_type,
                          'group_id': "", 'index': index, 'low_image': sample, 'image_type': 'sample',
                          'high_image': r['all']['high'][i],
+                         'update_at': datetime.now(),
                          }
                     flatten_images.append(t)
                     index += 1

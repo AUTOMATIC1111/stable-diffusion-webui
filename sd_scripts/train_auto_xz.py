@@ -636,7 +636,6 @@ def train_auto(
                      process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
                      model_path=general_model_path,
                      filter_tags=undesired_tags, additional_tags=trigger_word)
-    train_callback(2)
 
     train_preprocess(process_src=head_list, process_dst=train_dir, process_width=head_width, process_height=head_height,
                      preprocess_txt_action='ignore', process_keep_original_size=False,
@@ -684,7 +683,7 @@ def train_auto(
         )
 
         if callable(train_callback):
-            train_callback(2)
+            train_callback(4)
 
     lora_name = f"{task_id}"
 

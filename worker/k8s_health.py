@@ -6,8 +6,11 @@
 # @File    : k8s_health.py
 # @Software: Hifive
 import os
-from loguru import logger
+import time
 
+from loguru import logger
+from ctypes import CDLL
+from ctypes.util import find_library
 
 def write_healthy(status: bool):
     if status:
@@ -21,15 +24,18 @@ def write_healthy(status: bool):
         os.remove("/var/healthy.txt")
 
 
-def system_exit(free, total, threshold=0.4):
-    if free < threshold*total:
-        logger.info("CUDA out of memory, quit...")
-        # kill process
-        from ctypes import CDLL
-        from ctypes.util import find_library
-
+def system_exit(free, total, threshold=0.2, coercive=False):
+    gpu_oom = free < threshold*total and free / 2 ** 30 < 3
+    if gpu_oom or coercive:
+        if gpu_oom:
+            logger.info(f"CUDA out of memory({free}/{total}), quit...")
+        else:
+            logger.info("kill current process.")
+        # for restart k8s pod
         write_healthy(False)
+        time.sleep(1)
 
+        # kill process
         libc = CDLL(find_library("libc"))
         libc.exit(1)
 

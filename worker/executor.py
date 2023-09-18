@@ -117,7 +117,18 @@ class TaskExecutor(Thread):
                         if isinstance(task, Task):
                             logger.debug(f"====>>> waiting task:{task.id}, stop receive.")
                             setattr(self.not_busy, "value", 1)
-                            self.not_busy.wait()
+                            try:
+                                self.not_busy.wait(timeout=3600 * 2)
+                            except Exception as err:
+                                free, total = vram_mon.cuda_mem_get_info()
+                                logger.exception("executor cannot require locker, quit...")
+                                self.receiver.close()
+                                system_exit(free, total, True)
+                                break
+                            if task.is_train:
+                                paralle_count = task.get('paralle_count', 0)
+                                if paralle_count > 0:
+                                    self.receiver.decr_train_concurrency(task.user_id)
                             logger.debug(f"====>>> waiting task:{task.id}, begin receive.")
                 else:
                     self.not_busy.wait()

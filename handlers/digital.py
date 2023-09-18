@@ -44,9 +44,10 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
             yield from self._exec_img2img(task)
 
     def _exec_img2img(self, task: Task) -> typing.Iterable[TaskProgress]:
+        time_start = time.time()
         base_model_path = self._get_local_checkpoint(task)
         load_sd_model_weights(base_model_path, task.model_hash)
-        progress = TaskProgress.new_ready(task, f'model loaded, gen refine image...')
+        progress = TaskProgress.new_ready(task, f'model loaded, gen refine image...', 50)
         self._refresh_default_script_args()
         yield progress
         tasks = self._build_i2i_tasks(task)
@@ -55,6 +56,8 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
         all_seeds = []
         all_subseeds = []
         processed = None
+        upload_files_eta_secs = 5
+
         for i, p in enumerate(tasks):
             if i == 0:
                 self._set_little_models(p)
@@ -63,6 +66,13 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
             all_subseeds.extend(processed.all_subseeds)
             images.append(processed.images[0])
             progress.task_progress = min((i + 1) * 100 / len(tasks), 98)
+            # time_since_start = time.time() - time_start
+            # eta = (time_since_start / p)
+            # progress.eta_relative = int(eta - time_since_start) + upload_files_eta_secs
+            if i == 0:
+                progress.eta_relative = 60
+            else:
+                progress.calc_eta_relative(upload_files_eta_secs)
             yield progress
             p.close()
 
@@ -72,7 +82,10 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
             images.insert(0, grid)
             processed.index_of_first_image = 1
             processed.index_of_end_image = len(images)
-            processed.images = images
+        else:
+            processed.index_of_first_image = 0
+            processed.index_of_end_image = len(images) - 1
+        processed.images = images
 
         progress.status = TaskStatus.Uploading
         yield progress

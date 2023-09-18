@@ -25,12 +25,25 @@ def authorization(user, password):
         "admin": "Admin123",
     }
 
+    res = {
+        'expire_time': -1
+    }
+
+    # res['expire_time']
+
     if os.getenv("ENABLE_TSS", "0") == '1':
         print('tushuashua plugin enable!!!!')
-        return request_tu(user, password)
-    if user in auths and auths.get(user) == password:
-        return 3600 * 24 + int(time.time())
-    return find_users_from_db(user, password)
+        res['expire_time'] = request_tu(user, password)
+        tss_token = getattr(opts, 'tu-token', {}).get('token')
+        if tss_token:
+            res['tss_token'] = tss_token
+            print(f"set tss token cookies:{tss_token}")
+
+    elif user in auths and auths.get(user) == password:
+        res['expire_time'] = 3600 * 24 + int(time.time())
+    else:
+        res['expire_time'] = find_users_from_db(user, password)
+    return res
 
 
 def find_users_from_db(username, password) -> int:
@@ -86,6 +99,7 @@ def encrypt(message: str, passphrase: str):
 
 def request_tu(username, password):
     host = os.getenv('TSS_HOST', 'https://draw-plus-backend-qa.xingzheai.cn/')
+    host = host.rstrip('/')
     path = "/v1/login"
     bucket_path = "/v1/users/user_info"
 
