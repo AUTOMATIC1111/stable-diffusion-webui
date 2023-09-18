@@ -1076,6 +1076,11 @@ def create_ui(startup_timer = None):
                 loadsave.create_ui()
                 create_dirty_indicator("tab_defaults", [], interactive=False)
 
+            with gr.TabItem("Change log", id="change_log", elem_id="system_tab_changelog"):
+                with open('CHANGELOG.md', 'r', encoding='utf-8') as f:
+                    md = f.read()
+                gr.Markdown(md)
+
             with gr.TabItem("Licenses", id="system_licenses", elem_id="system_tab_licenses"):
                 gr.HTML(modules.shared.html("licenses.html"), elem_id="licenses", elem_classes="licenses")
                 create_dirty_indicator("tab_licenses", [], interactive=False)

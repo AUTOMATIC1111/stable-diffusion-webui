@@ -281,6 +281,12 @@ div.controlnet_main_options { display: grid; grid-template-columns: 1fr 1fr; gri
 .log-monitor { display: none; justify-content: unset !important; overflow: hidden; padding: 0; margin-top: auto; font-family: monospace; font-size: 0.85em; }
 .log-monitor td, .log-monitor th { padding-left: 1em; }
 
+/* changelog */
+.md h2 { background-color: var(--background-fill-primary); padding: 0.5em; }
+.md ul { list-style-type: square !important; text-indent: 1em; margin-left: 4em; }
+.md li { list-style-position: outside !important; text-indent: 0; }
+.md p { margin-left: 2em; }
+
 /* custom component */
 .folder-selector textarea { height: 2em !important; padding: 6px !important; }
 
@@ -294,6 +300,7 @@ div.controlnet_main_options { display: grid; grid-template-columns: 1fr 1fr; gri
 .loader::before, .loader::after { content: ""; position: absolute; top: 6px; bottom: 6px; left: 6px; right: 6px; border-radius: 50%; border: var(--spacing-md) solid transparent; }
 .loader::before { border-top-color: var(--primary-900); animation: 3s spin linear infinite; }
 .loader::after { border-top-color: var(--primary-300); animation: spin 1.5s linear infinite; }
+
 
 @keyframes move {
   from { background-position-x: 0, -40px; }
