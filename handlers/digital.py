@@ -69,7 +69,10 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
             # time_since_start = time.time() - time_start
             # eta = (time_since_start / p)
             # progress.eta_relative = int(eta - time_since_start) + upload_files_eta_secs
-            progress.calc_eta_relative(upload_files_eta_secs)
+            if i == 0:
+                progress.eta_relative = 60
+            else:
+                progress.calc_eta_relative(upload_files_eta_secs)
             yield progress
             p.close()
 
