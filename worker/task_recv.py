@@ -37,6 +37,7 @@ except:
     from collections import Iterable  # <=py3.9
 
 TaskQueuePrefix = "task_"
+TaskPreQueuePrefix = 'task-pre_'
 OtherTaskQueueToken = TaskQueuePrefix + 'others'
 TrainTaskQueueToken = 'train'
 UpscaleCoeff = 100 * 1000
@@ -262,6 +263,7 @@ class TaskReceiver:
                 if TrainTaskQueueToken in queue_name:
                     task = self._extract_queue_task(queue_name)
                     if task:
+
                         return task
 
     def _can_gener_img_worker_run_train(self):
@@ -313,7 +315,7 @@ class TaskReceiver:
 
         return False
 
-    def search_task_with_id(self, rds, task_id) -> typing.Any:
+    def search_task_with_id(self, rds, task_id, queue_name, task_score) -> typing.Any:
         # redis > 6.2.0
         # meta = rds.getdel(task_id)
         if self.task_score_limit > 0:
@@ -329,9 +331,22 @@ class TaskReceiver:
 
         meta = rds.get(task_id)
         if meta:
+            t = Task.from_json_str(meta)
+            if t.is_train:
+                paralle_count = t.get('paralle_count', 0)
+                if paralle_count > 0:
+                    can_exec = self.can_exec_train_task(t.user_id, paralle_count)
+
+                    if not can_exec:
+                        delay = 600
+                        logger.info(f"repush task {t.id} to {queue_name} and score:{task_score+delay}")
+                        self.repush_train_task(t.id, queue_name, task_score+delay)
+                    else:
+                        self.incr_train_concurrency(t.user_id)
+
             task_id = task_id.decode('utf8') if isinstance(task_id, bytes) else task_id
             rds.setex(f"task:worker:{task_id}", timedelta(hours=2), self.worker_id)
-            return Task.from_json_str(meta)
+            return t
 
     def _extract_queue_task(self, queue_name: str, retry: int = 1):
         queue_name = queue_name.decode('utf8') if isinstance(queue_name, bytes) else queue_name
@@ -343,18 +358,21 @@ class TaskReceiver:
             # logger.debug("===> acquire locker: task-lock-" + queue_name)
             locker.acquire(blocking=True, timeout=3)
             locked = True
+            # self._preload_task(queue_name)
             for _ in range(retry):
                 now = int(time.time() * 1000)
                 # min 最小为当前时间（ms）- VIP最大等级*放大系数（VIP提前执行权重）- 任务过期时间（1天）
                 # max 为当前时间（ms） + 偏移量1秒
                 min, max = -1, now + 1000
                 values = rds.zrangebyscore(
-                    queue_name, min, max, start=0, num=1)
+                    queue_name, min, max, start=0, num=1, withscores=True)
                 task = None
                 if values:
-                    rds.zrem(queue_name, *values)
-                    for v in values:
-                        task = self.search_task_with_id(rds, v)
+                    names = [v[0] for v in values]
+                    rds.zrem(queue_name, *names)
+                    for name, score in values:
+
+                        task = self.search_task_with_id(rds, name, queue_name, score)
                         if task:
                             break
                 if task:
@@ -383,6 +401,34 @@ class TaskReceiver:
             task = self._extract_queue_task(queue_name, 3)
             if task:
                 return task
+
+    def _preload_task(self, queue_name: str):
+        rds = self.redis_pool.get_connection()
+        model_hash = queue_name[len(TaskQueuePrefix):]
+        # 查询键：task-pre_{model_hash}*
+        keys = rds.keys(TaskPreQueuePrefix + model_hash + '*')
+
+        if not keys:
+            return
+
+        now = int(time.time() * 1000)
+        min, max = -1, now + 1000
+        # 当前任务队列长度
+        count = rds.zcount(queue_name, min, max)
+        for key in keys:
+            concurrency = int(key.split('-')[-1])
+            push_num = concurrency - count
+            logger.info(f"[{queue_name}] preload task num:{push_num}.")
+            # 从预加载队列LPOP task_id
+            task_ids = rds.lpop(key, push_num)
+            for task_id in task_ids:
+                # 设置task str任务的meta信息的过期
+                rds.expire(task_id, 3600*24)
+                # 从pre队列的task id 导入到正式队列
+                rds.zadd(queue_name, {
+                    task_id:  now
+                })
+                logger.info(f"preload task:{task_id} to {queue_name}.")
 
     def _search_queue_names(self):
         rds = self.redis_pool.get_connection()
@@ -535,6 +581,44 @@ class TaskReceiver:
             self.release_flag = False
         return self.release_flag
 
+    def incr_train_concurrency(self, user_id: str):
+        rds = self.redis_pool.get_connection()
+        key = f'counter:train:{user_id}'
+        v = rds.sadd(key, self.worker_id)
+        logger.info(f'{key} + 1, current:{v}')
+        rds.expire(key, 3*3600)
+
+    def decr_train_concurrency(self, user_id: str):
+        rds = self.redis_pool.get_connection()
+        key = f'counter:train:{user_id}'
+        v = rds.srem(key, self.worker_id)
+        logger.info(f'{key} - 1, current:{v}')
+        rds.expire(key, 3*3600)
+
+    def can_exec_train_task(self, user_id: str, max_value: int):
+        rds = self.redis_pool.get_connection()
+        key = f'counter:train:{user_id}'
+        members = rds.smembers(key)
+        if len(members) < max_value:
+            return True
+        running_workers = self.get_all_workers()
+        user_workers = set()
+
+        for worker_id in members:
+            if worker_id in running_workers:
+                user_workers.add(worker_id)
+            if len(user_workers) >= max_value:
+                logger.info(f"{user_id} current trainning workers:{';'.join(user_workers)}, max:{max_value}")
+                return False
+        return True
+
+    def repush_train_task(self, task_id: str, queue_name: str, score: int):
+        rds = self.redis_pool.get_connection()
+
+        rds.zadd(queue_name, {
+            task_id: score
+        })
+
     def close(self):
         if self.closed:
             return
@@ -542,3 +626,4 @@ class TaskReceiver:
         self.closed = True
         self.timer.shutdown()
         self.redis_pool.close()
+

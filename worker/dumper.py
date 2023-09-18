@@ -237,6 +237,7 @@ class MongoTaskDumper(TaskDumper):
                     multi=False
                 )
 
+
             self.clean_time = now
 
     def write_images(self, task_progress: TaskProgress):
