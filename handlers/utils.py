@@ -63,9 +63,12 @@ def batch_model_local_paths(model_type: ModelType, *remoting_paths: str) \
     remoting_key_dst_pairs, loc = [], []
     os.makedirs(ModelLocation[model_type], exist_ok=True)
     for p in remoting_paths:
+        if not p:
+            continue
         if os.path.isfile(p):
             loc.append(p)
             continue
+
         dst = os.path.join(ModelLocation[model_type], os.path.basename(p))
         loc.append(dst)
         if not os.path.isfile(dst):
