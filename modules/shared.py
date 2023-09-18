@@ -11,7 +11,7 @@ from enum import Enum
 import gradio as gr
 import fasteners
 from rich.console import Console
-from modules import errors, ui_components, shared_items, cmd_args
+from modules import errors, shared_items, cmd_args, ui_components
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 from modules.dml import memory_providers, default_memory_provider, directml_do_hijack
 import modules.interrogate
@@ -37,6 +37,7 @@ interrogator = modules.interrogate.InterrogateModels("interrogate")
 sd_upscalers = []
 face_restorers = []
 tab_names = []
+extra_networks = []
 options_templates = {}
 hypernetworks = {}
 loaded_hypernetworks = []
@@ -71,20 +72,11 @@ restricted_opts = {
 compatibility_opts = ['clip_skip', 'uni_pc_lower_order_final', 'uni_pc_order']
 console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
 
-def is_url(string):
-    parsed_url = urlparse(string)
-    return all([parsed_url.scheme, parsed_url.netloc])
-
 
 class Backend(Enum):
     ORIGINAL = 1
     DIFFUSERS = 2
 
-
-def reload_hypernetworks():
-    from modules.hypernetworks import hypernetwork
-    global hypernetworks # pylint: disable=W0603
-    hypernetworks = hypernetwork.list_hypernetworks(opts.hypernetwork_dir)
 
 
 class State:
@@ -192,6 +184,7 @@ class State:
         self.current_image = image
         self.id_live_preview += 1
 
+
 state = State()
 state.server_start = time.time()
 if not hasattr(cmd_opts, "use_openvino"):
@@ -249,6 +242,17 @@ def list_checkpoint_tiles():
     return modules.sd_models.checkpoint_tiles()
 
 default_checkpoint = list_checkpoint_tiles()[0] if len(list_checkpoint_tiles()) > 0 else "model.ckpt"
+
+
+def is_url(string):
+    parsed_url = urlparse(string)
+    return all([parsed_url.scheme, parsed_url.netloc])
+
+
+def reload_hypernetworks():
+    from modules.hypernetworks import hypernetwork
+    global hypernetworks # pylint: disable=W0603
+    hypernetworks = hypernetwork.list_hypernetworks(opts.hypernetwork_dir)
 
 
 def refresh_checkpoints():
@@ -644,6 +648,7 @@ options_templates.update(options_section(('interrogate', "Interrogate"), {
 }))
 
 options_templates.update(options_section(('extra_networks', "Extra Networks"), {
+    "extra_networks": OptionInfo(["All"], "Extra networks", ui_components.DropdownMulti, lambda: {"choices": ['All'] + [en.title for en in extra_networks]}),
     "extra_networks_card_cover": OptionInfo("sidebar", "UI position", gr.Radio, lambda: {"choices": ["cover", "inline", "sidebar"]}),
     "extra_networks_height": OptionInfo(53, "UI height (%)", gr.Slider, {"minimum": 10, "maximum": 100, "step": 1}),
     "extra_networks_sidebar_width": OptionInfo(35, "UI sidebar width (%)", gr.Slider, {"minimum": 10, "maximum": 80, "step": 1}),
@@ -653,8 +658,8 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_card_fit": OptionInfo("cover", "UI image contain method", gr.Radio, lambda: {"choices": ["contain", "cover", "fill"]}),
     "extra_network_skip_indexing": OptionInfo(False, "Do not automatically build extra network pages", gr.Checkbox),
     "lyco_patch_lora": OptionInfo(False, "Use LyCoris handler for all LoRA types", gr.Checkbox),
-    "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple LoRA", gr.Checkbox),
-    "extra_networks_default_multiplier": OptionInfo(1.0, "Multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple LoRA", gr.Checkbox, { "visible": False }),
+    "extra_networks_default_multiplier": OptionInfo(1.0, "Multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01, "visible": False}),
     "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: { "choices": ["None"] + list(hypernetworks.keys()), "visible": False }, refresh=reload_hypernetworks),
 }))
 
