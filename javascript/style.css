@@ -252,7 +252,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 #txt2img_description, #img2img_description { max-height: 63px; overflow-y: auto !important; }
 #txt2img_description > label > textarea, #img2img_description > label > textarea { font-size: 0.9em }
 
-/* controlnet */
+/* controlnet
 .controlnet_control_type .controlnet_control_type_filter_group .wrap:last-of-type { display: grid; grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 fieldset.controlnet_resize_mode_radio .wrap:last-of-type, fieldset.controlnet_control_mode_radio .wrap:last-of-type { flex-direction: column; }
 div.controlnet_preprocessor_model { display: grid; grid-auto-flow: row; grid-template-columns: 1fr max-content; }
@@ -263,6 +263,7 @@ div.controlnet_image_controls { display: grid; grid-template-columns: repeat(4, 
 div.controlnet_image_controls .controlnet_invert_warning { grid-column: 1 / -1; }
 div.controlnet_image_controls button { justify-self: center; }
 div.controlnet_main_options { display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: row; }
+ */
 
 /* specific elements */
 #modelmerger_interp_description { margin-top: 1em; margin-bottom: 1em; }
