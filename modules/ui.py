@@ -392,7 +392,7 @@ def create_ui(startup_timer = None):
                     with FormGroup():
                         with FormRow(elem_id="sampler_selection_txt2img_alt_row1"):
                             latent_index = gr.Dropdown(label='Secondary sampler', elem_id="txt2img_sampling_alt", choices=[x.name for x in modules.sd_samplers.samplers], value='Default', type="index")
-                            denoising_strength = gr.Slider(minimum=0.05, maximum=1.0, step=0.01, label='Denoising strength', value=0.5, elem_id="txt2img_denoising_strength")
+                            denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoising strength', value=0.5, elem_id="txt2img_denoising_strength")
                         with FormRow(elem_id="txt2img_hires_finalres", variant="compact"):
                             hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
                         with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
@@ -678,7 +678,7 @@ def create_ui(startup_timer = None):
 
                 with FormGroup(visible=show_denoise.value, elem_id=f"{tab}_denoise_group") as denoise_group:
                     with FormRow():
-                        denoising_strength = gr.Slider(minimum=0.05, maximum=1.0, step=0.01, label='Denoising strength', value=0.75, elem_id="img2img_denoising_strength")
+                        denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoising strength', value=0.75, elem_id="img2img_denoising_strength")
                         refiner_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise start', value=0.0, elem_id="img2img_refiner_start")
 
                 with FormGroup(visible=show_advanced.value, elem_id=f"{tab}_advanced_group") as advanced_group:

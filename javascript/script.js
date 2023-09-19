@@ -75,7 +75,7 @@ let executedOnLoaded = false;
 
 document.addEventListener('DOMContentLoaded', () => {
   const mutationObserver = new MutationObserver((m) => {
-    if (!executedOnLoaded && gradioApp().querySelector('#txt2img_prompt')) {
+    if (!executedOnLoaded && gradioApp().getElementById('txt2img_prompt')) {
       executedOnLoaded = true;
       executeCallbacks(uiLoadedCallbacks);
     }

@@ -291,7 +291,8 @@ def sanitize_filename_part(text, replace_spaces=True):
 
 class FilenameGenerator:
     replacements = {
-        'batch_number': lambda self: NOTHING if self.index <= 1 else self.index,
+        'batch_number': lambda self: self.batch_number,
+        'iter_number': lambda self: self.iter_number,
         'cfg': lambda self: self.p and self.p.cfg_scale,
         'clip_skip': lambda self: self.p and self.p.clip_skip,
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
@@ -320,12 +321,17 @@ class FilenameGenerator:
     }
     default_time_format = '%Y%m%d%H%M%S'
 
-    def __init__(self, p, seed, prompt, image, index = 0):
+    def __init__(self, p, seed, prompt, image, grid=False):
         self.p = p
         self.seed = seed
         self.prompt = prompt
         self.image = image
-        self.index = index if self.p is None or self.p.batch_size == 1 else self.p.batch_index + 1
+        if not grid:
+            self.batch_number = NOTHING if self.p is None or getattr(self.p, 'batch_size', 1) == 1 else (self.p.batch_index + 1 if hasattr(self.p, 'batch_index') else NOTHING)
+            self.iter_number = NOTHING if self.p is None or getattr(self.p, 'n_iter', 1) == 1 else (self.p.iteration + 1 if hasattr(self.p, 'iteration') else NOTHING)
+        else:
+            self.batch_number = NOTHING
+            self.iter_number = NOTHING
 
     def hasprompt(self, *args):
         lower = self.prompt.lower()
@@ -449,14 +455,14 @@ def atomically_save_image():
             image_format = 'JPEG'
         if shared.opts.image_watermark_enabled:
             image = set_watermark(image, shared.opts.image_watermark)
-        shared.log.debug(f'Saving: image={fn} type={image_format} size={image.width}x{image.height}')
+        shared.log.debug(f'Saving: image="{fn}" type={image_format} size={image.width}x{image.height}')
         # actual save
         exifinfo = (exifinfo or "") if shared.opts.image_metadata else ""
         if image_format == 'PNG':
             pnginfo_data = PngImagePlugin.PngInfo()
             for k, v in params.pnginfo.items():
                 pnginfo_data.add_text(k, str(v))
-            image.save(fn, format=image_format, quality=shared.opts.jpeg_quality, pnginfo=pnginfo_data if shared.opts.image_metadata else None)
+            image.save(fn, format=image_format, optimize=True, compress_level=9, pnginfo=pnginfo_data if shared.opts.image_metadata else None)
         elif image_format == 'JPEG':
             if image.mode == 'RGBA':
                 shared.log.warning('Saving RGBA image as JPEG: Alpha channel will be lost')
@@ -464,7 +470,7 @@ def atomically_save_image():
             elif image.mode == 'I;16':
                 image = image.point(lambda p: p * 0.0038910505836576).convert("L")
             exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo, encoding="unicode") } })
-            image.save(fn, format=image_format, quality=shared.opts.jpeg_quality, exif=exif_bytes)
+            image.save(fn, format=image_format, optimize=True, quality=shared.opts.jpeg_quality, exif=exif_bytes)
         elif image_format == 'WEBP':
             if image.mode == 'I;16':
                 image = image.point(lambda p: p * 0.0038910505836576).convert("RGB")
@@ -489,8 +495,14 @@ def atomically_save_image():
         with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
             file.write(exifinfo)
         if shared.opts.save_log_fn != '' and len(exifinfo) > 0:
-            entry = { 'filename': filename, 'time': datetime.datetime.now().isoformat(), 'info': exifinfo }
-            shared.writefile(entry, os.path.join(paths.data_path, shared.opts.save_log_fn), mode='a+')
+            fn = os.path.join(paths.data_path, shared.opts.save_log_fn)
+            entries = shared.readfile(fn)
+            idx = len(list(entries))
+            if idx == 0:
+                entries = []
+            entry = { 'id': idx, 'filename': filename, 'time': datetime.datetime.now().isoformat(), 'info': exifinfo }
+            entries.append(entry)
+            shared.writefile(entries, fn, mode='w')
         save_queue.task_done()
 
 
@@ -499,7 +511,7 @@ save_thread = threading.Thread(target=atomically_save_image, daemon=True)
 save_thread.start()
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None, index=0):
+def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
     """Save an image.
     Args:
         image (`PIL.Image`):
@@ -537,7 +549,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
         return None, None
     if path is None or len(path) == 0: # set default path to avoid errors when functions are triggered manually or via api and param is not set
         path = shared.opts.outdir_save
-    namegen = FilenameGenerator(p, seed, prompt, image, index)
+    namegen = FilenameGenerator(p, seed, prompt, image, grid=grid)
     if save_to_dirs is None:
         save_to_dirs = (grid and shared.opts.grid_save_to_dirs) or (not grid and shared.opts.save_to_dirs and not no_prompt)
     if save_to_dirs:

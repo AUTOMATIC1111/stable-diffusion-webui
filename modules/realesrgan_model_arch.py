@@ -155,7 +155,7 @@ class RealESRGANer():
                         # input tile dimensions
                         input_tile_width = input_end_x - input_start_x
                         input_tile_height = input_end_y - input_start_y
-                        tile_idx = y * tiles_x + x + 1
+                        tile_idx = y * tiles_x + x + 1 # noqa
                         input_tile = self.img[:, :, input_start_y_pad:input_end_y_pad, input_start_x_pad:input_end_x_pad]
 
                         # upscale tile
@@ -315,7 +315,7 @@ class IOConsumer(threading.Thread):
 
 from basicsr.utils.registry import ARCH_REGISTRY
 from torch import nn as nn
-from torch.nn import functional as F
+from torch.nn import functional as F # noqa
 
 
 class SRVGGNetCompact(nn.Module):
@@ -381,4 +381,3 @@ class SRVGGNetCompact(nn.Module):
         base = F.interpolate(x, scale_factor=self.upscale, mode='nearest')
         out += base
         return out
-    

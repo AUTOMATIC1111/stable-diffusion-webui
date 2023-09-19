@@ -496,7 +496,7 @@ def check_torch():
     if opts.get('cuda_compile_backend', '') == 'hidet':
         install('hidet', 'hidet')
     if args.use_openvino or opts.get('cuda_compile_backend', '') == 'openvino_fx':
-        install('openvino==2023.1.0.dev20230811', 'openvino')
+        install('openvino==2023.1.0', 'openvino')
         os.environ.setdefault('PYTORCH_TRACING_MODE', 'TORCHFX')
     if args.profile:
         print_profile(pr, 'Torch')

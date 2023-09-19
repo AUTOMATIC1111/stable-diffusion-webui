@@ -340,7 +340,7 @@ def readfile(filename, silent=False):
     return data
 
 
-def writefile(data, filename, mode='w'):
+def writefile(data, filename, mode='w', silent=False):
 
     def default(obj):
         log.error(f"Saving: {filename} not a valid object: {obj}")
@@ -350,7 +350,8 @@ def writefile(data, filename, mode='w'):
         with fasteners.InterProcessLock(f"{filename}.lock"):
             # skipkeys=True, ensure_ascii=True, check_circular=True, allow_nan=True
             output = json.dumps(data, indent=2, default=default)
-            log.debug(f'Saving: {filename} len={len(output)}')
+            if not silent:
+                log.debug(f'Saving: {filename} len={len(output)}')
             with open(filename, mode, encoding="utf8") as file:
                 file.write(output)
     except Exception as e:
@@ -376,24 +377,26 @@ options_templates.update(options_section(('sd', "Execution & Models"), {
     "sd_checkpoint_autoload": OptionInfo(True, "Model autoload on server start"),
     "sd_model_checkpoint": OptionInfo(default_checkpoint, "Base model", gr.Dropdown, lambda: {"choices": list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "sd_model_refiner": OptionInfo('None', "Refiner model", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
-    "sd_checkpoint_cache": OptionInfo(0, "Number of cached models", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
-    "sd_vae_checkpoint_cache": OptionInfo(0, "Number of cached VAEs", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae": OptionInfo("Automatic", "VAE model", gr.Dropdown, lambda: {"choices": shared_items.sd_vae_items()}, refresh=shared_items.refresh_vae_list),
     "sd_model_dict": OptionInfo('None', "Use baseline data from a different model", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "stream_load": OptionInfo(False, "Load models using stream loading method"),
-    "model_reuse_dict": OptionInfo(False, "When loading models attempt to reuse previous model dictionary"),
+    "model_reuse_dict": OptionInfo(False, "When loading models attempt to reuse previous model dictionary", gr.Checkbox, {"visible": False}),
     "prompt_attention": OptionInfo("Full parser", "Prompt attention parser", gr.Radio, lambda: {"choices": ["Full parser", "Compel parser", "A1111 parser", "Fixed attention"] }),
     "prompt_mean_norm": OptionInfo(True, "Prompt attention mean normalization"),
     "comma_padding_backtrack": OptionInfo(20, "Prompt padding for long prompts", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
+    "sd_checkpoint_cache": OptionInfo(0, "Number of cached models", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
+    "sd_vae_checkpoint_cache": OptionInfo(0, "Number of cached VAEs", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_disable_ckpt": OptionInfo(False, "Disallow usage of models in ckpt format"),
 }))
 
 options_templates.update(options_section(('optimizations', "Optimizations"), {
     "cross_attention_optimization": OptionInfo(cross_attention_optimization_default, "Cross-attention optimization method", gr.Radio, lambda: {"choices": shared_items.list_crossattention() }),
     "cross_attention_options": OptionInfo([], "Cross-attention advanced options", gr.CheckboxGroup, lambda: {"choices": ['xFormers enable flash Attention', 'SDP disable memory attention']}),
-    "sub_quad_q_chunk_size": OptionInfo(512, "Sub-quadratic cross-attention query chunk size", gr.Slider, {"minimum": 16, "maximum": 8192, "step": 8}),
-    "sub_quad_kv_chunk_size": OptionInfo(512, "Sub-quadratic cross-attention kv chunk size", gr.Slider, {"minimum": 0, "maximum": 8192, "step": 8}),
-    "sub_quad_chunk_threshold": OptionInfo(80, "Sub-quadratic cross-attention chunking threshold", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
+    "sub_quad_sep": OptionInfo("<h2>Sub-quadratic options</h2>", "", gr.HTML),
+    "sub_quad_q_chunk_size": OptionInfo(512, "cross-attention query chunk size", gr.Slider, {"minimum": 16, "maximum": 8192, "step": 8}),
+    "sub_quad_kv_chunk_size": OptionInfo(512, "cross-attention kv chunk size", gr.Slider, {"minimum": 0, "maximum": 8192, "step": 8}),
+    "sub_quad_chunk_threshold": OptionInfo(80, "cross-attention chunking threshold", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
+    "token_merging_sep": OptionInfo("<h2>Token Merging</h2>", "", gr.HTML),
     "token_merging_ratio": OptionInfo(0.0, "Token merging ratio", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
     "token_merging_ratio_img2img": OptionInfo(0.0, "Token merging ratio for img2img", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
     "token_merging_ratio_hr": OptionInfo(0.0, "Token merging ratio for hires pass", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
@@ -441,7 +444,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_attention_slicing": OptionInfo(True if devices.backend == "ipex" else False, "Enable attention slicing"),
     "diffusers_model_load_variant": OptionInfo("default", "Diffusers model loading variant", gr.Radio, lambda: {"choices": ['default', 'fp32', 'fp16']}),
     "diffusers_vae_load_variant": OptionInfo("default", "Diffusers VAE loading variant", gr.Radio, lambda: {"choices": ['default', 'fp32', 'fp16']}),
-    "diffusers_lora_loader": OptionInfo("sequential apply", "Diffusers LoRA loading variant", gr.Radio, lambda: {"choices": ['diffusers', 'sequential apply', 'merge and apply']}),
+    "diffusers_lora_loader": OptionInfo("diffusers" if cmd_opts.use_openvino else "sequential apply", "Diffusers LoRA loading variant", gr.Radio, lambda: {"choices": ['diffusers', 'sequential apply', 'merge and apply']}),
     "diffusers_force_zeros": OptionInfo(True, "Force zeros for prompts when empty"),
     "diffusers_aesthetics_score": OptionInfo(False, "Require aesthetics score"),
 }))
@@ -529,19 +532,19 @@ options_templates.update(options_section(('saving-paths', "Image Naming & Paths"
 options_templates.update(options_section(('ui', "User Interface"), {
     "gradio_theme": OptionInfo("black-teal", "UI theme", gr.Dropdown, lambda: {"choices": list_themes()}, refresh=refresh_themes),
     "theme_style": OptionInfo("Auto", "Theme mode", gr.Radio, {"choices": ["Auto", "Dark", "Light"]}),
-    "tooltips": OptionInfo("UI Tooltips", "UI tooltips", gr.Radio, {"choices": ["None", "Browser default", "UI tooltips"]}),
-    "return_grid": OptionInfo(True, "Show grid in results for web"),
-    "return_mask": OptionInfo(False, "For inpainting, include the greyscale mask in results for web"),
-    "return_mask_composite": OptionInfo(False, "For inpainting, include masked composite in results for web"),
+    "tooltips": OptionInfo("UI Tooltips", "UI tooltips", gr.Radio, {"choices": ["None", "Browser default", "UI tooltips"], "visible": False}),
+    "return_grid": OptionInfo(True, "Show grid in results"),
+    "return_mask": OptionInfo(False, "For inpainting, include the greyscale mask in results"),
+    "return_mask_composite": OptionInfo(False, "For inpainting, include masked composite in results"),
     "disable_weights_auto_swap": OptionInfo(True, "Do not change selected model when reading generation parameters"),
     "send_seed": OptionInfo(True, "Send seed when sending prompt or image to other interface"),
     "send_size": OptionInfo(True, "Send size when sending prompt or image to another interface"),
     "font": OptionInfo("", "Font for image grids that have text"),
-    "keyedit_precision_attention": OptionInfo(0.1, "Ctrl+up/down precision when editing (attention:1.1)", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
-    "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
-    "keyedit_delimiters": OptionInfo(".,\/!?%^*;:{}=`~()", "Ctrl+up/down word delimiters"), # pylint: disable=anomalous-backslash-in-string
+    "keyedit_precision_attention": OptionInfo(0.1, "Ctrl+up/down precision when editing (attention:1.1)", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001, "visible": False}),
+    "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001, "visible": False}),
+    "keyedit_delimiters": OptionInfo(".,\/!?%^*;:{}=`~()", "Ctrl+up/down word delimiters", gr.Textbox, { "visible": False }), # pylint: disable=anomalous-backslash-in-string
     "quicksettings_list": OptionInfo(["sd_model_checkpoint"] if backend == Backend.ORIGINAL else ["sd_model_checkpoint", "sd_model_refiner"], "Quicksettings list", ui_components.DropdownMulti, lambda: {"choices": list(opts.data_labels.keys())}),
-    "ui_scripts_reorder": OptionInfo("", "UI scripts order"),
+    "ui_scripts_reorder": OptionInfo("", "UI scripts order", gr.Textbox, { "visible": False }),
 }))
 
 options_templates.update(options_section(('live-preview', "Live Previews"), {
@@ -552,7 +555,7 @@ options_templates.update(options_section(('live-preview', "Live Previews"), {
     "notification_audio_path": OptionInfo("html/notification.mp3","Path to notification sound", component_args=hide_dirs, folder=True),
     "show_progress_every_n_steps": OptionInfo(1, "Live preview display period", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
     "show_progress_type": OptionInfo("Approximate NN", "Live preview method", gr.Radio, {"choices": ["Full VAE", "Approximate NN", "Approximate simple", "TAESD"]}),
-    "live_preview_content": OptionInfo("Combined", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
+    "live_preview_content": OptionInfo("Combined", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"], "visible": False}),
     "live_preview_refresh_period": OptionInfo(500, "Progress update period", gr.Slider, {"minimum": 0, "maximum": 5000, "step": 25}),
     "logmonitor_show": OptionInfo(True, "Show log view"),
     "logmonitor_refresh_period": OptionInfo(5000, "Log view update period", gr.Slider, {"minimum": 0, "maximum": 30000, "step": 25}),
@@ -638,7 +641,7 @@ options_templates.update(options_section(('interrogate', "Interrogate"), {
     "interrogate_clip_num_beams": OptionInfo(1, "Interrogate: num_beams for BLIP", gr.Slider, {"minimum": 1, "maximum": 16, "step": 1}),
     "interrogate_clip_min_length": OptionInfo(32, "Interrogate: minimum description length", gr.Slider, {"minimum": 1, "maximum": 128, "step": 1}),
     "interrogate_clip_max_length": OptionInfo(192, "Interrogate: maximum description length", gr.Slider, {"minimum": 1, "maximum": 256, "step": 1}),
-    "interrogate_clip_dict_limit": OptionInfo(2048, "CLIP: maximum number of lines in text file"),
+    "interrogate_clip_dict_limit": OptionInfo(2048, "CLIP: maximum number of lines in text file", gr.Slider, { "visible": False }),
     "interrogate_clip_skip_categories": OptionInfo(["artists", "movements", "flavors"], "Interrogate: skip categories", gr.CheckboxGroup, lambda: {"choices": modules.interrogate.category_types()}, refresh=modules.interrogate.category_types),
     "interrogate_deepbooru_score_threshold": OptionInfo(0.65, "Interrogate: deepbooru score threshold", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
     "deepbooru_sort_alpha": OptionInfo(False, "Interrogate: deepbooru sort alphabetically"),
@@ -652,10 +655,10 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_card_cover": OptionInfo("sidebar", "UI position", gr.Radio, lambda: {"choices": ["cover", "inline", "sidebar"]}),
     "extra_networks_height": OptionInfo(53, "UI height (%)", gr.Slider, {"minimum": 10, "maximum": 100, "step": 1}),
     "extra_networks_sidebar_width": OptionInfo(35, "UI sidebar width (%)", gr.Slider, {"minimum": 10, "maximum": 80, "step": 1}),
-    "extra_networks_card_lazy": OptionInfo(True, "UI card preview lazy loading"),
+    "extra_networks_card_lazy": OptionInfo(True, "UI card preview lazy loading", gr.Checkbox, { "visible": False }),
     "extra_networks_card_size": OptionInfo(160, "UI card size (px)", gr.Slider, {"minimum": 20, "maximum": 2000, "step": 1}),
     "extra_networks_card_square": OptionInfo(True, "UI disable variable aspect ratio"),
-    "extra_networks_card_fit": OptionInfo("cover", "UI image contain method", gr.Radio, lambda: {"choices": ["contain", "cover", "fill"]}),
+    "extra_networks_card_fit": OptionInfo("cover", "UI image contain method", gr.Radio, lambda: {"choices": ["contain", "cover", "fill"], "visible": False}),
     "extra_network_skip_indexing": OptionInfo(False, "Do not automatically build extra network pages", gr.Checkbox),
     "lyco_patch_lora": OptionInfo(False, "Use LyCoris handler for all LoRA types", gr.Checkbox),
     "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple LoRA", gr.Checkbox, { "visible": False }),
