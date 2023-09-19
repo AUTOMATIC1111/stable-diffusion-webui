@@ -341,6 +341,9 @@ class TaskReceiver:
                         logger.info(f"repush task {t.id} to {queue_name} and score:{task_score+delay}")
                         time.sleep(10)
                         self.repush_train_task(t.id, queue_name, task_score+delay)
+                        time.sleep(2)
+                        logger.debug(f"return none task")
+                        return
                     else:
                         self.incr_train_concurrency(t.user_id)
 
