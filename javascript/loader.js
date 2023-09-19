@@ -34,9 +34,10 @@ async function createSplash() {
     </div>`;
   document.body.insertAdjacentHTML('beforeend', splash);
   await preloadImages();
-  const imgElement = `<div class="splash-img" alt="logo" style="background-image: url(file=html/logo-bg-${dark ? 'dark' : 'light'}.jpg), url(file=html/logo-bg-${num}.jpg); background-blend-mode: ${dark ? 'darken' : 'lighten'}"></div>`;
+  const imgElement = `<div class="splash-img" alt="logo" style="background-image: url(file=html/logo-bg-${dark ? 'dark' : 'light'}.jpg), url(file=html/logo-bg-${num}.jpg); background-blend-mode: ${dark ? 'multiply' : 'lighten'}"></div>`;
   document.getElementById('splash').insertAdjacentHTML('afterbegin', imgElement);
 }
+
 async function removeSplash() {
   const splash = document.getElementById('splash');
   if (splash) splash.remove();
