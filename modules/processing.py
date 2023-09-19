@@ -965,6 +965,9 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if (self.hr_upscale_to_x == self.width and self.hr_upscale_to_y == self.height) or self.hr_upscaler is None or self.hr_upscaler == 'None':
             self.is_hr_pass = False
             return
+        if self.denoising_strength == 0:
+            self.is_hr_pass = False
+            return
         self.is_hr_pass = True
         if not shared.state.processing_has_refined_job_count:
             if shared.state.job_count == -1:
