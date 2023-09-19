@@ -315,7 +315,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         task_specific_kwargs = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength, "height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8)}
 
     if shared.state.interrupted or shared.state.skipped:
-        unload_diffusers_lora()
+        if lora_state['active']:
+            unload_diffusers_lora()
         return results
 
     if shared.opts.diffusers_move_base and not shared.sd_model.has_accelerate:
@@ -361,11 +362,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if hasattr(shared.sd_model, 'embedding_db') and len(shared.sd_model.embedding_db.embeddings_used) > 0:
         p.extra_generation_params['Embeddings'] = ', '.join(shared.sd_model.embedding_db.embeddings_used)
 
-    if lora_state['active']:
-        p.extra_generation_params['LoRA method'] = shared.opts.diffusers_lora_loader
-        unload_diffusers_lora()
-
     if shared.state.interrupted or shared.state.skipped:
+        if lora_state['active']:
+            unload_diffusers_lora()
         return results
 
     # optional hires pass
@@ -407,6 +406,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 except AssertionError as e:
                     shared.log.info(e)
 
+    if lora_state['active']:
+        p.extra_generation_params['LoRA method'] = shared.opts.diffusers_lora_loader
+        unload_diffusers_lora()
+
     # optional refiner pass or decode
     if is_refiner_enabled:
         if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_refiner and hasattr(shared.sd_model, 'vae'):
@@ -423,6 +426,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             sd_samplers.create_sampler(sampler.name, shared.sd_refiner) # TODO(Patrick): For wrapped pipelines this is currently a no-op
 
         if shared.state.interrupted or shared.state.skipped:
+            if lora_state['active']:
+                unload_diffusers_lora()
             return results
 
         if shared.opts.diffusers_move_refiner and not shared.sd_refiner.has_accelerate:
