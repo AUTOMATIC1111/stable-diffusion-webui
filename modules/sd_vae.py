@@ -243,7 +243,7 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
         vae_source = "function-argument"
     if loaded_vae_file == vae_file:
         return
-    if not sd_model.has_accelerate:
+    if not getattr(sd_model, 'has_accelerate', False):
         if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
             lowvram.send_everything_to_cpu()
         else:
@@ -265,6 +265,6 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
                 if vae is not None:
                     sd_model.vae = vae
 
-    if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and not sd_model.has_accelerate:
+    if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and not getattr(sd_model, 'has_accelerate', False):
         sd_model.to(devices.device)
     return sd_model

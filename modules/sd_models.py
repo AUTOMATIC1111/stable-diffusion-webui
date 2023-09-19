@@ -896,7 +896,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
 
         base_sent_to_cpu=False
         if (shared.opts.cuda_compile and shared.opts.cuda_compile_backend != 'none') or shared.opts.ipex_optimize:
-            if op == 'refiner' and not sd_model.has_accelerate:
+            if op == 'refiner' and not getattr(sd_model, 'has_accelerate', False):
                 gpu_vram = memory_stats().get('gpu', {})
                 free_vram = gpu_vram.get('total', 0) - gpu_vram.get('used', 0)
                 refiner_enough_vram = free_vram >= 7 if "StableDiffusionXL" in sd_model.__class__.__name__ else 3
@@ -917,7 +917,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     devices.torch_gc(force=True)
                     sd_model.to(devices.device)
                     base_sent_to_cpu=True
-            elif not sd_model.has_accelerate:
+            elif not getattr(sd_model, 'has_accelerate', False):
                 sd_model.to(devices.device)
 
             compile_diffusers(sd_model)
@@ -931,10 +931,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         shared.opts.data["sd_checkpoint_hash"] = checkpoint_info.sha256
         if hasattr(sd_model, "set_progress_bar_config"):
             sd_model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining}', ncols=80, colour='#327fba')
-        if op == 'refiner' and shared.opts.diffusers_move_refiner and not sd_model.has_accelerate:
+        if op == 'refiner' and shared.opts.diffusers_move_refiner and not getattr(sd_model, 'has_accelerate', False):
             shared.log.debug('Moving refiner model to CPU')
             sd_model.to(devices.cpu)
-        elif not sd_model.has_accelerate: # In offload modes, accelerate will move models around
+        elif not getattr(sd_model, 'has_accelerate', False): # In offload modes, accelerate will move models around
             sd_model.to(devices.device)
         if op == 'refiner' and base_sent_to_cpu:
             shared.log.debug('Moving base model back to GPU')
@@ -1067,6 +1067,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
             shared.log.info(f'LDM: {line.strip()}')
     shared.log.debug(f"Model created from config: {checkpoint_config}")
     sd_model.used_config = checkpoint_config
+    sd_model.has_accelerate = False
     timer.record("create")
     ok = load_model_weights(sd_model, checkpoint_info, state_dict, timer)
     if not ok:
@@ -1090,7 +1091,6 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
     sd_hijack.model_hijack.hijack(sd_model)
     timer.record("hijack")
     sd_model.eval()
-    sd_model.has_accelerate = False
     if op == 'refiner':
         model_data.sd_refiner = sd_model
     else:
@@ -1126,12 +1126,12 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         current_checkpoint_info = getattr(sd_model, 'sd_checkpoint_info', None)
         if current_checkpoint_info is not None and checkpoint_info is not None and current_checkpoint_info.filename == checkpoint_info.filename:
             return
-        if not sd_model.has_accelerate:
+        if not getattr(sd_model, 'has_accelerate', False):
             if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
                 lowvram.send_everything_to_cpu()
             else:
                 sd_model.to(devices.cpu)
-        if (reuse_dict or shared.opts.model_reuse_dict) and not sd_model.has_accelerate:
+        if (reuse_dict or shared.opts.model_reuse_dict) and not getattr(sd_model, 'has_accelerate', False):
             shared.log.info('Reusing previous model dictionary')
             sd_hijack.model_hijack.undo_hijack(sd_model)
         else:
@@ -1164,7 +1164,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         timer.record("hijack")
         script_callbacks.model_loaded_callback(sd_model)
         timer.record("callbacks")
-        if sd_model is not None and not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and not sd_model.has_accelerate:
+        if sd_model is not None and not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and not getattr(sd_model, 'has_accelerate', False):
             sd_model.to(devices.device)
             timer.record("device")
     shared.log.info(f"Weights loaded in {timer.summary()}")
@@ -1172,7 +1172,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
 
 def disable_offload(sd_model):
     from accelerate.hooks import remove_hook_from_module
-    if not sd_model.has_accelerate:
+    if not getattr(sd_model, 'has_accelerate', False):
         return
     for _name, model in sd_model.components.items():
         if not isinstance(model, torch.nn.Module):

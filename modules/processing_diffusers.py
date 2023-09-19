@@ -65,7 +65,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     def full_vae_decode(latents, model):
         t0 = time.time()
-        if shared.opts.diffusers_move_unet and not model.has_accelerate:
+        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
             shared.log.debug('Moving to CPU: model=UNet')
             unet_device = model.unet.device
             model.unet.to(devices.cpu)
@@ -80,7 +80,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             latents = latents.to(next(iter(model.vae.post_quant_conv.parameters())).dtype)
 
         decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
-        if shared.opts.diffusers_move_unet and not model.has_accelerate:
+        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
             model.unet.to(unet_device)
         t1 = time.time()
         shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={upcast} images={latents.shape[0]} latents={latents.shape} time={round(t1-t0, 3)}s')
@@ -88,7 +88,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     def full_vae_encode(image, model):
         shared.log.debug(f'VAE encode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)}')
-        if shared.opts.diffusers_move_unet and not model.has_accelerate:
+        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
             shared.log.debug('Moving to CPU: model=UNet')
             unet_device = model.unet.device
             model.unet.to(devices.cpu)
@@ -96,7 +96,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload:
             model.vae.to(devices.device)
         encoded = model.vae.encode(image.to(model.vae.device, model.vae.dtype))
-        if shared.opts.diffusers_move_unet and not model.has_accelerate:
+        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
             model.unet.to(unet_device)
         return encoded
 
@@ -358,6 +358,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         output = shared.sd_model(**base_args) # pylint: disable=not-callable
     except AssertionError as e:
         shared.log.info(e)
+    except ValueError as e:
+        shared.state.interrupted = True
+        shared.log.error(e)
 
     if hasattr(shared.sd_model, 'embedding_db') and len(shared.sd_model.embedding_db.embeddings_used) > 0:
         p.extra_generation_params['Embeddings'] = ', '.join(shared.sd_model.embedding_db.embeddings_used)
