@@ -609,13 +609,17 @@ class TaskReceiver:
         running_workers = self.get_all_workers()
         user_workers = set()
 
+        logger.debug(f">>> {user_id} current workers:{';'.join(user_workers)}, max:{max_value}")
+        flag = True
         for worker_id in members:
             if worker_id in running_workers:
                 user_workers.add(worker_id)
             if len(user_workers) >= max_value:
                 logger.info(f"{user_id} current trainning workers:{';'.join(user_workers)}, max:{max_value}")
-                return False
-        return True
+                flag = False
+                break
+        logger.info(f">>> {user_id} current trainning workers:{';'.join(user_workers)}, max:{max_value}")
+        return flag
 
     def repush_train_task(self, task_id: str, queue_name: str, score: int):
         rds = self.redis_pool.get_connection()
