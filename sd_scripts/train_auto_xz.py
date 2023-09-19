@@ -610,7 +610,7 @@ def train_auto(
     head_height = 512
     trigger_word = ""
     # 是否采用wd14作为反推tag，否则采用deepbooru
-    use_wd= os.getenv('WD', '1') == '1'
+    use_wd = os.getenv('WD', '1') == '1'
 
     # 反推tag默认排除的提示词
     undesired_tags = "blur,blurry,motion blur"  # 待测试五官
@@ -665,7 +665,7 @@ def train_auto(
         pic_nums = len(contents) / 2
 
     max_repeats = 40
-    repeats_n = min(int(30 * max_repeats / pic_nums), max_repeats+10)
+    repeats_n = min(int(20 * max_repeats / pic_nums), max_repeats)
 
     # 2.tagger反推
     if use_wd:
