@@ -827,7 +827,7 @@ def train_auto(
         callback=train_callback,
     )
 
-    return os.path.join(lora_path, lora_name + ".safetensors")
+    return os.path.join(lora_path, lora_name + ".safetensors"), gender
 
 #MODEL_PATH = "/data/qll/stable-diffusion-webui/models/Stable-diffusion/AWPortrait_v1.2.safetensors"
 #PIC_SAVE_PATH = "/data/qll/pics/yijian_sanciyuan_train"
