@@ -340,6 +340,7 @@ class TaskReceiver:
                     if not can_exec:
                         delay = 600
                         logger.info(f"repush task {t.id} to {queue_name} and score:{task_score+delay}")
+                        time.sleep(10)
                         self.repush_train_task(t.id, queue_name, task_score+delay)
                     else:
                         self.incr_train_concurrency(t.user_id)
@@ -588,12 +589,16 @@ class TaskReceiver:
         logger.info(f'{key} + 1, current:{v}')
         rds.expire(key, 3*3600)
 
-    def decr_train_concurrency(self, user_id: str):
-        rds = self.redis_pool.get_connection()
-        key = f'counter:train:{user_id}'
-        v = rds.srem(key, self.worker_id)
-        logger.info(f'{key} - 1, current:{v}')
-        rds.expire(key, 3*3600)
+    def decr_train_concurrency(self, task: Task):
+        if task.is_train:
+            paralle_count = task.get('paralle_count', 0)
+            if paralle_count > 0:
+                user_id = task.user_id
+                rds = self.redis_pool.get_connection()
+                key = f'counter:train:{user_id}'
+                v = rds.srem(key, self.worker_id)
+                logger.info(f'{key} - 1, current:{v}')
+                rds.expire(key, 3*3600)
 
     def can_exec_train_task(self, user_id: str, max_value: int):
         rds = self.redis_pool.get_connection()

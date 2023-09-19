@@ -125,10 +125,7 @@ class TaskExecutor(Thread):
                                 self.receiver.close()
                                 system_exit(free, total, True)
                                 break
-                            if task.is_train:
-                                paralle_count = task.get('paralle_count', 0)
-                                if paralle_count > 0:
-                                    self.receiver.decr_train_concurrency(task.user_id)
+                            self.receiver.decr_train_concurrency(task.user_id)
                             logger.debug(f"====>>> waiting task:{task.id}, begin receive.")
                 else:
                     self.not_busy.wait()
