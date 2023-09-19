@@ -337,7 +337,7 @@ class TaskReceiver:
                     can_exec = self.can_exec_train_task(t.user_id, paralle_count)
 
                     if not can_exec:
-                        delay = 600
+                        delay = 0
                         logger.info(f"repush task {t.id} to {queue_name} and score:{task_score+delay}")
                         time.sleep(10)
                         self.repush_train_task(t.id, queue_name, task_score+delay)
