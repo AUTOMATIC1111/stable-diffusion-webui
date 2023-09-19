@@ -148,7 +148,6 @@ class TaskReceiver:
         self.is_elastic = is_flexible_worker()
         self.recorder = TaskReceiverRecorder()
         self.task_score_limit = 5 if cmd_opts.lowvram else (10 if cmd_opts.medvram else -1)
-
         self.worker_id = self._worker_id()
 
         run_train_time_cfg = get_run_train_time_cfg()
@@ -609,16 +608,16 @@ class TaskReceiver:
         running_workers = self.get_all_workers()
         user_workers = set()
 
-        logger.debug(f">>> {user_id} current workers:{';'.join(user_workers)}, max:{max_value}")
+        logger.debug(f">>> {user_id} current workers:{'/n/t'.join(running_workers)}, /n/t max:{max_value}")
         flag = True
+        members = [k.decode('utf8') if isinstance(k, bytes) else k for k in members]
         for worker_id in members:
             if worker_id in running_workers:
                 user_workers.add(worker_id)
             if len(user_workers) >= max_value:
-                logger.info(f"{user_id} current trainning workers:{';'.join(user_workers)}, max:{max_value}")
                 flag = False
                 break
-        logger.info(f">>> {user_id} current trainning workers:{';'.join(user_workers)}, max:{max_value}")
+        logger.info(f">>> {user_id} current trainning workers:{'/n/t'.join(user_workers)},/n/t max:{max_value}>{flag}")
         return flag
 
     def repush_train_task(self, task_id: str, queue_name: str, score: int):
