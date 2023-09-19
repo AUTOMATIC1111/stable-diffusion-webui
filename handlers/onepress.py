@@ -250,10 +250,10 @@ class RenditionTask(Txt2ImgTask):
     def __init__(self,
                  base_model_path: str,  # 模型路径
                  model_hash: str,  # 模型hash值
-                 prompt: str,  # 图片的正向提示词
+                 style: str,  # 转绘风格 color_pencil/ukiyo/landscape/  min_watercolor/dazzle_color/oil_paint
                  width: int,  # 宽
                  height: int,  # 高
-                 style: str,  # 转绘风格 color_pencil/ukiyo/landscape/  min_watercolor/dazzle_color/oil_paint
+                 prompt: str,  # 图片的正向提示词
                  image: str,  # 原图路径
                  init_img: str,  # 油画垫图
                  lora_models: typing.Sequence[str] = None,# lora 
@@ -270,7 +270,7 @@ class RenditionTask(Txt2ImgTask):
         self.image = image
         self.init_img = init_img
         self.roop = roop
-        self.batch_size=batch_size
+        self.batch_size=batch_size if batch_size!=0 else 1
 
     @classmethod
     def exec_task(cls, task: Task):
@@ -278,10 +278,10 @@ class RenditionTask(Txt2ImgTask):
         t = RenditionTask(
             task['base_model_path'],
             task['model_hash'],
-            task['prompt'],
-            task.get(['width'],512),
-            task.get(['height'],512),
-            task.get(['style'],'ukiyo'),
+            task['style'],
+            task['width'],
+            task['height'],
+            task.get('prompt',""),
             task.get('image', None), # 图生图：极简水彩 炫彩 油画
             task.get('init_img', None),# 风格垫图 油画判断
             task.get('lora_models',None),
@@ -523,6 +523,7 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         yield progress
 
     def _exec_rendition(self, task: Task) -> typing.Iterable[TaskProgress]:
+        
         logger.info("one press rendition func starting...")
 
         full_task = RenditionTask.exec_task(task)
