@@ -84,6 +84,8 @@ def save_files(js_data, images, html_info, index):
             self.infotexts = getattr(self, 'infotexts', [html_info])
             self.infotext = self.infotexts[0] if len(self.infotexts) > 0 else html_info
             self.index_of_first_image = getattr(self, 'index_of_first_image', 0)
+            self.batch_size = 1
+
     try:
         data = json.loads(js_data)
     except Exception:
@@ -93,6 +95,8 @@ def save_files(js_data, images, html_info, index):
     if index > -1 and shared.opts.save_selected_only and (index >= p.index_of_first_image):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only # pylint: disable=no-member
         images = [images[index]]
         start_index = index
+    else:
+        p.batch_size = len(images)
     filenames = []
     fullfns = []
     for image_index, filedata in enumerate(images, start_index):
