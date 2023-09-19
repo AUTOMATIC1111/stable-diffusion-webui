@@ -61,7 +61,7 @@ def pil_to_temp_file(self, img, dir: str, format="png") -> str: # pylint: disabl
     file_obj = tempfile.NamedTemporaryFile(delete=False, suffix=".png", dir=dir)
     img.save(file_obj, pnginfo=(metadata if use_metadata else None))
     name = file_obj.name
-    shared.log.debug(f'Saving temp image: {name}')
+    shared.log.debug(f'Saving temp: image="{name}"')
     return name
 
 

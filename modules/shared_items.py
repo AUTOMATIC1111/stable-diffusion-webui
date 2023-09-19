@@ -20,7 +20,7 @@ def refresh_vae_list():
 
 def list_crossattention():
     return [
-        "Disable cross-attention layer optimization",
+        "Disabled",
         "xFormers",
         "Scaled-Dot-Product",
         "Doggettx's",

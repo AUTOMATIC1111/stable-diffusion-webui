@@ -75,17 +75,21 @@ def save_files(js_data, images, html_info, index):
     class PObject: # pylint: disable=too-few-public-methods
         def __init__(self, d=None):
             if d is not None:
-                for key, value in d.items():
-                    setattr(self, key, value)
-            self.seed = getattr(self, 'seed', None) or getattr(self, 'Seed', None)
+                for k, v in d.items():
+                    setattr(self, k, v)
             self.prompt = getattr(self, 'prompt', None) or getattr(self, 'Prompt', None)
-            self.all_seeds = getattr(self, 'all_seeds', [self.seed])
             self.all_prompts = getattr(self, 'all_prompts', [self.prompt])
+            self.negative_prompt = getattr(self, 'negative_prompt', None)
+            self.all_negative_prompt = getattr(self, 'all_negative_prompts', [self.negative_prompt])
+            self.seed = getattr(self, 'seed', None) or getattr(self, 'Seed', None)
+            self.all_seeds = getattr(self, 'all_seeds', [self.seed])
+            self.subseed = getattr(self, 'subseed', None)
+            self.all_subseeds = getattr(self, 'all_subseeds', [self.subseed])
+            self.width = getattr(self, 'width', None)
+            self.height = getattr(self, 'height', None)
+            self.index_of_first_image = getattr(self, 'index_of_first_image', 0)
             self.infotexts = getattr(self, 'infotexts', [html_info])
             self.infotext = self.infotexts[0] if len(self.infotexts) > 0 else html_info
-            self.index_of_first_image = getattr(self, 'index_of_first_image', 0)
-            self.batch_size = 1
-
     try:
         data = json.loads(js_data)
     except Exception:
@@ -95,8 +99,6 @@ def save_files(js_data, images, html_info, index):
     if index > -1 and shared.opts.save_selected_only and (index >= p.index_of_first_image):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only # pylint: disable=no-member
         images = [images[index]]
         start_index = index
-    else:
-        p.batch_size = len(images)
     filenames = []
     fullfns = []
     for image_index, filedata in enumerate(images, start_index):
@@ -114,12 +116,12 @@ def save_files(js_data, images, html_info, index):
             fullfns.append(fullfn)
             destination = shared.opts.outdir_save
             if shared.opts.use_save_to_dirs_for_ui:
-                namegen = modules.images.FilenameGenerator(p, seed=p.all_seeds[i], prompt=p.all_prompts[i], image=None, index=image_index)  # pylint: disable=no-member
+                namegen = modules.images.FilenameGenerator(p, seed=p.all_seeds[i], prompt=p.all_prompts[i], image=None)  # pylint: disable=no-member
                 dirname = namegen.apply(shared.opts.directories_filename_pattern or "[prompt_words]").lstrip(' ').rstrip('\\ /')
                 destination = os.path.join(destination, dirname)
                 os.makedirs(destination, exist_ok = True)
             shutil.copy(fullfn, destination)
-            shared.log.info(f"Copying image: {fullfn} -> {destination}")
+            shared.log.info(f'Copying image: file="{fullfn}" folder="{destination}"')
             tgt_filename = os.path.join(destination, os.path.basename(fullfn))
             modules.script_callbacks.image_save_btn_callback(tgt_filename)
         else:

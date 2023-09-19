@@ -261,7 +261,7 @@ def select_checkpoint(op='model'):
         return None
     checkpoint_info = get_closet_checkpoint_match(model_checkpoint)
     if checkpoint_info is not None:
-        shared.log.debug(f'Select checkpoint: {op} {checkpoint_info.title if checkpoint_info is not None else None}')
+        shared.log.debug(f'Select checkpoint: {op}="{checkpoint_info.title if checkpoint_info is not None else None}"')
         return checkpoint_info
     if len(checkpoints_list) == 0 and not shared.cmd_opts.no_download:
         shared.log.error("Cannot run without a checkpoint")
@@ -275,7 +275,7 @@ def select_checkpoint(op='model'):
             shared.log.info("Selecting first available checkpoint")
         # shared.log.warning(f"Loading fallback checkpoint: {checkpoint_info.title}")
         shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
-    shared.log.debug(f'Select checkpoint: {checkpoint_info.title if checkpoint_info is not None else None}')
+    shared.log.debug(f'Select checkpoint: {op}="{checkpoint_info.title if checkpoint_info is not None else None}"')
     return checkpoint_info
 
 

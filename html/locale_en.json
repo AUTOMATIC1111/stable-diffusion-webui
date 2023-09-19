@@ -356,7 +356,7 @@
   {"id":"","label":"Enable splitting of hires batch processing","localized":"","hint":"Reduces VRAM usage when using hires fix on batches of images"},
   {"id":"","label":"Load models using stream loading method","localized":"","hint":"When loading models attempt stream loading optimized for slow or network storage"},
   {"id":"","label":"When loading models attempt to reuse previous model dictionary","localized":"","hint":""},
-  {"id":"","label":"Disable cross-attention layer optimization","localized":"","hint":"Disable the all cross-attention optimization. May result in higher VRAM usage and longer generation times"},
+  {"id":"","label":"Disabled","localized":"","hint":""},
   {"id":"","label":"xFormers","localized":"","hint":"Memory optimization. Non-Deterministic (different results each time)"},
   {"id":"","label":"Scaled-Dot-Product","localized":"","hint":"Memory optimization. Non-Deterministic unless SDP memory attention is disabled."},
   {"id":"","label":"Doggettx's","localized":"","hint":""},

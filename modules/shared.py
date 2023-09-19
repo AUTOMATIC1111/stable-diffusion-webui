@@ -340,7 +340,7 @@ def readfile(filename, silent=False):
     return data
 
 
-def writefile(data, filename, mode='w'):
+def writefile(data, filename, mode='w', silent=False):
 
     def default(obj):
         log.error(f"Saving: {filename} not a valid object: {obj}")
@@ -350,7 +350,8 @@ def writefile(data, filename, mode='w'):
         with fasteners.InterProcessLock(f"{filename}.lock"):
             # skipkeys=True, ensure_ascii=True, check_circular=True, allow_nan=True
             output = json.dumps(data, indent=2, default=default)
-            log.debug(f'Saving: {filename} len={len(output)}')
+            if not silent:
+                log.debug(f'Saving: {filename} len={len(output)}')
             with open(filename, mode, encoding="utf8") as file:
                 file.write(output)
     except Exception as e:
