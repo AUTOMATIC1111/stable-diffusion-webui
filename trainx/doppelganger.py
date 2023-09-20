@@ -7,12 +7,15 @@
 # @Software: Hifive
 import copy
 import os.path
+import random
 import shutil
 import time
 import typing
 
+import numpy as np
+
 from modules.shared import mem_mon as vram_mon
-from trainx.utils import get_tmp_local_path, Tmp, upload_files
+from trainx.utils import get_tmp_local_path, Tmp, upload_files, detect_image_face
 from tools.file import zip_compress, zip_uncompress, find_files_from_dir
 from trainx.typex import DigitalDoppelgangerTask, Task, TrainLoraTask, PreprocessTask
 from sd_scripts.train_auto_xz import train_auto
@@ -39,6 +42,16 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
     logger.debug(f">> input images dir:{image_dir}")
 
     if image_dir:
+        # 检测年龄
+        images = [os.path.join(image_dir, os.path.basename(i)) for i in random.choices(task.image_keys, k=5)]
+        face_info = []
+        for n, face in detect_image_face(*images):
+            if face:
+                face_info.append((face.gender, face.age))
+
+        age = np.average([x[-1] for x in face_info])
+        gender = '1girl' if np.sum([x[0] == 0 for x in face_info]) > len(face_info) / 2 else '1boy'
+
         p = TaskProgress.new_running(job, 'train running.')
         p.eta_relative = 35 * 60
         yield p
@@ -66,7 +79,7 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
                     dump_func(p)
 
         logger.debug(f">> preprocess and train....")
-        out_path, gender = train_auto(
+        out_path, gender_tag = train_auto(
             train_callback=train_progress_callback,
             train_data_dir=image_dir,
             train_type=task.train_type,
@@ -82,7 +95,8 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
             result = {
                 'material': None,
                 'models': [],
-                'gender': gender
+                'gender': gender,
+                'age': int(age) if age else 20
             }
 
             cover = task.get_model_cover_key()
@@ -112,4 +126,3 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
     else:
         p = TaskProgress.new_failed(job, 'train failed(cannot download images)')
         yield p
-

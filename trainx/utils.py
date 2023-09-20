@@ -7,11 +7,15 @@
 # @Software: Hifive
 import hashlib
 import os
+import numpy as np
+from PIL import Image
 from enum import IntEnum
+from loguru import logger
 from worker.task_recv import Tmp
 from datetime import datetime
+from insightface.app import FaceAnalysis
 from tools.environment import get_file_storage_system_env, Env_BucketKey, S3ImageBucket, S3Tmp, S3SDWEB
-from filestorage import FileStorageCls, get_local_path, batch_download
+from filestorage import FileStorageCls, get_local_path, batch_download, http_down
 
 
 class ModelType(IntEnum):
@@ -97,3 +101,35 @@ def upload_files(is_tmp, *files, dirname=None):
             file_storage_system.upload(f, key)
             keys.append(key)
     return keys
+
+
+def detect_image_face(*images):
+    def download_models():
+        buffalo_l = os.path.join('models', 'buffalo_l')
+        os.makedirs(buffalo_l, exist_ok=True)
+        model_names = [
+            '1k3d68.onnx',
+            '2d106det.onnx',
+            'det_10g.onnx',
+            'genderage.onnx',
+            'w600k_r50.onnx',
+        ]
+        base_url = 'https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/face-analysis/buffalo_l/'
+
+        for m in model_names:
+            local = os.path.join(buffalo_l, m)
+            if not os.path.isfile(local):
+                logger.info(f"download buffalo_l: {local}...")
+                http_down(base_url + m, local)
+
+    download_models()
+    app = FaceAnalysis(providers=['CUDAExecutionProvider', 'CPUExecutionProvider'], root='.')
+    app.prepare(ctx_id=0, det_size=(640, 640))
+    for img_path in images:
+        img = np.array(Image.open(img_path))
+        faces = app.get(img)
+        basename = os.path.basename(img_path)
+        if not faces:
+            yield (basename, None)
+        else:
+            yield (basename, faces[0])

@@ -197,28 +197,31 @@ class PrivatizationFileStorage(FileStorage):
         if 'http' not in remoting_path.lower():
             raise OSError(f'unsupported file:{remoting_path}')
 
-        self.logger.info(f"download url: {remoting_path}...")
-        resp = http_request(remoting_path)
-        if resp:
-            filename = os.path.basename(remoting_path)
-            if 'Content-Disposition' in resp.headers:
-                cd = resp.headers.get('Content-Disposition')
-                map = dict((item.strip().split('=')[:2] for item in (item for item in cd.split(';') if '=' in item)))
-                if 'filename' in map:
-                    filename = map['filename'].strip('"')
+        filename = os.path.basename(remoting_path)
+        filepath = os.path.join(self.tmp_dir, filename)
+        if not os.path.isfile(filepath):
+            self.logger.info(f"download url: {remoting_path}...")
+            resp = http_request(remoting_path)
+            if resp:
 
-            chunk_size = 512
-            filepath = os.path.join(self.tmp_dir, filename)
-            self.logger.info(f"save to {filename} ...")
-            with open(filepath, 'wb') as f:
-                for chunk in resp.iter_content(chunk_size=chunk_size):
-                    if chunk:
-                        f.write(chunk)
+                if 'Content-Disposition' in resp.headers:
+                    cd = resp.headers.get('Content-Disposition')
+                    map = dict((item.strip().split('=')[:2] for item in (item for item in cd.split(';') if '=' in item)))
+                    if 'filename' in map:
+                        filename = map['filename'].strip('"')
 
-            if os.path.isdir(local_path):
-                local_path = os.path.join(local_path, filename)
-            shutil.move(filename, local_path)
-            return local_path
+                chunk_size = 512
+
+                self.logger.info(f"save to {filename} ...")
+                with open(filepath, 'wb') as f:
+                    for chunk in resp.iter_content(chunk_size=chunk_size):
+                        if chunk:
+                            f.write(chunk)
+
+                if os.path.isdir(local_path):
+                    local_path = os.path.join(local_path, filename)
+        shutil.move(filepath, local_path)
+        return local_path
 
     def upload(self, local_path, remoting_path) -> str:
         # local file system
