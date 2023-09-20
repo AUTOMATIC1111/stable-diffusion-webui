@@ -7,6 +7,7 @@
 # @Software: Hifive
 import hashlib
 import os
+import cv2
 import numpy as np
 from PIL import Image
 from enum import IntEnum
@@ -126,7 +127,7 @@ def detect_image_face(*images):
     app = FaceAnalysis(providers=['CUDAExecutionProvider', 'CPUExecutionProvider'], root='.')
     app.prepare(ctx_id=0, det_size=(640, 640))
     for img_path in images:
-        img = np.array(Image.open(img_path).convert("RGB"))
+        img = cv2.imread(img_path)
         faces = app.get(img)
         basename = os.path.basename(img_path)
         if not faces:
