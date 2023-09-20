@@ -319,7 +319,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             unload_diffusers_lora()
         return results
 
-    if shared.opts.diffusers_move_base and not hasattr(shared.sd_model, 'has_accelerate', False):
+    if shared.opts.diffusers_move_base and not getattr(shared.sd_model, 'has_accelerate', False):
         shared.sd_model.to(devices.device)
 
     is_img2img = bool(sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE or sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING)
@@ -417,7 +417,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if is_refiner_enabled:
         if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_refiner and hasattr(shared.sd_model, 'vae'):
             save_intermediate(latents=output.images, suffix="-before-refiner")
-        if shared.opts.diffusers_move_base and not hasattr(shared.sd_model, 'has_accelerate', False):
+        if shared.opts.diffusers_move_base and not getattr(shared.sd_model, 'has_accelerate', False):
             shared.log.debug('Moving to CPU: model=base')
             shared.sd_model.to(devices.cpu)
             devices.torch_gc()
@@ -433,7 +433,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 unload_diffusers_lora()
             return results
 
-        if shared.opts.diffusers_move_refiner and not hasattr(shared.sd_refiner, 'has_accelerate', False):
+        if shared.opts.diffusers_move_refiner and not getattr(shared.sd_refiner, 'has_accelerate', False):
             shared.sd_refiner.to(devices.device)
         refiner_is_sdxl = bool("StableDiffusionXL" in shared.sd_refiner.__class__.__name__)
         p.ops.append('refine')
@@ -469,7 +469,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 for refiner_image in refiner_images:
                     results.append(refiner_image)
 
-        if shared.opts.diffusers_move_refiner and not hasattr(shared.sd_refiner, 'has_accelerate', False):
+        if shared.opts.diffusers_move_refiner and not getattr(shared.sd_refiner, 'has_accelerate', False):
             shared.log.debug('Moving to CPU: model=refiner')
             shared.sd_refiner.to(devices.cpu)
             devices.torch_gc()
