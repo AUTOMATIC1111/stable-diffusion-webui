@@ -7,11 +7,11 @@ import torch
 
 from modules.shared import state
 from modules import sd_samplers_common, prompt_parser, shared
-import modules.models.diffusion.uni_pc
+import modules.uni_pc
 
 
 samplers_data_compvis = [
-    sd_samplers_common.SamplerData('UniPC', lambda model: VanillaStableDiffusionSampler(modules.models.diffusion.uni_pc.UniPCSampler, model), [], {}),
+    sd_samplers_common.SamplerData('UniPC', lambda model: VanillaStableDiffusionSampler(modules.uni_pc.UniPCSampler, model), [], {}),
     sd_samplers_common.SamplerData('DDIM', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.ddim.DDIMSampler, model), [], {"default_eta_is_0": True, "uses_ensd": True}),
     sd_samplers_common.SamplerData('PLMS', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.plms.PLMSSampler, model), [], {}),
 ]
@@ -22,7 +22,7 @@ class VanillaStableDiffusionSampler:
         self.sampler = constructor(sd_model)
         self.is_ddim = hasattr(self.sampler, 'p_sample_ddim')
         self.is_plms = hasattr(self.sampler, 'p_sample_plms')
-        self.is_unipc = isinstance(self.sampler, modules.models.diffusion.uni_pc.UniPCSampler)
+        self.is_unipc = isinstance(self.sampler, modules.uni_pc.UniPCSampler)
         self.orig_p_sample_ddim = None
         if self.is_plms:
             self.orig_p_sample_ddim = self.sampler.p_sample_plms
