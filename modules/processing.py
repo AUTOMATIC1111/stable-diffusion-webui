@@ -965,16 +965,13 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if (self.hr_upscale_to_x == self.width and self.hr_upscale_to_y == self.height) or self.hr_upscaler is None or self.hr_upscaler == 'None':
             self.is_hr_pass = False
             return
-        if self.denoising_strength == 0:
-            self.is_hr_pass = False
-            return
         self.is_hr_pass = True
         if not shared.state.processing_has_refined_job_count:
             if shared.state.job_count == -1:
                 shared.state.job_count = self.n_iter
             shared.state.job_count = shared.state.job_count * 2
             shared.state.processing_has_refined_job_count = True
-        shared.log.debug(f'Init hires: upscaler={self.hr_upscaler} sampler={self.latent_sampler} resize={self.hr_resize_x}x{self.hr_resize_y} upscale={self.hr_upscale_to_x}x{self.hr_upscale_to_y}')
+        shared.log.debug(f'Init hires: upscaler="{self.hr_upscaler}" sampler="{self.latent_sampler}" resize={self.hr_resize_x}x{self.hr_resize_y} upscale={self.hr_upscale_to_x}x{self.hr_upscale_to_y}')
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
 
@@ -1013,7 +1010,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         self.init_hr()
         if self.is_hr_pass:
-            self.ops.append('hires')
             target_width = self.hr_upscale_to_x
             target_height = self.hr_upscale_to_y
             for i in range(samples.shape[0]):
@@ -1051,13 +1047,17 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 if self.latent_sampler == "PLMS":
                     self.latent_sampler = 'UniPC'
             if self.hr_force or latent_scale_mode is not None:
-                devices.torch_gc() # GC now before running the next img2img to prevent running out of memory
-                self.sampler = modules.sd_samplers.create_sampler(self.latent_sampler or self.sampler_name, self.sd_model)
-                samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
-                noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
-                modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio(for_hr=True))
-                samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
-                modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio())
+                if self.denoising_strength > 0:
+                    self.ops.append('hires')
+                    devices.torch_gc() # GC now before running the next img2img to prevent running out of memory
+                    self.sampler = modules.sd_samplers.create_sampler(self.latent_sampler or self.sampler_name, self.sd_model)
+                    samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
+                    noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
+                    modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio(for_hr=True))
+                    samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
+                    modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio())
+                else:
+                    self.ops.append('upscale')
             x = None
             shared.state.nextjob()
             self.is_hr_pass = False

@@ -18,10 +18,8 @@ def gfpgann():
     if loaded_gfpgan_model is not None:
         loaded_gfpgan_model.gfpgan.to(devices.device_gfpgan)
         return loaded_gfpgan_model
-
     if gfpgan_constructor is None:
         return None
-
     models = modelloader.load_models(model_path, model_url, user_path, ext_filter="GFPGAN")
     if len(models) == 1 and "http" in models[0]:
         model_file = models[0]
@@ -36,7 +34,6 @@ def gfpgann():
     model = gfpgan_constructor(model_path=model_file, upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None, device=devices.device_gfpgan)
     loaded_gfpgan_model = model
     shared.log.info(f"Model loaded: type=GFPGAN model={model_file}")
-
     return model
 
 

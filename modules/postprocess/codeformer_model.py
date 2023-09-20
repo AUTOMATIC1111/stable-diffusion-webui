@@ -28,11 +28,10 @@ def setup_model(dirname):
 
     try:
         from torchvision.transforms.functional import normalize
-        from modules.codeformer.codeformer_arch import CodeFormer
+        from modules.postprocess.codeformer_arch import CodeFormer
         from basicsr.utils import img2tensor, tensor2img
         from facelib.utils.face_restoration_helper import FaceRestoreHelper
         from facelib.detection.retinaface import retinaface
-        from modules.shared import cmd_opts
 
         net_class = CodeFormer
 
@@ -54,12 +53,13 @@ def setup_model(dirname):
                 if len(model_paths) != 0:
                     ckpt_path = model_paths[0]
                 else:
-                    print("Unable to load codeformer model.")
+                    shared.log.error(f"Model failed loading: type=CodeFormer model={model_path}")
                     return None, None
                 net = net_class(dim_embd=512, codebook_size=1024, n_head=8, n_layers=9, connect_list=['32', '64', '128', '256']).to(devices.device_codeformer)
                 checkpoint = torch.load(ckpt_path)['params_ema']
                 net.load_state_dict(checkpoint)
                 net.eval()
+                shared.log.info(f"Model loaded: type=CodeFormer model={ckpt_path}")
 
                 if hasattr(retinaface, 'device'):
                     retinaface.device = devices.device_codeformer
@@ -102,8 +102,8 @@ def setup_model(dirname):
                             restored_face = tensor2img(output, rgb2bgr=True, min_max=(-1, 1))
                         del output
                         devices.torch_gc()
-                    except Exception as error:
-                        print(f'\tFailed inference for CodeFormer: {error}', file=sys.stderr)
+                    except Exception as e:
+                        shared.log.error(f'CodeForomer error: {e}')
                         restored_face = tensor2img(cropped_face_t, rgb2bgr=True, min_max=(-1, 1))
 
                     restored_face = restored_face.astype('uint8')

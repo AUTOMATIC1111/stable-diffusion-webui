@@ -1,57 +1,25 @@
-import os
 import numpy as np
 import torch
 from PIL import Image
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
-from swinir_model_arch import SwinIR as net
-from swinir_model_arch_v2 import Swin2SR as net2
-from modules import modelloader, devices, script_callbacks, shared
-from modules.shared import opts, state
-from modules.upscaler import Upscaler, UpscalerData
-
-
-device_swinir = devices.get_device_for('swinir')
+from modules.postprocess.swinir_model_arch import SwinIR as net
+from modules.postprocess.swinir_model_arch_v2 import Swin2SR as net2
+from modules import devices, script_callbacks, shared
+from modules.upscaler import Upscaler
 
 
 class UpscalerSwinIR(Upscaler):
     def __init__(self, dirname):
         self.name = "SwinIR"
-        self.model_url = "https://github.com/JingyunLiang/SwinIR/releases/download/v0.0" \
-                         "/003_realSR_BSRGAN_DFOWMFC_s64w8_SwinIR" \
-                         "-L_x4_GAN.pth "
-        self.model_name = "SwinIR 4x"
         self.user_path = dirname
         super().__init__()
-        scalers = []
-        model_files = self.find_models(ext_filter=[".pt", ".pth"])
-        for model in model_files:
-            if "http" in model:
-                name = self.model_name
-            else:
-                name = modelloader.friendly_name(model)
-            model_data = UpscalerData(name, model, self)
-            scalers.append(model_data)
-        self.scalers = scalers
-
-    def do_upscale(self, img, selected_model):
-        model = self.load_model(selected_model)
-        if model is None:
-            return img
-        model = model.to(device_swinir, dtype=devices.dtype)
-        img = upscale(img, model)
-        devices.torch_gc()
-        return img
+        self.scalers = self.find_scalers()
 
     def load_model(self, path, scale=4):
-        if "http" in path:
-            from modules.modelloader import load_file_from_url
-            dl_name = "%s%s" % (self.model_name.replace(" ", "_"), ".pth") # pylint: disable=consider-using-f-string
-            filename = load_file_from_url(url=path, model_dir=self.model_download_path, file_name=dl_name, progress=True)
-        else:
-            filename = path
-        if filename is None or not os.path.exists(filename):
-            shared.log.error(f"Model failed loading: type=SwinIR model={filename}")
-            return None
+        info = self.find_model(path)
+        if info is None:
+            return
+        pretrained_model = torch.load(info.local_data_path)
         model_v2 = net2(
             upscale=scale,
             in_chans=3,
@@ -78,9 +46,6 @@ class UpscalerSwinIR(Upscaler):
             upsampler="nearest+conv",
             resi_connection="3conv",
         )
-        pretrained_model = torch.load(filename)
-        shared.log.info(f"Model loaded: type=SwinIR model={filename}")
-
         for model in [model_v1, model_v2]:
             for param in ["params_ema", "params", None]:
                 try:
@@ -88,12 +53,20 @@ class UpscalerSwinIR(Upscaler):
                         model.load_state_dict(pretrained_model[param], strict=True)
                     else:
                         model.load_state_dict(pretrained_model, strict=True)
-                    shared.log.info(f'Loaded SwinIR model: {filename} param={param}')
+                    shared.log.info(f"Upscaler loaded: type={self.name} model={info.local_data_path} param={param}")
                     return model
-                except Exception:
-                    pass
-        shared.log.error(f'Could not determine SwinIR model parameters: {filename}')
+                except Exception as e:
+                    shared.log.error(f'Upscaler invalid parameters: type={self.name} model={info.local_data_path} {e}')
         return model
+
+    def do_upscale(self, img, selected_model):
+        model = self.load_model(selected_model)
+        if model is None:
+            return img
+        model = model.to(shared.device, dtype=devices.dtype)
+        img = upscale(img, model)
+        devices.torch_gc()
+        return img
 
 
 def upscale(
@@ -104,15 +77,13 @@ def upscale(
         window_size=8,
         scale=4,
 ):
-    tile = tile or opts.SWIN_tile
-    tile_overlap = tile_overlap or opts.SWIN_tile_overlap
-
-
+    tile = tile or shared.opts.SWIN_tile
+    tile_overlap = tile_overlap or shared.opts.SWIN_tile_overlap
     img = np.array(img)
     img = img[:, :, ::-1]
     img = np.moveaxis(img, 2, 0) / 255
     img = torch.from_numpy(img).float()
-    img = img.unsqueeze(0).to(device_swinir, dtype=devices.dtype)
+    img = img.unsqueeze(0).to(shared.device, dtype=devices.dtype)
     with torch.no_grad(), devices.autocast():
         _, _, h_old, w_old = img.size()
         h_pad = (h_old // window_size + 1) * window_size - h_old
@@ -136,23 +107,18 @@ def inference(img, model, tile, tile_overlap, window_size, scale):
     tile = min(tile, h, w)
     assert tile % window_size == 0, "tile size should be a multiple of window_size"
     sf = scale
-
     stride = tile - tile_overlap
     h_idx_list = list(range(0, h - tile, stride)) + [h - tile]
     w_idx_list = list(range(0, w - tile, stride)) + [w - tile]
-    E = torch.zeros(b, c, h * sf, w * sf, dtype=devices.dtype, device=device_swinir).type_as(img)
-    W = torch.zeros_like(E, dtype=devices.dtype, device=device_swinir)
+    E = torch.zeros(b, c, h * sf, w * sf, dtype=devices.dtype, device=shared.device).type_as(img)
+    W = torch.zeros_like(E, dtype=devices.dtype, device=shared.device)
 
     with Progress(TextColumn('[cyan]{task.description}'), BarColumn(), TaskProgressColumn(), TimeRemainingColumn(), TimeElapsedColumn(), console=shared.console) as progress:
         task = progress.add_task(description="Upscaling Initializing", total=len(h_idx_list) * len(w_idx_list))
         for h_idx in h_idx_list:
-            if state.interrupted or state.skipped:
-                break
-
             for w_idx in w_idx_list:
-                if state.interrupted or state.skipped:
+                if shared.state.interrupted or shared.state.skipped:
                     break
-
                 in_patch = img[..., h_idx: h_idx + tile, w_idx: w_idx + tile]
                 out_patch = model(in_patch)
                 out_patch_mask = torch.ones_like(out_patch)
@@ -165,15 +131,13 @@ def inference(img, model, tile, tile_overlap, window_size, scale):
                 ].add_(out_patch_mask)
                 progress.update(task, advance=1, description="Upscaling")
     output = E.div_(W)
-
     return output
 
 
 def on_ui_settings():
     import gradio as gr
-
-    shared.opts.add_option("SWIN_tile", shared.OptionInfo(192, "Tile size for all SwinIR", gr.Slider, {"minimum": 16, "maximum": 512, "step": 16}, section=('postprocessing', "Postprocessing")))
-    shared.opts.add_option("SWIN_tile_overlap", shared.OptionInfo(8, "Tile overlap, in pixels for SwinIR. Low values = visible seam", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}, section=('postprocessing', "Postprocessing")))
+    shared.opts.add_option("SWIN_tile", shared.OptionInfo(192, "Tile size for SwinIR upscaler", gr.Slider, {"minimum": 16, "maximum": 512, "step": 16}, section=('postprocessing', "Postprocessing")))
+    shared.opts.add_option("SWIN_tile_overlap", shared.OptionInfo(8, "Tile overlap for SwinIR upscaler", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}, section=('postprocessing', "Postprocessing")))
 
 
 script_callbacks.on_ui_settings(on_ui_settings)

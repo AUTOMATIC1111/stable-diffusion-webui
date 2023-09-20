@@ -18,9 +18,7 @@ from modules.dml import directml_override_opts
 from modules import prompt_parser
 from modules import timer
 import modules.ui_symbols as symbols
-import modules.codeformer_model
 import modules.generation_parameters_copypaste as parameters_copypaste
-import modules.gfpgan_model
 import modules.hypernetworks.ui
 import modules.scripts
 import modules.shared

@@ -292,6 +292,7 @@ def list_builtin_themes():
 
 
 def list_themes():
+    log.info('Browser session started')
     fn = os.path.join('html', 'themes.json')
     if not os.path.exists(fn):
         refresh_themes()
@@ -303,7 +304,7 @@ def list_themes():
     builtin = list_builtin_themes()
     default = ["gradio/default", "gradio/base", "gradio/glass", "gradio/monochrome", "gradio/soft"]
     external = {x['id'] for x in res if x['status'] == 'RUNNING' and 'test' not in x['id'].lower()}
-    log.info(f'Themes: builtin={len(builtin)} default={len(default)} external={len(external)}')
+    log.debug(f'Themes: builtin={len(builtin)} default={len(default)} external={len(external)}')
     themes = sorted(builtin) + sorted(default) + sorted(external, key=str.casefold)
     return themes
 
@@ -506,7 +507,7 @@ options_templates.update(options_section(('saving-paths', "Image Naming & Paths"
     "saving_sep_images": OptionInfo("<h2>Images</h2>", "", gr.HTML),
     "save_images_add_number": OptionInfo(True, "Add number to filename when saving", component_args=hide_dirs),
     "use_original_name_batch": OptionInfo(True, "Use original name for output filename during batch process"),
-    "use_upscaler_name_as_suffix": OptionInfo(True, "Use upscaler name as filename suffix in the extras tab"),
+    "use_upscaler_name_as_suffix": OptionInfo(True, "Use upscaler name as filename suffix in the extras tab", gr.Checkbox, {"visible": False}),
     "samples_filename_pattern": OptionInfo("[seq]-[prompt_words]", "Images filename pattern", component_args=hide_dirs),
 
     "outdir_sep_dirs": OptionInfo("<h2>Directories</h2>", "", gr.HTML),

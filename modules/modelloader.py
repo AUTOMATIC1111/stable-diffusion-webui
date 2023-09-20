@@ -325,7 +325,53 @@ def extension_filter(ext_filter=None, ext_blacklist=None):
         return (not ext_filter or any(fp.upper().endswith(ew) for ew in ext_filter)) and (not ext_blacklist or not any(fp.upper().endswith(ew) for ew in ext_blacklist))
     return filter
 
-def load_file_from_url(url: str, *, model_dir: str, progress: bool = True, file_name = None):
+
+def download_url_to_file(url: str, dst: str):
+    # based on torch.hub.download_url_to_file
+    import uuid
+    import tempfile
+    from urllib.request import urlopen, Request
+    from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
+
+    file_size = None
+    req = Request(url, headers={"User-Agent": "sdnext"})
+    u = urlopen(req)
+    meta = u.info()
+    if hasattr(meta, 'getheaders'):
+        content_length = meta.getheaders("Content-Length")
+    else:
+        content_length = meta.get_all("Content-Length")
+    if content_length is not None and len(content_length) > 0:
+        file_size = int(content_length[0])
+    dst = os.path.expanduser(dst)
+    for _seq in range(tempfile.TMP_MAX):
+        tmp_dst = dst + '.' + uuid.uuid4().hex + '.partial'
+        try:
+            f = open(tmp_dst, 'w+b')
+        except FileExistsError:
+            continue
+        break
+    else:
+        shared.log.error('Error downloading: url={url} no usable temporary filename found')
+        return
+    try:
+        with Progress(TextColumn('[cyan]{task.description}'), BarColumn(), TaskProgressColumn(), TimeRemainingColumn(), TimeElapsedColumn(), console=shared.console) as progress:
+            task = progress.add_task(description="Downloading", total=file_size)
+            while True:
+                buffer = u.read(8192)
+                if len(buffer) == 0:
+                    break
+                f.write(buffer)
+                progress.update(task, advance=len(buffer))
+        f.close()
+        shutil.move(f.name, dst)
+    finally:
+        f.close()
+        if os.path.exists(f.name):
+            os.remove(f.name)
+
+
+def load_file_from_url(url: str, *, model_dir: str, progress: bool = True, file_name = None): # pylint: disable=unused-argument
     """Download a file from url into model_dir, using the file present if possible. Returns the path to the downloaded file."""
     os.makedirs(model_dir, exist_ok=True)
     if not file_name:
@@ -334,8 +380,7 @@ def load_file_from_url(url: str, *, model_dir: str, progress: bool = True, file_
     cached_file = os.path.abspath(os.path.join(model_dir, file_name))
     if not os.path.exists(cached_file):
         shared.log.info(f'Downloading: url="{url}" file={cached_file}')
-        from torch.hub import download_url_to_file
-        download_url_to_file(url, cached_file, progress=progress)
+        download_url_to_file(url, cached_file)
     return cached_file
 
 
@@ -367,10 +412,16 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
 def friendly_name(file: str):
     if "http" in file:
         file = urlparse(file).path
-
     file = os.path.basename(file)
     model_name, _extension = os.path.splitext(file)
     return model_name
+
+
+def friendly_fullname(file: str):
+    if "http" in file:
+        file = urlparse(file).path
+    file = os.path.basename(file)
+    return file
 
 
 def cleanup_models():
@@ -427,15 +478,15 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
 
 def load_upscalers():
     # We can only do this 'magic' method to dynamically load upscalers if they are referenced, so we'll try to import any _model.py files before looking in __subclasses__
-    modules_dir = os.path.join(shared.script_path, "modules")
+    modules_dir = os.path.join(shared.script_path, "modules", "postprocess")
     for file in os.listdir(modules_dir):
         if "_model.py" in file:
             model_name = file.replace("_model.py", "")
-            full_model = f"modules.{model_name}_model"
+            full_model = f"modules.postprocess.{model_name}_model"
             try:
                 importlib.import_module(full_model)
-            except Exception:
-                pass
+            except Exception as e:
+                shared.log.error(f'Error loading upscaler: {model_name} {e}')
     datas = []
     commandline_options = vars(shared.cmd_opts)
     # some of upscaler classes will not go away after reloading their modules, and we'll end up with two copies of those classes. The newest copy will always be the last in the list, so we go from end to beginning and ignore duplicates
@@ -456,4 +507,4 @@ def load_upscalers():
         datas,
         key=lambda x: x.name.lower() if not isinstance(x.scaler, (UpscalerNone, UpscalerLanczos, UpscalerNearest)) else "" # Special case for UpscalerNone keeps it at the beginning of the list.
     )
-    shared.log.debug(f"Loaded upscalers: items={len(shared.sd_upscalers)}")
+    shared.log.debug(f"Loaded upscalers: total={len(shared.sd_upscalers)} downloaded={len([x for x in shared.sd_upscalers if x.data_path is not None and os.path.isfile(x.data_path)])} user={len([x for x in shared.sd_upscalers if x.custom])}")

@@ -1,15 +1,11 @@
-import os
-
 import numpy as np
 import torch
 from PIL import Image
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
-
-import modules.esrgan_model_arch as arch
-from modules import modelloader, images, devices
-from modules.upscaler import Upscaler, UpscalerData
+import modules.postprocess.esrgan_model_arch as arch
+from modules import images, devices
+from modules.upscaler import Upscaler
 from modules.shared import opts, log, console
-
 
 
 def mod2normal(state_dict):
@@ -123,24 +119,10 @@ def infer_params(state_dict):
 class UpscalerESRGAN(Upscaler):
     def __init__(self, dirname):
         self.name = "ESRGAN"
-        self.model_url = "https://github.com/cszn/KAIR/releases/download/v1.0/ESRGAN.pth"
-        self.model_name = "ESRGAN_4x"
-        self.scalers = []
         self.user_path = dirname
         super().__init__()
-        model_paths = self.find_models(ext_filter=[".pt", ".pth"])
-        scalers = []
-        if len(model_paths) == 0:
-            scaler_data = UpscalerData(self.model_name, self.model_url, self, 4)
-            scalers.append(scaler_data)
-        for file in model_paths:
-            if "http" in file:
-                name = self.model_name
-            else:
-                name = modelloader.friendly_name(file)
+        self.scalers = self.find_scalers()
 
-            scaler_data = UpscalerData(name, file, self, 4)
-            self.scalers.append(scaler_data)
 
     def do_upscale(self, img, selected_model):
         model = self.load_model(selected_model)
@@ -151,35 +133,23 @@ class UpscalerESRGAN(Upscaler):
         return img
 
     def load_model(self, path: str):
-        if "http" in path:
-            from modules.modelloader import load_file_from_url
-            filename = load_file_from_url(
-                url=self.model_url,
-                model_dir=self.model_download_path,
-                file_name=f"{self.model_name}.pth",
-                progress=True,
-            )
-        else:
-            filename = path
-        if not os.path.exists(filename) or filename is None:
-            log.error(f"Model failed loading: type=ESRGAN model={filename}")
-            return None
-
-        state_dict = torch.load(filename, map_location='cpu' if devices.device_esrgan.type == 'mps' else None)
-        log.info(f"Model loaded: type=ESRGAN model={filename}")
+        info = self.find_model(path)
+        if info is None:
+            return
+        state_dict = torch.load(info.local_data_path, map_location='cpu' if devices.device_esrgan.type == 'mps' else None)
+        log.info(f"Upscaler loaded: type={self.name} model={info.local_data_path}")
 
         if "params_ema" in state_dict:
             state_dict = state_dict["params_ema"]
         elif "params" in state_dict:
             state_dict = state_dict["params"]
-            num_conv = 16 if "realesr-animevideov3" in filename else 32
+            num_conv = 16 if "realesr-animevideov3" in info.local_data_path else 32
             model = arch.SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=num_conv, upscale=4, act_type='prelu')
             model.load_state_dict(state_dict)
             model.eval()
             return model
-
         if "body.0.rdb1.conv1.weight" in state_dict and "conv_first.weight" in state_dict:
-            nb = 6 if "RealESRGAN_x4plus_anime_6B" in filename else 23
+            nb = 6 if "RealESRGAN_x4plus_anime_6B" in info.local_data_path else 23
             state_dict = resrgan2normal(state_dict, nb)
         elif "conv_first.weight" in state_dict:
             state_dict = mod2normal(state_dict)

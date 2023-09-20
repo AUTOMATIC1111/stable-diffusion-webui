@@ -5,6 +5,7 @@ import threading
 import cv2
 import numpy as np
 import torch
+from torch import nn
 from torch.nn import functional as F
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
 from modules.shared import log, console
@@ -312,10 +313,6 @@ class IOConsumer(threading.Thread):
             output = msg['output']
             save_path = msg['save_path']
             cv2.imwrite(save_path, output)
-
-from basicsr.utils.registry import ARCH_REGISTRY
-from torch import nn as nn
-from torch.nn import functional as F # noqa
 
 
 class SRVGGNetCompact(nn.Module):

@@ -20,9 +20,6 @@ from modules.call_queue import queue_lock, wrap_queued_call, wrap_gradio_gpu_cal
 import modules.devices
 import modules.sd_samplers
 import modules.upscaler
-import modules.codeformer_model as codeformer
-import modules.face_restoration
-import modules.gfpgan_model as gfpgan
 import modules.img2img
 import modules.lowvram
 import modules.scripts
@@ -96,11 +93,11 @@ def initialize():
     modules.sd_models.setup_model()
     timer.startup.record("models")
 
+    import modules.postprocess.codeformer_model as codeformer
     codeformer.setup_model(opts.codeformer_models_path)
-    timer.startup.record("codeformer")
-
+    import modules.postprocess.gfpgan_model as gfpgan
     gfpgan.setup_model(opts.gfpgan_models_path)
-    timer.startup.record("gfpgan")
+    timer.startup.record("face-restore")
 
     log.debug('Loading extensions')
     t_timer, t_total = modules.scripts.load_scripts()
