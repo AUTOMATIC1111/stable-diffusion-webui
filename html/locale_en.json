@@ -412,7 +412,7 @@
   {"id":"","label":"Folder with ESRGAN models","localized":"","hint":""},
   {"id":"","label":"Folder with BSRGAN models","localized":"","hint":""},
   {"id":"","label":"Folder with RealESRGAN models","localized":"","hint":""},
-  {"id":"","label":"Folder with ScuNET models","localized":"","hint":""},
+  {"id":"","label":"Folder with SCUNet models","localized":"","hint":""},
   {"id":"","label":"Folder with SwinIR models","localized":"","hint":""},
   {"id":"","label":"Folder with LDSR models","localized":"","hint":""},
   {"id":"","label":"Folder with CLIP models","localized":"","hint":""},

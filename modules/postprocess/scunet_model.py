@@ -8,7 +8,7 @@ from modules.shared import opts, log, console, device
 from modules.upscaler import Upscaler
 
 
-class UpscalerScuNET(Upscaler):
+class UpscalerSCUNet(Upscaler):
     def __init__(self, dirname):
         self.name = "SCUNet"
         self.user_path = dirname

@@ -1,12 +1,16 @@
 # Change Log for SD.Next
 
-## Update for 2023-09-18
-
-Downgrade of `diffusers` to 0.20.2 due to critical issue with model offloading  
-This means that new model **Wuerstchen** is not supported until diffusers issue is resolved  
+## Update for 2023-09-20
 
 - Added **change log** to UI, see *System -> Changelog*
 - **Extra networks**: faster search, ability to show/hide/sort networks
+- **Upscalers**: complete refactor...
+  - more high quality upscalers available by default  
+  - unified init/download/execute/progress code  
+  - easier installation  
+  - available in **xyz grid**  
+  - allow upscale-only as part of **txt2img** and **img2img** workflows  
+    simply set *denoising strength* to 0 so hires does not get triggered  
 
 ## Update for 2023-09-13
 

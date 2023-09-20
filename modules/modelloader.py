@@ -448,8 +448,8 @@ def cleanup_models():
     src_path = os.path.join(root_path, "repositories/latent-diffusion/experiments/pretrained_models/")
     dest_path = os.path.join(models_path, "LDSR")
     move_files(src_path, dest_path)
-    src_path = os.path.join(root_path, "ScuNET")
-    dest_path = os.path.join(models_path, "ScuNET")
+    src_path = os.path.join(root_path, "SCUNet")
+    dest_path = os.path.join(models_path, "SCUNet")
     move_files(src_path, dest_path)
 
 
