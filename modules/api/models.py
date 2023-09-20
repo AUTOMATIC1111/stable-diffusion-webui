@@ -1,7 +1,7 @@
 import inspect
 
 from pydantic import BaseModel, Field, create_model
-from typing import Any, Optional
+from typing import Any, List, Optional, Union
 from typing_extensions import Literal
 from inflection import underscore
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img
@@ -303,7 +303,7 @@ class ScriptArg(BaseModel):
     minimum: Optional[Any] = Field(default=None, title="Minimum", description="Minimum allowed value for the argumentin UI")
     maximum: Optional[Any] = Field(default=None, title="Minimum", description="Maximum allowed value for the argumentin UI")
     step: Optional[Any] = Field(default=None, title="Minimum", description="Step for changing value of the argumentin UI")
-    choices: Optional[List[str]] = Field(default=None, title="Choices", description="Possible values for the argument")
+    choices: Optional[List[Union[str, List]]] = Field(default=None, title="Choices", description="Possible values for the argument")
 
 
 class ScriptInfo(BaseModel):
