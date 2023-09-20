@@ -126,7 +126,7 @@ def detect_image_face(*images):
     app = FaceAnalysis(providers=['CUDAExecutionProvider', 'CPUExecutionProvider'], root='.')
     app.prepare(ctx_id=0, det_size=(640, 640))
     for img_path in images:
-        img = np.array(Image.open(img_path))
+        img = np.array(Image.open(img_path).convert("RGB"))
         faces = app.get(img)
         basename = os.path.basename(img_path)
         if not faces:
