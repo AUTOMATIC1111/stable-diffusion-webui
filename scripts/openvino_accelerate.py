@@ -26,7 +26,6 @@ from modules.ui_common import create_refresh_button
 from modules.timer import Timer
 
 from PIL import Image, ImageOps
-from pathlib import Path
 from types import MappingProxyType
 from typing import Optional
 
@@ -51,6 +50,9 @@ from diffusers import (
     StableDiffusionInpaintPipeline,
     StableDiffusionControlNetPipeline,
     ControlNetModel,
+    StableDiffusionXLPipeline,
+    StableDiffusionXLImg2ImgPipeline,
+    StableDiffusionXLInpaintPipeline,
     DDIMScheduler,
     DPMSolverMultistepScheduler,
     EulerAncestralDiscreteScheduler,
@@ -58,14 +60,7 @@ from diffusers import (
     HeunDiscreteScheduler,
     LMSDiscreteScheduler,
     PNDMScheduler,
-)
-
-from diffusers.pipelines.stable_diffusion.convert_from_ckpt import download_from_original_stable_diffusion_ckpt
-
-from diffusers.utils import (
-    DIFFUSERS_CACHE,
-    HF_HUB_OFFLINE,
-    is_safetensors_available,
+    AutoencoderKL,
 )
 
 class ModelState:
@@ -80,6 +75,8 @@ class ModelState:
         self.model_hash = ""
         self.control_models = []
         self.lora_model = "None"
+        self.custom_vae = "None"
+        self.is_sdxl = False
 
 model_state = ModelState()
 
@@ -111,6 +108,7 @@ def openvino_fx(subgraph, example_inputs):
                 model_hash_str = model_hash_str + model_state.lora_model
 
             executor_parameters = {"model_hash_str": model_hash_str}
+
             # Check if the model was fully supported and already cached
             example_inputs.reverse()
             inputs_reversed = True
@@ -232,14 +230,14 @@ class OpenVINOGraphModule(torch.nn.Module):
         self.perm_fallback = False
 
     def __call__(self, *args):
-        if self.perm_fallback:
-            return self.gm(*args)
+        #if self.perm_fallback:
+        #    return self.gm(*args)
 
-        try:
-            result = openvino_execute(self.gm, *args, executor_parameters=self.executor_parameters, partition_id=self.partition_id, file_name=self.file_name)
-        except Exception:
-            self.perm_fallback = True
-            return self.gm(*args)
+        #try:
+        result = openvino_execute(self.gm, *args, executor_parameters=self.executor_parameters, partition_id=self.partition_id, file_name=self.file_name)
+        #except Exception:
+        #    self.perm_fallback = True
+        #    return self.gm(*args)
 
         return result
 
@@ -448,117 +446,6 @@ def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_na
     compiled = core.compile_model(om, device)
     return compiled
 
-def from_single_file(self, pretrained_model_link_or_path, **kwargs):
-
-    cache_dir = kwargs.pop("cache_dir", DIFFUSERS_CACHE)
-    resume_download = kwargs.pop("resume_download", False)
-    force_download = kwargs.pop("force_download", False)
-    proxies = kwargs.pop("proxies", None)
-    local_files_only = kwargs.pop("local_files_only", HF_HUB_OFFLINE)
-    use_auth_token = kwargs.pop("use_auth_token", None)
-    revision = kwargs.pop("revision", None)
-    extract_ema = kwargs.pop("extract_ema", False)
-    image_size = kwargs.pop("image_size", None)
-    scheduler_type = kwargs.pop("scheduler_type", "pndm")
-    num_in_channels = kwargs.pop("num_in_channels", None)
-    upcast_attention = kwargs.pop("upcast_attention", None)
-    load_safety_checker = kwargs.pop("load_safety_checker", True)
-    prediction_type = kwargs.pop("prediction_type", None)
-    text_encoder = kwargs.pop("text_encoder", None)
-    tokenizer = kwargs.pop("tokenizer", None)
-    local_config_file = kwargs.pop("local_config_file", None)
-
-    torch_dtype = kwargs.pop("torch_dtype", None)
-
-    use_safetensors = kwargs.pop("use_safetensors", None if is_safetensors_available() else False)
-
-    pipeline_name = self.__name__
-    file_extension = pretrained_model_link_or_path.rsplit(".", 1)[-1]
-    from_safetensors = file_extension == "safetensors"
-
-    if from_safetensors and use_safetensors is False:
-        raise ValueError("Make sure to install `safetensors` with `pip install safetensors`.")
-
-    # TODO: For now we only support stable diffusion
-    stable_unclip = None
-    model_type = None
-    controlnet = False
-
-    if pipeline_name == "StableDiffusionControlNetPipeline":
-        # Model type will be inferred from the checkpoint.
-        controlnet = True
-    elif "StableDiffusion" in pipeline_name:
-        # Model type will be inferred from the checkpoint.
-        pass
-    elif pipeline_name == "StableUnCLIPPipeline":
-        model_type = "FrozenOpenCLIPEmbedder"
-        stable_unclip = "txt2img"
-    elif pipeline_name == "StableUnCLIPImg2ImgPipeline":
-        model_type = "FrozenOpenCLIPEmbedder"
-        stable_unclip = "img2img"
-    elif pipeline_name == "PaintByExamplePipeline":
-        model_type = "PaintByExample"
-    elif pipeline_name == "LDMTextToImagePipeline":
-        model_type = "LDMTextToImage"
-    else:
-        raise ValueError(f"Unhandled pipeline class: {pipeline_name}")
-
-    # remove huggingface url
-    for prefix in ["https://huggingface.co/", "huggingface.co/", "hf.co/", "https://hf.co/"]:
-        if pretrained_model_link_or_path.startswith(prefix):
-            pretrained_model_link_or_path = pretrained_model_link_or_path[len(prefix) :]
-    # Code based on diffusers.pipelines.pipeline_utils.DiffusionPipeline.from_pretrained
-    ckpt_path = Path(pretrained_model_link_or_path)
-    if not ckpt_path.is_file():
-        # get repo_id and (potentially nested) file path of ckpt in repo
-        repo_id = "/".join(ckpt_path.parts[:2])
-        file_path = "/".join(ckpt_path.parts[2:])
-
-        if file_path.startswith("blob/"):
-            file_path = file_path[len("blob/") :]
-
-        if file_path.startswith("main/"):
-            file_path = file_path[len("main/") :]
-
-        from huggingface_hub import hf_hub_download
-        pretrained_model_link_or_path = hf_hub_download(
-            repo_id,
-            filename=file_path,
-            cache_dir=cache_dir,
-            resume_download=resume_download,
-            proxies=proxies,
-            local_files_only=local_files_only,
-            use_auth_token=use_auth_token,
-            revision=revision,
-            force_download=force_download,
-        )
-
-    pipe = download_from_original_stable_diffusion_ckpt(
-        pretrained_model_link_or_path,
-        original_config_file=local_config_file,
-        pipeline_class=self,
-        model_type=model_type,
-        stable_unclip=stable_unclip,
-        controlnet=controlnet,
-        from_safetensors=from_safetensors,
-        extract_ema=extract_ema,
-        image_size=image_size,
-        scheduler_type=scheduler_type,
-        num_in_channels=num_in_channels,
-        upcast_attention=upcast_attention,
-        load_safety_checker=load_safety_checker,
-        prediction_type=prediction_type,
-        text_encoder=text_encoder,
-        tokenizer=tokenizer,
-    )
-
-    if torch_dtype is not None:
-        pipe.to(torch_dtype=torch_dtype)
-
-    return pipe
-
-StableDiffusionPipeline.from_single_file = functools.partial(from_single_file, StableDiffusionPipeline)
-
 def openvino_clear_caches():
     global partitioned_modules
     global compiled_cache
@@ -574,6 +461,8 @@ def cond_stage_key(self):
     return None
 
 shared.sd_diffusers_model = sd_diffusers_model
+#refiner model
+shared.sd_refiner_model = None
 
 def set_scheduler(sd_model, sampler_name):
     if (sampler_name == "Euler a"):
@@ -599,9 +488,10 @@ def set_scheduler(sd_model, sampler_name):
 
     return sd_model.scheduler
 
-def get_diffusers_sd_model(model_config, sampler_name, enable_caching, openvino_device, mode):
+def get_diffusers_sd_model(model_config, vae_config, sampler_name, enable_caching, openvino_device, mode, is_xl_ckpt, refiner_checkpoint_name, refiner_steps):
     if (model_state.recompile == 1):
         model_state.partition_id = 0
+        os.environ["INFERENCE_PRECISION_HINT"] = "None"
         torch._dynamo.reset()
         openvino_clear_caches()
         curr_dir_path = os.getcwd()
@@ -612,11 +502,32 @@ def get_diffusers_sd_model(model_config, sampler_name, enable_caching, openvino_
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
         checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
         print("OpenVINO Script:  created model from config : " + checkpoint_config)
+        local_config_file = checkpoint_config
         if model_config != "None":
             local_config_file = os.path.join(curr_dir_path, 'configs', model_config)
-            sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, local_config_file=local_config_file, load_safety_checker=False)
+
+        if(is_xl_ckpt):
+            sd_model = StableDiffusionXLPipeline.from_single_file(checkpoint_path, local_config_file=local_config_file, load_safety_checker=False, use_safetensors=True)
+            if (mode == 1):
+                sd_model = StableDiffusionXLImg2ImgPipeline.from_single_file(checkpoint_path, local_config_file=checkpoint_config, load_safety_checker=False, use_safetensors=True)
+            elif (mode == 2):
+                sd_model = StableDiffusionXLInpaintPipeline.from_single_file(checkpoint_path, local_config_file=checkpoint_config, load_safety_checker=False, use_safetensors=True)
         else:
             sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, local_config_file=checkpoint_config, load_safety_checker=False, torch_dtype=torch.float32)
+            if (mode == 1):
+                sd_model = StableDiffusionImg2ImgPipeline(**sd_model.components)
+            elif (mode == 2):
+                sd_model = StableDiffusionInpaintPipeline(**sd_model.components)
+            elif (mode == 3):
+                if (len(model_state.control_models) > 1):
+                    controlnet = []
+                    for cn_model in model_state.control_models:
+                        controlnet.append(ControlNetModel.from_pretrained("lllyasviel/" + cn_model))
+                else:
+                    controlnet = ControlNetModel.from_pretrained("lllyasviel/" + model_state.control_models[0])
+                sd_model = StableDiffusionControlNetPipeline(**sd_model.components, controlnet=controlnet)
+                sd_model.controlnet = torch.compile(sd_model.controlnet, backend="openvino_fx")
+
 
         if ('lora' in modules.extra_networks.extra_network_registry):
             import lora
@@ -624,31 +535,51 @@ def get_diffusers_sd_model(model_config, sampler_name, enable_caching, openvino_
                 lora_model = lora.loaded_loras[0]
                 sd_model.load_lora_weights(os.path.join(os.getcwd(), "models", "Lora"), weight_name=lora_model.name + ".safetensors")
 
-        if (mode == 1):
-            sd_model = StableDiffusionImg2ImgPipeline(**sd_model.components)
-        elif (mode == 2):
-            sd_model = StableDiffusionInpaintPipeline(**sd_model.components)
-        elif (mode == 3):
-            if (len(model_state.control_models) > 1):
-                controlnet = []
-                for cn_model in model_state.control_models:
-                    controlnet.append(ControlNetModel.from_pretrained("lllyasviel/" + cn_model))
-            else:
-                controlnet = ControlNetModel.from_pretrained("lllyasviel/" + model_state.control_models[0])
-            sd_model = StableDiffusionControlNetPipeline(**sd_model.components, controlnet=controlnet)
-            sd_model.controlnet = torch.compile(sd_model.controlnet, backend="openvino_fx")
         checkpoint_info = CheckpointInfo(checkpoint_path)
-
+        os.environ["INFERENCE_PRECISION_HINT"] = "None"
         sd_model.sd_checkpoint_info = checkpoint_info
         sd_model.sd_model_hash = checkpoint_info.calculate_shorthash()
         sd_model.safety_checker = None
         sd_model.cond_stage_key = functools.partial(cond_stage_key, shared.sd_model)
         sd_model.scheduler = set_scheduler(sd_model, sampler_name)
-        sd_model.unet = torch.compile(sd_model.unet, backend="openvino_fx")
-        #sd_model.vae.decode = torch.compile(sd_model.vae.decode, backend="openvino_fx")
+        ## UNET
+        sd_model.unet = torch.compile(sd_model.unet,  backend="openvino_fx")
+        ## VAE
+        if vae_config == "Disable-VAE-Acceleration":
+            sd_model.vae.decode = sd_model.vae.decode
+        elif vae_config == "None":
+            #os.environ["INFERENCE_PRECISION_HINT"] = "f32"
+            sd_model.vae.decode = torch.compile(sd_model.vae.decode, backend="openvino_fx")
+        else:
+            vae_path = os.path.join(curr_dir_path, 'models', 'VAE', vae_config)
+            print("OpenVINO Script:  loading vae from : " + vae_path)
+            sd_model.vae = AutoencoderKL.from_single_file(vae_path, local_files_only=True)
+            #os.environ["INFERENCE_PRECISION_HINT"] = "f32"
+            sd_model.vae = torch.compile(sd_model.vae,  backend="openvino_fx")
+            print("VAE INFER PRECISION:" + os.getenv("INFERENCE_PRECISION_HINT"))
         shared.sd_diffusers_model = sd_model
         del sd_model
     return shared.sd_diffusers_model
+
+##get refiner model
+
+def get_diffusers_sd_refiner_model(model_config, vae_config, sampler_name, enable_caching, openvino_device, mode, is_xl_ckpt, refiner_checkpoint_name, refiner_steps):
+    if (model_state.recompile == 1):
+        os.environ["INFERENCE_PRECISION_HINT"] = "None"
+        curr_dir_path = os.getcwd()
+        if refiner_checkpoint_name != "None":
+            refiner_checkpoint_path= os.path.join(curr_dir_path, 'models', 'Stable-diffusion', refiner_checkpoint_name)
+            refiner_checkpoint_info = CheckpointInfo(refiner_checkpoint_path)
+            refiner_model = StableDiffusionXLImg2ImgPipeline.from_single_file(refiner_checkpoint_path, load_safety_checker=False, use_safetensors=True)
+            print("OpenVINO Script: refiner model loaded from" + refiner_checkpoint_path)
+            refiner_model.sd_checkpoint_info = refiner_checkpoint_info
+            refiner_model.sd_model_hash = refiner_checkpoint_info.calculate_shorthash()
+            ## UNET
+            refiner_model.unet = torch.compile(refiner_model.unet,  backend="openvino_fx")
+            print("OpenVINO Script: refiner model compiled")
+        shared.sd_refiner_model = refiner_model
+        del refiner_model
+    return shared.sd_refiner_model
 
 
 def init_new(self, all_prompts, all_seeds, all_subseeds):
@@ -745,9 +676,8 @@ def init_new(self, all_prompts, all_seeds, all_subseeds):
     else:
         raise RuntimeError(f"bad number of images passed: {len(imgs)}; expecting {self.batch_size} or less")
 
-def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_name, enable_caching, openvino_device, mode) -> Processed:
+def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_config, sampler_name, enable_caching, openvino_device, mode, is_xl_ckpt, refiner_checkpoint_name, refiner_steps) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
-
     if (mode == 0 and p.enable_hr):
         return process_images(p)
 
@@ -864,8 +794,14 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_
                 model_state.model_hash = shared.sd_model.sd_model_hash
                 model_state.lora_model = lora_model_name
 
-            shared.sd_diffusers_model = get_diffusers_sd_model(model_config, sampler_name, enable_caching, openvino_device, mode)
+            shared.sd_diffusers_model = get_diffusers_sd_model(model_config, vae_config, sampler_name, enable_caching, openvino_device, mode, is_xl_ckpt, refiner_checkpoint_name, refiner_steps)
             shared.sd_diffusers_model.scheduler = set_scheduler(shared.sd_diffusers_model, sampler_name)
+
+            if refiner_checkpoint_name != "None":
+                shared.sd_refiner_model = get_diffusers_sd_refiner_model(model_config, vae_config, sampler_name, enable_caching, openvino_device, mode, is_xl_ckpt, refiner_checkpoint_name, refiner_steps)
+                shared.sd_refiner_model.scheduler = set_scheduler(shared.sd_refiner_model, sampler_name)
+                print("refiner used: " + refiner_checkpoint_name)
+
 
             if p.scripts is not None:
                 p.scripts.process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
@@ -913,24 +849,42 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_
                     'height': p.height,
                 })
 
+            if refiner_checkpoint_name != "None":
+                base_output_type = "latent"
+            else:
+                base_output_type = "np"
             output = shared.sd_diffusers_model(
                     prompt=p.prompts,
                     negative_prompt=p.negative_prompts,
                     num_inference_steps=p.steps,
                     guidance_scale=p.cfg_scale,
                     generator=generator,
-                    output_type="np",
+                    output_type=base_output_type,
                     callback = callback,
                     callback_steps = 1,
                     **custom_inputs
             )
+
+            if refiner_checkpoint_name != "None":
+                refiner_output = shared.sd_refiner_model(
+                        prompt=p.prompts,
+                        negative_prompt=p.negative_prompts,
+                        num_inference_steps=refiner_steps,
+                        image=output.images[0][None, :],
+                        output_type="np"
+                )
+                print("refiner steps " + str(refiner_steps))
+
 
             model_state.recompile = 0
 
             warmup_duration = time_stamps[1] - time_stamps[0]
             generation_rate = (p.steps - 1) / (time_stamps[-1] - time_stamps[1])
 
-            x_samples_ddim = output.images
+            if refiner_checkpoint_name != "None":
+                x_samples_ddim = refiner_output.images
+            else:
+                x_samples_ddim = output.images
 
             for i, x_sample in enumerate(x_samples_ddim):
                 p.batch_index = i
@@ -969,7 +923,6 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_
                 if opts.enable_pnginfo:
                     image.info["parameters"] = text
                 output_images.append(image)
-                #if ('ControlNet' in p.extra_generation_params and cn_model != "None"):
                 for cn_image in control_images:
                     output_images.append(cn_image)
 
@@ -1060,16 +1013,43 @@ class Script(scripts.Script):
                 if file.endswith('.yaml'):
                     config_list.append(file)
             return config_list
+        def get_vae_list():
+            vae_dir_list = os.listdir(os.path.join(os.getcwd(), 'models', 'VAE'))
+            vae_list = []
+            vae_list.append("None")
+            vae_list.append("Disable-VAE-Acceleration")
+            for file in vae_dir_list:
+                if file.endswith('.safetensors') or file.endswith('.ckpt') or file.endswith('.pt'):
+                    vae_list.append(file)
+            return vae_list
+        def get_refiner_list():
+            refiner_dir_list = os.listdir(os.path.join(os.getcwd(), 'models', 'Stable-diffusion'))
+            refiner_list = []
+            refiner_list.append("None")
+            for file in refiner_dir_list:
+                if file.endswith('.safetensors') or file.endswith('.ckpt') or file.endswith('.pt'):
+                    refiner_list.append(file)
+            return refiner_list
 
-        with gr.Row():
-            model_config = gr.Dropdown(label="Select a local config for the model from the configs directory of the webui root", choices=get_config_list(), value="None", visible=True)
-            create_refresh_button(model_config, get_config_list, lambda: {"choices": get_config_list()},"refresh_model_config")
 
+        with gr.Group():
+            with gr.Row():
+                with gr.Row():
+                    model_config = gr.Dropdown(label="Select a local config for the model from the configs directory of the webui root", choices=get_config_list(), value="None", visible=True)
+                    create_refresh_button(model_config, get_config_list, lambda: {"choices": get_config_list()},"refresh_model_config")
+                with gr.Row():
+                    vae_config = gr.Dropdown(label="Custom VAE", choices=get_vae_list(), value="None", visible=True)
+                    create_refresh_button(vae_config, get_vae_list, lambda: {"choices": get_vae_list()},"refresh_vae_directory")
         openvino_device = gr.Dropdown(label="Select a device", choices=list(core.available_devices), value=model_state.device)
+        is_xl_ckpt= gr.Checkbox(label="Loaded checkpoint is a SDXL checkpoint", value=False)
+        with gr.Row():
+                refiner_checkpoint_name = gr.Dropdown(label="Model", choices=get_refiner_list(), value="None")
+                refiner_steps = gr.Slider(minimum=0, maximum=100, step=4, label='Refiner steps:', value=20)
         override_sampler = gr.Checkbox(label="Override the sampling selection from the main UI (Recommended as only below sampling methods have been validated for OpenVINO)", value=True)
         sampler_name = gr.Radio(label="Select a sampling method", choices=["Euler a", "Euler", "LMS", "Heun", "DPM++ 2M", "LMS Karras", "DPM++ 2M Karras", "DDIM", "PLMS"], value="Euler a")
         enable_caching = gr.Checkbox(label="Cache the compiled models on disk for faster model load in subsequent launches (Recommended)", value=True, elem_id=self.elem_id("enable_caching"))
         warmup_status = gr.Textbox(label="Device", interactive=False, visible=False)
+        vae_status = gr.Textbox(label="VAE", interactive=False, visible=False)
         gr.Markdown(
         """
         ###
@@ -1081,7 +1061,6 @@ class Script(scripts.Script):
         After recompiling, later inferences will reuse the newly compiled model and achieve faster running times.
         So it's normal for the first inference after a settings change to be slower, while subsequent inferences use the optimized compiled model and run faster.
         """)
-
         def device_change(choice):
             if (model_state.device == choice):
                 return gr.update(value="Device selected is " + choice, visible=True)
@@ -1090,10 +1069,17 @@ class Script(scripts.Script):
                 model_state.recompile = 1
                 return gr.update(value="Device changed to " + choice + ". Model will be re-compiled", visible=True)
         openvino_device.change(device_change, openvino_device, warmup_status)
+        def vae_change(choice):
+            if (model_state.custom_vae == choice):
+                return gr.update(value="Custom_VAE selected is " + choice, visible=True)
+            else:
+                model_state.custom_vae = choice
+                model_state.recompile = 1
+                return gr.update(value="Custom VAE changed to " + choice + ". Model will be re-compiled", visible=True)
+        vae_config.change(vae_change, vae_config, vae_status)
+        return [model_config, vae_config, openvino_device, override_sampler, sampler_name, enable_caching, is_xl_ckpt, refiner_checkpoint_name, refiner_steps]
 
-        return [model_config, openvino_device, override_sampler, sampler_name, enable_caching]
-
-    def run(self, p, model_config, openvino_device, override_sampler, sampler_name, enable_caching):
+    def run(self, p, model_config, vae_config, openvino_device, override_sampler, sampler_name, enable_caching, is_xl_ckpt, refiner_checkpoint_name, refiner_steps):
         model_state.partition_id = 0
         os.environ["OPENVINO_TORCH_BACKEND_DEVICE"] = str(openvino_device)
 
@@ -1111,14 +1097,14 @@ class Script(scripts.Script):
         mode = 0
         if self.is_txt2img:
             mode = 0
-            processed = process_images_openvino(p, model_config, p.sampler_name, enable_caching, openvino_device, mode)
+            processed = process_images_openvino(p, model_config, vae_config, p.sampler_name, enable_caching, openvino_device, mode, is_xl_ckpt, refiner_checkpoint_name, refiner_steps)
         else:
             if p.image_mask is None:
                 mode = 1
             else:
                 mode = 2
             p.init = functools.partial(init_new, p)
-            processed = process_images_openvino(p, model_config, p.sampler_name, enable_caching, openvino_device, mode)
+            processed = process_images_openvino(p, model_config, vae_config, p.sampler_name, enable_caching, openvino_device, mode, is_xl_ckpt, refiner_checkpoint_name, refiner_steps)
         return processed
 
 
