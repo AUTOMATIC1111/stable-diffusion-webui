@@ -25,7 +25,7 @@ def calculate_sha256(filename, quiet=False):
     hash_sha256 = hashlib.sha256()
     blksize = 1024 * 1024
     if not quiet:
-        with progress.open(filename, 'rb', description=f'Calculating hash: [cyan]{filename}', auto_refresh=True, console=shared.console) as f:
+        with progress.open(filename, 'rb', description=f'[cyan]Calculating hash: [yellow]{filename}', auto_refresh=True, console=shared.console) as f:
             for chunk in iter(lambda: f.read(blksize), b""):
                 hash_sha256.update(chunk)
     else:
@@ -58,7 +58,7 @@ def sha256(filename, title, use_addnet_hash=False):
         return None
     shared.state.begin("hashing")
     if use_addnet_hash:
-        with progress.open(filename, 'rb', description=f'Calculating hash: [cyan]{filename}', auto_refresh=True, console=shared.console) as f:
+        with progress.open(filename, 'rb', description=f'[cyan]Calculating hash: [yellow]{filename}', auto_refresh=True, console=shared.console) as f:
             sha256_value = addnet_hash_safetensors(f)
     else:
         sha256_value = calculate_sha256(filename)

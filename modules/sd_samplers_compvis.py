@@ -132,7 +132,7 @@ class VanillaStableDiffusionSampler:
 
     def initialize(self, p):
         if self.is_ddim:
-            self.eta = p.eta if p.eta is not None else shared.opts.eta_ddim
+            self.eta = p.eta if p.eta is not None else shared.opts.scheduler_eta
         else:
             self.eta = 0.0
         if self.eta != 0.0:

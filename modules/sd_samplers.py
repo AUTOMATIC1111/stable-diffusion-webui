@@ -61,14 +61,10 @@ def create_sampler(name, model):
 
 
 def set_samplers():
-    global samplers, samplers_for_img2img # pylint: disable=global-statement
-    shown = shared.opts.show_samplers
-    if type(shown) is not list or len(shown) == 0:
-        shown = ['UniPC']
-    shown_img2img = set(shown)
-    shown = set(shown + ['PLMS'])
-    samplers = [x for x in all_samplers if x.name in shown]
-    samplers_for_img2img = [x for x in all_samplers if x.name in shown_img2img]
+    global samplers # pylint: disable=global-statement
+    global samplers_for_img2img # pylint: disable=global-statement
+    samplers = [x for x in all_samplers if x.name in shared.opts.show_samplers] if len(shared.opts.show_samplers) > 0 else all_samplers
+    samplers_for_img2img = [x for x in samplers if x.name != "PLMS"]
     samplers_map.clear()
     for sampler in all_samplers:
         samplers_map[sampler.name.lower()] = sampler.name

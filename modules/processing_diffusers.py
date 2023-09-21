@@ -343,7 +343,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
         negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
         num_inference_steps=calculate_base_steps(),
-        eta=shared.opts.eta_ddim,
+        eta=shared.opts.scheduler_eta,
         guidance_rescale=p.diffusers_guidance_rescale,
         denoising_start=0 if use_refiner_start else p.refiner_start if use_denoise_start else None,
         denoising_end=p.refiner_start if use_refiner_start else 1 if use_denoise_start else None,
@@ -353,7 +353,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         **task_specific_kwargs
     )
     p.extra_generation_params['CFG rescale'] = p.diffusers_guidance_rescale
-    p.extra_generation_params["Eta DDIM"] = shared.opts.eta_ddim if shared.opts.eta_ddim is not None and shared.opts.eta_ddim > 0 else None
+    p.extra_generation_params["Eta"] = shared.opts.scheduler_eta if shared.opts.scheduler_eta is not None and shared.opts.scheduler_eta > 0 else None
     try:
         output = shared.sd_model(**base_args) # pylint: disable=not-callable
     except AssertionError as e:
@@ -395,7 +395,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
                     negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
                     num_inference_steps=int(p.hr_second_pass_steps // p.denoising_strength + 1),
-                    eta=shared.opts.eta_ddim,
+                    eta=shared.opts.scheduler_eta,
                     guidance_scale=p.image_cfg_scale if p.image_cfg_scale is not None else p.cfg_scale,
                     guidance_rescale=p.diffusers_guidance_rescale,
                     output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
@@ -448,7 +448,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts[i],
                 negative_prompts=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts[i],
                 num_inference_steps=int(p.refiner_steps // (1 - p.refiner_start)) if p.refiner_start > 0 and p.refiner_start < 1 and refiner_is_sdxl else int(p.refiner_steps // p.denoising_strength + 1) if refiner_is_sdxl else p.refiner_steps,
-                eta=shared.opts.eta_ddim,
+                eta=shared.opts.scheduler_eta,
                 strength=p.denoising_strength,
                 guidance_scale=p.image_cfg_scale if p.image_cfg_scale is not None else p.cfg_scale,
                 guidance_rescale=p.diffusers_guidance_rescale,

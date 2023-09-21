@@ -617,7 +617,7 @@ def detect_pipeline(f: str, op: str = 'model'):
                 guess = 'Unknown'
                 shared.log.error(f'Model autodetect failed, set diffuser pipeline manually: {f}')
                 return None, None
-            shared.log.debug(f'Model autodetect {op}: {f} pipeline={guess} size={size} GB')
+            shared.log.debug(f'Model autodetect: {op}="{f}" pipeline="{guess}" size={size} GB')
         except Exception as e:
             shared.log.error(f'Error detecting diffusers pipeline: model={f} {e}')
             return None, None

@@ -44,7 +44,7 @@ def model():
         sd_vae_approx_model.load_state_dict(torch.load(model_path, map_location='cpu' if devices.device.type != 'cuda' else None))
         sd_vae_approx_model.eval()
         sd_vae_approx_model.to(devices.device, devices.dtype)
-        log.info(f"Loaded VAE-approx model: {model_path}")
+        log.info(f"Loaded VAE-approx: model={model_path}")
 
     return sd_vae_approx_model
 

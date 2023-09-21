@@ -282,7 +282,7 @@ class KDiffusionSampler:
         self.model_wrap_cfg.nmask = p.nmask if hasattr(p, 'nmask') else None
         self.model_wrap_cfg.step = 0
         self.model_wrap_cfg.image_cfg_scale = getattr(p, 'image_cfg_scale', None)
-        self.eta = p.eta if p.eta is not None else opts.eta_ancestral
+        self.eta = p.eta if p.eta is not None else opts.scheduler_eta
         self.s_min_uncond = getattr(p, 's_min_uncond', 0.0)
 
         k_diffusion.sampling.torch = TorchHijack(self.sampler_noises if self.sampler_noises is not None else [])
@@ -301,13 +301,15 @@ class KDiffusionSampler:
         return extra_params_kwargs
 
     def get_sigmas(self, p, steps):
-        discard_next_to_last_sigma = self.config is not None and self.config.options.get('discard_next_to_last_sigma', False)
-        if opts.always_discard_next_to_last_sigma:
+        if opts.discard_next_to_last_sigma == 'always':
             discard_next_to_last_sigma = True
-            p.extra_generation_params["Discard penultimate sigma"] = True
-        if opts.never_discard_next_to_last_sigma:
+            p.extra_generation_params["Discard penultimate sigma"] = 'always'
+        elif opts.discard_next_to_last_sigma == 'never':
             discard_next_to_last_sigma = False
-            p.extra_generation_params["Discard penultimate sigma"] = False
+            p.extra_generation_params["Discard penultimate sigma"] = 'never'
+        else:
+            discard_next_to_last_sigma = self.config is not None and self.config.options.get('discard_next_to_last_sigma', False)
+
         steps += 1 if discard_next_to_last_sigma else 0
 
         if p.sampler_noise_scheduler_override:
