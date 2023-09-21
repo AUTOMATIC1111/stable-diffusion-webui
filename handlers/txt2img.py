@@ -66,13 +66,14 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  hr_sampler_name: str = None,  # hr sampler
                  hr_prompt: str = None,
                  hr_negative_prompt: str = None,
+                 ad_face: bool = True,  # 开启默认的ADetailer face
                  **kwargs):
         override_settings = create_override_settings_dict(override_settings_texts or [])
 
         t2i_script_runner = modules.scripts.scripts_txt2img
         selectable_scripts, selectable_script_idx = get_selectable_script(t2i_script_runner, select_script_name)
         script_args = init_script_args(default_script_arg_txt2img, alwayson_scripts, selectable_scripts,
-                                       selectable_script_idx, select_script_args, t2i_script_runner)
+                                       selectable_script_idx, select_script_args, t2i_script_runner, ad_face)
 
         super(Txt2ImgTask, self).__init__(
             sd_model=shared.sd_model,
