@@ -113,7 +113,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  lora_models: typing.Sequence[str] = None,  # 使用LORA，用户和系统全部LORA列表
                  embeddings: typing.Sequence[str] = None,  # embeddings，用户和系统全部embedding列表
                  lycoris_models: typing.Sequence[str] = None,  # lycoris，用户和系统全部lycoris列表
-                 ad_face: bool = True,  # 开启默认的ADetailer face
+                 disable_ad_face: bool = False,  # 关闭默认的ADetailer face
                  **kwargs):
         override_settings = create_override_settings_dict(override_settings_texts or [])
         image = None
@@ -211,7 +211,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         i2i_script_runner = modules.scripts.scripts_img2img
         selectable_scripts, selectable_script_idx = get_selectable_script(i2i_script_runner, select_script_name)
         script_args = init_script_args(default_script_arg_img2img, alwayson_scripts, selectable_scripts,
-                                       selectable_script_idx, select_script_args, i2i_script_runner, ad_face)
+                                       selectable_script_idx, select_script_args, i2i_script_runner, not disable_ad_face)
 
         super(Img2ImgTask, self).__init__(
             sd_model=shared.sd_model,
