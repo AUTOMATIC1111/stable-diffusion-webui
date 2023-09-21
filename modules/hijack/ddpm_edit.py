@@ -1024,7 +1024,7 @@ class LatentDiffusion(DDPM):
         elif self.parameterization == "eps":
             target = noise
         else:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         loss_simple = self.get_loss(model_output, target, mean=False).mean([1, 2, 3])
         loss_dict.update({f'{prefix}/loss_simple': loss_simple.mean()})
@@ -1063,7 +1063,7 @@ class LatentDiffusion(DDPM):
         elif self.parameterization == "x0":
             x_recon = model_out
         else:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         if clip_denoised:
             x_recon.clamp_(-1., 1.)
@@ -1423,7 +1423,7 @@ class DiffusionWrapper(pl.LightningModule):
             cc = c_crossattn[0]
             out = self.diffusion_model(x, t, y=cc)
         else:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         return out
 

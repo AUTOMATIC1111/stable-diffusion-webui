@@ -23,7 +23,7 @@ from modules import paths, shared, modelloader, devices, script_callbacks, sd_va
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
 from modules.memstats import memory_stats
-from modules.paths_internal import models_path
+from modules.paths_internal import models_path, script_path
 
 try:
     import diffusers
@@ -44,71 +44,55 @@ sd_metadata_timer = 0
 
 class CheckpointInfo:
     def __init__(self, filename):
-        name = ''
         self.name = None
         self.hash = None
         self.filename = filename
         self.type = ''
-        abspath = os.path.abspath(filename)
+        filename = os.path.abspath(filename)
+        if filename.startswith(script_path):
+            filename = os.path.relpath(filename, script_path)
+        relname = os.path.relpath(filename, model_path)
+        relname = os.path.relpath(filename, shared.cmd_opts.ckpt_dir)
+        relname, ext = os.path.splitext(relname)
+        ext = ext.lower()[1:]
 
-        if os.path.isfile(abspath): # ckpt or safetensor
-            if shared.opts.ckpt_dir is not None and abspath.startswith(shared.opts.ckpt_dir):
-                name = abspath.replace(shared.opts.ckpt_dir, '')
-            elif abspath.startswith(model_path):
-                name = abspath.replace(model_path, '')
-            else:
-                name = os.path.basename(filename)
-            if name.startswith("\\") or name.startswith("/"):
-                name = name[1:]
-            self.name = name
-            self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name}")
-            self.hash = self.sha256[0:8] if self.sha256 is not None else None
-            self.path = abspath
-            self.type = abspath.split('.')[-1].lower()
-            self.name_for_extra = os.path.splitext(os.path.basename(filename))[0]
-            self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
+        if os.path.isfile(filename): # ckpt or safetensor
+            self.name = relname
+            self.filename = filename
+            self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{os.path.basename(relname)}.{ext}")
+            self.type = ext
+            # self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
         else: # maybe a diffuser
             repo = [r for r in modelloader.diffuser_repos if filename == r['filename']]
             if len(repo) == 0:
-                if filename.lower() != 'none':
-                    shared.log.error(f'Cannot find diffuser model: {filename}')
-                else:
-                    shared.log.info(f'Skipping model load: {filename}')
-                return
-            self.name = repo[0]['name']
-            self.hash = repo[0]['hash'][:8]
-            self.sha256 = repo[0]['hash']
-            self.path = repo[0]['path']
-            self.type = 'diffusers'
-            self.name_for_extra = repo[0]['name']
-            self.model_name = repo[0]['name']
-            if os.path.isfile(repo[0]['model_info']):
-                file_path = repo[0]['model_info']
-                self.model_info = shared.readfile(file_path, silent=True)
+                self.name = relname
+                self.filename = filename
+                self.sha256 = None
+                self.type = 'unknown'
+            else:
+                self.name = repo[0]['name']
+                self.filename = repo[0]['path']
+                self.sha256 = repo[0]['hash']
+                self.type = 'diffusers'
 
         self.shorthash = self.sha256[0:10] if self.sha256 else None
         self.title = self.name if self.shorthash is None else f'{self.name} [{self.shorthash}]'
-        self.ids = [self.hash, self.model_name, self.title, self.name, f'{self.name} [{self.hash}]'] + ([self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]'] if self.shorthash else [])
-        self.metadata = {}
-        _, ext = os.path.splitext(self.filename)
-        if ext.lower() == ".safetensors":
-            try:
-                self.metadata = read_metadata_from_safetensors(filename)
-            except Exception as e:
-                errors.display(e, f"reading checkpoint metadata: {filename}")
+        self.path = self.filename
+        self.model_name = os.path.basename(self.name)
+        # shared.log.debug(f'Checkpoint: type={self.type} name={self.name} filename={self.filename} hash={self.shorthash} title={self.title}')
+        self.metadata = read_metadata_from_safetensors(filename)
 
     def register(self):
         checkpoints_list[self.title] = self
-        for i in self.ids:
-            checkpoint_aliases[i] = self
+        for i in [self.name, self.filename, self.shorthash, self.title]:
+            if i is not None:
+                checkpoint_aliases[i] = self
 
     def calculate_shorthash(self):
         self.sha256 = hashes.sha256(self.filename, f"checkpoint/{self.name}")
         if self.sha256 is None:
             return
         self.shorthash = self.sha256[0:10]
-        if self.shorthash not in self.ids:
-            self.ids += [self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]']
         checkpoints_list.pop(self.title)
         self.title = f'{self.name} [{self.shorthash}]'
         self.register()
@@ -340,9 +324,11 @@ def read_metadata_from_safetensors(filename):
     res = sd_metadata.get(filename, None)
     if res is not None:
         return res
-    res = {}
+    if not filename.endswith(".safetensors"):
+        return {}
     if shared.cmd_opts.no_metadata:
         return {}
+    res = {}
     try:
         t0 = time.time()
         with open(filename, mode="rb") as file:

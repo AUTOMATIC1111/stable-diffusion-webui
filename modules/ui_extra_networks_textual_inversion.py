@@ -26,7 +26,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
                 for filename in os.listdir(folder):
                     fn = os.path.join(folder, filename)
                     if os.path.isfile(fn) and (fn.lower().endswith(".pt") or fn.lower().endswith(".safetensors")):
-                        embedding = Embedding(0, os.path.basename(fn))
+                        embedding = Embedding(vec=0, name=os.path.basename(fn), filename=fn)
                         embedding.filename = fn
                         embeddings.append(embedding)
                     elif os.path.isdir(fn) and not fn.startswith('.'):
@@ -45,15 +45,16 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
             tags = {}
             if embedding.tag is not None:
                 tags[embedding.tag]=1
+            name = os.path.splitext(embedding.basename)[0]
             yield {
-                "name": os.path.splitext(embedding.name)[0],
+                "name": name,
                 "filename": embedding.filename,
                 "preview": self.find_preview(path),
                 "description": self.find_description(path),
                 "info": self.find_info(path),
-                "search_term": self.search_terms_from_path(embedding.filename),
+                "search_term": self.search_terms_from_path(name),
                 "prompt": json.dumps(os.path.splitext(embedding.name)[0]),
-                "local_preview": f"{path}.preview.{shared.opts.samples_format}",
+                "local_preview": f"{path}.{shared.opts.samples_format}",
                 "tags": tags,
             }
 

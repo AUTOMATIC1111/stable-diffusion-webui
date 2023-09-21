@@ -110,7 +110,7 @@ class ExtraNetworksPage:
                         {card_extra}
                     </div>
                 </div>
-                <img class='preview' src='{preview}' style='width: {width}px; height: {height}px; object-fit: {fit}' loading='{loading}'></img>
+                <img class='preview' src='{preview}' style='width: {width}px; height: {height}px; object-fit: {fit}' loading='lazy'></img>
             </div>
         '''
 
@@ -139,13 +139,8 @@ class ExtraNetworksPage:
         preview = f"./sd_extra_networks/thumb?filename={quoted_filename}&mtime={mtime}"
         return preview
 
-    def search_terms_from_path(self, filename, possible_directories=None):
-        abspath = os.path.abspath(filename)
-        for parentdir in (possible_directories if possible_directories is not None else self.allowed_directories_for_previews()):
-            parentdir = os.path.abspath(parentdir)
-            if abspath.startswith(parentdir):
-                return abspath[len(parentdir):].replace('\\', '/')
-        return ""
+    def search_terms_from_path(self, filename):
+        return filename.replace('\\', '/')
 
     def is_empty(self, folder):
         for f in listdir(folder):
@@ -228,21 +223,20 @@ class ExtraNetworksPage:
         return []
 
     def create_html(self, item, tabname):
-        try:
+        # try:
             args = {
                 "tabname": json.dumps(tabname),
                 "name": item["name"].replace('_', ' '),
                 "title": item["name"],
                 "tags": '|'.join([item.get("tags")] if isinstance(item.get("tags", {}), str) else list(item.get("tags", {}).keys())),
-                "preview": html.escape(item.get("preview", None)),
+                "preview": html.escape(item.get("preview", self.link_preview('html/card-no-preview.png'))),
                 "width": shared.opts.extra_networks_card_size,
                 "height": shared.opts.extra_networks_card_size if shared.opts.extra_networks_card_square else 'auto',
                 "fit": shared.opts.extra_networks_card_fit,
-                "loading": "lazy" if shared.opts.extra_networks_card_lazy else "eager",
                 "prompt": item.get("prompt", None),
                 "search_term": item.get("search_term", ""),
                 "description": item.get("description") or "",
-                "local_preview": item["local_preview"],
+                "local_preview": item.get("local_preview"),
                 "card_click": item.get("onclick", '"' + html.escape(f'return cardClicked({item.get("prompt", None)}, {"true" if self.allow_negative_prompt else "false"})') + '"'),
                 "card_save_preview": '"' + html.escape('return saveCardPreview(event)') + '"',
                 "card_save_desc": '"' + html.escape('return saveCardDescription(event)') + '"',
@@ -260,9 +254,9 @@ class ExtraNetworksPage:
             if alias is not None:
                 args['title'] += f'\nAlias: {alias}'
             return self.card.format(**args)
-        except Exception as e:
-            shared.log.error(f'Extra networks item error: page={tabname} item={item["name"]} {e}')
-            return ""
+        # except Exception as e:
+        #     shared.log.error(f'Extra networks item error: page={tabname} item={item["name"]} {e}')
+        #    return ""
 
     def find_preview(self, path):
         preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]

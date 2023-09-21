@@ -10,13 +10,12 @@ from modules import paths
 
 class Style():
     def __init__(self, name: str, prompt: str = "", negative_prompt: str = "", extra: str = "", filename: str = "", preview: str = ""):
-        self.name = re.sub(r'[\t\r\n]', '', name).strip()
+        self.name = name
         self.prompt = prompt
         self.negative_prompt = negative_prompt
         self.extra = extra
         self.filename = filename
         self.preview = preview
-
 
 def merge_prompts(style_prompt: str, prompt: str) -> str:
     if "{prompt}" in style_prompt:
@@ -61,13 +60,15 @@ class StyleDatabase:
         self.styles.clear()
         def list_folder(folder):
             for filename in os.listdir(folder):
-                fn = os.path.join(folder, filename)
+                fn = os.path.abspath(os.path.join(folder, filename))
                 if os.path.isfile(fn) and fn.lower().endswith(".json"):
                     with open(fn, 'r', encoding='utf-8') as f:
                         try:
                             style = json.load(f)
-                            fn = os.path.splitext(os.path.relpath(fn, self.path))[0]
-                            self.styles[style["name"]] = Style(style["name"], style.get("prompt", ""), style.get("negative", ""), style.get("extra", ""), fn, style.get("preview", ""))
+                            basename = os.path.splitext(os.path.basename(fn))[0]
+                            name = re.sub(r'[\t\r\n]', '', style.get("name", basename)).strip()
+                            name = os.path.join(os.path.dirname(os.path.relpath(fn, self.path)), name)
+                            self.styles[style["name"]] = Style(name=name, prompt=style.get("prompt", ""), negative_prompt=style.get("negative", ""), extra=style.get("extra", ""), filename=fn, preview=style.get("preview", ""))
                         except Exception as e:
                             log.error(f'Failed to load style: file={fn} error={e}')
                 elif os.path.isdir(fn) and not fn.startswith('.'):
@@ -77,17 +78,21 @@ class StyleDatabase:
         self.styles = dict(sorted(self.styles.items(), key=lambda style: style[1].filename))
         log.debug(f'Loaded styles: folder={self.path} items={len(self.styles.keys())}')
 
+    def find_style(self, name):
+        found = [style for style in self.styles.values() if style.name == name]
+        return found[0] if len(found) > 0 else self.no_style
+
     def get_style_prompts(self, styles):
-        return [self.styles.get(x, self.no_style).prompt for x in styles]
+        return [self.find_style(x).prompt for x in styles]
 
     def get_negative_style_prompts(self, styles):
-        return [self.styles.get(x, self.no_style).negative_prompt for x in styles]
+        return [self.find_style(x).negative_prompt for x in styles]
 
     def apply_styles_to_prompt(self, prompt, styles):
-        return apply_styles_to_prompt(prompt, [self.styles.get(x, self.no_style).prompt for x in styles])
+        return apply_styles_to_prompt(prompt, [self.find_style(x).prompt for x in styles])
 
     def apply_negative_styles_to_prompt(self, prompt, styles):
-        return apply_styles_to_prompt(prompt, [self.styles.get(x, self.no_style).negative_prompt for x in styles])
+        return apply_styles_to_prompt(prompt, [self.find_style(x).negative_prompt for x in styles])
 
     def save_styles(self, path, verbose=False):
         for name in list(self.styles):

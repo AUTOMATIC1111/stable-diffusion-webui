@@ -45,19 +45,20 @@ class ExtraNetworksPageStyles(ui_extra_networks.ExtraNetworksPage):
     """
 
     def list_items(self):
-        for k, v in shared.prompt_styles.styles.items():
-            fn = os.path.join(shared.opts.styles_dir, v.filename)
-            txt = f'Prompt: {v.prompt}'
-            if len(v.negative_prompt) > 0:
-                txt += f'\nNegative: {v.negative_prompt}'
+        for k, style in shared.prompt_styles.styles.items():
+            fn = os.path.splitext(style.filename)[0]
+            txt = f'Prompt: {style.prompt}'
+            if len(style.negative_prompt) > 0:
+                txt += f'\nNegative: {style.negative_prompt}'
             yield {
-                "name": v.name,
-                "search_term": f'{txt} /{v.filename}',
-                "filename": v.filename,
+                "name": style.name,
+                "title": k,
+                "filename": style.filename,
+                "search_term": f'{txt} {self.search_terms_from_path(style.name)}',
                 "preview": self.find_preview(fn),
-                "description": txt,
-                "onclick": '"' + html.escape(f"""return selectStyle({json.dumps(k)})""") + '"',
                 "local_preview": f"{fn}.{shared.opts.samples_format}",
+                "description": txt,
+                "onclick": '"' + html.escape(f"""return selectStyle({json.dumps(style.name)})""") + '"',
             }
 
     def allowed_directories_for_previews(self):

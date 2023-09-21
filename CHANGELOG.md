@@ -2,9 +2,11 @@
 
 ## Update for 2023-09-20
 
-- Added **change log** to UI, see *System -> Changelog*
-- **Extra networks**: faster search, ability to show/hide/sort networks
-- **Upscalers**: complete refactor...
+- Added **change log** to UI, see *System -> Changelog*  
+- **Extra networks**:  
+  - faster search, ability to show/hide/sort networks  
+  - refactored subfolder handling  
+- **Upscalers**: complete refactor...  
   - more high quality upscalers available by default  
   - unified init/download/execute/progress code  
   - easier installation  

@@ -667,7 +667,7 @@ class UniPC:
         elif self.variant == 'bh2':
             B_h = torch.expm1(hh)
         else:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         for i in range(1, order + 1):
             R.append(torch.pow(rks, i - 1))
@@ -802,7 +802,7 @@ class UniPC:
                             model_prev_list[-1] = model_x
                         progress.update(task, advance=1, description=f"Progress {round(len(vec_t) * step / (time.time() - t), 2)}it/s")
         else:
-            raise NotImplementedError()
+            raise NotImplementedError
         if denoise_to_zero:
             x = self.denoise_to_zero_fn(x, torch.ones((x.shape[0],)).to(device) * t_0)
         return x

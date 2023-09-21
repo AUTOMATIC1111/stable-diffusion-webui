@@ -29,18 +29,19 @@ def list_textual_inversion_templates():
 
 
 class Embedding:
-    def __init__(self, vec, name, step=None):
+    def __init__(self, vec, name, filename=None, step=None):
         self.vec = vec
         self.name = name
         self.tag = name
         self.step = step
+        self.filename = filename
+        self.basename = os.path.relpath(filename, shared.opts.embeddings_dir) if filename is not None else None
         self.shape = None
         self.vectors = 0
         self.cached_checksum = None
         self.sd_checkpoint = None
         self.sd_checkpoint_name = None
         self.optimizer_state_dict = None
-        self.filename = None
 
     def save(self, filename):
         embedding_data = {
@@ -131,8 +132,7 @@ class EmbeddingDatabase:
             pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
             return
         name = os.path.basename(fn)
-        embedding = Embedding(vec=None, name=name)
-        embedding.filename = path
+        embedding = Embedding(vec=None, name=name, filename=path)
         try:
             if hasattr(pipe,"load_textual_inversion"):
                 pipe.load_textual_inversion(path, cache_dir=shared.opts.diffusers_dir, local_files_only=True)
@@ -203,14 +203,13 @@ class EmbeddingDatabase:
 
         vec = emb.detach().to(devices.device, dtype=torch.float32)
         # name = data.get('name', name)
-        embedding = Embedding(vec, name)
+        embedding = Embedding(vec=vec, name=name, filename=path)
         embedding.tag = data.get('name', None)
         embedding.step = data.get('step', None)
         embedding.sd_checkpoint = data.get('sd_checkpoint', None)
         embedding.sd_checkpoint_name = data.get('sd_checkpoint_name', None)
         embedding.vectors = vec.shape[0]
         embedding.shape = vec.shape[-1]
-        embedding.filename = path
         if self.expected_shape == -1 or self.expected_shape == embedding.shape:
             self.register_embedding(embedding, shared.sd_model)
         else:
@@ -291,7 +290,7 @@ def create_embedding(name, num_vectors_per_token, overwrite_old, init_text='*'):
     if not overwrite_old and os.path.exists(fn):
         shared.log.warning(f"Embedding already exists: {fn}")
     else:
-        embedding = Embedding(vec, name)
+        embedding = Embedding(vec=vec, name=name, filename=fn)
         embedding.step = 0
         embedding.save(fn)
         shared.log.info(f'Created embedding: {fn} vectors {num_vectors_per_token} init {init_text}')

@@ -224,21 +224,15 @@ def load_lora(name, lora_on_disk):
 
 def load_loras(names, multipliers=None):
     already_loaded = {}
-
     for lora in loaded_loras:
         if lora.name in names:
             already_loaded[lora.name] = lora
-
     loaded_loras.clear()
-
     loras_on_disk = [available_lora_aliases.get(name, None) for name in names]
     if any(x is None for x in loras_on_disk):
         list_available_loras()
-
         loras_on_disk = [available_lora_aliases.get(name, None) for name in names]
-
     failed_to_load_loras = []
-
     recompile_model = False
     if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx":
         if len(names) == len(shared.compiled_model_state.lora_model):
@@ -270,12 +264,10 @@ def load_loras(names, multipliers=None):
                     continue
             lora.mentioned_name = name
             lora_on_disk.read_hash()
-
         if lora is None:
             failed_to_load_loras.append(name)
             print(f"Couldn't find Lora with name {name}")
             continue
-
         lora.multiplier = multipliers[i] if multipliers else 1.0
         loaded_loras.append(lora)
 
@@ -291,25 +283,20 @@ def lora_calc_updown(lora, module, target):
     with torch.no_grad():
         up = module.up.weight.to(target.device, dtype=target.dtype)
         down = module.down.weight.to(target.device, dtype=target.dtype)
-
         if up.shape[2:] == (1, 1) and down.shape[2:] == (1, 1):
             updown = (up.squeeze(2).squeeze(2) @ down.squeeze(2).squeeze(2)).unsqueeze(2).unsqueeze(3)
         elif up.shape[2:] == (3, 3) or down.shape[2:] == (3, 3):
             updown = torch.nn.functional.conv2d(down.permute(1, 0, 2, 3), up).permute(1, 0, 2, 3)
         else:
             updown = up @ down
-
         updown = updown * lora.multiplier * (module.alpha / module.up.weight.shape[1] if module.alpha else 1.0)
-
         return updown
 
 
 def lora_restore_weights_from_backup(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.MultiheadAttention]):
     weights_backup = getattr(self, "lora_weights_backup", None)
-
     if weights_backup is None:
         return
-
     if isinstance(self, torch.nn.MultiheadAttention):
         self.in_proj_weight.copy_(weights_backup[0])
         self.out_proj.weight.copy_(weights_backup[1])
@@ -450,6 +437,7 @@ def lora_MultiheadAttention_load_state_dict(self, *args, **kwargs):
 
 
 def list_available_loras():
+    from modules.paths_internal import script_path
     available_loras.clear()
     available_lora_aliases.clear()
     forbidden_lora_aliases.clear()
@@ -457,6 +445,8 @@ def list_available_loras():
     forbidden_lora_aliases.update({"none": 1, "Addams": 1})
     os.makedirs(shared.cmd_opts.lora_dir, exist_ok=True)
     for filename in sorted([*filter(extension_filter(['.PT', '.CKPT', '.SAFETENSORS']), directory_files(shared.cmd_opts.lora_dir))], key=str.lower):
+        if filename.startswith(script_path):
+            filename = os.path.relpath(filename, script_path)
         name = os.path.splitext(os.path.basename(filename))[0]
         entry = LoraOnDisk(name, filename)
         available_loras[name] = entry
