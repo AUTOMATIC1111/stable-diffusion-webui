@@ -1045,7 +1045,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 else:
                     image_conditioning = self.txt2img_image_conditioning(samples.to(dtype=devices.dtype_vae))
                 if self.latent_sampler == "PLMS":
-                   self.latent_sampler = 'UniPC'
+                    self.latent_sampler = 'UniPC'
             if self.hr_force or latent_scale_mode is not None:
                 if self.denoising_strength > 0:
                     self.ops.append('hires')

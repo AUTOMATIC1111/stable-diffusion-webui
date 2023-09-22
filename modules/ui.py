@@ -991,9 +991,10 @@ def create_ui(startup_timer = None):
                 modules.shared.opts.sd_backend = "diffusers"
         try:
             opts.save(modules.shared.config_filename)
-            log.info(f'Settings changed: {len(changed)} {changed}')
+            if len(changed) > 0:
+                log.info(f'Settings: changed={len(changed)} {changed}')
         except RuntimeError:
-            log.error(f'Settings change failed: {len(changed)} {changed}')
+            log.error(f'Settings failed: change={len(changed)} {changed}')
             return opts.dumpjson(), f'{len(changed)} Settings changed without save: {", ".join(changed)}'
         return opts.dumpjson(), f'{len(changed)} Settings changed{": " if len(changed) > 0 else ""}{", ".join(changed)}'
 

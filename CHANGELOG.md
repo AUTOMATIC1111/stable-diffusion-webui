@@ -2,17 +2,24 @@
 
 ## Update for 2023-09-20
 
-- Added **change log** to UI, see *System -> Changelog*  
+- Added **change log** to UI  
+  see *System -> Changelog*  
 - **Extra networks**:  
   - faster search, ability to show/hide/sort networks  
   - refactored subfolder handling  
-- **Upscalers**: complete refactor...  
+    *note*: this will trigger model hash recaclulation on first model use  
+- **Upscalers**:
   - more high quality upscalers available by default  
   - unified init/download/execute/progress code  
   - easier installation  
   - available in **xyz grid**  
   - allow upscale-only as part of **txt2img** and **img2img** workflows  
     simply set *denoising strength* to 0 so hires does not get triggered  
+- **Samplers**:
+  - default list for new installs is now all samplers, list can be modified in settings  
+  - simplified samplers configuration in settings
+- **Diffusers**
+  - better pipeline auto-detect when loading from safetensors  
 
 ## Update for 2023-09-13
 

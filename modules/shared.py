@@ -43,11 +43,6 @@ hypernetworks = {}
 loaded_hypernetworks = []
 gradio_theme = gr.themes.Base()
 settings_components = None
-pipelines = [
-    'Autodetect',
-    'Stable Diffusion', 'Stable Diffusion XL', 'Kandinsky V1', 'Kandinsky V2', 'DeepFloyd IF', 'Shap-E',
-    'Stable Diffusion Img2Img', 'Stable Diffusion XL Img2Img', 'Kandinsky V1 Img2Img', 'Kandinsky V2 Img2Img', 'DeepFloyd IF Img2Img', 'Shap-E Img2Img'
-]
 latent_upscale_default_mode = "None"
 latent_upscale_modes = {
     "Latent": {"mode": "bilinear", "antialias": False},
@@ -431,7 +426,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
 }))
 
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
-    "diffusers_pipeline": OptionInfo(pipelines[0], 'Diffusers pipeline', gr.Dropdown, lambda: {"choices": pipelines}),
+    "diffusers_pipeline": OptionInfo('Autodetect', 'Diffusers pipeline', gr.Dropdown, lambda: {"choices": list(shared_items.get_pipelines()) }),
     "diffusers_move_base": OptionInfo(True, "Move base model to CPU when using refiner"),
     "diffusers_move_unet": OptionInfo(True, "Move base model to CPU when using VAE"),
     "diffusers_move_refiner": OptionInfo(True, "Move refiner model to CPU when not in use"),
