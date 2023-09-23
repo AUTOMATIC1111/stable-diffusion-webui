@@ -25,6 +25,8 @@
   - simplified samplers configuration in settings  
 - **Diffusers**
   - better pipeline auto-detect when loading from safetensors  
+- **Logging**
+  - get browser session info in server log  
 
 ## Update for 2023-09-13
 

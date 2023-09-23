@@ -287,7 +287,6 @@ def list_builtin_themes():
 
 
 def list_themes():
-    log.info('Browser session started')
     fn = os.path.join('html', 'themes.json')
     if not os.path.exists(fn):
         refresh_themes()

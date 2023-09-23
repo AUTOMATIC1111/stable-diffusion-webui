@@ -51,6 +51,7 @@ async function initLogMonitor() {
     </table>
   `;
   el.style.display = 'none';
+  fetch(`/sdapi/v1/start?agent=${encodeURI(navigator.userAgent)}`);
   logMonitor();
   log('initLogMonitor');
 }

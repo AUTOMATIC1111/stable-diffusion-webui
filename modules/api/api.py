@@ -146,6 +146,7 @@ class Api:
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
         self.add_api_route("/sdapi/v1/log", self.get_log_buffer, methods=["GET"], response_model=List) # bypass auth
+        self.add_api_route("/sdapi/v1/start", self.session_start, methods=["GET"])
         self.add_api_route("/sdapi/v1/extra-networks", self.get_extra_networks, methods=["GET"], response_model=List[models.ExtraNetworkItem])
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
@@ -166,6 +167,10 @@ class Api:
         if req.clear:
             shared.log.buffer.clear()
         return lines
+
+    def session_start(self, agent: Optional[str] = None):
+        shared.log.info(f'Browser session: agent={agent}')
+        return {}
 
     def get_selectable_script(self, script_name, script_runner):
         if script_name is None or script_name == "":
