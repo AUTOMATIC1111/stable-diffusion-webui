@@ -5,7 +5,7 @@ from io import BytesIO
 from typing import List, Dict, Any, Optional
 from threading import Lock
 from secrets import compare_digest
-from fastapi import FastAPI, APIRouter, Depends
+from fastapi import FastAPI, APIRouter, Depends, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.exceptions import HTTPException
 from PIL import PngImagePlugin,Image
@@ -168,8 +168,8 @@ class Api:
             shared.log.buffer.clear()
         return lines
 
-    def session_start(self, agent: Optional[str] = None):
-        shared.log.info(f'Browser session: agent={agent}')
+    def session_start(self, req: Request, agent: Optional[str] = None):
+        shared.log.info(f'Browser session: client={req.client.host} agent={agent}')
         return {}
 
     def get_selectable_script(self, script_name, script_runner):
