@@ -5,7 +5,7 @@ from types import MethodType
 from modules import devices, sd_hijack_optimizations, shared, script_callbacks, errors, sd_unet
 from modules.hypernetworks import hypernetwork
 from modules.shared import cmd_opts
-from modules import sd_hijack_clip, sd_hijack_open_clip, sd_hijack_unet, sd_hijack_xlmr, xlmr
+from modules import sd_hijack_clip, sd_hijack_open_clip, sd_hijack_unet, sd_hijack_xlmr, xlmr, xlmr_m18
 
 import ldm.modules.attention
 import ldm.modules.diffusionmodules.model
@@ -208,11 +208,10 @@ class StableDiffusionModelHijack:
             else:
                 m.cond_stage_model = conditioner
 
-        if type(m.cond_stage_model) == xlmr.BertSeriesModelWithTransformation:
+        if type(m.cond_stage_model) == xlmr.BertSeriesModelWithTransformation or type(m.cond_stage_model) == xlmr_m18.BertSeriesModelWithTransformation:
             model_embeddings = m.cond_stage_model.roberta.embeddings
             model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.word_embeddings, self)
             m.cond_stage_model = sd_hijack_xlmr.FrozenXLMREmbedderWithCustomWords(m.cond_stage_model, self)
-
         elif type(m.cond_stage_model) == ldm.modules.encoders.modules.FrozenCLIPEmbedder:
             model_embeddings = m.cond_stage_model.transformer.text_model.embeddings
             model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.token_embedding, self)
@@ -258,7 +257,6 @@ class StableDiffusionModelHijack:
 
             if hasattr(m, 'cond_stage_model'):
                 delattr(m, 'cond_stage_model')
-
         elif type(m.cond_stage_model) == sd_hijack_xlmr.FrozenXLMREmbedderWithCustomWords:
             m.cond_stage_model = m.cond_stage_model.wrapped
 
