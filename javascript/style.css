@@ -1,7 +1,6 @@
 :root, .dark{ --checkbox-label-gap: 0.25em 0.1em; --section-header-text-size: 12pt; --block-background-fill: transparent;}
 a { font-weight: bold; cursor: pointer; }
 h2 { margin-top: 1em !important; font-size: 1.4em !important; }
-table { overflow-x: auto !important; overflow-y: auto !important; }
 div.gradio-container{ max-width: unset !important; padding: 8px !important; }
 div.tabitem { padding: 0 !important; }
 div.form { border-width: 0; box-shadow: none; background: transparent; overflow: visible; gap: 0.5em 1em; flex-grow: 1 !important; }
@@ -35,7 +34,9 @@ div.gradio-html.min{ min-height: 0; }
 .small-accordion .label-wrap .icon { margin-right: 1.6em; margin-left: 0.6em; color: var(--button-primary-border-color); }
 .hidden { display: none; }
 footer { display: none; }
-td { border-bottom: none !important; }
+table { overflow-x: auto !important; overflow-y: auto !important; }
+td { border-bottom: none !important; padding: 0.1em 0.5em !important; }
+tr { border-bottom: none !important; padding: 0.1em 0.5em !important; }
 
 /* general styled components */
 .gradio-button.tool { max-width: min-content; min-width: min-content !important; align-self: end; font-size: 1.4em; color: var(--body-text-color) !important; }
@@ -248,39 +249,31 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-network-cards .card .preview { box-shadow: var(--button-shadow); min-height: 30px; }
 .extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
 .extra-network-cards .card:hover .preview { box-shadow: none; filter: grayscale(100%); }
+.extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
+.extra-network-cards .card .overlay .tags { margin: 4px; display: none; overflow-wrap: break-word; }
+.extra-network-cards .card .overlay .tag { padding: 2px; margin: 2px; background: var(--neutral-700); cursor: pointer; display: inline-block; }
+.extra-network-cards .card .overlay .actions { font-size: 2.2em; display: none; text-align-last: center; cursor: pointer; font-variant: unicase; height: 0.8em }
+.extra-network-cards .card .overlay .actions > span { padding: 4px; }
+.extra-network-cards .card .overlay .description { line-break: anywhere; display: none; color: white; }
+.extra-network-cards .card:hover .overlay .actions { display: block; }
+.extra-network-cards .card:hover .overlay .tags { display: block; }
+.extra-network-cards .card:hover .overlay .description { display: block; }
+
 
 #txt2img_description, #img2img_description { max-height: 63px; overflow-y: auto !important; }
 #txt2img_description > label > textarea, #img2img_description > label > textarea { font-size: 0.9em }
-
-.extra-network-cards .card .info {
-  position: absolute;
-  font-size: 1.5em;
-  top: 0.1em;
-  right: 0.1em;
-  background: var(--button-primary-border-color);
-  width: 1.3em;
-  text-align: center;
-  border-radius: var(--block-radius);
-  height: 1.3em;
-  line-height: 1.2em;
-  cursor: pointer;
-  visibility: hidden;
-  z-index: 100;
-}
-.extra-network-cards .card:hover .info { visibility: visible; }
-
-.extra-networks_details {
+#txt2img_extra_details, #img2img_extra_details {
   position: fixed;
   bottom: 50%;
   left: 50%;
   transform: translate(-50%, 50%);
-  padding: 1em;
+  padding: 0.8em;
   border: var(--block-border-width) solid var(--highlight-color) !important;
   z-index: 100;
   box-shadow: var(--button-shadow);
-  width: 80vw;
-  display: none !important;
 }
+#txt2img_extra_details > div, #img2img_extra_details > div { overflow-y: auto; min-height: 40vh; max-height: 80vh; align-self: flex-start; }
+#txt2img_extra_details td:first-child, #img2img_extra_details td:first-child { font-weight: bold; }
 
 /* controlnet
 .controlnet_control_type .controlnet_control_type_filter_group .wrap:last-of-type { display: grid; grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); }

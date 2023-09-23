@@ -1,34 +1,42 @@
-let globalPopup = null;
-let globalPopupInner = null;
-let previousCard = null;
 const activePromptTextarea = {};
-const re_extranet = /<([^:]+:[^:]+):[\d\.]+>/;
-const re_extranet_g = /\s+<([^:]+:[^:]+):[\d\.]+>/g;
 
-const getENActiveTab = () => gradioApp().getElementById('tab_txt2img').style.display === 'block' ? 'txt2img' : 'img2img';
+// helpers
 
-function requestGet(url, data, handler, errorHandler) {
+const requestGet = (url, data, handler) => {
   const xhr = new XMLHttpRequest();
   const args = Object.keys(data).map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(data[k])}`).join('&');
   xhr.open('GET', `${url}?${args}`, true);
   xhr.onreadystatechange = () => {
     if (xhr.readyState === 4) {
-      if (xhr.status === 200) {
-        try {
-          const js = JSON.parse(xhr.responseText);
-          handler(js);
-        } catch (error) {
-          console.error(error);
-          errorHandler();
-        }
-      } else {
-        errorHandler();
-      }
+      if (xhr.status === 200) handler(JSON.parse(xhr.responseText));
+      else console.error(`Request: url=${url} status=${xhr.status} err`);
     }
   };
-  const js = JSON.stringify(data);
-  xhr.send(js);
-}
+  xhr.send(JSON.stringify(data));
+};
+
+const getENActiveTab = () => gradioApp().getElementById('tab_txt2img').style.display === 'block' ? 'txt2img' : 'img2img';
+
+const getENActivePage = () => {
+  const tabname = getENActiveTab();
+  const page = gradioApp().querySelector(`#${tabname}_extra_networks > .tabs > .tab-nav > .selected`);
+  return page ? page.innerText : '';
+};
+
+const setENState = (state) => {
+  if (!state) return;
+  state.tab = getENActiveTab();
+  state.page = getENActivePage();
+  log('setENState', state);
+  const el = gradioApp().querySelector(`#${state.tab}_extra_state  > label > textarea`);
+  el.value = JSON.stringify(state);
+  updateInput(el);
+};
+
+// popup
+
+let globalPopup = null;
+let globalPopupInner = null;
 
 function popup(contents) {
   if (!globalPopup) {
@@ -51,6 +59,45 @@ function popup(contents) {
   globalPopup.style.display = 'flex';
 }
 
+// methods
+
+function showCardDetails(event) {
+  const tabname = getENActiveTab();
+  setENState({ op: 'showCardDetails' });
+  const btn = gradioApp().getElementById(`${tabname}_extra_details_btn`);
+  btn.click();
+  event.stopPropagation();
+  event.preventDefault();
+}
+
+function getCardDetails(...args) {
+  const el = event?.target?.parentElement?.parentElement?.parentElement;
+  if (!el?.classList?.contains('card')) return [...args];
+  const tabname = getENActiveTab();
+  setENState({ op: 'getCardDetails', item: el.dataset.name });
+  return [...args];
+}
+
+function saveCardDescription(event) {
+  const el = event?.target?.parentElement?.parentElement?.parentElement;
+  if (!el?.classList?.contains('card')) return;
+  const tabname = getENActiveTab();
+  const description = gradioApp().getElementById(`${tabname}_description`)?.children[0].children[1].value;
+  el.dataset.description = description;
+  setENState({ op: 'saveCardDescription', item: el.dataset.name, description });
+  event.stopPropagation();
+  event.preventDefault();
+}
+
+function saveCardPreview(event) {
+  const el = event?.target?.parentElement?.parentElement?.parentElement;
+  if (!el?.classList?.contains('card')) return;
+  const index = selected_gallery_index();
+  setENState({ op: 'saveCardPreview', item: el.dataset.name, index });
+  event.stopPropagation();
+  event.preventDefault();
+}
+
 function readCardMetadata(event, extraPage, cardName) {
   requestGet('./sd_extra_networks/metadata', { page: extraPage, item: cardName }, (data) => {
     if (data?.metadata) {
@@ -60,7 +107,7 @@ function readCardMetadata(event, extraPage, cardName) {
       elem.textContent = data.metadata;
       popup(elem);
     }
-  }, () => { });
+  });
   event.stopPropagation();
   event.preventDefault();
 }
@@ -88,52 +135,12 @@ function readCardTags(el, tags) {
   }
 }
 
-function readCardInformation(event, extraPage, cardName) {
-  requestGet('./sd_extra_networks/info', { page: extraPage, item: cardName }, (data) => {
-    if (data?.info && (typeof (data?.info) === 'string')) {
-      const elem = document.createElement('pre');
-      elem.classList.add('popup-metadata');
-      elem.textContent = data.info;
-      popup(elem);
-    }
-  }, () => { });
-  event.stopPropagation();
-  event.preventDefault();
-}
-
 function readCardDescription(filename, descript) {
   const tabname = getENActiveTab();
-  const fn = gradioApp().querySelector(`#${tabname}_description_filename  > label > textarea`);
   const description = gradioApp().querySelector(`#${tabname}_description > label > textarea`);
-  fn.value = filename;
   description.value = descript?.trim() || '';
   description.focus();
-  updateInput(fn);
   updateInput(description);
-}
-
-function saveCardPreview(event) {
-  const tabname = getENActiveTab();
-  const textarea = gradioApp().querySelector(`#${tabname}_preview_filename  > label > textarea`);
-  const button = gradioApp().getElementById(`${tabname}_save_preview`);
-  const el = event?.target?.parentElement?.parentElement?.parentElement;
-  if (el?.classList?.contains('card')) {
-    textarea.value = el.dataset.filename;
-    updateInput(textarea);
-    button.click();
-  }
-  event.stopPropagation();
-  event.preventDefault();
-}
-
-function saveCardDescription(event) {
-  const tabname = getENActiveTab();
-  const el = event?.target?.parentElement?.parentElement?.parentElement;
-  if (el?.classList?.contains('card')) el.dataset.description = gradioApp().getElementById(`${tabname}_description`)?.children[0].children[1].value;
-  const button = gradioApp().getElementById(`${tabname}_save_description`);
-  button.click();
-  event.stopPropagation();
-  event.preventDefault();
 }
 
 async function filterExtraNetworksForTab(tabname, searchTerm) {
@@ -160,6 +167,79 @@ async function filterExtraNetworksForTab(tabname, searchTerm) {
   if (found > 0) log(`filterExtraNetworks: text=${searchTerm} items=${items} match=${found} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
   else log(`filterExtraNetworks: text=all items=${items} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
 }
+
+function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
+  const re_extranet = /<([^:]+:[^:]+):[\d\.]+>/;
+  const re_extranet_g = /\s+<([^:]+:[^:]+):[\d\.]+>/g;
+  let m = text.match(re_extranet);
+  let replaced = false;
+  let newTextareaText;
+  if (m) {
+    const partToSearch = m[1];
+    newTextareaText = textarea.value.replaceAll(re_extranet_g, (found) => {
+      m = found.match(re_extranet);
+      if (m[1] === partToSearch) {
+        replaced = true;
+        return '';
+      }
+      return found;
+    });
+  } else {
+    newTextareaText = textarea.value.replaceAll(new RegExp(text, 'g'), (found) => {
+      if (found === text) {
+        replaced = true;
+        return '';
+      }
+      return found;
+    });
+  }
+  if (replaced) {
+    textarea.value = newTextareaText;
+    return true;
+  }
+  return false;
+}
+
+function refreshExtraNetworks(tabname) {
+  log('refreshExtraNetworks', tabname, gradioApp().querySelector(`#${tabname}_extra_networks textarea`)?.value);
+  gradioApp().querySelector(`#${tabname}_extra_networks textarea`)?.dispatchEvent(new Event('input'));
+}
+
+function cardClicked(textToAdd, allowNegativePrompt) {
+  const tabname = getENActiveTab();
+  const textarea = allowNegativePrompt ? activePromptTextarea[tabname] : gradioApp().querySelector(`#${tabname}_prompt > label > textarea`);
+  if (textarea.value.indexOf(textToAdd) !== -1) textarea.value = textarea.value.replace(textToAdd, '');
+  else textarea.value += textToAdd;
+  updateInput(textarea);
+}
+
+function extraNetworksSearchButton(event) {
+  const tabname = getENActiveTab();
+  const searchTextarea = gradioApp().querySelector(`#${tabname}_extra_tabs > div > div > textarea`);
+  const button = event.target;
+  const text = button.classList.contains('search-all') ? '' : `${button.textContent.trim()}/`;
+  searchTextarea.value = text;
+  updateInput(searchTextarea);
+}
+
+let desiredStyle = '';
+function selectStyle(name) {
+  desiredStyle = name;
+  const tabname = getENActiveTab();
+  const button = gradioApp().querySelector(`#${tabname}_styles_select`);
+  button.click();
+}
+
+function applyStyles(styles) {
+  let newStyles = [];
+  if (styles) newStyles = Array.isArray(styles) ? styles : [styles];
+  const index = newStyles.indexOf(desiredStyle);
+  if (index > -1) newStyles.splice(index, 1);
+  else newStyles.push(desiredStyle);
+  return newStyles.join('|');
+}
+
+// init
 
 function setupExtraNetworksForTab(tabname) {
   gradioApp().querySelector(`#${tabname}_extra_tabs`).classList.add('extra-networks');
@@ -188,6 +268,7 @@ function setupExtraNetworksForTab(tabname) {
   });
 
   let hoverTimer = null;
+  let previousCard = null;
   gradioApp().getElementById(`${tabname}_extra_tabs`).onmouseover = (e) => {
     const el = e.target.closest('.card'); // bubble-up to card
     if (!el || (el.title === previousCard)) return;
@@ -259,81 +340,6 @@ function setupExtraNetworks() {
   registerPrompt('img2img', 'img2img_prompt');
   registerPrompt('img2img', 'img2img_neg_prompt');
   log('initExtraNetworks');
-}
-
-function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
-  let m = text.match(re_extranet);
-  let replaced = false;
-  let newTextareaText;
-  if (m) {
-    const partToSearch = m[1];
-    newTextareaText = textarea.value.replaceAll(re_extranet_g, (found) => {
-      m = found.match(re_extranet);
-      if (m[1] === partToSearch) {
-        replaced = true;
-        return '';
-      }
-      return found;
-    });
-  } else {
-    newTextareaText = textarea.value.replaceAll(new RegExp(text, 'g'), (found) => {
-      if (found === text) {
-        replaced = true;
-        return '';
-      }
-      return found;
-    });
-  }
-  if (replaced) {
-    textarea.value = newTextareaText;
-    return true;
-  }
-  return false;
-}
-
-function refreshExtraNetworks(tabname) {
-  console.log('refreshExtraNetworks', tabname, gradioApp().querySelector(`#${tabname}_extra_networks textarea`)?.value);
-  gradioApp().querySelector(`#${tabname}_extra_networks textarea`)?.dispatchEvent(new Event('input'));
-}
-
-function cardClicked(textToAdd, allowNegativePrompt) {
-  const tabname = getENActiveTab();
-  const textarea = allowNegativePrompt ? activePromptTextarea[tabname] : gradioApp().querySelector(`#${tabname}_prompt > label > textarea`);
-  if (textarea.value.indexOf(textToAdd) !== -1) textarea.value = textarea.value.replace(textToAdd, '');
-  else textarea.value += textToAdd;
-  updateInput(textarea);
-}
-
-function extraNetworksSearchButton(event) {
-  const tabname = getENActiveTab();
-  const searchTextarea = gradioApp().querySelector(`#${tabname}_extra_tabs > div > div > textarea`);
-  const button = event.target;
-  const text = button.classList.contains('search-all') ? '' : `${button.textContent.trim()}/`;
-  searchTextarea.value = text;
-  updateInput(searchTextarea);
-}
-
-function getENActivePage() {
-  const tabname = getENActiveTab();
-  const page = gradioApp().querySelector(`#${tabname}_extra_networks > .tabs > .tab-nav > .selected`);
-  return page ? page.innerText : '';
-}
-
-let desiredStyle = '';
-function selectStyle(name) {
-  desiredStyle = name;
-  const tabname = getENActiveTab();
-  const button = gradioApp().querySelector(`#${tabname}_styles_select`);
-  button.click();
-}
-
-function applyStyles(styles) {
-  let newStyles = [];
-  if (styles) newStyles = Array.isArray(styles) ? styles : [styles];
-  const index = newStyles.indexOf(desiredStyle);
-  if (index > -1) newStyles.splice(index, 1);
-  else newStyles.push(desiredStyle);
-  return newStyles.join('|');
 }
 
 onUiLoaded(setupExtraNetworks);

@@ -281,7 +281,7 @@ def start_ui():
     create_api(app)
     timer.startup.record("api")
 
-    ui_extra_networks.add_pages_to_demo(app)
+    ui_extra_networks.init_api(app)
 
     modules.script_callbacks.app_started_callback(shared.demo, app)
     timer.startup.record("app-started")

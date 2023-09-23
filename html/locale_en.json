@@ -94,6 +94,7 @@
   {"id":"","label":"save","localized":"","hint":"Save image"},
   {"id":"","label":"zip","localized":"","hint":"Create zip archive from images"},
   {"id":"","label":"delete","localized":"","hint":"Delete image"},
+  {"id":"","label":"replace","localized":"","hint":"Replace image"},
   {"id":"","label":"➠ text","localized":"","hint":"Transfer image to text interface"},
   {"id":"","label":"➠ image","localized":"","hint":"Transfer image to image interface"},
   {"id":"","label":"➠ inpaint","localized":"","hint":"Transfer image to inpaint interface"},

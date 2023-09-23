@@ -9,6 +9,8 @@
     any ui state including state of open/closed menus can be saved as default!  
     see *System -> User interface -> Set menu states*  
 - **Extra networks**:  
+  - new details interface to view and save data about extra networks  
+    main ui now has a single button on each en to trigger details view  
   - faster search, ability to show/hide/sort networks  
   - refactored subfolder handling  
     *note*: this will trigger model hash recaclulation on first model use  
