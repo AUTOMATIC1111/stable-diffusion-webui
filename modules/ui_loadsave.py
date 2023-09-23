@@ -15,6 +15,8 @@ class UiLoadsave:
         self.ui_defaults_apply = None # button
         self.ui_defaults_review = None # button
         self.ui_defaults_restore = None # button
+        self.ui_defaults_submenu = None # button
+        self.component_open = {}
         self.ui_defaults = {}
         self.ui_settings = self.read_from_file()
 
@@ -41,9 +43,13 @@ class UiLoadsave:
                     init_field(saved_value)
             if field == 'value' and key not in self.component_mapping:
                 self.component_mapping[key] = x
+            if field == 'open' and key not in self.component_mapping:
+                self.component_open[key] = x
 
         if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number, gr.Dropdown, ToolButton, gr.Button] and x.visible:
             apply_field(x, 'visible')
+        if type(x) == gr.Accordion:
+            apply_field(x, 'open')
         if type(x) == gr.Slider:
             apply_field(x, 'value')
             apply_field(x, 'minimum')
@@ -88,6 +94,8 @@ class UiLoadsave:
     def add_block(self, x, path=""):
         """adds all components inside a gradio block x to the registry of tracked components"""
         if hasattr(x, 'children'):
+            if isinstance(x, gr.Accordion):
+                self.add_component(f"{path}/{x.label}", x)
             if isinstance(x, gr.Tabs) and x.elem_id is not None:
                 self.add_component(f"{path}/Tabs@{x.elem_id}", x) # Tabs element dont have a label, have to use elem_id instead
             for c in x.children:
@@ -112,12 +120,6 @@ class UiLoadsave:
         self.write_to_file(self.ui_settings)
 
     def iter_changes(self, values):
-        """
-        given a dictionary with defaults from a file and current values from gradio elements, returns
-        an iterator over tuples of values that are not the same between the file and the current;
-        tuple contents are: path, old value, new value
-        """
-        # for (path, component), new_value in zip(self.component_mapping.items(), values):
         for i, name in enumerate(self.component_mapping):
             component = self.component_mapping[name]
             choices = getattr(component, 'choices', None)
@@ -134,6 +136,18 @@ class UiLoadsave:
             if old_value == new_value:
                 continue
             if old_value is None and (new_value == '' or new_value == []):
+                continue
+            if (new_value == default_value) and (old_value is None):
+                continue
+            yield name, old_value, new_value, default_value
+        return []
+
+    def iter_menus(self):
+        for _i, name in enumerate(self.component_open):
+            old_value = self.ui_settings.get(name, None)
+            new_value = self.component_open[name].open
+            default_value = self.ui_defaults.get(name, '')
+            if old_value == new_value:
                 continue
             if (new_value == default_value) and (old_value is None):
                 continue
@@ -186,6 +200,41 @@ class UiLoadsave:
         errors.log.info(f'UI defaults saved: {self.filename}')
         return f"Wrote {num_changed} changes"
 
+    def ui_submenu_apply(self, items):
+        text = """
+            <table id="ui-defauls">
+                <colgroup>
+                    <col style="width: 20%; background: var(--table-border-color)">
+                    <col style="width: 10%; background: var(--panel-background-fill)">
+                </colgroup>
+                <thead style="font-size: 110%; border-style: solid; border-bottom: 1px var(--button-primary-border-color) solid">
+                <tr>
+                    <th>Menu</th>
+                    <th>State</th>
+                </tr>
+                </thead>
+            <tbody>"""
+        for k in self.component_open.keys():
+            opened = len([i for i, j in items.items() if j is True and i in k]) > 0
+            self.component_open[k].open = opened
+            text += f"<tr><td>{k}</td><td>{'open' if opened else 'closed'}</td></tr>"
+        text += "</tbody></table>"
+
+        from modules.shared import log
+        num_changed = 0
+        current_ui_settings = self.read_from_file()
+        for name, _old_value, new_value, default_value in self.iter_menus():
+            log.debug(f'Settings: name={name} default={default_value} new={new_value}')
+            num_changed += 1
+            current_ui_settings[name] = new_value
+        if num_changed == 0:
+            text += '<br>No changes'
+        else:
+            self.write_to_file(current_ui_settings)
+            errors.log.info(f'UI defaults saved: {self.filename}')
+            text += f'<br>Changes: {num_changed}'
+        return text
+
     def ui_restore(self):
         if os.path.exists(self.filename):
             os.remove(self.filename)
@@ -195,11 +244,11 @@ class UiLoadsave:
     def create_ui(self):
         """creates ui elements for editing defaults UI, without adding any logic to them"""
         with gr.Row(elem_id="config_row"):
-            self.ui_defaults_view = gr.Button(value='View changes', elem_id="ui_defaults_view", variant="secondary")
             self.ui_defaults_apply = gr.Button(value='Set new defaults', elem_id="ui_defaults_apply", variant="primary")
+            self.ui_defaults_submenu = gr.Button(value='Set menu states', elem_id="ui_submenu_apply", variant="primary")
             self.ui_defaults_restore = gr.Button(value='Restore system defaults', elem_id="ui_defaults_restore", variant="primary")
-        self.ui_defaults_review = gr.HTML("")
-        gr.HTML(f"Review changed values and apply them as new user interface defaults<br><br>Config file: {self.filename}")
+            self.ui_defaults_view = gr.Button(value='Refresh changes', elem_id="ui_defaults_view", variant="secondary")
+        self.ui_defaults_review = gr.HTML("", elem_id="ui_defaults_review")
 
     def setup_ui(self):
         """adds logic to elements created with create_ui; all add_block class must be made before this"""
@@ -208,3 +257,4 @@ class UiLoadsave:
         self.ui_defaults_view.click(fn=self.ui_view, inputs=list(self.component_mapping.values()), outputs=[self.ui_defaults_review])
         self.ui_defaults_apply.click(fn=self.ui_apply, inputs=list(self.component_mapping.values()), outputs=[self.ui_defaults_review])
         self.ui_defaults_restore.click(fn=self.ui_restore, inputs=[], outputs=[self.ui_defaults_review])
+        self.ui_defaults_submenu.click(fn=self.ui_submenu_apply, _js='uiOpenSubmenus', inputs=[self.ui_defaults_review], outputs=[self.ui_defaults_review])

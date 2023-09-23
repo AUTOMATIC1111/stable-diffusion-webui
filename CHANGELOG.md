@@ -2,8 +2,12 @@
 
 ## Update for 2023-09-20
 
-- Added **change log** to UI  
-  see *System -> Changelog*  
+- **UI**
+  - added **change log** to UI  
+    see *System -> Changelog*  
+  - converted submenus from checkboxes to accordion elements  
+    any ui state including state of open/closed menus can be saved as default!  
+    see *System -> User interface -> Set menu states*  
 - **Extra networks**:  
   - faster search, ability to show/hide/sort networks  
   - refactored subfolder handling  
@@ -16,8 +20,9 @@
   - allow upscale-only as part of **txt2img** and **img2img** workflows  
     simply set *denoising strength* to 0 so hires does not get triggered  
 - **Samplers**:
+  - moved ui options to submenu  
   - default list for new installs is now all samplers, list can be modified in settings  
-  - simplified samplers configuration in settings
+  - simplified samplers configuration in settings  
 - **Diffusers**
   - better pipeline auto-detect when loading from safetensors  
 

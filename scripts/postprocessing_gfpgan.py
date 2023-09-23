@@ -12,7 +12,7 @@ class ScriptPostprocessingGfpGan(scripts_postprocessing.ScriptPostprocessing):
 
     def ui(self):
         with FormRow():
-            gfpgan_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="GFPGAN visibility", value=0, elem_id="extras_gfpgan_visibility")
+            gfpgan_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Strength", value=0, elem_id="extras_gfpgan_visibility")
 
         return {
             "gfpgan_visibility": gfpgan_visibility,

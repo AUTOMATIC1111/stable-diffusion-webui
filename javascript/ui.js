@@ -143,7 +143,7 @@ function clearGallery(tabname) {
   footer.style.display = 'flex';
 }
 
-function submit(...args) {
+function submit_txt2img(...args) {
   log('submitTxt');
   clearGallery('txt2img');
   const id = randomId();
@@ -169,6 +169,8 @@ function submit_postprocessing(...args) {
   clearGallery('extras');
   return args;
 }
+
+const submit = submit_txt2img;
 
 function modelmerger(...args) {
   const id = randomId();

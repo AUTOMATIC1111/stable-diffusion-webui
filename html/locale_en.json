@@ -115,7 +115,7 @@
   {"id":"","label":"Apply changes & restart server","localized":"","hint":"Apply all changes and restart server"},
   {"id":"","label":"install","localized":"","hint":"install this extension"},
   {"id":"","label":"uninstall","localized":"","hint":"uninstall this extension"},
-  {"id":"","label":"UI Config","localized":"","hint":"Review and set current values as default values for the user interface"},
+  {"id":"","label":"User interface","localized":"","hint":"Review and set current values as default values for the user interface"},
   {"id":"","label":"View changes","localized":"","hint":"Review changes between default user interface values and current values"},
   {"id":"","label":"Set new defaults","localized":"","hint":"Set current values as default values for the user interface"},
   {"id":"","label":"Benchmark","localized":"","hint":"Run benchmarks"},
@@ -124,7 +124,7 @@
 ],
 "txt2img tab": [
   {"id":"","label":"Batch","localized":"","hint":"Additional batching options"},
-  {"id":"","label":"Seed details","localized":"","hint":"Additional options regarding initial seed used to produce images"},
+  {"id":"","label":"Sampler","localized":"","hint":"Additional sampling options"},
   {"id":"","label":"Advanced","localized":"","hint":"Additional advanced options"},
   {"id":"","label":"Sampling method","localized":"","hint":"Which algorithm to use to produce the image"},
   {"id":"","label":"Sampling steps","localized":"","hint":"How many times to improve the generated image iteratively; higher values take longer; very low values can produce bad results"},
