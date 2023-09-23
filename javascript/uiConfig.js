@@ -12,7 +12,6 @@ function uiOpenSubmenus() {
 
 onUiLoaded(() => {
   const btn = gradioApp().getElementById('ui_defaults_view');
-  console.log('HERE', btn);
   if (!btn) return;
   const intersectionObserver = new IntersectionObserver((entries) => {
     if (entries[0].intersectionRatio <= 0) {}
