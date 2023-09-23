@@ -458,9 +458,10 @@ def parse_prompt_attention(text):
 
     return res
 
-def remove_comment_lines(prompt: str, annotation_symbol = "#"):
+def remove_comment_lines(prompt: str):
     """
     Remove comment lines from prompt,
+    it supports both # and // comments.
     For example:
     # some comments,
     # or prompt words that you don't want to use temporarily,
@@ -468,7 +469,7 @@ def remove_comment_lines(prompt: str, annotation_symbol = "#"):
     """
     prompts = []
     for p in prompt.split('\n'):
-        if not p.lstrip().startswith(annotation_symbol):
+        if re.search(r'^\s*(#|//)', p) is None:
             prompts.append(p)
 
     return '\n'.join(prompts)
