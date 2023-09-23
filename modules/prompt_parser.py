@@ -185,7 +185,7 @@ def get_learned_conditioning(model, prompts: SdConditioning | list[str], steps, 
             res.append(cached)
             continue
 
-        texts = SdConditioning([x[1] for x in prompt_schedule], copy_from=prompts)
+        texts = SdConditioning([remove_comment_lines(x[1]) for x in prompt_schedule], copy_from=prompts)
         conds = model.get_learned_conditioning(texts)
 
         cond_schedule = []
@@ -457,6 +457,21 @@ def parse_prompt_attention(text):
             i += 1
 
     return res
+
+def remove_comment_lines(prompt: str, annotation_symbol = "#"):
+    """
+    Remove comment lines from prompt,
+    For example:
+    # some comments,
+    # or prompt words that you don't want to use temporarily,
+    other prompt words in use,
+    """
+    prompts = []
+    for p in prompt.split('\n'):
+        if not p.lstrip().startswith(annotation_symbol):
+            prompts.append(p)
+
+    return '\n'.join(prompts)
 
 if __name__ == "__main__":
     import doctest
