@@ -2,6 +2,11 @@
 
 ## Update for 2023-09-20
 
+This is a big one, with some major changes and new functionality...
+
+Note that for this release its recommended to perform a clean install (fresh `git clone`)  
+Upgrades are still possible and supported, but above is recommended for best experience  
+
 - **UI**
   - added **change log** to UI  
     see *System -> Changelog*  
@@ -11,7 +16,8 @@
 - **Extra networks**:  
   - new details interface to view and save data about extra networks  
     main ui now has a single button on each en to trigger details view  
-    details view includes model/lora metadata parser!  
+  - details view includes model/lora metadata parser!  
+  - details view includes civitai model metadata!
   - faster search, ability to show/hide/sort networks  
   - refactored subfolder handling  
     *note*: this will trigger model hash recaclulation on first model use  
@@ -26,8 +32,17 @@
   - moved ui options to submenu  
   - default list for new installs is now all samplers, list can be modified in settings  
   - simplified samplers configuration in settings  
+- **CivitAI**:
+  - CivitAI integration in *Models -> CivitAI* can now find most  
+    previews AND metadata for most models (checkpoints, loras, embeddings)
+    metadata is now parsed and saved in *[model].json*  
+  - Description from parsed model metadata is used as model description if there is no manual  
+    description file present in format of *[model].txt*
 - **Diffusers**
   - better pipeline auto-detect when loading from safetensors  
+- **Startup**  
+  - All main CLI parameters can now be set as environment variable as well  
+    for example `--data-dir <path>` can be specified as `SD_DATADIR=<path>` before starting SD.Next  
 - **Logging**
   - get browser session info in server log  
   - when running with `--debug` flag, log is force-rotated  

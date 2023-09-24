@@ -8,6 +8,7 @@ import threading
 from datetime import datetime
 from types import SimpleNamespace
 from pathlib import Path
+from html.parser import HTMLParser
 from collections import OrderedDict
 import gradio as gr
 from PIL import Image
@@ -44,6 +45,7 @@ def register_page(page):
 
 
 def init_api(app):
+
     def fetch_file(filename: str = ""):
         if not os.path.exists(filename):
             return JSONResponse({ "error": f"file {filename}: not found" }, status_code=404)
@@ -62,23 +64,39 @@ def init_api(app):
         metadata = page.metadata.get(item, 'none')
         if metadata is None:
             metadata = ''
-        shared.log.debug(f"Extra networks metadata: page='{page}' item={item} len={len(metadata)}")
+        # shared.log.debug(f"Extra networks metadata: page='{page}' item={item} len={len(metadata)}")
         return JSONResponse({"metadata": metadata})
 
-
     def get_info(page: str = "", item: str = ""):
-        page = next(iter([x for x in shared.extra_networks if x.name == page]), None)
+        page = next(iter([x for x in get_pages() if x.name == page]), None)
         if page is None:
             return JSONResponse({ 'info': 'none' })
-        info = page.info.get(item, 'none')
+        item = next(iter([x for x in page.items if x['name'] == item]), None)
+        if item is None:
+            return JSONResponse({ 'info': 'none' })
+        info = page.find_info(item['filename'])
         if info is None:
-            info = ''
-        shared.log.debug(f"Extra networks info: page='{page}' item={item} len={len(info)}")
+            info = {}
+        # shared.log.debug(f"Extra networks info: page='{page.name}' item={item['name']} len={len(info)}")
         return JSONResponse({"info": info})
+
+    def get_desc(page: str = "", item: str = ""):
+        page = next(iter([x for x in get_pages() if x.name == page]), None)
+        if page is None:
+            return JSONResponse({ 'description': 'none' })
+        item = next(iter([x for x in page.items if x['name'] == item]), None)
+        if item is None:
+            return JSONResponse({ 'description': 'none' })
+        desc = page.find_description(item['filename'])
+        if desc is None:
+            desc = ''
+        # shared.log.debug(f"Extra networks desc: page='{page.name}' item={item['name']} len={len(desc)}")
+        return JSONResponse({"description": desc})
 
     app.add_api_route("/sd_extra_networks/thumb", fetch_file, methods=["GET"])
     app.add_api_route("/sd_extra_networks/metadata", get_metadata, methods=["GET"])
     app.add_api_route("/sd_extra_networks/info", get_info, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/description", get_desc, methods=["GET"])
 
 
 class ExtraNetworksPage:
@@ -94,7 +112,7 @@ class ExtraNetworksPage:
         self.refresh_time = None
         # class additional is to keep old extensions happy
         self.card = '''
-            <div class='card' onclick={card_click} title='{name}' data-name='{name}' data-description='{description}' data-tags='{tags}'>
+            <div class='card' onclick={card_click} title='{name}' data-tab='{tabname}' data-page='{page}' data-name='{name}' data-filename='{filename}' data-tags='{tags}'>
                 <div class='overlay'>
                     <span style="display:none" class='search_term'>{search_term}</span>
                     <div class='tags'></div>
@@ -199,7 +217,6 @@ class ExtraNetworksPage:
         htmls = []
         for item in self.items:
             self.metadata[item["name"]] = item.get("metadata", {})
-            self.info[item["name"]] = item.get('info', None) or self.find_info(item['filename'])
             htmls.append(self.create_html(item, tabname))
         self.html += ''.join(htmls)
         if len(subdirs_html) > 0 or len(self.html) > 0:
@@ -219,9 +236,11 @@ class ExtraNetworksPage:
     def create_html(self, item, tabname):
         try:
             args = {
-                "tabname": json.dumps(tabname),
+                "tabname": tabname,
+                "page": self.name,
                 "name": item["name"],
                 "title": item["name"].replace('_', ' '),
+                "filename": item["filename"],
                 "tags": '|'.join([item.get("tags")] if isinstance(item.get("tags", {}), str) else list(item.get("tags", {}).keys())),
                 "preview": html.escape(item.get("preview", self.link_preview('html/card-no-preview.png'))),
                 "width": shared.opts.extra_networks_card_size,
@@ -241,28 +260,35 @@ class ExtraNetworksPage:
             return ""
 
     def find_preview_file(self, path):
-        preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
         fn = os.path.splitext(path)[0]
-        files = listdir(os.path.dirname(path))
+        preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
         for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.preview.', '.']]:
-            if file in files:
+            if os.path.exists(file):
                 return file
         return 'html/card-no-preview.png'
 
     def find_preview(self, path):
+        fn = os.path.splitext(path)[0]
         preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
-        files = listdir(os.path.dirname(path))
-        for file in [f'{path}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.preview.', '.']]:
-            if file in files:
+        for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.preview.', '.']]:
+            if os.path.exists(file):
                 if '.thumb.' not in file:
                     self.missing_thumbs.append(file)
                 return self.link_preview(file)
         return self.link_preview('html/card-no-preview.png')
 
     def find_description(self, path):
-        files = listdir(os.path.dirname(path))
-        for file in [f"{path}.txt", f"{path}.description.txt"]:
-            if file in files:
+        class HTMLFilter(HTMLParser):
+            text = ""
+            def handle_data(self, data):
+                self.text += data
+            def handle_endtag(self, tag):
+                if tag == 'p':
+                    self.text += '\n'
+
+        fn = os.path.splitext(path)[0]
+        for file in [f"{fn}.txt", f"{fn}.description.txt"]:
+            if os.path.exists(file):
                 try:
                     with open(file, "r", encoding="utf-8", errors="replace") as f:
                         txt = f.read()
@@ -270,21 +296,17 @@ class ExtraNetworksPage:
                         return txt
                 except OSError:
                     pass
-        return ''
+        info = self.find_info(path)
+        desc = info.get('description', '') or ''
+        f = HTMLFilter()
+        f.feed(desc)
+        return f.text
 
     def find_info(self, path):
-        basename, _ext = os.path.splitext(path)
-        files = listdir(os.path.dirname(path))
-        for file in [f"{path}.info", f"{path}.civitai.info", f"{basename}.info", f"{basename}.civitai.info"]:
-            if file in files:
-                try:
-                    with open(file, "r", encoding="utf-8", errors="replace") as f:
-                        txt = f.read()
-                        txt = re.sub('[<>]', '', txt)
-                        return txt
-                except OSError:
-                    pass
-        return ''
+        fn = os.path.splitext(path)[0] + '.json'
+        if os.path.exists(fn):
+            return shared.readfile(fn, silent=True)
+        return {}
 
 
 def initialize():
@@ -364,12 +386,9 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         except Exception as e:
             shared.log.error(f'Extra networks state error: {e}')
             return
-        page, item = get_item(state)
-        shared.log.debug(f'Extra network: op={state.op} page={page.title if page is not None else None} item={item.filename if item is not None else None}')
+        _page, item = get_item(state)
+        # shared.log.debug(f'Extra network: op={state.op} page={page.title if page is not None else None} item={item.filename if item is not None else None}')
         ui.last_item = item
-
-        if state.op == 'getCardDetails':
-            pass
 
     def toggle_visibility(is_visible):
         is_visible = not is_visible
@@ -395,13 +414,13 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                 with gr.Row():
                     btn_save_desc = gr.Button('Save', elem_classes=['small-button'])
                     btn_delete_desc = gr.Button('Delete', elem_classes=['small-button'])
-            with gr.Tab('Info'):
-                info = gr.Textbox('', show_label=False, lines=8, placeholder="Extra network info...")
+            with gr.Tab('Model metadata'):
+                info = gr.JSON({}, show_label=False, lines=8)
                 ui.details_components.append(info)
                 with gr.Row():
                     btn_save_info = gr.Button('Save', elem_classes=['small-button'])
                     btn_delete_info = gr.Button('Delete', elem_classes=['small-button'])
-            with gr.Tab('Metadata'):
+            with gr.Tab('Embedded metadata'):
                 meta = gr.JSON({}, show_label=False, lines=8)
                 ui.details_components.append(meta)
 
@@ -420,15 +439,16 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                 hmtl = gr.HTML(page.html, elem_id=f'{tabname}{page.name}_extra_page', elem_classes="extra-networks-page")
                 ui.pages.append(hmtl)
 
-    def fn_save_img(index):
-        if index is None or index < 0 or ui.last_item is None or ui.last_item.local_preview is None:
+    def fn_save_img():
+        if ui.last_item is None or ui.last_item.local_preview is None:
             return 'html/card-no-preview.png'
-        images = list(ui.gallery.temp_files)
-        if len(images) < index + 1:
+        images = list(ui.gallery.temp_files) # gallery cannot be used as input component so looking at most recently registered temp files
+        if len(images) < 1:
             shared.log.warning(f'Extra network no image: item={ui.last_item.name}')
             return 'html/card-no-preview.png'
         try:
-            image = Image.open(images[index])
+            images.sort(key=lambda f: os.path.getmtime(f), reverse=True)
+            image = Image.open(images[0])
         except Exception as e:
             shared.log.error(f'Extra network error opening image: item={ui.last_item.name} {e}')
             return 'html/card-no-preview.png'
@@ -467,23 +487,22 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         return desc
 
     def fn_save_info(info):
-        fn = os.path.splitext(ui.last_item.filename)[0] + '.info'
-        with open(fn, 'w', encoding='utf-8') as f:
-            f.write(info)
+        fn = os.path.splitext(ui.last_item.filename)[0] + '.json'
+        shared.writefile(info, fn, silent=True)
         shared.log.debug(f'Extra network save desc: item={ui.last_item.name} filename={fn}')
         return info
 
     def fn_delete_info(info):
         if ui.last_item is None:
             return info
-        fn = os.path.splitext(ui.last_item.filename)[0] + '.info'
+        fn = os.path.splitext(ui.last_item.filename)[0] + '.json'
         if os.path.exists(fn):
             shared.log.debug(f'Extra network delete info: item={ui.last_item.name} filename={fn}')
             os.remove(fn)
             return ''
         return info
 
-    btn_save_img.click(fn=fn_save_img, _js='(img) => { return selected_gallery_index() }', inputs=[img], outputs=[img])
+    btn_save_img.click(fn=fn_save_img, inputs=[], outputs=[img])
     btn_delete_img.click(fn=fn_delete_img, inputs=[], outputs=[img])
     btn_save_desc.click(fn=fn_save_desc, inputs=[desc], outputs=[desc])
     btn_delete_desc.click(fn=fn_delete_desc, inputs=[desc], outputs=[desc])
@@ -495,12 +514,15 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         if item is not None and os.path.exists(item.filename):
             stat = os.stat(item.filename)
             desc = item.description
-            info = page.info.get(item.name, 'N/A')
+            fullinfo = shared.readfile(os.path.splitext(item.filename)[0] + '.json', silent=True)
+            if 'modelVersions' in fullinfo: # sanitize massive objects
+                fullinfo['modelVersions'] = []
+            info = fullinfo
             meta = page.metadata.get(item.name, {}) or {}
             if type(meta) is str:
                 try:
                     meta = json.loads(meta)
-                except:
+                except Exception:
                     meta = {}
             img = page.find_preview_file(item.filename)
             lora = ''
@@ -539,7 +561,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                     {model}
                 </tbody></table>
             '''
-        return [text, img, desc, info, meta, gr.update(visible=True)]
+        return [text, img, desc, info, meta, gr.update(visible=item is not None)]
 
     def en_refresh(title):
         pages = []

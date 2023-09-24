@@ -6,7 +6,7 @@ from modules import sd_models, sd_vae, extras
 from modules.ui_components import FormRow, ToolButton
 from modules.ui_common import create_refresh_button
 from modules.call_queue import wrap_gradio_gpu_call
-from modules.shared import opts, log
+from modules.shared import opts, log, req
 import modules.errors
 import modules.hashes
 
@@ -166,11 +166,11 @@ def create_ui():
                             m_meta = len(json.dumps(m.metadata)) - 2
                             m_size = round(stat.st_size / 1024 / 1024 / 1024, 3)
                             m_time = datetime.fromtimestamp(stat.st_mtime)
-                            model_data.append([m_name, m_type, m.filename, m.hash, m_time, m_size, m_meta])
+                            model_data.append([m_name, m_type, m.filename, m.shorthash, m_time, m_size, m_meta])
                             total_size += stat.st_size
                         except Exception as e:
                             txt += f"Error: {m.name} {e}<br>"
-                        txt += f"Model list enumerated {len(sd_models.checkpoints_list.keys())} models in {round(total_size / 1024 / 1024 / 1024, 3)} GB<br>"
+                    txt += f"Model list enumerated {len(sd_models.checkpoints_list.keys())} models in {round(total_size / 1024 / 1024 / 1024, 3)} GB<br>"
                     return model_data, txt
 
                 model_list_btn.click(fn=list_models, inputs=[], outputs=[model_table, models_outcome])
@@ -240,15 +240,13 @@ def create_ui():
                 data = []
 
                 def civit_search(name, tag, model_type):
-                    import requests
-                    headers = { 'Content-type': 'application/json' }
                     types = 'LORA' if model_type == 'LoRA' else 'Checkpoint'
                     url = f'https://civitai.com/api/v1/models?limit=25&types={types}&Sort=Newest'
                     if name is not None and len(name) > 0:
                         url += f'&query={name}'
                     if tag is not None and len(tag) > 0:
                         url += f'&tag={tag}'
-                    r = requests.get(url, timeout=60, headers=headers)
+                    r = req(url)
                     log.debug(f'CivitAI search: name="{name}" tag={tag or "none"} status={r.status_code}')
                     if r.status_code != 200:
                         return [], [], []
@@ -336,38 +334,50 @@ def create_ui():
                     return res
 
                 def civit_download_previews(civit_previews_rehash):
-                    import requests
-                    from modules.ui_extra_networks import extra_pages
-                    from modules.modelloader import download_civit_preview
-                    headers = { 'Content-type': 'application/json' }
-                    res = ''
-                    for page in extra_pages:
+                    log.debug('CivitAI download previews')
+                    from modules.ui_extra_networks import get_pages
+                    from modules.modelloader import download_civit_preview, download_civit_meta
+                    res = []
+                    for page in get_pages():
+                        if page.name == 'style':
+                            continue
                         for item in page.list_items():
-                            if item.get('fullname', None) is None:
-                                continue
-                            if 'card-no-preview.png' in item['preview'] and os.path.isfile(item['fullname']):
+                            meta = os.path.splitext(item['filename'])[0] + '.json'
+                            if ('card-no-preview.png' in item['preview'] or not os.path.isfile(meta)) and os.path.isfile(item['filename']):
                                 sha = item.get('hash', None)
-                                if item.get('hash', None) is None:
-                                    log.debug(f'CivitAI skipping item without hash: name="{item["name"]}"')
-                                    continue
-                                r = requests.get(f'https://civitai.com/api/v1/model-versions/by-hash/{sha}', timeout=5, headers=headers)
-                                log.debug(f'CivitAI search: name="{item["name"]}" hash={sha} status={r.status_code}')
-                                if r.status_code == 200:
-                                    d = r.json()
-                                    if d.get('images') is not None and len(d['images']) > 0 and len(d['images'][0]['url']) > 0:
-                                        preview_url = d['images'][0]['url']
-                                        res += download_civit_preview(item['filename'], preview_url) + '<br>'
-                                elif civit_previews_rehash and os.stat(item['fullname']).st_size < (1024 * 1024 * 1024):
-                                    sha = modules.hashes.calculate_sha256(item['fullname'], quiet=True)
-                                    r = requests.get(f'https://civitai.com/api/v1/model-versions/by-hash/{sha}', timeout=5, headers=headers)
+                                found = False
+                                if sha is not None and len(sha) > 0:
+                                    r = req(f'https://civitai.com/api/v1/model-versions/by-hash/{sha}')
                                     log.debug(f'CivitAI search: name="{item["name"]}" hash={sha} status={r.status_code}')
                                     if r.status_code == 200:
                                         d = r.json()
+                                        res.append(download_civit_meta(item['filename'], d['modelId']))
                                         if d.get('images') is not None and len(d['images']) > 0 and len(d['images'][0]['url']) > 0:
                                             preview_url = d['images'][0]['url']
-                                            res += download_civit_preview(item['filename'], preview_url) + '<br>'
-                    return res
+                                            res.append(download_civit_preview(item['filename'], preview_url))
+                                            found = True
+                                if not found and civit_previews_rehash and os.stat(item['filename']).st_size < (1024 * 1024 * 1024):
+                                    sha = modules.hashes.calculate_sha256(item['filename'], quiet=True)[:10]
+                                    r = req(f'https://civitai.com/api/v1/model-versions/by-hash/{sha}')
+                                    log.debug(f'CivitAI search: name="{item["name"]}" hash={sha} status={r.status_code}')
+                                    if r.status_code == 200:
+                                        d = r.json()
+                                        res.append(download_civit_meta(item['filename'], d['modelId']))
+                                        if d.get('images') is not None and len(d['images']) > 0 and len(d['images'][0]['url']) > 0:
+                                            preview_url = d['images'][0]['url']
+                                            res.append(download_civit_preview(item['filename'], preview_url))
+                    txt = '<br>'.join([r for r in res if len(r) > 0])
+                    return txt
 
+                with gr.Row(style={'margin-top': '1em'}):
+                    gr.HTML('<h2>Fetch information</h2>Fetches preview and metadata information for all models with missing information<br>Models with existing previews and information are not updated<br>')
+                with gr.Row():
+                    civit_previews_btn = gr.Button(value="Start", variant='primary')
+                with gr.Row():
+                    civit_previews_rehash = gr.Checkbox(value=True, label="Check alternative hash")
+
+                with gr.Row(style={'margin-top': '1em'}):
+                    gr.HTML('<h2>Search for models</h2>')
                 with gr.Row():
                     with gr.Column(scale=1):
                         civit_model_type = gr.Dropdown(label='Model type', choices=['SD 1.5', 'SD XL', 'LoRA', 'Other'], value='LoRA')
@@ -395,9 +405,6 @@ def create_ui():
                     civit_headers1 = ['ID', 'Name', 'Tags', 'Downloads', 'Rating']
                     civit_types1 = ['number', 'str', 'str', 'number', 'number']
                     civit_results1 = gr.DataFrame(value = None, label = 'Search results', show_label = True, interactive = False, wrap = True, overflow_row_behaviour = 'paginate', max_rows = 10, headers = civit_headers1, datatype = civit_types1, type='array')
-                with gr.Row():
-                    civit_previews_btn = gr.Button(value="Fetch previews for existing models", variant='primary')
-                    civit_previews_rehash = gr.Checkbox(value=False, label="Check alternative hash")
 
                 civit_search_text.submit(fn=civit_search, inputs=[civit_search_text, civit_search_tag, civit_model_type], outputs=[civit_results1, civit_results2, civit_results3])
                 civit_search_tag.submit(fn=civit_search, inputs=[civit_search_text, civit_search_tag, civit_model_type], outputs=[civit_results1, civit_results2, civit_results3])

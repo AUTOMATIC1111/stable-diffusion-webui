@@ -27,7 +27,7 @@ const setENState = (state) => {
   if (!state) return;
   state.tab = getENActiveTab();
   state.page = getENActivePage();
-  log('setENState', state);
+  // log('setENState', state);
   const el = gradioApp().querySelector(`#${state.tab}_extra_state  > label > textarea`);
   el.value = JSON.stringify(state);
   updateInput(el);
@@ -36,9 +36,7 @@ const setENState = (state) => {
 // methods
 
 function showCardDetails(event) {
-  console.log('HERE1', event);
   const tabname = getENActiveTab();
-  // setENState({ op: 'showCardDetails' });
   const btn = gradioApp().getElementById(`${tabname}_extra_details_btn`);
   btn.click();
   event.stopPropagation();
@@ -46,11 +44,9 @@ function showCardDetails(event) {
 }
 
 function getCardDetails(...args) {
-  console.log('HERE2', event);
   const el = event?.target?.parentElement?.parentElement;
-  if (!el?.classList?.contains('card')) return [...args];
-  const tabname = getENActiveTab();
-  setENState({ op: 'getCardDetails', item: el.dataset.name });
+  if (el?.classList?.contains('card')) setENState({ op: 'getCardDetails', item: el.dataset.name });
+  else setENState({ op: 'getCardDetails', item: null });
   return [...args];
 }
 
@@ -65,9 +61,9 @@ function readCardTags(el, tags) {
   };
   if (tags.length === 0) return;
   const cardTags = tags.split('|');
-  if (cardTags.length === 0) return;
+  if (!cardTags || cardTags.length === 0) return;
   const tagsEl = el.getElementsByClassName('tags')[0];
-  if (tagsEl.children.length > 0) return;
+  if (!tagsEl?.children || tagsEl.children.length > 0) return;
   for (const tag of cardTags) {
     const span = document.createElement('span');
     span.classList.add('tag');
@@ -77,12 +73,15 @@ function readCardTags(el, tags) {
   }
 }
 
-function readCardDescription(filename, descript) {
-  const tabname = getENActiveTab();
-  const description = gradioApp().querySelector(`#${tabname}_description > label > textarea`);
-  description.value = descript?.trim() || '';
-  description.focus();
-  updateInput(description);
+function readCardDescription(page, item) {
+  requestGet('/sd_extra_networks/description', { page, item }, (data) => {
+    const tabname = getENActiveTab();
+    const description = gradioApp().querySelector(`#${tabname}_description > label > textarea`);
+    description.value = data?.description?.trim() || '';
+    // description.focus();
+    updateInput(description);
+    setENState({ op: 'readCardDescription', page, item });
+  });
 }
 
 async function filterExtraNetworksForTab(tabname, searchTerm) {
@@ -216,7 +215,7 @@ function setupExtraNetworksForTab(tabname) {
     if (!el || (el.title === previousCard)) return;
     if (!hoverTimer) {
       hoverTimer = setTimeout(() => {
-        readCardDescription(el.dataset.filename, el.dataset.description);
+        readCardDescription(el.dataset.page, el.dataset.name);
         readCardTags(el, el.dataset.tags);
         previousCard = el.title;
       }, 300);

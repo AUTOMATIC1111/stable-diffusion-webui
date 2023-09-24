@@ -60,7 +60,7 @@ class CheckpointInfo:
         if os.path.isfile(filename): # ckpt or safetensor
             self.name = relname
             self.filename = filename
-            self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{os.path.basename(relname)}.{ext}")
+            self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{relname}")
             self.type = ext
             # self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
         else: # maybe a diffuser
@@ -76,6 +76,9 @@ class CheckpointInfo:
                 self.sha256 = repo[0]['hash']
                 self.type = 'diffusers'
 
+        # info = shared.readfile(self.filename, silent=True)
+        # if 'tags' in info:
+        #    self.tags = info['tags']
         self.shorthash = self.sha256[0:10] if self.sha256 else None
         self.title = self.name if self.shorthash is None else f'{self.name} [{self.shorthash}]'
         self.path = self.filename

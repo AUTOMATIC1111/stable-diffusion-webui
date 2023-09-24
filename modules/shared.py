@@ -6,8 +6,10 @@ import json
 import datetime
 import contextlib
 import urllib.request
+from types import SimpleNamespace
 from urllib.parse import urlparse
 from enum import Enum
+import requests
 import gradio as gr
 import fasteners
 from rich.console import Console
@@ -304,11 +306,10 @@ def list_themes():
 
 
 def refresh_themes():
-    import requests
     try:
-        req = requests.get('https://huggingface.co/datasets/freddyaboulton/gradio-theme-subdomains/resolve/main/subdomains.json', timeout=5)
-        if req.status_code == 200:
-            res = req.json()
+        r = req('https://huggingface.co/datasets/freddyaboulton/gradio-theme-subdomains/resolve/main/subdomains.json')
+        if r.status_code == 200:
+            res = r.json()
             fn = os.path.join('html', 'themes.json')
             writefile(res, fn)
             list_themes()
@@ -853,8 +854,8 @@ def reload_gradio_theme(theme_name=None):
     default_font_params = {}
     res = 0
     try:
-        req = urllib.request.Request("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono", method="HEAD")
-        res = urllib.request.urlopen(req, timeout=3.0).status # pylint: disable=consider-using-with
+        request = urllib.request.Request("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono", method="HEAD")
+        res = urllib.request.urlopen(request, timeout=3.0).status # pylint: disable=consider-using-with
     except Exception:
         res = 0
     if res != 200:
@@ -984,6 +985,16 @@ def get_version():
             version = { 'app': 'sd.next' }
     return version
 
+
+def req(url_addr, **kwargs):
+    headers = { 'Content-type': 'application/json' }
+    try:
+        res = requests.get(url_addr, timeout=30, headers=headers, verify=False, allow_redirects=True, **kwargs)
+    except Exception as e:
+        log.error(f'HTTP request error: url={url} {e}')
+        res = { 'status_code': 500, 'text': f'HTTP request error: url={url} {e}' }
+        res = SimpleNamespace(**res)
+    return res
 
 class Shared(sys.modules[__name__].__class__): # this class is here to provide sd_model field as a property, so that it can be created and loaded on demand rather than at program startup.
     @property

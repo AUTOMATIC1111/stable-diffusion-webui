@@ -5,6 +5,7 @@ import importlib
 from typing import Dict
 from urllib.parse import urlparse
 import PIL.Image as Image
+import rich.progress as p
 from modules import shared
 from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone
 from modules.paths import script_path, models_path
@@ -55,15 +56,32 @@ def walk(top, onerror:callable=None):
     yield top, nondirs
 
 
+def download_civit_meta(model_path: str, model_id):
+    fn = os.path.splitext(model_path)[0] + '.json'
+    if os.path.exists(fn):
+        return ''
+    url = f'https://civitai.com/api/v1/models/{model_id}'
+    r = shared.req(url)
+    if r.status_code == 200:
+        try:
+            shared.writefile(r.json(), fn, silent=True)
+            msg = f'CivitAI download: id={model_id} url={url} file={fn}'
+            shared.log.info(msg)
+            return msg
+        except Exception as e:
+            msg = f'CivitAI download error: id={model_id} url={url} file={fn} {e}'
+            shared.log.error(msg)
+            return msg
+    return ''
+
 def download_civit_preview(model_path: str, preview_url: str):
-    import requests
-    import rich.progress as p
-    _, ext = os.path.splitext(preview_url)
-    model_name, _ = os.path.splitext(os.path.basename(model_path))
-    preview_file = f'{os.path.splitext(model_path)[0]}{ext}' if '.safetensors' in model_path.lower() else f'{model_path}{ext}'
-    res = f'CivitAI download: name={model_name} url={preview_url}'
-    req = requests.get(preview_url, stream=True, timeout=30)
-    total_size = int(req.headers.get('content-length', 0))
+    ext = os.path.splitext(preview_url)[1]
+    preview_file = os.path.splitext(model_path)[0] + ext
+    if os.path.exists(preview_file):
+        return ''
+    res = f'CivitAI download: url={preview_url} file={preview_file}'
+    r = shared.req(preview_url, stream=True)
+    total_size = int(r.headers.get('content-length', 0))
     block_size = 16384 # 16KB blocks
     written = 0
     img = None
@@ -72,7 +90,7 @@ def download_civit_preview(model_path: str, preview_url: str):
         with open(preview_file, 'wb') as f:
             with p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn(), console=shared.console) as progress:
                 task = progress.add_task(description="Download starting", total=total_size)
-                for data in req.iter_content(block_size):
+                for data in r.iter_content(block_size):
                     written = written + len(data)
                     f.write(data)
                     progress.update(task, advance=block_size, description="Downloading")
@@ -81,7 +99,7 @@ def download_civit_preview(model_path: str, preview_url: str):
             raise ValueError(f'removed invalid download: bytes={written}')
         img = Image.open(preview_file)
     except Exception as e:
-        shared.log.error(f'CivitAI download error: name={model_name} url={preview_url} {e}')
+        shared.log.error(f'CivitAI download error: url={preview_url} file={preview_file} {e}')
     shared.state.end()
     if img is None:
         return res
@@ -100,11 +118,9 @@ def download_civit_model(model_url: str, model_name: str, model_path: str, model
         res += ' already exists'
         shared.log.warning(res)
         return res
-    import requests
-    import rich.progress as p
 
-    req = requests.get(model_url, stream=True, timeout=30)
-    total_size = int(req.headers.get('content-length', 0))
+    r = shared.req(model_url, stream=True)
+    total_size = int(r.headers.get('content-length', 0))
     block_size = 16384 # 16KB blocks
     written = 0
     shared.state.begin('civitai-download-model')
@@ -113,7 +129,7 @@ def download_civit_model(model_url: str, model_name: str, model_path: str, model
             with p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn(), console=shared.console) as progress:
                 task = progress.add_task(description="Download starting", total=total_size)
                 # for data in tqdm(req.iter_content(block_size), total=total_size//1024, unit='KB', unit_scale=False):
-                for data in req.iter_content(block_size):
+                for data in r.iter_content(block_size):
                     written = written + len(data)
                     f.write(data)
                     progress.update(task, advance=block_size, description="Downloading")

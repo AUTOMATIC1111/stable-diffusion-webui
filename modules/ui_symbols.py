@@ -24,4 +24,4 @@ detect = '📐'
 folder = '📂'
 random = '🎲️'
 reuse = '♻️'
-info = 'ℹ'
+info = 'ℹ' # noqa

@@ -150,7 +150,7 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 .progressDiv{ position: relative; height: 20px; background: #b4c0cc; margin-bottom: -3px; }
 .dark .progressDiv{ background: #424c5b; }
 .progressDiv .progress{ width: 0%; height: 20px; background: #0060df; color: white; font-weight: bold; line-height: 20px; padding: 0 8px 0 0; text-align: right; overflow: visible; white-space: nowrap; padding: 0 0.5em; }
-.livePreview { position: absolute; z-index: 300; background-color: transparent; width: -moz-available; width: -webkit-fill-available; }
+.livePreview { position: absolute; z-index: 50; background-color: transparent; width: -moz-available; width: -webkit-fill-available; }
 .livePreview img { position: absolute; object-fit: contain; width: 100%; height: 100%; }
 .dark .livePreview { background-color: rgb(17 24 39 / var(--tw-bg-opacity)); }
 .popup-metadata { color: white; background: #0000; display: inline-block; white-space: pre-wrap; font-size: 0.75em; }
