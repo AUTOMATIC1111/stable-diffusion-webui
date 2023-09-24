@@ -2,6 +2,7 @@ import gc
 import sys
 import contextlib
 import torch
+from modules.errors import log
 from modules import cmd_args, shared, memstats
 
 if sys.platform == "darwin":
@@ -98,7 +99,7 @@ def get_optimal_device():
 
 def get_device_for(task):
     if task in shared.cmd_opts.use_cpu:
-        shared.log.debug(f'Forcing CPU for task: {task}')
+        log.debug(f'Forcing CPU for task: {task}')
         return cpu
     return get_optimal_device()
 
@@ -114,9 +115,9 @@ def torch_gc(force=False):
     global previous_oom # pylint: disable=global-statement
     if oom > previous_oom:
         previous_oom = oom
-        shared.log.warning(f'GPU out-of-memory error: {mem}')
+        log.warning(f'GPU out-of-memory error: {mem}')
     if used > 90:
-        shared.log.info(f'GPU high memory utilization: {used}% {mem}')
+        log.info(f'GPU high memory utilization: {used}% {mem}')
         force = True
     if not force:
         return
@@ -128,7 +129,7 @@ def torch_gc(force=False):
                 torch.cuda.ipc_collect()
         except Exception:
             pass
-    shared.log.debug(f'gc: collected={collected} device={torch.device(get_optimal_device_name())} {memstats.memory_stats()}')
+    log.debug(f'gc: collected={collected} device={torch.device(get_optimal_device_name())} {memstats.memory_stats()}')
 
 
 def test_fp16():
@@ -140,7 +141,7 @@ def test_fp16():
         _y = layerNorm(x)
         return True
     except Exception as ex:
-        shared.log.warning(f'Torch FP16 test failed: Forcing FP32 operations: {ex}')
+        log.warning(f'Torch FP16 test failed: Forcing FP32 operations: {ex}')
         shared.opts.cuda_dtype = 'FP32'
         shared.opts.no_half = True
         shared.opts.no_half_vae = True
@@ -155,12 +156,12 @@ def test_bf16():
         _out = F.interpolate(image, size=(64, 64), mode="nearest")
         return True
     except Exception:
-        shared.log.warning('Torch BF16 test failed: Fallback to FP16 operations')
+        log.warning('Torch BF16 test failed: Fallback to FP16 operations')
         return False
 
 
 def set_cuda_params():
-    # shared.log.debug('Verifying Torch settings')
+    # log.debug('Verifying Torch settings')
     if cuda_ok:
         try:
             torch.backends.cuda.matmul.allow_tf32 = True
@@ -172,7 +173,7 @@ def set_cuda_params():
             try:
                 torch.backends.cudnn.benchmark = True
                 if shared.opts.cudnn_benchmark:
-                    shared.log.debug('Torch enable cuDNN benchmark')
+                    log.debug('Torch enable cuDNN benchmark')
                     torch.backends.cudnn.benchmark_limit = 0
                 torch.backends.cudnn.allow_tf32 = True
             except Exception:
@@ -197,12 +198,12 @@ def set_cuda_params():
     else:
         fp16_ok = False
     if shared.opts.no_half:
-        shared.log.info('Torch override dtype: no-half set')
+        log.info('Torch override dtype: no-half set')
         dtype = torch.float32
         dtype_vae = torch.float32
         dtype_unet = torch.float32
     if shared.opts.no_half_vae: # set dtype again as no-half-vae options take priority
-        shared.log.info('Torch override VAE dtype: no-half set')
+        log.info('Torch override VAE dtype: no-half set')
         dtype_vae = torch.float32
     unet_needs_upcast = shared.opts.upcast_sampling
     if shared.opts.inference_mode == 'inference-mode':
@@ -211,8 +212,8 @@ def set_cuda_params():
         inference_context = contextlib.nullcontext
     else:
         inference_context = torch.no_grad
-    shared.log.debug(f'Desired Torch parameters: dtype={shared.opts.cuda_dtype} no-half={shared.opts.no_half} no-half-vae={shared.opts.no_half_vae} upscast={shared.opts.upcast_sampling}')
-    shared.log.info(f'Setting Torch parameters: device={torch.device(get_optimal_device_name())} dtype={dtype} vae={dtype_vae} unet={dtype_unet} context={inference_context.__name__} fp16={fp16_ok} bf16={bf16_ok}')
+    log.debug(f'Desired Torch parameters: dtype={shared.opts.cuda_dtype} no-half={shared.opts.no_half} no-half-vae={shared.opts.no_half_vae} upscast={shared.opts.upcast_sampling}')
+    log.info(f'Setting Torch parameters: device={torch.device(get_optimal_device_name())} dtype={dtype} vae={dtype_vae} unet={dtype_unet} context={inference_context.__name__} fp16={fp16_ok} bf16={bf16_ok}')
 
 
 args = cmd_args.parser.parse_args()
@@ -222,14 +223,14 @@ if args.use_ipex or (hasattr(torch, 'xpu') and torch.xpu.is_available()):
     from modules.intel.ipex import ipex_init
     ok, e = ipex_init()
     if not ok:
-        shared.log.error('IPEX initialization failed: {e}')
+        log.error('IPEX initialization failed: {e}')
         backend = 'cpu'
 elif args.use_directml:
     backend = 'directml'
     from modules.dml import directml_init
     ok, e = directml_init()
     if not ok:
-        shared.log.error('DirectML initialization failed: {e}')
+        log.error('DirectML initialization failed: {e}')
         backend = 'cpu'
 elif torch.cuda.is_available() and torch.version.cuda:
     backend = 'cuda'
