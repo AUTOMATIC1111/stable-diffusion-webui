@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-09-20
+## Update for 2023-09-24
 
 This is a big one, with some major changes and new functionality...
 
