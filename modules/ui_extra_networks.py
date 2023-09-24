@@ -94,17 +94,15 @@ class ExtraNetworksPage:
         self.refresh_time = None
         # class additional is to keep old extensions happy
         self.card = '''
-            <div class='card' onclick={card_click} title='{name}' data-name='{name}' data-filename='{local_preview}' data-description='{description}' data-tags='{tags}'>
+            <div class='card' onclick={card_click} title='{name}' data-name='{name}' data-description='{description}' data-tags='{tags}'>
                 <div class='overlay'>
                     <span style="display:none" class='search_term'>{search_term}</span>
-                    <div class='name'>{title}</div>
                     <div class='tags'></div>
-                    <div class='actions'>
-                        <div class='additional'><ul></ul></div>
-                        <span title="Save current image as preview image" onclick="saveCardPreview(event)">⏺️</span>
-                        <span title="Save current description" onclick="saveCardDescription(event)">🛅</span>
-                        <span title="Get details" onclick="showCardDetails(event)">&#x1f6c8;</span>
-                    </div>
+                    <div class='name'>{title}</div>
+                </div>
+                <div class='actions'>
+                    <span title="Get details" onclick="showCardDetails(event)">&#x1f6c8;</span>
+                    <div class='additional'><ul></ul></div>
                 </div>
                 <img class='preview' src='{preview}' style='width: {width}px; height: {height}px; object-fit: {fit}' loading='lazy'></img>
             </div>
@@ -232,7 +230,6 @@ class ExtraNetworksPage:
                 "prompt": item.get("prompt", None),
                 "search_term": item.get("search_term", ""),
                 "description": item.get("description") or "",
-                "local_preview": item.get("local_preview"),
                 "card_click": item.get("onclick", '"' + html.escape(f'return cardClicked({item.get("prompt", None)}, {"true" if self.allow_negative_prompt else "false"})') + '"'),
             }
             alias = item.get("alias", None)
@@ -333,6 +330,7 @@ class ExtraNetworksUi:
         self.search: gr.Textbox = None
         self.button_details: gr.Button = None
         self.details_components: list = []
+        self.last_item: dict = None
 
 
 def create_ui(container, button_parent, tabname, skip_indexing = False):
@@ -347,7 +345,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
     state = {}
 
     def get_item(state):
-        if state is None or state.page is None or state.item is None:
+        if state is None or not hasattr(state, 'page') or not hasattr(state, 'item'):
             return None, None
         page = next(iter([x for x in get_pages() if x.title == state.page]), None)
         if page is None:
@@ -368,42 +366,10 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             return
         page, item = get_item(state)
         shared.log.debug(f'Extra network: op={state.op} page={page.title if page is not None else None} item={item.filename if item is not None else None}')
+        ui.last_item = item
 
         if state.op == 'getCardDetails':
             pass
-
-        if state.op == 'saveCardDescription':
-            if item is None or state.description is None or len(state.description) == 0:
-                return
-            try:
-                filename = os.path.splitext(item.filename)[1] + '.txt'
-                with open(filename, 'w', encoding='utf-8') as f:
-                    f.write(state.description)
-                shared.log.info(f'Extra network save: file="{filename}" description={state.description}')
-            except Exception as e:
-                shared.log.error(f'Extra network save: file="{filename}" {e}')
-
-        if state.op == 'saveCardPreview':
-            if item is None or item.local_preview is None or len(item.local_preview) == 0:
-                return
-            try:
-                images = list(ui.gallery.temp_files)
-                if len(images) < 1:
-                    shared.log.error(f'Extra network save: preview="{item.local_preview}" no images')
-                    return
-                image = Image.open(images[state.index])
-            except Exception as e:
-                shared.log.error(f'Extra network save: preview="{item.local_preview}" {e}')
-                return
-            if image.width > 512 or image.height > 512:
-                image = image.convert('RGB')
-                image.thumbnail((512, 512), Image.HAMMING)
-            image.save(item.local_preview, quality=50)
-            thumb = os.path.splitext(item.local_preview)[0] + '.thumb.jpg'
-            if os.path.exists(thumb):
-                shared.log.debug(f'Extra network delete: thumbnail="{thumb}"')
-                os.remove(thumb)
-            shared.log.info(f'Extra network save: preview="{item.local_preview}"')
 
     def toggle_visibility(is_visible):
         is_visible = not is_visible
@@ -420,21 +386,21 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                 img = gr.Image(value=None, show_label=False, interactive=False, container=True)
                 ui.details_components.append(img)
                 with gr.Row():
-                    gr.Button('Replace')
-                    gr.Button('Delete')
+                    btn_save_img = gr.Button('Replace', elem_classes=['small-button'])
+                    btn_delete_img = gr.Button('Delete', elem_classes=['small-button'])
         with gr.Tabs():
             with gr.Tab('Description'):
-                desc = gr.Textbox('', show_label=False, lines=8)
+                desc = gr.Textbox('', show_label=False, lines=8, placeholder="Extra network description...")
                 ui.details_components.append(desc)
                 with gr.Row():
-                    gr.Button('Save')
-                    gr.Button('Delete')
+                    btn_save_desc = gr.Button('Save', elem_classes=['small-button'])
+                    btn_delete_desc = gr.Button('Delete', elem_classes=['small-button'])
             with gr.Tab('Info'):
-                info = gr.Textbox('', show_label=False, lines=8)
+                info = gr.Textbox('', show_label=False, lines=8, placeholder="Extra network info...")
                 ui.details_components.append(info)
                 with gr.Row():
-                    gr.Button('Save')
-                    gr.Button('Delete')
+                    btn_save_info = gr.Button('Save', elem_classes=['small-button'])
+                    btn_delete_info = gr.Button('Delete', elem_classes=['small-button'])
             with gr.Tab('Metadata'):
                 meta = gr.JSON({}, show_label=False, lines=8)
                 ui.details_components.append(meta)
@@ -443,7 +409,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         button_refresh = ToolButton(symbols.refresh, elem_id=tabname+"_extra_refresh")
         button_close = ToolButton(symbols.close, elem_id=tabname+"_extra_close")
         ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", elem_classes="textbox", lines=2)
-        ui.description = gr.Textbox('', show_label=False, elem_id=tabname+"_description", placeholder="Save/Replace Extra Network Description...", elem_classes="textbox", lines=2)
+        ui.description = gr.Textbox('', show_label=False, elem_id=tabname+"_description", elem_classes="textbox", lines=2, interactive=False)
 
         if ui.tabname == 'txt2img': # refresh only once
             global refresh_time # pylint: disable=global-statement
@@ -454,26 +420,125 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                 hmtl = gr.HTML(page.html, elem_id=f'{tabname}{page.name}_extra_page', elem_classes="extra-networks-page")
                 ui.pages.append(hmtl)
 
+    def fn_save_img(index):
+        if index is None or index < 0 or ui.last_item is None or ui.last_item.local_preview is None:
+            return 'html/card-no-preview.png'
+        images = list(ui.gallery.temp_files)
+        if len(images) < index + 1:
+            shared.log.warning(f'Extra network no image: item={ui.last_item.name}')
+            return 'html/card-no-preview.png'
+        try:
+            image = Image.open(images[index])
+        except Exception as e:
+            shared.log.error(f'Extra network error opening image: item={ui.last_item.name} {e}')
+            return 'html/card-no-preview.png'
+        fn_delete_img()
+        if image.width > 512 or image.height > 512:
+            image = image.convert('RGB')
+            image.thumbnail((512, 512), Image.HAMMING)
+        image.save(ui.last_item.local_preview, quality=50)
+        shared.log.debug(f'Extra network save image: item={ui.last_item.name} filename={ui.last_item.local_preview}')
+        return image
+
+    def fn_delete_img():
+        preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
+        fn = os.path.splitext(ui.last_item.filename)[0]
+        for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.preview.', '.']]:
+            if os.path.exists(file):
+                os.remove(file)
+                shared.log.debug(f'Extra network delete image: item={ui.last_item.name} filename={file}')
+        return 'html/card-no-preview.png'
+
+    def fn_save_desc(desc):
+        fn = os.path.splitext(ui.last_item.filename)[0] + '.txt'
+        with open(fn, 'w', encoding='utf-8') as f:
+            f.write(desc)
+        shared.log.debug(f'Extra network save desc: item={ui.last_item.name} filename={fn}')
+        return desc
+
+    def fn_delete_desc(desc):
+        if ui.last_item is None:
+            return desc
+        fn = os.path.splitext(ui.last_item.filename)[0] + '.txt'
+        if os.path.exists(fn):
+            shared.log.debug(f'Extra network delete desc: item={ui.last_item.name} filename={fn}')
+            os.remove(fn)
+            return ''
+        return desc
+
+    def fn_save_info(info):
+        fn = os.path.splitext(ui.last_item.filename)[0] + '.info'
+        with open(fn, 'w', encoding='utf-8') as f:
+            f.write(info)
+        shared.log.debug(f'Extra network save desc: item={ui.last_item.name} filename={fn}')
+        return info
+
+    def fn_delete_info(info):
+        if ui.last_item is None:
+            return info
+        fn = os.path.splitext(ui.last_item.filename)[0] + '.info'
+        if os.path.exists(fn):
+            shared.log.debug(f'Extra network delete info: item={ui.last_item.name} filename={fn}')
+            os.remove(fn)
+            return ''
+        return info
+
+    btn_save_img.click(fn=fn_save_img, _js='(img) => { return selected_gallery_index() }', inputs=[img], outputs=[img])
+    btn_delete_img.click(fn=fn_delete_img, inputs=[], outputs=[img])
+    btn_save_desc.click(fn=fn_save_desc, inputs=[desc], outputs=[desc])
+    btn_delete_desc.click(fn=fn_delete_desc, inputs=[desc], outputs=[desc])
+    btn_save_info.click(fn=fn_save_info, inputs=[info], outputs=[info])
+    btn_delete_info.click(fn=fn_delete_info, inputs=[info], outputs=[info])
+
     def show_details(text, img, desc, info, meta):
         page, item = get_item(state)
         if item is not None and os.path.exists(item.filename):
             stat = os.stat(item.filename)
+            desc = item.description
+            info = page.info.get(item.name, 'N/A')
+            meta = page.metadata.get(item.name, {}) or {}
+            if type(meta) is str:
+                try:
+                    meta = json.loads(meta)
+                except:
+                    meta = {}
+            img = page.find_preview_file(item.filename)
+            lora = ''
+            model = ''
+            if page.title == 'Model':
+                merge = len(list(meta.get('sd_merge_models', {})))
+                if merge > 0:
+                    model += f'<tr><td>Merge models</td><td>{merge} recipes</td></tr>'
+                if meta.get('modelspec.architecture', None) is not None:
+                    model += f'''
+                        <tr><td>Architecture</td><td>{meta.get('modelspec.architecture', 'N/A')}</td></tr>
+                        <tr><td>Title</td><td>{meta.get('modelspec.title', 'N/A')}</td></tr>
+                        <tr><td>Resolution</td><td>{meta.get('modelspec.resolution', 'N/A')}</td></tr>
+                    '''
+            if page.title == 'Lora':
+                tags = getattr(item, 'tags', {})
+                tags = [f'{name}:{tags[name]}' for i, name in enumerate(tags)]
+                tags = ' '.join(tags)
+                lora = f'''
+                    <tr><td>Tags</td><td>{tags}</td></tr>
+                    <tr><td>Base model</td><td>{meta.get('ss_sd_model_name', 'N/A')}</td></tr>
+                    <tr><td>Resolution</td><td>{meta.get('ss_resolution', 'N/A')}</td></tr>
+                    <tr><td>Training images</td><td>{meta.get('ss_num_train_images', 'N/A')}</td></tr>
+                    <tr><td>Comment</td><td>{meta.get('ss_training_comment', 'N/A')}</td></tr>
+                '''
             text = f'''
                 <h2 style="border-bottom: 1px solid var(--button-primary-border-color); margin-bottom: 1em; margin-top: -1.3em !important;">{item.name}</h2>
                 <table style="width: 100%; line-height: 1.3em;"><tbody>
                     <tr><td>Type</td><td>{page.title}</td></tr>
                     <tr><td>Alias</td><td>{getattr(item, 'alias', 'N/A')}</td></tr>
-                    <tr><td>Tags</td><td>{getattr(item, 'tags', 'N/A')}</td></tr>
                     <tr><td>Filename</td><td>{item.filename}</td></tr>
                     <tr><td>Hash</td><td>{getattr(item, 'hash', 'N/A')}</td></tr>
                     <tr><td>Size</td><td>{round(stat.st_size/1024/1024, 2)} MB</td></tr>
                     <tr><td>Last modified</td><td>{datetime.fromtimestamp(stat.st_mtime)}</td></tr>
+                    {lora}
+                    {model}
                 </tbody></table>
             '''
-            desc = item.description
-            info = page.info.get(item.name, 'N/A')
-            meta = page.metadata.get(item.name, 'N/A')
-            img = page.find_preview_file(item.filename)
         return [text, img, desc, info, meta, gr.update(visible=True)]
 
     def en_refresh(title):

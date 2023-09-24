@@ -252,14 +252,22 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
 .extra-network-cards .card .overlay .tags { margin: 4px; display: none; overflow-wrap: break-word; }
 .extra-network-cards .card .overlay .tag { padding: 2px; margin: 2px; background: var(--neutral-700); cursor: pointer; display: inline-block; }
-.extra-network-cards .card .overlay .actions { font-size: 2.2em; display: none; text-align-last: center; cursor: pointer; font-variant: unicase; height: 0.8em }
-.extra-network-cards .card .overlay .actions > span { padding: 4px; }
-.extra-network-cards .card .overlay .description { line-break: anywhere; display: none; color: white; }
-.extra-network-cards .card:hover .overlay .actions { display: block; }
+.extra-network-cards .card .actions > span { padding: 4px; }
+.extra-network-cards .card:hover .actions { display: block; }
 .extra-network-cards .card:hover .overlay .tags { display: block; }
-.extra-network-cards .card:hover .overlay .description { display: block; }
-
-
+.extra-network-cards .card .actions {
+  font-size: 3em;
+  display: none;
+  text-align-last: right;
+  cursor: pointer;
+  font-variant: unicase;
+  position: absolute;
+  z-index: 100;
+  right: 0;
+  height: 0.7em;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.40);
+}
 #txt2img_description, #img2img_description { max-height: 63px; overflow-y: auto !important; }
 #txt2img_description > label > textarea, #img2img_description > label > textarea { font-size: 0.9em }
 #txt2img_extra_details, #img2img_extra_details {
@@ -273,7 +281,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
   box-shadow: var(--button-shadow);
 }
 #txt2img_extra_details > div, #img2img_extra_details > div { overflow-y: auto; min-height: 40vh; max-height: 80vh; align-self: flex-start; }
-#txt2img_extra_details td:first-child, #img2img_extra_details td:first-child { font-weight: bold; }
+#txt2img_extra_details td:first-child, #img2img_extra_details td:first-child { font-weight: bold; vertical-align: top; }
 
 /* controlnet
 .controlnet_control_type .controlnet_control_type_filter_group .wrap:last-of-type { display: grid; grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); }

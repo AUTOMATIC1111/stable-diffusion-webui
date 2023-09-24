@@ -33,37 +33,12 @@ const setENState = (state) => {
   updateInput(el);
 };
 
-// popup
-
-let globalPopup = null;
-let globalPopupInner = null;
-
-function popup(contents) {
-  if (!globalPopup) {
-    globalPopup = document.createElement('div');
-    globalPopup.onclick = () => { globalPopup.style.display = 'none'; };
-    globalPopup.classList.add('global-popup');
-    const close = document.createElement('div');
-    close.classList.add('global-popup-close');
-    close.onclick = () => { globalPopup.style.display = 'none'; };
-    close.title = 'Close';
-    globalPopup.appendChild(close);
-    globalPopupInner = document.createElement('div');
-    globalPopupInner.onclick = (event) => { event.stopPropagation(); return false; };
-    globalPopupInner.classList.add('global-popup-inner');
-    globalPopup.appendChild(globalPopupInner);
-    gradioApp().appendChild(globalPopup);
-  }
-  globalPopupInner.innerHTML = '';
-  globalPopupInner.appendChild(contents);
-  globalPopup.style.display = 'flex';
-}
-
 // methods
 
 function showCardDetails(event) {
+  console.log('HERE1', event);
   const tabname = getENActiveTab();
-  setENState({ op: 'showCardDetails' });
+  // setENState({ op: 'showCardDetails' });
   const btn = gradioApp().getElementById(`${tabname}_extra_details_btn`);
   btn.click();
   event.stopPropagation();
@@ -71,45 +46,12 @@ function showCardDetails(event) {
 }
 
 function getCardDetails(...args) {
-  const el = event?.target?.parentElement?.parentElement?.parentElement;
+  console.log('HERE2', event);
+  const el = event?.target?.parentElement?.parentElement;
   if (!el?.classList?.contains('card')) return [...args];
   const tabname = getENActiveTab();
   setENState({ op: 'getCardDetails', item: el.dataset.name });
   return [...args];
-}
-
-function saveCardDescription(event) {
-  const el = event?.target?.parentElement?.parentElement?.parentElement;
-  if (!el?.classList?.contains('card')) return;
-  const tabname = getENActiveTab();
-  const description = gradioApp().getElementById(`${tabname}_description`)?.children[0].children[1].value;
-  el.dataset.description = description;
-  setENState({ op: 'saveCardDescription', item: el.dataset.name, description });
-  event.stopPropagation();
-  event.preventDefault();
-}
-
-function saveCardPreview(event) {
-  const el = event?.target?.parentElement?.parentElement?.parentElement;
-  if (!el?.classList?.contains('card')) return;
-  const index = selected_gallery_index();
-  setENState({ op: 'saveCardPreview', item: el.dataset.name, index });
-  event.stopPropagation();
-  event.preventDefault();
-}
-
-function readCardMetadata(event, extraPage, cardName) {
-  requestGet('./sd_extra_networks/metadata', { page: extraPage, item: cardName }, (data) => {
-    if (data?.metadata) {
-      if (typeof (data?.metadata) !== 'string') data.metadata = JSON.stringify(data.metadata, null, 2);
-      const elem = document.createElement('pre');
-      elem.classList.add('popup-metadata');
-      elem.textContent = data.metadata;
-      popup(elem);
-    }
-  });
-  event.stopPropagation();
-  event.preventDefault();
 }
 
 function readCardTags(el, tags) {

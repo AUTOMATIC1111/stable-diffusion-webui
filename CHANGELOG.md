@@ -11,6 +11,7 @@
 - **Extra networks**:  
   - new details interface to view and save data about extra networks  
     main ui now has a single button on each en to trigger details view  
+    details view includes model/lora metadata parser!  
   - faster search, ability to show/hide/sort networks  
   - refactored subfolder handling  
     *note*: this will trigger model hash recaclulation on first model use  
@@ -29,6 +30,8 @@
   - better pipeline auto-detect when loading from safetensors  
 - **Logging**
   - get browser session info in server log  
+  - when running with `--debug` flag, log is force-rotated  
+    so each `sdnext.log.*` represents exactly one server run  
 
 ## Update for 2023-09-13
 

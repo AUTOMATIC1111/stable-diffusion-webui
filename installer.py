@@ -20,6 +20,7 @@ class Dot(dict): # dot notation access to dictionary attributes
 
 log = logging.getLogger("sd")
 log_file = os.path.join(os.path.dirname(__file__), 'sdnext.log')
+log_rolled = False
 quick_allowed = True
 errors = 0
 opts = {}
@@ -90,7 +91,12 @@ def setup_logging():
     rh.setLevel(level)
     log.addHandler(rh)
 
-    fh = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5, encoding='utf-8', delay=True) # 10MB default for log rotation
+    fh = RotatingFileHandler(log_file, maxBytes=32*1024*1024, backupCount=9, encoding='utf-8', delay=True) # 10MB default for log rotation
+    global log_rolled # pylint: disable=global-statement
+    if not log_rolled and args.debug:
+        fh.doRollover()
+        log.debug(f'Logging: {log_file}')
+        log_rolled = True
     fh.formatter = logging.Formatter('%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s')
     fh.setLevel(logging.DEBUG)
     log.addHandler(fh)
