@@ -1,11 +1,11 @@
 refresh = '⟲'
-close = '🗙'
+close = '✕'
 load = '⇧'
 save = '⇩'
 apply = '⇰'
 clear = '⊗'
 fill = '⊜'
-networks = '🗁'
+networks = '🌐'
 paste = '⇦'
 
 """
