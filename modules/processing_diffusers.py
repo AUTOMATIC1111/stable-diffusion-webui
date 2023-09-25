@@ -23,7 +23,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         p.is_hr_pass = True
     is_refiner_enabled = p.enable_hr and p.refiner_steps > 0 and p.refiner_start > 0 and p.refiner_start < 1 and shared.sd_refiner is not None
 
-    if len(p.init_images) > 0:
+    if hasattr(p, 'init_images') and len(p.init_images) > 0:
         tgt_width, tgt_height = 8 * math.ceil(p.init_images[0].width / 8), 8 * math.ceil(p.init_images[0].height / 8)
         if p.init_images[0].width != tgt_width or p.init_images[0].height != tgt_height:
             shared.log.debug(f'Resizing init images: original={p.init_images[0].width}x{p.init_images[0].height} target={tgt_width}x{tgt_height}')

@@ -964,7 +964,7 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     sd_model_hash = getattr(pipe, "sd_model_hash", None)
     has_accelerate = getattr(pipe, "has_accelerate", None)
 
-    if pipe.__class__.__name__ == "StableDiffusionXLPipeline" or pipe.__class__.__name__ == 'StableDiffusionXLImg2ImgPipeline':
+    if new_pipe_type == DiffusersTaskType.IMAGE_2_IMAGE and (pipe.__class__.__name__ == "StableDiffusionXLPipeline" or pipe.__class__.__name__ == 'StableDiffusionXLImg2ImgPipeline'):
         new_pipe_type = DiffusersTaskType.INPAINTING # sdxl works better with init mask
     try:
         if new_pipe_type == DiffusersTaskType.TEXT_2_IMAGE:
@@ -973,7 +973,7 @@ def set_diffuser_pipe(pipe, new_pipe_type):
             new_pipe = diffusers.AutoPipelineForImage2Image.from_pipe(pipe)
         elif new_pipe_type == DiffusersTaskType.INPAINTING:
             new_pipe = diffusers.AutoPipelineForInpainting.from_pipe(pipe)
-    except Exception as e: # pylint: disable=unused-variable
+    except Exception: # pylint: disable=unused-variable
         # shared.log.error(f'Failed to change: type={new_pipe_type} pipeline={pipe.__class__.__name__} {e}')
         return
 
