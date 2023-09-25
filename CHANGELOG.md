@@ -21,12 +21,24 @@ Upgrades are still possible and supported, but above is recommended for best exp
   - faster search, ability to show/hide/sort networks  
   - refactored subfolder handling  
     *note*: this will trigger model hash recaclulation on first model use  
-- **Refiner**:
-  - You can now use *SD Latent Upscale* models as refiner  
-    this is a bit experimental, but it works quite well!  
-    Simply go to *Models -> Huggingface* and download:
-    - `stabilityai/sd-x2-latent-upscaler`
-    - `stabilityai/stable-diffusion-x4-upscaler`
+- **Diffusers**:
+  - **SDXL Inpaint**  
+    - Although any model can be used for inpainiting, there is a case to be made for  
+      dedicated inpainting models as they are tuned to inpaint and not generate
+    - Model can be used as base model for **img2img** or refiner model for **txt2img**  
+      To download go to *Models -> Huggingface*:
+      - `diffusers/stable-diffusion-xl-1.0-inpainting-0.1` *(6.7GB)*
+  - **SDXL Instruct-Pix2Pix**
+    - Model can be used as base model for **img2img** or refiner model for **txt2img**  
+      This model is massive and requires a lot of resources!  
+      To download go to *Models -> Huggingface*:
+      - `diffusers/sdxl-instructpix2pix-768` *(11.9GB)*
+  - **SD Latent Upscale**
+    - You can use *SD Latent Upscale* models as **refiner models**  
+      This is a bit experimental, but it works quite well!  
+      To download go to *Models -> Huggingface*:
+      - `stabilityai/sd-x2-latent-upscaler` *(2.2GB)*  
+      - `stabilityai/stable-diffusion-x4-upscaler` *(1.7GB)*
 - **Upscalers**:
   - more high quality upscalers available by default  
     *SwinIR:2, ESRGAN:12, RealESRGAN:6, SCUNet:2*

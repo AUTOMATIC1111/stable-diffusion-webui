@@ -956,6 +956,7 @@ class DiffusersTaskType(Enum):
     TEXT_2_IMAGE = 1
     IMAGE_2_IMAGE = 2
     INPAINTING = 3
+    INSTRUCT = 4
 
 def set_diffuser_pipe(pipe, new_pipe_type):
     sd_checkpoint_info = getattr(pipe, "sd_checkpoint_info", None)
@@ -963,12 +964,19 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     sd_model_hash = getattr(pipe, "sd_model_hash", None)
     has_accelerate = getattr(pipe, "has_accelerate", None)
 
-    if new_pipe_type == DiffusersTaskType.TEXT_2_IMAGE:
-        new_pipe = diffusers.AutoPipelineForText2Image.from_pipe(pipe)
-    elif new_pipe_type == DiffusersTaskType.IMAGE_2_IMAGE:
-        new_pipe = diffusers.AutoPipelineForImage2Image.from_pipe(pipe)
-    elif new_pipe_type == DiffusersTaskType.INPAINTING:
-        new_pipe = diffusers.AutoPipelineForInpainting.from_pipe(pipe)
+    if pipe.__class__.__name__ == "StableDiffusionXLPipeline" or pipe.__class__.__name__ == 'StableDiffusionXLImg2ImgPipeline':
+        new_pipe_type = DiffusersTaskType.INPAINTING # sdxl works better with init mask
+    try:
+        if new_pipe_type == DiffusersTaskType.TEXT_2_IMAGE:
+            new_pipe = diffusers.AutoPipelineForText2Image.from_pipe(pipe)
+        elif new_pipe_type == DiffusersTaskType.IMAGE_2_IMAGE:
+            new_pipe = diffusers.AutoPipelineForImage2Image.from_pipe(pipe)
+        elif new_pipe_type == DiffusersTaskType.INPAINTING:
+            new_pipe = diffusers.AutoPipelineForInpainting.from_pipe(pipe)
+    except Exception as e: # pylint: disable=unused-variable
+        # shared.log.error(f'Failed to change: type={new_pipe_type} pipeline={pipe.__class__.__name__} {e}')
+        return
+
     if pipe.__class__ == new_pipe.__class__:
         return
 
@@ -977,7 +985,7 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     new_pipe.sd_model_hash = sd_model_hash
     new_pipe.has_accelerate = has_accelerate
     model_data.sd_model = new_pipe
-    shared.log.info(f"Pipeline class changed from {pipe.__class__.__name__} to {new_pipe.__class__.__name__}")
+    shared.log.debug(f"Pipeline class changed from {pipe.__class__.__name__} to {new_pipe.__class__.__name__}")
 
 
 def get_native(pipe: diffusers.DiffusionPipeline):
@@ -995,11 +1003,14 @@ def get_native(pipe: diffusers.DiffusionPipeline):
 
 
 def get_diffusers_task(pipe: diffusers.DiffusionPipeline) -> DiffusersTaskType:
-    if pipe.__class__ in diffusers.pipelines.auto_pipeline.AUTO_IMAGE2IMAGE_PIPELINES_MAPPING.values():
+    if pipe.__class__.__name__ == "StableDiffusionXLInstructPix2PixPipeline":
+        return DiffusersTaskType.INSTRUCT
+    elif pipe.__class__ in diffusers.pipelines.auto_pipeline.AUTO_IMAGE2IMAGE_PIPELINES_MAPPING.values():
         return DiffusersTaskType.IMAGE_2_IMAGE
     elif pipe.__class__ in diffusers.pipelines.auto_pipeline.AUTO_INPAINT_PIPELINES_MAPPING.values():
         return DiffusersTaskType.INPAINTING
-    return DiffusersTaskType.TEXT_2_IMAGE
+    else:
+        return DiffusersTaskType.TEXT_2_IMAGE
 
 
 def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'):

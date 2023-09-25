@@ -1096,11 +1096,11 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.sampler = None
 
     def init(self, all_prompts, all_seeds, all_subseeds):
-        if shared.backend == shared.Backend.DIFFUSERS and self.image_mask is None:
-            modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
-        elif shared.backend == shared.Backend.DIFFUSERS and self.image_mask is not None:
+        if shared.backend == shared.Backend.DIFFUSERS and self.image_mask is not None:
             modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.INPAINTING)
             self.sd_model.dtype = self.sd_model.unet.dtype
+        elif shared.backend == shared.Backend.DIFFUSERS and self.image_mask is None:
+            modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
 
         if self.sampler_name == "PLMS":
             self.sampler_name = 'UniPC'
@@ -1213,12 +1213,11 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.image_conditioning = self.img2img_image_conditioning(image, self.init_latent, image_mask)
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
-        if shared.backend == shared.Backend.DIFFUSERS:
-            if self.init_mask is None: # pylint: disable=no-member
-                modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
-            else:
-                modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.INPAINTING)
-                self.sd_model.dtype = self.sd_model.unet.dtype
+        if shared.backend == shared.Backend.DIFFUSERS and self.image_mask is not None:
+            modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.INPAINTING)
+            self.sd_model.dtype = self.sd_model.unet.dtype
+        elif shared.backend == shared.Backend.DIFFUSERS and self.image_mask is None:
+            modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
 
         x = create_random_tensors([4, self.height // 8, self.width // 8], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
         x *= self.initial_noise_multiplier

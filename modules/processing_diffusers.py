@@ -23,6 +23,16 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         p.is_hr_pass = True
     is_refiner_enabled = p.enable_hr and p.refiner_steps > 0 and p.refiner_start > 0 and p.refiner_start < 1 and shared.sd_refiner is not None
 
+    if len(p.init_images) > 0:
+        tgt_width, tgt_height = 8 * math.ceil(p.init_images[0].width / 8), 8 * math.ceil(p.init_images[0].height / 8)
+        if p.init_images[0].width != tgt_width or p.init_images[0].height != tgt_height:
+            shared.log.debug(f'Resizing init images: original={p.init_images[0].width}x{p.init_images[0].height} target={tgt_width}x{tgt_height}')
+            p.init_images = [images.resize_image(1, image, tgt_width, tgt_height, upscaler_name=None) for image in p.init_images]
+            if p.mask is not None:
+                p.mask = images.resize_image(1, p.mask, tgt_width, tgt_height, upscaler_name=None)
+            if p.mask_for_overlay is not None:
+                p.mask_for_overlay = images.resize_image(1, p.mask_for_overlay, tgt_width, tgt_height, upscaler_name=None)
+
     def hires_resize(latents): # input=latents output=pil
         latent_upscaler = shared.latent_upscale_modes.get(p.hr_upscaler, None)
         shared.log.info(f'Hires: upscaler={p.hr_upscaler} width={p.hr_upscale_to_x} height={p.hr_upscale_to_y} images={latents.shape[0]}')
@@ -310,8 +320,13 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE:
         p.ops.append('img2img')
         task_specific_kwargs = {"image": p.init_images, "strength": p.denoising_strength}
+    elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INSTRUCT:
+        p.ops.append('instruct')
+        task_specific_kwargs = {"height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8), "image": p.init_images, "strength": p.denoising_strength}
     elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING:
         p.ops.append('inpaint')
+        if p.mask is None:
+            p.mask = TF.to_pil_image(torch.ones_like(TF.to_tensor(p.init_images[0]))).convert("L")
         task_specific_kwargs = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength, "height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8)}
 
     if shared.state.interrupted or shared.state.skipped:
@@ -360,7 +375,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         shared.log.info(e)
     except ValueError as e:
         shared.state.interrupted = True
-        shared.log.error(e)
+        shared.log.error(f'Processing: {e}')
 
     if hasattr(shared.sd_model, 'embedding_db') and len(shared.sd_model.embedding_db.embeddings_used) > 0:
         p.extra_generation_params['Embeddings'] = ', '.join(shared.sd_model.embedding_db.embeddings_used)
