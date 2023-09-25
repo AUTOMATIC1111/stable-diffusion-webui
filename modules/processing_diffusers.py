@@ -443,6 +443,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             #    shared.log.warning(f'Refiner requires image size to be divisible by 8: {image.shape}')
             #    results.append(image)
             #    return results
+            noise_level = round(350 * p.denoising_strength)
+            output_type='latent' if hasattr(shared.sd_refiner, 'vae') else 'np',
+            if shared.sd_refiner.__class__.__name__ == 'StableDiffusionUpscalePipeline':
+                image = vae_decode(latents=image, model=shared.sd_model, full_quality=p.full_quality, output_type='pil')
+                p.extra_generation_params['Noise level'] = noise_level
+                output_type = 'np'
             refiner_args = set_pipeline_args(
                 model=shared.sd_refiner,
                 prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts[i],
@@ -450,12 +456,13 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 num_inference_steps=int(p.refiner_steps // (1 - p.refiner_start)) if p.refiner_start > 0 and p.refiner_start < 1 and refiner_is_sdxl else int(p.refiner_steps // p.denoising_strength + 1) if refiner_is_sdxl else p.refiner_steps,
                 eta=shared.opts.scheduler_eta,
                 strength=p.denoising_strength,
+                noise_level=noise_level, # StableDiffusionUpscalePipeline only
                 guidance_scale=p.image_cfg_scale if p.image_cfg_scale is not None else p.cfg_scale,
                 guidance_rescale=p.diffusers_guidance_rescale,
                 denoising_start=p.refiner_start if p.refiner_start > 0 and p.refiner_start < 1 else None,
                 denoising_end=1 if p.refiner_start > 0 and p.refiner_start < 1 else None,
                 image=image,
-                output_type='latent' if hasattr(shared.sd_refiner, 'vae') else 'np',
+                output_type=output_type,
                 clip_skip=p.clip_skip,
                 desc='Refiner',
             )

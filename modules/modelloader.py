@@ -249,7 +249,7 @@ def find_diffuser(name: str):
     hf_api = hf.HfApi()
     hf_filter = hf.ModelFilter(
         model_name=name,
-        task='text-to-image',
+        # task='text-to-image',
         library=['diffusers'],
     )
     models = list(hf_api.list_models(filter=hf_filter, full=True, limit=20, sort="downloads", direction=-1))

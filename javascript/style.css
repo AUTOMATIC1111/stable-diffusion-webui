@@ -31,6 +31,7 @@ div.gradio-html.min{ min-height: 0; }
 .settings-accordion .gap { padding-right: 1000px; }
 .small-accordion { width: fit-content !important; padding-left: 0 !important; }
 .small-accordion .form { min-width: var(--left-column) !important; }
+.small-accordion .label-wrap { padding: 16px 0px 8px 0px; margin: 0; border-top: 2px solid var(--button-secondary-border-color); }
 .small-accordion .label-wrap .icon { margin-right: 1.6em; margin-left: 0.6em; color: var(--button-primary-border-color); }
 .hidden { display: none; }
 footer { display: none; }

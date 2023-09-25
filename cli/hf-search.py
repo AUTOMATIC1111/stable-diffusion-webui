@@ -10,7 +10,7 @@ if __name__ == "__main__":
     hf_api = hf.HfApi()
     model_filter = hf.ModelFilter(
         model_name=keyword,
-        task='text-to-image',
+        # task='text-to-image',
         library=['diffusers'],
     )
     res = hf_api.list_models(filter=model_filter, full=True, limit=50, sort="downloads", direction=-1)

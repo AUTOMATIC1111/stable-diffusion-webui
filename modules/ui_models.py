@@ -187,7 +187,7 @@ def create_ui():
                     hf_api = hf.HfApi()
                     model_filter = hf.ModelFilter(
                         model_name=keyword,
-                        task='text-to-image',
+                        # task='text-to-image',
                         library=['diffusers'],
                     )
                     models = hf_api.list_models(filter=model_filter, full=True, limit=50, sort="downloads", direction=-1)

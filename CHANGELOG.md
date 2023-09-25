@@ -21,8 +21,19 @@ Upgrades are still possible and supported, but above is recommended for best exp
   - faster search, ability to show/hide/sort networks  
   - refactored subfolder handling  
     *note*: this will trigger model hash recaclulation on first model use  
+- **Refiner**:
+  - You can now use *SD Latent Upscale* models as refiner  
+    this is a bit experimental, but it works quite well!  
+    Simply go to *Models -> Huggingface* and download:
+    - `stabilityai/sd-x2-latent-upscaler`
+    - `stabilityai/stable-diffusion-x4-upscaler`
 - **Upscalers**:
   - more high quality upscalers available by default  
+    *SwinIR:2, ESRGAN:12, RealESRGAN:6, SCUNet:2*
+  - two additional latent upscalers based on SD upscale models when using Diffusers backend  
+    *SD Upscale 2x, SD Upscale 4x*  
+    Note: Recommended usage for *SD Upscale* is by using second pass instead of upscaler  
+    as it allows for tuning of prompt, seed, sampler settings which are used to guide upscaler
   - unified init/download/execute/progress code  
   - easier installation  
   - available in **xyz grid**  

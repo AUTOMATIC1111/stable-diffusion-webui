@@ -689,6 +689,76 @@ def compile_diffusers(sd_model):
     except Exception as err:
         shared.log.warning(f"Model compile not supported: {err}")
 
+
+def set_diffuser_options(sd_model, vae, op: str):
+    if (shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) and (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram):
+        shared.log.warning(f'Setting {op}: Model CPU offload and Sequential CPU offload are not compatible')
+        shared.log.debug(f'Setting {op}: disabling model CPU offload')
+        shared.opts.diffusers_model_cpu_offload=False
+        shared.cmd_opts.medvram=False
+
+    if hasattr(sd_model, "watermark"):
+        sd_model.watermark = NoWatermark()
+    sd_model.has_accelerate = False
+    if hasattr(sd_model, "enable_model_cpu_offload"):
+        if (shared.cmd_opts.medvram and devices.backend != "directml") or shared.opts.diffusers_model_cpu_offload:
+            shared.log.debug(f'Setting {op}: enable model CPU offload')
+            if shared.opts.diffusers_move_base or shared.opts.diffusers_move_unet or shared.opts.diffusers_move_refiner:
+                shared.opts.diffusers_move_base = False
+                shared.opts.diffusers_move_unet = False
+                shared.opts.diffusers_move_refiner = False
+                shared.log.warning(f'Disabling {op} "Move model to CPU" since "Model CPU offload" is enabled')
+            sd_model.enable_model_cpu_offload()
+            sd_model.has_accelerate = True
+    if hasattr(sd_model, "enable_sequential_cpu_offload"):
+        if shared.cmd_opts.lowvram or shared.opts.diffusers_seq_cpu_offload:
+            shared.log.debug(f'Setting {op}: enable sequential CPU offload')
+            if shared.opts.diffusers_move_base or shared.opts.diffusers_move_unet or shared.opts.diffusers_move_refiner:
+                shared.opts.diffusers_move_base = False
+                shared.opts.diffusers_move_unet = False
+                shared.opts.diffusers_move_refiner = False
+                shared.log.warning(f'Disabling {op} "Move model to CPU" since "Sequential CPU offload" is enabled')
+            sd_model.enable_sequential_cpu_offload(device=devices.device)
+            sd_model.has_accelerate = True
+    if hasattr(sd_model, "enable_vae_slicing"):
+        if shared.cmd_opts.lowvram or shared.opts.diffusers_vae_slicing:
+            shared.log.debug(f'Setting {op}: enable VAE slicing')
+            sd_model.enable_vae_slicing()
+        else:
+            sd_model.disable_vae_slicing()
+    if hasattr(sd_model, "enable_vae_tiling"):
+        if shared.cmd_opts.lowvram or shared.opts.diffusers_vae_tiling:
+            shared.log.debug(f'Setting {op}: enable VAE tiling')
+            sd_model.enable_vae_tiling()
+        else:
+            sd_model.disable_vae_tiling()
+    if hasattr(sd_model, "enable_attention_slicing"):
+        if shared.cmd_opts.lowvram or shared.opts.diffusers_attention_slicing:
+            shared.log.debug(f'Setting {op}: enable attention slicing')
+            sd_model.enable_attention_slicing()
+        else:
+            sd_model.disable_attention_slicing()
+    if hasattr(sd_model, "vae"):
+        if vae is not None:
+            sd_model.vae = vae
+        if shared.opts.diffusers_vae_upcast != 'default':
+            if shared.opts.diffusers_vae_upcast == 'true':
+                # sd_model.vae.config["force_upcast"] = True
+                sd_model.vae.config.force_upcast = True
+            else:
+                # sd_model.vae.config["force_upcast"] = False
+                sd_model.vae.config.force_upcast = False
+            if shared.opts.no_half_vae:
+                devices.dtype_vae = torch.float32
+                sd_model.vae.to(devices.dtype_vae)
+        shared.log.debug(f'Setting {op} VAE: name={sd_vae.loaded_vae_file} upcast={sd_model.vae.config.get("force_upcast", None)}')
+    if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):
+        sd_model.enable_xformers_memory_efficient_attention()
+    if shared.opts.opt_channelslast:
+        shared.log.debug(f'Setting {op}: enable channels last')
+        sd_model.unet.to(memory_format=torch.channels_last)
+
+
 def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'): # pylint: disable=unused-argument
     import torch # pylint: disable=reimported,redefined-outer-name
     if timer is None:
@@ -754,11 +824,21 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 diffusers_load_config["vae"] = vae
 
         if os.path.isdir(checkpoint_info.path):
-            try:
+            err1 = None
+            err2 = None
+            try: # try autopipeline first
                 sd_model = diffusers.AutoPipelineForText2Image.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
                 sd_model.model_type = sd_model.__class__.__name__
             except Exception as e:
-                shared.log.error(f'Failed loading {op}: {checkpoint_info.path} {e}')
+                err1 = e
+            try: # try diffusion pipeline next
+                if err1 is not None:
+                    sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+                    sd_model.model_type = sd_model.__class__.__name__
+            except Exception as e:
+                err2 = e
+            if err2 is not None:
+                shared.log.error(f'Failed loading {op}: {checkpoint_info.path} autopipeline={err1} diffusionpipeline={err2}')
                 return
         elif os.path.isfile(checkpoint_info.path) and checkpoint_info.path.lower().endswith('.safetensors'):
             diffusers_load_config["local_files_only"] = True
@@ -805,72 +885,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         elif "Kandinsky" in sd_model.__class__.__name__:
             sd_model.scheduler.name = 'DDIM'
 
-        if (shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) and (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram):
-            shared.log.warning(f'Setting {op}: Model CPU offload and Sequential CPU offload are not compatible')
-            shared.log.debug(f'Setting {op}: disabling model CPU offload')
-            shared.opts.diffusers_model_cpu_offload=False
-            shared.cmd_opts.medvram=False
-
-        if hasattr(sd_model, "watermark"):
-            sd_model.watermark = NoWatermark()
-        sd_model.has_accelerate = False
-        if hasattr(sd_model, "enable_model_cpu_offload"):
-            if (shared.cmd_opts.medvram and devices.backend != "directml") or shared.opts.diffusers_model_cpu_offload:
-                shared.log.debug(f'Setting {op}: enable model CPU offload')
-                if shared.opts.diffusers_move_base or shared.opts.diffusers_move_unet or shared.opts.diffusers_move_refiner:
-                    shared.opts.diffusers_move_base = False
-                    shared.opts.diffusers_move_unet = False
-                    shared.opts.diffusers_move_refiner = False
-                    shared.log.warning(f'Disabling {op} "Move model to CPU" since "Model CPU offload" is enabled')
-                sd_model.enable_model_cpu_offload()
-                sd_model.has_accelerate = True
-        if hasattr(sd_model, "enable_sequential_cpu_offload"):
-            if shared.cmd_opts.lowvram or shared.opts.diffusers_seq_cpu_offload:
-                shared.log.debug(f'Setting {op}: enable sequential CPU offload')
-                if shared.opts.diffusers_move_base or shared.opts.diffusers_move_unet or shared.opts.diffusers_move_refiner:
-                    shared.opts.diffusers_move_base = False
-                    shared.opts.diffusers_move_unet = False
-                    shared.opts.diffusers_move_refiner = False
-                    shared.log.warning(f'Disabling {op} "Move model to CPU" since "Sequential CPU offload" is enabled')
-                sd_model.enable_sequential_cpu_offload(device=devices.device)
-                sd_model.has_accelerate = True
-        if hasattr(sd_model, "enable_vae_slicing"):
-            if shared.cmd_opts.lowvram or shared.opts.diffusers_vae_slicing:
-                shared.log.debug(f'Setting {op}: enable VAE slicing')
-                sd_model.enable_vae_slicing()
-            else:
-                sd_model.disable_vae_slicing()
-        if hasattr(sd_model, "enable_vae_tiling"):
-            if shared.cmd_opts.lowvram or shared.opts.diffusers_vae_tiling:
-                shared.log.debug(f'Setting {op}: enable VAE tiling')
-                sd_model.enable_vae_tiling()
-            else:
-                sd_model.disable_vae_tiling()
-        if hasattr(sd_model, "enable_attention_slicing"):
-            if shared.cmd_opts.lowvram or shared.opts.diffusers_attention_slicing:
-                shared.log.debug(f'Setting {op}: enable attention slicing')
-                sd_model.enable_attention_slicing()
-            else:
-                sd_model.disable_attention_slicing()
-        if hasattr(sd_model, "vae"):
-            if vae is not None:
-                sd_model.vae = vae
-            if shared.opts.diffusers_vae_upcast != 'default':
-                if shared.opts.diffusers_vae_upcast == 'true':
-                    # sd_model.vae.config["force_upcast"] = True
-                    sd_model.vae.config.force_upcast = True
-                else:
-                    # sd_model.vae.config["force_upcast"] = False
-                    sd_model.vae.config.force_upcast = False
-                if shared.opts.no_half_vae:
-                    devices.dtype_vae = torch.float32
-                    sd_model.vae.to(devices.dtype_vae)
-            shared.log.debug(f'Setting {op} VAE: name={sd_vae.loaded_vae_file} upcast={sd_model.vae.config.get("force_upcast", None)}')
-        if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):
-            sd_model.enable_xformers_memory_efficient_attention()
-        if shared.opts.opt_channelslast:
-            shared.log.debug(f'Setting {op}: enable channels last')
-            sd_model.unet.to(memory_format=torch.channels_last)
+        set_diffuser_options(sd_model, vae, op)
 
         base_sent_to_cpu=False
         if (shared.opts.cuda_compile and shared.opts.cuda_compile_backend != 'none') or shared.opts.ipex_optimize:
