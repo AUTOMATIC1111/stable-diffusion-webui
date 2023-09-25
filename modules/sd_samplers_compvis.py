@@ -12,7 +12,7 @@ import modules.uni_pc
 
 samplers_data_compvis = [
     sd_samplers_common.SamplerData('UniPC', lambda model: VanillaStableDiffusionSampler(modules.uni_pc.UniPCSampler, model), [], {}),
-    sd_samplers_common.SamplerData('DDIM', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.ddim.DDIMSampler, model), [], {"default_eta_is_0": True, "uses_ensd": True}),
+    sd_samplers_common.SamplerData('DDIM', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.ddim.DDIMSampler, model), [], {"default_eta_is_0": True}),
     sd_samplers_common.SamplerData('PLMS', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.plms.PLMSSampler, model), [], {}),
 ]
 

@@ -10,28 +10,22 @@ from modules.script_callbacks import CFGDenoiserParams, cfg_denoiser_callback
 from modules.script_callbacks import CFGDenoisedParams, cfg_denoised_callback
 from modules.script_callbacks import AfterCFGCallbackParams, cfg_after_cfg_callback
 
+
 samplers_k_diffusion = [
-    ('Euler a', 'sample_euler_ancestral', ['k_euler_a', 'k_euler_ancestral'], {"uses_ensd": True}),
-    ('Euler', 'sample_euler', ['k_euler'], {}),
-    ('DPM++ 2S a', 'sample_dpmpp_2s_ancestral', ['k_dpmpp_2s_a'], {"uses_ensd": True, "second_order": True}),
-    ('DPM++ 2S a Karras', 'sample_dpmpp_2s_ancestral', ['k_dpmpp_2s_a_ka'], {'scheduler': 'karras', "uses_ensd": True, "second_order": True}),
-    ('DPM++ 2M', 'sample_dpmpp_2m', ['k_dpmpp_2m'], {}),
-    ('DPM++ 2M Karras', 'sample_dpmpp_2m', ['k_dpmpp_2m_ka'], {'scheduler': 'karras'}),
-    ('DPM++ SDE', 'sample_dpmpp_sde', ['k_dpmpp_sde'], {"second_order": True, "brownian_noise": True}),
-    ('DPM++ SDE Karras', 'sample_dpmpp_sde', ['k_dpmpp_sde_ka'], {'scheduler': 'karras', "second_order": True, "brownian_noise": True}),
-    ('DPM++ 2M SDE', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde'], {"brownian_noise": True, 'discard_next_to_last_sigma': True}),
-    ('DPM++ 2M SDE Karras', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde_ka'], {'scheduler': 'karras', "brownian_noise": True, 'discard_next_to_last_sigma': True}),
-    ('DPM++ 3M SDE', 'sample_dpmpp_3m_sde', ['k_dpmpp_3m_sde'], {"brownian_noise": True, 'discard_next_to_last_sigma': True}),
-    ('DPM++ 3M SDE Karras', 'sample_dpmpp_3m_sde', ['k_dpmpp_3m_sde_ka'], {'scheduler': 'karras', "brownian_noise": True, 'discard_next_to_last_sigma': True}),
-    ('DPM fast', 'sample_dpm_fast', ['k_dpm_fast'], {"uses_ensd": True}),
-    ('DPM adaptive', 'sample_dpm_adaptive', ['k_dpm_ad'], {"uses_ensd": True}),
-    ('DPM2', 'sample_dpm_2', ['k_dpm_2'], {'discard_next_to_last_sigma': True}),
-    ('DPM2 Karras', 'sample_dpm_2', ['k_dpm_2_ka'], {'scheduler': 'karras', 'discard_next_to_last_sigma': True, "uses_ensd": True, "second_order": True}),
-    ('DPM2 a', 'sample_dpm_2_ancestral', ['k_dpm_2_a'], {'discard_next_to_last_sigma': True, "uses_ensd": True}),
-    ('DPM2 a Karras', 'sample_dpm_2_ancestral', ['k_dpm_2_a_ka'], {'scheduler': 'karras', 'discard_next_to_last_sigma': True, "uses_ensd": True, "second_order": True}),
-    ('LMS', 'sample_lms', ['k_lms'], {}),
-    ('LMS Karras', 'sample_lms', ['k_lms_ka'], {'scheduler': 'karras'}),
-    ('Heun', 'sample_heun', ['k_heun'], {"second_order": True}),
+    ('Euler', 'sample_euler', ['k_euler'], {"scheduler": "default"}),
+    ('Euler A', 'sample_euler_ancestral', ['k_euler_a', 'k_euler_ancestral'], {"scheduler": "default", "brownian_noise": False}),
+    ('Heun', 'sample_heun', ['k_heun'], {"scheduler": "default"}),
+    ('LMS', 'sample_lms', ['k_lms'], {"scheduler": "default"}),
+    ('DPM Adaptive', 'sample_dpm_adaptive', ['k_dpm_ad'], {"scheduler": "default", "brownian_noise": False}),
+    ('DPM Fast', 'sample_dpm_fast', ['k_dpm_fast'], {"scheduler": "default", "brownian_noise": False}),
+    ('DPM2', 'sample_dpm_2', ['k_dpm_2'], {'discard_next_to_last_sigma': True, "second_order": True, "scheduler": "default", "brownian_noise": False}),
+    ('DPM2 a', 'sample_dpm_2_ancestral', ['k_dpm_2_a'], {'discard_next_to_last_sigma': True, "second_order": True, "scheduler": "default", "brownian_noise": False}),
+    ('DPM++ 2M', 'sample_dpmpp_2m', ['k_dpmpp_2m'], {"scheduler": "default", "brownian_noise": False}),
+    ('DPM++ 2M SDE', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde'], {'discard_next_to_last_sigma': True, "scheduler": "default", "brownian_noise": False}),
+    ('DPM++ 2M SDE Heun', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde_heun'], {"solver_type": "heun", "scheduler": "default", "brownian_noise": False}),
+    ('DPM++ 2S A', 'sample_dpmpp_2s_ancestral', ['k_dpmpp_2s_a'], {"second_order": True, "scheduler": "default", "brownian_noise": False}),
+    ('DPM++ SDE', 'sample_dpmpp_sde', ['k_dpmpp_sde'], {"second_order": True, "scheduler": "default", "brownian_noise": False}),
+    ('DPM++ 3M SDE', 'sample_dpmpp_3m_sde', ['k_dpmpp_3m_sde'], {'discard_next_to_last_sigma': True, "scheduler": "default", "brownian_noise": False}),
 ]
 
 samplers_data_k_diffusion = [
@@ -259,16 +253,13 @@ class KDiffusionSampler:
         if opts.live_preview_content == "Combined":
             sd_samplers_common.store_latent(latent)
         self.last_latent = latent
-
         if self.stop_at is not None and step > self.stop_at:
             raise sd_samplers_common.InterruptedException
-
         state.sampling_step = step
 
     def launch_sampling(self, steps, func):
         state.sampling_steps = steps
         state.sampling_step = 0
-
         try:
             return func()
         except sd_samplers_common.InterruptedException:
@@ -278,6 +269,13 @@ class KDiffusionSampler:
         return p.steps
 
     def initialize(self, p):
+        if self.config.options.get('brownian_noise', None) is not None:
+            self.config.options['brownian_noise'] = opts.data.get('schedulers_brownian_noise', False)
+        if self.config.options.get('scheduler', None) is not None:
+            self.config.options['scheduler'] = opts.data.get('schedulers_sigma', None)
+        if p is None:
+            return
+
         self.model_wrap_cfg.mask = p.mask if hasattr(p, 'mask') else None
         self.model_wrap_cfg.nmask = p.nmask if hasattr(p, 'nmask') else None
         self.model_wrap_cfg.step = 0
@@ -291,35 +289,30 @@ class KDiffusionSampler:
         for param_name in self.extra_params:
             if hasattr(p, param_name) and param_name in inspect.signature(self.func).parameters:
                 extra_params_kwargs[param_name] = getattr(p, param_name)
-
         if 'eta' in inspect.signature(self.func).parameters:
             if self.eta != 1.0:
                 p.extra_generation_params["Eta"] = self.eta
-
             extra_params_kwargs['eta'] = self.eta
 
         return extra_params_kwargs
 
-    def get_sigmas(self, p, steps):
-        if opts.discard_next_to_last_sigma == 'always':
-            discard_next_to_last_sigma = True
-            p.extra_generation_params["Discard penultimate sigma"] = 'always'
-        elif opts.discard_next_to_last_sigma == 'never':
-            discard_next_to_last_sigma = False
-            p.extra_generation_params["Discard penultimate sigma"] = 'never'
-        else:
-            discard_next_to_last_sigma = self.config is not None and self.config.options.get('discard_next_to_last_sigma', False)
-
+    def get_sigmas(self, p, steps): # pylint: disable=unused-argument
+        discard_next_to_last_sigma = opts.data.get('schedulers_discard_penultimate', True) if self.config.options.get('discard_next_to_last_sigma', None) is not None else False
         steps += 1 if discard_next_to_last_sigma else 0
 
-        if p.sampler_noise_scheduler_override:
-            sigmas = p.sampler_noise_scheduler_override(steps)
-        elif self.config is not None and self.config.options.get('scheduler', None) == 'karras':
-            sigma_min, sigma_max = (0.1, 10) if opts.use_old_karras_scheduler_sigmas else (self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item())
-
-            sigmas = k_diffusion.sampling.get_sigmas_karras(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, device=shared.device)
-        else:
+        if self.config.options.get('scheduler', None) == 'default' or self.config.options.get('scheduler', None) is None:
             sigmas = self.model_wrap.get_sigmas(steps)
+        elif self.config.options.get('scheduler', None) == 'karras':
+            sigma_min, sigma_max = self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item()
+            sigmas = k_diffusion.sampling.get_sigmas_karras(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, device=shared.device)
+        elif self.config.options.get('scheduler', None) == 'exponential':
+            sigma_min, sigma_max = self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item()
+            sigmas = k_diffusion.sampling.get_sigmas_exponential(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, device=shared.device)
+        elif self.config.options.get('scheduler', None) == 'polyexponential':
+            sigma_min, sigma_max = self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item()
+            sigmas = k_diffusion.sampling.get_sigmas_polyexponential(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, device=shared.device)
+        elif self.config.options.get('scheduler', None) == 'vp':
+            sigmas = k_diffusion.sampling.get_sigmas_vp(n=steps, device=shared.device)
 
         if discard_next_to_last_sigma:
             sigmas = torch.cat([sigmas[:-2], sigmas[-1:]])

@@ -293,19 +293,14 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     recompile_model()
 
     is_karras_compatible = shared.sd_model.__class__.__init__.__annotations__.get("scheduler", None) == diffusers.schedulers.scheduling_utils.KarrasDiffusionSchedulers
-    if ((not hasattr(shared.sd_model.scheduler, 'name')) or (p.sampler_name == 'DPM SDE') or (shared.sd_model.scheduler.name != p.sampler_name)) and (p.sampler_name != 'Default') and is_karras_compatible:
+    if hasattr(shared.sd_model, 'scheduler') and p.sampler_name != 'Default' and is_karras_compatible:
         sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)
         if sampler is None:
             sampler = sd_samplers.all_samplers_map.get("UniPC")
         sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
-        sampler_options = f'type:{shared.opts.schedulers_prediction_type} ' if shared.opts.schedulers_prediction_type != 'default' else ''
-        sampler_options += 'no_karras ' if not shared.opts.schedulers_use_karras else ''
-        sampler_options += 'no_low_order' if not shared.opts.schedulers_use_loworder else ''
-        sampler_options += 'dynamic_thresholding' if shared.opts.schedulers_use_thresholding else ''
-        sampler_options += f'solver:{shared.opts.schedulers_dpm_solver}' if shared.opts.schedulers_dpm_solver != 'sde-dpmsolver++' else ''
-        sampler_options += f'beta:{shared.opts.schedulers_beta_schedule}:{shared.opts.schedulers_beta_start}:{shared.opts.schedulers_beta_end}' if shared.opts.schedulers_beta_schedule != 'default' else ''
-        p.extra_generation_params['Sampler options'] = sampler_options if len(sampler_options) > 0 else None
-        p.extra_generation_params['Pipeline'] = shared.sd_model.__class__.__name__
+        # p.extra_generation_params['Sampler options'] = '' # TODO
+
+    p.extra_generation_params['Pipeline'] = shared.sd_model.__class__.__name__
 
     cross_attention_kwargs={}
     if len(getattr(p, 'init_images', [])) > 0:

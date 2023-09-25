@@ -89,7 +89,9 @@ def store_latent(decoded):
 def is_sampler_using_eta_noise_seed_delta(p):
     """returns whether sampler from config will use eta noise seed delta for image creation"""
     sampler_config = sd_samplers.find_sampler_config(p.sampler_name)
-    eta = p.eta
+    eta = 0
+    if hasattr(p, "eta"):
+        eta = p.eta
     if not hasattr(p.sampler, "eta"):
         return False
     if eta is None and p.sampler is not None:
@@ -98,7 +100,7 @@ def is_sampler_using_eta_noise_seed_delta(p):
         eta = 0 if sampler_config.options.get("default_eta_is_0", False) else 1.0
     if eta == 0:
         return False
-    return sampler_config.options.get("uses_ensd", False)
+    return True
 
 
 class InterruptedException(BaseException):

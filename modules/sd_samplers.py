@@ -46,6 +46,7 @@ def create_sampler(name, model):
     if shared.backend == shared.Backend.ORIGINAL:
         sampler = config.constructor(model)
         sampler.config = config
+        sampler.initialize(p=None)
         sampler.name = name
         shared.log.debug(f'Sampler: sampler={sampler.name} config={sampler.config.options}')
         return sampler

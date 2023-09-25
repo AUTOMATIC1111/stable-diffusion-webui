@@ -306,9 +306,46 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
 
 
 def create_sampler_and_steps_selection(choices, tabname):
-    with FormRow(elem_id=f"sampler_selection_{tabname}"):
+    def set_sampler_original_options(sampler_options, sampler_algo):
+        opts.data['schedulers_brownian_noise'] = 'brownian noise' in sampler_options
+        opts.data['schedulers_discard_penultimate'] = 'discard penultimate sigma' in sampler_options
+        opts.data['schedulers_sigma'] = sampler_algo
+
+    def set_sampler_diffuser_options(sampler_options):
+        opts.data['schedulers_use_karras'] = 'karras' in sampler_options
+        opts.data['schedulers_use_thresholding'] = 'dynamic thresholding' in sampler_options
+        opts.data['schedulers_use_loworder'] = 'low order' in sampler_options
+
+    with FormRow(elem_classes=['flex-break']):
         sampler_index = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling", choices=[x.name for x in choices], value='Default', type="index")
         steps = gr.Slider(minimum=0, maximum=99, step=1, label="Sampling steps", elem_id=f"{tabname}_steps", value=20)
+    if modules.shared.backend == modules.shared.Backend.ORIGINAL:
+        with FormRow(elem_classes=['flex-break']):
+            opts.data['schedulers_brownian_noise'] = opts.data.get('schedulers_brownian_noise', False)
+            opts.data['schedulers_discard_penultimate'] = opts.data.get('schedulers_discard_penultimate', True)
+            choices = ['brownian noise', 'discard penultimate sigma']
+            values = []
+            values += ['brownian noise'] if opts.data['schedulers_brownian_noise'] else []
+            values += ['discard penultimate sigma'] if opts.data['schedulers_discard_penultimate'] else []
+            sampler_options = gr.CheckboxGroup(label='Sampler options', choices=choices, value=values, type='value')
+        with FormRow(elem_classes=['flex-break']):
+            opts.data['schedulers_sigma'] = opts.data.get('schedulers_sigma', 'default')
+            sampler_algo = gr.Radio(label='Sigma algorithm', choices=['default', 'karras', 'exponential', 'polyexponential', 'vp'], value=opts.data['schedulers_sigma'], type='value')
+        sampler_options.change(fn=set_sampler_original_options, inputs=[sampler_options, sampler_algo], outputs=[])
+        sampler_algo.change(fn=set_sampler_original_options, inputs=[sampler_options, sampler_algo], outputs=[])
+    else:
+        with FormRow(elem_classes=['flex-break']):
+            opts.data['schedulers_use_karras'] = opts.data.get('schedulers_use_karras', True)
+            opts.data['schedulers_use_thresholding'] = opts.data.get('schedulers_use_thresholding', False)
+            opts.data['schedulers_use_loworder'] = opts.data.get('schedulers_use_loworder', True)
+            choices = ['karras', 'dynamic thresholding', 'low order']
+            values = []
+            values += ['karras'] if opts.data['schedulers_use_karras'] else []
+            values += ['dynamic thresholding'] if opts.data['schedulers_use_thresholding'] else []
+            values += ['low order'] if opts.data['schedulers_use_loworder'] else []
+            sampler_options = gr.CheckboxGroup(label='Sampler options', choices=choices, value=values, type='value')
+        sampler_options.change(fn=set_sampler_diffuser_options, inputs=[sampler_options], outputs=[])
+
     return steps, sampler_index
 
 

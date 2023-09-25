@@ -308,10 +308,10 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
                         process_cell(x, y, z, ix, iy, iz)
 
     if not processed_result:
-        shared.log.error("XYZ grid: Processing could not begin, you may need to refresh the tab or restart the service")
+        shared.log.error("XYZ grid: Failed to initialize processing")
         return Processed(p, [])
     elif not any(processed_result.images):
-        shared.log.error("XYZ grid: Failed to return even a single processed image")
+        shared.log.error("XYZ grid: Failed to return processed image")
         return Processed(p, [])
 
     z_count = len(zs)

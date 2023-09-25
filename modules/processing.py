@@ -130,7 +130,6 @@ class StableDiffusionProcessing:
         self.paste_to = None
         self.color_corrections = None
         self.denoising_strength: float = denoising_strength
-        self.sampler_noise_scheduler_override = None
         self.ddim_discretize = ddim_discretize or shared.opts.ddim_discretize
         self.s_min_uncond = s_min_uncond or shared.opts.s_min_uncond
         self.s_churn = s_churn or shared.opts.s_churn
@@ -304,7 +303,6 @@ class Processed:
         self.s_tmax = p.s_tmax
         self.s_noise = p.s_noise
         self.s_min_uncond = p.s_min_uncond
-        self.sampler_noise_scheduler_override = p.sampler_noise_scheduler_override
         self.prompt = self.prompt if type(self.prompt) != list else self.prompt[0]
         self.negative_prompt = self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0]
         self.seed = int(self.seed if type(self.seed) != list else self.seed[0]) if self.seed is not None else -1
