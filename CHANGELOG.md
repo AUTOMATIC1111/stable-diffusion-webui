@@ -55,6 +55,9 @@ Upgrades are still possible and supported, but above is recommended for best exp
   - moved ui options to submenu  
   - default list for new installs is now all samplers, list can be modified in settings  
   - simplified samplers configuration in settings  
+  - note that list of samplers is now *different* since keeping a flat-list of all possible  
+    combinations results in 50+ samplers which is not practical  
+    items such as algorithm (e.g. karras) is actually a sampler option, not a sampler itself  
 - **CivitAI**:
   - CivitAI integration in *Models -> CivitAI* can now find most  
     previews AND metadata for most models (checkpoints, loras, embeddings)
