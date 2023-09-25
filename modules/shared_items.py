@@ -26,15 +26,21 @@ def list_crossattention():
 
 def get_pipelines():
     import diffusers
-    return {
+    from installer import log
+    pipelines = {
         'Autodetect': None,
-        'Stable Diffusion': diffusers.StableDiffusionPipeline,
-        'Stable Diffusion Img2Img': diffusers.StableDiffusionImg2ImgPipeline,
-        'Stable Diffusion Instruct': diffusers.StableDiffusionInstructPix2PixPipeline,
-        'Stable Diffusion Upscale': diffusers.StableDiffusionUpscalePipeline,
-        'Stable Diffusion XL': diffusers.StableDiffusionXLPipeline,
-        'Stable Diffusion XL Img2Img': diffusers.StableDiffusionXLImg2ImgPipeline,
-        'Stable Diffusion XL Inpaint': diffusers.StableDiffusionXLInpaintPipeline,
-        'Stable Diffusion XL Instruct': diffusers.StableDiffusionXLInstructPix2PixPipeline,
+        'Stable Diffusion': getattr(diffusers, 'StableDiffusionPipeline', None),
+        'Stable Diffusion Img2Img': getattr(diffusers, 'StableDiffusionImg2ImgPipeline', None),
+        'Stable Diffusion Instruct': getattr(diffusers, 'StableDiffusionInstructPix2PixPipeline', None),
+        'Stable Diffusion Upscale': getattr(diffusers, 'StableDiffusionUpscalePipeline', None),
+        'Stable Diffusion XL': getattr(diffusers, 'StableDiffusionXLPipeline', None),
+        'Stable Diffusion XL Img2Img': getattr(diffusers, 'StableDiffusionXLImg2ImgPipeline', None),
+        'Stable Diffusion XL Inpaint': getattr(diffusers, 'StableDiffusionXLInpaintPipeline', None),
+        'Stable Diffusion XL Instruct': getattr(diffusers, 'StableDiffusionXLInstructPix2PixPipeline', None),
+        # 'Test': getattr(diffusers, 'TestPipeline', None),
         # 'Kandinsky V1', 'Kandinsky V2', 'DeepFloyd IF', 'Shap-E', 'Kandinsky V1 Img2Img', 'Kandinsky V2 Img2Img', 'DeepFloyd IF Img2Img', 'Shap-E Img2Img',
     }
+    for k, v in pipelines.items():
+        if k != 'Autodetect' and v is None:
+            log.error(f'Not available: pipeline={k} diffusers={diffusers.__version__} path={diffusers.__file__}')
+    return pipelines
