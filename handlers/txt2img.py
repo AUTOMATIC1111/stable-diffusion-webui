@@ -66,7 +66,7 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  hr_sampler_name: str = None,  # hr sampler
                  hr_prompt: str = None,
                  hr_negative_prompt: str = None,
-                 disable_ad_face: bool = True,  # 关闭默认的ADetailer face
+                 disable_ad_face: bool = False,  # 关闭默认的ADetailer face
                  **kwargs):
         override_settings = create_override_settings_dict(override_settings_texts or [])
 

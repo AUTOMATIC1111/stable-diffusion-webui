@@ -74,7 +74,7 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
                 if previous_eta < p.eta_relative:
                     epoch = progress // 10  # 控制的是10epoch
                     eta_relative = 2100 - epoch * 60
-                    p.eta_relative = min(eta_relative, previous_eta)
+                    p.eta_relative = min(eta_relative, previous_eta-60)
                     logger.debug(f"===>>> new eta:{eta_relative}")
 
                 #  time_since_start = time.time() - shared.state.time_start
