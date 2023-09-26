@@ -40,7 +40,7 @@ Upgrades are still possible and supported, but above is recommended for best exp
       To download go to *Models -> Huggingface*:
       - `stabilityai/sd-x2-latent-upscaler` *(2.2GB)*  
       - `stabilityai/stable-diffusion-x4-upscaler` *(1.7GB)*
-  - better **Embeddings** support for SD and SDXL  
+  - better **TI embeddings** support for SD and SDXL  
     faster loading, wider compatibility and support for embeddings with multiple vectors  
 - **Upscalers**:
   - more high quality upscalers available by default  
@@ -70,6 +70,9 @@ Upgrades are still possible and supported, but above is recommended for best exp
     description file present in format of *[model].txt*
   - to enable search, make sure all models have set hash values  
     *Models -> Valida -> Calculate hashes*
+- **Intel Arc/IPEX**:
+  - more optimizations, built-in binary wheels for Windows  
+    thanks @Disty0 @Nuullll
 - **Startup**  
   - All main CLI parameters can now be set as environment variable as well  
     for example `--data-dir <path>` can be specified as `SD_DATADIR=<path>` before starting SD.Next  

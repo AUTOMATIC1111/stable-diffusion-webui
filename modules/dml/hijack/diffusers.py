@@ -45,7 +45,7 @@ def PNDMScheduler__get_prev_sample(self, sample: torch.FloatTensor, timestep, pr
 
     return prev_sample
 
-diffusers.PNDMScheduler._get_prev_sample = PNDMScheduler__get_prev_sample
+diffusers.PNDMScheduler._get_prev_sample = PNDMScheduler__get_prev_sample # pylint: disable=protected-access
 
 def UniPCMultistepScheduler_multistep_uni_p_bh_update(
     self: diffusers.UniPCMultistepScheduler,
