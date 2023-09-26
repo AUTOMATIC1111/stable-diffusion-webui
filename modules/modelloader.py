@@ -151,6 +151,8 @@ def download_civit_model(model_url: str, model_name: str, model_path: str, model
 
 
 def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config: Dict[str, str] = None, token = None, variant = None, revision = None, mirror = None):
+    if hub_id is None or len(hub_id) == 0:
+        return
     from diffusers import DiffusionPipeline
     import huggingface_hub as hf
     shared.state.begin('huggingface-download-model')

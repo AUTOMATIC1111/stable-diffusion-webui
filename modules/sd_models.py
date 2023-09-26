@@ -826,19 +826,26 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         if os.path.isdir(checkpoint_info.path):
             err1 = None
             err2 = None
-            try: # try autopipeline first
+            err3 = None
+            try: # try autopipeline first, best choice but not all pipelines are available
                 sd_model = diffusers.AutoPipelineForText2Image.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
                 sd_model.model_type = sd_model.__class__.__name__
             except Exception as e:
                 err1 = e
-            try: # try diffusion pipeline next
+            try: # try diffusion pipeline next second-best choice, works for most non-linked pipelines
                 if err1 is not None:
                     sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
                     sd_model.model_type = sd_model.__class__.__name__
             except Exception as e:
                 err2 = e
-            if err2 is not None:
-                shared.log.error(f'Failed loading {op}: {checkpoint_info.path} autopipeline={err1} diffusionpipeline={err2}')
+            try: # try basic pipeline next just in case
+                if err2 is not None:
+                    sd_model = diffusers.StableDiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+                    sd_model.model_type = sd_model.__class__.__name__
+            except Exception as e:
+                err3 = e # ignore last error
+            if err3 is not None:
+                shared.log.error(f'Failed loading {op}: {checkpoint_info.path} auto={err1} diffusion={err2}')
                 return
         elif os.path.isfile(checkpoint_info.path) and checkpoint_info.path.lower().endswith('.safetensors'):
             diffusers_load_config["local_files_only"] = True
