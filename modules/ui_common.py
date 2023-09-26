@@ -151,16 +151,20 @@ def save_files(js_data, images, html_info, index):
 def create_output_panel(tabname, outdir):
     import modules.generation_parameters_copypaste as parameters_copypaste
 
-    def open_folder(f):
-        if not os.path.exists(f):
-            shared.log.warning(f'Folder "{f}" does not exist. After you create an image, the folder will be created.')
+    def open_folder(gallery):
+        if gallery is not None and len(gallery) > 0:
+            folder = os.path.dirname(gallery[-1]['name'])
+        else:
+            folder = shared.opts.outdir_samples or outdir
+        if not os.path.exists(folder):
+            shared.log.warning(f'Folder open: folder={folder} does not exist')
             return
-        elif not os.path.isdir(f):
-            shared.log.warning(f"An open_folder request was made with an argument that is not a folder: {f}")
+        elif not os.path.isdir(folder):
+            shared.log.warning(f"Folder open: folder={folder} not a folder")
             return
 
         if not shared.cmd_opts.hide_ui_dir_config:
-            path = os.path.normpath(f)
+            path = os.path.normpath(folder)
             if platform.system() == "Windows":
                 os.startfile(path) # pylint: disable=no-member
             elif platform.system() == "Darwin":
@@ -179,7 +183,7 @@ def create_output_panel(tabname, outdir):
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
                 if not shared.cmd_opts.listen:
                     open_folder_button = gr.Button('Show', visible=not shared.cmd_opts.hide_ui_dir_config, elem_id=f'open_folder_{tabname}')
-                    open_folder_button.click(fn=lambda: open_folder(shared.opts.outdir_samples or outdir), inputs=[], outputs=[])
+                    open_folder_button.click(open_folder, inputs=[result_gallery], outputs=[])
                 else:
                     clip_files = gr.Button('Copy', elem_id=f'open_folder_{tabname}')
                     clip_files.click(fn=None, _js='clip_gallery_urls', inputs=[result_gallery], outputs=[])
