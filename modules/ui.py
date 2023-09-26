@@ -51,8 +51,8 @@ sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
 paste_function = None
 
 
-def create_output_panel(tabname, outdir): # may be referenced by extensions
-    a, b, c, _d, e = ui_common.create_output_panel(tabname, outdir)
+def create_output_panel(tabname, outdir): # pylint: disable=unused-argument # outdir is used by extensions
+    a, b, c, _d, e = ui_common.create_output_panel(tabname)
     return a, b, c, e
 
 def plaintext_to_html(text): # may be referenced by extensions
@@ -460,7 +460,7 @@ def create_ui(startup_timer = None):
                     show_progress=False,
                 )
 
-            txt2img_gallery, generation_info, html_info, _html_info_formatted, html_log = ui_common.create_output_panel("txt2img", opts.outdir_txt2img_samples)
+            txt2img_gallery, generation_info, html_info, _html_info_formatted, html_log = ui_common.create_output_panel("txt2img")
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
@@ -744,7 +744,7 @@ def create_ui(startup_timer = None):
                 with FormGroup(elem_id="img2img_script_container"):
                     custom_inputs = modules.scripts.scripts_img2img.setup_ui()
 
-            img2img_gallery, generation_info, html_info, _html_info_formatted, html_log = ui_common.create_output_panel("img2img", opts.outdir_img2img_samples)
+            img2img_gallery, generation_info, html_info, _html_info_formatted, html_log = ui_common.create_output_panel("img2img")
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)

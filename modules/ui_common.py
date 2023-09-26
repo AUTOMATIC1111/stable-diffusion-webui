@@ -148,33 +148,32 @@ def save_files(js_data, images, html_info, index):
     return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0] if len(filenames) > 0 else 'none'}")
 
 
-def create_output_panel(tabname, outdir):
-    import modules.generation_parameters_copypaste as parameters_copypaste
+def open_folder(result_gallery, gallery_index = 0):
+    try:
+        folder = os.path.dirname(result_gallery[gallery_index]['name'])
+    except Exception:
+        folder = shared.opts.outdir_samples
+    if not os.path.exists(folder):
+        shared.log.warning(f'Folder open: folder={folder} does not exist')
+        return
+    elif not os.path.isdir(folder):
+        shared.log.warning(f"Folder open: folder={folder} not a folder")
+        return
 
-    def open_folder(gallery):
-        if type(gallery) is str:
-            folder = gallery
-        elif gallery is not None and len(gallery) > 0:
-            folder = os.path.dirname(gallery[-1]['name'])
+    if not shared.cmd_opts.hide_ui_dir_config:
+        path = os.path.normpath(folder)
+        if platform.system() == "Windows":
+            os.startfile(path) # pylint: disable=no-member
+        elif platform.system() == "Darwin":
+            subprocess.Popen(["open", path]) # pylint: disable=consider-using-with
+        elif "microsoft-standard-WSL2" in platform.uname().release:
+            subprocess.Popen(["wsl-open", path]) # pylint: disable=consider-using-with
         else:
-            folder = shared.opts.outdir_samples or outdir
-        if not os.path.exists(folder):
-            shared.log.warning(f'Folder open: folder={folder} does not exist')
-            return
-        elif not os.path.isdir(folder):
-            shared.log.warning(f"Folder open: folder={folder} not a folder")
-            return
+            subprocess.Popen(["xdg-open", path]) # pylint: disable=consider-using-with
 
-        if not shared.cmd_opts.hide_ui_dir_config:
-            path = os.path.normpath(folder)
-            if platform.system() == "Windows":
-                os.startfile(path) # pylint: disable=no-member
-            elif platform.system() == "Darwin":
-                subprocess.Popen(["open", path]) # pylint: disable=consider-using-with
-            elif "microsoft-standard-WSL2" in platform.uname().release:
-                subprocess.Popen(["wsl-open", path]) # pylint: disable=consider-using-with
-            else:
-                subprocess.Popen(["xdg-open", path]) # pylint: disable=consider-using-with
+
+def create_output_panel(tabname):
+    import modules.generation_parameters_copypaste as parameters_copypaste
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
@@ -182,10 +181,11 @@ def create_output_panel(tabname, outdir):
             result_gallery = gr.Gallery(value=[], label='Output', show_label=False, show_download_button=True, elem_id=f"{tabname}_gallery", container=False, preview=True, columns=[1,2,3,4,5,6], object_fit='scale-down')
 
         with gr.Column(elem_id=f"{tabname}_footer", elem_classes="gallery_footer"):
+            dummy_component = gr.Label(visible=False)
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
                 if not shared.cmd_opts.listen:
                     open_folder_button = gr.Button('Show', visible=not shared.cmd_opts.hide_ui_dir_config, elem_id=f'open_folder_{tabname}')
-                    open_folder_button.click(open_folder, inputs=[result_gallery], outputs=[])
+                    open_folder_button.click(open_folder, _js="(gallery, dummy) => [gallery, selected_gallery_index()]", inputs=[result_gallery, dummy_component], outputs=[])
                 else:
                     clip_files = gr.Button('Copy', elem_id=f'open_folder_{tabname}')
                     clip_files.click(fn=None, _js='clip_gallery_urls', inputs=[result_gallery], outputs=[])
