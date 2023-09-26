@@ -193,7 +193,7 @@ class EmbeddingDatabase:
         # diffuser concepts
         elif type(data) == dict and type(next(iter(data.values()))) == torch.Tensor:
             if len(data.keys()) != 1:
-                self.skipped_embeddings[name] = Embedding(None, name)
+                self.skipped_embeddings[name] = Embedding(None, name=name, filename=path)
                 return
             emb = next(iter(data.values()))
             if len(emb.shape) == 1:
