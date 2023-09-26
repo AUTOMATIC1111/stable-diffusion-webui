@@ -18,6 +18,7 @@ Upgrades are still possible and supported, but above is recommended for best exp
     main ui now has a single button on each en to trigger details view  
   - details view includes model/lora metadata parser!  
   - details view includes civitai model metadata!
+  - styles can be edited in details view  
   - faster search, ability to show/hide/sort networks  
   - refactored subfolder handling  
     *note*: this will trigger model hash recaclulation on first model use  
@@ -42,6 +43,7 @@ Upgrades are still possible and supported, but above is recommended for best exp
       - `stabilityai/stable-diffusion-x4-upscaler` *(1.7GB)*
   - better **TI embeddings** support for SD and SDXL  
     faster loading, wider compatibility and support for embeddings with multiple vectors  
+    information about used embedding is now also added to image metadata  
 - **Upscalers**:
   - more high quality upscalers available by default  
     *SwinIR:2, ESRGAN:12, RealESRGAN:6, SCUNet:2*

@@ -55,9 +55,12 @@ class ExtraNetworksPageStyles(ui_extra_networks.ExtraNetworksPage):
                 "title": k,
                 "filename": style.filename,
                 "search_term": f'{txt} {self.search_terms_from_path(style.name)}',
-                "preview": self.find_preview(fn),
+                "preview": style.preview if style.preview is not None and style.preview.startswith('data:') else self.find_preview(fn),
+                "description": style.description if style.description is not None and len(style.description) > 0 else txt,
+                "prompt": style.prompt or '',
+                "negative": style.negative_prompt or '',
+                "extra": style.extra or '',
                 "local_preview": f"{fn}.{shared.opts.samples_format}",
-                "description": txt,
                 "onclick": '"' + html.escape(f"""return selectStyle({json.dumps(style.name)})""") + '"',
             }
 

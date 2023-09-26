@@ -270,7 +270,7 @@ class ExtraNetworksPage:
     def find_preview(self, path):
         fn = os.path.splitext(path)[0]
         preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
-        for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.preview.', '.']]:
+        for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.', '.preview.']]:
             if os.path.exists(file):
                 if '.thumb.' not in file:
                     self.missing_thumbs.append(file)
@@ -286,16 +286,15 @@ class ExtraNetworksPage:
                 if tag == 'p':
                     self.text += '\n'
 
-        fn = os.path.splitext(path)[0]
-        for file in [f"{fn}.txt", f"{fn}.description.txt"]:
-            if os.path.exists(file):
-                try:
-                    with open(file, "r", encoding="utf-8", errors="replace") as f:
-                        txt = f.read()
-                        txt = re.sub('[<>]', '', txt)
-                        return txt
-                except OSError:
-                    pass
+        fn = os.path.splitext(path)[0] + '.txt'
+        if os.path.exists(fn):
+            try:
+                with open(fn, "r", encoding="utf-8", errors="replace") as f:
+                    txt = f.read()
+                    txt = re.sub('[<>]', '', txt)
+                    return txt
+            except OSError:
+                pass
         info = self.find_info(path)
         desc = info.get('description', '') or ''
         f = HTMLFilter()
@@ -305,7 +304,10 @@ class ExtraNetworksPage:
     def find_info(self, path):
         fn = os.path.splitext(path)[0] + '.json'
         if os.path.exists(fn):
-            return shared.readfile(fn, silent=True)
+            data = shared.readfile(fn, silent=True)
+            if type(data) is list:
+                data = data[0]
+            return data
         return {}
 
 
@@ -527,6 +529,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             img = page.find_preview_file(item.filename)
             lora = ''
             model = ''
+            style = ''
             if page.title == 'Model':
                 merge = len(list(meta.get('sd_merge_models', {})))
                 if merge > 0:
@@ -548,6 +551,13 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                     <tr><td>Training images</td><td>{meta.get('ss_num_train_images', 'N/A')}</td></tr>
                     <tr><td>Comment</td><td>{meta.get('ss_training_comment', 'N/A')}</td></tr>
                 '''
+            if page.title == 'Style':
+                style = f'''
+                    <tr><td>Name</td><td>{item.name}</td></tr>
+                    <tr><td>Description</td><td>{item.description}</td></tr>
+                    <tr><td>Preview Embedded</td><td>{item.preview.startswith('data:')}</td></tr>
+                '''
+                desc = f'Name: {item.name}\nDescription: {item.description}\nPrompt: {item.prompt}\nNegative: {item.negative}\nExtra: {item.extra}\n'
             text = f'''
                 <h2 style="border-bottom: 1px solid var(--button-primary-border-color); margin-bottom: 1em; margin-top: -1.3em !important;">{item.name}</h2>
                 <table style="width: 100%; line-height: 1.3em;"><tbody>
@@ -557,8 +567,10 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                     <tr><td>Hash</td><td>{getattr(item, 'hash', 'N/A')}</td></tr>
                     <tr><td>Size</td><td>{round(stat.st_size/1024/1024, 2)} MB</td></tr>
                     <tr><td>Last modified</td><td>{datetime.fromtimestamp(stat.st_mtime)}</td></tr>
+                    <tr><td style="border-top: 1px solid var(--button-primary-border-color);"></td><td></td></tr>
                     {lora}
                     {model}
+                    {style}
                 </tbody></table>
             '''
         return [text, img, desc, info, meta, gr.update(visible=item is not None)]

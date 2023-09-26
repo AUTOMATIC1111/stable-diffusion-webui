@@ -9,8 +9,9 @@ from modules import paths
 
 
 class Style():
-    def __init__(self, name: str, prompt: str = "", negative_prompt: str = "", extra: str = "", filename: str = "", preview: str = ""):
+    def __init__(self, name: str, desc: str = "", prompt: str = "", negative_prompt: str = "", extra: str = "", filename: str = "", preview: str = ""):
         self.name = name
+        self.description = desc
         self.prompt = prompt
         self.negative_prompt = negative_prompt
         self.extra = extra
@@ -64,11 +65,22 @@ class StyleDatabase:
                 if os.path.isfile(fn) and fn.lower().endswith(".json"):
                     with open(fn, 'r', encoding='utf-8') as f:
                         try:
-                            style = json.load(f)
-                            basename = os.path.splitext(os.path.basename(fn))[0]
-                            name = re.sub(r'[\t\r\n]', '', style.get("name", basename)).strip()
-                            name = os.path.join(os.path.dirname(os.path.relpath(fn, self.path)), name)
-                            self.styles[style["name"]] = Style(name=name, prompt=style.get("prompt", ""), negative_prompt=style.get("negative", ""), extra=style.get("extra", ""), filename=fn, preview=style.get("preview", ""))
+                            all_styles = json.load(f)
+                            if type(all_styles) is dict:
+                                all_styles = [all_styles]
+                            for style in all_styles:
+                                basename = os.path.splitext(os.path.basename(fn))[0]
+                                name = re.sub(r'[\t\r\n]', '', style.get("name", basename)).strip()
+                                name = os.path.join(os.path.dirname(os.path.relpath(fn, self.path)), name)
+                                self.styles[style["name"]] = Style(
+                                    name=name,
+                                    desc=style.get('description', name),
+                                    prompt=style.get("prompt", ""),
+                                    negative_prompt=style.get("negative", ""),
+                                    extra=style.get("extra", ""),
+                                    preview=style.get("preview", None),
+                                    filename=fn
+                                )
                         except Exception as e:
                             log.error(f'Failed to load style: file={fn} error={e}')
                 elif os.path.isdir(fn) and not fn.startswith('.'):
