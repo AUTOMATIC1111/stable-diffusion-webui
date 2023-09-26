@@ -1,6 +1,7 @@
 import os
 import html
 import csv
+import time
 from collections import namedtuple
 import torch
 from tqdm import tqdm
@@ -134,25 +135,39 @@ class EmbeddingDatabase:
         name = os.path.basename(fn)
         embedding = Embedding(vec=None, name=name, filename=path)
         try:
+            done = False
             if hasattr(pipe,"load_textual_inversion"):
-                pipe.load_textual_inversion(path, cache_dir=shared.opts.diffusers_dir, local_files_only=True)
-            elif "safetensors" in path:
+                try:
+                    pipe.load_textual_inversion(path, cache_dir=shared.opts.diffusers_dir, local_files_only=True)
+                    done = True
+                except Exception:
+                    pass
+            if not done and "safetensors" in path:
                 embeddings_dict = {}
                 from safetensors.torch import safe_open
                 with safe_open(path, framework="pt") as f:
                     for k in f.keys():
                         embeddings_dict[k] = f.get_tensor(k)
+                tokens = []
                 for i in range(len(embeddings_dict["clip_l"])):
-                    if i == 0:
-                        token = name.lower()
-                    else:
-                        token = f"{name.lower()}_{i}"
-                    pipe.tokenizer.add_tokens(token)
-                    token_id = pipe.tokenizer.convert_tokens_to_ids(token)
-                    pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
-                    pipe.text_encoder_2.resize_token_embeddings(len(pipe.tokenizer))
-                    pipe.text_encoder.get_input_embeddings().weight.data[token_id] = embeddings_dict["clip_l"][i]
-                    pipe.text_encoder_2.get_input_embeddings().weight.data[token_id] = embeddings_dict["clip_g"][i]
+                    tokens.append(name if i == 0 else f"{name}_{i}")
+                num_added = pipe.tokenizer.add_tokens(tokens)
+                if num_added > 0:
+                    token_ids = pipe.tokenizer.convert_tokens_to_ids(tokens)
+                    clip_l = None
+                    clip_g = None
+                    if hasattr(pipe.text_encoder, "resize_token_embeddings"):
+                        pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
+                        clip_l = pipe.text_encoder.get_input_embeddings().weight
+                    if hasattr(pipe.text_encoder_2, "resize_token_embeddings"):
+                        pipe.text_encoder_2.resize_token_embeddings(len(pipe.tokenizer))
+                        clip_g = pipe.text_encoder_2.get_input_embeddings().weight
+                    for i in range(len(token_ids)):
+                        if clip_l is not None:
+                            clip_l.data[token_ids[i]] = embeddings_dict["clip_l"][i]
+                        if clip_g is not None:
+                            clip_g.data[token_ids[i]] = embeddings_dict["clip_g"][i]
+
             else:
                 raise NotImplementedError
             # self.word_embeddings[name] = embedding
@@ -234,6 +249,7 @@ class EmbeddingDatabase:
                 continue
 
     def load_textual_inversion_embeddings(self, force_reload=False):
+        t0 = time.time()
         if not force_reload:
             need_reload = False
             for embdir in self.embedding_dirs.values():
@@ -260,7 +276,8 @@ class EmbeddingDatabase:
         displayed_embeddings = (tuple(self.word_embeddings.keys()), tuple(self.skipped_embeddings.keys()))
         if self.previously_displayed_embeddings != displayed_embeddings:
             self.previously_displayed_embeddings = displayed_embeddings
-            shared.log.info(f"Loaded embeddings: loaded={len(self.word_embeddings)} skipped={len(self.skipped_embeddings)}")
+            t1 = time.time()
+            shared.log.info(f"Loaded embeddings: loaded={len(self.word_embeddings)} skipped={len(self.skipped_embeddings)} time={t1-t0:.2f}s")
 
 
     def find_embedding_at_position(self, tokens, offset):

@@ -22,6 +22,7 @@ Upgrades are still possible and supported, but above is recommended for best exp
   - refactored subfolder handling  
     *note*: this will trigger model hash recaclulation on first model use  
 - **Diffusers**:
+  - better pipeline auto-detect when loading from safetensors  
   - **SDXL Inpaint**  
     - Although any model can be used for inpainiting, there is a case to be made for  
       dedicated inpainting models as they are tuned to inpaint and not generate
@@ -39,6 +40,8 @@ Upgrades are still possible and supported, but above is recommended for best exp
       To download go to *Models -> Huggingface*:
       - `stabilityai/sd-x2-latent-upscaler` *(2.2GB)*  
       - `stabilityai/stable-diffusion-x4-upscaler` *(1.7GB)*
+  - better **Embeddings** support for SD and SDXL  
+    faster loading, wider compatibility and support for embeddings with multiple vectors  
 - **Upscalers**:
   - more high quality upscalers available by default  
     *SwinIR:2, ESRGAN:12, RealESRGAN:6, SCUNet:2*
@@ -62,10 +65,11 @@ Upgrades are still possible and supported, but above is recommended for best exp
   - CivitAI integration in *Models -> CivitAI* can now find most  
     previews AND metadata for most models (checkpoints, loras, embeddings)
     metadata is now parsed and saved in *[model].json*  
+    typical hit rate is >95% for models, loras and embeddings  
   - Description from parsed model metadata is used as model description if there is no manual  
     description file present in format of *[model].txt*
-- **Diffusers**
-  - better pipeline auto-detect when loading from safetensors  
+  - to enable search, make sure all models have set hash values  
+    *Models -> Valida -> Calculate hashes*
 - **Startup**  
   - All main CLI parameters can now be set as environment variable as well  
     for example `--data-dir <path>` can be specified as `SD_DATADIR=<path>` before starting SD.Next  

@@ -177,8 +177,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         return prompts, negative_prompts, prompts_2, negative_prompts_2
 
     def set_pipeline_args(model, prompts: list, negative_prompts: list, prompts_2: typing.Optional[list]=None, negative_prompts_2: typing.Optional[list]=None, desc:str='', **kwargs):
-        if hasattr(model, 'embedding_db'):
-            del model.embedding_db
+        # if hasattr(model, 'embedding_db'):
+        #    del model.embedding_db
         try:
             is_refiner = model.text_encoder.__class__.__name__ != 'CLIPTextModel'
         except Exception:

@@ -249,7 +249,7 @@ def select_checkpoint(op='model'):
         return None
     checkpoint_info = get_closet_checkpoint_match(model_checkpoint)
     if checkpoint_info is not None:
-        shared.log.info(f'Select model: {op}="{checkpoint_info.title if checkpoint_info is not None else None}"')
+        shared.log.info(f'Select: {op}="{checkpoint_info.title if checkpoint_info is not None else None}"')
         return checkpoint_info
     if len(checkpoints_list) == 0 and not shared.cmd_opts.no_download:
         shared.log.error("Cannot run without a checkpoint")
@@ -263,7 +263,7 @@ def select_checkpoint(op='model'):
             shared.log.info("Selecting first available checkpoint")
         # shared.log.warning(f"Loading fallback checkpoint: {checkpoint_info.title}")
         shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
-    shared.log.info(f'Select model: {op}="{checkpoint_info.title if checkpoint_info is not None else None}"')
+    shared.log.info(f'Select: {op}="{checkpoint_info.title if checkpoint_info is not None else None}"')
     return checkpoint_info
 
 
@@ -946,10 +946,9 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     sd_model.embedding_db.load_textual_inversion_embeddings(force_reload=True)
 
     timer.record("load")
-    shared.log.info(f"Model loaded in {timer.summary()} native={get_native(sd_model)}")
     devices.torch_gc(force=True)
     script_callbacks.model_loaded_callback(sd_model)
-    shared.log.info(f'Model load finished {op}: {memory_stats()}')
+    shared.log.info(f"Loaded {op}: time={timer.summary()} native={get_native(sd_model)} {memory_stats()}")
 
 
 class DiffusersTaskType(Enum):
@@ -958,11 +957,13 @@ class DiffusersTaskType(Enum):
     INPAINTING = 3
     INSTRUCT = 4
 
+
 def set_diffuser_pipe(pipe, new_pipe_type):
     sd_checkpoint_info = getattr(pipe, "sd_checkpoint_info", None)
     sd_model_checkpoint = getattr(pipe, "sd_model_checkpoint", None)
     sd_model_hash = getattr(pipe, "sd_model_hash", None)
     has_accelerate = getattr(pipe, "has_accelerate", None)
+    embedding_db = getattr(pipe, "embedding_db", None)
 
     if new_pipe_type == DiffusersTaskType.IMAGE_2_IMAGE and (pipe.__class__.__name__ == "StableDiffusionXLPipeline" or pipe.__class__.__name__ == 'StableDiffusionXLImg2ImgPipeline'):
         new_pipe_type = DiffusersTaskType.INPAINTING # sdxl works better with init mask
@@ -984,6 +985,7 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     new_pipe.sd_model_checkpoint = sd_model_checkpoint
     new_pipe.sd_model_hash = sd_model_hash
     new_pipe.has_accelerate = has_accelerate
+    new_pipe.embedding_db = embedding_db
     model_data.sd_model = new_pipe
     shared.log.debug(f"Pipeline class changed from {pipe.__class__.__name__} to {new_pipe.__class__.__name__}")
 
