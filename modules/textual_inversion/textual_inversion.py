@@ -262,6 +262,7 @@ class EmbeddingDatabase:
             self.previously_displayed_embeddings = displayed_embeddings
             shared.log.info(f"Loaded embeddings: loaded={len(self.word_embeddings)} skipped={len(self.skipped_embeddings)}")
 
+
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]
         possible_matches = self.ids_lookup.get(token, None)

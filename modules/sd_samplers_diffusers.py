@@ -97,7 +97,6 @@ class DiffusionSampler:
         if 'predict_x0' in self.config:
             self.config['predict_x0'] = opts.uni_pc_variant
         if name == 'DPM++ 2M':
-            print('HERE', opts.schedulers_dpm_solver)
             self.config['algorithm_type'] = opts.schedulers_dpm_solver
         if 'beta_start' in self.config and opts.schedulers_beta_start > 0:
             self.config['beta_start'] = opts.schedulers_beta_start

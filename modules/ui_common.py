@@ -152,7 +152,9 @@ def create_output_panel(tabname, outdir):
     import modules.generation_parameters_copypaste as parameters_copypaste
 
     def open_folder(gallery):
-        if gallery is not None and len(gallery) > 0:
+        if type(gallery) is str:
+            folder = gallery
+        elif gallery is not None and len(gallery) > 0:
             folder = os.path.dirname(gallery[-1]['name'])
         else:
             folder = shared.opts.outdir_samples or outdir
