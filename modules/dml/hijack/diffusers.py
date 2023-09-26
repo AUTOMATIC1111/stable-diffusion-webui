@@ -20,7 +20,7 @@ def PNDMScheduler__get_prev_sample(self, sample: torch.FloatTensor, timestep, pr
     beta_prod_t = 1 - alpha_prod_t
     beta_prod_t_prev = 1 - alpha_prod_t_prev
 
-    if self.config.prediction_type == "v_prediction":
+    if self.config.prediction_type == "v-prediction":
         model_output = (alpha_prod_t**0.5) * model_output + (beta_prod_t**0.5) * sample
     elif self.config.prediction_type != "epsilon":
         raise ValueError(
