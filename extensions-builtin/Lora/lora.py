@@ -526,7 +526,8 @@ def set_available_loras(files):
 
         # available_loras[name] = LoraOnDisk(name, filename)
         entry = LoraOnDisk(name, filename)
-
+        #
+        print(f"set lora:{name}->{entry}")
         available_loras[name] = entry
 
         if entry.alias in available_lora_aliases:
@@ -534,6 +535,7 @@ def set_available_loras(files):
 
         available_lora_aliases[name] = entry
         available_lora_aliases[entry.alias] = entry
+
 
 list_available_loras()
 
