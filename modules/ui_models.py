@@ -144,7 +144,7 @@ def create_ui():
                     model_checkhash_btn.click(fn=sd_models.update_model_hashes, inputs=[], outputs=[models_outcome])
                 with gr.Row():
                     model_table = gr.DataFrame(
-                        value = model_data,
+                        value = None,
                         headers = model_headers,
                         label = 'Model data',
                         show_label = True,
@@ -209,6 +209,7 @@ def create_ui():
                     return f'Diffuser model downloaded: model="{hub_id}"'
 
                 with gr.Column(scale=6):
+                    gr.HTML('<h2>Search for models</h2>Select a model from the search results to download<br><br>')
                     with gr.Row():
                         hf_search_text = gr.Textbox('', label = 'Search models', placeholder='search huggingface models')
                         hf_search_btn = ToolButton(value="🔍", label="Search")
@@ -224,12 +225,13 @@ def create_ui():
                         hf_token = gr.Textbox('', label = 'Huggingface token', placeholder='optional access token for private or gated models')
                         hf_mirror = gr.Textbox('', label = 'Huggingface mirror', placeholder='optional mirror site for downloads')
                 with gr.Column(scale=1):
+                    gr.HTML('<br>')
                     hf_download_model_btn = gr.Button(value="Download model", variant='primary')
 
                 with gr.Row():
                     hf_headers = ['Name', 'Pipeline', 'Tags', 'Downloads', 'Updated', 'URL']
                     hf_types = ['str', 'str', 'str', 'number', 'date', 'markdown']
-                    hf_results = gr.DataFrame([], label = 'Search results', show_label = True, interactive = False, wrap = True, overflow_row_behaviour = 'paginate', max_rows = 10, headers = hf_headers, datatype = hf_types, type='array')
+                    hf_results = gr.DataFrame(None, label = 'Search results', show_label = True, interactive = False, wrap = True, overflow_row_behaviour = 'paginate', max_rows = 10, headers = hf_headers, datatype = hf_types, type='array')
 
                 hf_search_text.submit(fn=hf_search, inputs=[hf_search_text], outputs=[hf_results])
                 hf_search_btn.click(fn=hf_search, inputs=[hf_search_text], outputs=[hf_results])
@@ -377,7 +379,7 @@ def create_ui():
                     civit_previews_rehash = gr.Checkbox(value=True, label="Check alternative hash")
 
                 with gr.Row(style={'margin-top': '1em'}):
-                    gr.HTML('<h2>Search for models</h2>')
+                    gr.HTML('<h2>Search for models</h2>Select a model, model version and and model variant from the search results to download<br>')
                 with gr.Row():
                     with gr.Column(scale=1):
                         civit_model_type = gr.Dropdown(label='Model type', choices=['SD 1.5', 'SD XL', 'LoRA', 'Other'], value='LoRA')

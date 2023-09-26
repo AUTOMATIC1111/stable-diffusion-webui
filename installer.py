@@ -746,6 +746,7 @@ def set_environment():
     os.environ.setdefault('HF_HUB_DISABLE_TELEMETRY', '1')
     os.environ.setdefault('HF_HUB_DISABLE_EXPERIMENTAL_WARNING', '1')
     os.environ.setdefault('UVICORN_TIMEOUT_KEEP_ALIVE', '60')
+    os.environ.setdefault('K_DIFFUSION_USE_COMPILE', '0')
     if sys.platform == 'darwin':
         os.environ.setdefault('PYTORCH_ENABLE_MPS_FALLBACK', '1')
 

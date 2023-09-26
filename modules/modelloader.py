@@ -174,10 +174,24 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         shared.log.debug(f"Diffusers authentication: {token}")
         hf.login(token)
     pipeline_dir = None
+
+    ok = True
     try:
         pipeline_dir = DiffusionPipeline.download(hub_id, **download_config)
     except Exception as e:
-        shared.log.error(f"Diffusers download error: {hub_id} {e}")
+        ok = False
+        shared.log.warning(f"Diffusers download error: {hub_id} {e}")
+    if not ok:
+        try:
+            download_config.pop('load_connected_pipeline')
+            download_config.pop('variant')
+            pipeline_dir = hf.snapshot_download(hub_id, **download_config)
+        except Exception as e:
+            shared.log.warning(f"Diffusers hub download error: {hub_id} {e}")
+
+    if pipeline_dir is None:
+        shared.log.error(f"Diffusers no pipeline folder: {hub_id}")
+        return
     try:
         model_info_dict = hf.model_info(hub_id).cardData if pipeline_dir is not None else None # pylint: disable=no-member # TODO Diffusers is this real error?
     except Exception:

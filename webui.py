@@ -18,6 +18,7 @@ from modules import shared, extensions, extra_networks, ui_tempdir, ui_extra_net
 from modules.paths import create_paths
 from modules.call_queue import queue_lock, wrap_queued_call, wrap_gradio_gpu_call # pylint: disable=W0611,C0411,C0412
 import modules.devices
+
 import modules.sd_samplers
 import modules.upscaler
 import modules.img2img
@@ -77,7 +78,6 @@ def check_rollback_vae():
 
 def initialize():
     log.debug('Initializing')
-
     check_rollback_vae()
 
     modules.sd_samplers.list_samplers()

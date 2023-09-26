@@ -7,7 +7,10 @@ from modules import timer, errors
 
 initialized = False
 logging.getLogger("DeepSpeed").disabled = True
+# os.environ.setdefault('OMP_NUM_THREADS', 1)
+# os.environ.setdefault('MKL_NUM_THREADS', 1)
 import torch # pylint: disable=C0411
+# torch.set_num_threads(1)
 try:
     import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
     errors.log.debug(f'Loaded IPEX=={ipex.__version__}')
