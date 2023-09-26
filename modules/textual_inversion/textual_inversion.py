@@ -138,8 +138,13 @@ class EmbeddingDatabase:
             done = False
             if hasattr(pipe,"load_textual_inversion"):
                 try:
-                    pipe.load_textual_inversion(path, cache_dir=shared.opts.diffusers_dir, local_files_only=True)
-                    done = True
+                    token_ids = pipe.tokenizer.convert_tokens_to_ids(name)
+                    if token_ids > 49407: # already loaded
+                        done = True
+                    else:
+                        pipe.load_textual_inversion(path, token=name, cache_dir=shared.opts.diffusers_dir, local_files_only=True)
+                        done = True
+                    self.register_embedding(embedding, shared.sd_model)
                 except Exception:
                     pass
             if not done and "safetensors" in path:
@@ -148,30 +153,27 @@ class EmbeddingDatabase:
                 with safe_open(path, framework="pt") as f:
                     for k in f.keys():
                         embeddings_dict[k] = f.get_tensor(k)
+                clip_l = pipe.text_encoder.get_input_embeddings().weight if hasattr(pipe, 'text_encoder') and hasattr(pipe.text_encoder, "resize_token_embeddings") else None
+                clip_g = pipe.text_encoder_2.get_input_embeddings().weight if hasattr(pipe, 'text_encoder_2') and hasattr(pipe.text_encoder_2, "resize_token_embeddings") else None
                 tokens = []
                 for i in range(len(embeddings_dict["clip_l"])):
-                    tokens.append(name if i == 0 else f"{name}_{i}")
+                    if clip_l is not None and len(clip_l.data[0]) == len(embeddings_dict["clip_l"][i]):
+                        tokens.append(name if i == 0 else f"{name}_{i}")
                 num_added = pipe.tokenizer.add_tokens(tokens)
                 if num_added > 0:
                     token_ids = pipe.tokenizer.convert_tokens_to_ids(tokens)
-                    clip_l = None
-                    clip_g = None
-                    if hasattr(pipe.text_encoder, "resize_token_embeddings"):
+                    if clip_l is not None:
                         pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
-                        clip_l = pipe.text_encoder.get_input_embeddings().weight
-                    if hasattr(pipe.text_encoder_2, "resize_token_embeddings"):
-                        pipe.text_encoder_2.resize_token_embeddings(len(pipe.tokenizer))
-                        clip_g = pipe.text_encoder_2.get_input_embeddings().weight
-                    for i in range(len(token_ids)):
-                        if clip_l is not None:
+                        for i in range(len(token_ids)):
                             clip_l.data[token_ids[i]] = embeddings_dict["clip_l"][i]
-                        if clip_g is not None:
+                    if clip_g is not None:
+                        pipe.text_encoder_2.resize_token_embeddings(len(pipe.tokenizer))
+                        for i in range(len(token_ids)):
                             clip_g.data[token_ids[i]] = embeddings_dict["clip_g"][i]
-
+                self.register_embedding(embedding, shared.sd_model)
             else:
                 raise NotImplementedError
             # self.word_embeddings[name] = embedding
-            self.register_embedding(embedding, shared.sd_model)
         except Exception:
             self.skipped_embeddings[name] = embedding
 
