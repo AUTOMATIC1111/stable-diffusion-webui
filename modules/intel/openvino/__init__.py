@@ -85,10 +85,6 @@ def get_device():
         shared.log.warning("OpenVINO: No compatible GPU detected!")
     os.environ.setdefault('OPENVINO_TORCH_BACKEND_DEVICE', device)
     shared.log.debug(f"OpenVINO Device: {device}")
-    if shared.opts.cuda_compile_errors and device not in core.available_devices:
-        shared.log.error(f"OpenVINO: Specified device {device} is not in the list of OpenVINO Available Devices")
-    assert device in core.available_devices, f"OpenVINO: Specified device {device} is not in the list of OpenVINO Available Devices"
-
     return device
 
 def cache_root_path():
