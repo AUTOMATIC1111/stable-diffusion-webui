@@ -249,10 +249,10 @@ class LoRAModule(torch.nn.Module):
             self.org_module[0].forward = self.org_forward
 
     # forward with lora
-    def forward(self, x):
+    def forward(self, x, scale = 1.0):
         if not self.enabled:
             return self.org_forward(x)
-        return self.org_forward(x) + self.lora_up(self.lora_down(x)) * self.multiplier * self.scale
+        return self.org_forward(x, scale = 1.0) + self.lora_up(self.lora_down(x)) * self.multiplier * self.scale
 
     def set_network(self, network):
         self.network = network
