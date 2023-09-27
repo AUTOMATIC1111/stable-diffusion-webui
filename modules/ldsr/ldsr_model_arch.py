@@ -1,7 +1,5 @@
 import os
-import gc
 import time
-
 import numpy as np
 import torch
 import torchvision
@@ -9,7 +7,6 @@ from PIL import Image
 from einops import rearrange, repeat
 from omegaconf import OmegaConf
 import safetensors.torch
-
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.util import instantiate_from_config, ismap
 from modules import devices, shared, sd_hijack
@@ -133,6 +130,7 @@ class LDSR:
 
         if shared.opts.upscaler_unload:
             del model
+            global cached_ldsr_model # pylint: disable=global-statement
             cached_ldsr_model = None
             shared.log.debug(f"Upscaler unloaded: type=LDSR model={self.modelPath}")
             devices.torch_gc(force=True)

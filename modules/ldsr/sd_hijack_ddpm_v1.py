@@ -15,14 +15,12 @@ from functools import partial
 from tqdm import tqdm
 from torchvision.utils import make_grid
 from pytorch_lightning.utilities.distributed import rank_zero_only
-
 from ldm.util import log_txt_as_img, exists, default, ismap, isimage, mean_flat, count_params, instantiate_from_config
 from ldm.modules.ema import LitEma
 from ldm.modules.distributions.distributions import normal_kl, DiagonalGaussianDistribution
 from ldm.models.autoencoder import VQModelInterface, IdentityFirstStage, AutoencoderKL
 from ldm.modules.diffusionmodules.util import make_beta_schedule, extract_into_tensor, noise_like
 from ldm.models.diffusion.ddim import DDIMSampler
-
 import ldm.models.diffusion.ddpm
 
 __conditioning_keys__ = {'concat': 'c_concat',
@@ -1010,7 +1008,7 @@ class LatentDiffusionV1(DDPMV1):
         elif self.parameterization == "eps":
             target = noise
         else:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         loss_simple = self.get_loss(model_output, target, mean=False).mean([1, 2, 3])
         loss_dict.update({f'{prefix}/loss_simple': loss_simple.mean()})
@@ -1049,7 +1047,7 @@ class LatentDiffusionV1(DDPMV1):
         elif self.parameterization == "x0":
             x_recon = model_out
         else:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         if clip_denoised:
             x_recon.clamp_(-1., 1.)
@@ -1408,7 +1406,7 @@ class DiffusionWrapperV1(pl.LightningModule):
             cc = c_crossattn[0]
             out = self.diffusion_model(x, t, y=cc)
         else:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         return out
 

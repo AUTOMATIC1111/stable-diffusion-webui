@@ -306,13 +306,16 @@ class KDiffusionSampler:
         if self.config.options.get('scheduler', None) == 'default' or self.config.options.get('scheduler', None) is None:
             sigmas = self.model_wrap.get_sigmas(steps)
         elif self.config.options.get('scheduler', None) == 'karras':
-            sigma_min, sigma_max = self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item()
+            sigma_min = p.s_min if p.s_min > 0 else self.model_wrap.sigmas[0].item()
+            sigma_max = p.s_max if p.s_max > 0 else self.model_wrap.sigmas[-1].item()
             sigmas = k_diffusion.sampling.get_sigmas_karras(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, device=shared.device)
         elif self.config.options.get('scheduler', None) == 'exponential':
-            sigma_min, sigma_max = self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item()
+            sigma_min = p.s_min if p.s_min > 0 else self.model_wrap.sigmas[0].item()
+            sigma_max = p.s_max if p.s_max > 0 else self.model_wrap.sigmas[-1].item()
             sigmas = k_diffusion.sampling.get_sigmas_exponential(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, device=shared.device)
         elif self.config.options.get('scheduler', None) == 'polyexponential':
-            sigma_min, sigma_max = self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item()
+            sigma_min = p.s_min if p.s_min > 0 else self.model_wrap.sigmas[0].item()
+            sigma_max = p.s_max if p.s_max > 0 else self.model_wrap.sigmas[-1].item()
             sigmas = k_diffusion.sampling.get_sigmas_polyexponential(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, device=shared.device)
         elif self.config.options.get('scheduler', None) == 'vp':
             sigmas = k_diffusion.sampling.get_sigmas_vp(n=steps, device=shared.device)

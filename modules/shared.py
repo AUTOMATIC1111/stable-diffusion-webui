@@ -566,7 +566,7 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
     # managed from ui.py for backend original
     "schedulers_brownian_noise": OptionInfo(True, "Use Brownian noise", gr.Checkbox, {"visible": False}),
     "schedulers_discard_penultimate": OptionInfo(True, "Discard penultimate sigma", gr.Checkbox, {"visible": False}),
-    "schedulers_sigma": OptionInfo("default", "Sigma algorithm", gr.Radio, {"choices": ['default', 'karras', 'exponential', 'polyexponential', 'vp'], "visible": False}),
+    "schedulers_sigma": OptionInfo("default", "Sigma algorithm", gr.Radio, {"choices": ['default', 'karras', 'exponential', 'polyexponential'], "visible": False}),
     # managed from ui.py for backend diffusers
     "schedulers_use_karras": OptionInfo(True, "Use Karras sigmas", gr.Checkbox, {"visible": False}),
     "schedulers_use_thresholding": OptionInfo(False, "Use dynamic thresholding", gr.Checkbox, {"visible": False}),
@@ -586,6 +586,8 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
     's_min_uncond': OptionInfo(0.0, "Sigma negative guidance minimum ", gr.Slider, {"minimum": 0.0, "maximum": 4.0, "step": 0.01}),
     's_tmin':  OptionInfo(0.0, "Sigma tmin",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_noise': OptionInfo(1.0, "Sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    's_min':  OptionInfo(0.0, "Sigma min",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    's_max':  OptionInfo(0.0, "Sigma max",  gr.Slider, {"minimum": 0.0, "maximum": 100.0, "step": 1.0}),
     # 'discard_next_to_last_sigma': OptionInfo("default", "Discard penultimate sigma", gr.Radio, lambda: {"choices": ['default', 'always', 'never']}),
     # 'always_discard_next_to_last_sigma': OptionInfo(False, "Always discard next-to-last sigma"),
     # 'never_discard_next_to_last_sigma': OptionInfo(False, "Never discard next-to-last sigma"),
@@ -834,9 +836,8 @@ if cmd_opts.backend is None:
 else:
     backend = Backend.DIFFUSERS if cmd_opts.use_openvino or cmd_opts.backend.lower() == 'diffusers' else Backend.ORIGINAL
 opts.data['sd_backend'] = 'diffusers' if backend == Backend.DIFFUSERS else 'original'
-opts.data['uni_pc_lower_order_final'] = opts.schedulers_use_loworder
-opts.data['uni_pc_order'] = opts.schedulers_solver_order
-# opts.data['diffusers_lora_loader'] = 'diffusers' # TODO broken in diffusers=0.21
+opts.data['uni_pc_lower_order_final'] = opts.schedulers_use_loworder # compatibility
+opts.data['uni_pc_order'] = opts.schedulers_solver_order # compatibility
 log.info(f'Engine: backend={backend} compute={devices.backend} mode={devices.inference_context.__name__} device={devices.get_optimal_device_name()}')
 log.info(f'Device: {print_dict(devices.get_gpu_info())}')
 

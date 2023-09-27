@@ -3,10 +3,10 @@ import sys
 import traceback
 
 from modules.upscaler import Upscaler, UpscalerData
-from ldsr_model_arch import LDSR
+from modules.ldsr.ldsr_model_arch import LDSR
 from modules import shared, script_callbacks
-import sd_hijack_autoencoder  # noqa: F401
-import sd_hijack_ddpm_v1  # noqa: F401
+import modules.ldsr.sd_hijack_autoencoder # pylint: disable=unused-import
+import modules.ldsr.sd_hijack_ddpm_v1 # pylint: disable=unused-import
 
 
 class UpscalerLDSR(Upscaler):
@@ -56,8 +56,8 @@ class UpscalerLDSR(Upscaler):
             print(traceback.format_exc(), file=sys.stderr)
         return None
 
-    def do_upscale(self, img, path):
-        ldsr = self.load_model(path)
+    def do_upscale(self, img, selected_model):
+        ldsr = self.load_model(selected_model)
         if ldsr is None:
             print("NO LDSR!")
             return img

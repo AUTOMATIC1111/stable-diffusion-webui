@@ -1,14 +1,14 @@
 # The content of this file comes from the ldm/models/autoencoder.py file of the compvis/stable-diffusion repo
 # The VQModel & VQModelInterface were subsequently removed from ldm/models/autoencoder.py when we moved to the stability-ai/stablediffusion repo
 # As the LDSR upscaler relies on VQModel & VQModelInterface, the hijack aims to put them back into the ldm.models.autoencoder
+from contextlib import contextmanager
 import numpy as np
 import torch
 import pytorch_lightning as pl
 import torch.nn.functional as F
-from contextlib import contextmanager
 from torch.optim.lr_scheduler import LambdaLR
-from ldm.modules.ema import LitEma
 from taming.modules.vqvae.quantize import VectorQuantizer2 as VectorQuantizer
+from ldm.modules.ema import LitEma
 from ldm.modules.diffusionmodules.model import Encoder, Decoder
 from ldm.util import instantiate_from_config
 
@@ -85,7 +85,7 @@ class VQModel(pl.LightningModule):
         for k in keys:
             for ik in ignore_keys or []:
                 if k.startswith(ik):
-                    print("Deleting key {} from state_dict.".format(k))
+                    print(f"Deleting key {k} from state_dict.")
                     del sd[k]
         missing, unexpected = self.load_state_dict(sd, strict=False)
         print(f"Restored from {path} with {len(missing)} missing and {len(unexpected)} unexpected keys")
@@ -137,7 +137,7 @@ class VQModel(pl.LightningModule):
                 # do the first few batches with max size to avoid later oom
                 new_resize = upper_size
             else:
-                new_resize = np.random.choice(np.arange(lower_size, upper_size+16, 16))
+                new_resize = np.random.choice(np.arange(lower_size, upper_size+16, 16)) # noqa: NPY002
             if new_resize != x.shape[2]:
                 x = F.interpolate(x, size=new_resize, mode="bicubic")
             x = x.detach()

@@ -252,7 +252,7 @@ class LoRAModule(torch.nn.Module):
     def forward(self, x, scale = 1.0):
         if not self.enabled:
             return self.org_forward(x)
-        return self.org_forward(x, scale = 1.0) + self.lora_up(self.lora_down(x)) * self.multiplier * self.scale
+        return self.org_forward(x) + self.lora_up(self.lora_down(x)) * self.multiplier * self.scale
 
     def set_network(self, network):
         self.network = network
@@ -373,12 +373,8 @@ class LoRANetwork(torch.nn.Module): # pylint: disable=abstract-method
         super().__init__()
         self.multiplier = multiplier
 
-        # shared.log.debug("create LoRA network from weights")
-
         # convert SDXL Stability AI's U-Net modules to Diffusers
-        converted = self.convert_unet_modules(modules_dim, modules_alpha)
-        if converted:
-            shared.log.debug(f"LoRA convert: modules={converted} SDXL SAI/SGM to Diffusers")
+        self.convert_unet_modules(modules_dim, modules_alpha)
 
         # create module instances
         def create_modules(
@@ -463,10 +459,8 @@ class LoRANetwork(torch.nn.Module): # pylint: disable=abstract-method
     def convert_unet_modules(self, modules_dim, modules_alpha):
         converted_count = 0
         not_converted_count = 0
-
         map_keys = list(UNET_CONVERSION_MAP.keys())
         map_keys.sort()
-
         for key in list(modules_dim.keys()):
             if key.startswith(LoRANetwork.LORA_PREFIX_UNET + "_"):
                 search_key = key.replace(LoRANetwork.LORA_PREFIX_UNET + "_", "")
@@ -481,10 +475,9 @@ class LoRANetwork(torch.nn.Module): # pylint: disable=abstract-method
                     converted_count += 1
                 else:
                     not_converted_count += 1
-        assert (
-            converted_count == 0 or not_converted_count == 0
-        ), f"some modules are not converted: {converted_count} converted, {not_converted_count} not converted"
-        return converted_count
+        if not_converted_count > 0:
+            shared.log.warning(f'LoRA modules not converted: {not_converted_count}')
+
 
     def set_multiplier(self, multiplier):
         self.multiplier = multiplier

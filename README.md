@@ -15,9 +15,6 @@
 
 </div>
 
-This project started as a fork from [Automatic1111 WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui/) and it grew significantly since then,  
-but although it diverged considerably, any substantial features to original work is ported to this repository as well.
-
 ## Top-13 Features (10 wasn't enough)
 
 All Individual features are not listed here, instead check [ChangeLog](CHANGELOG.md) for full list of changes.
@@ -137,6 +134,9 @@ SD.Next comes with several extensions pre-installed:
 This should be fully cross-platform, but I would really love to have additional contributors and/or maintainers to join and help lead the efforts on different platforms.
 
 ### **Goals**
+
+This project started as a fork from [Automatic1111 WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui/) and it grew significantly since then,  
+but although it diverged considerably, any substantial features to original work is ported to this repository as well.
 
 The idea behind the fork is to enable latest technologies and advances in text-to-image generation.
 

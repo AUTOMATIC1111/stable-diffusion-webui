@@ -24,6 +24,12 @@ def apply_field(field):
     return fun
 
 
+def apply_setting(field):
+    def fun(p, x, xs):
+        shared.opts.data[field] = x
+    return fun
+
+
 def apply_prompt(p, x, xs):
     if xs[0] not in p.prompt and xs[0] not in p.negative_prompt:
         shared.log.warning(f"XYZ grid: prompt S/R did not find {xs[0]} in prompt or negative prompt.")
@@ -118,10 +124,6 @@ def apply_vae(p, x, xs):
 
 def apply_styles(p: StableDiffusionProcessingTxt2Img, x: str, _):
     p.styles.extend(x.split(','))
-
-
-def apply_schedulers_solver_order(p, x, xs):
-    shared.opts.data["schedulers_solver_order"] = min(x, p.steps - 1)
 
 
 def apply_upscaler(p: StableDiffusionProcessingTxt2Img, opt, x):
@@ -219,23 +221,25 @@ axis_options = [
     AxisOption("Prompt order", str_permutations, apply_order, fmt=format_value_join_list),
     AxisOption("Upscaler", str, apply_upscaler, choices=lambda: [x.name for x in shared.sd_upscalers][1:]),
     AxisOption("Face restore", str, apply_face_restore, fmt=format_value),
+    AxisOption("Token merging ratio high-res", float, apply_override('token_merging_ratio_hr')),
     AxisOption("Token merging ratio", float, apply_override('token_merging_ratio')),
-    # AxisOption("Sampler Sigma Churn", float, apply_field("s_churn")),
-    # AxisOption("Sampler Sigma min", float, apply_field("s_tmin")),
-    # AxisOption("Sampler Sigma max", float, apply_field("s_tmax")),
-    # AxisOption("Sampler Sigma noise", float, apply_field("s_noise")),
-    # AxisOption("Sampler Eta", float, apply_field("eta")),
-    # AxisOption("Sampler Solver Order", int, apply_schedulers_solver_order, cost=0.5),
-    # AxisOption("Token merging ratio high-res", float, apply_override('token_merging_ratio_hr')),
     AxisOptionImg2Img("Image mask weight", float, apply_field("inpainting_mask_weight")),
     AxisOption("Model dictionary", str, apply_dict, fmt=format_value, cost=1.0, choices=lambda: ['None'] + list(sd_models.checkpoints_list)),
-    AxisOption("SecondPass Upscaler", str, apply_field("hr_upscaler"), choices=lambda: [*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]]),
-    AxisOption("SecondPass Sampler", str, apply_latent_sampler, fmt=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
-    AxisOption("SecondPass Denoising Strength", float, apply_field("denoising_strength")),
-    AxisOption("SecondPass Steps", int, apply_field("hr_second_pass_steps")),
+    AxisOption("Sampler sigma min", float, apply_field("s_min")),
+    AxisOption("Sampler sigma max", float, apply_field("s_max")),
+    AxisOption("Sampler sigma tmin", float, apply_field("s_tmin")),
+    AxisOption("Sampler sigma tmax", float, apply_field("s_tmax")),
+    AxisOption("Sampler sigma Churn", float, apply_field("s_churn")),
+    AxisOption("Sampler sigma noise", float, apply_field("s_noise")),
+    AxisOption("Sampler eta", float, apply_field("eta")),
+    AxisOption("Sampler solver order", int, apply_setting("schedulers_solver_order")),
+    AxisOption("SecondPass upscaler", str, apply_field("hr_upscaler"), choices=lambda: [*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]]),
+    AxisOption("SecondPass sampler", str, apply_latent_sampler, fmt=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
+    AxisOption("SecondPass denoising Strength", float, apply_field("denoising_strength")),
+    AxisOption("SecondPass steps", int, apply_field("hr_second_pass_steps")),
     AxisOption("SecondPass CFG scale", float, apply_field("image_cfg_scale")),
-    AxisOption("SecondPass Guidance Rescale", float, apply_field("diffusers_guidance_rescale")),
-    AxisOption("SecondPass Refiner Start", float, apply_field("refiner_start")),
+    AxisOption("SecondPass guidance rescale", float, apply_field("diffusers_guidance_rescale")),
+    AxisOption("SecondPass refiner start", float, apply_field("refiner_start")),
 ]
 
 
