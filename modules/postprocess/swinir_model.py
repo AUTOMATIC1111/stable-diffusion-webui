@@ -14,11 +14,15 @@ class UpscalerSwinIR(Upscaler):
         self.user_path = dirname
         super().__init__()
         self.scalers = self.find_scalers()
+        self.models = {}
 
     def load_model(self, path, scale=4):
         info = self.find_model(path)
         if info is None:
             return
+        if self.models.get(info.local_data_path, None) is not None:
+            shared.log.debug(f"Upscaler cached: type={self.name} model={info.local_data_path}")
+            return self.models[info.local_data_path]
         pretrained_model = torch.load(info.local_data_path)
         model_v2 = net2(
             upscale=scale,
@@ -54,6 +58,7 @@ class UpscalerSwinIR(Upscaler):
                     else:
                         model.load_state_dict(pretrained_model, strict=True)
                     shared.log.info(f"Upscaler loaded: type={self.name} model={info.local_data_path} param={param}")
+                    self.models[info.local_data_path] = model
                     return model
                 except Exception as e:
                     shared.log.error(f'Upscaler invalid parameters: type={self.name} model={info.local_data_path} {e}')
@@ -65,7 +70,10 @@ class UpscalerSwinIR(Upscaler):
             return img
         model = model.to(shared.device, dtype=devices.dtype)
         img = upscale(img, model)
-        devices.torch_gc()
+        if shared.opts.upscaler_unload and selected_model in self.models:
+            del self.models[selected_model]
+            shared.log.debug(f"Upscaler unloaded: type={self.name} model={selected_model}")
+            devices.torch_gc(force=True)
         return img
 
 

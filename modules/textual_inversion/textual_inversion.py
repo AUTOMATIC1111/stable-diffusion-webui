@@ -128,52 +128,68 @@ class EmbeddingDatabase:
         if ext.lower() != ".pt" and ext.lower() != ".safetensors":
             return
         pipe = shared.sd_model
-        if filename == "":
-            pipe.tokenizer = pipe.tokenizer.__class__.from_pretrained(pipe.tokenizer.name_or_path)
-            pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
-            return
         name = os.path.basename(fn)
         embedding = Embedding(vec=None, name=name, filename=path)
+        if not hasattr(pipe, "tokenizer") or not hasattr(pipe, 'text_encoder'):
+            self.skipped_embeddings[name] = embedding
+            return
         try:
-            done = False
-            if hasattr(pipe,"load_textual_inversion"):
-                try:
-                    token_ids = pipe.tokenizer.convert_tokens_to_ids(name)
-                    if token_ids > 49407: # already loaded
-                        done = True
-                    else:
-                        pipe.load_textual_inversion(path, token=name, cache_dir=shared.opts.diffusers_dir, local_files_only=True)
-                        done = True
+            is_xl = hasattr(pipe, 'text_encoder_2')
+            try:
+                if not is_xl: # only use for sd15/sd21
+                    pipe.load_textual_inversion(path, token=name, cache_dir=shared.opts.diffusers_dir, local_files_only=True)
                     self.register_embedding(embedding, shared.sd_model)
-                except Exception:
-                    pass
-            if not done and "safetensors" in path:
+            except Exception:
+                pass
+            is_loaded = pipe.tokenizer.convert_tokens_to_ids(name) > 49407
+            if is_loaded:
+                self.register_embedding(embedding, shared.sd_model)
+            else:
                 embeddings_dict = {}
-                from safetensors.torch import safe_open
-                with safe_open(path, framework="pt") as f:
-                    for k in f.keys():
-                        embeddings_dict[k] = f.get_tensor(k)
+                if ext.lower() in ['.safetensors']:
+                    with safetensors.torch.safe_open(path, framework="pt") as f:
+                        for k in f.keys():
+                            embeddings_dict[k] = f.get_tensor(k)
+                else:
+                    raise NotImplementedError
+                """
+                # alternatively could disable load_textual_inversion and load everything here
+                elif ext.lower() in ['.pt', '.bin']:
+                    data = torch.load(path, map_location="cpu")
+                    embedding.tag = data.get('name', None)
+                    embedding.step = data.get('step', None)
+                    embedding.sd_checkpoint = data.get('sd_checkpoint', None)
+                    embedding.sd_checkpoint_name = data.get('sd_checkpoint_name', None)
+                    param_dict = data.get('string_to_param', None)
+                    embeddings_dict['clip_l'] = []
+                    for tokens in param_dict.values():
+                        for vec in tokens:
+                            embeddings_dict['clip_l'].append(vec)
+                """
                 clip_l = pipe.text_encoder.get_input_embeddings().weight if hasattr(pipe, 'text_encoder') and hasattr(pipe.text_encoder, "resize_token_embeddings") else None
                 clip_g = pipe.text_encoder_2.get_input_embeddings().weight if hasattr(pipe, 'text_encoder_2') and hasattr(pipe.text_encoder_2, "resize_token_embeddings") else None
+                is_sd = clip_l is not None and 'clip_l' in embeddings_dict and clip_g is None and 'clip_g' not in embeddings_dict
+                is_xl = clip_l is not None and 'clip_l' in embeddings_dict and clip_g is not None and 'clip_g' in embeddings_dict
                 tokens = []
                 for i in range(len(embeddings_dict["clip_l"])):
-                    if clip_l is not None and len(clip_l.data[0]) == len(embeddings_dict["clip_l"][i]):
+                    if (is_sd or is_xl) and (len(clip_l.data[0]) == len(embeddings_dict["clip_l"][i])):
                         tokens.append(name if i == 0 else f"{name}_{i}")
                 num_added = pipe.tokenizer.add_tokens(tokens)
                 if num_added > 0:
                     token_ids = pipe.tokenizer.convert_tokens_to_ids(tokens)
-                    if clip_l is not None:
+                    if is_sd: # only used for sd15 if load_textual_inversion failed and format is safetensors
                         pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
                         for i in range(len(token_ids)):
                             clip_l.data[token_ids[i]] = embeddings_dict["clip_l"][i]
-                    if clip_g is not None:
+                    elif is_xl:
+                        pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
                         pipe.text_encoder_2.resize_token_embeddings(len(pipe.tokenizer))
                         for i in range(len(token_ids)):
+                            clip_l.data[token_ids[i]] = embeddings_dict["clip_l"][i]
                             clip_g.data[token_ids[i]] = embeddings_dict["clip_g"][i]
-                self.register_embedding(embedding, shared.sd_model)
-            else:
-                raise NotImplementedError
-            # self.word_embeddings[name] = embedding
+                    self.register_embedding(embedding, shared.sd_model)
+                else:
+                    raise NotImplementedError
         except Exception:
             self.skipped_embeddings[name] = embedding
 

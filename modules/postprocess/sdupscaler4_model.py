@@ -19,17 +19,22 @@ class UpscalerSD(Upscaler):
             None,
             None,
         ]
+        self.models = {}
 
     def load_model(self, path: str):
         from modules.sd_models import set_diffuser_options
-        scaler = [x for x in self.scalers if x.data_path == path][0]
-        if scaler.model is None:
+        scaler: UpscalerData = [x for x in self.scalers if x.data_path == path][0]
+        if self.models.get(path, None) is not None:
+            shared.log.debug(f"Upscaler cached: type={scaler.name} model={path}")
+            return self.models[path]
+        else:
             devices.set_cuda_params()
-            scaler.model = diffusers.DiffusionPipeline.from_pretrained(path, cache_dir=shared.opts.diffusers_dir, torch_dtype=devices.dtype)
-            if hasattr(scaler.model, "set_progress_bar_config"):
-                scaler.model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining} ' + '\x1b[38;5;71m' + 'Upscale', ncols=80, colour='#327fba')
+            model = diffusers.DiffusionPipeline.from_pretrained(path, cache_dir=shared.opts.diffusers_dir, torch_dtype=devices.dtype)
+            if hasattr(model, "set_progress_bar_config"):
+                model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining} ' + '\x1b[38;5;71m' + 'Upscale', ncols=80, colour='#327fba')
             set_diffuser_options(scaler.model, vae=None, op='upscaler')
-        return scaler.model
+            self.models[path] = model
+        return self.models[path]
 
     def callback(self, _step: int, _timestep: int, _latents: torch.FloatTensor):
         pass
@@ -61,4 +66,8 @@ class UpscalerSD(Upscaler):
         model = model.to(devices.device)
         output = model(**args)
         image = output.images[0]
+        if shared.opts.upscaler_unload and selected_model in self.models:
+            del self.models[selected_model]
+            shared.log.debug(f"Upscaler unloaded: type={self.name} model={selected_model}")
+            devices.torch_gc(force=True)
         return image

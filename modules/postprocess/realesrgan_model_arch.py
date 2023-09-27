@@ -29,6 +29,7 @@ class RealESRGANer():
     """
 
     def __init__(self,
+                 name,
                  scale,
                  model_path,
                  dni_weight=None,
@@ -39,6 +40,7 @@ class RealESRGANer():
                  half=False,
                  device=None,
                  gpu_id=None):
+        self.name = name
         self.scale = scale
         self.tile_size = tile
         self.tile_pad = tile_pad
@@ -63,6 +65,7 @@ class RealESRGANer():
                 from modules.modelloader import load_file_from_url
                 model_path = load_file_from_url(url=model_path, model_dir=os.path.join(ROOT_DIR, 'weights'), progress=True, file_name=None)
             loadnet = torch.load(model_path, map_location=torch.device('cpu'))
+            log.info(f"Upscaler loaded: type={self.name} model={model_path}")
 
         # prefer to use params_ema
         if 'params_ema' in loadnet:

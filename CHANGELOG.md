@@ -72,9 +72,14 @@ Upgrades are still possible and supported, but above is recommended for best exp
     description file present in format of *[model].txt*
   - to enable search, make sure all models have set hash values  
     *Models -> Valida -> Calculate hashes*
-- **Intel Arc/IPEX**:
-  - more optimizations, built-in binary wheels for Windows  
-    thanks @Disty0 @Nuullll
+- **Compute**  
+  - **Intel Arc/IPEX**:  
+    - more optimizations, built-in binary wheels for Windows  
+      thanks @Disty0 @Nuullll  
+  - **AMD ROCm**:  
+    - updated installer to support detect `ROCm` *5.4/5.5/5.6/5.7*  
+  - **CUDA**:  
+    - testing moved to `torch` *2.2.0-dev/cu121*  
 - **Startup**  
   - All main CLI parameters can now be set as environment variable as well  
     for example `--data-dir <path>` can be specified as `SD_DATADIR=<path>` before starting SD.Next  

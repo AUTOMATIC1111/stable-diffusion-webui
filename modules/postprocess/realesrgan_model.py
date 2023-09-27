@@ -5,7 +5,7 @@ from basicsr.archs.rrdbnet_arch import RRDBNet
 from modules.postprocess.realesrgan_model_arch import SRVGGNetCompact
 from modules.upscaler import Upscaler
 from modules.shared import opts, device, log
-
+from modules import devices
 
 class UpscalerRealESRGAN(Upscaler):
     def __init__(self, dirname):
@@ -13,6 +13,7 @@ class UpscalerRealESRGAN(Upscaler):
         self.user_path = dirname
         super().__init__()
         self.scalers = self.find_scalers()
+        self.models = {}
         for scaler in self.scalers:
             if scaler.name == 'RealESRGAN 2x+':
                 scaler.model = lambda: RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
@@ -41,22 +42,29 @@ class UpscalerRealESRGAN(Upscaler):
         except Exception:
             log.error("Error importing Real-ESRGAN:")
             return img
-
         info = self.find_model(selected_model)
         if info is None or not os.path.exists(info.local_data_path):
             return img
-
-        upsampler = RealESRGANer(
-            scale=info.scale,
-            model_path=info.local_data_path,
-            model=info.model(),
-            half=not opts.no_half and not opts.upcast_sampling,
-            tile=opts.ESRGAN_tile,
-            tile_pad=opts.ESRGAN_tile_overlap,
-            device=device,
-        )
-
+        if self.models.get(info.local_data_path, None) is not None:
+            log.debug(f"Upscaler cached: type={self.name} model={info.local_data_path}")
+            upsampler=self.models[info.local_data_path]
+        else:
+            upsampler = RealESRGANer(
+                name=info.name,
+                scale=info.scale,
+                model_path=info.local_data_path,
+                model=info.model(),
+                half=not opts.no_half and not opts.upcast_sampling,
+                tile=opts.ESRGAN_tile,
+                tile_pad=opts.ESRGAN_tile_overlap,
+                device=device,
+            )
+            self.models[info.local_data_path] = upsampler
         upsampled = upsampler.enhance(np.array(img), outscale=info.scale)[0]
+        if opts.upscaler_unload and info.local_data_path in self.models:
+            del self.models[info.local_data_path]
+            log.debug(f"Upscaler unloaded: type={self.name} model={selected_model}")
+            devices.torch_gc(force=True)
 
         image = Image.fromarray(upsampled)
         return image

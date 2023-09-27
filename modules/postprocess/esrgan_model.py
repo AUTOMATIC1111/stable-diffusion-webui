@@ -4,7 +4,7 @@ from PIL import Image
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
 import modules.postprocess.esrgan_model_arch as arch
 from modules import images, devices
-from modules.upscaler import Upscaler
+from modules.upscaler import Upscaler, UpscalerData
 from modules.shared import opts, log, console
 
 
@@ -122,7 +122,7 @@ class UpscalerESRGAN(Upscaler):
         self.user_path = dirname
         super().__init__()
         self.scalers = self.find_scalers()
-
+        self.models = {}
 
     def do_upscale(self, img, selected_model):
         model = self.load_model(selected_model)
@@ -130,12 +130,19 @@ class UpscalerESRGAN(Upscaler):
             return img
         model.to(devices.device_esrgan)
         img = esrgan_upscale(model, img)
+        if opts.upscaler_unload and selected_model in self.models:
+            del self.models[selected_model]
+            log.debug(f"Upscaler unloaded: type={self.name} model={selected_model}")
+            devices.torch_gc(force=True)
         return img
 
     def load_model(self, path: str):
-        info = self.find_model(path)
+        info: UpscalerData = self.find_model(path)
         if info is None:
             return
+        if self.models.get(info.local_data_path, None) is not None:
+            log.debug(f"Upscaler cached: type={self.name} model={info.local_data_path}")
+            return self.models[info.local_data_path]
         state_dict = torch.load(info.local_data_path, map_location='cpu' if devices.device_esrgan.type == 'mps' else None)
         log.info(f"Upscaler loaded: type={self.name} model={info.local_data_path}")
 
@@ -147,7 +154,9 @@ class UpscalerESRGAN(Upscaler):
             model = arch.SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=num_conv, upscale=4, act_type='prelu')
             model.load_state_dict(state_dict)
             model.eval()
-            return model
+            self.models[info.local_data_path] = model
+            return self.models[info.local_data_path]
+
         if "body.0.rdb1.conv1.weight" in state_dict and "conv_first.weight" in state_dict:
             nb = 6 if "RealESRGAN_x4plus_anime_6B" in info.local_data_path else 23
             state_dict = resrgan2normal(state_dict, nb)
@@ -155,14 +164,12 @@ class UpscalerESRGAN(Upscaler):
             state_dict = mod2normal(state_dict)
         elif "model.0.weight" not in state_dict:
             raise TypeError("The file is not a recognized ESRGAN model.")
-
         in_nc, out_nc, nf, nb, plus, mscale = infer_params(state_dict)
-
         model = arch.RRDBNet(in_nc=in_nc, out_nc=out_nc, nf=nf, nb=nb, upscale=mscale, plus=plus)
         model.load_state_dict(state_dict)
         model.eval()
-
-        return model
+        self.models[info.local_data_path] = model
+        return self.models[info.local_data_path]
 
 
 def upscale_without_tiling(model, img):

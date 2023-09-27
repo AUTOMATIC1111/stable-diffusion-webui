@@ -14,18 +14,24 @@ class UpscalerSCUNet(Upscaler):
         self.user_path = dirname
         super().__init__()
         self.scalers = self.find_scalers()
+        self.models = {}
 
     def load_model(self, path: str):
         info = self.find_model(path)
         if info is None:
             return
-        model = net(in_nc=3, config=[4, 4, 4, 4, 4, 4, 4], dim=64)
-        model.load_state_dict(torch.load(info.local_data_path), strict=True)
-        model.eval()
-        log.info(f"Upscaler loaded: type={self.name} model={info.local_data_path}")
-        for _, v in model.named_parameters():
-            v.requires_grad = False
-        model = model.to(device)
+        if self.models.get(info.local_data_path, None) is not None:
+            log.debug(f"Upscaler cached: type={self.name} model={info.local_data_path}")
+            model=self.models[info.local_data_path]
+        else:
+            model = net(in_nc=3, config=[4, 4, 4, 4, 4, 4, 4], dim=64)
+            model.load_state_dict(torch.load(info.local_data_path), strict=True)
+            model.eval()
+            log.info(f"Upscaler loaded: type={self.name} model={info.local_data_path}")
+            for _, v in model.named_parameters():
+                v.requires_grad = False
+            model = model.to(device)
+            self.models[info.local_data_path] = model
         return model
 
     @staticmethod
@@ -83,7 +89,12 @@ class UpscalerSCUNet(Upscaler):
         devices.torch_gc()
         output = np_output.transpose((1, 2, 0))  # CHW to HWC
         output = output[:, :, ::-1]  # BGR to RGB
-        return PIL.Image.fromarray((output * 255).astype(np.uint8))
+        img = PIL.Image.fromarray((output * 255).astype(np.uint8))
+        if opts.upscaler_unload and selected_file in self.models:
+            del self.models[selected_file]
+            log.debug(f"Upscaler unloaded: type={self.name} model={selected_file}")
+            devices.torch_gc(force=True)
+        return img
 
 
 def on_ui_settings():
