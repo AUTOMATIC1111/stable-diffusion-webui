@@ -45,17 +45,19 @@ Upgrades are still possible and supported, but above is recommended for best exp
     faster loading, wider compatibility and support for embeddings with multiple vectors  
     information about used embedding is now also added to image metadata  
 - **Upscalers**:
+  - fix long outstanding memory leak in legacy code, amazing this went undetected for so long  
   - more high quality upscalers available by default  
     *SwinIR:2, ESRGAN:12, RealESRGAN:6, SCUNet:2*
   - two additional latent upscalers based on SD upscale models when using Diffusers backend  
     *SD Upscale 2x, SD Upscale 4x*  
     Note: Recommended usage for *SD Upscale* is by using second pass instead of upscaler  
     as it allows for tuning of prompt, seed, sampler settings which are used to guide upscaler
-  - unified init/download/execute/progress code  
-  - easier installation  
-  - available in **xyz grid**  
+  - upscalers are available in **xyz grid**  
+  - simplified *settings->postprocessing->upscalers*
   - allow upscale-only as part of **txt2img** and **img2img** workflows  
     simply set *denoising strength* to 0 so hires does not get triggered  
+  - unified init/download/execute/progress code  
+  - easier installation  
 - **Samplers**:
   - moved ui options to submenu  
   - default list for new installs is now all samplers, list can be modified in settings  

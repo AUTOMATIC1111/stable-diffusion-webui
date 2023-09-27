@@ -614,13 +614,10 @@ options_templates.update(options_section(('postprocessing', "Postprocessing"), {
 
     "postprocessing_sep_upscalers": OptionInfo("<h2>Upscaling</h2>", "", gr.HTML),
     "upscaler_unload": OptionInfo(False, "Unload upscaler after processing"),
-    'upscaling_max_images_in_cache': OptionInfo(5, "Maximum number of images in upscaling cache", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1, "visible": False}),
+    # 'upscaling_max_images_in_cache': OptionInfo(5, "Maximum number of images in upscaling cache", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1, "visible": False}),
     "upscaler_for_img2img": OptionInfo("None", "Default upscaler for image resize operations", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers]}),
-    # "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Real-ESRGAN available models", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
-    "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
-    "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap in pixels for ESRGAN upscalers", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
-    "SCUNET_tile": OptionInfo(256, "Tile size for SCUNET upscalers", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
-    "SCUNET_tile_overlap": OptionInfo(8, "Tile overlap for SCUNET upscalers", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),
+    "upscaler_tile_size": OptionInfo(192, "Upscaler tile size", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
+    "upscaler_tile_overlap": OptionInfo(8, "Upscaler tile overlap", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),
 }))
 
 options_templates.update(options_section(('training', "Training"), {

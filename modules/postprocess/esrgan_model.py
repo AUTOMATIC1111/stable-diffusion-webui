@@ -188,10 +188,10 @@ def upscale_without_tiling(model, img):
 
 
 def esrgan_upscale(model, img):
-    if opts.ESRGAN_tile == 0:
+    if opts.upscaler_tile_size == 0:
         return upscale_without_tiling(model, img)
 
-    grid = images.split_grid(img, opts.ESRGAN_tile, opts.ESRGAN_tile, opts.ESRGAN_tile_overlap)
+    grid = images.split_grid(img, opts.upscaler_tile_size, opts.upscaler_tile_size, opts.upscaler_tile_overlap)
     newtiles = []
     scale_factor = 1
 

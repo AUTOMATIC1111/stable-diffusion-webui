@@ -39,8 +39,8 @@ class UpscalerSCUNet(Upscaler):
     def tiled_inference(img, model):
         # test the image tile by tile
         h, w = img.shape[2:]
-        tile = opts.SCUNET_tile
-        tile_overlap = opts.SCUNET_tile_overlap
+        tile = opts.upscaler_tile_size
+        tile_overlap = opts.upscaler_tile_overlap
         if tile == 0:
             return model(img)
         assert tile % 8 == 0, "tile size should be a multiple of window_size"
@@ -72,7 +72,7 @@ class UpscalerSCUNet(Upscaler):
         model = self.load_model(selected_file)
         if model is None:
             return img
-        tile = opts.SCUNET_tile
+        tile = opts.upscaler_tile_size
         h, w = img.height, img.width
         np_img = np.array(img)
         np_img = np_img[:, :, ::-1]  # RGB to BGR
@@ -95,13 +95,3 @@ class UpscalerSCUNet(Upscaler):
             log.debug(f"Upscaler unloaded: type={self.name} model={selected_file}")
             devices.torch_gc(force=True)
         return img
-
-
-def on_ui_settings():
-    import gradio as gr
-    from modules import shared
-    shared.opts.add_option("SCUNET_tile", shared.OptionInfo(256, "Tile size for SCUNET upscalers", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}, section=('postprocessing', "Postprocessing")).info("0 = no tiling"))
-    shared.opts.add_option("SCUNET_tile_overlap", shared.OptionInfo(8, "Tile overlap for SCUNET upscalers", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}, section=('postprocessing', "Postprocessing")).info("Low values = visible seam"))
-
-
-script_callbacks.on_ui_settings(on_ui_settings)

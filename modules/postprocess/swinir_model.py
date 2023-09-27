@@ -85,8 +85,8 @@ def upscale(
         window_size=8,
         scale=4,
 ):
-    tile = tile or shared.opts.SWIN_tile
-    tile_overlap = tile_overlap or shared.opts.SWIN_tile_overlap
+    tile = tile or shared.opts.upscaler_tile_size
+    tile_overlap = tile_overlap or shared.opts.upscaler_tile_overlap
     img = np.array(img)
     img = img[:, :, ::-1]
     img = np.moveaxis(img, 2, 0) / 255
@@ -140,12 +140,3 @@ def inference(img, model, tile, tile_overlap, window_size, scale):
                 progress.update(task, advance=1, description="Upscaling")
     output = E.div_(W)
     return output
-
-
-def on_ui_settings():
-    import gradio as gr
-    shared.opts.add_option("SWIN_tile", shared.OptionInfo(192, "Tile size for SwinIR upscaler", gr.Slider, {"minimum": 16, "maximum": 512, "step": 16}, section=('postprocessing', "Postprocessing")))
-    shared.opts.add_option("SWIN_tile_overlap", shared.OptionInfo(8, "Tile overlap for SwinIR upscaler", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}, section=('postprocessing', "Postprocessing")))
-
-
-script_callbacks.on_ui_settings(on_ui_settings)

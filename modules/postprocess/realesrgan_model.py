@@ -55,8 +55,8 @@ class UpscalerRealESRGAN(Upscaler):
                 model_path=info.local_data_path,
                 model=info.model(),
                 half=not opts.no_half and not opts.upcast_sampling,
-                tile=opts.ESRGAN_tile,
-                tile_pad=opts.ESRGAN_tile_overlap,
+                tile=opts.upscaler_tile_size,
+                tile_pad=opts.upscaler_tile_overlap,
                 device=device,
             )
             self.models[info.local_data_path] = upsampler

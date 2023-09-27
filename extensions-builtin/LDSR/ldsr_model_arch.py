@@ -20,18 +20,18 @@ cached_ldsr_model: torch.nn.Module = None
 # Create LDSR Class
 class LDSR:
     def load_model_from_config(self, half_attention):
-        global cached_ldsr_model
+        global cached_ldsr_model # pylint: disable=global-statement
 
-        if shared.opts.ldsr_cached and cached_ldsr_model is not None:
-            shared.log.info("LDSR Loading model from cache")
+        if cached_ldsr_model is not None:
+            shared.log.info(f"Upscaler cached: type=LDSR model={self.modelPath}")
             model: torch.nn.Module = cached_ldsr_model
         else:
-            shared.log.info(f"LDSR Loading model from {self.modelPath}")
             _, extension = os.path.splitext(self.modelPath)
             if extension.lower() == ".safetensors":
                 pl_sd = safetensors.torch.load_file(self.modelPath, device="cpu")
             else:
                 pl_sd = torch.load(self.modelPath, map_location="cpu")
+            shared.log.info(f"Upscaler loaded: type=LDSR model={self.modelPath}")
             sd = pl_sd["state_dict"] if "state_dict" in pl_sd else pl_sd
             config = OmegaConf.load(self.yamlPath)
             config.model.target = "ldm.models.diffusion.ddpm.LatentDiffusionV1"
@@ -42,13 +42,9 @@ class LDSR:
                 model = model.half()
             if shared.cmd_opts.opt_channelslast:
                 model = model.to(memory_format=torch.channels_last)
-
             sd_hijack.model_hijack.hijack(model) # apply optimization
             model.eval()
-
-            if shared.opts.ldsr_cached:
-                cached_ldsr_model = model
-
+            cached_ldsr_model = model
         return {"model": model}
 
     def __init__(self, model_path, yaml_path):
@@ -58,18 +54,15 @@ class LDSR:
     @staticmethod
     def run(model, selected_path, custom_steps, eta):
         example = get_cond(selected_path)
-
         n_runs = 1
         guider = None
         ckwargs = None
         ddim_use_x0_pred = False
         temperature = 1.
-        eta = eta
+        eta = eta # pylint: disable=self-assigning-variable
         custom_shape = None
-
         height, width = example["image"].shape[1:3]
         split_input = height >= 128 and width >= 128
-
         if split_input:
             ks = 128
             stride = 64
@@ -105,14 +98,9 @@ class LDSR:
 
     def super_resolution(self, image, steps=100, target_scale=2, half_attention=False):
         model = self.load_model_from_config(half_attention)
-
         # Run settings
         diffusion_steps = int(steps)
         eta = 1.0
-
-        gc.collect()
-        devices.torch_gc()
-
         im_og = image
         width_og, height_og = im_og.size
         # If we can adjust the max upscale size, then the 4 below should be our variable
@@ -121,7 +109,6 @@ class LDSR:
         hd = height_og * down_sample_rate
         width_downsampled_pre = int(np.ceil(wd))
         height_downsampled_pre = int(np.ceil(hd))
-
         if down_sample_rate != 1:
             shared.log.info(f'LDSR Downsampling from [{width_og}, {height_og}] to [{width_downsampled_pre}, {height_downsampled_pre}]')
             im_og = im_og.resize((width_downsampled_pre, height_downsampled_pre), Image.LANCZOS)
@@ -141,13 +128,14 @@ class LDSR:
         sample = sample.numpy().astype(np.uint8)
         sample = np.transpose(sample, (0, 2, 3, 1))
         a = Image.fromarray(sample[0])
-
         # remove padding
         a = a.crop((0, 0) + tuple(np.array(im_og.size) * 4))
 
-        del model
-        gc.collect()
-        devices.torch_gc()
+        if shared.opts.upscaler_unload:
+            del model
+            cached_ldsr_model = None
+            shared.log.debug(f"Upscaler unloaded: type=LDSR model={self.modelPath}")
+            devices.torch_gc(force=True)
 
         return a
 

@@ -28,8 +28,8 @@ class Upscaler:
         if models is None:
             models = modules.shared.readfile('html/upscalers.json')
         self.mod_pad_h = None
-        self.tile_size = modules.shared.opts.ESRGAN_tile
-        self.tile_pad = modules.shared.opts.ESRGAN_tile_overlap
+        self.tile_size = modules.shared.opts.upscaler_tile_size
+        self.tile_pad = modules.shared.opts.upscaler_tile_overlap
         self.device = modules.shared.device
         self.img = None
         self.output = None
