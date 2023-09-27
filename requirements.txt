@@ -6,8 +6,9 @@ basicsr
 blendmodes
 clean-fid
 einops
+fastapi>=0.90.1
 gfpgan
-gradio==3.39.0
+gradio==3.41.2
 inflection
 jsonmerge
 kornia
@@ -31,5 +32,8 @@ torch
 torchdiffeq
 torchsde
 transformers==4.30.0
-diffusers==0.18.2
+diffusers==0.21.1
 openvino==2023.1.0.dev20230811
+invisible-watermark
+transformers==4.30.2
+
