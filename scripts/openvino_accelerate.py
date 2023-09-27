@@ -9,6 +9,7 @@ import hashlib
 import functools
 import gradio as gr
 import numpy as np
+import sys
 
 import modules
 import modules.paths as paths
@@ -63,7 +64,25 @@ from diffusers import (
     AutoencoderKL,
 )
 
-
+## hack for pytorch
+def BUILD_MAP_UNPACK(self, inst):
+        items = self.popn(inst.argval)
+        # ensure everything is a dict
+        items = [BuiltinVariable(dict).call_function(self, [x], {}) for x in items]
+        result = dict()
+        for x in items:
+            assert isinstance(x, ConstDictVariable)
+        result.update(x.items)
+        self.push(
+            ConstDictVariable(
+                result,
+                dict,
+                mutable_local=MutableLocal(),
+                **VariableTracker.propagate(items),
+            )
+        )
+tmp_torch = sys.modules["torch"]
+tmp_torch.BUILD_MAP_UNPACK_WITH_CALL = BUILD_MAP_UNPACK
 
 class ModelState:
     def __init__(self):
@@ -93,7 +112,6 @@ DEFAULT_OPENVINO_PYTHON_CONFIG = MappingProxyType(
 compiled_cache = {}
 max_openvino_partitions = 0
 partitioned_modules = {}
-
 @register_backend
 @fake_tensor_unsupported
 def openvino_fx(subgraph, example_inputs):
@@ -545,7 +563,7 @@ def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching,
         else:
             vae_path = os.path.join(curr_dir_path, 'models', 'VAE', vae_ckpt)
             print("OpenVINO Script:  loading vae from : " + vae_path)
-            sd_model.vae = AutoencoderKL.from_single_file(vae_path, local_files_only=True, variant="fp16", dtype=torch.float16)
+            sd_model.vae = AutoencoderKL.from_single_file(vae_path, local_files_only=True)
             sd_model.vae.decode = torch.compile(sd_model.vae.decode, backend="openvino_fx")
         shared.sd_diffusers_model = sd_model
         del sd_model
@@ -559,13 +577,22 @@ def get_diffusers_sd_refiner_model(model_config, vae_ckpt, sampler_name, enable_
         if refiner_ckpt != "None":
             refiner_checkpoint_path= os.path.join(curr_dir_path, 'models', 'Stable-diffusion', refiner_ckpt)
             refiner_checkpoint_info = CheckpointInfo(refiner_checkpoint_path)
-            refiner_model = StableDiffusionXLImg2ImgPipeline.from_single_file(refiner_checkpoint_path, use_safetensors=True, add_watermark=False, torch_dtype=torch.float32)
+            refiner_model = StableDiffusionXLImg2ImgPipeline.from_single_file(refiner_checkpoint_path, use_safetensors=True, torch_dtype=torch.float32)
             refiner_model.watermark = NoWatermark()
             refiner_model.sd_checkpoint_info = refiner_checkpoint_info
             refiner_model.sd_model_hash = refiner_checkpoint_info.calculate_shorthash()
             refiner_model.unet = torch.compile(refiner_model.unet,  backend="openvino_fx")
-            refiner_model.vae.decode = shared.sd_diffusers_model.vae.decode
-        shared.sd_refiner_model = refiner_model
+            ## VAE
+            if vae_ckpt == "Disable-VAE-Acceleration":
+                refiner_model.vae.decode = refiner_model.vae.decode
+            elif vae_ckpt == "None":
+                refiner_model.vae.decode = torch.compile(refiner_model.vae.decode, backend="openvino_fx")
+            else:
+                vae_path = os.path.join(curr_dir_path, 'models', 'VAE', vae_ckpt)
+                print("OpenVINO Script:  loading vae from : " + vae_path)
+                refiner_model.vae = AutoencoderKL.from_single_file(vae_path, local_files_only=True)
+                refiner_model.vae.decode = torch.compile(refiner_model.vae.decode, backend="openvino_fx")
+            shared.sd_refiner_model = refiner_model
         del refiner_model
     return shared.sd_refiner_model
 
@@ -913,7 +940,7 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
                 if opts.enable_pnginfo:
                     image.info["parameters"] = text
                 output_images.append(image)
-                if ('ControlNet' in p.extra_generation_params and cn_model != "None"):
+                if ('ControlNet 0' in p.extra_generation_params and cn_model != "None"):
                     for cn_image in control_images:
                         output_images.append(cn_image)
 
