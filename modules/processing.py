@@ -157,6 +157,7 @@ class StableDiffusionProcessing:
     token_merging_ratio = 0
     token_merging_ratio_hr = 0
     disable_extra_networks: bool = False
+    task_id: str = None
 
     scripts_value: scripts.ScriptRunner = field(default=None, init=False)
     script_args_value: list = field(default=None, init=False)
@@ -201,6 +202,8 @@ class StableDiffusionProcessing:
     sd_vae_hash: str = field(default=None, init=False)
 
     is_api: bool = field(default=False, init=False)
+    
+    task_id: str = field(default=None, init=False)
 
     def __post_init__(self):
         if self.sampler_index is not None:
@@ -481,9 +484,10 @@ class StableDiffusionProcessing:
 
 
 class Processed:
-    def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_negative_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None, comments=""):
+    def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_negative_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None, comments="", task_id=None,):
         self.images = images_list
         self.prompt = p.prompt
+        self.task_id  = p.task_id
         self.negative_prompt = p.negative_prompt
         self.seed = seed
         self.subseed = subseed

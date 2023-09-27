@@ -28,7 +28,7 @@ from PIL import PngImagePlugin,Image
 from modules.sd_models import unload_model_weights, reload_model_weights, checkpoint_aliases
 from modules.sd_models_config import find_checkpoint_config_near_filename
 from modules.realesrgan_model import get_realesrgan_models
-from modules import devices
+from modules import devices, progress
 from typing import Dict, List, Any
 import piexif
 import piexif.helper
@@ -357,11 +357,19 @@ class Api:
         args.pop('script_name', None)
         args.pop('script_args', None) # will refeed them to the pipeline directly after initializing them
         args.pop('alwayson_scripts', None)
-
+        
         script_args = self.init_script_args(txt2imgreq, self.default_script_arg_txt2img, selectable_scripts, selectable_script_idx, script_runner)
 
         send_images = args.pop('send_images', True)
         args.pop('save_images', None)
+        
+        task_id = args.pop('task_id', None)
+        if task_id is None:
+            task_id = str(time.time())
+
+        #if task_id.startswith("task(") and task_id.endswith(")"):
+        progress.add_task_to_queue(task_id)
+        progress.start_task(task_id)
 
         with self.queue_lock:
             with closing(StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)) as p:
@@ -375,12 +383,14 @@ class Api:
                     if selectable_scripts is not None:
                         p.script_args = script_args
                         processed = scripts.scripts_txt2img.run(p, *p.script_args) # Need to pass args as list here
+                        progress.record_results(task_id, '')
                     else:
                         p.script_args = tuple(script_args) # Need to pass args as tuple here
                         processed = process_images(p)
                 finally:
                     shared.state.end()
                     shared.total_tqdm.clear()
+                    progress.finish_task(task_id)
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
