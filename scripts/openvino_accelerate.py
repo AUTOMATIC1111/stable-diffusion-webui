@@ -68,17 +68,17 @@ from diffusers import (
 def BUILD_MAP_UNPACK(self, inst):
         items = self.popn(inst.argval)
         # ensure everything is a dict
-        items = [BuiltinVariable(dict).call_function(self, [x], {}) for x in items] #noqa
+        items = [BuiltinVariable(dict).call_function(self, [x], {}) for x in items] # noqa: F821
         result = dict()
         for x in items:
-            assert isinstance(x, ConstDictVariable) #noqa
+            assert isinstance(x, ConstDictVariable) # noqa: F821
         result.update(x.items)
         self.push(
-            ConstDictVariable( #noqa
+            ConstDictVariable( # noqa: F821
                 result,
                 dict,
-                mutable_local=MutableLocal(), #noqa
-                **VariableTracker.propagate(items), #noqa
+                mutable_local=MutableLocal(), # noqa: F821
+                **VariableTracker.propagate(items), # noqa: F821
             )
         )
 tmp_torch = sys.modules["torch"]
