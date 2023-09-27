@@ -69,10 +69,10 @@ Additional models will be added as they become available and there is public int
 - *nVidia* GPUs using **CUDA** libraries on both *Windows and Linux*
 - *AMD* GPUs using **ROCm** libraries on *Linux*.  
   Support will be extended to *Windows* once AMD releases ROCm for Windows
-- Any GPU compatibile with *DirectX* on *Windows* using **DirectML** libraries.  
-  This includes support for AMD GPUs that are not supported by native ROCm libraries
 - *Intel Arc* GPUs using **OneAPI** with *IPEX XPU* libraries on both *Windows and Linux*
-- *Intel* GPUs using **OpenVINO** libraries on both *Windows and Linux*
+- Any GPU compatible with *DirectX* on *Windows* using **DirectML** libraries.  
+  This includes support for AMD GPUs that are not supported by native ROCm libraries
+- Any GPU compatible with **OpenVINO** libraries on both *Windows and Linux*
 - *Apple M1/M2* on *OSX* using built-in support in Torch with **MPS** optimizations
 
 ## Install & Run

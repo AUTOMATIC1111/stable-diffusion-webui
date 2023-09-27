@@ -1,4 +1,5 @@
 import os
+import sys
 import torch
 from openvino.frontend import FrontEndManager
 from openvino.frontend.pytorch.fx_decoder import TorchFXPythonDecoder
@@ -12,6 +13,25 @@ from types import MappingProxyType
 from hashlib import sha256
 import functools
 from modules import shared, devices
+
+def BUILD_MAP_UNPACK(self, inst):
+        items = self.popn(inst.argval)
+        # ensure everything is a dict
+        items = [BuiltinVariable(dict).call_function(self, [x], {}) for x in items] # noqa: F821
+        result = dict()
+        for x in items:
+            assert isinstance(x, ConstDictVariable) # noqa: F821
+        result.update(x.items)
+        self.push(
+            ConstDictVariable( # noqa: F821
+                result,
+                dict,
+                mutable_local=MutableLocal(), # noqa: F821
+                **VariableTracker.propagate(items), # noqa: F821
+            )
+        )
+tmp_torch = sys.modules["torch"]
+tmp_torch.BUILD_MAP_UNPACK_WITH_CALL = BUILD_MAP_UNPACK
 
 compiled_cache = {}
 max_openvino_partitions = 0
