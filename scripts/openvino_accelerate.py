@@ -15,7 +15,7 @@ import modules
 import modules.paths as paths
 import modules.scripts as scripts
 
-from modules import images, devices, extra_networks, masking, shared, sd_models_config
+from modules import images, devices, extra_networks, masking, shared, sd_models_config, prompt_parser
 from modules.processing import (
     StableDiffusionProcessing, Processed, apply_overlay, apply_color_correction,
     get_fixed_seed, create_infotext, setup_color_correction
@@ -863,6 +863,7 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
                 })
 
 
+
             if refiner_ckpt != "None" and is_xl_ckpt is True:
                 base_output_type = "latent"
                 custom_inputs.update({
@@ -871,10 +872,16 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
             else:
                 base_output_type = "np"
 
+            #apply A1111 styled prompt weighting
+            cond = prompt_parser.SdConditioning(p.prompts, width=p.width, height=p.height)
+            prompt_embeds = p.sd_model.get_learned_conditioning(cond)
+            negative_cond = prompt_parser.SdConditioning(p.negative_prompts, width=p.width, height=p.height, is_negative_prompt=True)
+            negative_prompt_embeds = p.sd_model.get_learned_conditioning(negative_cond)
+
 
             output = shared.sd_diffusers_model(
-                    prompt=p.prompts,
-                    negative_prompt=p.negative_prompts,
+                    prompt_embeds=prompt_embeds,
+                    negative_prompt_embeds=negative_prompt_embeds,
                     num_inference_steps=p.steps,
                     guidance_scale=p.cfg_scale,
                     generator=generator,
