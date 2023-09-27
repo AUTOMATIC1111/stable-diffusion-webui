@@ -30,8 +30,6 @@ import os
 import logging
 from loguru import logger
 import math
-
-
 # conversion_action={"线稿":'line',"黑白":'black_white',"色块":'color','草图':'sketch','蜡笔':'crayon'}
 # rendition_style={"彩铅":'color_pencil',"浮世绘":'ukiyo',"山水画":'landscape',"极简水彩":'min_watercolor',"炫彩":'dazzle_color',"油画":'oil_paint'}
 
@@ -42,7 +40,6 @@ def size_control(width, height):
         width = int(width * rate)
         height = int(height * rate)
     return width, height
-
 
 def get_multidiffusion_args():
     onepress_multidiffusion_args = {'Tiled-Diffusion': {'args':
@@ -98,7 +95,6 @@ def get_multidiffusion_args():
 
     return onepress_multidiffusion_args
 
-
 def get_llul_args():
     onepress_llul_args = {'LLuL': {'args': [{'apply_to': ['OUT'], 'down': 'Pooling Max', 'down_aa': False,
                                              'enabled': True, 'force_float': False, 'intp': 'Lerp', 'layers':
@@ -107,7 +103,6 @@ def get_llul_args():
 
                                              'up': 'Bilinear', 'up_aa': False, 'weight': 0.15, 'x': 128, 'y': 128}]}}
     return onepress_llul_args
-
 
 def get_cn_args():
     onepress_cn_args = {'control_mode': 'Balanced',
@@ -128,21 +123,19 @@ def get_cn_args():
 
     return onepress_cn_args
 
-
 def get_txt2img_args(prompt, width, height):
     # 内置万能提示词
-    prompt = 'masterpiece, (highres 1.2), (ultra-detailed 1.2),' + prompt
+    prompt ='masterpiece, (highres 1.2), (ultra-detailed 1.2),'+prompt
     negative_prompt = '(worst quality:2), (low quality:2), (normal quality:2), lowres, normal quality,M,nsfw,'
     # 做尺寸控制
     width, height = size_control(width, height)
     onepress_txt2img_args = {'prompt': prompt, 'negative_prompt': negative_prompt,
                              'sampler_name': 'DPM++ 2M SDE Karras',
-                             'steps': 35,
+                             'steps': 25,
                              'cfg_scale': 7,
                              'denoising_strength': 0.7,
                              'width': width, 'height': height, 'n_iter': 1, 'batch_size': 1}
     return onepress_txt2img_args
-
 
 def get_img2img_args(prompt, width, height, init_img):
     onepress_img2img_args = get_txt2img_args(prompt, width, height)
@@ -152,11 +145,9 @@ def get_img2img_args(prompt, width, height, init_img):
     onepress_img2img_args['init_img_with_mask'] = {'image': '', 'mask': ''}
     return onepress_img2img_args
 
-
 class OnePressTaskType(Txt2ImgTask):
     Conversion = 1  # 图片上色：
     Rendition = 2  # 风格转换
-
 
 class ConversionTask(Txt2ImgTask):
     def __init__(self,
@@ -255,7 +246,6 @@ class ConversionTask(Txt2ImgTask):
 
         return full_task, is_img2img, full_canny, part_canny
 
-
 class RenditionTask(Txt2ImgTask):
     def __init__(self,
                  base_model_path: str,  # 模型路径
@@ -266,21 +256,21 @@ class RenditionTask(Txt2ImgTask):
                  prompt: str,  # 图片的正向提示词
                  image: str,  # 原图路径
                  init_img: str,  # 油画垫图
-                 lora_models: typing.Sequence[str] = None,  # lora
+                 lora_models: typing.Sequence[str] = None,# lora 
                  roop: bool = False,  # 换脸
-                 batch_size: int = 1  # 结果数量
+                 batch_size:int=1 #结果数量
                  ):
         self.base_model_path = base_model_path
         self.model_hash = model_hash
         self.loras = lora_models
         self.prompt = prompt
-        self.width = width if width != 0 else 512
-        self.height = height if height != 0 else 512
+        self.width = width if width!=0 else 512
+        self.height = height if height!=0 else 512
         self.style = style
         self.image = image
         self.init_img = init_img
         self.roop = roop
-        self.batch_size = batch_size if batch_size != 0 else 1
+        self.batch_size=batch_size if batch_size!=0 else 1
 
     @classmethod
     def exec_task(cls, task: Task):
@@ -291,65 +281,69 @@ class RenditionTask(Txt2ImgTask):
             task['style'],
             task['width'],
             task['height'],
-            task.get('prompt', ""),
-            task.get('image', None),  # 图生图：极简水彩 炫彩 油画
-            task.get('init_img', None),  # 风格垫图 油画判断
-            task.get('lora_models', None),
-            task.get('roop', False),
-            task.get('batch_size', 1))
+            task.get('prompt',""),
+            task.get('image', None), # 图生图：极简水彩 炫彩 油画
+            task.get('init_img', None),# 风格垫图 油画判断
+            task.get('lora_models',None),
+            task.get('roop', False), 
+            task.get('batch_size',1))
         full_task = deepcopy(task)
-
+        
         # 根据style的不同 把contorlnet的参数值加进去
         full_task.update(get_txt2img_args(t.prompt, t.width, t.height))
-        full_task['prompt'] = t.prompt
-        full_task['batch_size'] = t.batch_size
+        full_task['prompt']=t.prompt
+        full_task['batch_size']=t.batch_size
         full_task['alwayson_scripts'] = {'ControlNet': {'args': []}}
         # rendition_style={"彩铅":'color_pencil',"浮世绘":'ukiyo',"山水画":'landscape',"极简水彩":'min_watercolor',"炫彩":'dazzle_color',"油画":'oil_paint'}
-        if t.style in ['min_watercolor', 'dazzle_color', 'oil_paint']:
+        if t.style in ['min_watercolor', 'dazzle_color', 'oil_paint']: # 图生图模式 检测输入图片的
+            
             # 线稿固定人物形态
             cn_args_1 = get_cn_args()
             cn_args_1['enabled'] = True
-            cn_args_1[
-                'module'] = 'invert (from white bg & black line)'  # if t.style!='oil_paint'else 'lineart_realistic'
+            cn_args_1['module'] = 'lineart_realistic' # if t.style!='oil_paint'else 'lineart_realistic'
             cn_args_1['model'] = 'control_v11p_sd15_lineart [43d4be0d]'
             cn_args_1['image']['image'] = t.image
+            cn_args_1['weight'] = 1 
+            cn_args_1['threshold_a']=0
+            cn_args_1['threshold_b']=0.5
             full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args_1)
-            # 极简水彩：step：10,cfg：3
-            if t.style == 'min_watercolor':
-                full_task['steps'] = 10
-                full_task['cfg_scale'] = 3
-            # 油画：风格垫图
-            if t.style == 'oil_paint':
-                full_task['sampler_name'] = 'DPM++ 2M Karras'
-                cn_args_2 = get_cn_args()
-                cn_args_2['enabled'] = True
-                cn_args_2['module'] = 'reference_only'
-                cn_args_2['image']['image'] = t.init_img  # 风格垫图
-                cn_args_2['weight'] = 1
-                cn_args_2['threshold_a'] = 0.5
-                cn_args_2['threshold_b'] = 0
-                full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args_2)
-        else:
-            pass
-        if t.style == 'color_pencil':  # 彩铅
-            full_task['sampler_name'] = 'DPM++ 2S a Karras'
-            full_task['steps'] = 20
-        if full_task['lora_models'] == ['']: full_task['lora_models'] = None
+
+            if t.style=='dazzle_color':
+                full_task['steps']=36
+                full_task['cfg_scale']=7
+                full_task['negative_prompt']="worst quality,low quality,normal quality"
+            # 极简水彩：step：30,cfg：4
+            if t.style=='min_watercolor':
+                full_task['steps']=30
+                full_task['cfg_scale']=4
+
+
+        if t.style in ['color_pencil','ukiyo','landscape']: # 彩铅
+            # 文生图添加高清修复
+            full_task['enable_hr']= True
+            full_task['denoising_strength']= 0.7
+            full_task['tiling']= False
+            full_task['hr_scale']= 2
+            full_task['hr_upscaler']= 'ESRGAN_4x'
+            full_task['hr_second_pass_steps']= 0
+            full_task['hr_resize_x']= 0
+            full_task['hr_resize_y']= 0
+        if full_task['lora_models']==['']:full_task['lora_models']=None
         return full_task
 
     @classmethod
-    def exec_roop(cls, source_img: Image.Image, target_img: Image.Image, ):
+    def exec_roop(cls,source_img: Image.Image, target_img: Image.Image, ):
 
-        def get_face(img_data: np.ndarray, providers, det_size=(640, 640)):
+        def get_face(img_data: np.ndarray,providers, det_size=(640, 640)):
             # TODO 更换路径
-            models_dir = os.path.join(scripts.basedir(), "models" + os.path.sep + "roop" + os.path.sep + "buffalo_l")
+            models_dir = os.path.join(scripts.basedir(), "models" + os.path.sep + "roop"+os.path.sep + "buffalo_l")
             face_analyser = insightface.app.FaceAnalysis(name=models_dir, providers=providers)
             face_analyser.prepare(ctx_id=0, det_size=det_size)
             face = face_analyser.get(img_data)
 
             if len(face) == 0 and det_size[0] > 320 and det_size[1] > 320:
                 det_size_half = (det_size[0] // 2, det_size[1] // 2)
-                return get_face(img_data, providers, det_size=det_size_half)
+                return get_face(img_data, providers,det_size=det_size_half)
 
             try:
                 return sorted(face, key=lambda x: x.bbox[0])
@@ -358,30 +352,29 @@ class RenditionTask(Txt2ImgTask):
 
         source_img = cv2.cvtColor(np.array(source_img), cv2.COLOR_RGB2BGR)
         target_img = cv2.cvtColor(np.array(target_img), cv2.COLOR_RGB2BGR)
-
+        
         # 获取人脸
         providers = onnxruntime.get_available_providers()
-        source_face = get_face(source_img, providers)
-        target_face = get_face(target_img, providers)
-        if source_face is None or target_face is None:
+        source_face = get_face(source_img,providers)
+        target_face = get_face(target_img,providers)
+        if source_face is None or target_face is None: 
             return target_img
         # 人脸对应：算出中心点，判别与目标点最近的一张脸的位置，进行交换
-        source_point = []
+        source_point=[]
         for _ in source_face:
-            box = _.bbox.astype(np.int)
-            source_point.append(((box[2] + box[0]) / 2, (box[3] + box[1]) / 2))
-
+            box=_.bbox.astype(np.int)
+            source_point.append(((box[2]+box[0])/2,(box[3]+box[1])/2))
+        
         # 交换人脸
-        models_path = os.path.join(scripts.basedir(),
-                                   "models" + os.path.sep + "roop" + os.path.sep + "inswapper_128.onnx")
+        models_path = os.path.join(scripts.basedir(), "models" + os.path.sep + "roop" + os.path.sep + "inswapper_128.onnx")
         face_swapper = insightface.model_zoo.get_model(models_path, providers=providers)
         result = target_img
         for _ in target_face:
-            box = _.bbox.astype(np.int)
-            point = ((box[2] + box[0]) / 2, (box[3] + box[1]) / 2)
-            dis = [math.sqrt((point[0] - k[0]) ** 2 + (point[1] - k[1]) ** 2) for k in source_point]
-            # 距离最近的人脸
-            s_face = source_face[dis.index(min(dis))]
+            box=_.bbox.astype(np.int)
+            point=((box[2]+box[0])/2,(box[3]+box[1])/2)
+            dis=[math.sqrt((point[0]-k[0])**2 + (point[1]-k[1])**2) for k in source_point]
+             # 距离最近的人脸
+            s_face=source_face[dis.index(min(dis))]
             result = face_swapper.get(result, _, s_face)
         result_image = Image.fromarray(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
 
@@ -535,10 +528,11 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         yield progress
 
     def _exec_rendition(self, task: Task) -> typing.Iterable[TaskProgress]:
-
+        
         logger.info("one press rendition func starting...")
 
         full_task = RenditionTask.exec_task(task)
+        # 去除脸部修复
 
         # 加载模型
         base_model_path = self._get_local_checkpoint(full_task)
@@ -548,7 +542,7 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         yield progress
 
         logger.info("download network models...")
-        process_args = self._build_txt2img_arg(progress)
+        process_args =  self._build_txt2img_arg(progress)
 
         # 加载lora模型
         self._set_little_models(process_args)
@@ -559,20 +553,20 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         logger.info("step 1, rendition...")
         shared.state.begin()
         processed = process_images(process_args)
-        # processed.images = processed.images[1:task['batch_size'] + 1]
+        # processed.images = processed.images[1:task['batch_size']+1]
         logger.info("step 1 > ok")
 
         # 如果需要换人脸
         if task['roop']:
             logger.info("step 2, roop...")
-            roop_result = []
-            for i, img in enumerate(processed.images):
+            roop_result=[]
+            for i,img in enumerate(processed.images):
                 source_img = get_tmp_local_path(task['image'])
                 source_img = Image.open(source_img).convert('RGB')
-                target_img = img  #
+                target_img=img # 
                 # source_img: Image.Image, target_img: Image.Image, 
-                roop_result.append(RenditionTask.exec_roop(source_img, target_img))
-            processed.images = roop_result
+                roop_result.append(RenditionTask.exec_roop(source_img,target_img))
+            processed.images=roop_result 
             logger.info("step 2 > ok")
 
         shared.state.end()
