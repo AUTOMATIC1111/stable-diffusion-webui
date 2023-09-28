@@ -107,7 +107,12 @@ class EmbeddingDatabase:
 
     def register_embedding(self, embedding, model):
         self.word_embeddings[embedding.name] = embedding
-        ids = model.cond_stage_model.tokenize([embedding.name])[0]
+        if hasattr(model, 'cond_stage_model'):
+            ids = model.cond_stage_model.tokenize([embedding.name])[0]
+        elif hasattr(model, 'tokenizer'):
+            ids = model.tokenizer.convert_tokens_to_ids(embedding.name)
+        if type(ids) != list:
+            ids = [ids]
         first_id = ids[0]
         if first_id not in self.ids_lookup:
             self.ids_lookup[first_id] = []
@@ -141,7 +146,10 @@ class EmbeddingDatabase:
                     self.register_embedding(embedding, shared.sd_model)
             except Exception:
                 pass
-            is_loaded = pipe.tokenizer.convert_tokens_to_ids(name) > 49407
+            is_loaded = pipe.tokenizer.convert_tokens_to_ids(name)
+            if type(is_loaded) != list:
+                is_loaded = [is_loaded]
+            is_loaded = is_loaded[0] > 49407
             if is_loaded:
                 self.register_embedding(embedding, shared.sd_model)
             else:
@@ -166,28 +174,28 @@ class EmbeddingDatabase:
                         for vec in tokens:
                             embeddings_dict['clip_l'].append(vec)
                 """
-                clip_l = pipe.text_encoder.get_input_embeddings().weight if hasattr(pipe, 'text_encoder') and hasattr(pipe.text_encoder, "resize_token_embeddings") else None
-                clip_g = pipe.text_encoder_2.get_input_embeddings().weight if hasattr(pipe, 'text_encoder_2') and hasattr(pipe.text_encoder_2, "resize_token_embeddings") else None
+                clip_l = pipe.text_encoder if hasattr(pipe, 'text_encoder') else None
+                clip_g = pipe.text_encoder_2 if hasattr(pipe, 'text_encoder_2') else None
                 is_sd = clip_l is not None and 'clip_l' in embeddings_dict and clip_g is None and 'clip_g' not in embeddings_dict
                 is_xl = clip_l is not None and 'clip_l' in embeddings_dict and clip_g is not None and 'clip_g' in embeddings_dict
                 tokens = []
                 for i in range(len(embeddings_dict["clip_l"])):
-                    if (is_sd or is_xl) and (len(clip_l.data[0]) == len(embeddings_dict["clip_l"][i])):
+                    if (is_sd or is_xl) and (len(clip_l.get_input_embeddings().weight.data[0]) == len(embeddings_dict["clip_l"][i])):
                         tokens.append(name if i == 0 else f"{name}_{i}")
                 num_added = pipe.tokenizer.add_tokens(tokens)
                 if num_added > 0:
                     token_ids = pipe.tokenizer.convert_tokens_to_ids(tokens)
                     if is_sd: # only used for sd15 if load_textual_inversion failed and format is safetensors
-                        pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
+                        clip_l.resize_token_embeddings(len(pipe.tokenizer))
                         for i in range(len(token_ids)):
-                            clip_l.data[token_ids[i]] = embeddings_dict["clip_l"][i]
+                            clip_l.get_input_embeddings().weight.data[token_ids[i]] = embeddings_dict["clip_l"][i]
                     elif is_xl:
                         pipe.tokenizer_2.add_tokens(tokens)
-                        pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
-                        pipe.text_encoder_2.resize_token_embeddings(len(pipe.tokenizer))
+                        clip_l.resize_token_embeddings(len(pipe.tokenizer))
+                        clip_g.resize_token_embeddings(len(pipe.tokenizer))
                         for i in range(len(token_ids)):
-                            pipe.text_encoder.get_input_embeddings().weight.data[token_ids[i]] = embeddings_dict["clip_l"][i]
-                            pipe.text_encoder_2.get_input_embeddings().weight.data[token_ids[i]] = embeddings_dict["clip_g"][i]
+                            clip_l.get_input_embeddings().weight.data[token_ids[i]] = embeddings_dict["clip_l"][i]
+                            clip_g.get_input_embeddings().weight.data[token_ids[i]] = embeddings_dict["clip_g"][i]
                     self.register_embedding(embedding, shared.sd_model)
                 else:
                     raise NotImplementedError

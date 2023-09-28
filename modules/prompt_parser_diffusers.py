@@ -3,8 +3,7 @@ import typing
 import torch
 from compel import Compel, ReturnedEmbeddingsType
 from compel.embeddings_provider import BaseTextualInversionManager
-import modules.shared as shared
-import modules.prompt_parser as prompt_parser
+from modules import shared, devices, prompt_parser
 
 
 debug_output = os.environ.get('SD_PROMPT_DEBUG', None)
@@ -142,20 +141,20 @@ def compel_encode_prompt(
         prompt_2 = convert_to_compel(prompt_2)
         negative_prompt_2 = convert_to_compel(negative_prompt_2)
 
-    textual_inversion_manager = DiffusersTextualInversionManager(pipeline)
-
+    textual_inversion_manager_te1 = DiffusersTextualInversionManager(pipeline)
     compel_te1 = Compel(
         tokenizer=pipeline.tokenizer,
         text_encoder=pipeline.text_encoder,
         returned_embeddings_type=embedding_type,
         requires_pooled=False,
         # truncate_long_prompts=False,
-        device=shared.device,
-        textual_inversion_manager=textual_inversion_manager
+        device=devices.device,
+        textual_inversion_manager=textual_inversion_manager_te1
     )
 
     if 'XL' in pipeline.__class__.__name__ and not is_refiner:
-        compel_te2 = Compel(tokenizer=pipeline.tokenizer_2, text_encoder=pipeline.text_encoder_2, returned_embeddings_type=embedding_type, requires_pooled=True, device=shared.device, textual_inversion_manager=textual_inversion_manager)
+        # TODO textual_inversion_manager=textual_inversion_manager_te2 - DiffusersTextualInversionManager needs to use tokenizer_2
+        compel_te2 = Compel(tokenizer=pipeline.tokenizer_2, text_encoder=pipeline.text_encoder_2, returned_embeddings_type=embedding_type, requires_pooled=True, device=devices.device)
         positive_te1 = compel_te1(prompt)
         positive_te2, positive_pooled = compel_te2(prompt_2)
         positive = torch.cat((positive_te1, positive_te2), dim=-1)
@@ -169,7 +168,7 @@ def compel_encode_prompt(
         return prompt_embed, positive_pooled, negative_embed, negative_pooled
 
     elif 'XL' in pipeline.__class__.__name__ and is_refiner:
-        compel_te2 = Compel(tokenizer=pipeline.tokenizer_2, text_encoder=pipeline.text_encoder_2, returned_embeddings_type=embedding_type, requires_pooled=True, device=shared.device)
+        compel_te2 = Compel(tokenizer=pipeline.tokenizer_2, text_encoder=pipeline.text_encoder_2, returned_embeddings_type=embedding_type, requires_pooled=True, device=devices.device)
         positive, positive_pooled = compel_te2(prompt)
         negative, negative_pooled = compel_te2(negative_prompt)
 

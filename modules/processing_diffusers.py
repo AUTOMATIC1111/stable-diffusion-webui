@@ -201,7 +201,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompts(model, prompts, negative_prompts, prompts_2, negative_prompts_2, is_refiner, kwargs.pop("clip_skip", None))
                 parser = shared.opts.prompt_attention
             except Exception as e:
-                shared.log.error(f'Prompt parser: {e}')
+                shared.log.error(f'Prompt parser encode: {e}')
         if 'prompt' in possible:
             if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and prompt_embed is not None:
                 if type(pooled) == list:
