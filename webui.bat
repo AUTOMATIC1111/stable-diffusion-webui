@@ -1,4 +1,10 @@
+
 @echo off
+
+:: Ensure only TitanX is used (assuming TitanX is index 0)
+set CUDA_VISIBLE_DEVICES=0
+
+set COMMANDLINE_ARGS=--precision full --no-half --lowvram --always-batch-cond-uncond --opt-split-attention
 
 if not defined PYTHON (set PYTHON=python)
 if not defined VENV_DIR (set "VENV_DIR=%~dp0%venv")
