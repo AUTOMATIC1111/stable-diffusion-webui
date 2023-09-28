@@ -91,7 +91,7 @@ def get_openvino_device():
     try:
         return core.get_property(get_device(), "FULL_DEVICE_NAME")
     except Exception:
-        return "OpenVINO"
+        return f"OpenVINO {get_device()}"
 
 def cache_root_path():
     cache_root = "./cache/"
