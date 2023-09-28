@@ -182,11 +182,12 @@ class EmbeddingDatabase:
                         for i in range(len(token_ids)):
                             clip_l.data[token_ids[i]] = embeddings_dict["clip_l"][i]
                     elif is_xl:
+                        pipe.tokenizer_2.add_tokens(tokens)
                         pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
                         pipe.text_encoder_2.resize_token_embeddings(len(pipe.tokenizer))
                         for i in range(len(token_ids)):
-                            clip_l.data[token_ids[i]] = embeddings_dict["clip_l"][i]
-                            clip_g.data[token_ids[i]] = embeddings_dict["clip_g"][i]
+                            pipe.text_encoder.get_input_embeddings().weight.data[token_ids[i]] = embeddings_dict["clip_l"][i]
+                            pipe.text_encoder_2.get_input_embeddings().weight.data[token_ids[i]] = embeddings_dict["clip_g"][i]
                     self.register_embedding(embedding, shared.sd_model)
                 else:
                     raise NotImplementedError
