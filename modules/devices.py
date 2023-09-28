@@ -33,13 +33,16 @@ def get_gpu_info():
             return ''
 
     if not torch.cuda.is_available():
-        if hasattr(shared.cmd_opts, "use_openvino") and shared.cmd_opts.use_openvino:
-            from importlib.metadata import version as libmodule_version
-            return {
-                'device': get_openvino_device(),
-                'openvino': libmodule_version("openvino"),
-            }
-        else:
+        try:
+            if shared.cmd_opts.use_openvino:
+                from importlib.metadata import version as libmodule_version
+                return {
+                    'device': get_openvino_device(),
+                    'openvino': libmodule_version("openvino"),
+                }
+            else:
+                return {}
+        except Exception:
             return {}
     else:
         try:
