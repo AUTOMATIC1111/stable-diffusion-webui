@@ -7,8 +7,8 @@ from modules import initialize_util
 
 
 
-#ray.init()
-ray.init("ray://localhost:10001")
+ray.init()
+#ray.init("ray://localhost:10001")
 
 NUM_REPLICAS: int = 1
 if NUM_REPLICAS > ray.available_resources()["GPU"]:

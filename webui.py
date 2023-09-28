@@ -47,12 +47,10 @@ def api_only():
 def ray_only():
     from modules.api.ray import APIIngress
     from ray import serve
-    entrypoint = APIIngress.bind()
-    port = 8000
 
     # Shutdown any existing Serve replicas, if they're still around.
     serve.shutdown()
-    serve.run(entrypoint, port=port, name="serving_stable_diffusion_template")
+    serve.run(APIIngress.bind(), port=8000, name="serving_stable_diffusion_template")
     print("Done setting up replicas! Now accepting requests...")
 
 
@@ -169,5 +167,7 @@ if __name__ == "__main__":
 
     if cmd_opts.nowebui:
         api_only()
+    elif cmd_opts.ray:
+        ray_only()
     else:
         webui()
