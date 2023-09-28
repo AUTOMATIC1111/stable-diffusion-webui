@@ -486,6 +486,8 @@ def check_torch():
     if args.use_openvino or opts.get('cuda_compile_backend', '') == 'openvino_fx':
         install('openvino==2023.1.0', 'openvino')
         os.environ.setdefault('PYTORCH_TRACING_MODE', 'TORCHFX')
+        os.environ.setdefault('NEOReadDebugKeys', '1')
+        os.environ.setdefault('ClDeviceGlobalMemSizeAvailablePercent', '100')
     if args.profile:
         print_profile(pr, 'Torch')
 
