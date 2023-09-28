@@ -33,7 +33,14 @@ def get_gpu_info():
             return ''
 
     if not torch.cuda.is_available():
-        return {}
+        if hasattr(shared.cmd_opts, "use_openvino") and shared.cmd_opts.use_openvino:
+            from importlib.metadata import version as libmodule_version
+            return {
+                'device': get_openvino_device(),
+                'openvino': libmodule_version("openvino"),
+            }
+        else:
+            return {}
     else:
         try:
             if torch.version.cuda:
@@ -212,8 +219,9 @@ def set_cuda_params():
         inference_context = contextlib.nullcontext
     else:
         inference_context = torch.no_grad
+    log_device_name = get_openvino_device() if shared.cmd_opts.use_openvino else torch.device(get_optimal_device_name())
     log.debug(f'Desired Torch parameters: dtype={shared.opts.cuda_dtype} no-half={shared.opts.no_half} no-half-vae={shared.opts.no_half_vae} upscast={shared.opts.upcast_sampling}')
-    log.info(f'Setting Torch parameters: device={torch.device(get_optimal_device_name())} dtype={dtype} vae={dtype_vae} unet={dtype_unet} context={inference_context.__name__} fp16={fp16_ok} bf16={bf16_ok}')
+    log.info(f'Setting Torch parameters: device={log_device_name} dtype={dtype} vae={dtype_vae} unet={dtype_unet} context={inference_context.__name__} fp16={fp16_ok} bf16={bf16_ok}')
 
 
 args = cmd_args.parser.parse_args()
@@ -232,6 +240,9 @@ elif args.use_directml:
     if not ok:
         log.error('DirectML initialization failed: {e}')
         backend = 'cpu'
+if args.use_openvino:
+    from modules.intel.openvino import get_openvino_device
+    backend = 'openvino'
 elif torch.cuda.is_available() and torch.version.cuda:
     backend = 'cuda'
 elif torch.cuda.is_available() and torch.version.hip:

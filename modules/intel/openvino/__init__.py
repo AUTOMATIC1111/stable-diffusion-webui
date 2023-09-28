@@ -84,8 +84,14 @@ def get_device():
         device = "CPU"
         shared.log.warning("OpenVINO: No compatible GPU detected!")
     os.environ.setdefault('OPENVINO_TORCH_BACKEND_DEVICE', device)
-    shared.log.debug(f"OpenVINO Device: {device}")
     return device
+
+def get_openvino_device():
+    core = Core()
+    try:
+        return core.get_property(get_device(), "FULL_DEVICE_NAME")
+    except:
+        return "OpenVINO"
 
 def cache_root_path():
     cache_root = "./cache/"
