@@ -26,12 +26,12 @@ def torch_bmm(input, mat2, *, out=None):
     else:
         do_split = False
 
-    split_block_size = (split_slice_size * input_tokens * mat2_shape) / 1024 / 1024 * block_multiply #MB
     split_2_slice_size = input_tokens
-    if split_block_size > 4:
+    if split_slice_size * slice_block_size > 4:
+        slice_block_size2 = split_slice_size * mat2_shape / 1024 / 1024 * block_multiply
         do_split_2 = True
         #Find something divisible with the input_tokens
-        while ((split_slice_size * split_2_slice_size * mat2_shape) / 1024 / 1024 * block_multiply) > 4:
+        while (split_2_slice_size * slice_block_size2) > 4:
             split_2_slice_size = split_2_slice_size // 2
             if split_2_slice_size <= 1:
                 split_2_slice_size = 1
