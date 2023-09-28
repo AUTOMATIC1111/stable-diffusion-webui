@@ -44,7 +44,18 @@ def api_only():
         root_path=f"/{cmd_opts.subpath}" if cmd_opts.subpath else ""
     )
 
+def ray_only():
+    from modules.ray import APIIngress
 
+    entrypoint = APIIngress.bind()
+    port = 8000
+
+    # Shutdown any existing Serve replicas, if they're still around.
+    serve.shutdown()
+    serve.run(entrypoint, port=port, name="serving_stable_diffusion_template")
+    print("Done setting up replicas! Now accepting requests...")
+
+    
 def webui():
     from modules.shared_cmd_options import cmd_opts
 
