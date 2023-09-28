@@ -2,6 +2,11 @@
 
 ## Update for 2023-09-24
 
+**TBD**: Planned before release:
+- Integrate LoRA/Lyco for *backend:original*
+- Add EN provider for VAEs
+- Add FreeU for *backend:diffusers*
+
 This is a big one, with some major changes and new functionality...
 
 Note that for this release its recommended to perform a clean install (fresh `git clone`)  
