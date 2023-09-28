@@ -243,7 +243,7 @@ elif args.use_directml:
     if not ok:
         log.error('DirectML initialization failed: {e}')
         backend = 'cpu'
-if args.use_openvino:
+elif args.use_openvino:
     from modules.intel.openvino import get_openvino_device
     backend = 'openvino'
 elif torch.cuda.is_available() and torch.version.cuda:
