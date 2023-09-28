@@ -15,6 +15,7 @@
   {"id":"","label":"🗁","localized":"","hint":"Show/hide extra networks"},
   {"id":"","label":"⇰","localized":"","hint":"Apply selected styles to current prompt"},
   {"id":"","label":"⇩","localized":"","hint":"Save parameters from last generated image as style template"},
+  {"id":"","label":"🕮","localized":"","hint":"Save parameters from last generated image as style template"},
   {"id":"","label":"⟲","localized":"","hint":"Refresh"},
   {"id":"","label":"✕","localized":"","hint":"Close"},
   {"id":"","label":"⊜","localized":"","hint":"Fill"},
@@ -23,8 +24,8 @@
   {"id":"","label":"🔍","localized":"","hint":"Search"}
 ],
 "prompts": [
-  {"id":"","label":"Prompt","localized":"","hint":"Type what you want to see in the image"},
-  {"id":"","label":"Negative prompt","localized":"","hint":"Type what you DON'T want to see in the image"}
+  {"id":"","label":"Prompt","localized":"","hint":"Describe image you want to generate"},
+  {"id":"","label":"Negative prompt","localized":"","hint":"Describe what you don't want to see in generated image"}
 ],
 "common keywords": [
   {"id":"","label":"fp16","localized":"","hint":"Number representation in 16-bit floating point format"},
@@ -57,6 +58,9 @@
   {"id":"","label":"Skip","localized":"","hint":"Stop processing current job and continue processing"},
   {"id":"","label":"Interrupt","localized":"","hint":"Interrupt current processing job"},
   {"id":"","label":"Pause","localized":"","hint":"Pause processing"},
+  {"id":"","label":"Apply","localized":"","hint":"Apply parameters from last known generated image"},
+  {"id":"","label":"Clear","localized":"","hint":"Clear prompts"},
+  {"id":"","label":"Networks","localized":"","hint":"Open extra network interface"},
   {"id":"","label":"Interrogate\nCLIP","localized":"","hint":"Run interrogate using CLIP model"},
   {"id":"","label":"Interrogate\nDeepBooru","localized":"","hint":"Run interrogate using DeepBooru model"}
 ],

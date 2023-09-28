@@ -168,16 +168,21 @@ class ExtraNetworksPage:
             fn = f'{fn}.thumb.jpg'
             if os.path.exists(fn):
                 continue
+            img = None
             try:
                 img = Image.open(f)
-                if img.width > 1024 or img.height > 1024 or os.path.getsize(f) > 65536:
+            except Exception:
+                shared.log.warning(f'Extra network removing invalid image: {f}')
+                os.remove(f)
+            try:
+                if img is not None and img.width > 1024 or img.height > 1024 or os.path.getsize(f) > 65536:
                     img = img.convert('RGB')
                     img.thumbnail((512, 512), Image.HAMMING)
                     img.save(fn, quality=50)
                     img.close()
                     created += 1
             except Exception as e:
-                shared.log.error(f'Extra network error creating thumbnail: {f} {e}')
+                shared.log.warning(f'Extra network error creating thumbnail: {f} {e}')
         if created > 0:
             shared.log.info(f"Extra network thumbnails: {self.name} created={created}")
             self.missing_thumbs.clear()
@@ -442,13 +447,11 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         def ui_tab_change(page):
             scan_visible = page in ['Model', 'Lora', 'Hypernetwork', 'Embedding']
             save_visible = page in ['Style']
-            apply_visible = page in ['Style']
-            return [gr.update(visible=scan_visible), gr.update(visible=save_visible), gr.update(visible=apply_visible)]
+            return [gr.update(visible=scan_visible), gr.update(visible=save_visible)]
 
         ui.button_refresh = ToolButton(symbols.refresh, elem_id=tabname+"_extra_refresh")
         ui.button_scan = ToolButton(symbols.scan, elem_id=tabname+"_extra_scan", visible=True)
-        ui.button_save = ToolButton(symbols.save, elem_id=tabname+"_extra_save", visible=False)
-        ui.button_apply = ToolButton(symbols.apply, elem_id=tabname+"_extra_apply", visible=False)
+        ui.button_save = ToolButton(symbols.book, elem_id=tabname+"_extra_save", visible=False)
         ui.button_close = ToolButton(symbols.close, elem_id=tabname+"_extra_close")
         ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", elem_classes="textbox", lines=2)
         ui.description = gr.Textbox('', show_label=False, elem_id=tabname+"_description", elem_classes="textbox", lines=2, interactive=False)
@@ -461,7 +464,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab") as tab:
                 hmtl = gr.HTML(page.html, elem_id=f'{tabname}{page.name}_extra_page', elem_classes="extra-networks-page")
                 ui.pages.append(hmtl)
-                tab.select(ui_tab_change, _js="getENActivePage", inputs=[ui.button_details], outputs=[ui.button_scan, ui.button_save, ui.button_apply])
+                tab.select(ui_tab_change, _js="getENActivePage", inputs=[ui.button_details], outputs=[ui.button_scan, ui.button_save])
 
         # ui.tabs.change(fn=ui_tab_change, inputs=[], outputs=[ui.button_scan, ui.button_save])
 

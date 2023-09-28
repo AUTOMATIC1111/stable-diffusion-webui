@@ -253,12 +253,10 @@ def create_toprow(is_img2img):
                 pause = gr.Button('Pause', elem_id=f"{id_part}_pause")
                 pause.click(fn=lambda: modules.shared.state.pause(), _js='checkPaused', inputs=[], outputs=[])
             with gr.Row(elem_id=f"{id_part}_tools"):
-                paste = ToolButton(value=symbols.paste, elem_id="paste")
-                clear_prompt_button = ToolButton(value=symbols.clear, elem_id=f"{id_part}_clear_prompt_btn")
-                extra_networks_button = ToolButton(value=symbols.networks, elem_id=f"{id_part}_extra_networks_btn")
-                prompt_style_apply = ToolButton(value=symbols.apply, elem_id=f"{id_part}_style_apply_btn")
-                save_style = ToolButton(value=symbols.save, elem_id=f"{id_part}_style_create_btn")
-                clear_prompt_button.click(fn=lambda *x: x, _js="confirm_clear_prompt", inputs=[prompt, negative_prompt], outputs=[prompt, negative_prompt])
+                button_paste = gr.Button(value='Apply', variant='secondary', elem_id="paste") # symbols.paste
+                button_clear = gr.Button(value='Clear', variant='secondary', elem_id=f"{id_part}_clear_prompt_btn") # symbols.clear
+                button_extra = gr.Button(value='Networks', variant='secondary', elem_id=f"{id_part}_extra_networks_btn") # symbols.networks
+                button_clear.click(fn=lambda *x: x, _js="clearPrompts", inputs=[prompt, negative_prompt], outputs=[prompt, negative_prompt])
             with gr.Row(elem_id=f"{id_part}_counters"):
                 token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{id_part}_token_counter", elem_classes=["token-counter"])
                 token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
@@ -268,7 +266,7 @@ def create_toprow(is_img2img):
                 prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[style.name for style in modules.shared.prompt_styles.styles.values()], value=[], multiselect=True)
                 prompt_styles_btn = gr.Button('Apply', elem_id=f"{id_part}_styles_select", visible=False)
                 prompt_styles_btn.click(_js="applyStyles", fn=parse_style, inputs=[prompt_styles], outputs=[prompt_styles])
-    return prompt, prompt_styles, negative_prompt, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button
+    return prompt, prompt_styles, negative_prompt, submit, button_interrogate, button_deepbooru, button_paste, button_extra, token_counter, token_button, negative_token_counter, negative_token_button
 
 
 def setup_progressbar(*args, **kwargs): # pylint: disable=unused-argument
@@ -377,7 +375,7 @@ def create_ui(startup_timer = None):
     modules.scripts.scripts_current = modules.scripts.scripts_txt2img
     modules.scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, txt2img_prompt_styles, txt2img_negative_prompt, submit, _interrogate, _deepbooru, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button = create_toprow(is_img2img=False)
+        txt2img_prompt, txt2img_prompt_styles, txt2img_negative_prompt, submit, _interrogate, _deepbooru, txt2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button = create_toprow(is_img2img=False)
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="binary", visible=False)
         with FormRow(variant='compact', elem_id="txt2img_extra_networks", visible=False) as extra_networks_ui:
@@ -561,7 +559,7 @@ def create_ui(startup_timer = None):
     modules.scripts.scripts_current = modules.scripts.scripts_img2img
     modules.scripts.scripts_img2img.initialize_scripts(is_img2img=True)
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button = create_toprow(is_img2img=True)
+        img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, submit, img2img_interrogate, img2img_deepbooru, img2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button = create_toprow(is_img2img=True)
         img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="binary", visible=False)
 
         with FormRow(variant='compact', elem_id="img2img_extra_networks", visible=False) as extra_networks_ui:
@@ -834,27 +832,7 @@ def create_ui(startup_timer = None):
                 show_progress=False,
             )
 
-            prompts = [(txt2img_prompt, txt2img_negative_prompt), (img2img_prompt, img2img_negative_prompt)]
-            style_dropdowns = [txt2img_prompt_styles, img2img_prompt_styles]
-            style_js_funcs = ["update_txt2img_tokens", "update_img2img_tokens"]
-
-            for button, (prompt, negative_prompt) in zip([txt2img_save_style, img2img_save_style], prompts):
-                button.click(
-                    fn=add_style,
-                    _js="ask_for_style_name",
-                    inputs=[dummy_component, prompt, negative_prompt],
-                    outputs=[txt2img_prompt_styles, img2img_prompt_styles],
-                )
-
-            for button, (prompt, negative_prompt), styles, js_func in zip([txt2img_prompt_style_apply, img2img_prompt_style_apply], prompts, style_dropdowns, style_js_funcs):
-                button.click(
-                    fn=apply_styles,
-                    _js=js_func,
-                    inputs=[prompt, negative_prompt, styles],
-                    outputs=[prompt, negative_prompt, styles],
-                )
-
-            token_button.click(fn=update_token_counter, inputs=[img2img_prompt, steps], outputs=[token_counter])
+            token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[img2img_prompt, steps], outputs=[token_counter])
             negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[img2img_negative_prompt, steps], outputs=[negative_token_counter])
 
             ui_extra_networks.setup_ui(extra_networks_ui_img2img, img2img_gallery)
