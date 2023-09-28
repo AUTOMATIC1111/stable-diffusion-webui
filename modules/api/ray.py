@@ -7,8 +7,8 @@ from modules import initialize_util
 
 
 
-ray.init()
-
+#ray.init()
+ray.init("ray://localhost:10001")
 
 NUM_REPLICAS: int = 4
 if NUM_REPLICAS > ray.available_resources()["GPU"]:
@@ -21,7 +21,11 @@ if NUM_REPLICAS > ray.available_resources()["GPU"]:
 
 app = FastAPI()
 initialize_util.setup_middleware(app)
-api = Api(app, queue_lock)
+#api = Api(app)
+api = Api(app)
+# Try to serialize the Api class
+#pickle.dumps(api)
+
 
 @serve.deployment(
     ray_actor_options={"num_gpus": 1},
@@ -31,4 +35,6 @@ api = Api(app, queue_lock)
 class APIIngress(Api):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+
+
 

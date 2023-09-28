@@ -115,5 +115,9 @@ class Shared(sys.modules[__name__].__class__):
 
         modules.sd_models.model_data.set_sd_model(value)
 
+    def __reduce__(self):
+        # The callable is the class itself
+        # The arguments are the current values of the sd_model property
+        return (self.__class__, (self.sd_model,))
 
-sys.modules['modules.shared'].__class__ = Shared
+#sys.modules['modules.shared'].__class__ = Shared

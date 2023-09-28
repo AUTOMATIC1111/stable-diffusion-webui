@@ -45,8 +45,8 @@ def api_only():
     )
 
 def ray_only():
-    from modules.ray import APIIngress
-
+    from modules.api.ray import APIIngress
+    from ray import serve
     entrypoint = APIIngress.bind()
     port = 8000
 
@@ -55,7 +55,7 @@ def ray_only():
     serve.run(entrypoint, port=port, name="serving_stable_diffusion_template")
     print("Done setting up replicas! Now accepting requests...")
 
-    
+
 def webui():
     from modules.shared_cmd_options import cmd_opts
 
