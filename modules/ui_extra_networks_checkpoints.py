@@ -17,6 +17,7 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
         for name, checkpoint in sd_models.checkpoints_list.items():
             fn = os.path.splitext(checkpoint.filename)[0]
             record = {
+                "type": 'Model',
                 "name": checkpoint.name,
                 "title": checkpoint.title,
                 "filename": checkpoint.filename,

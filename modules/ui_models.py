@@ -11,6 +11,9 @@ import modules.errors
 import modules.hashes
 
 
+search_metadata_civit = None
+
+
 def create_ui():
     dummy_component = gr.Label(visible=False)
 
@@ -241,7 +244,7 @@ def create_ui():
             with gr.Tab(label="CivitAI"):
                 data = []
 
-                def civit_search(name, tag, model_type):
+                def civit_search_model(name, tag, model_type):
                     types = 'LORA' if model_type == 'LoRA' else 'Checkpoint'
                     url = f'https://civitai.com/api/v1/models?limit=25&types={types}&Sort=Newest'
                     if name is not None and len(name) > 0:
@@ -335,12 +338,15 @@ def create_ui():
                     list_models()
                     return res
 
-                def civit_download_previews(civit_previews_rehash):
+                def civit_search_metadata(civit_previews_rehash, title):
                     log.debug('CivitAI download previews')
                     from modules.ui_extra_networks import get_pages
                     from modules.modelloader import download_civit_preview, download_civit_meta
                     res = []
                     for page in get_pages():
+                        if type(title) == str:
+                            if page.title != title:
+                                continue
                         if page.name == 'style':
                             continue
                         for item in page.list_items():
@@ -370,6 +376,9 @@ def create_ui():
                                             res.append(download_civit_preview(item['filename'], preview_url))
                     txt = '<br>'.join([r for r in res if len(r) > 0])
                     return txt
+
+                global search_metadata_civit # pylint: disable=global-statement
+                search_metadata_civit = civit_search_metadata
 
                 with gr.Row(style={'margin-top': '1em'}):
                     gr.HTML('<h2>Fetch information</h2>Fetches preview and metadata information for all models with missing information<br>Models with existing previews and information are not updated<br>')
@@ -408,11 +417,11 @@ def create_ui():
                     civit_types1 = ['number', 'str', 'str', 'number', 'number']
                     civit_results1 = gr.DataFrame(value = None, label = 'Search results', show_label = True, interactive = False, wrap = True, overflow_row_behaviour = 'paginate', max_rows = 10, headers = civit_headers1, datatype = civit_types1, type='array')
 
-                civit_search_text.submit(fn=civit_search, inputs=[civit_search_text, civit_search_tag, civit_model_type], outputs=[civit_results1, civit_results2, civit_results3])
-                civit_search_tag.submit(fn=civit_search, inputs=[civit_search_text, civit_search_tag, civit_model_type], outputs=[civit_results1, civit_results2, civit_results3])
-                civit_search_btn.click(fn=civit_search, inputs=[civit_search_text, civit_search_tag, civit_model_type], outputs=[civit_results1, civit_results2, civit_results3])
+                civit_search_text.submit(fn=civit_search_model, inputs=[civit_search_text, civit_search_tag, civit_model_type], outputs=[civit_results1, civit_results2, civit_results3])
+                civit_search_tag.submit(fn=civit_search_model, inputs=[civit_search_text, civit_search_tag, civit_model_type], outputs=[civit_results1, civit_results2, civit_results3])
+                civit_search_btn.click(fn=civit_search_model, inputs=[civit_search_text, civit_search_tag, civit_model_type], outputs=[civit_results1, civit_results2, civit_results3])
                 civit_results1.select(fn=civit_select1, inputs=[civit_results1], outputs=[civit_results2, models_image])
                 civit_results2.select(fn=civit_select2, inputs=[civit_results2], outputs=[civit_results3])
                 civit_results3.select(fn=civit_select3, inputs=[civit_results3], outputs=[civit_selected, civit_name, civit_search_btn])
                 civit_download_model_btn.click(fn=civit_download_model, inputs=[civit_selected, civit_name, civit_path, civit_model_type, models_image], outputs=[models_outcome])
-                civit_previews_btn.click(fn=civit_download_previews, inputs=[civit_previews_rehash], outputs=[models_outcome])
+                civit_previews_btn.click(fn=civit_search_metadata, inputs=[civit_previews_rehash, civit_previews_rehash], outputs=[models_outcome])

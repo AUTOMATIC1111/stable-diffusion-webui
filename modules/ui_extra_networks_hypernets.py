@@ -15,6 +15,7 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
             fn = os.path.splitext(path)[0]
             name = os.path.relpath(fn, shared.opts.hypernetwork_dir)
             yield {
+                "type": 'Hypernetwork',
                 "name": os.path.relpath(fn, shared.opts.hypernetwork_dir),
                 "filename": path,
                 "preview": self.find_preview(fn),

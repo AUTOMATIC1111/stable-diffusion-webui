@@ -44,6 +44,57 @@ class ExtraNetworksPageStyles(ui_extra_networks.ExtraNetworksPage):
         pass
     """
 
+    def parse_desc(self, desc):
+        lines = desc.strip().split("\n")
+        params = { 'name': '', 'description': '', 'prompt': '', 'negative': '', 'extra': ''}
+        found = ''
+        for line in lines:
+            line = line.strip()
+            if line.lower().startswith('name:'):
+                found = 'name'
+                params['name'] = line[5:].strip()
+            elif line.lower().startswith('description:'):
+                found = 'description'
+                params['description'] = line[12:].strip()
+            elif line.lower().startswith('prompt:'):
+                found = 'prompt'
+                params['prompt'] = line[7:].strip()
+            elif line.lower().startswith('negative:'):
+                found = 'negative'
+                params['negative'] = line[9:].strip()
+            elif line.lower().startswith('extra:'):
+                found = 'extra'
+                params['extra'] = line[6:].strip()
+            elif found != '':
+                params[found] += '\n' + line
+        if params['name'] == '':
+            return None
+        if params['description'] == '':
+            params['description'] = params['name']
+        return params
+
+    def create_style(self, params):
+        from modules.images import FilenameGenerator
+        from hashlib import sha256
+        namegen = FilenameGenerator(p=None, seed=None, prompt=params.get('Prompt', ''), image=None, grid=False)
+        name = namegen.prompt_words()
+        sha = sha256(json.dumps(name).encode()).hexdigest()[0:8]
+        fn = os.path.join(shared.opts.styles_dir, sha + '.json')
+        item = {
+            "type": 'Style',
+            "name": name,
+            "title": name,
+            "filename": fn,
+            "search_term": f'{self.search_terms_from_path(name)}',
+            "preview": self.find_preview(name),
+            "description": '',
+            "prompt": params.get('Prompt', ''),
+            "negative": params.get('Negative prompt', ''),
+            "extra": '', # TODO add extras to styles
+            "local_preview": f"{name}.{shared.opts.samples_format}",
+        }
+        return item
+
     def list_items(self):
         for k, style in shared.prompt_styles.styles.items():
             fn = os.path.splitext(style.filename)[0]
@@ -51,6 +102,7 @@ class ExtraNetworksPageStyles(ui_extra_networks.ExtraNetworksPage):
             if len(style.negative_prompt) > 0:
                 txt += f'\nNegative: {style.negative_prompt}'
             yield {
+                "type": 'Style',
                 "name": style.name,
                 "title": k,
                 "filename": style.filename,

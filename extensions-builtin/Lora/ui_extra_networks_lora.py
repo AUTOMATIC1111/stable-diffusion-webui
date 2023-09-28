@@ -24,6 +24,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 tags[' '.join(words[1:])] = words[0]
             name = os.path.splitext(os.path.relpath(l.filename, shared.cmd_opts.lora_dir))[0]
             yield {
+                "type": 'Lora',
                 "name": name,
                 "filename": l.filename,
                 "hash": l.shorthash,

@@ -14,11 +14,17 @@ Upgrades are still possible and supported, but above is recommended for best exp
     any ui state including state of open/closed menus can be saved as default!  
     see *System -> User interface -> Set menu states*  
 - **Extra networks**:  
+  - you can scan [civitai](https://civitai.com/)  
+    for missing metadata and previews directly from extra networks  
   - new details interface to view and save data about extra networks  
     main ui now has a single button on each en to trigger details view  
   - details view includes model/lora metadata parser!  
-  - details view includes civitai model metadata!
-  - styles can be edited in details view  
+  - details view includes civitai model metadata!  
+  - **Styles**
+    - save/apply icons moved to extra networks  
+    - can be edited in details view  
+    - support for single or multiple styles per json  
+    - support for embedded previews  
   - faster search, ability to show/hide/sort networks  
   - refactored subfolder handling  
     *note*: this will trigger model hash recaclulation on first model use  
@@ -44,6 +50,9 @@ Upgrades are still possible and supported, but above is recommended for best exp
   - better **TI embeddings** support for SD and SDXL  
     faster loading, wider compatibility and support for embeddings with multiple vectors  
     information about used embedding is now also added to image metadata  
+    thanks @AI-Casanova  
+  - better **Lora** handling  
+    thanks @AI-Casanova  
 - **Upscalers**:
   - fix long outstanding memory leak in legacy code, amazing this went undetected for so long  
   - more high quality upscalers available by default  
@@ -53,7 +62,8 @@ Upgrades are still possible and supported, but above is recommended for best exp
     Note: Recommended usage for *SD Upscale* is by using second pass instead of upscaler  
     as it allows for tuning of prompt, seed, sampler settings which are used to guide upscaler
   - upscalers are available in **xyz grid**  
-  - simplified *settings->postprocessing->upscalers*
+  - simplified *settings->postprocessing->upscalers*  
+    e.g. all upsamplers share same settings for tiling  
   - allow upscale-only as part of **txt2img** and **img2img** workflows  
     simply set *denoising strength* to 0 so hires does not get triggered  
   - unified init/download/execute/progress code  
@@ -62,6 +72,7 @@ Upgrades are still possible and supported, but above is recommended for best exp
   - moved ui options to submenu  
   - default list for new installs is now all samplers, list can be modified in settings  
   - simplified samplers configuration in settings  
+    plus added few new ones like sigma min/max which can highly impact sampler behavior  
   - note that list of samplers is now *different* since keeping a flat-list of all possible  
     combinations results in 50+ samplers which is not practical  
     items such as algorithm (e.g. karras) is actually a sampler option, not a sampler itself  
@@ -82,6 +93,9 @@ Upgrades are still possible and supported, but above is recommended for best exp
     - updated installer to support detect `ROCm` *5.4/5.5/5.6/5.7*  
   - **CUDA**:  
     - testing moved to `torch` *2.2.0-dev/cu121*  
+  - **GC**:
+    - custom garbage collect threshold to reduce vram memory usage, thanks @Disty0  
+      see *settings -> compute -> gc*
 - **Startup**  
   - All main CLI parameters can now be set as environment variable as well  
     for example `--data-dir <path>` can be specified as `SD_DATADIR=<path>` before starting SD.Next  

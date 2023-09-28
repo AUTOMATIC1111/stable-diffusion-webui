@@ -46,6 +46,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
                 tags[embedding.tag]=1
             name = os.path.splitext(embedding.basename)[0]
             yield {
+                "type": 'Embedding',
                 "name": name,
                 "filename": embedding.filename,
                 "preview": self.find_preview(path),

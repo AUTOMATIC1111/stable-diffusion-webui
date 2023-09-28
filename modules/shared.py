@@ -332,12 +332,13 @@ def readfile(filename, silent=False):
             if not silent:
                 log.debug(f'Reading: {filename} len={len(data)}')
     except Exception as e:
-        log.error(f'Reading failed: {filename} {e}')
+        if not silent:
+            log.error(f'Reading failed: {filename} {e}')
+        return {}
     return data
 
 
 def writefile(data, filename, mode='w', silent=False):
-
     def default(obj):
         log.error(f"Saving: {filename} not a valid object: {obj}")
         return str(obj)
@@ -345,7 +346,16 @@ def writefile(data, filename, mode='w', silent=False):
     try:
         with fasteners.InterProcessLock(f"{filename}.lock"):
             # skipkeys=True, ensure_ascii=True, check_circular=True, allow_nan=True
-            output = json.dumps(data, indent=2, default=default)
+            if type(data) == dict:
+                output = json.dumps(data, indent=2, default=default)
+            elif isinstance(data, object):
+                simple = {}
+                for k in data.__dict__:
+                    if data.__dict__[k] is not None:
+                        simple[k] = data.__dict__[k]
+                output = json.dumps(simple, indent=2, default=default)
+            else:
+                raise ValueError('not a valid object')
             if not silent:
                 log.debug(f'Saving: {filename} len={len(output)}')
             with open(filename, mode, encoding="utf8") as file:

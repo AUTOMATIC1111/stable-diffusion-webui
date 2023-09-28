@@ -5,6 +5,7 @@ save = '⇩'
 apply = '⇰'
 clear = '⊗'
 fill = '⊜'
+scan = '🕸️'
 networks = '🌐'
 paste = '⇦'
 

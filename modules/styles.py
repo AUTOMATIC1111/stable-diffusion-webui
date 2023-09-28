@@ -69,6 +69,8 @@ class StyleDatabase:
                             if type(all_styles) is dict:
                                 all_styles = [all_styles]
                             for style in all_styles:
+                                if type(style) is not dict or "name" not in style:
+                                    raise ValueError('cannot parse style')
                                 basename = os.path.splitext(os.path.basename(fn))[0]
                                 name = re.sub(r'[\t\r\n]', '', style.get("name", basename)).strip()
                                 name = os.path.join(os.path.dirname(os.path.relpath(fn, self.path)), name)

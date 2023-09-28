@@ -17,7 +17,6 @@ from modules import shared, scripts, modelloader
 from modules.ui_components import ToolButton
 import modules.ui_symbols as symbols
 
-
 allowed_dirs = []
 dir_cache = {} # key=path, value=(mtime, listdir(path))
 refresh_time = None
@@ -268,6 +267,8 @@ class ExtraNetworksPage:
         return 'html/card-no-preview.png'
 
     def find_preview(self, path):
+        if path is None:
+            return self.link_preview('html/card-no-preview.png')
         fn = os.path.splitext(path)[0]
         preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
         for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.', '.preview.']]:
@@ -353,8 +354,14 @@ class ExtraNetworksUi:
         self.description: gr.Textbox = None
         self.search: gr.Textbox = None
         self.button_details: gr.Button = None
+        self.button_refresh: gr.Button = None
+        self.button_scan: gr.Button = None
+        self.button_save: gr.Button = None
+        self.button_apply: gr.Button = None
+        self.button_close: gr.Button = None
         self.details_components: list = []
         self.last_item: dict = None
+        self.last_page: ExtraNetworksPage = None
 
 
 def create_ui(container, button_parent, tabname, skip_indexing = False):
@@ -368,16 +375,22 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
     ui.button_details = gr.Button('Details', elem_id=tabname+"_extra_details_btn", visible=False)
     state = {}
 
-    def get_item(state):
-        if state is None or not hasattr(state, 'page') or not hasattr(state, 'item'):
-            return None, None
-        page = next(iter([x for x in get_pages() if x.title == state.page]), None)
-        if page is None:
-            return None, None
-        item = next(iter([x for x in page.items if x["name"] == state.item]), None)
-        if item is None:
-            return page, None
+    def get_item(state, params = None):
+        if params is not None and type(params) == dict:
+            page = next(iter([x for x in get_pages() if x.title == 'Style']), None)
+            item = page.create_style(params)
+        else:
+            if state is None or not hasattr(state, 'page') or not hasattr(state, 'item'):
+                return None, None
+            page = next(iter([x for x in get_pages() if x.title == state.page]), None)
+            if page is None:
+                return None, None
+            item = next(iter([x for x in page.items if x["name"] == state.item]), None)
+            if item is None:
+                return page, None
         item = SimpleNamespace(**item)
+        ui.last_item = item
+        ui.last_page = page
         return page, item
 
     # main event that is triggered when js updates state text field with json values, used to communicate js -> python
@@ -388,9 +401,8 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         except Exception as e:
             shared.log.error(f'Extra networks state error: {e}')
             return
-        _page, item = get_item(state)
+        _page, _item = get_item(state)
         # shared.log.debug(f'Extra network: op={state.op} page={page.title if page is not None else None} item={item.filename if item is not None else None}')
-        ui.last_item = item
 
     def toggle_visibility(is_visible):
         is_visible = not is_visible
@@ -427,8 +439,17 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                 ui.details_components.append(meta)
 
     with ui.tabs:
-        button_refresh = ToolButton(symbols.refresh, elem_id=tabname+"_extra_refresh")
-        button_close = ToolButton(symbols.close, elem_id=tabname+"_extra_close")
+        def ui_tab_change(page):
+            scan_visible = page in ['Model', 'Lora', 'Hypernetwork', 'Embedding']
+            save_visible = page in ['Style']
+            apply_visible = page in ['Style']
+            return [gr.update(visible=scan_visible), gr.update(visible=save_visible), gr.update(visible=apply_visible)]
+
+        ui.button_refresh = ToolButton(symbols.refresh, elem_id=tabname+"_extra_refresh")
+        ui.button_scan = ToolButton(symbols.scan, elem_id=tabname+"_extra_scan", visible=True)
+        ui.button_save = ToolButton(symbols.save, elem_id=tabname+"_extra_save", visible=False)
+        ui.button_apply = ToolButton(symbols.apply, elem_id=tabname+"_extra_apply", visible=False)
+        ui.button_close = ToolButton(symbols.close, elem_id=tabname+"_extra_close")
         ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", elem_classes="textbox", lines=2)
         ui.description = gr.Textbox('', show_label=False, elem_id=tabname+"_description", elem_classes="textbox", lines=2, interactive=False)
 
@@ -437,9 +458,12 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             refresh_time = time.time()
         for page in get_pages():
             page.create_page(ui.tabname, skip_indexing)
-            with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab"):
+            with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab") as tab:
                 hmtl = gr.HTML(page.html, elem_id=f'{tabname}{page.name}_extra_page', elem_classes="extra-networks-page")
                 ui.pages.append(hmtl)
+                tab.select(ui_tab_change, _js="getENActivePage", inputs=[ui.button_details], outputs=[ui.button_scan, ui.button_save, ui.button_apply])
+
+        # ui.tabs.change(fn=ui_tab_change, inputs=[], outputs=[ui.button_scan, ui.button_save])
 
     def fn_save_img():
         if ui.last_item is None or ui.last_item.local_preview is None:
@@ -472,16 +496,24 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         return 'html/card-no-preview.png'
 
     def fn_save_desc(desc):
-        fn = os.path.splitext(ui.last_item.filename)[0] + '.txt'
-        with open(fn, 'w', encoding='utf-8') as f:
-            f.write(desc)
-        shared.log.debug(f'Extra network save desc: item={ui.last_item.name} filename={fn}')
+        if hasattr(ui.last_item, 'type') and ui.last_item.type == 'Style':
+            params = ui.last_page.parse_desc(desc)
+            if params is not None:
+                fn_save_info(params)
+        else:
+            fn = os.path.splitext(ui.last_item.filename)[0] + '.txt'
+            with open(fn, 'w', encoding='utf-8') as f:
+                f.write(desc)
+            shared.log.debug(f'Extra network save desc: item={ui.last_item.name} filename={fn}')
         return desc
 
     def fn_delete_desc(desc):
         if ui.last_item is None:
             return desc
-        fn = os.path.splitext(ui.last_item.filename)[0] + '.txt'
+        if hasattr(ui.last_item, 'type') and ui.last_item.type == 'Style':
+            fn = os.path.splitext(ui.last_item.filename)[0] + '.json'
+        else:
+            fn = os.path.splitext(ui.last_item.filename)[0] + '.txt'
         if os.path.exists(fn):
             shared.log.debug(f'Extra network delete desc: item={ui.last_item.name} filename={fn}')
             os.remove(fn)
@@ -491,7 +523,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
     def fn_save_info(info):
         fn = os.path.splitext(ui.last_item.filename)[0] + '.json'
         shared.writefile(info, fn, silent=True)
-        shared.log.debug(f'Extra network save desc: item={ui.last_item.name} filename={fn}')
+        shared.log.debug(f'Extra network save info: item={ui.last_item.name} filename={fn}')
         return info
 
     def fn_delete_info(info):
@@ -511,10 +543,10 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
     btn_save_info.click(fn=fn_save_info, inputs=[info], outputs=[info])
     btn_delete_info.click(fn=fn_delete_info, inputs=[info], outputs=[info])
 
-    def show_details(text, img, desc, info, meta):
-        page, item = get_item(state)
-        if item is not None and os.path.exists(item.filename):
-            stat = os.stat(item.filename)
+    def show_details(text, img, desc, info, meta, params):
+        page, item = get_item(state, params)
+        if item is not None and hasattr(item, 'name'):
+            stat = os.stat(item.filename) if os.path.exists(item.filename) else None
             desc = item.description
             fullinfo = shared.readfile(os.path.splitext(item.filename)[0] + '.json', silent=True)
             if 'modelVersions' in fullinfo: # sanitize massive objects
@@ -530,6 +562,9 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             lora = ''
             model = ''
             style = ''
+            note = ''
+            if not os.path.exists(item.filename):
+                note = f'<br><h3>File is not yet saved</h3>Target filename: {item.filename}'
             if page.title == 'Model':
                 merge = len(list(meta.get('sd_merge_models', {})))
                 if merge > 0:
@@ -565,17 +600,18 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                     <tr><td>Alias</td><td>{getattr(item, 'alias', 'N/A')}</td></tr>
                     <tr><td>Filename</td><td>{item.filename}</td></tr>
                     <tr><td>Hash</td><td>{getattr(item, 'hash', 'N/A')}</td></tr>
-                    <tr><td>Size</td><td>{round(stat.st_size/1024/1024, 2)} MB</td></tr>
-                    <tr><td>Last modified</td><td>{datetime.fromtimestamp(stat.st_mtime)}</td></tr>
+                    <tr><td>Size</td><td>{round(stat.st_size/1024/1024, 2) if stat is not None else 'N/A'} MB</td></tr>
+                    <tr><td>Last modified</td><td>{datetime.fromtimestamp(stat.st_mtime) if stat is not None else 'N/A'}</td></tr>
                     <tr><td style="border-top: 1px solid var(--button-primary-border-color);"></td><td></td></tr>
                     {lora}
                     {model}
                     {style}
                 </tbody></table>
+                {note}
             '''
         return [text, img, desc, info, meta, gr.update(visible=item is not None)]
 
-    def en_refresh(title):
+    def ui_refresh_click(title):
         pages = []
         for page in get_pages():
             if title is None or title == '' or title == page.title or len(page.html) == 0:
@@ -587,11 +623,31 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         ui.search.update(value = ui.search.value)
         return pages
 
+    def ui_scan_click(title):
+        from modules import ui_models
+        ui_models.search_metadata_civit(True, title)
+        return ui_refresh_click(title)
+
+    def ui_save_click():
+        from modules import paths, generation_parameters_copypaste
+        filename = os.path.join(paths.data_path, "params.txt")
+        if os.path.exists(filename):
+            with open(filename, "r", encoding="utf8") as file:
+                prompt = file.read()
+        else:
+            prompt = ''
+        params = generation_parameters_copypaste.parse_generation_parameters(prompt)
+        res = show_details(text=None, img=None, desc=None, info=None, meta=None, params=params)
+        return res
+
+    dummy_state = gr.State(value=False) # pylint: disable=abstract-class-instantiated
     button_parent.click(fn=toggle_visibility, inputs=[ui.visible], outputs=[ui.visible, container, button_parent])
-    button_close.click(fn=toggle_visibility, inputs=[ui.visible], outputs=[ui.visible, container])
-    button_refresh.click(_js='getENActivePage', fn=en_refresh, inputs=[ui.search], outputs=ui.pages)
+    ui.button_close.click(fn=toggle_visibility, inputs=[ui.visible], outputs=[ui.visible, container])
+    ui.button_refresh.click(fn=ui_refresh_click, _js='getENActivePage', inputs=[ui.search], outputs=ui.pages)
+    ui.button_scan.click(fn=ui_scan_click, _js='getENActivePage', inputs=[ui.search], outputs=ui.pages)
+    ui.button_save.click(fn=ui_save_click, inputs=[], outputs=ui.details_components + [ui.details])
+    ui.button_details.click(show_details, _js="getCardDetails", inputs=ui.details_components + [dummy_state], outputs=ui.details_components + [ui.details])
     ui.state.change(state_change, inputs=[ui.state], outputs=[])
-    ui.button_details.click(show_details, _js="getCardDetails", inputs=ui.details_components, outputs=ui.details_components + [ui.details])
     return ui
 
 

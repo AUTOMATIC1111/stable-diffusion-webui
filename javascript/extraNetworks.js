@@ -184,26 +184,35 @@ function applyStyles(styles) {
 
 function setupExtraNetworksForTab(tabname) {
   gradioApp().querySelector(`#${tabname}_extra_tabs`).classList.add('extra-networks');
-  const tabs = gradioApp().querySelector(`#${tabname}_extra_tabs > div`);
-  const search = gradioApp().querySelector(`#${tabname}_extra_search textarea`);
-  const refresh = gradioApp().getElementById(`${tabname}_extra_refresh`);
-  const description = gradioApp().getElementById(`${tabname}_description`);
-  const close = gradioApp().getElementById(`${tabname}_extra_close`);
   const en = gradioApp().getElementById(`${tabname}_extra_networks`);
-  search.classList.add('search');
-  description.classList.add('description');
-  tabs.appendChild(refresh);
-  tabs.appendChild(close);
+  const tabs = gradioApp().querySelector(`#${tabname}_extra_tabs > div`);
+  const txtSearch = gradioApp().querySelector(`#${tabname}_extra_search textarea`);
+  const txtDescription = gradioApp().getElementById(`${tabname}_description`);
+  const btnRefresh = gradioApp().getElementById(`${tabname}_extra_refresh`);
+  const btnScan = gradioApp().getElementById(`${tabname}_extra_scan`);
+  const btnSave = gradioApp().getElementById(`${tabname}_extra_save`);
+  const btnApply = gradioApp().getElementById(`${tabname}_extra_apply`);
+  const btnClose = gradioApp().getElementById(`${tabname}_extra_close`);
+  txtSearch.classList.add('search');
+  txtDescription.classList.add('description');
+  const buttons = document.createElement('span');
+  buttons.classList.add('buttons');
+  buttons.appendChild(btnRefresh);
+  buttons.appendChild(btnScan);
+  buttons.appendChild(btnSave);
+  buttons.appendChild(btnApply);
+  buttons.appendChild(btnClose);
+  tabs.appendChild(buttons);
   const div = document.createElement('div');
   div.classList.add('second-line');
   tabs.appendChild(div);
-  div.appendChild(search);
-  div.appendChild(description);
+  div.appendChild(txtSearch);
+  div.appendChild(txtDescription);
   let searchTimer = null;
-  search.addEventListener('input', (evt) => {
+  txtSearch.addEventListener('input', (evt) => {
     if (searchTimer) clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
-      filterExtraNetworksForTab(tabname, search.value.toLowerCase());
+      filterExtraNetworksForTab(tabname, txtSearch.value.toLowerCase());
       searchTimer = null;
     }, 150);
   });

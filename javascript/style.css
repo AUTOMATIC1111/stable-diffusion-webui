@@ -239,11 +239,12 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-networks .search { flex: 1; }
 .extra-networks .description { flex: 3; }
 .extra-networks .tab-nav > button { margin-right: 0; height: 24px; padding: 2px 4px 2px 4px; }
+.extra-networks .buttons { position: absolute; right: 0; margin: -4px; }
+.extra-networks .custom-button { width: 120px; width: 100%; background: none; justify-content: left; text-align: left; padding: 2px 8px 2px 16px; text-indent: -8px; box-shadow: none; line-break: auto; }
+.extra-networks .custom-button:hover { background: var(--button-primary-background-fill) }
 .extra-networks-tab { padding: 0 !important; }
 .extra-network-subdirs { background: var(--input-background-fill); overflow-x: hidden; overflow-y: auto; min-width: max(15%, 120px); padding-top: 0.5em; }
 .extra-networks-page { display: flex }
-.extra-networks .custom-button { width: 120px; width: 100%; background: none; justify-content: left; text-align: left; padding: 2px 8px 2px 16px; text-indent: -8px; box-shadow: none; line-break: auto; }
-.extra-networks .custom-button:hover { background: var(--button-primary-background-fill) }
 .extra-network-cards { display: flex; flex-wrap: wrap; overflow-y: auto; overflow-x: hidden; align-content: flex-start; width: -moz-available; width: -webkit-fill-available; }
 .extra-network-cards .card { height: fit-content; margin: 0 0 0.5em 0.5em; position: relative; scroll-snap-align: start; scroll-margin-top: 0; }
 .extra-network-cards .card .overlay { position: absolute; bottom: 0; padding: 0.2em; z-index: 10; width: 100%; background: none; }
