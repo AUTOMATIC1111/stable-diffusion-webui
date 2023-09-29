@@ -9,7 +9,13 @@ fill = '⊜'
 scan = '🕸️'
 networks = '🌐'
 paste = '⇦'
-
+refine = '⌾'
+switch = '⇅'
+detect = '📐'
+folder = '📂'
+random = '🎲️'
+reuse = '♻️'
+info = 'ℹ' # noqa
 """
 refresh = '🔄'
 close = '🛗'
@@ -21,9 +27,3 @@ fill = '⏫'
 networks = '🌐'
 paste = '📘'
 """
-switch = '⇅'
-detect = '📐'
-folder = '📂'
-random = '🎲️'
-reuse = '♻️'
-info = 'ℹ' # noqa

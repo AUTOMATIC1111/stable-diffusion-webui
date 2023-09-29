@@ -186,24 +186,31 @@ function setupExtraNetworksForTab(tabname) {
   gradioApp().querySelector(`#${tabname}_extra_tabs`).classList.add('extra-networks');
   const en = gradioApp().getElementById(`${tabname}_extra_networks`);
   const tabs = gradioApp().querySelector(`#${tabname}_extra_tabs > div`);
-  const txtSearch = gradioApp().querySelector(`#${tabname}_extra_search textarea`);
-  const txtDescription = gradioApp().getElementById(`${tabname}_description`);
+
+  // buttons
   const btnRefresh = gradioApp().getElementById(`${tabname}_extra_refresh`);
   const btnScan = gradioApp().getElementById(`${tabname}_extra_scan`);
   const btnSave = gradioApp().getElementById(`${tabname}_extra_save`);
   const btnClose = gradioApp().getElementById(`${tabname}_extra_close`);
-  txtSearch.classList.add('search');
-  txtDescription.classList.add('description');
+  const btnModel = gradioApp().getElementById(`${tabname}_extra_model`);
   const buttons = document.createElement('span');
   buttons.classList.add('buttons');
   if (btnRefresh) buttons.appendChild(btnRefresh);
+  if (btnModel) buttons.appendChild(btnModel);
   if (btnScan) buttons.appendChild(btnScan);
   if (btnSave) buttons.appendChild(btnSave);
   if (btnClose) buttons.appendChild(btnClose);
+  btnModel.onclick = () => btnModel.classList.toggle('toolbutton-selected');
   tabs.appendChild(buttons);
+
+  // search and description
   const div = document.createElement('div');
   div.classList.add('second-line');
   tabs.appendChild(div);
+  const txtSearch = gradioApp().querySelector(`#${tabname}_extra_search textarea`);
+  const txtDescription = gradioApp().getElementById(`${tabname}_description`);
+  txtSearch.classList.add('search');
+  txtDescription.classList.add('description');
   div.appendChild(txtSearch);
   div.appendChild(txtDescription);
   let searchTimer = null;
@@ -215,6 +222,7 @@ function setupExtraNetworksForTab(tabname) {
     }, 150);
   });
 
+  // card hover
   let hoverTimer = null;
   let previousCard = null;
   gradioApp().getElementById(`${tabname}_extra_tabs`).onmouseover = (e) => {
@@ -233,6 +241,7 @@ function setupExtraNetworksForTab(tabname) {
     };
   };
 
+  // en style
   const intersectionObserver = new IntersectionObserver((entries) => {
     if (!en) return;
     for (const el of Array.from(gradioApp().querySelectorAll('.extra-networks-page'))) {

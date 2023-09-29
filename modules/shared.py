@@ -147,9 +147,11 @@ class State:
         self.skipped = False
         self.textinfo = None
         self.time_start = time.time()
+        log.debug(f'State begin: {self.job}')
         devices.torch_gc()
 
     def end(self):
+        log.debug(f'State end: {self.job} time={time.time() - self.time_start:.2f}s')
         self.job = ""
         self.job_count = 0
         self.job_no = 0

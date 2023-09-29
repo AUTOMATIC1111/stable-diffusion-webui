@@ -1,3 +1,4 @@
+import copy
 import hashlib
 import os.path
 from rich import progress
@@ -56,6 +57,7 @@ def sha256(filename, title, use_addnet_hash=False):
         return None
     if not os.path.isfile(filename):
         return None
+    orig_state = copy.deepcopy(shared.state)
     shared.state.begin("hashing")
     if use_addnet_hash:
         with progress.open(filename, 'rb', description=f'[cyan]Calculating hash: [yellow]{filename}', auto_refresh=True, console=shared.console) as f:
@@ -67,6 +69,7 @@ def sha256(filename, title, use_addnet_hash=False):
         "sha256": sha256_value
     }
     shared.state.end()
+    shared.state = orig_state
     dump_cache()
     return sha256_value
 

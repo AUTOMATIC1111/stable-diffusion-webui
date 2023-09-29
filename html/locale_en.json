@@ -19,6 +19,7 @@
   {"id":"","label":"⟲","localized":"","hint":"Refresh"},
   {"id":"","label":"✕","localized":"","hint":"Close"},
   {"id":"","label":"⊜","localized":"","hint":"Fill"},
+  {"id":"","label":"⌾","localized":"","hint":"Load model as refiner model when selected, otherwise load as base model"},
   {"id":"","label":"🕸️","localized":"","hint":"Scan CivitAI for missing metadata and previews"},
   {"id":"","label":"📐","localized":"","hint":"Measure"},
   {"id":"","label":"🔍","localized":"","hint":"Search"}

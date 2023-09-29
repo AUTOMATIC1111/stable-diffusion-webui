@@ -3,6 +3,7 @@ import io
 import sys
 import json
 import time
+import copy
 import logging
 import threading
 import contextlib
@@ -545,7 +546,8 @@ class ModelData:
                     if shared.backend == shared.Backend.ORIGINAL:
                         reload_model_weights(op='model')
                     elif shared.backend == shared.Backend.DIFFUSERS:
-                        load_diffuser(op='model')
+                        reload_model_weights(op='model')
+                        # load_diffuser(op='model')
                     else:
                         shared.log.error(f"Unknown Execution backend: {shared.backend}")
                     self.initial = False
@@ -1126,6 +1128,9 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
     if checkpoint_info is None:
         unload_model_weights(op=op)
         return
+    orig_state = copy.deepcopy(shared.state)
+    shared.state = shared.State()
+    shared.state.begin(f'load-{op}')
     if load_dict:
         shared.log.debug(f'Model dict: existing={sd_model is not None} target={checkpoint_info.filename} info={info}')
     else:
@@ -1165,8 +1170,11 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
             model_data.sd_dict = shared.opts.sd_model_dict
             shared.opts.data["sd_model_checkpoint"] = next_checkpoint_info.title
             reload_model_weights(reuse_dict=True) # ok we loaded dict now lets redo and load model on top of it
+        shared.state.end()
+        shared.state = orig_state
         return model_data.sd_model if op == 'model' or op == 'dict' else model_data.sd_refiner
 
+    # fallback
     try:
         load_model_weights(sd_model, checkpoint_info, state_dict, timer)
     except Exception:
@@ -1180,7 +1188,9 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         if sd_model is not None and not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and not getattr(sd_model, 'has_accelerate', False):
             sd_model.to(devices.device)
             timer.record("device")
-    shared.log.info(f"Weights loaded in {timer.summary()}")
+    shared.state.end()
+    shared.state = orig_state
+    shared.log.info(f"Loaded: {op} time={timer.summary()}")
 
 
 def disable_offload(sd_model):

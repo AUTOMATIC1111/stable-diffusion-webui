@@ -1,5 +1,6 @@
 let logMonitorEl = null;
 let logMonitorStatus = true;
+let jobStatusEl = null;
 
 async function logMonitor() {
   if (logMonitorStatus) setTimeout(logMonitor, opts.logmonitor_refresh_period);
@@ -51,6 +52,9 @@ async function initLogMonitor() {
     </table>
   `;
   el.style.display = 'none';
+  jobStatusEl = document.createElement('div');
+  jobStatusEl.className = 'jobStatus';
+  gradioApp().appendChild(jobStatusEl);
   fetch(`/sdapi/v1/start?agent=${encodeURI(navigator.userAgent)}`);
   logMonitor();
   log('initLogMonitor');

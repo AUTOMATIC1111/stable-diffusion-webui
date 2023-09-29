@@ -40,7 +40,6 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
                 res[-1] = f"<div class='error'>{html.escape(str(e))}</div>"
             finally:
                 progress.finish_task(id_task)
-            shared.state.end()
         return res
     return wrap_gradio_call(f, extra_outputs=extra_outputs, add_stats=True, name=name)
 

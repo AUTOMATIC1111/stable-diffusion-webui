@@ -366,6 +366,7 @@ class ExtraNetworksUi:
         self.button_save: gr.Button = None
         self.button_apply: gr.Button = None
         self.button_close: gr.Button = None
+        self.button_model: gr.Checkbox = None
         self.details_components: list = []
         self.last_item: dict = None
         self.last_page: ExtraNetworksPage = None
@@ -449,12 +450,14 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         def ui_tab_change(page):
             scan_visible = page in ['Model', 'Lora', 'Hypernetwork', 'Embedding']
             save_visible = page in ['Style']
-            return [gr.update(visible=scan_visible), gr.update(visible=save_visible)]
+            model_visible = page in ['Model']
+            return [gr.update(visible=scan_visible), gr.update(visible=save_visible), gr.update(visible=model_visible)]
 
         ui.button_refresh = ToolButton(symbols.refresh, elem_id=tabname+"_extra_refresh")
         ui.button_scan = ToolButton(symbols.scan, elem_id=tabname+"_extra_scan", visible=True)
         ui.button_save = ToolButton(symbols.book, elem_id=tabname+"_extra_save", visible=False)
         ui.button_close = ToolButton(symbols.close, elem_id=tabname+"_extra_close")
+        ui.button_model = ToolButton(symbols.refine, elem_id=tabname+"_extra_model", visible=True)
         ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", elem_classes="textbox", lines=2)
         ui.description = gr.Textbox('', show_label=False, elem_id=tabname+"_description", elem_classes="textbox", lines=2, interactive=False)
 
@@ -466,7 +469,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab") as tab:
                 hmtl = gr.HTML(page.html, elem_id=f'{tabname}{page.name}_extra_page', elem_classes="extra-networks-page")
                 ui.pages.append(hmtl)
-                tab.select(ui_tab_change, _js="getENActivePage", inputs=[ui.button_details], outputs=[ui.button_scan, ui.button_save])
+                tab.select(ui_tab_change, _js="getENActivePage", inputs=[ui.button_details], outputs=[ui.button_scan, ui.button_save, ui.button_model])
 
         # ui.tabs.change(fn=ui_tab_change, inputs=[], outputs=[ui.button_scan, ui.button_save])
 

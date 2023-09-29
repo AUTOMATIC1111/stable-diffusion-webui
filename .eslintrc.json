@@ -73,7 +73,7 @@
     "register_drag_drop": "readonly",
     //extraNetworks.js
     "requestGet": "readonly",
-    "popup": "readonly",
+    "getENActiveTab": "readonly",
     // from python
     "localization": "readonly",
     // progressbar.js
@@ -82,6 +82,8 @@
     // imageviewer.js
     "modalPrevImage": "readonly",
     "modalNextImage": "readonly",
+    // logMonitor.js
+    "jobStatusEl": "readonly",
     // loader.js
     "removeSplash": "readonly"
   },

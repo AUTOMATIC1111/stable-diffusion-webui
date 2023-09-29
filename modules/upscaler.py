@@ -1,4 +1,5 @@
 import os
+import copy
 from abc import abstractmethod
 import PIL
 from PIL import Image
@@ -79,6 +80,8 @@ class Upscaler:
         return img
 
     def upscale(self, img: PIL.Image, scale, selected_model: str = None):
+        orig_state = copy.deepcopy(modules.shared.state)
+        modules.shared.state.begin('upscale')
         self.scale = scale
         dest_w = int(img.width * scale)
         dest_h = int(img.height * scale)
@@ -91,6 +94,8 @@ class Upscaler:
                 break
         if img.width != dest_w or img.height != dest_h:
             img = img.resize((int(dest_w), int(dest_h)), resample=LANCZOS)
+        modules.shared.state.end()
+        modules.shared.state = orig_state
         return img
 
     @abstractmethod

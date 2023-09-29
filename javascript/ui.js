@@ -336,13 +336,19 @@ function updateInput(target) {
 let desiredCheckpointName = null;
 function selectCheckpoint(name) {
   desiredCheckpointName = name;
-  gradioApp().getElementById('change_checkpoint').click();
+  const tabname = getENActiveTab();
+  const btnModel = gradioApp().getElementById(`${tabname}_extra_model`);
+  const isRefiner = btnModel && btnModel.classList.contains('toolbutton-selected');
+  if (isRefiner) gradioApp().getElementById('change_refiner').click();
+  else gradioApp().getElementById('change_checkpoint').click();
+  log(`Change ${isRefiner ? 'refiner' : 'model'}: ${desiredCheckpointName}`);
 }
 
 let desiredVAEName = null;
 function selectVAE(name) {
   desiredVAEName = name;
   gradioApp().getElementById('change_vae').click();
+  log(`Change VAE: ${desiredVAEName}`);
 }
 
 function currentImg2imgSourceResolution(_a, _b, scaleBy) {

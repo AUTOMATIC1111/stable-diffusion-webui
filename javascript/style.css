@@ -120,6 +120,8 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
   z-index: var(--layer-2);
 }
 .tooltip-show { opacity: 0.9; }
+.toolbutton-selected { background: var(--background-fill-primary) !important; }
+.jobStatus { position: fixed; bottom: 1em; right: 1em; background: var(--input-background-fill); padding: 0.4em; font-size: 0.8em; color: var(--body-text-color-subdued); }
 
 /* settings */
 #si-sparkline-memo, #si-sparkline-load { background-color: #111; }

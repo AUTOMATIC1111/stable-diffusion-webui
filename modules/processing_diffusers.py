@@ -362,6 +362,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         desc='Base',
         **task_specific_kwargs
     )
+    # p.steps = base_args['num_inference_steps']
     p.extra_generation_params['CFG rescale'] = p.diffusers_guidance_rescale
     p.extra_generation_params["Eta"] = shared.opts.scheduler_eta if shared.opts.scheduler_eta is not None and shared.opts.scheduler_eta > 0 and shared.opts.scheduler_eta < 1 else None
     try:
@@ -414,6 +415,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     strength=p.denoising_strength,
                     desc='Hires',
                 )
+                # p.steps += hires_args['num_inference_steps']
                 try:
                     output = shared.sd_model(**hires_args) # pylint: disable=not-callable
                 except AssertionError as e:
@@ -476,6 +478,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 clip_skip=p.clip_skip,
                 desc='Refiner',
             )
+            # p.steps += refiner_args['num_inference_steps']
             try:
                 refiner_output = shared.sd_refiner(**refiner_args) # pylint: disable=not-callable
             except AssertionError as e:

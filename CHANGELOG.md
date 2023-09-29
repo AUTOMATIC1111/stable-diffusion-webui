@@ -1,12 +1,13 @@
 # Change Log for SD.Next
 
-## Update for 2023-09-24
+## Update for 2023-09-29
 
 **TBD**: Planned before release:
 - Integrate LoRA/Lyco for *backend:original*
 - Add FreeU for *backend:diffusers*
 
 This is a big one, with some major changes and new functionality...
+And probably the biggest release since introduction of **Diffusers**  
 
 Note that for this release its recommended to perform a clean install (fresh `git clone`)  
 Upgrades are still possible and supported, but above is recommended for best experience  
@@ -17,13 +18,17 @@ Upgrades are still possible and supported, but above is recommended for best exp
   - converted submenus from checkboxes to accordion elements  
     any ui state including state of open/closed menus can be saved as default!  
     see *System -> User interface -> Set menu states*  
+  - small visual indicator bottom right of page showing internal server job state  
 - **Extra networks**:  
-  - you can scan [civitai](https://civitai.com/)  
-    for missing metadata and previews directly from extra networks  
-  - new details interface to view and save data about extra networks  
-    main ui now has a single button on each en to trigger details view  
-  - details view includes model/lora metadata parser!  
-  - details view includes civitai model metadata!  
+  - **Details**
+    - new details interface to view and save data about extra networks  
+      main ui now has a single button on each en to trigger details view  
+    - details view includes model/lora metadata parser!  
+    - details view includes civitai model metadata!  
+  - **Metadata**:
+    - you can scan [civitai](https://civitai.com/)  
+      for missing metadata and previews directly from extra networks  
+      simply click on button in top-right corner of extra networks page  
   - **Styles**
     - save/apply icons moved to extra networks  
     - can be edited in details view  
@@ -31,9 +36,13 @@ Upgrades are still possible and supported, but above is recommended for best exp
     - support for embedded previews  
   - **VAE**
     - VAEs are now also listed as part of extra networks
-  - faster search, ability to show/hide/sort networks  
-  - refactored subfolder handling  
-    *note*: this will trigger model hash recaclulation on first model use  
+  - **Refiner**
+    - you can load model from extra networks as base model or as refiner  
+      simply select button in top-right of models page  
+  - **General**
+    - faster search, ability to show/hide/sort networks  
+    - refactored subfolder handling  
+      *note*: this will trigger model hash recaclulation on first model use  
 - **Diffusers**:
   - better pipeline auto-detect when loading from safetensors  
   - **SDXL Inpaint**  
@@ -110,6 +119,7 @@ Upgrades are still possible and supported, but above is recommended for best exp
     - get browser session info in server log  
     - when running with `--debug` flag, log is force-rotated  
       so each `sdnext.log.*` represents exactly one server run  
+    - internal server job state tracking
   - **API**
     - add end-to-end example how to use API: `cli/simple-txt2img.js`  
       covers txt2img, upscale, hires, refiner  
