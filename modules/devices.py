@@ -32,13 +32,19 @@ def get_gpu_info():
         else:
             return ''
 
+    def get_package_version(pkg: str):
+        import pkg_resources
+        spec = pkg_resources.working_set.by_key.get(pkg, None) # more reliable than importlib
+        version = pkg_resources.get_distribution(pkg).version if spec is not None else ''
+        return version
+
     if not torch.cuda.is_available():
         try:
             if shared.cmd_opts.use_openvino:
                 from importlib.metadata import version as libmodule_version
                 return {
                     'device': get_openvino_device(),
-                    'openvino': libmodule_version("openvino"),
+                    'openvino': get_package_version("openvino"),
                 }
             else:
                 return {}
@@ -46,7 +52,12 @@ def get_gpu_info():
             return {}
     else:
         try:
-            if torch.version.cuda:
+            if hasattr(torch, "xpu") and torch.xpu.is_available():
+                return {
+                    'device': f'{torch.xpu.get_device_name(torch.xpu.current_device())} n={torch.xpu.device_count()}',
+                    'ipex': get_package_version('intel-extension-for-pytorch'),
+                }
+            elif torch.version.cuda:
                 return {
                     'device': f'{torch.cuda.get_device_name(torch.cuda.current_device())} n={torch.cuda.device_count()} arch={torch.cuda.get_arch_list()[-1]} cap={torch.cuda.get_device_capability(device)}',
                     'cuda': torch.version.cuda,
@@ -59,16 +70,9 @@ def get_gpu_info():
                     'hip': torch.version.hip,
                 }
             else:
-                try:
-                    import intel_extension_for_pytorch as ipex# pylint: disable=import-error, unused-import
-                    return {
-                        'device': f'{torch.xpu.get_device_name(torch.xpu.current_device())} n={torch.xpu.device_count()}',
-                        'ipex': ipex.__version__,
-                    }
-                except Exception:
-                    return {
-                        'device': 'unknown'
-                    }
+                return {
+                    'device': 'unknown'
+                }
         except Exception as ex:
             return { 'error': ex }
 
@@ -222,7 +226,7 @@ def set_cuda_params():
         inference_context = contextlib.nullcontext
     else:
         inference_context = torch.no_grad
-    log_device_name = get_openvino_device() if shared.cmd_opts.use_openvino else torch.device(get_optimal_device_name())
+    log_device_name = get_raw_openvino_device() if shared.cmd_opts.use_openvino else torch.device(get_optimal_device_name())
     log.debug(f'Desired Torch parameters: dtype={shared.opts.cuda_dtype} no-half={shared.opts.no_half} no-half-vae={shared.opts.no_half_vae} upscast={shared.opts.upcast_sampling}')
     log.info(f'Setting Torch parameters: device={log_device_name} dtype={dtype} vae={dtype_vae} unet={dtype_unet} context={inference_context.__name__} fp16={fp16_ok} bf16={bf16_ok}')
 
@@ -245,6 +249,7 @@ elif args.use_directml:
         backend = 'cpu'
 elif args.use_openvino:
     from modules.intel.openvino import get_openvino_device
+    from modules.intel.openvino import get_device as get_raw_openvino_device
     backend = 'openvino'
 elif torch.cuda.is_available() and torch.version.cuda:
     backend = 'cuda'
