@@ -3,7 +3,7 @@ from collections import namedtuple
 import numpy as np
 import torch
 from PIL import Image
-from modules import devices, images, sd_vae_approx, sd_samplers, sd_vae_taesd, shared, sd_models
+from modules import devices, images, sd_vae_approx, sd_vae_taesd, shared, sd_models
 from modules.shared import opts, state
 import k_diffusion.sampling
 
@@ -122,8 +122,8 @@ def store_latent(decoded):
 
 def is_sampler_using_eta_noise_seed_delta(p):
     """returns whether sampler from config will use eta noise seed delta for image creation"""
-
-    sampler_config = sd_samplers.find_sampler_config(p.sampler_name)
+    from modules.sd_samplers import find_sampler_config
+    sampler_config = find_sampler_config(p.sampler_name)
 
     eta = p.eta
 

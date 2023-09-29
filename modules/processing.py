@@ -19,7 +19,6 @@ import modules.sd_hijack
 from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_unet, errors, rng
 from modules.rng import slerp # noqa: F401
 from modules.sd_hijack import model_hijack
-from modules.sd_samplers_common import images_tensor_to_samples, decode_first_stage, approximation_indexes
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
 import modules.paths as paths
@@ -89,6 +88,7 @@ def create_binary_mask(image):
     return image
 
 def txt2img_image_conditioning(sd_model, x, width, height):
+    from modules.sd_samplers_common import images_tensor_to_samples, approximation_indexes
     if sd_model.model.conditioning_key in {'hybrid', 'concat'}: # Inpainting models
 
         # The "masked-image" in this case will just be all 0.5 since the entire image is masked.
@@ -277,6 +277,7 @@ class StableDiffusionProcessing:
         return txt2img_image_conditioning(self.sd_model, x, width or self.width, height or self.height)
 
     def depth2img_image_conditioning(self, source_image):
+        from modules.sd_samplers_common import images_tensor_to_samples, approximation_indexes
         # Use the AddMiDaS helper to Format our source image to suit the MiDaS model
         transformer = AddMiDaS(model_type="dpt_hybrid")
         transformed = transformer({"jpg": rearrange(source_image[0], "c h w -> h w c")})
@@ -296,6 +297,7 @@ class StableDiffusionProcessing:
         return conditioning
 
     def edit_image_conditioning(self, source_image):
+        from modules.sd_samplers_common import images_tensor_to_samples, approximation_indexes
         conditioning_image = images_tensor_to_samples(source_image*0.5+0.5, approximation_indexes.get(opts.sd_vae_encode_method))
 
         return conditioning_image
@@ -588,6 +590,7 @@ class DecodedSamples(list):
 
 
 def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
+    from modules.sd_samplers_common import decode_first_stage
     samples = DecodedSamples()
 
     for i in range(batch.shape[0]):
@@ -1156,6 +1159,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         return self.sample_hr_pass(samples, decoded_samples, seeds, subseeds, subseed_strength, prompts)
 
     def sample_hr_pass(self, samples, decoded_samples, seeds, subseeds, subseed_strength, prompts):
+        
         if shared.state.interrupted:
             return samples
 
@@ -1189,6 +1193,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             # Avoid making the inpainting conditioning unless necessary as
             # this does need some extra compute to decode / encode the image again.
             if getattr(self, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) < 1.0:
+                from modules.sd_samplers_common import decode_first_stage , approximation_indexes
                 image_conditioning = self.img2img_image_conditioning(decode_first_stage(self.sd_model, samples), samples)
             else:
                 image_conditioning = self.txt2img_image_conditioning(samples)
@@ -1212,6 +1217,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             decoded_samples = decoded_samples.to(shared.device, dtype=devices.dtype_vae)
 
             if opts.sd_vae_encode_method != 'Full':
+                from modules.sd_samplers_common import images_tensor_to_samples
                 self.extra_generation_params['VAE Encoder'] = opts.sd_vae_encode_method
             samples = images_tensor_to_samples(decoded_samples, approximation_indexes.get(opts.sd_vae_encode_method))
 
@@ -1387,6 +1393,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.mask_blur_y = value
 
     def init(self, all_prompts, all_seeds, all_subseeds):
+        from modules.sd_samplers_common import images_tensor_to_samples, approximation_indexes
         self.image_cfg_scale: float = self.image_cfg_scale if shared.sd_model.cond_stage_key == "edit" else None
 
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)

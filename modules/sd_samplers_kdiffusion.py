@@ -1,7 +1,8 @@
 import torch
 import inspect
 import k_diffusion.sampling
-from modules import sd_samplers_common, sd_samplers_extra, sd_samplers_cfg_denoiser
+from modules.sd_samplers_common import SamplerData, Sampler, setup_img2img_steps
+from modules import sd_samplers_extra, sd_samplers_cfg_denoiser
 from modules.sd_samplers_cfg_denoiser import CFGDenoiser  # noqa: F401
 from modules.script_callbacks import ExtraNoiseParams, extra_noise_callback
 
@@ -40,7 +41,7 @@ samplers_k_diffusion = [
 
 
 samplers_data_k_diffusion = [
-    sd_samplers_common.SamplerData(label, lambda model, funcname=funcname: KDiffusionSampler(funcname, model), aliases, options)
+    SamplerData(label, lambda model, funcname=funcname: KDiffusionSampler(funcname, model), aliases, options)
     for label, funcname, aliases, options in samplers_k_diffusion
     if callable(funcname) or hasattr(k_diffusion.sampling, funcname)
 ]
@@ -76,7 +77,7 @@ class CFGDenoiserKDiffusion(sd_samplers_cfg_denoiser.CFGDenoiser):
         return self.model_wrap
 
 
-class KDiffusionSampler(sd_samplers_common.Sampler):
+class KDiffusionSampler(Sampler):
     def __init__(self, funcname, sd_model, options=None):
         super().__init__(funcname)
 
@@ -139,7 +140,7 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
         return sigmas
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
-        steps, t_enc = sd_samplers_common.setup_img2img_steps(p, steps)
+        steps, t_enc = setup_img2img_steps(p, steps)
 
         sigmas = self.get_sigmas(p, steps)
         sigma_sched = sigmas[steps - t_enc - 1:]
