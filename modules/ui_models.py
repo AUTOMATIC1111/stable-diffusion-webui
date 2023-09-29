@@ -339,7 +339,7 @@ def create_ui():
                     return res
 
                 def civit_search_metadata(civit_previews_rehash, title):
-                    log.debug('CivitAI download previews')
+                    log.debug(f'CivitAI search metadata: {title if type(title) == str else "all"}')
                     from modules.ui_extra_networks import get_pages
                     from modules.modelloader import download_civit_preview, download_civit_meta
                     res = []

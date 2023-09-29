@@ -4,7 +4,6 @@
 
 **TBD**: Planned before release:
 - Integrate LoRA/Lyco for *backend:original*
-- Add EN provider for VAEs
 - Add FreeU for *backend:diffusers*
 
 This is a big one, with some major changes and new functionality...
@@ -30,6 +29,8 @@ Upgrades are still possible and supported, but above is recommended for best exp
     - can be edited in details view  
     - support for single or multiple styles per json  
     - support for embedded previews  
+  - **VAE**
+    - VAEs are now also listed as part of extra networks
   - faster search, ability to show/hide/sort networks  
   - refactored subfolder handling  
     *note*: this will trigger model hash recaclulation on first model use  
@@ -101,13 +102,17 @@ Upgrades are still possible and supported, but above is recommended for best exp
   - **GC**:
     - custom garbage collect threshold to reduce vram memory usage, thanks @Disty0  
       see *settings -> compute -> gc*
-- **Startup**  
-  - All main CLI parameters can now be set as environment variable as well  
-    for example `--data-dir <path>` can be specified as `SD_DATADIR=<path>` before starting SD.Next  
-- **Logging**
-  - get browser session info in server log  
-  - when running with `--debug` flag, log is force-rotated  
-    so each `sdnext.log.*` represents exactly one server run  
+- **General**
+  - **Startup**  
+    - All main CLI parameters can now be set as environment variable as well  
+      for example `--data-dir <path>` can be specified as `SD_DATADIR=<path>` before starting SD.Next  
+  - **Logging**
+    - get browser session info in server log  
+    - when running with `--debug` flag, log is force-rotated  
+      so each `sdnext.log.*` represents exactly one server run  
+  - **API**
+    - add end-to-end example how to use API: `cli/simple-txt2img.js`  
+      covers txt2img, upscale, hires, refiner  
 
 ## Update for 2023-09-13
 

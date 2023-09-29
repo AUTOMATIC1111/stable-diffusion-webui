@@ -1168,6 +1168,13 @@ def create_ui(startup_timer = None):
             inputs=[component_dict['sd_model_checkpoint'], dummy_component],
             outputs=[component_dict['sd_model_checkpoint'], text_settings],
         )
+        button_set_vae = gr.Button('Change vae', elem_id='change_vae', visible=False)
+        button_set_vae.click(
+            fn=lambda value, _: run_settings_single(value, key='sd_vae'),
+            _js="function(v){ var res = desiredVAEName; desiredVAEName = ''; return [res || v, null]; }",
+            inputs=[component_dict['sd_vae'], dummy_component],
+            outputs=[component_dict['sd_vae'], text_settings],
+        )
 
         component_keys = [k for k in opts.data_labels.keys() if k in component_dict]
 

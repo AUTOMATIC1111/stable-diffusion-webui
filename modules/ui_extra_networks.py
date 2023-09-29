@@ -326,10 +326,12 @@ def register_pages():
     from modules.ui_extra_networks_hypernets import ExtraNetworksPageHypernetworks
     from modules.ui_extra_networks_checkpoints import ExtraNetworksPageCheckpoints
     from modules.ui_extra_networks_styles import ExtraNetworksPageStyles
+    from modules.ui_extra_networks_vae import ExtraNetworksPageVAEs
     register_page(ExtraNetworksPageCheckpoints())
     register_page(ExtraNetworksPageStyles())
     register_page(ExtraNetworksPageTextualInversion())
     register_page(ExtraNetworksPageHypernetworks())
+    register_page(ExtraNetworksPageVAEs())
 
 
 def get_pages():

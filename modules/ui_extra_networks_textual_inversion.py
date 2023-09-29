@@ -1,6 +1,5 @@
 import json
 import os
-
 from modules import shared, sd_hijack, sd_models, ui_extra_networks
 from modules.textual_inversion.textual_inversion import Embedding
 
