@@ -19,7 +19,8 @@ def create_api(app):
     from modules.api.api import Api
     from modules.call_queue import queue_lock
 
-    api = Api(app, queue_lock)
+    api = Api(app)
+    #api = Api(app, queue_lock)
     return api
 
 

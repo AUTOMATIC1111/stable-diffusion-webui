@@ -85,25 +85,3 @@ list_checkpoint_tiles = shared_items.list_checkpoint_tiles
 refresh_checkpoints = shared_items.refresh_checkpoints
 list_samplers = shared_items.list_samplers
 reload_hypernetworks = shared_items.reload_hypernetworks
-
-
-# Add a few dummy flags from possibly Ray server.
-# This is a limitation from Ray and will be fixed in future version.
-parser.add_argument("--node-ip-address", type=str, default="")
-parser.add_argument("--node-manager-port", type=str, default="")
-parser.add_argument("--object-store-name", type=str, default="")
-parser.add_argument("--raylet-name", type=str, default="")
-parser.add_argument("--redis-address", type=str, default="")
-parser.add_argument("--temp-dir", type=str, default="")
-parser.add_argument("--metrics-agent-port", type=str, default="")
-#parser.add_argument("--runtime-env-agent-port", type=str, default="")
-parser.add_argument("--logging-rotate-bytes", type=str, default="")
-parser.add_argument("--logging-rotate-backup-count", type=str, default="")
-parser.add_argument("--runtime-env-agent-port", type=str, default="")
-parser.add_argument("--gcs-address", type=str, default="")
-parser.add_argument("--session-name", type=str, default="")
-#parser.add_argument("--temp-dir", type=str, default="")
-parser.add_argument("--webui", type=str, default="")
-parser.add_argument("--cluster-id", type=str, default="")
-parser.add_argument("--startup-token", type=str, default="")
-parser.add_argument("--worker-launch-time-ms", type=str, default="")

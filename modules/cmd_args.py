@@ -118,3 +118,25 @@ parser.add_argument('--timeout-keep-alive', type=int, default=30, help='set time
 parser.add_argument("--disable-all-extensions", action='store_true', help="prevent all extensions from running regardless of any other settings", default=False)
 parser.add_argument("--disable-extra-extensions", action='store_true', help=" prevent all extensions except built-in from running regardless of any other settings", default=False)
 parser.add_argument("--ray", action='store_true', help="use api=True to launch the ray API instead of the webui")
+
+
+# Add a few dummy flags from possibly Ray server.
+# This is a limitation from Ray and will be fixed in future version.
+parser.add_argument("--node-ip-address", type=str, default="")
+parser.add_argument("--node-manager-port", type=str, default="")
+parser.add_argument("--object-store-name", type=str, default="")
+parser.add_argument("--raylet-name", type=str, default="")
+parser.add_argument("--redis-address", type=str, default="")
+parser.add_argument("--temp-dir", type=str, default="")
+parser.add_argument("--metrics-agent-port", type=str, default="")
+#parser.add_argument("--runtime-env-agent-port", type=str, default="")
+parser.add_argument("--logging-rotate-bytes", type=str, default="")
+parser.add_argument("--logging-rotate-backup-count", type=str, default="")
+parser.add_argument("--runtime-env-agent-port", type=str, default="")
+parser.add_argument("--gcs-address", type=str, default="")
+parser.add_argument("--session-name", type=str, default="")
+#parser.add_argument("--temp-dir", type=str, default="")
+parser.add_argument("--webui", type=str, default="")
+parser.add_argument("--cluster-id", type=str, default="")
+parser.add_argument("--startup-token", type=str, default="")
+parser.add_argument("--worker-launch-time-ms", type=str, default="")
