@@ -2,9 +2,11 @@
 
 ## Update for 2023-09-29
 
-**TBD**: Planned before release:
+**TBD**: Candidates before release:
 - Integrate LoRA/Lyco for *backend:original*
 - Add FreeU for *backend:diffusers*
+- Add HAT upscaler
+- Switch Diffusers prompt parser
 
 This is a big one, with some major changes and new functionality...
 And probably the biggest release since introduction of **Diffusers**  
@@ -44,9 +46,7 @@ Upgrades are still possible and supported, but above is recommended for best exp
     - refactored subfolder handling  
       *note*: this will trigger model hash recaclulation on first model use  
 - **Diffusers**:
-  - better pipeline auto-detect when loading from safetensors  
-    also, new setting: *settings -> diffusers -> force inpaint*
-    as some models behave better when in *inpaint* mode even for normal *img2img* tasks  
+  - better pipeline **auto-detect** when loading from safetensors  
   - **SDXL Inpaint**  
     - Although any model can be used for inpainiting, there is a case to be made for  
       dedicated inpainting models as they are tuned to inpaint and not generate
@@ -64,12 +64,15 @@ Upgrades are still possible and supported, but above is recommended for best exp
       To download go to *Models -> Huggingface*:
       - `stabilityai/sd-x2-latent-upscaler` *(2.2GB)*  
       - `stabilityai/stable-diffusion-x4-upscaler` *(1.7GB)*
+  - better **Hires** support for SD and SDXL  
   - better **TI embeddings** support for SD and SDXL  
     faster loading, wider compatibility and support for embeddings with multiple vectors  
     information about used embedding is now also added to image metadata  
     thanks @AI-Casanova  
   - better **Lora** handling  
     thanks @AI-Casanova  
+  - new setting: *settings -> diffusers -> force inpaint*
+    as some models behave better when in *inpaint* mode even for normal *img2img* tasks  
 - **Upscalers**:
   - fix long outstanding memory leak in legacy code, amazing this went undetected for so long  
   - more high quality upscalers available by default  
