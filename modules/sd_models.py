@@ -540,16 +540,10 @@ class ModelData:
         self.lock = threading.Lock()
 
     def get_sd_model(self):
-        if self.sd_model is None and shared.opts.sd_model_checkpoint != 'None':
+        if self.sd_model is None and shared.opts.sd_model_checkpoint != 'None' and not self.lock.locked():
             with self.lock:
                 try:
-                    if shared.backend == shared.Backend.ORIGINAL:
-                        reload_model_weights(op='model')
-                    elif shared.backend == shared.Backend.DIFFUSERS:
-                        reload_model_weights(op='model')
-                        # load_diffuser(op='model')
-                    else:
-                        shared.log.error(f"Unknown Execution backend: {shared.backend}")
+                    self.sd_model = reload_model_weights(op='model')
                     self.initial = False
                 except Exception as e:
                     shared.log.error("Failed to load stable diffusion model")
@@ -561,15 +555,10 @@ class ModelData:
         self.sd_model = v
 
     def get_sd_refiner(self):
-        if self.sd_refiner is None and shared.opts.sd_model_refiner != 'None':
+        if self.sd_refiner is None and shared.opts.sd_model_refiner != 'None' and not self.lock.locked():
             with self.lock:
                 try:
-                    if shared.backend == shared.Backend.ORIGINAL:
-                        reload_model_weights(op='refiner')
-                    elif shared.backend == shared.Backend.DIFFUSERS:
-                        load_diffuser(op='refiner')
-                    else:
-                        shared.log.error(f"Unknown Execution backend: {shared.backend}")
+                    self.sd_refiner = reload_model_weights(op='refiner')
                     self.initial = False
                 except Exception as e:
                     shared.log.error("Failed to load stable diffusion model")
@@ -585,6 +574,7 @@ model_data = ModelData()
 
 def change_backend():
     shared.log.info(f'Backend changed: {shared.backend}')
+    shared.log.warning('Server restart required to apply all changes')
     if shared.backend == shared.Backend.ORIGINAL:
         change_from = shared.Backend.DIFFUSERS
     else:
@@ -967,6 +957,17 @@ class DiffusersTaskType(Enum):
     INSTRUCT = 4
 
 
+def get_diffusers_task(pipe: diffusers.DiffusionPipeline) -> DiffusersTaskType:
+    if pipe.__class__.__name__ == "StableDiffusionXLInstructPix2PixPipeline":
+        return DiffusersTaskType.INSTRUCT
+    elif pipe.__class__ in diffusers.pipelines.auto_pipeline.AUTO_IMAGE2IMAGE_PIPELINES_MAPPING.values():
+        return DiffusersTaskType.IMAGE_2_IMAGE
+    elif pipe.__class__ in diffusers.pipelines.auto_pipeline.AUTO_INPAINT_PIPELINES_MAPPING.values():
+        return DiffusersTaskType.INPAINTING
+    else:
+        return DiffusersTaskType.TEXT_2_IMAGE
+
+
 def set_diffuser_pipe(pipe, new_pipe_type):
     sd_checkpoint_info = getattr(pipe, "sd_checkpoint_info", None)
     sd_model_checkpoint = getattr(pipe, "sd_model_checkpoint", None)
@@ -974,8 +975,9 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     has_accelerate = getattr(pipe, "has_accelerate", None)
     embedding_db = getattr(pipe, "embedding_db", None)
 
-    if new_pipe_type == DiffusersTaskType.IMAGE_2_IMAGE and (pipe.__class__.__name__ == "StableDiffusionXLPipeline" or pipe.__class__.__name__ == 'StableDiffusionXLImg2ImgPipeline'):
-        new_pipe_type = DiffusersTaskType.INPAINTING # sdxl works better with init mask
+    if shared.opts.diffusers_force_inpaint:
+        if new_pipe_type == DiffusersTaskType.IMAGE_2_IMAGE:
+            new_pipe_type = DiffusersTaskType.INPAINTING # sdxl may work better with init mask
     try:
         if new_pipe_type == DiffusersTaskType.TEXT_2_IMAGE:
             new_pipe = diffusers.AutoPipelineForText2Image.from_pipe(pipe)
@@ -985,18 +987,18 @@ def set_diffuser_pipe(pipe, new_pipe_type):
             new_pipe = diffusers.AutoPipelineForInpainting.from_pipe(pipe)
     except Exception: # pylint: disable=unused-variable
         # shared.log.error(f'Failed to change: type={new_pipe_type} pipeline={pipe.__class__.__name__} {e}')
-        return
+        return pipe
 
     if pipe.__class__ == new_pipe.__class__:
-        return
-
+        return pipe
     new_pipe.sd_checkpoint_info = sd_checkpoint_info
     new_pipe.sd_model_checkpoint = sd_model_checkpoint
     new_pipe.sd_model_hash = sd_model_hash
     new_pipe.has_accelerate = has_accelerate
     new_pipe.embedding_db = embedding_db
-    model_data.sd_model = new_pipe
-    shared.log.debug(f"Pipeline class changed from {pipe.__class__.__name__} to {new_pipe.__class__.__name__}")
+    shared.log.debug(f"Pipeline class change: original={pipe.__class__.__name__} target={new_pipe.__class__.__name__}")
+    pipe = new_pipe
+    return pipe
 
 
 def get_native(pipe: diffusers.DiffusionPipeline):
@@ -1011,17 +1013,6 @@ def get_native(pipe: diffusers.DiffusionPipeline):
     else:
         size = 0
     return size
-
-
-def get_diffusers_task(pipe: diffusers.DiffusionPipeline) -> DiffusersTaskType:
-    if pipe.__class__.__name__ == "StableDiffusionXLInstructPix2PixPipeline":
-        return DiffusersTaskType.INSTRUCT
-    elif pipe.__class__ in diffusers.pipelines.auto_pipeline.AUTO_IMAGE2IMAGE_PIPELINES_MAPPING.values():
-        return DiffusersTaskType.IMAGE_2_IMAGE
-    elif pipe.__class__ in diffusers.pipelines.auto_pipeline.AUTO_INPAINT_PIPELINES_MAPPING.values():
-        return DiffusersTaskType.INPAINTING
-    else:
-        return DiffusersTaskType.TEXT_2_IMAGE
 
 
 def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'):
@@ -1127,7 +1118,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
     next_checkpoint_info = info or select_checkpoint(op='dict' if load_dict else 'model') if load_dict else None
     if checkpoint_info is None:
         unload_model_weights(op=op)
-        return
+        return None
     orig_state = copy.deepcopy(shared.state)
     shared.state = shared.State()
     shared.state.begin(f'load-{op}')
@@ -1143,7 +1134,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
     else:
         current_checkpoint_info = getattr(sd_model, 'sd_checkpoint_info', None)
         if current_checkpoint_info is not None and checkpoint_info is not None and current_checkpoint_info.filename == checkpoint_info.filename:
-            return
+            return None
         if not getattr(sd_model, 'has_accelerate', False):
             if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
                 lowvram.send_everything_to_cpu()
@@ -1172,9 +1163,16 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
             reload_model_weights(reuse_dict=True) # ok we loaded dict now lets redo and load model on top of it
         shared.state.end()
         shared.state = orig_state
-        return model_data.sd_model if op == 'model' or op == 'dict' else model_data.sd_refiner
+        # data['sd_model_checkpoint']
+        if op == 'model' or op == 'dict':
+            shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title
+            return model_data.sd_model
+        else:
+            shared.opts.data["sd_model_refiner"] = checkpoint_info.title
+            return model_data.sd_refiner
 
     # fallback
+    shared.log.info(f"Loading using fallback: {op} model={checkpoint_info.title}")
     try:
         load_model_weights(sd_model, checkpoint_info, state_dict, timer)
     except Exception:
@@ -1191,6 +1189,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
     shared.state.end()
     shared.state = orig_state
     shared.log.info(f"Loaded: {op} time={timer.summary()}")
+    return sd_model
 
 
 def disable_offload(sd_model):

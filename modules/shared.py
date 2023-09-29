@@ -456,6 +456,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_lora_loader": OptionInfo("diffusers" if cmd_opts.use_openvino else "sequential apply", "Diffusers LoRA loading variant", gr.Radio, lambda: {"choices": ['diffusers', 'sequential apply', 'merge and apply']}),
     "diffusers_force_zeros": OptionInfo(True, "Force zeros for prompts when empty"),
     "diffusers_aesthetics_score": OptionInfo(False, "Require aesthetics score"),
+    "diffusers_force_inpaint": OptionInfo(False, 'Diffusers force inpaint pipeline'),
 }))
 
 options_templates.update(options_section(('system-paths', "System Paths"), {

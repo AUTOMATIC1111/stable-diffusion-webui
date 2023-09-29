@@ -176,6 +176,26 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 negative_prompts_2.append(negative_prompts_2[-1])
         return prompts, negative_prompts, prompts_2, negative_prompts_2
 
+    def task_specific_kwargs(model):
+        task_args = {}
+        if sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE:
+            p.ops.append('txt2img')
+            task_args = {"height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8)}
+        elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE:
+            p.ops.append('img2img')
+            task_args = {"image": p.init_images, "strength": p.denoising_strength}
+        elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INSTRUCT:
+            p.ops.append('instruct')
+            task_args = {"height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8), "image": p.init_images, "strength": p.denoising_strength}
+        elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INPAINTING:
+            p.ops.append('inpaint')
+            if getattr(p, 'mask', None) is None:
+                p.mask = TF.to_pil_image(torch.ones_like(TF.to_tensor(p.init_images[0]))).convert("L")
+            width = 8 * math.ceil(p.init_images[0].width / 8)
+            height = 8 * math.ceil(p.init_images[0].height / 8)
+            task_args = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength, "height": height, "width": width}
+        return task_args
+
     def set_pipeline_args(model, prompts: list, negative_prompts: list, prompts_2: typing.Optional[list]=None, negative_prompts_2: typing.Optional[list]=None, desc:str='', **kwargs):
         # if hasattr(model, 'embedding_db'):
         #    del model.embedding_db
@@ -231,8 +251,14 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if 'callback' in possible:
             args['callback'] = diffusers_callback
         for arg in kwargs:
-            if arg in possible:
+            if arg in possible: # add kwargs
                 args[arg] = kwargs[arg]
+            else:
+                pass
+        task_kwargs = task_specific_kwargs(model)
+        for arg in task_kwargs:
+            if arg in possible and arg not in args: # task specific args should not override args
+                args[arg] = task_kwargs[arg]
             else:
                 pass
                 # shared.log.debug(f'Diffuser not supported: pipeline={pipeline.__class__.__name__} task={sd_models.get_diffusers_task(model)} arg={arg}')
@@ -308,21 +334,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             p.init_images.append(p.init_images[-1])
     if lora_state['active']:
         cross_attention_kwargs['scale'] = lora_state['multiplier']
-    task_specific_kwargs={}
-    if sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE:
-        p.ops.append('txt2img')
-        task_specific_kwargs = {"height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8)}
-    elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE:
-        p.ops.append('img2img')
-        task_specific_kwargs = {"image": p.init_images, "strength": p.denoising_strength}
-    elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INSTRUCT:
-        p.ops.append('instruct')
-        task_specific_kwargs = {"height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8), "image": p.init_images, "strength": p.denoising_strength}
-    elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING:
-        p.ops.append('inpaint')
-        if p.mask is None:
-            p.mask = TF.to_pil_image(torch.ones_like(TF.to_tensor(p.init_images[0]))).convert("L")
-        task_specific_kwargs = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength, "height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8)}
 
     if shared.state.interrupted or shared.state.skipped:
         if lora_state['active']:
@@ -346,6 +357,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         else:
             return p.steps
 
+    # pipeline type is set earlier in processing.py
     base_args = set_pipeline_args(
         model=shared.sd_model,
         prompts=prompts,
@@ -360,7 +372,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
         clip_skip=p.clip_skip,
         desc='Base',
-        **task_specific_kwargs
     )
     # p.steps = base_args['num_inference_steps']
     p.extra_generation_params['CFG rescale'] = p.diffusers_guidance_rescale
@@ -392,13 +403,13 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             output.images = hires_resize(latents=output.images)
             if latent_scale_mode is not None or p.hr_force:
                 p.ops.append('hires')
+                shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                 recompile_model(hires=True)
                 if ((not hasattr(shared.sd_model.scheduler, 'name')) or (p.latent_sampler == 'DPM SDE') or (shared.sd_model.scheduler.name != p.latent_sampler)) and (p.latent_sampler != 'Default') and is_karras_compatible:
                     sampler = sd_samplers.all_samplers_map.get(p.latent_sampler, None)
                     if sampler is None:
                         sampler = sd_samplers.all_samplers_map.get("UniPC")
                     sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
-                sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                 hires_args = set_pipeline_args(
                     model=shared.sd_model,
                     prompts=prompts,
@@ -449,6 +460,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             shared.sd_refiner.to(devices.device)
         refiner_is_sdxl = bool("StableDiffusionXL" in shared.sd_refiner.__class__.__name__)
         p.ops.append('refine')
+        shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
         for i in range(len(output.images)):
             image = output.images[i]
             # if (image.shape[2] == 3) and (image.shape[0] % 8 != 0 or image.shape[1] % 8 != 0):

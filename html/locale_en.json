@@ -590,6 +590,7 @@
   {"id":"","label":"Enable VAE slicing","localized":"","hint":"Decodes batch latents one image at a time with limited VRAM. Small performance boost in VAE decode on multi-image batches"},
   {"id":"","label":"Enable VAE tiling","localized":"","hint":"Divide large images into overlapping tiles with limited VRAM. Results in a minor increase in processing time"},
   {"id":"","label":"Enable attention slicing","localized":"","hint":"Performs attention computation in steps instead of all at once. Slower inference times, but greatly reduced memory usage"},
+  {"id":"","label":"Diffusers force inpaint pipeline","localized":"","hint":"Force inpaint pipeline for all img2img tasks. Results in slightly different results that may be more precise"},
   {"id":"","label":"Diffusers model loading variant","localized":"","hint":""},
   {"id":"","label":"Diffusers VAE loading variant","localized":"","hint":""},
   {"id":"","label":"Diffusers LoRA loading variant","localized":"","hint":"'sequential apply' loads and applies each LoRA in order of appearance, 'merge and apply' loads all LoRAs and merges them in-memory before applying to model, 'diffusers' uses diffusers default LoRA loading method"},

@@ -45,6 +45,8 @@ Upgrades are still possible and supported, but above is recommended for best exp
       *note*: this will trigger model hash recaclulation on first model use  
 - **Diffusers**:
   - better pipeline auto-detect when loading from safetensors  
+    also, new setting: *settings -> diffusers -> force inpaint*
+    as some models behave better when in *inpaint* mode even for normal *img2img* tasks  
   - **SDXL Inpaint**  
     - Although any model can be used for inpainiting, there is a case to be made for  
       dedicated inpainting models as they are tuned to inpaint and not generate
@@ -102,7 +104,8 @@ Upgrades are still possible and supported, but above is recommended for best exp
     *Models -> Valida -> Calculate hashes*
 - **Compute**  
   - **Intel Arc/IPEX**:  
-    - more optimizations, built-in binary wheels for Windows  
+    - tons of optimizations, built-in binary wheels for Windows  
+      i have to say, intel arc/ipex is getting to be quite a player, especially with openvino  
       thanks @Disty0 @Nuullll  
   - **AMD ROCm**:  
     - updated installer to support detect `ROCm` *5.4/5.5/5.6/5.7*  
