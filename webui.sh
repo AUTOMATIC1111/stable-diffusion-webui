@@ -233,6 +233,8 @@ prepare_tcmalloc() {
 
 KEEP_GOING=1
 export SD_WEBUI_RESTART=tmp/restart
+mkdir tmp 2>/dev/null
+
 while [[ "$KEEP_GOING" -eq "1" ]]; do
     if [[ ! -z "${ACCELERATE}" ]] && [ ${ACCELERATE}="True" ] && [ -x "$(command -v accelerate)" ]; then
         printf "\n%s\n" "${delimiter}"
