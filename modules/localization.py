@@ -14,21 +14,24 @@ def list_localizations(dirname):
         if ext.lower() != ".json":
             continue
 
-        localizations[fn] = os.path.join(dirname, file)
+        localizations[fn] = [os.path.join(dirname, file)]
 
     for file in scripts.list_scripts("localizations", ".json"):
         fn, ext = os.path.splitext(file.filename)
-        localizations[fn] = file.path
+        if fn not in localizations:
+            localizations[fn] = []
+        localizations[fn].append(file.path)
 
 
 def localization_js(current_localization_name: str) -> str:
-    fn = localizations.get(current_localization_name, None)
+    fns = localizations.get(current_localization_name, None)
     data = {}
-    if fn is not None:
-        try:
-            with open(fn, "r", encoding="utf8") as file:
-                data = json.load(file)
-        except Exception:
-            errors.report(f"Error loading localization from {fn}", exc_info=True)
+    if fns is not None:
+        for fn in fns:
+            try:
+                with open(fn, "r", encoding="utf8") as file:
+                    data.update(json.load(file))
+            except Exception:
+                errors.report(f"Error loading localization from {fn}", exc_info=True)
 
     return f"window.localization = {json.dumps(data)}"
