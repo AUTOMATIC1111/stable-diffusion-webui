@@ -46,7 +46,8 @@ function keyupEditAttention(event) {
 
     function selectCurrentWord() {
         if (selectionStart !== selectionEnd) return false;
-        const delimiters = opts.keyedit_delimiters + " \r\n\t";
+        let delimiters = opts.keyedit_delimiters.replace(/(^|[^\\])(\\\\)*\\$/, "$&\\").replace(/(^|[^\\])((\\\\)*")/g, "$1\\$2");
+        delimiters = JSON.parse(`"${delimiters}"`);
 
         // seek backward until to find beggining
         while (!delimiters.includes(text[selectionStart - 1]) && selectionStart > 0) {
