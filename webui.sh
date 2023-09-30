@@ -51,6 +51,8 @@ fi
 if [[ -z "${GIT}" ]]
 then
     export GIT="git"
+else
+    export GIT_PYTHON_GIT_EXECUTABLE="${GIT}"
 fi
 
 # python3 venv without trailing slash (defaults to ${install_dir}/${clone_dir}/venv)
