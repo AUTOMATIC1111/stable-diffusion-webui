@@ -97,23 +97,26 @@ class ExtraNetworksPageStyles(ui_extra_networks.ExtraNetworksPage):
 
     def list_items(self):
         for k, style in shared.prompt_styles.styles.items():
-            fn = os.path.splitext(style.filename)[0]
-            txt = f'Prompt: {style.prompt}'
-            if len(style.negative_prompt) > 0:
+            fn = os.path.splitext(getattr(style, 'filename', ''))[0]
+            name = getattr(style, 'name', '')
+            if name == '':
+                continue
+            txt = f'Prompt: {getattr(style, "prompt", "")}'
+            if len(getattr(style, 'negative_prompt', '')) > 0:
                 txt += f'\nNegative: {style.negative_prompt}'
             yield {
                 "type": 'Style',
-                "name": style.name,
+                "name": name,
                 "title": k,
                 "filename": style.filename,
-                "search_term": f'{txt} {self.search_terms_from_path(style.name)}',
-                "preview": style.preview if style.preview is not None and style.preview.startswith('data:') else self.find_preview(fn),
-                "description": style.description if style.description is not None and len(style.description) > 0 else txt,
-                "prompt": style.prompt or '',
-                "negative": style.negative_prompt or '',
-                "extra": style.extra or '',
+                "search_term": f'{txt} {self.search_terms_from_path(name)}',
+                "preview": style.preview if getattr(style, 'preview', None) is not None and style.preview.startswith('data:') else self.find_preview(fn),
+                "description": style.description if getattr(style, 'description', None) is not None and len(style.description) > 0 else txt,
+                "prompt": getattr(style, 'prompt', ''),
+                "negative": getattr(style, 'negative_prompt', ''),
+                "extra": getattr(style, 'extra', ''),
                 "local_preview": f"{fn}.{shared.opts.samples_format}",
-                "onclick": '"' + html.escape(f"""return selectStyle({json.dumps(style.name)})""") + '"',
+                "onclick": '"' + html.escape(f"""return selectStyle({json.dumps(name)})""") + '"',
             }
 
     def allowed_directories_for_previews(self):

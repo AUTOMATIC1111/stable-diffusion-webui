@@ -6,7 +6,7 @@ from modules.upscaler import Upscaler, UpscalerData
 
 class UpscalerSD(Upscaler):
     def __init__(self, dirname): # pylint: disable=super-init-not-called
-        self.name = "StableDiffusion"
+        self.name = "SDUpscale"
         self.user_path = dirname
         if shared.backend != shared.Backend.DIFFUSERS:
             super().__init__()

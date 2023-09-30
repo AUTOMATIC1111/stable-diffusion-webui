@@ -2,7 +2,7 @@ import PIL.Image
 import numpy as np
 import torch
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
-from modules import devices, script_callbacks
+from modules import devices
 from modules.postprocess.scunet_model_arch import SCUNet as net
 from modules.shared import opts, log, console, device
 from modules.upscaler import Upscaler
@@ -67,7 +67,7 @@ class UpscalerSCUNet(Upscaler):
         output = E.div_(W)
         return output
 
-    def do_upscale(self, img: PIL.Image.Image, selected_file): # pylint: disable=arguments-renamed
+    def do_upscale(self, img: PIL.Image.Image, selected_file):
         devices.torch_gc()
         model = self.load_model(selected_file)
         if model is None:

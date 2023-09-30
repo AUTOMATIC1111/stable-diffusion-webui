@@ -692,6 +692,10 @@ def ensure_base_requirements():
         import rich # pylint: disable=unused-import
     except ImportError:
         install('rich', 'rich')
+    try:
+        import rich # pylint: disable=unused-import
+    except ImportError:
+        pass
 
 
 def install_requirements():

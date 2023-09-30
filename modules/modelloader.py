@@ -527,6 +527,7 @@ def load_upscalers():
         classname = str(cls)
         if classname not in used_classes:
             used_classes[classname] = cls
+    names = []
     for cls in reversed(used_classes.values()):
         name = cls.__name__
         cmd_name = f"{name.lower().replace('upscaler', '')}_models_path"
@@ -535,8 +536,6 @@ def load_upscalers():
         scaler.user_path = commandline_model_path
         scaler.model_download_path = commandline_model_path or scaler.model_path
         datas += scaler.scalers
-    shared.sd_upscalers = sorted(
-        datas,
-        key=lambda x: x.name.lower() if not isinstance(x.scaler, (UpscalerNone, UpscalerLanczos, UpscalerNearest)) else "" # Special case for UpscalerNone keeps it at the beginning of the list.
-    )
-    shared.log.debug(f"Loaded upscalers: total={len(shared.sd_upscalers)} downloaded={len([x for x in shared.sd_upscalers if x.data_path is not None and os.path.isfile(x.data_path)])} user={len([x for x in shared.sd_upscalers if x.custom])}")
+        names.append(name[8:])
+    shared.sd_upscalers = sorted(datas, key=lambda x: x.name.lower() if not isinstance(x.scaler, (UpscalerNone, UpscalerLanczos, UpscalerNearest)) else "") # Special case for UpscalerNone keeps it at the beginning of the list.
+    shared.log.debug(f"Loaded upscalers: total={len(shared.sd_upscalers)} downloaded={len([x for x in shared.sd_upscalers if x.data_path is not None and os.path.isfile(x.data_path)])} user={len([x for x in shared.sd_upscalers if x.custom])} {names}")

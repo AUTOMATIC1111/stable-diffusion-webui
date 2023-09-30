@@ -8,7 +8,7 @@
 - Add HAT upscaler
 - Switch Diffusers prompt parser
 
-This is a big one, with some major changes and new functionality...
+This is a big one, with some major changes and new functionality...  
 And probably the biggest release since introduction of **Diffusers**  
 
 Note that for this release its recommended to perform a clean install (fresh `git clone`)  
@@ -71,14 +71,15 @@ Upgrades are still possible and supported, but above is recommended for best exp
     thanks @AI-Casanova  
   - better **Lora** handling  
     thanks @AI-Casanova  
-  - new setting: *settings -> diffusers -> force inpaint*
+  - new setting: *settings -> diffusers -> force inpaint*  
     as some models behave better when in *inpaint* mode even for normal *img2img* tasks  
 - **Upscalers**:
+  - pretty much a rewrite and tons of new upscalers - built-in list is now at **42**
   - fix long outstanding memory leak in legacy code, amazing this went undetected for so long  
   - more high quality upscalers available by default  
-    *SwinIR:2, ESRGAN:12, RealESRGAN:6, SCUNet:2*
+    **SwinIR** (2), **ESRGAN** (12), **RealESRGAN** (6), **SCUNet** (2)  
   - two additional latent upscalers based on SD upscale models when using Diffusers backend  
-    *SD Upscale 2x, SD Upscale 4x*  
+    **SD Upscale 2x**, **SD Upscale 4x***  
     Note: Recommended usage for *SD Upscale* is by using second pass instead of upscaler  
     as it allows for tuning of prompt, seed, sampler settings which are used to guide upscaler
   - upscalers are available in **xyz grid**  
@@ -88,6 +89,12 @@ Upgrades are still possible and supported, but above is recommended for best exp
     simply set *denoising strength* to 0 so hires does not get triggered  
   - unified init/download/execute/progress code  
   - easier installation  
+  - and if that is not enough, install extension:  
+    <https://github.com/vladmandic/sd-extension-chainner>  
+    and it will add 15 more upscalers from different families:  
+    **HAT** (6), **RealHAT** (2), **DAT** (1), **RRDBNet** (1), **SPSRNet** (1), **SRFormer** (2), **SwiftSR** (2)  
+    and yes, you can download and add your own, just place them in `models/chaiNNer`  
+    note: extension will probably be added to default built-in list in the near-future  
 - **Samplers**:
   - moved ui options to submenu  
   - default list for new installs is now all samplers, list can be modified in settings  

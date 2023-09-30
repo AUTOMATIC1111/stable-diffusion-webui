@@ -304,6 +304,7 @@ def webui(restart=False):
     load_model()
     shared.opts.save(shared.config_filename)
     log.info(f"Startup time: {timer.startup.summary()}")
+    timer.startup.reset()
 
     if not restart:
         # override all loggers to use the same handlers as the main logger
