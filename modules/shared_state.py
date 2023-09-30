@@ -103,6 +103,7 @@ class State:
 
     def begin(self, job: str = "(unknown)"):
         self.sampling_step = 0
+        self.time_start = time.time()
         self.job_count = -1
         self.processing_has_refined_job_count = False
         self.job_no = 0
@@ -114,7 +115,6 @@ class State:
         self.skipped = False
         self.interrupted = False
         self.textinfo = None
-        self.time_start = time.time()
         self.job = job
         devices.torch_gc()
         log.info("Starting job %s", job)
