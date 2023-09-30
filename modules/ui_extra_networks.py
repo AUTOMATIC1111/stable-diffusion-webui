@@ -235,7 +235,7 @@ class ExtraNetworksPage:
         if search_only and shared.opts.extra_networks_hidden_models == "Never":
             return ""
 
-        sort_keys = " ".join([html.escape(f'data-sort-{k}={v}') for k, v in item.get("sort_keys", {}).items()]).strip()
+        sort_keys = " ".join([f'data-sort-{k}="{html.escape(str(v))}"' for k, v in item.get("sort_keys", {}).items()]).strip()
 
         args = {
             "background_image": background_image,
