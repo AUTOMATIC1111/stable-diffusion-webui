@@ -15,6 +15,11 @@ from modules.ui_components import ToolButton
 extra_pages = []
 allowed_dirs = set()
 
+allowed_preview_extensions = ["png", "jpg", "jpeg", "webp", "gif"]
+if shared.opts.samples_format not in allowed_preview_extensions:
+    allowed_preview_extensions.append(shared.opts.samples_format)
+allowed_preview_extensions_dot = ['.' + extension for extension in allowed_preview_extensions]
+
 
 def register_page(page):
     """registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions"""
@@ -34,7 +39,7 @@ def fetch_file(filename: str = ""):
         raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
 
     ext = os.path.splitext(filename)[1].lower()
-    if ext not in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
+    if ext not in allowed_preview_extensions_dot:
         raise ValueError(f"File cannot be fetched: {filename}. Only png, jpg, webp, and gif.")
 
     # would profit from returning 304
@@ -273,11 +278,7 @@ class ExtraNetworksPage:
         Find a preview PNG for a given path (without extension) and call link_preview on it.
         """
 
-        preview_extensions = ["png", "jpg", "jpeg", "webp"]
-        if shared.opts.samples_format not in preview_extensions:
-            preview_extensions.append(shared.opts.samples_format)
-
-        potential_files = sum([[path + "." + ext, path + ".preview." + ext] for ext in preview_extensions], [])
+        potential_files = sum([[path + "." + ext, path + ".preview." + ext] for ext in allowed_preview_extensions], [])
 
         for file in potential_files:
             if os.path.isfile(file):
