@@ -1,12 +1,13 @@
 # Change Log for SD.Next
 
-## Update for 2023-09-29
+## Update for 2023-09-30
 
-**TBD**: Candidates before release:
-- Integrate LoRA/Lyco for *backend:original*
-- Add FreeU for *backend:diffusers*
-- Add HAT upscaler
-- Switch Diffusers prompt parser
+**TBD**: Candidates before release:  
+- Integrate LoRA/Lyco for *backend:original*  
+- Add FreeU for *backend:diffusers*  
+  for *backend:original* use extension: <https://github.com/ljleb/sd-webui-freeu>  
+- Switch Diffusers prompt parser  
+- Custom log destination  
 
 This is a big one, with some major changes and new functionality...  
 And probably the biggest release since introduction of **Diffusers**  
