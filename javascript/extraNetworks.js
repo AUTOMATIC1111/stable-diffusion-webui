@@ -335,7 +335,7 @@ function extraNetworksEditUserMetadata(event, tabname, extraPage, cardName) {
 function extraNetworksRefreshSingleCard(page, tabname, name) {
     requestGet("./sd_extra_networks/get-single-card", {page: page, tabname: tabname, name: name}, function(data) {
         if (data && data.html) {
-            var card = gradioApp().querySelector('.card[data-name=' + JSON.stringify(name) + ']'); // likely using the wrong stringify function
+            var card = gradioApp().querySelector(`#${tabname}_${page.replace(" ", "_")}_cards > .card[data-name="${name}"]`);
 
             var newDiv = document.createElement('DIV');
             newDiv.innerHTML = data.html;
