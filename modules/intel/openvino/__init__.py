@@ -70,6 +70,15 @@ def get_device():
     core = Core()
     if os.getenv("OPENVINO_TORCH_BACKEND_DEVICE") is not None:
         device = os.getenv("OPENVINO_TORCH_BACKEND_DEVICE")
+    elif shared.opts.openvino_multi_gpu:
+        device = ""
+        available_devices = core.available_devices
+        available_devices.remove("CPU")
+        if shared.opts.openvino_remove_igpu_from_multi and "GPU.0" in available_devices:
+            available_devices.remove("GPU.0")
+        for gpu in available_devices:
+            device = f"{device},{gpu}"
+        device = f"MULTI:{device[1:]}"
     elif any(openvino_cpu in cpu_module.lower() for cpu_module in shared.cmd_opts.use_cpu for openvino_cpu in ["openvino", "all"]):
         device = "CPU"
     elif shared.cmd_opts.device_id is not None:
