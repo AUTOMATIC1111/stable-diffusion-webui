@@ -561,6 +561,8 @@ def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_p
             })
 
             piexif.insert(exif_bytes, filename)
+    elif extension.lower() == ".gif":
+        image.save(filename, format=image_format, comment=geninfo)
     else:
         image.save(filename, format=image_format, quality=opts.jpeg_quality)
 
