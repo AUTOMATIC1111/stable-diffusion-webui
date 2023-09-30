@@ -64,7 +64,7 @@ Use --skip-python-version-check to suppress this warning.
 @lru_cache()
 def commit_hash():
     try:
-        return subprocess.check_output([git, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
+        return subprocess.check_output([git, "-C", script_path, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
     except Exception:
         return "<none>"
 
@@ -72,7 +72,7 @@ def commit_hash():
 @lru_cache()
 def git_tag():
     try:
-        return subprocess.check_output([git, "describe", "--tags"], shell=False, encoding='utf8').strip()
+        return subprocess.check_output([git, "-C", script_path, "describe", "--tags"], shell=False, encoding='utf8').strip()
     except Exception:
         try:
 
