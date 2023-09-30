@@ -12,7 +12,7 @@ import modules.loader
 import torch # pylint: disable=wrong-import-order
 from modules import timer, errors, paths # pylint: disable=unused-import
 local_url = None
-from installer import log, git_commit, custom_excepthook
+from installer import log, git_commit
 import ldm.modules.encoders.modules # pylint: disable=W0611,C0411,E0401
 from modules import shared, extensions, extra_networks, ui_tempdir, ui_extra_networks, modelloader # pylint: disable=ungrouped-imports
 from modules.paths import create_paths
@@ -37,7 +37,12 @@ import modules.hypernetworks.hypernetwork
 from modules.middleware import setup_middleware
 
 
-sys.excepthook = custom_excepthook
+try:
+    from installer import custom_excepthook # pylint: disable=ungrouped-imports
+    sys.excepthook = custom_excepthook
+except Exception:
+    pass
+
 state = shared.state
 if not modules.loader.initialized:
     timer.startup.record("libraries")

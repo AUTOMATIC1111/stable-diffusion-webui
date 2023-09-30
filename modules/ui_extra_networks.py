@@ -19,7 +19,7 @@ import modules.ui_symbols as symbols
 
 allowed_dirs = []
 dir_cache = {} # key=path, value=(mtime, listdir(path))
-refresh_time = None
+refresh_time = 0
 extra_pages = shared.extra_networks
 
 
@@ -108,7 +108,9 @@ class ExtraNetworksPage:
         self.html = ''
         self.items = []
         self.missing_thumbs = []
-        self.refresh_time = None
+        self.refresh_time = 0
+        self.page_time = 0
+        self.list_time = 0
         # class additional is to keep old extensions happy
         self.card = '''
             <div class='card' onclick={card_click} title='{name}' data-tab='{tabname}' data-page='{page}' data-name='{name}' data-filename='{filename}' data-tags='{tags}'>
@@ -187,10 +189,25 @@ class ExtraNetworksPage:
             shared.log.info(f"Extra network thumbnails: {self.name} created={created}")
             self.missing_thumbs.clear()
 
-    def create_page(self, tabname, skip = False):
-        if self.refresh_time is not None and self.refresh_time > refresh_time: # cached page
-            return self.html
+    def create_items(self, tabname):
+        if self.refresh_time is not None and self.refresh_time > refresh_time: # cached results
+            return
         t0 = time.time()
+        try:
+            self.items = list(self.list_items())
+            self.refresh_time = time.time()
+        except Exception as e:
+            self.items = []
+            shared.log.error(f'Extra networks error listing items: class={self.__class__} tab={tabname} {e}')
+        for item in self.items:
+            self.metadata[item["name"]] = item.get("metadata", {})
+        t1 = time.time()
+        self.list_time = round(t1-t0, 2)
+
+
+    def create_page(self, tabname, skip = False):
+        if self.page_time > refresh_time: # cached page
+            return self.html
         self_name_id = self.name.replace(" ", "_")
         if skip:
             return f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'></div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>Extra network page not ready<br>Click refresh to try again</div>"
@@ -211,24 +228,18 @@ class ExtraNetworksPage:
         subdirs_html = "<button class='lg secondary gradio-button custom-button search-all' onclick='extraNetworksSearchButton(event)'>all</button><br>"
         subdirs_html += "".join([f"<button class='lg secondary gradio-button custom-button' onclick='extraNetworksSearchButton(event)'>{html.escape(subdir)}</button><br>" for subdir in subdirs if subdir != ''])
         self.html = ''
-        try:
-            self.items = list(self.list_items())
-            self.refresh_time = time.time()
-        except Exception as e:
-            self.items = []
-            shared.log.error(f'Extra networks error listing items: class={self.__class__} tab={tabname} {e}')
+        self.create_items(tabname)
         self.create_xyz_grid()
         htmls = []
         for item in self.items:
-            self.metadata[item["name"]] = item.get("metadata", {})
             htmls.append(self.create_html(item, tabname))
         self.html += ''.join(htmls)
+        self.page_time = time.time()
         if len(subdirs_html) > 0 or len(self.html) > 0:
             self.html = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
         else:
             return ''
-        t1 = time.time()
-        shared.log.debug(f"Extra networks: page='{self.name}' items={len(self.items)} subdirs={len(subdirs)} tab={tabname} dirs={self.allowed_directories_for_previews()} time={round(t1-t0, 2)}")
+        shared.log.debug(f"Extra networks: page='{self.name}' items={len(self.items)} subdirs={len(subdirs)} tab={tabname} dirs={self.allowed_directories_for_previews()} time={self.list_time}s")
         threading.Thread(target=self.create_thumb).start()
 
     def list_items(self):
@@ -464,13 +475,19 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         if ui.tabname == 'txt2img': # refresh only once
             global refresh_time # pylint: disable=global-statement
             refresh_time = time.time()
+        threads = []
+        for page in get_pages():
+            # page.create_items(ui.tabname)
+            threads.append(threading.Thread(target=page.create_items, args=[ui.tabname]))
+            threads[-1].start()
+        for thread in threads:
+            thread.join()
         for page in get_pages():
             page.create_page(ui.tabname, skip_indexing)
             with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab") as tab:
                 hmtl = gr.HTML(page.html, elem_id=f'{tabname}{page.name}_extra_page', elem_classes="extra-networks-page")
                 ui.pages.append(hmtl)
                 tab.select(ui_tab_change, _js="getENActivePage", inputs=[ui.button_details], outputs=[ui.button_scan, ui.button_save, ui.button_model])
-
         # ui.tabs.change(fn=ui_tab_change, inputs=[], outputs=[ui.button_scan, ui.button_save])
 
     def fn_save_img():
@@ -624,7 +641,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         for page in get_pages():
             if title is None or title == '' or title == page.title or len(page.html) == 0:
                 page.refresh()
-                page.refresh_time = None
+                page.refresh_time = 0
                 page.create_page(ui.tabname)
                 shared.log.debug(f"Refreshing Extra networks: page='{page.title}' items={len(page.items)} tab={ui.tabname}")
             pages.append(page.html)

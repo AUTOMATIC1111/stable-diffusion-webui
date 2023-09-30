@@ -131,6 +131,8 @@ Upgrades are still possible and supported, but above is recommended for best exp
       for example `--data-dir <path>` can be specified as `SD_DATADIR=<path>` before starting SD.Next  
   - **Logging**
     - get browser session info in server log  
+    - allow custom log file destination  
+      see `webui --log`
     - when running with `--debug` flag, log is force-rotated  
       so each `sdnext.log.*` represents exactly one server run  
     - internal server job state tracking

@@ -21,6 +21,7 @@ class Dot(dict): # dot notation access to dictionary attributes
 log = logging.getLogger("sd")
 log_file = os.path.join(os.path.dirname(__file__), 'sdnext.log')
 log_rolled = False
+first_call = True
 quick_allowed = True
 errors = 0
 opts = {}
@@ -73,6 +74,10 @@ def setup_logging():
     from rich.pretty import install as pretty_install
     from rich.traceback import install as traceback_install
 
+    if args.log:
+        global log_file # pylint: disable=global-statement
+        log_file = args.log
+
     level = logging.DEBUG if args.debug else logging.INFO
     log.setLevel(logging.DEBUG) # log to file is always at level debug for facility `sd`
     console = Console(log_time=True, log_time_format='%H:%M:%S-%f', theme=Theme({
@@ -93,10 +98,16 @@ def setup_logging():
 
     fh = RotatingFileHandler(log_file, maxBytes=32*1024*1024, backupCount=9, encoding='utf-8', delay=True) # 10MB default for log rotation
     global log_rolled # pylint: disable=global-statement
-    if not log_rolled and args.debug:
+    if not log_rolled and args.debug and not args.log:
         fh.doRollover()
-        log.debug(f'Logger: file={log_file} level={level}')
         log_rolled = True
+
+    global first_call # pylint: disable=global-statement
+    if first_call:
+        log_size = os.path.getsize(log_file) if os.path.exists(log_file) else 0
+        log.debug(f'Logger: file={log_file} level={level} size={log_size} mode={"append" if not log_rolled else "create"}')
+        first_call = False
+
     fh.formatter = logging.Formatter('%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s')
     fh.setLevel(logging.DEBUG)
     log.addHandler(fh)
@@ -886,6 +897,7 @@ def check_timestamp():
 
 def add_args(parser):
     group = parser.add_argument_group('Setup options')
+    group.add_argument("--log", type=str, default=os.environ.get("SD_LOG", None), help="Set log file, default: %(default)s")
     group.add_argument('--debug', default = os.environ.get("SD_DEBUG",False), action='store_true', help = "Run installer with debug logging, default: %(default)s")
     group.add_argument('--reset', default = os.environ.get("SD_RESET",False), action='store_true', help = "Reset main repository to latest version, default: %(default)s")
     group.add_argument('--upgrade', default = os.environ.get("SD_UPGRADE",False), action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")

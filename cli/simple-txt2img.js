@@ -1,7 +1,9 @@
+#!/usr/bin/env node
+
 // simple nodejs script to test sdnext api
 
-const fs = require('fs');
-const process = require('process');
+const fs = require('fs'); // eslint-disable-line no-undef
+const process = require('process'); // eslint-disable-line no-undef
 
 const sd_url = process.env.SDAPI_URL || 'http://127.0.0.1:7860';
 const sd_username = process.env.SDAPI_USR;
@@ -50,7 +52,7 @@ async function main() {
   } else {
     const json = await res.json();
     console.log('result:', json.info);
-    for (const i in json.images) {
+    for (const i in json.images) { // eslint-disable-line guard-for-in
       const f = `/tmp/test-{${i}.jpg`;
       fs.writeFileSync(f, atob(json.images[i]), 'binary');
       console.log('image saved:', f);
