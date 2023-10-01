@@ -103,7 +103,8 @@ def decode_base64_to_image(encoding):
 
 def encode_pil_to_base64(image):
     with io.BytesIO() as output_bytes:
-
+        if isinstance(image, str):
+            return image
         if opts.samples_format.lower() == 'png':
             use_metadata = False
             metadata = PngImagePlugin.PngInfo()
