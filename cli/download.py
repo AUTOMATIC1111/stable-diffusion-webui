@@ -95,9 +95,9 @@ def download_httpx(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = 'downloader')
-    parser.add_argument('--url', required=True, help="download url")
-    parser.add_argument('--file', required=False, help="output file")
-    parser.add_argument('--lib', required=False, choices=['urllib', 'urllib3', 'requests', 'httpx'], help="download mode, default: %(default)s")
+    parser.add_argument('--url', required=True, help="download url, required")
+    parser.add_argument('--file', required=False, help="output file, default: autodetect")
+    parser.add_argument('--lib', required=False, default='requests', choices=['urllib', 'urllib3', 'requests', 'httpx'], help="download mode, default: %(default)s")
     parser.add_argument('--block', required=False, type=int, default=16384, help="download block size, default: %(default)s")
     parsed = parser.parse_args()
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
