@@ -95,8 +95,7 @@ def guess_model_config_from_state_dict(sd, filename):
         if diffusion_model_input.shape[1] == 8:
             return config_instruct_pix2pix
 
-    
-    # import pdb; pdb.set_trace()
+
     if sd.get('cond_stage_model.roberta.embeddings.word_embeddings.weight', None) is not None:
         if sd.get('cond_stage_model.transformation.weight').size()[0] == 1024:
             return config_alt_diffusion_m18
