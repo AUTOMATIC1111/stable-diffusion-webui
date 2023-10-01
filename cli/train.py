@@ -80,6 +80,7 @@ def parse_args():
     group_main.add_argument('--model', type=str, default='', required=False, help='base model to use for training, default: current loaded model')
     group_main.add_argument('--name', type=str, default=None, required=True, help='output filename')
     group_main.add_argument('--tag', type=str, default='person', required=False, help='primary tags, default: %(default)s')
+    group_main.add_argument('--comments', type=str, default='', required=False, help='comments to be added to trained model metadata, default: %(default)s')
 
     group_data = parser.add_argument_group('Dataset')
     group_data.add_argument('--input', type=str, default=None, required=True, help='input folder with training images')
@@ -98,6 +99,8 @@ def parse_args():
     group_train.add_argument('--alpha', type=float, default=0, required=False, help='lora/lyco alpha for weights scaling, default: dim/2')
     group_train.add_argument('--algo', type=str, default=None, choices=['locon', 'loha', 'lokr', 'ia3'], required=False, help='alternative lyco algoritm, default: %(default)s')
     group_train.add_argument('--args', type=str, default=None, required=False, help='lora/lyco additional network arguments, default: %(default)s')
+    group_train.add_argument('--optimizer', type=str, default='AdamW', required=False, help='optimizer type, default: %(default)s')
+    # AdamW (default), AdamW8bit, PagedAdamW8bit, Lion8bit, PagedLion8bit, Lion, SGDNesterov, SGDNesterov8bit, DAdaptation(DAdaptAdamPreprint), DAdaptAdaGrad, DAdaptAdam, DAdaptAdan, DAdaptAdanIP, DAdaptLion, DAdaptSGD, AdaFactor
 
     group_other = parser.add_argument_group('Other')
     group_other.add_argument('--overwrite', default = False, action='store_true', help = "overwrite existing training, default: %(default)s")
@@ -140,15 +143,22 @@ def verify_args():
         sdapi.postsync('/sdapi/v1/options', server_options.options)
     else:
         args.model = server_options.options.sd_model_checkpoint.split(' [')[0]
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     args.lora_dir = server_options.options.lora_dir
+    if not os.path.isabs(args.lora_dir):
+        args.lora_dir = os.path.join(base_dir, args.lora_dir)
     args.lyco_dir = server_options.options.lyco_dir
+    if not os.path.isabs(args.lyco_dir):
+        args.lyco_dir = os.path.join(base_dir, args.lyco_dir)
     args.ckpt_dir = server_options.options.ckpt_dir
+    if not os.path.isabs(args.ckpt_dir):
+        args.ckpt_dir = os.path.join(base_dir, args.ckpt_dir)
     args.embeddings_dir = server_options.options.embeddings_dir
     if not os.path.isfile(args.model):
         attempt = os.path.abspath(os.path.join(args.ckpt_dir, args.model))
         args.model = attempt if os.path.isfile(attempt) else args.model
     if not os.path.isfile(args.model):
-        attempt = os.path.abspath(os.path.join(args.ckpt_dir, '..', args.model))
+        attempt = os.path.abspath(os.path.join(args.ckpt_dir, args.model + '.safetensors'))
         args.model = attempt if os.path.isfile(attempt) else args.model
     if not os.path.isfile(args.model):
         log.error(f'cannot find loaded model: {args.model}')
@@ -242,7 +252,8 @@ def train_lora():
         sys.path.append(lycoris_path)
     log.debug('importing lora lib')
     import train_network
-    train_network.train(options.lora)
+    trainer = train_network.NetworkTrainer()
+    trainer.train(options.lora)
     if args.type == 'lyco':
         log.debug('importing lycoris lib')
         import importlib
@@ -267,12 +278,16 @@ def prepare_options():
         options.lora.network_module = 'lycoris.kohya'
         options.lora.in_json = os.path.join(args.process_dir, args.name + '.json')
     # lora specific
+    options.lora.save_model_as = 'safetensors'
     options.lora.pretrained_model_name_or_path = args.model
     options.lora.output_name = args.name
     options.lora.max_train_steps = args.steps
     options.lora.network_dim = args.dim
     options.lora.network_alpha = args.dim // 2 if args.alpha == 0 else args.alpha
     options.lora.netwoork_args = []
+    options.lora.training_comment = args.comments
+    options.lora.sdpa = True
+    options.lora.optimizer_type = args.optimizer
     if args.algo is not None:
         options.lora.netwoork_args.append(f'algo={args.algo}')
     if args.args is not None:
@@ -367,31 +382,10 @@ def process_inputs():
     process.unload()
 
 
-def check_versions():
-    if args.experimental:
-        log.info('experimental mode enabled')
-        return
-    log.info('checking accelerate')
-    error = False
-    import accelerate
-    if accelerate.__version__ != '0.19.0':
-        log.error(f'invalid accelerate version: accelerate=0.19.0 found={accelerate.__version__}')
-        error = True
-    log.info('checking diffusers')
-    import diffusers
-    if diffusers.__version__ != '0.10.2':
-        log.error(f'invalid diffusers version: diffusers=0.10.2 found={diffusers.__version__}')
-        error = True
-    if error:
-        log.info('> pip install accelerate==0.20.3 diffusers==0.10.2')
-        exit(1)
-
-
 if __name__ == '__main__':
-    log.info('SD.Next train script')
     parse_args()
     setup_logging()
-    check_versions()
+    log.info('SD.Next Train')
     sdapi.sd_url = args.server
     if args.user is not None:
         sdapi.sd_username = args.user

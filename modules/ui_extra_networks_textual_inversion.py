@@ -39,23 +39,26 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
             embeddings = []
         embeddings = sorted(embeddings, key=lambda emb: emb.filename)
         for embedding in embeddings:
-            path, _ext = os.path.splitext(embedding.filename)
-            tags = {}
-            if embedding.tag is not None:
-                tags[embedding.tag]=1
-            name = os.path.splitext(embedding.basename)[0]
-            yield {
-                "type": 'Embedding',
-                "name": name,
-                "filename": embedding.filename,
-                "preview": self.find_preview(path),
-                "description": self.find_description(path),
-                "info": self.find_info(path),
-                "search_term": self.search_terms_from_path(name),
-                "prompt": json.dumps(os.path.splitext(embedding.name)[0]),
-                "local_preview": f"{path}.{shared.opts.samples_format}",
-                "tags": tags,
-            }
+            try:
+                path, _ext = os.path.splitext(embedding.filename)
+                tags = {}
+                if embedding.tag is not None:
+                    tags[embedding.tag]=1
+                name = os.path.splitext(embedding.basename)[0]
+                yield {
+                    "type": 'Embedding',
+                    "name": name,
+                    "filename": embedding.filename,
+                    "preview": self.find_preview(path),
+                    "description": self.find_description(path),
+                    "info": self.find_info(path),
+                    "search_term": self.search_terms_from_path(name),
+                    "prompt": json.dumps(os.path.splitext(embedding.name)[0]),
+                    "local_preview": f"{path}.{shared.opts.samples_format}",
+                    "tags": tags,
+                }
+            except Exception as e:
+                shared.log.debug(f"Extra networks error: type=embedding file={embedding.filename} {e}")
 
     def allowed_directories_for_previews(self):
         return list(sd_hijack.model_hijack.embedding_db.embedding_dirs)

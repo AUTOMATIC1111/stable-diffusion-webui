@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-09-30
+## Update for 2023-10-01
 
 **TBD**: Candidates before release:  
 - Integrate LoRA/Lyco for *backend:original*  
@@ -8,6 +8,7 @@
   for *backend:original* use extension: <https://github.com/ljleb/sd-webui-freeu>  
 - Switch Diffusers prompt parser  
 - Custom log destination  
+- Include chaiNNer extension as submodule  
 
 This is a big one, with some major changes and new functionality...  
 And probably the biggest release since introduction of **Diffusers**  
@@ -21,6 +22,8 @@ Upgrades are still possible and supported, but above is recommended for best exp
   - converted submenus from checkboxes to accordion elements  
     any ui state including state of open/closed menus can be saved as default!  
     see *System -> User interface -> Set menu states*  
+  - new built-in theme **invokeai**  
+    thanks @BinaryQuantumSoul
   - small visual indicator bottom right of page showing internal server job state  
 - **Extra networks**:  
   - **Details**
