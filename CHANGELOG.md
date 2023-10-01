@@ -8,6 +8,7 @@
   for *backend:original* use extension: <https://github.com/ljleb/sd-webui-freeu>  
 - Switch Diffusers prompt parser  
 - Include chaiNNer extension as submodule  
+- SDXL training
 
 This is a big one, with some major changes and new functionality...  
 And probably the biggest release since introduction of **Diffusers**  
