@@ -57,6 +57,8 @@ class Extension:
                 self.status = 'unknown'
                 self.git_name = repo.remotes.origin.url.split('.git')[0].split('/')[-1]
                 self.description = repo.description
+                if self.description is None or self.description.startswith("Unnamed repository"):
+                    self.description = "[No description]"
                 self.remote = next(repo.remote().urls, None)
                 head = repo.head.commit
                 self.commit_date = repo.head.commit.committed_date

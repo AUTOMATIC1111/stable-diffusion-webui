@@ -7,7 +7,6 @@
 - Add FreeU for *backend:diffusers*  
   for *backend:original* use extension: <https://github.com/ljleb/sd-webui-freeu>  
 - Switch Diffusers prompt parser  
-- Custom log destination  
 - Include chaiNNer extension as submodule  
 
 This is a big one, with some major changes and new functionality...  
