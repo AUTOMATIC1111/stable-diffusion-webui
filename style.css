@@ -423,6 +423,7 @@ div#extras_scale_to_tab div.form{
 #settings > div{
     border: none;
     margin-left: 10em;
+    padding: 0 var(--spacing-xl);
 }
 
 #settings > div.tab-nav{
@@ -437,6 +438,7 @@ div#extras_scale_to_tab div.form{
     border: none;
     text-align: left;
     white-space: initial;
+    padding: 4px;
 }
 
 #settings_result{

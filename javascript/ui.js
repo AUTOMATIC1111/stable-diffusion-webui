@@ -263,21 +263,6 @@ onAfterUiUpdate(function() {
     json_elem.parentElement.style.display = "none";
 
     setupTokenCounters();
-
-    var show_all_pages = gradioApp().getElementById('settings_show_all_pages');
-    var settings_tabs = gradioApp().querySelector('#settings div');
-    if (show_all_pages && settings_tabs) {
-        settings_tabs.appendChild(show_all_pages);
-        show_all_pages.onclick = function() {
-            gradioApp().querySelectorAll('#settings > div').forEach(function(elem) {
-                if (elem.id == "settings_tab_licenses") {
-                    return;
-                }
-
-                elem.style.display = "block";
-            });
-        };
-    }
 });
 
 onOptionsChanged(function() {

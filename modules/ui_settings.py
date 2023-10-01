@@ -64,6 +64,9 @@ class UiSettings:
     quicksettings_list = None
     quicksettings_names = None
     text_settings = None
+    show_all_pages = None
+    show_one_page = None
+    search_input = None
 
     def run_settings(self, *args):
         changed = []
@@ -136,7 +139,7 @@ class UiSettings:
                         gr.Group()
                         current_tab = gr.TabItem(elem_id=f"settings_{elem_id}", label=text)
                         current_tab.__enter__()
-                        current_row = gr.Column(variant='compact')
+                        current_row = gr.Column(elem_id=f"column_settings_{elem_id}", variant='compact')
                         current_row.__enter__()
 
                         previous_section = item.section
@@ -183,7 +186,11 @@ class UiSettings:
                 with gr.TabItem("Licenses", id="licenses", elem_id="settings_tab_licenses"):
                     gr.HTML(shared.html("licenses.html"), elem_id="licenses")
 
-                gr.Button(value="Show all pages", elem_id="settings_show_all_pages")
+                self.show_all_pages = gr.Button(value="Show all pages", elem_id="settings_show_all_pages")
+                self.show_one_page = gr.Button(value="Show only one page", elem_id="settings_show_one_page", visible=False)
+                self.show_one_page.click(lambda: None)
+
+                self.search_input = gr.Textbox(value="", elem_id="settings_search", max_lines=1, placeholder="Search...", show_label=False)
 
                 self.text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
 
@@ -313,3 +320,8 @@ class UiSettings:
             outputs=[self.component_dict[k] for k in component_keys],
             queue=False,
         )
+
+    def search(self, text):
+        print(text)
+
+        return [gr.update(visible=text in (comp.label or "")) for comp in self.components]

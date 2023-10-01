@@ -60,7 +60,7 @@ function setupTokenCounting(id, id_counter, id_button) {
     prompt.parentElement.insertBefore(counter, prompt);
     prompt.parentElement.style.position = "relative";
 
-    func = onEdit(id, textarea, 800, function() {
+    var func = onEdit(id, textarea, 800, function() {
         gradioApp().getElementById(id_button)?.click();
     });
     promptTokenCountUpdateFunctions[id] = func;
