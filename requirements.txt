@@ -1,3 +1,4 @@
+setuptools
 addict
 aenum
 aiohttp

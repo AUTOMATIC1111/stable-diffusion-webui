@@ -74,7 +74,9 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .tab-nav { zoom: 120%; margin-top: 10px; margin-bottom: 10px; border-bottom: 2px solid var(--highlight-color) !important; padding-bottom: 2px; }
 div.tab-nav button.selected {background-color: var(--button-primary-background-fill);}
 #settings div.tab-nav button.selected {background-color: var(--background-color); color: var(--primary-800); font-weight: bold;}
-.label-wrap { background-color: #363c4a; padding: 16px 8px 8px 8px; border-radius: var(--radius-lg);}
+.label-wrap { background-color: #363c4a; padding: 16px 8px 8px 8px; border-radius: var(--radius-lg); padding-left: 8px !important; }
+.small-accordion .label-wrap { padding: 8px 0px 8px 0px; }
+.small-accordion .label-wrap .icon { margin-right: 1em; }
 .gradio-slider input[type="number"] { width: 4.5em; font-size: 0.8rem; height: 20px; }
 .gradio-button.tool { border: none; box-shadow: none; border-radius: var(--radius-lg);}
 button.selected {background: var(--button-primary-background-fill);}

@@ -399,8 +399,9 @@ def check_torch():
                 log.debug(f'HSA_OVERRIDE_GFX_VERSION auto config is skipped for {gpu}')
         try:
             command = subprocess.run('hipconfig --version', shell=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            major_ver, minor_ver, *_ = command.stdout.decode(encoding="utf8", errors="ignore").split('.')
-            rocm_ver = f'{major_ver}.{minor_ver}'
+            arr = command.stdout.decode(encoding="utf8", errors="ignore").split('.')
+            if len(arr) >= 2:
+                rocm_ver = f'{arr[0]}.{arr[1]}'
             log.debug(f'ROCm version detected: {rocm_ver}')
         except Exception as e:
             log.debug(f'Run hipconfig failed: {e}')
