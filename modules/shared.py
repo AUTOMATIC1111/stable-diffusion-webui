@@ -1012,8 +1012,8 @@ def req(url_addr, **kwargs):
     try:
         res = requests.get(url_addr, timeout=30, headers=headers, verify=False, allow_redirects=True, **kwargs)
     except Exception as e:
-        log.error(f'HTTP request error: url={url} {e}')
-        res = { 'status_code': 500, 'text': f'HTTP request error: url={url} {e}' }
+        log.error(f'HTTP request error: url={url_addr} {e}')
+        res = { 'status_code': 500, 'text': f'HTTP request error: url={url_addr} {e}' }
         res = SimpleNamespace(**res)
     return res
 
