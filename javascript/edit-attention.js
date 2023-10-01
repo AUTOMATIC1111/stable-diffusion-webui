@@ -46,8 +46,12 @@ function keyupEditAttention(event) {
 
     function selectCurrentWord() {
         if (selectionStart !== selectionEnd) return false;
-        let delimiters = opts.keyedit_delimiters.replace(/(^|[^\\])(\\\\)*\\$/, "$&\\").replace(/(^|[^\\])((\\\\)*")/g, "$1\\$2");
-        delimiters = JSON.parse(`"${delimiters}"`);
+        const whitespace_delimiters = {"Tab": "\t", "Carriage Return": "\r", "Line Feed": "\n"};
+        let delimiters = opts.keyedit_delimiters;
+
+        for (let i of opts.keyedit_delimiters_whitespace) {
+            delimiters += whitespace_delimiters[i];
+        }
 
         // seek backward until to find beggining
         while (!delimiters.includes(text[selectionStart - 1]) && selectionStart > 0) {
