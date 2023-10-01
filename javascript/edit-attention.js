@@ -86,7 +86,7 @@ function keyupEditAttention(event) {
     }
 
     var end = text.slice(selectionEnd + 1).indexOf(closeCharacter) + 1;
-    var weight = parseFloat(text.slice(selectionEnd + 1, selectionEnd + 1 + end));
+    var weight = parseFloat(text.slice(selectionEnd + 1, selectionEnd + end));
     if (isNaN(weight)) return;
 
     weight += isPlus ? delta : -delta;
