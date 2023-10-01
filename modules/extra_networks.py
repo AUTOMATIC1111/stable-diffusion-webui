@@ -4,7 +4,7 @@ import re
 import logging
 from collections import defaultdict
 
-from modules import errors
+from modules import errors, prompt_parser
 
 extra_network_registry = {}
 extra_network_aliases = {}
@@ -186,7 +186,7 @@ def parse_prompt(prompt):
 
         return ""
 
-    prompt = re.sub(re_extra_net, found, prompt)
+    prompt = re.sub(re_extra_net, found, prompt_parser.remove_comment_lines(prompt))
 
     return prompt, res
 
