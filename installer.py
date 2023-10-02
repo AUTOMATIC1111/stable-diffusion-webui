@@ -530,10 +530,6 @@ def install_packages():
         pr = cProfile.Profile()
         pr.enable()
     log.info('Verifying packages')
-    # gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
-    # openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
-    # install(gfpgan_package, 'gfpgan')
-    # install(openclip_package, 'open-clip-torch')
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git")
     install(clip_package, 'clip')
     invisiblewatermark_package = os.environ.get('INVISIBLEWATERMARK_PACKAGE', "git+https://github.com/patrickvonplaten/invisible-watermark.git@remove_onnxruntime_depedency")
@@ -542,7 +538,6 @@ def install_packages():
     install('pi-heif', 'pi_heif', ignore=True)
     tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0')
     install(tensorflow_package, 'tensorflow', ignore=True)
-    # install('git+https://github.com/google-research/torchsde', 'torchsde', ignore=True)
     bitsandbytes_package = os.environ.get('BITSANDBYTES_PACKAGE', None)
     if bitsandbytes_package is not None:
         install(bitsandbytes_package, 'bitsandbytes', ignore=True)
