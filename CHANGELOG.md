@@ -6,9 +6,10 @@
 - Integrate LoRA/Lyco for *backend:original*  
 - Add FreeU for *backend:diffusers*  
   for *backend:original* use extension: <https://github.com/ljleb/sd-webui-freeu>  
+- Add HyperTile: <https://github.com/tfernd/HyperTile>
 - Switch Diffusers prompt parser  
 - Include chaiNNer extension as submodule  
-- SDXL training
+- Convert IPEX slicing to generic: <https://github.com/vladmandic/automatic/blob/dev/modules/intel/ipex/attention.py>
 
 This is a big one, with some major changes and new functionality...  
 And probably the biggest release since introduction of **Diffusers**  
@@ -140,12 +141,17 @@ Upgrades are still possible and supported, but above is recommended for best exp
     - when running with `--debug` flag, log is force-rotated  
       so each `sdnext.log.*` represents exactly one server run  
     - internal server job state tracking  
-  - **API**
-    - add end-to-end example how to use API: `cli/simple-txt2img.js`  
-      covers txt2img, upscale, hires, refiner  
   - **Launcher**  
     - new `webui.ps1` powershell launcher for windows (old `webui.bat` is still valid)  
       thanks @em411  
+  - **API**
+    - add end-to-end example how to use API: `cli/simple-txt2img.js`  
+      covers txt2img, upscale, hires, refiner  
+  - **train.py**
+    - wrapper script around built-in **kohya's lora** training script  
+      see `cli/train.py --help`  
+      new support for sd and sdxl  
+      new support for full offline mode (without sdnext server running)  
 
 ## Update for 2023-09-13
 

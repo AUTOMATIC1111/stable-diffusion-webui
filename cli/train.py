@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 
+"""
+Examples:
+- sd15:    train.py --type lora --tag girl --comments sdnext --input ~/generative/Input/mia --process original,interrogate,resize --name mia
+- sdxl:    train.py --type lora --tag girl --comments sdnext --input ~/generative/Input/mia --process original,interrogate,resize --precision fp32 --optimizer Adafactor --sdxl --name miaxl
+- offline: train.py --type lora --tag girl --comments sdnext --input ~/generative/Input/mia --model /home/vlado/dev/sdnext/models/Stable-diffusion/sdxl/miaanimeSFWNSFWSDXL_v40.safetensors --dir /home/vlado/dev/sdnext/models/Lora/ --precision fp32 --optimizer Adafactor --sdxl --name miaxl 
+"""
+
 # system imports
 import os
 import re
@@ -24,6 +31,7 @@ args = None
 log = logging.getLogger('train')
 valid_steps = ['original', 'face', 'body', 'blur', 'range', 'upscale', 'restore', 'interrogate', 'resize', 'square', 'segment']
 log_file = os.path.join(os.path.dirname(__file__), 'train.log')
+server_ok = False
 
 # methods
 
@@ -74,6 +82,7 @@ def parse_args():
     group_server.add_argument('--server', type=str, default='http://127.0.0.1:7860', required=False, help='server url, default: %(default)s')
     group_server.add_argument('--user', type=str, default=None, required=False, help='server url, default: %(default)s')
     group_server.add_argument('--password', type=str, default=None, required=False, help='server url, default: %(default)s')
+    group_server.add_argument('--dir', type=str, default=None, required=False, help='folder with trained networks, default: use server setting')
 
     group_main = parser.add_argument_group('Main')
     group_main.add_argument('--type', type=str, choices=['embedding', 'ti', 'lora', 'lyco', 'dreambooth', 'hypernetwork'], default=None, required=True, help='training type')
@@ -100,6 +109,8 @@ def parse_args():
     group_train.add_argument('--algo', type=str, default=None, choices=['locon', 'loha', 'lokr', 'ia3'], required=False, help='alternative lyco algoritm, default: %(default)s')
     group_train.add_argument('--args', type=str, default=None, required=False, help='lora/lyco additional network arguments, default: %(default)s')
     group_train.add_argument('--optimizer', type=str, default='AdamW', required=False, help='optimizer type, default: %(default)s')
+    group_train.add_argument('--precision', type=str, choices=['fp16', 'fp32'], default='fp16', required=True, help='training precision, default: %(default)s')
+    group_train.add_argument('--sdxl', default = False, action='store_true', help = "run sdxl training, default: %(default)s")
     # AdamW (default), AdamW8bit, PagedAdamW8bit, Lion8bit, PagedLion8bit, Lion, SGDNesterov, SGDNesterov8bit, DAdaptation(DAdaptAdamPreprint), DAdaptAdaGrad, DAdaptAdam, DAdaptAdan, DAdaptAdanIP, DAdaptLion, DAdaptSGD, AdaFactor
 
     group_other = parser.add_argument_group('Other')
@@ -111,26 +122,28 @@ def parse_args():
 
 
 def prepare_server():
+    global server_ok # pylint: disable=global-statement
     try:
         server_status = util.Map(sdapi.progresssync())
         server_state = server_status['state']
+        server_ok = True
     except Exception:
-        log.error(f'server error: {server_status}')
+        log.warning(f'sdnext server error: {server_status}')
+        server_ok = False
+    if server_ok and server_state['job_count'] > 0:
+        log.error(f'sdnext server not idle: {server_state}')
         exit(1)
-    if server_state['job_count'] > 0:
-        log.error(f'server not idle: {server_state}')
-        exit(1)
-
-    server_options = util.Map(sdapi.options())
-    server_options.options.save_training_settings_to_txt = False
-    server_options.options.training_enable_tensorboard = False
-    server_options.options.training_tensorboard_save_images = False
-    server_options.options.pin_memory = True
-    server_options.options.save_optimizer_state = False
-    server_options.options.training_image_repeats_per_epoch = args.repeats
-    server_options.options.training_write_csv_every = 0
-    sdapi.postsync('/sdapi/v1/options', server_options.options)
-    log.info('updated server options')
+    if server_ok:
+        server_options = util.Map(sdapi.options())
+        server_options.options.save_training_settings_to_txt = False
+        server_options.options.training_enable_tensorboard = False
+        server_options.options.training_tensorboard_save_images = False
+        server_options.options.pin_memory = True
+        server_options.options.save_optimizer_state = False
+        server_options.options.training_image_repeats_per_epoch = args.repeats
+        server_options.options.training_write_csv_every = 0
+        sdapi.postsync('/sdapi/v1/options', server_options.options)
+        log.info('updated server options')
 
 
 def verify_args():
@@ -139,22 +152,31 @@ def verify_args():
         if not os.path.isfile(args.model):
             log.error(f'cannot find loaded model: {args.model}')
             exit(1)
-        server_options.options.sd_model_checkpoint = args.model
-        sdapi.postsync('/sdapi/v1/options', server_options.options)
-    else:
+        if server_ok:
+            server_options.options.sd_model_checkpoint = args.model
+            sdapi.postsync('/sdapi/v1/options', server_options.options)
+    elif server_ok:
         args.model = server_options.options.sd_model_checkpoint.split(' [')[0]
+        if args.sdxl and (server_options.sd_backend != 'diffusers' or server_options.diffusers_pipeline != 'Stable Diffusion XL'):
+            log.warning('server checkpoint is not sdxl')
+    else:
+        log.error('no model specified')
+        exit(1)
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    args.lora_dir = server_options.options.lora_dir
+    if args.type == 'lora' and not server_ok and not args.dir:
+        log.error('offline lora training requires lora')
+        exit(1)
+    args.lora_dir = server_options.options.lora_dir or args.dir
     if not os.path.isabs(args.lora_dir):
         args.lora_dir = os.path.join(base_dir, args.lora_dir)
-    args.lyco_dir = server_options.options.lyco_dir
+    args.lyco_dir = server_options.options.lyco_dir or args.dir
     if not os.path.isabs(args.lyco_dir):
         args.lyco_dir = os.path.join(base_dir, args.lyco_dir)
-    args.ckpt_dir = server_options.options.ckpt_dir
-    if not os.path.isabs(args.ckpt_dir):
-        args.ckpt_dir = os.path.join(base_dir, args.ckpt_dir)
-    args.embeddings_dir = server_options.options.embeddings_dir
+    args.embeddings_dir = server_options.options.embeddings_dir or args.dir
     if not os.path.isfile(args.model):
+        args.ckpt_dir = server_options.options.ckpt_dir
+        if not os.path.isabs(args.ckpt_dir):
+            args.ckpt_dir = os.path.join(base_dir, args.ckpt_dir)
         attempt = os.path.abspath(os.path.join(args.ckpt_dir, args.model))
         args.model = attempt if os.path.isfile(attempt) else args.model
     if not os.path.isfile(args.model):
@@ -163,9 +185,6 @@ def verify_args():
     if not os.path.isfile(args.model):
         log.error(f'cannot find loaded model: {args.model}')
         exit(1)
-    # if not os.path.exists(args.ckpt_dir) or not os.path.isdir(args.ckpt_dir):
-    #     log.error(f'cannot find models folder: {args.ckpt_dir}')
-    #     exit(1)
     if not os.path.exists(args.input) or not os.path.isdir(args.input):
         log.error(f'cannot find training folder: {args.input}')
         exit(1)
@@ -251,9 +270,14 @@ def train_lora():
     if args.type == 'lyco':
         sys.path.append(lycoris_path)
     log.debug('importing lora lib')
-    import train_network
-    trainer = train_network.NetworkTrainer()
-    trainer.train(options.lora)
+    if not args.sdxl:
+        import train_network
+        trainer = train_network.NetworkTrainer()
+        trainer.train(options.lora)
+    else:
+        import sdxl_train_network
+        trainer = sdxl_train_network.SdxlNetworkTrainer()
+        trainer.train(options.lora)
     if args.type == 'lyco':
         log.debug('importing lycoris lib')
         import importlib
@@ -284,19 +308,20 @@ def prepare_options():
     options.lora.max_train_steps = args.steps
     options.lora.network_dim = args.dim
     options.lora.network_alpha = args.dim // 2 if args.alpha == 0 else args.alpha
-    options.lora.netwoork_args = []
+    options.lora.network_args = []
     options.lora.training_comment = args.comments
     options.lora.sdpa = True
     options.lora.optimizer_type = args.optimizer
     if args.algo is not None:
-        options.lora.netwoork_args.append(f'algo={args.algo}')
+        options.lora.network_args.append(f'algo={args.algo}')
     if args.args is not None:
         for net_arg in args.args:
-            options.lora.netwoork_args.append(net_arg)
+            options.lora.network_args.append(net_arg)
     options.lora.gradient_accumulation_steps = args.gradient
     options.lora.learning_rate = args.lr
     options.lora.train_batch_size = args.batch
     options.lora.train_data_dir = args.process_dir
+    options.lora.no_half_vae = args.precision == 'fp16'
     # embedding specific
     options.embedding.embedding_name = args.name
     options.embedding.learn_rate = str(args.lr)
@@ -329,6 +354,7 @@ def process_inputs():
             log.info(f'processed folder exists: {args.process_dir}')
     steps = [step for step in processing_options if step in ['face', 'body', 'original']]
     process.reset()
+    options.process.target_size = 1024 if args.sdxl else 512
     metadata = {}
     for step in steps:
         if step == 'face':
@@ -351,19 +377,22 @@ def process_inputs():
         log.info(f'processing output folder: {folder}')
         pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
         results = {}
-        for f in files:
-            res = process.file(filename = f, folder = folder, tag = args.tag, requested = opts)
-            if res.image: # valid result
-                results[res.type] = results.get(res.type, 0) + 1
-                results['total'] = results.get('total', 0) + 1
-                rel_path = res.basename.replace(os.path.commonpath([res.basename, args.process_dir]), '')
-                if rel_path.startswith(os.path.sep):
-                    rel_path = rel_path[1:]
-                metadata[rel_path] = { 'caption': res.caption, 'tags': ','.join(res.tags) }
-                if options.lora.in_json is None:
-                    with open(res.output.replace(options.process.format, '.txt'), "w", encoding='utf-8') as outfile:
-                        outfile.write(res.caption)
-            log.info(f"processing {'saved' if res.image is not None else 'skipped'}: {f} => {res.output} {res.ops} {res.message}")
+        if server_ok:
+            for f in files:
+                res = process.file(filename = f, folder = folder, tag = args.tag, requested = opts)
+                if res.image: # valid result
+                    results[res.type] = results.get(res.type, 0) + 1
+                    results['total'] = results.get('total', 0) + 1
+                    rel_path = res.basename.replace(os.path.commonpath([res.basename, args.process_dir]), '')
+                    if rel_path.startswith(os.path.sep):
+                        rel_path = rel_path[1:]
+                    metadata[rel_path] = { 'caption': res.caption, 'tags': ','.join(res.tags) }
+                    if options.lora.in_json is None:
+                        with open(res.output.replace(options.process.format, '.txt'), "w", encoding='utf-8') as outfile:
+                            outfile.write(res.caption)
+                log.info(f"processing {'saved' if res.image is not None else 'skipped'}: {f} => {res.output} {res.ops} {res.message}")
+        else:
+            log.info('processing skipped: offline')
     folders = [os.path.join(args.process_dir, folder) for folder in os.listdir(args.process_dir) if os.path.isdir(os.path.join(args.process_dir, folder))]
     log.info(f'input datasets {folders}')
     if options.lora.in_json is not None:
