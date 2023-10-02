@@ -1,20 +1,5 @@
 @echo off
 
-echo.
-echo ******************************************************************
-echo ** DEPRECATION WARNING                                           **
-echo **                                                               **
-echo ** This Batch (.bat) version of the script is now deprecated     **
-echo ** and will be removed in the future.                            **
-echo **                                                               **
-echo ** Please use the new PowerShell (.ps1) script: "webui.ps1"      **
-echo **                                                               **
-echo ******************************************************************
-echo.
-
-:: Allow the user to read the deprecation warning before proceeding
-timeout /t 10
-
 if not defined PYTHON (set PYTHON=python)
 if not defined VENV_DIR (set "VENV_DIR=%~dp0%venv")
 set ERROR_REPORTING=FALSE
