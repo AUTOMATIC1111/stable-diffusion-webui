@@ -207,17 +207,18 @@ function setupExtraNetworksForTab(tabname) {
   const div = document.createElement('div');
   div.classList.add('second-line');
   tabs.appendChild(div);
-  const txtSearch = gradioApp().querySelector(`#${tabname}_extra_search textarea`);
+  const txtSearch = gradioApp().querySelector(`#${tabname}_extra_search`);
+  const txtSearchValue = gradioApp().querySelector(`#${tabname}_extra_search textarea`);
   const txtDescription = gradioApp().getElementById(`${tabname}_description`);
   txtSearch.classList.add('search');
   txtDescription.classList.add('description');
   div.appendChild(txtSearch);
   div.appendChild(txtDescription);
   let searchTimer = null;
-  txtSearch.addEventListener('input', (evt) => {
+  txtSearchValue.addEventListener('input', (evt) => {
     if (searchTimer) clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
-      filterExtraNetworksForTab(tabname, txtSearch.value.toLowerCase());
+      filterExtraNetworksForTab(tabname, txtSearchValue.value.toLowerCase());
       searchTimer = null;
     }, 150);
   });

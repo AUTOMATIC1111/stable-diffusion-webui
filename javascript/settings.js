@@ -1,3 +1,4 @@
+let settingsInitialized = false;
 let opts_metadata = {};
 const opts_tabs = {};
 
@@ -47,6 +48,7 @@ function showAllSettings() {
 }
 
 function markIfModified(setting_name, value) {
+  if (!opts_metadata[setting_name]) return;
   const elem = gradioApp().getElementById(`modification_indicator_${setting_name}`);
   if (!elem) return;
   const previous_value = JSON.stringify(opts[setting_name]);
@@ -137,7 +139,9 @@ onOptionsChanged(() => {
   });
 });
 
-onUiLoaded(() => {
+function initSettings() {
+  if (settingsInitialized) return;
+  settingsInitialized = true;
   const tab_nav_element = gradioApp().querySelector('#settings > .tab-nav');
   const tab_nav_buttons = gradioApp().querySelectorAll('#settings > .tab-nav > button');
   const tab_elements = gradioApp().querySelectorAll('#settings > div:not(.tab-nav)');
@@ -158,4 +162,6 @@ onUiLoaded(() => {
     observer.observe(elem, { attributes: true, attributeFilter: ['style'] });
   });
   log('initSettings');
-});
+}
+
+onUiLoaded(initSettings);

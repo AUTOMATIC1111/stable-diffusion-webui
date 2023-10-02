@@ -37,7 +37,6 @@ class Extension:
         self.have_info_from_repo = False
         self.mtime = 0
         self.ctime = 0
-        self.script_files = []
 
     def read_info_from_repo(self):
         if self.have_info_from_repo:
@@ -75,9 +74,6 @@ class Extension:
                 self.remote = None
 
     def list_files(self, subdir, extension):
-        if len(self.script_files) > 0:
-            return self.script_files
-
         from modules import scripts
         dirpath = os.path.join(self.path, subdir)
         if not os.path.isdir(dirpath):
@@ -94,7 +90,6 @@ class Extension:
             if priority != '50':
                 shared.log.debug(f'Extension priority override: {os.path.dirname(dirpath)}:{priority}')
         res = [x for x in res if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
-        self.script_files = res
         return res
 
     def check_updates(self):
