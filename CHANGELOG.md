@@ -53,20 +53,20 @@ Upgrades are still possible and supported, but above is recommended for best exp
 - **Diffusers**:  
   - better pipeline **auto-detect** when loading from safetensors  
   - **SDXL Inpaint**  
-    - Although any model can be used for inpainiting, there is a case to be made for  
+    - although any model can be used for inpainiting, there is a case to be made for  
       dedicated inpainting models as they are tuned to inpaint and not generate  
-    - Model can be used as base model for **img2img** or refiner model for **txt2img**  
+    - model can be used as base model for **img2img** or refiner model for **txt2img**  
       To download go to *Models -> Huggingface*:  
       - `diffusers/stable-diffusion-xl-1.0-inpainting-0.1` *(6.7GB)*  
   - **SDXL Instruct-Pix2Pix**  
-    - Model can be used as base model for **img2img** or refiner model for **txt2img**  
-      This model is massive and requires a lot of resources!  
-      To download go to *Models -> Huggingface*:  
+    - model can be used as base model for **img2img** or refiner model for **txt2img**  
+      this model is massive and requires a lot of resources!  
+      to download go to *Models -> Huggingface*:  
       - `diffusers/sdxl-instructpix2pix-768` *(11.9GB)*  
   - **SD Latent Upscale**  
-    - You can use *SD Latent Upscale* models as **refiner models**  
-      This is a bit experimental, but it works quite well!  
-      To download go to *Models -> Huggingface*:  
+    - you can use *SD Latent Upscale* models as **refiner models**  
+      this is a bit experimental, but it works quite well!  
+      to download go to *Models -> Huggingface*:  
       - `stabilityai/sd-x2-latent-upscaler` *(2.2GB)*  
       - `stabilityai/stable-diffusion-x4-upscaler` *(1.7GB)*  
   - better **Hires** support for SD and SDXL  
@@ -85,7 +85,7 @@ Upgrades are still possible and supported, but above is recommended for best exp
     **SwinIR** (2), **ESRGAN** (12), **RealESRGAN** (6), **SCUNet** (2)  
   - two additional latent upscalers based on SD upscale models when using Diffusers backend  
     **SD Upscale 2x**, **SD Upscale 4x***  
-    Note: Recommended usage for *SD Upscale* is by using second pass instead of upscaler  
+    note: Recommended usage for *SD Upscale* is by using second pass instead of upscaler  
     as it allows for tuning of prompt, seed, sampler settings which are used to guide upscaler  
   - upscalers are available in **xyz grid**  
   - simplified *settings->postprocessing->upscalers*  
@@ -109,11 +109,11 @@ Upgrades are still possible and supported, but above is recommended for best exp
     combinations results in 50+ samplers which is not practical  
     items such as algorithm (e.g. karras) is actually a sampler option, not a sampler itself  
 - **CivitAI**:
-  - CivitAI integration in *Models -> CivitAI* can now find most  
+  - civitai integration in *models -> civitai* can now find most  
     previews AND metadata for most models (checkpoints, loras, embeddings)  
     metadata is now parsed and saved in *[model].json*  
     typical hit rate is >95% for models, loras and embeddings  
-  - Description from parsed model metadata is used as model description if there is no manual  
+  - description from parsed model metadata is used as model description if there is no manual  
     description file present in format of *[model].txt*  
   - to enable search, make sure all models have set hash values  
     *Models -> Valida -> Calculate hashes*  
@@ -131,8 +131,9 @@ Upgrades are still possible and supported, but above is recommended for best exp
       see *settings -> compute -> gc*  
 - **General**  
   - **Startup**  
-    - All main CLI parameters can now be set as environment variable as well  
+    - all main CLI parameters can now be set as environment variable as well  
       for example `--data-dir <path>` can be specified as `SD_DATADIR=<path>` before starting SD.Next  
+    - faster extensions loading
   - **Logging**  
     - get browser session info in server log  
     - allow custom log file destination  

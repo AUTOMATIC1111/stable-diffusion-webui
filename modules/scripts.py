@@ -193,9 +193,11 @@ ScriptFile = namedtuple("ScriptFile", ["basedir", "filename", "path", "priority"
 scripts_data = []
 postprocessing_scripts_data = []
 ScriptClassData = namedtuple("ScriptClassData", ["script_class", "path", "basedir", "module"])
-
+scripts_list_per_dir = {}
 
 def list_scripts(scriptdirname, extension):
+    if scriptdirname in scripts_list_per_dir:
+        return scripts_list_per_dir[scriptdirname]
     tmp_list = []
     base = os.path.join(paths.script_path, scriptdirname)
     if os.path.exists(base):
@@ -219,11 +221,13 @@ def list_scripts(scriptdirname, extension):
             if os.path.isfile(os.path.join(base, "..", ".priority")):
                 with open(os.path.join(base, "..", ".priority"), "r", encoding="utf-8") as f:
                     priority = priority + str(f.read().strip())
+                    log.debug(f'Script priority override: ${script.name}:{priority}')
             else:
                 priority = priority + script.priority
             priority_list.append(ScriptFile(script.basedir, script.filename, script.path, priority))
             # log.debug(f'Adding script: {script.basedir} {script.filename} {script.path} {priority}')
     priority_sort = sorted(priority_list, key=lambda item: item.priority + item.path.lower(), reverse=False)
+    scripts_list_per_dir[scriptdirname] = priority_sort
     return priority_sort
 
 
