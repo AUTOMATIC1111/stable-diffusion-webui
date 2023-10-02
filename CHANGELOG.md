@@ -7,7 +7,6 @@
 - Add FreeU for *backend:diffusers*  
   for *backend:original* use extension: <https://github.com/ljleb/sd-webui-freeu>  
 - Add HyperTile: <https://github.com/tfernd/HyperTile>
-- Switch Diffusers prompt parser  
 - Include chaiNNer extension as submodule  
 - Convert IPEX slicing to generic: <https://github.com/vladmandic/automatic/blob/dev/modules/intel/ipex/attention.py>
 
@@ -70,6 +69,11 @@ Upgrades are still possible and supported, but above is recommended for best exp
       to download go to *Models -> Huggingface*:  
       - `stabilityai/sd-x2-latent-upscaler` *(2.2GB)*  
       - `stabilityai/stable-diffusion-x4-upscaler` *(1.7GB)*  
+  - better **Prompt attention**  
+    should better handle more complex prompts  
+    for sdxl, choose which part of prompt goes to second text encoder - just add `TE2:` separator in the prompt  
+    for hires and refiner, second pass prompt is used if present, otherwise primary prompt is used  
+    thanks @AI-Casanova  
   - better **Hires** support for SD and SDXL  
   - better **TI embeddings** support for SD and SDXL  
     faster loading, wider compatibility and support for embeddings with multiple vectors  

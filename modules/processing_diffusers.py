@@ -412,8 +412,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
                 hires_args = set_pipeline_args(
                     model=shared.sd_model,
-                    prompts=prompts,
-                    negative_prompts=negative_prompts,
+                    prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
+                    negative_prompts=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
                     prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
                     negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
                     num_inference_steps=int(p.hr_second_pass_steps // p.denoising_strength + 1),

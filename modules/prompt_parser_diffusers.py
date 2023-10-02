@@ -5,8 +5,10 @@ from compel import ReturnedEmbeddingsType
 from compel.embeddings_provider import BaseTextualInversionManager, EmbeddingsProvider
 from modules import shared, prompt_parser
 
+
 debug_output = os.environ.get('SD_PROMPT_DEBUG', None)
 debug = shared.log.info if debug_output is not None else lambda *args, **kwargs: None
+
 
 CLIP_SKIP_MAPPING = {
     None: ReturnedEmbeddingsType.LAST_HIDDEN_STATES_NORMALIZED,
@@ -46,6 +48,7 @@ class DiffusersTextualInversionManager(BaseTextualInversionManager):
                 prompt = prompt.replace(token, replacement)
         if hasattr(self.pipe, 'embedding_db'):
             self.pipe.embedding_db.embeddings_used = list(set(self.pipe.embedding_db.embeddings_used))
+        debug(f'Prompt: convert={prompt}')
         return prompt
 
     def expand_textual_inversion_token_ids_if_necessary(self, token_ids: typing.List[int]) -> typing.List[int]:
@@ -53,16 +56,11 @@ class DiffusersTextualInversionManager(BaseTextualInversionManager):
             return token_ids
         prompt = self.pipe.tokenizer.decode(token_ids)
         prompt = self.maybe_convert_prompt(prompt, self.pipe.tokenizer)
-        print(prompt)
+        debug(f'Prompt: expand={prompt}')
         return self.pipe.tokenizer.encode(prompt, add_special_tokens=False)
 
 
-def encode_prompts(
-        pipeline,
-        prompts: list,
-        negative_prompts: list,
-        clip_skip: typing.Optional[int] = None,
-):
+def encode_prompts(pipeline, prompts: list, negative_prompts: list, clip_skip: typing.Optional[int] = None):
     if 'StableDiffusion' not in pipeline.__class__.__name__:
         shared.log.warning(f"Prompt parser not supported: {pipeline.__class__.__name__}")
         return None, None, None, None
@@ -90,12 +88,12 @@ def encode_prompts(
 
 
 def get_prompts_with_weights(prompt: str):
-    prompt = DiffusersTextualInversionManager(shared.sd_model,
-                                              shared.sd_model.tokenizer or shared.sd_model.tokenizer_2).maybe_convert_prompt(
-        prompt, shared.sd_model.tokenizer or shared.sd_model.tokenizer_2)
+    manager = DiffusersTextualInversionManager(shared.sd_model, shared.sd_model.tokenizer or shared.sd_model.tokenizer_2)
+    prompt = manager.maybe_convert_prompt(prompt, shared.sd_model.tokenizer or shared.sd_model.tokenizer_2)
     texts_and_weights = prompt_parser.parse_prompt_attention(prompt)
     texts = [t for t, w in texts_and_weights]
     text_weights = [w for t, w in texts_and_weights]
+    debug(f'Prompt: weights={texts_and_weights}')
     return texts, text_weights
 
 
@@ -109,24 +107,15 @@ def prepare_embedding_providers(pipe, clip_skip):
             clip_skip = 2
         embedding_type = CLIP_SKIP_MAPPING[clip_skip]
     if hasattr(pipe, "tokenizer") and hasattr(pipe, "text_encoder"):
-        embeddings_providers.append(
-            EmbeddingsProvider(tokenizer=pipe.tokenizer, text_encoder=pipe.text_encoder,
-                                                          truncate=False,
-                                                          returned_embeddings_type=embedding_type))
+        embedding = EmbeddingsProvider(tokenizer=pipe.tokenizer, text_encoder=pipe.text_encoder, truncate=False, returned_embeddings_type=embedding_type)
+        embeddings_providers.append(embedding)
     if hasattr(pipe, "tokenizer_2") and hasattr(pipe, "text_encoder_2"):
-        embeddings_providers.append(
-            EmbeddingsProvider(tokenizer=pipe.tokenizer_2, text_encoder=pipe.text_encoder_2,
-                                                          truncate=False,
-                                                          returned_embeddings_type=embedding_type))
+        embedding = EmbeddingsProvider(tokenizer=pipe.tokenizer_2, text_encoder=pipe.text_encoder_2, truncate=False, returned_embeddings_type=embedding_type)
+        embeddings_providers.append(embedding)
     return embeddings_providers
 
 
-def get_weighted_text_embeddings_sdxl(
-        pipe,
-        prompt: str = "",
-        neg_prompt: str = "",
-        clip_skip: int = None
-):
+def get_weighted_text_embeddings_sdxl(pipe, prompt: str = "", neg_prompt: str = "", clip_skip: int = None):
     prompt_2 = prompt.split("TE2:")[-1]
     neg_prompt_2 = neg_prompt.split("TE2:")[-1]
     prompt = prompt.split("TE2:")[0]
@@ -149,21 +138,13 @@ def get_weighted_text_embeddings_sdxl(
     prompt_embeds = []
     negative_prompt_embeds = []
     for i in range(len(embedding_providers)):
-        prompt_embeds.append(
-            embedding_providers[i].get_embeddings_for_weighted_prompt_fragments(text_batch=[positives[i]],
-                                                                                fragment_weights_batch=[
-                                                                                    positive_weights[i]],
-                                                                                device=pipe.device))
-        negative_prompt_embeds.append(
-            embedding_providers[i].get_embeddings_for_weighted_prompt_fragments(text_batch=[negatives[i]],
-                                                                                fragment_weights_batch=[
-                                                                                    negative_weights[i]],
-                                                                                device=pipe.device))
+        embed = embedding_providers[i].get_embeddings_for_weighted_prompt_fragments(text_batch=[positives[i]], fragment_weights_batch=[positive_weights[i]], device=pipe.device)
+        prompt_embeds.append(embed)
+        embed = embedding_providers[i].get_embeddings_for_weighted_prompt_fragments(text_batch=[negatives[i]], fragment_weights_batch=[negative_weights[i]],device=pipe.device)
+        negative_prompt_embeds.append(embed)
+
     prompt_embeds = torch.cat(prompt_embeds, dim=-1) if len(prompt_embeds) > 1 else prompt_embeds[0]
     negative_prompt_embeds = torch.cat(negative_prompt_embeds, dim=-1) if len(negative_prompt_embeds) > 1 else negative_prompt_embeds[0]
-
     pooled_prompt_embeds = embedding_providers[-1].get_pooled_embeddings(texts=[prompt_2], device=pipe.device) if prompt_embeds.shape[-1] > 768 else None
-    negative_pooled_prompt_embeds = embedding_providers[-1].get_pooled_embeddings(texts=[neg_prompt_2],
-                                                                                  device=pipe.device) if negative_prompt_embeds.shape[-1] > 768 else None
+    negative_pooled_prompt_embeds = embedding_providers[-1].get_pooled_embeddings(texts=[neg_prompt_2], device=pipe.device) if negative_prompt_embeds.shape[-1] > 768 else None
     return prompt_embeds, pooled_prompt_embeds, negative_prompt_embeds, negative_pooled_prompt_embeds
-    
