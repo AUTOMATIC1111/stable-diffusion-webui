@@ -5,7 +5,7 @@ import os.path
 
 import gradio as gr
 
-from modules import generation_parameters_copypaste, images, sysinfo, errors
+from modules import generation_parameters_copypaste, images, sysinfo, errors, ui_extra_networks
 
 
 class UserMetadataEditor:
@@ -36,8 +36,8 @@ class UserMetadataEditor:
         item = self.page.items.get(name, {})
 
         user_metadata = item.get('user_metadata', None)
-        if user_metadata is None:
-            user_metadata = {}
+        if not user_metadata:
+            user_metadata = {'description': item.get('description', '')}
             item['user_metadata'] = user_metadata
 
         return user_metadata
@@ -89,14 +89,24 @@ class UserMetadataEditor:
 
         return preview
 
+    def relative_path(self, path):
+        for parent_path in self.page.allowed_directories_for_previews():
+            if ui_extra_networks.path_is_parent(parent_path, path):
+                return os.path.relpath(path, parent_path)
+
+        return os.path.basename(path)
+
     def get_metadata_table(self, name):
         item = self.page.items.get(name, {})
         try:
             filename = item["filename"]
+            shorthash = item.get("shorthash", None)
 
             stats = os.stat(filename)
             params = [
+                ('Filename: ', self.relative_path(filename)),
                 ('File size: ', sysinfo.pretty_bytes(stats.st_size)),
+                ('Hash: ', shorthash),
                 ('Modified: ', datetime.datetime.fromtimestamp(stats.st_mtime).strftime('%Y-%m-%d %H:%M')),
             ]
 
@@ -114,7 +124,7 @@ class UserMetadataEditor:
             errors.display(e, f"reading metadata info for {name}")
             params = []
 
-        table = '<table class="file-metadata">' + "".join(f"<tr><th>{name}</th><td>{value}</td></tr>" for name, value in params) + '</table>'
+        table = '<table class="file-metadata">' + "".join(f"<tr><th>{name}</th><td>{value}</td></tr>" for name, value in params if value is not None) + '</table>'
 
         return html.escape(name), user_metadata.get('description', ''), table, self.get_card_html(name), user_metadata.get('notes', '')
 
@@ -124,7 +134,7 @@ class UserMetadataEditor:
         basename, ext = os.path.splitext(filename)
 
         with open(basename + '.json', "w", encoding="utf8") as file:
-            json.dump(metadata, file)
+            json.dump(metadata, file, indent=4)
 
     def save_user_metadata(self, name, desc, notes):
         user_metadata = self.get_user_metadata(name)

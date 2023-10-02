@@ -4,6 +4,7 @@ import torch
 import platform
 from modules.sd_hijack_utils import CondFunc
 from packaging import version
+from modules import shared
 
 log = logging.getLogger(__name__)
 
@@ -30,8 +31,7 @@ has_mps = check_for_mps()
 
 def torch_mps_gc() -> None:
     try:
-        from modules.shared import state
-        if state.current_latent is not None:
+        if shared.state.current_latent is not None:
             log.debug("`current_latent` is set, skipping MPS garbage collection")
             return
         from torch.mps import empty_cache
@@ -52,9 +52,6 @@ def cumsum_fix(input, cumsum_func, *args, **kwargs):
 
 
 if has_mps:
-    # MPS fix for randn in torchsde
-    CondFunc('torchsde._brownian.brownian_interval._randn', lambda _, size, dtype, device, seed: torch.randn(size, dtype=dtype, device=torch.device("cpu"), generator=torch.Generator(torch.device("cpu")).manual_seed(int(seed))).to(device), lambda _, size, dtype, device, seed: device.type == 'mps')
-
     if platform.mac_ver()[0].startswith("13.2."):
         # MPS workaround for https://github.com/pytorch/pytorch/issues/95188, thanks to danieldk (https://github.com/explosion/curated-transformers/pull/124)
         CondFunc('torch.nn.functional.linear', lambda _, input, weight, bias: (torch.matmul(input, weight.t()) + bias) if bias is not None else torch.matmul(input, weight.t()), lambda _, input, weight, bias: input.numel() > 10485760)

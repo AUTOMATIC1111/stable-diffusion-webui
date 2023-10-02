@@ -7,8 +7,12 @@ from modules import errors
 from modules.ui_components import ToolButton
 
 
+def radio_choices(comp):  # gradio 3.41 changes choices from list of values to list of pairs
+    return [x[0] if isinstance(x, tuple) else x for x in getattr(comp, 'choices', [])]
+
+
 class UiLoadsave:
-    """allows saving and restorig default values for gradio components"""
+    """allows saving and restoring default values for gradio components"""
 
     def __init__(self, filename):
         self.filename = filename
@@ -27,6 +31,8 @@ class UiLoadsave:
         except Exception as e:
             self.error_loading = True
             errors.display(e, "loading settings")
+
+
 
     def add_component(self, path, x):
         """adds component to the registry of tracked components"""
@@ -48,6 +54,14 @@ class UiLoadsave:
             elif condition and not condition(saved_value):
                 pass
             else:
+                if isinstance(x, gr.Textbox) and field == 'value':  # due to an undesirable behavior of gr.Textbox, if you give it an int value instead of str, everything dies
+                    saved_value = str(saved_value)
+                elif isinstance(x, gr.Number) and field == 'value':
+                    try:
+                        saved_value = float(saved_value)
+                    except ValueError:
+                        return
+
                 setattr(obj, field, saved_value)
                 if init_field is not None:
                     init_field(saved_value)
@@ -65,7 +79,7 @@ class UiLoadsave:
             apply_field(x, 'step')
 
         if type(x) == gr.Radio:
-            apply_field(x, 'value', lambda val: val in x.choices)
+            apply_field(x, 'value', lambda val: val in radio_choices(x))
 
         if type(x) == gr.Checkbox:
             apply_field(x, 'value')
@@ -78,10 +92,11 @@ class UiLoadsave:
 
         if type(x) == gr.Dropdown:
             def check_dropdown(val):
+                choices = radio_choices(x)
                 if getattr(x, 'multiselect', False):
-                    return all(value in x.choices for value in val)
+                    return all(value in choices for value in val)
                 else:
-                    return val in x.choices
+                    return val in choices
 
             apply_field(x, 'value', check_dropdown, getattr(x, 'init_field', None))
 
@@ -138,12 +153,14 @@ class UiLoadsave:
         for (path, component), new_value in zip(self.component_mapping.items(), values):
             old_value = current_ui_settings.get(path)
 
-            choices = getattr(component, 'choices', None)
+            choices = radio_choices(component)
             if isinstance(new_value, int) and choices:
                 if new_value >= len(choices):
                     continue
 
                 new_value = choices[new_value]
+                if isinstance(new_value, tuple):
+                    new_value = new_value[0]
 
             if new_value == old_value:
                 continue
