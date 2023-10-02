@@ -150,7 +150,7 @@ Upgrades are still possible and supported, but above is recommended for best exp
   - **train.py**
     - wrapper script around built-in **kohya's lora** training script  
       see `cli/train.py --help`  
-      new support for sd and sdxl  
+      new support for sd and sdxl, thanks @evshiron  
       new support for full offline mode (without sdnext server running)  
 
 ## Update for 2023-09-13
