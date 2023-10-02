@@ -404,7 +404,7 @@ def check_torch():
                 rocm_ver = f'{arr[0]}.{arr[1]}'
             log.debug(f'ROCm version detected: {rocm_ver}')
         except Exception as e:
-            log.debug(f'Run hipconfig failed: {e}')
+            log.debug(f'ROCm hipconfig failed: {e}')
             rocm_ver = None
         if rocm_ver in ['5.5', '5.6']:
             # install torch nightly via torchvision to avoid wasting bandwidth when torchvision depends on torch from yesterday
@@ -538,6 +538,7 @@ def install_packages():
     install('pi-heif', 'pi_heif', ignore=True)
     tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0')
     install(tensorflow_package, 'tensorflow', ignore=True)
+    install('nvidia-ml-py', 'pynvml', ignore=True)
     bitsandbytes_package = os.environ.get('BITSANDBYTES_PACKAGE', None)
     if bitsandbytes_package is not None:
         install(bitsandbytes_package, 'bitsandbytes', ignore=True)
