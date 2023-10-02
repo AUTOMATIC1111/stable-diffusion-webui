@@ -218,7 +218,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         parser = 'Fixed attention'
         if shared.opts.prompt_attention != 'Fixed attention' and 'StableDiffusion' in model.__class__.__name__:
             try:
-                prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompts(model, prompts, negative_prompts, prompts_2, negative_prompts_2, is_refiner, kwargs.pop("clip_skip", None))
+                prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.encode_prompts(model, prompts, negative_prompts, kwargs.pop("clip_skip", None))
                 parser = shared.opts.prompt_attention
             except Exception as e:
                 shared.log.error(f'Prompt parser encode: {e}')
