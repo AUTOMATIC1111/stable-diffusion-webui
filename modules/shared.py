@@ -350,6 +350,8 @@ def writefile(data, filename, mode='w', silent=False):
             # skipkeys=True, ensure_ascii=True, check_circular=True, allow_nan=True
             if type(data) == dict:
                 output = json.dumps(data, indent=2, default=default)
+            elif type(data) == list:
+                output = json.dumps(data, indent=2, default=default)
             elif isinstance(data, object):
                 simple = {}
                 for k in data.__dict__:
