@@ -326,6 +326,19 @@ div.controlnet_main_options { display: grid; grid-template-columns: 1fr 1fr; gri
 
 /* custom component */
 .folder-selector textarea { height: 2em !important; padding: 6px !important; }
+.nvml {
+  position: fixed;
+  top: 100px;
+  left: 100px;
+  background: var(--background-fill-primary);
+  border: 1px solid var(--button-primary-border-color);
+  padding: 6px;
+  color: var(--button-primary-text-color);
+  font-size: 0.7em;
+  z-index: 50;
+  font-family: monospace;
+  display: none;
+}
 
 /* Workaround for Gradio dropdowns capturing clicks during and after fadeout */
 .gradio-dropdown > label > div > div:first-child:not(.showOptions) ~ ul.options { pointer-events: none; }

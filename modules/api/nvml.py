@@ -76,8 +76,8 @@ def get_nvml():
                     'memory': [nv.nvmlDeviceGetClockInfo(dev, 2), nv.nvmlDeviceGetMaxClockInfo(dev, 2)],
                 },
                 'load': {
-                    'gpu': nv.nvmlDeviceGetUtilizationRates(dev).gpu,
-                    'memory': nv.nvmlDeviceGetUtilizationRates(dev).memory,
+                    'gpu': round(nv.nvmlDeviceGetUtilizationRates(dev).gpu),
+                    'memory': round(nv.nvmlDeviceGetUtilizationRates(dev).memory),
                     'temp': nv.nvmlDeviceGetTemperature(dev, 0),
                     'fan': nv.nvmlDeviceGetFanSpeed(dev),
                 },
