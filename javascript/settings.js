@@ -6,6 +6,10 @@ const monitoredOpts = [
   { sd_backend: () => gradioApp().getElementById('refresh_sd_model_checkpoint')?.click() },
 ];
 
+const AppyOpts = [
+  { compact_view: (val) => toggleCompact(val) },
+];
+
 function updateOpts(json_string) {
   const settings_data = JSON.parse(json_string);
   for (const op of monitoredOpts) {
@@ -15,6 +19,11 @@ function updateOpts(json_string) {
       log('updateOpts', key, opts[key], settings_data.values[key]);
       if (callback) callback();
     }
+  }
+  for (const op of AppyOpts) {
+    const key = Object.keys(op)[0];
+    const callback = op[key];
+    if (callback) callback(settings_data.values[key]);
   }
   opts = settings_data.values;
   opts_metadata = settings_data.metadata;

@@ -69,6 +69,7 @@
     "create_submit_args": "readonly",
     "restart_reload": "readonly",
     "updateInput": "readonly",
+    "toggleCompact": "readonly",
     // settings.js
     "register_drag_drop": "readonly",
     //extraNetworks.js

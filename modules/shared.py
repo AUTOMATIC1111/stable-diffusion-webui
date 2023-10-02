@@ -545,6 +545,7 @@ options_templates.update(options_section(('ui', "User Interface"), {
     "gradio_theme": OptionInfo("black-teal", "UI theme", gr.Dropdown, lambda: {"choices": list_themes()}, refresh=refresh_themes),
     "theme_style": OptionInfo("Auto", "Theme mode", gr.Radio, {"choices": ["Auto", "Dark", "Light"]}),
     "tooltips": OptionInfo("UI Tooltips", "UI tooltips", gr.Radio, {"choices": ["None", "Browser default", "UI tooltips"], "visible": False}),
+    "compact_view": OptionInfo(True, "Compact view"),
     "return_grid": OptionInfo(True, "Show grid in results"),
     "return_mask": OptionInfo(False, "For inpainting, include the greyscale mask in results"),
     "return_mask_composite": OptionInfo(False, "For inpainting, include masked composite in results"),

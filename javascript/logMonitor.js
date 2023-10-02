@@ -54,6 +54,7 @@ async function initLogMonitor() {
   el.style.display = 'none';
   jobStatusEl = document.createElement('div');
   jobStatusEl.className = 'jobStatus';
+  jobStatusEl.style.display = 'none';
   gradioApp().appendChild(jobStatusEl);
   fetch(`/sdapi/v1/start?agent=${encodeURI(navigator.userAgent)}`);
   logMonitor();

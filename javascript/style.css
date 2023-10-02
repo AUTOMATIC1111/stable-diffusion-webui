@@ -34,6 +34,8 @@ div.gradio-html.min{ min-height: 0; }
 .small-accordion .label-wrap { padding: 16px 0px 8px 0px; margin: 0; border-top: 2px solid var(--button-secondary-border-color); }
 .small-accordion .label-wrap .icon { margin-right: 1.6em; margin-left: 0.6em; color: var(--button-primary-border-color); }
 .hidden { display: none; }
+.form-compact { margin-bottom: 0 !important; gap: 0.2em 1em !important; }
+.accordion-compact { padding: 8px 0px 4px 0px !important; }
 .flex-break { flex-basis: 100% !important; }
 footer { display: none; }
 table { overflow-x: auto !important; overflow-y: auto !important; }

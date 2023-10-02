@@ -24,6 +24,7 @@ Upgrades are still possible and supported, but above is recommended for best exp
     see *System -> User interface -> Set menu states*  
   - new built-in theme **invokeai**  
     thanks @BinaryQuantumSoul
+  - add **compact view** option in settings -> user interface  
   - small visual indicator bottom right of page showing internal server job state  
 - **Extra networks**:  
   - **Details**
