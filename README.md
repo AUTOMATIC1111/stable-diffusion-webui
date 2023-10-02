@@ -90,7 +90,7 @@ Additional models will be added as they become available and there is public int
 
 ### Run
 
-Once SD.Next is installed, simply run `webui.bat` (*Windows*) or `webui.sh` (*Linux or MacOS*)
+Once SD.Next is installed, simply run `webui.ps1` or `webui.bat` (*Windows*) or `webui.sh` (*Linux or MacOS*)
 
 Below is partial list of all available parameters, run `webui --help` for the full list:
 

@@ -16,59 +16,59 @@ And probably the biggest release since introduction of **Diffusers**
 Note that for this release its recommended to perform a clean install (fresh `git clone`)  
 Upgrades are still possible and supported, but above is recommended for best experience  
 
-- **UI**
+- **UI**  
   - added **change log** to UI  
     see *System -> Changelog*  
   - converted submenus from checkboxes to accordion elements  
     any ui state including state of open/closed menus can be saved as default!  
     see *System -> User interface -> Set menu states*  
   - new built-in theme **invokeai**  
-    thanks @BinaryQuantumSoul
+    thanks @BinaryQuantumSoul  
   - add **compact view** option in settings -> user interface  
   - small visual indicator bottom right of page showing internal server job state  
 - **Extra networks**:  
-  - **Details**
+  - **Details**  
     - new details interface to view and save data about extra networks  
       main ui now has a single button on each en to trigger details view  
     - details view includes model/lora metadata parser!  
     - details view includes civitai model metadata!  
-  - **Metadata**:
+  - **Metadata**:  
     - you can scan [civitai](https://civitai.com/)  
       for missing metadata and previews directly from extra networks  
       simply click on button in top-right corner of extra networks page  
-  - **Styles**
+  - **Styles**  
     - save/apply icons moved to extra networks  
     - can be edited in details view  
     - support for single or multiple styles per json  
     - support for embedded previews  
-  - **VAE**
-    - VAEs are now also listed as part of extra networks
-  - **Refiner**
+  - **VAE**  
+    - VAEs are now also listed as part of extra networks  
+  - **Refiner**  
     - you can load model from extra networks as base model or as refiner  
       simply select button in top-right of models page  
-  - **General**
+  - **General**  
     - faster search, ability to show/hide/sort networks  
     - refactored subfolder handling  
       *note*: this will trigger model hash recaclulation on first model use  
-- **Diffusers**:
+- **Diffusers**:  
   - better pipeline **auto-detect** when loading from safetensors  
   - **SDXL Inpaint**  
     - Although any model can be used for inpainiting, there is a case to be made for  
-      dedicated inpainting models as they are tuned to inpaint and not generate
+      dedicated inpainting models as they are tuned to inpaint and not generate  
     - Model can be used as base model for **img2img** or refiner model for **txt2img**  
-      To download go to *Models -> Huggingface*:
-      - `diffusers/stable-diffusion-xl-1.0-inpainting-0.1` *(6.7GB)*
-  - **SDXL Instruct-Pix2Pix**
+      To download go to *Models -> Huggingface*:  
+      - `diffusers/stable-diffusion-xl-1.0-inpainting-0.1` *(6.7GB)*  
+  - **SDXL Instruct-Pix2Pix**  
     - Model can be used as base model for **img2img** or refiner model for **txt2img**  
       This model is massive and requires a lot of resources!  
-      To download go to *Models -> Huggingface*:
-      - `diffusers/sdxl-instructpix2pix-768` *(11.9GB)*
-  - **SD Latent Upscale**
+      To download go to *Models -> Huggingface*:  
+      - `diffusers/sdxl-instructpix2pix-768` *(11.9GB)*  
+  - **SD Latent Upscale**  
     - You can use *SD Latent Upscale* models as **refiner models**  
       This is a bit experimental, but it works quite well!  
-      To download go to *Models -> Huggingface*:
+      To download go to *Models -> Huggingface*:  
       - `stabilityai/sd-x2-latent-upscaler` *(2.2GB)*  
-      - `stabilityai/stable-diffusion-x4-upscaler` *(1.7GB)*
+      - `stabilityai/stable-diffusion-x4-upscaler` *(1.7GB)*  
   - better **Hires** support for SD and SDXL  
   - better **TI embeddings** support for SD and SDXL  
     faster loading, wider compatibility and support for embeddings with multiple vectors  
@@ -79,14 +79,14 @@ Upgrades are still possible and supported, but above is recommended for best exp
   - new setting: *settings -> diffusers -> force inpaint*  
     as some models behave better when in *inpaint* mode even for normal *img2img* tasks  
 - **Upscalers**:
-  - pretty much a rewrite and tons of new upscalers - built-in list is now at **42**
+  - pretty much a rewrite and tons of new upscalers - built-in list is now at **42**  
   - fix long outstanding memory leak in legacy code, amazing this went undetected for so long  
   - more high quality upscalers available by default  
     **SwinIR** (2), **ESRGAN** (12), **RealESRGAN** (6), **SCUNet** (2)  
   - two additional latent upscalers based on SD upscale models when using Diffusers backend  
     **SD Upscale 2x**, **SD Upscale 4x***  
     Note: Recommended usage for *SD Upscale* is by using second pass instead of upscaler  
-    as it allows for tuning of prompt, seed, sampler settings which are used to guide upscaler
+    as it allows for tuning of prompt, seed, sampler settings which are used to guide upscaler  
   - upscalers are available in **xyz grid**  
   - simplified *settings->postprocessing->upscalers*  
     e.g. all upsamplers share same settings for tiling  
@@ -100,7 +100,7 @@ Upgrades are still possible and supported, but above is recommended for best exp
     **HAT** (6), **RealHAT** (2), **DAT** (1), **RRDBNet** (1), **SPSRNet** (1), **SRFormer** (2), **SwiftSR** (2)  
     and yes, you can download and add your own, just place them in `models/chaiNNer`  
     note: extension will probably be added to default built-in list in the near-future  
-- **Samplers**:
+- **Samplers**:  
   - moved ui options to submenu  
   - default list for new installs is now all samplers, list can be modified in settings  
   - simplified samplers configuration in settings  
@@ -110,13 +110,13 @@ Upgrades are still possible and supported, but above is recommended for best exp
     items such as algorithm (e.g. karras) is actually a sampler option, not a sampler itself  
 - **CivitAI**:
   - CivitAI integration in *Models -> CivitAI* can now find most  
-    previews AND metadata for most models (checkpoints, loras, embeddings)
+    previews AND metadata for most models (checkpoints, loras, embeddings)  
     metadata is now parsed and saved in *[model].json*  
     typical hit rate is >95% for models, loras and embeddings  
   - Description from parsed model metadata is used as model description if there is no manual  
-    description file present in format of *[model].txt*
+    description file present in format of *[model].txt*  
   - to enable search, make sure all models have set hash values  
-    *Models -> Valida -> Calculate hashes*
+    *Models -> Valida -> Calculate hashes*  
 - **Compute**  
   - **Intel Arc/IPEX**:  
     - tons of optimizations, built-in binary wheels for Windows  
@@ -126,23 +126,26 @@ Upgrades are still possible and supported, but above is recommended for best exp
     - updated installer to support detect `ROCm` *5.4/5.5/5.6/5.7*  
   - **CUDA**:  
     - testing moved to `torch` *2.2.0-dev/cu121*  
-  - **GC**:
+  - **GC**:  
     - custom garbage collect threshold to reduce vram memory usage, thanks @Disty0  
-      see *settings -> compute -> gc*
-- **General**
+      see *settings -> compute -> gc*  
+- **General**  
   - **Startup**  
     - All main CLI parameters can now be set as environment variable as well  
       for example `--data-dir <path>` can be specified as `SD_DATADIR=<path>` before starting SD.Next  
-  - **Logging**
+  - **Logging**  
     - get browser session info in server log  
     - allow custom log file destination  
-      see `webui --log`
+      see `webui --log`  
     - when running with `--debug` flag, log is force-rotated  
       so each `sdnext.log.*` represents exactly one server run  
-    - internal server job state tracking
+    - internal server job state tracking  
   - **API**
     - add end-to-end example how to use API: `cli/simple-txt2img.js`  
       covers txt2img, upscale, hires, refiner  
+  - **Launcher**  
+    - new `webui.ps1` powershell launcher for windows (old `webui.bat` is still valid)  
+      thanks @em411  
 
 ## Update for 2023-09-13
 
