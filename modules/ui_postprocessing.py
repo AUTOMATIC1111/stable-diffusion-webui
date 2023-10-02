@@ -19,7 +19,7 @@ def submit_click(tab_index, extras_image, image_batch, extras_batch_input_dir, e
 
 def create_ui():
     tab_index = gr.State(value=0) # pylint: disable=abstract-class-instantiated
-    with gr.Row().style(equal_height=False, variant='compact'):
+    with gr.Row(equal_height=False, variant='compact'):
         with gr.Column(variant='compact'):
             with gr.Tabs(elem_id="mode_extras"):
                 with gr.TabItem('Single Image', id="single_image", elem_id="extras_single_tab") as tab_single:

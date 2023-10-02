@@ -448,13 +448,13 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                     btn_save_desc = gr.Button('Save', elem_classes=['small-button'])
                     btn_delete_desc = gr.Button('Delete', elem_classes=['small-button'])
             with gr.Tab('Model metadata'):
-                info = gr.JSON({}, show_label=False, lines=8)
+                info = gr.JSON({}, show_label=False)
                 ui.details_components.append(info)
                 with gr.Row():
                     btn_save_info = gr.Button('Save', elem_classes=['small-button'])
                     btn_delete_info = gr.Button('Delete', elem_classes=['small-button'])
             with gr.Tab('Embedded metadata'):
-                meta = gr.JSON({}, show_label=False, lines=8)
+                meta = gr.JSON({}, show_label=False)
                 ui.details_components.append(meta)
 
     with ui.tabs:

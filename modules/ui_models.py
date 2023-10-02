@@ -17,7 +17,7 @@ search_metadata_civit = None
 def create_ui():
     dummy_component = gr.Label(visible=False)
 
-    with gr.Row(id="models_tab", elem_id="models_tab"):
+    with gr.Row(elem_id="models_tab"):
         with gr.Column(elem_id='models_output_container', scale=1):
             # models_output = gr.Text(elem_id="models_output", value="", show_label=False)
             gr.HTML(elem_id="models_progress", value="")
@@ -69,7 +69,7 @@ def create_ui():
                 )
 
             with gr.Tab(label="Merge"):
-                with gr.Row().style(equal_height=False):
+                with gr.Row(equal_height=False):
                     with gr.Column(variant='compact'):
                         with FormRow():
                             custom_name = gr.Textbox(label="New model name")
@@ -380,14 +380,14 @@ def create_ui():
                 global search_metadata_civit # pylint: disable=global-statement
                 search_metadata_civit = civit_search_metadata
 
-                with gr.Row(style={'margin-top': '1em'}):
+                with gr.Row():
                     gr.HTML('<h2>Fetch information</h2>Fetches preview and metadata information for all models with missing information<br>Models with existing previews and information are not updated<br>')
                 with gr.Row():
                     civit_previews_btn = gr.Button(value="Start", variant='primary')
                 with gr.Row():
                     civit_previews_rehash = gr.Checkbox(value=True, label="Check alternative hash")
 
-                with gr.Row(style={'margin-top': '1em'}):
+                with gr.Row():
                     gr.HTML('<h2>Search for models</h2>Select a model, model version and and model variant from the search results to download<br>')
                 with gr.Row():
                     with gr.Column(scale=1):

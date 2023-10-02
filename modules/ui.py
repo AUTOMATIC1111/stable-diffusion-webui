@@ -144,13 +144,11 @@ def interrogate_deepbooru(image):
 def create_seed_inputs(tab):
     with gr.Accordion(open=False, label="Seed", elem_id=f"{tab}_seed_group", elem_classes=["small-accordion"]):
         with FormRow(elem_id=f"{tab}_seed_row", variant="compact"):
-            seed = gr.Number(label='Initial seed', value=-1, elem_id=f"{tab}_seed")
-            seed.style(container=False)
+            seed = gr.Number(label='Initial seed', value=-1, elem_id=f"{tab}_seed", container=False)
             random_seed = ToolButton(symbols.random, elem_id=f"{tab}_random_seed", label='Random seed')
             reuse_seed = ToolButton(symbols.reuse, elem_id=f"{tab}_reuse_seed", label='Reuse seed')
         with FormRow(visible=True, elem_id=f"{tab}_subseed_row"):
-            subseed = gr.Number(label='Variation seed', value=-1, elem_id=f"{tab}_subseed")
-            subseed.style(container=False)
+            subseed = gr.Number(label='Variation seed', value=-1, elem_id=f"{tab}_subseed", container=False)
             random_subseed = ToolButton(symbols.random, elem_id=f"{tab}_random_subseed")
             reuse_subseed = ToolButton(symbols.reuse, elem_id=f"{tab}_reuse_subseed")
             subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=f"{tab}_subseed_strength")
@@ -382,7 +380,7 @@ def create_ui(startup_timer = None):
             extra_networks_ui = ui_extra_networks.create_ui(extra_networks_ui, extra_networks_button, 'txt2img', skip_indexing=opts.extra_network_skip_indexing)
             timer.startup.record('ui-extra-networks')
 
-        with gr.Row().style(equal_height=False, elem_id="txt2img_interface"):
+        with gr.Row(elem_id="txt2img_interface", equal_height=False):
             with gr.Column(variant='compact', elem_id="txt2img_settings"):
 
                 with FormRow():
@@ -566,7 +564,7 @@ def create_ui(startup_timer = None):
             from modules import ui_extra_networks
             extra_networks_ui_img2img = ui_extra_networks.create_ui(extra_networks_ui, extra_networks_button, 'img2img', skip_indexing=opts.extra_network_skip_indexing)
 
-        with FormRow().style(equal_height=False, elem_id="img2img_interface"):
+        with FormRow(elem_id="img2img_interface", equal_height=False):
             with gr.Column(variant='compact', elem_id="img2img_settings"):
                 copy_image_buttons = []
                 copy_image_destinations = {}
@@ -587,19 +585,19 @@ def create_ui(startup_timer = None):
                 with gr.Tabs(elem_id="mode_img2img"):
                     img2img_selected_tab = gr.State(0) # pylint: disable=abstract-class-instantiated
                     with gr.TabItem('Image', id='img2img', elem_id="img2img_img2img_tab") as tab_img2img:
-                        init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA").style(height=480)
+                        init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA", height=480)
                         add_copy_image_controls('img2img', init_img)
 
                     with gr.TabItem('Sketch', id='img2img_sketch', elem_id="img2img_img2img_sketch_tab") as tab_sketch:
-                        sketch = gr.Image(label="Image for img2img", elem_id="img2img_sketch", show_label=False, source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA").style(height=480)
+                        sketch = gr.Image(label="Image for img2img", elem_id="img2img_sketch", show_label=False, source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA", height=480)
                         add_copy_image_controls('sketch', sketch)
 
                     with gr.TabItem('Inpaint', id='inpaint', elem_id="img2img_inpaint_tab") as tab_inpaint:
-                        init_img_with_mask = gr.Image(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA").style(height=480)
+                        init_img_with_mask = gr.Image(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA", height=480)
                         add_copy_image_controls('inpaint', init_img_with_mask)
 
                     with gr.TabItem('Inpaint sketch', id='inpaint_sketch', elem_id="img2img_inpaint_sketch_tab") as tab_inpaint_color:
-                        inpaint_color_sketch = gr.Image(label="Color sketch inpainting", show_label=False, elem_id="inpaint_sketch", source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA").style(height=480)
+                        inpaint_color_sketch = gr.Image(label="Color sketch inpainting", show_label=False, elem_id="inpaint_sketch", source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA", height=480)
                         inpaint_color_sketch_orig = gr.State(None) # pylint: disable=abstract-class-instantiated
                         add_copy_image_controls('inpaint_sketch', inpaint_color_sketch)
 
@@ -891,7 +889,7 @@ def create_ui(startup_timer = None):
         timer.startup.record("ui-extras")
 
     with gr.Blocks(analytics_enabled=False) as train_interface:
-        ui_train.create_ui(txt2img_preview_params = [txt2img_prompt, txt2img_negative_prompt, steps, sampler_index, cfg_scale, seed, width, height])
+        ui_train.create_ui([txt2img_prompt, txt2img_negative_prompt, steps, sampler_index, cfg_scale, seed, width, height])
         timer.startup.record("ui-train")
 
     with gr.Blocks(analytics_enabled=False) as models_interface:
@@ -1066,7 +1064,7 @@ def create_ui(startup_timer = None):
                         current_tab.__exit__()
 
                     request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications", visible=False)
-                    with gr.TabItem("Show all pages", variant='primary', elem_id="settings_show_all_pages"):
+                    with gr.TabItem("Show all pages", elem_id="settings_show_all_pages"):
                         create_dirty_indicator("show_all_pages", [], interactive=False)
 
             with gr.TabItem("User interface", id="system_config", elem_id="tab_config"):
@@ -1113,7 +1111,7 @@ def create_ui(startup_timer = None):
     for _interface, label, _ifid in interfaces:
         modules.shared.tab_names.append(label)
 
-    with gr.Blocks(theme=modules.shared.gradio_theme, analytics_enabled=False, title="SD.Next", allowed_paths=[cmd_opts.data_dir]) as demo:
+    with gr.Blocks(theme=modules.shared.gradio_theme, analytics_enabled=False, title="SD.Next") as demo:
         with gr.Row(elem_id="quicksettings", variant="compact"):
             for _i, k, _item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
                 component = create_setting_component(k, is_quicksettings=True)
@@ -1146,9 +1144,9 @@ def create_ui(startup_timer = None):
             inputs=components,
             outputs=[text_settings, result],
         )
-        defaults_submit.click(fn=lambda x: modules.shared.restore_defaults(restart=True), _js="restart_reload")
-        restart_submit.click(fn=lambda x: modules.shared.restart_server(restart=True), _js="restart_reload")
-        shutdown_submit.click(fn=lambda x: modules.shared.restart_server(restart=False), _js="restart_reload")
+        defaults_submit.click(fn=lambda: modules.shared.restore_defaults(restart=True), _js="restart_reload")
+        restart_submit.click(fn=lambda: modules.shared.restart_server(restart=True), _js="restart_reload")
+        shutdown_submit.click(fn=lambda: modules.shared.restart_server(restart=False), _js="restart_reload")
 
         for _i, k, _item in quicksettings_list:
             component = component_dict[k]

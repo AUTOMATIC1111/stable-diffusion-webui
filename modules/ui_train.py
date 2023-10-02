@@ -11,10 +11,10 @@ import modules.errors
 def create_ui(txt2img_preview_params):
     dummy_component = gr.Label(visible=False)
 
-    with gr.Row(id="train_tab", elem_id="train_tab"):
+    with gr.Row(elem_id="train_tab"):
         with gr.Column(elem_id='train_output_container', scale=1):
             train_output = gr.Text(elem_id="train_output", value="", show_label=False)
-            gr.Gallery(label='Output', show_label=False, elem_id='train_gallery').style(columns=1)
+            gr.Gallery(label='Output', show_label=False, elem_id='train_gallery', columns=1)
             gr.HTML(elem_id="train_progress", value="")
             train_outcome = gr.HTML(elem_id="train_error", value="")
 
@@ -33,7 +33,6 @@ def create_ui(txt2img_preview_params):
         with gr.Column(elem_id='train_input_container', scale=3):
 
             with gr.Tabs(elem_id="train_tabs"):
-
                 def gr_show(visible=True):
                     return {"visible": visible, "__type__": "update"}
 
@@ -48,7 +47,7 @@ def create_ui(txt2img_preview_params):
                 ### preprocess tab
 
                 with gr.Tab(label="Preprocess images", id="preprocess_images") as tab_preprocess:
-                    tab_preprocess.select(fn=lambda x: train_tab_change('pp'), inputs=[], outputs=[action_pp, action_ti, action_hn])
+                    tab_preprocess.select(fn=lambda: train_tab_change('pp'), inputs=[], outputs=[action_pp, action_ti, action_hn])
                     process_src = gr.Textbox(label='Source directory')
                     process_dst = gr.Textbox(label='Destination directory')
                     with gr.Row():
@@ -133,9 +132,8 @@ def create_ui(txt2img_preview_params):
                     )
 
                 ### train embedding tab
-
                 with gr.Tab(label="Train embedding", id="train_embedding_tab") as tab_ti:
-                    tab_ti.select(fn=lambda x: train_tab_change('ti'), inputs=[], outputs=[action_pp, action_ti, action_hn])
+                    tab_ti.select(fn=lambda: train_tab_change('ti'), inputs=[], outputs=[action_pp, action_ti, action_hn])
                     def get_textual_inversion_template_names():
                         return sorted(textual_inversion.textual_inversion_templates)
 
@@ -244,7 +242,7 @@ def create_ui(txt2img_preview_params):
                 ### train hypernetwork tab
 
                 with gr.Tab(label="Train hypernetwork", id="train_hypernetwork_tab") as tab_hn:
-                    tab_hn.select(fn=lambda x: train_tab_change('hn'), inputs=[], outputs=[action_pp, action_ti, action_hn])
+                    tab_hn.select(fn=lambda: train_tab_change('hn'), inputs=[], outputs=[action_pp, action_ti, action_hn])
                     gr.Markdown('## Select existing embedding to continue training or create a new one')
                     with FormRow():
                         with gr.Column():
