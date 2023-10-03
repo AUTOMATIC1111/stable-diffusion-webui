@@ -438,6 +438,12 @@ def start():
         webui.webui()
 
 
+def ray():
+    print(f"Launching {'API server' if '--nowebui' or '--ray' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
+    import webui
+    webui.ray_only()
+
+
 def dump_sysinfo():
     from modules import sysinfo
     import datetime
