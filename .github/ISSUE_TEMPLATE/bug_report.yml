@@ -39,10 +39,7 @@ body:
       label: What happened?
       description: Tell us what happened in a very clear and simple way
       placeholder: |
-        I tried to use txt2img with the XYZ grid script, with DPM++ SDE, DPM++ 2M SDE samplers.
-        It should generate a grid of 2 images but I only got 1.
-        
-        (add screenshot or screen recording if necessary)
+        txt2img is not working as intended.
     validations:
       required: true
   - type: textarea
@@ -51,9 +48,9 @@ body:
       label: Steps to reproduce the problem
       description: Please provide us with precise step by step instructions on how to reproduce the bug
       placeholder: |
-        1. Go to txt2img tab, select XYZ grid script
-        2. Set axis type to `Sampler`, and select DPM++ 2M SDE, DPM++ 3M SDE
-        3. Set `Sampling steps` to 1, click generate button
+        1. Go to ...
+        2. Press ...
+        3. ...
     validations:
       required: true
   - type: textarea
@@ -62,8 +59,7 @@ body:
       label: What should have happened?
       description: Tell us what you think the normal behavior should be
       placeholder: |
-        It should generate a grid of 2 images.
-        This was working in webui version 1.x.x
+        WebUI should ...
     validations:
       required: true
   - type: dropdown
@@ -97,37 +93,13 @@ body:
       label: Console logs
       description: Please provide **full** cmd/terminal logs from the moment you started UI to the end of it, after the bug occured. If it's very long, provide a link to pastebin or similar service.
       render: Shell
-      placeholder: |
-        generating image for xyz plot: UnboundLocalError
-        Traceback (most recent call last):
-          File "B:\GitHub\stable-diffusion-webui\scripts\xyz_grid.py", line 698, in cell
-            res = process_images(pc)
-          File "B:\GitHub\stable-diffusion-webui\modules\processing.py", line 732, in process_images
-            res = process_images_inner(p)
-          File "B:\GitHub\stable-diffusion-webui\modules\processing.py", line 867, in process_images_inner
-            samples_ddim = p.sample(conditioning=p.c, unconditional_conditioning=p.uc, seeds=p.seeds, subseeds=p.subseeds, subseed_strength=p.subseed_strength, prompts=p.prompts)
-          File "B:\GitHub\stable-diffusion-webui\modules\processing.py", line 1140, in sample
-            samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
-          File "B:\GitHub\stable-diffusion-webui\modules\sd_samplers_kdiffusion.py", line 235, in sample
-            samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, x, extra_args=self.sampler_extra_args, disable=False, callback=self.callback_state, **extra_params_kwargs))
-          File "B:\GitHub\stable-diffusion-webui\modules\sd_samplers_common.py", line 261, in launch_sampling
-            return func()
-          File "B:\GitHub\stable-diffusion-webui\modules\sd_samplers_kdiffusion.py", line 235, in <lambda>
-            samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, x, extra_args=self.sampler_extra_args, disable=False, callback=self.callback_state, **extra_params_kwargs))
-          File "B:\GitHub\stable-diffusion-webui\venv\lib\site-packages\torch\utils\_contextlib.py", line 115, in decorate_context
-            return func(*args, **kwargs)
-          File "B:\GitHub\stable-diffusion-webui\repositories\k-diffusion\k_diffusion\sampling.py", line 651, in sample_dpmpp_2m_sde
-            h_last = h
-        UnboundLocalError: local variable 'h' referenced before assignment        
     validations:
       required: true
   - type: textarea
     id: misc
     attributes:
       label: Additional information
-      description: Please provide us with any relevant additional info or context.
-      placeholder: |
+      description: | 
+        Please provide us with any relevant additional info or context.
         Examples:
-        I have updated the GPU driver recently.
-        I suspect the issue is caused by XXXXX.
-        I am using a VPN.
+        　I have updated my GPU driver recently.
