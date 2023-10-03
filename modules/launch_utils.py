@@ -430,18 +430,13 @@ def configure_for_tests():
 def start():
     print(f"Launching {'API server' if '--nowebui' or '--ray' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
     import webui
+    from modules.api.ray import ray_only
     if '--nowebui' in sys.argv:
         webui.api_only()
     elif '--ray' in sys.argv:
-        webui.ray_only()
+        ray_only()
     else:
         webui.webui()
-
-
-def ray():
-    print(f"Launching {'API server' if '--nowebui' or '--ray' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
-    import webui
-    webui.ray_only()
 
 
 def dump_sysinfo():
