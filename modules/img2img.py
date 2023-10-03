@@ -75,6 +75,8 @@ def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args)
             batch_mask_images = batch_mask_images * btcrept
             p.image_mask = batch_mask_images
 
+        batch_image_files = batch_image_files * btcrept # List used for naming later.
+
         proc = modules.scripts.scripts_img2img.run(p, *args)
         if proc is None:
             proc = processing.process_images(p)
