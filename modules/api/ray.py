@@ -24,6 +24,8 @@ if NUM_REPLICAS > ray.available_resources()["GPU"]:
 
 app = FastAPI()
 initialize_util.setup_middleware(app)
+#api = Api(app)
+script_callbacks.before_ui_callback()
 script_callbacks.app_started_callback(None, app)
 
 @serve.deployment(
