@@ -1010,8 +1010,9 @@ def get_version():
     return version
 
 
-def req(url_addr, **kwargs):
-    headers = { 'Content-type': 'application/json' }
+def req(url_addr, headers = None, **kwargs):
+    if headers is None:
+        headers = { 'Content-type': 'application/json' }
     try:
         res = requests.get(url_addr, timeout=30, headers=headers, verify=False, allow_redirects=True, **kwargs)
     except Exception as e:

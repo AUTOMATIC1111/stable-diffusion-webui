@@ -156,7 +156,7 @@ function cardClicked(textToAdd, allowNegativePrompt) {
 
 function extraNetworksSearchButton(event) {
   const tabname = getENActiveTab();
-  const searchTextarea = gradioApp().querySelector(`#${tabname}_extra_tabs > div > div > textarea`);
+  const searchTextarea = gradioApp().querySelector(`#${tabname}_extra_search textarea`);
   const button = event.target;
   const text = button.classList.contains('search-all') ? '' : `${button.textContent.trim()}/`;
   searchTextarea.value = text;

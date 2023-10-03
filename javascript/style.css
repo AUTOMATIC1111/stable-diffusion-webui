@@ -8,6 +8,7 @@ div.compact{ gap: 1em; }
 div.gradio-html.min{ min-height: 0; }
 .block.gradio-checkbox { margin: 0.75em 1.5em 0 0; align-self: center; }
 .block.gradio-dropdown, .block.gradio-slider, .block.gradio-checkbox, .block.gradio-textbox, .block.gradio-radio, .block.gradio-checkboxgroup, .block.gradio-number, .block.gradio-colorpicker { border-width: 0 !important; box-shadow: none !important;}
+.block.gradio-textbox { overflow: visible !important; }
 .block.padded:not(.gradio-accordion) { padding: 0 !important; margin-right: 0; min-width: 90px !important; }
 .compact{ background: transparent !important; padding: 0 !important; }
 .dark .gradio-dropdown ul.options li.item:not(:has(.hide)) { background-color: var(--neutral-900); }

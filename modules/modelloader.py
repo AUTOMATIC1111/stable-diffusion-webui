@@ -108,46 +108,76 @@ def download_civit_preview(model_path: str, preview_url: str):
     return res
 
 
-def download_civit_model(model_url: str, model_name: str, model_path: str, model_type: str, preview):
+download_pbar = None
+
+def download_civit_model_thread(model_name, model_url, model_path, model_type, preview):
+    import hashlib
+    sha256 = hashlib.sha256()
+    sha256.update(model_name.encode('utf-8'))
+    temp_file = sha256.hexdigest()[:8] + '.tmp'
+
     if model_type == 'LoRA':
         model_file = os.path.join(shared.opts.lora_dir, model_path, model_name)
+        temp_file = os.path.join(shared.opts.lora_dir, model_path, temp_file)
     else:
         model_file = os.path.join(shared.opts.ckpt_dir, model_path, model_name)
-    res = f'CivitAI download: name={model_name} url={model_url} path={model_path}'
+        temp_file = os.path.join(shared.opts.ckpt_dir, model_path, temp_file)
+
+    res = f'CivitAI download: name={model_name} url={model_url} path={model_path} temp={temp_file}'
     if os.path.isfile(model_file):
         res += ' already exists'
         shared.log.warning(res)
         return res
 
-    r = shared.req(model_url, stream=True)
+    headers = {}
+    starting_pos = 0
+    if os.path.isfile(temp_file):
+        starting_pos = os.path.getsize(temp_file)
+        res += f' resume={round(starting_pos/1024/1024)}Mb'
+        headers = {'Range': f'bytes={starting_pos}-'}
+
+    r = shared.req(model_url, headers=headers, stream=True)
     total_size = int(r.headers.get('content-length', 0))
-    block_size = 16384 # 16KB blocks
-    written = 0
+    res += f' size={round((starting_pos + total_size)/1024/1024)}Mb'
+    shared.log.info(res)
     shared.state.begin('civitai-download-model')
-    try:
-        with open(model_file, 'wb') as f:
-            with p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn(), console=shared.console) as progress:
-                task = progress.add_task(description="Download starting", total=total_size)
-                # for data in tqdm(req.iter_content(block_size), total=total_size//1024, unit='KB', unit_scale=False):
+    block_size = 16384 # 16KB blocks
+    written = starting_pos
+    global download_pbar # pylint: disable=global-statement
+    if download_pbar is None:
+        download_pbar = p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn(), p.TextColumn('[cyan]{task.fields[name]}'), console=shared.console)
+    with download_pbar:
+        task = download_pbar.add_task(description="Download starting", total=starting_pos+total_size, name=model_name)
+        try:
+            with open(temp_file, 'ab') as f:
                 for data in r.iter_content(block_size):
                     written = written + len(data)
                     f.write(data)
-                    progress.update(task, advance=block_size, description="Downloading")
-        if written < 1024 * 1024: # min threshold
-            os.remove(model_file)
-            raise ValueError(f'removed invalid download: bytes={written}')
-        if preview is not None:
-            preview_file = os.path.splitext(model_file)[0] + '.jpg'
-            preview.save(preview_file)
-            res += f' preview={preview_file}'
-    except Exception as e:
-        shared.log.error(f'CivitAI download error: name={model_name} url={model_url} path={model_path} {e}')
-    if total_size == written:
-        shared.log.info(f'{res} size={total_size}')
+                    download_pbar.update(task, description="Download", completed=written)
+            if written < 1024 * 1024: # min threshold
+                os.remove(temp_file)
+                raise ValueError(f'removed invalid download: bytes={written}')
+            if preview is not None:
+                preview_file = os.path.splitext(model_file)[0] + '.jpg'
+                preview.save(preview_file)
+                res += f' preview={preview_file}'
+        except Exception as e:
+            shared.log.error(f'{res} {e}')
+        finally:
+            download_pbar.stop_task(task)
+            download_pbar.remove_task(task)
+    if starting_pos+total_size != written:
+        shared.log.warning(f'{res} written={round(written/1024/1024)}Mb incomplete download')
     else:
-        shared.log.error(f'{res} size={total_size} written={written}')
+        os.rename(temp_file, model_file)
     shared.state.end()
-    return res
+
+
+def download_civit_model(model_url: str, model_name: str, model_path: str, model_type: str, preview):
+    import threading
+    thread = threading.Thread(target=download_civit_model_thread, args=(model_name, model_url, model_path, model_type, preview))
+    thread.start()
+    return f'CivitAI download: name={model_name} url={model_url} path={model_path}'
 
 
 def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config: Dict[str, str] = None, token = None, variant = None, revision = None, mirror = None):

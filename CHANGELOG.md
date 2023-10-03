@@ -114,6 +114,9 @@ Upgrades are still possible and supported, but above is recommended for best exp
     combinations results in 50+ samplers which is not practical  
     items such as algorithm (e.g. karras) is actually a sampler option, not a sampler itself  
 - **CivitAI**:
+  - civitai model download is now multithreaded and resumable  
+    meaning that you can download multiple models in parallel  
+    as well as resume aborted/incomplete downloads  
   - civitai integration in *models -> civitai* can now find most  
     previews AND metadata for most models (checkpoints, loras, embeddings)  
     metadata is now parsed and saved in *[model].json*  

@@ -165,6 +165,8 @@ class ExtraNetworksPage:
     def create_thumb(self):
         created = 0
         for f in self.missing_thumbs:
+            if not os.path.exists(f):
+                continue
             fn, _ext = os.path.splitext(f)
             fn = fn.replace('.preview', '')
             fn = f'{fn}.thumb.jpg'
@@ -175,8 +177,9 @@ class ExtraNetworksPage:
                 img = Image.open(f)
             except Exception:
                 shared.log.warning(f'Extra network removing invalid image: {f}')
-                os.remove(f)
             try:
+                if img is None:
+                    os.remove(f)
                 if img is not None and img.width > 1024 or img.height > 1024 or os.path.getsize(f) > 65536:
                     img = img.convert('RGB')
                     img.thumbnail((512, 512), Image.HAMMING)
