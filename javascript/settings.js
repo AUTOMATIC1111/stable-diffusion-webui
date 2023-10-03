@@ -24,10 +24,10 @@ onUiLoaded(function() {
     var settings_tabs = gradioApp().querySelector('#settings div');
 
     onEdit('settingsSearch', editTextarea, 250, function() {
-        var searchText = (editTextarea.value || "").trim();
+        var searchText = (editTextarea.value || "").trim().toLowerCase();
 
         gradioApp().querySelectorAll('#settings > div[id^=settings_] div[id^=column_settings_] > *').forEach(function(elem) {
-            var visible = elem.textContent.trim().indexOf(searchText) != -1;
+            var visible = elem.textContent.trim().toLowerCase().indexOf(searchText) != -1;
             elem.style.display = visible ? "" : "none";
         });
 
