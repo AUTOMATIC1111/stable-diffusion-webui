@@ -25,15 +25,21 @@ def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args)
         is_inpaint_batch = len(inpaint_masks) > 0
     if is_inpaint_batch:
         shared.log.info(f"\nInpaint batch is enabled. {len(inpaint_masks)} masks found.")
+    # SBM Batch frame should actually print btcrept. Or customise the messages.
     shared.log.info(f"Will process {len(image_files)} images, creating {p.n_iter * p.batch_size} new images for each.")
     save_normally = output_dir == ''
     p.do_not_save_grid = True
     p.do_not_save_samples = not save_normally
     shared.state.job_count = len(image_files) * p.n_iter
     # SBM Batch frame mode, take 2.
-    window_size = p.batch_size
-    p.seed = [p.seed] * window_size # SBM MONKEYPATCH: Need to change processing to support a fixed seed value.
-    p.subseed = [p.subseed] * window_size # SBM MONKEYPATCH
+    if shared.opts.batch_frame_mode:
+        window_size = p.batch_size
+        btcrept = 1
+        p.seed = [p.seed] * window_size # SBM MONKEYPATCH: Need to change processing to support a fixed seed value.
+        p.subseed = [p.subseed] * window_size # SBM MONKEYPATCH
+    else: # SBM Frame mode is off, standard operation of repeating same images with sequential seed.
+        window_size = 1
+        btcrept = p.batch_size
     for i in range(0, len(image_files), window_size):
         shared.state.job = f"{i+1} to {min(i+window_size, len(image_files))} out of {len(image_files)}"
         if shared.state.skipped:
@@ -53,6 +59,7 @@ def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args)
                 continue
             img = ImageOps.exif_transpose(img)
             batch_images.append(img)
+        batch_images = batch_images * btcrept # Standard mode sends the same image per batchsize.
         p.init_images = batch_images
 
         if is_inpaint_batch:
@@ -65,6 +72,7 @@ def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args)
                     mask_image_path = inpaint_masks[0]
                 mask_image = Image.open(mask_image_path)
                 batch_mask_images.append(mask_image)
+            batch_mask_images = batch_mask_images * btcrept
             p.image_mask = batch_mask_images
 
         proc = modules.scripts.scripts_img2img.run(p, *args)
@@ -74,7 +82,10 @@ def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args)
             basename, ext = os.path.splitext(os.path.basename(image_file))
             ext = ext[1:]
             if len(proc.images) > 1:
-                basename = f'{basename}-{n + i}'
+                if shared.opts.batch_frame_mode: # SBM Frames are numbered globally.
+                    basename = f'{basename}-{n + i}'
+                else: # Images are numbered per rept.
+                    basename = f'{basename}-{n}'
             if not shared.opts.use_original_name_batch:
                 basename = ''
                 ext = shared.opts.samples_format
