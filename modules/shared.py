@@ -506,6 +506,8 @@ options_templates.update(options_section(('saving-paths', "Image Naming & Paths"
     "saving_sep_images": OptionInfo("<h2>Images</h2>", "", gr.HTML),
     "save_images_add_number": OptionInfo(True, "Add number to filename when saving", component_args=hide_dirs),
     "use_original_name_batch": OptionInfo(True, "Use original name for output filename during batch process"),
+    # SBM Batch frame mode.
+    "batch_frame_mode": OptionInfo(False, "Use batchsize to process multiple images in batch mode"),
     "use_upscaler_name_as_suffix": OptionInfo(True, "Use upscaler name as filename suffix in the extras tab"),
     "samples_filename_pattern": OptionInfo("[seq]-[prompt_words]", "Images filename pattern", component_args=hide_dirs),
 
