@@ -2,8 +2,6 @@ import os
 import sys
 import traceback
 
-from basicsr.utils.download_util import load_file_from_url
-
 from modules.upscaler import Upscaler, UpscalerData
 from ldsr_model_arch import LDSR
 from modules import shared, script_callbacks
@@ -42,6 +40,7 @@ class UpscalerLDSR(Upscaler):
             print("Renaming model from model.pth to model.ckpt")
             os.rename(old_model_path, new_model_path)
 
+        from modules.modelloader import load_file_from_url
         if local_safetensors_path is not None and os.path.exists(local_safetensors_path):
             model = local_safetensors_path
         else:

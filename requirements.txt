@@ -27,7 +27,6 @@ opencv-contrib-python-headless
 piexif
 psutil
 pyyaml
-realesrgan
 resize-right
 rich
 safetensors

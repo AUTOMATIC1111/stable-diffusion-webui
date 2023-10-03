@@ -65,7 +65,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     def full_vae_decode(latents, model):
         t0 = time.time()
-        if shared.opts.diffusers_move_unet and not model.has_accelerate:
+        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
             shared.log.debug('Moving to CPU: model=UNet')
             unet_device = model.unet.device
             model.unet.to(devices.cpu)
@@ -80,7 +80,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             latents = latents.to(next(iter(model.vae.post_quant_conv.parameters())).dtype)
 
         decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
-        if shared.opts.diffusers_move_unet and not model.has_accelerate:
+        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
             model.unet.to(unet_device)
         t1 = time.time()
         shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={upcast} images={latents.shape[0]} latents={latents.shape} time={round(t1-t0, 3)}s')
@@ -88,7 +88,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     def full_vae_encode(image, model):
         shared.log.debug(f'VAE encode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)}')
-        if shared.opts.diffusers_move_unet and not model.has_accelerate:
+        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
             shared.log.debug('Moving to CPU: model=UNet')
             unet_device = model.unet.device
             model.unet.to(devices.cpu)
@@ -96,7 +96,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload:
             model.vae.to(devices.device)
         encoded = model.vae.encode(image.to(model.vae.device, model.vae.dtype))
-        if shared.opts.diffusers_move_unet and not model.has_accelerate:
+        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
             model.unet.to(unet_device)
         return encoded
 
@@ -315,10 +315,11 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         task_specific_kwargs = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength, "height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8)}
 
     if shared.state.interrupted or shared.state.skipped:
-        unload_diffusers_lora()
+        if lora_state['active']:
+            unload_diffusers_lora()
         return results
 
-    if shared.opts.diffusers_move_base and not shared.sd_model.has_accelerate:
+    if shared.opts.diffusers_move_base and not getattr(shared.sd_model, 'has_accelerate', False):
         shared.sd_model.to(devices.device)
 
     is_img2img = bool(sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE or sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING)
@@ -357,15 +358,16 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         output = shared.sd_model(**base_args) # pylint: disable=not-callable
     except AssertionError as e:
         shared.log.info(e)
+    except ValueError as e:
+        shared.state.interrupted = True
+        shared.log.error(e)
 
     if hasattr(shared.sd_model, 'embedding_db') and len(shared.sd_model.embedding_db.embeddings_used) > 0:
         p.extra_generation_params['Embeddings'] = ', '.join(shared.sd_model.embedding_db.embeddings_used)
 
-    if lora_state['active']:
-        p.extra_generation_params['LoRA method'] = shared.opts.diffusers_lora_loader
-        unload_diffusers_lora()
-
     if shared.state.interrupted or shared.state.skipped:
+        if lora_state['active']:
+            unload_diffusers_lora()
         return results
 
     # optional hires pass
@@ -407,11 +409,15 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 except AssertionError as e:
                     shared.log.info(e)
 
+    if lora_state['active']:
+        p.extra_generation_params['LoRA method'] = shared.opts.diffusers_lora_loader
+        unload_diffusers_lora()
+
     # optional refiner pass or decode
     if is_refiner_enabled:
         if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_refiner and hasattr(shared.sd_model, 'vae'):
             save_intermediate(latents=output.images, suffix="-before-refiner")
-        if shared.opts.diffusers_move_base and not shared.sd_model.has_accelerate:
+        if shared.opts.diffusers_move_base and not getattr(shared.sd_model, 'has_accelerate', False):
             shared.log.debug('Moving to CPU: model=base')
             shared.sd_model.to(devices.cpu)
             devices.torch_gc()
@@ -423,9 +429,11 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             sd_samplers.create_sampler(sampler.name, shared.sd_refiner) # TODO(Patrick): For wrapped pipelines this is currently a no-op
 
         if shared.state.interrupted or shared.state.skipped:
+            if lora_state['active']:
+                unload_diffusers_lora()
             return results
 
-        if shared.opts.diffusers_move_refiner and not shared.sd_refiner.has_accelerate:
+        if shared.opts.diffusers_move_refiner and not getattr(shared.sd_refiner, 'has_accelerate', False):
             shared.sd_refiner.to(devices.device)
         refiner_is_sdxl = bool("StableDiffusionXL" in shared.sd_refiner.__class__.__name__)
         p.ops.append('refine')
@@ -461,7 +469,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 for refiner_image in refiner_images:
                     results.append(refiner_image)
 
-        if shared.opts.diffusers_move_refiner and not shared.sd_refiner.has_accelerate:
+        if shared.opts.diffusers_move_refiner and not getattr(shared.sd_refiner, 'has_accelerate', False):
             shared.log.debug('Moving to CPU: model=refiner')
             shared.sd_refiner.to(devices.cpu)
             devices.torch_gc()

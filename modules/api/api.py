@@ -504,9 +504,8 @@ class Api:
         }
 
     def get_extra_networks(self, page: Optional[str] = None, name: Optional[str] = None, filename: Optional[str] = None, title: Optional[str] = None, fullname: Optional[str] = None, hash: Optional[str] = None): # pylint: disable=redefined-builtin
-        import modules.ui_extra_networks
         res = []
-        for pg in modules.ui_extra_networks.extra_pages:
+        for pg in shared.extra_networks:
             if page is not None and pg.name != page.lower():
                 continue
             for item in pg.items:

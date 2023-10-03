@@ -51,7 +51,7 @@ async function setHints() {
   if (localeData.data.length === 0) {
     const res = await fetch('/file=html/locale_en.json');
     const json = await res.json();
-    localeData.data = Object.values(json).flat();
+    localeData.data = Object.values(json).flat().filter((e) => e.hint.length > 0);
     for (const e of localeData.data) e.label = e.label.toLowerCase().trim();
   }
   const elements = [

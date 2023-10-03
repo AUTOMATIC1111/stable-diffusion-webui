@@ -7,7 +7,7 @@ from modules.textual_inversion.textual_inversion import Embedding
 
 class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
-        super().__init__('Textual Inversion')
+        super().__init__('Embedding')
         self.allow_negative_prompt = True
 
     def refresh(self):

@@ -1,9 +1,12 @@
 # Change Log for SD.Next
 
-## Update for 2023-09-15
+## Update for 2023-09-18
 
 Downgrade of `diffusers` to 0.20.2 due to critical issue with model offloading  
 This means that new model **Wuerstchen** is not supported until diffusers issue is resolved  
+
+- Added **change log** to UI, see *System -> Changelog*
+- **Extra networks**: faster search, ability to show/hide/sort networks
 
 ## Update for 2023-09-13
 

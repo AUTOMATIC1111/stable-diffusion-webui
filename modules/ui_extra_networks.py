@@ -16,10 +16,10 @@ from modules.ui_components import ToolButton
 import modules.ui_symbols as symbols
 
 
-extra_pages = []
 allowed_dirs = []
 dir_cache = {} # key=path, value=(mtime, listdir(path))
 refresh_time = None
+extra_pages = shared.extra_networks
 
 
 def listdir(path):
@@ -37,9 +37,9 @@ def listdir(path):
 
 def register_page(page):
     # registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions
-    extra_pages.append(page)
+    shared.extra_networks.append(page)
     allowed_dirs.clear()
-    for page in extra_pages:
+    for page in shared.extra_networks:
         for folder in page.allowed_directories_for_previews():
             if folder not in allowed_dirs:
                 allowed_dirs.append(os.path.abspath(folder))
@@ -58,7 +58,7 @@ def fetch_file(filename: str = ""):
 
 
 def get_metadata(page: str = "", item: str = ""):
-    page = next(iter([x for x in extra_pages if x.name == page]), None)
+    page = next(iter([x for x in shared.extra_networks if x.name == page]), None)
     if page is None:
         return JSONResponse({ 'metadata': 'none' })
     metadata = page.metadata.get(item, 'none')
@@ -69,7 +69,7 @@ def get_metadata(page: str = "", item: str = ""):
 
 
 def get_info(page: str = "", item: str = ""):
-    page = next(iter([x for x in extra_pages if x.name == page]), None)
+    page = next(iter([x for x in shared.extra_networks if x.name == page]), None)
     if page is None:
         return JSONResponse({ 'info': 'none' })
     info = page.info.get(item, 'none')
@@ -128,7 +128,7 @@ class ExtraNetworksPage:
                     shared.log.error(f'Cannot evaluate extra network prompt: {item["prompt"]} {e}')
 
         if not any(self.title in x.label for x in xyz_grid.axis_options):
-            if self.title == 'Checkpoints':
+            if self.title == 'Model':
                 return
             opt = xyz_grid.AxisOption(f"[Network] {self.title}", str, add_prompt, choices=lambda: [x["name"] for x in self.items])
             xyz_grid.axis_options.append(opt)
@@ -308,7 +308,7 @@ class ExtraNetworksPage:
             shared.log.error(f'Extra network save preview: {filename} {e}')
             return
         is_allowed = False
-        for page in extra_pages:
+        for page in shared.extra_networks:
             if any(path_is_parent(x, filename) for x in page.allowed_directories_for_previews()):
                 is_allowed = True
                 break
@@ -339,7 +339,7 @@ class ExtraNetworksPage:
 
 
 def initialize():
-    extra_pages.clear()
+    shared.extra_networks.clear()
 
 
 def register_pages():
@@ -351,6 +351,21 @@ def register_pages():
     register_page(ExtraNetworksPageStyles())
     register_page(ExtraNetworksPageTextualInversion())
     register_page(ExtraNetworksPageHypernetworks())
+
+
+def get_pages():
+    pages = []
+    if 'All' in shared.opts.extra_networks:
+        pages = shared.extra_networks
+    else:
+        titles = [page.title for page in shared.extra_networks]
+        for page in shared.opts.extra_networks:
+            try:
+                idx = titles.index(page)
+            except ValueError:
+                continue
+            pages.append(shared.extra_networks[idx])
+    return pages
 
 
 class ExtraNetworksUi:
@@ -384,7 +399,7 @@ def create_ui(container, button, tabname, skip_indexing = False):
         if ui.tabname == 'txt2img': # refresh only once
             global refresh_time # pylint: disable=global-statement
             refresh_time = time.time()
-        for page in extra_pages:
+        for page in get_pages():
             page.create_page(ui.tabname, skip_indexing)
             with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab"):
                 hmtl = gr.HTML(page.html, elem_id=f'{tabname}{page.name}_extra_page', elem_classes="extra-networks-page")
@@ -396,16 +411,16 @@ def create_ui(container, button, tabname, skip_indexing = False):
         return is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary"))
 
     def en_refresh(title):
-        res = []
-        for page in extra_pages:
+        pages = []
+        for page in get_pages():
             if title is None or title == '' or title == page.title or len(page.html) == 0:
                 page.refresh()
                 page.refresh_time = None
                 page.create_page(ui.tabname)
                 shared.log.debug(f"Refreshing Extra networks: page='{page.title}' items={len(page.items)} tab={ui.tabname}")
-            res.append(page.html)
+            pages.append(page.html)
         ui.search.update(value = ui.search.value)
-        return res
+        return pages
 
     state_visible = gr.State(value=False) # pylint: disable=abstract-class-instantiated
     button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button])
@@ -423,15 +438,13 @@ def path_is_parent(parent_path, child_path):
 def setup_ui(ui, gallery):
 
     def save_preview(pagename, index, images, filename):
-        res = []
-        for page in extra_pages:
+        pages = []
+        for page in get_pages():
             if pagename is None or pagename == '' or pagename == page.title or len(page.html) == 0:
                 page.save_preview(index, images, filename)
-                res.append(page.create_page(ui.tabname))
-            else:
-                res.append(page.html)
-        return res
-
+                page.create_page(ui.tabname)
+            pages.append(page.html)
+        return pages
 
     ui.button_save_preview.click(
         fn=save_preview,
@@ -441,14 +454,13 @@ def setup_ui(ui, gallery):
     )
 
     def save_description(pagename, filename, desc):
-        res = []
-        for page in extra_pages:
+        pages = []
+        for page in get_pages():
             if pagename is None or pagename == '' or pagename == page.title or len(page.html) == 0:
                 page.save_description(filename, desc)
-                res.append(page.create_page(ui.tabname))
-            else:
-                res.append(page.html)
-        return res
+                page.create_page(ui.tabname)
+            pages.append(page.html)
+        return pages
 
     ui.button_save_description.click(
         fn=save_description,

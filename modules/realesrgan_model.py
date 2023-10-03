@@ -1,12 +1,9 @@
 import os
-import sys
 import numpy as np
 from PIL import Image
-from basicsr.utils.download_util import load_file_from_url
 from modules.upscaler import Upscaler, UpscalerData
-from modules.shared import opts, device
+from modules.shared import opts, device, log
 from modules import modelloader
-import modules.errors as errors
 
 
 class UpscalerRealESRGAN(Upscaler):
@@ -16,8 +13,7 @@ class UpscalerRealESRGAN(Upscaler):
         super().__init__()
         try:
             from basicsr.archs.rrdbnet_arch import RRDBNet # pylint: disable=unused-import
-            from realesrgan import RealESRGANer # pylint: disable=unused-import
-            from realesrgan.archs.srvgg_arch import SRVGGNetCompact # pylint: disable=unused-import
+            from modules.realesrgan_model_arch import RealESRGANer, SRVGGNetCompact # pylint: disable=unused-import
             self.enable = True
             self.scalers = []
             scalers = self.load_models(path)
@@ -28,11 +24,9 @@ class UpscalerRealESRGAN(Upscaler):
                     local_model_candidates = [local_model for local_model in local_model_paths if local_model.endswith(f"{filename}.pth")]
                     if local_model_candidates:
                         scaler.local_data_path = local_model_candidates[0]
-                if scaler.name in opts.realesrgan_enabled_models:
-                    self.scalers.append(scaler)
-
+                self.scalers.append(scaler)
         except Exception as e:
-            errors.display(e, 'real-esrgan')
+            log.error(f"Error loading Real-ESRGAN: model={path} {e}")
             self.enable = False
             self.scalers = []
 
@@ -41,14 +35,13 @@ class UpscalerRealESRGAN(Upscaler):
             return img
 
         try:
-            from realesrgan import RealESRGANer
+            from modules.realesrgan_model_arch import RealESRGANer
         except Exception:
-            print("Error importing Real-ESRGAN:", file=sys.stderr)
+            log.error("Error importing Real-ESRGAN:")
             return img
 
         info = self.load_model(selected_model)
-        if not os.path.exists(info.local_data_path):
-            print(f"Unable to load RealESRGAN model: {info.name}")
+        if info is None or not os.path.exists(info.local_data_path):
             return img
 
         upsampler = RealESRGANer(
@@ -70,13 +63,15 @@ class UpscalerRealESRGAN(Upscaler):
         try:
             info = next(iter([scaler for scaler in self.scalers if scaler.data_path == path]), None)
             if info is None:
-                print(f"Unable to find model info: {path}")
+                log.error(f"Model failed loading: type=R-ESRGAN model={info.name}")
                 return None
             if info.local_data_path.startswith("http"):
+                from modules.modelloader import load_file_from_url
                 info.local_data_path = load_file_from_url(url=info.data_path, model_dir=self.model_download_path, progress=True)
+            log.info(f"Model loaded: type=R-ESRGAN model={info.name}")
             return info
         except Exception as e:
-            errors.display(e, 'real-esrgan model list')
+            log.error(f"Model failed loading: type=R-ESRGAN model={info.name} {e}")
         return None
 
     def load_models(self, _):
@@ -86,7 +81,7 @@ class UpscalerRealESRGAN(Upscaler):
 def get_realesrgan_models(scaler):
     try:
         from basicsr.archs.rrdbnet_arch import RRDBNet
-        from realesrgan.archs.srvgg_arch import SRVGGNetCompact
+        from modules.realesrgan_model_arch import SRVGGNetCompact # pylint: disable=unused-import
         models = [
             UpscalerData(
                 name="R-ESRGAN General 4xV3",
@@ -132,6 +127,6 @@ def get_realesrgan_models(scaler):
             ),
         ]
         return models
-    except Exception:
-        print("Error creating Real-ESRGAN models list", file=sys.stderr)
+    except Exception as e:
+        log.error(f'Error creating Real-ESRGAN models list: {e}')
         return []
