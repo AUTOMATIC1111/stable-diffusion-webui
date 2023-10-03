@@ -222,27 +222,24 @@ function extraNetworksSearchButton(tabs_id, event) {
 
 var globalPopup = null;
 var globalPopupInner = null;
+
 function closePopup() {
     if (!globalPopup) return;
-
     globalPopup.style.display = "none";
 }
+
 function popup(contents) {
     if (!globalPopup) {
         globalPopup = document.createElement('div');
-        globalPopup.onclick = closePopup;
         globalPopup.classList.add('global-popup');
 
         var close = document.createElement('div');
         close.classList.add('global-popup-close');
-        close.onclick = closePopup;
+        close.addEventListener("click", closePopup);
         close.title = "Close";
         globalPopup.appendChild(close);
 
         globalPopupInner = document.createElement('div');
-        globalPopupInner.onclick = function(event) {
-            event.stopPropagation(); return false;
-        };
         globalPopupInner.classList.add('global-popup-inner');
         globalPopup.appendChild(globalPopupInner);
 
