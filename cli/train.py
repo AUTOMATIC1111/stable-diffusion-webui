@@ -4,7 +4,7 @@
 Examples:
 - sd15:    train.py --type lora --tag girl --comments sdnext --input ~/generative/Input/mia --process original,interrogate,resize --name mia
 - sdxl:    train.py --type lora --tag girl --comments sdnext --input ~/generative/Input/mia --process original,interrogate,resize --precision fp32 --optimizer Adafactor --sdxl --name miaxl
-- offline: train.py --type lora --tag girl --comments sdnext --input ~/generative/Input/mia --model /home/vlado/dev/sdnext/models/Stable-diffusion/sdxl/miaanimeSFWNSFWSDXL_v40.safetensors --dir /home/vlado/dev/sdnext/models/Lora/ --precision fp32 --optimizer Adafactor --sdxl --name miaxl 
+- offline: train.py --type lora --tag girl --comments sdnext --input ~/generative/Input/mia --model /home/vlado/dev/sdnext/models/Stable-diffusion/sdxl/miaanimeSFWNSFWSDXL_v40.safetensors --dir /home/vlado/dev/sdnext/models/Lora/ --precision fp32 --optimizer Adafactor --sdxl --name miaxl
 """
 
 # system imports

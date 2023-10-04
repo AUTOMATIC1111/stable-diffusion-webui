@@ -495,17 +495,11 @@ def create_ui(startup_timer = None):
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
             batch_switch_btn.click(lambda w, h: (h, w), inputs=[batch_count, batch_size], outputs=[batch_count, batch_size], show_progress=False)
             txt_prompt_img.change(fn=modules.images.image_data, inputs=[txt_prompt_img], outputs=[txt2img_prompt, txt_prompt_img])
-            """
-            show_sampler.change(gr_show, inputs=[show_sampler], outputs=[sampler_group], show_progress = False)
-            show_batch.change(gr_show, inputs=[show_batch], outputs=[batch_group], show_progress = False)
-            show_seed.change(gr_show, inputs=[show_seed], outputs=[seed_group], show_progress = False)
-            show_advanced.change(gr_show, inputs=[show_advanced], outputs=[advanced_group], show_progress = False)
-            show_second_pass.change(enable_hr_change, inputs=[show_second_pass, refiner_start], outputs=[second_pass_group, hr_refiner], show_progress = False)
-            """
 
             txt2img_paste_fields = [
                 (txt2img_prompt, "Prompt"),
                 (txt2img_negative_prompt, "Negative prompt"),
+                # (txt2img_prompt_styles, "Styles"),
                 (steps, "Steps"),
                 (seed, "Seed"),
                 (sampler_index, "Sampler"),
@@ -514,7 +508,6 @@ def create_ui(startup_timer = None):
                 (height, "Size-2"),
                 (subseed, "Variation seed"),
                 (subseed_strength, "Variation strength"),
-                (full_quality, "Full quality"),
                 (clip_skip, "Clip skip"),
                 (latent_index, "Latent sampler"),
                 (latent_index, "Secondary sampler"),
@@ -527,14 +520,15 @@ def create_ui(startup_timer = None):
                 (batch_count, "Batch count"),
                 (seed_resize_from_w, "Seed resize from-1"),
                 (seed_resize_from_h, "Seed resize from-2"),
+                (enable_hr, "Second pass"),
+                (hr_force, "Hires force"),
                 (hr_scale, "Hires upscale"),
                 (hr_upscaler, "Hires upscaler"),
-                (hr_second_pass_steps, "Hires steps"),
                 (hr_second_pass_steps, "Hires steps"),
                 (hr_resize_x, "Hires resize-1"),
                 (hr_resize_y, "Hires resize-2"),
                 (diffusers_guidance_rescale, "CFG rescale"),
-                (image_cfg_scale, "Refiner CFG scale"),
+                (image_cfg_scale, "Image CFG scale"),
                 (refiner_steps, "Refiner steps"),
                 (refiner_start, "Refiner start"),
                 (tiling, "Tiling"),
@@ -837,6 +831,7 @@ def create_ui(startup_timer = None):
             img2img_paste_fields = [
                 (img2img_prompt, "Prompt"),
                 (img2img_negative_prompt, "Negative prompt"),
+                # (img2img_prompt_styles, "Styles"),
                 (steps, "Steps"),
                 (seed, "Seed"),
                 (sampler_index, "Sampler"),
@@ -850,28 +845,29 @@ def create_ui(startup_timer = None):
                 (latent_index, "Latent sampler"),
                 (latent_index, "Secondary sampler"),
                 (denoising_strength, "Denoising strength"),
-                (refiner_steps, "Refiner steps"),
-                (refiner_start, "Refiner start"),
-                (full_quality, "Full quality"),
                 (restore_faces, "Face restoration"),
                 (batch_size, "Batch size"),
                 (batch_count, "Batch count"),
                 (seed_resize_from_w, "Seed resize from-1"),
                 (seed_resize_from_h, "Seed resize from-2"),
+                (resize_mode, "Resize mode"),
+                (image_cfg_scale, "Image CFG scale"),
+                (diffusers_guidance_rescale, "CFG rescale"),
+                (tiling, "Tiling"),
+                (mask_blur, "Mask blur"),
+                (scale_by, "UNKNOWN"), # TODO scale_by
+                # from txt2img
+                (hr_force, "Hires force"),
                 (hr_scale, "Hires upscale"),
                 (hr_upscaler, "Hires upscaler"),
                 (hr_second_pass_steps, "Hires steps"),
                 (hr_second_pass_steps, "Hires steps"),
                 (hr_resize_x, "Hires resize-1"),
                 (hr_resize_y, "Hires resize-2"),
-                (diffusers_guidance_rescale, "CFG rescale"),
-                (image_cfg_scale, "Image CFG scale"),
                 (refiner_steps, "Refiner steps"),
                 (refiner_start, "Refiner start"),
-                (tiling, "Tiling"),
-                (refiner_negative, "Negative2"),
                 (refiner_prompt, "Prompt2"),
-                (mask_blur, "Mask blur"),
+                (refiner_negative, "Negative2"),
                 *modules.scripts.scripts_img2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields, override_settings)

@@ -535,7 +535,7 @@ def install_packages():
     install('pi-heif', 'pi_heif', ignore=True)
     tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0')
     install(tensorflow_package, 'tensorflow', ignore=True)
-    install('nvidia-ml-py', 'pynvml', ignore=True)
+    # install('nvidia-ml-py', 'pynvml', ignore=True)
     bitsandbytes_package = os.environ.get('BITSANDBYTES_PACKAGE', None)
     if bitsandbytes_package is not None:
         install(bitsandbytes_package, 'bitsandbytes', ignore=True)
@@ -693,6 +693,14 @@ def install_submodules():
 
 
 def ensure_base_requirements():
+    try:
+        import setuptools # pylint: disable=unused-import
+    except ImportError:
+        install('setuptools', 'setuptools')
+    try:
+        import setuptools # pylint: disable=unused-import
+    except ImportError:
+        pass
     try:
         import rich # pylint: disable=unused-import
     except ImportError:

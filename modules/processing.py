@@ -483,11 +483,11 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Clip skip": p.clip_skip if p.clip_skip > 1 else None,
         "Prompt2": p.refiner_prompt if len(p.refiner_prompt) > 0 else None,
         "Negative2": p.refiner_negative if len(p.refiner_negative) > 0 else None,
-        # other
-        "ENSD": shared.opts.eta_noise_seed_delta if shared.opts.eta_noise_seed_delta != 0 and modules.sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p) else None,
+        "Styles": "; ".join(p.styles) if p.styles is not None and len(p.styles) > 0 else None,
         "Tiling": p.tiling if p.tiling else None,
         # sdnext
         "Backend": 'Diffusers' if shared.backend == shared.Backend.DIFFUSERS else 'Original',
+        "App": 'SD.Next',
         "Version": git_commit,
         "Comment": comment,
         "Operations": '; '.join(ops).replace('"', '') if len(p.ops) > 0 else 'none',
@@ -495,6 +495,8 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
     if 'txt2img' in p.ops:
         pass
     if 'hires' in p.ops or 'upscale' in p.ops:
+        args["Second pass"] = p.enable_hr
+        args["Hires force"] = p.hr_force
         args["Hires steps"] = p.hr_second_pass_steps
         args["Hires upscaler"] = p.hr_upscaler
         args["Hires upscale"] = p.hr_scale
@@ -505,6 +507,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         args["Image CFG scale"] = p.image_cfg_scale
         args["CFG rescale"] = p.diffusers_guidance_rescale if shared.backend == shared.Backend.DIFFUSERS else None
     if 'refine' in p.ops:
+        args["Second pass"] = p.enable_hr
         args["Refiner"] = None if (not shared.opts.add_model_name_to_info) or (not shared.sd_refiner) or (not shared.sd_refiner.sd_checkpoint_info.model_name) else shared.sd_refiner.sd_checkpoint_info.model_name.replace(',', '').replace(':', '')
         args['Image CFG scale'] = p.image_cfg_scale
         args['Refiner steps'] = p.refiner_steps
@@ -515,10 +518,9 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
     if 'img2img' in p.ops or 'inpaint' in p.ops:
         args["Init image size"] = f"{getattr(p, 'init_img_width', 0)}x{getattr(p, 'init_img_height', 0)}"
         args["Init image hash"] = getattr(p, 'init_img_hash', None)
-        args["Conditional mask weight"] = getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None
+        args["Mask weight"] = getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None
         args['Resize mode'] = getattr(p, 'resize_mode', None)
         args["Mask blur"] = p.mask_blur if getattr(p, 'mask', None) is not None and getattr(p, 'mask_blur', 0) > 0 else None
-        args["Noise multiplier"] = p.initial_noise_multiplier if getattr(p, 'initial_noise_multiplier', 1.0) != 1.0 else None
         args["Denoising strength"] = getattr(p, 'denoising_strength', None)
     if 'face' in p.ops:
         args["Face restoration"] = shared.opts.face_restoration_model
@@ -528,11 +530,34 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
     if hasattr(modules.sd_hijack.model_hijack, 'embedding_db') and len(modules.sd_hijack.model_hijack.embedding_db.embeddings_used) > 0: # this is for original hijaacked models only, diffusers are handled separately
         args["Embeddings"] = ', '.join(modules.sd_hijack.model_hijack.embedding_db.embeddings_used)
 
+    # samplers
+    args["Sampler ENSD"] = shared.opts.eta_noise_seed_delta if shared.opts.eta_noise_seed_delta != 0 and modules.sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p) else None
+    args["Sampler ENSM"] = p.initial_noise_multiplier if getattr(p, 'initial_noise_multiplier', 1.0) != 1.0 else None
+    args['Sampler order'] = shared.opts.schedulers_solver_order if shared.opts.schedulers_solver_order != shared.opts.data_labels.get('schedulers_solver_order').default else None
+    if shared.backend == shared.Backend.DIFFUSERS:
+        args['Sampler beta schedule'] = shared.opts.schedulers_beta_schedule if shared.opts.schedulers_beta_schedule != shared.opts.data_labels.get('schedulers_beta_schedule').default else None
+        args['Sampler beta start'] = shared.opts.schedulers_beta_start if shared.opts.schedulers_beta_start != shared.opts.data_labels.get('schedulers_beta_start').default else None
+        args['Sampler beta end'] = shared.opts.schedulers_beta_end if shared.opts.schedulers_beta_end != shared.opts.data_labels.get('schedulers_beta_end').default else None
+        args['Sampler DPM solver'] = shared.opts.schedulers_dpm_solver if shared.opts.schedulers_dpm_solver != shared.opts.data_labels.get('schedulers_dpm_solver').default else None
+    if shared.backend == shared.Backend.ORIGINAL:
+        args['Sampler brownian'] = shared.opts.schedulers_brownian_noise if shared.opts.schedulers_brownian_noise != shared.opts.data_labels.get('schedulers_brownian_noise').default else None
+        args['Sampler discard'] = shared.opts.schedulers_discard_penultimate if shared.opts.schedulers_discard_penultimate != shared.opts.data_labels.get('schedulers_discard_penultimate').default else None
+        args['Sampler dyn threshold'] = shared.opts.schedulers_use_thresholding if shared.opts.schedulers_use_thresholding != shared.opts.data_labels.get('schedulers_use_thresholding').default else None
+        args['Sampler karras'] = shared.opts.schedulers_use_karras if shared.opts.schedulers_use_karras != shared.opts.data_labels.get('schedulers_use_karras').default else None
+        args['Sampler low order'] = shared.opts.schedulers_use_loworder if shared.opts.schedulers_use_loworder != shared.opts.data_labels.get('schedulers_use_loworder').default else None
+        args['Sampler quantization'] = shared.opts.enable_quantization if shared.opts.enable_quantization != shared.opts.data_labels.get('enable_quantization').default else None
+        args['Sampler sigma'] = shared.opts.schedulers_sigma if shared.opts.schedulers_sigma != shared.opts.data_labels.get('schedulers_sigma').default else None
+        args['Sampler sigma min'] = shared.opts.s_min if shared.opts.s_min != shared.opts.data_labels.get('s_min').default else None
+        args['Sampler sigma max'] = shared.opts.s_max if shared.opts.s_max != shared.opts.data_labels.get('s_max').default else None
+        args['Sampler sigma churn'] = shared.opts.s_churn if shared.opts.s_churn != shared.opts.data_labels.get('s_churn').default else None
+        args['Sampler sigma uncond'] = shared.opts.s_churn if shared.opts.s_churn != shared.opts.data_labels.get('s_churn').default else None
+        args['Sampler sigma noise'] = shared.opts.s_noise if shared.opts.s_noise != shared.opts.data_labels.get('s_noise').default else None
+        args['Sampler sigma tmin'] = shared.opts.s_tmin if shared.opts.s_tmin != shared.opts.data_labels.get('s_tmin').default else None
     # tome
     token_merging_ratio = p.get_token_merging_ratio()
     token_merging_ratio_hr = p.get_token_merging_ratio(for_hr=True) if p.enable_hr else None
-    args['Token merging ratio'] = token_merging_ratio if token_merging_ratio != 0 else None
-    args['Token merging ratio hr'] = token_merging_ratio_hr if token_merging_ratio_hr != 0 else None
+    args['ToMe'] = token_merging_ratio if token_merging_ratio != 0 else None
+    args['ToMe hires'] = token_merging_ratio_hr if token_merging_ratio_hr != 0 else None
 
     args.update(p.extra_generation_params)
     params_text = ", ".join([k if k == v else f'{k}: {modules.generation_parameters_copypaste.quote(v)}' for k, v in args.items() if v is not None])
@@ -579,7 +604,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     stored_opts = {}
     for k, v in p.override_settings.copy().items():
         orig = shared.opts.data.get(k, None) or shared.opts.data_labels[k].default
-        if orig == v or os.path.splitext(orig)[0] == v:
+        if orig == v or (type(orig) == str and os.path.splitext(orig)[0] == v):
             p.override_settings.pop(k, None)
     for k in p.override_settings.keys():
         stored_opts[k] = shared.opts.data.get(k, None) or shared.opts.data_labels[k].default
@@ -596,7 +621,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         if p.override_settings.get('sd_vae', None) is not None:
             if p.override_settings.get('sd_vae', None) == 'TAESD':
                 p.full_quality = False
-                # p.override_settings.pop('sd_vae', None)
+                p.override_settings.pop('sd_vae', None)
+        if p.override_settings.get('Hires upscaler', None) is not None:
+            p.enable_hr = True
         if len(p.override_settings.keys()) > 0:
             shared.log.debug(f'Override: {p.override_settings}')
         for k, v in p.override_settings.items():

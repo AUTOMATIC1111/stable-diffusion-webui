@@ -407,9 +407,9 @@ options_templates.update(options_section(('optimizations', "Optimizations"), {
     "sub_quad_kv_chunk_size": OptionInfo(512, "cross-attention kv chunk size", gr.Slider, {"minimum": 0, "maximum": 8192, "step": 8}),
     "sub_quad_chunk_threshold": OptionInfo(80, "cross-attention chunking threshold", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
     "token_merging_sep": OptionInfo("<h2>Token Merging</h2>", "", gr.HTML),
-    "token_merging_ratio": OptionInfo(0.0, "Token merging ratio", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
-    "token_merging_ratio_img2img": OptionInfo(0.0, "Token merging ratio for img2img", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
-    "token_merging_ratio_hr": OptionInfo(0.0, "Token merging ratio for hires pass", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
+    "token_merging_ratio": OptionInfo(0.0, "Token merging ratio (txt2img)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
+    "token_merging_ratio_img2img": OptionInfo(0.0, "Token merging ratio (img2img)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
+    "token_merging_ratio_hr": OptionInfo(0.0, "Token merging ratio for (hires)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
     "inference_mode": OptionInfo("no-grad", "Torch inference mode", gr.Radio, lambda: {"choices": ["no-grad", "inference-mode", "none"]}),
     "sd_vae_sliced_encode": OptionInfo(False, "VAE Slicing (original)"),
 }))
@@ -564,9 +564,9 @@ options_templates.update(options_section(('ui', "User Interface"), {
 }))
 
 options_templates.update(options_section(('live-preview', "Live Previews"), {
-    "show_progressbar": OptionInfo(True, "Show progressbar"),
-    "live_previews_enable": OptionInfo(True, "Show live previews of the created image"),
-    "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
+    "show_progressbar": OptionInfo(True, "Show progressbar", gr.Checkbox, {"visible": False}),
+    "live_previews_enable": OptionInfo(True, "Show live previews of the created image", gr.Checkbox, {"visible": False}),
+    "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid", gr.Checkbox, {"visible": False}),
     "notification_audio_enable": OptionInfo(False, "Play a sound when images are finished generating"),
     "notification_audio_path": OptionInfo("html/notification.mp3","Path to notification sound", component_args=hide_dirs, folder=True),
     "show_progress_every_n_steps": OptionInfo(1, "Live preview display period", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
@@ -587,18 +587,19 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
     "schedulers_brownian_noise": OptionInfo(True, "Use Brownian noise", gr.Checkbox, {"visible": False}),
     "schedulers_discard_penultimate": OptionInfo(True, "Discard penultimate sigma", gr.Checkbox, {"visible": False}),
     "schedulers_sigma": OptionInfo("default", "Sigma algorithm", gr.Radio, {"choices": ['default', 'karras', 'exponential', 'polyexponential'], "visible": False}),
-    # managed from ui.py for backend diffusers
     "schedulers_use_karras": OptionInfo(True, "Use Karras sigmas", gr.Checkbox, {"visible": False}),
     "schedulers_use_thresholding": OptionInfo(False, "Use dynamic thresholding", gr.Checkbox, {"visible": False}),
     "schedulers_use_loworder": OptionInfo(True, "Use simplified solvers in final steps", gr.Checkbox, {"visible": False}),
     "schedulers_prediction_type": OptionInfo("default", "Override model prediction type", gr.Radio, lambda: {"choices": ['default', 'epsilon', 'sample', 'v-prediction'], "visible": False}),
 
+    # managed from ui.py for backend diffusers
     "schedulers_sep_diffusers": OptionInfo("<h2>Diffusers specific config</h2>", "", gr.HTML),
     "schedulers_dpm_solver": OptionInfo("sde-dpmsolver++", "DPM solver algorithm", gr.Radio, lambda: {"choices": ['dpmsolver', 'dpmsolver++', 'sde-dpmsolver', 'sde-dpmsolver++']}),
     "schedulers_beta_schedule": OptionInfo("default", "Override beta schedule", gr.Radio, lambda: {"choices": ['default', 'linear', 'scaled_linear', 'squaredcos_cap_v2']}),
     'schedulers_beta_start': OptionInfo(0, "Override beta start", gr.Number, {}),
     'schedulers_beta_end': OptionInfo(0, "Override beta end", gr.Number, {}),
 
+    # managed from ui.py for backend original k-diffusion
     "schedulers_sep_kdiffusers": OptionInfo("<h2>K-Diffusion specific config</h2>", "", gr.HTML),
     "always_batch_cond_uncond": OptionInfo(False, "Disable conditional batching enabled on low memory systems"),
     "enable_quantization": OptionInfo(True, "Enable quantization for sharper and cleaner results"),
@@ -608,10 +609,6 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
     's_noise': OptionInfo(1.0, "Sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_min':  OptionInfo(0.0, "Sigma min",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_max':  OptionInfo(0.0, "Sigma max",  gr.Slider, {"minimum": 0.0, "maximum": 100.0, "step": 1.0}),
-    # 'discard_next_to_last_sigma': OptionInfo("default", "Discard penultimate sigma", gr.Radio, lambda: {"choices": ['default', 'always', 'never']}),
-    # 'always_discard_next_to_last_sigma': OptionInfo(False, "Always discard next-to-last sigma"),
-    # 'never_discard_next_to_last_sigma': OptionInfo(False, "Never discard next-to-last sigma"),
-
     "schedulers_sep_compvis": OptionInfo("<h2>CompVis specific config</h2>", "", gr.HTML),
     'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "bh2", "vary_coeff"]}),
     'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}),

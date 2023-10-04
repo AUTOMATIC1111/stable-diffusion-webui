@@ -136,14 +136,14 @@ class VanillaStableDiffusionSampler:
         else:
             self.eta = 0.0
         if self.eta != 0.0:
-            p.extra_generation_params["Eta DDIM"] = self.eta
+            p.extra_generation_params["Sampler Eta"] = self.eta
 
         if self.is_unipc:
             keys = [
+                ('Solver order', 'schedulers_solver_order'),
+                ('Sampler low order', 'schedulers_use_loworder'),
                 ('UniPC variant', 'uni_pc_variant'),
                 ('UniPC skip type', 'uni_pc_skip_type'),
-                ('UniPC order', 'schedulers_solver_order'),
-                ('UniPC lower order final', 'schedulers_use_loworder'),
             ]
 
             for name, key in keys:

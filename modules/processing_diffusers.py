@@ -197,12 +197,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         return task_args
 
     def set_pipeline_args(model, prompts: list, negative_prompts: list, prompts_2: typing.Optional[list]=None, negative_prompts_2: typing.Optional[list]=None, desc:str='', **kwargs):
-        # if hasattr(model, 'embedding_db'):
-        #    del model.embedding_db
-        try:
-            is_refiner = model.text_encoder.__class__.__name__ != 'CLIPTextModel'
-        except Exception:
-            is_refiner = False
         if hasattr(model, "set_progress_bar_config"):
             model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining} ' + '\x1b[38;5;71m' + desc, ncols=80, colour='#327fba')
         args = {}
@@ -324,7 +318,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if sampler is None:
             sampler = sd_samplers.all_samplers_map.get("UniPC")
         sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
-        # p.extra_generation_params['Sampler options'] = '' # TODO
+        # p.extra_generation_params['Sampler options'] = '' # TODO sampler_options
 
     p.extra_generation_params['Pipeline'] = shared.sd_model.__class__.__name__
 
@@ -375,7 +369,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     )
     # p.steps = base_args['num_inference_steps']
     p.extra_generation_params['CFG rescale'] = p.diffusers_guidance_rescale
-    p.extra_generation_params["Eta"] = shared.opts.scheduler_eta if shared.opts.scheduler_eta is not None and shared.opts.scheduler_eta > 0 and shared.opts.scheduler_eta < 1 else None
+    p.extra_generation_params["Sampler Eta"] = shared.opts.scheduler_eta if shared.opts.scheduler_eta is not None and shared.opts.scheduler_eta > 0 and shared.opts.scheduler_eta < 1 else None
     try:
         output = shared.sd_model(**base_args) # pylint: disable=not-callable
     except AssertionError as e:

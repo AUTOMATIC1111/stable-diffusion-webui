@@ -262,23 +262,45 @@ settings_map = {}
 
 
 infotext_to_setting_name_mapping = [
-    ('VAE', 'sd_vae'),
-    ('Conditional mask weight', 'inpainting_mask_weight'),
-    ('Model hash', 'sd_model_checkpoint'),
     ('Backed', 'sd_backend'),
+    ('Model hash', 'sd_model_checkpoint'),
     ('Refiner', 'sd_model_refiner'),
+    ('VAE', 'sd_vae'),
     ('Parser', 'prompt_attention'),
-    ('ENSD', 'eta_noise_seed_delta'),
-    ('Noise multiplier', 'initial_noise_multiplier'),
-    ('Eta', 'scheduler_eta'),
+    ('Color correction', 'img2img_color_correction'),
     ('LoRA method', 'diffusers_lora_loader'),
-    ('Discard penultimate sigma', 'discard_next_to_last_sigma'),
-    ('UniPC variant', 'uni_pc_variant'),
+    # Samplers
+    ('Sampler Eta', 'scheduler_eta'),
+    ('Sampler ENSD', 'eta_noise_seed_delta'),
+    ('Sampler order', 'schedulers_solver_order'),
+    # Samplers diffusers
+    ('Sampler beta schedule', 'schedulers_beta_schedule'),
+    ('Sampler beta start', 'schedulers_beta_start'),
+    ('Sampler beta end', 'schedulers_beta_end'),
+    ('Sampler DPM solver', 'schedulers_dpm_solver'),
+    # Samplers original
+    ('Sampler brownian', 'schedulers_brownian_noise'),
+    ('Sampler discard', 'schedulers_discard_penultimate'),
+    ('Sampler dyn threshold', 'schedulers_use_thresholding'),
+    ('Sampler karras', 'schedulers_use_karras'),
+    ('Sampler low order', 'schedulers_use_loworder'),
+    ('Sampler quantization', 'enable_quantization'),
+    ('Sampler sigma', 'schedulers_sigma'),
+    ('Sampler sigma min', 's_min'),
+    ('Sampler sigma max', 's_max'),
+    ('Sampler sigma churn', 's_churn'),
+    ('Sampler sigma uncond', 's_min_uncond'),
+    ('Sampler sigma noise', 's_noise'),
+    ('Sampler sigma tmin', 's_tmin'),
+    ('Sampler ENSM', 'initial_noise_multiplier'), # img2img only
     ('UniPC skip type', 'uni_pc_skip_type'),
-    ('UniPC order', 'schedulers_solver_order'),
-    ('UniPC lower order final', 'schedulers_use_loworder'),
+    ('UniPC variant', 'uni_pc_variant'),
+    # Token Merging
+    ('Mask weight', 'inpainting_mask_weight'),
     ('Token merging ratio', 'token_merging_ratio'),
-    ('Token merging ratio hr', 'token_merging_ratio_hr'),
+    ('ToMe', 'token_merging_ratio'),
+    ('ToMe hires', 'token_merging_ratio_hr'),
+    ('ToMe img2img', 'token_merging_ratio_img2img'),
 ]
 
 
@@ -348,11 +370,13 @@ def connect_paste(button, local_paste_fields, input_comp, override_settings_comp
                 if v is None:
                     continue
                 if shared.opts.disable_weights_auto_swap:
-                    if setting_name == "sd_model_checkpoint" or setting_name == 'sd_model_refiner' or setting_name == 'sd_backend':
+                    if setting_name == "sd_model_checkpoint" or setting_name == 'sd_model_refiner' or setting_name == 'sd_backend' or setting_name == 'sd_vae':
                         continue
                 v = shared.opts.cast_value(setting_name, v)
                 current_value = getattr(shared.opts, setting_name, None)
                 if v == current_value:
+                    continue
+                if type(current_value) == str and v == os.path.splitext(current_value)[0]:
                     continue
                 vals[param_name] = v
             vals_pairs = [f"{k}: {v}" for k, v in vals.items()]
