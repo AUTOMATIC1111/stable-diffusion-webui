@@ -80,7 +80,7 @@ class Extension:
             return []
         res = []
         for filename in sorted(os.listdir(dirpath)):
-            if not filename.endswith(".py"):
+            if not filename.endswith(".py") and not filename.endswith(".js") and not filename.endswith(".mjs"):
                 continue
             priority = '50'
             if os.path.isfile(os.path.join(dirpath, "..", ".priority")):

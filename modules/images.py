@@ -490,6 +490,7 @@ def atomically_save_image():
             try:
                 with open(txt_fullfn, "w", encoding="utf8") as file:
                     file.write(f"{exifinfo}\n")
+                shared.log.debug(f'Saving: text="{txt_fullfn}"')
             except Exception as e:
                 shared.log.warning(f'Image description save failed: {txt_fullfn} {e}')
         with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:

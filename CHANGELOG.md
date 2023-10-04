@@ -7,7 +7,6 @@
 - Add FreeU for *backend:diffusers*  
   for *backend:original* use extension: <https://github.com/ljleb/sd-webui-freeu>  
 - Add HyperTile: <https://github.com/tfernd/HyperTile>
-- Convert IPEX slicing to generic: <https://github.com/vladmandic/automatic/blob/dev/modules/intel/ipex/attention.py>
 - Fix override settings
 
 This is a big one, with some major changes and new functionality...  
@@ -73,6 +72,7 @@ Upgrades are still possible and supported, but above is recommended for best exp
     should better handle more complex prompts  
     for sdxl, choose which part of prompt goes to second text encoder - just add `TE2:` separator in the prompt  
     for hires and refiner, second pass prompt is used if present, otherwise primary prompt is used  
+    new option in *settings -> diffusers -> sdxl pooled embeds*  
     thanks @AI-Casanova  
   - better **Hires** support for SD and SDXL  
   - better **TI embeddings** support for SD and SDXL  
