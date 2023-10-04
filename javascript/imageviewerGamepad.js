@@ -35,8 +35,19 @@ Primarily for vr controller type pointer devices.
 I use the wheel event because there's currently no way to do it properly with web xr.
  */
 let isScrolling = false;
-window.addEventListener('wheel', (e) => {
-    if (!opts.js_modal_lightbox_gamepad || isScrolling) return;
+
+onOptionsChanged(function() {
+    if (opts.js_modal_lightbox_gamepad) {
+        window.addEventListener('wheel', modalScroll);
+    } else {
+        window.removeEventListener('wheel', modalScroll);
+    }
+});
+
+function modalScroll(e) {
+    if (document.activeElement.type === "number") document.activeElement.blur();
+
+    if (isScrolling) return;
     isScrolling = true;
 
     if (e.deltaX <= -0.6) {
@@ -48,7 +59,7 @@ window.addEventListener('wheel', (e) => {
     setTimeout(() => {
         isScrolling = false;
     }, opts.js_modal_lightbox_gamepad_repeat);
-});
+}
 
 function sleepUntil(f, timeout) {
     return new Promise((resolve) => {
