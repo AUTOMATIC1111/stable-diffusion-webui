@@ -461,6 +461,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_force_zeros": OptionInfo(True, "Force zeros for prompts when empty"),
     "diffusers_aesthetics_score": OptionInfo(False, "Require aesthetics score"),
     "diffusers_force_inpaint": OptionInfo(False, 'Diffusers force inpaint pipeline'),
+    "diffusers_pooled": OptionInfo("default", "Diffusers SDXL pooled embeds (experimental)", gr.Radio, lambda: {"choices": ['default', 'weighted']}),
 }))
 
 options_templates.update(options_section(('system-paths', "System Paths"), {
