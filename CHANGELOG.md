@@ -4,11 +4,11 @@
 
 **TBD**: Candidates before release:  
 - Integrate LoRA/Lyco for *backend:original*  
+- Implement Lyco for *backend:diffusers*
 - Add FreeU for *backend:diffusers*  
   for *backend:original* use extension: <https://github.com/ljleb/sd-webui-freeu>  
 - Add HyperTile: <https://github.com/tfernd/HyperTile>
 - Implement styles extra field
-- Add built-in styles
 
 This is a big one, with some major changes and new functionality...  
 And probably the biggest release since introduction of **Diffusers**  
