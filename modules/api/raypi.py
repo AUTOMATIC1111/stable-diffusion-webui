@@ -206,7 +206,7 @@ def api_middleware(app: FastAPI):
 @serve.deployment(    
     ray_actor_options={"num_gpus": 1},
     autoscaling_config={"min_replicas": 0, "max_replicas": 2},
-    route_prefix="/sdapi/v1",
+    #route_prefix="/sdapi/v1",
     )
 @serve.ingress(app)
 class Api:
@@ -220,6 +220,7 @@ class Api:
         self.app = app
         #self.queue_lock = queue_lock
         api_middleware(self.app)
+        self.launch_ray()
         print("API initialized")
 
         self.default_script_arg_txt2img = []
@@ -793,3 +794,43 @@ class Api:
         shared.state.server_command = "stop"
         return Response("Stopping.")
 
+    def launch_ray(self):
+        self.app.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"], response_model=models.TextToImageResponse)
+        self.app.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=models.ImageToImageResponse)
+        self.app.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=models.ExtrasSingleImageResponse)
+        self.app.add_api_route("/sdapi/v1/extra-batch-images", self.extras_batch_images_api, methods=["POST"], response_model=models.ExtrasBatchImagesResponse)
+        self.app.add_api_route("/sdapi/v1/png-info", self.pnginfoapi, methods=["POST"], response_model=models.PNGInfoResponse)
+        self.app.add_api_route("/sdapi/v1/progress", self.progressapi, methods=["GET"], response_model=models.ProgressResponse)
+        self.app.add_api_route("/sdapi/v1/interrogate", self.interrogateapi, methods=["POST"])
+        self.app.add_api_route("/sdapi/v1/interrupt", self.interruptapi, methods=["POST"])
+        self.app.add_api_route("/sdapi/v1/skip", self.skip, methods=["POST"])
+        self.app.add_api_route("/sdapi/v1/options", self.get_config, methods=["GET"], response_model=models.OptionsModel)
+        self.app.add_api_route("/sdapi/v1/options", self.set_config, methods=["POST"])
+        self.app.add_api_route("/sdapi/v1/cmd-flags", self.get_cmd_flags, methods=["GET"], response_model=models.FlagsModel)
+        self.app.add_api_route("/sdapi/v1/samplers", self.get_samplers, methods=["GET"], response_model=List[models.SamplerItem])
+        self.app.add_api_route("/sdapi/v1/upscalers", self.get_upscalers, methods=["GET"], response_model=List[models.UpscalerItem])
+        self.app.add_api_route("/sdapi/v1/latent-upscale-modes", self.get_latent_upscale_modes, methods=["GET"], response_model=List[models.LatentUpscalerModeItem])
+        self.app.add_api_route("/sdapi/v1/sd-models", self.get_sd_models, methods=["GET"], response_model=List[models.SDModelItem])
+        self.app.add_api_route("/sdapi/v1/sd-vae", self.get_sd_vaes, methods=["GET"], response_model=List[models.SDVaeItem])
+        self.app.add_api_route("/sdapi/v1/hypernetworks", self.get_hypernetworks, methods=["GET"], response_model=List[models.HypernetworkItem])
+        self.app.add_api_route("/sdapi/v1/face-restorers", self.get_face_restorers, methods=["GET"], response_model=List[models.FaceRestorerItem])
+        self.app.add_api_route("/sdapi/v1/realesrgan-models", self.get_realesrgan_models, methods=["GET"], response_model=List[models.RealesrganItem])
+        self.app.add_api_route("/sdapi/v1/prompt-styles", self.get_prompt_styles, methods=["GET"], response_model=List[models.PromptStyleItem])
+        self.app.add_api_route("/sdapi/v1/embeddings", self.get_embeddings, methods=["GET"], response_model=models.EmbeddingsResponse)
+        self.app.add_api_route("/sdapi/v1/refresh-checkpoints", self.refresh_checkpoints, methods=["POST"])
+        self.app.add_api_route("/sdapi/v1/refresh-vae", self.refresh_vae, methods=["POST"])
+        self.app.add_api_route("/sdapi/v1/create/embedding", self.create_embedding, methods=["POST"], response_model=models.CreateResponse)
+        self.app.add_api_route("/sdapi/v1/create/hypernetwork", self.create_hypernetwork, methods=["POST"], response_model=models.CreateResponse)
+        self.app.add_api_route("/sdapi/v1/preprocess", self.preprocess, methods=["POST"], response_model=models.PreprocessResponse)
+        self.app.add_api_route("/sdapi/v1/train/embedding", self.train_embedding, methods=["POST"], response_model=models.TrainResponse)
+        self.app.add_api_route("/sdapi/v1/train/hypernetwork", self.train_hypernetwork, methods=["POST"], response_model=models.TrainResponse)
+        self.app.add_api_route("/sdapi/v1/memory", self.get_memory, methods=["GET"], response_model=models.MemoryResponse)
+        self.app.add_api_route("/sdapi/v1/unload-checkpoint", self.unloadapi, methods=["POST"])
+        self.app.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
+        self.app.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
+        self.app.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
+
+        if shared.cmd_opts.api_server_stop:
+            self.app.add_api_route("/sdapi/v1/server-kill", self.kill_webui, methods=["POST"])
+            self.app.add_api_route("/sdapi/v1/server-restart", self.restart_webui, methods=["POST"])
+            self.app.add_api_route("/sdapi/v1/server-stop", self.stop_webui, methods=["POST"])
