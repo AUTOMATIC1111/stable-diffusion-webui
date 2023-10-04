@@ -7,8 +7,8 @@
 - Add FreeU for *backend:diffusers*  
   for *backend:original* use extension: <https://github.com/ljleb/sd-webui-freeu>  
 - Add HyperTile: <https://github.com/tfernd/HyperTile>
-- Include chaiNNer extension as submodule  
 - Convert IPEX slicing to generic: <https://github.com/vladmandic/automatic/blob/dev/modules/intel/ipex/attention.py>
+- Fix override settings
 
 This is a big one, with some major changes and new functionality...  
 And probably the biggest release since introduction of **Diffusers**  
@@ -132,6 +132,7 @@ Upgrades are still possible and supported, but above is recommended for best exp
       thanks @Disty0 @Nuullll  
   - **AMD ROCm**:  
     - updated installer to support detect `ROCm` *5.4/5.5/5.6/5.7*  
+    - support for `torch-rocm-5.7`
   - **CUDA**:  
     - testing moved to `torch` *2.2.0-dev/cu121*  
   - **GC**:  
