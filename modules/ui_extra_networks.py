@@ -1,7 +1,9 @@
+import io
 import re
 import time
 import json
 import html
+import base64
 import os.path
 import urllib.parse
 import threading
@@ -228,6 +230,8 @@ class ExtraNetworksPage:
                 if not self.is_empty(tgt):
                     subdirs[subdir] = 1
         subdirs = OrderedDict(sorted(subdirs.items()))
+        if self.name == 'style' and shared.opts.extra_networks_styles:
+            subdirs['built-in'] = 1
         subdirs_html = "<button class='lg secondary gradio-button custom-button search-all' onclick='extraNetworksSearchButton(event)'>all</button><br>"
         subdirs_html += "".join([f"<button class='lg secondary gradio-button custom-button' onclick='extraNetworksSearchButton(event)'>{html.escape(subdir)}</button><br>" for subdir in subdirs if subdir != ''])
         self.html = ''
@@ -586,7 +590,11 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                     meta = json.loads(meta)
                 except Exception:
                     meta = {}
-            img = page.find_preview_file(item.filename)
+            if ui.last_item.preview.startswith('data:'):
+                b64str = ui.last_item.preview.split(',',1)[1]
+                img = Image.open(io.BytesIO(base64.b64decode(b64str)))
+            else:
+                img = page.find_preview_file(item.filename)
             lora = ''
             model = ''
             style = ''

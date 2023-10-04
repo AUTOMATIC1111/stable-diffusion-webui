@@ -7,7 +7,8 @@
 - Add FreeU for *backend:diffusers*  
   for *backend:original* use extension: <https://github.com/ljleb/sd-webui-freeu>  
 - Add HyperTile: <https://github.com/tfernd/HyperTile>
-- Implement Styles extra field
+- Implement styles extra field
+- Add built-in styles
 
 This is a big one, with some major changes and new functionality...  
 And probably the biggest release since introduction of **Diffusers**  
@@ -40,6 +41,8 @@ Upgrades are still possible and supported, but above is recommended for best exp
     - can be edited in details view  
     - support for single or multiple styles per json  
     - support for embedded previews  
+    - large database of art styles included by default  
+      can be disabled in *settings -> extra networks -> show built-in*  
   - **VAE**  
     - VAEs are now also listed as part of extra networks  
   - **Refiner**  

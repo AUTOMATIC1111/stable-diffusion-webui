@@ -43,6 +43,7 @@ class StyleDatabase:
         self.no_style = Style("None")
         self.styles = {}
         self.path = opts.styles_dir
+        self.built_in = opts.extra_networks_styles
         if os.path.isfile(opts.styles_dir) or opts.styles_dir.endswith(".csv"):
             legacy_file = opts.styles_dir
             self.load_csv(legacy_file)
@@ -57,39 +58,49 @@ class StyleDatabase:
             self.path = opts.styles_dir
             os.makedirs(opts.styles_dir, exist_ok=True)
 
+    def load_style(self, fn, prefix=None):
+        with open(fn, 'r', encoding='utf-8') as f:
+            try:
+                all_styles = json.load(f)
+                if type(all_styles) is dict:
+                    all_styles = [all_styles]
+                for style in all_styles:
+                    if type(style) is not dict or "name" not in style:
+                        raise ValueError('cannot parse style')
+                    basename = os.path.splitext(os.path.basename(fn))[0]
+                    name = re.sub(r'[\t\r\n]', '', style.get("name", basename)).strip()
+                    if prefix is not None:
+                        name = os.path.join(prefix, name)
+                    else:
+                        name = os.path.join(os.path.dirname(os.path.relpath(fn, self.path)), name)
+                    self.styles[style["name"]] = Style(
+                        name=name,
+                        desc=style.get('description', name),
+                        prompt=style.get("prompt", ""),
+                        negative_prompt=style.get("negative", ""),
+                        extra=style.get("extra", ""),
+                        preview=style.get("preview", None),
+                        filename=fn
+                    )
+            except Exception as e:
+                log.error(f'Failed to load style: file={fn} error={e}')
+
+
     def reload(self):
         self.styles.clear()
         def list_folder(folder):
             for filename in os.listdir(folder):
                 fn = os.path.abspath(os.path.join(folder, filename))
                 if os.path.isfile(fn) and fn.lower().endswith(".json"):
-                    with open(fn, 'r', encoding='utf-8') as f:
-                        try:
-                            all_styles = json.load(f)
-                            if type(all_styles) is dict:
-                                all_styles = [all_styles]
-                            for style in all_styles:
-                                if type(style) is not dict or "name" not in style:
-                                    raise ValueError('cannot parse style')
-                                basename = os.path.splitext(os.path.basename(fn))[0]
-                                name = re.sub(r'[\t\r\n]', '', style.get("name", basename)).strip()
-                                name = os.path.join(os.path.dirname(os.path.relpath(fn, self.path)), name)
-                                self.styles[style["name"]] = Style(
-                                    name=name,
-                                    desc=style.get('description', name),
-                                    prompt=style.get("prompt", ""),
-                                    negative_prompt=style.get("negative", ""),
-                                    extra=style.get("extra", ""),
-                                    preview=style.get("preview", None),
-                                    filename=fn
-                                )
-                        except Exception as e:
-                            log.error(f'Failed to load style: file={fn} error={e}')
+                    self.load_style(fn)
                 elif os.path.isdir(fn) and not fn.startswith('.'):
                     list_folder(fn)
 
         list_folder(self.path)
         self.styles = dict(sorted(self.styles.items(), key=lambda style: style[1].filename))
+        if self.built_in:
+            self.load_style(os.path.join(paths.data_path, 'html', 'art-styles.json'), 'built-in')
+
         log.debug(f'Loaded styles: folder={self.path} items={len(self.styles.keys())}')
 
     def find_style(self, name):
