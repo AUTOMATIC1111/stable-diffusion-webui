@@ -114,6 +114,19 @@ def prepare_embedding_providers(pipe, clip_skip):
         embeddings_providers.append(embedding)
     return embeddings_providers
 
+def pad_to_same_length(embeds):
+    try: #SDXL
+        empty_embed = shared.sd_model.encode_prompt("")
+    except: #SD1.5
+        empty_embed = shared.sd_model.encode_prompt("",shared.sd_model.device, 1, False)
+
+    empty_batched = torch.cat([empty_embed[0]] * embeds[0].shape[0])
+    max_token_count = max([embed.shape[1] for embed in embeds])
+    for i, embed in enumerate(embeds):
+        while embed.shape[1] < max_token_count:
+            embed = torch.cat([embed, empty_batched], dim=1)
+            embeds[i] = embed
+    return embeds
 
 def get_weighted_text_embeddings_sdxl(pipe, prompt: str = "", neg_prompt: str = "", clip_skip: int = None):
     prompt_2 = prompt.split("TE2:")[-1]
@@ -127,7 +140,6 @@ def get_weighted_text_embeddings_sdxl(pipe, prompt: str = "", neg_prompt: str = 
     ns = [get_prompts_with_weights(p) for p in [neg_prompt, neg_prompt_2]]
     negatives = [t for t, w in ns]
     negative_weights = [w for t, w in ns]
-
     if hasattr(pipe, "tokenizer_2") and not hasattr(pipe, "tokenizer"):
         positives.pop(0)
         positive_weights.pop(0)
@@ -137,14 +149,35 @@ def get_weighted_text_embeddings_sdxl(pipe, prompt: str = "", neg_prompt: str = 
     embedding_providers = prepare_embedding_providers(pipe, clip_skip)
     prompt_embeds = []
     negative_prompt_embeds = []
+    pooled_prompt_embeds = None
+    negative_pooled_prompt_embeds =  None
+
     for i in range(len(embedding_providers)):
-        embed = embedding_providers[i].get_embeddings_for_weighted_prompt_fragments(text_batch=[positives[i]], fragment_weights_batch=[positive_weights[i]], device=pipe.device)
+        embed, ptokens = embedding_providers[i].get_embeddings_for_weighted_prompt_fragments(text_batch=[positives[i]], fragment_weights_batch=[positive_weights[i]], device=pipe.device, should_return_tokens=True)
         prompt_embeds.append(embed)
-        embed = embedding_providers[i].get_embeddings_for_weighted_prompt_fragments(text_batch=[negatives[i]], fragment_weights_batch=[negative_weights[i]],device=pipe.device)
+        embed, ntokens = embedding_providers[i].get_embeddings_for_weighted_prompt_fragments(text_batch=[negatives[i]], fragment_weights_batch=[negative_weights[i]],device=pipe.device, should_return_tokens=True)
         negative_prompt_embeds.append(embed)
+
+    if prompt_embeds[-1].shape[-1] > 768:
+        if shared.opts.diffusers_pooled == "weighted":
+            pooled_prompt_embeds = prompt_embeds[-1][
+                        torch.arange(prompt_embeds[-1].shape[0], device=pipe.device),
+                        (ptokens.to(dtype=torch.int, device=pipe.device) == 49407)
+                        .int()
+                        .argmax(dim=-1),
+                    ]
+            negative_pooled_prompt_embeds = negative_prompt_embeds[-1][
+                        torch.arange(negative_prompt_embeds[-1].shape[0], device=pipe.device),
+                        (ntokens.to(dtype=torch.int, device=pipe.device) == 49407)
+                        .int()
+                        .argmax(dim=-1),
+                    ]
+        else:
+            pooled_prompt_embeds = embedding_providers[-1].get_pooled_embeddings(texts=[prompt_2], device=pipe.device) if prompt_embeds[-1].shape[-1] > 768 else None
+            negative_pooled_prompt_embeds = embedding_providers[-1].get_pooled_embeddings(texts=[neg_prompt_2], device=pipe.device) if negative_prompt_embeds[-1].shape[-1] > 768 else None
 
     prompt_embeds = torch.cat(prompt_embeds, dim=-1) if len(prompt_embeds) > 1 else prompt_embeds[0]
     negative_prompt_embeds = torch.cat(negative_prompt_embeds, dim=-1) if len(negative_prompt_embeds) > 1 else negative_prompt_embeds[0]
-    pooled_prompt_embeds = embedding_providers[-1].get_pooled_embeddings(texts=[prompt_2], device=pipe.device) if prompt_embeds.shape[-1] > 768 else None
-    negative_pooled_prompt_embeds = embedding_providers[-1].get_pooled_embeddings(texts=[neg_prompt_2], device=pipe.device) if negative_prompt_embeds.shape[-1] > 768 else None
+    if prompt_embeds.shape[1] != negative_prompt_embeds.shape[1]:
+        [prompt_embeds, negative_prompt_embeds] = pad_to_same_length([prompt_embeds, negative_prompt_embeds])
     return prompt_embeds, pooled_prompt_embeds, negative_prompt_embeds, negative_pooled_prompt_embeds
