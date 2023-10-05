@@ -431,6 +431,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "opt_channelslast": OptionInfo(False, "Use channels last as torch memory format "),
     "cudnn_benchmark": OptionInfo(False, "Enable full-depth cuDNN benchmark feature"),
     "ipex_optimize": OptionInfo(True if devices.backend == "ipex" else False, "Enable IPEX Optimize for Intel GPUs"),
+    "openvino_disable_model_caching": OptionInfo(False, "OpenVINO disable model caching"),
     "openvino_multi_gpu": OptionInfo(False, "OpenVINO use Multi GPU"),
     "openvino_remove_igpu_from_multi": OptionInfo(False, "OpenVINO remove iGPU from Multi GPU"),
     "directml_memory_provider": OptionInfo(default_memory_provider, 'DirectML memory stats provider', gr.Radio, lambda: {"choices": memory_providers}),
