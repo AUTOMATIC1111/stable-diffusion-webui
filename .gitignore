@@ -39,3 +39,4 @@ notification.mp3
 /.coverage*
 
 sd-data
+modules/api/raypi2.py

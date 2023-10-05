@@ -198,7 +198,7 @@ def api_middleware(app: FastAPI):
 
 
 class Api:
-    def __init__(self, app: FastAPI):
+    def __init__(self, app: FastAPI, queue_lock: Lock):
         if shared.cmd_opts.api_auth:
             self.credentials = {}
             for auth in shared.cmd_opts.api_auth.split(","):
@@ -207,7 +207,7 @@ class Api:
 
         self.router = APIRouter()
         self.app = app
-        #self.queue_lock = queue_lock
+        self.queue_lock = queue_lock
         api_middleware(self.app)
         print("API initialized")
         self.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"], response_model=models.TextToImageResponse)
