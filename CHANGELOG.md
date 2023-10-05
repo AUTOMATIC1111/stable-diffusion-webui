@@ -149,6 +149,8 @@ Upgrades are still possible and supported, but above is recommended for best exp
   - **Startup**  
     - all main CLI parameters can now be set as environment variable as well  
       for example `--data-dir <path>` can be specified as `SD_DATADIR=<path>` before starting SD.Next  
+  - **XYZ Grid**
+    - more flexibility to use selection or strings  
   - **Logging**  
     - get browser session info in server log  
     - allow custom log file destination  

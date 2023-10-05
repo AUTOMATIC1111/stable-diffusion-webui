@@ -42,6 +42,7 @@ footer { display: none; }
 table { overflow-x: auto !important; overflow-y: auto !important; }
 td { border-bottom: none !important; padding: 0.1em 0.5em !important; }
 tr { border-bottom: none !important; padding: 0.1em 0.5em !important; }
+.gradio-column { min-width: unset !important; }
 
 /* general styled components */
 .gradio-button.tool { max-width: min-content; min-width: min-content !important; align-self: end; font-size: 1.4em; color: var(--body-text-color) !important; }
