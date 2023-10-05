@@ -198,6 +198,23 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
         list_available_networks()
         networks_on_disk = [available_network_aliases.get(name, None) for name in names]
     failed_to_load_networks = []
+
+    recompile_model = False
+    if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx":
+        if len(names) == len(shared.compiled_model_state.lora_model):
+            for i, name in enumerate(names):
+                if shared.compiled_model_state.lora_model[i] != f"{name}:{te_multipliers[i] if te_multipliers else 1.0}":
+                    recompile_model = True
+                    break
+        else:
+            recompile_model = True
+        shared.compiled_model_state.lora_model = []
+    if recompile_model:
+        sd_models.unload_model_weights(op='model')
+        shared.opts.cuda_compile = False
+        sd_models.reload_model_weights(op='model')
+        shared.opts.cuda_compile = True
+
     for i, (network_on_disk, name) in enumerate(zip(networks_on_disk, names)):
         net = already_loaded.get(name, None)
         if network_on_disk is not None:
@@ -230,6 +247,9 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
         sd_hijack.model_hijack.comments.append("Networks not found: " + ", ".join(failed_to_load_networks))
     purge_networks_from_memory()
 
+    if recompile_model:
+        shared.log.info("Networks: Recompiling model")
+        sd_models.compile_diffusers(shared.sd_model)
 
 def network_restore_weights_from_backup(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.GroupNorm, torch.nn.LayerNorm, torch.nn.MultiheadAttention]):
     weights_backup = getattr(self, "network_weights_backup", None)
