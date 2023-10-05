@@ -1,8 +1,8 @@
 from ray import serve
 import ray
-from fastapi import FastAPI
+
 from modules.api.raypi import Raypi
-from modules.api.api import Raypi
+
 import time
 
 
@@ -19,22 +19,6 @@ if NUM_REPLICAS > ray.available_resources()["GPU"]:
         "Consider decreasing the number of workers, or decreasing the resources needed "
         "per worker. Ignore this if your cluster auto-scales."
     )
-
-app = FastAPI()
-
-@serve.deployment(    
-    ray_actor_options={"num_gpus": 1},
-    autoscaling_config={"min_replicas": 0, "max_replicas": 2},
-    #route_prefix="/sdapi/v1",
-    )
-@serve.ingress(app)
-class RayDeployment:
-    def __init__(self):
-        pass
-
-
-# 2: Deploy the deployment.
-
 
 
 
