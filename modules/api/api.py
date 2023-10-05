@@ -16,6 +16,9 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from secrets import compare_digest
 
+from modules import initialize
+initialize.imports()
+
 import modules.shared as shared
 from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors, restart, shared_items
 from modules.api import models
@@ -33,7 +36,9 @@ from typing import Dict, List, Any
 import piexif
 import piexif.helper
 from contextlib import closing
+from ray import serve
 
+app = FastAPI()
 
 def script_name_to_index(name, scripts):
     try:
@@ -197,8 +202,18 @@ def api_middleware(app: FastAPI):
         return handle_exception(request, e)
 
 
+api_middleware(app)
+
+
+@serve.deployment(    
+    ray_actor_options={"num_gpus": 1},
+    autoscaling_config={"min_replicas": 0, "max_replicas": 2},
+    #route_prefix="/sdapi/v1",
+    )
+@serve.ingress(app)
 class Api:
-    def __init__(self, app: FastAPI, queue_lock: Lock):
+    def __init__(self):
+        initialize.initialize()
         if shared.cmd_opts.api_auth:
             self.credentials = {}
             for auth in shared.cmd_opts.api_auth.split(","):
@@ -206,9 +221,9 @@ class Api:
                 self.credentials[user] = password
 
         self.router = APIRouter()
-        self.app = app
-        self.queue_lock = queue_lock
-        api_middleware(self.app)
+        
+        
+        
         print("API initialized")
         self.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"], response_model=models.TextToImageResponse)
         self.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=models.ImageToImageResponse)

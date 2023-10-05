@@ -40,3 +40,4 @@ notification.mp3
 
 sd-data
 modules/api/raypi2.py
+modules/api/raypi3.py

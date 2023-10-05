@@ -16,6 +16,9 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from secrets import compare_digest
 
+from modules import initialize
+initialize.imports()
+
 import modules.shared as shared
 from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors, restart, shared_items
 from modules.api import models
@@ -36,8 +39,9 @@ from contextlib import closing
 
 from modules import initialize_util
 from modules import script_callbacks
-from modules import initialize
 
+
+import launch
 from ray import serve
 
 app = FastAPI()
@@ -203,20 +207,31 @@ def api_middleware(app: FastAPI):
     async def http_exception_handler(request: Request, e: HTTPException):
         return handle_exception(request, e)
 
-@serve.deployment(
-                  ray_actor_options={"num_gpus": 1},
-                  autoscaling_config={"min_replicas": 0, "max_replicas": 2},
-                 )
+
+api_middleware(app)
+
+@serve.deployment(    
+    ray_actor_options={"num_gpus": 1},
+    autoscaling_config={"min_replicas": 0, "max_replicas": 2},
+    #route_prefix="/sdapi/v1",
+    )
 @serve.ingress(app)
 class Raypi:
     def __init__(self):
+        print("Initializing API")
+        initialize.initialize()
+        print("preparing env")
+        launch.prepare_environment()
+        #app.include_router(Raypi(app).router)      
+              
         if shared.cmd_opts.api_auth:
             self.credentials = {}
             for auth in shared.cmd_opts.api_auth.split(","):
                 user, password = auth.split(":")
                 self.credentials[user] = password
-        
-        
+        print("preparing env")
+        launch.prepare_environment()
+     
         print("API initialized")
 
         self.default_script_arg_txt2img = []
@@ -785,7 +800,3 @@ class Raypi:
     def stop_webui(request):
         shared.state.server_command = "stop"
         return Response("Stopping.")
-
-    def launch(self, server_name, port, root_path):
-        self.app.include_router(self.router)
-        uvicorn.run(self.app, host=server_name, port=port, timeout_keep_alive=shared.cmd_opts.timeout_keep_alive, root_path=root_path)
