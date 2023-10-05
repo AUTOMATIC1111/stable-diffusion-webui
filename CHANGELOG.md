@@ -1,9 +1,8 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-01
+## Update for 2023-10-05
 
 **TBD**: Candidates before release:  
-- Integrate LoRA/Lyco for *backend:original*  
 - Implement Lyco for *backend:diffusers*
 - Add FreeU for *backend:diffusers*  
   for *backend:original* use extension: <https://github.com/ljleb/sd-webui-freeu>  
