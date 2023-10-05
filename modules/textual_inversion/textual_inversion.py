@@ -129,6 +129,8 @@ class EmbeddingDatabase:
         return vec.shape[1]
 
     def load_diffusers_embedding(self, filename: str, path: str):
+        if shared.sd_model is None:
+            return
         fn, ext = os.path.splitext(filename)
         if ext.lower() != ".pt" and ext.lower() != ".safetensors":
             return
@@ -276,6 +278,8 @@ class EmbeddingDatabase:
                 continue
 
     def load_textual_inversion_embeddings(self, force_reload=False):
+        if shared.sd_model is None:
+            return
         t0 = time.time()
         if not force_reload:
             need_reload = False

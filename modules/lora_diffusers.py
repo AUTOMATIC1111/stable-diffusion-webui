@@ -1,28 +1,35 @@
+import os
 import time
 import diffusers
 import diffusers.models.lora as diffusers_lora
 # from modules import shared
 import modules.shared as shared
+import modules.errors
 
 
-lora_state = { # TODO Lora state for Diffusers
+debug_output = os.environ.get('SD_LORA_DEBUG', None)
+debug = shared.log.info if debug_output is not None else lambda *args, **kwargs: None
+
+
+lora_state = { # Lora state for Diffusers
     'multiplier': [],
     'active': False,
     'loaded': [],
     'all_loras': [],
 }
+
 def unload_diffusers_lora():
     try:
         pipe = shared.sd_model
         if shared.opts.diffusers_lora_loader == "diffusers":
             if len(lora_state['loaded']) > 1 and hasattr(pipe, "unfuse_lora"):
+                debug(f'LoRA unfuse: loader={shared.opts.diffusers_lora_loader}')
                 pipe.unfuse_lora()
             pipe.unload_lora_weights()
             pipe._remove_text_encoder_monkey_patch() # pylint: disable=W0212
             proc_cls_name = next(iter(pipe.unet.attn_processors.values())).__class__.__name__
             non_lora_proc_cls = getattr(diffusers.models.attention_processor, proc_cls_name)#[len("LORA"):])
             pipe.unet.set_attn_processor(non_lora_proc_cls())
-            # shared.log.debug('Diffusers LoRA unloaded')
         else:
             lora_state['all_loras'].reverse()
             lora_state['multiplier'].reverse()
@@ -35,29 +42,30 @@ def unload_diffusers_lora():
         lora_state['loaded'].clear()
         lora_state['all_loras'] = []
         lora_state['multiplier'] = []
+        debug(f'LoRA unloaded: loader={shared.opts.diffusers_lora_loader}')
     except Exception as e:
         shared.log.error(f"LoRA unload failed: {e}")
 
 
-def load_diffusers_lora(name, lora, strength = 1.0, num_loras = 1):
-    if f'{lora.filename}:{strength}' in lora_state['loaded']:
-        shared.log.info(f'LoRA cached: {name} strength={strength}')
+def load_diffusers_lora(name, lora, te_multiplier = 1.0, unet_multiplier = 1.0, dyn_dim = None): # TODO: te_multiplier is used as strength and unet_multiplier is ignored
+    if f'{lora.filename}:{te_multiplier}' in lora_state['loaded']:
+        debug(f'LoRA cached: {name} te-strength={te_multiplier} unet-strength={unet_multiplier} dyn-dim={dyn_dim}')
         return
     try:
         t0 = time.time()
         pipe = shared.sd_model
         lora_state['active'] = True
-        lora_state['multiplier'].append(strength)
+        lora_state['multiplier'].append(te_multiplier)
         fuse = 0
         if shared.opts.diffusers_lora_loader.startswith("diffusers"):
-            pipe.load_lora_weights(lora.filename, cache_dir=shared.opts.diffusers_dir, local_files_only=True, lora_scale=strength, low_cpu_mem_usage=True)
-            if num_loras > 1 and hasattr(pipe, "fuse_lora"):
+            pipe.load_lora_weights(lora.filename, cache_dir=shared.opts.diffusers_dir, local_files_only=True, lora_scale=te_multiplier, low_cpu_mem_usage=True)
+            if hasattr(pipe, "fuse_lora"):
                 t2 = time.time()
-                pipe.fuse_lora(lora_scale=strength)
+                pipe.fuse_lora(lora_scale=te_multiplier)
                 fuse = time.time() - t2
-            lora_state['loaded'].append(f'{lora.filename}:{strength}')
+            lora_state['loaded'].append(f'{lora.filename}:{te_multiplier}')
             if shared.compiled_model_state is not None: #filename breaks caching
-                shared.compiled_model_state.lora_model.append(f'{name}:{strength}')
+                shared.compiled_model_state.lora_model.append(f'{name}:{te_multiplier}')
         else:
             from safetensors.torch import load_file
             lora_sd = load_file(lora.filename)
@@ -65,23 +73,26 @@ def load_diffusers_lora(name, lora, strength = 1.0, num_loras = 1):
                 text_encoders = [pipe.text_encoder, pipe.text_encoder_2]
             else:
                 text_encoders = pipe.text_encoder
-            lora_network: LoRANetwork = create_network_from_weights(text_encoders, pipe.unet, lora_sd, multiplier=strength)
+            lora_network: LoRANetwork = create_network_from_weights(text_encoders, pipe.unet, lora_sd, multiplier=te_multiplier)
             lora_network.load_state_dict(lora_sd)
             if shared.opts.diffusers_lora_loader == "merge and apply":
-                lora_network.merge_to(multiplier=strength)
+                lora_network.merge_to(multiplier=te_multiplier)
             if shared.opts.diffusers_lora_loader == "sequential apply":
                 lora_network.to(shared.device, dtype=pipe.unet.dtype)
-                lora_network.apply_to(multiplier=strength)
+                lora_network.apply_to(multiplier=te_multiplier)
             lora_state['all_loras'].append(lora_network)
-            lora_state['loaded'].append(f'{lora.filename}:{strength}')
+            lora_state['loaded'].append(f'{lora.filename}:{te_multiplier}')
             if shared.compiled_model_state is not None: #filename breaks caching
-                shared.compiled_model_state.lora_model.append(f'{name}:{strength}')
+                shared.compiled_model_state.lora_model.append(f'{name}:{te_multiplier}')
         t1 = time.time()
         fuse = f'fuse={fuse:.2f}s' if fuse > 0 else ''
-        shared.log.info(f'LoRA loaded: {name} strength={strength} loader="{shared.opts.diffusers_lora_loader}" lora={t1-t0:.2f}s {fuse}')
+        shared.log.info(f'LoRA loaded: {name} strength={te_multiplier} loader="{shared.opts.diffusers_lora_loader}" lora={t1-t0:.2f}s {fuse}')
     except Exception as e:
         lines = str(e).splitlines()
-        shared.log.error(f'LoRA loading failed: {name} loader="{shared.opts.diffusers_lora_loader}" {lines[0]}')
+        if debug_output is None:
+            shared.log.error(f'LoRA load failed: {name} loader="{shared.opts.diffusers_lora_loader}" {lines[0]}')
+        else:
+            modules.errors.display(e, 'LoRA load failed')
 
 
 # Diffusersで動くLoRA。このファイル単独で完結する。
@@ -249,7 +260,7 @@ class LoRAModule(torch.nn.Module):
             self.org_module[0].forward = self.org_forward
 
     # forward with lora
-    def forward(self, x, scale = 1.0):
+    def forward(self, x, scale = 1.0): # pylint: disable=unused-argument
         if not self.enabled:
             return self.org_forward(x)
         return self.org_forward(x) + self.lora_up(self.lora_down(x)) * self.multiplier * self.scale
@@ -442,7 +453,7 @@ class LoRANetwork(torch.nn.Module): # pylint: disable=abstract-method
 
         self.unet_loras: List[LoRAModule]
         self.unet_loras, skipped_un = create_modules(True, None, unet, target_modules)
-        shared.log.debug(f"LoRA modules loaded/skipped: te={len(self.text_encoder_loras)}/{len(skipped_te)} unet={len(self.unet_loras)}/skip={len(skipped_un)}")
+        debug(f"LoRA module: te_loaded={len(self.text_encoder_loras)} te_skipped={len(skipped_te)} unet_loaded={len(self.unet_loras)} unet_skipped={len(skipped_un)}")
 
         # assertion
         names = set()
@@ -475,9 +486,7 @@ class LoRANetwork(torch.nn.Module): # pylint: disable=abstract-method
                     converted_count += 1
                 else:
                     not_converted_count += 1
-        if not_converted_count > 0:
-            shared.log.warning(f'LoRA modules not converted: {not_converted_count}')
-
+        debug(f'LoRA module: unet converted={converted_count}/{not_converted_count}')
 
     def set_multiplier(self, multiplier):
         self.multiplier = multiplier

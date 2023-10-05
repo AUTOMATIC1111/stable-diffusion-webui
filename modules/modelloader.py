@@ -99,6 +99,8 @@ def download_civit_preview(model_path: str, preview_url: str):
             raise ValueError(f'removed invalid download: bytes={written}')
         img = Image.open(preview_file)
     except Exception as e:
+        os.remove(preview_file)
+        res += f' error={e}'
         shared.log.error(f'CivitAI download error: url={preview_url} file={preview_file} {e}')
     shared.state.end()
     if img is None:

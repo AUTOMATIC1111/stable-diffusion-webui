@@ -117,7 +117,7 @@ def prepare_embedding_providers(pipe, clip_skip):
 def pad_to_same_length(embeds):
     try: #SDXL
         empty_embed = shared.sd_model.encode_prompt("")
-    except: #SD1.5
+    except Exception: #SD1.5
         empty_embed = shared.sd_model.encode_prompt("",shared.sd_model.device, 1, False)
 
     empty_batched = torch.cat([empty_embed[0]] * embeds[0].shape[0])

@@ -164,11 +164,15 @@ class StableDiffusionProcessing:
         self.s_max = shared.opts.s_max
         self.s_tmin = shared.opts.s_tmin
         self.s_tmax = float('inf')  # not representable as a standard ui option
+        self.comments = {}
         shared.opts.data['clip_skip'] = clip_skip
 
     @property
     def sd_model(self):
         return shared.sd_model
+
+    def comment(self, text):
+        self.comments[text] = 1
 
     def txt2img_image_conditioning(self, x, width=None, height=None):
         self.is_using_inpainting_conditioning = self.sd_model.model.conditioning_key in {'hybrid', 'concat'}

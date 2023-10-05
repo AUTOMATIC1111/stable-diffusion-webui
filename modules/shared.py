@@ -151,6 +151,9 @@ class State:
         devices.torch_gc()
 
     def end(self):
+        if self.time_start is None: # someone called end before being
+            log.debug(f'Access state.end: {sys._getframe().f_back.f_code.co_name}') # pylint: disable=protected-access
+            self.time_start = time.time()
         log.debug(f'State end: {self.job} time={time.time() - self.time_start:.2f}s')
         self.job = ""
         self.job_count = 0
@@ -679,9 +682,9 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_card_square": OptionInfo(True, "UI disable variable aspect ratio"),
     "extra_networks_card_fit": OptionInfo("cover", "UI image contain method", gr.Radio, lambda: {"choices": ["contain", "cover", "fill"], "visible": False}),
     "extra_network_skip_indexing": OptionInfo(False, "Do not automatically build extra network pages", gr.Checkbox),
-    "lyco_patch_lora": OptionInfo(False, "Use LyCoris handler for all LoRA types", gr.Checkbox),
+    "lyco_patch_lora": OptionInfo(False, "Use LyCoris handler for all LoRA types", gr.Checkbox, { "visible": False }),
     "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple LoRA", gr.Checkbox, { "visible": False }),
-    "extra_networks_default_multiplier": OptionInfo(1.0, "Multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    "extra_networks_default_multiplier": OptionInfo(1.0, "Default multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: { "choices": ["None"] + list(hypernetworks.keys()), "visible": False }, refresh=reload_hypernetworks),
 }))
 
@@ -1023,6 +1026,7 @@ def req(url_addr, headers = None, **kwargs):
 class Shared(sys.modules[__name__].__class__): # this class is here to provide sd_model field as a property, so that it can be created and loaded on demand rather than at program startup.
     @property
     def sd_model(self):
+        # log.debug(f'Access shared.sd_model: {sys._getframe().f_back.f_code.co_name}') # pylint: disable=protected-access
         import modules.sd_models # pylint: disable=W0621
         return modules.sd_models.model_data.get_sd_model()
 
@@ -1048,6 +1052,10 @@ class Shared(sys.modules[__name__].__class__): # this class is here to provide s
     @property
     def sd_model_type(self):
         try:
+            import modules.sd_models # pylint: disable=W0621
+            if modules.sd_models.model_data.sd_model is None:
+                model_type = 'none'
+                return model_type
             if backend == Backend.ORIGINAL:
                 model_type = 'ldm'
             elif "StableDiffusionXL" in self.sd_model.__class__.__name__:
@@ -1065,6 +1073,10 @@ class Shared(sys.modules[__name__].__class__): # this class is here to provide s
     @property
     def sd_refiner_type(self):
         try:
+            import modules.sd_models # pylint: disable=W0621
+            if modules.sd_models.model_data.sd_refiner is None:
+                model_type = 'none'
+                return model_type
             if backend == Backend.ORIGINAL:
                 model_type = 'ldm'
             elif "StableDiffusionXL" in self.sd_refiner.__class__.__name__:

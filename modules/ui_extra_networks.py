@@ -178,6 +178,7 @@ class ExtraNetworksPage:
             try:
                 img = Image.open(f)
             except Exception:
+                img = None
                 shared.log.warning(f'Extra network removing invalid image: {f}')
             try:
                 if img is None:
@@ -203,7 +204,7 @@ class ExtraNetworksPage:
             self.refresh_time = time.time()
         except Exception as e:
             self.items = []
-            shared.log.error(f'Extra networks error listing items: class={self.__class__} tab={tabname} {e}')
+            shared.log.error(f'Extra networks error listing items: class={self.__class__.__name__} tab={tabname} {e}')
         for item in self.items:
             self.metadata[item["name"]] = item.get("metadata", {})
         t1 = time.time()
@@ -612,11 +613,19 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                         <tr><td>Resolution</td><td>{meta.get('modelspec.resolution', 'N/A')}</td></tr>
                     '''
             if page.title == 'Lora':
-                tags = getattr(item, 'tags', {})
-                tags = [f'{name}:{tags[name]}' for i, name in enumerate(tags)]
-                tags = ' '.join(tags)
+                try:
+                    tags = getattr(item, 'tags', {})
+                    tags = [f'{name}:{tags[name]}' for i, name in enumerate(tags)]
+                    tags = ' '.join(tags)
+                except Exception:
+                    tags = ''
+                try:
+                    triggers = ' '.join(info.get('tags', []))
+                except Exception:
+                    triggers = ''
                 lora = f'''
-                    <tr><td>Tags</td><td>{tags}</td></tr>
+                    <tr><td>Model tags</td><td>{tags}</td></tr>
+                    <tr><td>User tags</td><td>{triggers}</td></tr>
                     <tr><td>Base model</td><td>{meta.get('ss_sd_model_name', 'N/A')}</td></tr>
                     <tr><td>Resolution</td><td>{meta.get('ss_resolution', 'N/A')}</td></tr>
                     <tr><td>Training images</td><td>{meta.get('ss_num_train_images', 'N/A')}</td></tr>

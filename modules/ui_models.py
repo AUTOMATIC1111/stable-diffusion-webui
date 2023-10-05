@@ -361,10 +361,14 @@ def create_ui():
                                     if r.status_code == 200:
                                         d = r.json()
                                         res.append(download_civit_meta(item['filename'], d['modelId']))
-                                        if d.get('images') is not None and len(d['images']) > 0 and len(d['images'][0]['url']) > 0:
-                                            preview_url = d['images'][0]['url']
-                                            res.append(download_civit_preview(item['filename'], preview_url))
-                                            found = True
+                                        if d.get('images') is not None:
+                                            for i in d['images']:
+                                                preview_url = i['url']
+                                                img_res = download_civit_preview(item['filename'], preview_url)
+                                                res.append(img_res)
+                                                if 'error' not in img_res:
+                                                    found = True
+                                                    break
                                 if not found and civit_previews_rehash and os.stat(item['filename']).st_size < (1024 * 1024 * 1024):
                                     sha = modules.hashes.calculate_sha256(item['filename'], quiet=True)[:10]
                                     r = req(f'https://civitai.com/api/v1/model-versions/by-hash/{sha}')
@@ -372,9 +376,14 @@ def create_ui():
                                     if r.status_code == 200:
                                         d = r.json()
                                         res.append(download_civit_meta(item['filename'], d['modelId']))
-                                        if d.get('images') is not None and len(d['images']) > 0 and len(d['images'][0]['url']) > 0:
-                                            preview_url = d['images'][0]['url']
-                                            res.append(download_civit_preview(item['filename'], preview_url))
+                                        if d.get('images') is not None:
+                                            for i in d['images']:
+                                                preview_url = i['url']
+                                                img_res = download_civit_preview(item['filename'], preview_url)
+                                                res.append(img_res)
+                                                if 'error' not in img_res:
+                                                    found = True
+                                                    break
                     txt = '<br>'.join([r for r in res if len(r) > 0])
                     return txt
 

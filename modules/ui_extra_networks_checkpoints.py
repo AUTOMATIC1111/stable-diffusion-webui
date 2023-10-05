@@ -13,7 +13,8 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
 
     def list_items(self):
         checkpoint: sd_models.CheckpointInfo
-        for name, checkpoint in sd_models.checkpoints_list.items():
+        checkpoints = sd_models.checkpoints_list.copy()
+        for name, checkpoint in checkpoints.items():
             try:
                 fn = os.path.splitext(checkpoint.filename)[0]
                 record = {

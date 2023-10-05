@@ -45,6 +45,9 @@ Upgrades are still possible and supported, but above is recommended for best exp
       can be disabled in *settings -> extra networks -> show built-in*  
   - **VAE**  
     - VAEs are now also listed as part of extra networks  
+  - **LoRA**  
+    - LoRAs are now automatically filtered based on compatibility with currently loaded model  
+      note that if lora type cannot be auto-determined, it will be left in the list  
   - **Refiner**  
     - you can load model from extra networks as base model or as refiner  
       simply select button in top-right of models page  
@@ -91,6 +94,10 @@ Upgrades are still possible and supported, but above is recommended for best exp
   - fix long outstanding memory leak in legacy code, amazing this went undetected for so long  
   - more high quality upscalers available by default  
     **SwinIR** (2), **ESRGAN** (12), **RealESRGAN** (6), **SCUNet** (2)  
+  - if that is not enough, there is new **chaiNNer** integration:  
+    adds 15 more upscalers from different families out-of-the-box:  
+    **HAT** (6), **RealHAT** (2), **DAT** (1), **RRDBNet** (1), **SPSRNet** (1), **SRFormer** (2), **SwiftSR** (2)  
+    and yes, you can download and add your own, just place them in `models/chaiNNer`  
   - two additional latent upscalers based on SD upscale models when using Diffusers backend  
     **SD Upscale 2x**, **SD Upscale 4x***  
     note: Recommended usage for *SD Upscale* is by using second pass instead of upscaler  
@@ -102,12 +109,6 @@ Upgrades are still possible and supported, but above is recommended for best exp
     simply set *denoising strength* to 0 so hires does not get triggered  
   - unified init/download/execute/progress code  
   - easier installation  
-  - and if that is not enough, install extension:  
-    <https://github.com/vladmandic/sd-extension-chainner>  
-    and it will add 15 more upscalers from different families:  
-    **HAT** (6), **RealHAT** (2), **DAT** (1), **RRDBNet** (1), **SPSRNet** (1), **SRFormer** (2), **SwiftSR** (2)  
-    and yes, you can download and add your own, just place them in `models/chaiNNer`  
-    note: extension will probably be added to default built-in list in the near-future  
 - **Samplers**:  
   - moved ui options to submenu  
   - default list for new installs is now all samplers, list can be modified in settings  
@@ -128,6 +129,9 @@ Upgrades are still possible and supported, but above is recommended for best exp
     description file present in format of *[model].txt*  
   - to enable search, make sure all models have set hash values  
     *Models -> Valida -> Calculate hashes*  
+- **LoRA**
+  - for *backend:original*, lyco handler has been removed and replaced with new  
+    unified lora/lyco handler that supports all variants of loras  
 - **Compute**  
   - **Intel Arc/IPEX**:  
     - tons of optimizations, built-in binary wheels for Windows  
