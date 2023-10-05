@@ -11,17 +11,6 @@ ray.init()
 #ray.init("ray://localhost:10001")
 
 
-
-NUM_REPLICAS: int = 1
-if NUM_REPLICAS > ray.available_resources()["GPU"]:
-    print(
-        "Your cluster does not currently have enough resources to run with these settings. "
-        "Consider decreasing the number of workers, or decreasing the resources needed "
-        "per worker. Ignore this if your cluster auto-scales."
-    )
-
-
-
 def ray_only():
     serve.shutdown()
     serve.start()
