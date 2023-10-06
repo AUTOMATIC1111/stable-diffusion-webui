@@ -49,7 +49,6 @@ input[type=range]::-moz-range-thumb { box-shadow: 2px 2px 3px #111111; border: 0
 ::-webkit-scrollbar-track { background: #333333; }
 ::-webkit-scrollbar-thumb { background-color: var(--highlight-color); border-radius: var(--radius-lg); border-width: 0; box-shadow: 2px 2px 3px #111111; }
 div.form { border-width: 0; box-shadow: none; background: transparent; overflow: visible; margin-bottom: 6px; }
-div.compact { gap: 1em; }
 
 /* gradio style classes */
 fieldset .gr-block.gr-box, label.block span { padding: 0; margin-top: -4px; }

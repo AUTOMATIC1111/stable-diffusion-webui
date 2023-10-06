@@ -144,11 +144,11 @@ def interrogate_deepbooru(image):
 def create_seed_inputs(tab):
     with gr.Accordion(open=False, label="Seed", elem_id=f"{tab}_seed_group", elem_classes=["small-accordion"]):
         with FormRow(elem_id=f"{tab}_seed_row", variant="compact"):
-            seed = gr.Number(label='Initial seed', value=-1, elem_id=f"{tab}_seed", container=False)
+            seed = gr.Number(label='Initial seed', value=-1, elem_id=f"{tab}_seed", container=True)
             random_seed = ToolButton(symbols.random, elem_id=f"{tab}_random_seed", label='Random seed')
             reuse_seed = ToolButton(symbols.reuse, elem_id=f"{tab}_reuse_seed", label='Reuse seed')
-        with FormRow(visible=True, elem_id=f"{tab}_subseed_row"):
-            subseed = gr.Number(label='Variation seed', value=-1, elem_id=f"{tab}_subseed", container=False)
+        with FormRow(visible=True, elem_id=f"{tab}_subseed_row", variant="compact"):
+            subseed = gr.Number(label='Variation seed', value=-1, elem_id=f"{tab}_subseed", container=True)
             random_subseed = ToolButton(symbols.random, elem_id=f"{tab}_random_subseed")
             reuse_subseed = ToolButton(symbols.reuse, elem_id=f"{tab}_reuse_subseed")
             subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=f"{tab}_subseed_strength")
@@ -406,10 +406,10 @@ def create_ui(startup_timer = None):
                         with FormRow():
                             cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='CFG scale', value=6.0, elem_id="txt2img_cfg_scale")
                             clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=14, step=1, elem_id='txt2img_clip_skip', interactive=True)
-                        with FormRow(elem_id="guidence_scale_row", variant="compact"):
+                        with FormRow():
                             image_cfg_scale = gr.Slider(minimum=1.1, maximum=30.0, step=0.1, label='Secondary CFG scale', value=6.0, elem_id="txt2img_image_cfg_scale")
                             diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
-                        with FormRow(elem_classes="checkboxes-row", variant="compact"):
+                        with FormRow():
                             full_quality = gr.Checkbox(label='Full quality', value=True, elem_id="txt2img_full_quality")
                             restore_faces = gr.Checkbox(label='Face restore', value=False, visible=len(modules.shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
                             tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
@@ -637,7 +637,7 @@ def create_ui(startup_timer = None):
 
                     with gr.Accordion(open=False, label="Resize", elem_classes=["small-accordion"], elem_id="img2img_resize_group"):
                         with FormRow():
-                            resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["None", "Resize fixed", "Crop and resize", "Resize and fill", "Resize using Latent upscale"], type="index", value="None")
+                            resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["None", "Resize fixed", "Crop and resize", "Resize and fill", "Latent upscale"], type="index", value="None")
 
                         with FormRow():
                             with gr.Column(elem_id="img2img_column_size", scale=4):

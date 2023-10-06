@@ -230,7 +230,7 @@
   {"id":"","label":"Resize fixed","localized":"","hint":"Resize image to target resolution. Unless height and width match, you will get incorrect aspect ratio"},
   {"id":"","label":"Crop and resize","localized":"","hint":"Resize the image so that entirety of target resolution is filled with the image. Crop parts that stick out"},
   {"id":"","label":"Resize and fill","localized":"","hint":"Resize the image so that entirety of image is inside target resolution. Fill empty space with image's colors"},
-  {"id":"","label":"Resize using Latent upscale","localized":"","hint":""},
+  {"id":"","label":"Latent upscale","localized":"","hint":""},
   {"id":"","label":"Mask blur","localized":"","hint":"How much to blur the mask before processing, in pixels"},
   {"id":"","label":"Mask transparency","localized":"","hint":""},
   {"id":"","label":"Inpaint masked","localized":"","hint":""},

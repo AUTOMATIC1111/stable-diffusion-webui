@@ -477,8 +477,8 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         ui.button_save = ToolButton(symbols.book, elem_id=tabname+"_extra_save", visible=False)
         ui.button_close = ToolButton(symbols.close, elem_id=tabname+"_extra_close")
         ui.button_model = ToolButton(symbols.refine, elem_id=tabname+"_extra_model", visible=True)
-        ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", elem_classes="textbox", lines=2, container=True)
-        ui.description = gr.Textbox('', show_label=False, elem_id=tabname+"_description", elem_classes="textbox", lines=2, interactive=False)
+        ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", elem_classes="textbox", lines=2, container=False)
+        ui.description = gr.Textbox('', show_label=False, elem_id=tabname+"_description", elem_classes="textbox", lines=2, interactive=False, container=False)
 
         if ui.tabname == 'txt2img': # refresh only once
             global refresh_time # pylint: disable=global-statement
