@@ -459,9 +459,9 @@ options_templates.update(options_section(('advanced', "Inference Settings"), {
 
     "hypertile_sep": OptionInfo("<h2>HyperTile</h2>", "", gr.HTML),
     "hypertile_vae_enabled": OptionInfo(False, "HyperTile for VAE enabled", gr.Checkbox, {"visible": False}),
-    "hypertile_vae_tile": OptionInfo(128, "2nd stage skip factor", gr.Slider, {"minimum": 128, "maximum": 512, "step": 8, "visible": False}),
+    "hypertile_vae_tile": OptionInfo(128, "HyperTile for VAE tile size", gr.Slider, {"minimum": 128, "maximum": 512, "step": 8, "visible": False}),
     "hypertile_unet_enabled": OptionInfo(False, "HyperTile for UNet enabled"),
-    "hypertile_unet_tile": OptionInfo(256, "2nd stage skip factor", gr.Slider, {"minimum": 256, "maximum": 1024, "step": 8}),
+    "hypertile_unet_tile": OptionInfo(256, "HyperTile for UNet tile size", gr.Slider, {"minimum": 256, "maximum": 1024, "step": 8}),
 
     "inference_mode_sep": OptionInfo("<h2>Inference mode</h2>", "", gr.HTML),
     "inference_mode": OptionInfo("no-grad", "Torch inference mode", gr.Radio, lambda: {"choices": ["no-grad", "inference-mode", "none"]}),
