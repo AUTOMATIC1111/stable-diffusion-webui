@@ -4,9 +4,7 @@
 
 **TBD**: Candidates before release:  
 - Implement Lyco for *backend:diffusers*
-- Add FreeU for *backend:diffusers*  
-  for *backend:original* use extension: <https://github.com/ljleb/sd-webui-freeu>  
-- Add HyperTile: <https://github.com/tfernd/HyperTile>
+- Note: Free-U requires diffusers main branch, will be included in next release
 - Implement styles extra field
 
 This is a big one, with some major changes and new functionality...  
@@ -144,6 +142,11 @@ Upgrades are still possible and supported, but above is recommended for best exp
   - **GC**:  
     - custom garbage collect threshold to reduce vram memory usage, thanks @Disty0  
       see *settings -> compute -> gc*  
+- **Inference**  
+  - new section in **settings**  
+    - [Token Merging](https://github.com/dbolya/tomesd): not new, but updated  
+    - [Free-U](https://github.com/ChenyangSi/FreeU): new!  
+    - [HyperTile](https://github.com/tfernd/HyperTile): new!  
 - **General**  
   - **Startup**  
     - all main CLI parameters can now be set as environment variable as well  

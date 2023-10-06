@@ -41,6 +41,7 @@ tr { border-bottom: none !important; padding: 0.1em 0.5em !important; }
 .gradio-slider { max-width: 50%; margin-right: var(--spacing-sm) !important; }
 .gradio-slider input[type="number"] { width: 6em; margin-left: 0.5em; }
 .gradio-textbox { overflow: visible !important; }
+.gradio-radio { padding: 0 !important; }
 
 /* custom gradio elements */
 .accordion-compact { padding: 8px 0px 4px 0px !important; }
@@ -102,7 +103,8 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 #quicksettings { width: fit-content; margin-top: 1em; }
 #quicksettings > button { padding: 0 1em 0 0; align-self: end; margin-bottom: var(--text-lg); }
 #settings { display: flex; gap: var(--layout-gap); }
-#settings div { border: none; gap: 0.5em; }
+#settings div { border: none; gap: 0; margin: 0 0 var(--layout-gap) 0px; padding: 0; }
+#settings .gr-group { max-width: 70em; }
 #settings > div.tab-content { flex: 10 0 75%; display: grid; }
 #settings > div.tab-content > div { border: none; padding: 0; }
 #settings > div.tab-content > div > div > div > div > div { flex-direction: unset; }

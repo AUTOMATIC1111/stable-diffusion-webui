@@ -28,6 +28,7 @@ import modules.face_restoration
 import modules.images as images
 import modules.styles
 import modules.sd_hijack
+import modules.sd_hijack_freeu
 import modules.sd_samplers
 import modules.sd_samplers_common
 import modules.sd_models
@@ -639,6 +640,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
         if not shared.opts.cuda_compile:
             modules.sd_models.apply_token_merging(p.sd_model, p.get_token_merging_ratio())
+            modules.sd_hijack_freeu.apply_freeu(p.sd_model, shared.backend == shared.Backend.ORIGINAL)
 
         if shared.cmd_opts.profile:
             """

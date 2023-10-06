@@ -395,7 +395,7 @@
   {"id":"","label":"Enable upcast sampling","localized":"","hint":"Usually produces similar results to --no-half with better performance while using less memory"},
   {"id":"","label":"Enable upcast cross attention layer","localized":"","hint":""},
   {"id":"","label":"Disable NaN check in produced images/latent spaces","localized":"","hint":""},
-  {"id":"","label":"Attempt VAE roll back when produced NaN values (experimental)","localized":"","hint":"Requires Torch 2.1 and NaN check enabled"},
+  {"id":"","label":"Attempt VAE roll back when produced NaN values","localized":"","hint":"Requires Torch 2.1 and NaN check enabled"},
   {"id":"","label":"Use channels last as torch memory format","localized":"","hint":""},
   {"id":"","label":"Enable full-depth cuDNN benchmark feature","localized":"","hint":""},
   {"id":"","label":"Enable model compile","localized":"","hint":""},

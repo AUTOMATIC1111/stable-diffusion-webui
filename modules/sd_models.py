@@ -1249,7 +1249,7 @@ def apply_token_merging(sd_model, token_merging_ratio=0):
                 merge_crossattn=False,
                 merge_mlp=False
             )
-            shared.log.debug(f'Applying token merging: ratio={token_merging_ratio}')
+            shared.log.info(f'Applying token merging: ratio={token_merging_ratio}')
             sd_model.applied_token_merged_ratio = token_merging_ratio
         except Exception:
             shared.log.warning(f'Token merging not supported: pipeline={sd_model.__class__.__name__}')

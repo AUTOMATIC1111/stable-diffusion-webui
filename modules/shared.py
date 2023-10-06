@@ -402,23 +402,8 @@ options_templates.update(options_section(('sd', "Execution & Models"), {
     "sd_disable_ckpt": OptionInfo(False, "Disallow usage of models in ckpt format"),
 }))
 
-options_templates.update(options_section(('optimizations', "Optimizations"), {
-    "cross_attention_optimization": OptionInfo(cross_attention_optimization_default, "Cross-attention optimization method", gr.Radio, lambda: {"choices": shared_items.list_crossattention() }),
-    "cross_attention_options": OptionInfo([], "Cross-attention advanced options", gr.CheckboxGroup, lambda: {"choices": ['xFormers enable flash Attention', 'SDP disable memory attention']}),
-    "sub_quad_sep": OptionInfo("<h2>Sub-quadratic options</h2>", "", gr.HTML),
-    "sub_quad_q_chunk_size": OptionInfo(512, "cross-attention query chunk size", gr.Slider, {"minimum": 16, "maximum": 8192, "step": 8}),
-    "sub_quad_kv_chunk_size": OptionInfo(512, "cross-attention kv chunk size", gr.Slider, {"minimum": 0, "maximum": 8192, "step": 8}),
-    "sub_quad_chunk_threshold": OptionInfo(80, "cross-attention chunking threshold", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
-    "token_merging_sep": OptionInfo("<h2>Token Merging</h2>", "", gr.HTML),
-    "token_merging_ratio": OptionInfo(0.0, "Token merging ratio (txt2img)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
-    "token_merging_ratio_img2img": OptionInfo(0.0, "Token merging ratio (img2img)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
-    "token_merging_ratio_hr": OptionInfo(0.0, "Token merging ratio for (hires)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
-    "inference_mode": OptionInfo("no-grad", "Torch inference mode", gr.Radio, lambda: {"choices": ["no-grad", "inference-mode", "none"]}),
-    "sd_vae_sliced_encode": OptionInfo(False, "VAE Slicing (original)"),
-}))
-
 options_templates.update(options_section(('cuda', "Compute Settings"), {
-    # "memmon_poll_rate": OptionInfo(2, "VRAM usage polls per second during generation", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
+    "math_sep": OptionInfo("<h2>Execution precision</h2>", "", gr.HTML),
     "precision": OptionInfo("Autocast", "Precision type", gr.Radio, lambda: {"choices": ["Autocast", "Full"]}),
     "cuda_dtype": OptionInfo("FP32" if sys.platform == "darwin" or cmd_opts.use_openvino else "BF16" if devices.backend == "ipex" else "FP16", "Device precision type", gr.Radio, lambda: {"choices": ["FP32", "FP16", "BF16"]}),
     "no_half": OptionInfo(False, "Use full precision for model (--no-half)", None, None, None),
@@ -427,23 +412,54 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "upcast_attn": OptionInfo(False, "Enable upcast cross attention layer"),
     "cuda_cast_unet": OptionInfo(False, "Use fixed UNet precision"),
     "disable_nan_check": OptionInfo(True, "Disable NaN check in produced images/latent spaces", gr.Checkbox, {"visible": False}),
-    "rollback_vae": OptionInfo(False, "Attempt VAE roll back when produced NaN values (experimental)"),
+    "rollback_vae": OptionInfo(False, "Attempt VAE roll back when produced NaN values"),
+
+    "cross_attention_sep": OptionInfo("<h2>Cross-attention</h2>", "", gr.HTML),
+    "cross_attention_optimization": OptionInfo(cross_attention_optimization_default, "Cross-attention optimization method", gr.Radio, lambda: {"choices": shared_items.list_crossattention() }),
+    "cross_attention_options": OptionInfo([], "Cross-attention advanced options", gr.CheckboxGroup, lambda: {"choices": ['xFormers enable flash Attention', 'SDP disable memory attention']}),
+    "sub_quad_sep": OptionInfo("<h3>Sub-quadratic options</h3>", "", gr.HTML),
+    "sub_quad_q_chunk_size": OptionInfo(512, "cross-attention query chunk size", gr.Slider, {"minimum": 16, "maximum": 8192, "step": 8}),
+    "sub_quad_kv_chunk_size": OptionInfo(512, "cross-attention kv chunk size", gr.Slider, {"minimum": 0, "maximum": 8192, "step": 8}),
+    "sub_quad_chunk_threshold": OptionInfo(80, "cross-attention chunking threshold", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
+
+    "other_sep": OptionInfo("<h2>Execution precision</h2>", "", gr.HTML),
     "opt_channelslast": OptionInfo(False, "Use channels last as torch memory format "),
     "cudnn_benchmark": OptionInfo(False, "Enable full-depth cuDNN benchmark feature"),
-    "ipex_optimize": OptionInfo(True if devices.backend == "ipex" else False, "Enable IPEX Optimize for Intel GPUs"),
-    "directml_memory_provider": OptionInfo(default_memory_provider, 'DirectML memory stats provider', gr.Radio, lambda: {"choices": memory_providers}),
     "torch_gc_threshold": OptionInfo(90, "VRAM usage threshold before running Torch GC to clear up VRAM", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
+
     "cuda_compile_sep": OptionInfo("<h2>Model Compile</h2>", "", gr.HTML),
     "cuda_compile": OptionInfo(True if cmd_opts.use_openvino else False, "Enable model compile"),
     "cuda_compile_backend": OptionInfo("openvino_fx" if cmd_opts.use_openvino else "none", "Model compile backend", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx']}),
     "cuda_compile_mode": OptionInfo("default", "Model compile mode", gr.Radio, lambda: {"choices": ['default', 'reduce-overhead', 'max-autotune']}),
     "cuda_compile_fullgraph": OptionInfo(False, "Model compile fullgraph"),
     "cuda_compile_precompile": OptionInfo(False, "Model compile precompile"),
+    "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
+    "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
+
+    "ipex_sep": OptionInfo("<h2>IPEX, DirectML and OpenVINO</h2>", "", gr.HTML),
+    "ipex_optimize": OptionInfo(True if devices.backend == "ipex" else False, "Enable IPEX Optimize for Intel GPUs"),
+    "directml_memory_provider": OptionInfo(default_memory_provider, 'DirectML memory stats provider', gr.Radio, lambda: {"choices": memory_providers}),
     "openvino_disable_model_caching": OptionInfo(False, "OpenVINO disable model caching"),
     "openvino_multi_gpu": OptionInfo(False, "OpenVINO use Multi GPU"),
     "openvino_remove_igpu_from_multi": OptionInfo(False, "OpenVINO remove iGPU from Multi GPU"),
-    "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
-    "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
+}))
+
+options_templates.update(options_section(('advanced', "Inference Settings"), {
+    "token_merging_sep": OptionInfo("<h2>Token merging</h2>", "", gr.HTML),
+    "token_merging_ratio": OptionInfo(0.0, "Token merging ratio (txt2img)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
+    "token_merging_ratio_img2img": OptionInfo(0.0, "Token merging ratio (img2img)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
+    "token_merging_ratio_hr": OptionInfo(0.0, "Token merging ratio for (hires)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
+
+    "freeu_sep": OptionInfo("<h2>FreeU</h2>", "", gr.HTML),
+    "freeu_enabled": OptionInfo(False, "FreeU enabled"),
+    "freeu_b1": OptionInfo(1.2, "1st stage backbone factor", gr.Slider, {"minimum": 1.0, "maximum": 2.0, "step": 0.01}),
+    "freeu_b2": OptionInfo(1.4, "2nd stage backbone factor", gr.Slider, {"minimum": 1.0, "maximum": 2.0, "step": 0.01}),
+    "freeu_s1": OptionInfo(0.9, "1st stage skip factor", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    "freeu_s2": OptionInfo(0.2, "2nd stage skip factor", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+
+    "inference_mode_sep": OptionInfo("<h2>Inference mode</h2>", "", gr.HTML),
+    "inference_mode": OptionInfo("no-grad", "Torch inference mode", gr.Radio, lambda: {"choices": ["no-grad", "inference-mode", "none"]}),
+    "sd_vae_sliced_encode": OptionInfo(False, "VAE Slicing (original)"),
 }))
 
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
