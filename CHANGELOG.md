@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-05
+## Update for 2023-10-06
 
 **TBD**: Candidates before release:  
 - Implement Lyco for *backend:diffusers*
@@ -12,6 +12,9 @@ And probably the biggest release since introduction of **Diffusers**
 
 Note that for this release its recommended to perform a clean install (fresh `git clone`)  
 Upgrades are still possible and supported, but above is recommended for best experience  
+
+Changelog is massive, but do read through or you'll be missing on some very cool new functionality  
+or even free speedups and quality improvements (regardless of which workflows you're using)!  
 
 - **UI**  
   - added **change log** to UI  
