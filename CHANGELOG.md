@@ -145,8 +145,17 @@ Upgrades are still possible and supported, but above is recommended for best exp
 - **Inference**  
   - new section in **settings**  
     - [Token Merging](https://github.com/dbolya/tomesd): not new, but updated  
+      available for *diffusers* and *original* backends  
+      speed-up your generations by merging redundant tokens  
+      speed up will depend on how aggressive you want to be with token merging  
     - [Free-U](https://github.com/ChenyangSi/FreeU): new!  
+      available for *diffusers* and *original* backends  
+      improve generations quality at no cost (other than finding params that work for you)  
+      thanks @ljleb
     - [HyperTile](https://github.com/tfernd/HyperTile): new!  
+      available for *diffusers* and *original* backends  
+      2x speed-up your generations for free :)
+      thanks @tfernd
 - **General**  
   - **Startup**  
     - all main CLI parameters can now be set as environment variable as well  

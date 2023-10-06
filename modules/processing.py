@@ -35,6 +35,7 @@ import modules.sd_models
 import modules.sd_vae
 import modules.sd_vae_approx
 import modules.generation_parameters_copypaste
+from modules.sd_hijack_hypertile import context_hypertile_vae, context_hypertile_unet
 
 
 opt_C = 4
@@ -79,7 +80,7 @@ def txt2img_image_conditioning(sd_model, x, width, height):
         image_conditioning = torch.zeros(x.shape[0], 3, height, width, device=x.device)
         image_conditioning = sd_model.get_first_stage_encoding(sd_model.encode_first_stage(image_conditioning))
         # Add the fake full 1s mask to the first dimension.
-        image_conditioning = torch.nn.functional.pad(image_conditioning, (0, 0, 0, 0, 1, 0), value=1.0)
+        image_conditioning = torch.nn.functional.pad(image_conditioning, (0, 0, 0, 0, 1, 0), value=1.0) # pylint: disable=not-callable
         image_conditioning = image_conditioning.to(x.dtype)
         return image_conditioning
     elif sd_model.model.conditioning_key == "crossattn-adm": # UnCLIP models
@@ -656,7 +657,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             res = process_images_inner(p)
             print_profile(pr, 'Torch')
         else:
-            res = process_images_inner(p)
+            with context_hypertile_vae(p), context_hypertile_unet(p):
+                res = process_images_inner(p)
     finally:
         if not shared.opts.cuda_compile:
             modules.sd_models.apply_token_merging(p.sd_model, 0)
@@ -815,7 +817,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             elif shared.backend == shared.Backend.DIFFUSERS:
                 from modules.processing_diffusers import process_diffusers
                 x_samples_ddim = process_diffusers(p, p.seeds, p.prompts, p.negative_prompts)
-
             else:
                 raise ValueError(f"Unknown backend {shared.backend}")
 

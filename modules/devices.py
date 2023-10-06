@@ -15,7 +15,7 @@ def has_mps() -> bool:
     if sys.platform != "darwin":
         return False
     else:
-        return mac_specific.has_mps
+        return mac_specific.has_mps # pylint: disable=used-before-assignment
 
 
 def get_gpu_info():

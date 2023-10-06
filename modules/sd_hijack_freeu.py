@@ -47,7 +47,6 @@ def lerp(a, b, r):
 
 
 def free_u_cat_hijack(hs, *args, original_function, **kwargs):
-    print('HERE', state.sampling_step, state.sampling_steps)
     if not opts.freeu_enabled:
         return original_function(hs, *args, **kwargs)
     schedule_ratio = get_schedule_ratio()

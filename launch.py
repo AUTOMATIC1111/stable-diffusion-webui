@@ -189,7 +189,7 @@ if __name__ == "__main__":
         installer.log.info('Skipping all checks')
         installer.quick_allowed = True
     elif installer.check_timestamp():
-        installer.log.info('No changes detected: Quick launch active')
+        installer.log.info('No changes detected: quick launch active')
         installer.install_requirements()
         installer.install_packages()
         installer.check_extensions()

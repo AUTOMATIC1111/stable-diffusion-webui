@@ -457,6 +457,12 @@ options_templates.update(options_section(('advanced', "Inference Settings"), {
     "freeu_s1": OptionInfo(0.9, "1st stage skip factor", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "freeu_s2": OptionInfo(0.2, "2nd stage skip factor", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
 
+    "hypertile_sep": OptionInfo("<h2>HyperTile</h2>", "", gr.HTML),
+    "hypertile_vae_enabled": OptionInfo(False, "HyperTile for VAE enabled", gr.Checkbox, {"visible": False}),
+    "hypertile_vae_tile": OptionInfo(128, "2nd stage skip factor", gr.Slider, {"minimum": 128, "maximum": 512, "step": 8, "visible": False}),
+    "hypertile_unet_enabled": OptionInfo(False, "HyperTile for UNet enabled"),
+    "hypertile_unet_tile": OptionInfo(256, "2nd stage skip factor", gr.Slider, {"minimum": 256, "maximum": 1024, "step": 8}),
+
     "inference_mode_sep": OptionInfo("<h2>Inference mode</h2>", "", gr.HTML),
     "inference_mode": OptionInfo("no-grad", "Torch inference mode", gr.Radio, lambda: {"choices": ["no-grad", "inference-mode", "none"]}),
     "sd_vae_sliced_encode": OptionInfo(False, "VAE Slicing (original)"),
