@@ -31,7 +31,7 @@
   --radius-sm: 2px;
   --radius-lg: 4px;
   --spacing-md: 4px;
-  --spacing-xxl: 8px;
+  --spacing-xxl: 6px;
   --line-sm: 1.2em;
   --line-md: 1.4em;
 }
@@ -101,6 +101,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #img2img_label_copy_to_img2img { font-weight: normal; }
 #txt2img_prompt, #txt2img_neg_prompt, #img2img_prompt, #img2img_neg_prompt { background-color: var(--background-color); box-shadow: 4px 4px 4px 0px #333333  !important; }
 #txt2img_prompt > label > textarea, #txt2img_neg_prompt > label > textarea, #img2img_prompt > label > textarea, #img2img_neg_prompt > label > textarea { font-size: 1.0em; line-height: 1.4em; }
+#txt2img_styles, #img2img_styles { margin-top: -10px; margin-left: -10px; width: 100px; }
 #img2img_settings { min-width: calc(2 * var(--left-column)); max-width: calc(2 * var(--left-column)); background-color: #111111; padding-top: 16px; }
 #interrogate, #deepbooru { margin: 0 0px 10px 0px; max-width: 80px; max-height: 80px; font-weight: normal; font-size: 0.95em; }
 #quicksettings .gr-button-tool { font-size: 1.6rem; box-shadow: none; margin-left: -20px; margin-top: -2px; height: 2.4em; }

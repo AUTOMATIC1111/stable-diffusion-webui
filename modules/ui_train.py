@@ -56,7 +56,7 @@ def create_ui(txt2img_preview_params):
                     preprocess_txt_action = gr.Dropdown(label='Existing caption text action', value="ignore", choices=["ignore", "copy", "prepend", "append"])
 
                     with gr.Box():
-                        gr.Markdown('## Preprocessing steps')
+                        gr.HTML('<h2>Preprocessing steps</h2>')
                         process_keep_original_size = gr.Checkbox(label='Keep original size')
                         process_keep_channels = gr.Checkbox(label='Keep original image channels')
                         process_flip = gr.Checkbox(label='Create flipped copies')
@@ -78,7 +78,7 @@ def create_ui(txt2img_preview_params):
                         process_focal_crop_debug = gr.Checkbox(label='Create debug image')
 
                     with gr.Column(visible=False) as process_multicrop_col:
-                        gr.Markdown('## Each image is center-cropped with an automatically chosen width and height.')
+                        gr.HTML('<h2>Each image is center-cropped with an automatically chosen width and height</h2>')
                         with gr.Row():
                             process_multicrop_mindim = gr.Slider(minimum=64, maximum=2048, step=8, label="Dimension lower bound", value=384)
                             process_multicrop_maxdim = gr.Slider(minimum=64, maximum=2048, step=8, label="Dimension upper bound", value=768)
@@ -137,7 +137,7 @@ def create_ui(txt2img_preview_params):
                     def get_textual_inversion_template_names():
                         return sorted(textual_inversion.textual_inversion_templates)
 
-                    gr.Markdown('## Select existing embedding to continue training or create a new one')
+                    gr.HTML('<h2>Select existing embedding to continue training or create a new one</h2>')
                     with FormRow():
                         with gr.Column():
                             with gr.Row():
@@ -152,7 +152,7 @@ def create_ui(txt2img_preview_params):
                                 ti_create = gr.Button(value="Create embedding", variant='secondary')
 
                     with gr.Box():
-                        gr.Markdown('## Training parameters')
+                        gr.HTML('<h2>Training parameters</h2>')
                         ti_learn_rate = gr.Textbox(label='Embedding Learning rate', placeholder="Embedding Learning rate", value="0.005")
                         with FormRow():
                             ti_clip_grad_mode = gr.Dropdown(value="disabled", label="Gradient Clipping", choices=["disabled", "value", "norm"])
@@ -162,7 +162,7 @@ def create_ui(txt2img_preview_params):
                         ti_steps = gr.Number(label='Max steps', value=1000, precision=0)
 
                     with gr.Box():
-                        gr.Markdown('## Training images')
+                        gr.HTML('<h2>Training images</h2>')
                         ti_dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
                         with FormRow():
                             ti_varsize = gr.Checkbox(label="Do not resize images", value=False)
@@ -171,7 +171,7 @@ def create_ui(txt2img_preview_params):
                         ti_use_weight = gr.Checkbox(label="Use PNG alpha channel as loss weight", value=False)
 
                     with gr.Box():
-                        gr.Markdown('## Dataset processing')
+                        gr.HTML('<h2>Dataset processing</h2>')
                         with FormRow():
                             ti_template = gr.Dropdown(label='Prompt template', value="style_filewords.txt", choices=get_textual_inversion_template_names())
                             create_refresh_button(ti_template, textual_inversion.list_textual_inversion_templates, lambda: {"choices": get_textual_inversion_template_names()}, "refrsh_train_template_file")
@@ -180,7 +180,7 @@ def create_ui(txt2img_preview_params):
                         ti_latent_sampling_method = gr.Radio(label='Choose latent sampling method', value="once", choices=['once', 'deterministic', 'random'])
 
                     with gr.Box():
-                        gr.Markdown('## Training outputs')
+                        gr.HTML('<h2>Training outputs</h2>')
                         with FormRow():
                             ti_create_every = gr.Number(label='Create interim images', value=500, precision=0)
                             ti_save_every = gr.Number(label='Create interim embeddings', value=500, precision=0)
@@ -243,7 +243,7 @@ def create_ui(txt2img_preview_params):
 
                 with gr.Tab(label="Train hypernetwork", id="train_hypernetwork_tab") as tab_hn:
                     tab_hn.select(fn=lambda: train_tab_change('hn'), inputs=[], outputs=[action_pp, action_ti, action_hn])
-                    gr.Markdown('## Select existing embedding to continue training or create a new one')
+                    gr.HTML('<h2>Select existing hypernetwork to continue training or create a new one</h2>')
                     with FormRow():
                         with gr.Column():
                             with FormRow():
@@ -264,7 +264,7 @@ def create_ui(txt2img_preview_params):
                                 hn_create = gr.Button(value="Create hypernetwork", variant='secondary')
 
                     with gr.Box():
-                        gr.Markdown('## Training parameters')
+                        gr.HTML('<h2>Training parameters</h2>')
                         hn_learn_rate = gr.Textbox(label='Hypernetwork Learning rate', placeholder="Hypernetwork Learning rate", value="0.00001")
                         with FormRow():
                             hn_clip_grad_mode = gr.Dropdown(value="disabled", label="Gradient Clipping", choices=["disabled", "value", "norm"])
@@ -274,7 +274,7 @@ def create_ui(txt2img_preview_params):
                         hn_steps = gr.Number(label='Max steps', value=1000, precision=0)
 
                     with gr.Box():
-                        gr.Markdown('## Training images')
+                        gr.HTML('<h2>Training images</h2>')
                         hn_dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
                         with FormRow():
                             hn_varsize = gr.Checkbox(label="Do not resize images", value=False)
@@ -283,7 +283,7 @@ def create_ui(txt2img_preview_params):
                         hn_use_weight = gr.Checkbox(label="Use PNG alpha channel as loss weight", value=False)
 
                     with gr.Box():
-                        gr.Markdown('## Dataset processing')
+                        gr.HTML('<h2>Dataset processing</h2>')
                         with FormRow():
                             hn_template = gr.Dropdown(label='Prompt template', value="style_filewords.txt", choices=get_textual_inversion_template_names())
                             create_refresh_button(hn_template, textual_inversion.list_textual_inversion_templates, lambda: {"choices": get_textual_inversion_template_names()}, "refrsh_train_template_file")
@@ -292,7 +292,7 @@ def create_ui(txt2img_preview_params):
                         hn_latent_sampling_method = gr.Radio(label='Choose latent sampling method', value="once", choices=['once', 'deterministic', 'random'])
 
                     with gr.Box():
-                        gr.Markdown('## Training outputs')
+                        gr.HTML('<h2>Training outputs</h2>')
                         with FormRow():
                             hn_create_every = gr.Number(label='Create interim images', value=500, precision=0)
                             hn_save_every = gr.Number(label='Create interim hypernetworks', value=500, precision=0)

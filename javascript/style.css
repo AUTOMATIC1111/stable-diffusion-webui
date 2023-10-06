@@ -26,7 +26,7 @@ tr { border-bottom: none !important; padding: 0.1em 0.5em !important; }
 .gradio-button.tool { max-width: min-content; min-width: min-content !important; align-self: end; font-size: 1.4em; color: var(--body-text-color) !important; margin-bottom: var(--spacing-md); }
 .gradio-checkbox { margin: 0.75em 1.5em 0 0; align-self: center; }
 .gradio-column { min-width: unset !important; }
-.gradio-container { max-width: unset !important; padding: 8px !important; }
+.gradio-container { max-width: unset !important; padding: var(--block-label-padding) !important; }
 .gradio-container .prose a, .gradio-container .prose a:visited{ color: unset; text-decoration: none; }
 
 .gradio-dropdown { margin-right: var(--spacing-sm) !important; }
@@ -100,7 +100,7 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 
 /* settings */
 #si-sparkline-memo, #si-sparkline-load { background-color: #111; }
-#quicksettings { width: fit-content; margin-top: 1em; }
+#quicksettings { width: fit-content; }
 #quicksettings > button { padding: 0 1em 0 0; align-self: end; margin-bottom: var(--text-lg); }
 #settings { display: flex; gap: var(--layout-gap); }
 #settings div { border: none; gap: 0; margin: 0 0 var(--layout-gap) 0px; padding: 0; }

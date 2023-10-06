@@ -3,9 +3,10 @@
 ## Update for 2023-10-06
 
 **TBD**: Candidates before release:  
-- Implement Lyco for *backend:diffusers*
-- Note: Free-U requires diffusers main branch, will be included in next release
+- Note: Free-U requires unreleased diffusers
+- Update Lora handler for *backend:diffusers*
 - Implement styles extra field
+- Merge parallel batch processing
 
 This is a big one, with some major changes and new functionality...  
 And probably the biggest release since introduction of **Diffusers**  
