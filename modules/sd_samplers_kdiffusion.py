@@ -7,7 +7,6 @@ from modules import prompt_parser
 from modules import devices
 from modules import sd_samplers_common
 
-from modules.shared import opts, state
 import modules.shared as shared
 from modules.script_callbacks import CFGDenoiserParams, cfg_denoiser_callback
 from modules.script_callbacks import CFGDenoisedParams, cfg_denoised_callback
@@ -78,12 +77,12 @@ class CFGDenoiser(torch.nn.Module):
         return denoised
 
     def forward(self, x, sigma, uncond, cond, cond_scale, s_min_uncond, image_cond):
-        if state.interrupted or state.skipped:
+        if shared.state.interrupted or shared.state.skipped:
             raise sd_samplers_common.InterruptedException
-        if state.paused:
+        if shared.state.paused:
             shared.log.debug('Sampling paused')
-            while state.paused:
-                if state.interrupted or state.skipped:
+            while shared.state.paused:
+                if shared.state.interrupted or shared.state.skipped:
                     raise sd_samplers_common.InterruptedException
                 import time
                 time.sleep(0.1)
@@ -116,7 +115,7 @@ class CFGDenoiser(torch.nn.Module):
             sigma_in = torch.cat([torch.stack([sigma[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [sigma] + [sigma])
             image_cond_in = torch.cat([torch.stack([image_cond[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [image_uncond] + [torch.zeros_like(self.init_latent)])
 
-        denoiser_params = CFGDenoiserParams(x_in, image_cond_in, sigma_in, state.sampling_step, state.sampling_steps, tensor, uncond)
+        denoiser_params = CFGDenoiserParams(x_in, image_cond_in, sigma_in, shared.state.sampling_step, shared.state.sampling_steps, tensor, uncond)
         cfg_denoiser_callback(denoiser_params)
         x_in = denoiser_params.x
         image_cond_in = denoiser_params.image_cond
@@ -179,14 +178,14 @@ class CFGDenoiser(torch.nn.Module):
             fake_uncond = torch.cat([x_out[i:i+1] for i in denoised_image_indexes])
             x_out = torch.cat([x_out, fake_uncond])  # we skipped uncond denoising, so we put cond-denoised image to where the uncond-denoised image should be
 
-        denoised_params = CFGDenoisedParams(x_out, state.sampling_step, state.sampling_steps, self.inner_model)
+        denoised_params = CFGDenoisedParams(x_out, shared.state.sampling_step, shared.state.sampling_steps, self.inner_model)
         cfg_denoised_callback(denoised_params)
 
         devices.test_for_nans(x_out, "unet")
 
-        if opts.live_preview_content == "Prompt":
+        if shared.opts.live_preview_content == "Prompt":
             sd_samplers_common.store_latent(torch.cat([x_out[i:i+1] for i in denoised_image_indexes]))
-        elif opts.live_preview_content == "Negative prompt":
+        elif shared.opts.live_preview_content == "Negative prompt":
             sd_samplers_common.store_latent(x_out[-uncond.shape[0]:])
 
         if is_edit_model:
@@ -199,7 +198,7 @@ class CFGDenoiser(torch.nn.Module):
         if self.mask is not None:
             denoised = self.init_latent * self.mask + self.nmask * denoised
 
-        after_cfg_callback_params = AfterCFGCallbackParams(denoised, state.sampling_step, state.sampling_steps)
+        after_cfg_callback_params = AfterCFGCallbackParams(denoised, shared.state.sampling_step, shared.state.sampling_steps)
         cfg_after_cfg_callback(after_cfg_callback_params)
         denoised = after_cfg_callback_params.x
 
@@ -253,16 +252,16 @@ class KDiffusionSampler:
     def callback_state(self, d):
         step = d['i']
         latent = d["denoised"]
-        if opts.live_preview_content == "Combined":
+        if shared.opts.live_preview_content == "Combined":
             sd_samplers_common.store_latent(latent)
         self.last_latent = latent
         if self.stop_at is not None and step > self.stop_at:
             raise sd_samplers_common.InterruptedException
-        state.sampling_step = step
+        shared.state.sampling_step = step
 
     def launch_sampling(self, steps, func):
-        state.sampling_steps = steps
-        state.sampling_step = 0
+        shared.state.sampling_steps = steps
+        shared.state.sampling_step = 0
         try:
             return func()
         except sd_samplers_common.InterruptedException:
@@ -273,9 +272,9 @@ class KDiffusionSampler:
 
     def initialize(self, p):
         if self.config.options.get('brownian_noise', None) is not None:
-            self.config.options['brownian_noise'] = opts.data.get('schedulers_brownian_noise', False)
+            self.config.options['brownian_noise'] = shared.opts.data.get('schedulers_brownian_noise', False)
         if self.config.options.get('scheduler', None) is not None:
-            self.config.options['scheduler'] = opts.data.get('schedulers_sigma', None)
+            self.config.options['scheduler'] = shared.opts.data.get('schedulers_sigma', None)
         if p is None:
             return
 
@@ -283,7 +282,7 @@ class KDiffusionSampler:
         self.model_wrap_cfg.nmask = p.nmask if hasattr(p, 'nmask') else None
         self.model_wrap_cfg.step = 0
         self.model_wrap_cfg.image_cfg_scale = getattr(p, 'image_cfg_scale', None)
-        self.eta = p.eta if p.eta is not None else opts.scheduler_eta
+        self.eta = p.eta if p.eta is not None else shared.opts.scheduler_eta
         self.s_min_uncond = getattr(p, 's_min_uncond', 0.0)
 
         k_diffusion.sampling.torch = TorchHijack(self.sampler_noises if self.sampler_noises is not None else [])
@@ -300,7 +299,7 @@ class KDiffusionSampler:
         return extra_params_kwargs
 
     def get_sigmas(self, p, steps): # pylint: disable=unused-argument
-        discard_next_to_last_sigma = opts.data.get('schedulers_discard_penultimate', True) if self.config.options.get('discard_next_to_last_sigma', None) is not None else False
+        discard_next_to_last_sigma = shared.opts.data.get('schedulers_discard_penultimate', True) if self.config.options.get('discard_next_to_last_sigma', None) is not None else False
         steps += 1 if discard_next_to_last_sigma else 0
 
         if self.config.options.get('scheduler', None) == 'default' or self.config.options.get('scheduler', None) is None:

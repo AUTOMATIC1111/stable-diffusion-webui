@@ -2,9 +2,9 @@ from collections import namedtuple
 import numpy as np
 import torch
 from PIL import Image
-from modules import devices, processing, images, sd_vae_approx, sd_samplers
-import modules.shared as shared
+from modules import devices, processing, images, sd_vae_approx, sd_samplers, shared
 import modules.taesd.sd_vae_taesd as sd_vae_taesd
+
 
 SamplerData = namedtuple('SamplerData', ['name', 'constructor', 'aliases', 'options'])
 approximation_indexes = {"Full VAE": 0, "Approximate NN": 1, "Approximate simple": 2, "TAESD": 3}
@@ -44,7 +44,8 @@ def single_sample_to_image(sample, approximation=None):
         return Image.new(mode="RGB", size=(512, 512))
     x_sample = torch.clamp(255 * x_sample, min=0.0, max=255).cpu()
     x_sample = np.moveaxis(x_sample.numpy(), 0, 2).astype(np.uint8)
-    return Image.fromarray(x_sample)
+    image = Image.fromarray(x_sample)
+    return image
 
 
 def sample_to_image(samples, index=0, approximation=None):

@@ -1,11 +1,8 @@
 import math
 import ldm.models.diffusion.ddim
 import ldm.models.diffusion.plms
-
 import numpy as np
 import torch
-
-from modules.shared import state
 from modules import sd_samplers_common, prompt_parser, shared
 import modules.unipc
 
@@ -43,8 +40,8 @@ class VanillaStableDiffusionSampler:
         return 0
 
     def launch_sampling(self, steps, func):
-        state.sampling_steps = steps
-        state.sampling_step = 0
+        shared.state.sampling_steps = steps
+        shared.state.sampling_step = 0
         try:
             return func()
         except sd_samplers_common.InterruptedException:
@@ -57,12 +54,12 @@ class VanillaStableDiffusionSampler:
         return res
 
     def before_sample(self, x, ts, cond, unconditional_conditioning):
-        if state.interrupted or state.skipped:
+        if shared.state.interrupted or shared.state.skipped:
             raise sd_samplers_common.InterruptedException
-        if state.paused:
+        if shared.state.paused:
             shared.log.debug('Sampling paused')
-            while state.paused:
-                if state.interrupted or state.skipped:
+            while shared.state.paused:
+                if shared.state.interrupted or shared.state.skipped:
                     raise sd_samplers_common.InterruptedException
                 import time
                 time.sleep(0.1)
@@ -120,7 +117,7 @@ class VanillaStableDiffusionSampler:
         self.last_latent = self.init_latent * self.mask + self.nmask * last_latent if self.mask is not None else last_latent
         sd_samplers_common.store_latent(self.last_latent)
         self.step += 1
-        state.sampling_step = self.step
+        shared.state.sampling_step = self.step
 
     def after_sample(self, x, ts, cond, uncond, res):
         if not self.is_unipc:

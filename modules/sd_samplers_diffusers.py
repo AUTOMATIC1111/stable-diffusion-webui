@@ -1,4 +1,4 @@
-from modules.shared import opts, log
+from modules import shared
 from modules import sd_samplers_common
 
 try:
@@ -20,7 +20,7 @@ try:
     )
 except Exception as e:
     import diffusers
-    log.error(f'Diffusers import error: version={diffusers.__version__} error: {e}')
+    shared.log.error(f'Diffusers import error: version={diffusers.__version__} error: {e}')
 
 config = {
     # beta_start, beta_end are typically per-scheduler, but we don't want them as they should be taken from the model itself as those are values model was trained on
@@ -82,25 +82,25 @@ class DiffusionSampler:
             if key in self.config:
                 self.config[key] = value
         # finally apply user preferences
-        if opts.schedulers_prediction_type != 'default':
-            self.config['prediction_type'] = opts.schedulers_prediction_type
-        if opts.schedulers_beta_schedule != 'default':
-            self.config['beta_schedule'] = opts.schedulers_beta_schedule
+        if shared.opts.schedulers_prediction_type != 'default':
+            self.config['prediction_type'] = shared.opts.schedulers_prediction_type
+        if shared.opts.schedulers_beta_schedule != 'default':
+            self.config['beta_schedule'] = shared.opts.schedulers_beta_schedule
         if 'use_karras_sigmas' in self.config:
-            self.config['use_karras_sigmas'] = opts.schedulers_use_karras
+            self.config['use_karras_sigmas'] = shared.opts.schedulers_use_karras
         if 'thresholding' in self.config:
-            self.config['thresholding'] = opts.schedulers_use_thresholding
+            self.config['thresholding'] = shared.opts.schedulers_use_thresholding
         if 'lower_order_final' in self.config:
-            self.config['lower_order_final'] = opts.schedulers_use_loworder
+            self.config['lower_order_final'] = shared.opts.schedulers_use_loworder
         if 'solver_order' in self.config:
-            self.config['solver_order'] = opts.schedulers_solver_order
+            self.config['solver_order'] = shared.opts.schedulers_solver_order
         if 'predict_x0' in self.config:
-            self.config['predict_x0'] = opts.uni_pc_variant
+            self.config['predict_x0'] = shared.opts.uni_pc_variant
         if name == 'DPM++ 2M':
-            self.config['algorithm_type'] = opts.schedulers_dpm_solver
-        if 'beta_start' in self.config and opts.schedulers_beta_start > 0:
-            self.config['beta_start'] = opts.schedulers_beta_start
-        if 'beta_end' in self.config and opts.schedulers_beta_end > 0:
-            self.config['beta_end'] = opts.schedulers_beta_end
+            self.config['algorithm_type'] = shared.opts.schedulers_dpm_solver
+        if 'beta_start' in self.config and shared.opts.schedulers_beta_start > 0:
+            self.config['beta_start'] = shared.opts.schedulers_beta_start
+        if 'beta_end' in self.config and shared.opts.schedulers_beta_end > 0:
+            self.config['beta_end'] = shared.opts.schedulers_beta_end
         self.sampler = constructor(**self.config)
         self.sampler.name = name

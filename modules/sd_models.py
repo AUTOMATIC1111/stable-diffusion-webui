@@ -1240,6 +1240,9 @@ def apply_token_merging(sd_model, token_merging_ratio=0):
     except Exception:
         pass
     if token_merging_ratio > 0:
+        if shared.opts.hypertile_unet_enabled:
+            shared.log.warning('Token merging not supported with HyperTile for UNet')
+            return
         try:
             tomesd.apply_patch(
                 sd_model,
