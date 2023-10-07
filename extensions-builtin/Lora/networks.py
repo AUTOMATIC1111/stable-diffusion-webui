@@ -13,6 +13,7 @@ import network_full
 import network_norm
 import torch
 from modules import shared, devices, sd_models, errors, scripts, sd_hijack
+import diffusers.models.lora as diffusers_lora
 
 
 module_types = [
@@ -311,15 +312,6 @@ def load_network(name, network_on_disk):
     if keys_failed_to_match:
         logging.debug(f"Network {network_on_disk.filename} didn't match keys: {keys_failed_to_match}")
     return net
-
-
-def load_diffusers(name, network_on_disk, te_multiplier: float, unet_multiplier: float, dyn_dim): # pylint: disable=W0613
-    net = network.Network(name, network_on_disk)
-    net.mtime = os.path.getmtime(network_on_disk.filename)
-    from modules.lora_diffusers import load_diffusers_lora
-    load_diffusers_lora(name, network_on_disk, te_multiplier, unet_multiplier, dyn_dim)
-    return net
-
 
 def purge_networks_from_memory():
     while len(networks_in_memory) > shared.opts.lora_in_memory_limit and len(networks_in_memory) > 0:
