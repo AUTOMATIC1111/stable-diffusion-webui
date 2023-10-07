@@ -310,6 +310,8 @@ def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
     if checkpoint_info in checkpoints_loaded:
         # use checkpoint cache
         print(f"Loading weights [{sd_model_hash}] from cache")
+        # move to end as latest
+        checkpoints_loaded.move_to_end(checkpoint_info)
         return checkpoints_loaded[checkpoint_info]
 
     print(f"Loading weights [{sd_model_hash}] from {checkpoint_info.filename}")
