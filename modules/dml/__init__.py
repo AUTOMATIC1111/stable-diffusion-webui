@@ -10,6 +10,7 @@ if platform.system() == "Windows":
     memory_providers.append("Performance Counter")
     default_memory_provider = "Performance Counter"
 do_nothing = lambda: None # pylint: disable=unnecessary-lambda-assignment
+do_nothing_with_self = lambda self: None # pylint: disable=unnecessary-lambda-assignment
 
 def _set_memory_provider():
     from modules.shared import opts, cmd_opts, log
@@ -66,7 +67,12 @@ def directml_do_hijack():
     import modules.dml.hijack # pylint: disable=unused-import
     from modules.devices import device
 
+    CondFunc('torch.Generator',
+        lambda orig_func, device: orig_func("cpu"),
+        lambda orig_func, device: True)
+
     if not torch.dml.has_float64_support(device):
+        torch.Tensor.__str__ = do_nothing_with_self
         CondFunc('torch.from_numpy',
             lambda orig_func, *args, **kwargs: orig_func(args[0].astype('float32')),
             lambda *args, **kwargs: args[1].dtype == float)
