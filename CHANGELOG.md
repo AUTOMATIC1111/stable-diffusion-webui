@@ -44,6 +44,10 @@ or even free speedups and quality improvements (regardless of which workflows yo
     - support for embedded previews  
     - large database of art styles included by default  
       can be disabled in *settings -> extra networks -> show built-in*  
+    - styles can also be used in a prompt directly: `<style:style_name>`  
+      if style if an exact match, it will be used  
+      otherwise it will rotate between styles that match the start of the name  
+      that way you can use different styles as wildcards when processing batches  
   - **VAE**  
     - VAEs are now also listed as part of extra networks  
   - **LoRA**  
