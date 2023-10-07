@@ -12,7 +12,6 @@ import modules.sd_models as sd_models
 import modules.sd_vae as sd_vae
 import modules.taesd.sd_vae_taesd as sd_vae_taesd
 import modules.images as images
-from modules.lora_diffusers import lora_state, unload_diffusers_lora
 from modules.processing import StableDiffusionProcessing
 import modules.prompt_parser_diffusers as prompt_parser_diffusers
 
@@ -326,12 +325,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if len(getattr(p, 'init_images', [])) > 0:
         while len(p.init_images) < len(prompts):
             p.init_images.append(p.init_images[-1])
-    if lora_state['active']:
-        cross_attention_kwargs['scale'] = lora_state['multiplier']
 
     if shared.state.interrupted or shared.state.skipped:
-        if lora_state['active']:
-            unload_diffusers_lora()
         return results
 
     if shared.opts.diffusers_move_base and not getattr(shared.sd_model, 'has_accelerate', False):
@@ -382,8 +377,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         p.extra_generation_params['Embeddings'] = ', '.join(shared.sd_model.embedding_db.embeddings_used)
 
     if shared.state.interrupted or shared.state.skipped:
-        if lora_state['active']:
-            unload_diffusers_lora()
         return results
 
     # optional hires pass
@@ -426,10 +419,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 except AssertionError as e:
                     shared.log.info(e)
 
-    if lora_state['active']:
-        p.extra_generation_params['LoRA method'] = shared.opts.diffusers_lora_loader
-        unload_diffusers_lora()
-
     # optional refiner pass or decode
     if is_refiner_enabled:
         if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_refiner and hasattr(shared.sd_model, 'vae'):
@@ -446,8 +435,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             sd_samplers.create_sampler(sampler.name, shared.sd_refiner) # TODO(Patrick): For wrapped pipelines this is currently a no-op
 
         if shared.state.interrupted or shared.state.skipped:
-            if lora_state['active']:
-                unload_diffusers_lora()
             return results
 
         if shared.opts.diffusers_move_refiner and not getattr(shared.sd_refiner, 'has_accelerate', False):
