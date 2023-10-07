@@ -35,7 +35,7 @@ import modules.sd_models
 import modules.sd_vae
 import modules.sd_vae_approx
 import modules.generation_parameters_copypaste
-from modules.sd_hijack_hypertile import context_hypertile_vae, context_hypertile_unet
+from modules.sd_hijack_hypertile import context_hypertile_vae, context_hypertile_unet, hypertile_set
 
 
 opt_C = 4
@@ -639,6 +639,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if k == 'sd_vae':
                 modules.sd_vae.reload_vae_weights()
 
+        shared.prompt_styles.apply_styles_to_extra(p)
+
         if not shared.opts.cuda_compile:
             modules.sd_models.apply_token_merging(p.sd_model, p.get_token_merging_ratio())
             modules.sd_hijack_freeu.apply_freeu(p.sd_model, shared.backend == shared.Backend.ORIGINAL)
@@ -1032,6 +1034,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 self.enable_hr = False
 
         self.ops.append('txt2img')
+        hypertile_set(self)
         self.sampler = modules.sd_samplers.create_sampler(self.sampler_name, self.sd_model)
         x = create_random_tensors([4, self.height // 8, self.width // 8], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
         samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
@@ -1243,6 +1246,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.image_conditioning = self.img2img_image_conditioning(image, self.init_latent, image_mask)
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+        hypertile_set(self)
         x = create_random_tensors([4, self.height // 8, self.width // 8], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
         x *= self.initial_noise_multiplier
         samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning)

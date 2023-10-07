@@ -10,6 +10,7 @@ import math
 import torch
 import torch.nn as nn
 from einops import rearrange
+from modules.shared import log
 
 
 # global variables to keep track of changing image size in multiple passes
@@ -17,6 +18,8 @@ height = None
 width = None
 max_h = 0
 max_w = 0
+error_reported = False
+reset_needed = False
 
 
 def possible_tile_sizes(dimension: int, tile_size: int, min_tile_size: int, tile_options: int) -> list[int]:
@@ -57,7 +60,7 @@ def split_attention(layer: nn.Module, tile_size: int=256, min_tile_size: int=256
     def self_attn_forward(forward: Callable) -> Callable:
         @wraps(forward)
         def wrapper(*args, **kwargs):
-            global height, width, max_h, max_w # pylint: disable=global-statement
+            global height, width, max_h, max_w, reset_needed # pylint: disable=global-statement
             nh, nw = make_ns()
             x = args[0]
             if x.ndim == 4: # VAE
@@ -72,26 +75,40 @@ def split_attention(layer: nn.Module, tile_size: int=256, min_tile_size: int=256
                 h, w = round(math.sqrt(ar * hw)), round(math.sqrt(hw / ar))
                 # dynamic height/width based on fact that first two forward calls contain actual height/width
                 # and reset if latest hw is larger since we're never downscaling in 2nd pass
-                if h > max_h:
-                    height = 8 * h
-                    max_h = max(max_h, h)
+                if reset_needed:
                     reset_nhs()
-                if w > max_w:
-                    width = 8 * w
-                    max_w = max(max_w, w)
                     reset_nws()
+                    max_h = height
+                    max_w = width
+                    reset_needed = False
+                else:
+                    if h > max_h:
+                        height = 8 * h
+                        max_h = max(max_h, h)
+                        reset_nhs()
+                    if w > max_w:
+                        width = 8 * w
+                        max_w = max(max_w, w)
+                        reset_nws()
                 down_ratio = height // 8 // h
                 curr_depth = round(math.log(down_ratio, 2))
                 # scale-up the tile-size the deeper we go
                 nh = max(1, nh // down_ratio)
                 nw = max(1, nw // down_ratio)
                 do_split = curr_depth <= depth and h % nh == 0 and w % nw == 0 and nh * nw > 1
-                if do_split:
-                    x = rearrange(x, "b (nh h nw w) c -> (b nh nw) (h w) c", h=h // nh, w=w // nw, nh=nh, nw=nw)
-                out = forward(x, *args[1:], **kwargs)
-                if do_split:
-                    out = rearrange(out, "(b nh nw) hw c -> b nh nw hw c", nh=nh, nw=nw)
-                    out = rearrange(out, "b nh nw (h w) c -> b (nh h nw w) c", h=h // nh, w=w // nw)
+                try:
+                    if do_split:
+                        x = rearrange(x, "b (nh h nw w) c -> (b nh nw) (h w) c", h=h // nh, w=w // nw, nh=nh, nw=nw)
+                    out = forward(x, *args[1:], **kwargs)
+                    if do_split:
+                        out = rearrange(out, "(b nh nw) hw c -> b nh nw hw c", nh=nh, nw=nw)
+                        out = rearrange(out, "b nh nw (h w) c -> b (nh h nw w) c", h=h // nh, w=w // nw)
+                except Exception as e:
+                    global error_reported # pylint: disable=global-statement
+                    if not error_reported:
+                        error_reported = True
+                        log.error(f'Hypertile error: width={width} height={height} {e}')
+                    out = forward(x, *args[1:], **kwargs)
             return out
         return wrapper
     try: # hijack forward method and restore
@@ -110,7 +127,8 @@ def split_attention(layer: nn.Module, tile_size: int=256, min_tile_size: int=256
 
 
 def context_hypertile_vae(p):
-    global height, width, max_h, max_w # pylint: disable=global-statement
+    global height, width, max_h, max_w, error_reported # pylint: disable=global-statement
+    error_reported = False
     height=p.height
     width=p.width
     max_h = 0
@@ -128,7 +146,8 @@ def context_hypertile_vae(p):
 
 
 def context_hypertile_unet(p):
-    global height, width, max_h, max_w # pylint: disable=global-statement
+    global height, width, max_h, max_w, error_reported # pylint: disable=global-statement
+    error_reported = False
     height=p.height
     width=p.width
     max_h = 0
@@ -143,3 +162,11 @@ def context_hypertile_unet(p):
     else:
         shared.log.info(f'Applying hypertile: unet={shared.opts.hypertile_unet_tile}')
         return split_attention(unet, tile_size=shared.opts.hypertile_unet_tile, min_tile_size=128, swap_size=1)
+
+
+def hypertile_set(p):
+    global height, width, error_reported, reset_needed # pylint: disable=global-statement
+    error_reported = False
+    height=p.height
+    width=p.width
+    reset_needed = True

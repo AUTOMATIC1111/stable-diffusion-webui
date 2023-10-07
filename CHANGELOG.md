@@ -5,7 +5,6 @@
 **TBD**: Candidates before release:  
 - Note: Free-U requires unreleased diffusers
 - Update Lora handler for *backend:diffusers*
-- Implement styles extra field
 - Merge parallel batch processing
 
 This is a big one, with some major changes and new functionality...  
@@ -48,6 +47,8 @@ or even free speedups and quality improvements (regardless of which workflows yo
       if style if an exact match, it will be used  
       otherwise it will rotate between styles that match the start of the name  
       that way you can use different styles as wildcards when processing batches  
+    - styles can have **extra** fields, not just prompt and negative prompt  
+      for example: *"Extra: sampler: Euler a, width: 480, height: 640, steps: 30, cfg scale: 10, clip skip: 2"*
   - **VAE**  
     - VAEs are now also listed as part of extra networks  
   - **LoRA**  

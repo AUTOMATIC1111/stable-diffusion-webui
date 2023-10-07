@@ -1,7 +1,7 @@
 import os
 import html
 import json
-from modules import shared, script_callbacks, extra_networks, ui_extra_networks, styles
+from modules import shared, extra_networks, ui_extra_networks, styles
 
 
 class ExtraNetworksPageStyles(ui_extra_networks.ExtraNetworksPage):
@@ -57,7 +57,7 @@ class ExtraNetworksPageStyles(ui_extra_networks.ExtraNetworksPage):
             "description": '',
             "prompt": params.get('Prompt', ''),
             "negative": params.get('Negative prompt', ''),
-            "extra": '', # TODO add extras to styles
+            "extra": '',
             "local_preview": f"{name}.{shared.opts.samples_format}",
         }
         return item
@@ -118,6 +118,7 @@ class ExtraNetworkStyles(extra_networks.ExtraNetwork):
                     p.styles.append(style.name)
                     p.prompts = [styles.merge_prompts(style.prompt, prompt) for prompt in p.prompts]
                     p.negative_prompts = [styles.merge_prompts(style.negative_prompt, prompt) for prompt in p.negative_prompts]
+                    styles.apply_styles_to_extra(p, style)
 
 
     def deactivate(self, p):

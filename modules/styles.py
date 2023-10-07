@@ -38,6 +38,31 @@ def apply_styles_to_prompt(prompt, styles):
     return prompt
 
 
+def apply_styles_to_extra(p, style: Style):
+    if style is None:
+        return
+    name_map = {
+        'sampler': 'sampler_name',
+    }
+    from modules.generation_parameters_copypaste import parse_generation_parameters
+    extra = parse_generation_parameters(style.extra)
+    extra.pop('Prompt', None)
+    extra.pop('Negative prompt', None)
+    fields = []
+    for k, v in extra.items():
+        k = k.lower()
+        k = k.replace(' ', '_')
+        if k in name_map: # rename some fields
+            k = name_map[k]
+        if hasattr(p, k):
+            orig = getattr(p, k)
+            if type(orig) != type(v) and orig is not None:
+                v = type(orig)(v)
+            setattr(p, k, v)
+            fields.append(f'{k}={v}')
+    log.debug(f'Applied style: {style.name} extra={fields}')
+
+
 class StyleDatabase:
     def __init__(self, opts):
         self.no_style = Style("None")
@@ -118,6 +143,11 @@ class StyleDatabase:
 
     def apply_negative_styles_to_prompt(self, prompt, styles):
         return apply_styles_to_prompt(prompt, [self.find_style(x).negative_prompt for x in styles])
+
+    def apply_styles_to_extra(self, p):
+        for style in p.styles:
+            s = self.find_style(style)
+            apply_styles_to_extra(p, s)
 
     def save_styles(self, path, verbose=False):
         for name in list(self.styles):
