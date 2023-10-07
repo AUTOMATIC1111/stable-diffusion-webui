@@ -74,8 +74,8 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 #txt2img_actions_column, #img2img_actions_column { gap: 0.5em; height: fit-content; }
 #txt2img_generate_box > button, #img2img_generate_box > button { min-height: 42px; max-height: 42px; }
 #txt2img_generate_line2, #img2img_generate_line2, #txt2img_tools, #img2img_tools { display: flex; }
-#txt2img_generate_line2 > button, #img2img_generate_line2 > button, #extras_generate_box > button, #txt2img_tools > button, #img2img_tools > button { height: 2.2em; line-height: 0; font-size: var(--input-text-size);
-  min-width: unset; display: block !important; }
+#txt2img_generate_line2 > button, #img2img_generate_line2 > button, #extras_generate_box > button, #txt2img_tools > button, #img2img_tools > button { height: 2em; line-height: 0; font-size: var(--input-text-size);
+  min-width: unset; display: block !important; margin-left: 0.4em; margin-right: 0.4em; }
 #txt2img_prompt, #txt2img_neg_prompt, #img2img_prompt, #img2img_neg_prompt { display: contents; }
 .interrogate-col{ min-width: 0 !important; max-width: fit-content; gap: 0.5em; }
 .interrogate-col > button{ flex: 1; }
