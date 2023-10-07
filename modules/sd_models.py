@@ -380,8 +380,8 @@ def read_metadata_from_safetensors(filename):
 
 
 def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unused-argument
-    if shared.backend == shared.Backend.DIFFUSERS:
-        return None
+    #if shared.backend == shared.Backend.DIFFUSERS:
+        #return None
     try:
         pl_sd = None
         with progress.open(checkpoint_file, 'rb', description=f'[cyan]Loading weights: [yellow]{checkpoint_file}', auto_refresh=True, console=shared.console) as f:
