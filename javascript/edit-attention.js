@@ -26,7 +26,7 @@ function keyupEditAttention(event) {
 
         // Set the selection to the text between the parenthesis
         const parenContent = text.substring(beforeParen + 1, selectionStart + afterParen);
-        if (!/.*:[\d.]+/.test(parenContent)) return false;
+        if (!/.*:[\d.]+/s.test(parenContent)) return false;
         const lastColon = parenContent.lastIndexOf(":");
         selectionStart = beforeParen + 1;
         selectionEnd = selectionStart + lastColon;
@@ -67,10 +67,10 @@ function keyupEditAttention(event) {
     var closeCharacter = ')';
     var delta = opts.keyedit_precision_attention;
 
-    if (selectionStart > 0 && /<.*:[\d.]+>/.test(text.slice(selectionStart - 1, selectionEnd + text.slice(selectionEnd).indexOf(">") + 1))) {
+    if (selectionStart > 0 && /<.*:[\d.]+>/s.test(text.slice(selectionStart - 1, selectionEnd + text.slice(selectionEnd).indexOf(">") + 1))) {
         closeCharacter = '>';
         delta = opts.keyedit_precision_extra;
-    } else if (selectionStart > 0 && /\(.*\)|\[.*\]/.test(text.slice(selectionStart - 1, selectionEnd + 1))) {
+    } else if (selectionStart > 0 && /\(.*\)|\[.*\]/s.test(text.slice(selectionStart - 1, selectionEnd + 1))) {
         closeCharacter = null;
         if (isPlus) {
             text = text.slice(0, selectionStart) + text[selectionStart - 1] + text.slice(selectionStart, selectionEnd) + text[selectionEnd] + text.slice(selectionEnd);
@@ -81,7 +81,7 @@ function keyupEditAttention(event) {
             selectionStart--;
             selectionEnd--;
         }
-    } else if (selectionStart == 0 || !/\(.*:[\d.]+\)/.test(text.slice(selectionStart - 1, selectionEnd + text.slice(selectionEnd).indexOf(")") + 1))) {
+    } else if (selectionStart == 0 || !/\(.*:[\d.]+\)/s.test(text.slice(selectionStart - 1, selectionEnd + text.slice(selectionEnd).indexOf(")") + 1))) {
         // do not include spaces at the end
         while (selectionEnd > selectionStart && text[selectionEnd - 1] == ' ') {
             selectionEnd--;
