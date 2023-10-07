@@ -166,10 +166,9 @@ class KeyConvert:
         return key, sd_module
 
     def diffusers(self, key):
-        map_keys = list(self.UNET_CONVERSION_MAP.keys())  # prefix of U-Net modules
-        map_keys.sort()
-
         if self.is_sdxl:
+            map_keys = list(self.UNET_CONVERSION_MAP.keys())  # prefix of U-Net modules
+            map_keys.sort()
             search_key = key.replace(self.LORA_PREFIX_UNET + "_", "").replace(self.LORA_PREFIX_TEXT_ENCODER1 + "_",
                                                                               "").replace(
                 self.LORA_PREFIX_TEXT_ENCODER2 + "_", "")
