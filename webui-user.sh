@@ -47,3 +47,6 @@ export ACCELERATE="True"
 #export NO_TCMALLOC="True"
 
 ###########################################
+export RAY_NUM_GPUS=1
+export RAY_MIN_REPLICAS=0
+export RAY_MAX_REPLICAS=2
