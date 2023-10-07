@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-06
+## Update for 2023-10-07
 
 **TBD**: Candidates before release:  
 - Note: Free-U requires unreleased diffusers

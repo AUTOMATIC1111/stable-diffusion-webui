@@ -30,7 +30,7 @@ tr { border-bottom: none !important; padding: 0.1em 0.5em !important; }
 .gradio-container .prose a, .gradio-container .prose a:visited{ color: unset; text-decoration: none; }
 
 .gradio-dropdown { margin-right: var(--spacing-sm) !important; }
-.gradio-dropdown ul.options { z-index: 100; min-width: fit-content; max-height: 33vh !important; white-space: nowrap; }
+.gradio-dropdown ul.options { z-index: 1000; min-width: fit-content; max-height: 33vh !important; white-space: nowrap; }
 .gradio-dropdown ul.options li.item { padding: var(--spacing-xs); }
 .gradio-dropdown ul.options li.item:not(:has(.hide)) { background-color: var(--primary-500); }
 .gradio-dropdown span { margin-bottom: 0 !important; }
