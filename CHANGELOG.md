@@ -2,15 +2,13 @@
 
 ## Update for 2023-10-08
 
-**TBD**: Candidates before release:  
-- Note: Free-U requires unreleased diffusers
-- Update Lora handler for *backend:diffusers*
+- Final strech of the DEV branch before merge to master  
+- Requires pending `diffusers==0.22.0`
 
-This is a big one, with some major changes and new functionality...  
-And probably the biggest release since introduction of **Diffusers**  
+This is a major release, with many changes and new functionality...  
 
-Note that for this release its recommended to perform a clean install (fresh `git clone`)  
-Upgrades are still possible and supported, but above is recommended for best experience  
+Note that for this release its recommended to perform a clean install (e.g. fresh `git clone`)  
+Upgrades are still possible and supported, but clean install is recommended for best experience  
 
 Changelog is massive, but do read through or you'll be missing on some very cool new functionality  
 or even free speedups and quality improvements (regardless of which workflows you're using)!  
@@ -169,7 +167,7 @@ or even free speedups and quality improvements (regardless of which workflows yo
       thanks @ljleb
     - [HyperTile](https://github.com/tfernd/HyperTile): new!  
       available for *diffusers* and *original* backends  
-      2x speed-up your generations for free :)
+      massive (up to 2x) speed-up your generations for free :)
       thanks @tfernd
     - **Batch mode**  
       new option *settings -> inference -> batch mode*  
