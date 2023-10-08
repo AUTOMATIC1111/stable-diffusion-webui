@@ -39,9 +39,23 @@ class PreprocessTask(UserDict):
 
     @property
     def params(self):
-        interrogate_model = self['interrogate_model']
-        process_caption_deepbooru = 'deepbooru' in interrogate_model
-        process_caption = 'clip' in interrogate_model
+        interrogate_model = str(self['interrogate_model'] or "")
+        # process_caption_deepbooru = 'deepbooru' in interrogate_model
+        # process_caption = 'clip' in interrogate_model
+
+        process_caption_deepbooru = False
+        process_caption = False
+        caption_wd_interrogator_name = None
+
+        for name in interrogate_model.split(','):
+            name = name.strip().lower()
+            if name == 'deepbooru':
+                process_caption_deepbooru = True
+            elif 'clip' == name:
+                process_caption = True
+            elif name.startswith('wd14-') or name.startswith('wd-v1-'):
+                caption_wd_interrogator_name = name
+
         return {
             'process_width': self['process_width'],
             'process_height': self['process_height'],
@@ -50,6 +64,7 @@ class PreprocessTask(UserDict):
             'process_split': self['process_split'],
             'process_caption': process_caption,
             'process_caption_deepbooru': process_caption_deepbooru,
+            'caption_wd_interrogator_name': caption_wd_interrogator_name,
             'split_threshold': self.get('split_threshold', 0.5),
             'overlap_ratio': self.get('overlap_ratio', 0.2),
             'process_focal_crop': self.get('process_focal_crop', False),

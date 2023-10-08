@@ -734,6 +734,8 @@ def train(args, train_epoch_callback=None):
         # end of epoch
         if math.isnan(loss_total / len(loss_list)):
             # nan(task failed)
+            accelerator.end_training()
+            del accelerator
             return False
 
     # metadata["ss_epoch"] = str(num_train_epochs)

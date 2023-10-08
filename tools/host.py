@@ -23,6 +23,7 @@ def get_host_ip():
 def get_host_name():
     try:
         hostname = socket.gethostname()
+
         return hostname
     except:
         return None

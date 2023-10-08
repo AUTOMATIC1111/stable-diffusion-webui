@@ -26,9 +26,9 @@ class TaskExecutor(Thread):
 
     def __init__(self, ckpt_recorder: CkptLoadRecorder, timeout=0, group=None, target=None, name=None,
                  args=(), kwargs=None, *, daemon=None, train_only=False):
-        self.receiver = TaskReceiver(ckpt_recorder, train_only)
         self.recorder = ckpt_recorder
         self._handlers = {}
+        self.receiver = TaskReceiver(ckpt_recorder, train_only, self.can_exec_task)
         self.timeout = timeout if timeout > 0 else TaskTimeout
         self.__stop = False
         self.mutex = Lock()
@@ -47,8 +47,14 @@ class TaskExecutor(Thread):
     def stop(self):
         self.__stop = True
 
+    def can_exec_task(self, task: Task) -> bool:
+        types = self._handlers.keys()
+        return task.task_type in types
+
     def add_handler(self, *handlers: TaskHandler):
         for handler in handlers:
+            if not handler.enable:
+                logger.warning(f"handler disable:{handler.task_type.name}")
             self._handlers[handler.task_type] = handler
 
     def get_handler(self, task: Task) -> typing.Optional[TaskHandler]:
@@ -62,7 +68,7 @@ class TaskExecutor(Thread):
             return
 
         with self.not_busy:
-            self.not_busy.notify()
+            self.not_busy.notify_all()
             logger.debug("notify receiver ")
             setattr(self.not_busy, "value", 0)
 
@@ -76,7 +82,11 @@ class TaskExecutor(Thread):
         logger.info(f"executor start with:{','.join(handlers)}")
         while not self.__stop:
             try:
+                logger.info(f"====>>> start receive and execute task")
                 task = self.queue.get(timeout=10)
+                if not task:
+                    continue
+
                 logger.info(f"====>>> receive task:{task.desc()}")
                 logger.info(f"====>>> model history:{self.recorder.history()}")
 
@@ -98,6 +108,8 @@ class TaskExecutor(Thread):
                     # 释放磁盘空间
                     self._clean_disk()
             except queue.Empty:
+                if random.randint(1, 10) < 3:
+                    logger.info('task queue is empty...')
                 continue
             except Exception:
                 logger.exception("executor err")
@@ -111,14 +123,18 @@ class TaskExecutor(Thread):
         while self.is_alive() and not self.receiver.closed:
             with self.not_busy:
                 if not self.queue.full():
+
                     for task in self.receiver.task_iter():
                         logger.info(f"====>>> preload task:{task.id}")
                         self.queue.put(task)
+                        logger.info(f"====>>> push task:{task.id}")
                         if isinstance(task, Task):
                             logger.debug(f"====>>> waiting task:{task.id}, stop receive.")
                             setattr(self.not_busy, "value", 1)
                             try:
-                                self.not_busy.wait(timeout=3600 * 2)
+                                timeout = 3600 * 16
+                                self.not_busy.wait(timeout=timeout)
+                                logger.info(f"====>>> acquire locker, time out:{timeout} seconds")
                             except Exception as err:
                                 free, total = vram_mon.cuda_mem_get_info()
                                 logger.exception("executor cannot require locker, quit...")

@@ -24,6 +24,7 @@ class TaskHandler:
 
     def __init__(self, task_type: TaskType):
         self.task_type = task_type
+        self.enable = True
 
     def handle_task_type(self):
         return self.task_type
