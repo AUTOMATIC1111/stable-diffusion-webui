@@ -395,8 +395,8 @@ def create_ui():
     import modules.ui
     with gr.Blocks(analytics_enabled=False) as ui:
         extensions_disable_all = gr.Radio(label="Disable all extensions", choices=["none", "user", "all"], value=shared.opts.disable_all_extensions, elem_id="extensions_disable_all", visible=False)
-        extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False).style(container=False)
-        extensions_update_list = gr.Text(elem_id="extensions_update_list", visible=False).style(container=False)
+        extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False, container=False)
+        extensions_update_list = gr.Text(elem_id="extensions_update_list", visible=False, container=False)
         with gr.Tabs(elem_id="tabs_extensions"):
             with gr.TabItem("Manage extensions", id="manage"):
                 with gr.Row(elem_id="extensions_installed_top"):

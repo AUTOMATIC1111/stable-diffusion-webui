@@ -24,6 +24,12 @@ def apply_field(field):
     return fun
 
 
+def apply_setting(field):
+    def fun(p, x, xs):
+        shared.opts.data[field] = x
+    return fun
+
+
 def apply_prompt(p, x, xs):
     if xs[0] not in p.prompt and xs[0] not in p.negative_prompt:
         shared.log.warning(f"XYZ grid: prompt S/R did not find {xs[0]} in prompt or negative prompt.")
@@ -98,13 +104,6 @@ def apply_clip_skip(p, x, xs):
     shared.opts.data["clip_skip"] = x
 
 
-def apply_upscale_latent_space(p, x, xs):
-    if x.lower().strip() != '0':
-        shared.opts.data["use_scale_latent_for_hires_fix"] = True
-    else:
-        shared.opts.data["use_scale_latent_for_hires_fix"] = False
-
-
 def find_vae(name: str):
     if name.lower() in ['auto', 'automatic']:
         return sd_vae.unspecified
@@ -127,8 +126,11 @@ def apply_styles(p: StableDiffusionProcessingTxt2Img, x: str, _):
     p.styles.extend(x.split(','))
 
 
-def apply_schedulers_solver_order(p, x, xs):
-    shared.opts.data["schedulers_solver_order"] = min(x, p.steps - 1)
+def apply_upscaler(p: StableDiffusionProcessingTxt2Img, opt, x):
+    p.enable_hr = True
+    p.hr_force = True
+    p.denoising_strength = 0.0
+    p.hr_upscaler = opt
 
 
 def apply_face_restore(p, opt, x):
@@ -179,6 +181,12 @@ def str_permutations(x):
     return x
 
 
+def list_to_csv_string(data_list):
+    with StringIO() as o:
+        csv.writer(o).writerow(data_list)
+        return o.getvalue().strip()
+
+
 class AxisOption:
     def __init__(self, label, tipe, apply, fmt=format_value_add_label, confirm=None, cost=0.0, choices=None):
         self.label = label
@@ -203,41 +211,41 @@ class AxisOptionTxt2Img(AxisOption):
 
 axis_options = [
     AxisOption("Nothing", str, do_nothing, fmt=format_nothing),
-    AxisOption("Checkpoint name", str, apply_checkpoint, fmt=format_value, cost=1.0, choices=lambda: sorted(sd_models.checkpoints_list)),
-    AxisOption("VAE", str, apply_vae, cost=0.7, choices=lambda: ['None'] + list(sd_vae.vae_dict)),
-    AxisOption("Dict name", str, apply_dict, fmt=format_value, cost=1.0, choices=lambda: ['None'] + list(sd_models.checkpoints_list)),
     AxisOption("Prompt S/R", str, apply_prompt, fmt=format_value),
-    AxisOption("Styles", str, apply_styles, choices=lambda: list(shared.prompt_styles.styles)),
+    AxisOption("Model", str, apply_checkpoint, fmt=format_value, cost=1.0, choices=lambda: sorted(sd_models.checkpoints_list)),
+    AxisOption("VAE", str, apply_vae, cost=0.7, choices=lambda: ['None'] + list(sd_vae.vae_dict)),
+    AxisOption("Styles", str, apply_styles, choices=lambda: [s.name for s in shared.prompt_styles.styles.values()]),
     AxisOptionTxt2Img("Sampler", str, apply_sampler, fmt=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
     AxisOptionImg2Img("Sampler", str, apply_sampler, fmt=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers_for_img2img]),
     AxisOption("Seed", int, apply_field("seed")),
     AxisOption("Steps", int, apply_field("steps")),
     AxisOption("CFG Scale", float, apply_field("cfg_scale")),
-    AxisOption("Var. seed", int, apply_field("subseed")),
-    AxisOption("Var. strength", float, apply_field("subseed_strength")),
+    AxisOption("Variation seed", int, apply_field("subseed")),
+    AxisOption("Variation strength", float, apply_field("subseed_strength")),
     AxisOption("Clip skip", int, apply_clip_skip),
-    AxisOption("Denoising", float, apply_field("denoising_strength")),
-    AxisOptionTxt2Img("Hires steps", int, apply_field("hr_second_pass_steps")),
-    AxisOptionImg2Img("Image CFG scale", float, apply_field("image_cfg_scale")),
+    AxisOption("Denoising strength", float, apply_field("denoising_strength")),
     AxisOption("Prompt order", str_permutations, apply_order, fmt=format_value_join_list),
-    AxisOption("Sampler Sigma Churn", float, apply_field("s_churn")),
-    AxisOption("Sampler Sigma min", float, apply_field("s_tmin")),
-    AxisOption("Sampler Sigma max", float, apply_field("s_tmax")),
-    AxisOption("Sampler Sigma noise", float, apply_field("s_noise")),
-    AxisOption("Sampler Eta", float, apply_field("eta")),
-    AxisOptionTxt2Img("Hires upscaler", str, apply_field("hr_upscaler"), choices=lambda: [*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]]),
-    AxisOptionImg2Img("Image Mask Weight", float, apply_field("inpainting_mask_weight")),
-    AxisOption("Sampler Solver Order", int, apply_schedulers_solver_order, cost=0.5),
+    AxisOption("Upscaler", str, apply_upscaler, choices=lambda: [x.name for x in shared.sd_upscalers][1:]),
     AxisOption("Face restore", str, apply_face_restore, fmt=format_value),
-    AxisOption("Token merging ratio", float, apply_override('token_merging_ratio')),
-    AxisOption("Token merging ratio high-res", float, apply_override('token_merging_ratio_hr')),
-    #Second PASS
-    AxisOption("SecondPass Sampler", str, apply_latent_sampler, fmt=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
-    AxisOption("SecondPass Denoising Strength", float, apply_field("denoising_strength")),
-    AxisOption("SecondPass Steps", int, apply_field("hr_second_pass_steps")),
+    AxisOption("Token merging ratio (txt2img)", float, apply_override('token_merging_ratio')),
+    AxisOption("Token merging ratio (hires)", float, apply_override('token_merging_ratio_hr')),
+    AxisOptionImg2Img("Image mask weight", float, apply_field("inpainting_mask_weight")),
+    AxisOption("Model dictionary", str, apply_dict, fmt=format_value, cost=1.0, choices=lambda: ['None'] + list(sd_models.checkpoints_list)),
+    AxisOption("Sampler sigma min", float, apply_field("s_min")),
+    AxisOption("Sampler sigma max", float, apply_field("s_max")),
+    AxisOption("Sampler sigma tmin", float, apply_field("s_tmin")),
+    AxisOption("Sampler sigma tmax", float, apply_field("s_tmax")),
+    AxisOption("Sampler sigma Churn", float, apply_field("s_churn")),
+    AxisOption("Sampler sigma noise", float, apply_field("s_noise")),
+    AxisOption("Sampler eta", float, apply_field("eta")),
+    AxisOption("Sampler solver order", int, apply_setting("schedulers_solver_order")),
+    AxisOption("SecondPass upscaler", str, apply_field("hr_upscaler"), choices=lambda: [*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]]),
+    AxisOption("SecondPass sampler", str, apply_latent_sampler, fmt=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
+    AxisOption("SecondPass denoising Strength", float, apply_field("denoising_strength")),
+    AxisOption("SecondPass steps", int, apply_field("hr_second_pass_steps")),
     AxisOption("SecondPass CFG scale", float, apply_field("image_cfg_scale")),
-    AxisOption("SecondPass Guidance Rescale", float, apply_field("diffusers_guidance_rescale")),
-    AxisOption("SecondPass Refiner Start", float, apply_field("refiner_start")),
+    AxisOption("SecondPass guidance rescale", float, apply_field("diffusers_guidance_rescale")),
+    AxisOption("SecondPass refiner start", float, apply_field("refiner_start")),
 ]
 
 
@@ -310,10 +318,10 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
                         process_cell(x, y, z, ix, iy, iz)
 
     if not processed_result:
-        shared.log.error("XYZ grid: Processing could not begin, you may need to refresh the tab or restart the service")
+        shared.log.error("XYZ grid: Failed to initialize processing")
         return Processed(p, [])
     elif not any(processed_result.images):
-        shared.log.error("XYZ grid: Failed to return even a single processed image")
+        shared.log.error("XYZ grid: Failed to return processed image")
         return Processed(p, [])
 
     z_count = len(zs)
@@ -369,9 +377,8 @@ class SharedSettingsStackHelper(object):
 
 re_range = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\(([+-]\d+)\s*\))?\s*")
 re_range_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\(([+-]\d+(?:.\d*)?)\s*\))?\s*")
-re_range_count = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\[(\d+)\s*\])?\s*")
-re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\[(\d+(?:.\d*)?)\s*\])?\s*")
-
+re_range_count = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\[(\d+)\s*])?\s*")
+re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\[(\d+(?:.\d*)?)\s*])?\s*")
 
 class Script(scripts.Script):
     def title(self):
@@ -380,33 +387,34 @@ class Script(scripts.Script):
     def ui(self, is_img2img):
         self.current_axis_options = [x for x in axis_options if type(x) == AxisOption or x.is_img2img == is_img2img]
         with gr.Row():
-            with gr.Column(scale=19):
+            with gr.Column():
                 with gr.Row():
                     x_type = gr.Dropdown(label="X type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("x_type"))
                     x_values = gr.Textbox(label="X values", lines=1, elem_id=self.elem_id("x_values"))
                     x_values_dropdown = gr.Dropdown(label="X values",visible=False,multiselect=True,interactive=True)
                     fill_x_button = ToolButton(value=symbols.fill, elem_id="xyz_grid_fill_x_tool_button", visible=False)
-
                 with gr.Row():
                     y_type = gr.Dropdown(label="Y type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("y_type"))
                     y_values = gr.Textbox(label="Y values", lines=1, elem_id=self.elem_id("y_values"))
                     y_values_dropdown = gr.Dropdown(label="Y values",visible=False,multiselect=True,interactive=True)
                     fill_y_button = ToolButton(value=symbols.fill, elem_id="xyz_grid_fill_y_tool_button", visible=False)
-
                 with gr.Row():
                     z_type = gr.Dropdown(label="Z type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("z_type"))
                     z_values = gr.Textbox(label="Z values", lines=1, elem_id=self.elem_id("z_values"))
                     z_values_dropdown = gr.Dropdown(label="Z values",visible=False,multiselect=True,interactive=True)
                     fill_z_button = ToolButton(value=symbols.fill, elem_id="xyz_grid_fill_z_tool_button", visible=False)
-        with gr.Row(variant="compact", elem_id="axis_options"):
-            draw_legend = gr.Checkbox(label='Draw legend', value=True, elem_id=self.elem_id("draw_legend"))
-            no_fixed_seeds = gr.Checkbox(label='Keep random seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"))
-            no_grid = gr.Checkbox(label='Skip grid', value=False, elem_id=self.elem_id("no_xyz_grid"))
-            include_lone_images = gr.Checkbox(label='Include sub images', value=False, elem_id=self.elem_id("include_lone_images"))
-            include_sub_grids = gr.Checkbox(label='Include sub grids', value=False, elem_id=self.elem_id("include_sub_grids"))
-        with gr.Row(variant="compact", elem_id="axis_options"):
+        with gr.Row():
+            with gr.Column():
+                csv_mode = gr.Checkbox(label='Text inputs', value=False, elem_id=self.elem_id("csv_mode"), container=False)
+                draw_legend = gr.Checkbox(label='Legend', value=True, elem_id=self.elem_id("draw_legend"), container=False)
+                no_fixed_seeds = gr.Checkbox(label='Random seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"), container=False)
+            with gr.Column():
+                no_grid = gr.Checkbox(label='Skip grid', value=False, elem_id=self.elem_id("no_xyz_grid"), container=False)
+                include_lone_images = gr.Checkbox(label='Sub-images', value=False, elem_id=self.elem_id("include_lone_images"), container=False)
+                include_sub_grids = gr.Checkbox(label='Sub-grids', value=False, elem_id=self.elem_id("include_sub_grids"), container=False)
+        with gr.Row():
             margin_size = gr.Slider(label="Grid margins", minimum=0, maximum=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
-        with gr.Row(variant="compact", elem_id="swap_axes"):
+        with gr.Row():
             swap_xy_axes_button = gr.Button(value="Swap X/Y", elem_id="xy_grid_swap_axes_button", variant="secondary")
             swap_yz_axes_button = gr.Button(value="Swap Y/Z", elem_id="yz_grid_swap_axes_button", variant="secondary")
             swap_xz_axes_button = gr.Button(value="Swap X/Z", elem_id="xz_grid_swap_axes_button", variant="secondary")
@@ -421,28 +429,48 @@ class Script(scripts.Script):
         xz_swap_args = [x_type, x_values, x_values_dropdown, z_type, z_values, z_values_dropdown]
         swap_xz_axes_button.click(swap_axes, inputs=xz_swap_args, outputs=xz_swap_args)
 
-        def fill(x_type):
-            axis = self.current_axis_options[x_type]
-            return axis.choices() if axis.choices else gr.update()
+        def fill(axis_type, csv_mode):
+            axis = self.current_axis_options[axis_type]
+            if axis.choices:
+                if csv_mode:
+                    return list_to_csv_string(axis.choices()), gr.update()
+                else:
+                    return gr.update(), axis.choices()
+            else:
+                return gr.update(), gr.update()
 
-        fill_x_button.click(fn=fill, inputs=[x_type], outputs=[x_values_dropdown])
-        fill_y_button.click(fn=fill, inputs=[y_type], outputs=[y_values_dropdown])
-        fill_z_button.click(fn=fill, inputs=[z_type], outputs=[z_values_dropdown])
+        fill_x_button.click(fn=fill, inputs=[x_type, csv_mode], outputs=[x_values_dropdown])
+        fill_y_button.click(fn=fill, inputs=[y_type, csv_mode], outputs=[y_values_dropdown])
+        fill_z_button.click(fn=fill, inputs=[z_type, csv_mode], outputs=[z_values_dropdown])
 
-        def select_axis(axis_type,axis_values_dropdown):
+        def select_axis(axis_type, axis_values, axis_values_dropdown, csv_mode):
             choices = self.current_axis_options[axis_type].choices
             has_choices = choices is not None
-            current_values = axis_values_dropdown
+            current_values = axis_values
+            current_dropdown_values = axis_values_dropdown
             if has_choices:
                 choices = choices()
-                if isinstance(current_values,str):
-                    current_values = current_values.split(",")
-                current_values = list(filter(lambda x: x in choices, current_values))
-            return gr.Button.update(visible=has_choices),gr.Textbox.update(visible=not has_choices),gr.update(choices=choices if has_choices else None,visible=has_choices,value=current_values)
+                if csv_mode:
+                    current_dropdown_values = list(filter(lambda x: x in choices, current_dropdown_values))
+                    current_values = list_to_csv_string(current_dropdown_values)
+                else:
+                    current_dropdown_values = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(axis_values)))]
+                    current_dropdown_values = list(filter(lambda x: x in choices, current_dropdown_values))
 
-        x_type.change(fn=select_axis, inputs=[x_type,x_values_dropdown], outputs=[fill_x_button,x_values,x_values_dropdown])
-        y_type.change(fn=select_axis, inputs=[y_type,y_values_dropdown], outputs=[fill_y_button,y_values,y_values_dropdown])
-        z_type.change(fn=select_axis, inputs=[z_type,z_values_dropdown], outputs=[fill_z_button,z_values,z_values_dropdown])
+            return (gr.Button.update(visible=has_choices), gr.Textbox.update(visible=not has_choices or csv_mode, value=current_values),
+                    gr.update(choices=choices if has_choices else None, visible=has_choices and not csv_mode, value=current_dropdown_values))
+
+        x_type.change(fn=select_axis, inputs=[x_type, x_values, x_values_dropdown, csv_mode], outputs=[fill_x_button, x_values, x_values_dropdown])
+        y_type.change(fn=select_axis, inputs=[y_type, y_values, y_values_dropdown, csv_mode], outputs=[fill_y_button, y_values, y_values_dropdown])
+        z_type.change(fn=select_axis, inputs=[z_type, z_values, z_values_dropdown, csv_mode], outputs=[fill_z_button, z_values, z_values_dropdown])
+
+        def change_choice_mode(csv_mode, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown):
+            _fill_x_button, _x_values, _x_values_dropdown = select_axis(x_type, x_values, x_values_dropdown, csv_mode)
+            _fill_y_button, _y_values, _y_values_dropdown = select_axis(y_type, y_values, y_values_dropdown, csv_mode)
+            _fill_z_button, _z_values, _z_values_dropdown = select_axis(z_type, z_values, z_values_dropdown, csv_mode)
+            return _fill_x_button, _x_values, _x_values_dropdown, _fill_y_button, _y_values, _y_values_dropdown, _fill_z_button, _z_values, _z_values_dropdown
+
+        csv_mode.change(fn=change_choice_mode, inputs=[csv_mode, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown], outputs=[fill_x_button, x_values, x_values_dropdown, fill_y_button, y_values, y_values_dropdown, fill_z_button, z_values, z_values_dropdown])
 
         def get_dropdown_update_from_params(axis,params):
             val_key = f"{axis} Values"
@@ -462,9 +490,9 @@ class Script(scripts.Script):
             (z_values_dropdown, lambda params:get_dropdown_update_from_params("Z",params)),
         )
 
-        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size, no_grid]
+        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, csv_mode, draw_legend, no_fixed_seeds, no_grid, include_lone_images, include_sub_grids, margin_size]
 
-    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size, no_grid): # pylint: disable=arguments-differ
+    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, csv_mode, draw_legend, no_fixed_seeds, no_grid, include_lone_images, include_sub_grids, margin_size): # pylint: disable=W0221
         shared.log.debug(f'xyzgrid: x_type={x_type}|x_values={x_values}|x_values_dropdown={x_values_dropdown}|y_type={y_type}|{y_values}={y_values}|{y_values_dropdown}={y_values_dropdown}|z_type={z_type}|z_values={z_values}|z_values_dropdown={z_values_dropdown}|draw_legend={draw_legend}|include_lone_images={include_lone_images}|include_sub_grids={include_sub_grids}|no_grid={no_grid}|margin_size={margin_size}')
         if not no_fixed_seeds:
             processing.fix_seed(p)
@@ -473,7 +501,7 @@ class Script(scripts.Script):
         def process_axis(opt, vals, vals_dropdown):
             if opt.label == 'Nothing':
                 return [0]
-            if opt.choices is not None:
+            if opt.choices is not None and not csv_mode:
                 valslist = vals_dropdown
             else:
                 valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
@@ -522,16 +550,16 @@ class Script(scripts.Script):
             return valslist
 
         x_opt = self.current_axis_options[x_type]
-        if x_opt.choices is not None:
-            x_values = ",".join(x_values_dropdown)
+        if x_opt.choices is not None and not csv_mode:
+            x_values = list_to_csv_string(x_values_dropdown)
         xs = process_axis(x_opt, x_values, x_values_dropdown)
         y_opt = self.current_axis_options[y_type]
-        if y_opt.choices is not None:
-            y_values = ",".join(y_values_dropdown)
+        if y_opt.choices is not None and not csv_mode:
+            y_values = list_to_csv_string(y_values_dropdown)
         ys = process_axis(y_opt, y_values, y_values_dropdown)
         z_opt = self.current_axis_options[z_type]
-        if z_opt.choices is not None:
-            z_values = ",".join(z_values_dropdown)
+        if z_opt.choices is not None and not csv_mode:
+            z_values = list_to_csv_string(z_values_dropdown)
         zs = process_axis(z_opt, z_values, z_values_dropdown)
         Image.MAX_IMAGE_PIXELS = None # disable check in Pillow and rely on check below to allow large custom image sizes
 

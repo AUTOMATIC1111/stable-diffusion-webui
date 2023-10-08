@@ -10,13 +10,15 @@ def torch_bmm(input, mat2, *, out=None):
 
     #ARC GPUs can't allocate more than 4GB to a single block, Slice it:
     batch_size_attention, input_tokens, mat2_shape = input.shape[0], input.shape[1], mat2.shape[2]
-    block_multiply = 2.4 if input.dtype == torch.float32 else 1.2
-    block_size = (batch_size_attention * input_tokens * mat2_shape) / 1024 * block_multiply #MB
+    block_multiply = input.element_size()
+    slice_block_size = input_tokens * mat2_shape / 1024 / 1024 * block_multiply
+    block_size = batch_size_attention * slice_block_size
+
     split_slice_size = batch_size_attention
-    if block_size >= 4000:
+    if block_size > 4:
         do_split = True
         #Find something divisible with the input_tokens
-        while ((split_slice_size * input_tokens * mat2_shape) / 1024 * block_multiply) > 4000:
+        while (split_slice_size * slice_block_size) > 4:
             split_slice_size = split_slice_size // 2
             if split_slice_size <= 1:
                 split_slice_size = 1
@@ -24,12 +26,12 @@ def torch_bmm(input, mat2, *, out=None):
     else:
         do_split = False
 
-    split_block_size = (split_slice_size * input_tokens * mat2_shape) / 1024 * block_multiply #MB
     split_2_slice_size = input_tokens
-    if split_block_size >= 4000:
+    if split_slice_size * slice_block_size > 4:
+        slice_block_size2 = split_slice_size * mat2_shape / 1024 / 1024 * block_multiply
         do_split_2 = True
         #Find something divisible with the input_tokens
-        while ((split_slice_size * split_2_slice_size * mat2_shape) / 1024 * block_multiply) > 4000:
+        while (split_2_slice_size * slice_block_size2) > 4:
             split_2_slice_size = split_2_slice_size // 2
             if split_2_slice_size <= 1:
                 split_2_slice_size = 1
@@ -71,13 +73,16 @@ def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.
     else:
         shape_one, batch_size_attention, query_tokens, shape_four = query.shape
         no_shape_one = False
-    block_multiply = 3.6 if query.dtype == torch.float32 else 1.8
-    block_size = (shape_one * batch_size_attention * query_tokens * shape_four) / 1024 * block_multiply #MB
+
+    block_multiply = query.element_size()
+    slice_block_size = shape_one * query_tokens * shape_four / 1024 / 1024 * block_multiply
+    block_size = batch_size_attention * slice_block_size
+
     split_slice_size = batch_size_attention
-    if block_size >= 4000:
+    if block_size > 5:
         do_split = True
         #Find something divisible with the shape_one
-        while ((shape_one * split_slice_size * query_tokens * shape_four) / 1024 * block_multiply) > 4000:
+        while (split_slice_size * slice_block_size) > 4:
             split_slice_size = split_slice_size // 2
             if split_slice_size <= 1:
                 split_slice_size = 1
@@ -85,12 +90,12 @@ def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.
     else:
         do_split = False
 
-    split_block_size = (shape_one * split_slice_size * query_tokens * shape_four) / 1024 * block_multiply #MB
     split_2_slice_size = query_tokens
-    if split_block_size >= 4000:
+    if split_slice_size * slice_block_size > 5:
+        slice_block_size2 = shape_one * split_slice_size * shape_four / 1024 / 1024 * block_multiply
         do_split_2 = True
         #Find something divisible with the batch_size_attention
-        while ((shape_one * split_slice_size * split_2_slice_size * shape_four) / 1024 * block_multiply) > 4000:
+        while (split_2_slice_size * slice_block_size2) > 4:
             split_2_slice_size = split_2_slice_size // 2
             if split_2_slice_size <= 1:
                 split_2_slice_size = 1

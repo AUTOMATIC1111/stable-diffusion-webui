@@ -2,9 +2,9 @@ from collections import namedtuple
 import numpy as np
 import torch
 from PIL import Image
-from modules import devices, processing, images, sd_vae_approx, sd_samplers
-import modules.shared as shared
+from modules import devices, processing, images, sd_vae_approx, sd_samplers, shared
 import modules.taesd.sd_vae_taesd as sd_vae_taesd
+
 
 SamplerData = namedtuple('SamplerData', ['name', 'constructor', 'aliases', 'options'])
 approximation_indexes = {"Full VAE": 0, "Approximate NN": 1, "Approximate simple": 2, "TAESD": 3}
@@ -44,7 +44,8 @@ def single_sample_to_image(sample, approximation=None):
         return Image.new(mode="RGB", size=(512, 512))
     x_sample = torch.clamp(255 * x_sample, min=0.0, max=255).cpu()
     x_sample = np.moveaxis(x_sample.numpy(), 0, 2).astype(np.uint8)
-    return Image.fromarray(x_sample)
+    image = Image.fromarray(x_sample)
+    return image
 
 
 def sample_to_image(samples, index=0, approximation=None):
@@ -89,7 +90,9 @@ def store_latent(decoded):
 def is_sampler_using_eta_noise_seed_delta(p):
     """returns whether sampler from config will use eta noise seed delta for image creation"""
     sampler_config = sd_samplers.find_sampler_config(p.sampler_name)
-    eta = p.eta
+    eta = 0
+    if hasattr(p, "eta"):
+        eta = p.eta
     if not hasattr(p.sampler, "eta"):
         return False
     if eta is None and p.sampler is not None:
@@ -98,7 +101,7 @@ def is_sampler_using_eta_noise_seed_delta(p):
         eta = 0 if sampler_config.options.get("default_eta_is_0", False) else 1.0
     if eta == 0:
         return False
-    return sampler_config.options.get("uses_ensd", False)
+    return True
 
 
 class InterruptedException(BaseException):

@@ -1,12 +1,194 @@
 # Change Log for SD.Next
 
-## Update for 2023-09-18
+## Update for 2023-10-07
 
-Downgrade of `diffusers` to 0.20.2 due to critical issue with model offloading  
-This means that new model **Wuerstchen** is not supported until diffusers issue is resolved  
+**TBD**: Candidates before release:  
+- Note: Free-U requires unreleased diffusers
+- Update Lora handler for *backend:diffusers*
+- Merge parallel batch processing
 
-- Added **change log** to UI, see *System -> Changelog*
-- **Extra networks**: faster search, ability to show/hide/sort networks
+This is a big one, with some major changes and new functionality...  
+And probably the biggest release since introduction of **Diffusers**  
+
+Note that for this release its recommended to perform a clean install (fresh `git clone`)  
+Upgrades are still possible and supported, but above is recommended for best experience  
+
+Changelog is massive, but do read through or you'll be missing on some very cool new functionality  
+or even free speedups and quality improvements (regardless of which workflows you're using)!  
+
+- **UI**  
+  - added **change log** to UI  
+    see *System -> Changelog*  
+  - converted submenus from checkboxes to accordion elements  
+    any ui state including state of open/closed menus can be saved as default!  
+    see *System -> User interface -> Set menu states*  
+  - new built-in theme **invokeai**  
+    thanks @BinaryQuantumSoul  
+  - add **compact view** option in settings -> user interface  
+  - small visual indicator bottom right of page showing internal server job state  
+- **Extra networks**:  
+  - **Details**  
+    - new details interface to view and save data about extra networks  
+      main ui now has a single button on each en to trigger details view  
+    - details view includes model/lora metadata parser!  
+    - details view includes civitai model metadata!  
+  - **Metadata**:  
+    - you can scan [civitai](https://civitai.com/)  
+      for missing metadata and previews directly from extra networks  
+      simply click on button in top-right corner of extra networks page  
+  - **Styles**  
+    - save/apply icons moved to extra networks  
+    - can be edited in details view  
+    - support for single or multiple styles per json  
+    - support for embedded previews  
+    - large database of art styles included by default  
+      can be disabled in *settings -> extra networks -> show built-in*  
+    - styles can also be used in a prompt directly: `<style:style_name>`  
+      if style if an exact match, it will be used  
+      otherwise it will rotate between styles that match the start of the name  
+      that way you can use different styles as wildcards when processing batches  
+    - styles can have **extra** fields, not just prompt and negative prompt  
+      for example: *"Extra: sampler: Euler a, width: 480, height: 640, steps: 30, cfg scale: 10, clip skip: 2"*
+  - **VAE**  
+    - VAEs are now also listed as part of extra networks  
+  - **LoRA**  
+    - LoRAs are now automatically filtered based on compatibility with currently loaded model  
+      note that if lora type cannot be auto-determined, it will be left in the list  
+  - **Refiner**  
+    - you can load model from extra networks as base model or as refiner  
+      simply select button in top-right of models page  
+  - **General**  
+    - faster search, ability to show/hide/sort networks  
+    - refactored subfolder handling  
+      *note*: this will trigger model hash recaclulation on first model use  
+- **Diffusers**:  
+  - better pipeline **auto-detect** when loading from safetensors  
+  - **SDXL Inpaint**  
+    - although any model can be used for inpainiting, there is a case to be made for  
+      dedicated inpainting models as they are tuned to inpaint and not generate  
+    - model can be used as base model for **img2img** or refiner model for **txt2img**  
+      To download go to *Models -> Huggingface*:  
+      - `diffusers/stable-diffusion-xl-1.0-inpainting-0.1` *(6.7GB)*  
+  - **SDXL Instruct-Pix2Pix**  
+    - model can be used as base model for **img2img** or refiner model for **txt2img**  
+      this model is massive and requires a lot of resources!  
+      to download go to *Models -> Huggingface*:  
+      - `diffusers/sdxl-instructpix2pix-768` *(11.9GB)*  
+  - **SD Latent Upscale**  
+    - you can use *SD Latent Upscale* models as **refiner models**  
+      this is a bit experimental, but it works quite well!  
+      to download go to *Models -> Huggingface*:  
+      - `stabilityai/sd-x2-latent-upscaler` *(2.2GB)*  
+      - `stabilityai/stable-diffusion-x4-upscaler` *(1.7GB)*  
+  - better **Prompt attention**  
+    should better handle more complex prompts  
+    for sdxl, choose which part of prompt goes to second text encoder - just add `TE2:` separator in the prompt  
+    for hires and refiner, second pass prompt is used if present, otherwise primary prompt is used  
+    new option in *settings -> diffusers -> sdxl pooled embeds*  
+    thanks @AI-Casanova  
+  - better **Hires** support for SD and SDXL  
+  - better **TI embeddings** support for SD and SDXL  
+    faster loading, wider compatibility and support for embeddings with multiple vectors  
+    information about used embedding is now also added to image metadata  
+    thanks @AI-Casanova  
+  - better **Lora** handling  
+    thanks @AI-Casanova  
+  - new setting: *settings -> diffusers -> force inpaint*  
+    as some models behave better when in *inpaint* mode even for normal *img2img* tasks  
+- **Upscalers**:
+  - pretty much a rewrite and tons of new upscalers - built-in list is now at **42**  
+  - fix long outstanding memory leak in legacy code, amazing this went undetected for so long  
+  - more high quality upscalers available by default  
+    **SwinIR** (2), **ESRGAN** (12), **RealESRGAN** (6), **SCUNet** (2)  
+  - if that is not enough, there is new **chaiNNer** integration:  
+    adds 15 more upscalers from different families out-of-the-box:  
+    **HAT** (6), **RealHAT** (2), **DAT** (1), **RRDBNet** (1), **SPSRNet** (1), **SRFormer** (2), **SwiftSR** (2)  
+    and yes, you can download and add your own, just place them in `models/chaiNNer`  
+  - two additional latent upscalers based on SD upscale models when using Diffusers backend  
+    **SD Upscale 2x**, **SD Upscale 4x***  
+    note: Recommended usage for *SD Upscale* is by using second pass instead of upscaler  
+    as it allows for tuning of prompt, seed, sampler settings which are used to guide upscaler  
+  - upscalers are available in **xyz grid**  
+  - simplified *settings->postprocessing->upscalers*  
+    e.g. all upsamplers share same settings for tiling  
+  - allow upscale-only as part of **txt2img** and **img2img** workflows  
+    simply set *denoising strength* to 0 so hires does not get triggered  
+  - unified init/download/execute/progress code  
+  - easier installation  
+- **Samplers**:  
+  - moved ui options to submenu  
+  - default list for new installs is now all samplers, list can be modified in settings  
+  - simplified samplers configuration in settings  
+    plus added few new ones like sigma min/max which can highly impact sampler behavior  
+  - note that list of samplers is now *different* since keeping a flat-list of all possible  
+    combinations results in 50+ samplers which is not practical  
+    items such as algorithm (e.g. karras) is actually a sampler option, not a sampler itself  
+- **CivitAI**:
+  - civitai model download is now multithreaded and resumable  
+    meaning that you can download multiple models in parallel  
+    as well as resume aborted/incomplete downloads  
+  - civitai integration in *models -> civitai* can now find most  
+    previews AND metadata for most models (checkpoints, loras, embeddings)  
+    metadata is now parsed and saved in *[model].json*  
+    typical hit rate is >95% for models, loras and embeddings  
+  - description from parsed model metadata is used as model description if there is no manual  
+    description file present in format of *[model].txt*  
+  - to enable search, make sure all models have set hash values  
+    *Models -> Valida -> Calculate hashes*  
+- **LoRA**
+  - for *backend:original*, lyco handler has been removed and replaced with new  
+    unified lora/lyco handler that supports all variants of loras  
+- **Compute**  
+  - **Intel Arc/IPEX**:  
+    - tons of optimizations, built-in binary wheels for Windows  
+      i have to say, intel arc/ipex is getting to be quite a player, especially with openvino  
+      thanks @Disty0 @Nuullll  
+  - **AMD ROCm**:  
+    - updated installer to support detect `ROCm` *5.4/5.5/5.6/5.7*  
+    - support for `torch-rocm-5.7`
+  - **CUDA**:  
+    - testing moved to `torch` *2.2.0-dev/cu121*  
+  - **GC**:  
+    - custom garbage collect threshold to reduce vram memory usage, thanks @Disty0  
+      see *settings -> compute -> gc*  
+- **Inference**  
+  - new section in **settings**  
+    - [Token Merging](https://github.com/dbolya/tomesd): not new, but updated  
+      available for *diffusers* and *original* backends  
+      speed-up your generations by merging redundant tokens  
+      speed up will depend on how aggressive you want to be with token merging  
+    - [Free-U](https://github.com/ChenyangSi/FreeU): new!  
+      available for *diffusers* and *original* backends  
+      improve generations quality at no cost (other than finding params that work for you)  
+      thanks @ljleb
+    - [HyperTile](https://github.com/tfernd/HyperTile): new!  
+      available for *diffusers* and *original* backends  
+      2x speed-up your generations for free :)
+      thanks @tfernd
+- **General**  
+  - **Startup**  
+    - all main CLI parameters can now be set as environment variable as well  
+      for example `--data-dir <path>` can be specified as `SD_DATADIR=<path>` before starting SD.Next  
+  - **XYZ Grid**
+    - more flexibility to use selection or strings  
+  - **Logging**  
+    - get browser session info in server log  
+    - allow custom log file destination  
+      see `webui --log`  
+    - when running with `--debug` flag, log is force-rotated  
+      so each `sdnext.log.*` represents exactly one server run  
+    - internal server job state tracking  
+  - **Launcher**  
+    - new `webui.ps1` powershell launcher for windows (old `webui.bat` is still valid)  
+      thanks @em411  
+  - **API**
+    - add end-to-end example how to use API: `cli/simple-txt2img.js`  
+      covers txt2img, upscale, hires, refiner  
+  - **train.py**
+    - wrapper script around built-in **kohya's lora** training script  
+      see `cli/train.py --help`  
+      new support for sd and sdxl, thanks @evshiron  
+      new support for full offline mode (without sdnext server running)  
 
 ## Update for 2023-09-13
 

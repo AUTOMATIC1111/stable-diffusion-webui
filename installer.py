@@ -20,6 +20,8 @@ class Dot(dict): # dot notation access to dictionary attributes
 
 log = logging.getLogger("sd")
 log_file = os.path.join(os.path.dirname(__file__), 'sdnext.log')
+log_rolled = False
+first_call = True
 quick_allowed = True
 errors = 0
 opts = {}
@@ -72,6 +74,10 @@ def setup_logging():
     from rich.pretty import install as pretty_install
     from rich.traceback import install as traceback_install
 
+    if args.log:
+        global log_file # pylint: disable=global-statement
+        log_file = args.log
+
     level = logging.DEBUG if args.debug else logging.INFO
     log.setLevel(logging.DEBUG) # log to file is always at level debug for facility `sd`
     console = Console(log_time=True, log_time_format='%H:%M:%S-%f', theme=Theme({
@@ -90,7 +96,18 @@ def setup_logging():
     rh.setLevel(level)
     log.addHandler(rh)
 
-    fh = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5, encoding='utf-8', delay=True) # 10MB default for log rotation
+    fh = RotatingFileHandler(log_file, maxBytes=32*1024*1024, backupCount=9, encoding='utf-8', delay=True) # 10MB default for log rotation
+    global log_rolled # pylint: disable=global-statement
+    if not log_rolled and args.debug and not args.log:
+        fh.doRollover()
+        log_rolled = True
+
+    global first_call # pylint: disable=global-statement
+    if first_call:
+        log_size = os.path.getsize(log_file) if os.path.exists(log_file) else 0
+        log.debug(f'Logger: file={log_file} level={level} size={log_size} mode={"append" if not log_rolled else "create"}')
+        first_call = False
+
     fh.formatter = logging.Formatter('%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s')
     fh.setLevel(logging.DEBUG)
     log.addHandler(fh)
@@ -322,27 +339,6 @@ def check_python():
         log.debug(f'Git {git_version.replace("git version", "").strip()}')
 
 
-# Intel hasn't released a corresponding torchvision wheel along with torch and ipex wheels, so we have to install official pytorch torchvision as a W/A.
-# However, the latest torchvision explicitly requires torch version == 2.0.1, which is incompatible with the Intel torch version 2.0.0a0. This will cause
-# intel torch to be uninstalled when pip scans the dependencies of torchvision. This function will check the torch version and force installing Intel torch
-# 2.0.0a0 to avoid the underlying dll version error.
-# TODO(Disty or Nuullll) remove this W/A when Intel releases torchvision wheel for windows.
-def fix_ipex_win_torch():
-    if not args.use_ipex or 'win' not in sys.platform:
-        return
-    try:
-        ipex_torch_ver = '2.0.0a0'
-        installed_torch_ver = pkg_resources.get_distribution('torch').version
-        if not installed_torch_ver.startswith(ipex_torch_ver):
-            log.warning(f'Incompatible torch version {installed_torch_ver} for ipex windows, reinstalling to {ipex_torch_ver}')
-            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0a0 intel_extension_for_pytorch==2.0.110+gitba7f6c1 -f https://developer.intel.com/ipex-whl-stable-xpu')
-            install(torch_command)
-            import torch # pylint: disable=unused-import
-            import intel_extension_for_pytorch as ipex # pylint: disable=unused-import
-    except Exception as e:
-        log.warning(e)
-
-
 # check torch version
 def check_torch():
     if args.quick:
@@ -403,13 +399,14 @@ def check_torch():
                 log.debug(f'HSA_OVERRIDE_GFX_VERSION auto config is skipped for {gpu}')
         try:
             command = subprocess.run('hipconfig --version', shell=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            major_ver, minor_ver, *_ = command.stdout.decode(encoding="utf8", errors="ignore").split('.')
-            rocm_ver = f'{major_ver}.{minor_ver}'
+            arr = command.stdout.decode(encoding="utf8", errors="ignore").split('.')
+            if len(arr) >= 2:
+                rocm_ver = f'{arr[0]}.{arr[1]}'
             log.debug(f'ROCm version detected: {rocm_ver}')
         except Exception as e:
-            log.debug(f'Run hipconfig failed: {e}')
+            log.debug(f'ROCm hipconfig failed: {e}')
             rocm_ver = None
-        if rocm_ver in ['5.5', '5.6']:
+        if rocm_ver in ['5.5', '5.6', '5.7']:
             # install torch nightly via torchvision to avoid wasting bandwidth when torchvision depends on torch from yesterday
             torch_command = os.environ.get('TORCH_COMMAND', f'torchvision --pre --index-url https://download.pytorch.org/whl/nightly/rocm{rocm_ver}')
         else:
@@ -418,15 +415,16 @@ def check_torch():
     elif allow_ipex and (args.use_ipex or shutil.which('sycl-ls') is not None or shutil.which('sycl-ls.exe') is not None or os.environ.get('ONEAPI_ROOT') is not None or os.path.exists('/opt/intel/oneapi') or os.path.exists("C:/Program Files (x86)/Intel/oneAPI") or os.path.exists("C:/oneAPI")):
         args.use_ipex = True # pylint: disable=attribute-defined-outside-init
         log.info('Intel OneAPI Toolkit detected')
-        if shutil.which('sycl-ls') is None and shutil.which('sycl-ls.exe') is None:
-            log.error('Intel OneAPI Toolkit is not activated! Activate OneAPI manually!')
         os.environ.setdefault('NEOReadDebugKeys', '1')
         os.environ.setdefault('ClDeviceGlobalMemSizeAvailablePercent', '100')
         if "linux" in sys.platform:
-            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.1a0 torchvision==0.15.2a0 intel_extension_for_pytorch==2.0.110+xpu -f https://developer.intel.com/ipex-whl-stable-xpu')
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.1a0 torchvision==0.15.2a0 intel_extension_for_pytorch==2.0.110+xpu --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/')
             os.environ.setdefault('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0 intel-extension-for-tensorflow[gpu]')
         else:
-            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0a0 intel_extension_for_pytorch==2.0.110+gitba7f6c1 -f https://developer.intel.com/ipex-whl-stable-xpu')
+            pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/ipex_with_aot_for_windows/torch-2.0.0a0+gite9ebda2-cp310-cp310-win_amd64.whl'
+            torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/ipex_with_aot_for_windows/torchvision-0.15.2a0+fa99a53-cp310-cp310-win_amd64.whl'
+            ipex_pip = 'https://github.com/Disty0/automatic/releases/download/ipex_with_aot_for_windows/intel_extension_for_pytorch-2.0.110+git0f2597b-cp310-cp310-win_amd64.whl'
+            torch_command = os.environ.get('TORCH_COMMAND', f'{pytorch_pip} {torchvision_pip} {ipex_pip}')
     elif allow_openvino and args.use_openvino:
         #Remove this after 2.1.0 releases
         log.info('Using OpenVINO')
@@ -450,7 +448,6 @@ def check_torch():
             import torch
             log.info(f'Torch {torch.__version__}')
             if args.use_ipex and allow_ipex:
-                fix_ipex_win_torch()
                 import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
                 log.info(f'Torch backend: Intel IPEX {ipex.__version__}')
                 if shutil.which('icpx') is not None:
@@ -498,6 +495,8 @@ def check_torch():
     if args.use_openvino or opts.get('cuda_compile_backend', '') == 'openvino_fx':
         install('openvino==2023.1.0', 'openvino')
         os.environ.setdefault('PYTORCH_TRACING_MODE', 'TORCHFX')
+        os.environ.setdefault('NEOReadDebugKeys', '1')
+        os.environ.setdefault('ClDeviceGlobalMemSizeAvailablePercent', '100')
     if args.profile:
         print_profile(pr, 'Torch')
 
@@ -528,10 +527,6 @@ def install_packages():
         pr = cProfile.Profile()
         pr.enable()
     log.info('Verifying packages')
-    # gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
-    # openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
-    # install(gfpgan_package, 'gfpgan')
-    # install(openclip_package, 'open-clip-torch')
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git")
     install(clip_package, 'clip')
     invisiblewatermark_package = os.environ.get('INVISIBLEWATERMARK_PACKAGE', "git+https://github.com/patrickvonplaten/invisible-watermark.git@remove_onnxruntime_depedency")
@@ -540,7 +535,7 @@ def install_packages():
     install('pi-heif', 'pi_heif', ignore=True)
     tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0')
     install(tensorflow_package, 'tensorflow', ignore=True)
-    install('git+https://github.com/google-research/torchsde', 'torchsde', ignore=True)
+    # install('nvidia-ml-py', 'pynvml', ignore=True)
     bitsandbytes_package = os.environ.get('BITSANDBYTES_PACKAGE', None)
     if bitsandbytes_package is not None:
         install(bitsandbytes_package, 'bitsandbytes', ignore=True)
@@ -572,7 +567,8 @@ def install_repositories():
     clone(taming_transformers_repo, d('taming-transformers'), taming_transformers_commit)
     k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/crowsonkb/k-diffusion.git')
     # k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', "b43db16749d51055f813255eea2fdf1def801919")
-    k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', 'ab527a9')
+    # k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', 'ab527a9')
+    k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', 'f4a74f1ec906cb62916f58288ec73ef0330ba446')
     clone(k_diffusion_repo, d('k-diffusion'), k_diffusion_commit)
     codeformer_repo = os.environ.get('CODEFORMER_REPO', 'https://github.com/sczhou/CodeFormer.git')
     # codeformer_commit = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
@@ -698,9 +694,21 @@ def install_submodules():
 
 def ensure_base_requirements():
     try:
+        import setuptools # pylint: disable=unused-import
+    except ImportError:
+        install('setuptools', 'setuptools')
+    try:
+        import setuptools # pylint: disable=unused-import
+    except ImportError:
+        pass
+    try:
         import rich # pylint: disable=unused-import
     except ImportError:
         install('rich', 'rich')
+    try:
+        import rich # pylint: disable=unused-import
+    except ImportError:
+        pass
 
 
 def install_requirements():
@@ -739,6 +747,7 @@ def set_environment():
     os.environ.setdefault('HF_HUB_DISABLE_TELEMETRY', '1')
     os.environ.setdefault('HF_HUB_DISABLE_EXPERIMENTAL_WARNING', '1')
     os.environ.setdefault('UVICORN_TIMEOUT_KEEP_ALIVE', '60')
+    os.environ.setdefault('K_DIFFUSION_USE_COMPILE', '0')
     if sys.platform == 'darwin':
         os.environ.setdefault('PYTORCH_ENABLE_MPS_FALLBACK', '1')
 
@@ -890,27 +899,28 @@ def check_timestamp():
 
 def add_args(parser):
     group = parser.add_argument_group('Setup options')
-    group.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
-    group.add_argument('--reset', default = False, action='store_true', help = "Reset main repository to latest version, default: %(default)s")
-    group.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
-    group.add_argument('--requirements', default = False, action='store_true', help = "Force re-check of requirements, default: %(default)s")
-    group.add_argument('--quick', default = False, action='store_true', help = "Run with startup sequence only, default: %(default)s")
-    group.add_argument('--use-directml', default = False, action='store_true', help = "Use DirectML if no compatible GPU is detected, default: %(default)s")
-    group.add_argument("--use-openvino", default = False, action='store_true', help="Use Intel OpenVINO backend, default: %(default)s")
-    group.add_argument("--use-ipex", default = False, action='store_true', help="Force use Intel OneAPI XPU backend, default: %(default)s")
-    group.add_argument("--use-cuda", default=False, action='store_true', help="Force use nVidia CUDA backend, default: %(default)s")
-    group.add_argument("--use-rocm", default=False, action='store_true', help="Force use AMD ROCm backend, default: %(default)s")
-    group.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")
-    group.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
-    group.add_argument('--skip-git', default = False, action='store_true', help = "Skips running all GIT operations, default: %(default)s")
-    group.add_argument('--skip-torch', default = False, action='store_true', help = "Skips running Torch checks, default: %(default)s")
-    group.add_argument('--skip-all', default = False, action='store_true', help = "Skips running all checks, default: %(default)s")
-    group.add_argument('--experimental', default = False, action='store_true', help = "Allow unsupported versions of libraries, default: %(default)s")
-    group.add_argument('--reinstall', default = False, action='store_true', help = "Force reinstallation of all requirements, default: %(default)s")
-    group.add_argument('--test', default = False, action='store_true', help = "Run test only and exit")
+    group.add_argument("--log", type=str, default=os.environ.get("SD_LOG", None), help="Set log file, default: %(default)s")
+    group.add_argument('--debug', default = os.environ.get("SD_DEBUG",False), action='store_true', help = "Run installer with debug logging, default: %(default)s")
+    group.add_argument('--reset', default = os.environ.get("SD_RESET",False), action='store_true', help = "Reset main repository to latest version, default: %(default)s")
+    group.add_argument('--upgrade', default = os.environ.get("SD_UPGRADE",False), action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
+    group.add_argument('--requirements', default = os.environ.get("SD_REQUIREMENTS",False), action='store_true', help = "Force re-check of requirements, default: %(default)s")
+    group.add_argument('--quick', default = os.environ.get("SD_QUICK",False), action='store_true', help = "Run with startup sequence only, default: %(default)s")
+    group.add_argument('--use-directml', default = os.environ.get("SD_USEDIRECTML",False), action='store_true', help = "Use DirectML if no compatible GPU is detected, default: %(default)s")
+    group.add_argument("--use-openvino", default = os.environ.get("SD_USEOPENVINO",False), action='store_true', help="Use Intel OpenVINO backend, default: %(default)s")
+    group.add_argument("--use-ipex", default = os.environ.get("SD_USEIPEX",False), action='store_true', help="Force use Intel OneAPI XPU backend, default: %(default)s")
+    group.add_argument("--use-cuda", default = os.environ.get("SD_USECUDA",False), action='store_true', help="Force use nVidia CUDA backend, default: %(default)s")
+    group.add_argument("--use-rocm", default = os.environ.get("SD_USEROCM",False), action='store_true', help="Force use AMD ROCm backend, default: %(default)s")
+    group.add_argument('--skip-requirements', default = os.environ.get("SD_SKIPREQUIREMENTS",False), action='store_true', help = "Skips checking and installing requirements, default: %(default)s")
+    group.add_argument('--skip-extensions', default = os.environ.get("SD_SKIPEXTENSION",False), action='store_true', help = "Skips running individual extension installers, default: %(default)s")
+    group.add_argument('--skip-git', default = os.environ.get("SD_SKIPGIT",False), action='store_true', help = "Skips running all GIT operations, default: %(default)s")
+    group.add_argument('--skip-torch', default = os.environ.get("SD_SKIPTORCH",False), action='store_true', help = "Skips running Torch checks, default: %(default)s")
+    group.add_argument('--skip-all', default = os.environ.get("SD_SKIPALL",False), action='store_true', help = "Skips running all checks, default: %(default)s")
+    group.add_argument('--experimental', default = os.environ.get("SD_EXPERIMENTAL",False), action='store_true', help = "Allow unsupported versions of libraries, default: %(default)s")
+    group.add_argument('--reinstall', default = os.environ.get("SD_REINSTALL",False), action='store_true', help = "Force reinstallation of all requirements, default: %(default)s")
+    group.add_argument('--test', default = os.environ.get("SD_TEST",False), action='store_true', help = "Run test only and exit")
     group.add_argument('--version', default = False, action='store_true', help = "Print version information")
-    group.add_argument('--ignore', default = False, action='store_true', help = "Ignore any errors and attempt to continue")
-    group.add_argument('--safe', default = False, action='store_true', help = "Run in safe mode with no user extensions")
+    group.add_argument('--ignore', default = os.environ.get("SD_IGNORE",False), action='store_true', help = "Ignore any errors and attempt to continue")
+    group.add_argument('--safe', default = os.environ.get("SD_SAFE",False), action='store_true', help = "Run in safe mode with no user extensions")
 
 
 def parse_args(parser):

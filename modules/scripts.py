@@ -219,6 +219,7 @@ def list_scripts(scriptdirname, extension):
             if os.path.isfile(os.path.join(base, "..", ".priority")):
                 with open(os.path.join(base, "..", ".priority"), "r", encoding="utf-8") as f:
                     priority = priority + str(f.read().strip())
+                    log.debug(f'Script priority override: ${script.name}:{priority}')
             else:
                 priority = priority + script.priority
             priority_list.append(ScriptFile(script.basedir, script.filename, script.path, priority))

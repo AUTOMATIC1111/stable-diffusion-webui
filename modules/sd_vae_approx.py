@@ -1,8 +1,8 @@
 import os
-
 import torch
 from torch import nn
 from modules import devices, paths
+
 
 sd_vae_approx_model = None
 
@@ -23,7 +23,7 @@ class VAEApprox(nn.Module):
         extra = 11
         try:
             x = nn.functional.interpolate(x, (x.shape[2] * 2, x.shape[3] * 2))
-            x = nn.functional.pad(x, (extra, extra, extra, extra))
+            x = nn.functional.pad(x, (extra, extra, extra, extra)) # pylint: disable=not-callable
             for layer in [self.conv1, self.conv2, self.conv3, self.conv4, self.conv5, self.conv6, self.conv7, self.conv8, ]:
                 x = layer(x)
                 x = nn.functional.leaky_relu(x, 0.1)
@@ -34,7 +34,6 @@ class VAEApprox(nn.Module):
 
 def model():
     global sd_vae_approx_model # pylint: disable=global-statement
-
     if sd_vae_approx_model is None:
         from modules.shared import log
         model_path = os.path.join(paths.models_path, "VAE-approx", "model.pt")
@@ -44,8 +43,7 @@ def model():
         sd_vae_approx_model.load_state_dict(torch.load(model_path, map_location='cpu' if devices.device.type != 'cuda' else None))
         sd_vae_approx_model.eval()
         sd_vae_approx_model.to(devices.device, devices.dtype)
-        log.info(f"Loaded VAE-approx model: {model_path}")
-
+        log.info(f"Loaded VAE-approx: model={model_path}")
     return sd_vae_approx_model
 
 

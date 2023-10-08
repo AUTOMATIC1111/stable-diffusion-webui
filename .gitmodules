@@ -20,17 +20,9 @@
   path = extensions-builtin/sd-webui-controlnet
   url = https://github.com/Mikubill/sd-webui-controlnet
   ignore = dirty
-[submodule "modules/lycoris"]
-  path = modules/lycoris
-  url = https://github.com/KohakuBlueleaf/LyCORIS
-  ignore = dirty
 [submodule "extensions-builtin/stable-diffusion-webui-rembg"]
   path = extensions-builtin/stable-diffusion-webui-rembg
   url = https://github.com/vladmandic/sd-extension-rembg
-  ignore = dirty
-[submodule "extensions-builtin/a1111-sd-webui-lycoris"]
-  path = extensions-builtin/a1111-sd-webui-lycoris
-  url = https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris
   ignore = dirty
 [submodule "extensions-builtin/multidiffusion-upscaler-for-automatic1111"]
   path = extensions-builtin/multidiffusion-upscaler-for-automatic1111
@@ -39,3 +31,6 @@
 [submodule "extensions-builtin/sd-webui-agent-scheduler"]
   path = extensions-builtin/sd-webui-agent-scheduler
   url = https://github.com/ArtVentureX/sd-webui-agent-scheduler
+[submodule "extensions-builtin/sd-extension-chainner"]
+  path = extensions-builtin/sd-extension-chainner
+  url = https://github.com/vladmandic/sd-extension-chainner

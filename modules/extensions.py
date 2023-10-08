@@ -57,6 +57,8 @@ class Extension:
                 self.status = 'unknown'
                 self.git_name = repo.remotes.origin.url.split('.git')[0].split('/')[-1]
                 self.description = repo.description
+                if self.description is None or self.description.startswith("Unnamed repository"):
+                    self.description = "[No description]"
                 self.remote = next(repo.remote().urls, None)
                 head = repo.head.commit
                 self.commit_date = repo.head.commit.committed_date
@@ -78,11 +80,15 @@ class Extension:
             return []
         res = []
         for filename in sorted(os.listdir(dirpath)):
+            if not filename.endswith(".py") and not filename.endswith(".js") and not filename.endswith(".mjs"):
+                continue
             priority = '50'
             if os.path.isfile(os.path.join(dirpath, "..", ".priority")):
                 with open(os.path.join(dirpath, "..", ".priority"), "r", encoding="utf-8") as f:
                     priority = str(f.read().strip())
             res.append(scripts.ScriptFile(self.path, filename, os.path.join(dirpath, filename), priority))
+            if priority != '50':
+                shared.log.debug(f'Extension priority override: {os.path.dirname(dirpath)}:{priority}')
         res = [x for x in res if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
         return res
 

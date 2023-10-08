@@ -165,7 +165,10 @@ if __name__ == "__main__":
     installer.args = args
     installer.setup_logging()
     installer.log.info('Starting SD.Next')
-    sys.excepthook = installer.custom_excepthook
+    try:
+        sys.excepthook = installer.custom_excepthook
+    except Exception:
+        pass
     installer.read_options()
     if args.skip_all:
         args.quick = True
@@ -186,7 +189,7 @@ if __name__ == "__main__":
         installer.log.info('Skipping all checks')
         installer.quick_allowed = True
     elif installer.check_timestamp():
-        installer.log.info('No changes detected: Quick launch active')
+        installer.log.info('No changes detected: quick launch active')
         installer.install_requirements()
         installer.install_packages()
         installer.check_extensions()
@@ -204,7 +207,6 @@ if __name__ == "__main__":
             installer.log.warning(f'Setup complete with errors: {installer.errors}')
             installer.log.warning(f'See log file for more details: {installer.log_file}')
     installer.extensions_preload(parser) # adds additional args from extensions
-    installer.fix_ipex_win_torch() # redo ipex win torch fix since extensions may scan the deps of torchvision
     args = installer.parse_args(parser)
     # installer.run_setup()
     # installer.log.debug(f"Args: {vars(args)}")

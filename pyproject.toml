@@ -33,7 +33,6 @@ exclude = [
 	"extensions",
   "extensions-builtin",
   "modules/lora",
-  "modules/lycoris",
   "modules/dml",
   "modules/models/diffusion",
 ]

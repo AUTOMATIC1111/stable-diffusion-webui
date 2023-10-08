@@ -1,18 +1,19 @@
 import os
+import copy
 from abc import abstractmethod
-
 import PIL
 from PIL import Image
-
 import modules.shared
 from modules import modelloader
 
+
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 NEAREST = (Image.Resampling.NEAREST if hasattr(Image, 'Resampling') else Image.NEAREST)
-
+models = None
 
 class Upscaler:
     name = None
+    folder = None
     model_path = None
     model_name = None
     model_url = None
@@ -23,10 +24,13 @@ class Upscaler:
     scalers = []
     tile = True
 
-    def __init__(self, create_dirs=False):
+    def __init__(self, create_dirs=True):
+        global models # pylint: disable=global-statement
+        if models is None:
+            models = modules.shared.readfile('html/upscalers.json')
         self.mod_pad_h = None
-        self.tile_size = modules.shared.opts.ESRGAN_tile
-        self.tile_pad = modules.shared.opts.ESRGAN_tile_overlap
+        self.tile_size = modules.shared.opts.upscaler_tile_size
+        self.tile_pad = modules.shared.opts.upscaler_tile_overlap
         self.device = modules.shared.device
         self.img = None
         self.output = None
@@ -35,23 +39,49 @@ class Upscaler:
         self.pre_pad = 0
         self.mod_scale = None
         self.model_download_path = None
-
         if self.model_path is None and self.name:
             self.model_path = os.path.join(modules.shared.models_path, self.name)
         if self.model_path and create_dirs:
             os.makedirs(self.model_path, exist_ok=True)
-
         try:
             import cv2  # pylint: disable=unused-import
             self.can_tile = True
         except Exception:
             pass
 
+    def find_scalers(self):
+        scalers = []
+        loaded = []
+        for k, v in models.items(): # from config
+            if k != self.name:
+                continue
+            for model in v:
+                local_name = os.path.join(self.user_path, modelloader.friendly_fullname(model[1]))
+                model_path = local_name if os.path.exists(local_name) else model[1]
+                scaler = UpscalerData(name=f'{k} {model[0]}', path=model_path, upscaler=self)
+                scalers.append(scaler)
+                loaded.append(model_path)
+                # modules.shared.log.debug(f'Upscaler type={self.name} folder="{self.user_path}" model="{model[0]}" path="{model_path}"')
+        for fn in os.listdir(self.user_path): # from folder
+            if not fn.endswith('.pth') and not fn.endswith('.pt'):
+                continue
+            file_name = os.path.join(self.user_path, fn)
+            if file_name not in loaded:
+                model_name = os.path.splitext(fn)[0]
+                scaler = UpscalerData(name=f'{self.name} {model_name}', path=file_name, upscaler=self)
+                scaler.custom = True
+                scalers.append(scaler)
+                loaded.append(file_name)
+                # modules.shared.log.debug(f'Upscaler type={self.name} folder="{self.user_path}" model="{model_name}" path="{file_name}"')
+        return scalers
+
     @abstractmethod
     def do_upscale(self, img: PIL.Image, selected_model: str):
         return img
 
     def upscale(self, img: PIL.Image, scale, selected_model: str = None):
+        orig_state = copy.deepcopy(modules.shared.state)
+        modules.shared.state.begin('upscale')
         self.scale = scale
         dest_w = int(img.width * scale)
         dest_h = int(img.height * scale)
@@ -64,6 +94,8 @@ class Upscaler:
                 break
         if img.width != dest_w or img.height != dest_h:
             img = img.resize((int(dest_w), int(dest_h)), resample=LANCZOS)
+        modules.shared.state.end()
+        modules.shared.state = orig_state
         return img
 
     @abstractmethod
@@ -76,8 +108,26 @@ class Upscaler:
     def update_status(self, prompt):
         print(f"\nextras: {prompt}", file=modules.shared.progress_print_out)
 
+    def find_model(self, path):
+        info = None
+        for scaler in self.scalers:
+            if scaler.data_path == path:
+                info = scaler
+                break
+        if info is None:
+            modules.shared.log.error(f'Upscaler cannot match model: type={self.name} model="{path}"')
+            return None
+        if info.local_data_path.startswith("http"):
+            from modules.modelloader import load_file_from_url
+            info.local_data_path = load_file_from_url(url=info.data_path, model_dir=self.model_download_path, progress=True)
+        if not os.path.isfile(info.local_data_path):
+            modules.shared.log.error(f'Upscaler cannot find model: type={self.name} model="{info.local_data_path}"')
+            return None
+        return info
+
 
 class UpscalerData:
+    custom: bool = False
     name = None
     data_path = None
     scale: int = 4

@@ -303,10 +303,10 @@ class FilenameGenerator:
         'height': lambda self: self.image.height,
         'image_hash': lambda self: self.image_hash(),
         'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
-        'model': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.name_for_extra, replace_spaces=False),
-        'model_shortname': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.name_for_extra, replace_spaces=False),
-        'model_hash': lambda self: getattr(self.p, "sd_model_hash", shared.sd_model.sd_model_hash),
-        'model_name': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.model_name, replace_spaces=False),
+        'model': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.title, replace_spaces=False),
+        'model_shortname': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.name, replace_spaces=False),
+        'model_hash': lambda self: shared.sd_model.sd_checkpoint_info.shorthash,
+        'model_name': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.name, replace_spaces=False),
         'prompt_hash': lambda self: hashlib.sha256(self.prompt.encode()).hexdigest()[0:8],
         'prompt_no_styles': lambda self: self.prompt_no_style(),
         'prompt_spaces': lambda self: sanitize_filename_part(self.prompt, replace_spaces=False),
@@ -490,6 +490,7 @@ def atomically_save_image():
             try:
                 with open(txt_fullfn, "w", encoding="utf8") as file:
                     file.write(f"{exifinfo}\n")
+                shared.log.debug(f'Saving: text="{txt_fullfn}"')
             except Exception as e:
                 shared.log.warning(f'Image description save failed: {txt_fullfn} {e}')
         with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:

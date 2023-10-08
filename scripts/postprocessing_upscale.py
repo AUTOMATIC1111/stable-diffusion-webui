@@ -1,12 +1,8 @@
 from PIL import Image
-import numpy as np
 import gradio as gr
 from modules import scripts_postprocessing, shared
 from modules.ui_components import FormRow, ToolButton
 import modules.ui_symbols as symbols
-
-
-upscale_cache = {}
 
 
 class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
@@ -24,7 +20,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
 
                     with gr.TabItem('Scale to', elem_id="extras_scale_to_tab") as tab_scale_to:
                         with FormRow():
-                            with gr.Row(elem_id="upscaling_column_size", scale=4):
+                            with gr.Row(elem_id="upscaling_column_size"):
                                 upscaling_resize_w = gr.Slider(minimum=64, maximum=4096, step=8, label="Width", value=512, elem_id="extras_upscaling_resize_w")
                                 upscaling_resize_h = gr.Slider(minimum=64, maximum=4096, step=8, label="Height", value=512, elem_id="extras_upscaling_resize_h")
                                 upscaling_res_switch_btn = ToolButton(value=symbols.switch, elem_id="upscaling_res_switch_btn")
@@ -58,25 +54,12 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
             info["Postprocess upscale to"] = f"{upscale_to_width}x{upscale_to_height}"
         else:
             info["Postprocess upscale by"] = upscale_by
-
-        cache_key = (hash(np.array(image.getdata()).tobytes()), upscaler.name, upscale_mode, upscale_by,  upscale_to_width, upscale_to_height, upscale_crop)
-        cached_image = upscale_cache.pop(cache_key, None)
-
-        if cached_image is not None:
-            image = cached_image
-        else:
-            image = upscaler.scaler.upscale(image, upscale_by, upscaler.data_path)
-
-        upscale_cache[cache_key] = image
-        if len(upscale_cache) > shared.opts.upscaling_max_images_in_cache:
-            upscale_cache.pop(next(iter(upscale_cache), None), None)
-
+        image = upscaler.scaler.upscale(image, upscale_by, upscaler.data_path)
         if upscale_mode == 1 and upscale_crop:
             cropped = Image.new("RGB", (upscale_to_width, upscale_to_height))
             cropped.paste(image, box=(upscale_to_width // 2 - image.width // 2, upscale_to_height // 2 - image.height // 2))
             image = cropped
             info["Postprocess crop to"] = f"{image.width}x{image.height}"
-
         return image
 
     def process(self, pp: scripts_postprocessing.PostprocessedImage, upscale_mode=1, upscale_by=2.0, upscale_to_width=None, upscale_to_height=None, upscale_crop=False, upscaler_1_name=None, upscaler_2_name=None, upscaler_2_visibility=0.0): # pylint: disable=arguments-differ
@@ -104,7 +87,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
         pp.image = upscaled_image
 
     def image_changed(self):
-        upscale_cache.clear()
+        pass
 
 
 class ScriptPostprocessingUpscaleSimple(ScriptPostprocessingUpscale):

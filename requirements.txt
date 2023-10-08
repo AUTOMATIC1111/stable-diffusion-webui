@@ -1,3 +1,4 @@
+setuptools
 addict
 aenum
 aiohttp
@@ -38,15 +39,17 @@ voluptuous
 yapf
 scikit-image
 basicsr
-compel==2.0.2
 fasteners
+dctorch
+compel==2.0.2
+torchsde==0.2.6
 typing-extensions==4.7.1
 antlr4-python3-runtime==4.9.3
 requests==2.31.0
 tqdm==4.66.1
 accelerate==0.20.3
 opencv-python-headless==4.7.0.72
-diffusers==0.20.2
+diffusers==0.21.4
 einops==0.4.1
 gradio==3.43.2
 huggingface_hub==0.17.1
@@ -56,7 +59,7 @@ numba==0.57.1
 pandas==1.5.3
 protobuf==3.20.3
 pytorch_lightning==1.9.4
-transformers==4.31.0
+transformers==4.30.2
 tomesd==0.1.3
 urllib3==1.26.15
 Pillow==9.5.0

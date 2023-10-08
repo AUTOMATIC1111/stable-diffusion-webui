@@ -47,7 +47,7 @@ function setProgress(res) {
   let eta = '';
   if (res?.paused) eta = 'Paused';
   else if (res?.completed || (progress > 0.99)) eta = 'Finishing';
-  else if (sec === 0) eta = 'Starting';
+  else if (sec === 0) eta = `Init${res?.job?.length > 0 ? `: ${res.job}` : ''}`;
   else {
     const min = Math.floor(sec / 60);
     sec %= 60;
@@ -106,6 +106,7 @@ function requestProgress(id_task, progressEl, galleryEl, atEnd = null, onProgres
     debug('taskEnd:', id_task);
     localStorage.removeItem('task');
     setProgress();
+    if (jobStatusEl) jobStatusEl.style.display = 'none';
     if (parentGallery && livePreview) parentGallery.removeChild(livePreview);
     checkPaused(true);
     if (atEnd) atEnd();
@@ -113,6 +114,8 @@ function requestProgress(id_task, progressEl, galleryEl, atEnd = null, onProgres
 
   const start = (id_task, id_live_preview) => { // eslint-disable-line no-shadow
     request('./internal/progress', { id_task, id_live_preview }, (res) => {
+      if (jobStatusEl) jobStatusEl.innerText = (res?.job || '').trim().toUpperCase();
+      if (jobStatusEl) jobStatusEl.style.display = jobStatusEl.innerText.length > 0 ? 'block' : 'none';
       lastState = res;
       const elapsedFromStart = (new Date() - dateStart) / 1000;
       hasStarted |= res.active;
@@ -124,7 +127,7 @@ function requestProgress(id_task, progressEl, galleryEl, atEnd = null, onProgres
       if (res.live_preview && !livePreview) init();
       if (res.live_preview && galleryEl) img.src = res.live_preview;
       if (onProgress) onProgress(res);
-      setTimeout(() => start(id_task, id_live_preview), opts.live_preview_refresh_period || 250);
+      setTimeout(() => start(id_task, id_live_preview), opts.live_preview_refresh_period || 500);
     }, done);
   };
   start(id_task, 0);

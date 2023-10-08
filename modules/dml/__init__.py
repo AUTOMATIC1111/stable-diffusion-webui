@@ -1,7 +1,7 @@
 import platform
 from typing import NamedTuple, Callable, Optional
 import torch
-
+from modules.errors import log
 from modules.sd_hijack_utils import CondFunc
 
 memory_providers = ["None", "atiadlxx (AMD only)"]
@@ -12,8 +12,7 @@ if platform.system() == "Windows":
 do_nothing = lambda: None # pylint: disable=unnecessary-lambda-assignment
 
 def _set_memory_provider():
-    from modules.shared import opts, cmd_opts, log
-
+    from modules.shared import opts, cmd_opts
     if opts.directml_memory_provider == "Performance Counter":
         from .backend import pdh_mem_get_info
         from .memory import MemoryProvider
@@ -59,6 +58,7 @@ def directml_init():
 
         torch.Tensor.directml = lambda self: self.to(torch.dml.current_device())
     except Exception as e:
+        log.error(f'DirectML initialization failed: {e}')
         return False, e
     return True, None
 

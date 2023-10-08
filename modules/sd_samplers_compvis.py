@@ -1,18 +1,15 @@
 import math
 import ldm.models.diffusion.ddim
 import ldm.models.diffusion.plms
-
 import numpy as np
 import torch
-
-from modules.shared import state
 from modules import sd_samplers_common, prompt_parser, shared
-import modules.models.diffusion.uni_pc
+import modules.unipc
 
 
 samplers_data_compvis = [
-    sd_samplers_common.SamplerData('UniPC', lambda model: VanillaStableDiffusionSampler(modules.models.diffusion.uni_pc.UniPCSampler, model), [], {}),
-    sd_samplers_common.SamplerData('DDIM', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.ddim.DDIMSampler, model), [], {"default_eta_is_0": True, "uses_ensd": True}),
+    sd_samplers_common.SamplerData('UniPC', lambda model: VanillaStableDiffusionSampler(modules.unipc.UniPCSampler, model), [], {}),
+    sd_samplers_common.SamplerData('DDIM', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.ddim.DDIMSampler, model), [], {"default_eta_is_0": True}),
     sd_samplers_common.SamplerData('PLMS', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.plms.PLMSSampler, model), [], {}),
 ]
 
@@ -22,7 +19,7 @@ class VanillaStableDiffusionSampler:
         self.sampler = constructor(sd_model)
         self.is_ddim = hasattr(self.sampler, 'p_sample_ddim')
         self.is_plms = hasattr(self.sampler, 'p_sample_plms')
-        self.is_unipc = isinstance(self.sampler, modules.models.diffusion.uni_pc.UniPCSampler)
+        self.is_unipc = isinstance(self.sampler, modules.unipc.UniPCSampler)
         self.orig_p_sample_ddim = None
         if self.is_plms:
             self.orig_p_sample_ddim = self.sampler.p_sample_plms
@@ -43,8 +40,8 @@ class VanillaStableDiffusionSampler:
         return 0
 
     def launch_sampling(self, steps, func):
-        state.sampling_steps = steps
-        state.sampling_step = 0
+        shared.state.sampling_steps = steps
+        shared.state.sampling_step = 0
         try:
             return func()
         except sd_samplers_common.InterruptedException:
@@ -57,12 +54,12 @@ class VanillaStableDiffusionSampler:
         return res
 
     def before_sample(self, x, ts, cond, unconditional_conditioning):
-        if state.interrupted or state.skipped:
+        if shared.state.interrupted or shared.state.skipped:
             raise sd_samplers_common.InterruptedException
-        if state.paused:
+        if shared.state.paused:
             shared.log.debug('Sampling paused')
-            while state.paused:
-                if state.interrupted or state.skipped:
+            while shared.state.paused:
+                if shared.state.interrupted or shared.state.skipped:
                     raise sd_samplers_common.InterruptedException
                 import time
                 time.sleep(0.1)
@@ -120,7 +117,7 @@ class VanillaStableDiffusionSampler:
         self.last_latent = self.init_latent * self.mask + self.nmask * last_latent if self.mask is not None else last_latent
         sd_samplers_common.store_latent(self.last_latent)
         self.step += 1
-        state.sampling_step = self.step
+        shared.state.sampling_step = self.step
 
     def after_sample(self, x, ts, cond, uncond, res):
         if not self.is_unipc:
@@ -132,18 +129,18 @@ class VanillaStableDiffusionSampler:
 
     def initialize(self, p):
         if self.is_ddim:
-            self.eta = p.eta if p.eta is not None else shared.opts.eta_ddim
+            self.eta = p.eta if p.eta is not None else shared.opts.scheduler_eta
         else:
             self.eta = 0.0
         if self.eta != 0.0:
-            p.extra_generation_params["Eta DDIM"] = self.eta
+            p.extra_generation_params["Sampler Eta"] = self.eta
 
         if self.is_unipc:
             keys = [
+                ('Solver order', 'schedulers_solver_order'),
+                ('Sampler low order', 'schedulers_use_loworder'),
                 ('UniPC variant', 'uni_pc_variant'),
                 ('UniPC skip type', 'uni_pc_skip_type'),
-                ('UniPC order', 'schedulers_solver_order'),
-                ('UniPC lower order final', 'schedulers_use_loworder'),
             ]
 
             for name, key in keys:

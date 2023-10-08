@@ -23,6 +23,16 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         p.is_hr_pass = True
     is_refiner_enabled = p.enable_hr and p.refiner_steps > 0 and p.refiner_start > 0 and p.refiner_start < 1 and shared.sd_refiner is not None
 
+    if hasattr(p, 'init_images') and len(p.init_images) > 0:
+        tgt_width, tgt_height = 8 * math.ceil(p.init_images[0].width / 8), 8 * math.ceil(p.init_images[0].height / 8)
+        if p.init_images[0].width != tgt_width or p.init_images[0].height != tgt_height:
+            shared.log.debug(f'Resizing init images: original={p.init_images[0].width}x{p.init_images[0].height} target={tgt_width}x{tgt_height}')
+            p.init_images = [images.resize_image(1, image, tgt_width, tgt_height, upscaler_name=None) for image in p.init_images]
+            if p.mask is not None:
+                p.mask = images.resize_image(1, p.mask, tgt_width, tgt_height, upscaler_name=None)
+            if p.mask_for_overlay is not None:
+                p.mask_for_overlay = images.resize_image(1, p.mask_for_overlay, tgt_width, tgt_height, upscaler_name=None)
+
     def hires_resize(latents): # input=latents output=pil
         latent_upscaler = shared.latent_upscale_modes.get(p.hr_upscaler, None)
         shared.log.info(f'Hires: upscaler={p.hr_upscaler} width={p.hr_upscale_to_x} height={p.hr_upscale_to_y} images={latents.shape[0]}')
@@ -166,13 +176,27 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 negative_prompts_2.append(negative_prompts_2[-1])
         return prompts, negative_prompts, prompts_2, negative_prompts_2
 
+    def task_specific_kwargs(model):
+        task_args = {}
+        if sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE:
+            p.ops.append('txt2img')
+            task_args = {"height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8)}
+        elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE:
+            p.ops.append('img2img')
+            task_args = {"image": p.init_images, "strength": p.denoising_strength}
+        elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INSTRUCT:
+            p.ops.append('instruct')
+            task_args = {"height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8), "image": p.init_images, "strength": p.denoising_strength}
+        elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INPAINTING:
+            p.ops.append('inpaint')
+            if getattr(p, 'mask', None) is None:
+                p.mask = TF.to_pil_image(torch.ones_like(TF.to_tensor(p.init_images[0]))).convert("L")
+            width = 8 * math.ceil(p.init_images[0].width / 8)
+            height = 8 * math.ceil(p.init_images[0].height / 8)
+            task_args = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength, "height": height, "width": width}
+        return task_args
+
     def set_pipeline_args(model, prompts: list, negative_prompts: list, prompts_2: typing.Optional[list]=None, negative_prompts_2: typing.Optional[list]=None, desc:str='', **kwargs):
-        if hasattr(model, 'embedding_db'):
-            del model.embedding_db
-        try:
-            is_refiner = model.text_encoder.__class__.__name__ != 'CLIPTextModel'
-        except Exception:
-            is_refiner = False
         if hasattr(model, "set_progress_bar_config"):
             model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining} ' + '\x1b[38;5;71m' + desc, ncols=80, colour='#327fba')
         args = {}
@@ -188,10 +212,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         parser = 'Fixed attention'
         if shared.opts.prompt_attention != 'Fixed attention' and 'StableDiffusion' in model.__class__.__name__:
             try:
-                prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompts(model, prompts, negative_prompts, prompts_2, negative_prompts_2, is_refiner, kwargs.pop("clip_skip", None))
+                prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.encode_prompts(model, prompts, negative_prompts, kwargs.pop("clip_skip", None))
                 parser = shared.opts.prompt_attention
             except Exception as e:
-                shared.log.error(f'Prompt parser: {e}')
+                shared.log.error(f'Prompt parser encode: {e}')
         if 'prompt' in possible:
             if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and prompt_embed is not None:
                 if type(pooled) == list:
@@ -221,8 +245,14 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if 'callback' in possible:
             args['callback'] = diffusers_callback
         for arg in kwargs:
-            if arg in possible:
+            if arg in possible: # add kwargs
                 args[arg] = kwargs[arg]
+            else:
+                pass
+        task_kwargs = task_specific_kwargs(model)
+        for arg in task_kwargs:
+            if arg in possible and arg not in args: # task specific args should not override args
+                args[arg] = task_kwargs[arg]
             else:
                 pass
                 # shared.log.debug(f'Diffuser not supported: pipeline={pipeline.__class__.__name__} task={sd_models.get_diffusers_task(model)} arg={arg}')
@@ -283,19 +313,14 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     recompile_model()
 
     is_karras_compatible = shared.sd_model.__class__.__init__.__annotations__.get("scheduler", None) == diffusers.schedulers.scheduling_utils.KarrasDiffusionSchedulers
-    if ((not hasattr(shared.sd_model.scheduler, 'name')) or (p.sampler_name == 'DPM SDE') or (shared.sd_model.scheduler.name != p.sampler_name)) and (p.sampler_name != 'Default') and is_karras_compatible:
+    if hasattr(shared.sd_model, 'scheduler') and p.sampler_name != 'Default' and is_karras_compatible:
         sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)
         if sampler is None:
             sampler = sd_samplers.all_samplers_map.get("UniPC")
         sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
-        sampler_options = f'type:{shared.opts.schedulers_prediction_type} ' if shared.opts.schedulers_prediction_type != 'default' else ''
-        sampler_options += 'no_karras ' if not shared.opts.schedulers_use_karras else ''
-        sampler_options += 'no_low_order' if not shared.opts.schedulers_use_loworder else ''
-        sampler_options += 'dynamic_thresholding' if shared.opts.schedulers_use_thresholding else ''
-        sampler_options += f'solver:{shared.opts.schedulers_dpm_solver}' if shared.opts.schedulers_dpm_solver != 'sde-dpmsolver++' else ''
-        sampler_options += f'beta:{shared.opts.schedulers_beta_schedule}:{shared.opts.schedulers_beta_start}:{shared.opts.schedulers_beta_end}' if shared.opts.schedulers_beta_schedule != 'default' else ''
-        p.extra_generation_params['Sampler options'] = sampler_options if len(sampler_options) > 0 else None
-        p.extra_generation_params['Pipeline'] = shared.sd_model.__class__.__name__
+        # p.extra_generation_params['Sampler options'] = '' # TODO sampler_options
+
+    p.extra_generation_params['Pipeline'] = shared.sd_model.__class__.__name__
 
     cross_attention_kwargs={}
     if len(getattr(p, 'init_images', [])) > 0:
@@ -303,16 +328,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             p.init_images.append(p.init_images[-1])
     if lora_state['active']:
         cross_attention_kwargs['scale'] = lora_state['multiplier']
-    task_specific_kwargs={}
-    if sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE:
-        p.ops.append('txt2img')
-        task_specific_kwargs = {"height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8)}
-    elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE:
-        p.ops.append('img2img')
-        task_specific_kwargs = {"image": p.init_images, "strength": p.denoising_strength}
-    elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING:
-        p.ops.append('inpaint')
-        task_specific_kwargs = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength, "height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8)}
 
     if shared.state.interrupted or shared.state.skipped:
         if lora_state['active']:
@@ -336,6 +351,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         else:
             return p.steps
 
+    # pipeline type is set earlier in processing.py
     base_args = set_pipeline_args(
         model=shared.sd_model,
         prompts=prompts,
@@ -343,24 +359,24 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
         negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
         num_inference_steps=calculate_base_steps(),
-        eta=shared.opts.eta_ddim,
+        eta=shared.opts.scheduler_eta,
         guidance_rescale=p.diffusers_guidance_rescale,
         denoising_start=0 if use_refiner_start else p.refiner_start if use_denoise_start else None,
         denoising_end=p.refiner_start if use_refiner_start else 1 if use_denoise_start else None,
         output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
         clip_skip=p.clip_skip,
         desc='Base',
-        **task_specific_kwargs
     )
+    # p.steps = base_args['num_inference_steps']
     p.extra_generation_params['CFG rescale'] = p.diffusers_guidance_rescale
-    p.extra_generation_params["Eta DDIM"] = shared.opts.eta_ddim if shared.opts.eta_ddim is not None and shared.opts.eta_ddim > 0 else None
+    p.extra_generation_params["Sampler Eta"] = shared.opts.scheduler_eta if shared.opts.scheduler_eta is not None and shared.opts.scheduler_eta > 0 and shared.opts.scheduler_eta < 1 else None
     try:
         output = shared.sd_model(**base_args) # pylint: disable=not-callable
     except AssertionError as e:
         shared.log.info(e)
     except ValueError as e:
         shared.state.interrupted = True
-        shared.log.error(e)
+        shared.log.error(f'Processing: {e}')
 
     if hasattr(shared.sd_model, 'embedding_db') and len(shared.sd_model.embedding_db.embeddings_used) > 0:
         p.extra_generation_params['Embeddings'] = ', '.join(shared.sd_model.embedding_db.embeddings_used)
@@ -381,21 +397,21 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             output.images = hires_resize(latents=output.images)
             if latent_scale_mode is not None or p.hr_force:
                 p.ops.append('hires')
+                shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                 recompile_model(hires=True)
                 if ((not hasattr(shared.sd_model.scheduler, 'name')) or (p.latent_sampler == 'DPM SDE') or (shared.sd_model.scheduler.name != p.latent_sampler)) and (p.latent_sampler != 'Default') and is_karras_compatible:
                     sampler = sd_samplers.all_samplers_map.get(p.latent_sampler, None)
                     if sampler is None:
                         sampler = sd_samplers.all_samplers_map.get("UniPC")
                     sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
-                sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                 hires_args = set_pipeline_args(
                     model=shared.sd_model,
-                    prompts=prompts,
-                    negative_prompts=negative_prompts,
+                    prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
+                    negative_prompts=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
                     prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
                     negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
                     num_inference_steps=int(p.hr_second_pass_steps // p.denoising_strength + 1),
-                    eta=shared.opts.eta_ddim,
+                    eta=shared.opts.scheduler_eta,
                     guidance_scale=p.image_cfg_scale if p.image_cfg_scale is not None else p.cfg_scale,
                     guidance_rescale=p.diffusers_guidance_rescale,
                     output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
@@ -404,6 +420,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     strength=p.denoising_strength,
                     desc='Hires',
                 )
+                # p.steps += hires_args['num_inference_steps']
                 try:
                     output = shared.sd_model(**hires_args) # pylint: disable=not-callable
                 except AssertionError as e:
@@ -437,28 +454,37 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             shared.sd_refiner.to(devices.device)
         refiner_is_sdxl = bool("StableDiffusionXL" in shared.sd_refiner.__class__.__name__)
         p.ops.append('refine')
+        shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
         for i in range(len(output.images)):
             image = output.images[i]
             # if (image.shape[2] == 3) and (image.shape[0] % 8 != 0 or image.shape[1] % 8 != 0):
             #    shared.log.warning(f'Refiner requires image size to be divisible by 8: {image.shape}')
             #    results.append(image)
             #    return results
+            noise_level = round(350 * p.denoising_strength)
+            output_type='latent' if hasattr(shared.sd_refiner, 'vae') else 'np',
+            if shared.sd_refiner.__class__.__name__ == 'StableDiffusionUpscalePipeline':
+                image = vae_decode(latents=image, model=shared.sd_model, full_quality=p.full_quality, output_type='pil')
+                p.extra_generation_params['Noise level'] = noise_level
+                output_type = 'np'
             refiner_args = set_pipeline_args(
                 model=shared.sd_refiner,
                 prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts[i],
                 negative_prompts=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts[i],
                 num_inference_steps=int(p.refiner_steps // (1 - p.refiner_start)) if p.refiner_start > 0 and p.refiner_start < 1 and refiner_is_sdxl else int(p.refiner_steps // p.denoising_strength + 1) if refiner_is_sdxl else p.refiner_steps,
-                eta=shared.opts.eta_ddim,
+                eta=shared.opts.scheduler_eta,
                 strength=p.denoising_strength,
+                noise_level=noise_level, # StableDiffusionUpscalePipeline only
                 guidance_scale=p.image_cfg_scale if p.image_cfg_scale is not None else p.cfg_scale,
                 guidance_rescale=p.diffusers_guidance_rescale,
                 denoising_start=p.refiner_start if p.refiner_start > 0 and p.refiner_start < 1 else None,
                 denoising_end=1 if p.refiner_start > 0 and p.refiner_start < 1 else None,
                 image=image,
-                output_type='latent' if hasattr(shared.sd_refiner, 'vae') else 'np',
+                output_type=output_type,
                 clip_skip=p.clip_skip,
                 desc='Refiner',
             )
+            # p.steps += refiner_args['num_inference_steps']
             try:
                 refiner_output = shared.sd_refiner(**refiner_args) # pylint: disable=not-callable
             except AssertionError as e:

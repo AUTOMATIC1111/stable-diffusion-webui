@@ -17,11 +17,6 @@ def ipex_init(): # pylint: disable=too-many-statements
         torch.cuda.device = torch.xpu.device
         torch.cuda.device_count = torch.xpu.device_count
         torch.cuda.device_of = torch.xpu.device_of
-        # getDeviceIdListForCard is renamed since https://github.com/intel/intel-extension-for-pytorch/commit/835b41fd5c8b6facf9efee8312f20699850ee592
-        if hasattr(torch.xpu, 'getDeviceIdListForCard'):
-            torch.cuda.getDeviceIdListForCard = torch.xpu.getDeviceIdListForCard
-        else:
-            torch.cuda.getDeviceIdListForCard = torch.xpu.get_device_id_list_per_card
         torch.cuda.get_device_name = torch.xpu.get_device_name
         torch.cuda.get_device_properties = torch.xpu.get_device_properties
         torch.cuda.init = torch.xpu.init
@@ -150,18 +145,24 @@ def ipex_init(): # pylint: disable=too-many-statements
         ipex._C._DeviceProperties.minor = 2
 
         #Fix functions with ipex:
-        torch.cuda.mem_get_info = lambda device=None: [(torch.xpu.get_device_properties(device).total_memory - torch.xpu.memory_allocated(device)), torch.xpu.get_device_properties(device).total_memory]
+        torch.cuda.mem_get_info = lambda device=None: [(torch.xpu.get_device_properties(device).total_memory - torch.xpu.memory_reserved(device)), torch.xpu.get_device_properties(device).total_memory]
         torch._utils._get_available_device_type = lambda: "xpu"
         torch.has_cuda = True
         torch.cuda.has_half = True
         torch.cuda.is_bf16_supported = lambda *args, **kwargs: True
         torch.cuda.is_fp16_supported = lambda *args, **kwargs: True
-        #torch.version.cuda = "11.7" #Breaks System Info
+        torch.version.cuda = "11.7"
         torch.cuda.get_device_capability = lambda *args, **kwargs: [11,7]
         torch.cuda.get_device_properties.major = 11
         torch.cuda.get_device_properties.minor = 7
         torch.cuda.ipc_collect = lambda *args, **kwargs: None
         torch.cuda.utilization = lambda *args, **kwargs: 0
+        if hasattr(torch.xpu, 'getDeviceIdListForCard'):
+            torch.cuda.getDeviceIdListForCard = torch.xpu.getDeviceIdListForCard
+            torch.cuda.get_device_id_list_per_card = torch.xpu.getDeviceIdListForCard
+        else:
+            torch.cuda.getDeviceIdListForCard = torch.xpu.get_device_id_list_per_card
+            torch.cuda.get_device_id_list_per_card = torch.xpu.get_device_id_list_per_card
 
         ipex_hijacks()
         attention_init()

@@ -19,7 +19,7 @@ def submit_click(tab_index, extras_image, image_batch, extras_batch_input_dir, e
 
 def create_ui():
     tab_index = gr.State(value=0) # pylint: disable=abstract-class-instantiated
-    with gr.Row().style(equal_height=False, variant='compact'):
+    with gr.Row(equal_height=False, variant='compact'):
         with gr.Column(variant='compact'):
             with gr.Tabs(elem_id="mode_extras"):
                 with gr.TabItem('Single Image', id="single_image", elem_id="extras_single_tab") as tab_single:
@@ -41,7 +41,7 @@ def create_ui():
                 interrupt.click(fn=lambda: shared.state.interrupt(), inputs=[], outputs=[])
                 skip = gr.Button('Skip', elem_id=f"{id_part}_skip", variant='secondary')
                 skip.click(fn=lambda: shared.state.skip(), inputs=[], outputs=[])
-            result_images, generation_info, html_info, html_info_formatted, html_log = ui_common.create_output_panel("extras", shared.opts.outdir_extras_samples)
+            result_images, generation_info, html_info, html_info_formatted, html_log = ui_common.create_output_panel("extras")
             gr.HTML('File metadata')
             exif_info = gr.HTML(elem_id="pnginfo_html_info")
             gen_info = gr.Text(elem_id="pnginfo_gen_info", visible=False)

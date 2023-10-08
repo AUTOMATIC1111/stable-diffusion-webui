@@ -59,9 +59,9 @@ ddpm_edit_hijack = None
 def hijack_ddpm_edit():
     global ddpm_edit_hijack # pylint: disable=global-statement
     if not ddpm_edit_hijack:
-        CondFunc('modules.models.diffusion.ddpm_edit.LatentDiffusion.decode_first_stage', first_stage_sub, first_stage_cond)
-        CondFunc('modules.models.diffusion.ddpm_edit.LatentDiffusion.encode_first_stage', first_stage_sub, first_stage_cond)
-        ddpm_edit_hijack = CondFunc('modules.models.diffusion.ddpm_edit.LatentDiffusion.apply_model', apply_model, unet_needs_upcast)
+        CondFunc('modules.hijack.ddpm_edit.LatentDiffusion.decode_first_stage', first_stage_sub, first_stage_cond)
+        CondFunc('modules.hijack.ddpm_edit.LatentDiffusion.encode_first_stage', first_stage_sub, first_stage_cond)
+        ddpm_edit_hijack = CondFunc('modules.hijack.ddpm_edit.LatentDiffusion.apply_model', apply_model, unet_needs_upcast)
 
 
 unet_needs_upcast = lambda *args, **kwargs: devices.unet_needs_upcast # pylint: disable=unnecessary-lambda-assignment
