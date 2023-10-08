@@ -363,10 +363,10 @@ class TrainLoraTask(UserDict):
         w, h = arr[0], arr[-1]
 
         r = int(w) * int(h)
-        if r < 512*768:
+        if r < 512 * 768:
             return min(batch_size, 6)
-        elif r > 1024 * 768:
-            return min(batch_size, 2)
+        elif r > 1024 * 1024:
+            return min(batch_size, 4)
 
         return batch_size
 
