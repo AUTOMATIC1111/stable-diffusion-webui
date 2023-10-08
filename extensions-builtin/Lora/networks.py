@@ -173,8 +173,8 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
     while len(lora_cache) > shared.opts.lora_in_memory_limit:
         name = next(iter(lora_cache))
         lora_cache.pop(name, None)
-    if debug:
-        shared.log.debug(f'LoRA cache: {list(lora_cache)}')
+    if len(loaded_networks) > 0 and debug:
+        shared.log.debug(f'LoRA loaded={len(loaded_networks)} cache={list(lora_cache)}')
     devices.torch_gc()
 
     if recompile_model:

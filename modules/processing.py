@@ -902,7 +902,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 if shared.opts.grid_save:
                     images.save_image(grid, p.outpath_grids, "", p.all_seeds[0], p.all_prompts[0], shared.opts.grid_format, info=infotext(-1), short_filename=not shared.opts.grid_extended_filename, p=p, grid=True, suffix="-grid") # main save grid
 
-    if not p.disable_extra_networks and extra_network_data:
+    if not p.disable_extra_networks:
         modules.extra_networks.deactivate(p, extra_network_data)
 
     res = Processed(

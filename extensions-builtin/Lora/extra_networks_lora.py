@@ -5,9 +5,13 @@ from modules import extra_networks, shared
 
 
 class ExtraNetworkLora(extra_networks.ExtraNetwork):
+
     def __init__(self):
         super().__init__('lora')
+        self.active = False
         self.errors = {}
+        networks.originals = lora_patches.LoraPatches()
+
         """mapping of network names to the number of errors the network had during operation"""
 
     def activate(self, p, params_list):
@@ -18,7 +22,10 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
             p.all_prompts = [x + f"<lora:{additional}:{shared.opts.extra_networks_default_multiplier}>" for x in p.all_prompts]
             params_list.append(extra_networks.ExtraNetworkParams(items=[additional, shared.opts.extra_networks_default_multiplier]))
         if len(params_list) > 0:
-            networks.originals = lora_patches.LoraPatches()
+            self.active = True
+            if networks.debug:
+                shared.log.debug("LoRA activate")
+                networks.originals.apply()
         names = []
         te_multipliers = []
         unet_multipliers = []
@@ -51,13 +58,18 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
                 network_hashes.append(f"{alias}: {shorthash}")
             if network_hashes:
                 p.extra_generation_params["Lora hashes"] = ", ".join(network_hashes)
-        shared.log.info(f'Applying LoRA: {names} patch={t1-t0:.2f}s load={t2-t1:.2f}s')
-
+        if len(names) > 0:
+            shared.log.info(f'Applying LoRA: {names} patch={t1-t0:.2f}s load={t2-t1:.2f}s')
+        elif self.active:
+            self.active = False
 
     def deactivate(self, p):
-        networks.originals.undo()
-        if networks.debug:
-            shared.log.debug(f"LoRA timers: load={networks.timer['load']:.2f}s apply={networks.timer['apply']:.2f}s restore={networks.timer['restore']:.2f}s")
+        if not self.active and getattr(networks, "originals", None ) is not None:
+            networks.originals.undo()
+            if networks.debug:
+                shared.log.debug("LoRA deactivate")
+        if self.active and networks.debug:
+            shared.log.debug(f"LoRA end: load={networks.timer['load']:.2f}s apply={networks.timer['apply']:.2f}s restore={networks.timer['restore']:.2f}s")
         if self.errors:
             p.comment("Networks with errors: " + ", ".join(f"{k} ({v})" for k, v in self.errors.items()))
             for k, v in self.errors.items():
