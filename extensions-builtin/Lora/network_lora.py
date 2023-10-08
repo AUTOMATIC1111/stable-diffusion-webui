@@ -1,5 +1,6 @@
 import torch
 
+import diffusers.models.lora as diffusers_lora
 import lyco_helpers
 import network
 from modules import devices
@@ -24,8 +25,8 @@ class NetworkModuleLora(network.NetworkModule):
         weight = weights.get(key)
         if weight is None and none_ok:
             return None
-        is_linear = type(self.sd_module) in [torch.nn.Linear, torch.nn.modules.linear.NonDynamicallyQuantizableLinear, torch.nn.MultiheadAttention]
-        is_conv = type(self.sd_module) in [torch.nn.Conv2d]
+        is_linear = type(self.sd_module) in [torch.nn.Linear, torch.nn.modules.linear.NonDynamicallyQuantizableLinear, torch.nn.MultiheadAttention, diffusers_lora.LoRACompatibleLinear]
+        is_conv = type(self.sd_module) in [torch.nn.Conv2d, diffusers_lora.LoRACompatibleConv]
         if is_linear:
             weight = weight.reshape(weight.shape[0], -1)
             module = torch.nn.Linear(weight.shape[1], weight.shape[0], bias=False)
@@ -68,4 +69,7 @@ class NetworkModuleLora(network.NetworkModule):
     def forward(self, x, y):
         self.up_model.to(device=devices.device)
         self.down_model.to(device=devices.device)
+        if hasattr(y, "scale"):
+            return y(scale=1) + self.up_model(self.down_model(x)) * self.multiplier() * self.calc_scale()
+
         return y + self.up_model(self.down_model(x)) * self.multiplier() * self.calc_scale()
