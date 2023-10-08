@@ -360,8 +360,10 @@ def check_torch():
         pass
     elif allow_cuda and (shutil.which('nvidia-smi') is not None or os.path.exists(os.path.join(os.environ.get('SystemRoot') or r'C:\Windows', 'System32', 'nvidia-smi.exe'))):
         log.info('nVidia CUDA toolkit detected')
-        torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision --index-url https://download.pytorch.org/whl/cu121')
-        xformers_package = os.environ.get('XFORMERS_PACKAGE', '--pre xformers<0.0.24' if opts.get('cross_attention_optimization', '') == 'xFormers' else 'none')
+        xformers_enabled = opts.get('cross_attention_optimization', '') == 'xFormers'
+        cuda_version = "118" if xformers_enabled else "121"
+        torch_command = os.environ.get('TORCH_COMMAND', f'torch torchvision --index-url https://download.pytorch.org/whl/cu{cuda_version}')
+        xformers_package = os.environ.get('XFORMERS_PACKAGE', '--pre xformers<0.0.24' if xformers_enabled else 'none')
     elif allow_rocm and (shutil.which('rocminfo') is not None or os.path.exists('/opt/rocm/bin/rocminfo') or os.path.exists('/dev/kfd')):
         log.info('AMD ROCm toolkit detected')
         os.environ.setdefault('PYTORCH_HIP_ALLOC_CONF', 'garbage_collection_threshold:0.8,max_split_size_mb:512')
