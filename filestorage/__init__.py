@@ -9,7 +9,7 @@ import os
 import typing
 
 from loguru import logger
-from filestorage.storage import FileStorage
+from filestorage.storage import FileStorage, PrivatizationFileStorage
 from tools.reflection import find_classes
 from urllib.parse import urlparse
 from tools.environment import Env_EndponitKey
@@ -60,6 +60,17 @@ def push_local_path(remoting, local, storage_cls=None):
     storage_cls = storage_cls or find_storage_classes_with_env()
     with storage_cls() as s:
         return s.upload(local, remoting)
+
+
+def signature_url(remoting, storage_cls=None):
+    storage_cls = storage_cls or find_storage_classes_with_env()
+    with storage_cls() as s:
+        return s.preview_url(remoting)
+
+
+def http_down(remoting, local):
+    f = PrivatizationFileStorage()
+    f.download(remoting, local)
 
 
 FileStorageCls = find_storage_classes_with_env()

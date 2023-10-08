@@ -650,6 +650,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     #     params.filename = fullfn_without_extension + extension
     #     fullfn = params.filename
 
+    # fix: 解决提示词过长导致文件命名超出限制的BUG
     fn_base = os.path.basename(params.filename)
     dirname = os.path.dirname(params.filename)
     params.filename = os.path.join(dirname, fn_base[-64:])

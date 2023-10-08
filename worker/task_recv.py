@@ -28,7 +28,7 @@ from tools.wrapper import timed_lru_cache
 from tools.host import get_host_name
 from modules.shared import mem_mon as vram_mon
 from apscheduler.schedulers.background import BackgroundScheduler
-from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api, run_train_ratio,\
+from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api, run_train_ratio, \
     Env_Run_Train_Time_Start, Env_Run_Train_Time_End, is_flexible_worker, get_worker_state_dump_path
 
 try:
@@ -37,6 +37,7 @@ except:
     from collections import Iterable  # <=py3.9
 
 TaskQueuePrefix = "task_"
+TaskPreQueuePrefix = 'task-pre_'
 OtherTaskQueueToken = TaskQueuePrefix + 'others'
 TrainTaskQueueToken = 'train'
 UpscaleCoeff = 100 * 1000
@@ -113,9 +114,16 @@ class TaskReceiverRecorder:
                     }))
             self.dump_ts = int(time.time())
 
+    def idle_time(self):
+        with open(self.file_path) as f:
+            d = json.loads(f.readline())
+            if d['status'] == TaskReceiverState.Idle.value:
+                return int(time.time()) - d['timestamp']
+
 
 def register_worker(worker_id):
     try:
+
         pool = RedisPool()
         conn = pool.get_connection()
         conn.setex(worker_id, 300, 60)
@@ -130,7 +138,8 @@ def register_worker(worker_id):
 
 class TaskReceiver:
 
-    def __init__(self, recoder: CkptLoadRecorder, train_only: bool = False):
+    def __init__(self, recoder: CkptLoadRecorder, train_only: bool = False,
+                 task_received_callback: typing.Callable = None):
         self.release_flag = None
         self.model_recoder = recoder
         self.redis_pool = RedisPool()
@@ -139,7 +148,9 @@ class TaskReceiver:
         # self.worker_id = self._worker_id()
         self.is_elastic = is_flexible_worker()
         self.recorder = TaskReceiverRecorder()
+        self.task_score_limit = 5 if cmd_opts.lowvram else (10 if cmd_opts.medvram else -1)
         self.worker_id = self._worker_id()
+        self.task_received_callback = task_received_callback
 
         run_train_time_cfg = get_run_train_time_cfg()
         run_train_time_start = run_train_time_cfg[Env_Run_Train_Time_Start]
@@ -165,6 +176,8 @@ class TaskReceiver:
 
         self.timer.add_job(register_worker, 'interval', seconds=30, args=[self.worker_id])
         self.timer.start()
+        self.exception_ts = 0
+        self.closed = False
 
     def _worker_id(self):
         group_id = get_worker_group()
@@ -200,7 +213,7 @@ class TaskReceiver:
             if is_flexible_worker():
                 raise OSError('elastic resource cannot run with train only mode')
 
-        return f"{group_id}:{nvidia_video_card_id}"
+        return f"{group_id}:{self.task_score_limit}.{nvidia_video_card_id}"
 
     def _clean_tmp_files(self):
         now = time.time()
@@ -264,8 +277,24 @@ class TaskReceiver:
             group_id = get_worker_group()
             workers = group_workers.get(group_id) or []
             if workers:
+                def can_exec_train(worker_id: str):
+                    if TrainOnlyWorkerFlag in worker_id:
+                        return False
+
+                    start = worker_id.index(':') if ':' in worker_id else 0
+                    end = worker_id.index(".")
+                    if end > start > 0:
+                        try:
+                            limit = int(worker_id[start: end])
+                            return limit == -1
+                        except:
+                            return True
+
+                    return True
+
                 # 1/5的WOEKER 生图，剩下的执行训练。
-                workers = [w for w in workers if TrainOnlyWorkerFlag not in w]
+                workers = [w for w in workers if can_exec_train(w)]
+
                 run_train_worker_num = int(len(workers) * run_train_ratio())
 
                 if run_train_worker_num >= 1:
@@ -286,14 +315,47 @@ class TaskReceiver:
 
         return False
 
-    def search_task_with_id(self, rds, task_id) -> typing.Any:
+    def search_task_with_id(self, rds, task_id, queue_name, task_score) -> typing.Any:
         # redis > 6.2.0
         # meta = rds.getdel(task_id)
+        if self.task_score_limit > 0:
+            arr = task_id.split('_')
+            if len(arr) == 2:
+                try:
+                    score = int(arr[-1])
+                    if self.task_score_limit < score:
+                        print(f"====> task:{task_id} out of limit({self.task_score_limit}).")
+                        return
+                except:
+                    pass
+
         meta = rds.get(task_id)
         if meta:
+            t = Task.from_json_str(meta)
+            if t.is_train:
+                paralle_count = t.get('paralle_count', 0)
+                if paralle_count > 0:
+                    can_exec = self.can_exec_train_task(t.user_id, paralle_count)
+
+                    if not can_exec:
+                        delay = 0
+                        logger.info(f"repush task {t.id} to {queue_name} and score:{task_score + delay}")
+                        time.sleep(10)
+                        self.repush_task(t.id, queue_name, task_score + delay)
+                        time.sleep(2)
+                        logger.debug(f"return none task")
+                        return
+                    else:
+                        self.incr_train_concurrency(t.user_id)
+
+            if callable(self.task_received_callback) and not self.task_received_callback(t):
+                logger.info("receive callback repush task.")
+                self.repush_task(t.id, queue_name, task_score)
+                return
+
             task_id = task_id.decode('utf8') if isinstance(task_id, bytes) else task_id
             rds.setex(f"task:worker:{task_id}", timedelta(hours=2), self.worker_id)
-            return Task.from_json_str(meta)
+            return t
 
     def _extract_queue_task(self, queue_name: str, retry: int = 1):
         queue_name = queue_name.decode('utf8') if isinstance(queue_name, bytes) else queue_name
@@ -302,20 +364,24 @@ class TaskReceiver:
         locker = redis_lock.Lock(rds, "task-lock-" + queue_name, expire=10)
         locked = False
         try:
+            # logger.debug("===> acquire locker: task-lock-" + queue_name)
             locker.acquire(blocking=True, timeout=3)
             locked = True
+            # self._preload_task(queue_name)
             for _ in range(retry):
                 now = int(time.time() * 1000)
                 # min 最小为当前时间（ms）- VIP最大等级*放大系数（VIP提前执行权重）- 任务过期时间（1天）
                 # max 为当前时间（ms） + 偏移量1秒
                 min, max = -1, now + 1000
                 values = rds.zrangebyscore(
-                    queue_name, min, max, start=0, num=1)
+                    queue_name, min, max, start=0, num=1, withscores=True)
                 task = None
                 if values:
-                    rds.zrem(queue_name, *values)
-                    for v in values:
-                        task = self.search_task_with_id(rds, v)
+                    names = [v[0] for v in values]
+                    rds.zrem(queue_name, *names)
+                    for name, score in values:
+
+                        task = self.search_task_with_id(rds, name, queue_name, score)
                         if task:
                             break
                 if task:
@@ -345,6 +411,34 @@ class TaskReceiver:
             if task:
                 return task
 
+    def _preload_task(self, queue_name: str):
+        rds = self.redis_pool.get_connection()
+        model_hash = queue_name[len(TaskQueuePrefix):]
+        # 查询键：task-pre_{model_hash}*
+        keys = rds.keys(TaskPreQueuePrefix + model_hash + '*')
+
+        if not keys:
+            return
+
+        now = int(time.time() * 1000)
+        min, max = -1, now + 1000
+        # 当前任务队列长度
+        count = rds.zcount(queue_name, min, max)
+        for key in keys:
+            concurrency = int(key.split('-')[-1])
+            push_num = concurrency - count
+            logger.info(f"[{queue_name}] preload task num:{push_num}.")
+            # 从预加载队列LPOP task_id
+            task_ids = rds.lpop(key, push_num)
+            for task_id in task_ids:
+                # 设置task str任务的meta信息的过期
+                rds.expire(task_id, 3600 * 24)
+                # 从pre队列的task id 导入到正式队列
+                rds.zadd(queue_name, {
+                    task_id: now
+                })
+                logger.info(f"preload task:{task_id} to {queue_name}.")
+
     def _search_queue_names(self):
         rds = self.redis_pool.get_connection()
         keys = rds.keys(TaskQueuePrefix + '*')
@@ -363,13 +457,17 @@ class TaskReceiver:
                 return t
 
     def get_one_task(self, block: bool = True, sleep_time: float = 4) -> typing.Optional[Task]:
-        while 1:
+        while not self.closed:
             st = time.time()
             if self.train_only:
                 task = self._search_train_task()
             else:
                 task = self._search_task()
             if task:
+                if isinstance(task, Task):
+                    task.setdefault("worker", self.worker_id)
+
+                self.recorder.set_state(TaskReceiverState.Running)
                 return task
             if not block:
                 return None
@@ -379,7 +477,7 @@ class TaskReceiver:
             self.register_worker()
 
     def task_iter(self, sleep_time: float = 2) -> typing.Iterable[Task]:
-        while 1:
+        while not self.closed:
             try:
                 st = time.time()
 
@@ -395,6 +493,9 @@ class TaskReceiver:
                         task = self._search_task()
 
                 if task:
+                    if isinstance(task, Task):
+                        task.setdefault("worker", self.worker_id)
+
                     self.recorder.set_state(TaskReceiverState.Running)
                     yield task
                 else:
@@ -404,13 +505,19 @@ class TaskReceiver:
                 if wait > 0:
                     self._clean_tmp_files()
                     time.sleep(wait)
-
+                self.register_worker()
+                self.write_worker_state()
+                self.exception_ts = -1
             except:
                 time.sleep(1)
                 logger.exception("get task err")
+                self.exception_ts = time.time()
             finally:
-                self.register_worker()
-                self.write_worker_state()
+                if self.exception_ts > 0 and time.time() - self.exception_ts > 900:
+                    # 超过15分钟自动退出~
+                    logger.warning(f'auto exit, catch error at:{self.exception_ts}')
+                    self.close()
+                    break
 
     def register_worker(self):
         if time.time() - self.register_time > 120:
@@ -483,5 +590,57 @@ class TaskReceiver:
             self.release_flag = False
         return self.release_flag
 
+    def incr_train_concurrency(self, user_id: str):
+        rds = self.redis_pool.get_connection()
+        key = f'counter:train:{user_id}'
+        v = rds.sadd(key, self.worker_id)
+        logger.info(f'{key} + 1, current:{v}')
+        rds.expire(key, 3 * 3600)
+
+    def decr_train_concurrency(self, task: Task):
+        if task.is_train:
+            paralle_count = task.get('paralle_count', 0)
+            if paralle_count > 0:
+                user_id = task.user_id
+                rds = self.redis_pool.get_connection()
+                key = f'counter:train:{user_id}'
+                v = rds.srem(key, self.worker_id)
+                logger.info(f'{key} - 1, current:{v}')
+                rds.expire(key, 3 * 3600)
+
+    def can_exec_train_task(self, user_id: str, max_value: int):
+        rds = self.redis_pool.get_connection()
+        key = f'counter:train:{user_id}'
+        members = rds.smembers(key)
+        if len(members) < max_value:
+            return True
+        running_workers = self.get_all_workers()
+        user_workers = set()
+
+        logger.debug(f">>> {user_id} current workers:{'/n/t'.join(running_workers)}, /n/t max:{max_value}")
+        flag = True
+        members = [k.decode('utf8') if isinstance(k, bytes) else k for k in members]
+        for worker_id in members:
+            if worker_id in running_workers:
+                user_workers.add(worker_id)
+            if len(user_workers) >= max_value:
+                flag = False
+                break
+        logger.info(f">>> {user_id} current trainning workers:{'/n/t'.join(user_workers)},/n/t max:{max_value}>{flag}")
+        return flag
+
+    def repush_task(self, task_id: str, queue_name: str, score: int):
+        rds = self.redis_pool.get_connection()
+
+        rds.zadd(queue_name, {
+            task_id: score
+        })
+
+
     def close(self):
+        if self.closed:
+            return
+
+        self.closed = True
         self.timer.shutdown()
+        self.redis_pool.close()

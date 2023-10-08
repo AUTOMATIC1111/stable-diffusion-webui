@@ -9,6 +9,7 @@ import io
 import os
 import typing
 import uuid
+import hashlib
 
 from PIL import Image
 from loguru import logger
@@ -16,8 +17,9 @@ from datetime import datetime
 from worker.task_recv import Tmp
 from PIL.PngImagePlugin import PngInfo
 from tools.encryptor import des_encrypt
-from modules.processing import Processed
+from tools.wrapper import FuncExecTimeWrapper
 from modules.shared import cmd_opts
+from modules.processing import Processed
 from modules.scripts import Script, ScriptRunner
 from modules.sd_models import reload_model_weights, CheckpointInfo
 from handlers.formatter import format_alwayson_script_args
@@ -61,15 +63,24 @@ def batch_model_local_paths(model_type: ModelType, *remoting_paths: str) \
     remoting_key_dst_pairs, loc = [], []
     os.makedirs(ModelLocation[model_type], exist_ok=True)
     for p in remoting_paths:
+        if not p:
+            continue
         if os.path.isfile(p):
             loc.append(p)
             continue
+
         dst = os.path.join(ModelLocation[model_type], os.path.basename(p))
         loc.append(dst)
         if not os.path.isfile(dst):
             remoting_key_dst_pairs.append((p, dst))
     batch_download(remoting_key_dst_pairs)
     return loc
+
+
+def mk_tmp_dir(dirname):
+    d = os.path.join(Tmp, dirname)
+    os.makedirs(d, exist_ok=True)
+    return d
 
 
 def get_tmp_local_path(remoting_path: str):
@@ -79,11 +90,17 @@ def get_tmp_local_path(remoting_path: str):
         return remoting_path
 
     os.makedirs(Tmp, exist_ok=True)
-    dst = os.path.join(Tmp, os.path.basename(remoting_path))
+    _, ex = os.path.splitext(remoting_path)
+
+    md5 = hashlib.md5()
+    md5.update(remoting_path.encode())
+    hash_str = md5.hexdigest()[:16]
+
+    dst = os.path.join(Tmp, hash_str + ex)
     return get_local_path(remoting_path, dst)
 
 
-def upload_files(is_tmp, *files):
+def upload_files(is_tmp, *files, dirname=None):
     keys = []
     if files:
         date = datetime.today().strftime('%Y/%m/%d')
@@ -91,6 +108,8 @@ def upload_files(is_tmp, *files):
         bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
         file_storage_system = FileStorageCls()
         relative = S3Tmp if is_tmp else S3SDWEB
+        if dirname:
+            relative = os.path.join(relative, dirname)
 
         for f in files:
             name = os.path.basename(f)
@@ -100,12 +119,15 @@ def upload_files(is_tmp, *files):
     return keys
 
 
-def upload_content(is_tmp, content, name=None):
+def upload_content(is_tmp, content, name=None, dirname=None):
     date = datetime.today().strftime('%Y/%m/%d')
     storage_env = get_file_storage_system_env()
     bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
     file_storage_system = FileStorageCls()
     relative = S3Tmp if is_tmp else S3SDWEB
+    if dirname:
+        relative = os.path.join(relative, dirname)
+
     name = name or str(uuid.uuid1())
     key = os.path.join(bucket, relative, date, name)
     file_storage_system.upload_content(key, content)
@@ -165,13 +187,14 @@ def get_selectable_script(script_runner, script_name):
 
 def script_name_to_index(name, scripts):
     try:
-        return [script.title().lower().replace(' ', '-') for script in scripts].index(name.lower())
+        return [script.title().lower().replace(' ', '-') for script in scripts].index(name.lower().replace(' ', '-'))
     except:
         raise Exception(f"Script '{name}' not found")
 
 
+ADetailer = 'ADetailer'
 default_alwayson_scripts = {
-    'ADetailer': {
+    ADetailer: {
         'args': [{
             'ad_model': 'mediapipe_face_full'
         }]
@@ -180,7 +203,8 @@ default_alwayson_scripts = {
 
 
 def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: StrMapMap, selectable_scripts: Script,
-                     selectable_idx: int, request_script_args: typing.Sequence, script_runner: ScriptRunner):
+                     selectable_idx: int, request_script_args: typing.Sequence, script_runner: ScriptRunner,
+                     enable_def_adetailer: bool = True):
     script_args = [x for x in default_script_args]
 
     if selectable_scripts:
@@ -188,7 +212,15 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
         script_args[0] = selectable_idx + 1
 
     alwayson_scripts = alwayson_scripts or {}
-    alwayson_scripts.update(default_alwayson_scripts)
+    if not getattr(cmd_opts, 'disable_tss_def_alwayson', False):
+        for k, v in default_alwayson_scripts.items():
+            if not enable_def_adetailer and ADetailer == k:
+                logger.debug('====> adetailer plugin disable!')
+                continue
+            alwayson_scripts[k] = v
+    else:
+        logger.debug('====> disable tss default plugin!')
+
     # Now check for always on scripts
     if alwayson_scripts:
 
@@ -229,17 +261,21 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
     return script_args
 
 
+@FuncExecTimeWrapper()
 def load_sd_model_weights(filename, sha256=None):
-    checkpoint = CheckpointInfo(filename, sha256)
-    return reload_model_weights(info=checkpoint)
+    # 修改文件mtime，便于后续清理
+    if filename:
+        os.popen(f'touch {filename}')
+        checkpoint = CheckpointInfo(filename, sha256)
+        return reload_model_weights(info=checkpoint)
 
 
 def close_pil(image: Image):
     image.close()
 
 
-def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, script_dir: str, task_id: str,
-                          clean_upload_files: bool = True, encrypt_info: bool = True):
+def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, script_dir: str,
+                          task_id: str, clean_upload_files: bool = True, inspect=False):
     if not output_dir:
         raise ValueError('output is empty')
 
@@ -275,14 +311,18 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, scrip
         full_path = os.path.join(out_obj.output_dir, filename)
 
         pnginfo_data = PngInfo()
-        pnginfo_data.add_text('by', 'xing-zhe')
+        pnginfo_data.add_text('by', 'xingzhe')
         size = f"{processed_image.width}*{processed_image.height}"
+        infotexts = proc.infotexts[n].replace('-automatic1111', "-xingzhe") \
+            if proc.infotexts and n < len(proc.infotexts) else ''
         for k, v in processed_image.info.items():
-            if 'parameters' == k and encrypt_info and not cmd_opts.no_encrypt_info:
-                v = des_encrypt(v)
-            if cmd_opts.no_encrypt_info:
-                print(v)
+            if 'parameters' == k:
+                v = str(v).replace('-automatic1111', "-xingzhe")
+                print(f"image parameters:{v}")
+                infotexts = v
+                continue
             pnginfo_data.add_text(k, str(v))
+        pnginfo_data.add_text('parameters', infotexts)
 
         processed_image.save(full_path, pnginfo=pnginfo_data)
         out_obj.add_image(full_path)
@@ -290,6 +330,10 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, scrip
     grid_keys = out_grid_image.multi_upload_keys(clean_upload_files)
     image_keys = out_image.multi_upload_keys(clean_upload_files)
     script_keys = out_script_image.multi_upload_keys(clean_upload_files)
+
+    if inspect:
+        out_grid_image.inspect(grid_keys)
+        out_image.inspect(image_keys)
 
     output = {
         'grids': grid_keys.to_dict(),

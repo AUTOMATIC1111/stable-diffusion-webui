@@ -1,0 +1,22 @@
+name: 🧩 其他 Others
+description: 提出其他问题。 Report any other non-support related issues.
+
+body:
+- type: markdown
+  attributes:
+    value: >
+      #### 你可以在这里提出任何前面几类模板不适用的问题，包括但不限于：优化性建议、框架使用体验反馈、版本兼容性问题、报错信息不清楚等。
+
+      #### You can report any issues that are not applicable to the previous types of templates, including but not limited to: enhancement suggestions, feedback on the use of the framework, version compatibility issues, unclear error information, etc.
+
+- type: textarea
+  id: others
+  attributes:
+    label: 问题描述 Please describe your issue
+  validations:
+    required: true
+
+- type: markdown
+  attributes:
+    value: >
+      感谢你的贡献 🎉！ Thanks for your contribution 🎉!

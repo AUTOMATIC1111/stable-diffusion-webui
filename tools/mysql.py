@@ -129,6 +129,9 @@ locker = threading.RLock()
 
 def get_mysql_cli(host: str = None, port: typing.Optional[int] = None, user: str = None,
                   pwd: str = None, db: str = None) -> typing.Optional[MySQLClient]:
+    if os.getenv("ENABLE_TSS", "0") == '1':
+        return None
+
     env_vars = get_mysql_env()
     if not host:
         host = env_vars.get(Env_MysqlHost)

@@ -5,7 +5,7 @@
 # @Site    : 
 # @File    : txt2img.py
 # @Software: Hifive
-import os.path
+import os
 import time
 import typing
 import modules.scripts
@@ -58,14 +58,17 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  steps: int = 30,  # 步数
                  select_script_name: str = None,  # 选择下拉框脚本名
                  select_script_args: typing.Sequence = None,  # 选择下拉框脚本参数
+                 select_script_nets: typing.Sequence[typing.Mapping] = None,  # 选择下拉框脚本涉及的模型信息
                  alwayson_scripts: AlwaysonScriptsType = None,  # 插件脚本，object格式： {插件名: {'args': [参数列表]}}
                  override_settings_texts=None,  # 自定义设置 TEXT,如: ['Clip skip: 2', 'ENSD: 31337', 'sd_vae': 'None']
                  lora_models: typing.Sequence[str] = None,  # 使用LORA，用户和系统全部LORA列表
                  embeddings: typing.Sequence[str] = None,  # embeddings，用户和系统全部mbending列表
+                 lycoris_models: typing.Sequence[str] = None,  # lycoris，用户和系统全部lycoris列表
                  compress_pnginfo: bool = True,  # 使用GZIP压缩图片信息（默认开启）
                  hr_sampler_name: str = None,  # hr sampler
                  hr_prompt: str = None,
                  hr_negative_prompt: str = None,
+                 disable_ad_face: bool = False,  # 关闭默认的ADetailer face
                  xl_refiner: bool = False,  # 是否启用XLRefiner
                  xl_refiner_ds: float = 0.2,  # XL 精描幅度
                  xl_refiner_model_path: str = None,  # XL refiner模型文件
@@ -75,7 +78,7 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
         t2i_script_runner = modules.scripts.scripts_txt2img
         selectable_scripts, selectable_script_idx = get_selectable_script(t2i_script_runner, select_script_name)
         script_args = init_script_args(default_script_arg_txt2img, alwayson_scripts, selectable_scripts,
-                                       selectable_script_idx, select_script_args, t2i_script_runner)
+                                       selectable_script_idx, select_script_args, t2i_script_runner, not disable_ad_face)
 
         super(Txt2ImgTask, self).__init__(
             sd_model=shared.sd_model,
@@ -105,13 +108,13 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
             hr_resize_y=hr_resize_y,
             override_settings=override_settings,
             outpath_samples=f"output/{user_id}/txt2img/samples/",
+            outpath_scripts=f"output/{user_id}/txt2img/scripts/",
             outpath_grids=f"output/{user_id}/txt2img/grids/",
             hr_sampler_name=hr_sampler_name,
             hr_prompt=hr_prompt,
             hr_negative_prompt=hr_negative_prompt
         )
 
-        self.outpath_scripts = f"output/{user_id}/txt2img/scripts/"
         self.scripts = modules.scripts.scripts_txt2img
         self.script_args = script_args
         self.script_name = select_script_name
@@ -121,6 +124,8 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
         self.kwargs = kwargs
         self.loras = lora_models
         self.embedding = embeddings
+        self.lycoris = lycoris_models
+        self.select_script_nets = select_script_nets
         self.xl_refiner = xl_refiner
         self.xl_refiner_ds = xl_refiner_ds
         self.xl_refiner_model_path = xl_refiner_model_path
@@ -149,6 +154,9 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                 raise TypeError('select_script type err')
             select_script_name = select_script['name']
             select_script_args = select_script['args']
+        else:
+            select_script_name = task.get('select_script_name')
+            select_script_args = task.get('select_script_args')
         kwargs = task.data.copy()
         kwargs.pop('base_model_path')
         kwargs.pop('alwayson_scripts')
@@ -159,6 +167,11 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
             kwargs.pop('select_script')
         if 'select_script_name' in kwargs:
             kwargs.pop('select_script_name')
+        if 'select_script_args' in kwargs:
+            kwargs.pop('select_script_args')
+
+        if "nsfw" in prompt.lower():
+            prompt = prompt.lower().replace('nsfw', '')
 
         return cls(base_model_path,
                    user_id,
@@ -234,7 +247,7 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
     def _exec_txt2img(self, task: Task) -> typing.Iterable[TaskProgress]:
         base_model_path, xl_refiner_model = self._get_local_checkpoint(task)
         load_sd_model_weights(base_model_path, task.model_hash)
-        progress = TaskProgress.new_ready(task, f'model loaded:{os.path.basename(base_model_path)}, run t2i...')
+        progress = TaskProgress.new_ready(task, f'model loaded, run t2i...')
         yield progress
         process_args = self._build_txt2img_arg(progress)
         self._set_little_models(process_args)
@@ -258,10 +271,11 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
                                        process_args.outpath_samples,
                                        process_args.outpath_grids,
                                        process_args.outpath_scripts,
-                                       task.id)
+                                       task.id,
+                                       inspect=process_args.kwargs.get("need_audit", False))
 
         progress = TaskProgress.new_finish(task, images)
-        progress.update_seed(processed.seed, processed.subseed)
+        progress.update_seed(processed.all_seeds, processed.all_subseeds)
 
         yield progress
 

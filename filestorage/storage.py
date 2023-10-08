@@ -120,6 +120,9 @@ class FileStorage:
     def upload_content(self, remoting_path, content) -> str:
         raise NotImplementedError
 
+    def preview_url(self, remoting_path: str) -> str:
+        raise NotImplementedError
+
     def multi_upload(self, local_remoting_pars: typing.Sequence[typing.Tuple[str, str]]):
         if local_remoting_pars:
             worker_count = cpu_count()
@@ -133,6 +136,13 @@ class FileStorage:
             worker_count = worker_count if worker_count <= 4 else 4
             w = MultiThreadWorker(remoting_loc_pairs, self.download, worker_count)
             w.run()
+
+    def download_dir(self, remoting_dir: str, local_dir: str) -> bool:
+        if os.path.isdir(local_dir):
+            shutil.rmtree(local_dir)
+
+        os.makedirs(local_dir, exist_ok=True)
+        return False
 
     def close(self):
         pass
@@ -174,7 +184,7 @@ class PrivatizationFileStorage(FileStorage):
     def name(self):
         return 'default'
 
-    def download(self, remoting_path: str, local_path: str) -> str:
+    def download(self, remoting_path: str, local_path: str, progress_callback=None) -> str:
         if os.path.isfile(local_path):
             return local_path
 
@@ -187,28 +197,31 @@ class PrivatizationFileStorage(FileStorage):
         if 'http' not in remoting_path.lower():
             raise OSError(f'unsupported file:{remoting_path}')
 
-        self.logger.info(f"download url: {remoting_path}...")
-        resp = http_request(remoting_path)
-        if resp:
-            filename = os.path.basename(remoting_path)
-            if 'Content-Disposition' in resp.headers:
-                cd = resp.headers.get('Content-Disposition')
-                map = dict((item.strip().split('=')[:2] for item in (item for item in cd.split(';') if '=' in item)))
-                if 'filename' in map:
-                    filename = map['filename'].strip('"')
+        filename = os.path.basename(remoting_path)
+        filepath = os.path.join(self.tmp_dir, filename)
+        if not os.path.isfile(filepath):
+            self.logger.info(f"download url: {remoting_path}...")
+            resp = http_request(remoting_path)
+            if resp:
 
-            chunk_size = 512
-            filepath = os.path.join(self.tmp_dir, filename)
-            self.logger.info(f"save to {filename} ...")
-            with open(filepath, 'wb') as f:
-                for chunk in resp.iter_content(chunk_size=chunk_size):
-                    if chunk:
-                        f.write(chunk)
+                if 'Content-Disposition' in resp.headers:
+                    cd = resp.headers.get('Content-Disposition')
+                    map = dict((item.strip().split('=')[:2] for item in (item for item in cd.split(';') if '=' in item)))
+                    if 'filename' in map:
+                        filename = map['filename'].strip('"')
 
-            if os.path.isdir(local_path):
-                local_path = os.path.join(local_path, filename)
-            shutil.move(filename, local_path)
-            return local_path
+                chunk_size = 512
+
+                self.logger.info(f"save to {filename} ...")
+                with open(filepath, 'wb') as f:
+                    for chunk in resp.iter_content(chunk_size=chunk_size):
+                        if chunk:
+                            f.write(chunk)
+
+                if os.path.isdir(local_path):
+                    local_path = os.path.join(local_path, filename)
+        shutil.move(filepath, local_path)
+        return local_path
 
     def upload(self, local_path, remoting_path) -> str:
         # local file system
@@ -219,6 +232,9 @@ class PrivatizationFileStorage(FileStorage):
     def upload_content(self, remoting_path, content) -> str:
         with open(remoting_path, 'wb+') as f:
             f.write(content)
+        return remoting_path
+
+    def preview_url(self, remoting_path: str) -> str:
         return remoting_path
 
 

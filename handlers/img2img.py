@@ -6,15 +6,18 @@
 # @File    : img2img.py
 # @Software: Hifive
 import os.path
+import shutil
 import time
 import typing
 import modules.scripts
 import modules.shared as shared
 import numpy as np
 from enum import IntEnum
+from loguru import logger
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops
 from modules import deepbooru
 from handlers.typex import ModelType
+from modules.sd_models import CheckpointInfo
 from worker.handler import TaskHandler
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.img2img import process_batch
@@ -27,7 +30,7 @@ from worker.dumper import dumper
 from tools.image import plt_show, encode_pil_to_base64
 from modules import sd_models
 
-AlwaysonScriptsType = typing.Mapping[str, typing.Mapping[str, typing.Any]]
+AlwaysonScriptsType = typing.Dict[str, typing.Mapping[str, typing.Any]]
 PixelDeviation = 2
 
 
@@ -36,6 +39,18 @@ class Img2ImgMinorTaskType(IntEnum):
     Img2Img = 1
     Interrogate = 10
     RunControlnetAnnotator = 100
+
+
+class ModelInfo:
+
+    def __init__(self, **kwargs):
+        self.name = kwargs['name']
+        self.key = kwargs['key']
+        self.type = ModelType(kwargs['type'])
+        base_name, _ = os.path.splitext(self.name)
+        hash, ex = os.path.splitext(self.key)
+        self.name = base_name + ex
+        self.hash = hash
 
 
 def gen_mask(image: Image):
@@ -87,6 +102,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  denoising_strength: float = 0.75,  # 重绘幅度（含手涂和上传）
                  select_script_name: str = None,  # 选择下拉框脚本名
                  select_script_args: typing.Sequence = None,  # 选择下拉框脚本参数
+                 select_script_nets: typing.Sequence[typing.Mapping] = None,  # 选择下拉框脚本涉及的模型信息
                  alwayson_scripts: AlwaysonScriptsType = None,  # 插件脚本，object格式： {插件名: {'args': [参数列表]}}
                  img2img_batch_input_dir: str = None,
                  img2img_batch_output_dir: str = None,
@@ -96,6 +112,8 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  scale_by=-1,  # 图形放大，大于0生效。
                  lora_models: typing.Sequence[str] = None,  # 使用LORA，用户和系统全部LORA列表
                  embeddings: typing.Sequence[str] = None,  # embeddings，用户和系统全部embedding列表
+                 lycoris_models: typing.Sequence[str] = None,  # lycoris，用户和系统全部lycoris列表
+                 disable_ad_face: bool = False,  # 关闭默认的ADetailer face
                  **kwargs):
         override_settings = create_override_settings_dict(override_settings_texts or [])
         image = None
@@ -193,12 +211,13 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         i2i_script_runner = modules.scripts.scripts_img2img
         selectable_scripts, selectable_script_idx = get_selectable_script(i2i_script_runner, select_script_name)
         script_args = init_script_args(default_script_arg_img2img, alwayson_scripts, selectable_scripts,
-                                       selectable_script_idx, select_script_args, i2i_script_runner)
+                                       selectable_script_idx, select_script_args, i2i_script_runner, not disable_ad_face)
 
         super(Img2ImgTask, self).__init__(
             sd_model=shared.sd_model,
             outpath_samples=f"output/{user_id}/img2img/samples/",
             outpath_grids=f"output/{user_id}/img2img/grids/",
+            outpath_scripts=f"output/{user_id}/img2img/scripts/",
             prompt=prompt,
             negative_prompt=negative_prompt,
             styles=prompt_styles,
@@ -231,7 +250,6 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             do_not_save_samples=False
         )
 
-        self.outpath_scripts = f"output/{user_id}/img2img/scripts/"
         self.scripts = i2i_script_runner
         self.script_name = select_script_name
         self.base_model_path = base_model_path
@@ -242,6 +260,8 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         self.kwargs = kwargs
         self.loras = lora_models
         self.embedding = embeddings
+        self.lycoris = lycoris_models
+        self.select_script_nets = select_script_nets
 
         if mask:
             self.extra_generation_params["Mask blur"] = mask_blur
@@ -280,6 +300,10 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                 raise TypeError('select_script type err')
             select_script_name = select_script['name']
             select_script_args = select_script['args']
+        else:
+            select_script_name = task.get('select_script_name')
+            select_script_args = task.get('select_script_args')
+
         kwargs = task.data.copy()
         kwargs.pop('base_model_path')
         kwargs.pop('alwayson_scripts')
@@ -290,6 +314,11 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             kwargs.pop('select_script')
         if 'select_script_name' in kwargs:
             kwargs.pop('select_script_name')
+        if 'select_script_args' in kwargs:
+            kwargs.pop('select_script_args')
+
+        if "nsfw" in prompt.lower():
+            prompt = prompt.lower().replace('nsfw', '')
 
         return cls(base_model_path,
                    user_id,
@@ -390,7 +419,13 @@ class Img2ImgTaskHandler(TaskHandler):
         return t
 
     def _get_local_checkpoint(self, task: Task):
+        '''
+        下载大模型，或者脚本中的模型列表
+        '''
         progress = TaskProgress.new_prepare(task, f"0%")
+
+        # 脚本任务，不需要再下载生图的大模型了~
+        self._get_select_script_models(progress)
 
         def progress_callback(*args):
             if len(args) < 2:
@@ -411,14 +446,86 @@ class Img2ImgTaskHandler(TaskHandler):
     def _get_local_embedding_dirs(self, embeddings: typing.Sequence[str]) -> typing.Set[str]:
         # embeddings = [get_model_local_path(p, ModelType.Embedding) for p in embeddings]
         embeddings = batch_model_local_paths(ModelType.Embedding, *embeddings)
+        os.popen(f'touch {" ".join(embeddings)}')
         return set((os.path.dirname(p) for p in embeddings if p and os.path.isfile(p)))
 
+    def _get_select_script_models(self, progress: TaskProgress):
+        '''
+        下载下拉脚本用到的模型列表
+        '''
+        task = progress.task
+        select_script_nets = task.get('select_script_nets')
+        if select_script_nets:
+            total = len(select_script_nets)
+
+            def dump_progress(i):
+                p = int(i * 100 / total)
+
+                current_progress = int(progress.task_desc[:-1])
+                if p >= current_progress:
+                    progress.task_desc = f"{p}%"
+                    self._set_task_status(progress)
+
+            logger.debug('>>> start download select_script_nets')
+            for i, mi in enumerate(select_script_nets):
+                dump_progress(i)
+                model_info = ModelInfo(**mi)
+                local = get_model_local_path(model_info.key, model_info.type)
+                logger.debug(f'download {model_info.key} to {local} ')
+                if not local:
+                    raise OSError(f'cannot download file:{model_info.key}')
+
+                dir = os.path.dirname(local)
+                dst = os.path.join(dir, model_info.name)
+                if not os.path.isfile(dst):
+                    # 防止有重名导致问题~
+                    shutil.copy(local, dst)
+                logger.debug(f'{local} copy to {dst}')
+                os.popen(f'touch {local} {dst}')
+
+                # 修改路径
+                task['select_script_nets'][i]['local'] = dst
+            return True
+        return False
+
     def _get_local_loras(self, loras: typing.Sequence[str]) -> typing.Sequence[str]:
-        # loras = [get_model_local_path(p, ModelType.Lora) for p in loras]
         loras = batch_model_local_paths(ModelType.Lora, *loras)
-        return [p for p in loras if p and os.path.isfile(p)]
+        local_models = [p for p in loras if p and os.path.isfile(p)]
+        os.popen(f'touch {" ".join(local_models)}')
+
+        return local_models
+
+    def _get_local_lycoris(self, lycoris: typing.Sequence[str]) -> typing.Sequence[str]:
+        local_models = batch_model_local_paths(ModelType.LyCORIS, *lycoris)
+        local_models = [p for p in local_models if p and os.path.isfile(p)]
+        os.popen(f'touch {" ".join(local_models)}')
+
+        return local_models
 
     def _set_little_models(self, process_args):
+        select_script_nets = getattr(process_args, 'select_script_nets', [])
+        # 下拉脚本生效
+        if select_script_nets:
+            loras, embeddings = [], []
+            for net in select_script_nets:
+                dst = net['local']
+                model_info = ModelInfo(**net)
+                print(f'select script nets:{dst}')
+
+                if model_info.type == ModelType.CheckPoint:
+                    basename = os.path.basename(model_info.key)
+                    sha256, _ = os.path.splitext(basename)
+                    checkpoint_info = CheckpointInfo(dst, sha256)
+                    checkpoint_info.register()
+                elif model_info.type == ModelType.Embedding:
+                    embeddings.append(dst)
+                elif model_info.type == ModelType.Lora:
+                    loras.append(dst)
+            loras.extend(process_args.loras or [])
+            embeddings.extend(process_args.embedding or [])
+            process_args.loras = loras
+            process_args.embedding = embeddings
+
         if process_args.loras:
             # 设置LORA，具体实施在modules/exta_networks.py 中activate函数。
             sd_models.user_loras = self._get_local_loras(process_args.loras)
@@ -431,11 +538,13 @@ class Img2ImgTaskHandler(TaskHandler):
         else:
             sd_models.user_embedding_dirs = []
 
-    def _exec_img2img(self, task: Task) -> typing.Iterable[TaskProgress]:
+        if process_args.lycoris:
+            pass
 
+    def _exec_img2img(self, task: Task) -> typing.Iterable[TaskProgress]:
         base_model_path = self._get_local_checkpoint(task)
         load_sd_model_weights(base_model_path, task.model_hash)
-        progress = TaskProgress.new_ready(task, f'model loaded:{os.path.basename(base_model_path)}, run i2i...')
+        progress = TaskProgress.new_ready(task, f'model loaded, run i2i...')
         yield progress
         # 参数有使用到sd_model因此在切换模型后再构造参数。
         process_args = self._build_img2img_arg(progress)
@@ -484,10 +593,11 @@ class Img2ImgTaskHandler(TaskHandler):
                                        process_args.outpath_samples,
                                        process_args.outpath_grids,
                                        process_args.outpath_scripts,
-                                       task.id)
+                                       task.id,
+                                       inspect=process_args.kwargs.get("need_audit", False))
 
         progress = TaskProgress.new_finish(task, images)
-        progress.update_seed(processed.seed, processed.subseed)
+        progress.update_seed(processed.all_seeds, processed.all_subseeds)
 
         yield progress
 
@@ -504,23 +614,33 @@ class Img2ImgTaskHandler(TaskHandler):
     def _update_preview(self, progress: TaskProgress):
         if shared.state.sampling_step - shared.state.current_image_sampling_step < 5:
             return
-        p = 0.01
+        p = 0
 
+        #     if job_count > 0:
+        #         progress += job_no / job_count
+        #     if sampling_steps > 0 and job_count > 0:
+        #         progress += 1 / job_count * sampling_step / sampling_steps
         if shared.state.job_count > 0:
-            p += shared.state.job_no / (progress.task['n_iter'] * progress.task['batch_size'])
+            job_no = shared.state.job_no - 1 if shared.state.job_no > 0 else 0
+            p += job_no / (progress.task['n_iter'] * progress.task['batch_size'])
             # p += (shared.state.job_no) / shared.state.job_count
         if shared.state.sampling_steps > 0:
-            p += 1 / (progress.task['n_iter'] * progress.task['batch_size']) * shared.state.sampling_step / shared.state.sampling_steps
+            p += 1 / (progress.task['n_iter'] * progress.task[
+                'batch_size']) * shared.state.sampling_step / shared.state.sampling_steps
+
+        current_progress = min(p * 100, 99)
+        if current_progress < progress.task_progress:
+            return
 
         time_since_start = time.time() - shared.state.time_start
         eta = (time_since_start / p)
-        progress.eta_relative = eta - time_since_start
-        progress.task_progress = min(p, 0.99) * 100
-        print(f"-> progress:{progress.task_progress}\n")
+        progress.task_progress = current_progress
+        progress.eta_relative = int(eta - time_since_start)
+        # print(f"-> progress: {progress.task_progress}, real:{p}\n")
 
         shared.state.set_current_image()
         if shared.state.current_image:
-            current = encode_pil_to_base64(shared.state.current_image, 40)
+            current = encode_pil_to_base64(shared.state.current_image, 30)
             if current:
                 progress.preview = current
             print("\n>>set preview!!\n")

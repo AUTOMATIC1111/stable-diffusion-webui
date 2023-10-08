@@ -83,7 +83,7 @@ import modules.ui
 from modules import modelloader
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
-
+sys.path.append("sd_scripts")
 startup_timer.record("other imports")
 
 
@@ -510,10 +510,11 @@ def run_worker():
         from worker.task_send import RedisSender, VipLevel
 
         if cmd_opts.train_only:
-            from trainx.typex import PreprocessTask, TrainLoraTask
+            from trainx.typex import PreprocessTask, TrainLoraTask, DigitalDoppelgangerTask
             tasks = [
                 # PreprocessTask.debug_task(),
-                TrainLoraTask.debug_task()
+                # TrainLoraTask.debug_task()
+                DigitalDoppelgangerTask.debug_task()
             ]
         else:
             from handlers.img2img import Img2ImgTask
@@ -535,6 +536,8 @@ def run_worker():
         dumper.stop()
         return
 
+    from loguru import logger
+    logger.debug("[WORKER] worker模式下需要保证config.json中配置controlnet unit限定5个")
     exec = run_executor(shared.sd_model_recorder, train_only=cmd_opts.train_only)
     exec.stop()
     dumper.stop()

@@ -5,6 +5,8 @@
 # @Site    : 
 # @File    : executor.py
 # @Software: Hifive
+import os.path
+import queue
 import random
 import time
 import typing
@@ -24,9 +26,9 @@ class TaskExecutor(Thread):
 
     def __init__(self, ckpt_recorder: CkptLoadRecorder, timeout=0, group=None, target=None, name=None,
                  args=(), kwargs=None, *, daemon=None, train_only=False):
-        self.receiver = TaskReceiver(ckpt_recorder, train_only)
         self.recorder = ckpt_recorder
         self._handlers = {}
+        self.receiver = TaskReceiver(ckpt_recorder, train_only, self.can_exec_task)
         self.timeout = timeout if timeout > 0 else TaskTimeout
         self.__stop = False
         self.mutex = Lock()
@@ -38,15 +40,21 @@ class TaskExecutor(Thread):
         super(TaskExecutor, self).__init__(group, target, name, args, kwargs, daemon=daemon)
 
     def _close(self):
-        for h in self._handlers:
+        for h in self._handlers.values():
             h.close()
         self.receiver.close()
 
     def stop(self):
         self.__stop = True
 
+    def can_exec_task(self, task: Task) -> bool:
+        types = self._handlers.keys()
+        return task.task_type in types
+
     def add_handler(self, *handlers: TaskHandler):
         for handler in handlers:
+            if not handler.enable:
+                logger.warning(f"handler disable:{handler.task_type.name}")
             self._handlers[handler.task_type] = handler
 
     def get_handler(self, task: Task) -> typing.Optional[TaskHandler]:
@@ -60,7 +68,7 @@ class TaskExecutor(Thread):
             return
 
         with self.not_busy:
-            self.not_busy.notify()
+            self.not_busy.notify_all()
             logger.debug("notify receiver ")
             setattr(self.not_busy, "value", 0)
 
@@ -74,7 +82,11 @@ class TaskExecutor(Thread):
         logger.info(f"executor start with:{','.join(handlers)}")
         while not self.__stop:
             try:
-                task = self.queue.get()
+                logger.info(f"====>>> start receive and execute task")
+                task = self.queue.get(timeout=10)
+                if not task:
+                    continue
+
                 logger.info(f"====>>> receive task:{task.desc()}")
                 logger.info(f"====>>> model history:{self.recorder.history()}")
 
@@ -86,34 +98,55 @@ class TaskExecutor(Thread):
                     now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
                     create_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(task.create_at))
                     handler.set_failed(task, f'task time out(task create time:{create_time}, now:{now})')
+                    self.nofity()
                     continue
                 handler(task, progress_callback=self.task_progress)
                 if random.randint(1, 10) < 3:
                     torch_gc()
                     free, total = vram_mon.cuda_mem_get_info()
                     system_exit(free, total)
+                    # 释放磁盘空间
+                    self._clean_disk()
+            except queue.Empty:
+                if random.randint(1, 10) < 3:
+                    logger.info('task queue is empty...')
+                continue
             except Exception:
                 logger.exception("executor err")
                 self.nofity()
 
         logger.info('executor stopping...')
+        write_healthy(False)
         self._close()
 
     def _get_task(self):
-        while self.is_alive():
+        while self.is_alive() and not self.receiver.closed:
             with self.not_busy:
                 if not self.queue.full():
+
                     for task in self.receiver.task_iter():
                         logger.info(f"====>>> preload task:{task.id}")
                         self.queue.put(task)
+                        logger.info(f"====>>> push task:{task.id}")
                         if isinstance(task, Task):
                             logger.debug(f"====>>> waiting task:{task.id}, stop receive.")
                             setattr(self.not_busy, "value", 1)
-                            self.not_busy.wait()
+                            try:
+                                timeout = 3600 * 16
+                                self.not_busy.wait(timeout=timeout)
+                                logger.info(f"====>>> acquire locker, time out:{timeout} seconds")
+                            except Exception as err:
+                                free, total = vram_mon.cuda_mem_get_info()
+                                logger.exception("executor cannot require locker, quit...")
+                                self.receiver.close()
+                                system_exit(free, total, True)
+                                break
+                            self.receiver.decr_train_concurrency(task)
                             logger.debug(f"====>>> waiting task:{task.id}, begin receive.")
                 else:
                     self.not_busy.wait()
         logger.info("=======> task receiver quit!!!!!!")
+        self.__stop = True
 
     def _is_timeout(self, task: Task) -> bool:
         if task.create_at <= 0:
@@ -125,9 +158,30 @@ class TaskExecutor(Thread):
 
         return now - task.create_at > self.timeout
 
+    def _clean_disk(self, expire_days=14):
+        # 根据mtime
+        dirnames = ['models/Stable-diffusion', 'models/Lora', 'models/LyCORIS']
+        now = time.time()
+        interval = expire_days*24*3600
+        for dir in dirnames:
+            if not os.path.isdir(dir):
+                continue
+            for f in os.listdir(dir):
+                full = os.path.join(dir, f)
+                if os.path.isfile(full):
+                    mtime = os.path.getmtime(full)
+                    if now - mtime < interval:
+                        continue
+                    try:
+                        logger.warning(f'[WARN] file:{full}, mtime expired!!!!')
+                        os.remove(full)
+                    except:
+                        logger.exception(f'cannot remove file:{full}')
+
     def run(self) -> None:
         self._get_task()
 
     def start(self) -> None:
         super(TaskExecutor, self).start()
         self.exec_task()
+

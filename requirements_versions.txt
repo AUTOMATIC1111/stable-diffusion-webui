@@ -37,3 +37,9 @@ torch
 torchdiffeq==0.2.3
 torchsde==0.2.5
 transformers==4.25.1
+
+safetensors==0.3.1
+httpcore<=0.15
+fastapi==0.94.0
+tomesd==0.1.2
+apscheduler

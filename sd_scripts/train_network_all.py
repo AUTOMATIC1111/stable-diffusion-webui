@@ -26,7 +26,8 @@ from sd_scripts.library.config_util import (
 )
 import sd_scripts.library.huggingface_util as huggingface_util
 import sd_scripts.library.custom_train_functions as custom_train_functions
-from sd_scripts.library.custom_train_functions import apply_snr_weight, get_weighted_text_embeddings, pyramid_noise_like, \
+from sd_scripts.library.custom_train_functions import apply_snr_weight, get_weighted_text_embeddings, \
+    pyramid_noise_like, \
     apply_noise_offset
 
 
@@ -112,7 +113,8 @@ def train(args, train_epoch_callback=None):
                 "datasets": [
                     # {"subsets": config_util.generate_dreambooth_subsets_config_by_subdirs(args.train_data_dir, args.reg_data_dir)}
                     {"subsets": config_util.generate_dreambooth_subsets_config_by_args(
-                        list_repeats, class_tokens, list_train_data_dirs, list_reg_repeats, reg_tokens, list_reg_data_dirs)}
+                        list_repeats, class_tokens, list_train_data_dirs, list_reg_repeats, reg_tokens,
+                        list_reg_data_dirs)}
                 ]
             }
         else:
@@ -732,6 +734,8 @@ def train(args, train_epoch_callback=None):
         # end of epoch
         if math.isnan(loss_total / len(loss_list)):
             # nan(task failed)
+            accelerator.end_training()
+            del accelerator
             return False
 
     # metadata["ss_epoch"] = str(num_train_epochs)
@@ -745,7 +749,7 @@ def train(args, train_epoch_callback=None):
     if is_main_process and args.save_state:
         train_util.save_state_on_train_end(args, accelerator)
 
-    # del accelerator  # この後メモリを使うのでこれは消す
+    del accelerator  # この後メモリを使うのでこれは消す
 
     if is_main_process:
         ckpt_name = train_util.get_last_ckpt_name(args, "." + args.save_model_as)
@@ -756,11 +760,11 @@ def train(args, train_epoch_callback=None):
 
 
 def setup_parser() -> argparse.ArgumentParser:
-    #parser = argparse.ArgumentParser()
+    # parser = argparse.ArgumentParser()
     parent_parser = argparse.ArgumentParser()
     subparsers = parent_parser.add_subparsers(title="sys_sub_parsers")
     parser = subparsers.add_parser("lora_train",
-                                          help="create the lora_train environment")
+                                   help="create the lora_train environment")
 
     train_util.add_sd_models_arguments(parser)
     train_util.add_dataset_arguments(parser, True, True, True)
@@ -978,11 +982,11 @@ def train_with_params(
         config_file=None,  # using .toml instead of args to pass hyperparameter
         output_config=False,  # output command line args to given .json file
         callback=None,
-                      ):
+):
     # TODO 数据校验，或者流程重新梳理，去掉args
     parser = setup_parser()
     args = parser.parse_args([])
-    #args = train_util.read_config_from_file(args, parser)
+    # args = train_util.read_config_from_file(args, parser)
 
     args.pretrained_model_name_or_path = pretrained_model_name_or_path
     if network_weights:
@@ -1007,81 +1011,91 @@ def train_with_params(
     args.network_alpha = network_alpha
 
     args.learning_rate = learning_rate
-    args.unet_lr = unet_lr if unet_lr!="" and unet_lr!=-1 else None
-    args.text_encoder_lr = text_encoder_lr if text_encoder_lr!="" and text_encoder_lr!=-1 else None
-    args.optimizer_type = optimizer_type if optimizer_type!="" and optimizer_type!=-1 else None
-    args.lr_scheduler_num_cycles = lr_scheduler_num_cycles if lr_scheduler_num_cycles!="" and lr_scheduler_num_cycles!=-1 else None
-    args.lr_scheduler = lr_scheduler if lr_scheduler!="" and lr_scheduler!=-1 else None
+    args.unet_lr = unet_lr if unet_lr != "" and unet_lr != -1 else None
+    args.text_encoder_lr = text_encoder_lr if text_encoder_lr != "" and text_encoder_lr != -1 else None
+    args.optimizer_type = optimizer_type if optimizer_type != "" and optimizer_type != -1 else None
+    args.lr_scheduler_num_cycles = lr_scheduler_num_cycles if lr_scheduler_num_cycles != "" and lr_scheduler_num_cycles != -1 else None
+    args.lr_scheduler = lr_scheduler if lr_scheduler != "" and lr_scheduler != -1 else None
 
-    args.network_train_unet_only = network_train_unet_only if network_train_unet_only!="" and network_train_unet_only!=-1 else None
-    args.network_train_text_encoder_only = network_train_text_encoder_only if network_train_text_encoder_only!="" and network_train_text_encoder_only!=-1 else None
+    args.network_train_unet_only = network_train_unet_only if network_train_unet_only != "" and network_train_unet_only != -1 else None
+    args.network_train_text_encoder_only = network_train_text_encoder_only if network_train_text_encoder_only != "" and network_train_text_encoder_only != -1 else None
     args.seed = seed
 
-    args.output_dir = output_dir if output_dir!="" and output_dir!=-1 else None
-    args.logging_dir = logging_dir if logging_dir!="" and logging_dir!=-1 else None
-    args.save_last_n_epochs = save_last_n_epochs if save_last_n_epochs!="" and save_last_n_epochs!=-1 else None
+    args.output_dir = output_dir if output_dir != "" and output_dir != -1 else None
+    args.logging_dir = logging_dir if logging_dir != "" and logging_dir != -1 else None
+    args.save_last_n_epochs = save_last_n_epochs if save_last_n_epochs != "" and save_last_n_epochs != -1 else None
 
-    args.v2 = v2 if v2!="" and v2!=-1 else None
-    args.v_parameterization = v_parameterization if v_parameterization!="" and v_parameterization!=-1 else None
+    args.v2 = v2 if v2 != "" and v2 != -1 else None
+    args.v_parameterization = v_parameterization if v_parameterization != "" and v_parameterization != -1 else None
 
     if enable_bucket:
-        args.enable_bucket = enable_bucket if enable_bucket!="" and enable_bucket!=-1 else None
-        args.min_bucket_reso = min_bucket_reso if min_bucket_reso!="" and min_bucket_reso!=-1 else None
-        args.max_bucket_reso = max_bucket_reso if max_bucket_reso!="" and max_bucket_reso!=-1 else None
-        args.bucket_reso_steps = bucket_reso_steps if bucket_reso_steps!="" and bucket_reso_steps!=-1 else None
-        args.bucket_no_upscale = bucket_no_upscale if bucket_no_upscale!="" and bucket_no_upscale!=-1 else None
+        args.enable_bucket = enable_bucket if enable_bucket != "" and enable_bucket != -1 else None
+        args.min_bucket_reso = min_bucket_reso if min_bucket_reso != "" and min_bucket_reso != -1 else None
+        args.max_bucket_reso = max_bucket_reso if max_bucket_reso != "" and max_bucket_reso != -1 else None
+        args.bucket_reso_steps = bucket_reso_steps if bucket_reso_steps != "" and bucket_reso_steps != -1 else None
+        args.bucket_no_upscale = bucket_no_upscale if bucket_no_upscale != "" and bucket_no_upscale != -1 else None
 
     args.network_module = network_module
     if args.network_args is None:
         args.network_args = []
     if network_module == "lycoris.kohya":
-        if conv_dim is not None and conv_dim!=-1 and conv_dim!="": args.network_args.append(f"conv_dim={conv_dim}")
-        if conv_alpha is not None and conv_alpha!=-1 and conv_alpha!="": args.network_args.append(f"conv_alpha={conv_alpha}")
-        if dropout is not None and dropout!=-1 and dropout!="": args.network_args.append(f"dropout={dropout}")
+        if conv_dim is not None and conv_dim != -1 and conv_dim != "": args.network_args.append(f"conv_dim={conv_dim}")
+        if conv_alpha is not None and conv_alpha != -1 and conv_alpha != "": args.network_args.append(
+            f"conv_alpha={conv_alpha}")
+        if dropout is not None and dropout != -1 and dropout != "": args.network_args.append(f"dropout={dropout}")
         args.network_args.append(f"algo={algo}")
     elif network_module == "networks.dylora":
         args.network_args.append(f"unit={unit}")
     elif network_module == "networks.lora":
-        if conv_dim is not None and conv_dim!=-1 and conv_dim!="": args.network_args.append(f"conv_dim={conv_dim}")
-        if conv_alpha is not None and conv_alpha!=-1 and conv_alpha!="": args.network_args.append(f"conv_alpha={conv_alpha}")
-        if dropout is not None and dropout!=-1 and dropout!="": args.network_args.append(f"dropout={dropout}")
-        if block_dims is not None and block_dims!=-1 and block_dims!="": args.network_args.append(f"block_dims={block_dims}")
-        if block_alphas is not None and block_alphas!=-1 and block_alphas!="": args.network_args.append(f"block_alphas={block_alphas}")
-        if conv_block_dims is not None and conv_block_dims!=-1 and conv_block_dims!="": args.network_args.append(f"conv_block_dims={conv_block_dims}")
-        if conv_block_alphas is not None and conv_block_alphas!=-1 and conv_block_alphas!="": args.network_args.append(f"conv_block_alphas={conv_block_alphas}")
+        if conv_dim is not None and conv_dim != -1 and conv_dim != "": args.network_args.append(f"conv_dim={conv_dim}")
+        if conv_alpha is not None and conv_alpha != -1 and conv_alpha != "": args.network_args.append(
+            f"conv_alpha={conv_alpha}")
+        if dropout is not None and dropout != -1 and dropout != "": args.network_args.append(f"dropout={dropout}")
+        if block_dims is not None and block_dims != -1 and block_dims != "": args.network_args.append(
+            f"block_dims={block_dims}")
+        if block_alphas is not None and block_alphas != -1 and block_alphas != "": args.network_args.append(
+            f"block_alphas={block_alphas}")
+        if conv_block_dims is not None and conv_block_dims != -1 and conv_block_dims != "": args.network_args.append(
+            f"conv_block_dims={conv_block_dims}")
+        if conv_block_alphas is not None and conv_block_alphas != -1 and conv_block_alphas != "": args.network_args.append(
+            f"conv_block_alphas={conv_block_alphas}")
     if enable_block_weights:
-        if down_lr_weight is not None and down_lr_weight!=-1 and down_lr_weight!="": args.network_args.append(f"down_lr_weight={down_lr_weight}")
-        if up_lr_weight is not None and up_lr_weight!=-1 and up_lr_weight!="": args.network_args.append(f"up_lr_weight={up_lr_weight}")
-        if mid_lr_weight is not None and mid_lr_weight!=-1 and mid_lr_weight!="": args.network_args.append(f"mid_lr_weight={mid_lr_weight}")
-        if block_lr_zero_threshold is not None and block_lr_zero_threshold!=-1 and block_lr_zero_threshold!="": args.network_args.append(f"block_lr_zero_threshold={block_lr_zero_threshold}")
+        if down_lr_weight is not None and down_lr_weight != -1 and down_lr_weight != "": args.network_args.append(
+            f"down_lr_weight={down_lr_weight}")
+        if up_lr_weight is not None and up_lr_weight != -1 and up_lr_weight != "": args.network_args.append(
+            f"up_lr_weight={up_lr_weight}")
+        if mid_lr_weight is not None and mid_lr_weight != -1 and mid_lr_weight != "": args.network_args.append(
+            f"mid_lr_weight={mid_lr_weight}")
+        if block_lr_zero_threshold is not None and block_lr_zero_threshold != -1 and block_lr_zero_threshold != "": args.network_args.append(
+            f"block_lr_zero_threshold={block_lr_zero_threshold}")
 
     if enable_preview:
-        args.sample_prompts = sample_prompts if sample_prompts!="" and sample_prompts!=-1 else None
-        args.sample_sampler = sample_sampler if sample_sampler!="" and sample_sampler!=-1 else None
-        args.sample_every_n_epochs = sample_every_n_epochs if sample_every_n_epochs!="" and sample_every_n_epochs!=-1 else None
+        args.sample_prompts = sample_prompts if sample_prompts != "" and sample_prompts != -1 else None
+        args.sample_sampler = sample_sampler if sample_sampler != "" and sample_sampler != -1 else None
+        args.sample_every_n_epochs = sample_every_n_epochs if sample_every_n_epochs != "" and sample_every_n_epochs != -1 else None
 
-    args.caption_extension = caption_extension if caption_extension!="" and caption_extension!=-1 else None
-    args.shuffle_caption = shuffle_caption if shuffle_caption!="" and shuffle_caption!=-1 else None
-    args.token_warmup_min = token_warmup_min if token_warmup_min!="" and token_warmup_min!=-1 else None
-    args.token_warmup_step = token_warmup_step if token_warmup_step!="" and token_warmup_step!=-1 else None
-    args.keep_tokens = keep_tokens if keep_tokens!="" and keep_tokens!=-1 else None
-    args.weighted_captions = weighted_captions if weighted_captions!="" and weighted_captions!=-1 else None
+    args.caption_extension = caption_extension if caption_extension != "" and caption_extension != -1 else None
+    args.shuffle_caption = shuffle_caption if shuffle_caption != "" and shuffle_caption != -1 else None
+    args.token_warmup_min = token_warmup_min if token_warmup_min != "" and token_warmup_min != -1 else None
+    args.token_warmup_step = token_warmup_step if token_warmup_step != "" and token_warmup_step != -1 else None
+    args.keep_tokens = keep_tokens if keep_tokens != "" and keep_tokens != -1 else None
+    args.weighted_captions = weighted_captions if weighted_captions != "" and weighted_captions != -1 else None
 
-    args.max_token_length = max_token_length if max_token_length!="" and max_token_length!=-1 else None
-    args.caption_dropout_rate = caption_dropout_rate if caption_dropout_rate!="" and caption_dropout_rate!=-1 else None
-    args.caption_dropout_every_n_epochs = caption_dropout_every_n_epochs if caption_dropout_every_n_epochs!="" and caption_dropout_every_n_epochs!=-1 else None
-    args.caption_tag_dropout_rate = caption_tag_dropout_rate if caption_tag_dropout_rate!="" and caption_tag_dropout_rate!=-1 else None
+    args.max_token_length = max_token_length if max_token_length != "" and max_token_length != -1 else None
+    args.caption_dropout_rate = caption_dropout_rate if caption_dropout_rate != "" and caption_dropout_rate != -1 else None
+    args.caption_dropout_every_n_epochs = caption_dropout_every_n_epochs if caption_dropout_every_n_epochs != "" and caption_dropout_every_n_epochs != -1 else None
+    args.caption_tag_dropout_rate = caption_tag_dropout_rate if caption_tag_dropout_rate != "" and caption_tag_dropout_rate != -1 else None
 
-    args.prior_loss_weight = prior_loss_weight if prior_loss_weight!="" and prior_loss_weight!=-1 else None
-    args.min_snr_gamma = min_snr_gamma if min_snr_gamma!="" and min_snr_gamma!=-1 else None
-    args.noise_offset = noise_offset if noise_offset!="" and noise_offset!=-1 else None
-    args.multires_noise_iterations = multires_noise_iterations if multires_noise_iterations!="" and multires_noise_iterations!=-1 else None
-    args.multires_noise_discount = multires_noise_discount if multires_noise_discount!="" and multires_noise_discount!=-1 else None
-    args.gradient_checkpointing = gradient_checkpointing if gradient_checkpointing!="" and gradient_checkpointing!=-1 else None
-    args.gradient_accumulation_steps = gradient_accumulation_steps if gradient_accumulation_steps!="" and gradient_accumulation_steps!=-1 else None
-    args.mixed_precision = mixed_precision if mixed_precision!="" and mixed_precision!=-1 else None
+    args.prior_loss_weight = prior_loss_weight if prior_loss_weight != "" and prior_loss_weight != -1 else None
+    args.min_snr_gamma = min_snr_gamma if min_snr_gamma != "" and min_snr_gamma != -1 else None
+    args.noise_offset = noise_offset if noise_offset != "" and noise_offset != -1 else None
+    args.multires_noise_iterations = multires_noise_iterations if multires_noise_iterations != "" and multires_noise_iterations != -1 else None
+    args.multires_noise_discount = multires_noise_discount if multires_noise_discount != "" and multires_noise_discount != -1 else None
+    args.gradient_checkpointing = gradient_checkpointing if gradient_checkpointing != "" and gradient_checkpointing != -1 else None
+    args.gradient_accumulation_steps = gradient_accumulation_steps if gradient_accumulation_steps != "" and gradient_accumulation_steps != -1 else None
+    args.mixed_precision = mixed_precision if mixed_precision != "" and mixed_precision != -1 else None
     if noise_offset is not None:
-        args.adaptive_noise_scale = adaptive_noise_scale if adaptive_noise_scale!="" and adaptive_noise_scale!=-1 else None
+        args.adaptive_noise_scale = adaptive_noise_scale if adaptive_noise_scale != "" and adaptive_noise_scale != -1 else None
 
     args.xformers = xformers
     args.lowram = lowram
@@ -1090,8 +1104,8 @@ def train_with_params(
     args.persistent_data_loader_workers = persistent_data_loader_workers
     args.save_precision = save_precision
 
-    args.config_file = config_file if config_file!="" and config_file!=-1 else None
-    args.output_config = output_config if output_config!="" and output_config!=-1 else None
+    args.config_file = config_file if config_file != "" and config_file != -1 else None
+    args.output_config = output_config if output_config != "" and output_config != -1 else None
     if output_config is not None and config_file is not None:
         if config_file.endswith(".json"):
             args = train_util.read_config_from_json(args, parser)
@@ -1106,31 +1120,31 @@ if __name__ == "__main__":
     #
     # args = parser.parse_args()
     # args = train_util.read_config_from_file(args, parser)
-    test_with_file=False
+    test_with_file = False
     if test_with_file:
         config_file_path = r"E:\qll\sd-scripts\test_config.toml"
         train_with_file(config_file_path, train_callback)
     else:
         train_with_params(
 
-        pretrained_model_name_or_path=r"E:\qll\models\chilloutmix_NiPrunedFp32Fix.safetensors",
-        network_weights="",  # "output/y1s1_100v3.safetensors",
-        output_name="xhx-lion-0.0002",
-        save_model_as="safetensors",
-        v2 = False,
-        v_parameterization = False,
-        output_dir = "./output",
-        logging_dir = "./logs",
-        save_every_n_epochs = 2,
-        save_last_n_epochs = 10,
-        save_precision = None,
-        trigger_words=["xhx"],
-        reg_tokens=[""],
-        list_train_data_dir=[r"E:\qll\pics\hanfu-512x768-tags"],
-        list_reg_data_dir=[""],
-        max_token_length = 75,  # max token length of text encoder (default for 75, 150 or 225)
-        num_repeats=["8"],
-        list_reg_repeats=None,  # ["8"]
+            pretrained_model_name_or_path=r"E:\qll\models\chilloutmix_NiPrunedFp32Fix.safetensors",
+            network_weights="",  # "output/y1s1_100v3.safetensors",
+            output_name="xhx-lion-0.0002",
+            save_model_as="safetensors",
+            v2=False,
+            v_parameterization=False,
+            output_dir="./output",
+            logging_dir="./logs",
+            save_every_n_epochs=2,
+            save_last_n_epochs=10,
+            save_precision=None,
+            trigger_words=["xhx"],
+            reg_tokens=[""],
+            list_train_data_dir=[r"E:\qll\pics\hanfu-512x768-tags"],
+            list_reg_data_dir=[""],
+            max_token_length=75,  # max token length of text encoder (default for 75, 150 or 225)
+            num_repeats=["8"],
+            list_reg_repeats=None,  # ["8"]
             batch_size=1,
             resolution="512,512",  # 64的倍数
             cache_latents=False,
@@ -1143,7 +1157,7 @@ if __name__ == "__main__":
             bucket_reso_steps=64,  # 秋叶版没有这个,steps of resolution for buckets, divisible by 8 is recommended
             bucket_no_upscale=False,  # 秋叶版没有这个,make bucket for each image without upscaling
             token_warmup_min=1,  # 秋叶版没有这个,start learning at N tags (token means comma separated strinfloatgs)
-            token_warmup_step=0, # 秋叶版没有这个,tag length reaches maximum on N steps (or N*max_train_steps if N<1)
+            token_warmup_step=0,  # 秋叶版没有这个,tag length reaches maximum on N steps (or N*max_train_steps if N<1)
 
             caption_extension=".txt",
             caption_dropout_rate=0.0,  # Rate out dropout caption(0.0~1.0)
@@ -1155,7 +1169,7 @@ if __name__ == "__main__":
             # keep heading N tokens when shuffling caption tokens (token means comma separated strings)
             color_aug=False,  # 秋叶版没有这个,enable weak color augmentation
             flip_aug=False,  # 秋叶版没有这个,enable horizontal flip augmentation
-            face_crop_aug_range=None, # 1.0,2.0,4.0
+            face_crop_aug_range=None,  # 1.0,2.0,4.0
             # 秋叶版没有这个,enable face-centered crop augmentation and its range (e.g. 2.0,4.0)
             random_crop=False,
             # 秋叶版没有这个,enable random crop (for style training in face-centered crop augmentation)
@@ -1228,8 +1242,9 @@ if __name__ == "__main__":
             seed=1,
             prior_loss_weight=1.0,  # loss weight for regularization images
             min_snr_gamma=None,  # float型，比如5.0，最小信噪比伽马值，如果启用推荐为 5
-            noise_offset=None,  # float型，0.1左右,enable noise offset with this value (if enabled, around 0.1 is recommended)
-            adaptive_noise_scale=None,  #  float型， 1.0
+            noise_offset=None,
+            # float型，0.1左右,enable noise offset with this value (if enabled, around 0.1 is recommended)
+            adaptive_noise_scale=None,  # float型， 1.0
             # 与noise_offset配套使用；add `latent mean absolute value * this value` to noise_offset (disabled if None, default)
             multires_noise_iterations=None,  # 整数，多分辨率（金字塔）噪声迭代次数 推荐 6-10。无法与 noise_offset 一同启用。
             multires_noise_discount=0.3,  # 多分辨率（金字塔）噪声迭代次数 推荐 6-10。无法与 noise_offset 一同启用。

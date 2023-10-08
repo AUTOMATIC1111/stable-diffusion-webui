@@ -1,0 +1,50 @@
+name: 🚀 新需求 Feature Request
+description: 提交一个你对PaddleSeg的新需求。 Submit a request for a new feature.
+labels: [Feature Request]
+
+body:
+- type: markdown
+  attributes:
+    value: >
+      #### 你可以在这里提出你对PaddleSeg的新需求，包括但不限于：功能或模型缺失、功能不全或无法使用、精度/性能不符合预期等。
+
+      #### You could submit a request for a new feature here, including but not limited to: new features or models, incomplete or unusable features, accuracy/performance not as expected, etc.
+
+- type: checkboxes
+  attributes:
+    label: 问题确认 Search before asking
+    description: >
+      在向PaddleSeg提新需求之前，请先查询[历史issue](https://github.com/PaddlePaddle/PaddleSeg/issues)(包含open与closed)是否报过同样的需求。
+
+      Before submitting a feature request, please make sure the issue hasn't been already addressed by searching through the [open and closed issues](https://github.com/PaddlePaddle/PaddleSeg/issues).
+
+    options:
+      - label: >
+          我已经查询[历史issue](https://github.com/PaddlePaddle/PaddleSeg/issues)(包含open与closed)，没有类似需求。I have searched the [open and closed issues](https://github.com/PaddlePaddle/PaddleSeg/issues) and found no similar feature requests.
+        required: true
+
+- type: textarea
+  id: description
+  attributes:
+    label: 需求描述 Feature Description
+    description: |
+      请尽可能包含任务目标、需求场景、功能描述等信息，全面的信息有利于我们准确评估你的需求。
+      Please include as much information as possible, such as mission objectives, requirement scenarios, functional descriptions, etc. Comprehensive information will help us accurately assess your feature request.
+    value: "1. 任务目标（请描述你正在做的项目是什么，如模型、论文、项目是什么？）; 2. 需求场景（请描述你的项目中为什么需要用此功能）; 3. 功能描述（请简单描述或设计这个功能）"
+  validations:
+    required: true
+
+- type: checkboxes
+  attributes:
+    label: 是否愿意提交PR Are you willing to submit a PR?
+    description: >
+      (可选)如果你对新feature有自己的想法，十分鼓励提交[Pull Request](https://github.com/PaddlePaddle/PaddleSeg/pulls)，共同提升PaddleSeg
+
+      (Optional) We encourage you to submit a [Pull Request](https://github.com/PaddlePaddle/PaddleSeg/pulls) (PR) to help improve PaddleSeg for everyone, especially if you have a good understanding of how to implement a fix or feature.
+    options:
+      - label: Yes I'd like to help by submitting a PR!
+
+- type: markdown
+  attributes:
+    value: >
+      感谢你的贡献 🎉！Thanks for your contribution 🎉!

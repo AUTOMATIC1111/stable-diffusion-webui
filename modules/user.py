@@ -8,8 +8,15 @@
 import json
 import os
 import time
-import typing
+import base64
+import os
+import traceback
 
+import requests
+from hashlib import md5
+from modules.shared import opts
+from Crypto.Cipher import AES
+from Crypto import Random
 from tools.mysql import get_mysql_cli
 
 
@@ -18,13 +25,28 @@ def authorization(user, password):
         "admin": "Admin123",
     }
 
-    if user in auths and auths.get(user) == password:
-        return 3600 * 24 + int(time.time())
+    res = {
+        'expire_time': -1
+    }
 
-    return find_users_from_models(user, password)
+    # res['expire_time']
+
+    if os.getenv("ENABLE_TSS", "0") == '1':
+        print('tushuashua plugin enable!!!!')
+        res['expire_time'] = request_tu(user, password)
+        tss_token = getattr(opts, 'tu-token', {}).get('token')
+        if tss_token:
+            res['tss_token'] = tss_token
+            print(f"set tss token cookies:{tss_token}")
+
+    elif user in auths and auths.get(user) == password:
+        res['expire_time'] = 3600 * 24 + int(time.time())
+    else:
+        res['expire_time'] = find_users_from_db(user, password)
+    return res
 
 
-def find_users_from_models(username, password) -> int:
+def find_users_from_db(username, password) -> int:
     host = os.getenv('MysqlHost')
     if host:
         cli = get_mysql_cli()
@@ -43,4 +65,74 @@ def find_users_from_models(username, password) -> int:
             return -1
         finally:
             cli.close()
+    return -1
+
+
+def pad(data):
+    length = 16 - (len(data) % 16)
+    return (data + (chr(length) * length)).encode()
+
+
+def unpad(data):
+    return data[:-(data[-1] if type(data[-1]) == int else ord(data[-1]))]
+
+
+def bytes_to_key(data: bytes, salt: bytes, output: int = 48):
+    assert len(salt) == 8, len(salt)
+    data += salt
+    key = md5(data).digest()
+    final_key = key
+    while len(final_key) < output:
+        key = md5(key + data).digest()
+        final_key += key
+    return final_key[:output]
+
+
+def encrypt(message: str, passphrase: str):
+    salt = Random.new().read(8)
+    key_iv = bytes_to_key(passphrase.encode(), salt, 32+16)
+    key = key_iv[:32]
+    iv = key_iv[32:]
+    aes = AES.new(key, AES.MODE_CBC, iv)
+    return base64.b64encode(b"Salted__" + salt + aes.encrypt(pad(message)))
+
+
+def request_tu(username, password):
+    host = os.getenv('TSS_HOST', 'https://draw-plus-backend-qa.xingzheai.cn/')
+    host = host.rstrip('/')
+    path = "/v1/login"
+    bucket_path = "/v1/users/user_info"
+
+    try:
+        encrypted = encrypt(password, 'ZSYL20200707ZSYL')
+        resp = requests.post(host + path, json={
+            'account': username,
+            'password': encrypted.decode()
+        }, timeout=10)
+        if resp:
+            data = resp.json()
+            if data.get('code', -1) == 200:
+                token = data['data']['token']
+                expire = time.time() + 10 * 3600
+                setattr(opts, 'tu-token', {
+                    'token': token,
+                    'expire': expire,
+                })
+
+                bucket_resp = requests.get(host + bucket_path, headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bearer {token}' if not token.startswith('Bearer') else token
+                }, timeout=10)
+                if bucket_resp:
+                    data = bucket_resp.json()
+                    if data.get('code', -1) == 200:
+                        xz_bucket = data['data']['bucket']
+                        setattr(opts, 'xz_bucket', xz_bucket)
+
+                return expire
+
+    except Exception as ex:
+        traceback.print_exc()
+        return -1
+
     return -1

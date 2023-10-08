@@ -13,12 +13,12 @@ from PIL import Image
 from loguru import logger
 from worker.dumper import dumper
 from worker.task import Task
-from .typex import PreprocessTask
+from trainx.typex import PreprocessTask
 from worker.task import TaskProgress
 from tools.image import thumbnail
-from .utils import get_tmp_local_path, Tmp, upload_files
+from trainx.utils import get_tmp_local_path, Tmp, upload_files
 from tools.file import zip_compress, zip_uncompress, find_files_from_dir
-from modules.textual_inversion.preprocess import preprocess_sub_dir
+from trainx.text_inversion import preprocess_sub_dir
 
 ImagesEx = ["png", 'jpeg', 'jpg']
 
@@ -116,7 +116,8 @@ def build_thumbnail_tag(target_dir):
             with open(file) as f:
                 lines = f.readlines()
                 if basename in images:
-                    images[basename]['tag'] = ' '.join(lines)
+                    # 替换掉_为空格
+                    images[basename]['tag'] = ' '.join(lines).replace('_', ' ')
                 else:
                     # 提前预置了TXT，预处理后png名称会重命名。
                     def get_rename_image():
@@ -128,7 +129,7 @@ def build_thumbnail_tag(target_dir):
                         raise KeyError(f'cannot found image key:{basename}')
                     if not images[rename]['tag']:
                         # tag 已经存在可能是反推出来的说明要保留
-                        images[rename]['tag'] = ' '.join(lines)
+                        images[rename]['tag'] = ' '.join(lines).replace('_', ' ')
         except Exception as ex:
             print(f'cannot read caption file:{file}, err:{ex}')
 
@@ -168,3 +169,49 @@ def get_batch_image_size(target_dir):
             max_reso = max(max(image.size), max_reso)
             min_reso = min(min(image.size), min_reso)
     return [x for x in current or []], min_reso, max_reso
+
+
+def debug_task():
+    t = {
+        'task_id': 'test_pre',
+        'base_model_path': 'xingzheaidraw/sd-web/models/system/Lora/2023/05/22/478d15657df6464ce9cc07a40bde3c1d06cb2a74e51c21e2f458012aff3406eb.safetensors',
+        'model_hash': '478d15657df6464ce9cc07a40bde3c1d06cb2a74e51c21e2f458012aff3406eb',
+        'alwayson_scripts': {},
+        'user_id': 'test_user',
+        'task_type': 4,
+        'minor_type': 1,
+        "interrogate_model": "wd14-vit-v2",
+        "process_width": 512,
+        "process_height": 512,
+        "preprocess_txt_action": "copy",
+        "process_flip": False,
+        "process_split": False,
+        "split_threshold": 0.5,
+        "overlap_ratio": 0.2,
+        "process_focal_crop": False,
+        "process_focal_crop_face_weight": 0.9,
+        "process_focal_crop_entropy_weight": 0.15,
+        "process_focal_crop_edges_weight": 0.5,
+        "process_focal_crop_debug": False,
+        "process_multicrop": False,
+        "process_multicrop_mindim": 384,
+        "process_multicrop_maxdim": 768,
+        "process_multicrop_minarea": 4096,
+        "process_multicrop_maxarea": 409600,
+        "process_multicrop_objective": "Maximize area",
+        "process_multicrop_threshold": 0.1,
+        "process_keep_original_size": False,
+        "zip_key": "xingzheaidraw/sd-tmp/2023/06/28/file-qjry3qvzjvzqkl.zip",
+        "ignore": False,
+        "regex_tokens": [
+            {
+                "sub_folder": "asd",
+                "need": False
+            }
+        ],
+        "resolution": None,
+        "min_reso": 0,
+        "max_reso": 0,
+    }
+
+    return Task(**t)
