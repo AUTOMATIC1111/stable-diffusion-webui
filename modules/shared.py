@@ -463,7 +463,8 @@ options_templates.update(options_section(('advanced', "Inference Settings"), {
     "hypertile_unet_enabled": OptionInfo(False, "HyperTile for UNet enabled"),
     "hypertile_unet_tile": OptionInfo(256, "HyperTile for UNet tile size", gr.Slider, {"minimum": 256, "maximum": 1024, "step": 8}),
 
-    "inference_mode_sep": OptionInfo("<h2>Inference mode</h2>", "", gr.HTML),
+    "inference_other_sep": OptionInfo("<h2>Other</h2>", "", gr.HTML),
+    "batch_frame_mode": OptionInfo(False, "Use batchsize to process multiple images in batch mode"),
     "inference_mode": OptionInfo("no-grad", "Torch inference mode", gr.Radio, lambda: {"choices": ["no-grad", "inference-mode", "none"]}),
     "sd_vae_sliced_encode": OptionInfo(False, "VAE Slicing (original)"),
 }))
