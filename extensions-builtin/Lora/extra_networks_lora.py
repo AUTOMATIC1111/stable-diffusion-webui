@@ -1,4 +1,6 @@
+import time
 import networks
+import lora_patches
 from modules import extra_networks, shared
 
 
@@ -9,6 +11,8 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
         """mapping of network names to the number of errors the network had during operation"""
 
     def activate(self, p, params_list):
+        t0 = time.time()
+        networks.originals = lora_patches.LoraPatches()
         additional = shared.opts.sd_lora
         self.errors.clear()
         if additional != "None" and additional in networks.available_networks and not any(x for x in params_list if x.items[0] == additional):
@@ -30,7 +34,9 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
             te_multipliers.append(te_multiplier)
             unet_multipliers.append(unet_multiplier)
             dyn_dims.append(dyn_dim)
+        t1 = time.time()
         networks.load_networks(names, te_multipliers, unet_multipliers, dyn_dims)
+        t2 = time.time()
         if shared.opts.lora_add_hashes_to_infotext:
             network_hashes = []
             for item in networks.loaded_networks:
@@ -44,8 +50,13 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
                 network_hashes.append(f"{alias}: {shorthash}")
             if network_hashes:
                 p.extra_generation_params["Lora hashes"] = ", ".join(network_hashes)
+        shared.log.info(f'Applying LoRA: {names} patch={t1-t0:.2f}s load={t2-t1:.2f}s')
+
 
     def deactivate(self, p):
+        networks.originals.undo()
+        if networks.debug:
+            shared.log.debug(f"LoRA timers: load={networks.timer['load']:.2f}s apply={networks.timer['apply']:.2f}s restore={networks.timer['restore']:.2f}s")
         if self.errors:
             p.comment("Networks with errors: " + ", ".join(f"{k} ({v})" for k, v in self.errors.items()))
             for k, v in self.errors.items():

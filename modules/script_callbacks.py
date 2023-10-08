@@ -92,6 +92,8 @@ class ImageGridLoopParams:
 ScriptCallback = namedtuple("ScriptCallback", ["script", "callback"])
 callback_map = dict(
     callbacks_app_started=[],
+    callbacks_before_process=[],
+    callbacks_after_process=[],
     callbacks_model_loaded=[],
     callbacks_ui_tabs=[],
     callbacks_ui_train_tabs=[],
@@ -132,6 +134,26 @@ def app_started_callback(demo: Optional[Blocks], app: FastAPI):
             timer(t0, c.script, 'app_started')
         except Exception as e:
             report_exception(e, c, 'app_started_callback')
+
+
+def before_process_callback(p):
+    for c in callback_map['callbacks_before_process']:
+        try:
+            t0 = time.time()
+            c.callback(p)
+            timer(t0, c.script, 'before_process')
+        except Exception as e:
+            report_exception(e, c, 'before_process_callback')
+
+
+def after_process_callback(p):
+    for c in callback_map['callbacks_after_process']:
+        try:
+            t0 = time.time()
+            c.callback(p)
+            timer(t0, c.script, 'after_process')
+        except Exception as e:
+            report_exception(e, c, 'after_process_callback')
 
 
 def app_reload_callback():
@@ -332,6 +354,16 @@ def on_app_started(callback):
     """register a function to be called when the webui started, the gradio `Block` component and
     fastapi `FastAPI` object are passed as the arguments"""
     add_callback(callback_map['callbacks_app_started'], callback)
+
+
+def on_before_process(callback):
+    """register a function to be called just before processing starts"""
+    add_callback(callback_map['callbacks_before_process'], callback)
+
+
+def on_after_process(callback):
+    """register a function to be called just after processing ends"""
+    add_callback(callback_map['callbacks_after_process'], callback)
 
 
 def on_before_reload(callback):

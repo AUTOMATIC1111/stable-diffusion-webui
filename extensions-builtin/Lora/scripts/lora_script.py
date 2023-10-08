@@ -4,14 +4,14 @@ from fastapi import FastAPI
 import network
 import networks
 import lora  # noqa:F401 # pylint: disable=unused-import
-import lora_patches
+# import lora_patches
 import extra_networks_lora
 import ui_extra_networks_lora
 from modules import script_callbacks, ui_extra_networks, extra_networks, shared
 
 
-def unload():
-    networks.originals.undo()
+# def unload():
+#     networks.originals.undo()
 
 
 def before_ui():
@@ -21,25 +21,17 @@ def before_ui():
     # extra_networks.register_extra_network_alias(networks.extra_network_lora, "lyco")
 
 
-networks.originals = lora_patches.LoraPatches()
+# networks.originals = lora_patches.LoraPatches()
 script_callbacks.on_model_loaded(networks.assign_network_names_to_compvis_modules)
-script_callbacks.on_script_unloaded(unload)
+# script_callbacks.on_script_unloaded(unload)
 script_callbacks.on_before_ui(before_ui)
 script_callbacks.on_infotext_pasted(networks.infotext_pasted)
 
 
 shared.options_templates.update(shared.options_section(('extra_networks', "Extra Networks"), {
     "sd_lora": shared.OptionInfo("None", "Add network to prompt", gr.Dropdown, lambda: {"choices": ["None", *networks.available_networks], "visible": False}, refresh=networks.list_available_networks),
-    "lora_preferred_name": shared.OptionInfo("Alias from file", "When adding to prompt, refer to Lora by", gr.Radio, {"choices": ["Alias from file", "Filename"]}),
-    "lora_add_hashes_to_infotext": shared.OptionInfo(True, "Add Lora hashes to infotext"),
     # "lora_show_all": shared.OptionInfo(False, "Always show all networks on the Lora page").info("otherwise, those detected as for incompatible version of Stable Diffusion will be hidden"),
     # "lora_hide_unknown_for_versions": shared.OptionInfo([], "Hide networks of unknown versions for model versions", gr.CheckboxGroup, {"choices": ["SD1", "SD2", "SDXL"]}),
-    "lora_in_memory_limit": shared.OptionInfo(0, "Lora in-memory cache", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
-}))
-
-
-shared.options_templates.update(shared.options_section(('compatibility', "Compatibility"), {
-    "lora_functional": shared.OptionInfo(False, "Lora/Networks: use old method that takes longer when you have multiple Loras active and produces same results as kohya-ss/sd-webui-additional-networks extension"),
 }))
 
 
@@ -85,4 +77,3 @@ def infotext_pasted(infotext, d): # pylint: disable=unused-argument
 
 
 script_callbacks.on_infotext_pasted(infotext_pasted)
-shared.opts.onchange("lora_in_memory_limit", networks.purge_networks_from_memory)
