@@ -43,12 +43,11 @@ def save_pil_to_file(self, pil_image, dir=None, format="png"):
 
     if shared.opts.temp_dir != "":
         dir = shared.opts.temp_dir
-    ##添加临时路径判断，无/tmp/gradio 路径则创建
+    else:
+        os.makedirs(dir, exist_ok=True)
+    # 添加临时路径判断，无/tmp/gradio 路径则创建
     if dir[:4] == '/tmp':
-        try:
-            os.mkdir("/tmp/gradio")
-        except:
-            pass
+        os.makedirs("/tmp/gradio", exist_ok=True)
     use_metadata = False
     metadata = PngImagePlugin.PngInfo()
     for key, value in pil_image.info.items():
@@ -61,8 +60,9 @@ def save_pil_to_file(self, pil_image, dir=None, format="png"):
     return file_obj.name
 
 
-# override save to file function so that it also writes PNG info
-gradio.components.IOComponent.pil_to_temp_file = save_pil_to_file
+def install_ui_tempdir_override():
+    """override save to file function so that it also writes PNG info"""
+    gradio.components.IOComponent.pil_to_temp_file = save_pil_to_file
 
 
 def on_tmpdir_changed():

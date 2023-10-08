@@ -1,20 +1,38 @@
+function toggleCss(key, css, enable) {
+    var style = document.getElementById(key);
+    if (enable && !style) {
+        style = document.createElement('style');
+        style.id = key;
+        style.type = 'text/css';
+        document.head.appendChild(style);
+    }
+    if (style && !enable) {
+        document.head.removeChild(style);
+    }
+    if (style) {
+        style.innerHTML == '';
+        style.appendChild(document.createTextNode(css));
+    }
+}
+
 function setupExtraNetworksForTab(tabname) {
     gradioApp().querySelector('#' + tabname + '_extra_tabs').classList.add('extra-networks');
 
     var tabs = gradioApp().querySelector('#' + tabname + '_extra_tabs > div');
-    var search = gradioApp().querySelector('#' + tabname + '_extra_search textarea');
+    var searchDiv = gradioApp().getElementById(tabname + '_extra_search');
+    var search = searchDiv.querySelector('textarea');
     var sort = gradioApp().getElementById(tabname + '_extra_sort');
     var sortOrder = gradioApp().getElementById(tabname + '_extra_sortorder');
     var refresh = gradioApp().getElementById(tabname + '_extra_refresh');
+    var showDirsDiv = gradioApp().getElementById(tabname + '_extra_show_dirs');
+    var showDirs = gradioApp().querySelector('#' + tabname + '_extra_show_dirs input');
 
-    search.classList.add('search');
-    sort.classList.add('sort');
-    sortOrder.classList.add('sortorder');
     sort.dataset.sortkey = 'sortDefault';
-    tabs.appendChild(search);
+    tabs.appendChild(searchDiv);
     tabs.appendChild(sort);
     tabs.appendChild(sortOrder);
     tabs.appendChild(refresh);
+    tabs.appendChild(showDirsDiv);
 
     var applyFilter = function() {
         var searchTerm = search.value.toLowerCase();
@@ -80,6 +98,15 @@ function setupExtraNetworksForTab(tabname) {
     });
 
     extraNetworksApplyFilter[tabname] = applyFilter;
+
+    var showDirsUpdate = function() {
+        var css = '#' + tabname + '_extra_tabs .extra-network-subdirs { display: none; }';
+        toggleCss(tabname + '_extra_show_dirs_style', css, !showDirs.checked);
+        localSet('extra-networks-show-dirs', showDirs.checked ? 1 : 0);
+    };
+    showDirs.checked = localGet('extra-networks-show-dirs', 1) == 1;
+    showDirs.addEventListener("change", showDirsUpdate);
+    showDirsUpdate();
 }
 
 function applyExtraNetworkFilter(tabname) {
@@ -179,7 +206,7 @@ function saveCardPreview(event, tabname, filename) {
 }
 
 function extraNetworksSearchButton(tabs_id, event) {
-    var searchTextarea = gradioApp().querySelector("#" + tabs_id + ' > div > textarea');
+    var searchTextarea = gradioApp().querySelector("#" + tabs_id + ' > label > textarea');
     var button = event.target;
     var text = button.classList.contains("search-all") ? "" : button.textContent.trim();
 
@@ -220,6 +247,15 @@ function popup(contents) {
     globalPopupInner.appendChild(contents);
 
     globalPopup.style.display = "flex";
+}
+
+var storedPopupIds = {};
+function popupId(id) {
+    if (!storedPopupIds[id]) {
+        storedPopupIds[id] = gradioApp().getElementById(id);
+    }
+
+    popup(storedPopupIds[id]);
 }
 
 function extraNetworksShowMetadata(text) {
@@ -305,7 +341,7 @@ function extraNetworksRefreshSingleCard(page, tabname, name) {
             newDiv.innerHTML = data.html;
             var newCard = newDiv.firstElementChild;
 
-            newCard.style = '';
+            newCard.style.display = '';
             card.parentElement.insertBefore(newCard, card);
             card.parentElement.removeChild(card);
         }

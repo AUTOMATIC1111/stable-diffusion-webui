@@ -21,8 +21,6 @@ from modules import sd_samplers, shared, script_callbacks, errors
 from modules.paths_internal import roboto_ttf_file
 from modules.shared import opts
 
-import modules.sd_vae as sd_vae
-
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
 
@@ -318,7 +316,7 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
     return res
 
 
-invalid_filename_chars = '<>:"/\\|?*\n'
+invalid_filename_chars = '<>:"/\\|?*\n\r\t'
 invalid_filename_prefix = ' '
 invalid_filename_postfix = ' .'
 re_nonletters = re.compile(r'[\s' + string.punctuation + ']+')
@@ -342,16 +340,6 @@ def sanitize_filename_part(text, replace_spaces=True):
 
 
 class FilenameGenerator:
-    def get_vae_filename(self): #get the name of the VAE file.
-        if sd_vae.loaded_vae_file is None:
-            return "NoneType"
-        file_name = os.path.basename(sd_vae.loaded_vae_file)
-        split_file_name = file_name.split('.')
-        if len(split_file_name) > 1 and split_file_name[0] == '':
-            return split_file_name[1] # if the first character of the filename is "." then [1] is obtained.
-        else:
-            return split_file_name[0]
-
     replacements = {
         'seed': lambda self: self.seed if self.seed is not None else '',
         'seed_first': lambda self: self.seed if self.p.batch_size == 1 else self.p.all_seeds[0],
@@ -367,7 +355,9 @@ class FilenameGenerator:
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
         'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
         'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
-        'prompt_hash': lambda self: hashlib.sha256(self.prompt.encode()).hexdigest()[0:8],
+        'prompt_hash': lambda self, *args: self.string_hash(self.prompt, *args),
+        'negative_prompt_hash': lambda self, *args: self.string_hash(self.p.negative_prompt, *args),
+        'full_prompt_hash': lambda self, *args: self.string_hash(f"{self.p.prompt} {self.p.negative_prompt}", *args),  # a space in between to create a unique string
         'prompt': lambda self: sanitize_filename_part(self.prompt),
         'prompt_no_styles': lambda self: self.prompt_no_style(),
         'prompt_spaces': lambda self: sanitize_filename_part(self.prompt, replace_spaces=False),
@@ -380,7 +370,8 @@ class FilenameGenerator:
         'denoising': lambda self: self.p.denoising_strength if self.p and self.p.denoising_strength else NOTHING_AND_SKIP_PREVIOUS_TEXT,
         'user': lambda self: self.p.user,
         'vae_filename': lambda self: self.get_vae_filename(),
-        'none': lambda self: '', # Overrides the default so you can get just the sequence number
+        'none': lambda self: '',  # Overrides the default, so you can get just the sequence number
+        'image_hash': lambda self, *args: self.image_hash(*args)  # accepts formats: [image_hash<length>] default full hash
     }
     default_time_format = '%Y%m%d%H%M%S'
 
@@ -390,6 +381,22 @@ class FilenameGenerator:
         self.prompt = prompt
         self.image = image
         self.zip = zip
+
+    def get_vae_filename(self):
+        """Get the name of the VAE file."""
+
+        import modules.sd_vae as sd_vae
+
+        if sd_vae.loaded_vae_file is None:
+            return "NoneType"
+
+        file_name = os.path.basename(sd_vae.loaded_vae_file)
+        split_file_name = file_name.split('.')
+        if len(split_file_name) > 1 and split_file_name[0] == '':
+            return split_file_name[1]  # if the first character of the filename is "." then [1] is obtained.
+        else:
+            return split_file_name[0]
+
 
     def hasprompt(self, *args):
         lower = self.prompt.lower()
@@ -443,6 +450,14 @@ class FilenameGenerator:
             formatted_time = time_zone_time.strftime(self.default_time_format)
 
         return sanitize_filename_part(formatted_time, replace_spaces=False)
+
+    def image_hash(self, *args):
+        length = int(args[0]) if (args and args[0] != "") else None
+        return hashlib.sha256(self.image.tobytes()).hexdigest()[0:length]
+
+    def string_hash(self, text, *args):
+        length = int(args[0]) if (args and args[0] != "") else 8
+        return hashlib.sha256(text.encode()).hexdigest()[0:length]
 
     def apply(self, x):
         res = ''
@@ -584,6 +599,11 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             If a text file is saved for this image, this will be its full path. Otherwise None.
     """
     namegen = FilenameGenerator(p, seed, prompt, image)
+
+    # WebP and JPG formats have maximum dimension limits of 16383 and 65535 respectively. switch to PNG which has a much higher limit
+    if (image.height > 65535 or image.width > 65535) and extension.lower() in ("jpg", "jpeg") or (image.height > 16383 or image.width > 16383) and extension.lower() == "webp":
+        print('Image dimensions too large; saving as PNG')
+        extension = ".png"
 
     if save_to_dirs is None:
         save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
