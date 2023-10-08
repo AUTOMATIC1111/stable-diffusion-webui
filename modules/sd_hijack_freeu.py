@@ -126,11 +126,12 @@ def ratio_to_region(width: float, offset: float, n: int):
     return round(start), round(end), inverted
 
 
-def apply_freeu(model, backend_original):
+def apply_freeu(p, backend_original):
     global state_enabled # pylint: disable=global-statement
     global cat_original # pylint: disable=global-statement
     if backend_original:
         if opts.freeu_enabled:
+            p.extra_generation_params['FreeU'] = f'b1={opts.freeu_b1} b2={opts.freeu_b2} s1={opts.freeu_s1} s2={opts.freeu_s2}'
             if not state_enabled: # otherwise already patched
                 cat_original = th.cat
                 th.cat = functools.partial(free_u_cat_hijack, original_function=th.cat)
@@ -139,12 +140,13 @@ def apply_freeu(model, backend_original):
             if cat_original is not None:
                 th.cat = cat_original
                 state_enabled = False
-    elif hasattr(model, 'enable_freeu'):
+    elif hasattr(p.sd_model, 'enable_freeu'):
         if opts.freeu_enabled:
-            model.enable_freeu(s1=opts.freeu_s1, s2=opts.freeu_s2, b1=opts.freeu_b1, b2=opts.freeu_b2)
+            p.extra_generation_params['FreeU'] = f'b1={opts.freeu_b1} b2={opts.freeu_b2} s1={opts.freeu_s1} s2={opts.freeu_s2}'
+            p.sd_model.enable_freeu(s1=opts.freeu_s1, s2=opts.freeu_s2, b1=opts.freeu_b1, b2=opts.freeu_b2)
             state_enabled = True
         elif state_enabled:
-            model.disable_freeu()
+            p.sd_model.disable_freeu()
             state_enabled = False
     if opts.freeu_enabled:
         log.info(f'Applying free-u: b1={opts.freeu_b1} b2={opts.freeu_b2} s1={opts.freeu_s1} s2={opts.freeu_s2}')

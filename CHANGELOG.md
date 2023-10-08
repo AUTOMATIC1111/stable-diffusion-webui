@@ -135,9 +135,14 @@ or even free speedups and quality improvements (regardless of which workflows yo
   - to enable search, make sure all models have set hash values  
     *Models -> Valida -> Calculate hashes*  
 - **LoRA**
-  - for *backend:original*, lyco handler has been removed and replaced with new  
-    unified lora/lyco handler that supports all variants of loras  
+  - new unified LoRA handler for all LoRA types (lora, lyco, loha, lokr, locon, etc.)  
+    applies to both original and diffusers backend  
+    thanks @AI-Casanova for diffusers port  
+  - for *backend:original*, separate lyco handler has been removed  
 - **Compute**  
+  - **CUDA**:  
+    - default updated to `torch` *2.1.0* with cuda *12.1*  
+    - testing moved to `torch` *2.2.0-dev/cu122*  
   - **Intel Arc/IPEX**:  
     - tons of optimizations, built-in binary wheels for Windows  
       i have to say, intel arc/ipex is getting to be quite a player, especially with openvino  
@@ -145,8 +150,10 @@ or even free speedups and quality improvements (regardless of which workflows yo
   - **AMD ROCm**:  
     - updated installer to support detect `ROCm` *5.4/5.5/5.6/5.7*  
     - support for `torch-rocm-5.7`
-  - **CUDA**:  
-    - testing moved to `torch` *2.2.0-dev/cu121*  
+  - **xFormers**:
+    - default updated to *0.0.22*  
+    - note that latest xformers are still not compatible with standard torch 2.1.0 with cuda 12.1  
+      either downgrade torch to 2.0.1 with cuda 11.8 or build xformers manually  
   - **GC**:  
     - custom garbage collect threshold to reduce vram memory usage, thanks @Disty0  
       see *settings -> compute -> gc*  

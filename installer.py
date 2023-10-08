@@ -341,8 +341,6 @@ def check_python():
 
 # check torch version
 def check_torch():
-    if args.quick:
-        return
     if args.skip_torch:
         log.info('Skipping Torch tests')
         return
@@ -362,8 +360,8 @@ def check_torch():
         pass
     elif allow_cuda and (shutil.which('nvidia-smi') is not None or os.path.exists(os.path.join(os.environ.get('SystemRoot') or r'C:\Windows', 'System32', 'nvidia-smi.exe'))):
         log.info('nVidia CUDA toolkit detected')
-        torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision --index-url https://download.pytorch.org/whl/cu118')
-        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.20' if opts.get('cross_attention_optimization', '') == 'xFormers' else 'none')
+        torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision --index-url https://download.pytorch.org/whl/cu121')
+        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.22' if opts.get('cross_attention_optimization', '') == 'xFormers' else 'none')
     elif allow_rocm and (shutil.which('rocminfo') is not None or os.path.exists('/opt/rocm/bin/rocminfo') or os.path.exists('/dev/kfd')):
         log.info('AMD ROCm toolkit detected')
         os.environ.setdefault('PYTORCH_HIP_ALLOC_CONF', 'garbage_collection_threshold:0.8,max_split_size_mb:512')
@@ -483,6 +481,10 @@ def check_torch():
     try:
         if 'xformers' in xformers_package:
             install(f'--no-deps {xformers_package}', ignore=True)
+            import torch
+            import xformers
+            if torch.__version__ != '2.0.1+cu118' and xformers.__version__ in ['0.0.22', '0.0.21', '0.0.20']:
+                log.warning(f'Likely incompatible torch with: xformers=={xformers.__version__} installed: torch=={torch.__version__} required: torch==2.0.1+cu118 - build xformers manually or downgrade torch')
         elif not args.experimental:
             x = pkg_resources.working_set.by_key.get('xformers', None)
             if x is not None:
