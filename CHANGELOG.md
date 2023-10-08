@@ -1,11 +1,10 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-07
+## Update for 2023-10-08
 
 **TBD**: Candidates before release:  
 - Note: Free-U requires unreleased diffusers
 - Update Lora handler for *backend:diffusers*
-- Merge parallel batch processing
 
 This is a big one, with some major changes and new functionality...  
 And probably the biggest release since introduction of **Diffusers**  
@@ -165,6 +164,10 @@ or even free speedups and quality improvements (regardless of which workflows yo
       available for *diffusers* and *original* backends  
       2x speed-up your generations for free :)
       thanks @tfernd
+    - **Batch mode**  
+      new option *settings -> inference -> batch mode*  
+      when using img2img process batch, process multiple images in batch in parallel  
+      thanks @Symbiomatrix
 - **General**  
   - **Startup**  
     - all main CLI parameters can now be set as environment variable as well  
