@@ -12,12 +12,13 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
 
     def activate(self, p, params_list):
         t0 = time.time()
-        networks.originals = lora_patches.LoraPatches()
         additional = shared.opts.sd_lora
         self.errors.clear()
         if additional != "None" and additional in networks.available_networks and not any(x for x in params_list if x.items[0] == additional):
             p.all_prompts = [x + f"<lora:{additional}:{shared.opts.extra_networks_default_multiplier}>" for x in p.all_prompts]
             params_list.append(extra_networks.ExtraNetworkParams(items=[additional, shared.opts.extra_networks_default_multiplier]))
+        if len(params_list) > 0:
+            networks.originals = lora_patches.LoraPatches()
         names = []
         te_multipliers = []
         unet_multipliers = []

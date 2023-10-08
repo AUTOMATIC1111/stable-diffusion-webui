@@ -872,6 +872,7 @@ def check_timestamp():
         return True
     ok = True
     setup_time = -1
+    version_time = -1
     with open(log_file, 'r', encoding='utf8') as f:
         lines = f.readlines()
         for line in lines:
@@ -881,8 +882,6 @@ def check_timestamp():
         version_time = int(git('log -1 --pretty=format:"%at"'))
     except Exception as e:
         log.error(f'Error getting local repository version: {e}')
-        if not args.ignore:
-            sys.exit(1)
     log.debug(f'Repository update time: {time.ctime(int(version_time))}')
     if setup_time == -1:
         return False
