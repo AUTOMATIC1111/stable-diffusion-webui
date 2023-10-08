@@ -312,12 +312,15 @@ def create_ui():
                             for variant in model['modelVersions']:
                                 if variant['id'] == variant_id:
                                     for f in variant['files']:
-                                        data3.append([
-                                            f['name'],
-                                            round(f['sizeKB']),
-                                            json.dumps(f['metadata']),
-                                            f['downloadUrl'],
-                                        ])
+                                        ext = os.path.splitext(f['name'])[1]
+                                        print(f['name'], ext)
+                                        if os.path.splitext(f['name'])[1] in ['.safetensors', '.ckpt', '.pt', '.pth', '.bin']:
+                                            data3.append([
+                                                f['name'],
+                                                round(f['sizeKB']),
+                                                json.dumps(f['metadata']),
+                                                f['downloadUrl'],
+                                            ])
                     log.debug(f'CivitAI select: model="{in_data[evt.index[0]]}" files={len(data3)}')
                     return data3
 
