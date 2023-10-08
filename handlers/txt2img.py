@@ -108,13 +108,13 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
             hr_resize_y=hr_resize_y,
             override_settings=override_settings,
             outpath_samples=f"output/{user_id}/txt2img/samples/",
-            outpath_scripts=f"output/{user_id}/txt2img/scripts/",
             outpath_grids=f"output/{user_id}/txt2img/grids/",
             hr_sampler_name=hr_sampler_name,
             hr_prompt=hr_prompt,
             hr_negative_prompt=hr_negative_prompt
         )
 
+        self.outpath_scripts = f"output/{user_id}/img2img/scripts/",
         self.scripts = modules.scripts.scripts_txt2img
         self.script_args = script_args
         self.script_name = select_script_name
@@ -203,6 +203,8 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
     def _get_local_checkpoint(self, task: Task):
         progress = TaskProgress.new_prepare(task, f"0%")
         xl_refiner_model_path = task.get('xl_refiner_model_path')
+        # 脚本任务
+        self._get_select_script_models(progress)
 
         def base_model_progress_callback(*args):
             if len(args) < 2:

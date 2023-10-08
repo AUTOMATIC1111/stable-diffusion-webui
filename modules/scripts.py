@@ -419,6 +419,7 @@ class ScriptRunner:
         self.infotext_fields = []
         self.paste_field_names = []
         self.inputs = [None]
+        self.is_img2img = False
 
         self.on_before_component_elem_id = {}
         """dict of callbacks to be called before an element is created; key=elem_id, value=list of callbacks"""
