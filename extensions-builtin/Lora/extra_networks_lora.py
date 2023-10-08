@@ -23,9 +23,9 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
             params_list.append(extra_networks.ExtraNetworkParams(items=[additional, shared.opts.extra_networks_default_multiplier]))
         if len(params_list) > 0:
             self.active = True
+            networks.originals.apply() # apply patches
             if networks.debug:
                 shared.log.debug("LoRA activate")
-                networks.originals.apply()
         names = []
         te_multipliers = []
         unet_multipliers = []
@@ -65,7 +65,7 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
 
     def deactivate(self, p):
         if not self.active and getattr(networks, "originals", None ) is not None:
-            networks.originals.undo()
+            networks.originals.undo() # remove patches
             if networks.debug:
                 shared.log.debug("LoRA deactivate")
         if self.active and networks.debug:
