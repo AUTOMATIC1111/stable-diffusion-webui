@@ -18,6 +18,7 @@ class Dot(dict): # dot notation access to dictionary attributes
     __delattr__ = dict.__delitem__
 
 
+version = None
 log = logging.getLogger("sd")
 log_file = os.path.join(os.path.dirname(__file__), 'sdnext.log')
 log_rolled = False
@@ -177,16 +178,16 @@ def installed(package, friendly: str = None):
                 spec = pkg_resources.working_set.by_key.get(p[0].replace('_', '-'), None) # check name variations
             ok = ok and spec is not None
             if ok:
-                version = pkg_resources.get_distribution(p[0]).version
-                # log.debug(f"Package version found: {p[0]} {version}")
+                package_version = pkg_resources.get_distribution(p[0]).version
+                # log.debug(f"Package version found: {p[0]} {package_version}")
                 if len(p) > 1:
-                    exact = version == p[1]
+                    exact = package_version == p[1]
                     ok = ok and (exact or args.experimental)
                     if not exact:
                         if args.experimental:
-                            log.warning(f"Package allowing experimental: {p[0]} {version} required {p[1]}")
+                            log.warning(f"Package allowing experimental: {p[0]} {package_version} required {p[1]}")
                         else:
-                            log.warning(f"Package wrong version: {p[0]} {version} required {p[1]}")
+                            log.warning(f"Package wrong version: {p[0]} {package_version} required {p[1]}")
             else:
                 log.debug(f"Package version not found: {p[0]}")
         return ok
@@ -466,8 +467,8 @@ def check_torch():
                 try:
                     if args.use_directml and allow_directml:
                         import torch_directml # pylint: disable=import-error
-                        version = pkg_resources.get_distribution("torch-directml")
-                        log.info(f'Torch backend: DirectML ({version})')
+                        dml_ver = pkg_resources.get_distribution("torch-directml")
+                        log.info(f'Torch backend: DirectML ({dml_ver})')
                         for i in range(0, torch_directml.device_count()):
                             log.info(f'Torch detected GPU: {torch_directml.device_name(i)}')
                 except Exception:
@@ -784,7 +785,7 @@ def check_extensions():
 
 
 def get_version():
-    version = None
+    global version # pylint: disable=global-statement
     if version is None:
         try:
             res = subprocess.run('git log --pretty=format:"%h %ad" -1 --date=short', stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True, check=True)

@@ -26,7 +26,7 @@ def setup_middleware(app: FastAPI, cmd_opts):
     from fastapi.middleware.gzip import GZipMiddleware
     app.user_middleware = [x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware']
     app.middleware_stack = None # reset current middleware to allow modifying user provided list
-    app.add_middleware(GZipMiddleware, minimum_size=1024)
+    app.add_middleware(GZipMiddleware, minimum_size=2048)
     if cmd_opts.cors_origins and cmd_opts.cors_regex:
         app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_origins.split(','), allow_origin_regex=cmd_opts.cors_regex, allow_methods=['*'], allow_credentials=True, allow_headers=['*'])
     elif cmd_opts.cors_origins:

@@ -9,7 +9,7 @@ from fastapi import FastAPI, APIRouter, Depends, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.exceptions import HTTPException
 from PIL import PngImagePlugin,Image
-
+import requests
 import piexif
 import piexif.helper
 import gradio as gr
@@ -147,6 +147,7 @@ class Api:
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
         self.add_api_route("/sdapi/v1/log", self.get_log_buffer, methods=["GET"], response_model=List) # bypass auth
         self.add_api_route("/sdapi/v1/start", self.session_start, methods=["GET"])
+        self.add_api_route("/sdapi/v1/motd", self.get_motd, methods=["GET"], response_model=str)
         self.add_api_route("/sdapi/v1/extra-networks", self.get_extra_networks, methods=["GET"], response_model=List[models.ExtraNetworkItem])
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
@@ -171,6 +172,19 @@ class Api:
     def session_start(self, req: Request, agent: Optional[str] = None):
         shared.log.info(f'Browser session: client={req.client.host} agent={agent}')
         return {}
+
+    def get_motd(self):
+        from installer import get_version
+        motd = ''
+        ver = get_version()
+        if ver.get('updated', None) is not None:
+            motd = f"version <b>{ver['hash']} {ver['updated']}</b> <span style='color: var(--primary-500)'>{ver['url'].split('/')[-1]}</span><br>"
+        if shared.opts.motd:
+            res = requests.get('https://vladmandic.github.io/automatic/motd', timeout=10)
+            if res.status_code == 200:
+                shared.log.info(f'MOTD: {res.text}')
+                motd += res.text
+        return motd
 
     def get_selectable_script(self, script_name, script_runner):
         if script_name is None or script_name == "":
