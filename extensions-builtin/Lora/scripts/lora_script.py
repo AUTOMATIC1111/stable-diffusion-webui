@@ -29,7 +29,8 @@ script_callbacks.on_infotext_pasted(networks.infotext_pasted)
 
 
 shared.options_templates.update(shared.options_section(('extra_networks', "Extra Networks"), {
-    "sd_lora": shared.OptionInfo("None", "Add network to prompt", gr.Dropdown, lambda: {"choices": ["None", *networks.available_networks], "visible": False}, refresh=networks.list_available_networks),
+    # "sd_lora": shared.OptionInfo("None", "Add network to prompt", gr.Dropdown, lambda: {"choices": ["None", *networks.available_networks], "visible": False}, refresh=networks.list_available_networks),
+    "sd_lora": shared.OptionInfo("None", "Add network to prompt", gr.Dropdown, {"choices": ["None"]}),
     # "lora_show_all": shared.OptionInfo(False, "Always show all networks on the Lora page").info("otherwise, those detected as for incompatible version of Stable Diffusion will be hidden"),
     # "lora_hide_unknown_for_versions": shared.OptionInfo([], "Hide networks of unknown versions for model versions", gr.CheckboxGroup, {"choices": ["SD1", "SD2", "SDXL"]}),
 }))

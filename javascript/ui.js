@@ -371,7 +371,7 @@ function create_theme_element() {
 }
 
 function toggleCompact(val) {
-  log('toggleCompact', val);
+  // log('toggleCompact', val);
   if (val) {
     gradioApp().style.setProperty('--layout-gap', 'var(--spacing-md)');
     gradioApp().querySelectorAll('input[type=range]').forEach((el) => el.classList.add('hidden'));

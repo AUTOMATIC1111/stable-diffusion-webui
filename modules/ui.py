@@ -946,8 +946,8 @@ def create_ui(startup_timer = None):
         def get_opt_values():
             return [getattr(opts, _key) for _key in keys_to_reset]
 
-        elements_to_reset = [component_dict[_key] for _key in keys_to_reset]
-        indicator = gr.Button("", elem_classes="modification-indicator", elem_id="modification_indicator_" + key, **kwargs)
+        elements_to_reset = [component_dict[_key] for _key in keys_to_reset if component_dict[_key] is not None]
+        indicator = gr.Button("", elem_classes="modification-indicator", elem_id=f"modification_indicator_{key}", **kwargs)
         indicator.click(fn=get_opt_values, outputs=elements_to_reset, show_progress=False)
         return indicator
 
@@ -1135,6 +1135,7 @@ def create_ui(startup_timer = None):
             gr.Audio(interactive=False, value=os.path.join(script_path, opts.notification_audio_path), elem_id="audio_notification", visible=False)
 
         text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
+        components = [c for c in components if c is not None]
         settings_submit.click(
             fn=wrap_gradio_call(run_settings, extra_outputs=[gr.update()]),
             inputs=components,
@@ -1185,7 +1186,7 @@ def create_ui(startup_timer = None):
         demo.load(
             fn=get_settings_values,
             inputs=[],
-            outputs=[component_dict[k] for k in component_keys],
+            outputs=[component_dict[k] for k in component_keys if component_dict[k] is not None],
             queue=False,
         )
 

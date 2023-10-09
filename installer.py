@@ -788,6 +788,10 @@ def get_version():
     global version # pylint: disable=global-statement
     if version is None:
         try:
+            subprocess.run('git config log.showsignature false', stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True, check=True)
+        except Exception:
+            pass
+        try:
             res = subprocess.run('git log --pretty=format:"%h %ad" -1 --date=short', stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True, check=True)
             ver = res.stdout.decode(encoding = 'utf8', errors='ignore') if len(res.stdout) > 0 else '  '
             githash, updated = ver.split(' ')

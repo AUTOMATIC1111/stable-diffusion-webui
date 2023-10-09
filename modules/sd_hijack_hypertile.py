@@ -136,6 +136,9 @@ def context_hypertile_vae(p):
     from modules import shared
     if p.sd_model is None or not shared.opts.hypertile_vae_enabled:
         return nullcontext()
+    if shared.opts.cross_attention_optimization == 'Sub-quadratic':
+        shared.log.warning('Hypertile UNet is not compatible with Sub-quadratic cross-attention optimization')
+        return nullcontext()
     vae = getattr(p.sd_model, "vae", None) if shared.backend == shared.Backend.DIFFUSERS else getattr(p.sd_model, "first_stage_model", None)
     if vae is None:
         shared.log.warning('Hypertile VAE is enabled but no VAE model was found')
@@ -155,6 +158,9 @@ def context_hypertile_unet(p):
     max_w = 0
     from modules import shared
     if p.sd_model is None or not shared.opts.hypertile_unet_enabled:
+        return nullcontext()
+    if shared.opts.cross_attention_optimization == 'Sub-quadratic':
+        shared.log.warning('Hypertile UNet is not compatible with Sub-quadratic cross-attention optimization')
         return nullcontext()
     unet = getattr(p.sd_model, "unet", None) if shared.backend == shared.Backend.DIFFUSERS else getattr(p.sd_model.model, "diffusion_model", None)
     if unet is None:
