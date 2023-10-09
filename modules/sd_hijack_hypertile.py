@@ -173,8 +173,11 @@ def context_hypertile_unet(p):
 
 
 def hypertile_set(p, hr=False):
+    from modules import shared
     global height, width, error_reported, reset_needed # pylint: disable=global-statement
+    if not shared.opts.hypertile_unet_enabled:
+        return
     error_reported = False
-    height=p.height if not hr else p.hr_upscale_to_y
-    width=p.width if not hr else p.hr_upscale_to_x
+    height=p.height if not hr else getattr(p, 'hr_upscale_to_y', p.height)
+    width=p.width if not hr else getattr(p, 'hr_upscale_to_x', p.width)
     reset_needed = True
