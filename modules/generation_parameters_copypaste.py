@@ -364,10 +364,7 @@ def create_override_settings_dict(text_pairs):
 def connect_paste(button, paste_fields, input_comp, override_settings_component, tabname):
     def paste_func(prompt):
         if not prompt and not shared.cmd_opts.hide_ui_dir_config:
-            filename = os.path.join(data_path, "params.txt")
-            if os.path.exists(filename):
-                with open(filename, "r", encoding="utf8") as file:
-                    prompt = file.read()
+            prompt = shared.infotext_params
 
         params = parse_generation_parameters(prompt)
         script_callbacks.infotext_pasted_callback(prompt, params)
