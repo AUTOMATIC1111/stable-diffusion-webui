@@ -1029,7 +1029,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.ops.append('txt2img')
         hypertile_set(self)
         self.sampler = modules.sd_samplers.create_sampler(self.sampler_name, self.sd_model)
-        self.sampler.initialize(self)
+        if hasattr(self.sampler, "initialize"):
+            self.sampler.initialize(self)
         x = create_random_tensors([4, self.height // 8, self.width // 8], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
         samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
         if not self.enable_hr or shared.state.interrupted or shared.state.skipped:
@@ -1078,7 +1079,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                     self.ops.append('hires')
                     devices.torch_gc() # GC now before running the next img2img to prevent running out of memory
                     self.sampler = modules.sd_samplers.create_sampler(self.latent_sampler or self.sampler_name, self.sd_model)
-                    self.sampler.initialize(self)
+                    if hasattr(self.sampler, "initialize"):
+                        self.sampler.initialize(self)
                     samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
                     noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
                     modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio(for_hr=True))
@@ -1134,7 +1136,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         if self.sampler_name == "PLMS":
             self.sampler_name = 'UniPC'
         self.sampler = modules.sd_samplers.create_sampler(self.sampler_name, self.sd_model)
-        self.sampler.initialize(self)
+        if hasattr(self.sampler, "initialize"):
+            self.sampler.initialize(self)
 
         if self.image_mask is not None:
             self.ops.append('inpaint')
