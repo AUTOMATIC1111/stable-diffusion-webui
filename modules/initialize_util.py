@@ -151,9 +151,13 @@ def dumpstacks():
 def configure_sigint_handler():
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
-        print(f'Interrupted with signal {sig} in {frame}')
+        # avoid dumping stack on ctrl+c
+        if sig == signal.SIGINT:
+            print("Interrupted with <Ctrl+C>, exiting...")
+        else:
+            print(f'Interrupted with signal {sig} in {frame}')
 
-        dumpstacks()
+            dumpstacks()
 
         os._exit(0)
 

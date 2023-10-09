@@ -1,4 +1,5 @@
 from modules import launch_utils
+import signal
 
 args = launch_utils.args
 python = launch_utils.python
@@ -23,6 +24,9 @@ prepare_environment = launch_utils.prepare_environment
 configure_for_tests = launch_utils.configure_for_tests
 start = launch_utils.start
 
+def ctrl_c_handler(signum, frame):
+    print("Interrupted with <Ctrl+C>, exiting...")
+    exit(0)
 
 def main():
     if args.dump_sysinfo:
@@ -32,6 +36,7 @@ def main():
 
         exit(0)
 
+    signal.signal(signal.SIGINT, ctrl_c_handler)
     launch_utils.startup_timer.record("initial startup")
 
     with launch_utils.startup_timer.subcategory("prepare environment"):
