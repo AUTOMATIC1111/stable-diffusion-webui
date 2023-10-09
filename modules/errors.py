@@ -83,7 +83,7 @@ def run(code, task):
     try:
         code()
     except Exception as e:
-        display(task, e)
+        display(e, task)
 
 
 def check_versions():

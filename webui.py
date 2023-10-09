@@ -2,10 +2,15 @@ from __future__ import annotations
 
 import os
 import time
-
+import sys
+import modules
+import subprocess
 from modules import timer
 from modules import initialize_util
 from modules import initialize
+from modules import shared
+from modules.shared import cmd_opts
+from modules.paths import data_path
 
 startup_timer = timer.startup_timer
 startup_timer.record("launcher")
@@ -173,6 +178,45 @@ def check_resource():
     pull_res()
 
 
+def set_pip_index():
+    def run(command, desc=None, errdesc=None, custom_env=None, live: bool = False) -> str:
+        if desc is not None:
+            print(desc)
+
+        run_kwargs = {
+            "args": command,
+            "shell": True,
+            "env": os.environ if custom_env is None else custom_env,
+            "encoding": 'utf8',
+            "errors": 'ignore',
+        }
+
+        if not live:
+            run_kwargs["stdout"] = run_kwargs["stderr"] = subprocess.PIPE
+
+        result = subprocess.run(**run_kwargs)
+
+        if result.returncode != 0:
+            error_bits = [
+                f"{errdesc or 'Error running command'}.",
+                f"Command: {command}",
+                f"Error code: {result.returncode}",
+            ]
+            if result.stdout:
+                error_bits.append(f"stdout: {result.stdout}")
+            if result.stderr:
+                error_bits.append(f"stderr: {result.stderr}")
+            raise RuntimeError("\n".join(error_bits))
+
+        return (result.stdout or "")
+
+    python = sys.executable
+    command = f'''
+    {python} -m pip config --site set global.index-url https://mirrors.aliyun.com/pypi/simple/
+    '''
+    run(command)
+
+
 def run_worker():
     from consumer import run_executor
     from worker.dumper import dumper
@@ -216,12 +260,17 @@ def run_worker():
  # XZ end
 
 
-if __name__ == "__main__":
+def run_sd_webui():
     import sys
     from tools.mysql import dispose
 
     print(sys.argv)
+    set_pip_index()
     check_resource()
+
+    if not cmd_opts.skip_install:
+        from modules.launch_utils import run_extensions_installers
+        run_extensions_installers(os.path.join(data_path, 'config.json'))
 
     if cmd_opts.worker:
         run_worker()
@@ -232,3 +281,8 @@ if __name__ == "__main__":
             webui()
 
     dispose()
+
+
+if __name__ == "__main__":
+    run_sd_webui()
+

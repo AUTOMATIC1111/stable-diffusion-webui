@@ -67,7 +67,7 @@ def cache(subsection):
                 else:
                     try:
                         with open(cache_filename, "r", encoding="utf8") as file:
-                            cache_data = json.load(file)
+                            cache_data = json.load(file) or {}
                     except Exception:
                         os.replace(cache_filename, os.path.join(script_path, "tmp", "cache.json"))
                         print('[ERROR] issue occurred while trying to read cache.json, move current cache to tmp/cache.json and create new cache')
