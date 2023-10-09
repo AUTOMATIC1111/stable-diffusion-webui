@@ -323,7 +323,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     p.extra_generation_params['Pipeline'] = shared.sd_model.__class__.__name__
 
-    cross_attention_kwargs={}
     if len(getattr(p, 'init_images', [])) > 0:
         while len(p.init_images) < len(prompts):
             p.init_images.append(p.init_images[-1])

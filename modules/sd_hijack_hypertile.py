@@ -159,7 +159,7 @@ def context_hypertile_unet(p):
     from modules import shared
     if p.sd_model is None or not shared.opts.hypertile_unet_enabled:
         return nullcontext()
-    if shared.opts.cross_attention_optimization == 'Sub-quadratic':
+    if shared.opts.cross_attention_optimization == 'Sub-quadratic' and not shared.cmd_opts.experimental:
         shared.log.warning('Hypertile UNet is not compatible with Sub-quadratic cross-attention optimization')
         return nullcontext()
     unet = getattr(p.sd_model, "unet", None) if shared.backend == shared.Backend.DIFFUSERS else getattr(p.sd_model.model, "diffusion_model", None)
