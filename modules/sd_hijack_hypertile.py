@@ -90,7 +90,7 @@ def split_attention(layer: nn.Module, tile_size: int=256, min_tile_size: int=256
                         width = 8 * w
                         max_w = max(max_w, w)
                         reset_nws()
-                down_ratio = height // 8 // h
+                down_ratio = max(height // 8 // h, 1)
                 curr_depth = round(math.log(down_ratio, 2))
                 # scale-up the tile-size the deeper we go
                 nh = max(1, nh // down_ratio)
@@ -166,9 +166,9 @@ def context_hypertile_unet(p):
         return split_attention(unet, tile_size=shared.opts.hypertile_unet_tile, min_tile_size=128, swap_size=1)
 
 
-def hypertile_set(p):
+def hypertile_set(p, hr=False):
     global height, width, error_reported, reset_needed # pylint: disable=global-statement
     error_reported = False
-    height=p.height
-    width=p.width
+    height=p.height if not hr else p.hr_upscale_to_y
+    width=p.width if not hr else p.hr_upscale_to_x
     reset_needed = True

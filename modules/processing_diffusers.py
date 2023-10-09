@@ -14,6 +14,7 @@ import modules.taesd.sd_vae_taesd as sd_vae_taesd
 import modules.images as images
 from modules.processing import StableDiffusionProcessing
 import modules.prompt_parser_diffusers as prompt_parser_diffusers
+from modules.sd_hijack_hypertile import hypertile_set
 
 
 def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_prompts):
@@ -256,6 +257,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 pass
                 # shared.log.debug(f'Diffuser not supported: pipeline={pipeline.__class__.__name__} task={sd_models.get_diffusers_task(model)} arg={arg}')
         # shared.log.debug(f'Diffuser pipeline: {pipeline.__class__.__name__} possible={possible}')
+        hypertile_set(p, hr=hasattr(p, 'init_images') and len(p.init_images) > 0)
         clean = args.copy()
         clean.pop('callback', None)
         clean.pop('callback_steps', None)
