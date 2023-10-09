@@ -849,9 +849,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             # Example: a wildcard processed by process_batch sets an extra model
             # strength, which is saved as "Model Strength: 1.0" in the infotext
             if n == 0:
-                with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
-                    processed = Processed(p, [])
-                    file.write(processed.infotext(p, 0))
+                processed = Processed(p, [], p.seed, "")
+                shared.infotext_params = processed.infotext(p, 0)
 
             p.setup_conds()
 
