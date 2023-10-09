@@ -34,7 +34,7 @@ def find_sampler_config(name):
     return config
 
 
-def create_sampler(name, model):
+def create_sampler(name, model, p=None):
     if name == 'Default' and hasattr(model, 'scheduler'):
         config = {k: v for k, v in model.scheduler.config.items() if not k.startswith('_')}
         shared.log.debug(f'Sampler default {type(model.scheduler).__name__}: {config}')
@@ -46,7 +46,7 @@ def create_sampler(name, model):
     if shared.backend == shared.Backend.ORIGINAL:
         sampler = config.constructor(model)
         sampler.config = config
-        sampler.initialize(p=None)
+        sampler.initialize(p)
         sampler.name = name
         shared.log.debug(f'Sampler: sampler={sampler.name} config={sampler.config.options}')
         return sampler
