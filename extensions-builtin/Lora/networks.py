@@ -305,7 +305,6 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
 
             if emb_db.expected_shape == -1 or emb_db.expected_shape == embedding.shape:
                 emb_db.register_embedding(embedding, shared.sd_model)
-                print(f'registered bundle embedding: {embedding.name}')
             else:
                 emb_db.skipped_embeddings[name] = embedding
 
