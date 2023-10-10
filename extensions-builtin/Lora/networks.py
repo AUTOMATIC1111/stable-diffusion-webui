@@ -157,7 +157,11 @@ def load_network(name, network_on_disk):
         if key_network_without_network_parts == "bundle_emb":
             emb_name, vec_name = network_part.split(".", 1)
             emb_dict = bundle_embeddings.get(emb_name, {})
-            emb_dict[vec_name] = weight
+            if vec_name.split('.')[0] == 'string_to_param':
+                _, k2 = vec_name.split('.', 1)
+                emb_dict['string_to_param'] = {k2: weight}
+            else:
+                emb_dict[vec_name] = weight
             bundle_embeddings[emb_name] = emb_dict
 
         key = convert_diffusers_name_to_compvis(key_network_without_network_parts, is_sd2)
@@ -301,6 +305,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
 
             if emb_db.expected_shape == -1 or emb_db.expected_shape == embedding.shape:
                 emb_db.register_embedding(embedding, shared.sd_model)
+                print(f'registered bundle embedding: {embedding.name}')
             else:
                 emb_db.skipped_embeddings[name] = embedding
 
