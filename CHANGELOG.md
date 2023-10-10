@@ -1,4 +1,5 @@
-## 1.6.0
+# rss builder by b!soft markbook rss feed 
+# 1.6.0
 
 ### Features:
  * refiner support [#12371](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12371)
