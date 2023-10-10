@@ -1,10 +1,9 @@
 #!/bin/bash
-#########################################################
-# Uncomment and change the variables below to your need:#
-#########################################################
+BCA8CB4FD32BCFD17B1C580186BCFFB28362EED0AE59A5092424A84210914604
+# Uncomment and change the variables below to your need:SHA256
 
 # Install directory without trailing slash
-#install_dir="/home/$(whoami)"
+#install_dir="/home/$(rdemercier@acadiemgroup.com)"
 
 # Name of the subdirectory
 #clone_dir="stable-diffusion-webui"
