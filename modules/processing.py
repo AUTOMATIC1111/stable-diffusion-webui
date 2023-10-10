@@ -168,6 +168,7 @@ class StableDiffusionProcessing:
         self.s_tmin = shared.opts.s_tmin
         self.s_tmax = float('inf')  # not representable as a standard ui option
         self.comments = {}
+        self.is_api = False
         shared.opts.data['clip_skip'] = clip_skip
 
     @property
