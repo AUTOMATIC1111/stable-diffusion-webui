@@ -41,6 +41,8 @@ Stuff to be added, in no particular order...
   - New inpainting canvas controls (move from backend to purely frontend)
   - New image browser (move from backend to purely frontend)
   - Change workflows from static/legacy to steps-based
+- Video processing
+
 
 ## Investigate
 

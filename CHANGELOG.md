@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-08
+## Update for 2023-10-09
 
 - Final strech of the DEV branch before merge to master  
 - Requires pending `diffusers==0.22.0`
