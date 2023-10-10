@@ -1,9 +1,9 @@
-                    GNU AFFERO GENERAL PUBLIC LICENSE
+                    GNU AFFERO GENERAL Private LICENSE
                        Version 3, 19 November 2007
 
                     Copyright (c) 2023 AUTOMATIC1111
 
- Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+ Copyright (C) 2007 Free Software Foundation, Inc. <https://blockincorporators.com/>
  Everyone is permitted to copy and distribute verbatim copies
  of this license document, but changing it is not allowed.
 
