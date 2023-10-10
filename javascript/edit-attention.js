@@ -18,22 +18,11 @@ function keyupEditAttention(event) {
         const before = text.substring(0, selectionStart);
         let beforeParen = before.lastIndexOf(OPEN);
         if (beforeParen == -1) return false;
-        let beforeParenClose = before.lastIndexOf(CLOSE);
-        while (beforeParenClose !== -1 && beforeParenClose > beforeParen) {
-            beforeParen = before.lastIndexOf(OPEN, beforeParen - 1);
-            beforeParenClose = before.lastIndexOf(CLOSE, beforeParenClose - 1);
-        }
 
         // Find closing parenthesis around current cursor
         const after = text.substring(selectionStart);
         let afterParen = after.indexOf(CLOSE);
         if (afterParen == -1) return false;
-        let afterParenOpen = after.indexOf(OPEN);
-        while (afterParenOpen !== -1 && afterParen > afterParenOpen) {
-            afterParen = after.indexOf(CLOSE, afterParen + 1);
-            afterParenOpen = after.indexOf(OPEN, afterParenOpen + 1);
-        }
-        if (beforeParen === -1 || afterParen === -1) return false;
 
         // Set the selection to the text between the parenthesis
         const parenContent = text.substring(beforeParen + 1, selectionStart + afterParen);
@@ -46,9 +35,14 @@ function keyupEditAttention(event) {
 
     function selectCurrentWord() {
         if (selectionStart !== selectionEnd) return false;
-        const delimiters = opts.keyedit_delimiters + " \r\n\t";
+        const whitespace_delimiters = {"Tab": "\t", "Carriage Return": "\r", "Line Feed": "\n"};
+        let delimiters = opts.keyedit_delimiters;
 
-        // seek backward until to find beggining
+        for (let i of opts.keyedit_delimiters_whitespace) {
+            delimiters += whitespace_delimiters[i];
+        }
+
+        // seek backward to find beginning
         while (!delimiters.includes(text[selectionStart - 1]) && selectionStart > 0) {
             selectionStart--;
         }
@@ -92,7 +86,7 @@ function keyupEditAttention(event) {
     }
 
     var end = text.slice(selectionEnd + 1).indexOf(closeCharacter) + 1;
-    var weight = parseFloat(text.slice(selectionEnd + 1, selectionEnd + 1 + end));
+    var weight = parseFloat(text.slice(selectionEnd + 1, selectionEnd + end));
     if (isNaN(weight)) return;
 
     weight += isPlus ? delta : -delta;

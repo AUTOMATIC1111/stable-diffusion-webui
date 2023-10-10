@@ -1,3 +1,4 @@
+import functools
 import os.path
 import urllib.parse
 from pathlib import Path
@@ -14,6 +15,17 @@ from modules.ui_components import ToolButton
 
 extra_pages = []
 allowed_dirs = set()
+
+default_allowed_preview_extensions = ["png", "jpg", "jpeg", "webp", "gif"]
+
+
+@functools.cache
+def allowed_preview_extensions_with_extra(extra_extensions=None):
+    return set(default_allowed_preview_extensions) | set(extra_extensions or [])
+
+
+def allowed_preview_extensions():
+    return allowed_preview_extensions_with_extra((shared.opts.samples_format, ))
 
 
 def register_page(page):
@@ -33,9 +45,9 @@ def fetch_file(filename: str = ""):
     if not any(Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs):
         raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
 
-    ext = os.path.splitext(filename)[1].lower()
-    if ext not in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
-        raise ValueError(f"File cannot be fetched: {filename}. Only png, jpg, webp, and gif.")
+    ext = os.path.splitext(filename)[1].lower()[1:]
+    if ext not in allowed_preview_extensions():
+        raise ValueError(f"File cannot be fetched: {filename}. Extensions allowed: {allowed_preview_extensions()}.")
 
     # would profit from returning 304
     return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
@@ -213,9 +225,9 @@ class ExtraNetworksPage:
         metadata_button = ""
         metadata = item.get("metadata")
         if metadata:
-            metadata_button = f"<div class='metadata-button card-button' title='Show internal metadata' onclick='extraNetworksRequestMetadata(event, {quote_js(self.name)}, {quote_js(item['name'])})'></div>"
+            metadata_button = f"<div class='metadata-button card-button' title='Show internal metadata' onclick='extraNetworksRequestMetadata(event, {quote_js(self.name)}, {quote_js(html.escape(item['name']))})'></div>"
 
-        edit_button = f"<div class='edit-button card-button' title='Edit metadata' onclick='extraNetworksEditUserMetadata(event, {quote_js(tabname)}, {quote_js(self.id_page)}, {quote_js(item['name'])})'></div>"
+        edit_button = f"<div class='edit-button card-button' title='Edit metadata' onclick='extraNetworksEditUserMetadata(event, {quote_js(tabname)}, {quote_js(self.id_page)}, {quote_js(html.escape(item['name']))})'></div>"
 
         local_path = ""
         filename = item.get("filename", "")
@@ -235,7 +247,7 @@ class ExtraNetworksPage:
         if search_only and shared.opts.extra_networks_hidden_models == "Never":
             return ""
 
-        sort_keys = " ".join([html.escape(f'data-sort-{k}={v}') for k, v in item.get("sort_keys", {}).items()]).strip()
+        sort_keys = " ".join([f'data-sort-{k}="{html.escape(str(v))}"' for k, v in item.get("sort_keys", {}).items()]).strip()
 
         args = {
             "background_image": background_image,
@@ -273,11 +285,7 @@ class ExtraNetworksPage:
         Find a preview PNG for a given path (without extension) and call link_preview on it.
         """
 
-        preview_extensions = ["png", "jpg", "jpeg", "webp"]
-        if shared.opts.samples_format not in preview_extensions:
-            preview_extensions.append(shared.opts.samples_format)
-
-        potential_files = sum([[path + "." + ext, path + ".preview." + ext] for ext in preview_extensions], [])
+        potential_files = sum([[path + "." + ext, path + ".preview." + ext] for ext in allowed_preview_extensions()], [])
 
         for file in potential_files:
             if os.path.isfile(file):
@@ -374,7 +382,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
     edit_search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", elem_classes="search", placeholder="Search...", visible=False, interactive=True)
     dropdown_sort = gr.Dropdown(choices=['Default Sort', 'Date Created', 'Date Modified', 'Name'], value='Default Sort', elem_id=tabname+"_extra_sort", elem_classes="sort", multiselect=False, visible=False, show_label=False, interactive=True, label=tabname+"_extra_sort_order")
-    button_sortorder = ToolButton(switch_values_symbol, elem_id=tabname+"_extra_sortorder", elem_classes="sortorder", visible=False)
+    button_sortorder = ToolButton(switch_values_symbol, elem_id=tabname+"_extra_sortorder", elem_classes="sortorder", visible=False, tooltip="Invert sort order")
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh", visible=False)
     checkbox_show_dirs = gr.Checkbox(True, label='Show dirs', elem_id=tabname+"_extra_show_dirs", elem_classes="show-dirs", visible=False)
 

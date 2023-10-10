@@ -1,6 +1,7 @@
 @echo off
 
 if not defined PYTHON (set PYTHON=python)
+if defined GIT (set "GIT_PYTHON_GIT_EXECUTABLE=%GIT%")
 if not defined VENV_DIR (set "VENV_DIR=%~dp0%venv")
 
 set SD_WEBUI_RESTART=tmp/restart

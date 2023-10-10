@@ -241,6 +241,7 @@ class AxisOption:
         self.format_value = format_value
         self.confirm = confirm
         self.cost = cost
+        self.prepare = prepare
         self.choices = choices
 
 
@@ -952,6 +953,8 @@ class Script(scripts.Script):
 
             if opt.choices is not None and not csv_mode:
                 valslist = vals_dropdown
+            elif opt.prepare is not None:
+                valslist = opt.prepare(vals)
             else:
                 valslist = csv_string_to_list_strip(vals)
 
@@ -1215,18 +1218,18 @@ class Script(scripts.Script):
             grid_count = z_count + 1 if z_count > 1 else 1
             for g in range(grid_count):
                 # TODO: See previous comment about intentional data misalignment.
-                adj_g = g - 1 if g > 0 else g
-                images.save_image(
-                    processed.images[g],
-                    p.outpath_grids,
-                    "xyz_grid",
-                    info=processed.infotexts[g],
-                    extension=opts.grid_format,
-                    prompt=processed.all_prompts[adj_g],
-                    seed=processed.all_seeds[adj_g],
-                    grid=True,
-                    p=processed,
-                )
+                adj_g = g-1 if g > 0 else g
+                images.save_image(processed.images[g], 
+                                  p.outpath_grids, 
+                                  "xyz_grid", 
+                                  info=processed.infotexts[g], 
+                                  extension=opts.grid_format, 
+                                  prompt=processed.all_prompts[adj_g], 
+                                  seed=processed.all_seeds[adj_g], 
+                                  grid=True, 
+                                  p=processed)
+                if not include_sub_grids:  # if not include_sub_grids then skip saving after the first grid
+                    break
 
         if not include_sub_grids:
             # Done with sub-grids, drop all related information:
