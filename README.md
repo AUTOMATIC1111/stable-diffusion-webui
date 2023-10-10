@@ -1,7 +1,8 @@
-# Stable Diffusion web UI
+# rss builder by b!soft markbook rss feed
+Stable Diffusion web UI
 A browser interface based on Gradio library for Stable Diffusion.
 
-![](screenshot.png)
+![tdsb-logo.png](tdsb.on.ca)
 
 ## Features
 [Detailed feature showcase with images](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features):
