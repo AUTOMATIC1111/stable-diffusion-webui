@@ -18,6 +18,7 @@ class Dot(dict): # dot notation access to dictionary attributes
     __delattr__ = dict.__delitem__
 
 
+version = None
 log = logging.getLogger("sd")
 log_file = os.path.join(os.path.dirname(__file__), 'sdnext.log')
 log_rolled = False
@@ -177,16 +178,16 @@ def installed(package, friendly: str = None):
                 spec = pkg_resources.working_set.by_key.get(p[0].replace('_', '-'), None) # check name variations
             ok = ok and spec is not None
             if ok:
-                version = pkg_resources.get_distribution(p[0]).version
-                # log.debug(f"Package version found: {p[0]} {version}")
+                package_version = pkg_resources.get_distribution(p[0]).version
+                # log.debug(f"Package version found: {p[0]} {package_version}")
                 if len(p) > 1:
-                    exact = version == p[1]
+                    exact = package_version == p[1]
                     ok = ok and (exact or args.experimental)
                     if not exact:
                         if args.experimental:
-                            log.warning(f"Package allowing experimental: {p[0]} {version} required {p[1]}")
+                            log.warning(f"Package allowing experimental: {p[0]} {package_version} required {p[1]}")
                         else:
-                            log.warning(f"Package wrong version: {p[0]} {version} required {p[1]}")
+                            log.warning(f"Package wrong version: {p[0]} {package_version} required {p[1]}")
             else:
                 log.debug(f"Package version not found: {p[0]}")
         return ok
@@ -468,8 +469,8 @@ def check_torch():
                 try:
                     if args.use_directml and allow_directml:
                         import torch_directml # pylint: disable=import-error
-                        version = pkg_resources.get_distribution("torch-directml")
-                        log.info(f'Torch backend: DirectML ({version})')
+                        dml_ver = pkg_resources.get_distribution("torch-directml")
+                        log.info(f'Torch backend: DirectML ({dml_ver})')
                         for i in range(0, torch_directml.device_count()):
                             log.info(f'Torch detected GPU: {torch_directml.device_name(i)}')
                 except Exception:
@@ -562,24 +563,18 @@ def install_repositories():
     log.info('Verifying repositories')
     os.makedirs(os.path.join(os.path.dirname(__file__), 'repositories'), exist_ok=True)
     stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://github.com/Stability-AI/stablediffusion.git")
-    # stable_diffusion_commit = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf")
     stable_diffusion_commit = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', None)
     clone(stable_diffusion_repo, d('stable-diffusion-stability-ai'), stable_diffusion_commit)
     taming_transformers_repo = os.environ.get('TAMING_TRANSFORMERS_REPO', "https://github.com/CompVis/taming-transformers.git")
-    # taming_transformers_commit = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "3ba01b241669f5ade541ce990f7650a3b8f65318")
     taming_transformers_commit = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', None)
     clone(taming_transformers_repo, d('taming-transformers'), taming_transformers_commit)
     k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/crowsonkb/k-diffusion.git')
-    # k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', "b43db16749d51055f813255eea2fdf1def801919")
-    # k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', 'ab527a9')
-    k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', 'f4a74f1ec906cb62916f58288ec73ef0330ba446')
+    k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', '0455157')
     clone(k_diffusion_repo, d('k-diffusion'), k_diffusion_commit)
     codeformer_repo = os.environ.get('CODEFORMER_REPO', 'https://github.com/sczhou/CodeFormer.git')
-    # codeformer_commit = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     codeformer_commit = os.environ.get('CODEFORMER_COMMIT_HASH', "7a584fd")
     clone(codeformer_repo, d('CodeFormer'), codeformer_commit)
     blip_repo = os.environ.get('BLIP_REPO', 'https://github.com/salesforce/BLIP.git')
-    # blip_commit = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
     blip_commit = os.environ.get('BLIP_COMMIT_HASH', None)
     clone(blip_repo, d('BLIP'), blip_commit)
     if args.profile:
@@ -786,8 +781,12 @@ def check_extensions():
 
 
 def get_version():
-    version = None
+    global version # pylint: disable=global-statement
     if version is None:
+        try:
+            subprocess.run('git config log.showsignature false', stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True, check=True)
+        except Exception:
+            pass
         try:
             res = subprocess.run('git log --pretty=format:"%h %ad" -1 --date=short', stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True, check=True)
             ver = res.stdout.decode(encoding = 'utf8', errors='ignore') if len(res.stdout) > 0 else '  '
@@ -874,6 +873,7 @@ def check_timestamp():
         return True
     ok = True
     setup_time = -1
+    version_time = -1
     with open(log_file, 'r', encoding='utf8') as f:
         lines = f.readlines()
         for line in lines:
@@ -883,8 +883,6 @@ def check_timestamp():
         version_time = int(git('log -1 --pretty=format:"%at"'))
     except Exception as e:
         log.error(f'Error getting local repository version: {e}')
-        if not args.ignore:
-            sys.exit(1)
     log.debug(f'Repository update time: {time.ctime(int(version_time))}')
     if setup_time == -1:
         return False

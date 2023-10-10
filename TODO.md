@@ -11,12 +11,9 @@ N/A
 Stuff to be added, in no particular order...
 
 - Diffusers:
-  - Add Lyco support
   - Add ControlNet
-  - Fix DeepFloyd IF model
   - Add unCLIP model
   - Add Training support
-  - Add long prompts
 - Technical debt:
   - Port **A1111** stuff
   - Port `p.all_hr_prompts`
@@ -24,15 +21,11 @@ Stuff to be added, in no particular order...
 - Non-technical:
   - Update Wiki
   - Rename repo: **automatic** -> **sdnext**
-  - [Localization](https://app.transifex.com/signup/open-source/)
 - New Minor
   - Prompt padding for positive/negative
-  - Add EN provider for VAEs
-  - Built-in `motd`-style notifications
 - New Major
   - Profile manager (for `config.json` and `ui-config.json`)
   - Multi-user support
-  - Add [SAG](https://huggingface.co/docs/diffusers/v0.19.3/en/api/pipelines/self_attention_guidance), [SAG](https://github.com/ashen-sensored/sd_webui_SAG)
   - Image phash and hdash using `imagehash`
   - Model merge using `git-rebasin`
   - Enable refiner-style workflow for `ldm` backend
@@ -48,6 +41,8 @@ Stuff to be added, in no particular order...
   - New inpainting canvas controls (move from backend to purely frontend)
   - New image browser (move from backend to purely frontend)
   - Change workflows from static/legacy to steps-based
+- Video processing
+
 
 ## Investigate
 
@@ -71,6 +66,8 @@ Tech that can be integrated as part of the core workflow...
 - [QuickEmbedding](https://github.com/ethansmith2000/QuickEmbedding)
 - [DragGAN](https://github.com/XingangPan/DragGAN)
 - [LamaCleaner](https://github.com/Sanster/lama-cleaner)
+- [SAG](https://huggingface.co/docs/diffusers/v0.19.3/en/api/pipelines/self_attention_guidance), [SAG](https://github.com/ashen-sensored/sd_webui_SAG)
+- [Localization](https://app.transifex.com/signup/open-source/)
 - `TensorRT`
 
 ## Random

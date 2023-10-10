@@ -90,7 +90,7 @@ def split_attention(layer: nn.Module, tile_size: int=256, min_tile_size: int=256
                         width = 8 * w
                         max_w = max(max_w, w)
                         reset_nws()
-                down_ratio = height // 8 // h
+                down_ratio = max(height // 8 // h, 1)
                 curr_depth = round(math.log(down_ratio, 2))
                 # scale-up the tile-size the deeper we go
                 nh = max(1, nh // down_ratio)
@@ -136,6 +136,9 @@ def context_hypertile_vae(p):
     from modules import shared
     if p.sd_model is None or not shared.opts.hypertile_vae_enabled:
         return nullcontext()
+    if shared.opts.cross_attention_optimization == 'Sub-quadratic':
+        shared.log.warning('Hypertile UNet is not compatible with Sub-quadratic cross-attention optimization')
+        return nullcontext()
     vae = getattr(p.sd_model, "vae", None) if shared.backend == shared.Backend.DIFFUSERS else getattr(p.sd_model, "first_stage_model", None)
     if vae is None:
         shared.log.warning('Hypertile VAE is enabled but no VAE model was found')
@@ -156,6 +159,9 @@ def context_hypertile_unet(p):
     from modules import shared
     if p.sd_model is None or not shared.opts.hypertile_unet_enabled:
         return nullcontext()
+    if shared.opts.cross_attention_optimization == 'Sub-quadratic' and not shared.cmd_opts.experimental:
+        shared.log.warning('Hypertile UNet is not compatible with Sub-quadratic cross-attention optimization')
+        return nullcontext()
     unet = getattr(p.sd_model, "unet", None) if shared.backend == shared.Backend.DIFFUSERS else getattr(p.sd_model.model, "diffusion_model", None)
     if unet is None:
         shared.log.warning('Hypertile Unet is enabled but no Unet model was found')
@@ -166,9 +172,12 @@ def context_hypertile_unet(p):
         return split_attention(unet, tile_size=shared.opts.hypertile_unet_tile, min_tile_size=128, swap_size=1)
 
 
-def hypertile_set(p):
+def hypertile_set(p, hr=False):
+    from modules import shared
     global height, width, error_reported, reset_needed # pylint: disable=global-statement
+    if not shared.opts.hypertile_unet_enabled:
+        return
     error_reported = False
-    height=p.height
-    width=p.width
+    height=p.height if not hr else getattr(p, 'hr_upscale_to_y', p.height)
+    width=p.width if not hr else getattr(p, 'hr_upscale_to_x', p.width)
     reset_needed = True

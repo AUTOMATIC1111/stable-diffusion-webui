@@ -75,10 +75,7 @@ class NetworkOnDisk:
 
     def get_alias(self):
         import networks
-        if shared.opts.lora_preferred_name == "Filename" or self.alias.lower() in networks.forbidden_network_aliases:
-            return self.name
-        else:
-            return self.alias
+        return self.name if shared.opts.lora_preferred_name == "filename" or self.alias.lower() in networks.forbidden_network_aliases else self.alias
 
 
 class Network:  # LoraModule

@@ -128,26 +128,24 @@ class VanillaStableDiffusionSampler:
         self.update_step(x)
 
     def initialize(self, p):
-        if self.is_ddim:
-            self.eta = p.eta if p.eta is not None else shared.opts.scheduler_eta
-        else:
-            self.eta = 0.0
-        if self.eta != 0.0:
-            p.extra_generation_params["Sampler Eta"] = self.eta
-
-        if self.is_unipc:
-            keys = [
-                ('Solver order', 'schedulers_solver_order'),
-                ('Sampler low order', 'schedulers_use_loworder'),
-                ('UniPC variant', 'uni_pc_variant'),
-                ('UniPC skip type', 'uni_pc_skip_type'),
-            ]
-
-            for name, key in keys:
-                v = getattr(shared.opts, key)
-                if v != shared.opts.get_default(key):
-                    p.extra_generation_params[name] = v
-
+        if p is not None:
+            if self.is_ddim:
+                self.eta = p.eta if p.eta is not None else shared.opts.scheduler_eta
+            else:
+                self.eta = 0.0
+            if self.eta != 0.0:
+                p.extra_generation_params["Sampler Eta"] = self.eta
+            if self.is_unipc:
+                keys = [
+                    ('Solver order', 'schedulers_solver_order'),
+                    ('Sampler low order', 'schedulers_use_loworder'),
+                    ('UniPC variant', 'uni_pc_variant'),
+                    ('UniPC skip type', 'uni_pc_skip_type'),
+                ]
+                for name, key in keys:
+                    v = getattr(shared.opts, key)
+                    if v != shared.opts.get_default(key):
+                        p.extra_generation_params[name] = v
         for fieldname in ['p_sample_ddim', 'p_sample_plms']:
             if hasattr(self.sampler, fieldname):
                 setattr(self.sampler, fieldname, self.p_sample_ddim_hook)

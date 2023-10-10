@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-08
+## Update for 2023-10-09
 
 - Final strech of the DEV branch before merge to master  
 - Requires pending `diffusers==0.22.0`
@@ -133,7 +133,7 @@ or even free speedups and quality improvements (regardless of which workflows yo
   - to enable search, make sure all models have set hash values  
     *Models -> Valida -> Calculate hashes*  
 - **LoRA**
-  - new unified LoRA handler for all LoRA types (lora, lyco, loha, lokr, locon, etc.)  
+  - new unified LoRA handler for all LoRA types (lora, lyco, loha, lokr, locon, ia3, etc.)  
     applies to both original and diffusers backend  
     thanks @AI-Casanova for diffusers port  
   - for *backend:original*, separate lyco handler has been removed  

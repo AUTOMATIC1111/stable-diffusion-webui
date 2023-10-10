@@ -598,7 +598,6 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
         filename = filename[:max_name_len - max(4, len(extension))]
         params.filename = filename + extension
     txt_fullfn = f"{filename}.txt" if shared.opts.save_txt and len(exifinfo) > 0 else None
-
     save_queue.put((params.image, filename, extension, params, exifinfo, txt_fullfn)) # actual save is executed in a thread that polls data from queue
     save_queue.join()
 

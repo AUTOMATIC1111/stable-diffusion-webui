@@ -72,10 +72,14 @@ class UiLoadsave:
             apply_field(x, 'value')
         if type(x) == gr.Dropdown:
             def check_dropdown(val):
+                if x.choices is None:
+                    errors.log.warning(f'UI: path={path} value={getattr(x, "value", None)}, choices={getattr(x, "choices", None)}')
+                    return False
+                choices = [c[0] for c in x.choices] if type(x.choices[0]) == tuple else x.choices
                 if getattr(x, 'multiselect', False):
-                    return all(value in x.choices for value in val)
+                    return all(value in choices for value in val)
                 else:
-                    return val in x.choices
+                    return val in choices
             apply_field(x, 'value', check_dropdown, getattr(x, 'init_field', None))
 
         def check_tab_id(tab_id):

@@ -22,6 +22,7 @@ import modules.lowvram
 import modules.masking
 import modules.paths
 import modules.scripts
+import modules.script_callbacks
 import modules.prompt_parser
 import modules.extra_networks
 import modules.face_restoration
@@ -167,6 +168,7 @@ class StableDiffusionProcessing:
         self.s_tmin = shared.opts.s_tmin
         self.s_tmax = float('inf')  # not representable as a standard ui option
         self.comments = {}
+        self.is_api = False
         shared.opts.data['clip_skip'] = clip_skip
 
     @property
@@ -364,8 +366,7 @@ class Processed:
         return self.token_merging_ratio_hr if for_hr else self.token_merging_ratio
 
 
-# from https://discuss.pytorch.org/t/help-regarding-slerp-function-for-generative-model-sampling/32475/3
-def slerp(val, low, high):
+def slerp(val, low, high): # from https://discuss.pytorch.org/t/help-regarding-slerp-function-for-generative-model-sampling/32475/3
     low_norm = low/torch.norm(low, dim=1, keepdim=True)
     high_norm = high/torch.norm(high, dim=1, keepdim=True)
     dot = (low_norm*high_norm).sum(1)
@@ -382,7 +383,6 @@ def slerp(val, low, high):
 def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, seed_resize_from_h=0, seed_resize_from_w=0, p=None):
     eta_noise_seed_delta = shared.opts.eta_noise_seed_delta or 0
     xs = []
-
     # if we have multiple seeds, this means we are working with batch size>1; this then
     # enables the generation of additional tensors with noise that the sampler will use during its processing.
     # Using those pre-generated tensors instead of simple torch.randn allows a batch with seeds [100, 101] to
@@ -391,24 +391,19 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
         sampler_noises = [[] for _ in range(p.sampler.number_of_needed_noises(p))]
     else:
         sampler_noises = None
-
     for i, seed in enumerate(seeds):
         noise_shape = shape if seed_resize_from_h <= 0 or seed_resize_from_w <= 0 else (shape[0], seed_resize_from_h//8, seed_resize_from_w//8)
-
         subnoise = None
         if subseeds is not None:
             subseed = 0 if i >= len(subseeds) else subseeds[i]
             subnoise = devices.randn(subseed, noise_shape)
-
         # randn results depend on device; gpu and cpu get different results for same seed;
         # the way I see it, it's better to do this on CPU, so that everyone gets same result;
         # but the original script had it like this, so I do not dare change it for now because
         # it will break everyone's seeds.
         noise = devices.randn(seed, noise_shape)
-
         if subnoise is not None:
             noise = slerp(subseed_strength, noise, subnoise)
-
         if noise_shape != shape:
             x = devices.randn(seed, shape)
             dx = (shape[2] - noise_shape[2]) // 2
@@ -421,19 +416,15 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
             dy = max(-dy, 0)
             x[:, ty:ty+h, tx:tx+w] = noise[:, dy:dy+h, dx:dx+w]
             noise = x
-
         if sampler_noises is not None:
             cnt = p.sampler.number_of_needed_noises(p)
             if eta_noise_seed_delta > 0:
                 torch.manual_seed(seed + eta_noise_seed_delta)
             for j in range(cnt):
                 sampler_noises[j].append(devices.randn_without_seed(tuple(noise_shape)))
-
         xs.append(noise)
-
     if sampler_noises is not None:
         p.sampler.sampler_noises = [torch.stack(n).to(shared.device) for n in sampler_noises]
-
     x = torch.stack(xs).to(shared.device)
     return x
 
@@ -532,10 +523,9 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         args["Face restoration"] = shared.opts.face_restoration_model
     if 'color' in p.ops:
         args["Color correction"] = True
-
+    # embeddings
     if hasattr(modules.sd_hijack.model_hijack, 'embedding_db') and len(modules.sd_hijack.model_hijack.embedding_db.embeddings_used) > 0: # this is for original hijaacked models only, diffusers are handled separately
         args["Embeddings"] = ', '.join(modules.sd_hijack.model_hijack.embedding_db.embeddings_used)
-
     # samplers
     args["Sampler ENSD"] = shared.opts.eta_noise_seed_delta if shared.opts.eta_noise_seed_delta != 0 and modules.sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p) else None
     args["Sampler ENSM"] = p.initial_noise_multiplier if getattr(p, 'initial_noise_multiplier', 1.0) != 1.0 else None
@@ -645,6 +635,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             modules.sd_models.apply_token_merging(p.sd_model, p.get_token_merging_ratio())
             modules.sd_hijack_freeu.apply_freeu(p, shared.backend == shared.Backend.ORIGINAL)
 
+        modules.script_callbacks.before_process_callback(p)
+
         if shared.cmd_opts.profile:
             """
             import torch.profiler # pylint: disable=redefined-outer-name
@@ -656,7 +648,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             import cProfile
             pr = cProfile.Profile()
             pr.enable()
-            res = process_images_inner(p)
+            with context_hypertile_vae(p), context_hypertile_unet(p):
+                res = process_images_inner(p)
             print_profile(pr, 'Torch')
         else:
             with context_hypertile_vae(p), context_hypertile_unet(p):
@@ -664,6 +657,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     finally:
         if not shared.opts.cuda_compile:
             modules.sd_models.apply_token_merging(p.sd_model, 0)
+        modules.script_callbacks.after_process_callback(p)
         if p.override_settings_restore_afterwards: # restore opts to original state
             for k, v in stored_opts.items():
                 setattr(shared.opts, k, v)
@@ -909,7 +903,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 if shared.opts.grid_save:
                     images.save_image(grid, p.outpath_grids, "", p.all_seeds[0], p.all_prompts[0], shared.opts.grid_format, info=infotext(-1), short_filename=not shared.opts.grid_extended_filename, p=p, grid=True, suffix="-grid") # main save grid
 
-    if not p.disable_extra_networks and extra_network_data:
+    if not p.disable_extra_networks:
         modules.extra_networks.deactivate(p, extra_network_data)
 
     res = Processed(
@@ -1036,6 +1030,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.ops.append('txt2img')
         hypertile_set(self)
         self.sampler = modules.sd_samplers.create_sampler(self.sampler_name, self.sd_model)
+        if hasattr(self.sampler, "initialize"):
+            self.sampler.initialize(self)
         x = create_random_tensors([4, self.height // 8, self.width // 8], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
         samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
         if not self.enable_hr or shared.state.interrupted or shared.state.skipped:
@@ -1084,9 +1080,12 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                     self.ops.append('hires')
                     devices.torch_gc() # GC now before running the next img2img to prevent running out of memory
                     self.sampler = modules.sd_samplers.create_sampler(self.latent_sampler or self.sampler_name, self.sd_model)
+                    if hasattr(self.sampler, "initialize"):
+                        self.sampler.initialize(self)
                     samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
                     noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
                     modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio(for_hr=True))
+                    hypertile_set(self, hr=True)
                     samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
                     modules.sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio())
                 else:
@@ -1138,6 +1137,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         if self.sampler_name == "PLMS":
             self.sampler_name = 'UniPC'
         self.sampler = modules.sd_samplers.create_sampler(self.sampler_name, self.sd_model)
+        if hasattr(self.sampler, "initialize"):
+            self.sampler.initialize(self)
 
         if self.image_mask is not None:
             self.ops.append('inpaint')
