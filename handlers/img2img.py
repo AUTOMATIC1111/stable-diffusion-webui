@@ -22,7 +22,7 @@ from worker.handler import TaskHandler
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.img2img import process_batch
 from worker.task import TaskType, TaskProgress, Task, TaskStatus
-from modules.processing import StableDiffusionProcessingImg2Img, process_images, Processed
+from modules.processing import StableDiffusionProcessingImg2Img, process_images, Processed, create_binary_mask
 from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, \
     load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path, batch_model_local_paths
 from handlers.extension.controlnet import exec_control_net_annotator
@@ -176,8 +176,10 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                 mask_path = get_tmp_local_path(mask_path)
                 mask = Image.open(mask_path).convert('RGBA')
 
-            alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
-            mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
+            # alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
+            # mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
+
+            mask = create_binary_mask(mask)
             image = image.convert("RGB")
         elif mode == 1:
             sketch = get_tmp_local_path(sketch)

@@ -605,12 +605,16 @@ def train_auto(
     height_train = 768
     width = 512
     height = 768
-    options = ["抠出头部", "放大","磨皮"]  # 数据预处理方法 "抠出全身","抠出头部", "放大", "镜像", "旋转", "改变尺寸","磨皮"
+    options = ["抠出头部", "放大", "磨皮"]  # 数据预处理方法 "抠出全身","抠出头部", "放大", "镜像", "旋转", "改变尺寸","磨皮"
     head_width = 512
     head_height = 512
     trigger_word = ""
     # 是否采用wd14作为反推tag，否则采用deepbooru
     use_wd = os.getenv('WD', '1') == '1'
+    # 对于小于15的数据样本，进行数据增强
+    images = [x for x in os.listdir(train_data_dir) if os.path.splitext(x)[-1].lower() != ".txt"]
+    if len(images) < 15:
+        options.append("镜像")
 
     # 反推tag默认排除的提示词
     undesired_tags = "blur,blurry,motion blur"  # 待测试五官
