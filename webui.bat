@@ -4,6 +4,12 @@ if not defined PYTHON (set PYTHON=python)
 if defined GIT (set "GIT_PYTHON_GIT_EXECUTABLE=%GIT%")
 if not defined VENV_DIR (set "VENV_DIR=%~dp0%venv")
 
+if not exist webui-user.bat (
+    if exist webui-user.bat.in (
+        copy webui-user.bat.in webui-user.bat
+    )
+)
+
 set SD_WEBUI_RESTART=tmp/restart
 set ERROR_REPORTING=FALSE
 
