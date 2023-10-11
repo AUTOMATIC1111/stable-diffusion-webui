@@ -245,8 +245,8 @@ def create_ui():
                 data = []
 
                 def civit_search_model(name, tag, model_type):
-                    types = 'LORA' if model_type == 'LoRA' else 'Checkpoint'
-                    url = f'https://civitai.com/api/v1/models?limit=25&types={types}&Sort=Newest'
+                    # types = 'LORA' if model_type == 'LoRA' else 'Checkpoint'
+                    url = 'https://civitai.com/api/v1/models?limit=25&&Sort=Newest'
                     if name is not None and len(name) > 0:
                         url += f'&query={name}'
                     if tag is not None and len(tag) > 0:
@@ -261,7 +261,7 @@ def create_ui():
                     data1 = []
                     for model in data:
                         found = 0
-                        if model_type == 'LoRA' and model['type'] == 'LORA':
+                        if model_type == 'LoRA' and model['type'] in ['LORA', 'LoCon']:
                             found += 1
                         for variant in model['modelVersions']:
                             if model_type == 'SD 1.5':
