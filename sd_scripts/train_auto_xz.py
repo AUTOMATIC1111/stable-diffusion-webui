@@ -305,6 +305,7 @@ def image_process(proc_image_input_batch, options, resize_weight=512, resize_hei
 
         if op4 in options:
             result_list = []
+            print('mirror iamges....')
             for i in image_process_list:
                 result_list.append(mirror_images(i))
             image_process_list += result_list
@@ -605,12 +606,14 @@ def train_auto(
     height_train = 768
     width = 512
     height = 768
-    options = ["抠出头部", "放大", "磨皮", "镜像"]  # 数据预处理方法 "抠出全身","抠出头部", "放大", "镜像", "旋转", "改变尺寸","磨皮"
+    options = ["抠出头部", "放大", "磨皮" ]  # 数据预处理方法 "抠出全身","抠出头部", "放大", "镜像", "旋转", "改变尺寸","磨皮"
     head_width = 512
     head_height = 512
     trigger_word = ""
     # 是否采用wd14作为反推tag，否则采用deepbooru
     use_wd = os.getenv('WD', '1') == '1'
+    if len(images) < 15:
+        options.append("镜像")
 
     # 反推tag默认排除的提示词
     undesired_tags = "blur,blurry,motion blur"  # 待测试五官
