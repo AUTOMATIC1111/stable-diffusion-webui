@@ -9,6 +9,7 @@ import string
 import hashlib
 import queue
 import threading
+from pathlib import Path
 from collections import namedtuple
 import pytz
 import numpy as np
@@ -266,58 +267,48 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None, output_type
     return res
 
 
-invalid_filename_chars = '<>:"/\\|?*\n'
-invalid_filename_prefix = ' '
-invalid_filename_postfix = ' .'
 re_nonletters = re.compile(r'[\s' + string.punctuation + ']+')
 re_pattern = re.compile(r"(.*?)(?:\[([^\[\]]+)\]|$)")
 re_pattern_arg = re.compile(r"(.*)<([^>]*)>$")
-max_filename_part_length = 128
+# re_attention = re.compile(r'\((\w+):\d+(\.\d+)?\)')
+re_attention = re.compile(r'[\(*\[*](\w+)(:\d+(\.\d+))?[\)*\]*]|')
+re_network = re.compile(r'\<\w+:(\w+)(:\d+(\.\d+))?\>|')
+re_brackets = re.compile(r'[\([{})\]]')
+
 NOTHING = object()
-
-
-def sanitize_filename_part(text, replace_spaces=True):
-    if text is None:
-        return None
-    text = os.path.basename(text)
-    if replace_spaces:
-        text = text.replace(' ', '_')
-    text = text.replace('#', '_')
-    text = text.translate({ord(x): '_' for x in invalid_filename_chars})
-    text = text.lstrip(invalid_filename_prefix)[:max_filename_part_length]
-    text = text.rstrip(invalid_filename_postfix)
-    return text
 
 
 class FilenameGenerator:
     replacements = {
+        'width': lambda self: self.image.width,
+        'height': lambda self: self.image.height,
         'batch_number': lambda self: self.batch_number,
         'iter_number': lambda self: self.iter_number,
-        'cfg': lambda self: self.p and self.p.cfg_scale,
-        'clip_skip': lambda self: self.p and self.p.clip_skip,
+        'num': lambda self: NOTHING if self.p.n_iter == 1 and self.p.batch_size == 1 else self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
+        'generation_number': lambda self: NOTHING if self.p.n_iter == 1 and self.p.batch_size == 1 else self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
         'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
-        'denoising': lambda self: self.p.denoising_strength if self.p and self.p.denoising_strength else NOTHING,
-        'generation_number': lambda self: NOTHING if self.p.n_iter == 1 and self.p.batch_size == 1 else self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
         'hasprompt': lambda self, *args: self.hasprompt(*args),  # accepts formats:[hasprompt<prompt1|default><prompt2>..]
-        'height': lambda self: self.image.height,
+        'hash': lambda self: self.image_hash(),
         'image_hash': lambda self: self.image_hash(),
+        'timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
         'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
-        'model': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.title, replace_spaces=False),
-        'model_shortname': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.name, replace_spaces=False),
+
+        'model': lambda self: shared.sd_model.sd_checkpoint_info.title,
+        'model_shortname': lambda self: shared.sd_model.sd_checkpoint_info.name,
+        'model_name': lambda self: shared.sd_model.sd_checkpoint_info.name,
         'model_hash': lambda self: shared.sd_model.sd_checkpoint_info.shorthash,
-        'model_name': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.name, replace_spaces=False),
-        'prompt_hash': lambda self: hashlib.sha256(self.prompt.encode()).hexdigest()[0:8],
+
+        'prompt': lambda self: self.prompt,
         'prompt_no_styles': lambda self: self.prompt_no_style(),
-        'prompt_spaces': lambda self: sanitize_filename_part(self.prompt, replace_spaces=False),
         'prompt_words': lambda self: self.prompt_words(),
-        'prompt': lambda self: sanitize_filename_part(self.prompt),
-        'sampler': lambda self: self.p and sanitize_filename_part(self.p.sampler_name, replace_spaces=False),
+        'prompt_hash': lambda self: hashlib.sha256(self.prompt.encode()).hexdigest()[0:8],
+
+        'sampler': lambda self: self.p and self.p.sampler_name,
         'seed': lambda self: self.seed if self.seed is not None else '',
         'steps': lambda self: self.p and self.p.steps,
-        'styles': lambda self: self.p and sanitize_filename_part(", ".join([style for style in self.p.styles if not style == "None"]) or "None", replace_spaces=False),
+        'styles': lambda self: self.p and ", ".join([style for style in self.p.styles if not style == "None"]) or "None",
         'uuid': lambda self: str(uuid.uuid4()),
-        'width': lambda self: self.image.width,
     }
     default_time_format = '%Y%m%d%H%M%S'
 
@@ -347,7 +338,7 @@ class FilenameGenerator:
                     outres = f'{outres}{expected}'
                 else:
                     outres = outres if default == "" else f'{outres}{default}'
-        return sanitize_filename_part(outres)
+        return outres
 
     def image_hash(self):
         if self.image is None:
@@ -360,6 +351,14 @@ class FilenameGenerator:
         shorthash = hashlib.sha256(img_str).hexdigest()[0:8]
         return shorthash
 
+    def prompt_words(self):
+        no_attention = re_attention.sub(r'\1', self.prompt)
+        no_network = re_network.sub(r'\1', no_attention)
+        no_brackets = re_brackets.sub('', no_network)
+        words = [x for x in re_nonletters.split(no_brackets or "") if len(x) > 0]
+        prompt = " ".join(words[0:shared.opts.directories_max_prompt_words])
+        return prompt
+
     def prompt_no_style(self):
         if self.p is None or self.prompt is None:
             return None
@@ -367,13 +366,9 @@ class FilenameGenerator:
         for style in shared.prompt_styles.get_style_prompts(self.p.styles):
             if len(style) > 0:
                 for part in style.split("{prompt}"):
-                    prompt_no_style = prompt_no_style.replace(part, "").replace(", ,", ",").strip().strip(',')
-                prompt_no_style = prompt_no_style.replace(style, "").strip().strip(',').strip()
-        return sanitize_filename_part(prompt_no_style, replace_spaces=False)
-
-    def prompt_words(self):
-        words = [x for x in re_nonletters.split(self.prompt or "") if len(x) > 0]
-        return sanitize_filename_part(" ".join(words[0:shared.opts.directories_max_prompt_words]), replace_spaces=False)
+                    prompt_no_style = prompt_no_style.replace(part, "").replace(", ,", ",")
+                prompt_no_style = prompt_no_style.replace(style, "")
+        return prompt_no_style
 
     def datetime(self, *args):
         time_datetime = datetime.datetime.now()
@@ -387,7 +382,26 @@ class FilenameGenerator:
             formatted_time = time_zone_time.strftime(time_format)
         except (ValueError, TypeError):
             formatted_time = time_zone_time.strftime(self.default_time_format)
-        return sanitize_filename_part(formatted_time, replace_spaces=False)
+        return formatted_time
+
+    def sanitize(self, filename):
+        invalid_chars = '#<>:;"/\\|?*\n\t\r'
+        invalid_prefix = ''
+        invalid_suffix = '.'
+
+        parts = Path(filename).parts
+        for part in parts:
+            part = part.translate({ord(x): '_' for x in invalid_chars})
+            part = part.lstrip(invalid_prefix)
+            part = part.rstrip(invalid_suffix)
+
+        fn = Path(*parts)
+        max_length = os.statvfs(__file__).f_namemax if hasattr(os, 'statvfs') else 128
+        fn, ext = os.path.splitext(fn)
+        fn = fn[:max_length-max(4, len(ext))] + ext
+
+        shared.log.debug(f'Filename sanitize: input={filename} parts={parts} output={fn}')
+        return fn
 
     def apply(self, x):
         res = ''
@@ -409,16 +423,14 @@ class FilenameGenerator:
                     replacement = fun(self, *pattern_args)
                 except Exception as e:
                     replacement = None
-                    errors.display(e, 'filename pattern')
+                    shared.log.error(f'Filename apply pattern: {e}')
                 if replacement == NOTHING:
                     continue
                 elif replacement is not None:
-                    res += text + str(replacement)
+                    res += text + str(replacement.replace('/', '-').replace('\\', '-'))
                     continue
             else:
                 res += text + f'[{pattern}]' # reinsert unknown pattern
-            res += f'{text}'
-            res = res.split('?')[0].strip('-').strip()
         return res
 
 
@@ -443,7 +455,7 @@ def get_next_sequence_number(path, basename):
 def atomically_save_image():
     Image.MAX_IMAGE_PIXELS = None # disable check in Pillow and rely on check below to allow large custom image sizes
     while True:
-        image, filename, extension, params, exifinfo, txt_fullfn = save_queue.get()
+        image, filename, extension, params, exifinfo, filename_txt = save_queue.get()
         fn = filename + extension
         filename = filename.strip()
         if extension[0] != '.': # add dot if missing
@@ -488,11 +500,11 @@ def atomically_save_image():
         # additional metadata saved in files
         if shared.opts.save_txt and len(exifinfo) > 0:
             try:
-                with open(txt_fullfn, "w", encoding="utf8") as file:
+                with open(filename_txt, "w", encoding="utf8") as file:
                     file.write(f"{exifinfo}\n")
-                shared.log.debug(f'Saving: text="{txt_fullfn}"')
+                shared.log.debug(f'Saving: text="{filename_txt}"')
             except Exception as e:
-                shared.log.warning(f'Image description save failed: {txt_fullfn} {e}')
+                shared.log.warning(f'Image description save failed: {filename_txt} {e}')
         with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
             file.write(exifinfo)
         if shared.opts.save_log_fn != '' and len(exifinfo) > 0:
@@ -512,37 +524,7 @@ save_thread = threading.Thread(target=atomically_save_image, daemon=True)
 save_thread.start()
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
-    """Save an image.
-    Args:
-        image (`PIL.Image`):
-            The image to be saved.
-        path (`str`):
-            The directory to save the image. Note, the option `save_to_dirs` will make the image to be saved into a sub directory.
-        basename (`str`):
-            The base filename which will be applied to `filename pattern`.
-        seed, prompt, short_filename,
-        extension (`str`):
-            Image file extension, default is `jpg`.
-        pngsectionname (`str`):
-            Specify the name of the section which `info` will be saved in.
-        info (`str` or `PngImagePlugin.iTXt`):
-            PNG info chunks.
-        existing_info (`dict`):
-            Additional PNG info. `existing_info == {pngsectionname: info, ...}`
-        no_prompt:
-            TODO I don't know its meaning.
-        p (`StableDiffusionProcessing`)
-        forced_filename (`str`):
-            If specified, `basename` and filename pattern will be ignored.
-        save_to_dirs (bool):
-            If true, the image will be saved into a subdirectory of `path`.
-    Returns: (fullfn, txt_fullfn)
-        fullfn (`str`):
-            The full path of the saved imaged.
-        txt_fullfn (`str` or None):
-            If a text file is saved for this image, this will be its full path. Otherwise None.
-    """
+def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None): # pylint: disable=unused-argument
     if image is None:
         shared.log.warning('Image is none')
         return None, None
@@ -551,12 +533,9 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
     if path is None or len(path) == 0: # set default path to avoid errors when functions are triggered manually or via api and param is not set
         path = shared.opts.outdir_save
     namegen = FilenameGenerator(p, seed, prompt, image, grid=grid)
-    if save_to_dirs is None:
-        save_to_dirs = (grid and shared.opts.grid_save_to_dirs) or (not grid and shared.opts.save_to_dirs and not no_prompt)
-    if save_to_dirs:
-        dirname = namegen.apply(shared.opts.directories_filename_pattern or "[prompt_words]").lstrip(' ').rstrip('\\ /')
+    if shared.opts.save_to_dirs:
+        dirname = namegen.apply(shared.opts.directories_filename_pattern or "[prompt_words]")
         path = os.path.join(path, dirname)
-    os.makedirs(path, exist_ok=True)
     if forced_filename is None:
         if short_filename or seed is None:
             file_decoration = ""
@@ -564,46 +543,40 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
             file_decoration = shared.opts.samples_filename_pattern
         else:
             file_decoration = "[seq]-[prompt_words]"
-        file_decoration = namegen.apply(file_decoration).strip(' ').strip('-')
-        if len(file_decoration) == 0:
-            file_decoration = namegen.apply('[seq]').strip(' ').strip('-')
+        file_decoration = namegen.apply(file_decoration)
         file_decoration += suffix
         if shared.opts.save_images_add_number:
             if '[seq]' not in file_decoration:
                 file_decoration = f"[seq]-{file_decoration}"
             basecount = get_next_sequence_number(path, basename)
-            fullfn = None
+            filename = None
             for i in range(9999):
                 seq = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
-                fullfn = os.path.join(path, f"{file_decoration.replace('[seq]', seq)}.{extension}")
-                if not os.path.exists(fullfn):
+                filename = os.path.join(path, f"{file_decoration.replace('[seq]', seq)}.{extension}")
+                if not os.path.exists(filename):
                     break
         else:
-            if basename == '':
-                fullfn = os.path.join(path, f"{file_decoration}.{extension}")
-            else:
-                fullfn = os.path.join(path, f"{basename}-{file_decoration}.{extension}")
+            filename = os.path.join(path, f"{file_decoration}.{extension}") if basename == '' else os.path.join(path, f"{basename}-{file_decoration}.{extension}")
     else:
-        fullfn = os.path.join(path, f"{forced_filename}.{extension}")
+        filename = os.path.join(path, f"{forced_filename}.{extension}")
     pnginfo = existing_info or {}
     if info is not None:
         pnginfo[pnginfo_section_name] = info
-    params = script_callbacks.ImageSaveParams(image, p, fullfn, pnginfo)
+    params = script_callbacks.ImageSaveParams(image, p, filename, pnginfo)
     script_callbacks.before_image_saved_callback(params)
     exifinfo = params.pnginfo.get('UserComment', '')
     exifinfo = (exifinfo + ', ' if len(exifinfo) > 0 else '') + params.pnginfo.get(pnginfo_section_name, '')
-    filename, extension = os.path.splitext(params.filename)
-    if hasattr(os, 'statvfs'):
-        max_name_len = os.statvfs(path).f_namemax
-        filename = filename[:max_name_len - max(4, len(extension))]
-        params.filename = filename + extension
-    txt_fullfn = f"{filename}.txt" if shared.opts.save_txt and len(exifinfo) > 0 else None
-    save_queue.put((params.image, filename, extension, params, exifinfo, txt_fullfn)) # actual save is executed in a thread that polls data from queue
+    filename = namegen.sanitize(params.filename)
+    dirname = os.path.dirname(filename)
+    os.makedirs(dirname, exist_ok=True)
+    filename, extension = os.path.splitext(filename)
+    filename_txt = f"{filename}.txt" if shared.opts.save_txt and len(exifinfo) > 0 else None
+    save_queue.put((params.image, filename, extension, params, exifinfo, filename_txt)) # actual save is executed in a thread that polls data from queue
     save_queue.join()
 
     params.image.already_saved_as = params.filename
     script_callbacks.image_saved_callback(params)
-    return params.filename, txt_fullfn
+    return params.filename, filename_txt
 
 
 def safe_decode_string(s: bytes):
