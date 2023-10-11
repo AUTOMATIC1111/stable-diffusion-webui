@@ -1,8 +1,8 @@
 GitPython==3.1.32
-Pillow==9.5.0
+Pillow==10.0.1
 accelerate==0.21.0
 basicsr==1.4.2
-blendmodes==2022
+blendmodes==2023
 clean-fid==0.1.35
 einops==0.4.1
 fastapi==0.94.0
