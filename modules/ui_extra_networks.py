@@ -153,7 +153,14 @@ class ExtraNetworksPage:
                     while subdir.startswith("/"):
                         subdir = subdir[1:]
 
-                    is_empty = len(os.listdir(x)) == 0
+                    files = os.listdir(x)
+                    is_empty = True
+                    if len(files) > 0:
+                        if any(file for file in files for ext in [".pth", ".pt", ".ckpt", ".safetensors"] if file.endswith(ext)):
+                            is_empty = False
+                    if is_empty:
+                        continue
+
                     if not is_empty and not subdir.endswith("/"):
                         subdir = subdir + "/"
 
