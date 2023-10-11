@@ -309,6 +309,14 @@ def requirements_met(requirements_file):
     return True
 
 
+def set_pip_mirror():
+    python = sys.executable
+    command = f'''
+    {python} -m pip config --site set global.index-url https://mirrors.aliyun.com/pypi/simple/
+    '''
+    run(command)
+
+
 def prepare_environment():
     torch_index_url = os.environ.get('TORCH_INDEX_URL', "https://download.pytorch.org/whl/cu118")
     torch_command = os.environ.get('TORCH_COMMAND', f"pip install torch==2.0.1 torchvision==0.15.2 --extra-index-url {torch_index_url}")
@@ -350,6 +358,8 @@ def prepare_environment():
     print(f"Version: {tag}")
     print(f"Commit hash: {commit}")
 
+    set_pip_mirror()
+
     if args.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
         startup_timer.record("install torch")
@@ -388,7 +398,7 @@ def prepare_environment():
     startup_timer.record("clone repositores")
 
     if not is_installed("lpips"):
-        run_pip(f"install -r \"{os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}\"", "requirements for CodeFormer")
+        run_pip(f"install -r \"{os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}\" -i https://pypi.douban.com/simple/", "requirements for CodeFormer")
         startup_timer.record("install CodeFormer requirements")
 
     if not os.path.isfile(requirements_file):

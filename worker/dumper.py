@@ -18,6 +18,7 @@ from tools.host import get_host_ip
 from tools.redis import RedisPool
 from worker.task import TaskProgress
 from tools.environment import pod_host, mongo_doc_expire_seconds
+from modules.shared import cmd_opts
 
 
 class DumpInfo:
@@ -167,6 +168,11 @@ class TaskDumper(Thread):
 class MongoTaskDumper(TaskDumper):
 
     def __init__(self, *args, **db_settings):
+
+        mgo_config = db_settings or {}
+        if 'host' not in mgo_config:
+            raise ValueError('cannot found mongo host.')
+
         mgo = MongoClient(**db_settings or {})
         mgo.collect.create_index('task_id', unique=True)
         mgo.collect.create_index('status')
@@ -284,8 +290,12 @@ class MongoTaskDumper(TaskDumper):
                 self.db.db['images'].insert_many(flatten_images)
 
 
-dumper = MongoTaskDumper()
-dumper.start()
+dumper = None
+
+
+if cmd_opts.worker:
+    dumper = MongoTaskDumper()
+    dumper.start()
 
 
 

@@ -60,7 +60,7 @@ def dump_cache(title, sha256):
         finally:
             mysql_cli.close()
 
-    if cli:
+    if cli and cli.available:
         write_model_hash(cli)
 
 
@@ -102,7 +102,7 @@ def sha256_from_cache(filename, title, use_addnet_hash=False):
     if title not in hashes:
         def query_mysql():
             cli = get_mysql_cli()
-            if cli:
+            if cli and cli.available:
                 try:
                     if is_worker:
                         # OSS key 文件名就是hash
