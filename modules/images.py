@@ -305,7 +305,7 @@ class FilenameGenerator:
         'prompt_hash': lambda self: hashlib.sha256(self.prompt.encode()).hexdigest()[0:8],
 
         'sampler': lambda self: self.p and self.p.sampler_name,
-        'seed': lambda self: self.seed if self.seed is not None else '',
+        'seed': lambda self: str(self.seed) if self.seed is not None else '',
         'steps': lambda self: self.p and self.p.steps,
         'styles': lambda self: self.p and ", ".join([style for style in self.p.styles if not style == "None"]) or "None",
         'uuid': lambda self: str(uuid.uuid4()),
@@ -388,19 +388,16 @@ class FilenameGenerator:
         invalid_chars = '#<>:;"/\\|?*\n\t\r'
         invalid_prefix = ''
         invalid_suffix = '.'
-
         parts = Path(filename).parts
         for part in parts:
             part = part.translate({ord(x): '_' for x in invalid_chars})
             part = part.lstrip(invalid_prefix)
             part = part.rstrip(invalid_suffix)
-
         fn = Path(*parts)
         max_length = os.statvfs(__file__).f_namemax if hasattr(os, 'statvfs') else 128
         fn, ext = os.path.splitext(fn)
         fn = fn[:max_length-max(4, len(ext))] + ext
-
-        shared.log.debug(f'Filename sanitize: input={filename} parts={parts} output={fn}')
+        # shared.log.debug(f'Filename sanitize: input={filename} parts={parts} output={fn}')
         return fn
 
     def apply(self, x):
@@ -427,7 +424,7 @@ class FilenameGenerator:
                 if replacement == NOTHING:
                     continue
                 elif replacement is not None:
-                    res += text + str(replacement.replace('/', '-').replace('\\', '-'))
+                    res += text + str(replacement).replace('/', '-').replace('\\', '-')
                     continue
             else:
                 res += text + f'[{pattern}]' # reinsert unknown pattern
@@ -442,6 +439,8 @@ def get_next_sequence_number(path, basename):
     if basename != '':
         basename = f"{basename}-"
     prefix_length = len(basename)
+    if not os.path.isdir(path):
+        return 0
     for p in os.listdir(path):
         if p.startswith(basename):
             parts = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
