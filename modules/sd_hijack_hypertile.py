@@ -43,19 +43,24 @@ def parse_list(x: list[int], /) -> str:
 @contextmanager
 def split_attention(layer: nn.Module, tile_size: int=256, min_tile_size: int=256, swap_size: int=1, depth: int=0):
     # hijacks AttnBlock from ldm and attention from diffusers
+    global reset_needed # pylint: disable=global-statement
     ar = height / width # Aspect ratio
+    reset_needed = True
     nhs = possible_tile_sizes(height, tile_size, min_tile_size, swap_size) # possible sub-grids that fit into the image
     nws = possible_tile_sizes(width, tile_size, min_tile_size, swap_size)
-    # random sub-grid indices # TODO remove randomness. seed?
     make_ns = lambda: (nhs[random.randint(0, len(nhs) - 1)], nws[random.randint(0, len(nws) - 1)]) # pylint: disable=unnecessary-lambda-assignment
 
     def reset_nhs():
-        nonlocal nhs
+        nonlocal nws, make_ns, ar
+        ar = height / width # Aspect ratio
         nhs = possible_tile_sizes(height, tile_size, min_tile_size, swap_size)
+        make_ns = lambda: (nhs[random.randint(0, len(nhs) - 1)], nws[random.randint(0, len(nws) - 1)]) # pylint: disable=unnecessary-lambda-assignment
 
     def reset_nws():
-        nonlocal nws
+        nonlocal nws, make_ns, ar
+        ar = height / width # Aspect ratio
         nws = possible_tile_sizes(width, tile_size, min_tile_size, swap_size)
+        make_ns = lambda: (nhs[random.randint(0, len(nhs) - 1)], nws[random.randint(0, len(nws) - 1)]) # pylint: disable=unnecessary-lambda-assignment
 
     def self_attn_forward(forward: Callable) -> Callable:
         @wraps(forward)

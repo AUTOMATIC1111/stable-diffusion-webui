@@ -169,6 +169,7 @@ class StableDiffusionProcessing:
         self.s_tmax = float('inf')  # not representable as a standard ui option
         self.comments = {}
         self.is_api = False
+        self.resize_mode: int = 0
         shared.opts.data['clip_skip'] = clip_skip
 
     @property
@@ -1000,6 +1001,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 shared.state.job_count = self.n_iter
             shared.state.job_count = shared.state.job_count * 2
             shared.state.processing_has_refined_job_count = True
+        hypertile_set(self, hr=True)
         shared.log.debug(f'Init hires: upscaler="{self.hr_upscaler}" sampler="{self.latent_sampler}" resize={self.hr_resize_x}x{self.hr_resize_y} upscale={self.hr_upscale_to_x}x{self.hr_upscale_to_y}')
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):

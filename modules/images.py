@@ -270,7 +270,6 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None, output_type
 re_nonletters = re.compile(r'[\s' + string.punctuation + ']+')
 re_pattern = re.compile(r"(.*?)(?:\[([^\[\]]+)\]|$)")
 re_pattern_arg = re.compile(r"(.*)<([^>]*)>$")
-# re_attention = re.compile(r'\((\w+):\d+(\.\d+)?\)')
 re_attention = re.compile(r'[\(*\[*](\w+)(:\d+(\.\d+))?[\)*\]*]|')
 re_network = re.compile(r'\<\w+:(\w+)(:\d+(\.\d+))?\>|')
 re_brackets = re.compile(r'[\([{})\]]')
