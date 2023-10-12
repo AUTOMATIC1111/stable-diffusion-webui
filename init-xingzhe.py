@@ -1,8 +1,5 @@
 import os
-from modules.paths import data_path
-import modules
 import modules.launch_utils as lu
-import modules.paths_internal as pi
 
 
 def install():
@@ -15,6 +12,7 @@ def install():
 
 
 def download_config():
+    import modules.paths_internal as pi
     # 下载obs文件
     lu.run(
         f"wget https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/configs/Tags-zh-full-pack.csv -O ${pi.data_path}/extensions/tagcomplete/tags/tags-zh-full-pack.csv")
@@ -35,6 +33,7 @@ def download_config():
 
 
 def clone_extensions():
+    import modules.paths_internal as pi
     lu.git_clone("https://github.com/CompVis/taming-transformers.git",
                  os.path.join(pi.extensions_dir, "taming-transformers"),
                  "clone taming-transformers")
