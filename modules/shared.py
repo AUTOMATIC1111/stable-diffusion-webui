@@ -95,7 +95,7 @@ class State:
     textinfo = None
     time_start = None
     need_restart = False
-    server_start = None
+    server_start = time.time()
     oom = False
 
     def skip(self):
@@ -188,7 +188,6 @@ class State:
 
 
 state = State()
-state.server_start = time.time()
 if not hasattr(cmd_opts, "use_openvino"):
     cmd_opts.use_openvino = False
 if cmd_opts.use_openvino:
@@ -736,6 +735,7 @@ options_templates.update()
 class Options:
     data = None
     data_labels = options_templates
+    filename = None
     typemap = {int: float}
 
     def __init__(self):
@@ -787,7 +787,9 @@ class Options:
         data_label = self.data_labels.get(key)
         return data_label.default if data_label is not None else None
 
-    def save(self, filename):
+    def save(self, filename=None, silent=False):
+        if filename is None:
+            filename = self.filename
         if cmd_opts.freeze:
             log.warning(f'Settings saving is disabled: {filename}')
             return
@@ -805,7 +807,7 @@ class Options:
                     if k not in compatibility_opts:
                         unused_settings.append(k)
                     diff[k] = v
-            writefile(diff, filename)
+            writefile(diff, filename, silent=silent)
             if len(unused_settings) > 0:
                 log.debug(f"Unused settings: {unused_settings}")
         except Exception as e:
@@ -818,7 +820,9 @@ class Options:
         type_y = self.typemap.get(type(y), type(y))
         return type_x == type_y
 
-    def load(self, filename):
+    def load(self, filename=None):
+        if filename is None:
+            filename = self.filename
         if not os.path.isfile(filename):
             log.debug(f'Created default config: {filename}')
             self.save(filename)

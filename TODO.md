@@ -21,9 +21,11 @@ Stuff to be added, in no particular order...
 - Non-technical:
   - Update Wiki
   - Rename repo: **automatic** -> **sdnext**
+- Backends:
+  - PyTorch / XLA
+  - Diffusers / ONNX
 - New Minor
   - Prompt padding for positive/negative
-  - PyTorch / XLA
 - New Major
   - Profile manager (for `config.json` and `ui-config.json`)
   - Multi-user support
