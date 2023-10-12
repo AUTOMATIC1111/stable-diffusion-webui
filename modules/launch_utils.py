@@ -398,7 +398,7 @@ def prepare_environment():
     startup_timer.record("clone repositores")
 
     if not is_installed("lpips"):
-        run_pip(f"install -r \"{os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}\" -i https://pypi.douban.com/simple/", "requirements for CodeFormer")
+        run_pip(f"install -r \"{os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}\"", "requirements for CodeFormer")
         startup_timer.record("install CodeFormer requirements")
 
     if not os.path.isfile(requirements_file):

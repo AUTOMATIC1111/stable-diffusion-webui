@@ -268,9 +268,9 @@ def run_sd_webui():
     set_pip_index()
     check_resource()
 
-    if not cmd_opts.skip_install:
-        from modules.launch_utils import run_extensions_installers
-        run_extensions_installers(os.path.join(data_path, 'config.json'))
+    # if not cmd_opts.skip_install:
+    #     from modules.launch_utils import run_extensions_installers
+    #     run_extensions_installers(os.path.join(data_path, 'config.json'))
 
     if cmd_opts.worker:
         run_worker()
