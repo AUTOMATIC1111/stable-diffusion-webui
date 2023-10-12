@@ -155,10 +155,10 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 #imageARPreview { position: absolute; top: 0px; left: 0px; border: 2px solid red; background: rgba(255, 0, 0, 0.3); z-index: 900; pointer-events: none; display: none; }
 
 /* context menu (ie for the generate button) */
-#context-menu { z-index:9999; position:absolute; display:block; padding:0px 0; border:2px solid #a55000; box-shadow:1px 1px 2px #CE6400; width: 200px; }
-.context-menu-items{ list-style: none; margin: 0; padding: 0; }
-.context-menu-items a { display:block; padding:5px; cursor:pointer; }
-.context-menu-items a:hover { background: #a55000; }
+#context-menu { z-index: 9999; position: absolute; display: block; padding: var(--spacing-md); border: 2px solid var(--highlight-color); background: var(--background-fill-primary); color: var(--body-text-color); }
+.context-menu-items { list-style: none; margin: 0; padding: 0; }
+.context-menu-items a { display: block; padding: var(--spacing-md); cursor: pointer; font-weight: normal; }
+.context-menu-items a:hover { background: var(--highlight-color) }
 
 /* extensions */
 #tab_extensions table, #tab_config table{ border-collapse: collapse; }
@@ -248,7 +248,7 @@ div.controlnet_main_options { display: grid; grid-template-columns: 1fr 1fr; gri
 
 /* custom component */
 .folder-selector textarea { height: 2em !important; padding: 6px !important; }
-.nvml { position: fixed; top: 100px; left: 100px; background: var(--background-fill-primary); border: 1px solid var(--button-primary-border-color); padding: 6px; color: var(--button-primary-text-color);
+.nvml { position: fixed; bottom: 10px; right: 10px; background: var(--background-fill-primary); border: 1px solid var(--button-primary-border-color); padding: 6px; color: var(--button-primary-text-color);
   font-size: 0.7em; z-index: 50; font-family: monospace; display: none; }
 
 /* loader */

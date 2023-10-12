@@ -46,20 +46,26 @@ async function updateNVML() {
 }
 
 async function initNVML() {
-  nvmlEl = document.createElement('div');
-  nvmlEl.className = 'nvml';
-  nvmlEl.id = 'nvml';
-  nvmlTable = document.createElement('table');
-  nvmlTable.className = 'nvml-table';
-  nvmlTable.id = 'nvml-table';
-  nvmlTable.innerHTML = `
-    <thead><tr><th></th><th></th></tr></thead>
-    <tbody></tbody>
-  `;
-  nvmlEl.appendChild(nvmlTable);
-  gradioApp().appendChild(nvmlEl);
-  log('initNVML');
-  // nvmlInterval = setInterval(updateNVML, 1000);
+  nvmlEl = document.getElementById('nvml');
+  if (!nvmlEl) {
+    nvmlEl = document.createElement('div');
+    nvmlEl.className = 'nvml';
+    nvmlEl.id = 'nvml';
+    nvmlTable = document.createElement('table');
+    nvmlTable.className = 'nvml-table';
+    nvmlTable.id = 'nvml-table';
+    nvmlTable.innerHTML = `
+      <thead><tr><th></th><th></th></tr></thead>
+      <tbody></tbody>
+    `;
+    nvmlEl.appendChild(nvmlTable);
+    gradioApp().appendChild(nvmlEl);
+    log('initNVML');
+  }
+  nvmlInterval = setInterval(updateNVML, 1000);
 }
 
-onUiLoaded(initNVML);
+async function disableNVML() {
+  clearInterval(nvmlInterval);
+  nvmlEl.style.display = 'none';
+}

@@ -86,7 +86,10 @@
     // logMonitor.js
     "jobStatusEl": "readonly",
     // loader.js
-    "removeSplash": "readonly"
+    "removeSplash": "readonly",
+    // nvml.js
+    "initNVML": "readonly",
+    "disableNVML": "readonly"
   },
   "ignorePatterns": [
     "node_modules",

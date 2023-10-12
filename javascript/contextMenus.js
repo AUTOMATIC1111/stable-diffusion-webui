@@ -9,13 +9,8 @@ const contextMenuInit = () => {
     const posy = event.clientY + document.body.scrollTop + document.documentElement.scrollTop;
     const oldMenu = gradioApp().querySelector('#context-menu');
     if (oldMenu) oldMenu.remove();
-    const tabButton = uiCurrentTab;
-    const baseStyle = window.getComputedStyle(tabButton);
     const contextMenu = document.createElement('nav');
     contextMenu.id = 'context-menu';
-    contextMenu.style.background = baseStyle.background;
-    contextMenu.style.color = baseStyle.color;
-    contextMenu.style.fontFamily = baseStyle.fontFamily;
     contextMenu.style.top = `${posy}px`;
     contextMenu.style.left = `${posx}px`;
     const contextMenuList = document.createElement('ul');
@@ -90,41 +85,27 @@ const appendContextMenuOption = initResponse[0];
 const removeContextMenuOption = initResponse[1];
 const addContextMenuEventListener = initResponse[2];
 
-(function () { // eslint-disable-line
+function initContextMenu() {
   // Start example Context Menu Items
   const generateOnRepeat = (genbuttonid, interruptbuttonid) => {
     const genbutton = gradioApp().querySelector(genbuttonid);
     const busy = document.getElementById('progressbar')?.style.display === 'block';
     if (!busy) genbutton.click();
     clearInterval(window.generateOnRepeatInterval);
-    window.generateOnRepeatInterval = setInterval(
-      () => {
-        const pbBusy = document.getElementById('progressbar')?.style.display === 'block';
-        if (!pbBusy) genbutton.click();
-      },
-      500,
-    );
+    window.generateOnRepeatInterval = setInterval(() => {
+      const pbBusy = document.getElementById('progressbar')?.style.display === 'block';
+      if (!pbBusy) genbutton.click();
+    }, 500);
   };
+  const cancelGenerateForever = () => clearInterval(window.generateOnRepeatInterval);
 
   appendContextMenuOption('#txt2img_generate', 'Generate forever', () => generateOnRepeat('#txt2img_generate', '#txt2img_interrupt'));
   appendContextMenuOption('#img2img_generate', 'Generate forever', () => generateOnRepeat('#img2img_generate', '#img2img_interrupt'));
-  const cancelGenerateForever = () => clearInterval(window.generateOnRepeatInterval);
-
-  appendContextMenuOption('#txt2img_interrupt', 'Cancel generate forever', cancelGenerateForever);
   appendContextMenuOption('#txt2img_generate', 'Cancel generate forever', cancelGenerateForever);
-  appendContextMenuOption('#img2img_interrupt', 'Cancel generate forever', cancelGenerateForever);
   appendContextMenuOption('#img2img_generate', 'Cancel generate forever', cancelGenerateForever);
-  appendContextMenuOption(
-    '#roll',
-    'Roll three',
-    () => {
-      const rollbutton = getUICurrentTabContent().querySelector('#roll');
-      setTimeout(() => { rollbutton.click(); }, 100);
-      setTimeout(() => { rollbutton.click(); }, 200);
-      setTimeout(() => { rollbutton.click(); }, 300);
-    },
-  );
-}());
-// End example Context Menu Items
+  appendContextMenuOption('#txt2img_generate', 'Show NVML overlay', initNVML);
+  appendContextMenuOption('#txt2img_generate', 'Hide NVML overlay', disableNVML);
+}
 
+onUiLoaded(initContextMenu);
 onAfterUiUpdate(() => addContextMenuEventListener());

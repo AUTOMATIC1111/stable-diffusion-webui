@@ -140,6 +140,7 @@ or even free speedups and quality improvements (regardless of which workflows yo
   - **CUDA**:  
     - default updated to `torch` *2.1.0* with cuda *12.1*  
     - testing moved to `torch` *2.2.0-dev/cu122*  
+    - check out *generate context menu -> show nvml*
   - **Intel Arc/IPEX**:  
     - tons of optimizations, built-in binary wheels for Windows  
       i have to say, intel arc/ipex is getting to be quite a player, especially with openvino  
