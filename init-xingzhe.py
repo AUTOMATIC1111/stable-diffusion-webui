@@ -116,8 +116,9 @@ def clone_extensions():
 
 
 def main():
-    download_config()
     install()
+    download_config()
+
 
 
 if __name__ == '__main__':
