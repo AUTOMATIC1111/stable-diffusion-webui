@@ -398,14 +398,14 @@ def check_torch():
                 log.debug(f'HSA_OVERRIDE_GFX_VERSION auto config is skipped for {gpu}')
         try:
             command = subprocess.run('hipconfig --version', shell=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            rocm_ver_tuple = tuple(int(v) for v in command.stdout.decode(encoding="utf8", errors="ignore").split('.'))
-            if len(rocm_ver_tuple) >= 2:
-                rocm_ver = f'{rocm_ver_tuple[0]}.{rocm_ver_tuple[1]}'
+            arr = command.stdout.decode(encoding="utf8", errors="ignore").split('.')
+            if len(arr) >= 2:
+                rocm_ver = f'{arr[0]}.{arr[1]}'
             log.debug(f'ROCm version detected: {rocm_ver}')
         except Exception as e:
             log.debug(f'ROCm hipconfig failed: {e}')
             rocm_ver = None
-        if rocm_ver_tuple[:2] == "5.7":
+        if rocm_ver in {"5.5", "5.6"}:
             # install torch nightly via torchvision to avoid wasting bandwidth when torchvision depends on torch from yesterday
             torch_command = os.environ.get('TORCH_COMMAND', 'torchvision --pre --index-url https://download.pytorch.org/whl/nightly/rocm{rocm_ver}')
         else:
