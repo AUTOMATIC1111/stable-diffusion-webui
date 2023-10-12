@@ -612,6 +612,8 @@ def train_auto(
     trigger_word = ""
     # 是否采用wd14作为反推tag，否则采用deepbooru
     use_wd = os.getenv('WD', '1') == '1'
+    # 对于小于15的数据样本，进行数据增强
+    images = [x for x in os.listdir(train_data_dir) if os.path.splitext(x)[-1].lower() != ".txt"]
     if len(images) < 15:
         options.append("镜像")
 
