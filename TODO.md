@@ -24,6 +24,7 @@ Stuff to be added, in no particular order...
 - Backends:
   - PyTorch / XLA
   - Diffusers / ONNX
+  - ScaleCrafter <https://github.com/YingqingHe/ScaleCrafter>
 - New Minor
   - Prompt padding for positive/negative
 - New Major

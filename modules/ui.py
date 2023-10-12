@@ -261,8 +261,10 @@ def create_toprow(is_img2img):
                 negative_token_button = gr.Button(visible=False, elem_id=f"{id_part}_negative_token_button")
             with gr.Row(elem_id=f"{id_part}_styles_row"):
                 prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[style.name for style in modules.shared.prompt_styles.styles.values()], value=[], multiselect=True)
-                prompt_styles_btn = gr.Button('Apply', elem_id=f"{id_part}_styles_select", visible=False)
-                prompt_styles_btn.click(_js="applyStyles", fn=parse_style, inputs=[prompt_styles], outputs=[prompt_styles])
+                prompt_styles_btn_select = gr.Button('Select', elem_id=f"{id_part}_styles_select", visible=False)
+                prompt_styles_btn_select.click(_js="applyStyles", fn=parse_style, inputs=[prompt_styles], outputs=[prompt_styles])
+                prompt_styles_btn_apply = ToolButton(symbols.apply, elem_id=f"{id_part}_extra_apply", visible=False)
+                prompt_styles_btn_apply.click(fn=apply_styles, inputs=[prompt, negative_prompt, prompt_styles], outputs=[prompt, negative_prompt, prompt_styles])
     return prompt, prompt_styles, negative_prompt, submit, button_interrogate, button_deepbooru, button_paste, button_extra, token_counter, token_button, negative_token_counter, negative_token_button
 
 

@@ -62,7 +62,7 @@ class CFGDenoiser(torch.nn.Module):
 
     @property
     def inner_model(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def combine_denoised(self, x_out, conds_list, uncond, cond_scale):
         denoised_uncond = x_out[-uncond.shape[0]:]

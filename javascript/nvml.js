@@ -5,14 +5,12 @@ let nvmlTable = null;
 async function updateNVML() {
   try {
     const res = await fetch('/sdapi/v1/nvml');
-    console.log('HERE1', res);
     if (!res.ok) {
       clearInterval(nvmlInterval);
       nvmlEl.style.display = 'none';
       return;
     }
     const data = await res.json();
-    console.log('HERE2', data);
     if (!data) {
       clearInterval(nvmlInterval);
       nvmlEl.style.display = 'none';

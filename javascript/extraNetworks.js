@@ -20,7 +20,10 @@ const getENActiveTab = () => gradioApp().getElementById('tab_txt2img').style.dis
 const getENActivePage = () => {
   const tabname = getENActiveTab();
   const page = gradioApp().querySelector(`#${tabname}_extra_networks > .tabs > .tab-nav > .selected`);
-  return page ? page.innerText : '';
+  const pageName = page ? page.innerText : '';
+  const btnApply = gradioApp().getElementById(`${tabname}_extra_apply`);
+  if (btnApply) btnApply.style.display = pageName === 'Style' ? 'inline-flex' : 'none';
+  return pageName;
 };
 
 const setENState = (state) => {
@@ -193,10 +196,12 @@ function setupExtraNetworksForTab(tabname) {
   const btnSave = gradioApp().getElementById(`${tabname}_extra_save`);
   const btnClose = gradioApp().getElementById(`${tabname}_extra_close`);
   const btnModel = gradioApp().getElementById(`${tabname}_extra_model`);
+  const btnApply = gradioApp().getElementById(`${tabname}_extra_apply`);
   const buttons = document.createElement('span');
   buttons.classList.add('buttons');
   if (btnRefresh) buttons.appendChild(btnRefresh);
   if (btnModel) buttons.appendChild(btnModel);
+  if (btnApply) buttons.appendChild(btnApply);
   if (btnScan) buttons.appendChild(btnScan);
   if (btnSave) buttons.appendChild(btnSave);
   if (btnClose) buttons.appendChild(btnClose);
