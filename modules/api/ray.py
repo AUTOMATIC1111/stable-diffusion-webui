@@ -14,12 +14,7 @@ ray.init()
 def ray_only():
     serve.shutdown()
     serve.start()
-    #Raypi.deploy()
-
-    
     serve.run(Raypi.bind(), port=8000, route_prefix="/sdapi/v1")  #route_prefix="/sdapi/v1" # Call the launch_ray method to get the FastAPI app
-
-
     print("Done setting up replicas! Now accepting requests...")
     while True:
         time.sleep(1000)
