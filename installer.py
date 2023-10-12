@@ -405,9 +405,11 @@ def check_torch():
         except Exception as e:
             log.debug(f'ROCm hipconfig failed: {e}')
             rocm_ver = None
-        if rocm_ver in {"5.5", "5.6"}:
+        if rocm_ver in {"5.7"}:
             # install torch nightly via torchvision to avoid wasting bandwidth when torchvision depends on torch from yesterday
-            torch_command = os.environ.get('TORCH_COMMAND', 'torchvision --pre --index-url https://download.pytorch.org/whl/nightly/rocm{rocm_ver}')
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision --pre --index-url https://download.pytorch.org/whl/nightly/rocm{rocm_ver}')
+        elif rocm_ver in {"5.5", "5.6"}:
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision --index-url https://download.pytorch.org/whl/nightly/rocm{rocm_ver}')
         else:
             # ROCm 5.5 is oldest for PyTorch 2.1
             torch_command = os.environ.get('TORCH_COMMAND', f'torch torchvision --index-url https://download.pytorch.org/whl/rocm5.5')
