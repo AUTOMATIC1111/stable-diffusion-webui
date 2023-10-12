@@ -12,7 +12,7 @@ from obs import PutObjectHeader
 from obs import ObsClient
 from filestorage.storage import FileStorage
 from tools.environment import get_file_storage_system_env, Env_EndponitKey, \
-    Env_AccessKey, Env_SecretKey
+    Env_AccessKey, Env_SecretKey, Env_BucketKey
 
 
 class ObsFileStorage(FileStorage):
@@ -23,6 +23,8 @@ class ObsFileStorage(FileStorage):
         endpoint = env_vars.get(Env_EndponitKey, '')
         access_key_id = env_vars.get(Env_AccessKey, '')
         secret_access_key = env_vars.get(Env_SecretKey, '')
+        self.bucket_name = env_vars.get(Env_BucketKey, '')
+
         self.obsClient = None
         if 'huaweicloud' in endpoint:
             self.obsClient = ObsClient(
@@ -45,11 +47,12 @@ class ObsFileStorage(FileStorage):
                 if os.path.isfile(local_path):
                     return local_path
 
-                bucket, key = self.extract_buack_key_from_path(remoting_path)
-                self.logger.info(f"download {key} from obs to {local_path}")
+                # bucket, key = self.extract_buack_key_from_path(remoting_path)
+
+                self.logger.info(f"download {remoting_path} from obs to {local_path}")
                 tmp_file = os.path.join(self.tmp_dir, os.path.basename(local_path))
                 resp = self.obsClient.downloadFile(
-                    bucket, key, tmp_file, 10 * 1024 * 1024, 4, True, progressCallback=progress_callback_wrapper)
+                    self.bucket_name, remoting_path, tmp_file, 10 * 1024 * 1024, 4, True, progressCallback=progress_callback_wrapper)
                 if resp.status < 300 and os.path.isfile(tmp_file):
                     shutil.move(tmp_file, local_path)
                     return local_path
@@ -65,12 +68,13 @@ class ObsFileStorage(FileStorage):
     def upload(self, local_path, remoting_path) -> str:
         if not os.path.isfile(local_path):
             raise OSError(f'cannot found file:{local_path}')
-        bucket, key = self.extract_buack_key_from_path(remoting_path)
+
         headers = PutObjectHeader()
         headers.contentType = self.mmie(local_path)
         self.logger.info(f"upload file:{remoting_path}")
         # 分片上传
-        resp = self.obsClient.uploadFile(bucket, key, local_path, 5*1024*1024, 4, True, headers=headers)
+        resp = self.obsClient.uploadFile(
+            self.bucket_name, remoting_path, local_path, 5*1024*1024, 4, True, headers=headers)
 
         if resp.status < 300:
             return remoting_path
@@ -78,9 +82,9 @@ class ObsFileStorage(FileStorage):
             raise OSError(f'cannot download file from obs, resp:{resp.errorMessage},key: {remoting_path}')
 
     def upload_content(self, remoting_path, content) -> str:
-        bucket, key = self.extract_buack_key_from_path(remoting_path)
+        # bucket, key = self.extract_buack_key_from_path(remoting_path)
         headers = PutObjectHeader()
-        resp = self.obsClient.putContent(bucket, key, content, headers=headers)
+        resp = self.obsClient.putContent(self.bucket_name, remoting_path, content, headers=headers)
 
         if resp.status < 300:
             return remoting_path
@@ -88,7 +92,7 @@ class ObsFileStorage(FileStorage):
             raise OSError(f'cannot download file from obs, resp:{resp.errorMessage},key: {remoting_path}')
 
     def preview_url(self, remoting_path: str) -> str:
-        bucket, key = self.extract_buack_key_from_path(remoting_path)
-        resp = self.obsClient.createSignedUrl('GET', bucket, key, expires=3000)
+        # bucket, key = self.extract_buack_key_from_path(remoting_path)
+        resp = self.obsClient.createSignedUrl('GET', self.bucket_name, remoting_path, expires=3000)
         return resp.get('signedUrl')
 

@@ -121,16 +121,18 @@ class TaskReceiverRecorder:
                 return int(time.time()) - d['timestamp']
 
 
-def register_worker(worker_id):
+def register_worker(worker_info: typing.Mapping):
     try:
-
+        worker_id = worker_info['worker_id']
+        now = int(time.time())
         pool = RedisPool()
         conn = pool.get_connection()
-        conn.setex(worker_id, 300, 60)
+        conn.setex(worker_id, 300, json.dumps(worker_info))
         conn.zadd(SDWorkerZset, {
-            worker_id: int(time.time())
+            worker_id: now
         })
         conn.expire(SDWorkerZset, timedelta(hours=1))
+        conn.zremrangebyscore(SDWorkerZset,  now - 600, now)
         pool.close()
     except:
         pass
@@ -148,6 +150,7 @@ class TaskReceiver:
         # self.worker_id = self._worker_id()
         self.is_elastic = is_flexible_worker()
         self.recorder = TaskReceiverRecorder()
+        self.group_id = get_worker_group()
         self.task_score_limit = 5 if cmd_opts.lowvram else (10 if cmd_opts.medvram else -1)
         self.worker_id = self._worker_id()
         self.task_received_callback = task_received_callback
@@ -174,14 +177,22 @@ class TaskReceiver:
         self.local_cache = {}
         self.timer = BackgroundScheduler()
 
-        self.timer.add_job(register_worker, 'interval', seconds=30, args=[self.worker_id])
+        worker_info = self._worker_info()
+        self.timer.add_job(register_worker, 'interval', seconds=30, args=[worker_info])
         self.timer.start()
         self.exception_ts = 0
         self.closed = False
 
     def _worker_id(self):
+        info = self._worker_info()
+
+        return info['worker_id']
+
+    @timed_lru_cache(3600)
+    def _worker_info(self):
         group_id = get_worker_group()
-        nvidia_video_card_id = '&'.join(GpuInfo().names)
+        gpu_names = '&'.join(GpuInfo().names)
+        nvidia_video_card_id = gpu_names
 
         # int(str(uuid.uuid1())[-4:], 16)
         hostname = get_host_name()
@@ -212,8 +223,17 @@ class TaskReceiver:
             nvidia_video_card_id = TrainOnlyWorkerFlag + nvidia_video_card_id
             if is_flexible_worker():
                 raise OSError('elastic resource cannot run with train only mode')
+        worker_id = f"{group_id}:{self.task_score_limit}.{nvidia_video_card_id}"
 
-        return f"{group_id}:{self.task_score_limit}.{nvidia_video_card_id}"
+        return {
+            'worker_id': worker_id,
+            'flexible': is_flexible_worker(),
+            'video_id': nvidia_video_card_id,
+            'group': group_id,
+            'max_task_score': self.task_score_limit,
+            'resource': f'{group_id}:{gpu_names}',
+
+        }
 
     def _clean_tmp_files(self):
         now = time.time()
@@ -326,6 +346,7 @@ class TaskReceiver:
                     if self.task_score_limit < score:
                         print(f"====> task:{task_id} out of limit({self.task_score_limit}).")
                         return
+
                 except:
                     pass
 
@@ -543,11 +564,6 @@ class TaskReceiver:
         worker_ids = [k.decode('utf8') if isinstance(k, bytes) else k for k in keys]
 
         def get_work_id_num(x: str):
-            # def hashs(s):
-            #     hash_md5 = hashlib.md5()
-            #     hash_md5.update(s.encode())
-            #
-            #     return hash_md5.hexdigest()[:8]
             if 'Host:' in x:
                 idx = x.index('Host:')
                 return x[idx:]
@@ -635,7 +651,6 @@ class TaskReceiver:
         rds.zadd(queue_name, {
             task_id: score
         })
-
 
     def close(self):
         if self.closed:

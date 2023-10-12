@@ -23,7 +23,7 @@ from modules.processing import Processed
 from modules.scripts import Script, ScriptRunner
 from modules.sd_models import reload_model_weights, CheckpointInfo
 from handlers.formatter import format_alwayson_script_args
-from tools.environment import get_file_storage_system_env, Env_BucketKey, S3ImageBucket, S3Tmp, S3SDWEB
+from tools.environment import  S3ImageBucket, S3Tmp, S3SDWEB
 from filestorage import FileStorageCls, get_local_path, batch_download
 from handlers.typex import ModelLocation, ModelType, ImageOutput, OutImageType, UserModelLocation
 
@@ -104,8 +104,6 @@ def upload_files(is_tmp, *files, dirname=None):
     keys = []
     if files:
         date = datetime.today().strftime('%Y/%m/%d')
-        storage_env = get_file_storage_system_env()
-        bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
         file_storage_system = FileStorageCls()
         relative = S3Tmp if is_tmp else S3SDWEB
         if dirname:
@@ -113,7 +111,7 @@ def upload_files(is_tmp, *files, dirname=None):
 
         for f in files:
             name = os.path.basename(f)
-            key = os.path.join(bucket, relative, date, name)
+            key = os.path.join(relative, date, name)
             file_storage_system.upload(f, key)
             keys.append(key)
     return keys
@@ -121,15 +119,14 @@ def upload_files(is_tmp, *files, dirname=None):
 
 def upload_content(is_tmp, content, name=None, dirname=None):
     date = datetime.today().strftime('%Y/%m/%d')
-    storage_env = get_file_storage_system_env()
-    bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
+
     file_storage_system = FileStorageCls()
     relative = S3Tmp if is_tmp else S3SDWEB
     if dirname:
         relative = os.path.join(relative, dirname)
 
     name = name or str(uuid.uuid1())
-    key = os.path.join(bucket, relative, date, name)
+    key = os.path.join(relative, date, name)
     file_storage_system.upload_content(key, content)
 
     return key

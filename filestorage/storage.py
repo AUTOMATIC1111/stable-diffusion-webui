@@ -151,10 +151,6 @@ class FileStorage:
         array = p.strip(os.path.sep).split(os.path.sep)
         return array[0]
 
-    def extract_buack_key_from_path(self, p: str) -> (str, str):
-        array = p.strip('/').split('/')
-        return array[0], '/'.join(array[1:])
-
     def mmie(self, p: str) -> str:
         _, ex = os.path.splitext(p)
         ex = ex.lower()
