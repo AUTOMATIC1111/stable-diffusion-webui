@@ -9,7 +9,7 @@ sd_vae_approx_model = None
 
 class VAEApprox(nn.Module):
     def __init__(self):
-        super(VAEApprox, self).__init__()
+        super().__init__()
         self.conv1 = nn.Conv2d(4, 8, (7, 7))
         self.conv2 = nn.Conv2d(8, 16, (5, 5))
         self.conv3 = nn.Conv2d(16, 32, (3, 3))
@@ -64,6 +64,6 @@ def cheap_approximation(sample):
         ]).reshape(3, 4, 1, 1).to(sample.device)
         bias = None
     try:
-        return nn.functional.conv2d(sample, weight, bias)
+        return nn.functional.conv2d(sample, weight, bias) # pylint: disable=not-callable
     except Exception:
         return sample
