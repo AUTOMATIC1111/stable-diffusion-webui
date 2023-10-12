@@ -9,10 +9,8 @@ from modules import devices
 
 class DeepDanbooruModel(nn.Module):
     def __init__(self):
-        super(DeepDanbooruModel, self).__init__()
-
+        super().__init__()
         self.tags = []
-
         self.n_Conv_0 = nn.Conv2d(kernel_size=(7, 7), in_channels=3, out_channels=64, stride=(2, 2))
         self.n_MaxPool_0 = nn.MaxPool2d(kernel_size=(3, 3), stride=(2, 2))
         self.n_Conv_1 = nn.Conv2d(kernel_size=(1, 1), in_channels=64, out_channels=256)
@@ -673,5 +671,4 @@ class DeepDanbooruModel(nn.Module):
 
     def load_state_dict(self, state_dict, **kwargs): # pylint: disable=arguments-differ,unused-argument
         self.tags = state_dict.get('tags', [])
-
-        super(DeepDanbooruModel, self).load_state_dict({k: v for k, v in state_dict.items() if k != 'tags'})
+        super(DeepDanbooruModel, self).load_state_dict({k: v for k, v in state_dict.items() if k != 'tags'}) # pylint: disable=R1725

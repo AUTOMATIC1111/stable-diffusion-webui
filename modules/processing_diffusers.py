@@ -456,7 +456,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             #    results.append(image)
             #    return results
             noise_level = round(350 * p.denoising_strength)
-            output_type='latent' if hasattr(shared.sd_refiner, 'vae') else 'np',
+            output_type='latent' if hasattr(shared.sd_refiner, 'vae') else 'np'
             if shared.sd_refiner.__class__.__name__ == 'StableDiffusionUpscalePipeline':
                 image = vae_decode(latents=image, model=shared.sd_model, full_quality=p.full_quality, output_type='pil')
                 p.extra_generation_params['Noise level'] = noise_level

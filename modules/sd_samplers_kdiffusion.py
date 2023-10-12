@@ -248,7 +248,7 @@ class KDiffusionSampler:
         if self.config.options.get('scheduler', None) is not None:
             self.config.options['scheduler'] = shared.opts.data.get('schedulers_sigma', None)
         if p is None:
-            return
+            return {}
         self.model_wrap_cfg.mask = p.mask if hasattr(p, 'mask') else None
         self.model_wrap_cfg.nmask = p.nmask if hasattr(p, 'nmask') else None
         self.model_wrap_cfg.image_cfg_scale = getattr(p, 'image_cfg_scale', None)

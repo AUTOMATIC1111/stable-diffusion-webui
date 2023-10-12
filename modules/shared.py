@@ -850,7 +850,7 @@ class Options:
         d = {k: self.data.get(k, self.data_labels.get(k).default) for k in self.data_labels.keys()}
         metadata = {
             k: {
-                "is_stored": k in self.data and self.data[k] != self.data_labels[k].default,
+                "is_stored": k in self.data and self.data[k] != self.data_labels[k].default, # pylint: disable=unnecessary-dict-index-lookup
                 "tab_name": v.section[0]
             } for k, v in self.data_labels.items()
         }

@@ -173,6 +173,7 @@ def download_civit_model_thread(model_name, model_url, model_path, model_type, p
     else:
         os.rename(temp_file, model_file)
     shared.state.end()
+    return res
 
 
 def download_civit_model(model_url: str, model_name: str, model_path: str, model_type: str, preview):
@@ -184,7 +185,7 @@ def download_civit_model(model_url: str, model_name: str, model_path: str, model
 
 def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config: Dict[str, str] = None, token = None, variant = None, revision = None, mirror = None):
     if hub_id is None or len(hub_id) == 0:
-        return
+        return None
     from diffusers import DiffusionPipeline
     import huggingface_hub as hf
     shared.state.begin('huggingface-download-model')
@@ -225,7 +226,7 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
 
     if pipeline_dir is None:
         shared.log.error(f"Diffusers no pipeline folder: {hub_id}")
-        return
+        return None
     try:
         model_info_dict = hf.model_info(hub_id).cardData if pipeline_dir is not None else None # pylint: disable=no-member # TODO Diffusers is this real error?
     except Exception:
@@ -399,19 +400,19 @@ def download_url_to_file(url: str, dst: str):
 
     file_size = None
     req = Request(url, headers={"User-Agent": "sdnext"})
-    u = urlopen(req)
+    u = urlopen(req) # pylint: disable=R1732
     meta = u.info()
     if hasattr(meta, 'getheaders'):
         content_length = meta.getheaders("Content-Length")
     else:
-        content_length = meta.get_all("Content-Length")
+        content_length = meta.get_all("Content-Length") # pylint: disable=R1732
     if content_length is not None and len(content_length) > 0:
         file_size = int(content_length[0])
     dst = os.path.expanduser(dst)
     for _seq in range(tempfile.TMP_MAX):
         tmp_dst = dst + '.' + uuid.uuid4().hex + '.partial'
         try:
-            f = open(tmp_dst, 'w+b')
+            f = open(tmp_dst, 'w+b') # pylint: disable=R1732
         except FileExistsError:
             continue
         break

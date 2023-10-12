@@ -1,4 +1,5 @@
 import os
+import itertools # SBM Batch frames
 import numpy as np
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops, UnidentifiedImageError
 import modules.scripts
@@ -6,7 +7,6 @@ from modules import sd_samplers, shared, processing, images
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.ui import plaintext_to_html
 from modules.memstats import memory_stats
-import itertools # SBM Batch frames
 
 
 def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args):
@@ -121,17 +121,17 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
 
     if mode == 0:  # img2img
         if init_img is None:
-            return
+            return [], '', '', 'Error: init image not provided'
         image = init_img.convert("RGB")
         mask = None
     elif mode == 1:  # img2img sketch
         if sketch is None:
-            return
+            return [], '', '', 'Error: sketch image not provided'
         image = sketch.convert("RGB")
         mask = None
     elif mode == 2:  # inpaint
         if init_img_with_mask is None:
-            return
+            return [], '', '', 'Error: init image with mask not provided'
         image = init_img_with_mask["image"]
         mask = init_img_with_mask["mask"]
         alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
@@ -139,7 +139,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         image = image.convert("RGB")
     elif mode == 3:  # inpaint sketch
         if inpaint_color_sketch is None:
-            return
+            return [], '', '', 'Error: color sketch image not provided'
         image = inpaint_color_sketch
         orig = inpaint_color_sketch_orig or inpaint_color_sketch
         pred = np.any(np.array(image) != np.array(orig), axis=-1)
@@ -150,7 +150,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         image = image.convert("RGB")
     elif mode == 4:  # inpaint upload mask
         if init_img_inpaint is None:
-            return
+            return [], '', '', 'Error: inpaint image not provided'
         image = init_img_inpaint
         mask = init_mask_inpaint
     else:

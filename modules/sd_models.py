@@ -96,7 +96,7 @@ class CheckpointInfo:
     def calculate_shorthash(self):
         self.sha256 = hashes.sha256(self.filename, f"checkpoint/{self.name}")
         if self.sha256 is None:
-            return
+            return None
         self.shorthash = self.sha256[0:10]
         checkpoints_list.pop(self.title)
         self.title = f'{self.name} [{self.shorthash}]'
@@ -309,14 +309,13 @@ def scrub_dict(dict_obj, keys):
     for key in list(dict_obj.keys()):
         if not isinstance(dict_obj, dict):
             continue
-        elif key in keys:
+        if key in keys:
             dict_obj.pop(key, None)
         elif isinstance(dict_obj[key], dict):
             scrub_dict(dict_obj[key], keys)
         elif isinstance(dict_obj[key], list):
             for item in dict_obj[key]:
                 scrub_dict(item, keys)
-    return
 
 
 def read_metadata_from_safetensors(filename):

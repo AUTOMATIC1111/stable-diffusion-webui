@@ -181,6 +181,7 @@ def install_extension_from_url(dirname, url, branch_name, search_text, sort_colu
         shared.log.error(f'Error installing extension: {url} {e}')
     finally:
         shutil.rmtree(tmpdir, True)
+    return []
 
 
 def install_extension(extension_to_install, search_text, sort_column):

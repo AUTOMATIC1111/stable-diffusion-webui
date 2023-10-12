@@ -39,8 +39,8 @@ def register_page(page):
     # registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions
     shared.extra_networks.append(page)
     allowed_dirs.clear()
-    for page in shared.extra_networks:
-        for folder in page.allowed_directories_for_previews():
+    for pg in shared.extra_networks:
+        for folder in pg.allowed_directories_for_previews():
             if folder not in allowed_dirs:
                 allowed_dirs.append(os.path.abspath(folder))
 
@@ -249,6 +249,7 @@ class ExtraNetworksPage:
             return ''
         shared.log.debug(f"Extra networks: page='{self.name}' items={len(self.items)} subdirs={len(subdirs)} tab={tabname} dirs={self.allowed_directories_for_previews()} time={self.list_time}s")
         threading.Thread(target=self.create_thumb).start()
+        return self.html
 
     def list_items(self):
         raise NotImplementedError

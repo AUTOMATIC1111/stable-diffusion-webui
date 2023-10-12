@@ -18,7 +18,7 @@ or even free speedups and quality improvements (regardless of which workflows yo
   - converted submenus from checkboxes to accordion elements  
     any ui state including state of open/closed menus can be saved as default!  
     see *System -> User interface -> Set menu states*  
-  - new built-in theme **invokeai**  
+  - new built-in theme **invoked**  
     thanks @BinaryQuantumSoul  
   - add **compact view** option in settings -> user interface  
   - small visual indicator bottom right of page showing internal server job state  
@@ -89,6 +89,8 @@ or even free speedups and quality improvements (regardless of which workflows yo
     thanks @AI-Casanova  
   - better **Lora** handling  
     thanks @AI-Casanova  
+  - better **SDXL preview** quality (approx method)  
+    thanks @BlueAmulet
   - new setting: *settings -> diffusers -> force inpaint*  
     as some models behave better when in *inpaint* mode even for normal *img2img* tasks  
 - **Upscalers**:

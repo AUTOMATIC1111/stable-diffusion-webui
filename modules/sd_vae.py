@@ -233,7 +233,7 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
     if not sd_model:
         sd_model = shared.sd_model
     if sd_model is None:
-        return
+        return None
     global checkpoint_info # pylint: disable=global-statement
     checkpoint_info = sd_model.sd_checkpoint_info
     checkpoint_file = checkpoint_info.filename
@@ -242,7 +242,7 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
     else:
         vae_source = "function-argument"
     if loaded_vae_file == vae_file:
-        return
+        return None
     if not getattr(sd_model, 'has_accelerate', False):
         if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
             lowvram.send_everything_to_cpu()

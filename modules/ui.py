@@ -117,7 +117,7 @@ def process_interrogate(interrogation_function, mode, ii_input_files, ii_input_d
         else:
             if not os.path.isdir(ii_input_dir):
                 log.error(f"Input directory not found: {ii_input_dir}")
-                return
+                return [gr.update(), None]
             images = modules.shared.listfiles(ii_input_dir)
         if ii_output_dir != "":
             os.makedirs(ii_output_dir, exist_ok=True)
@@ -959,7 +959,7 @@ def create_ui(startup_timer = None):
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
             if comp == dummy_component:
                 continue
-            elif not opts.same_type(value, opts.data_labels[key].default):
+            if not opts.same_type(value, opts.data_labels[key].default):
                 log.error(f'Setting bad value: {key}={value} expecting={type(opts.data_labels[key].default).__name__}')
                 continue
             if opts.set(key, value):

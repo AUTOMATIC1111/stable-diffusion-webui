@@ -422,7 +422,7 @@ class FilenameGenerator:
                     shared.log.error(f'Filename apply pattern: {e}')
                 if replacement == NOTHING:
                     continue
-                elif replacement is not None:
+                if replacement is not None:
                     res += text + str(replacement).replace('/', '-').replace('\\', '-')
                     continue
             else:

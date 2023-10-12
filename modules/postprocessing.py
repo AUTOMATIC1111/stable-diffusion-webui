@@ -51,7 +51,7 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
         outpath = output_dir
     else:
         outpath = opts.outdir_samples or opts.outdir_extras_samples
-    for image, name, ext in zip(image_data, image_names, image_ext):
+    for image, name, ext in zip(image_data, image_names, image_ext): # pylint: disable=redefined-argument-from-local
         shared.log.debug(f'process: image={image} {args}')
         infotext = ''
         if shared.state.interrupted:

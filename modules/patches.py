@@ -51,8 +51,6 @@ def undo(key, obj, field):
     original_func = originals[key].pop(patch_key)
     setattr(obj, field, original_func)
 
-    return None
-
 
 def original(key, obj, field):
     """Returns the original function for the patch created by the patch() function"""
