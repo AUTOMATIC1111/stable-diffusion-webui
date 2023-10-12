@@ -77,7 +77,7 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 #txt2img_generate_line2 > button, #img2img_generate_line2 > button, #extras_generate_box > button, #txt2img_tools > button, #img2img_tools > button { height: 2em; line-height: 0; font-size: var(--input-text-size);
   min-width: unset; display: block !important; margin-left: 0.4em; margin-right: 0.4em; }
 #txt2img_prompt, #txt2img_neg_prompt, #img2img_prompt, #img2img_neg_prompt { display: contents; }
-.interrogate-col{ min-width: 0 !important; max-width: fit-content; gap: 0.5em; }
+.interrogate-col{ min-width: 0 !important; max-width: fit-content; margin-right: var(--spacing-xxl); }
 .interrogate-col > button{ flex: 1; }
 #sampler_selection_img2img { margin-top: 1em; }
 #txtimg_hr_finalres{ min-height: 0 !important; }

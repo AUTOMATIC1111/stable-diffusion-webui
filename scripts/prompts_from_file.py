@@ -118,7 +118,7 @@ class Script(scripts.Script):
         prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=2), inputs=[prompt_txt], outputs=[prompt_txt], show_progress=False)
         return [checkbox_iterate, checkbox_iterate_batch, prompt_txt]
 
-    def run(self, p, checkbox_iterate, checkbox_iterate_batch, prompt_txt: str):
+    def run(self, p, checkbox_iterate, checkbox_iterate_batch, prompt_txt: str): # pylint: disable=arguments-differ
         lines = [x.strip() for x in prompt_txt.splitlines()]
         lines = [x for x in lines if len(x) > 0]
 

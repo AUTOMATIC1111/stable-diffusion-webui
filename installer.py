@@ -959,10 +959,14 @@ def git_reset():
     log.warning('Running GIT reset')
     global quick_allowed # pylint: disable=global-statement
     quick_allowed = False
-    git('merge --abort')
+    git('add .')
+    git('stash')
+    git('merge --abort', folder=None, ignore=True)
     git('fetch --all')
     git('reset --hard origin/master')
     git('checkout master')
+    git('submodule update --init --recursive')
+    git('submodule sync --recursive')
     log.info('GIT reset complete')
 
 

@@ -1,9 +1,8 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-09
+## Update for 2023-10-11
 
-- Final strech of the DEV branch before merge to master  
-- Requires pending `diffusers==0.22.0`
+- Final strech of the DEV branch before merge to master: requires pending `diffusers==0.22.0`
 
 This is a major release, with many changes and new functionality...  
 
@@ -173,6 +172,10 @@ or even free speedups and quality improvements (regardless of which workflows yo
       new option *settings -> inference -> batch mode*  
       when using img2img process batch, process multiple images in batch in parallel  
       thanks @Symbiomatrix
+- **NSFW**
+  - install extension: [NudeNet](https://github.com/vladmandic/sd-extension-nudenet)  
+    body part detection, image metadata, advanced censoring, etc...  
+    more in the extension notes  
 - **General**  
   - **Startup**  
     - all main CLI parameters can now be set as environment variable as well  

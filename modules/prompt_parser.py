@@ -324,8 +324,11 @@ def parse_prompt_attention(text):
         whitespace = ' '
 
     def multiply_range(start_position, multiplier):
-        for p in range(start_position, len(res)):
-            res[p][1] *= multiplier
+        try:
+            for p in range(start_position, len(res)):
+                res[p][1] *= multiplier
+        except Exception as e:
+            log(f'Prompt parser: {e}')
 
     for m in re_attention.finditer(text):
         text = m.group(0)

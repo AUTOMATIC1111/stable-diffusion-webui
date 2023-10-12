@@ -12,6 +12,7 @@ import modules.sd_models as sd_models
 import modules.sd_vae as sd_vae
 import modules.taesd.sd_vae_taesd as sd_vae_taesd
 import modules.images as images
+import modules.errors as errors
 from modules.processing import StableDiffusionProcessing
 import modules.prompt_parser_diffusers as prompt_parser_diffusers
 from modules.sd_hijack_hypertile import hypertile_set
@@ -28,6 +29,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if p.init_images[0].width != tgt_width or p.init_images[0].height != tgt_height:
             shared.log.debug(f'Resizing init images: original={p.init_images[0].width}x{p.init_images[0].height} target={tgt_width}x{tgt_height}')
             p.init_images = [images.resize_image(1, image, tgt_width, tgt_height, upscaler_name=None) for image in p.init_images]
+            p.height = tgt_height
+            p.width = tgt_width
+            hypertile_set(p)
             if p.mask is not None:
                 p.mask = images.resize_image(1, p.mask, tgt_width, tgt_height, upscaler_name=None)
             if p.mask_for_overlay is not None:
@@ -373,6 +377,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     except ValueError as e:
         shared.state.interrupted = True
         shared.log.error(f'Processing: {e}')
+        if shared.cmd_opts.debug:
+            errors.display(e, 'Processing')
 
     if hasattr(shared.sd_model, 'embedding_db') and len(shared.sd_model.embedding_db.embeddings_used) > 0:
         p.extra_generation_params['Embeddings'] = ', '.join(shared.sd_model.embedding_db.embeddings_used)
