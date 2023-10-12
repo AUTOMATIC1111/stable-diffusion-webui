@@ -5,6 +5,7 @@ import re
 import lora_patches
 import network
 import network_lora
+import network_glora
 import network_hada
 import network_ia3
 import network_lokr
@@ -23,6 +24,7 @@ module_types = [
     network_lokr.ModuleTypeLokr(),
     network_full.ModuleTypeFull(),
     network_norm.ModuleTypeNorm(),
+    network_glora.ModuleTypeGLora(),
 ]
 
 
