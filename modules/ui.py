@@ -1286,7 +1286,7 @@ def create_ui():
 
             loadsave.setup_ui()
 
-        if os.path.exists(os.path.join(script_path, "notification.mp3")):
+        if os.path.exists(os.path.join(script_path, "notification.mp3")) and shared.opts.notification_audio:
             gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
 
         footer = shared.html("footer.html")
