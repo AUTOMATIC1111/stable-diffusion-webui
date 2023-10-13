@@ -1,40 +1,45 @@
 import os
 import modules.launch_utils as lu
 
+HTTP_PROXY = ""
+
 
 def install():
     lu.prepare_environment()
     # 安装gfpgan
     lu.run_pip("install --verbose  gfpgan==1.3.8", "install gfpgan")
     # 安装GroundingDINO ，先克隆源码再从源码安装
-    lu.git_clone("https://github.com/IDEA-Research/GroundingDINO.git", lu.repo_dir("GroundingDINO"), "GroundingDINO")
-    lu.run_pip(f"install  -e ${lu.repo_dir('GroundingDINO')}", "install GroundingDINO")
+    lu.run(
+        f"https_proxy='{HTTP_PROXY}' git clone --depth 1 https://github.com/IDEA-Research/GroundingDINO.git ",
+        "git GroundingDINO")
+    lu.run("cd GroundingDINO;pip3 install -e .", "install GroundingDINO")
 
 
 def download_config():
     import modules.paths_internal as pi
     # 下载obs文件
+    obs_path = "xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web"
     lu.run(
-        f"wget https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/configs/Tags-zh-full-pack.csv -O ${pi.data_path}/extensions/tagcomplete/tags/tags-zh-full-pack.csv")
-    lu.run(
-        f"wget https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/configs/config.json -O  ${pi.data_path}/config.json")
-    lu.run(
-        f"wget https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/resource/zh_cn.csv -O ${pi.data_path}/extensions/tagcomplete/tags/zh_cn.csv")
-    lu.run(
-        f"wget https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/resource/artists.txt -O ${pi.data_path}/stable-diffusion-webui/interrogate/artists.txt")
-    lu.run(
-        f"wget https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/resource/flavors.txt -O ${pi.data_path}/stable-diffusion-webui/interrogate/flavors.txt")
-    lu.run(
-        f"wget https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/resource/mediums.txt -O ${pi.data_path}/stable-diffusion-webui/interrogate/mediums.txt")
-    lu.run(
-        f"wget https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/resource/movements.txt -O ${pi.data_path}/stable-diffusion-webui/interrogate/movements.txt")
-    lu.run(
-        f"wget https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/resource/libcudart.so -O /opt/conda/lib/libcudart.so")
+        f"wget https://{obs_path}/configs/Tags-zh-full-pack.csv -O {pi.data_path}/extensions/tagcomplete/tags/tags-zh-full-pack.csv",
+        "downloading tags-zh-full-pack.csv")
+    lu.run(f"wget https://{obs_path}/configs/config.json -O {pi.data_path}/config.json", "downloading config.json")
+    lu.run(f"wget https://{obs_path}/resource/zh_cn.csv -O {pi.data_path}/extensions/tagcomplete/tags/zh_cn.csv",
+           "downloading zh_cn.csv")
+    interrogate_path = os.path.join(pi.data_path, 'interrogate')
+    lu.run(f"mkdir -p  {interrogate_path}", f"mkdir {interrogate_path}")
+    lu.run(f"wget https:///artists.txt -O {interrogate_path}/artists.txt", "downloading artists.txt")
+    lu.run(f"wget https://{obs_path}/resource/flavors.txt -O {pi.data_path}/flavors.txt", "downloading flavors.txt")
+    lu.run(f"wget https://{obs_path}/resource/mediums.txt -O {pi.data_path}/mediums.txt", "downloading mediums.txt")
+    lu.run(f"wget https://{obs_path}/sd-web/resource/movements.txt -O {pi.data_path}/movements.txt",
+           "downloading movements.txt")
+    lu.run(f"wget https://{obs_path}/sd-web/resource/libcudart.so -O /opt/conda/lib/libcudart.so",
+           "downloading libcudart.so")
 
 
 def clone_extensions():
     import modules.paths_internal as pi
-    lu.git_clone("https://github.com/CompVis/taming-transformers.git",
+    lu.run(f"export https_proxy={HTTP_PROXY}", "set https proxy")
+    lu.git_clone(f"https://github.com/CompVis/taming-transformers.git",
                  os.path.join(pi.extensions_dir, "taming-transformers"),
                  "clone taming-transformers")
     lu.git_clone("https://github.com/nonnonstop/sd-webui-3d-open-pose-editor",
@@ -105,11 +110,11 @@ def clone_extensions():
     lu.git_clone("https://github.com/xilai0715/sd-vide-frame.git",
                  os.path.join(pi.extensions_dir, "video--frame"),
                  "clone video--frame")
-
+    lu.run(f"export https_proxy={HTTP_PROXY}", "unset https proxy")
+    ##克隆公司自己开发的插件
     lu.git_clone("https://gitlab.ilongyuan.cn/qzai/sd_super_functions.git",
                  os.path.join(pi.extensions_dir, "sd_super_functions"),
                  "clone sd_super_functions")
-
     lu.git_clone("https://gitlab.ilongyuan.cn/aigc/sd-webui-filemanager.git",
                  os.path.join(pi.extensions_dir, "sd-webui-filemanager"),
                  "clone sd-webui-filemanager")
@@ -122,10 +127,13 @@ def install_worker_requirements():
 
 
 def main():
+    print(f"HTTP_PROXY :{HTTP_PROXY}")
     install()
     download_config()
 
 
-
 if __name__ == '__main__':
+    import sys
+
+    HTTP_PROXY = sys.argv[1]
     main()
