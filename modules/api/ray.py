@@ -1,7 +1,7 @@
 from ray import serve
 import ray
 
-from modules.api.raypi import Raypi
+from modules.api.raypi import FastAPIWrapper
 
 import time
 import os
@@ -13,7 +13,9 @@ ray.init()
 
 def ray_only():
     serve.shutdown()
-    serve.start()
+    #serve.start(port=int(os.environ.get("RAY_PORT", 8000)))
+    serve.start(detached=True, http_options={"host": "0.0.0.0"})
+    print(f"Starting Raypi on port {os.environ.get('RAY_PORT', 8000)}")
     serve.run(Raypi.bind(), port=int(os.environ.get("RAY_PORT", 8000)), route_prefix="/sdapi/v1")  #route_prefix="/sdapi/v1" # Call the launch_ray method to get the FastAPI app
     print("Done setting up replicas! Now accepting requests...")
     while True:
