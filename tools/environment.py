@@ -48,6 +48,7 @@ Env_Flexible_Res_Token = "FLEXIBLE_RESOURCE"
 Env_Worker_State_File = "WORKER_STATE_FILE_PATH"
 Env_GSS_Count_API = "GSS_COUNT_API"
 Env_HostName = "hostname"
+Env_TaskGroupQueueOnly = "WORKER_GROUP_QUEUE_ONLY"
 Env_WorkerRunTrainRatio = "RUN_TRAIN_RATIO"
 
 cache = {}
@@ -93,6 +94,13 @@ def get_worker_group():
     cache[Env_Worker_Group] = group
 
     return group
+
+
+def is_task_group_queue_only():
+    x = cache.get(Env_TaskGroupQueueOnly) or os.getenv(Env_TaskGroupQueueOnly)
+    cache[Env_TaskGroupQueueOnly] = x
+
+    return x == "1"
 
 
 def get_run_train_time_cfg():

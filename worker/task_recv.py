@@ -29,7 +29,8 @@ from tools.host import get_host_name
 from modules.shared import mem_mon as vram_mon
 from apscheduler.schedulers.background import BackgroundScheduler
 from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api, run_train_ratio, \
-    Env_Run_Train_Time_Start, Env_Run_Train_Time_End, is_flexible_worker, get_worker_state_dump_path
+    Env_Run_Train_Time_Start, Env_Run_Train_Time_End, is_flexible_worker, get_worker_state_dump_path, \
+    is_task_group_queue_only
 
 try:
     from collections.abc import Iterable  # >=py3.10
@@ -127,7 +128,6 @@ def register_worker(worker_info: typing.Mapping):
         now = int(time.time())
         pool = RedisPool()
         conn = pool.get_connection()
-        conn.setex(worker_id, 300, json.dumps(worker_info))
         conn.zadd(SDWorkerZset, {
             worker_id: now
         })
@@ -171,7 +171,8 @@ class TaskReceiver:
         self.run_train_time_end = max(run_train_time_start, run_train_time_end)
 
         logger.info(
-            f"worker id:{self.worker_id}, train work receive clock:{self.run_train_time_start} - {self.run_train_time_end}")
+            f"worker id:{self.worker_id}, train work receive clock:"
+            f"{self.run_train_time_start} - {self.run_train_time_end}")
 
         self.register_time = 0
         self.local_cache = {}
@@ -179,16 +180,18 @@ class TaskReceiver:
 
         worker_info = self._worker_info()
         self.timer.add_job(register_worker, 'interval', seconds=30, args=[worker_info])
-        self.timer.start()
         self.exception_ts = 0
         self.closed = False
+        self.is_task_group_queue_only = is_task_group_queue_only()
+
+        self.timer.start()
 
     def _worker_id(self):
         info = self._worker_info()
 
         return info['worker_id']
 
-    @timed_lru_cache(3600)
+    @timed_lru_cache(300)
     def _worker_info(self):
         group_id = get_worker_group()
         gpu_names = '&'.join(GpuInfo().names)
@@ -224,6 +227,8 @@ class TaskReceiver:
             if is_flexible_worker():
                 raise OSError('elastic resource cannot run with train only mode')
         worker_id = f"{group_id}:{self.task_score_limit}.{nvidia_video_card_id}"
+        exec_train = self.train_only or self._can_gener_img_worker_run_train()
+        model_hash_list = self.model_recoder.history()
 
         return {
             'worker_id': worker_id,
@@ -232,7 +237,8 @@ class TaskReceiver:
             'group': group_id,
             'max_task_score': self.task_score_limit,
             'resource': f'{group_id}:{gpu_names}',
-
+            'exec_train_task': exec_train,
+            'model_hash_list': model_hash_list,
         }
 
     def _clean_tmp_files(self):
@@ -272,6 +278,15 @@ class TaskReceiver:
                 task = self._extract_queue_task(queue_name)
                 if task:
                     return task
+
+    def _search_group_task_queue(self):
+        '''
+        搜索指定资源的队列。
+        '''
+        info = self._worker_info()
+        resource_name = info['resource']
+
+        return self._get_queue_task(resource_name)
 
     def _search_train_task(self):
         # 弹性不训练
@@ -466,6 +481,9 @@ class TaskReceiver:
         return [k.decode('utf8') if isinstance(k, bytes) else k for k in keys]
 
     def _search_task(self):
+        if self.is_task_group_queue_only:
+            return self._search_group_task_queue()
+
         t = self._search_history_ckpt_task()
         if t:
             return t
@@ -541,16 +559,14 @@ class TaskReceiver:
                     break
 
     def register_worker(self):
-        if time.time() - self.register_time > 120:
+        if time.time() - self.register_time > 60:
             try:
+                info = self._worker_info()
                 free, total = vram_mon.cuda_mem_get_info()
                 logger.info(f'[VRAM] GPU free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
-                # conn = self.redis_pool.get_connection()
-                # conn.setex(self.worker_id, 300, 60)
-                # conn.zadd(SDWorkerZset, {
-                #     self.worker_id: int(time.time())
-                # })
-                # conn.expire(SDWorkerZset, timedelta(hours=1))
+                conn = self.redis_pool.get_connection()
+                conn.setex(self.worker_id, 300, json.dumps(info))
+
                 self.register_time = time.time()
             except:
                 return False

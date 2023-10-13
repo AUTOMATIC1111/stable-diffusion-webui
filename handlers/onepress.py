@@ -407,7 +407,7 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         self.requirements = [
             RequirementItem.from_expr('insightface==0.7.1'),
             RequirementItem.from_expr('onnxruntime-gpu')
-            
+
         ]
 
     def _exec(self, task: Task) -> typing.Iterable[TaskProgress]:
