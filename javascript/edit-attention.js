@@ -73,21 +73,34 @@ function keyupEditAttention(event) {
     } else if (selectionStart > 0 && /\(.*\)|\[.*\]/s.test(text.slice(selectionStart - 1, selectionEnd + 1))) {
         let start = text[selectionStart - 1];
         let end = text[selectionEnd];
-        let numParen = 0;
+        if (opts.keyedit_convert) {
+            let numParen = 0;
 
-        while (text[selectionStart - numParen - 1] == start && text[selectionEnd + numParen] == end) {
-            numParen++;
-        }
+            while (text[selectionStart - numParen - 1] == start && text[selectionEnd + numParen] == end) {
+                numParen++;
+            }
 
-        if (start == "(") {
-            weight = 1.1 ** numParen;
+            if (start == "(") {
+                weight = 1.1 ** numParen;
+            } else {
+                weight = (1 / 1.1) ** numParen;
+            }
+
+            text = text.slice(0, selectionStart - numParen) + "(" + text.slice(selectionStart, selectionEnd) + ":" + weight + ")" + text.slice(selectionEnd + numParen);
+            selectionStart -= numParen - 1;
+            selectionEnd -= numParen - 1;
         } else {
-            weight = 0.9 ** numParen;
+            closeCharacter = null;
+            if (isPlus) {
+                text = text.slice(0, selectionStart) + start + text.slice(selectionStart, selectionEnd) + end + text.slice(selectionEnd);
+                selectionStart++;
+                selectionEnd++;
+            } else {
+                text = text.slice(0, selectionStart - 1) + text.slice(selectionStart, selectionEnd) + text.slice(selectionEnd + 1);
+                selectionStart--;
+                selectionEnd--;
+            }
         }
-
-        text = text.slice(0, selectionStart - numParen) + "(" + text.slice(selectionStart, selectionEnd) + ":" + weight + ")" + text.slice(selectionEnd + numParen);
-        selectionStart -= numParen - 1;
-        selectionEnd -= numParen - 1;
     } else if (selectionStart == 0 || !/\(.*:-?[\d.]+\)/s.test(text.slice(selectionStart - 1, selectionEnd + text.slice(selectionEnd).indexOf(")") + 1))) {
         // do not include spaces at the end
         while (selectionEnd > selectionStart && text[selectionEnd - 1] == ' ') {
@@ -104,21 +117,23 @@ function keyupEditAttention(event) {
         selectionEnd++;
     }
 
-    var end = text.slice(selectionEnd + 1).indexOf(closeCharacter) + 1;
-    var weight = parseFloat(text.slice(selectionEnd + 1, selectionEnd + end));
-    if (isNaN(weight)) return;
+    if (closeCharacter) {
+        var end = text.slice(selectionEnd + 1).indexOf(closeCharacter) + 1;
+        var weight = parseFloat(text.slice(selectionEnd + 1, selectionEnd + end));
+        if (isNaN(weight)) return;
 
-    weight += isPlus ? delta : -delta;
-    weight = parseFloat(weight.toPrecision(12));
-    if (Number.isInteger(weight)) weight += ".0";
+        weight += isPlus ? delta : -delta;
+        weight = parseFloat(weight.toPrecision(12));
+        if (Number.isInteger(weight)) weight += ".0";
 
-    if (closeCharacter == ')' && weight == 1) {
-        var endParenPos = text.substring(selectionEnd).indexOf(')');
-        text = text.slice(0, selectionStart - 1) + text.slice(selectionStart, selectionEnd) + text.slice(selectionEnd + endParenPos + 1);
-        selectionStart--;
-        selectionEnd--;
-    } else {
-        text = text.slice(0, selectionEnd + 1) + weight + text.slice(selectionEnd + end);
+        if (closeCharacter == ')' && weight == 1) {
+            var endParenPos = text.substring(selectionEnd).indexOf(')');
+            text = text.slice(0, selectionStart - 1) + text.slice(selectionStart, selectionEnd) + text.slice(selectionEnd + endParenPos + 1);
+            selectionStart--;
+            selectionEnd--;
+        } else {
+            text = text.slice(0, selectionEnd + 1) + weight + text.slice(selectionEnd + end);
+        }
     }
 
     target.focus();
