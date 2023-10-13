@@ -115,6 +115,12 @@ def clone_extensions():
                  "clone sd-webui-filemanager")
 
 
+def install_worker_requirements():
+    from handlers import get_task_handlers
+    for h in get_task_handlers():
+        h.install_requirements()
+
+
 def main():
     download_config()
     install()
