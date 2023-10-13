@@ -598,7 +598,7 @@ def detect_pipeline(f: str, op: str = 'model'):
             size = round(os.path.getsize(f) / 1024 / 1024)
             if size < 128:
                 shared.log.warning(f'Model size smaller than expected: {f} size={size} MB')
-            elif size >= 331 and size <= 339: # 335
+            elif (size >= 316 and size <= 324) or (size >= 156 and size <= 164): # 320 or 160
                 shared.log.warning(f'Model detected as VAE model, but attempting to load as model: {op}={f} size={size} MB')
                 guess = 'VAE'
             elif size >= 5351 and size <= 5359: # 5353
@@ -609,7 +609,7 @@ def detect_pipeline(f: str, op: str = 'model'):
                 if op == 'model':
                     shared.log.warning(f'Model detected as SD-XL refiner model, but attempting to load a base model: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion XL'
-            elif size >= 6611 and size <= 6619: # 6617
+            elif (size >= 6611 and size <= 6619) or (size >= 6771 and size <= 6779): # 6617, HassakuXL is 6776
                 if shared.backend == shared.Backend.ORIGINAL:
                     shared.log.warning(f'Model detected as SD-XL base model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion XL'
@@ -632,6 +632,14 @@ def detect_pipeline(f: str, op: str = 'model'):
         except Exception as e:
             shared.log.error(f'Error detecting diffusers pipeline: model={f} {e}')
             return None, None
+    else:
+        try:
+            size = round(os.path.getsize(f) / 1024 / 1024)
+            pipeline = shared_items.get_pipelines().get(guess, None)
+            shared.log.info(f'Diffusers: {op}="{guess}" class={pipeline.__name__} file="{f}" size={size}MB')
+        except Exception as e:
+            shared.log.error(f'Error loading diffusers pipeline: model={f} {e}')
+            
     if pipeline is None:
         shared.log.warning(f'Autodetect: pipeline not recognized: {guess}: {op}={f} size={size}')
         pipeline = diffusers.StableDiffusionPipeline
