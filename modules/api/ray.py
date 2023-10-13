@@ -1,7 +1,7 @@
 from ray import serve
 import ray
 
-from modules.api.raypi import FastAPIWrapper
+from modules.api.raypi import Raypi
 
 import time
 import os
