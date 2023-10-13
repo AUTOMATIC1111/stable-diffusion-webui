@@ -149,6 +149,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
         shared.opts.cuda_compile = True
     loaded_networks.clear()
     for i, (network_on_disk, name) in enumerate(zip(networks_on_disk, names)):
+        net = None
         if network_on_disk is not None:
             try:
                 net = load_network(name, network_on_disk)
@@ -161,7 +162,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
             network_on_disk.read_hash()
         if net is None:
             failed_to_load_networks.append(name)
-            shared.log.error(f"LoRA unknown network: file={network_on_disk.filename} network={name}")
+            shared.log.error(f"LoRA unknown: network={name}")
             continue
         net.te_multiplier = te_multipliers[i] if te_multipliers else 1.0
         net.unet_multiplier = unet_multipliers[i] if unet_multipliers else 1.0

@@ -331,32 +331,34 @@ def parse_prompt_attention(text):
             log(f'Prompt parser: {e}')
 
     for m in re_attention.finditer(text):
-        text = m.group(0)
-        weight = m.group(1)
-
-        if text.startswith('\\'):
-            res.append([text[1:], 1.0])
-        elif text == '(':
-            round_brackets.append(len(res))
-        elif text == '[':
-            square_brackets.append(len(res))
-        elif weight is not None and len(round_brackets) > 0:
-            multiply_range(round_brackets.pop(), float(weight))
-        elif text == ')' and len(round_brackets) > 0:
-            multiply_range(round_brackets.pop(), round_bracket_multiplier)
-        elif text == ']' and len(square_brackets) > 0:
-            multiply_range(square_brackets.pop(), square_bracket_multiplier)
-        else:
-            parts = re.split(re_break, text)
-            for i, part in enumerate(parts):
-                if i > 0:
-                    res.append(["BREAK", -1])
-                if opts.prompt_attention == 'Full parser':
-                    part = re_clean.sub("", part)
-                    part = re_whitespace.sub(" ", part).strip()
-                    if len(part) == 0:
-                        continue
-                res.append([part, 1.0])
+        try:
+            section = m.group(0)
+            weight = m.group(1)
+            if section.startswith('\\'):
+                res.append([section[1:], 1.0])
+            elif section == '(':
+                round_brackets.append(len(res))
+            elif section == '[':
+                square_brackets.append(len(res))
+            elif weight is not None and len(round_brackets) > 0:
+                multiply_range(round_brackets.pop(), float(weight))
+            elif section == ')' and len(round_brackets) > 0:
+                multiply_range(round_brackets.pop(), round_bracket_multiplier)
+            elif section == ']' and len(square_brackets) > 0:
+                multiply_range(square_brackets.pop(), square_bracket_multiplier)
+            else:
+                parts = re.split(re_break, section)
+                for i, part in enumerate(parts):
+                    if i > 0:
+                        res.append(["BREAK", -1])
+                    if opts.prompt_attention == 'Full parser':
+                        part = re_clean.sub("", part)
+                        part = re_whitespace.sub(" ", part).strip()
+                        if len(part) == 0:
+                            continue
+                    res.append([part, 1.0])
+        except Exception as e:
+            log.error(f'Prompt parser: section={text[m.start():m.end()]} position={m.start()}:{m.end()} text={text} error={e}')
     for pos in round_brackets:
         multiply_range(pos, round_bracket_multiplier)
     for pos in square_brackets:
