@@ -113,7 +113,12 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
                     p.override_settings['samples_filename_pattern'] = f'{image_path.stem}-[generation_number]'
                 else:
                     p.override_settings['samples_filename_pattern'] = f'{image_path.stem}'
-            process_images(p)
+            try:
+                process_images(p)
+            except Exception as e:
+                if p.scripts is not None:
+                    p.scripts.postprocess(p, Processed(p, [], comments=e))
+                raise e
 
 
 def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_name: str, mask_blur: int, mask_alpha: float, inpainting_fill: int, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, denoising_strength: float, selected_scale_tab: int, height: int, width: int, scale_by: float, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, override_settings_texts, img2img_batch_use_png_info: bool, img2img_batch_png_info_props: list, img2img_batch_png_info_dir: str, request: gr.Request, *args):
@@ -205,7 +210,12 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         else:
             processed = modules.scripts.scripts_img2img.run(p, *args)
             if processed is None:
-                processed = process_images(p)
+                try:
+                    processed = process_images(p)
+                except Exception as e:
+                    if p.scripts is not None:
+                        p.scripts.postprocess(p, Processed(p, [], comments=e))
+                    raise e
 
     shared.total_tqdm.clear()
 
