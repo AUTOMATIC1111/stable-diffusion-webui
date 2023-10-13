@@ -74,6 +74,11 @@ def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.
         shape_one, batch_size_attention, query_tokens, shape_four = query.shape
         no_shape_one = False
 
+    if query.dtype != key.dtype:
+        key = key.to(dtype=query.dtype)
+    if query.dtype != value.dtype:
+        value = value.to(dtype=query.dtype)
+
     block_multiply = query.element_size()
     slice_block_size = shape_one * query_tokens * shape_four / 1024 / 1024 * block_multiply
     block_size = batch_size_attention * slice_block_size
