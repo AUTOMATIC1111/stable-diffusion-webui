@@ -820,6 +820,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 state.skipped = False
 
             if state.interrupted:
+                infotexts.append(Processed(p, []).infotext(p, 0))
                 break
 
             sd_models.reload_model_weights()  # model can be changed for example by refiner
