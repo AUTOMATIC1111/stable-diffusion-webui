@@ -136,4 +136,5 @@ if __name__ == '__main__':
     import sys
 
     HTTP_PROXY = sys.argv[1]
+    print("start init xin zhe env")
     main()
