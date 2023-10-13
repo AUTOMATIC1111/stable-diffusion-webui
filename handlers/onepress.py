@@ -404,11 +404,7 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
     def __init__(self):
         super(OnePressTaskHandler, self).__init__()
         self.task_type = TaskType.OnePress
-        self.requirements = [
-            RequirementItem.from_expr('insightface==0.7.1'),
-            RequirementItem.from_expr('onnxruntime-gpu')
 
-        ]
 
     def _exec(self, task: Task) -> typing.Iterable[TaskProgress]:
         # 根据任务的不同类型：执行不同的任务

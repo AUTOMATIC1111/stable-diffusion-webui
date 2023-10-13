@@ -111,7 +111,8 @@ def clone_extensions():
                  os.path.join(pi.extensions_dir, "video--frame"),
                  "clone video--frame")
     lu.run(f"export https_proxy={HTTP_PROXY}", "unset https proxy")
-    ##克隆公司自己开发的插件
+
+    # 克隆公司自己开发的插件
     lu.git_clone("https://gitlab.ilongyuan.cn/qzai/sd_super_functions.git",
                  os.path.join(pi.extensions_dir, "sd_super_functions"),
                  "clone sd_super_functions")
@@ -121,9 +122,8 @@ def clone_extensions():
 
 
 def install_worker_requirements():
-    from handlers import get_task_handlers
-    for h in get_task_handlers():
-        h.install_requirements()
+    from worker.install import install_pip_requirements
+    install_pip_requirements()
 
 
 def main():
