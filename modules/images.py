@@ -472,7 +472,7 @@ def atomically_save_image():
             pnginfo_data = PngImagePlugin.PngInfo()
             for k, v in params.pnginfo.items():
                 pnginfo_data.add_text(k, str(v))
-            image.save(fn, format=image_format, optimize=True, compress_level=9, pnginfo=pnginfo_data if shared.opts.image_metadata else None)
+            image.save(fn, format=image_format, compress_level=8, pnginfo=pnginfo_data if shared.opts.image_metadata else None)
         elif image_format == 'JPEG':
             if image.mode == 'RGBA':
                 shared.log.warning('Saving RGBA image as JPEG: Alpha channel will be lost')

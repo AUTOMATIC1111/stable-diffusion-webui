@@ -49,7 +49,6 @@ def split_attention(layer: nn.Module, tile_size: int=256, min_tile_size: int=256
     nhs = possible_tile_sizes(height, tile_size, min_tile_size, swap_size) # possible sub-grids that fit into the image
     nws = possible_tile_sizes(width, tile_size, min_tile_size, swap_size)
     make_ns = lambda: (nhs[random.randint(0, len(nhs) - 1)], nws[random.randint(0, len(nws) - 1)]) # pylint: disable=unnecessary-lambda-assignment
-
     def reset_nhs():
         nonlocal nws, make_ns, ar
         ar = height / width # Aspect ratio
@@ -145,6 +144,9 @@ def context_hypertile_vae(p):
         shared.log.warning('Hypertile UNet is not compatible with Sub-quadratic cross-attention optimization')
         return nullcontext()
     vae = getattr(p.sd_model, "vae", None) if shared.backend == shared.Backend.DIFFUSERS else getattr(p.sd_model, "first_stage_model", None)
+    if height % 8 != 0 or width % 8 != 0:
+        log.warning(f'Hypertile VAE disabled: width={width} height={height} are not divisible by 8')
+        return nullcontext()
     if vae is None:
         shared.log.warning('Hypertile VAE is enabled but no VAE model was found')
         return nullcontext()
@@ -168,8 +170,11 @@ def context_hypertile_unet(p):
         shared.log.warning('Hypertile UNet is not compatible with Sub-quadratic cross-attention optimization')
         return nullcontext()
     unet = getattr(p.sd_model, "unet", None) if shared.backend == shared.Backend.DIFFUSERS else getattr(p.sd_model.model, "diffusion_model", None)
+    if height % 8 != 0 or width % 8 != 0:
+        log.warning(f'Hypertile UNet disabled: width={width} height={height} are not divisible by 8')
+        return nullcontext()
     if unet is None:
-        shared.log.warning('Hypertile Unet is enabled but no Unet model was found')
+        shared.log.warning('Hypertile UNet is enabled but no Unet model was found')
         return nullcontext()
     else:
         shared.log.info(f'Applying hypertile: unet={shared.opts.hypertile_unet_tile}')

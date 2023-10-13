@@ -358,7 +358,7 @@ def parse_prompt_attention(text):
                             continue
                     res.append([part, 1.0])
         except Exception as e:
-            log.error(f'Prompt parser: section={text[m.start():m.end()]} position={m.start()}:{m.end()} text={text} error={e}')
+            log.error(f'Prompt parser: section="{text[m.start():m.end()]}" position={m.start()}:{m.end()} text="{text}" error={e}')
     for pos in round_brackets:
         multiply_range(pos, round_bracket_multiplier)
     for pos in square_brackets:
