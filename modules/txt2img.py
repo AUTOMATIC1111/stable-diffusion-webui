@@ -52,7 +52,12 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
         processed = modules.scripts.scripts_txt2img.run(p, *args)
 
         if processed is None:
-            processed = processing.process_images(p)
+            try:
+                processed = processing.process_images(p)
+            except Exception as e:
+                if p.scripts is not None:
+                    p.scripts.postprocess(p, Processed(p, [], comments=e))
+                raise e
 
     shared.total_tqdm.clear()
 
