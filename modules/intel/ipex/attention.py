@@ -84,7 +84,7 @@ def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.
     block_size = batch_size_attention * slice_block_size
 
     split_slice_size = batch_size_attention
-    if block_size > 5:
+    if block_size > 6:
         do_split = True
         #Find something divisible with the shape_one
         while (split_slice_size * slice_block_size) > 4:
@@ -96,7 +96,7 @@ def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.
         do_split = False
 
     split_2_slice_size = query_tokens
-    if split_slice_size * slice_block_size > 5:
+    if split_slice_size * slice_block_size > 6:
         slice_block_size2 = shape_one * split_slice_size * shape_four / 1024 / 1024 * block_multiply
         do_split_2 = True
         #Find something divisible with the batch_size_attention

@@ -119,6 +119,9 @@ class StableDiffusionProcessing:
         self.cfg_scale: float = cfg_scale
         self.image_cfg_scale = image_cfg_scale
         self.diffusers_guidance_rescale = diffusers_guidance_rescale
+        if (devices.backend == "ipex" or shared.cmd_opts.use_openvino) and width == 1024 and height == 1024:
+            width = 1080
+            height = 1080
         self.width: int = width
         self.height: int = height
         self.full_quality: bool = full_quality
@@ -937,6 +940,18 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     def __init__(self, enable_hr: bool = False, denoising_strength: float = 0.75, firstphase_width: int = 0, firstphase_height: int = 0, hr_scale: float = 2.0, hr_force: bool = False, hr_upscaler: str = None, hr_second_pass_steps: int = 0, hr_resize_x: int = 0, hr_resize_y: int = 0, refiner_steps: int = 5, refiner_start: float = 0, refiner_prompt: str = '', refiner_negative: str = '', **kwargs):
 
         super().__init__(**kwargs)
+        if devices.backend == "ipex" or shared.cmd_opts.use_openvino:
+            width_curse = bool(hr_resize_x == 1024 and self.height * (hr_resize_x / self.width) == 1024)
+            height_curse = bool(hr_resize_y == 1024 and self.width * (hr_resize_y / self.height) == 1024)
+            if (width_curse != height_curse) or (height_curse and width_curse):
+                if width_curse:
+                    hr_resize_x = 1080
+                if height_curse:
+                    hr_resize_y = 1080
+            if self.width * hr_scale == 1024 and self.height * hr_scale == 1024:
+                hr_scale = 1080 / self.width
+            if firstphase_width * hr_scale == 1024 and firstphase_height * hr_scale == 1024:
+                hr_scale = 1080 / firstphase_width
         self.enable_hr = enable_hr
         self.denoising_strength = denoising_strength
         self.hr_scale = hr_scale

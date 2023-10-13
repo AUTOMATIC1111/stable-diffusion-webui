@@ -423,9 +423,9 @@ def check_torch():
             torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.1a0 torchvision==0.15.2a0 intel_extension_for_pytorch==2.0.110+xpu --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/')
             os.environ.setdefault('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0 intel-extension-for-tensorflow[gpu]')
         else:
-            pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/ipex_with_aot_for_windows/torch-2.0.0a0+gite9ebda2-cp310-cp310-win_amd64.whl'
-            torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/ipex_with_aot_for_windows/torchvision-0.15.2a0+fa99a53-cp310-cp310-win_amd64.whl'
-            ipex_pip = 'https://github.com/Disty0/automatic/releases/download/ipex_with_aot_for_windows/intel_extension_for_pytorch-2.0.110+git0f2597b-cp310-cp310-win_amd64.whl'
+            pytorch_pip = 'https://github.com/Nuullll/intel-extension-for-pytorch/releases/download/v2.0.110%2Bxpu-master%2Bdll-bundle/torch-2.0.0a0+gite9ebda2-cp310-cp310-win_amd64.whl'
+            torchvision_pip = 'https://github.com/Nuullll/intel-extension-for-pytorch/releases/download/v2.0.110%2Bxpu-master%2Bdll-bundle/torchvision-0.15.2a0+fa99a53-cp310-cp310-win_amd64.whl'
+            ipex_pip = 'https://github.com/Nuullll/intel-extension-for-pytorch/releases/download/v2.0.110%2Bxpu-master%2Bdll-bundle/intel_extension_for_pytorch-2.0.110+gitc6ea20b-cp310-cp310-win_amd64.whl'
             torch_command = os.environ.get('TORCH_COMMAND', f'{pytorch_pip} {torchvision_pip} {ipex_pip}')
     elif allow_openvino and args.use_openvino:
         #Remove this after 2.1.0 releases
