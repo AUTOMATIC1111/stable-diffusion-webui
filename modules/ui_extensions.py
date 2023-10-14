@@ -378,13 +378,15 @@ def create_html(search_text, sort_column):
                 status = f"<span style='cursor:pointer;color:#4E22FF' title=\"{ext.get('note', 'custom value')}\">⬤</span>"
             elif ext['status'] == 5:
                 status = "<span style='cursor:pointer;color:#CE0000' title='Not supported'>⬤</span>"
+            elif ext['status'] == 6:
+                status = "<span style='cursor:pointer;color:#AEAEAE' title='Just discovered'>⬤</span>"
             else:
                 status = "<span style='cursor:pointer;color:#008EBC' title='Unknown status'>⬤</span>"
         else:
             if updated < datetime.timestamp(datetime.now() - timedelta(6*30)):
-                status = "<span style='cursor:pointer;color:#C000CF' title='unmaintained'>⬤</span>"
+                status = "<span style='cursor:pointer;color:#C000CF' title='Unmaintained>⬤</span>"
             else:
-                status = "<span style='cursor:pointer;color:#7C7C7C'>⬤</span>"
+                status = "<span style='cursor:pointer;color:#7C7C7C' title='No info'>⬤</span>"
 
         code += f"""
             <tr style="display: {visible}">
