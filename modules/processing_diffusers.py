@@ -32,9 +32,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             p.height = tgt_height
             p.width = tgt_width
             hypertile_set(p)
-            if p.mask is not None:
+            if getattr(p, 'mask', None) is not None:
                 p.mask = images.resize_image(1, p.mask, tgt_width, tgt_height, upscaler_name=None)
-            if p.mask_for_overlay is not None:
+            if getattr(p, 'mask_for_overlay', None) is not None:
                 p.mask_for_overlay = images.resize_image(1, p.mask_for_overlay, tgt_width, tgt_height, upscaler_name=None)
 
     def hires_resize(latents): # input=latents output=pil
@@ -44,11 +44,11 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             latents = torch.nn.functional.interpolate(latents, size=(p.hr_upscale_to_y // 8, p.hr_upscale_to_x // 8), mode=latent_upscaler["mode"], antialias=latent_upscaler["antialias"])
         first_pass_images = vae_decode(latents=latents, model=shared.sd_model, full_quality=p.full_quality, output_type='pil')
         p.init_images = []
-        for first_pass_image in first_pass_images:
+        for img in first_pass_images:
             if latent_upscaler is None:
-                init_image = images.resize_image(1, first_pass_image, p.hr_upscale_to_x, p.hr_upscale_to_y, upscaler_name=p.hr_upscaler)
+                init_image = images.resize_image(1, img, p.hr_upscale_to_x, p.hr_upscale_to_y, upscaler_name=p.hr_upscaler)
             else:
-                init_image = first_pass_image
+                init_image = img
             # if is_refiner_enabled:
             #    init_image = vae_encode(init_image, model=shared.sd_model, full_quality=p.full_quality)
             p.init_images.append(init_image)
@@ -185,13 +185,13 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE:
             p.ops.append('txt2img')
             task_args = {"height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8)}
-        elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE:
+        elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE and len(getattr(p, 'init_images' ,[])) > 0:
             p.ops.append('img2img')
             task_args = {"image": p.init_images, "strength": p.denoising_strength}
-        elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INSTRUCT:
+        elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INSTRUCT and len(getattr(p, 'init_images' ,[])) > 0:
             p.ops.append('instruct')
             task_args = {"height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8), "image": p.init_images, "strength": p.denoising_strength}
-        elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INPAINTING:
+        elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INPAINTING and len(getattr(p, 'init_images' ,[])) > 0:
             p.ops.append('inpaint')
             if getattr(p, 'mask', None) is None:
                 p.mask = TF.to_pil_image(torch.ones_like(TF.to_tensor(p.init_images[0]))).convert("L")
@@ -201,6 +201,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         return task_args
 
     def set_pipeline_args(model, prompts: list, negative_prompts: list, prompts_2: typing.Optional[list]=None, negative_prompts_2: typing.Optional[list]=None, desc:str='', **kwargs):
+        
         if hasattr(model, "set_progress_bar_config"):
             model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining} ' + '\x1b[38;5;71m' + desc, ncols=80, colour='#327fba')
         args = {}
@@ -261,7 +262,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 pass
                 # shared.log.debug(f'Diffuser not supported: pipeline={pipeline.__class__.__name__} task={sd_models.get_diffusers_task(model)} arg={arg}')
         # shared.log.debug(f'Diffuser pipeline: {pipeline.__class__.__name__} possible={possible}')
-        hypertile_set(p, hr=hasattr(p, 'init_images') and len(p.init_images) > 0)
+        hypertile_set(p, hr=len(getattr(p, 'init_images', [])))
         clean = args.copy()
         clean.pop('callback', None)
         clean.pop('callback_steps', None)
@@ -351,7 +352,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         else:
             return p.steps
 
-    # pipeline type is set earlier in processing.py
+    # pipeline type is set earlier in processing, but check for sanity
+    if sd_models.get_diffusers_task(shared.sd_model) != sd_models.DiffusersTaskType.TEXT_2_IMAGE and len(getattr(p, 'init_images' ,[])) == 0: # reset pipeline
+        shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
     base_args = set_pipeline_args(
         model=shared.sd_model,
         prompts=prompts,
@@ -420,11 +423,11 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     strength=p.denoising_strength,
                     desc='Hires',
                 )
-                # p.steps += hires_args['num_inference_steps']
                 try:
                     output = shared.sd_model(**hires_args) # pylint: disable=not-callable
                 except AssertionError as e:
                     shared.log.info(e)
+                p.init_images = []
 
     # optional refiner pass or decode
     if is_refiner_enabled:

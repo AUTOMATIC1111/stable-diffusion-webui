@@ -48,25 +48,30 @@ def split_attention(layer: nn.Module, tile_size: int=256, min_tile_size: int=256
     reset_needed = True
     nhs = possible_tile_sizes(height, tile_size, min_tile_size, swap_size) # possible sub-grids that fit into the image
     nws = possible_tile_sizes(width, tile_size, min_tile_size, swap_size)
-    make_ns = lambda: (nhs[random.randint(0, len(nhs) - 1)], nws[random.randint(0, len(nws) - 1)]) # pylint: disable=unnecessary-lambda-assignment
     def reset_nhs():
-        nonlocal nws, make_ns, ar
+        nonlocal nhs, ar
         ar = height / width # Aspect ratio
         nhs = possible_tile_sizes(height, tile_size, min_tile_size, swap_size)
-        make_ns = lambda: (nhs[random.randint(0, len(nhs) - 1)], nws[random.randint(0, len(nws) - 1)]) # pylint: disable=unnecessary-lambda-assignment
 
     def reset_nws():
-        nonlocal nws, make_ns, ar
+        nonlocal nws, ar
         ar = height / width # Aspect ratio
         nws = possible_tile_sizes(width, tile_size, min_tile_size, swap_size)
-        make_ns = lambda: (nhs[random.randint(0, len(nhs) - 1)], nws[random.randint(0, len(nws) - 1)]) # pylint: disable=unnecessary-lambda-assignment
 
     def self_attn_forward(forward: Callable) -> Callable:
         @wraps(forward)
         def wrapper(*args, **kwargs):
-            global height, width, max_h, max_w, reset_needed # pylint: disable=global-statement
-            nh, nw = make_ns()
+            global height, width, max_h, max_w, reset_needed, error_reported # pylint: disable=global-statement
             x = args[0]
+            try:
+                nh = nhs[random.randint(0, len(nhs) - 1)]
+                nw = nws[random.randint(0, len(nws) - 1)]
+            except Exception as e:
+                if not error_reported:
+                    error_reported = True
+                    log.error(f'Hypertile error: width={width} height={height} {e}')
+                out = forward(x, *args[1:], **kwargs)
+                return out
             if x.ndim == 4: # VAE
                 # TODO: VAE breaks for diffusers when using non-standard sizes
                 if nh * nw > 1:
@@ -108,7 +113,6 @@ def split_attention(layer: nn.Module, tile_size: int=256, min_tile_size: int=256
                         out = rearrange(out, "(b nh nw) hw c -> b nh nw hw c", nh=nh, nw=nw)
                         out = rearrange(out, "b nh nw (h w) c -> b (nh h nw w) c", h=h // nh, w=w // nw)
                 except Exception as e:
-                    global error_reported # pylint: disable=global-statement
                     if not error_reported:
                         error_reported = True
                         log.error(f'Hypertile error: width={width} height={height} {e}')
