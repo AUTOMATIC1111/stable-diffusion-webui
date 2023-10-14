@@ -1,6 +1,6 @@
 import torch
 import inspect
-import sys
+
 from modules import devices, sd_samplers_common, sd_samplers_timesteps_impl
 from modules.sd_samplers_cfg_denoiser import CFGDenoiser
 from modules.script_callbacks import ExtraNoiseParams, extra_noise_callback
@@ -161,7 +161,3 @@ class CompVisSampler(sd_samplers_common.Sampler):
             p.extra_generation_params["Pad conds"] = True
 
         return samples
-
-
-sys.modules['modules.sd_samplers_compvis'] = sys.modules[__name__]
-VanillaStableDiffusionSampler = CompVisSampler  # temp. compatibility with older extensions

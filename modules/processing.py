@@ -217,6 +217,7 @@ class StableDiffusionProcessing:
         self.s_tmin = self.s_tmin if self.s_tmin is not None else opts.s_tmin
         self.s_tmax = (self.s_tmax if self.s_tmax is not None else opts.s_tmax) or float('inf')
         self.s_noise = self.s_noise if self.s_noise is not None else opts.s_noise
+        self.ddim_discretize = self.ddim_discretize or opts.ddim_discretize
 
         self.extra_generation_params = self.extra_generation_params or {}
         self.override_settings = self.override_settings or {}
