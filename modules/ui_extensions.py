@@ -313,10 +313,10 @@ def refresh_extensions_list_from_data(search_text, sort_column):
 
     def dt(x: str):
         val = ext.get(x, None)
-        if val is not None:
-            return datetime.fromisoformat(val[:-1]).strftime('%a %b%d %Y %H:%M')
-        else:
-            return "N/A"
+        try:
+            return datetime.fromisoformat(val[:-1]).strftime('%a %b%d %Y %H:%M') if val is not None else "N/A"
+        except:
+            return 'N/A'
 
     stats = { 'processed': 0, 'enabled': 0, 'hidden': 0, 'installed': 0 }
     for ext in sorted(extensions_list, key=sort_function, reverse=sort_reverse):
@@ -336,7 +336,10 @@ def refresh_extensions_list_from_data(search_text, sort_column):
         path = ext.get("path", "")
         remote = ext.get("remote", None)
         commit_date = ext.get("commit_date", 1577836800) or 1577836800
-        update_available = (remote is not None) & (installed) & (datetime.utcfromtimestamp(commit_date + 60 * 60) < datetime.fromisoformat(ext.get('updated', '2000-01-01T00:00:00.000Z')[:-1]))
+        try:
+            update_available = (remote is not None) & (installed) & (datetime.utcfromtimestamp(commit_date + 60 * 60) < datetime.fromisoformat(ext.get('updated', '2000-01-01T00:00:00.000Z')[:-1]))
+        except:
+            update_available = False
         ext['sort_user'] = f"{'0' if ext['is_builtin'] else '1'}{'1' if ext['installed'] else '0'}{ext.get('name', '')}"
         ext['sort_enabled'] = f"{'0' if ext['enabled'] else '1'}{'1' if ext['is_builtin'] else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
         ext['sort_update'] = f"{'1' if update_available else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
