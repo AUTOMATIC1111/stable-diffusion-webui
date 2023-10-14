@@ -698,7 +698,7 @@ def ensure_base_requirements():
     except ImportError:
         install('setuptools', 'setuptools')
     try:
-        import setuptools # pylint: disable=unused-import # noqa: F811
+        import setuptools # pylint: disable=unused-import
     except ImportError:
         pass
     try:
@@ -706,7 +706,7 @@ def ensure_base_requirements():
     except ImportError:
         install('rich', 'rich')
     try:
-        import rich # pylint: disable=unused-import # noqa: F811
+        import rich # pylint: disable=unused-import
     except ImportError:
         pass
 

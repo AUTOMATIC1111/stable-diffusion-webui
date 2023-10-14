@@ -312,7 +312,7 @@ def create_html(search_text, sort_column):
         val = ext.get(x, None)
         try:
             return datetime.fromisoformat(val[:-1]).strftime('%a %b%d %Y %H:%M') if val is not None else "N/A"
-        except:
+        except Exception:
             return 'N/A'
 
     stats = { 'processed': 0, 'enabled': 0, 'hidden': 0, 'installed': 0 }
@@ -321,7 +321,7 @@ def create_html(search_text, sort_column):
         author = f"Author: {ext['url'].split('/')[3]}" if 'github' in ext['url'] else ''
         try:
             updated = datetime.timestamp(datetime.fromisoformat(ext.get('updated', '2000-01-01T00:00:00.000Z').rstrip('Z')))
-        except:
+        except Exception:
             updated = datetime.timestamp(datetime.now())
         update_available = (installed is not None) and (ext['remote'] is not None) and (ext['commit_date'] + 60 * 60 < updated)
         ext['sort_user'] = f"{'0' if ext['is_builtin'] else '1'}{'1' if ext['installed'] else '0'}{ext.get('name', '')}"
