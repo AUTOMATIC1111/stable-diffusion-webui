@@ -7,13 +7,12 @@ import time
 import os
 
 
-ray.init()
+ray.init(os.environ.get("RAY_HEAD_ADDRESS", ""))
 #ray.init("ray://localhost:10001")
 
 
 def ray_only():
     serve.shutdown()
-    #serve.start(port=int(os.environ.get("RAY_PORT", 8000)))
     serve.start(detached=True, http_options={
                                             "host": os.environ.get("RAY_IP", "0.0.0.0"), 
                                             "port": int(os.environ.get("RAY_PORT", 8000))
