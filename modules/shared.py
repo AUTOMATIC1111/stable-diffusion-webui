@@ -97,6 +97,7 @@ class State:
     need_restart = False
     server_start = time.time()
     oom = False
+    debug_output = os.environ.get('SD_STATE_DEBUG', None)
 
     def skip(self):
         log.debug('Requested skip')
@@ -147,14 +148,16 @@ class State:
         self.skipped = False
         self.textinfo = None
         self.time_start = time.time()
-        log.debug(f'State begin: {self.job}')
+        if self.debug_output:
+            log.debug(f'State begin: {self.job}')
         devices.torch_gc()
 
     def end(self):
         if self.time_start is None: # someone called end before being
             log.debug(f'Access state.end: {sys._getframe().f_back.f_code.co_name}') # pylint: disable=protected-access
             self.time_start = time.time()
-        log.debug(f'State end: {self.job} time={time.time() - self.time_start:.2f}s')
+        if self.debug_output:
+            log.debug(f'State end: {self.job} time={time.time() - self.time_start:.2f}s')
         self.job = ""
         self.job_count = 0
         self.job_no = 0
