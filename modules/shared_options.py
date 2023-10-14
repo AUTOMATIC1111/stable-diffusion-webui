@@ -22,6 +22,7 @@ restricted_opts = {
 }
 
 options_templates.update(options_section(('saving-images', "Saving images/grids"), {
+    "notification_audio": OptionInfo(True, "Play notification sound after image generation", comment_after="(notification.mp3 should be present in the root directory)").needs_reload_ui(),
     "samples_save": OptionInfo(True, "Always save all generated images"),
     "samples_format": OptionInfo('png', 'File format for images'),
     "samples_filename_pattern": OptionInfo("", "Images filename pattern", component_args=hide_dirs).link("wiki", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Images-Filename-Name-and-Subdirectory"),
