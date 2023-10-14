@@ -309,7 +309,7 @@ def create_html(search_text, sort_column):
         try:
             return datetime.fromisoformat(val[:-1]).strftime('%a %b%d %Y %H:%M') if val is not None else "N/A"
         except:
-            return datetime.now().strftime('%a %b%d %Y %H:%M')
+            return 'N/A'
 
     stats = { 'processed': 0, 'enabled': 0, 'hidden': 0, 'installed': 0 }
     for ext in sorted(extensions_list, key=sort_function, reverse=sort_reverse):
