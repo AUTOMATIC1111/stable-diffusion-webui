@@ -36,7 +36,7 @@ def get_installed(ext) -> extensions.Extension:
 
 def list_extensions():
     global extensions_list # pylint: disable=global-statement
-    extensions_list = shared.readfile(os.path.join(paths.script_path, "html", "extensions.json"))
+    extensions_list = shared.readfile(os.path.join(paths.script_path, "html", "extensions.json")) or []
     found = []
     for ext in extensions.extensions:
         ext.read_info()
@@ -312,7 +312,7 @@ def create_html(search_text, sort_column):
     for ext in sorted(extensions_list, key=sort_function, reverse=sort_reverse):
         installed = get_installed(ext)
         author = f"Author: {ext['url'].split('/')[3]}" if 'github' in ext['url'] else ''
-        updated = datetime.timestamp(datetime.fromisoformat(ext.get('updated', '2000-01-01T00:00:00.000Z')))
+        updated = datetime.timestamp(datetime.fromisoformat(ext.get('updated', '2000-01-01T00:00:00.000Z').rstrip('Z')))
         update_available = (installed is not None) and (ext['remote'] is not None) and (ext['commit_date'] + 60 * 60 < updated)
         ext['sort_user'] = f"{'0' if ext['is_builtin'] else '1'}{'1' if ext['installed'] else '0'}{ext.get('name', '')}"
         ext['sort_enabled'] = f"{'0' if ext['enabled'] else '1'}{'1' if ext['is_builtin'] else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
