@@ -75,7 +75,7 @@ class UiLoadsave:
                 if x.choices is None:
                     errors.log.warning(f'UI: path={path} value={getattr(x, "value", None)}, choices={getattr(x, "choices", None)}')
                     return False
-                choices = [c[0] for c in x.choices] if type(x.choices[0]) == tuple else x.choices
+                choices = [c[0] for c in x.choices] if type(x.choices) == list and len(x.choices) > 0 and type(x.choices[0]) == tuple else x.choices
                 if getattr(x, 'multiselect', False):
                     return all(value in choices for value in val)
                 else:

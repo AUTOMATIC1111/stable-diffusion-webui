@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-11
+## Update for 2023-10-14
 
 - Final strech of the DEV branch before merge to master: requires pending `diffusers==0.22.0`
 
@@ -178,6 +178,7 @@ or even free speedups and quality improvements (regardless of which workflows yo
 - **NSFW**
   - install extension: [NudeNet](https://github.com/vladmandic/sd-extension-nudenet)  
     body part detection, image metadata, advanced censoring, etc...  
+    works for *text*, *image* and *process* workflows  
     more in the extension notes  
 - **General**  
   - **Startup**  
@@ -198,6 +199,11 @@ or even free speedups and quality improvements (regardless of which workflows yo
   - **API**
     - add end-to-end example how to use API: `cli/simple-txt2img.js`  
       covers txt2img, upscale, hires, refiner  
+  - **Extensions**
+    - better overall compatibility with A1111 extensions (up to a point)  
+    - new framework for extension validation  
+      extensions ui now shows actual status of extensions for reviewed extensions  
+      if you want to contribute/flag/update extension status, reach out on github or discord  
   - **train.py**
     - wrapper script around built-in **kohya's lora** training script  
       see `cli/train.py --help`  

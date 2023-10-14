@@ -455,11 +455,17 @@ def fix_seed(p):
     p.subseed = get_fixed_seed(p.subseed)
 
 
-def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0, index=None, all_negative_prompts=None):
+def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=None, all_subseeds=None, comments=None, iteration=0, position_in_batch=0, index=None, all_negative_prompts=None):
     if not hasattr(shared.sd_model, 'sd_checkpoint_info'):
         return ''
     if index is None:
         index = position_in_batch + iteration * p.batch_size
+    if all_prompts is None:
+        all_prompts = p.all_prompts
+    if all_seeds is None:
+        all_seeds = p.all_seeds
+    if all_subseeds is None:
+        all_subseeds = p.all_subseeds
     if all_negative_prompts is None:
         all_negative_prompts = p.all_negative_prompts
     comment = ', '.join(comments) if comments is not None and type(comments) is list else None

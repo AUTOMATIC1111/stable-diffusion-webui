@@ -210,18 +210,6 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 #txt2img_extra_details td:first-child, #img2img_extra_details td:first-child { font-weight: bold; vertical-align: top; }
 #txt2img_extra_details .gradio-image, #img2img_extra_details .gradio-image { max-height: 70vh; }
 
-/* controlnet
-.controlnet_control_type .controlnet_control_type_filter_group .wrap:last-of-type { display: grid; grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-fieldset.controlnet_resize_mode_radio .wrap:last-of-type, fieldset.controlnet_control_mode_radio .wrap:last-of-type { flex-direction: column; }
-div.controlnet_preprocessor_model { display: grid; grid-auto-flow: row; grid-template-columns: 1fr max-content; }
-div.controlnet_preprocessor_model button.gradio-button { align-self: center; }
-div.controlnet_weight_steps > div.form { display: grid; grid-template: repeat(2, 1fr) / repeat(2, 1fr); }
-div.controlnet_weight_steps .controlnet_control_weight_slider { grid-column: 1 / -1; }
-div.controlnet_image_controls { display: grid; grid-template-columns: repeat(4, 1fr); }
-div.controlnet_image_controls .controlnet_invert_warning { grid-column: 1 / -1; }
-div.controlnet_image_controls button { justify-self: center; }
-div.controlnet_main_options { display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: row; }
- */
 
 /* specific elements */
 #modelmerger_interp_description { margin-top: 1em; margin-bottom: 1em; }
@@ -229,13 +217,16 @@ div.controlnet_main_options { display: grid; grid-template-columns: 1fr 1fr; gri
 #scripts_alwayson_txt2img > .label-wrap, #scripts_alwayson_img2img > .label-wrap { background: var(--input-background-fill); padding: 0; margin: 0; border-radius: var(--radius-lg); }
 #scripts_alwayson_txt2img > .label-wrap > span, #scripts_alwayson_img2img > .label-wrap > span { padding: var(--spacing-xxl); }
 #script_txt2img_agent_scheduler { display: none; }
-#extras_generate, #extras_interrupt, #extras_skip { display: block !important; position: relative; height: 36px; }
-#extras_upscale { margin-top: 10px }
 #refresh_tac_refreshTempFiles { display: none; }
 #train_tab { flex-flow: row-reverse; }
 #models_tab { flex-flow: row-reverse; }
 #swap_axes > button { min-width: 100px; font-size: 1em; }
 #ui_defaults_review { margin: 1em; }
+
+/* extras */
+.extras { gap: 0.2em 1em !important }
+#extras_generate, #extras_interrupt, #extras_skip { display: block !important; position: relative; height: 36px; }
+#extras_upscale { margin-top: 10px }
 
 /* log monitor */
 .log-monitor { display: none; justify-content: unset !important; overflow: hidden; padding: 0; margin-top: auto; font-family: monospace; font-size: 0.85em; }

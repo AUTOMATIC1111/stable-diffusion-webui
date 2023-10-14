@@ -351,6 +351,8 @@ class FilenameGenerator:
         return shorthash
 
     def prompt_words(self):
+        if self.p is None or self.prompt is None:
+            return ''
         no_attention = re_attention.sub(r'\1', self.prompt)
         no_network = re_network.sub(r'\1', no_attention)
         no_brackets = re_brackets.sub('', no_network)
@@ -419,7 +421,7 @@ class FilenameGenerator:
                     replacement = fun(self, *pattern_args)
                 except Exception as e:
                     replacement = None
-                    shared.log.error(f'Filename apply pattern: {e}')
+                    shared.log.error(f'Filename apply pattern: {x} {e}')
                 if replacement == NOTHING:
                     continue
                 if replacement is not None:
@@ -522,7 +524,7 @@ save_thread = threading.Thread(target=atomically_save_image, daemon=True)
 save_thread.start()
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None): # pylint: disable=unused-argument
+def save_image(image, path, basename = '', seed=None, prompt=None, extension=shared.opts.samples_format, info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None): # pylint: disable=unused-argument
     if image is None:
         shared.log.warning('Image is none')
         return None, None

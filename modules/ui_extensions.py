@@ -36,7 +36,11 @@ def get_installed(ext) -> extensions.Extension:
 
 def list_extensions():
     global extensions_list # pylint: disable=global-statement
-    extensions_list = shared.readfile(os.path.join(paths.script_path, "html", "extensions.json")) or []
+    fn = os.path.join(paths.script_path, "html", "extensions.json")
+    extensions_list = shared.readfile(fn) or []
+    if type(extensions_list) != list:
+        shared.log.warning(f'Invalid extensions list: file={fn}')
+        extensions_list = []
     found = []
     for ext in extensions.extensions:
         ext.read_info()
