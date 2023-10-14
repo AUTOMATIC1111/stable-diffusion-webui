@@ -384,7 +384,7 @@ def create_html(search_text, sort_column):
                 status = "<span style='cursor:pointer;color:#008EBC' title='Unknown status'>⬤</span>"
         else:
             if updated < datetime.timestamp(datetime.now() - timedelta(6*30)):
-                status = "<span style='cursor:pointer;color:#C000CF' title='Unmaintained>⬤</span>"
+                status = "<span style='cursor:pointer;color:#C000CF' title='Unmaintained'>⬤</span>"
             else:
                 status = "<span style='cursor:pointer;color:#7C7C7C' title='No info'>⬤</span>"
 
