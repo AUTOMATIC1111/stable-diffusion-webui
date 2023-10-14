@@ -66,13 +66,13 @@ def check_access():
     assert not shared.cmd_opts.disable_extension_access, "extension access disabled because of command line flags"
 
 
-def apply_and_restart(disable_list, update_list, disable_all):
+def apply_changes(disable_list, update_list, disable_all):
     check_access()
     shared.log.debug(f'Extensions apply: disable={disable_list} update={update_list}')
     disabled = json.loads(disable_list)
-    assert type(disabled) == list, f"wrong disable_list data for apply_and_restart: {disable_list}"
+    assert type(disabled) == list, f"wrong disable_list data for apply_changes: {disable_list}"
     update = json.loads(update_list)
-    assert type(update) == list, f"wrong update_list data for apply_and_restart: {update_list}"
+    assert type(update) == list, f"wrong update_list data for apply_changes: {update_list}"
     update = set(update)
     for ext in extensions.extensions:
         if ext.name not in update:
@@ -84,7 +84,7 @@ def apply_and_restart(disable_list, update_list, disable_all):
     shared.opts.disabled_extensions = disabled
     shared.opts.disable_all_extensions = disable_all
     shared.opts.save(shared.config_filename)
-    # shared.restart_server(restart=True)
+    shared.restart_server(restart=True)
 
 
 def check_updates(_id_task, disable_list, search_text, sort_column):
@@ -306,13 +306,19 @@ def create_html(search_text, sort_column):
 
     def dt(x: str):
         val = ext.get(x, None)
-        return datetime.fromisoformat(val[:-1]).strftime('%a %b%d %Y %H:%M') if val is not None else "N/A"
+        try:
+            return datetime.fromisoformat(val[:-1]).strftime('%a %b%d %Y %H:%M') if val is not None else "N/A"
+        except:
+            return datetime.now().strftime('%a %b%d %Y %H:%M')
 
     stats = { 'processed': 0, 'enabled': 0, 'hidden': 0, 'installed': 0 }
     for ext in sorted(extensions_list, key=sort_function, reverse=sort_reverse):
         installed = get_installed(ext)
         author = f"Author: {ext['url'].split('/')[3]}" if 'github' in ext['url'] else ''
-        updated = datetime.timestamp(datetime.fromisoformat(ext.get('updated', '2000-01-01T00:00:00.000Z').rstrip('Z')))
+        try:
+            updated = datetime.timestamp(datetime.fromisoformat(ext.get('updated', '2000-01-01T00:00:00.000Z').rstrip('Z')))
+        except:
+            updated = datetime.timestamp(datetime.now())
         update_available = (installed is not None) and (ext['remote'] is not None) and (ext['commit_date'] + 60 * 60 < updated)
         ext['sort_user'] = f"{'0' if ext['is_builtin'] else '1'}{'1' if ext['installed'] else '0'}{ext.get('name', '')}"
         ext['sort_enabled'] = f"{'0' if ext['enabled'] else '1'}{'1' if ext['is_builtin'] else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
@@ -425,7 +431,7 @@ def create_ui():
                     outputs=[extensions_table, info],
                 )
                 apply.click(
-                    fn=apply_and_restart,
+                    fn=apply_changes,
                     _js="extensions_apply",
                     inputs=[extensions_disabled_list, extensions_update_list, extensions_disable_all],
                     outputs=[],
