@@ -1,4 +1,5 @@
 import collections
+import copy
 import os.path
 import sys
 import gc
@@ -357,12 +358,12 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     if model.is_sdxl:
         sd_models_xl.extend_sdxl(model)
 
-    model.load_state_dict(state_dict, strict=False)
-    timer.record("apply weights to model")
-
     if shared.opts.sd_checkpoint_cache > 0:
         # cache newly loaded model
-        checkpoints_loaded[checkpoint_info] = state_dict
+        checkpoints_loaded[checkpoint_info] = copy.deepcopy(state_dict)
+
+    model.load_state_dict(state_dict, strict=False)
+    timer.record("apply weights to model")
 
     del state_dict
 
