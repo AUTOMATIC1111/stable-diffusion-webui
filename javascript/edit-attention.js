@@ -26,6 +26,7 @@ function keyupEditAttention(event) {
 
         // Set the selection to the text between the parenthesis
         const parenContent = text.substring(beforeParen + 1, selectionStart + afterParen);
+        if (!/.*:-?[\d.]+/s.test(parenContent)) return false;
         const lastColon = parenContent.lastIndexOf(":");
         selectionStart = beforeParen + 1;
         selectionEnd = selectionStart + lastColon;
@@ -66,40 +67,73 @@ function keyupEditAttention(event) {
     var closeCharacter = ')';
     var delta = opts.keyedit_precision_attention;
 
-    if (selectionStart > 0 && text[selectionStart - 1] == '<') {
+    if (selectionStart > 0 && /<.*:-?[\d.]+>/s.test(text.slice(selectionStart - 1, selectionEnd + text.slice(selectionEnd).indexOf(">") + 1))) {
         closeCharacter = '>';
         delta = opts.keyedit_precision_extra;
-    } else if (selectionStart == 0 || text[selectionStart - 1] != "(") {
+    } else if (selectionStart > 0 && /\(.*\)|\[.*\]/s.test(text.slice(selectionStart - 1, selectionEnd + 1))) {
+        let start = text[selectionStart - 1];
+        let end = text[selectionEnd];
+        if (opts.keyedit_convert) {
+            let numParen = 0;
 
+            while (text[selectionStart - numParen - 1] == start && text[selectionEnd + numParen] == end) {
+                numParen++;
+            }
+
+            if (start == "(") {
+                weight = 1.1 ** numParen;
+            } else {
+                weight = (1 / 1.1) ** numParen;
+            }
+
+            text = text.slice(0, selectionStart - numParen) + "(" + text.slice(selectionStart, selectionEnd) + ":" + weight + ")" + text.slice(selectionEnd + numParen);
+            selectionStart -= numParen - 1;
+            selectionEnd -= numParen - 1;
+        } else {
+            closeCharacter = null;
+            if (isPlus) {
+                text = text.slice(0, selectionStart) + start + text.slice(selectionStart, selectionEnd) + end + text.slice(selectionEnd);
+                selectionStart++;
+                selectionEnd++;
+            } else {
+                text = text.slice(0, selectionStart - 1) + text.slice(selectionStart, selectionEnd) + text.slice(selectionEnd + 1);
+                selectionStart--;
+                selectionEnd--;
+            }
+        }
+    } else if (selectionStart == 0 || !/\(.*:-?[\d.]+\)/s.test(text.slice(selectionStart - 1, selectionEnd + text.slice(selectionEnd).indexOf(")") + 1))) {
         // do not include spaces at the end
         while (selectionEnd > selectionStart && text[selectionEnd - 1] == ' ') {
-            selectionEnd -= 1;
+            selectionEnd--;
         }
+
         if (selectionStart == selectionEnd) {
             return;
         }
 
         text = text.slice(0, selectionStart) + "(" + text.slice(selectionStart, selectionEnd) + ":1.0)" + text.slice(selectionEnd);
 
-        selectionStart += 1;
-        selectionEnd += 1;
+        selectionStart++;
+        selectionEnd++;
     }
 
-    var end = text.slice(selectionEnd + 1).indexOf(closeCharacter) + 1;
-    var weight = parseFloat(text.slice(selectionEnd + 1, selectionEnd + end));
-    if (isNaN(weight)) return;
+    if (closeCharacter) {
+        var end = text.slice(selectionEnd + 1).indexOf(closeCharacter) + 1;
+        var weight = parseFloat(text.slice(selectionEnd + 1, selectionEnd + end));
+        if (isNaN(weight)) return;
 
-    weight += isPlus ? delta : -delta;
-    weight = parseFloat(weight.toPrecision(12));
-    if (String(weight).length == 1) weight += ".0";
+        weight += isPlus ? delta : -delta;
+        weight = parseFloat(weight.toPrecision(12));
+        if (Number.isInteger(weight)) weight += ".0";
 
-    if (closeCharacter == ')' && weight == 1) {
-        var endParenPos = text.substring(selectionEnd).indexOf(')');
-        text = text.slice(0, selectionStart - 1) + text.slice(selectionStart, selectionEnd) + text.slice(selectionEnd + endParenPos + 1);
-        selectionStart--;
-        selectionEnd--;
-    } else {
-        text = text.slice(0, selectionEnd + 1) + weight + text.slice(selectionEnd + end);
+        if (closeCharacter == ')' && weight == 1) {
+            var endParenPos = text.substring(selectionEnd).indexOf(')');
+            text = text.slice(0, selectionStart - 1) + text.slice(selectionStart, selectionEnd) + text.slice(selectionEnd + endParenPos + 1);
+            selectionStart--;
+            selectionEnd--;
+        } else {
+            text = text.slice(0, selectionEnd + 1) + weight + text.slice(selectionEnd + end);
+        }
     }
 
     target.focus();
