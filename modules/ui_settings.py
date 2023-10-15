@@ -1,6 +1,6 @@
 import gradio as gr
 
-from modules import ui_common, shared, script_callbacks, scripts, sd_models, sysinfo
+from modules import ui_common, shared, script_callbacks, scripts, sd_models, sysinfo, timer
 from modules.call_queue import wrap_gradio_call
 from modules.shared import opts
 from modules.ui_components import FormRow
@@ -177,8 +177,8 @@ class UiSettings:
                     download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
                     reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary', elem_id="settings_reload_script_bodies")
                     with gr.Row():
-                        unload_sd_model = gr.Button(value='Unload SD checkpoint to free VRAM', elem_id="sett_unload_sd_model")
-                        reload_sd_model = gr.Button(value='Reload the last SD checkpoint back into VRAM', elem_id="sett_reload_sd_model")
+                        unload_sd_model = gr.Button(value='Unload SD checkpoint to RAM', elem_id="sett_unload_sd_model")
+                        reload_sd_model = gr.Button(value='Load SD checkpoint to VRAM from RAM', elem_id="sett_reload_sd_model")
                     with gr.Row():
                         calculate_all_checkpoint_hash = gr.Button(value='Calculate hash for all checkpoint', elem_id="calculate_all_checkpoint_hash")
                         calculate_all_checkpoint_hash_threads = gr.Number(value=1, label="Number of parallel calculations", elem_id="calculate_all_checkpoint_hash_threads", precision=0, minimum=1)
@@ -194,16 +194,26 @@ class UiSettings:
 
                 self.text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
 
+            def call_func_and_return_text(func, text):
+                def handler():
+                    t = timer.Timer()
+                    func()
+                    t.record(text)
+
+                    return f'{text} in {t.total:.1f}s'
+
+                return handler
+
             unload_sd_model.click(
-                fn=sd_models.unload_model_weights,
+                fn=call_func_and_return_text(sd_models.unload_model_weights, 'Unloaded the checkpoint'),
                 inputs=[],
-                outputs=[]
+                outputs=[self.result]
             )
 
             reload_sd_model.click(
-                fn=sd_models.reload_model_weights,
+                fn=call_func_and_return_text(lambda: sd_models.send_model_to_device(shared.sd_model), 'Loaded the checkpoint'),
                 inputs=[],
-                outputs=[]
+                outputs=[self.result]
             )
 
             request_notifications.click(

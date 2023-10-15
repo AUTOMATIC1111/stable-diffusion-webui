@@ -1,7 +1,6 @@
 import collections
 import os.path
 import sys
-import gc
 import threading
 
 import torch
@@ -798,17 +797,7 @@ def reload_model_weights(sd_model=None, info=None):
 
 
 def unload_model_weights(sd_model=None, info=None):
-    timer = Timer()
-
-    if model_data.sd_model:
-        model_data.sd_model.to(devices.cpu)
-        sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
-        model_data.sd_model = None
-        sd_model = None
-        gc.collect()
-        devices.torch_gc()
-
-    print(f"Unloaded weights {timer.summary()}.")
+    send_model_to_cpu(sd_model or shared.sd_model)
 
     return sd_model
 
