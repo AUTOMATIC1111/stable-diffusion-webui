@@ -86,6 +86,8 @@ function keyupEditAttention(event) {
                 weight = (1 / 1.1) ** numParen;
             }
 
+            weight = Math.round(weight / opts.keyedit_precision_attention) * opts.keyedit_precision_attention;
+
             text = text.slice(0, selectionStart - numParen) + "(" + text.slice(selectionStart, selectionEnd) + ":" + weight + ")" + text.slice(selectionEnd + numParen);
             selectionStart -= numParen - 1;
             selectionEnd -= numParen - 1;
