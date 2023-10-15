@@ -123,23 +123,25 @@ document.addEventListener("DOMContentLoaded", function() {
 /**
  * Add a Ctrl (Alt) + Enter as a shortcut to start / restart a generation
  */
-document.addEventListener('keydown', (e) => {
-    const isEnter = e.key === 'Enter' || e.keyCode === 13
-    const isModifierKey = e.metaKey || e.ctrlKey || e.altKey
+document.addEventListener('keydown', function(e) {
+    const isEnter = e.key === 'Enter' || e.keyCode === 13;
+    const isModifierKey = e.metaKey || e.ctrlKey || e.altKey;
 
-    const interruptButton = get_uiCurrentTabContent().querySelector('button[id$=_interrupt]')
-    const generateButton = get_uiCurrentTabContent().querySelector('button[id$=_generate]')
+    const interruptButton = get_uiCurrentTabContent().querySelector('button[id$=_interrupt]');
+    const generateButton = get_uiCurrentTabContent().querySelector('button[id$=_generate]');
 
     if (isEnter && isModifierKey) {
         if (interruptButton.style.display === 'block') {
-            interruptButton.click()
-            setTimeout(() => generateButton.click(), 500)
+            interruptButton.click();
+            setTimeout(function() {
+                generateButton.click();
+            }, 500);
         } else {
-            generateButton.click()
+            generateButton.click();
         }
-        e.preventDefault()
+        e.preventDefault();
     }
-})
+});
 
 /**
  * checks that a UI element is not in another hidden element or tab content
