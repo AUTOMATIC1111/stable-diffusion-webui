@@ -688,7 +688,7 @@ class Script(scripts.Script):
         grid_infotext = [None] * (1 + len(zs))
 
         def cell(x, y, z, ix, iy, iz):
-            if shared.state.interrupted:
+            if shared.state.interrupted or state.interrupted_next:
                 return Processed(p, [], p.seed, "")
 
             pc = copy(p)
