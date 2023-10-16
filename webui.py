@@ -25,7 +25,7 @@ def create_api(app):
 
 
 def ray_api():
-    from modules.api. ray import ray_only
+    from modules.api.ray import ray_only
 
     from modules.shared_cmd_options import cmd_opts
 
