@@ -77,12 +77,12 @@ class State:
         log.info("Received skip request")
 
     def interrupt(self):
-        if shared.opts.interrupt_after_current and self.job_count > 1:
-            self.interrupted_next = True
-            log.info("Received interrupt request, interrupt after current job")
-        else:
-            self.interrupted = True
-            log.info("Received interrupt request")
+        self.interrupted = True
+        log.info("Received interrupt request")
+
+    def interrupt_next(self):
+        self.interrupted_next = True
+        log.info("Received interrupt request, interrupt after current job")
 
     def nextjob(self):
         if shared.opts.live_previews_enable and shared.opts.show_progress_every_n_steps == -1:
