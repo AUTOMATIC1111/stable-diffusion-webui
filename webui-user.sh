@@ -53,3 +53,4 @@ export RAY_MAX_REPLICAS=2
 export RAY_PORT=7575
 export RAY_IP="0.0.0.0"
 #export RAY_HEAD_ADDRESS='ray://ray-head:10001'
+#export RAY_DOCKER="True"
