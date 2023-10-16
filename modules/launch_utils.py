@@ -434,8 +434,7 @@ def start():
     if '--nowebui' in sys.argv:
         webui.api_only()
     elif '--ray' in sys.argv:
-        from modules.api.ray import ray_only
-        ray_only()
+        webui.ray_api()
     else:
         webui.webui()
 
