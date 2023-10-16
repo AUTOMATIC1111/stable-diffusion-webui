@@ -1223,7 +1223,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 image = images.resize_image(3, image, self.width, self.height)
             if shared.backend == shared.Backend.DIFFUSERS:
                 unprocessed.append(image)
-            self.init_images = [image] # TODO assign early for diffusers
+            self.init_images = [image] # assign early for diffusers
             if image_mask is not None:
                 if self.inpainting_fill != 1:
                     image = modules.masking.fill(image, latent_mask)

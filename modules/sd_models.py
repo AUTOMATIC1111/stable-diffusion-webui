@@ -639,7 +639,7 @@ def detect_pipeline(f: str, op: str = 'model'):
             shared.log.info(f'Diffusers: {op}="{guess}" class={pipeline.__name__} file="{f}" size={size}MB')
         except Exception as e:
             shared.log.error(f'Error loading diffusers pipeline: model={f} {e}')
-            
+
     if pipeline is None:
         shared.log.warning(f'Autodetect: pipeline not recognized: {guess}: {op}={f} size={size}')
         pipeline = diffusers.StableDiffusionPipeline
@@ -774,7 +774,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         "requires_safety_checker": False,
         "load_safety_checker": False,
         "load_connected_pipeline": True,
-        # "use_safetensors": True,  # TODO(PVP) - we can't enable this for all checkpoints just yet
+        # todo use_safetensors cant enable for all checkpoints just yet
     }
     if shared.opts.diffusers_model_load_variant == 'default':
         if devices.dtype == torch.float16:

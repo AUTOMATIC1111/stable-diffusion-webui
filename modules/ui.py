@@ -327,7 +327,7 @@ def create_sampler_and_steps_selection(choices, tabname):
             sampler_options = gr.CheckboxGroup(label='Sampler options', choices=choices, value=values, type='value')
         with FormRow(elem_classes=['flex-break']):
             opts.data['schedulers_sigma'] = opts.data.get('schedulers_sigma', 'default')
-            sampler_algo = gr.Radio(label='Sigma algorithm', choices=['default', 'karras', 'exponential', 'polyexponential', 'vp'], value=opts.data['schedulers_sigma'], type='value')
+            sampler_algo = gr.Radio(label='Sigma algorithm', choices=['default', 'karras', 'exponential', 'polyexponential'], value=opts.data['schedulers_sigma'], type='value')
         sampler_options.change(fn=set_sampler_original_options, inputs=[sampler_options, sampler_algo], outputs=[])
         sampler_algo.change(fn=set_sampler_original_options, inputs=[sampler_options, sampler_algo], outputs=[])
     else:
@@ -850,7 +850,8 @@ def create_ui(startup_timer = None):
                 (diffusers_guidance_rescale, "CFG rescale"),
                 (tiling, "Tiling"),
                 (mask_blur, "Mask blur"),
-                (scale_by, "UNKNOWN"), # TODO scale_by
+                # TODO scale_by add to paste fields
+                (scale_by, "UNKNOWN"),
                 # from txt2img
                 (hr_force, "Hires force"),
                 (hr_scale, "Hires upscale"),

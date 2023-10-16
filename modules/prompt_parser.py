@@ -122,7 +122,7 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
                 before, after, _, when = args
                 yield before or () if step <= when else after
             def alternate(self, args):
-                yield next(args[(step - 1)%len(args)])
+                yield next(args[(step - 1)%len(args)]) # pylint: disable=stop-iteration-return
             def start(self, args):
                 def flatten(x):
                     if type(x) == str:

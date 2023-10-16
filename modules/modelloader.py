@@ -228,7 +228,8 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         shared.log.error(f"Diffusers no pipeline folder: {hub_id}")
         return None
     try:
-        model_info_dict = hf.model_info(hub_id).cardData if pipeline_dir is not None else None # pylint: disable=no-member # TODO Diffusers is this real error?
+        # TODO diffusers is this real error?
+        model_info_dict = hf.model_info(hub_id).cardData if pipeline_dir is not None else None # pylint: disable=no-member
     except Exception:
         model_info_dict = None
     if model_info_dict is not None and "prior" in model_info_dict: # some checkpoints need to be downloaded as "hidden" as they just serve as pre- or post-pipelines of other pipelines

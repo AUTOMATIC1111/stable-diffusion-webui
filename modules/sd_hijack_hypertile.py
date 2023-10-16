@@ -73,7 +73,7 @@ def split_attention(layer: nn.Module, tile_size: int=256, min_tile_size: int=256
                 out = forward(x, *args[1:], **kwargs)
                 return out
             if x.ndim == 4: # VAE
-                # TODO: VAE breaks for diffusers when using non-standard sizes
+                # TODO hyperlink vae breaks for diffusers when using non-standard sizes
                 if nh * nw > 1:
                     x = rearrange(x, "b c (nh h) (nw w) -> (b nh nw) c h w", nh=nh, nw=nw)
                 out = forward(x, *args[1:], **kwargs)

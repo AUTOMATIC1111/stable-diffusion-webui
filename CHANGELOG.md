@@ -1,8 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-14
-
-- Final strech of the DEV branch before merge to master: requires pending `diffusers==0.22.0`
+## Update for 2023-10-16
 
 This is a major release, with many changes and new functionality...  
 
@@ -151,9 +149,10 @@ or even free speedups and quality improvements (regardless of which workflows yo
     - updated installer to support detect `ROCm` *5.4/5.5/5.6/5.7*  
     - support for `torch-rocm-5.7`
   - **xFormers**:
-    - default updated to *0.0.22*  
-    - note that latest xformers are still not compatible with standard torch 2.1.0 with cuda 12.1  
-      either downgrade torch to 2.0.1 with cuda 11.8 or build xformers manually  
+    - default updated to *0.0.23*  
+    - note that latest xformers are still not compatible with cuda 12.1  
+      recommended to use torch 2.1.0 with cuda 11.8  
+    - added cmd param `--use-xformers` to force usage of exformers  
   - **GC**:  
     - custom garbage collect threshold to reduce vram memory usage, thanks @Disty0  
       see *settings -> compute -> gc*  
@@ -166,16 +165,17 @@ or even free speedups and quality improvements (regardless of which workflows yo
     - [Free-U](https://github.com/ChenyangSi/FreeU): new!  
       available for *diffusers* and *original* backends  
       improve generations quality at no cost (other than finding params that work for you)  
-      thanks @ljleb
+      *note: temporarily disabled for diffusers pending release of diffusers==0.22*  
+      thanks @ljleb  
     - [Token Merging](https://github.com/dbolya/tomesd): not new, but updated  
       available for *diffusers* and *original* backends  
       speed-up your generations by merging redundant tokens  
       speed up will depend on how aggressive you want to be with token merging  
     - **Batch mode**  
       new option *settings -> inference -> batch mode*  
-      when using img2img process batch, process multiple images in batch in parallel  
+      when using img2img process batch, optionally process multiple images in batch in parallel  
       thanks @Symbiomatrix
-- **NSFW**
+- **NSFW Detection/Censor**  
   - install extension: [NudeNet](https://github.com/vladmandic/sd-extension-nudenet)  
     body part detection, image metadata, advanced censoring, etc...  
     works for *text*, *image* and *process* workflows  
