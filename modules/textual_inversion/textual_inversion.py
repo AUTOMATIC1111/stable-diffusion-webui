@@ -150,9 +150,17 @@ class EmbeddingDatabase:
         self.word_embeddings[name] = embedding
         return embedding
 
+    # def get_expected_shape(self):
+    #     vec = shared.sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
+    #     return vec.shape[1]
+
     def get_expected_shape(self):
-        vec = shared.sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
-        return vec.shape[1]
+        if shared.sd_model is None or not hasattr(shared.sd_model, 'cond_stage_model'):
+            # Handle the error appropriately, e.g., by raising an exception or returning a default value
+            raise ValueError("shared.sd_model is not initialized or does not have a 'cond_stage_model' attribute")
+        else:
+            vec = shared.sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
+            return vec.shape[1]
 
     def load_from_file(self, path, filename):
         name, ext = os.path.splitext(filename)
