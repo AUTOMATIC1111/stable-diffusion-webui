@@ -637,6 +637,13 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     model_data.set_sd_model(sd_model)
     model_data.was_loaded_at_least_once = True
 
+    # Check if shared.sd_model is initialized and has 'cond_stage_model' attribute
+    if shared.sd_model is None or not hasattr(shared.sd_model, 'cond_stage_model'):
+        # Initialize shared.sd_model or add 'cond_stage_model' attribute
+        # The following is just a placeholder, replace it with actual initialization code
+        shared.sd_model = instantiate_from_config(sd_config.model)
+        shared.sd_model.cond_stage_model = instantiate_from_config(sd_config.cond_stage_model)
+
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)  # Reload embeddings after model load as they may or may not fit the model
 
     timer.record("load textual inversion embeddings")
@@ -653,7 +660,6 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     print(f"Model loaded in {timer.summary()}.")
 
     return sd_model
-
 
 def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
     """
