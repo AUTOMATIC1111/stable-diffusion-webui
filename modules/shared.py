@@ -547,17 +547,17 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
 }))
 
 options_templates.update(options_section(('saving-paths', "Image Naming & Paths"), {
-    "saving_sep_images": OptionInfo("<h2>Images</h2>", "", gr.HTML),
+    "saving_sep_images": OptionInfo("<h2>Save options</h2>", "", gr.HTML),
     "save_images_add_number": OptionInfo(True, "Add number to filename when saving", component_args=hide_dirs),
-    "use_original_name_batch": OptionInfo(True, "Use original name for output filename during batch process"),
-    "use_upscaler_name_as_suffix": OptionInfo(True, "Use upscaler name as filename suffix in the extras tab", gr.Checkbox, {"visible": False}),
+    "use_original_name_batch": OptionInfo(True, "Use original name during batch process"),
+    "use_upscaler_name_as_suffix": OptionInfo(True, "Use upscaler as suffix", gr.Checkbox, {"visible": False}),
     "samples_filename_pattern": OptionInfo("[seq]-[model_name]-[prompt_words]", "Images filename pattern", component_args=hide_dirs),
+    "directories_max_prompt_words": OptionInfo(8, "Max words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 99, "step": 1, **hide_dirs}),
+    "use_save_to_dirs_for_ui": OptionInfo(False, "Save images to a subdirectory when using Save button", gr.Checkbox, {"visible": False}),
+    "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
+    "directories_filename_pattern": OptionInfo("[date]", "Directory name pattern", component_args=hide_dirs),
 
     "outdir_sep_dirs": OptionInfo("<h2>Directories</h2>", "", gr.HTML),
-    "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
-    "use_save_to_dirs_for_ui": OptionInfo(False, "Save images to a subdirectory when using Save button", gr.Checkbox, {"visible": False}),
-    "directories_filename_pattern": OptionInfo("[date]", "Directory name pattern", component_args=hide_dirs),
-    "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 99, "step": 1, **hide_dirs}),
     "outdir_samples": OptionInfo("", "Output directory for images", component_args=hide_dirs, folder=True),
     "outdir_txt2img_samples": OptionInfo("outputs/text", 'Output directory for txt2img images', component_args=hide_dirs, folder=True),
     "outdir_img2img_samples": OptionInfo("outputs/image", 'Output directory for img2img images', component_args=hide_dirs, folder=True),
