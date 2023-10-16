@@ -45,6 +45,11 @@ or even free speedups and quality improvements (regardless of which workflows yo
       for example: *"Extra: sampler: Euler a, width: 480, height: 640, steps: 30, cfg scale: 10, clip skip: 2"*
   - **VAE**  
     - VAEs are now also listed as part of extra networks  
+    - Image preview methods have been redesigned: simple, approximate, taesd, full  
+      please set desired preview method in settings  
+    - both original and diffusers backend now support "full quality" setting  
+      if you desired model or platform does not support FP16 and/or you have a low-end hardware and cannot use FP32  
+      you can disable "full quality" in advanced params and it will likely reduce decode errors (infamous black images)  
   - **LoRA**  
     - LoRAs are now automatically filtered based on compatibility with currently loaded model  
       note that if lora type cannot be auto-determined, it will be left in the list  
@@ -152,6 +157,8 @@ or even free speedups and quality improvements (regardless of which workflows yo
     - default updated to *0.0.23*  
     - note that latest xformers are still not compatible with cuda 12.1  
       recommended to use torch 2.1.0 with cuda 11.8  
+      if you attempt to use xformers with cuda 12.1, it will force a full xformers rebuild on install  
+      which can take a very long time and may/may-not work  
     - added cmd param `--use-xformers` to force usage of exformers  
   - **GC**:  
     - custom garbage collect threshold to reduce vram memory usage, thanks @Disty0  

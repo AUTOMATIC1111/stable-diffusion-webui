@@ -62,6 +62,7 @@ def decode(latents):
     image = vae.decoder(enc).clamp(0, 1).detach()
     return image[0]
 
+
 def encode(image):
     from modules import shared
     model_class = shared.sd_model_type
