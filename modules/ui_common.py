@@ -115,11 +115,11 @@ def save_files(js_data, images, html_info, index):
             filenames.append(os.path.basename(fullfn))
             fullfns.append(fullfn)
             destination = shared.opts.outdir_save
-            if shared.opts.use_save_to_dirs_for_ui:
-                namegen = modules.images.FilenameGenerator(p, seed=p.all_seeds[i], prompt=p.all_prompts[i], image=None)  # pylint: disable=no-member
-                dirname = namegen.apply(shared.opts.directories_filename_pattern or "[prompt_words]").lstrip(' ').rstrip('\\ /')
-                destination = os.path.join(destination, dirname)
-                os.makedirs(destination, exist_ok = True)
+            namegen = modules.images.FilenameGenerator(p, seed=p.all_seeds[i], prompt=p.all_prompts[i], image=None)  # pylint: disable=no-member
+            dirname = namegen.apply(shared.opts.directories_filename_pattern or "[prompt_words]").lstrip(' ').rstrip('\\ /')
+            destination = os.path.join(destination, dirname)
+            destination = namegen.sanitize(destination)
+            os.makedirs(destination, exist_ok = True)
             shutil.copy(fullfn, destination)
             shared.log.info(f'Copying image: file="{fullfn}" folder="{destination}"')
             tgt_filename = os.path.join(destination, os.path.basename(fullfn))
@@ -127,7 +127,7 @@ def save_files(js_data, images, html_info, index):
         else:
             image = image_from_url_text(filedata)
             info = p.infotexts[i + 1] if len(p.infotexts) > len(p.all_seeds) else p.infotexts[i] # infotexts may be offset by 1 because the first image is the grid
-            fullfn, txt_fullfn = modules.images.save_image(image, shared.opts.outdir_save, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], info=info, extension=shared.opts.samples_format, grid=is_grid, p=p, save_to_dirs=shared.opts.use_save_to_dirs_for_ui)
+            fullfn, txt_fullfn = modules.images.save_image(image, shared.opts.outdir_save, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], info=info, extension=shared.opts.samples_format, grid=is_grid, p=p)
             if fullfn is None:
                 continue
             filename = os.path.relpath(fullfn, shared.opts.outdir_save)
@@ -148,38 +148,44 @@ def save_files(js_data, images, html_info, index):
     return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0] if len(filenames) > 0 else 'none'}")
 
 
-def create_output_panel(tabname, outdir):
+def open_folder(result_gallery, gallery_index = 0):
+    try:
+        folder = os.path.dirname(result_gallery[gallery_index]['name'])
+    except Exception:
+        folder = shared.opts.outdir_samples
+    if not os.path.exists(folder):
+        shared.log.warning(f'Folder open: folder={folder} does not exist')
+        return
+    elif not os.path.isdir(folder):
+        shared.log.warning(f"Folder open: folder={folder} not a folder")
+        return
+
+    if not shared.cmd_opts.hide_ui_dir_config:
+        path = os.path.normpath(folder)
+        if platform.system() == "Windows":
+            os.startfile(path) # pylint: disable=no-member
+        elif platform.system() == "Darwin":
+            subprocess.Popen(["open", path]) # pylint: disable=consider-using-with
+        elif "microsoft-standard-WSL2" in platform.uname().release:
+            subprocess.Popen(["wsl-open", path]) # pylint: disable=consider-using-with
+        else:
+            subprocess.Popen(["xdg-open", path]) # pylint: disable=consider-using-with
+
+
+def create_output_panel(tabname):
     import modules.generation_parameters_copypaste as parameters_copypaste
-
-    def open_folder(f):
-        if not os.path.exists(f):
-            shared.log.warning(f'Folder "{f}" does not exist. After you create an image, the folder will be created.')
-            return
-        elif not os.path.isdir(f):
-            shared.log.warning(f"An open_folder request was made with an argument that is not a folder: {f}")
-            return
-
-        if not shared.cmd_opts.hide_ui_dir_config:
-            path = os.path.normpath(f)
-            if platform.system() == "Windows":
-                os.startfile(path) # pylint: disable=no-member
-            elif platform.system() == "Darwin":
-                subprocess.Popen(["open", path]) # pylint: disable=consider-using-with
-            elif "microsoft-standard-WSL2" in platform.uname().release:
-                subprocess.Popen(["wsl-open", path]) # pylint: disable=consider-using-with
-            else:
-                subprocess.Popen(["xdg-open", path]) # pylint: disable=consider-using-with
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
             # columns are for <576px, <768px, <992px, <1200px, <1400px, >1400px
-            result_gallery = gr.Gallery(value=[], label='Output', show_label=False, show_download_button=True, elem_id=f"{tabname}_gallery", container=False, preview=True, columns=[1,2,3,4,5,6], object_fit='scale-down')
+            result_gallery = gr.Gallery(value=[], label='Output', show_label=False, show_download_button=True, allow_preview=True, elem_id=f"{tabname}_gallery", container=False, preview=True, columns=5, object_fit='scale-down')
 
         with gr.Column(elem_id=f"{tabname}_footer", elem_classes="gallery_footer"):
+            dummy_component = gr.Label(visible=False)
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
                 if not shared.cmd_opts.listen:
                     open_folder_button = gr.Button('Show', visible=not shared.cmd_opts.hide_ui_dir_config, elem_id=f'open_folder_{tabname}')
-                    open_folder_button.click(fn=lambda: open_folder(shared.opts.outdir_samples or outdir), inputs=[], outputs=[])
+                    open_folder_button.click(open_folder, _js="(gallery, dummy) => [gallery, selected_gallery_index()]", inputs=[result_gallery, dummy_component], outputs=[])
                 else:
                     clip_files = gr.Button('Copy', elem_id=f'open_folder_{tabname}')
                     clip_files.click(fn=None, _js='clip_gallery_urls', inputs=[result_gallery], outputs=[])

@@ -288,7 +288,7 @@ def list_hypernetworks(path):
             fn = os.path.join(folder, filename)
             if os.path.isfile(fn) and fn.lower().endswith(".pt"):
                 name = os.path.splitext(os.path.basename(fn))[0]
-                res[name] = filename
+                res[name] = fn
             elif os.path.isdir(fn) and not fn.startswith('.'):
                 list_folder(fn)
 

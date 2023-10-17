@@ -9,10 +9,10 @@ class ScriptPostprocessingForMainUI(scripts.Script):
     def title(self):
         return self.script.name
 
-    def show(self, is_img2img):
+    def show(self, is_img2img): # pylint: disable=unused-argument
         return scripts.AlwaysVisible
 
-    def ui(self, is_img2img):
+    def ui(self, is_img2img): # pylint: disable=unused-argument
         self.postprocessing_controls = self.script.ui()
         return self.postprocessing_controls.values()
 

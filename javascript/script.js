@@ -79,8 +79,10 @@ document.addEventListener('DOMContentLoaded', () => {
       executedOnLoaded = true;
       executeCallbacks(uiLoadedCallbacks);
     }
-    executeCallbacks(uiUpdateCallbacks, m);
-    scheduleAfterUiUpdateCallbacks();
+    if (executedOnLoaded) {
+      executeCallbacks(uiUpdateCallbacks, m);
+      scheduleAfterUiUpdateCallbacks();
+    }
     const newTab = getUICurrentTab();
     if (newTab && (newTab !== uiCurrentTab)) {
       uiCurrentTab = newTab;

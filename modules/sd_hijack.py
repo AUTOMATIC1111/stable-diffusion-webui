@@ -1,4 +1,4 @@
-from types import MethodType
+from types import MethodType, SimpleNamespace
 import torch
 from torch.nn.functional import silu
 import ldm.modules.attention
@@ -28,6 +28,7 @@ ldm.modules.attention.BasicTransformerBlock.ATTENTION_MODES["softmax-xformers"] 
 ldm.modules.attention.print = lambda *args: None
 ldm.modules.diffusionmodules.model.print = lambda *args: None
 
+current_optimizer = SimpleNamespace(**{ "name": "none" })
 
 def apply_optimizations():
     undo_optimizations()
@@ -72,6 +73,7 @@ def apply_optimizations():
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.cross_attention_attnblock_forward
         optimization_method = 'doggettx'
+    current_optimizer.name = optimization_method
     return optimization_method
 
 

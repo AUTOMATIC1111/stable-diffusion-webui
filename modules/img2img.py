@@ -1,4 +1,5 @@
 import os
+import itertools # SBM Batch frames
 import numpy as np
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops, UnidentifiedImageError
 import modules.scripts
@@ -15,7 +16,7 @@ def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args)
         image_files = [f.name for f in input_files]
     else:
         if not os.path.isdir(input_dir):
-            shared.log.error(f"Input directory not found: {input_dir}")
+            shared.log.error(f"Process batch: directory not found: {input_dir}")
             return
         image_files = shared.listfiles(input_dir)
     is_inpaint_batch = False
@@ -23,46 +24,69 @@ def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args)
         inpaint_masks = shared.listfiles(inpaint_mask_dir)
         is_inpaint_batch = len(inpaint_masks) > 0
     if is_inpaint_batch:
-        shared.log.info(f"\nInpaint batch is enabled. {len(inpaint_masks)} masks found.")
-    shared.log.info(f"Will process {len(image_files)} images, creating {p.n_iter * p.batch_size} new images for each.")
+        shared.log.info(f"Process batch: inpaint batch masks={len(inpaint_masks)}")
     save_normally = output_dir == ''
     p.do_not_save_grid = True
     p.do_not_save_samples = not save_normally
     shared.state.job_count = len(image_files) * p.n_iter
-    for i, image_file in enumerate(image_files):
-        shared.state.job = f"{i+1} out of {len(image_files)}"
+    if shared.opts.batch_frame_mode: # SBM Frame mode is on, process each image in batch with same seed
+        window_size = p.batch_size
+        btcrept = 1
+        p.seed = [p.seed] * window_size # SBM MONKEYPATCH: Need to change processing to support a fixed seed value.
+        p.subseed = [p.subseed] * window_size # SBM MONKEYPATCH
+        shared.log.info(f"Process batch: inputs={len(image_files)} parallel={window_size} outputs={p.n_iter} per input ")
+    else: # SBM Frame mode is off, standard operation of repeating same images with sequential seed.
+        window_size = 1
+        btcrept = p.batch_size
+        shared.log.info(f"Process batch: inputs={len(image_files)} outputs={p.n_iter * p.batch_size} per input")
+    for i in range(0, len(image_files), window_size):
+        shared.state.job = f"{i+1} to {min(i+window_size, len(image_files))} out of {len(image_files)}"
         if shared.state.skipped:
             shared.state.skipped = False
         if shared.state.interrupted:
             break
-        try:
-            img = Image.open(image_file)
-        except UnidentifiedImageError as e:
-            shared.log.error(f"Image error: {e}")
-            continue
-        img = ImageOps.exif_transpose(img)
-        if p.scale_by != 1:
-            p.width = int(img.width * p.scale_by)
-            p.height = int(img.height * p.scale_by)
-        p.init_images = [img] * p.batch_size
+        batch_image_files = image_files[i:i+window_size]
+        batch_images = []
+        for image_file in batch_image_files:
+            try:
+                img = Image.open(image_file)
+                if p.scale_by != 1:
+                    p.width = int(img.width * p.scale_by)
+                    p.height = int(img.height * p.scale_by)
+            except UnidentifiedImageError as e:
+                shared.log.error(f"Image error: {e}")
+                continue
+            img = ImageOps.exif_transpose(img)
+            batch_images.append(img)
+        batch_images = batch_images * btcrept # Standard mode sends the same image per batchsize.
+        p.init_images = batch_images
 
         if is_inpaint_batch:
             # try to find corresponding mask for an image using simple filename matching
-            mask_image_path = os.path.join(inpaint_mask_dir, os.path.basename(image_file))
-            # if not found use first one ("same mask for all images" use-case)
-            if mask_image_path not in inpaint_masks:
-                mask_image_path = inpaint_masks[0]
-            mask_image = Image.open(mask_image_path)
-            p.image_mask = mask_image
+            batch_mask_images = []
+            for image_file in batch_image_files:
+                mask_image_path = os.path.join(inpaint_mask_dir, os.path.basename(image_file))
+                # if not found use first one ("same mask for all images" use-case)
+                if mask_image_path not in inpaint_masks:
+                    mask_image_path = inpaint_masks[0]
+                mask_image = Image.open(mask_image_path)
+                batch_mask_images.append(mask_image)
+            batch_mask_images = batch_mask_images * btcrept
+            p.image_mask = batch_mask_images
+
+        batch_image_files = batch_image_files * btcrept # List used for naming later.
 
         proc = modules.scripts.scripts_img2img.run(p, *args)
         if proc is None:
             proc = processing.process_images(p)
-        for n, image in enumerate(proc.images):
+        for n, (image, image_file) in enumerate(itertools.zip_longest(proc.images,batch_image_files)):
             basename, ext = os.path.splitext(os.path.basename(image_file))
             ext = ext[1:]
             if len(proc.images) > 1:
-                basename = f'{basename}-{n}'
+                if shared.opts.batch_frame_mode: # SBM Frames are numbered globally.
+                    basename = f'{basename}-{n + i}'
+                else: # Images are numbered per rept.
+                    basename = f'{basename}-{n}'
             if not shared.opts.use_original_name_batch:
                 basename = ''
                 ext = shared.opts.samples_format
@@ -74,7 +98,7 @@ def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args)
             for k, v in items.items():
                 image.info[k] = v
             images.save_image(image, path=output_dir, basename=basename, seed=None, prompt=None, extension=ext, info=geninfo, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=image.info, forced_filename=None)
-        shared.log.debug(f'Processed: images={len(image_files)} memory={memory_stats()} op=batch')
+        shared.log.debug(f'Processed: images={len(batch_image_files)} memory={memory_stats()} batch')
 
 
 def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_index: int, latent_index: int, mask_blur: int, mask_alpha: float, inpainting_fill: int, full_quality: bool, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, diffusers_guidance_rescale: float, refiner_steps: int, refiner_start: float, clip_skip: int, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, selected_scale_tab: int, height: int, width: int, scale_by: float, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_files: list, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, override_settings_texts, *args): # pylint: disable=unused-argument
@@ -97,17 +121,17 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
 
     if mode == 0:  # img2img
         if init_img is None:
-            return
+            return [], '', '', 'Error: init image not provided'
         image = init_img.convert("RGB")
         mask = None
     elif mode == 1:  # img2img sketch
         if sketch is None:
-            return
+            return [], '', '', 'Error: sketch image not provided'
         image = sketch.convert("RGB")
         mask = None
     elif mode == 2:  # inpaint
         if init_img_with_mask is None:
-            return
+            return [], '', '', 'Error: init image with mask not provided'
         image = init_img_with_mask["image"]
         mask = init_img_with_mask["mask"]
         alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
@@ -115,7 +139,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         image = image.convert("RGB")
     elif mode == 3:  # inpaint sketch
         if inpaint_color_sketch is None:
-            return
+            return [], '', '', 'Error: color sketch image not provided'
         image = inpaint_color_sketch
         orig = inpaint_color_sketch_orig or inpaint_color_sketch
         pred = np.any(np.array(image) != np.array(orig), axis=-1)
@@ -126,7 +150,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         image = image.convert("RGB")
     elif mode == 4:  # inpaint upload mask
         if init_img_inpaint is None:
-            return
+            return [], '', '', 'Error: inpaint image not provided'
         image = init_img_inpaint
         mask = init_mask_inpaint
     else:

@@ -50,31 +50,30 @@ def create_paths(opts, log=None):
     def create_path(folder):
         if folder is None or folder == '':
             return
-        if not os.path.exists(folder):
-            try:
-                os.makedirs(folder, exist_ok=True)
-                if log is not None:
-                    log.debug(f'Create path: {folder}')
-            except Exception as e:
-                if log is not None:
-                    log.error(f'Failed to create path: {folder} {e}')
+        if os.path.exists(folder):
+            return
+        try:
+            os.makedirs(folder, exist_ok=True)
+            if log is not None:
+                log.debug(f'Create folder={folder}')
+        except Exception as e:
+            if log is not None:
+                log.error(f'Create Failed folder={folder} {e}')
 
     def fix_path(folder):
         tgt = opts.data.get(folder, None) or opts.data_labels[folder].default
         if tgt is None or tgt == '':
             return tgt
+        if os.path.isabs(tgt):
+            return tgt
         if len(data_path) > 0 and tgt.startswith(data_path): # path is already relative to data_path
             return tgt
-        fullpath = os.path.join(data_path, tgt)
-        if len(data_path) > 0 and os.path.isabs(data_path):
-            return fullpath
-        if os.path.isabs(fullpath) and os.path.exists(fullpath):
-            return fullpath
-        try:
-            relpath = os.path.relpath(fullpath, script_path)
-            opts.data[folder] = relpath
-        except Exception:
-            opts.data[folder] = fullpath
+        else:
+            tgt = os.path.join(data_path, tgt)
+        if os.path.isabs(tgt):
+            return tgt
+        tgt = os.path.relpath(tgt, script_path)
+        opts.data[folder] = tgt
         return opts.data[folder]
 
     create_path(data_path)

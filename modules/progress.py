@@ -43,6 +43,7 @@ class ProgressRequest(BaseModel):
 
 
 class InternalProgressResponse(BaseModel):
+    job: str = Field(default=None, title="Job name", description="Internal job name")
     active: bool = Field(title="Whether the task is being worked on right now")
     queued: bool = Field(title="Whether the task is in queue")
     paused: bool = Field(title="Whether the task is paused")
@@ -64,14 +65,12 @@ def progressapi(req: ProgressRequest):
     completed = req.id_task in finished_tasks
     paused = shared.state.paused
     if not active:
-        return InternalProgressResponse(active=active, queued=queued, paused=paused, completed=completed, id_live_preview=-1, textinfo="Queued..." if queued else "Waiting...")
+        return InternalProgressResponse(job=shared.state.job, active=active, queued=queued, paused=paused, completed=completed, id_live_preview=-1, textinfo="Queued..." if queued else "Waiting...")
     progress = 0
-    job_count, job_no = shared.state.job_count, shared.state.job_no
-    sampling_steps, sampling_step = shared.state.sampling_steps, shared.state.sampling_step
-    if job_count > 0:
-        progress += job_no / job_count
-    if sampling_steps > 0 and job_count > 0:
-        progress += 1 / job_count * sampling_step / sampling_steps
+    if shared.state.job_count > 0:
+        progress += shared.state.job_no / shared.state.job_count
+    if shared.state.sampling_steps > 0 and shared.state.job_count > 0:
+        progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
     progress = min(progress, 1)
     elapsed_since_start = time.time() - shared.state.time_start
     predicted_duration = elapsed_since_start / progress if progress > 0 else None
@@ -84,4 +83,4 @@ def progressapi(req: ProgressRequest):
         shared.state.current_image.save(buffered, format='jpeg')
         live_preview = f'data:image/jpeg;base64,{base64.b64encode(buffered.getvalue()).decode("ascii")}'
         id_live_preview = shared.state.id_live_preview
-    return InternalProgressResponse(active=active, queued=queued, paused=paused, completed=completed, progress=progress, eta=eta, live_preview=live_preview, id_live_preview=id_live_preview, textinfo=shared.state.textinfo)
+    return InternalProgressResponse(job=shared.state.job, active=active, queued=queued, paused=paused, completed=completed, progress=progress, eta=eta, live_preview=live_preview, id_live_preview=id_live_preview, textinfo=shared.state.textinfo)

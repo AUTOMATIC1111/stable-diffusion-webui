@@ -1,6 +1,6 @@
 let currentWidth = null;
 let currentHeight = null;
-let arFrameTimeout = setTimeout(() => {}, 0);
+let arFrameTimeout = null;
 
 function dimensionChange(e, is_width, is_height) {
   if (is_width) currentWidth = e.target.value * 1.0;
@@ -42,10 +42,8 @@ function dimensionChange(e, is_width, is_height) {
     arPreviewRect.style.width = `${arRectWidth}px`;
     arPreviewRect.style.height = `${arRectHeight}px`;
 
-    clearTimeout(arFrameTimeout);
-    arFrameTimeout = setTimeout(() => {
-      arPreviewRect.style.display = 'none';
-    }, 2000);
+    if (arFrameTimeout) clearTimeout(arFrameTimeout);
+    arFrameTimeout = setTimeout(() => { arPreviewRect.style.display = 'none'; }, 2000);
     arPreviewRect.style.display = 'block';
   }
 }

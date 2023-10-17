@@ -192,7 +192,7 @@ def image_face_points(im, settings):
     return []
 
 
-def image_corner_points(im, settings):
+def image_corner_points(im, settings): # pylint: disable=unused-argument
     grayscale = im.convert("L")
 
     # naive attempt at preventing focal points from collecting at watermarks near the bottom
@@ -266,7 +266,7 @@ def centroid(pois):
     return PointOfInterest(sum(x)/len(pois), sum(y)/len(pois))
 
 
-def poi_average(pois, settings):
+def poi_average(pois, settings): # pylint: disable=unused-argument
     weight = 0.0
     x = 0.0
     y = 0.0

@@ -118,7 +118,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #txt2img_subseed_strength { margin-top: 0; }
 #pnginfo_html2_info { margin-top: -18px; background-color: var(--input-background-fill); padding: var(--input-padding) }
 .gradio-button.tool { filter: hue-rotate(180deg) saturate(0.5); }
-#txt2img_tools, #img2img_tools { margin-top: -4px; margin-bottom: -4px; }
 #txt2img_styles_row, #img2img_styles_row { margin-top: -6px; z-index: 200; }
 
 /* custom elements overrides */

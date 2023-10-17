@@ -3,7 +3,7 @@
 
 model:
   base_learning_rate: 1.0e-04
-  target: modules.models.diffusion.ddpm_edit.LatentDiffusion
+  target: modules.hijack.ddpm_edit.LatentDiffusion
   params:
     linear_start: 0.00085
     linear_end: 0.0120

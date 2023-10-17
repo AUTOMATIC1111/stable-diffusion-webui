@@ -85,7 +85,7 @@ max-locals=99
 max-parents=99
 max-public-methods=99
 max-returns=99
-max-statements=99
+max-statements=199
 min-public-methods=1
 
 [EXCEPTIONS]
@@ -127,13 +127,16 @@ confidence=HIGH,
 disable=bad-inline-option,
         bare-except,
         broad-exception-caught,
+        chained-comparison,
         consider-iterating-dictionary,
         consider-using-dict-items,
         consider-using-generator,
         consider-using-enumerate,
         consider-using-sys-exit,
         consider-using-from-import,
+        consider-using-get,
         consider-using-in,
+        consider-using-min-builtin,
         dangerous-default-value,
         deprecated-pragma,
         duplicate-code,
@@ -154,6 +157,9 @@ disable=bad-inline-option,
         suppressed-message,
         too-many-nested-blocks,
         too-few-public-methods,
+        too-many-statements,
+        too-many-locals,
+        too-many-instance-attributes,
         unnecessary-dunder-call,
         unnecessary-lambda,
         use-dict-literal,

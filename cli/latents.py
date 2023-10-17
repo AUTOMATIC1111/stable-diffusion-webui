@@ -51,7 +51,7 @@ def get_latents(local_vae, images, weight_dtype):
     img_tensors = img_tensors.to(device, weight_dtype)
     with torch.no_grad():
         latents = local_vae.encode(img_tensors).latent_dist.sample().float().to('cpu').numpy()
-    return latents
+    return latents, [images[0].shape[0], images[0].shape[1]]
 
 
 def get_npz_filename_wo_ext(data_dir, image_key):
@@ -87,11 +87,19 @@ def create_vae_latents(local_params):
     def process_batch(is_last):
         for bucket in bucket_manager.buckets:
             if (is_last and len(bucket) > 0) or len(bucket) >= args.batch:
-                latents = get_latents(vae, [img for _, img in bucket], weight_dtype)
+                latents, original_size = get_latents(vae, [img for _, img in bucket], weight_dtype)
                 assert latents.shape[2] == bucket[0][1].shape[0] // 8 and latents.shape[3] == bucket[0][1].shape[1] // 8, f'latent shape {latents.shape}, {bucket[0][1].shape}'
                 for (image_key, _), latent in zip(bucket, latents):
                     npz_file_name = get_npz_filename_wo_ext(args.input, image_key)
-                    np.savez(npz_file_name, latent)
+                    # np.savez(npz_file_name, latent)
+                    kwargs = {}
+                    np.savez(
+                        npz_file_name,
+                        latents=latent,
+                        original_size=np.array(original_size),
+                        crop_ltrb=np.array([0, 0]),
+                        **kwargs,
+                    )
                 bucket.clear()
     data = [[(None, ip)] for ip in image_paths]
     bucket_counts = {}

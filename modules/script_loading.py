@@ -13,13 +13,16 @@ def load_module(path):
     module_spec = importlib.util.spec_from_file_location(os.path.basename(path), path)
     module = importlib.util.module_from_spec(module_spec)
     try:
-        # stdout = io.StringIO()
-        with contextlib.redirect_stdout(io.StringIO()) as stdout:
+        if '/sd-extension-' in path: # safe extensions without stdout intercept
             module_spec.loader.exec_module(module)
-        setup_logging() # reset since scripts can hijaack logging
-        for line in stdout.getvalue().splitlines():
-            if len(line) > 0:
-                errors.log.info(f"Extension: script='{os.path.relpath(path)}' {line.strip()}")
+        else:
+            # stdout = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                module_spec.loader.exec_module(module)
+            setup_logging() # reset since scripts can hijaack logging
+            for line in stdout.getvalue().splitlines():
+                if len(line) > 0:
+                    errors.log.info(f"Extension: script='{os.path.relpath(path)}' {line.strip()}")
     except Exception as e:
         errors.display(e, f'Module load: {path}')
     return module

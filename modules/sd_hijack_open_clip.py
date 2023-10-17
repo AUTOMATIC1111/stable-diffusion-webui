@@ -22,7 +22,7 @@ class FrozenOpenCLIPEmbedderWithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWit
         z = self.wrapped.encode_with_transformer(tokens)
         return z
 
-    def encode_embedding_init_text(self, init_text, nvpt):
+    def encode_embedding_init_text(self, init_text, nvpt): # pylint: disable=unused-argument
         ids = tokenizer.encode(init_text)
         ids = torch.asarray([ids], device=devices.device, dtype=torch.int)
         embedded = self.wrapped.model.token_embedding.wrapped(ids).squeeze(0)

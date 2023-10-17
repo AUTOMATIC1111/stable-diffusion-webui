@@ -245,10 +245,11 @@ class UpscalerItem(BaseModel):
 
 class SDModelItem(BaseModel):
     title: str = Field(title="Title")
-    model_name: str = Field(title="Model Name")
-    hash: Optional[str] = Field(title="Short hash")
-    sha256: Optional[str] = Field(title="sha256 hash")
+    name: str = Field(title="Model Name")
     filename: str = Field(title="Filename")
+    type: str = Field(title="Model type")
+    sha256: Optional[str] = Field(title="SHA256 hash")
+    hash: Optional[str] = Field(title="Short hash")
     config: Optional[str] = Field(title="Config file")
 
 class HypernetworkItem(BaseModel):

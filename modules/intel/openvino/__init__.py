@@ -70,6 +70,15 @@ def get_device():
     core = Core()
     if os.getenv("OPENVINO_TORCH_BACKEND_DEVICE") is not None:
         device = os.getenv("OPENVINO_TORCH_BACKEND_DEVICE")
+    elif shared.opts.openvino_multi_gpu:
+        device = ""
+        available_devices = core.available_devices
+        available_devices.remove("CPU")
+        if shared.opts.openvino_remove_igpu_from_multi and "GPU.0" in available_devices:
+            available_devices.remove("GPU.0")
+        for gpu in available_devices:
+            device = f"{device},{gpu}"
+        device = f"MULTI:{device[1:]}"
     elif any(openvino_cpu in cpu_module.lower() for cpu_module in shared.cmd_opts.use_cpu for openvino_cpu in ["openvino", "all"]):
         device = "CPU"
     elif shared.cmd_opts.device_id is not None:
@@ -84,8 +93,14 @@ def get_device():
         device = "CPU"
         shared.log.warning("OpenVINO: No compatible GPU detected!")
     os.environ.setdefault('OPENVINO_TORCH_BACKEND_DEVICE', device)
-    shared.log.debug(f"OpenVINO Device: {device}")
     return device
+
+def get_openvino_device():
+    core = Core()
+    try:
+        return core.get_property(get_device(), "FULL_DEVICE_NAME")
+    except Exception:
+        return f"OpenVINO {get_device()}"
 
 def cache_root_path():
     cache_root = "./cache/"
@@ -321,7 +336,7 @@ def partition_graph(gm, use_python_fusion_cache: bool, model_hash_str: str = Non
 def openvino_fx(subgraph, example_inputs):
     executor_parameters = None
     inputs_reversed = False
-    if os.getenv("OPENVINO_TORCH_MODEL_CACHING") != "0":
+    if not shared.opts.openvino_disable_model_caching:
         os.environ.setdefault('OPENVINO_TORCH_MODEL_CACHING', "1")
         # Create a hash to be used for caching
         model_hash_str = sha256(subgraph.code.encode('utf-8')).hexdigest()
@@ -371,7 +386,8 @@ def openvino_fx(subgraph, example_inputs):
                     return res
                 return _call
     else:
-        maybe_fs_cached_name = ""
+        os.environ.setdefault('OPENVINO_TORCH_MODEL_CACHING', "0")
+        maybe_fs_cached_name = None
 
     if inputs_reversed:
         example_inputs.reverse()

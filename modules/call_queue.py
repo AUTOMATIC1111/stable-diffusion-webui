@@ -40,7 +40,6 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
                 res[-1] = f"<div class='error'>{html.escape(str(e))}</div>"
             finally:
                 progress.finish_task(id_task)
-            shared.state.end()
         return res
     return wrap_gradio_call(f, extra_outputs=extra_outputs, add_stats=True, name=name)
 
@@ -82,7 +81,8 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False, name=None):
         vram_html = ''
         if not shared.mem_mon.disabled:
             vram = {k: -(v//-(1024*1024)) for k, v in shared.mem_mon.read().items()}
-            vram_html += f" | <p class='vram'>GPU active {max(vram['active_peak'], vram['reserved_peak'])} MB reserved {vram['reserved']} | used {vram['used']} MB free {vram['free']} MB total {vram['total']} MB | retries {vram['retries']} oom {vram['oom']}</p>"
+            if vram.get('active_peak', 0) > 0:
+                vram_html = f" | <p class='vram'>GPU active {max(vram['active_peak'], vram['reserved_peak'])} MB reserved {vram['reserved']} | used {vram['used']} MB free {vram['free']} MB total {vram['total']} MB | retries {vram['retries']} oom {vram['oom']}</p>"
         res[-1] += f"<div class='performance'><p class='time'>Time: {elapsed_text}</p>{vram_html}</div>"
         return tuple(res)
     return f

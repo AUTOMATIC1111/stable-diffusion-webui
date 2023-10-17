@@ -1,6 +1,7 @@
 import os
 import html
 import csv
+import time
 from collections import namedtuple
 import torch
 from tqdm import tqdm
@@ -29,18 +30,19 @@ def list_textual_inversion_templates():
 
 
 class Embedding:
-    def __init__(self, vec, name, step=None):
+    def __init__(self, vec, name, filename=None, step=None):
         self.vec = vec
         self.name = name
         self.tag = name
         self.step = step
+        self.filename = filename
+        self.basename = os.path.relpath(filename, shared.opts.embeddings_dir) if filename is not None else None
         self.shape = None
         self.vectors = 0
         self.cached_checksum = None
         self.sd_checkpoint = None
         self.sd_checkpoint_name = None
         self.optimizer_state_dict = None
-        self.filename = None
 
     def save(self, filename):
         embedding_data = {
@@ -105,7 +107,12 @@ class EmbeddingDatabase:
 
     def register_embedding(self, embedding, model):
         self.word_embeddings[embedding.name] = embedding
-        ids = model.cond_stage_model.tokenize([embedding.name])[0]
+        if hasattr(model, 'cond_stage_model'):
+            ids = model.cond_stage_model.tokenize([embedding.name])[0]
+        elif hasattr(model, 'tokenizer'):
+            ids = model.tokenizer.convert_tokens_to_ids(embedding.name)
+        if type(ids) != list:
+            ids = [ids]
         first_id = ids[0]
         if first_id not in self.ids_lookup:
             self.ids_lookup[first_id] = []
@@ -122,41 +129,78 @@ class EmbeddingDatabase:
         return vec.shape[1]
 
     def load_diffusers_embedding(self, filename: str, path: str):
+        if shared.sd_model is None:
+            return
         fn, ext = os.path.splitext(filename)
         if ext.lower() != ".pt" and ext.lower() != ".safetensors":
             return
         pipe = shared.sd_model
-        if filename == "":
-            pipe.tokenizer = pipe.tokenizer.__class__.from_pretrained(pipe.tokenizer.name_or_path)
-            pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
-            return
         name = os.path.basename(fn)
-        embedding = Embedding(vec=None, name=name)
-        embedding.filename = path
+        embedding = Embedding(vec=None, name=name, filename=path)
+        if not hasattr(pipe, "tokenizer") or not hasattr(pipe, 'text_encoder'):
+            self.skipped_embeddings[name] = embedding
+            return
         try:
-            if hasattr(pipe,"load_textual_inversion"):
-                pipe.load_textual_inversion(path, cache_dir=shared.opts.diffusers_dir, local_files_only=True)
-            elif "safetensors" in path:
-                embeddings_dict = {}
-                from safetensors.torch import safe_open
-                with safe_open(path, framework="pt") as f:
-                    for k in f.keys():
-                        embeddings_dict[k] = f.get_tensor(k)
-                for i in range(len(embeddings_dict["clip_l"])):
-                    if i == 0:
-                        token = name.lower()
-                    else:
-                        token = f"{name.lower()}_{i}"
-                    pipe.tokenizer.add_tokens(token)
-                    token_id = pipe.tokenizer.convert_tokens_to_ids(token)
-                    pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
-                    pipe.text_encoder_2.resize_token_embeddings(len(pipe.tokenizer))
-                    pipe.text_encoder.get_input_embeddings().weight.data[token_id] = embeddings_dict["clip_l"][i]
-                    pipe.text_encoder_2.get_input_embeddings().weight.data[token_id] = embeddings_dict["clip_g"][i]
+            is_xl = hasattr(pipe, 'text_encoder_2')
+            try:
+                if not is_xl: # only use for sd15/sd21
+                    pipe.load_textual_inversion(path, token=name, cache_dir=shared.opts.diffusers_dir, local_files_only=True)
+                    self.register_embedding(embedding, shared.sd_model)
+            except Exception:
+                pass
+            is_loaded = pipe.tokenizer.convert_tokens_to_ids(name)
+            if type(is_loaded) != list:
+                is_loaded = [is_loaded]
+            is_loaded = is_loaded[0] > 49407
+            if is_loaded:
+                self.register_embedding(embedding, shared.sd_model)
             else:
-                raise NotImplementedError
-            # self.word_embeddings[name] = embedding
-            self.register_embedding(embedding, shared.sd_model)
+                embeddings_dict = {}
+                if ext.lower() in ['.safetensors']:
+                    with safetensors.torch.safe_open(path, framework="pt") as f:
+                        for k in f.keys():
+                            embeddings_dict[k] = f.get_tensor(k)
+                else:
+                    raise NotImplementedError
+                """
+                # alternatively could disable load_textual_inversion and load everything here
+                elif ext.lower() in ['.pt', '.bin']:
+                    data = torch.load(path, map_location="cpu")
+                    embedding.tag = data.get('name', None)
+                    embedding.step = data.get('step', None)
+                    embedding.sd_checkpoint = data.get('sd_checkpoint', None)
+                    embedding.sd_checkpoint_name = data.get('sd_checkpoint_name', None)
+                    param_dict = data.get('string_to_param', None)
+                    embeddings_dict['clip_l'] = []
+                    for tokens in param_dict.values():
+                        for vec in tokens:
+                            embeddings_dict['clip_l'].append(vec)
+                """
+                clip_l = pipe.text_encoder if hasattr(pipe, 'text_encoder') else None
+                clip_g = pipe.text_encoder_2 if hasattr(pipe, 'text_encoder_2') else None
+                is_sd = clip_l is not None and 'clip_l' in embeddings_dict and clip_g is None and 'clip_g' not in embeddings_dict
+                is_xl = clip_l is not None and 'clip_l' in embeddings_dict and clip_g is not None and 'clip_g' in embeddings_dict
+                tokens = []
+                for i in range(len(embeddings_dict["clip_l"])):
+                    if (is_sd or is_xl) and (len(clip_l.get_input_embeddings().weight.data[0]) == len(embeddings_dict["clip_l"][i])):
+                        tokens.append(name if i == 0 else f"{name}_{i}")
+                num_added = pipe.tokenizer.add_tokens(tokens)
+                if num_added > 0:
+                    token_ids = pipe.tokenizer.convert_tokens_to_ids(tokens)
+                    if is_sd: # only used for sd15 if load_textual_inversion failed and format is safetensors
+                        clip_l.resize_token_embeddings(len(pipe.tokenizer))
+                        for i in range(len(token_ids)):
+                            clip_l.get_input_embeddings().weight.data[token_ids[i]] = embeddings_dict["clip_l"][i]
+                    elif is_xl:
+                        pipe.tokenizer_2.add_tokens(tokens)
+                        clip_l.resize_token_embeddings(len(pipe.tokenizer))
+                        clip_g.resize_token_embeddings(len(pipe.tokenizer))
+                        for i in range(len(token_ids)):
+                            clip_l.get_input_embeddings().weight.data[token_ids[i]] = embeddings_dict["clip_l"][i]
+                            clip_g.get_input_embeddings().weight.data[token_ids[i]] = embeddings_dict["clip_g"][i]
+                    self.register_embedding(embedding, shared.sd_model)
+                else:
+                    raise NotImplementedError
         except Exception:
             self.skipped_embeddings[name] = embedding
 
@@ -193,7 +237,7 @@ class EmbeddingDatabase:
         # diffuser concepts
         elif type(data) == dict and type(next(iter(data.values()))) == torch.Tensor:
             if len(data.keys()) != 1:
-                self.skipped_embeddings[name] = Embedding(None, name)
+                self.skipped_embeddings[name] = Embedding(None, name=name, filename=path)
                 return
             emb = next(iter(data.values()))
             if len(emb.shape) == 1:
@@ -203,14 +247,13 @@ class EmbeddingDatabase:
 
         vec = emb.detach().to(devices.device, dtype=torch.float32)
         # name = data.get('name', name)
-        embedding = Embedding(vec, name)
+        embedding = Embedding(vec=vec, name=name, filename=path)
         embedding.tag = data.get('name', None)
         embedding.step = data.get('step', None)
         embedding.sd_checkpoint = data.get('sd_checkpoint', None)
         embedding.sd_checkpoint_name = data.get('sd_checkpoint_name', None)
         embedding.vectors = vec.shape[0]
         embedding.shape = vec.shape[-1]
-        embedding.filename = path
         if self.expected_shape == -1 or self.expected_shape == embedding.shape:
             self.register_embedding(embedding, shared.sd_model)
         else:
@@ -235,6 +278,9 @@ class EmbeddingDatabase:
                 continue
 
     def load_textual_inversion_embeddings(self, force_reload=False):
+        if shared.sd_model is None:
+            return
+        t0 = time.time()
         if not force_reload:
             need_reload = False
             for embdir in self.embedding_dirs.values():
@@ -261,7 +307,9 @@ class EmbeddingDatabase:
         displayed_embeddings = (tuple(self.word_embeddings.keys()), tuple(self.skipped_embeddings.keys()))
         if self.previously_displayed_embeddings != displayed_embeddings:
             self.previously_displayed_embeddings = displayed_embeddings
-            shared.log.info(f"Loaded embeddings: loaded={len(self.word_embeddings)} skipped={len(self.skipped_embeddings)}")
+            t1 = time.time()
+            shared.log.info(f"Loaded embeddings: loaded={len(self.word_embeddings)} skipped={len(self.skipped_embeddings)} time={t1-t0:.2f}s")
+
 
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]
@@ -291,7 +339,7 @@ def create_embedding(name, num_vectors_per_token, overwrite_old, init_text='*'):
     if not overwrite_old and os.path.exists(fn):
         shared.log.warning(f"Embedding already exists: {fn}")
     else:
-        embedding = Embedding(vec, name)
+        embedding = Embedding(vec=vec, name=name, filename=fn)
         embedding.step = 0
         embedding.save(fn)
         shared.log.info(f'Created embedding: {fn} vectors {num_vectors_per_token} init {init_text}')

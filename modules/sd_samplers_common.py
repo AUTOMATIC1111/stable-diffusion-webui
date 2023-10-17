@@ -1,13 +1,21 @@
 from collections import namedtuple
-import numpy as np
 import torch
+import torchvision.transforms as T
 from PIL import Image
-from modules import devices, processing, images, sd_vae_approx, sd_samplers
-import modules.shared as shared
+from modules import devices, processing, images, sd_vae_approx, sd_samplers, shared
 import modules.taesd.sd_vae_taesd as sd_vae_taesd
 
+
 SamplerData = namedtuple('SamplerData', ['name', 'constructor', 'aliases', 'options'])
-approximation_indexes = {"Full VAE": 0, "Approximate NN": 1, "Approximate simple": 2, "TAESD": 3}
+approximation_indexes = { "Simple": 0, "Approximate": 1, "TAESD": 2, "Full VAE": 3 }
+warned = False
+
+
+def warn_once(message):
+    global warned # pylint: disable=global-statement
+    if not warned:
+        shared.log.warning(message)
+        warned = True
 
 
 def setup_img2img_steps(p, steps=None):
@@ -23,28 +31,34 @@ def setup_img2img_steps(p, steps=None):
 
 
 def single_sample_to_image(sample, approximation=None):
+
     if approximation is None:
-        approximation = approximation_indexes.get(shared.opts.show_progress_type, 0)
-    if approximation == 0:
-        x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0] * 0.5 + 0.5
-    elif approximation == 1:
-        x_sample = sd_vae_approx.model()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach() * 0.5 + 0.5
-        if shared.sd_model_type == "sdxl":
-            x_sample = x_sample[[2,1,0],:,:] # BGR to RGB
-    elif approximation == 2:
+        approximation = approximation_indexes.get(shared.opts.show_progress_type, None)
+        if approximation is None:
+            warn_once('Unknown decode type, please reset preview method')
+            approximation = 0
+
+    if approximation == 0: # Simple
         x_sample = sd_vae_approx.cheap_approximation(sample) * 0.5 + 0.5
+    elif approximation == 1: # Approximate
+        x_sample = sd_vae_approx.nn_approximation(sample) * 0.5 + 0.5
         if shared.sd_model_type == "sdxl":
             x_sample = x_sample[[2,1,0],:,:] # BGR to RGB
-    elif approximation == 3:
-        # x_sample = sample * 1.5
-        # x_sample = sd_vae_taesd.model()(x_sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
+    elif approximation == 2: # TAESD
         x_sample = sd_vae_taesd.decode(sample)
+    elif approximation == 3: # Full VAE
+        x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0] * 0.5 + 0.5
     else:
-        shared.log.warning(f"Unknown image decode type: {approximation}")
+        warn_once(f"Unknown latent decode type: {approximation}")
         return Image.new(mode="RGB", size=(512, 512))
-    x_sample = torch.clamp(255 * x_sample, min=0.0, max=255).cpu()
-    x_sample = np.moveaxis(x_sample.numpy(), 0, 2).astype(np.uint8)
-    return Image.fromarray(x_sample)
+
+    try:
+        transform = T.ToPILImage()
+        image = transform(x_sample)
+    except Exception as e:
+        warn_once(f'Transform tensor to image: {e}')
+        image = Image.new(mode="RGB", size=(512, 512))
+    return image
 
 
 def sample_to_image(samples, index=0, approximation=None):
@@ -59,7 +73,7 @@ def images_tensor_to_samples(image, approximation=None, model=None):
     '''image[0, 1] -> latent'''
     if approximation is None:
         approximation = approximation_indexes.get(shared.opts.show_progress_type, 0)
-    if approximation == 3:
+    if approximation == 2:
         image = image.to(devices.device, devices.dtype)
         x_latent = sd_vae_taesd.encode(image)
     else:
@@ -69,10 +83,8 @@ def images_tensor_to_samples(image, approximation=None, model=None):
         image = image.to(shared.device, dtype=devices.dtype_vae)
         image = image * 2 - 1
         if len(image) > 1:
-            x_latent = torch.stack([
-                model.get_first_stage_encoding(model.encode_first_stage(torch.unsqueeze(img, 0)))[0]
-                for img in image
-            ])
+            image_latents = [model.get_first_stage_encoding(model.encode_first_stage(torch.unsqueeze(img, 0)))[0] for img in image]
+            x_latent = torch.stack(image_latents)
         else:
             x_latent = model.get_first_stage_encoding(model.encode_first_stage(image))
     return x_latent
@@ -89,7 +101,9 @@ def store_latent(decoded):
 def is_sampler_using_eta_noise_seed_delta(p):
     """returns whether sampler from config will use eta noise seed delta for image creation"""
     sampler_config = sd_samplers.find_sampler_config(p.sampler_name)
-    eta = p.eta
+    eta = 0
+    if hasattr(p, "eta"):
+        eta = p.eta
     if not hasattr(p.sampler, "eta"):
         return False
     if eta is None and p.sampler is not None:
@@ -98,7 +112,7 @@ def is_sampler_using_eta_noise_seed_delta(p):
         eta = 0 if sampler_config.options.get("default_eta_is_0", False) else 1.0
     if eta == 0:
         return False
-    return sampler_config.options.get("uses_ensd", False)
+    return True
 
 
 class InterruptedException(BaseException):

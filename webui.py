@@ -12,17 +12,15 @@ import modules.loader
 import torch # pylint: disable=wrong-import-order
 from modules import timer, errors, paths # pylint: disable=unused-import
 local_url = None
-from installer import log, git_commit, custom_excepthook
+from installer import log, git_commit
 import ldm.modules.encoders.modules # pylint: disable=W0611,C0411,E0401
 from modules import shared, extensions, extra_networks, ui_tempdir, ui_extra_networks, modelloader # pylint: disable=ungrouped-imports
 from modules.paths import create_paths
 from modules.call_queue import queue_lock, wrap_queued_call, wrap_gradio_gpu_call # pylint: disable=W0611,C0411,C0412
 import modules.devices
+
 import modules.sd_samplers
 import modules.upscaler
-import modules.codeformer_model as codeformer
-import modules.face_restoration
-import modules.gfpgan_model as gfpgan
 import modules.img2img
 import modules.lowvram
 import modules.scripts
@@ -39,7 +37,12 @@ import modules.hypernetworks.hypernetwork
 from modules.middleware import setup_middleware
 
 
-sys.excepthook = custom_excepthook
+try:
+    from installer import custom_excepthook # pylint: disable=ungrouped-imports
+    sys.excepthook = custom_excepthook
+except Exception:
+    pass
+
 state = shared.state
 if not modules.loader.initialized:
     timer.startup.record("libraries")
@@ -80,7 +83,6 @@ def check_rollback_vae():
 
 def initialize():
     log.debug('Initializing')
-
     check_rollback_vae()
 
     modules.sd_samplers.list_samplers()
@@ -96,11 +98,11 @@ def initialize():
     modules.sd_models.setup_model()
     timer.startup.record("models")
 
+    import modules.postprocess.codeformer_model as codeformer
     codeformer.setup_model(opts.codeformer_models_path)
-    timer.startup.record("codeformer")
-
+    import modules.postprocess.gfpgan_model as gfpgan
     gfpgan.setup_model(opts.gfpgan_models_path)
-    timer.startup.record("gfpgan")
+    timer.startup.record("face-restore")
 
     log.debug('Loading extensions')
     t_timer, t_total = modules.scripts.load_scripts()
@@ -176,6 +178,8 @@ def create_api(app):
     log.debug('Creating API')
     from modules.api.api import Api
     api = Api(app, queue_lock)
+    from modules.api.nvml import nvml_api
+    nvml_api(api)
     return api
 
 
@@ -284,7 +288,7 @@ def start_ui():
     create_api(app)
     timer.startup.record("api")
 
-    ui_extra_networks.add_pages_to_demo(app)
+    ui_extra_networks.init_api(app)
 
     modules.script_callbacks.app_started_callback(shared.demo, app)
     timer.startup.record("app-started")
@@ -307,6 +311,7 @@ def webui(restart=False):
     load_model()
     shared.opts.save(shared.config_filename)
     log.info(f"Startup time: {timer.startup.summary()}")
+    timer.startup.reset()
 
     if not restart:
         # override all loggers to use the same handlers as the main logger
