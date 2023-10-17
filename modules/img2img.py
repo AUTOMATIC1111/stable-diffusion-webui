@@ -14,7 +14,7 @@ import modules.shared as shared
 import modules.processing as processing
 from modules.ui import plaintext_to_html
 import modules.scripts
-
+from modules.shared import shared_instance
 
 def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=False, scale_by=1.0, use_png_info=False, png_info_props=None, png_info_dir=None):
     output_dir = output_dir.strip()
@@ -158,7 +158,8 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
 
     p = StableDiffusionProcessingImg2Img(
-        sd_model=shared.sd_model,
+        #sd_model=shared.sd_model,
+        sd_model=shared_instance.sd_model,
         outpath_samples=opts.outdir_samples or opts.outdir_img2img_samples,
         outpath_grids=opts.outdir_grids or opts.outdir_img2img_grids,
         prompt=prompt,

@@ -19,7 +19,7 @@ import modules.sd_samplers
 import modules.sd_models
 import modules.sd_vae
 import re
-
+from modules.shared import shared_instance
 from modules.ui_components import ToolButton
 
 fill_values_symbol = "\U0001f4d2"  # 📒
@@ -121,7 +121,8 @@ def find_vae(name: str):
 
 
 def apply_vae(p, x, xs):
-    modules.sd_vae.reload_vae_weights(shared.sd_model, vae_file=find_vae(x))
+    #modules.sd_vae.reload_vae_weights(shared.sd_model, vae_file=find_vae(x))
+    modules.sd_vae.reload_vae_weights(shared_instance.sd_model, vae_file=find_vae(x))
 
 
 def apply_styles(p: StableDiffusionProcessingTxt2Img, x: str, _):

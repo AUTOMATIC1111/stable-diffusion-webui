@@ -95,7 +95,8 @@ def ui_reorder_categories():
     yield "scripts"
 
 
-class Shared(sys.modules[__name__].__class__):
+#class Shared(sys.modules[__name__].__class__):
+class Shared:
     """
     this class is here to provide sd_model field as a property, so that it can be created and loaded on demand rather than
     at program startup.
@@ -118,6 +119,7 @@ class Shared(sys.modules[__name__].__class__):
     def __reduce__(self):
         # The callable is the class itself
         # The arguments are the current values of the sd_model property
-        return (self.__class__, (self.sd_model,))
+        #return (self.__class__, (self.sd_model,))
+        return (self.__class__, ())
 
-sys.modules['modules.shared'].__class__ = Shared
+#sys.modules['modules.shared'].__class__ = Shared

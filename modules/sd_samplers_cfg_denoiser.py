@@ -6,7 +6,7 @@ import modules.shared as shared
 from modules.script_callbacks import CFGDenoiserParams, cfg_denoiser_callback
 from modules.script_callbacks import CFGDenoisedParams, cfg_denoised_callback
 from modules.script_callbacks import AfterCFGCallbackParams, cfg_after_cfg_callback
-
+from modules.shared import shared_instance
 
 def catenate_conds(conds):
     if not isinstance(conds[0], dict):
@@ -98,7 +98,8 @@ class CFGDenoiser(torch.nn.Module):
 
         # at self.image_cfg_scale == 1.0 produced results for edit model are the same as with normal sampling,
         # so is_edit_model is set to False to support AND composition.
-        is_edit_model = shared.sd_model.cond_stage_key == "edit" and self.image_cfg_scale is not None and self.image_cfg_scale != 1.0
+        #is_edit_model = shared.sd_model.cond_stage_key == "edit" and self.image_cfg_scale is not None and self.image_cfg_scale != 1.0
+        is_edit_model = shared_instance.sd_model.cond_stage_key == "edit" and self.image_cfg_scale is not None and self.image_cfg_scale != 1.0
 
         conds_list, tensor = prompt_parser.reconstruct_multicond_batch(cond, self.step)
         uncond = prompt_parser.reconstruct_cond_batch(uncond, self.step)
@@ -111,7 +112,8 @@ class CFGDenoiser(torch.nn.Module):
         batch_size = len(conds_list)
         repeats = [len(conds_list[i]) for i in range(batch_size)]
 
-        if shared.sd_model.model.conditioning_key == "crossattn-adm":
+        #if shared.sd_model.model.conditioning_key == "crossattn-adm":
+        if shared_instance.sd_model.model.conditioning_key == "crossattn-adm":
             image_uncond = torch.zeros_like(image_cond)
             make_condition_dict = lambda c_crossattn, c_adm: {"c_crossattn": [c_crossattn], "c_adm": c_adm}
         else:
@@ -147,7 +149,8 @@ class CFGDenoiser(torch.nn.Module):
 
         self.padded_cond_uncond = False
         if shared.opts.pad_cond_uncond and tensor.shape[1] != uncond.shape[1]:
-            empty = shared.sd_model.cond_stage_model_empty_prompt
+            #empty = shared.sd_model.cond_stage_model_empty_prompt
+            empty = shared_instance.sd_model.cond_stage_model_empty_prompt
             num_repeats = (tensor.shape[1] - uncond.shape[1]) // empty.shape[1]
 
             if num_repeats < 0:

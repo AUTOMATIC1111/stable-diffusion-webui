@@ -12,7 +12,7 @@ import random
 import tqdm
 from modules import devices, shared
 import re
-
+from modules.shared import shared_instance
 from ldm.modules.distributions.distributions import DiagonalGaussianDistribution
 
 re_numbers_at_start = re.compile(r"^[-\d]+\s*")
@@ -169,7 +169,8 @@ class PersonalizedBase(Dataset):
         if self.tag_drop_out != 0 or self.shuffle_tags:
             entry.cond_text = self.create_text(entry.filename_text)
         if self.latent_sampling_method == "random":
-            entry.latent_sample = shared.sd_model.get_first_stage_encoding(entry.latent_dist).to(devices.cpu)
+            #entry.latent_sample = shared.sd_model.get_first_stage_encoding(entry.latent_dist).to(devices.cpu)
+            entry.latent_sample = shared_instance.sd_model.get_first_stage_encoding(entry.latent_dist).to(devices.cpu)
         return entry
 
 

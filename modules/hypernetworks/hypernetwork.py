@@ -18,7 +18,7 @@ from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_norm
 
 from collections import deque
 from statistics import stdev, mean
-
+from modules.shared import shared_instance
 
 optimizer_dict = {optim_name : cls_obj for optim_name, cls_obj in inspect.getmembers(torch.optim, inspect.isclass) if optim_name != "Optimizer"}
 
@@ -525,7 +525,8 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
 
     pin_memory = shared.opts.pin_memory
 
-    ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=hypernetwork_name, model=shared.sd_model, cond_model=shared.sd_model.cond_stage_model, device=devices.device, template_file=template_file, include_cond=True, batch_size=batch_size, gradient_step=gradient_step, shuffle_tags=shuffle_tags, tag_drop_out=tag_drop_out, latent_sampling_method=latent_sampling_method, varsize=varsize, use_weight=use_weight)
+    #ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=hypernetwork_name, model=shared.sd_model, cond_model=shared.sd_model.cond_stage_model, device=devices.device, template_file=template_file, include_cond=True, batch_size=batch_size, gradient_step=gradient_step, shuffle_tags=shuffle_tags, tag_drop_out=tag_drop_out, latent_sampling_method=latent_sampling_method, varsize=varsize, use_weight=use_weight)
+    ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=hypernetwork_name, model=shared_instance.sd_model, cond_model=shared_instance.sd_model.cond_stage_model, device=devices.device, template_file=template_file, include_cond=True, batch_size=batch_size, gradient_step=gradient_step, shuffle_tags=shuffle_tags, tag_drop_out=tag_drop_out, latent_sampling_method=latent_sampling_method, varsize=varsize, use_weight=use_weight)
 
     if shared.opts.save_training_settings_to_txt:
         saved_params = dict(
@@ -542,8 +543,10 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
 
     if unload:
         shared.parallel_processing_allowed = False
-        shared.sd_model.cond_stage_model.to(devices.cpu)
-        shared.sd_model.first_stage_model.to(devices.cpu)
+        #shared.sd_model.cond_stage_model.to(devices.cpu)
+        #shared.sd_model.first_stage_model.to(devices.cpu)
+        shared_instance.sd_model.cond_stage_model.to(devices.cpu)
+        shared_instance.sd_model.first_stage_model.to(devices.cpu)
 
     weights = hypernetwork.weights()
     hypernetwork.train()
@@ -614,16 +617,21 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                     if use_weight:
                         w = batch.weight.to(devices.device, non_blocking=pin_memory)
                     if tag_drop_out != 0 or shuffle_tags:
-                        shared.sd_model.cond_stage_model.to(devices.device)
-                        c = shared.sd_model.cond_stage_model(batch.cond_text).to(devices.device, non_blocking=pin_memory)
-                        shared.sd_model.cond_stage_model.to(devices.cpu)
+                        #shared.sd_model.cond_stage_model.to(devices.device)
+                        shared_instance.sd_model.cond_stage_model.to(devices.device)
+                        c = shared_instance.sd_model.cond_stage_model(batch.cond_text).to(devices.device, non_blocking=pin_memory)
+                        shared_instance.sd_model.cond_stage_model.to(devices.cpu)
+                        #c = shared.sd_model.cond_stage_model(batch.cond_text).to(devices.device, non_blocking=pin_memory)
+                        #shared.sd_model.cond_stage_model.to(devices.cpu)
                     else:
                         c = stack_conds(batch.cond).to(devices.device, non_blocking=pin_memory)
                     if use_weight:
-                        loss = shared.sd_model.weighted_forward(x, c, w)[0] / gradient_step
+                        loss = shared_instance.sd_model.weighted_forward(x, c, w)[0] / gradient_step
+                        #loss = shared.sd_model.weighted_forward(x, c, w)[0] / gradient_step
                         del w
                     else:
-                        loss = shared.sd_model.forward(x, c)[0] / gradient_step
+                        #loss = shared.sd_model.forward(x, c)[0] / gradient_step
+                        loss = shared_instance.sd_model.forward(x, c)[0] / gradient_step
                     del x
                     del c
 
@@ -683,11 +691,14 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                     cuda_rng_state = None
                     if torch.cuda.is_available():
                         cuda_rng_state = torch.cuda.get_rng_state_all()
-                    shared.sd_model.cond_stage_model.to(devices.device)
-                    shared.sd_model.first_stage_model.to(devices.device)
+                    #shared.sd_model.cond_stage_model.to(devices.device)
+                    #shared.sd_model.first_stage_model.to(devices.device)
+                    shared_instance.sd_model.cond_stage_model.to(devices.device)
+                    shared_instance.sd_model.first_stage_model.to(devices.device)
 
                     p = processing.StableDiffusionProcessingTxt2Img(
-                        sd_model=shared.sd_model,
+                        #sd_model=shared.sd_model,
+                        sd_model=shared_instance.sd_model,
                         do_not_save_grid=True,
                         do_not_save_samples=True,
                     )
@@ -716,8 +727,10 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                         image = processed.images[0] if len(processed.images) > 0 else None
 
                     if unload:
-                        shared.sd_model.cond_stage_model.to(devices.cpu)
-                        shared.sd_model.first_stage_model.to(devices.cpu)
+                        #shared.sd_model.cond_stage_model.to(devices.cpu)
+                        #shared.sd_model.first_stage_model.to(devices.cpu)
+                        shared_instance.sd_model.cond_stage_model.to(devices.cpu)
+                        shared_instance.sd_model.first_stage_model.to(devices.cpu)
                     torch.set_rng_state(rng_state)
                     if torch.cuda.is_available():
                         torch.cuda.set_rng_state_all(cuda_rng_state)
@@ -760,8 +773,10 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 
     del optimizer
     hypernetwork.optimizer_state_dict = None  # dereference it after saving, to save memory.
-    shared.sd_model.cond_stage_model.to(devices.device)
-    shared.sd_model.first_stage_model.to(devices.device)
+    #shared.sd_model.cond_stage_model.to(devices.device)
+    #shared.sd_model.first_stage_model.to(devices.device)
+    shared_instance.sd_model.cond_stage_model.to(devices.device)
+    shared_instance.sd_model.first_stage_model.to(devices.device)
     shared.parallel_processing_allowed = old_parallel_processing_allowed
 
     return hypernetwork, filename

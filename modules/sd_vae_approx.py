@@ -3,7 +3,7 @@ import os
 import torch
 from torch import nn
 from modules import devices, paths, shared
-
+from modules.shared import shared_instance
 sd_vae_approx_models = {}
 
 
@@ -40,7 +40,8 @@ def download_model(model_path, model_url):
 
 
 def model():
-    model_name = "vaeapprox-sdxl.pt" if getattr(shared.sd_model, 'is_sdxl', False) else "model.pt"
+    model_name = "vaeapprox-sdxl.pt" if getattr(shared_instance.sd_model, 'is_sdxl', False) else "model.pt"
+    #model_name = "vaeapprox-sdxl.pt" if getattr(shared.sd_model, 'is_sdxl', False) else "model.pt"
     loaded_model = sd_vae_approx_models.get(model_name)
 
     if loaded_model is None:
@@ -64,7 +65,8 @@ def model():
 def cheap_approximation(sample):
     # https://discuss.huggingface.co/t/decoding-latents-to-rgb-without-upscaling/23204/2
 
-    if shared.sd_model.is_sdxl:
+    #if shared.sd_model.is_sdxl:
+    if shared_instance.sd_model.is_sdxl:
         coeffs = [
             [ 0.3448,  0.4168,  0.4395],
             [-0.1953, -0.0290,  0.0250],

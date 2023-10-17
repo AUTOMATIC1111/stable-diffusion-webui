@@ -5,7 +5,7 @@ import warnings
 from threading import Thread
 
 from modules.timer import startup_timer
-
+from modules.shared import shared_instance
 
 def imports():
     logging.getLogger("torch.distributed.nn").setLevel(logging.ERROR)  # sshh...
@@ -144,7 +144,9 @@ def initialize_rest(*, reload_script_modules=False):
         by that time, so we apply optimization again.
         """
 
-        shared.sd_model  # noqa: B018
+        #shared.sd_model  # noqa: B018
+        
+        shared_instance.sd_model = shared.shared_instance.sd_model
 
         if sd_hijack.current_optimizer is None:
             sd_hijack.apply_optimizations()

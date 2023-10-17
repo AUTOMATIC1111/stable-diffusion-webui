@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 
 from modules import devices, paths_internal, shared
+from modules.shared import shared_instance
 
 sd_vae_taesd_models = {}
 
@@ -87,7 +88,8 @@ def download_model(model_path, model_url):
 
 
 def decoder_model():
-    model_name = "taesdxl_decoder.pth" if getattr(shared.sd_model, 'is_sdxl', False) else "taesd_decoder.pth"
+    model_name = "taesdxl_decoder.pth" if getattr(shared_instance.sd_model, 'is_sdxl', False) else "taesd_decoder.pth"
+    #model_name = "taesdxl_decoder.pth" if getattr(shared.sd_model, 'is_sdxl', False) else "taesd_decoder.pth"
     loaded_model = sd_vae_taesd_models.get(model_name)
 
     if loaded_model is None:
@@ -106,7 +108,8 @@ def decoder_model():
 
 
 def encoder_model():
-    model_name = "taesdxl_encoder.pth" if getattr(shared.sd_model, 'is_sdxl', False) else "taesd_encoder.pth"
+    model_name = "taesdxl_encoder.pth" if getattr(shared_instance.sd_model, 'is_sdxl', False) else "taesd_encoder.pth"
+    #model_name = "taesdxl_encoder.pth" if getattr(shared.sd_model, 'is_sdxl', False) else "taesd_encoder.pth"
     loaded_model = sd_vae_taesd_models.get(model_name)
 
     if loaded_model is None:

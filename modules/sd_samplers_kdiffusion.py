@@ -5,7 +5,7 @@ from modules.sd_samplers_common import SamplerData, Sampler, setup_img2img_steps
 from modules import sd_samplers_extra, sd_samplers_cfg_denoiser
 from modules.sd_samplers_cfg_denoiser import CFGDenoiser  # noqa: F401
 from modules.script_callbacks import ExtraNoiseParams, extra_noise_callback
-
+from modules.shared import shared_instance
 from modules.shared import opts
 import modules.shared as shared
 
@@ -71,9 +71,10 @@ class CFGDenoiserKDiffusion(sd_samplers_cfg_denoiser.CFGDenoiser):
     @property
     def inner_model(self):
         if self.model_wrap is None:
-            denoiser = k_diffusion.external.CompVisVDenoiser if shared.sd_model.parameterization == "v" else k_diffusion.external.CompVisDenoiser
-            self.model_wrap = denoiser(shared.sd_model, quantize=shared.opts.enable_quantization)
-
+            #denoiser = k_diffusion.external.CompVisVDenoiser if shared.sd_model.parameterization == "v" else k_diffusion.external.CompVisDenoiser
+            denoiser = k_diffusion.external.CompVisVDenoiser if shared_instance.sd_model.parameterization == "v" else k_diffusion.external.CompVisDenoiser
+            #self.model_wrap = denoiser(shared.sd_model, quantize=shared.opts.enable_quantization)
+            self.model_wrap = denoiser(shared_instance.sd_model, quantize=shared.opts.enable_quantization)
         return self.model_wrap
 
 

@@ -6,7 +6,7 @@ import networks
 from modules import shared, ui_extra_networks
 from modules.ui_extra_networks import quote_js
 from ui_edit_user_metadata import LoraUserMetadataEditor
-
+from modules.shared import shared_instance
 
 class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
@@ -52,17 +52,26 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
 
         if shared.opts.lora_show_all or not enable_filter:
             pass
+#        elif sd_version == network.SdVersion.Unknown:
+#            model_version = network.SdVersion.SDXL if shared.sd_model.is_sdxl else network.SdVersion.SD2 if shared.sd_model.is_sd2 else network.SdVersion.SD1
+#            if model_version.name in shared.opts.lora_hide_unknown_for_versions:
+#                return None
+#        elif shared.sd_model.is_sdxl and sd_version != network.SdVersion.SDXL:
+#            return None
+#        elif shared.sd_model.is_sd2 and sd_version != network.SdVersion.SD2:
+#            return None
+#        elif shared.sd_model.is_sd1 and sd_version != network.SdVersion.SD1:
+#            return None
         elif sd_version == network.SdVersion.Unknown:
-            model_version = network.SdVersion.SDXL if shared.sd_model.is_sdxl else network.SdVersion.SD2 if shared.sd_model.is_sd2 else network.SdVersion.SD1
+            model_version = network.SdVersion.SDXL if shared_instance.sd_model.is_sdxl else network.SdVersion.SD2 if shared_instance.sd_model.is_sd2 else network.SdVersion.SD1
             if model_version.name in shared.opts.lora_hide_unknown_for_versions:
                 return None
-        elif shared.sd_model.is_sdxl and sd_version != network.SdVersion.SDXL:
+        elif shared_instance.sd_model.is_sdxl and sd_version != network.SdVersion.SDXL:
             return None
-        elif shared.sd_model.is_sd2 and sd_version != network.SdVersion.SD2:
+        elif shared_instance.sd_model.is_sd2 and sd_version != network.SdVersion.SD2:
             return None
-        elif shared.sd_model.is_sd1 and sd_version != network.SdVersion.SD1:
+        elif shared_instance.sd_model.is_sd1 and sd_version != network.SdVersion.SD1:
             return None
-
         return item
 
     def list_items(self):

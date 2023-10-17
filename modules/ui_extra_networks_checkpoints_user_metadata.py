@@ -2,7 +2,7 @@ import gradio as gr
 
 from modules import ui_extra_networks_user_metadata, sd_vae, shared
 from modules.ui_common import create_refresh_button
-
+from modules.shared import shared_instance
 
 class CheckpointUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor):
     def __init__(self, ui, tabname, page):
@@ -19,7 +19,8 @@ class CheckpointUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataE
         self.write_user_metadata(name, user_metadata)
 
     def update_vae(self, name):
-        if name == shared.sd_model.sd_checkpoint_info.name_for_extra:
+        if name == shared_instance.sd_model.sd_checkpoint_info.name_for_extra:
+        #if name == shared.sd_model.sd_checkpoint_info.name_for_extra:
             sd_vae.reload_vae_weights()
 
     def put_values_into_components(self, name):

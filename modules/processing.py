@@ -32,7 +32,7 @@ from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 
 from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
-
+from modules.shared import shared_instance
 
 # some of those options should not be changed at all because they would break the model, so I removed them from options.
 opt_C = 4
@@ -235,7 +235,8 @@ class StableDiffusionProcessing:
 
     @property
     def sd_model(self):
-        return shared.sd_model
+        #return shared.sd_model
+        return shared_instance.sd_model
 
     @sd_model.setter
     def sd_model(self, value):
@@ -418,7 +419,8 @@ class StableDiffusionProcessing:
             hires_steps,
             use_old_scheduling,
             opts.CLIP_stop_at_last_layers,
-            shared.sd_model.sd_checkpoint_info,
+            #shared.sd_model.sd_checkpoint_info,
+            shared_instance.sd_model.sd_checkpoint_info,
             extra_network_data,
             opts.sdxl_crop_left,
             opts.sdxl_crop_top,
@@ -454,8 +456,8 @@ class StableDiffusionProcessing:
         cache = caches[0]
 
         with devices.autocast():
-            cache[1] = function(shared.sd_model, required_prompts, steps, hires_steps, shared.opts.use_old_scheduling)
-
+            #cache[1] = function(shared.sd_model, required_prompts, steps, hires_steps, shared.opts.use_old_scheduling)
+            cache[1] = function(shared_instance.sd_model, required_prompts, steps, hires_steps, shared.opts.use_old_scheduling)
         cache[0] = cached_params
         return cache[1]
 
@@ -772,8 +774,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         if p.refiner_checkpoint_info is None:
             raise Exception(f'Could not find checkpoint with name {p.refiner_checkpoint}')
 
-    p.sd_model_name = shared.sd_model.sd_checkpoint_info.name_for_extra
-    p.sd_model_hash = shared.sd_model.sd_model_hash
+    #p.sd_model_name = shared.sd_model.sd_checkpoint_info.name_for_extra
+    #p.sd_model_hash = shared.sd_model.sd_model_hash
+    p.sd_model_name = shared_instance.sd_model.sd_checkpoint_info.name_for_extra
+    p.sd_model_hash = shared_instance.sd_model.sd_model_hash
     p.sd_vae_name = sd_vae.get_loaded_vae_name()
     p.sd_vae_hash = sd_vae.get_loaded_vae_hash()
 
@@ -882,7 +886,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             del samples_ddim
 
-            if lowvram.is_enabled(shared.sd_model):
+            #if lowvram.is_enabled(shared.sd_model):
+            if lowvram.is_enabled(shared_instance.sd_model):
                 lowvram.send_everything_to_cpu()
 
             devices.torch_gc()
@@ -1321,7 +1326,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             if shared.opts.hires_fix_use_firstpass_conds:
                 self.calculate_hr_conds()
 
-            elif lowvram.is_enabled(shared.sd_model) and shared.sd_model.sd_checkpoint_info == sd_models.select_checkpoint():  # if in lowvram mode, we need to calculate conds right away, before the cond NN is unloaded
+            elif lowvram.is_enabled(shared_instance.sd_model) and shared_instance.sd_model.sd_checkpoint_info == sd_models.select_checkpoint():  # if in lowvram mode, we need to calculate conds right away, before the cond NN is unloaded
+            #elif lowvram.is_enabled(shared.sd_model) and shared.sd_model.sd_checkpoint_info == sd_models.select_checkpoint():  # if in lowvram mode, we need to calculate conds right away, before the cond NN is unloaded
                 with devices.autocast():
                     extra_networks.activate(self, self.hr_extra_network_data)
 
@@ -1394,7 +1400,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         from modules.sd_samplers_common import images_tensor_to_samples, approximation_indexes
-        self.image_cfg_scale: float = self.image_cfg_scale if shared.sd_model.cond_stage_key == "edit" else None
+        #self.image_cfg_scale: float = self.image_cfg_scale if shared.sd_model.cond_stage_key == "edit" else None
+        self.image_cfg_scale: float = self.image_cfg_scale if shared_instance.sd_model.cond_stage_key == "edit" else None
+
 
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
         crop_region = None

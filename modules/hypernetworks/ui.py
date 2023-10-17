@@ -3,7 +3,7 @@ import html
 import gradio as gr
 import modules.hypernetworks.hypernetwork
 from modules import devices, sd_hijack, shared
-
+from modules.shared import shared_instance
 not_available = ["hardswish", "multiheadattention"]
 keys = [x for x in modules.hypernetworks.hypernetwork.HypernetworkModule.activation_dict if x not in not_available]
 
@@ -32,7 +32,9 @@ Hypernetwork saved to {html.escape(filename)}
     except Exception:
         raise
     finally:
-        shared.sd_model.cond_stage_model.to(devices.device)
-        shared.sd_model.first_stage_model.to(devices.device)
+        #shared.sd_model.cond_stage_model.to(devices.device)
+        #shared.sd_model.first_stage_model.to(devices.device)
+        shared_instance.sd_model.cond_stage_model.to(devices.device)
+        shared_instance.sd_model.first_stage_model.to(devices.device)
         sd_hijack.apply_optimizations()
 

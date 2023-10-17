@@ -6,7 +6,7 @@ from PIL import Image
 from modules import devices, images, sd_vae_approx, sd_vae_taesd, shared, sd_models
 from modules.shared import opts, state
 import k_diffusion.sampling
-
+from modules.shared import shared_instance
 
 SamplerDataTuple = namedtuple('SamplerData', ['name', 'constructor', 'aliases', 'options'])
 
@@ -41,7 +41,8 @@ def samples_to_images_tensor(sample, approximation=None, model=None):
         approximation = approximation_indexes.get(opts.show_progress_type, 0)
 
         from modules import lowvram
-        if approximation == 0 and lowvram.is_enabled(shared.sd_model) and not shared.opts.live_preview_allow_lowvram_full:
+        if approximation == 0 and lowvram.is_enabled(shared_instance.sd_model) and not shared.opts.live_preview_allow_lowvram_full:
+        #if approximation == 0 and lowvram.is_enabled(shared.sd_model) and not shared.opts.live_preview_allow_lowvram_full:
             approximation = 1
 
     if approximation == 2:
@@ -53,7 +54,8 @@ def samples_to_images_tensor(sample, approximation=None, model=None):
         x_sample = x_sample * 2 - 1
     else:
         if model is None:
-            model = shared.sd_model
+            #model = shared.sd_model
+            model = shared_instance.sd_model
         with devices.without_autocast(): # fixes an issue with unstable VAEs that are flaky even in fp32
             x_sample = model.decode_first_stage(sample.to(model.first_stage_model.dtype))
 
@@ -94,7 +96,8 @@ def images_tensor_to_samples(image, approximation=None, model=None):
         x_latent = sd_vae_taesd.encoder_model()(image)
     else:
         if model is None:
-            model = shared.sd_model
+            #model = shared.sd_model
+            model = shared_instance.sd_model
         model.first_stage_model.to(devices.dtype_vae)
 
         image = image.to(shared.device, dtype=devices.dtype_vae)
@@ -163,7 +166,8 @@ def apply_refiner(cfg_denoiser):
     if refiner_switch_at is not None and completed_ratio < refiner_switch_at:
         return False
 
-    if refiner_checkpoint_info is None or shared.sd_model.sd_checkpoint_info == refiner_checkpoint_info:
+    if refiner_checkpoint_info is None or shared_instance.sd_model.sd_checkpoint_info == refiner_checkpoint_info:
+    #if refiner_checkpoint_info is None or shared.sd_model.sd_checkpoint_info == refiner_checkpoint_info:
         return False
 
     if getattr(cfg_denoiser.p, "enable_hr", False):
@@ -235,7 +239,8 @@ class Sampler:
         self.eta_infotext_field = 'Eta'
         self.eta_default = 1.0
 
-        self.conditioning_key = shared.sd_model.model.conditioning_key
+        #self.conditioning_key = shared.sd_model.model.conditioning_key
+        self.conditioning_key = shared_instance.sd_model.model.conditioning_key
 
         self.p = None
         self.model_wrap_cfg = None

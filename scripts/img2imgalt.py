@@ -7,7 +7,7 @@ import modules.scripts as scripts
 import gradio as gr
 
 from modules import processing, shared, sd_samplers, sd_samplers_common
-
+from modules.shared import shared_instance
 import torch
 import k_diffusion as K
 
@@ -15,11 +15,17 @@ def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
     x = p.init_latent
 
     s_in = x.new_ones([x.shape[0]])
-    if shared.sd_model.parameterization == "v":
-        dnw = K.external.CompVisVDenoiser(shared.sd_model)
+    #if shared.sd_model.parameterization == "v":
+    #    dnw = K.external.CompVisVDenoiser(shared.sd_model)
+    #    skip = 1
+    #else:
+    #    dnw = K.external.CompVisDenoiser(shared.sd_model)
+    #    skip = 0
+    if shared_instance.sd_model.parameterization == "v":
+        dnw = K.external.CompVisVDenoiser(shared_instance.sd_model)
         skip = 1
     else:
-        dnw = K.external.CompVisDenoiser(shared.sd_model)
+        dnw = K.external.CompVisDenoiser(shared_instance.sd_model)
         skip = 0
     sigmas = dnw.get_sigmas(steps).flip(0)
 
@@ -38,7 +44,8 @@ def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
         c_out, c_in = [K.utils.append_dims(k, x_in.ndim) for k in dnw.get_scalings(sigma_in)[skip:]]
         t = dnw.sigma_to_t(sigma_in)
 
-        eps = shared.sd_model.apply_model(x_in * c_in, t, cond=cond_in)
+        #eps = shared.sd_model.apply_model(x_in * c_in, t, cond=cond_in)
+        eps = shared_instance.sd_model.apply_model(x_in * c_in, t, cond=cond_in)
         denoised_uncond, denoised_cond = (x_in + eps * c_out).chunk(2)
 
         denoised = denoised_uncond + (denoised_cond - denoised_uncond) * cfg_scale
@@ -67,11 +74,14 @@ def find_noise_for_image_sigma_adjustment(p, cond, uncond, cfg_scale, steps):
     x = p.init_latent
 
     s_in = x.new_ones([x.shape[0]])
-    if shared.sd_model.parameterization == "v":
-        dnw = K.external.CompVisVDenoiser(shared.sd_model)
+    #if shared.sd_model.parameterization == "v":
+    if shared_instance.sd_model.parameterization == "v":
+        #dnw = K.external.CompVisVDenoiser(shared.sd_model)
+        dnw = K.external.CompVisVDenoiser(shared_instance.sd_model)
         skip = 1
     else:
-        dnw = K.external.CompVisDenoiser(shared.sd_model)
+        #dnw = K.external.CompVisDenoiser(shared.sd_model)
+        dnw = K.external.CompVisDenoiser(shared_instance.sd_model)
         skip = 0
     sigmas = dnw.get_sigmas(steps).flip(0)
 
@@ -94,7 +104,8 @@ def find_noise_for_image_sigma_adjustment(p, cond, uncond, cfg_scale, steps):
         else:
             t = dnw.sigma_to_t(sigma_in)
 
-        eps = shared.sd_model.apply_model(x_in * c_in, t, cond=cond_in)
+        #eps = shared.sd_model.apply_model(x_in * c_in, t, cond=cond_in)
+        eps = shared_instance.sd_model.apply_model(x_in * c_in, t, cond=cond_in)
         denoised_uncond, denoised_cond = (x_in + eps * c_out).chunk(2)
 
         denoised = denoised_uncond + (denoised_cond - denoised_uncond) * cfg_scale

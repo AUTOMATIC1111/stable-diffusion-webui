@@ -19,6 +19,7 @@ from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
 from modules.textual_inversion.image_embedding import embedding_to_b64, embedding_from_b64, insert_image_data_embed, extract_image_data_embed, caption_image_overlay
 from modules.textual_inversion.logging import save_settings_to_file
+from modules.shared import shared_instance
 
 
 TextualInversionTemplate = namedtuple("TextualInversionTemplate", ["name", "path"])
@@ -151,7 +152,8 @@ class EmbeddingDatabase:
         return embedding
 
     def get_expected_shape(self):
-        vec = shared.sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
+        #vec = shared.sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
+        vec = shared_instance.sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
         return vec.shape[1]
 
     def load_from_file(self, path, filename):
@@ -217,7 +219,8 @@ class EmbeddingDatabase:
         embedding.set_hash(hashes.sha256(embedding.filename, "textual_inversion/" + name) or '')
 
         if self.expected_shape == -1 or self.expected_shape == embedding.shape:
-            self.register_embedding(embedding, shared.sd_model)
+            #self.register_embedding(embedding, shared.sd_model)
+            self.register_embedding(embedding, shared_instance.sd_model)
         else:
             self.skipped_embeddings[name] = embedding
 
@@ -286,7 +289,8 @@ class EmbeddingDatabase:
 
 
 def create_embedding(name, num_vectors_per_token, overwrite_old, init_text='*'):
-    cond_model = shared.sd_model.cond_stage_model
+    #cond_model = shared.sd_model.cond_stage_model
+    cond_model = shared_instance.sd_model.cond_stage_model
 
     with devices.autocast():
         cond_model([""])  # will send cond model to GPU if lowvram/medvram is active
@@ -447,7 +451,9 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
 
     pin_memory = shared.opts.pin_memory
 
-    ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared.sd_model, cond_model=shared.sd_model.cond_stage_model, device=devices.device, template_file=template_file, batch_size=batch_size, gradient_step=gradient_step, shuffle_tags=shuffle_tags, tag_drop_out=tag_drop_out, latent_sampling_method=latent_sampling_method, varsize=varsize, use_weight=use_weight)
+    ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared_instance.sd_model, cond_model=shared_instance.sd_model.cond_stage_model, device=devices.device, template_file=template_file, batch_size=batch_size, gradient_step=gradient_step, shuffle_tags=shuffle_tags, tag_drop_out=tag_drop_out, latent_sampling_method=latent_sampling_method, varsize=varsize, use_weight=use_weight)
+
+    #ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared.sd_model, cond_model=shared.sd_model.cond_stage_model, device=devices.device, template_file=template_file, batch_size=batch_size, gradient_step=gradient_step, shuffle_tags=shuffle_tags, tag_drop_out=tag_drop_out, latent_sampling_method=latent_sampling_method, varsize=varsize, use_weight=use_weight)
 
     if shared.opts.save_training_settings_to_txt:
         save_settings_to_file(log_directory, {**dict(model_name=checkpoint.model_name, model_hash=checkpoint.shorthash, num_of_dataset_images=len(ds), num_vectors_per_token=len(embedding.vec)), **locals()})
@@ -458,7 +464,8 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
 
     if unload:
         shared.parallel_processing_allowed = False
-        shared.sd_model.first_stage_model.to(devices.cpu)
+        #shared.sd_model.first_stage_model.to(devices.cpu)
+        shared_instance.sd_model.first_stage_model.to(devices.cpu)
 
     embedding.vec.requires_grad = True
     optimizer = torch.optim.AdamW([embedding.vec], lr=scheduler.learn_rate, weight_decay=0.0)
@@ -490,7 +497,8 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
     forced_filename = "<none>"
     embedding_yet_to_be_embedded = False
 
-    is_training_inpainting_model = shared.sd_model.model.conditioning_key in {'hybrid', 'concat'}
+    #is_training_inpainting_model = shared.sd_model.model.conditioning_key in {'hybrid', 'concat'}
+    is_training_inpainting_model = shared_instance.sd_model.model.conditioning_key in {'hybrid', 'concat'}
     img_c = None
 
     pbar = tqdm.tqdm(total=steps - initial_step)
@@ -519,21 +527,24 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     x = batch.latent_sample.to(devices.device, non_blocking=pin_memory)
                     if use_weight:
                         w = batch.weight.to(devices.device, non_blocking=pin_memory)
-                    c = shared.sd_model.cond_stage_model(batch.cond_text)
+                    #c = shared.sd_model.cond_stage_model(batch.cond_text)
+                    c = shared_instance.sd_model.cond_stage_model(batch.cond_text)
 
                     if is_training_inpainting_model:
                         if img_c is None:
-                            img_c = processing.txt2img_image_conditioning(shared.sd_model, c, training_width, training_height)
-
+                            #img_c = processing.txt2img_image_conditioning(shared.sd_model, c, training_width, training_height)
+                            img_c = processing.txt2img_image_conditioning(shared_instance.sd_model, c, training_width, training_height)
                         cond = {"c_concat": [img_c], "c_crossattn": [c]}
                     else:
                         cond = c
 
                     if use_weight:
-                        loss = shared.sd_model.weighted_forward(x, cond, w)[0] / gradient_step
+                        #loss = shared.sd_model.weighted_forward(x, cond, w)[0] / gradient_step
+                        loss = shared_instance.sd_model.weighted_forward(x, cond, w)[0] / gradient_step
                         del w
                     else:
-                        loss = shared.sd_model.forward(x, cond)[0] / gradient_step
+                        #loss = shared.sd_model.forward(x, cond)[0] / gradient_step
+                        loss = shared_instance.sd_model.forward(x, cond)[0] / gradient_step
                     del x
 
                     _loss_step += loss.item()
@@ -577,14 +588,21 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     forced_filename = f'{embedding_name}-{steps_done}'
                     last_saved_image = os.path.join(images_dir, forced_filename)
 
-                    shared.sd_model.first_stage_model.to(devices.device)
+                    #shared.sd_model.first_stage_model.to(devices.device)
+                    shared_instance.sd_model.first_stage_model.to(devices.device)
 
+                    #p = processing.StableDiffusionProcessingTxt2Img(
+                    #    sd_model=shared.sd_model,
+                    #    do_not_save_grid=True,
+                    #    do_not_save_samples=True,
+                    #    do_not_reload_embeddings=True,
+                    #)
                     p = processing.StableDiffusionProcessingTxt2Img(
-                        sd_model=shared.sd_model,
-                        do_not_save_grid=True,
-                        do_not_save_samples=True,
-                        do_not_reload_embeddings=True,
-                    )
+                                            sd_model=shared_instance.sd_model,
+                                            do_not_save_grid=True,
+                                            do_not_save_samples=True,
+                                            do_not_reload_embeddings=True,
+                                        )
 
                     if preview_from_txt2img:
                         p.prompt = preview_prompt
@@ -608,7 +626,8 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                         image = processed.images[0] if len(processed.images) > 0 else None
 
                     if unload:
-                        shared.sd_model.first_stage_model.to(devices.cpu)
+                        #shared.sd_model.first_stage_model.to(devices.cpu)
+                        shared_instance.sd_model.first_stage_model.to(devices.cpu)
 
                     if image is not None:
                         shared.state.assign_current_image(image)
@@ -666,7 +685,8 @@ Last saved image: {html.escape(last_saved_image)}<br/>
     finally:
         pbar.leave = False
         pbar.close()
-        shared.sd_model.first_stage_model.to(devices.device)
+        #shared.sd_model.first_stage_model.to(devices.device)
+        shared_instance.sd_model.first_stage_model.to(devices.device)
         shared.parallel_processing_allowed = old_parallel_processing_allowed
         sd_hijack_checkpoint.remove()
 

@@ -33,7 +33,7 @@ from typing import Dict, List, Any
 import piexif
 import piexif.helper
 from contextlib import closing
-
+from modules.shared import shared_instance
 
 def script_name_to_index(name, scripts):
     try:
@@ -364,7 +364,8 @@ class Api:
         args.pop('save_images', None)
 
         with self.queue_lock:
-            with closing(StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)) as p:
+            with closing(StableDiffusionProcessingTxt2Img(sd_model=shared_instance.sd_model, **args)) as p:
+            #with closing(StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)) as p:
                 p.is_api = True
                 p.scripts = script_runner
                 p.outpath_grids = opts.outdir_txt2img_grids
@@ -424,7 +425,8 @@ class Api:
         args.pop('save_images', None)
 
         with self.queue_lock:
-            with closing(StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)) as p:
+            #with closing(StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)) as p:
+            with closing(StableDiffusionProcessingImg2Img(sd_model=shared_instance.sd_model, **args)) as p:
                 p.init_images = [decode_base64_to_image(x) for x in init_images]
                 p.is_api = True
                 p.scripts = script_runner
@@ -724,8 +726,10 @@ class Api:
             except Exception as e:
                 error = e
             finally:
-                shared.sd_model.cond_stage_model.to(devices.device)
-                shared.sd_model.first_stage_model.to(devices.device)
+                #shared.sd_model.cond_stage_model.to(devices.device)
+                #shared.sd_model.first_stage_model.to(devices.device)
+                shared_instance.sd_model.cond_stage_model.to(devices.device)
+                shared_instance.sd_model.first_stage_model.to(devices.device)
                 if not apply_optimizations:
                     sd_hijack.apply_optimizations()
                 shared.state.end()

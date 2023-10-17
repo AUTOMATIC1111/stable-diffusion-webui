@@ -2,6 +2,7 @@ import torch.nn
 import ldm.modules.diffusionmodules.openaimodel
 
 from modules import script_callbacks, shared, devices
+from modules.shared import shared_instance
 
 unet_options = []
 current_unet_option = None
@@ -22,7 +23,8 @@ def get_unet_option(option=None):
         return None
 
     if option == "Automatic":
-        name = shared.sd_model.sd_checkpoint_info.model_name
+        #name = shared.sd_model.sd_checkpoint_info.model_name
+        name = shared_instance.sd_model.sd_checkpoint_info.model_name
 
         options = [x for x in unet_options if x.model_name == name]
 
@@ -47,12 +49,15 @@ def apply_unet(option=None):
     if current_unet_option is None:
         current_unet = None
 
-        if not shared.sd_model.lowvram:
-            shared.sd_model.model.diffusion_model.to(devices.device)
+        #if not shared.sd_model.lowvram:
+        #    shared.sd_model.model.diffusion_model.to(devices.device)
+        if not shared_instance.sd_model.lowvram:
+            shared_instance.sd_model.model.diffusion_model.to(devices.device)
 
         return
 
-    shared.sd_model.model.diffusion_model.to(devices.cpu)
+    #shared.sd_model.model.diffusion_model.to(devices.cpu)
+    shared_instance.sd_model.model.diffusion_model.to(devices.cpu)
     devices.torch_gc()
 
     current_unet = current_unet_option.create_unet()

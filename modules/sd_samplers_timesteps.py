@@ -4,7 +4,7 @@ import sys
 from modules import devices, sd_samplers_common, sd_samplers_timesteps_impl
 from modules.sd_samplers_cfg_denoiser import CFGDenoiser
 from modules.script_callbacks import ExtraNoiseParams, extra_noise_callback
-
+from modules.shared import shared_instance
 from modules.shared import opts
 import modules.shared as shared
 
@@ -49,7 +49,8 @@ class CFGDenoiserTimesteps(CFGDenoiser):
     def __init__(self, sampler):
         super().__init__(sampler)
 
-        self.alphas = shared.sd_model.alphas_cumprod
+        #self.alphas = shared.sd_model.alphas_cumprod
+        self.alphas = shared_instance.sd_model.alphas_cumprod
         self.mask_before_denoising = True
 
     def get_pred_x0(self, x_in, x_out, sigma):
@@ -65,8 +66,10 @@ class CFGDenoiserTimesteps(CFGDenoiser):
     @property
     def inner_model(self):
         if self.model_wrap is None:
-            denoiser = CompVisTimestepsVDenoiser if shared.sd_model.parameterization == "v" else CompVisTimestepsDenoiser
-            self.model_wrap = denoiser(shared.sd_model)
+            #denoiser = CompVisTimestepsVDenoiser if shared.sd_model.parameterization == "v" else CompVisTimestepsDenoiser
+            denoiser = CompVisTimestepsVDenoiser if shared_instance.sd_model.parameterization == "v" else CompVisTimestepsDenoiser
+            #self.model_wrap = denoiser(shared.sd_model)
+            self.model_wrap = denoiser(shared_instance.sd_model)
 
         return self.model_wrap
 
@@ -99,7 +102,8 @@ class CompVisSampler(sd_samplers_common.Sampler):
         timesteps = self.get_timesteps(p, steps)
         timesteps_sched = timesteps[:t_enc]
 
-        alphas_cumprod = shared.sd_model.alphas_cumprod
+        #alphas_cumprod = shared.sd_model.alphas_cumprod
+        alphas_cumprod = shared_instance.sd_model.alphas_cumprod
         sqrt_alpha_cumprod = torch.sqrt(alphas_cumprod[timesteps[t_enc]])
         sqrt_one_minus_alpha_cumprod = torch.sqrt(1 - alphas_cumprod[timesteps[t_enc]])
 
