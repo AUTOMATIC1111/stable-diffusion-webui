@@ -98,6 +98,7 @@ def compatibility_args(opts, args):
     group.add_argument("--lyco-debug", help=argparse.SUPPRESS, action='store_true', default=False)
     group.add_argument("--enable-console-prompts", help=argparse.SUPPRESS, action='store_true', default=False)
     group.add_argument("--safe", help=argparse.SUPPRESS, action='store_true', default=False)
+    group.add_argument("--use-xformers", help=argparse.SUPPRESS, action='store_true', default=False)
 
     # removed opts are added here with fixed values for compatibility reasons
     opts.use_old_emphasis_implementation = False

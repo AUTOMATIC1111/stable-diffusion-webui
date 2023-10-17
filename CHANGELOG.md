@@ -1,14 +1,14 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-16
+## Update for 2023-10-17
 
 This is a major release, with many changes and new functionality...  
 
-Note that for this release its recommended to perform a clean install (e.g. fresh `git clone`)  
-Upgrades are still possible and supported, but clean install is recommended for best experience  
-
 Changelog is massive, but do read through or you'll be missing on some very cool new functionality  
 or even free speedups and quality improvements (regardless of which workflows you're using)!  
+
+Note that for this release its recommended to perform a clean install (e.g. fresh `git clone`)  
+Upgrades are still possible and supported, but clean install is recommended for best experience  
 
 - **UI**  
   - added **change log** to UI  
@@ -167,7 +167,8 @@ or even free speedups and quality improvements (regardless of which workflows yo
   - new section in **settings**  
     - [HyperTile](https://github.com/tfernd/HyperTile): new!  
       available for *diffusers* and *original* backends  
-      massive (up to 2x) speed-up your generations for free :)
+      massive (up to 2x) speed-up your generations for free :)  
+      *note: hypertile is not compatible with any extension that modifies processing parameters such as resolution*  
       thanks @tfernd
     - [Free-U](https://github.com/ChenyangSi/FreeU): new!  
       available for *diffusers* and *original* backends  

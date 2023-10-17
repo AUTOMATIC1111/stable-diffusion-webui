@@ -171,6 +171,7 @@ class StableDiffusionProcessing:
         self.s_max = shared.opts.s_max
         self.s_tmin = shared.opts.s_tmin
         self.s_tmax = float('inf')  # not representable as a standard ui option
+        self.refiner_switch_at = 0 # a1111 compatibility item
         self.comments = {}
         self.is_api = False
         self.resize_mode: int = 0
