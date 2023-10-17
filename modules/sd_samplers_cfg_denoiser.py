@@ -1,3 +1,4 @@
+# TODO a1111 compatibility module
 # TODO cfg_denoiser implementation missing
 
 import torch

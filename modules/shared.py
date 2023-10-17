@@ -3,7 +3,6 @@ import os
 import sys
 import time
 import json
-import datetime
 import contextlib
 import urllib.request
 from types import SimpleNamespace
@@ -13,7 +12,7 @@ import requests
 import gradio as gr
 import fasteners
 from rich.console import Console
-from modules import errors, shared_items, cmd_args, ui_components
+from modules import errors, shared_items, shared_state, cmd_args, ui_components
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 from modules.dml import memory_providers, default_memory_provider, directml_do_hijack
 import modules.interrogate
@@ -75,122 +74,7 @@ class Backend(Enum):
     DIFFUSERS = 2
 
 
-
-class State:
-    skipped = False
-    interrupted = False
-    paused = False
-    job = ""
-    job_no = 0
-    job_count = 0
-    total_jobs = 0
-    processing_has_refined_job_count = False
-    job_timestamp = '0'
-    sampling_step = 0
-    sampling_steps = 0
-    current_latent = None
-    current_image = None
-    current_image_sampling_step = 0
-    id_live_preview = 0
-    textinfo = None
-    time_start = None
-    need_restart = False
-    server_start = time.time()
-    oom = False
-    debug_output = os.environ.get('SD_STATE_DEBUG', None)
-
-    def skip(self):
-        log.debug('Requested skip')
-        self.skipped = True
-
-    def interrupt(self):
-        log.debug('Requested interrupt')
-        self.interrupted = True
-
-    def pause(self):
-        self.paused = not self.paused
-        log.debug(f'Requested {"pause" if self.paused else "continue"}')
-
-    def nextjob(self):
-        if opts.live_previews_enable and opts.show_progress_every_n_steps == -1:
-            self.do_set_current_image()
-        self.job_no += 1
-        self.sampling_step = 0
-        self.current_image_sampling_step = 0
-
-    def dict(self):
-        obj = {
-            "skipped": self.skipped,
-            "interrupted": self.interrupted,
-            "job": self.job,
-            "job_count": self.job_count,
-            "job_timestamp": self.job_timestamp,
-            "job_no": self.job_no,
-            "sampling_step": self.sampling_step,
-            "sampling_steps": self.sampling_steps,
-        }
-        return obj
-
-    def begin(self, title=""):
-        self.total_jobs += 1
-        self.current_image = None
-        self.current_image_sampling_step = 0
-        self.current_latent = None
-        self.id_live_preview = 0
-        self.interrupted = False
-        self.job = title
-        self.job_count = -1
-        self.job_no = 0
-        self.job_timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        self.paused = False
-        self.processing_has_refined_job_count = False
-        self.sampling_step = 0
-        self.skipped = False
-        self.textinfo = None
-        self.time_start = time.time()
-        if self.debug_output:
-            log.debug(f'State begin: {self.job}')
-        devices.torch_gc()
-
-    def end(self):
-        if self.time_start is None: # someone called end before being
-            log.debug(f'Access state.end: {sys._getframe().f_back.f_code.co_name}') # pylint: disable=protected-access
-            self.time_start = time.time()
-        if self.debug_output:
-            log.debug(f'State end: {self.job} time={time.time() - self.time_start:.2f}s')
-        self.job = ""
-        self.job_count = 0
-        self.job_no = 0
-        self.paused = False
-        self.interrupted = False
-        self.skipped = False
-        devices.torch_gc()
-
-    def set_current_image(self):
-        """sets self.current_image from self.current_latent if enough sampling steps have been made after the last call to this"""
-        if not parallel_processing_allowed:
-            return
-        if abs(self.sampling_step - self.current_image_sampling_step) >= opts.show_progress_every_n_steps and opts.live_previews_enable and opts.show_progress_every_n_steps > 0:
-            self.do_set_current_image()
-
-    def do_set_current_image(self):
-        if self.current_latent is None:
-            return
-        import modules.sd_samplers # pylint: disable=W0621
-        try:
-            image = modules.sd_samplers.samples_to_image_grid(self.current_latent) if opts.show_progress_grid else modules.sd_samplers.sample_to_image(self.current_latent)
-            self.assign_current_image(image)
-            self.current_image_sampling_step = self.sampling_step
-        except Exception:
-            # log.error(f'Error setting current image: step={self.sampling_step} {e}')
-            pass
-
-    def assign_current_image(self, image):
-        self.current_image = image
-        self.id_live_preview += 1
-
-
-state = State()
+state = shared_state.State()
 if not hasattr(cmd_opts, "use_openvino"):
     cmd_opts.use_openvino = False
 if cmd_opts.use_openvino:
