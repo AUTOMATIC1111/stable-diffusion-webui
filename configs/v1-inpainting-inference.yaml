@@ -41,7 +41,7 @@ model:
         transformer_depth: 1
         context_dim: 768
         use_checkpoint: True
-        legacy: False
+        legacy: true
 
     first_stage_config:
       target: ldm.models.autoencoder.AutoencoderKL
