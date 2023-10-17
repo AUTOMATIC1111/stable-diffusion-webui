@@ -51,13 +51,20 @@ class CheckpointInfo:
         self.filename = filename
         self.type = ''
         filename = os.path.abspath(filename)
-        if filename.startswith(script_path):
-            filename = os.path.relpath(filename, script_path)
+        relname = filename
+        if relname.startswith(script_path):
+            try:
+                relname = os.path.relpath(filename, script_path)
+            except:
+                pass
         try:
             relname = os.path.relpath(filename, model_path)
+        except:
+            pass
+        try:
             relname = os.path.relpath(filename, shared.cmd_opts.ckpt_dir)
         except:
-            relname = filename
+            pass
         relname, ext = os.path.splitext(relname)
         ext = ext.lower()[1:]
 
@@ -256,7 +263,7 @@ def select_checkpoint(op='model'):
         shared.log.info(f'Select: {op}="{checkpoint_info.title if checkpoint_info is not None else None}"')
         return checkpoint_info
     if len(checkpoints_list) == 0 and not shared.cmd_opts.no_download:
-        shared.log.error("Cannot run without a checkpoint")
+        shared.log.error("Cannot generate without a checkpoint")
         shared.log.error("Use --ckpt <path-to-checkpoint> to force using existing checkpoint")
         return None
     checkpoint_info = next(iter(checkpoints_list.values()))
