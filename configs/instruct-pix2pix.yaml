@@ -1,5 +1,5 @@
 # File modified by authors of InstructPix2Pix from original (https://github.com/CompVis/stable-diffusion).
-# See more details in LICENSE.
+# See details in LICENSE.
 
 model:
   base_learning_rate: 1.0e-04
@@ -16,11 +16,11 @@ model:
     # image_size: 32
     image_size: 16
     channels: 4
-    cond_stage_trainable: false   # Note: different from the one we trained before
+    cond_stage_trainable: true   # Note: different from the one we trained before
     conditioning_key: hybrid
     monitor: val/loss_simple_ema
     scale_factor: 0.18215
-    use_ema: false
+    use_ema: true
 
     scheduler_config: # 10000 warmup steps
       target: ldm.lr_scheduler.LambdaLinearScheduler
@@ -46,7 +46,7 @@ model:
         transformer_depth: 1
         context_dim: 768
         use_checkpoint: True
-        legacy: False
+        legacy: true
 
     first_stage_config:
       target: ldm.models.autoencoder.AutoencoderKL
@@ -79,7 +79,7 @@ data:
   params:
     batch_size: 128
     num_workers: 1
-    wrap: false
+    wrap: true
     validation:
       target: edit_dataset.EditDataset
       params:
@@ -94,5 +94,5 @@ data:
         min_resize_res: 512
         max_resize_res: 512
         crop_res: 512
-        output_as_edit: False
+        output_as_edit: true
         real_input: True
