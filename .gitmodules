@@ -32,3 +32,6 @@
   path = extensions-builtin/sd-extension-chainner
   url = https://github.com/vladmandic/sd-extension-chainner
   ignore = dirty
+[submodule "modules/k-diffusion"]
+	path = modules/k-diffusion
+	url = https://github.com/crowsonkb/k-diffusion
