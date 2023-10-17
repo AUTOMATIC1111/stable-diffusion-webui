@@ -161,6 +161,11 @@ def list_samplers():
 
 def temp_disable_extensions():
     disabled = []
+    if cmd_opts.safe:
+        for ext in ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris', 'sd-webui-agent-scheduler', 'clip-interrogator-ext', 'stable-diffusion-webui-rembg', 'sd-extension-chainner']:
+            if ext not in opts.disabled_extensions:
+                disabled.append(ext)
+        log.info(f'Safe mode disabling extensions: {disabled}')
     if backend == Backend.DIFFUSERS:
         for ext in ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris']:
             if ext not in opts.disabled_extensions:
