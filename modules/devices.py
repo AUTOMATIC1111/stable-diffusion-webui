@@ -45,6 +45,11 @@ def get_gpu_info():
                     'device': get_openvino_device(),
                     'openvino': get_package_version("openvino"),
                 }
+            elif shared.cmd_opts.use_directml:
+                return {
+                    'device': f'{torch.cuda.get_device_name(torch.cuda.current_device())} n={torch.cuda.device_count()}',
+                    'directml': get_package_version("torch-directml"),
+                }
             else:
                 return {}
         except Exception:
