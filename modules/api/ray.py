@@ -18,10 +18,12 @@ def ray_only():
     serve.shutdown()
     if "RAY_DOCKER" in os.environ:
         print("starting ray in docker")
-        serve.start(detached=True, http_options={
-                                                "host": os.environ.get("RAY_IP", "0.0.0.0"), 
-                                                "port": int(os.environ.get("RAY_PORT", 8000))
-                                                }
+        serve.start(
+            detached=True, 
+            http_options={
+                        "host": os.environ.get("RAY_IP", "0.0.0.0"), 
+                        "port": int(os.environ.get("RAY_PORT", 8000))
+                        }
         )
     else:    
         serve.start(
