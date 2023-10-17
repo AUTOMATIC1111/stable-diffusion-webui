@@ -130,10 +130,9 @@ def activate(p, extra_network_data):
     activated = []
 
     for extra_network, extra_network_args in lookup_extra_networks(extra_network_data).items():
-
         try:
             # 加载用户LORA
-            if extra_network_name == 'lora' and hasattr(extra_network, 'set_loras'):
+            if extra_network.name == 'lora' and hasattr(extra_network, 'set_loras'):
                 if sd_models.user_loras:
                     set_loras = getattr(extra_network, 'set_loras')
                     set_loras(sd_models.user_loras)
