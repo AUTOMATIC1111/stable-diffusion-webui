@@ -27,12 +27,12 @@ def download_config():
            "downloading zh_cn.csv")
     interrogate_path = os.path.join(pi.data_path, 'interrogate')
     lu.run(f"mkdir -p  {interrogate_path}", f"mkdir {interrogate_path}")
-    lu.run(f"wget https:///artists.txt -O {interrogate_path}/artists.txt", "downloading artists.txt")
+    lu.run(f"wget https://{obs_path}/resource/artists.txt -O {interrogate_path}/artists.txt", "downloading artists.txt")
     lu.run(f"wget https://{obs_path}/resource/flavors.txt -O {pi.data_path}/flavors.txt", "downloading flavors.txt")
     lu.run(f"wget https://{obs_path}/resource/mediums.txt -O {pi.data_path}/mediums.txt", "downloading mediums.txt")
-    lu.run(f"wget https://{obs_path}/sd-web/resource/movements.txt -O {pi.data_path}/movements.txt",
+    lu.run(f"wget https://{obs_path}/resource/movements.txt -O {pi.data_path}/movements.txt",
            "downloading movements.txt")
-    lu.run(f"wget https://{obs_path}/sd-web/resource/libcudart.so -O /opt/conda/lib/libcudart.so",
+    lu.run(f"wget https://{obs_path}/resource/libcudart.so -O /opt/conda/lib/libcudart.so",
            "downloading libcudart.so")
 
 
@@ -136,4 +136,5 @@ if __name__ == '__main__':
     import sys
 
     HTTP_PROXY = sys.argv[1]
+    print("start init xin zhe env")
     main()
