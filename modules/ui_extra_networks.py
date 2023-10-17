@@ -182,8 +182,9 @@ class ExtraNetworksPage:
                 shared.log.warning(f'Extra network removing invalid image: {f}')
             try:
                 if img is None:
+                    img = None
                     os.remove(f)
-                if img is not None and img.width > 1024 or img.height > 1024 or os.path.getsize(f) > 65536:
+                elif img.width > 1024 or img.height > 1024 or os.path.getsize(f) > 65536:
                     img = img.convert('RGB')
                     img.thumbnail((512, 512), Image.HAMMING)
                     img.save(fn, quality=50)

@@ -379,8 +379,9 @@ def read_metadata_from_safetensors(filename):
 
 
 def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unused-argument
-    #if shared.backend == shared.Backend.DIFFUSERS:
-        #return None
+    if not os.path.isfile(checkpoint_file):
+        shared.log.error(f"Model is not a file: {checkpoint_file}")
+        return None
     try:
         pl_sd = None
         with progress.open(checkpoint_file, 'rb', description=f'[cyan]Loading weights: [yellow]{checkpoint_file}', auto_refresh=True, console=shared.console) as f:
@@ -413,6 +414,8 @@ def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unuse
 
 
 def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
+    if not os.path.isfile(checkpoint_info.filename):
+        return None
     if checkpoint_info in checkpoints_loaded:
         shared.log.info("Model weights loading: from cache")
         return checkpoints_loaded[checkpoint_info]
