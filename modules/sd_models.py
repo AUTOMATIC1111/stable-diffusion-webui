@@ -20,7 +20,7 @@ import tomesd
 from transformers import logging as transformers_logging
 import ldm.modules.midas as midas
 from ldm.util import instantiate_from_config
-from modules import paths, shared, shared_items, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config
+from modules import paths, shared, shared_items, shared_state, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
 from modules.memstats import memory_stats
@@ -53,8 +53,11 @@ class CheckpointInfo:
         filename = os.path.abspath(filename)
         if filename.startswith(script_path):
             filename = os.path.relpath(filename, script_path)
-        relname = os.path.relpath(filename, model_path)
-        relname = os.path.relpath(filename, shared.cmd_opts.ckpt_dir)
+        try:
+            relname = os.path.relpath(filename, model_path)
+            relname = os.path.relpath(filename, shared.cmd_opts.ckpt_dir)
+        except:
+            relname = filename
         relname, ext = os.path.splitext(relname)
         ext = ext.lower()[1:]
 
@@ -777,7 +780,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         "requires_safety_checker": False,
         "load_safety_checker": False,
         "load_connected_pipeline": True,
-        # todo use_safetensors cant enable for all checkpoints just yet
+        # TODO: use_safetensors cant enable for all checkpoints just yet
     }
     if shared.opts.diffusers_model_load_variant == 'default':
         if devices.dtype == torch.float16:
@@ -1132,7 +1135,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         unload_model_weights(op=op)
         return None
     orig_state = copy.deepcopy(shared.state)
-    shared.state = shared.State()
+    shared.state = shared_state.State()
     shared.state.begin(f'load-{op}')
     if load_dict:
         shared.log.debug(f'Model dict: existing={sd_model is not None} target={checkpoint_info.filename} info={info}')
