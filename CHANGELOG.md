@@ -195,6 +195,12 @@ Upgrades are still possible and supported, but clean install is recommended for 
     extensions ui now shows actual status of extensions for reviewed extensions  
     if you want to contribute/flag/update extension status, reach out on github or discord  
   - better overall compatibility with A1111 extensions (up to a point)  
+  - [MultiDiffusion](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111)  
+    has been removed from list of built-in extensions  
+    you can still install it manually if desired  
+  - [LyCORIS]<https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris>  
+    has been removed from list of built-in extensions  
+    it is considered obsolete given that all functionality is now built-in  
 - **General**  
   - **Startup**  
     - all main CLI parameters can now be set as environment variable as well  
