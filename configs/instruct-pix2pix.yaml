@@ -20,7 +20,7 @@ model:
     conditioning_key: hybrid
     monitor: val/loss_simple_ema
     scale_factor: 0.18215
-    use_ema: false
+    use_ema: true
 
     scheduler_config: # 10000 warmup steps
       target: ldm.lr_scheduler.LambdaLinearScheduler
@@ -46,7 +46,7 @@ model:
         transformer_depth: 1
         context_dim: 768
         use_checkpoint: True
-        legacy: False
+        legacy: true
 
     first_stage_config:
       target: ldm.models.autoencoder.AutoencoderKL
