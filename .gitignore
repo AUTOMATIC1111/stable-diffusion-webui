@@ -43,7 +43,6 @@ cache
 !package.json
 
 # all dynamic stuff
-/repositories/**/*
 /extensions/**/*
 /outputs/**/*
 /embeddings/**/*
