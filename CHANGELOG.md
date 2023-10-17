@@ -145,7 +145,7 @@ Upgrades are still possible and supported, but clean install is recommended for 
   - **CUDA**:  
     - default updated to `torch` *2.1.0* with cuda *12.1*  
     - testing moved to `torch` *2.2.0-dev/cu122*  
-    - check out *generate context menu -> show nvml*
+    - check out *generate context menu -> show nvml* for live gpu stats (memory, power, temp, clock, etc.)
   - **Intel Arc/IPEX**:  
     - tons of optimizations, built-in binary wheels for Windows  
       i have to say, intel arc/ipex is getting to be quite a player, especially with openvino  
