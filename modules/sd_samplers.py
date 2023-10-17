@@ -56,4 +56,4 @@ def visible_sampler_names():
     return [x.name for x in samplers if x.name not in samplers_hidden]
 
 
-set_samplers()
+#set_samplers()

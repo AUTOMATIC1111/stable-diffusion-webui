@@ -24,6 +24,7 @@ configure_for_tests = launch_utils.configure_for_tests
 start = launch_utils.start
 
 
+
 def main():
     if args.dump_sysinfo:
         filename = launch_utils.dump_sysinfo()
@@ -42,7 +43,6 @@ def main():
         configure_for_tests()
 
     start()
-
 
 if __name__ == "__main__":
     main()

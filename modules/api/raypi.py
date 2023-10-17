@@ -36,6 +36,12 @@ from typing import Dict, List, Any
 import piexif
 import piexif.helper
 from contextlib import closing
+
+from modules import initialize_util
+from modules import script_callbacks
+import os
+
+import launch
 from ray import serve
 
 app = FastAPI()
@@ -204,75 +210,35 @@ def api_middleware(app: FastAPI):
 
 api_middleware(app)
 
-
 @serve.deployment(    
-    ray_actor_options={"num_gpus": 1},
-    autoscaling_config={"min_replicas": 0, "max_replicas": 2},
-    #route_prefix="/sdapi/v1",
+    ray_actor_options={"num_gpus": int(os.environ.get("RAY_NUM_GPUS", 0))},
+    autoscaling_config={
+                        "min_replicas": int(os.environ.get("RAY_MIN_REPLICAS", 0)),
+                        "max_replicas": int(os.environ.get("RAY_MAX_REPLICAS", 0))
+                        },
     )
 @serve.ingress(app)
-class Api:
+class Raypi:
     def __init__(self):
+        print("Initializing API")
         initialize.initialize()
+        print("preparing env")
+        launch.prepare_environment()
+        #app.include_router(Raypi(app).router)      
+              
         if shared.cmd_opts.api_auth:
             self.credentials = {}
             for auth in shared.cmd_opts.api_auth.split(","):
                 user, password = auth.split(":")
                 self.credentials[user] = password
-
-        self.router = APIRouter()
-        
-        
-        
+        print("preparing env")
+        launch.prepare_environment()
+     
         print("API initialized")
-        self.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"], response_model=models.TextToImageResponse)
-        self.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=models.ImageToImageResponse)
-        self.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=models.ExtrasSingleImageResponse)
-        self.add_api_route("/sdapi/v1/extra-batch-images", self.extras_batch_images_api, methods=["POST"], response_model=models.ExtrasBatchImagesResponse)
-        self.add_api_route("/sdapi/v1/png-info", self.pnginfoapi, methods=["POST"], response_model=models.PNGInfoResponse)
-        self.add_api_route("/sdapi/v1/progress", self.progressapi, methods=["GET"], response_model=models.ProgressResponse)
-        self.add_api_route("/sdapi/v1/interrogate", self.interrogateapi, methods=["POST"])
-        self.add_api_route("/sdapi/v1/interrupt", self.interruptapi, methods=["POST"])
-        self.add_api_route("/sdapi/v1/skip", self.skip, methods=["POST"])
-        self.add_api_route("/sdapi/v1/options", self.get_config, methods=["GET"], response_model=models.OptionsModel)
-        self.add_api_route("/sdapi/v1/options", self.set_config, methods=["POST"])
-        self.add_api_route("/sdapi/v1/cmd-flags", self.get_cmd_flags, methods=["GET"], response_model=models.FlagsModel)
-        self.add_api_route("/sdapi/v1/samplers", self.get_samplers, methods=["GET"], response_model=List[models.SamplerItem])
-        self.add_api_route("/sdapi/v1/upscalers", self.get_upscalers, methods=["GET"], response_model=List[models.UpscalerItem])
-        self.add_api_route("/sdapi/v1/latent-upscale-modes", self.get_latent_upscale_modes, methods=["GET"], response_model=List[models.LatentUpscalerModeItem])
-        self.add_api_route("/sdapi/v1/sd-models", self.get_sd_models, methods=["GET"], response_model=List[models.SDModelItem])
-        self.add_api_route("/sdapi/v1/sd-vae", self.get_sd_vaes, methods=["GET"], response_model=List[models.SDVaeItem])
-        self.add_api_route("/sdapi/v1/hypernetworks", self.get_hypernetworks, methods=["GET"], response_model=List[models.HypernetworkItem])
-        self.add_api_route("/sdapi/v1/face-restorers", self.get_face_restorers, methods=["GET"], response_model=List[models.FaceRestorerItem])
-        self.add_api_route("/sdapi/v1/realesrgan-models", self.get_realesrgan_models, methods=["GET"], response_model=List[models.RealesrganItem])
-        self.add_api_route("/sdapi/v1/prompt-styles", self.get_prompt_styles, methods=["GET"], response_model=List[models.PromptStyleItem])
-        self.add_api_route("/sdapi/v1/embeddings", self.get_embeddings, methods=["GET"], response_model=models.EmbeddingsResponse)
-        self.add_api_route("/sdapi/v1/refresh-checkpoints", self.refresh_checkpoints, methods=["POST"])
-        self.add_api_route("/sdapi/v1/refresh-vae", self.refresh_vae, methods=["POST"])
-        self.add_api_route("/sdapi/v1/create/embedding", self.create_embedding, methods=["POST"], response_model=models.CreateResponse)
-        self.add_api_route("/sdapi/v1/create/hypernetwork", self.create_hypernetwork, methods=["POST"], response_model=models.CreateResponse)
-        self.add_api_route("/sdapi/v1/preprocess", self.preprocess, methods=["POST"], response_model=models.PreprocessResponse)
-        self.add_api_route("/sdapi/v1/train/embedding", self.train_embedding, methods=["POST"], response_model=models.TrainResponse)
-        self.add_api_route("/sdapi/v1/train/hypernetwork", self.train_hypernetwork, methods=["POST"], response_model=models.TrainResponse)
-        self.add_api_route("/sdapi/v1/memory", self.get_memory, methods=["GET"], response_model=models.MemoryResponse)
-        self.add_api_route("/sdapi/v1/unload-checkpoint", self.unloadapi, methods=["POST"])
-        self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
-        self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
-        self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
-
-        if shared.cmd_opts.api_server_stop:
-            self.add_api_route("/sdapi/v1/server-kill", self.kill_webui, methods=["POST"])
-            self.add_api_route("/sdapi/v1/server-restart", self.restart_webui, methods=["POST"])
-            self.add_api_route("/sdapi/v1/server-stop", self.stop_webui, methods=["POST"])
 
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
 
-
-    def add_api_route(self, path: str, endpoint, **kwargs):
-        if shared.cmd_opts.api_auth:
-            return self.app.add_api_route(path, endpoint, dependencies=[Depends(self.auth)], **kwargs)
-        return self.app.add_api_route(path, endpoint, **kwargs)
 
     def auth(self, credentials: HTTPBasicCredentials = Depends(HTTPBasic())):
         if credentials.username in self.credentials:
@@ -289,12 +255,14 @@ class Api:
         script = script_runner.selectable_scripts[script_idx]
         return script, script_idx
 
+    @app.get("/scripts", response_model=models.ScriptsList)
     def get_scripts_list(self):
         t2ilist = [script.name for script in scripts.scripts_txt2img.scripts if script.name is not None]
         i2ilist = [script.name for script in scripts.scripts_img2img.scripts if script.name is not None]
 
         return models.ScriptsList(txt2img=t2ilist, img2img=i2ilist)
 
+    @app.get("/script-info", response_model=List[models.ScriptInfo])
     def get_script_info(self):
         res = []
 
@@ -353,6 +321,7 @@ class Api:
                         script_args[alwayson_script.args_from + idx] = request.alwayson_scripts[alwayson_script_name]["args"][idx]
         return script_args
 
+    @app.post("/txt2img", response_model=models.TextToImageResponse)
     def text2imgapi(self, txt2imgreq: models.StableDiffusionTxt2ImgProcessingAPI):
         script_runner = scripts.scripts_txt2img
         if not script_runner.scripts:
@@ -380,29 +349,29 @@ class Api:
         send_images = args.pop('send_images', True)
         args.pop('save_images', None)
 
-        with self.queue_lock:
-            with closing(StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)) as p:
-                p.is_api = True
-                p.scripts = script_runner
-                p.outpath_grids = opts.outdir_txt2img_grids
-                p.outpath_samples = opts.outdir_txt2img_samples
-
-                try:
-                    shared.state.begin(job="scripts_txt2img")
-                    if selectable_scripts is not None:
-                        p.script_args = script_args
-                        processed = scripts.scripts_txt2img.run(p, *p.script_args) # Need to pass args as list here
-                    else:
-                        p.script_args = tuple(script_args) # Need to pass args as tuple here
-                        processed = process_images(p)
-                finally:
-                    shared.state.end()
-                    shared.total_tqdm.clear()
+        
+        with closing(StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)) as p:
+            p.is_api = True
+            p.scripts = script_runner
+            p.outpath_grids = opts.outdir_txt2img_grids
+            p.outpath_samples = opts.outdir_txt2img_samples
+            try:
+                shared.state.begin(job="scripts_txt2img")
+                if selectable_scripts is not None:
+                    p.script_args = script_args
+                    processed = scripts.scripts_txt2img.run(p, *p.script_args) # Need to pass args as list here
+                else:
+                    p.script_args = tuple(script_args) # Need to pass args as tuple here
+                    processed = process_images(p)
+            finally:
+                shared.state.end()
+                shared.total_tqdm.clear()
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
         return models.TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
+    @app.post("/img2img", response_model=models.ImageToImageResponse)
     def img2imgapi(self, img2imgreq: models.StableDiffusionImg2ImgProcessingAPI):
         init_images = img2imgreq.init_images
         if init_images is None:
@@ -440,25 +409,24 @@ class Api:
         send_images = args.pop('send_images', True)
         args.pop('save_images', None)
 
-        with self.queue_lock:
-            with closing(StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)) as p:
-                p.init_images = [decode_base64_to_image(x) for x in init_images]
-                p.is_api = True
-                p.scripts = script_runner
-                p.outpath_grids = opts.outdir_img2img_grids
-                p.outpath_samples = opts.outdir_img2img_samples
-
-                try:
-                    shared.state.begin(job="scripts_img2img")
-                    if selectable_scripts is not None:
-                        p.script_args = script_args
-                        processed = scripts.scripts_img2img.run(p, *p.script_args) # Need to pass args as list here
-                    else:
-                        p.script_args = tuple(script_args) # Need to pass args as tuple here
-                        processed = process_images(p)
-                finally:
-                    shared.state.end()
-                    shared.total_tqdm.clear()
+        
+        with closing(StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)) as p:
+            p.init_images = [decode_base64_to_image(x) for x in init_images]
+            p.is_api = True
+            p.scripts = script_runner
+            p.outpath_grids = opts.outdir_img2img_grids
+            p.outpath_samples = opts.outdir_img2img_samples
+            try:
+                shared.state.begin(job="scripts_img2img")
+                if selectable_scripts is not None:
+                    p.script_args = script_args
+                    processed = scripts.scripts_img2img.run(p, *p.script_args) # Need to pass args as list here
+                else:
+                    p.script_args = tuple(script_args) # Need to pass args as tuple here
+                    processed = process_images(p)
+            finally:
+                shared.state.end()
+                shared.total_tqdm.clear()
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
@@ -468,27 +436,30 @@ class Api:
 
         return models.ImageToImageResponse(images=b64images, parameters=vars(img2imgreq), info=processed.js())
 
+    @app.post("/extra-single-image",response_model=models.ExtrasSingleImageResponse)
     def extras_single_image_api(self, req: models.ExtrasSingleImageRequest):
         reqDict = setUpscalers(req)
 
         reqDict['image'] = decode_base64_to_image(reqDict['image'])
 
-        with self.queue_lock:
-            result = postprocessing.run_extras(extras_mode=0, image_folder="", input_dir="", output_dir="", save_output=False, **reqDict)
+        
+        result = postprocessing.run_extras(extras_mode=0, image_folder="", input_dir="", output_dir="", save_output=False, **reqDict)
 
         return models.ExtrasSingleImageResponse(image=encode_pil_to_base64(result[0][0]), html_info=result[1])
 
+    @app.post("/extra-batch-images",response_model=models.ExtrasBatchImagesResponse)
     def extras_batch_images_api(self, req: models.ExtrasBatchImagesRequest):
         reqDict = setUpscalers(req)
 
         image_list = reqDict.pop('imageList', [])
         image_folder = [decode_base64_to_image(x.data) for x in image_list]
 
-        with self.queue_lock:
-            result = postprocessing.run_extras(extras_mode=1, image_folder=image_folder, image="", input_dir="", output_dir="", save_output=False, **reqDict)
+        
+        result = postprocessing.run_extras(extras_mode=1, image_folder=image_folder, image="", input_dir="", output_dir="", save_output=False, **reqDict)
 
         return models.ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
 
+    @app.post("/png-info",response_model=models.PNGInfoResponse)
     def pnginfoapi(self, req: models.PNGInfoRequest):
         if(not req.image.strip()):
             return models.PNGInfoResponse(info="")
@@ -505,6 +476,7 @@ class Api:
 
         return models.PNGInfoResponse(info=geninfo, items=items)
 
+    @app.get("/progress",response_model=models.ProgressResponse)
     def progressapi(self, req: models.ProgressRequest = Depends()):
         # copy from check_progress_call of ui.py
 
@@ -533,6 +505,7 @@ class Api:
 
         return models.ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image, textinfo=shared.state.textinfo)
 
+    @app.post("/interrogate")
     def interrogateapi(self, interrogatereq: models.InterrogateRequest):
         image_b64 = interrogatereq.image
         if image_b64 is None:
@@ -542,34 +515,38 @@ class Api:
         img = img.convert('RGB')
 
         # Override object param
-        with self.queue_lock:
-            if interrogatereq.model == "clip":
-                processed = shared.interrogator.interrogate(img)
-            elif interrogatereq.model == "deepdanbooru":
-                processed = deepbooru.model.tag(img)
-            else:
-                raise HTTPException(status_code=404, detail="Model not found")
-
+        if interrogatereq.model == "clip":
+            processed = shared.interrogator.interrogate(img)
+        elif interrogatereq.model == "deepdanbooru":
+            processed = deepbooru.model.tag(img)
+        else:
+            raise HTTPException(status_code=404, detail="Model not found")
+        
         return models.InterrogateResponse(caption=processed)
 
+    @app.post("/interrupt")
     def interruptapi(self):
         shared.state.interrupt()
 
         return {}
 
+    @app.post("/unload-checkpoint")
     def unloadapi(self):
         unload_model_weights()
 
         return {}
 
+    @app.post("/reload-checkpoint")
     def reloadapi(self):
         reload_model_weights()
 
         return {}
 
+    @app.post("/skip")
     def skip(self):
         shared.state.skip()
 
+    @app.get("/options",response_model=models.OptionsModel)
     def get_config(self):
         options = {}
         for key in shared.opts.data.keys():
@@ -581,6 +558,7 @@ class Api:
 
         return options
 
+    @app.post("/options")
     def set_config(self, req: Dict[str, Any]):
         checkpoint_name = req.get("sd_model_checkpoint", None)
         if checkpoint_name is not None and checkpoint_name not in checkpoint_aliases:
@@ -592,12 +570,15 @@ class Api:
         shared.opts.save(shared.config_filename)
         return
 
+    @app.get("/cmd-flags", response_model=models.FlagsModel)
     def get_cmd_flags(self):
         return vars(shared.cmd_opts)
 
+    @app.get("/samplers", response_model=List[models.SamplerItem])
     def get_samplers(self):
         return [{"name": sampler[0], "aliases":sampler[2], "options":sampler[3]} for sampler in sd_samplers.all_samplers]
 
+    @app.get("/upscalers",response_model=List[models.UpscalerItem])
     def get_upscalers(self):
         return [
             {
@@ -610,6 +591,7 @@ class Api:
             for upscaler in shared.sd_upscalers
         ]
 
+    @app.get("/latent-upscale-modes",response_model=List[models.LatentUpscalerModeItem])
     def get_latent_upscale_modes(self):
         return [
             {
@@ -618,23 +600,29 @@ class Api:
             for upscale_mode in [*(shared.latent_upscale_modes or {})]
         ]
 
+    @app.get("/sd-models", response_model=List[models.SDModelItem])
     def get_sd_models(self):
         import modules.sd_models as sd_models
         return [{"title": x.title, "model_name": x.model_name, "hash": x.shorthash, "sha256": x.sha256, "filename": x.filename, "config": find_checkpoint_config_near_filename(x)} for x in sd_models.checkpoints_list.values()]
 
+    @app.get("/sd-vae", response_model=List[models.SDVaeItem])
     def get_sd_vaes(self):
         import modules.sd_vae as sd_vae
         return [{"model_name": x, "filename": sd_vae.vae_dict[x]} for x in sd_vae.vae_dict.keys()]
 
+    @app.get("/hypernetworks", response_model=List[models.HypernetworkItem])
     def get_hypernetworks(self):
         return [{"name": name, "path": shared.hypernetworks[name]} for name in shared.hypernetworks]
 
+    @app.get("/face-restorers", response_model=List[models.FaceRestorerItem])
     def get_face_restorers(self):
         return [{"name":x.name(), "cmd_dir": getattr(x, "cmd_dir", None)} for x in shared.face_restorers]
 
+    @app.get("/realesrgan-models",response_model=List[models.RealesrganItem])
     def get_realesrgan_models(self):
         return [{"name":x.name,"path":x.data_path, "scale":x.scale} for x in get_realesrgan_models(None)]
 
+    @app.get("/prompt-styles", response_model=List[models.PromptStyleItem])
     def get_prompt_styles(self):
         styleList = []
         for k in shared.prompt_styles.styles:
@@ -643,6 +631,7 @@ class Api:
 
         return styleList
 
+    @app.get("/embeddings", response_model=models.EmbeddingsResponse)
     def get_embeddings(self):
         db = sd_hijack.model_hijack.embedding_db
 
@@ -655,6 +644,7 @@ class Api:
                 "vectors": embedding.vectors,
             }
 
+
         def convert_embeddings(embeddings):
             return {embedding.name: convert_embedding(embedding) for embedding in embeddings.values()}
 
@@ -663,14 +653,17 @@ class Api:
             "skipped": convert_embeddings(db.skipped_embeddings),
         }
 
+    @app.post("/refresh-checkpoints")
     def refresh_checkpoints(self):
-        with self.queue_lock:
-            shared.refresh_checkpoints()
+        
+        shared.refresh_checkpoints()
 
+    @app.post("/refresh-vae")
     def refresh_vae(self):
-        with self.queue_lock:
-            shared_items.refresh_vae_list()
+        
+        shared_items.refresh_vae_list()
 
+    @app.post("/create/embedding", response_model=models.CreateResponse)
     def create_embedding(self, args: dict):
         try:
             shared.state.begin(job="create_embedding")
@@ -682,7 +675,7 @@ class Api:
         finally:
             shared.state.end()
 
-
+    @app.post("/create/hypernetwork", response_model=models.CreateResponse)
     def create_hypernetwork(self, args: dict):
         try:
             shared.state.begin(job="create_hypernetwork")
@@ -693,6 +686,7 @@ class Api:
         finally:
             shared.state.end()
 
+    @app.post("/preprocess", response_model=models.PreprocessResponse)
     def preprocess(self, args: dict):
         try:
             shared.state.begin(job="preprocess")
@@ -706,6 +700,7 @@ class Api:
         finally:
             shared.state.end()
 
+    @app.post("/train/embedding", response_model=models.TrainResponse)
     def train_embedding(self, args: dict):
         try:
             shared.state.begin(job="train_embedding")
@@ -727,6 +722,7 @@ class Api:
         finally:
             shared.state.end()
 
+    @app.post("/train/hypernetwork", response_model=models.TrainResponse)
     def train_hypernetwork(self, args: dict):
         try:
             shared.state.begin(job="train_hypernetwork")
@@ -752,6 +748,7 @@ class Api:
         finally:
             shared.state.end()
 
+    @app.get("/memory", response_model=models.MemoryResponse)
     def get_memory(self):
         try:
             import os
@@ -791,15 +788,17 @@ class Api:
         self.app.include_router(self.router)
         uvicorn.run(self.app, host=server_name, port=port, timeout_keep_alive=shared.cmd_opts.timeout_keep_alive, root_path=root_path)
 
+    @app.post("/server-kill")
     def kill_webui(self):
         restart.stop_program()
 
+    @app.post("/server-restart")
     def restart_webui(self):
         if restart.is_restartable():
             restart.restart_program()
         return Response(status_code=501)
 
+    @app.post("/server-stop")
     def stop_webui(request):
         shared.state.server_command = "stop"
         return Response("Stopping.")
-

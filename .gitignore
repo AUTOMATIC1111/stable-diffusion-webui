@@ -37,3 +37,7 @@ notification.mp3
 /node_modules
 /package-lock.json
 /.coverage*
+
+sd-data
+modules/api/raypi2.py
+modules/api/raypi3.py

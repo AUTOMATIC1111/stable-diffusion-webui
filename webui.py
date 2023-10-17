@@ -19,8 +19,28 @@ def create_api(app):
     from modules.api.api import Api
     from modules.call_queue import queue_lock
 
-    api = Api(app, queue_lock)
+    api = Api(app)
+    #api = Api(app, queue_lock)
     return api
+
+
+def ray_api():
+    from modules.api.ray import ray_only
+
+    from modules.shared_cmd_options import cmd_opts
+
+    launch_api = cmd_opts.api
+    initialize.initialize()
+
+    from modules import shared, ui_tempdir, script_callbacks, ui, progress, ui_extra_networks
+
+    script_callbacks.before_ui_callback()
+    startup_timer.record("scripts before_ui_callback")
+    shared.demo = ui.create_ui()
+    startup_timer.record("create ui")
+    if not cmd_opts.no_gradio_queue:
+        shared.demo.queue(64)
+    ray_only()
 
 
 def api_only():
@@ -155,8 +175,11 @@ def webui():
 
 if __name__ == "__main__":
     from modules.shared_cmd_options import cmd_opts
+    
 
     if cmd_opts.nowebui:
         api_only()
+    elif cmd_opts.ray:
+        ray_api()
     else:
         webui()
