@@ -231,8 +231,7 @@ class Raypi:
             for auth in shared.cmd_opts.api_auth.split(","):
                 user, password = auth.split(":")
                 self.credentials[user] = password
-        print("preparing env")
-        launch.prepare_environment()
+        
      
         print("API initialized")
 
