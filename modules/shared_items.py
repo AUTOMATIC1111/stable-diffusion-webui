@@ -120,4 +120,4 @@ class Shared(sys.modules[__name__].__class__):
         # The arguments are the current values of the sd_model property
         return (self.__class__, (self.sd_model,))
 
-#sys.modules['modules.shared'].__class__ = Shared
+sys.modules['modules.shared'].__class__ = Shared
