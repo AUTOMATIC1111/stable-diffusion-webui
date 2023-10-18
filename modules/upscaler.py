@@ -64,6 +64,8 @@ class Upscaler:
                 scalers.append(scaler)
                 loaded.append(model_path)
                 # modules.shared.log.debug(f'Upscaler type={self.name} folder="{self.user_path}" model="{model[0]}" path="{model_path}"')
+        if not os.path.exists(self.user_path):
+            return scalers
         for fn in os.listdir(self.user_path): # from folder
             if not fn.endswith('.pth') and not fn.endswith('.pt'):
                 continue

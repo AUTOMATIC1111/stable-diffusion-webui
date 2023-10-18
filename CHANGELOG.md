@@ -9,6 +9,8 @@ Service release addressing all zero-day issues reported so far...
 - fix freeu for backend original and add it to xyz grid
 - fix loading diffuser models in huggingface format from non-standard location
 - fix default styles looking in wrong location
+- fix missing upscaler folder on initial startup
+- enhance extension compatibility for exensions directly importing codeformers
 - update `typing-extensions`
 
 **Themes**

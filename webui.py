@@ -100,6 +100,7 @@ def initialize():
 
     import modules.postprocess.codeformer_model as codeformer
     codeformer.setup_model(opts.codeformer_models_path)
+    sys.modules["modules.codeformer_model"] = codeformer
     import modules.postprocess.gfpgan_model as gfpgan
     gfpgan.setup_model(opts.gfpgan_models_path)
     timer.startup.record("face-restore")

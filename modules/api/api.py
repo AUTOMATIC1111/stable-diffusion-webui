@@ -182,7 +182,8 @@ class Api:
         if shared.opts.motd:
             res = requests.get('https://vladmandic.github.io/automatic/motd', timeout=10)
             if res.status_code == 200:
-                shared.log.info(f'MOTD: {res.text}')
+                msg = (res.text or '').strip()
+                shared.log.info(f'MOTD: {msg if len(msg) > 0 else "N/A"}')
                 motd += res.text
         return motd
 
