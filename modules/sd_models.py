@@ -55,7 +55,7 @@ class CheckpointInfo:
         def rel(fn, path):
             try:
                 return os.path.relpath(fn, path)
-            except:
+            except Exception:
                 return fn
 
         if relname.startswith(shared.opts.ckpt_dir):
