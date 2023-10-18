@@ -447,7 +447,7 @@ def check_torch():
             log.info('Using CPU-only Torch')
             torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision')
     if 'torch' in torch_command and not args.version:
-        log.info('Installing torch - this may take a while')
+        # log.info('Installing torch - this may take a while')
         install(torch_command, 'torch torchvision')
     else:
         try:

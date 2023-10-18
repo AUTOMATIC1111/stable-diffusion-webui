@@ -50,21 +50,24 @@ class CheckpointInfo:
         self.hash = None
         self.filename = filename
         self.type = ''
-        filename = os.path.abspath(filename)
         relname = filename
-        if relname.startswith(script_path):
+
+        def rel(fn, path):
             try:
-                relname = os.path.relpath(filename, script_path)
+                return os.path.relpath(fn, path)
             except:
-                pass
-        try:
-            relname = os.path.relpath(filename, model_path)
-        except:
-            pass
-        try:
-            relname = os.path.relpath(filename, shared.cmd_opts.ckpt_dir)
-        except:
-            pass
+                return fn
+
+        if relname.startswith(shared.opts.ckpt_dir):
+            relname = rel(filename, shared.opts.ckpt_dir)
+        elif relname.startswith(shared.opts.diffusers_dir):
+            relname = rel(filename, shared.opts.diffusers_dir)
+        elif relname.startswith(model_path):
+            relname = rel(filename, model_path)
+        elif relname.startswith(script_path):
+            relname = rel(filename, script_path)
+        else:
+            relname = os.path.abspath(relname)
         relname, ext = os.path.splitext(relname)
         ext = ext.lower()[1:]
 
@@ -87,9 +90,6 @@ class CheckpointInfo:
                 self.sha256 = repo[0]['hash']
                 self.type = 'diffusers'
 
-        # info = shared.readfile(self.filename, silent=True)
-        # if 'tags' in info:
-        #    self.tags = info['tags']
         self.shorthash = self.sha256[0:10] if self.sha256 else None
         self.title = self.name if self.shorthash is None else f'{self.name} [{self.shorthash}]'
         self.path = self.filename
