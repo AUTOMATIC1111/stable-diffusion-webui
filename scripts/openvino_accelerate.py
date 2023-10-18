@@ -520,7 +520,15 @@ def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching,
             elif (mode == 2):
                 sd_model = StableDiffusionXLInpaintPipeline(**sd_model.components)
             elif (mode == 3):
-                controlnet = ControlNetModel.from_pretrained("lllyasviel/" + model_state.cn_model)
+                cn_model_dir_path = os.path.join(curr_dir_path, 'extensions', 'sd-webui-controlnet', 'models')
+                cn_model_path = os.path.join(cn_model_dir_path, model_state.cn_model)
+                if os.path.isfile(cn_model_path + '.pt'):
+                    cn_model_path = cn_model_path + '.pt'
+                elif os.path.isfile(cn_model_path + '.safetensors'):
+                    cn_model_path = cn_model_path + '.safetensors'
+                elif os.path.isfile(cn_model_path + '.pth'):
+                    cn_model_path = cn_model_path + '.pth'
+                controlnet = ControlNetModel.from_single_file(cn_model_path, local_files_only=True)
                 sd_model = StableDiffusionXLControlNetPipeline(**sd_model.components, controlnet=controlnet)
                 sd_model.controlnet = torch.compile(sd_model.controlnet, backend="openvino_fx")
         else:
@@ -535,7 +543,15 @@ def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching,
             elif (mode == 2):
                 sd_model = StableDiffusionInpaintPipeline(**sd_model.components)
             elif (mode == 3):
-                controlnet = ControlNetModel.from_pretrained("lllyasviel/" + model_state.cn_model)
+                cn_model_dir_path = os.path.join(curr_dir_path, 'extensions', 'sd-webui-controlnet', 'models')
+                cn_model_path = os.path.join(cn_model_dir_path, model_state.cn_model)
+                if os.path.isfile(cn_model_path + '.pt'):
+                    cn_model_path = cn_model_path + '.pt'
+                elif os.path.isfile(cn_model_path + '.safetensors'):
+                    cn_model_path = cn_model_path + '.safetensors'
+                elif os.path.isfile(cn_model_path + '.pth'):
+                    cn_model_path = cn_model_path + '.pth'
+                controlnet = ControlNetModel.from_single_file(cn_model_path, local_files_only=True)
                 sd_model = StableDiffusionControlNetPipeline(**sd_model.components, controlnet=controlnet)
                 sd_model.controlnet = torch.compile(sd_model.controlnet, backend="openvino_fx")
 
@@ -878,10 +894,23 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
             negative_cond = prompt_parser.SdConditioning(p.negative_prompts, width=p.width, height=p.height, is_negative_prompt=True)
             negative_prompt_embeds = p.sd_model.get_learned_conditioning(negative_cond)
 
+            # temp workaround to disable prompt weighting for SDXL
+            if is_xl_ckpt is True :
+                custom_inputs.update(
+                    {
+                    'prompt': p.prompts,
+                    'negative_prompt': p.negative_prompts
+                }
+                )
+            else:
+                custom_inputs.update(
+                    {
+                        'prompt_embeds' : prompt_embeds,
+                        'negative_prompt_embeds' : negative_prompt_embeds
+                    }
+                )
 
             output = shared.sd_diffusers_model(
-                    prompt_embeds=prompt_embeds,
-                    negative_prompt_embeds=negative_prompt_embeds,
                     num_inference_steps=p.steps,
                     guidance_scale=p.cfg_scale,
                     generator=generator,
