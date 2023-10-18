@@ -5,11 +5,11 @@
 Service release addressing all zero-day issues reported so far...
 
 **Fixes**
-- complete lyco removal
 - fix freeu for backend original and add it to xyz grid
 - fix loading diffuser models in huggingface format from non-standard location
 - fix default styles looking in wrong location
 - fix missing upscaler folder on initial startup
+- complete lyco removal
 - enhance extension compatibility for exensions directly importing codeformers
 - update `typing-extensions`
 
@@ -18,11 +18,6 @@ Service release addressing all zero-day issues reported so far...
   - *black-teal (default), light-teal, black-orange, invoked, amethyst-nightfall, midnight-barbie*  
 - if you're using any **gradio default** themes or a **3rd party** theme or  that are not optimized for SD.Next, you may experience issues  
   default minimal style has been updated for compatibility, but actual styling is completely outside of SD.Next control  
-
-**Cannot reproduce**  
-- diffusers: img2img: batch count 2 => black images for higher batches  
-- diffusers deis sampler reporting sde-dpmsolver++ is not implemented  
-
 
 ## Update for 2023-10-17
 
