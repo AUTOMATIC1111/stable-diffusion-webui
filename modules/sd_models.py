@@ -394,6 +394,9 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         if shared.cmd_opts.opt_unet_fp8_storage:
             model.model.diffusion_model = model.model.diffusion_model.to(torch.float8_e4m3fn)
             timer.record("apply fp8 unet")
+        elif model.is_sdxl and shared.cmd_opts.opt_unet_fp8_storage_xl:
+            model.model.diffusion_model = model.model.diffusion_model.to(torch.float8_e4m3fn)
+            timer.record("apply fp8 unet for sdxl")
 
     devices.unet_needs_upcast = shared.cmd_opts.upcast_sampling and devices.dtype == torch.float16 and devices.dtype_unet == torch.float16
 
