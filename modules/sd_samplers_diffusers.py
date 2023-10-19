@@ -103,6 +103,5 @@ class DiffusionSampler:
             self.config['beta_start'] = shared.opts.schedulers_beta_start
         if 'beta_end' in self.config and shared.opts.schedulers_beta_end > 0:
             self.config['beta_end'] = shared.opts.schedulers_beta_end
-        print('HERE9', self.config)
         self.sampler = constructor(**self.config)
         self.sampler.name = name

@@ -525,8 +525,11 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         if image.width > 512 or image.height > 512:
             image = image.convert('RGB')
             image.thumbnail((512, 512), Image.HAMMING)
-        image.save(ui.last_item.local_preview, quality=50)
-        shared.log.debug(f'Extra network save image: item={ui.last_item.name} filename={ui.last_item.local_preview}')
+        try:
+            image.save(ui.last_item.local_preview, quality=50)
+            shared.log.debug(f'Extra network save image: item={ui.last_item.name} filename={ui.last_item.local_preview}')
+        except Exception as e:
+            shared.log.error(f'Extra network save image: item={ui.last_item.name} filename={ui.last_item.local_preview} {e}')
         return image
 
     def fn_delete_img():

@@ -71,7 +71,6 @@ def cheap_approximation(sample): # Approximate simple
         ]).reshape(3, 4, 1, 1)
         simple_bias = None
     try:
-        print('HERE', sample.dtype, sample.device)
         x_sample = nn.functional.conv2d(sample, simple_weights.to(sample.device, sample.dtype), simple_bias.to(sample.device, sample.dtype)) # pylint: disable=not-callable
         return x_sample
     except Exception as e:

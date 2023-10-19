@@ -16,10 +16,12 @@ Service release addressing all zero-day issues reported so far...
 - fix new style filename template
 - fix image name template using model name
 - fix model path using relative path
+- fix torch-rocm version detection (thanks @xangelix)
 - force second requirements check on startup
 - remove lyco, multiple_tqdm
 - enhance extension compatibility for exensions directly importing codeformers  
 - enhance extension compatibility for exensions directly accessing processing params  
+- update `openvino` (thanks @disty0)
 - update `typing-extensions`
 
 **Themes**
