@@ -351,7 +351,7 @@ class FilenameGenerator:
         return shorthash
 
     def prompt_words(self):
-        if self.p is None or self.prompt is None:
+        if self.prompt is None:
             return ''
         no_attention = re_attention.sub(r'\1', self.prompt)
         no_network = re_network.sub(r'\1', no_attention)
