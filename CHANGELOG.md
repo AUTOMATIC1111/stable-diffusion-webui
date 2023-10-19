@@ -14,6 +14,7 @@ Service release addressing all zero-day issues reported so far...
 - fix batch img2img
 - fix diffusers dpm++ 2m and 1s samplers
 - fix new style filename template
+- fix image name template using model name
 - force second requirements check on startup
 - remove lyco, multiple_tqdm
 - enhance extension compatibility for exensions directly importing codeformers  

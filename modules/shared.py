@@ -160,7 +160,7 @@ def list_samplers():
 def temp_disable_extensions():
     disabled = []
     if cmd_opts.safe:
-        for ext in ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris', 'sd-webui-agent-scheduler', 'clip-interrogator-ext', 'stable-diffusion-webui-rembg', 'sd-extension-chainner']:
+        for ext in ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris', 'sd-webui-agent-scheduler', 'clip-interrogator-ext', 'stable-diffusion-webui-rembg', 'sd-extension-chainner', 'stable-diffusion-webui-images-browser']:
             if ext not in opts.disabled_extensions:
                 disabled.append(ext)
         log.info(f'Safe mode disabling extensions: {disabled}')
@@ -297,7 +297,7 @@ options_templates.update(options_section(('advanced', "Inference Settings"), {
     "token_merging_sep": OptionInfo("<h2>Token merging</h2>", "", gr.HTML),
     "token_merging_ratio": OptionInfo(0.0, "Token merging ratio (txt2img)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
     "token_merging_ratio_img2img": OptionInfo(0.0, "Token merging ratio (img2img)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
-    "token_merging_ratio_hr": OptionInfo(0.0, "Token merging ratio for (hires)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
+    "token_merging_ratio_hr": OptionInfo(0.0, "Token merging ratio (hires)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
 
     "freeu_sep": OptionInfo("<h2>FreeU</h2>", "", gr.HTML),
     "freeu_enabled": OptionInfo(False, "FreeU enabled"),

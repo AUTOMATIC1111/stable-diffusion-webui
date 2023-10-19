@@ -172,12 +172,15 @@ class StableDiffusionProcessing:
         self.s_max = shared.opts.s_max
         self.s_tmin = shared.opts.s_tmin
         self.s_tmax = float('inf')  # not representable as a standard ui option
-        self.refiner_switch_at = 0 # a1111 compatibility item
-        self.all_hr_prompts = [] # a1111 compatibility item
-        self.hr_prompt = '' # a1111 compatibility item
-        self.comments = {} # a1111 compatibility item
-        self.is_api = False # a1111 compatibility item
         shared.opts.data['clip_skip'] = clip_skip
+        # TODO a1111 compatibility items
+        self.refiner_switch_at = 0
+        self.hr_prompt = ''
+        self.all_hr_prompts = []
+        self.hr_negative_prompt = ''
+        self.all_hr_negative_prompts = []
+        self.comments = {}
+        self.is_api = False
 
     @property
     def sd_model(self):
