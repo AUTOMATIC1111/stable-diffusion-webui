@@ -8,6 +8,7 @@ from openvino.runtime import Core, Type, PartialShape, serialize
 from torch._dynamo.backends.common import fake_tensor_unsupported
 from torch._dynamo.backends.registry import register_backend
 from torch.fx.experimental.proxy_tensor import make_fx
+from torch.fx import GraphModule
 from torch.utils._pytree import tree_flatten
 from types import MappingProxyType
 from hashlib import sha256
@@ -132,7 +133,7 @@ def cached_model_name(model_hash_str, device, args, cache_root, reversed = False
 
     return file_name
 
-def check_fully_supported(self, graph_module):
+def check_fully_supported(self, graph_module: GraphModule) -> bool:
     num_fused = 0
     for node in graph_module.graph.nodes:
         if node.op == "call_module" and "fused_" in node.name:
@@ -178,7 +179,7 @@ def openvino_clear_caches():
     compiled_cache.clear()
     partitioned_modules.clear()
 
-def openvino_compile(gm, *args, model_hash_str: str = None, file_name=""):
+def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_name=""):
     core = Core()
 
     device = get_device()
@@ -259,7 +260,7 @@ def openvino_compile_cached_model(cached_model_path, *example_inputs):
 
     return compiled_model
 
-def openvino_execute(gm, *args, executor_parameters=None, partition_id, file_name=""):
+def openvino_execute(gm: GraphModule, *args, executor_parameters=None, partition_id, file_name=""):
     executor_parameters = executor_parameters or DEFAULT_OPENVINO_PYTHON_CONFIG
 
     use_cache = executor_parameters.get(
@@ -292,7 +293,7 @@ def openvino_execute(gm, *args, executor_parameters=None, partition_id, file_nam
         return results1[0]
     return results1
 
-def openvino_execute_partitioned(gm, *args, executor_parameters=None, file_name=""):
+def openvino_execute_partitioned(gm: GraphModule, *args, executor_parameters=None, file_name=""):
     executor_parameters = executor_parameters or DEFAULT_OPENVINO_PYTHON_CONFIG
 
     global partitioned_modules
@@ -316,7 +317,7 @@ def openvino_execute_partitioned(gm, *args, executor_parameters=None, file_name=
 
     return partitioned_modules[signature](*args)
 
-def partition_graph(gm, use_python_fusion_cache: bool, model_hash_str: str = None, file_name=""):
+def partition_graph(gm: GraphModule, use_python_fusion_cache: bool, model_hash_str: str = None, file_name=""):
     global max_openvino_partitions
     for node in gm.graph.nodes:
         if node.op == "call_module" and "fused_" in node.name:

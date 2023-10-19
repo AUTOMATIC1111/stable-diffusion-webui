@@ -431,9 +431,32 @@ def check_torch():
             ipex_pip = 'https://github.com/Nuullll/intel-extension-for-pytorch/releases/download/v2.0.110%2Bxpu-master%2Bdll-bundle/intel_extension_for_pytorch-2.0.110+gitc6ea20b-cp310-cp310-win_amd64.whl'
             torch_command = os.environ.get('TORCH_COMMAND', f'{pytorch_pip} {torchvision_pip} {ipex_pip}')
     elif allow_openvino and args.use_openvino:
-        #Remove this after 2.1.0 releases
         log.info('Using OpenVINO')
-        torch_command = os.environ.get('TORCH_COMMAND', '--pre torch==2.1.0.dev20230820+cpu torchvision==0.16.0.dev20230820+cpu -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html')
+        if "linux" in sys.platform:
+            if sys.version_info[1] == 11:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp311-cp311-linux_x86_64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp311-cp311-linux_x86_64.whl'
+            elif sys.version_info[1] == 10:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp310-cp310-linux_x86_64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp310-cp310-linux_x86_64.whl'
+            elif sys.version_info[1] == 8:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp38-cp38-linux_x86_64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp38-cp38-linux_x86_64.whl'
+            else:
+                log.error('Unsupported Pyhton version')
+        else:
+            if sys.version_info[1] == 11:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp311-cp311-win_amd64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp311-cp311-win_amd64.whl'
+            elif sys.version_info[1] == 10:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp310-cp310-win_amd64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp310-cp310-win_amd64.whl'
+            elif sys.version_info[1] == 8:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp38-cp38-win_amd64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp38-cp38-win_amd64.whl'
+            else:
+                log.error('Unsupported Pyhton version')
+        torch_command = os.environ.get('TORCH_COMMAND', f'{pytorch_pip} {torchvision_pip}')
     else:
         machine = platform.machine()
         if sys.platform == 'darwin':
@@ -505,7 +528,7 @@ def check_torch():
     if opts.get('cuda_compile_backend', '') == 'hidet':
         install('hidet', 'hidet')
     if args.use_openvino or opts.get('cuda_compile_backend', '') == 'openvino_fx':
-        install('openvino==2023.1.0', 'openvino')
+        install('openvino==2023.2.0.dev20230922', 'openvino')
         os.environ.setdefault('PYTORCH_TRACING_MODE', 'TORCHFX')
         os.environ.setdefault('NEOReadDebugKeys', '1')
         os.environ.setdefault('ClDeviceGlobalMemSizeAvailablePercent', '100')
