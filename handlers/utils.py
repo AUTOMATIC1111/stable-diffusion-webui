@@ -201,7 +201,11 @@ default_alwayson_scripts = {
 
 def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: StrMapMap, selectable_scripts: Script,
                      selectable_idx: int, request_script_args: typing.Sequence, script_runner: ScriptRunner,
-                     enable_def_adetailer: bool = True):
+                     enable_def_adetailer: bool = True,
+                     enable_refiner: bool = False,    # 是否启用XLRefiner
+                     refiner_switch_at: float = 0.8,  # XL 精描切换时机
+                     refiner_checkpoint: str = None   # XL refiner模型文件
+                     ):
     script_args = [x for x in default_script_args]
 
     if selectable_scripts:
@@ -209,6 +213,17 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
         script_args[0] = selectable_idx + 1
 
     alwayson_scripts = alwayson_scripts or {}
+
+    if enable_refiner and os.path.isfile(refiner_checkpoint):
+        alwayson_scripts.update({
+            "Refiner": {'args': [
+                enable_refiner,
+                refiner_checkpoint,
+                refiner_switch_at
+            ]
+            }
+        })
+
     if not getattr(cmd_opts, 'disable_tss_def_alwayson', False):
         for k, v in default_alwayson_scripts.items():
             if not enable_def_adetailer and ADetailer == k:
