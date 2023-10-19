@@ -43,8 +43,8 @@ class NetworkModuleOFT(network.NetworkModule):
         norm_Q = torch.norm(block_Q.flatten())
         new_norm_Q = torch.clamp(norm_Q, max=self.constraint)
         block_Q = block_Q * ((new_norm_Q + 1e-8) / (norm_Q + 1e-8))
-        I = torch.eye(self.block_size, device=self.oft_blocks.device).unsqueeze(0).repeat(self.num_blocks, 1, 1)
-        block_R = torch.matmul(I + block_Q, (I - block_Q).inverse())
+        m_I = torch.eye(self.block_size, device=self.oft_blocks.device).unsqueeze(0).repeat(self.num_blocks, 1, 1)
+        block_R = torch.matmul(m_I + block_Q, (m_I - block_Q).inverse())
         #block_R_weighted = multiplier * block_R + (1 - multiplier) * I
         #R = torch.block_diag(*block_R_weighted)
         R = torch.block_diag(*block_R)
