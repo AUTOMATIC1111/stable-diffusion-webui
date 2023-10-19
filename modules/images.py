@@ -294,8 +294,8 @@ class FilenameGenerator:
         'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
 
         'model': lambda self: shared.sd_model.sd_checkpoint_info.title,
-        'model_shortname': lambda self: shared.sd_model.sd_checkpoint_info.name,
-        'model_name': lambda self: shared.sd_model.sd_checkpoint_info.name,
+        'model_shortname': lambda self: shared.sd_model.sd_checkpoint_info.model_name,
+        'model_name': lambda self: shared.sd_model.sd_checkpoint_info.model_name,
         'model_hash': lambda self: shared.sd_model.sd_checkpoint_info.shorthash,
 
         'prompt': lambda self: self.prompt,
@@ -351,7 +351,7 @@ class FilenameGenerator:
         return shorthash
 
     def prompt_words(self):
-        if self.p is None or self.prompt is None:
+        if self.prompt is None:
             return ''
         no_attention = re_attention.sub(r'\1', self.prompt)
         no_network = re_network.sub(r'\1', no_attention)

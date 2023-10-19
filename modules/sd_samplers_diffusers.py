@@ -29,8 +29,8 @@ config = {
     'DDIM': { 'clip_sample': True, 'set_alpha_to_one': True, 'steps_offset': 0, 'clip_sample_range': 1.0, 'sample_max_value': 1.0, 'timestep_spacing': 'linspace', 'rescale_betas_zero_snr': False },
     'DDPM': { 'variance_type': "fixed_small", 'clip_sample': True, 'thresholding': False, 'clip_sample_range': 1.0, 'sample_max_value': 1.0, 'timestep_spacing': 'linspace'},
     'DEIS': { 'solver_order': 2, 'thresholding': False, 'sample_max_value': 1.0, 'algorithm_type': "deis", 'solver_type': "logrho", 'lower_order_final': True },
-    'DPM 1S++': { 'solver_order': 2, 'thresholding': False, 'sample_max_value': 1.0, 'algorithm_type': "dpmsolver++", 'solver_type': "midpoint", 'lower_order_final': True, 'use_karras_sigmas': False },
-    'DPM 2M++': { 'thresholding': False, 'sample_max_value': 1.0, 'algorithm_type': "dpmsolver++", 'solver_type': "midpoint", 'lower_order_final': True, 'use_karras_sigmas': False },
+    'DPM++ 1S': { 'solver_order': 2, 'thresholding': False, 'sample_max_value': 1.0, 'algorithm_type': "dpmsolver++", 'solver_type': "midpoint", 'lower_order_final': True, 'use_karras_sigmas': False },
+    'DPM++ 2M': { 'thresholding': False, 'sample_max_value': 1.0, 'algorithm_type': "dpmsolver++", 'solver_type': "midpoint", 'lower_order_final': True, 'use_karras_sigmas': False },
     'DPM SDE': { 'use_karras_sigmas': False },
     'Euler a': { },
     'Euler': { 'interpolation_type': "linear", 'use_karras_sigmas': False },
@@ -66,9 +66,10 @@ class DiffusionSampler:
             return
         self.name = name
         self.config = {}
-        self.config = config['All'].copy() # apply global defaults
         if not hasattr(model, 'scheduler'):
             return
+        for key, value in config.get('All', {}).items(): # apply global defaults
+            self.config[key] = value
         for key, value in config.get(name, {}).items(): # apply diffusers per-scheduler defaults
             self.config[key] = value
         if hasattr(model.scheduler, 'scheduler_config'): # find model defaults

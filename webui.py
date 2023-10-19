@@ -100,6 +100,7 @@ def initialize():
 
     import modules.postprocess.codeformer_model as codeformer
     codeformer.setup_model(opts.codeformer_models_path)
+    sys.modules["modules.codeformer_model"] = codeformer
     import modules.postprocess.gfpgan_model as gfpgan
     gfpgan.setup_model(opts.gfpgan_models_path)
     timer.startup.record("face-restore")
@@ -115,7 +116,7 @@ def initialize():
 
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
-    shared.opts.onchange("gradio_theme", shared.reload_gradio_theme)
+    # shared.opts.onchange("gradio_theme", shared.reload_gradio_theme)
     timer.startup.record("onchange")
 
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
@@ -215,7 +216,7 @@ def start_common():
         log.info(f'Using data path: {shared.cmd_opts.data_dir}')
     if shared.cmd_opts.models_dir is not None and len(shared.cmd_opts.models_dir) > 0 and shared.cmd_opts.models_dir != 'models':
         log.info(f'Using models path: {shared.cmd_opts.models_dir}')
-    create_paths(opts, log)
+    create_paths(opts)
     async_policy()
     initialize()
     if shared.opts.clean_temp_dir_at_start:

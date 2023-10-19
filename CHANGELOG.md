@@ -1,5 +1,35 @@
 # Change Log for SD.Next
 
+## Update for 2023-10-18
+
+Service release addressing all zero-day issues reported so far...
+
+**Fixes**
+- fix freeu for backend original and add it to xyz grid
+- fix loading diffuser models in huggingface format from non-standard location
+- fix default styles looking in wrong location
+- fix missing upscaler folder on initial startup
+- fix handling of relative path for models
+- fix simple live preview device mismatch
+- fix batch img2img
+- fix diffusers dpm++ 2m and 1s samplers
+- fix new style filename template
+- fix image name template using model name
+- fix model path using relative path
+- fix torch-rocm version detection (thanks @xangelix)
+- force second requirements check on startup
+- remove lyco, multiple_tqdm
+- enhance extension compatibility for exensions directly importing codeformers  
+- enhance extension compatibility for exensions directly accessing processing params  
+- update `openvino` (thanks @disty0)
+- update `typing-extensions`
+
+**Themes**
+- all built-in themes are fully supported:  
+  - *black-teal (default), light-teal, black-orange, invoked, amethyst-nightfall, midnight-barbie*  
+- if you're using any **gradio default** themes or a **3rd party** theme or  that are not optimized for SD.Next, you may experience issues  
+  default minimal style has been updated for compatibility, but actual styling is completely outside of SD.Next control  
+
 ## Update for 2023-10-17
 
 This is a major release, with many changes and new functionality...  

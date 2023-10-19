@@ -374,8 +374,13 @@ def list_available_networks():
     available_network_hash_lookup.clear()
     forbidden_network_aliases.update({"none": 1, "Addams": 1})
     os.makedirs(shared.cmd_opts.lora_dir, exist_ok=True)
-    candidates = list(shared.walk_files(shared.cmd_opts.lora_dir, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
-    candidates += list(shared.walk_files(shared.cmd_opts.lyco_dir, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
+    candidates = []
+    if os.path.exists(shared.cmd_opts.lora_dir):
+        candidates += list(shared.walk_files(shared.cmd_opts.lora_dir, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
+    else:
+        shared.log.warning('LoRA directory not found: path={shared.cmd_opts.lora_dir}')
+    if os.path.exists(shared.cmd_opts.lyco_dir):
+        candidates += list(shared.walk_files(shared.cmd_opts.lyco_dir, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
     for filename in candidates:
         if os.path.isdir(filename):
             continue

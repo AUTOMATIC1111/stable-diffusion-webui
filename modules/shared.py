@@ -4,7 +4,6 @@ import sys
 import time
 import json
 import contextlib
-import urllib.request
 from types import SimpleNamespace
 from urllib.parse import urlparse
 from enum import Enum
@@ -12,7 +11,7 @@ import requests
 import gradio as gr
 import fasteners
 from rich.console import Console
-from modules import errors, shared_items, shared_state, cmd_args, ui_components
+from modules import errors, shared_items, shared_state, cmd_args, ui_components, theme
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 from modules.dml import memory_providers, default_memory_provider, directml_do_hijack
 import modules.interrogate
@@ -42,7 +41,6 @@ extra_networks = []
 options_templates = {}
 hypernetworks = {}
 loaded_hypernetworks = []
-gradio_theme = gr.themes.Base()
 settings_components = None
 latent_upscale_default_mode = "None"
 latent_upscale_modes = {
@@ -162,7 +160,7 @@ def list_samplers():
 def temp_disable_extensions():
     disabled = []
     if cmd_opts.safe:
-        for ext in ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris', 'sd-webui-agent-scheduler', 'clip-interrogator-ext', 'stable-diffusion-webui-rembg', 'sd-extension-chainner']:
+        for ext in ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris', 'sd-webui-agent-scheduler', 'clip-interrogator-ext', 'stable-diffusion-webui-rembg', 'sd-extension-chainner', 'stable-diffusion-webui-images-browser']:
             if ext not in opts.disabled_extensions:
                 disabled.append(ext)
         log.info(f'Safe mode disabling extensions: {disabled}')
@@ -171,48 +169,8 @@ def temp_disable_extensions():
             if ext not in opts.disabled_extensions:
                 disabled.append(ext)
         log.info(f'Diffusers disabling uncompatible extensions: {disabled}')
-    if opts.lyco_patch_lora and backend != Backend.DIFFUSERS:
-        cmd_opts.lyco_dir = opts.lora_dir
-        if 'Lora' not in opts.disabled_extensions:
-            disabled.append('Lora')
     cmd_opts.controlnet_loglevel = 'WARNING'
     return disabled
-
-
-def list_builtin_themes():
-    files = [os.path.splitext(f)[0] for f in os.listdir('javascript') if f.endswith('.css')]
-    return files
-
-
-def list_themes():
-    fn = os.path.join('html', 'themes.json')
-    if not os.path.exists(fn):
-        refresh_themes()
-    if os.path.exists(fn):
-        with open(fn, mode='r', encoding='utf=8') as f:
-            res = json.loads(f.read())
-    else:
-        res = []
-    builtin = list_builtin_themes()
-    default = ["gradio/default", "gradio/base", "gradio/glass", "gradio/monochrome", "gradio/soft"]
-    external = {x['id'] for x in res if x['status'] == 'RUNNING' and 'test' not in x['id'].lower()}
-    log.debug(f'Themes: builtin={len(builtin)} default={len(default)} external={len(external)}')
-    themes = sorted(builtin) + sorted(default) + sorted(external, key=str.casefold)
-    return themes
-
-
-def refresh_themes():
-    try:
-        r = req('https://huggingface.co/datasets/freddyaboulton/gradio-theme-subdomains/resolve/main/subdomains.json')
-        if r.status_code == 200:
-            res = r.json()
-            fn = os.path.join('html', 'themes.json')
-            writefile(res, fn)
-            list_themes()
-        else:
-            log.error('Error refreshing UI themes')
-    except Exception:
-        log.error('Exception refreshing UI themes')
 
 
 def readfile(filename, silent=False):
@@ -339,7 +297,7 @@ options_templates.update(options_section(('advanced', "Inference Settings"), {
     "token_merging_sep": OptionInfo("<h2>Token merging</h2>", "", gr.HTML),
     "token_merging_ratio": OptionInfo(0.0, "Token merging ratio (txt2img)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
     "token_merging_ratio_img2img": OptionInfo(0.0, "Token merging ratio (img2img)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
-    "token_merging_ratio_hr": OptionInfo(0.0, "Token merging ratio for (hires)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
+    "token_merging_ratio_hr": OptionInfo(0.0, "Token merging ratio (hires)", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
 
     "freeu_sep": OptionInfo("<h2>FreeU</h2>", "", gr.HTML),
     "freeu_enabled": OptionInfo(False, "FreeU enabled"),
@@ -388,9 +346,9 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Folder with stable diffusion models", folder=True),
     "diffusers_dir": OptionInfo(os.path.join(paths.models_path, 'Diffusers'), "Folder with Hugggingface models", folder=True),
     "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Folder with VAE files", folder=True),
-    # "sd_lora": OptionInfo("", "Add LoRA to prompt", gr.Textbox, {"visible": False}),
+    "sd_lora": OptionInfo("", "Add LoRA to prompt", gr.Textbox, {"visible": False}),
     "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Folder with LoRA network(s)", folder=True),
-    "lyco_dir": OptionInfo(os.path.join(paths.models_path, 'LyCORIS'), "Folder with LyCORIS network(s)", folder=True),
+    "lyco_dir": OptionInfo(os.path.join(paths.models_path, 'LyCORIS'), "Folder with LyCORIS network(s)", gr.Text, {"visible": False}),
     "styles_dir": OptionInfo(os.path.join(paths.data_path, 'styles.csv'), "File or Folder with user-defined styles", folder=True),
     "embeddings_dir": OptionInfo(os.path.join(paths.models_path, 'embeddings'), "Folder with textual inversion embeddings", folder=True),
     "hypernetwork_dir": OptionInfo(os.path.join(paths.models_path, 'hypernetworks'), "Folder with Hypernetwork models", folder=True),
@@ -464,7 +422,7 @@ options_templates.update(options_section(('saving-paths', "Image Naming & Paths"
 
 options_templates.update(options_section(('ui', "User Interface"), {
     "motd": OptionInfo(True, "Show MOTD"),
-    "gradio_theme": OptionInfo("black-teal", "UI theme", gr.Dropdown, lambda: {"choices": list_themes()}, refresh=refresh_themes),
+    "gradio_theme": OptionInfo("black-teal", "UI theme", gr.Dropdown, lambda: {"choices": theme.list_themes()}, refresh=theme.refresh_themes),
     "theme_style": OptionInfo("Auto", "Theme mode", gr.Radio, {"choices": ["Auto", "Dark", "Light"]}),
     "tooltips": OptionInfo("UI Tooltips", "UI tooltips", gr.Radio, {"choices": ["None", "Browser default", "UI tooltips"], "visible": False}),
     "compact_view": OptionInfo(False, "Compact view"),
@@ -611,7 +569,6 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "lora_preferred_name": OptionInfo("filename", "LoRA preffered name", gr.Radio, {"choices": ["filename", "alias"]}),
     "lora_add_hashes_to_infotext": OptionInfo(True, "LoRA add hash info"),
     "lora_in_memory_limit": OptionInfo(0, "LoRA memory cache", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
-    "lyco_patch_lora": OptionInfo(False, "Use LyCoris handler for all LoRA types", gr.Checkbox, { "visible": False }),
     "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple LoRA", gr.Checkbox, { "visible": False }),
 
     "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, { "choices": ["None"], "visible": False }),
@@ -807,45 +764,6 @@ parallel_processing_allowed = not cmd_opts.lowvram
 mem_mon = modules.memmon.MemUsageMonitor("MemMon", devices.device)
 if devices.backend == "directml":
     directml_do_hijack()
-
-
-def reload_gradio_theme(theme_name=None):
-    global gradio_theme # pylint: disable=global-statement
-    if not theme_name:
-        theme_name = opts.gradio_theme
-    default_font_params = {}
-    res = 0
-    try:
-        request = urllib.request.Request("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono", method="HEAD")
-        res = urllib.request.urlopen(request, timeout=3.0).status # pylint: disable=consider-using-with
-    except Exception:
-        res = 0
-    if res != 200:
-        log.info('No internet access detected, using default fonts')
-        default_font_params = {
-            'font':['Helvetica', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-            'font_mono':['IBM Plex Mono', 'ui-monospace', 'Consolas', 'monospace']
-        }
-    if theme_name in list_builtin_themes():
-        gradio_theme = gr.themes.Base(**default_font_params)
-    elif theme_name.startswith("gradio/"):
-        if theme_name == "gradio/default":
-            gradio_theme = gr.themes.Default(**default_font_params)
-        if theme_name == "gradio/base":
-            gradio_theme = gr.themes.Base(**default_font_params)
-        if theme_name == "gradio/glass":
-            gradio_theme = gr.themes.Glass(**default_font_params)
-        if theme_name == "gradio/monochrome":
-            gradio_theme = gr.themes.Monochrome(**default_font_params)
-        if theme_name == "gradio/soft":
-            gradio_theme = gr.themes.Soft(**default_font_params)
-    else:
-        try:
-            gradio_theme = gr.themes.ThemeClass.from_hub(theme_name)
-        except Exception:
-            log.error("Theme download error accessing HuggingFace")
-            gradio_theme = gr.themes.Default(**default_font_params)
-    log.info(f'Loading UI theme: name={theme_name} style={opts.theme_style}')
 
 
 class TotalTQDM: # compatibility with previous global-tqdm

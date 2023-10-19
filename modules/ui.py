@@ -25,6 +25,7 @@ import modules.shared
 import modules.errors
 import modules.styles
 import modules.extras
+import modules.theme
 import modules.textual_inversion.ui
 import modules.sd_samplers
 
@@ -250,7 +251,7 @@ def create_toprow(is_img2img):
                 pause = gr.Button('Pause', elem_id=f"{id_part}_pause")
                 pause.click(fn=lambda: modules.shared.state.pause(), _js='checkPaused', inputs=[], outputs=[])
             with gr.Row(elem_id=f"{id_part}_tools"):
-                button_paste = gr.Button(value='Apply', variant='secondary', elem_id="paste") # symbols.paste
+                button_paste = gr.Button(value='Restore', variant='secondary', elem_id="paste") # symbols.paste
                 button_clear = gr.Button(value='Clear', variant='secondary', elem_id=f"{id_part}_clear_prompt_btn") # symbols.clear
                 button_extra = gr.Button(value='Networks', variant='secondary', elem_id=f"{id_part}_extra_networks_btn") # symbols.networks
                 button_clear.click(fn=lambda *x: ['', ''], inputs=[prompt, negative_prompt], outputs=[prompt, negative_prompt], show_progress=False)
@@ -1103,7 +1104,7 @@ def create_ui(startup_timer = None):
     for _interface, label, _ifid in interfaces:
         modules.shared.tab_names.append(label)
 
-    with gr.Blocks(theme=modules.shared.gradio_theme, analytics_enabled=False, title="SD.Next") as demo:
+    with gr.Blocks(theme=modules.theme.gradio_theme, analytics_enabled=False, title="SD.Next") as demo:
         with gr.Row(elem_id="quicksettings", variant="compact"):
             for _i, k, _item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
                 component = create_setting_component(k, is_quicksettings=True)
@@ -1226,19 +1227,20 @@ def html_body():
     return body
 
 
-def html_css():
+def html_css(is_builtin: bool):
     added = []
 
     def stylesheet(fn):
         added.append(fn)
         return f'<link rel="stylesheet" property="stylesheet" href="{webpath(fn)}">'
 
-    head = stylesheet(os.path.join(script_path, 'javascript/style.css'))
+    css = 'sdnext.css' if is_builtin else 'base.css'
+    head = stylesheet(os.path.join(script_path, 'javascript', css))
     for cssfile in modules.scripts.list_files_with_name("style.css"):
         if not os.path.isfile(cssfile):
             continue
         head += stylesheet(cssfile)
-    if opts.gradio_theme in modules.shared.list_builtin_themes():
+    if opts.gradio_theme in modules.theme.list_builtin_themes():
         head += stylesheet(os.path.join(script_path, "javascript", f"{opts.gradio_theme}.css"))
     if os.path.exists(os.path.join(data_path, "user.css")):
         head += stylesheet(os.path.join(data_path, "user.css"))
@@ -1248,8 +1250,9 @@ def html_css():
 
 
 def reload_javascript():
+    is_builtin = modules.theme.reload_gradio_theme()
     head = html_head()
-    css = html_css()
+    css = html_css(is_builtin)
     body = html_body()
 
     def template_response(*args, **kwargs):

@@ -50,21 +50,29 @@ class CheckpointInfo:
         self.hash = None
         self.filename = filename
         self.type = ''
-        filename = os.path.abspath(filename)
         relname = filename
-        if relname.startswith(script_path):
+        app_path = os.path.abspath(script_path)
+
+        def rel(fn, path):
             try:
-                relname = os.path.relpath(filename, script_path)
-            except:
-                pass
-        try:
-            relname = os.path.relpath(filename, model_path)
-        except:
-            pass
-        try:
-            relname = os.path.relpath(filename, shared.cmd_opts.ckpt_dir)
-        except:
-            pass
+                return os.path.relpath(fn, path)
+            except Exception:
+                return fn
+
+        if relname.startswith('..'):
+            relname = os.path.abspath(relname)
+        if relname.startswith(shared.opts.ckpt_dir):
+            relname = rel(filename, shared.opts.ckpt_dir)
+        elif relname.startswith(shared.opts.diffusers_dir):
+            relname = rel(filename, shared.opts.diffusers_dir)
+        elif relname.startswith(model_path):
+            relname = rel(filename, model_path)
+        elif relname.startswith(script_path):
+            relname = rel(filename, script_path)
+        elif relname.startswith(app_path):
+            relname = rel(filename, app_path)
+        else:
+            relname = os.path.abspath(relname)
         relname, ext = os.path.splitext(relname)
         ext = ext.lower()[1:]
 
@@ -87,9 +95,6 @@ class CheckpointInfo:
                 self.sha256 = repo[0]['hash']
                 self.type = 'diffusers'
 
-        # info = shared.readfile(self.filename, silent=True)
-        # if 'tags' in info:
-        #    self.tags = info['tags']
         self.shorthash = self.sha256[0:10] if self.sha256 else None
         self.title = self.name if self.shorthash is None else f'{self.name} [{self.shorthash}]'
         self.path = self.filename
@@ -264,7 +269,8 @@ def select_checkpoint(op='model'):
         return checkpoint_info
     if len(checkpoints_list) == 0 and not shared.cmd_opts.no_download:
         shared.log.error("Cannot generate without a checkpoint")
-        shared.log.error("Use --ckpt <path-to-checkpoint> to force using existing checkpoint")
+        shared.log.info("Set system paths to use existing folders in a different location")
+        shared.log.info("Or use --ckpt <path-to-checkpoint> to force using existing checkpoint")
         return None
     checkpoint_info = next(iter(checkpoints_list.values()))
     if model_checkpoint is not None:
@@ -705,6 +711,9 @@ def compile_diffusers(sd_model):
 
 
 def set_diffuser_options(sd_model, vae, op: str):
+    if sd_model is None:
+        shared.log.warning(f'{op} is not loaded')
+        return
     if (shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) and (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram):
         shared.log.warning(f'Setting {op}: Model CPU offload and Sequential CPU offload are not compatible')
         shared.log.debug(f'Setting {op}: disabling model CPU offload')

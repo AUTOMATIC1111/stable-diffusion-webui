@@ -23,9 +23,11 @@ allowed_dirs = []
 dir_cache = {} # key=path, value=(mtime, listdir(path))
 refresh_time = 0
 extra_pages = shared.extra_networks
+debug = shared.log.info if os.environ.get('SD_EN_DEBUG', None) is not None else lambda *args, **kwargs: None
 
 
 def listdir(path):
+    debug(f'EN list-dir: {path}')
     if not os.path.exists(path):
         return []
     if path in dir_cache and os.path.getmtime(path) == dir_cache[path][0]:
@@ -37,6 +39,7 @@ def listdir(path):
 
 def register_page(page):
     # registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions
+    debug(f'EN register-page: {page}')
     shared.extra_networks.append(page)
     allowed_dirs.clear()
     for pg in shared.extra_networks:
@@ -165,6 +168,7 @@ class ExtraNetworksPage:
         return True
 
     def create_thumb(self):
+        debug(f'EN create-thumb: {self.name}')
         created = 0
         for f in self.missing_thumbs:
             if not os.path.exists(f):
@@ -197,6 +201,7 @@ class ExtraNetworksPage:
             self.missing_thumbs.clear()
 
     def create_items(self, tabname):
+        debug(f'EN create-items: {self.name}')
         if self.refresh_time is not None and self.refresh_time > refresh_time: # cached results
             return
         t0 = time.time()
@@ -213,6 +218,7 @@ class ExtraNetworksPage:
 
 
     def create_page(self, tabname, skip = False):
+        debug(f'EN create-page: {self.name}')
         if self.page_time > refresh_time: # cached page
             return self.html
         self_name_id = self.name.replace(" ", "_")
@@ -249,7 +255,8 @@ class ExtraNetworksPage:
         else:
             return ''
         shared.log.debug(f"Extra networks: page='{self.name}' items={len(self.items)} subdirs={len(subdirs)} tab={tabname} dirs={self.allowed_directories_for_previews()} time={self.list_time}s")
-        threading.Thread(target=self.create_thumb).start()
+        if len(self.missing_thumbs) > 0:
+            threading.Thread(target=self.create_thumb).start()
         return self.html
 
     def list_items(self):
@@ -394,6 +401,7 @@ class ExtraNetworksUi:
 
 
 def create_ui(container, button_parent, tabname, skip_indexing = False):
+    debug(f'EN create-ui: {tabname}')
     ui = ExtraNetworksUi()
     ui.tabname = tabname
     ui.pages = []
@@ -517,8 +525,11 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         if image.width > 512 or image.height > 512:
             image = image.convert('RGB')
             image.thumbnail((512, 512), Image.HAMMING)
-        image.save(ui.last_item.local_preview, quality=50)
-        shared.log.debug(f'Extra network save image: item={ui.last_item.name} filename={ui.last_item.local_preview}')
+        try:
+            image.save(ui.last_item.local_preview, quality=50)
+            shared.log.debug(f'Extra network save image: item={ui.last_item.name} filename={ui.last_item.local_preview}')
+        except Exception as e:
+            shared.log.error(f'Extra network save image: item={ui.last_item.name} filename={ui.last_item.local_preview} {e}')
         return image
 
     def fn_delete_img():

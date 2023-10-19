@@ -143,7 +143,7 @@ def create_ui():
 
                 with gr.Row():
                     model_list_btn = gr.Button(value="List model details", variant='primary')
-                    model_checkhash_btn = gr.Button(value="Calculate hash for all models (may take a long time)", variant='primary')
+                    model_checkhash_btn = gr.Button(value="Calculate hash for all models", variant='primary')
                     model_checkhash_btn.click(fn=sd_models.update_model_hashes, inputs=[], outputs=[models_outcome])
                 with gr.Row():
                     model_table = gr.DataFrame(

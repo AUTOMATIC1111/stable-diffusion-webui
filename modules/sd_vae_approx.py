@@ -5,8 +5,6 @@ from modules import devices, paths, shared
 
 
 sd_vae_approx_model = None
-simple_weights = None
-simple_bias = None
 
 
 class VAEApprox(nn.Module):
@@ -58,24 +56,22 @@ def nn_approximation(sample): # Approximate NN
 
 def cheap_approximation(sample): # Approximate simple
     # https://discuss.huggingface.co/t/decoding-latents-to-rgb-without-upscaling/23204/2
-    global simple_weights, simple_bias # pylint: disable=global-statement
-    if simple_weights is None or simple_bias is None:
-        if shared.sd_model_type == "sdxl":
-            simple_weights = torch.tensor([
-                [0.4543,-0.2868, 0.1566,-0.4748],
-                [0.5008, 0.0952, 0.2155,-0.3268],
-                [0.5294, 0.1625,-0.0624,-0.3793]
-            ]).reshape(3, 4, 1, 1).to(sample.device)
-            simple_bias = torch.tensor([0.1375, 0.0144, -0.0675]).to(sample.device)
-        else:
-            simple_weights = torch.tensor([
-                [0.298, 0.187,-0.158,-0.184],
-                [0.207, 0.286, 0.189,-0.271],
-                [0.208, 0.173, 0.264,-0.473],
-            ]).reshape(3, 4, 1, 1).to(sample.device)
-            simple_bias = None
+    if shared.sd_model_type == "sdxl":
+        simple_weights = torch.tensor([
+            [0.4543,-0.2868, 0.1566,-0.4748],
+            [0.5008, 0.0952, 0.2155,-0.3268],
+            [0.5294, 0.1625,-0.0624,-0.3793]
+        ]).reshape(3, 4, 1, 1)
+        simple_bias = torch.tensor([0.1375, 0.0144, -0.0675])
+    else:
+        simple_weights = torch.tensor([
+            [0.298, 0.187,-0.158,-0.184],
+            [0.207, 0.286, 0.189,-0.271],
+            [0.208, 0.173, 0.264,-0.473],
+        ]).reshape(3, 4, 1, 1)
+        simple_bias = None
     try:
-        x_sample = nn.functional.conv2d(sample, simple_weights, simple_bias) # pylint: disable=not-callable
+        x_sample = nn.functional.conv2d(sample, simple_weights.to(sample.device, sample.dtype), simple_bias.to(sample.device, sample.dtype)) # pylint: disable=not-callable
         return x_sample
     except Exception as e:
         shared.log.error(f'Decode simple: {e}')

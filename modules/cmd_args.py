@@ -94,7 +94,7 @@ def compatibility_args(opts, args):
     group.add_argument("--lyco-dir", help=argparse.SUPPRESS, default=opts.lyco_dir)
     group.add_argument("--embeddings-dir", help=argparse.SUPPRESS, default=opts.embeddings_dir)
     group.add_argument("--hypernetwork-dir", help=argparse.SUPPRESS, default=opts.hypernetwork_dir)
-    group.add_argument("--lyco-patch-lora", help=argparse.SUPPRESS, default=opts.lyco_patch_lora)
+    group.add_argument("--lyco-patch-lora", help=argparse.SUPPRESS, default=False)
     group.add_argument("--lyco-debug", help=argparse.SUPPRESS, action='store_true', default=False)
     group.add_argument("--enable-console-prompts", help=argparse.SUPPRESS, action='store_true', default=False)
     group.add_argument("--safe", help=argparse.SUPPRESS, action='store_true', default=False)
@@ -114,7 +114,7 @@ def compatibility_args(opts, args):
     opts.sd_vae_as_default = True
     opts.enable_emphasis = True
     opts.enable_batch_seeds = True
-    opts.multiple_tqdm = False
+    # opts.multiple_tqdm = False
     opts.print_hypernet_extra = False
     opts.dimensions_and_batch_together = True
     opts.enable_pnginfo = True

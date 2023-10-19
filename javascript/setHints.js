@@ -30,20 +30,15 @@ async function tooltipHide(e) {
 
 async function validateHints(elements, data) {
   let original = elements.map((e) => e.textContent.toLowerCase().trim()).sort((a, b) => a > b);
-  original = [...new Set(original)];
-  log('all hints:', original);
-  log('hints-differences', { elements: original.length, hints: data.length });
+  original = [...new Set(original)]; // remove duplicates
   const current = data.map((e) => e.label.toLowerCase().trim()).sort((a, b) => a > b);
-  let missing = [];
-  for (let i = 0; i < original.length; i++) {
-    if (!current.includes(original[i])) missing.push(original[i]);
-  }
-  log('missing in locale:', missing);
-  missing = [];
-  for (let i = 0; i < current.length; i++) {
-    if (!original.includes(current[i])) missing.push(current[i]);
-  }
-  log('in locale but not ui:', missing);
+  log('all elements:', original);
+  log('all hints:', current);
+  log('hints-differences', { elements: original.length, hints: current.length });
+  const missingLocale = original.filter((e) => !current.includes(e));
+  log('missing in locale:', missingLocale);
+  const missingUI = current.filter((e) => !original.includes(e));
+  log('in locale but not ui:', missingUI);
 }
 
 async function setHints() {

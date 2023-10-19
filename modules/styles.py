@@ -124,7 +124,7 @@ class StyleDatabase:
         list_folder(self.path)
         self.styles = dict(sorted(self.styles.items(), key=lambda style: style[1].filename))
         if self.built_in:
-            self.load_style(os.path.join(paths.data_path, 'html', 'art-styles.json'), 'built-in')
+            self.load_style(os.path.join('html', 'art-styles.json'), 'built-in')
 
         log.debug(f'Loaded styles: folder={self.path} items={len(self.styles.keys())}')
 

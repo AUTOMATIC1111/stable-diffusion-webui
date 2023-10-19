@@ -410,9 +410,9 @@ def check_torch():
             rocm_ver = None
         if rocm_ver in {"5.7"}:
             # install torch nightly via torchvision to avoid wasting bandwidth when torchvision depends on torch from yesterday
-            torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision --pre --index-url https://download.pytorch.org/whl/nightly/rocm{rocm_ver}')
+            torch_command = os.environ.get('TORCH_COMMAND', f'torch torchvision --pre --index-url https://download.pytorch.org/whl/nightly/rocm{rocm_ver}')
         elif rocm_ver in {"5.5", "5.6"}:
-            torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision --index-url https://download.pytorch.org/whl/nightly/rocm{rocm_ver}')
+            torch_command = os.environ.get('TORCH_COMMAND', f'torch torchvision --index-url https://download.pytorch.org/whl/nightly/rocm{rocm_ver}')
         else:
             # ROCm 5.5 is oldest for PyTorch 2.1
             torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision --index-url https://download.pytorch.org/whl/rocm5.5')
@@ -431,9 +431,38 @@ def check_torch():
             ipex_pip = 'https://github.com/Nuullll/intel-extension-for-pytorch/releases/download/v2.0.110%2Bxpu-master%2Bdll-bundle/intel_extension_for_pytorch-2.0.110+gitc6ea20b-cp310-cp310-win_amd64.whl'
             torch_command = os.environ.get('TORCH_COMMAND', f'{pytorch_pip} {torchvision_pip} {ipex_pip}')
     elif allow_openvino and args.use_openvino:
-        #Remove this after 2.1.0 releases
         log.info('Using OpenVINO')
-        torch_command = os.environ.get('TORCH_COMMAND', '--pre torch==2.1.0.dev20230820+cpu torchvision==0.16.0.dev20230820+cpu -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html')
+        if "linux" in sys.platform:
+            if sys.version_info[1] == 11:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp311-cp311-linux_x86_64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp311-cp311-linux_x86_64.whl'
+            elif sys.version_info[1] == 10:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp310-cp310-linux_x86_64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp310-cp310-linux_x86_64.whl'
+            elif sys.version_info[1] == 8:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp38-cp38-linux_x86_64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp38-cp38-linux_x86_64.whl'
+            else:
+                log.error('Unsupported Python version')
+                #Will error when generating an image:
+                pytorch_pip = 'torch==2.1.0'
+                torchvision_pip = 'torchvision==0.16.0 --index-url https://download.pytorch.org/whl/cpu'
+        else:
+            if sys.version_info[1] == 11:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp311-cp311-win_amd64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp311-cp311-win_amd64.whl'
+            elif sys.version_info[1] == 10:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp310-cp310-win_amd64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp310-cp310-win_amd64.whl'
+            elif sys.version_info[1] == 8:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp38-cp38-win_amd64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp38-cp38-win_amd64.whl'
+            else:
+                log.error('Unsupported Python version')
+                #Will error when generating an image:
+                pytorch_pip = 'torch==2.1.0'
+                torchvision_pip = 'torchvision==0.16.0 --index-url https://download.pytorch.org/whl/cpu'
+        torch_command = os.environ.get('TORCH_COMMAND', f'{pytorch_pip} {torchvision_pip}')
     else:
         machine = platform.machine()
         if sys.platform == 'darwin':
@@ -447,7 +476,7 @@ def check_torch():
             log.info('Using CPU-only Torch')
             torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision')
     if 'torch' in torch_command and not args.version:
-        log.info('Installing torch - this may take a while')
+        # log.info('Installing torch - this may take a while')
         install(torch_command, 'torch torchvision')
     else:
         try:
@@ -505,7 +534,7 @@ def check_torch():
     if opts.get('cuda_compile_backend', '') == 'hidet':
         install('hidet', 'hidet')
     if args.use_openvino or opts.get('cuda_compile_backend', '') == 'openvino_fx':
-        install('openvino==2023.1.0', 'openvino')
+        install('openvino==2023.2.0.dev20230922', 'openvino')
         os.environ.setdefault('PYTORCH_TRACING_MODE', 'TORCHFX')
         os.environ.setdefault('NEOReadDebugKeys', '1')
         os.environ.setdefault('ClDeviceGlobalMemSizeAvailablePercent', '100')
@@ -757,6 +786,7 @@ def set_environment():
     os.environ.setdefault('HF_HUB_DISABLE_EXPERIMENTAL_WARNING', '1')
     os.environ.setdefault('UVICORN_TIMEOUT_KEEP_ALIVE', '60')
     os.environ.setdefault('K_DIFFUSION_USE_COMPILE', '0')
+    os.environ.setdefault('TF_ENABLE_ONEDNN_OPTS', '0')
     if sys.platform == 'darwin':
         os.environ.setdefault('PYTORCH_ENABLE_MPS_FALLBACK', '1')
 
