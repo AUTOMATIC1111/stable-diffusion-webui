@@ -443,7 +443,10 @@ def check_torch():
                 pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp38-cp38-linux_x86_64.whl'
                 torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp38-cp38-linux_x86_64.whl'
             else:
-                log.error('Unsupported Pyhton version')
+                log.error('Unsupported Python version')
+                #Will error when generating an image:
+                pytorch_pip = 'torch==2.1.0'
+                torchvision_pip = 'torchvision==0.16.0 --index-url https://download.pytorch.org/whl/cpu'
         else:
             if sys.version_info[1] == 11:
                 pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp311-cp311-win_amd64.whl'
@@ -455,7 +458,10 @@ def check_torch():
                 pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp38-cp38-win_amd64.whl'
                 torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp38-cp38-win_amd64.whl'
             else:
-                log.error('Unsupported Pyhton version')
+                log.error('Unsupported Python version')
+                #Will error when generating an image:
+                pytorch_pip = 'torch==2.1.0'
+                torchvision_pip = 'torchvision==0.16.0 --index-url https://download.pytorch.org/whl/cpu'
         torch_command = os.environ.get('TORCH_COMMAND', f'{pytorch_pip} {torchvision_pip}')
     else:
         machine = platform.machine()
