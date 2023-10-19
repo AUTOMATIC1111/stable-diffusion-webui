@@ -70,6 +70,8 @@ def create_paths(opts, log=None):
             return tgt
         else:
             tgt = os.path.join(data_path, tgt)
+        if tgt.startswith('..'):
+            tgt = os.path.abspath(tgt)
         if os.path.isabs(tgt):
             return tgt
         tgt = os.path.relpath(tgt, script_path)
