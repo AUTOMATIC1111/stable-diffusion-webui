@@ -51,6 +51,7 @@ class CheckpointInfo:
         self.filename = filename
         self.type = ''
         relname = filename
+        app_path = os.path.abspath(script_path)
 
         def rel(fn, path):
             try:
@@ -58,6 +59,8 @@ class CheckpointInfo:
             except Exception:
                 return fn
 
+        if relname.startswith('..'):
+            relname = os.path.abspath(relname)
         if relname.startswith(shared.opts.ckpt_dir):
             relname = rel(filename, shared.opts.ckpt_dir)
         elif relname.startswith(shared.opts.diffusers_dir):
@@ -66,6 +69,8 @@ class CheckpointInfo:
             relname = rel(filename, model_path)
         elif relname.startswith(script_path):
             relname = rel(filename, script_path)
+        elif relname.startswith(app_path):
+            relname = rel(filename, app_path)
         else:
             relname = os.path.abspath(relname)
         relname, ext = os.path.splitext(relname)
@@ -705,6 +710,9 @@ def compile_diffusers(sd_model):
 
 
 def set_diffuser_options(sd_model, vae, op: str):
+    if sd_model is None:
+        shared.log.warning(f'{op} is not loaded')
+        return
     if (shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) and (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram):
         shared.log.warning(f'Setting {op}: Model CPU offload and Sequential CPU offload are not compatible')
         shared.log.debug(f'Setting {op}: disabling model CPU offload')

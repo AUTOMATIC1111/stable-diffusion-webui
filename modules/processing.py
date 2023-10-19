@@ -163,6 +163,7 @@ class StableDiffusionProcessing:
         self.refiner_steps = 5
         self.refiner_start = 0
         self.ops = []
+        self.resize_mode: int = 0
         self.ddim_discretize = shared.opts.ddim_discretize
         self.s_min_uncond = shared.opts.s_min_uncond
         self.s_churn = shared.opts.s_churn
@@ -172,9 +173,10 @@ class StableDiffusionProcessing:
         self.s_tmin = shared.opts.s_tmin
         self.s_tmax = float('inf')  # not representable as a standard ui option
         self.refiner_switch_at = 0 # a1111 compatibility item
-        self.comments = {}
-        self.is_api = False
-        self.resize_mode: int = 0
+        self.all_hr_prompts = [] # a1111 compatibility item
+        self.hr_prompt = '' # a1111 compatibility item
+        self.comments = {} # a1111 compatibility item
+        self.is_api = False # a1111 compatibility item
         shared.opts.data['clip_skip'] = clip_skip
 
     @property
@@ -1180,6 +1182,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         crop_region = None
         image_mask = self.image_mask
         if image_mask is not None:
+            if type(image_mask) == list:
+                image_mask = image_mask[0]
             image_mask = image_mask.convert('L')
             if self.inpainting_mask_invert:
                 image_mask = ImageOps.invert(image_mask)

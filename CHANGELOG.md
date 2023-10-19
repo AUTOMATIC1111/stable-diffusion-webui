@@ -9,8 +9,13 @@ Service release addressing all zero-day issues reported so far...
 - fix loading diffuser models in huggingface format from non-standard location
 - fix default styles looking in wrong location
 - fix missing upscaler folder on initial startup
-- complete lyco removal
-- enhance extension compatibility for exensions directly importing codeformers
+- fix handling of relative path for models
+- fix simple live preview device mismatch
+- fix batch img2img
+- force second requirements check on startup
+- remove lyco, multiple_tqdm
+- enhance extension compatibility for exensions directly importing codeformers  
+- enhance extension compatibility for exensions directly accessing processing params  
 - update `typing-extensions`
 
 **Themes**

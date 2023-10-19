@@ -43,7 +43,6 @@ fasteners
 dctorch
 compel==2.0.2
 torchsde==0.2.6
-typing-extensions==4.8.0
 antlr4-python3-runtime==4.9.3
 requests==2.31.0
 tqdm==4.66.1
@@ -65,3 +64,4 @@ urllib3==1.26.15
 Pillow==9.5.0
 timm==0.9.7
 pydantic==1.10.13
+typing-extensions==4.8.0
