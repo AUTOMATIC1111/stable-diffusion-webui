@@ -12,6 +12,7 @@ Service release addressing all zero-day issues reported so far...
 - fix handling of relative path for models
 - fix simple live preview device mismatch
 - fix batch img2img
+- fix diffusers dpm++ 2m and 1s samplers
 - force second requirements check on startup
 - remove lyco, multiple_tqdm
 - enhance extension compatibility for exensions directly importing codeformers  
