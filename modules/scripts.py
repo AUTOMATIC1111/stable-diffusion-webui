@@ -35,6 +35,7 @@ class Script:
     group = None
     infotext_fields = None
     paste_field_names = None
+    section = None
 
     def title(self):
         """this function should return the title of the script. This is what will be displayed in the dropdown menu."""
@@ -332,7 +333,6 @@ class ScriptRunner:
         self.paste_field_names.clear()
         self.script_load_ctr = 0
         self.is_img2img = is_img2img
-
         self.scripts.clear()
         self.alwayson_scripts.clear()
         self.selectable_scripts.clear()
@@ -354,6 +354,22 @@ class ScriptRunner:
                     self.selectable_scripts.append(script)
             except Exception as e:
                 log.error(f'Script initialize: {path} {e}')
+
+    def setup_ui_for_section(self, section, scriptlist=None):
+        if scriptlist is None:
+            scriptlist = self.alwayson_scripts
+        for script in scriptlist:
+            if script.alwayson and script.section != section:
+                continue
+            if script.create_group:
+                with gr.Group(visible=script.alwayson) as group:
+                    self.create_script_ui(script)
+                script.group = group
+            else:
+                self.create_script_ui(script)
+
+    def prepare_ui(self):
+        self.inputs = [None]
 
     def setup_ui(self):
         import modules.api.models as api_models

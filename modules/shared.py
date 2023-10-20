@@ -289,8 +289,9 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "ipex_optimize": OptionInfo(True if devices.backend == "ipex" else False, "Enable IPEX Optimize for Intel GPUs"),
     "directml_memory_provider": OptionInfo(default_memory_provider, 'DirectML memory stats provider', gr.Radio, {"choices": memory_providers}),
     "openvino_disable_model_caching": OptionInfo(False, "OpenVINO disable model caching"),
-    "openvino_multi_gpu": OptionInfo(False, "OpenVINO use Multi GPU"),
-    "openvino_remove_igpu_from_multi": OptionInfo(False, "OpenVINO remove iGPU from Multi GPU"),
+    "openvino_hetero_gpu": OptionInfo(False, "OpenVINO use Hetero Device for single inference with multiple devices"),
+    "openvino_remove_cpu_from_hetero": OptionInfo(False, "OpenVINO remove CPU from Hetero Device"),
+    "openvino_remove_igpu_from_hetero": OptionInfo(False, "OpenVINO remove iGPU from Hetero Device"),
 }))
 
 options_templates.update(options_section(('advanced', "Inference Settings"), {
@@ -364,6 +365,7 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
 }))
 
 options_templates.update(options_section(('saving-images', "Image Options"), {
+    "keep_incomplete": OptionInfo(True, "Keep incomplete images"),
     "samples_save": OptionInfo(True, "Always save all generated images"),
     "samples_format": OptionInfo('jpg', 'File format for generated images', gr.Dropdown, {"choices": ["jpg", "png", "webp", "tiff", "jp2"]}),
     "jpeg_quality": OptionInfo(90, "Quality for saved images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
@@ -425,6 +427,7 @@ options_templates.update(options_section(('ui', "User Interface"), {
     "gradio_theme": OptionInfo("black-teal", "UI theme", gr.Dropdown, lambda: {"choices": theme.list_themes()}, refresh=theme.refresh_themes),
     "theme_style": OptionInfo("Auto", "Theme mode", gr.Radio, {"choices": ["Auto", "Dark", "Light"]}),
     "tooltips": OptionInfo("UI Tooltips", "UI tooltips", gr.Radio, {"choices": ["None", "Browser default", "UI tooltips"], "visible": False}),
+    "gallery_height": OptionInfo("", "Gallery height", gr.Textbox),
     "compact_view": OptionInfo(False, "Compact view"),
     "return_grid": OptionInfo(True, "Show grid in results"),
     "return_mask": OptionInfo(False, "For inpainting, include the greyscale mask in results"),

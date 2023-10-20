@@ -10,7 +10,7 @@ gradio_theme = gr.themes.Base()
 
 
 def list_builtin_themes():
-    files = [os.path.splitext(f)[0] for f in os.listdir('javascript') if f.endswith('.css')]
+    files = [os.path.splitext(f)[0] for f in os.listdir('javascript') if f.endswith('.css') and f not in ['base.css', 'sdnext.css', 'style.css']]
     return files
 
 
@@ -26,6 +26,7 @@ def list_themes():
     builtin = list_builtin_themes()
     default = ["gradio/default", "gradio/base", "gradio/glass", "gradio/monochrome", "gradio/soft"]
     external = {x['id'] for x in res if x['status'] == 'RUNNING' and 'test' not in x['id'].lower()}
+    external = [f'huggingface/{x}' for x in external]
     modules.shared.log.debug(f'Themes: builtin={len(builtin)} default={len(default)} external={len(external)}')
     themes = sorted(builtin) + sorted(default) + sorted(external, key=str.casefold)
     return themes
@@ -80,8 +81,9 @@ def reload_gradio_theme(theme_name=None):
             gradio_theme = gr.themes.Soft(**default_font_params)
     else:
         try:
+            hf_theme_name = theme_name.replace('huggingface/', '')
             modules.shared.log.warning('Using 3rd party theme which is not optimized for SD.Next')
-            gradio_theme = gr.themes.ThemeClass.from_hub(theme_name)
+            gradio_theme = gr.themes.ThemeClass.from_hub(hf_theme_name)
         except Exception:
             modules.shared.log.error("Theme download error accessing HuggingFace")
             gradio_theme = gr.themes.Default(**default_font_params)

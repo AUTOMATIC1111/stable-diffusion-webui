@@ -34,6 +34,11 @@ def find_sampler_config(name):
     return config
 
 
+def visible_sampler_names():
+    samplers = [x for x in all_samplers if x.name in shared.opts.show_samplers] if len(shared.opts.show_samplers) > 0 else all_samplers
+    return samplers
+
+
 def create_sampler(name, model):
     if name == 'Default' and hasattr(model, 'scheduler'):
         config = {k: v for k, v in model.scheduler.config.items() if not k.startswith('_')}
@@ -64,7 +69,7 @@ def create_sampler(name, model):
 def set_samplers():
     global samplers # pylint: disable=global-statement
     global samplers_for_img2img # pylint: disable=global-statement
-    samplers = [x for x in all_samplers if x.name in shared.opts.show_samplers] if len(shared.opts.show_samplers) > 0 else all_samplers
+    samplers = visible_sampler_names()
     samplers_for_img2img = [x for x in samplers if x.name != "PLMS"]
     samplers_map.clear()
     for sampler in all_samplers:

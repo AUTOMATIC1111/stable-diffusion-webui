@@ -64,6 +64,8 @@ class ExtraNetwork:
 
 def activate(p, extra_network_data):
     """call activate for extra networks in extra_network_data in specified order, then call activate for all remaining registered networks with an empty argument list"""
+    if extra_network_data is None:
+        return
     for extra_network_name, extra_network_args in extra_network_data.items():
         extra_network = extra_network_registry.get(extra_network_name, None)
         if extra_network is None:
@@ -86,6 +88,8 @@ def activate(p, extra_network_data):
 
 def deactivate(p, extra_network_data):
     """call deactivate for extra networks in extra_network_data in specified order, then call deactivate for all remaining registered networks"""
+    if extra_network_data is None:
+        return
     for extra_network_name in extra_network_data:
         extra_network = extra_network_registry.get(extra_network_name, None)
         if extra_network is None:

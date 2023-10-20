@@ -97,11 +97,13 @@ class DiffusionSampler:
             self.config['solver_order'] = shared.opts.schedulers_solver_order
         if 'predict_x0' in self.config:
             self.config['predict_x0'] = shared.opts.uni_pc_variant
-        if name == 'DPM++ 2M':
-            self.config['algorithm_type'] = shared.opts.schedulers_dpm_solver
         if 'beta_start' in self.config and shared.opts.schedulers_beta_start > 0:
             self.config['beta_start'] = shared.opts.schedulers_beta_start
         if 'beta_end' in self.config and shared.opts.schedulers_beta_end > 0:
             self.config['beta_end'] = shared.opts.schedulers_beta_end
+        if name == 'DPM++ 2M':
+            self.config['algorithm_type'] = shared.opts.schedulers_dpm_solver
+        if name == 'DEIS':
+            self.config['algorithm_type'] = 'deis'
         self.sampler = constructor(**self.config)
         self.sampler.name = name

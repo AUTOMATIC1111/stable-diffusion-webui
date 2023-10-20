@@ -12,6 +12,9 @@ import modules.images
 import modules.script_callbacks
 
 
+folder_symbol = symbols.folder
+
+
 def update_generation_info(generation_info, html_info, img_index):
     try:
         generation_info = json.loads(generation_info)
@@ -178,7 +181,7 @@ def create_output_panel(tabname):
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
             # columns are for <576px, <768px, <992px, <1200px, <1400px, >1400px
-            result_gallery = gr.Gallery(value=[], label='Output', show_label=False, show_download_button=True, allow_preview=True, elem_id=f"{tabname}_gallery", container=False, preview=True, columns=5, object_fit='scale-down')
+            result_gallery = gr.Gallery(value=[], label='Output', show_label=False, show_download_button=True, allow_preview=True, elem_id=f"{tabname}_gallery", container=False, preview=True, columns=5, object_fit='scale-down', height=shared.opts.gallery_height or None)
 
         with gr.Column(elem_id=f"{tabname}_footer", elem_classes="gallery_footer"):
             dummy_component = gr.Label(visible=False)

@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-18
+## Update for 2023-10-20
 
 Service release addressing all zero-day issues reported so far...
 
@@ -12,15 +12,19 @@ Service release addressing all zero-day issues reported so far...
 - fix handling of relative path for models
 - fix simple live preview device mismatch
 - fix batch img2img
-- fix diffusers dpm++ 2m and 1s samplers
+- fix diffusers dpm++ 2m, dpm++ 1s, deis samplers
 - fix new style filename template
 - fix image name template using model name
 - fix model path using relative path
 - fix torch-rocm version detection (thanks @xangelix)
+- fix chainner upscalers color clipping
 - force second requirements check on startup
 - remove lyco, multiple_tqdm
 - enhance extension compatibility for exensions directly importing codeformers  
 - enhance extension compatibility for exensions directly accessing processing params  
+- clearly mark external themes in ui
+- new option: *settings -> images -> keep incomplete*
+  can be used to skip vae decode on aborted/skipped/interrupted image generations
 - update `openvino` (thanks @disty0)
 - update `typing-extensions`
 
