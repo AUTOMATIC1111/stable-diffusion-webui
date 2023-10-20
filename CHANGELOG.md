@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-19
+## Update for 2023-10-20
 
 Service release addressing all zero-day issues reported so far...
 
