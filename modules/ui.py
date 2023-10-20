@@ -35,6 +35,15 @@ mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
 log = modules.shared.log
 ui_system_tabs = None
+switch_values_symbol = symbols.switch
+detect_image_size_symbol = symbols.detect
+paste_symbol = symbols.paste
+clear_prompt_symbol = symbols.clear
+restore_progress_symbol = symbols.apply
+folder_symbol = symbols.folder
+extra_networks_symbol = symbols.networks
+apply_style_symbol = symbols.apply
+save_style_symbol = symbols.save
 
 
 if not cmd_opts.share and not cmd_opts.listen:
@@ -353,7 +362,7 @@ def get_value_for_setting(key):
 
 
 def ordered_ui_categories():
-    return [] # dummy
+    return ['dimensions', 'sampler', 'seed', 'denoising', 'cfg', 'checkboxes', 'accordions', 'override_settings', 'scripts'] # TODO: a1111 compatibility item, not implemented
 
 
 def create_override_settings_dropdown(tabname, row): # pylint: disable=unused-argument
