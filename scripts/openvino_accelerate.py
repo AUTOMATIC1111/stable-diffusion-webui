@@ -49,6 +49,7 @@ from diffusers import (
     StableDiffusionImg2ImgPipeline,
     StableDiffusionInpaintPipeline,
     StableDiffusionControlNetPipeline,
+    ControlNetModel,
     StableDiffusionXLPipeline,
     StableDiffusionXLImg2ImgPipeline,
     StableDiffusionXLInpaintPipeline,
@@ -63,6 +64,7 @@ from diffusers import (
     PNDMScheduler,
     AutoencoderKL,
 )
+
 
 ## hack for pytorch
 def BUILD_MAP_UNPACK(self, inst):
@@ -94,6 +96,8 @@ class ModelState:
         self.mode = 0
         self.partition_id = 0
         self.model_hash = ""
+        self.control_models = []
+        self.is_sdxl = False
         self.cn_model = "None"
         self.lora_model = "None"
         self.vae_ckpt = "None"
@@ -112,6 +116,7 @@ DEFAULT_OPENVINO_PYTHON_CONFIG = MappingProxyType(
 compiled_cache = {}
 max_openvino_partitions = 0
 partitioned_modules = {}
+
 @register_backend
 @fake_tensor_unsupported
 def openvino_fx(subgraph, example_inputs):
@@ -120,47 +125,67 @@ def openvino_fx(subgraph, example_inputs):
         inputs_reversed = False
         if os.getenv("OPENVINO_TORCH_MODEL_CACHING") is not None:
             # Create a hash to be used for caching
-            model_hash_str = sha256(subgraph.code.encode('utf-8')).hexdigest() + "_" + model_state.model_hash
-            if (model_state.cn_model != "None" and model_state.partition_id == 0):
-                model_hash_str = model_hash_str + model_state.cn_model
+            model_hash_str = sha256(subgraph.code.encode('utf-8')).hexdigest()
+            if (len(model_state.control_models) > 0 and model_state.partition_id == 0): #scn_model != "None" and model_state.partition_id == 0):
+                for cn_model in model_state.control_models:
+                    model_hash_str = model_hash_str + "_" + cn_model
 
             if (model_state.lora_model != "None"):
                 model_hash_str = model_hash_str + model_state.lora_model
 
             executor_parameters = {"model_hash_str": model_hash_str}
+
             # Check if the model was fully supported and already cached
             example_inputs.reverse()
             inputs_reversed = True
             maybe_fs_cached_name = cached_model_name(model_hash_str + "_fs", get_device(), example_inputs, cache_root_path())
 
             if os.path.isfile(maybe_fs_cached_name + ".xml") and os.path.isfile(maybe_fs_cached_name + ".bin"):
-                if (model_state.cn_model != "None" and model_state.cn_model in maybe_fs_cached_name):
+                if (len(model_state.control_models) > 0 and model_state.control_models[0] in maybe_fs_cached_name):
                     example_inputs_reordered = []
                     if (os.path.isfile(maybe_fs_cached_name + ".txt")):
                         f = open(maybe_fs_cached_name + ".txt", "r")
+                        reordered_idx = []
                         for input_data in example_inputs:
                             shape = f.readline()
                             if (str(input_data.size()) != shape):
                                 for idx1, input_data1 in enumerate(example_inputs):
                                     if (str(input_data1.size()).strip() == str(shape).strip()):
-                                        example_inputs_reordered.append(example_inputs[idx1])
+                                        if idx1 not in reordered_idx:
+                                            reordered_idx.append(idx1)
+                                            example_inputs_reordered.append(example_inputs[idx1])
+                                            break
                         example_inputs = example_inputs_reordered
 
                     # Model is fully supported and already cached. Run the cached OV model directly.
                     compiled_model = openvino_compile_cached_model(maybe_fs_cached_name, *example_inputs)
 
                     def _call(*args):
-                        if (model_state.cn_model != "None" and model_state.cn_model in maybe_fs_cached_name):
+                        if (len(model_state.control_models) > 0 and model_state.control_models[0] in maybe_fs_cached_name): #if (model_state.cn_model != "None" and model_state.cn_model in maybe_fs_cached_name):
                             args_reordered = []
                             if (os.path.isfile(maybe_fs_cached_name + ".txt")):
                                 f = open(maybe_fs_cached_name + ".txt", "r")
+                                reordered_idx = []
                                 for input_data in args:
                                     shape = f.readline()
                                     if (str(input_data.size()) != shape):
                                         for idx1, input_data1 in enumerate(args):
                                             if (str(input_data1.size()).strip() == str(shape).strip()):
-                                                args_reordered.append(args[idx1])
+                                                if idx1 not in reordered_idx:
+                                                    reordered_idx.append(idx1)
+                                                    args_reordered.append(args[idx1])
+                                                    break
                             args = args_reordered
+
+                        res = execute_cached(compiled_model, *args)
+                        model_state.partition_id = model_state.partition_id + 1
+                        return res
+                    return _call
+
+                if (len(model_state.control_models) == 0):
+                    compiled_model = openvino_compile_cached_model(maybe_fs_cached_name, *example_inputs)
+                    def _call(*args):
+
                         res = execute_cached(compiled_model, *args)
                         model_state.partition_id = model_state.partition_id + 1
                         return res
@@ -277,8 +302,9 @@ def openvino_execute(gm: GraphModule, *args, executor_parameters=None, partition
     if use_cache and (partition_id in compiled_cache):
         compiled = compiled_cache[partition_id]
     else:
-        if (model_state.cn_model != "None" and file_name is not None
-                and os.path.isfile(file_name + ".xml") and os.path.isfile(file_name + ".bin")):
+        if (len(model_state.control_models)> 0 and file_name is not None
+                and os.path.isfile(file_name + ".xml") and os.path.isfile(file_name + ".bin") and model_state.control_models[0] in file_name):
+
             compiled = openvino_compile_cached_model(file_name, *args)
         else:
             compiled = openvino_compile(gm, *args, model_hash_str=model_hash_str, file_name=file_name)
@@ -322,7 +348,7 @@ def execute_cached(compiled_model, *args):
     flat_args, _ = tree_flatten(args)
     ov_inputs = [a.detach().cpu().numpy() for a in flat_args]
 
-    if (model_state.cn_model == "None"):
+    if (len(model_state.control_models) == 0):
         ov_inputs.reverse()
 
     res = compiled_model(ov_inputs)
@@ -365,7 +391,6 @@ def get_device():
     if os.getenv("OPENVINO_TORCH_BACKEND_DEVICE") is not None:
         device = os.getenv("OPENVINO_TORCH_BACKEND_DEVICE")
         assert device in core.available_devices, "Specified device " + device + " is not in the list of OpenVINO Available Devices"
-
     return device
 
 def openvino_compile_cached_model(cached_model_path, *example_inputs):
@@ -400,7 +425,7 @@ def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_na
     device = get_device()
     cache_root = cache_root_path()
 
-    if file_name is not None and os.path.isfile(file_name + ".xml") and os.path.isfile(file_name + ".bin"):
+    if (file_name is not None and os.path.isfile(file_name + ".xml") and os.path.isfile(file_name + ".bin")):
         om = core.read_model(file_name + ".xml")
     else:
         fe_manager = FrontEndManager()
@@ -420,7 +445,7 @@ def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_na
 
         if (file_name is not None):
             serialize(om, file_name + ".xml", file_name + ".bin")
-            if (model_state.cn_model != "None"):
+            if (len(model_state.control_models) > 0):
                 f = open(file_name + ".txt", "w")
                 for input_data in args:
                     f.write(str(input_data.size()))
@@ -532,12 +557,12 @@ def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching,
                 sd_model = StableDiffusionXLControlNetPipeline(**sd_model.components, controlnet=controlnet)
                 sd_model.controlnet = torch.compile(sd_model.controlnet, backend="openvino_fx")
         else:
-
             if model_config != "None":
                 local_config_file = os.path.join(curr_dir_path, 'configs', model_config)
                 sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, original_config_file=local_config_file, use_safetensors=True, variant="fp32", dtype=torch.float32)
             else:
                 sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, original_config_file=checkpoint_config, use_safetensors=True, variant="fp32", dtype=torch.float32)
+
             if (mode == 1):
                 sd_model = StableDiffusionImg2ImgPipeline(**sd_model.components)
             elif (mode == 2):
@@ -557,13 +582,12 @@ def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching,
 
         #load lora
 
+
         if ('lora' in modules.extra_networks.extra_network_registry):
             import lora
             if lora.loaded_loras:
                 lora_model = lora.loaded_loras[0]
                 sd_model.load_lora_weights(os.path.join(os.getcwd(), "models", "Lora"), weight_name=lora_model.name + ".safetensors", low_cpu_mem_usage=True)
-
-
         sd_model.watermark = NoWatermark()
         sd_model.sd_checkpoint_info = checkpoint_info
         sd_model.sd_model_hash = checkpoint_info.calculate_shorthash()
@@ -743,26 +767,32 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
 
     if p.scripts is not None:
         p.scripts.process(p)
-
+    cn_model="None"
+    control_models = []
     control_images = []
 
-    cn_model="None"
+    for key in p.extra_generation_params.keys():
+        if key.startswith('ControlNet'):
+            control_images_cn = []
+            cn_params = p.extra_generation_params[key]
+            cn_param_elements = [part.strip() for part in cn_params.split(', ')]
+            for element in cn_param_elements:
+                if (element.split(':')[0] == "Model"):
+                    cn_model = (element.split(':')[1]).split(' ')[1]
 
-    if ('ControlNet 0' in p.extra_generation_params):
-        cn_params = p.extra_generation_params['ControlNet 0']
+            if (cn_model != "None"):
+                control_models.append(cn_model)
+                control_res = Processed(
+                    p,
+                    images_list=control_images_cn,
+                )
+                p.scripts.postprocess(p, control_res)
+                mode = 3
+                for cn_image in control_images_cn:
+                    control_images.append(cn_image)
 
-        cn_param_elements = [part.strip() for part in cn_params.split(', ')]
-        for element in cn_param_elements:
-            if (element.split(':')[0] == "model"):
-                cn_model = (element.split(':')[1]).split(' ')[1]
+    model_state.control_models = control_models
 
-        if (cn_model != "None"):
-            control_res = Processed(
-                p,
-                images_list=control_images,
-            )
-            p.scripts.postprocess(p, control_res)
-            mode = 3
 
     infotexts = []
     output_images = []
@@ -795,8 +825,6 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
 
             if len(p.prompts) == 0:
                 break
-
-
 
             extra_network_data = p.parse_extra_network_prompts()
 
@@ -877,8 +905,6 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
                     'width': p.width,
                     'height': p.height,
                 })
-
-
 
             if refiner_ckpt != "None" and is_xl_ckpt is True:
                 base_output_type = "latent"
@@ -976,9 +1002,10 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
                 if opts.enable_pnginfo:
                     image.info["parameters"] = text
                 output_images.append(image)
-                if ('ControlNet 0' in p.extra_generation_params and cn_model != "None"):
-                    for cn_image in control_images:
-                        output_images.append(cn_image)
+
+                for cn_image in control_images:
+                    output_images.append(cn_image)
+
 
                 if hasattr(p, 'mask_for_overlay') and p.mask_for_overlay and any([opts.save_mask, opts.save_mask_composite, opts.return_mask, opts.return_mask_composite]):
                     image_mask = p.mask_for_overlay.convert('RGB')
