@@ -114,6 +114,7 @@ class KeyConvert:
             self.UNET_CONVERSION_MAP = make_unet_conversion_map() if self.is_sdxl else None
             self.LORA_PREFIX_UNET = "lora_unet"
             self.LORA_PREFIX_TEXT_ENCODER = "lora_te"
+            self.OFT_PREFIX_UNET = "oft_unet"
             # SDXL: must starts with LORA_PREFIX_TEXT_ENCODER
             self.LORA_PREFIX_TEXT_ENCODER1 = "lora_te1"
             self.LORA_PREFIX_TEXT_ENCODER2 = "lora_te2"
@@ -142,9 +143,12 @@ class KeyConvert:
         if self.is_sdxl:
             map_keys = list(self.UNET_CONVERSION_MAP.keys())  # prefix of U-Net modules
             map_keys.sort()
-            search_key = key.replace(self.LORA_PREFIX_UNET + "_", "").replace(self.LORA_PREFIX_TEXT_ENCODER1 + "_",
-                                                                              "").replace(
-                self.LORA_PREFIX_TEXT_ENCODER2 + "_", "")
+            oft_prefix = self.OFT_PREFIX_UNET + "_"
+            lora_prefix = self.LORA_PREFIX_UNET + "_"
+            te1_prefix = self.LORA_PREFIX_TEXT_ENCODER1 + "_"
+            te2_prefix = self.LORA_PREFIX_TEXT_ENCODER2 + "_"
+            search_key = key.replace(lora_prefix, "").replace(oft_prefix, "").replace(te1_prefix, "").replace(te2_prefix, "")
+
             position = bisect.bisect_right(map_keys, search_key)
             map_key = map_keys[position - 1]
             if search_key.startswith(map_key):
