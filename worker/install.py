@@ -6,9 +6,9 @@
 # @File    : install.py
 # @Software: Hifive
 import typing
+from strenum import StrEnum
 from worker.task import TaskType
 from modules import launch_utils
-from enum import StrEnum
 from importlib.metadata import version
 
 
@@ -55,10 +55,11 @@ class RequirementItem:
         return cls(name, ver, expr)
 
 
-Requirements: typing.Mapping[TaskType, typing.List[typing.Optional[RequirementItem, str]]] = {
+Requirements: typing.Mapping[TaskType, typing.List[typing.Union[RequirementItem, str]]] = {
     TaskType.OnePress: [
+        'onnxruntime-gpu',
         'insightface==0.7.1',
-        'onnxruntime-gpu'
+
     ]
 }
 
@@ -95,6 +96,7 @@ def install_pip_requirements():
     if Requirements:
         for task_type, requirements in Requirements.items():
             for require in requirements:
+                require = require if isinstance(require, RequirementItem) else RequirementItem.from_expr(require)
                 package_name = require.package_name
                 if require.require_expr == RequirementVersionExpr.Equal:
                     tiny_pip_package(require, task_type,

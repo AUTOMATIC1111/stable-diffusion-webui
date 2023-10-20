@@ -152,7 +152,6 @@ class TaskReceiver:
         self.recorder = TaskReceiverRecorder()
         self.group_id = get_worker_group()
         self.task_score_limit = 5 if cmd_opts.lowvram else (10 if cmd_opts.medvram else -1)
-        self.worker_id = self._worker_id()
         self.task_received_callback = task_received_callback
 
         run_train_time_cfg = get_run_train_time_cfg()
@@ -170,10 +169,6 @@ class TaskReceiver:
         self.run_train_time_start = min(run_train_time_start, run_train_time_end)
         self.run_train_time_end = max(run_train_time_start, run_train_time_end)
 
-        logger.info(
-            f"worker id:{self.worker_id}, train work receive clock:"
-            f"{self.run_train_time_start} - {self.run_train_time_end}")
-
         self.register_time = 0
         self.local_cache = {}
         self.timer = BackgroundScheduler()
@@ -183,8 +178,11 @@ class TaskReceiver:
         self.exception_ts = 0
         self.closed = False
         self.is_task_group_queue_only = is_task_group_queue_only()
-
+        self.worker_id = self._worker_id()
         self.timer.start()
+        logger.info(
+            f"worker id:{self.worker_id}, train work receive clock:"
+            f"{self.run_train_time_start} - {self.run_train_time_end}")
 
     def _worker_id(self):
         info = self._worker_info()

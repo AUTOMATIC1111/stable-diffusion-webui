@@ -129,6 +129,7 @@ def install_worker_requirements():
 def main():
     print(f"HTTP_PROXY :{HTTP_PROXY}")
     install()
+    install_worker_requirements()
     download_config()
 
 

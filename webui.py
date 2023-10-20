@@ -10,7 +10,10 @@ from modules import initialize_util
 from modules import initialize
 from modules import shared
 from modules.shared import cmd_opts
-from modules.paths import data_path
+from loguru import logger
+
+# 添加sd_scripts 主路径
+sys.path.append("sd_scripts")
 
 startup_timer = timer.startup_timer
 startup_timer.record("launcher")
@@ -241,7 +244,8 @@ def run_worker():
         sender = RedisSender()
         sender.push_task(VipLevel.Level_1, *tasks)
     if not cmd_opts.train_only:
-        initialize()
+        logger.info('initialize...')
+        initialize.initialize()
         modules.script_callbacks.before_ui_callback()
         startup_timer.record("scripts before_ui_callback")
 
@@ -251,7 +255,6 @@ def run_worker():
         dumper.stop()
         return
 
-    from loguru import logger
     logger.debug("[WORKER] worker模式下需要保证config.json中配置controlnet unit限定5个")
     exec = run_executor(shared.sd_model_recorder, train_only=cmd_opts.train_only)
     exec.stop()
