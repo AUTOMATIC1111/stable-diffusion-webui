@@ -17,11 +17,14 @@ Service release addressing all zero-day issues reported so far...
 - fix image name template using model name
 - fix model path using relative path
 - fix torch-rocm version detection (thanks @xangelix)
+- fix chainner upscalers color clipping
 - force second requirements check on startup
 - remove lyco, multiple_tqdm
 - enhance extension compatibility for exensions directly importing codeformers  
 - enhance extension compatibility for exensions directly accessing processing params  
 - clearly mark external themes in ui
+- new option: *settings -> images -> keep incomplete*
+  can be used to skip vae decode on aborted/skipped/interrupted image generations
 - update `openvino` (thanks @disty0)
 - update `typing-extensions`
 

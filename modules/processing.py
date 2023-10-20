@@ -441,6 +441,10 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
 
 
 def decode_first_stage(model, x, full_quality=True):
+    if not shared.opts.keep_incomplete and (shared.state.skipped or shared.state.interrupted):
+        shared.log.debug(f'Decode VAE: skipped={shared.state.skipped} interrupted={shared.state.interrupted}')
+        x_sample = torch.zeros((len(x), 3, x.shape[2] * 8, x.shape[3] * 8), dtype=devices.dtype_vae, device=devices.device)
+        return x_sample
     with devices.autocast(disable = x.dtype==devices.dtype_vae):
         try:
             if full_quality:
