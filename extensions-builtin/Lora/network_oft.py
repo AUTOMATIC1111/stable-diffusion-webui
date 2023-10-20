@@ -46,8 +46,9 @@ class NetworkModuleOFT(network.NetworkModule):
         """
         self.weights = weights.w.get("oft_blocks").to(device=devices.device)
         self.net = net
-        self.alpha = self.multiplier()
         self.dim = self.weights.shape[0] #num blocks
+        self.num_blocks = self.dim
+        self.alpha = self.multiplier()
         
         # old way of calculating out_features, not technically correct:
         #self.out_dim = max(self.weights.shape[1],self.weights.shape[2])*self.dim 
@@ -73,17 +74,16 @@ class NetworkModuleOFT(network.NetworkModule):
 
     def get_weight(self):
         try:
-            self.alpha = self.multiplier() #update alpha? Not sure if necessary.
             #get_weight implementation:
             block_Q = self.weights - self.weights.transpose(1, 2)
             norm_Q = torch.norm(block_Q.flatten())
             new_norm_Q = torch.clamp(norm_Q, max=self.constraint)
-            block_Q = (block_Q * ((new_norm_Q + 1e-8) / (norm_Q + 1e-8))).to(device=devices.device)
+            block_Q = (block_Q * ((new_norm_Q + self.constraint) / (norm_Q + self.constraint))).to(device=devices.device)
             I = torch.eye(self.block_size, device=devices.device).unsqueeze(0).repeat(self.dim, 1, 1)
             block_R = torch.matmul(I + block_Q, (I - block_Q).inverse())
             block_R_weighted =  self.alpha*block_R + (1 - self.alpha) * I
             R = torch.block_diag(*block_R_weighted)
-            R = R * self.alpha #Added this line, seems to make the results better, less overbaked
+            #R = R * self.alpha #Added this line, seems to make the results better, less overbaked
             return R
         except Exception as e:
             print("ERROR:")
@@ -92,8 +92,6 @@ class NetworkModuleOFT(network.NetworkModule):
         
     
     def calc_updown(self, orig_weight):
-        self.alpha = self.multiplier() #update alpha? Not sure if necessary.
-        output_shape = self.weights.shape
         R = self.get_weight().to(device=devices.device, dtype=orig_weight.dtype)
         
         try:
@@ -128,9 +126,23 @@ class NetworkModuleOFT(network.NetworkModule):
                     #check for irregular linear sizes, if dim1 is larger than dim0, that means:
                     #we have dim1 composed of self.dim elements (blocks)
                     #in order to apply batched matmul, we need to view this differently, add a dimension for our blocks
-                    x = orig_weight.view(self.dim, orig_weight.shape[0], orig_weight.shape[1]//self.dim)
+                    #x = orig_weight.view(self.dim, orig_weight.shape[0], orig_weight.shape[1]//self.dim)
                     #x = orig_weight.view(self.dim, orig_weight.shape[1]//self.dim, orig_weight.shape[0])
+                    channels_per_block = orig_weight.shape[1] // self.dim
+    
+                    # Segment orig_weight into blocks along the second dimension (channels)
+                    weight_segments = torch.split(orig_weight, split_size_or_sections=channels_per_block, dim=1)
                     
+                    # Apply the transformation to each segment
+                    transformed_segments = []
+                    for segment in weight_segments:
+                        # Reshape the segment to ensure matrix multiplication is feasible
+                        reshaped_segment = segment.reshape(channels_per_block, -1)
+                        transformed_segment = torch.matmul(reshaped_segment, R)
+                        # Reshape the transformed segment back to its original shape
+                        transformed_segment = transformed_segment.reshape(orig_weight.shape[0], channels_per_block)
+                        transformed_segments.append(transformed_segment)
+                    updown = torch.cat(transformed_segments, dim=1)
                     #Since our size is irregular, I've made some assumptions here that may not be correct.
                     #I still do not fully understand what "orig_weight" represents relative to "x" in the original oft.py forward()
 
@@ -175,19 +187,20 @@ class NetworkModuleOFT(network.NetworkModule):
                         return x
                     """
 
-                    x = x.transpose(1,2)
-                    #R_expanded = R.unsqueeze(0).expand(x.shape[0], -1, -1)
-                    R_expanded = R.unsqueeze(0).repeat(x.shape[0], 1, 1)
-                    #x = torch.bmm(x, R_expanded)
-                    x = torch.matmul(x, R_expanded)
                     #x = x.transpose(1,2)
-                    updown = torch.cat(x.unbind(0), dim=1)
+                    #R_expanded = R.unsqueeze(0).expand(x.shape[0], -1, -1)
+                    #R_expanded = R.unsqueeze(0).repeat(x.shape[0], 1, 1)
+                    #x = torch.bmm(x, R_expanded)
+                    #x = torch.matmul(x, R_expanded)
+                    #x = x.transpose(1,2)
+                    #updown = torch.cat(x.unbind(0), dim=1)
                     #updown = x.view(orig_weight.shape[0], orig_weight.shape[1])
                 else:
                     updown = torch.matmul(orig_weight, R)
             elif self.is_conv:
                 updown = torch.matmul(orig_weight, R)
-            return(self.finalize_updown(updown, orig_weight, output_shape))
+            updown = updown * self.multiplier() * self.calc_scale()
+            return(self.finalize_updown(updown, orig_weight, orig_weight.shape))
             
         except Exception as e:
             print("ERROR:")
