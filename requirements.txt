@@ -13,6 +13,7 @@ inflection
 jsonmerge
 kornia
 lark
+nevergrad
 numpy
 omegaconf
 open-clip-torch

@@ -1,6 +1,7 @@
 import torch
 
 from modules import devices, rng_philox, shared
+import nevergrad as ng
 
 
 def randn(seed, shape, generator=None):
@@ -11,7 +12,7 @@ def randn(seed, shape, generator=None):
     manual_seed(seed)
 
     if shared.opts.randn_source == "NV":
-        return torch.asarray((generator or nv_rng).randn(shape), device=devices.device)
+        return torch.asarray(ng.common.quasi_randomise((generator or nv_rng).randn(shape)), device=devices.device)
 
     if shared.opts.randn_source == "CPU" or devices.device.type == 'mps':
         return torch.randn(shape, device=devices.cpu, generator=generator).to(devices.device)
@@ -26,7 +27,7 @@ def randn_local(seed, shape):
 
     if shared.opts.randn_source == "NV":
         rng = rng_philox.Generator(seed)
-        return torch.asarray(rng.randn(shape), device=devices.device)
+        return torch.asarray(ng.common.quasi_randomize(rng.randn(shape)), device=devices.device)
 
     local_device = devices.cpu if shared.opts.randn_source == "CPU" or devices.device.type == 'mps' else devices.device
     local_generator = torch.Generator(local_device).manual_seed(int(seed))
@@ -39,7 +40,7 @@ def randn_like(x):
     Use either randn() or manual_seed() to initialize the generator."""
 
     if shared.opts.randn_source == "NV":
-        return torch.asarray(nv_rng.randn(x.shape), device=x.device, dtype=x.dtype)
+        return torch.asarray(ng.common.quasi_randomize(nv_rng.randn(x.shape)), device=x.device, dtype=x.dtype)
 
     if shared.opts.randn_source == "CPU" or x.device.type == 'mps':
         return torch.randn_like(x, device=devices.cpu).to(x.device)
