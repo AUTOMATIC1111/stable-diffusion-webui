@@ -56,6 +56,14 @@ def encode_embedding_init_text(self: sgm.modules.GeneralConditioner, init_text, 
     return torch.cat(res, dim=1)
 
 
+def tokenize(self: sgm.modules.GeneralConditioner, texts):
+    for embedder in [embedder for embedder in self.embedders if hasattr(embedder, 'tokenize')]:
+        return embedder.tokenize(texts)
+
+    raise AssertionError('no tokenizer available')
+
+
+
 def process_texts(self, texts):
     for embedder in [embedder for embedder in self.embedders if hasattr(embedder, 'process_texts')]:
         return embedder.process_texts(texts)
@@ -68,6 +76,7 @@ def get_target_prompt_token_count(self, token_count):
 
 # those additions to GeneralConditioner make it possible to use it as model.cond_stage_model from SD1.5 in exist
 sgm.modules.GeneralConditioner.encode_embedding_init_text = encode_embedding_init_text
+sgm.modules.GeneralConditioner.tokenize = tokenize
 sgm.modules.GeneralConditioner.process_texts = process_texts
 sgm.modules.GeneralConditioner.get_target_prompt_token_count = get_target_prompt_token_count
 
@@ -89,10 +98,10 @@ def extend_sdxl(model):
     model.conditioner.wrapped = torch.nn.Module()
 
 
-sgm.modules.attention.print = lambda *args: None
-sgm.modules.diffusionmodules.model.print = lambda *args: None
-sgm.modules.diffusionmodules.openaimodel.print = lambda *args: None
-sgm.modules.encoders.modules.print = lambda *args: None
+sgm.modules.attention.print = shared.ldm_print
+sgm.modules.diffusionmodules.model.print = shared.ldm_print
+sgm.modules.diffusionmodules.openaimodel.print = shared.ldm_print
+sgm.modules.encoders.modules.print = shared.ldm_print
 
 # this gets the code to load the vanilla attention that we override
 sgm.modules.attention.SDP_IS_AVAILABLE = True

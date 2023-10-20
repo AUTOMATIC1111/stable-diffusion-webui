@@ -50,9 +50,11 @@ class PydanticModelGenerator:
         additional_fields = None,
     ):
         def field_type_generator(k, v):
-            # field_type = str if not overrides.get(k) else overrides[k]["type"]
-            # print(k, v.annotation, v.default)
             field_type = v.annotation
+
+            if field_type == 'Image':
+                # images are sent as base64 strings via API
+                field_type = 'str'
 
             return Optional[field_type]
 
@@ -63,7 +65,6 @@ class PydanticModelGenerator:
                 parameters = {**parameters, **inspect.signature(classes.__init__).parameters}
             return parameters
 
-
         self._model_name = model_name
         self._class_data = merge_class_params(class_instance)
 
@@ -72,7 +73,7 @@ class PydanticModelGenerator:
                 field=underscore(k),
                 field_alias=k,
                 field_type=field_type_generator(k, v),
-                field_value=v.default
+                field_value=None if isinstance(v.default, property) else v.default
             )
             for (k,v) in self._class_data.items() if k not in API_NOT_ALLOWED
         ]

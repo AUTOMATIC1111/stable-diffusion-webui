@@ -20,7 +20,13 @@ function reportWindowSize() {
         var button = gradioApp().getElementById(tab + '_generate_box');
         var target = gradioApp().getElementById(currentlyMobile ? tab + '_results' : tab + '_actions_column');
         target.insertBefore(button, target.firstElementChild);
+
+        gradioApp().getElementById(tab + '_results').classList.toggle('mobile', currentlyMobile);
     }
 }
 
 window.addEventListener("resize", reportWindowSize);
+
+onUiLoaded(function() {
+    reportWindowSize();
+});

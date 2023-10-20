@@ -2,9 +2,8 @@ import os.path
 import urllib.parse
 from pathlib import Path
 
-from modules import shared, ui_extra_networks_user_metadata, errors
+from modules import shared, ui_extra_networks_user_metadata, errors, extra_networks
 from modules.images import read_info_from_image, save_image_with_geninfo
-from modules.ui import up_down_symbol
 import gradio as gr
 import json
 import html
@@ -101,16 +100,7 @@ class ExtraNetworksPage:
 
     def read_user_metadata(self, item):
         filename = item.get("filename", None)
-        basename, ext = os.path.splitext(filename)
-        metadata_filename = basename + '.json'
-
-        metadata = {}
-        try:
-            if os.path.isfile(metadata_filename):
-                with open(metadata_filename, "r", encoding="utf8") as file:
-                    metadata = json.load(file)
-        except Exception as e:
-            errors.display(e, f"reading extra network user metadata from {metadata_filename}")
+        metadata = extra_networks.get_user_metadata(filename)
 
         desc = metadata.get("description", None)
         if desc is not None:
@@ -164,7 +154,7 @@ class ExtraNetworksPage:
             subdirs = {"": 1, **subdirs}
 
         subdirs_html = "".join([f"""
-<button class='lg secondary gradio-button custom-button{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
+<button class='lg secondary gradio-button custom-button{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_search", event)'>
 {html.escape(subdir if subdir!="" else "all")}
 </button>
 """ for subdir in subdirs])
@@ -356,7 +346,9 @@ def pages_in_preferred_order(pages):
     return sorted(pages, key=lambda x: tab_scores[x.name])
 
 
-def create_ui(container, button, tabname):
+def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
+    from modules.ui import switch_values_symbol
+
     ui = ExtraNetworksUi()
     ui.pages = []
     ui.pages_contents = []
@@ -364,48 +356,42 @@ def create_ui(container, button, tabname):
     ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
     ui.tabname = tabname
 
-    with gr.Tabs(elem_id=tabname+"_extra_tabs"):
-        for page in ui.stored_extra_pages:
-            with gr.Tab(page.title, id=page.id_page):
-                elem_id = f"{tabname}_{page.id_page}_cards_html"
-                page_elem = gr.HTML('Loading...', elem_id=elem_id)
-                ui.pages.append(page_elem)
+    related_tabs = []
 
-                page_elem.change(fn=lambda: None, _js='function(){applyExtraNetworkFilter(' + quote_js(tabname) + '); return []}', inputs=[], outputs=[])
+    for page in ui.stored_extra_pages:
+        with gr.Tab(page.title, id=page.id_page) as tab:
+            elem_id = f"{tabname}_{page.id_page}_cards_html"
+            page_elem = gr.HTML('Loading...', elem_id=elem_id)
+            ui.pages.append(page_elem)
 
-                editor = page.create_user_metadata_editor(ui, tabname)
-                editor.create_ui()
-                ui.user_metadata_editors.append(editor)
+            page_elem.change(fn=lambda: None, _js='function(){applyExtraNetworkFilter(' + quote_js(tabname) + '); return []}', inputs=[], outputs=[])
 
-    gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
-    gr.Dropdown(choices=['Default Sort', 'Date Created', 'Date Modified', 'Name'], value='Default Sort', elem_id=tabname+"_extra_sort", multiselect=False, visible=False, show_label=False, interactive=True)
-    ToolButton(up_down_symbol, elem_id=tabname+"_extra_sortorder")
-    button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
+            editor = page.create_user_metadata_editor(ui, tabname)
+            editor.create_ui()
+            ui.user_metadata_editors.append(editor)
+
+            related_tabs.append(tab)
+
+    edit_search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", elem_classes="search", placeholder="Search...", visible=False, interactive=True)
+    dropdown_sort = gr.Dropdown(choices=['Default Sort', 'Date Created', 'Date Modified', 'Name'], value='Default Sort', elem_id=tabname+"_extra_sort", elem_classes="sort", multiselect=False, visible=False, show_label=False, interactive=True, label=tabname+"_extra_sort_order")
+    button_sortorder = ToolButton(switch_values_symbol, elem_id=tabname+"_extra_sortorder", elem_classes="sortorder", visible=False)
+    button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh", visible=False)
+    checkbox_show_dirs = gr.Checkbox(True, label='Show dirs', elem_id=tabname+"_extra_show_dirs", elem_classes="show-dirs", visible=False)
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
 
-    def toggle_visibility(is_visible):
-        is_visible = not is_visible
+    for tab in unrelated_tabs:
+        tab.select(fn=lambda: [gr.update(visible=False) for _ in range(5)], inputs=[], outputs=[edit_search, dropdown_sort, button_sortorder, button_refresh, checkbox_show_dirs], show_progress=False)
 
-        return is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary"))
+    for tab in related_tabs:
+        tab.select(fn=lambda: [gr.update(visible=True) for _ in range(5)], inputs=[], outputs=[edit_search, dropdown_sort, button_sortorder, button_refresh, checkbox_show_dirs], show_progress=False)
 
-    def fill_tabs(is_empty):
-        """Creates HTML for extra networks' tabs when the extra networks button is clicked for the first time."""
-
+    def pages_html():
         if not ui.pages_contents:
-            refresh()
+            return refresh()
 
-        if is_empty:
-            return True, *ui.pages_contents
-
-        return True, *[gr.update() for _ in ui.pages_contents]
-
-    state_visible = gr.State(value=False)
-    button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button], show_progress=False)
-
-    state_empty = gr.State(value=True)
-    button.click(fn=fill_tabs, inputs=[state_empty], outputs=[state_empty, *ui.pages], show_progress=False)
+        return ui.pages_contents
 
     def refresh():
         for pg in ui.stored_extra_pages:
@@ -415,6 +401,7 @@ def create_ui(container, button, tabname):
 
         return ui.pages_contents
 
+    interface.load(fn=pages_html, inputs=[], outputs=[*ui.pages])
     button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
 
     return ui
