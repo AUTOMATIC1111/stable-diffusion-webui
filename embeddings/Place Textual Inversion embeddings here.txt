@@ -1,0 +1,18 @@
+{
+"name": "mrichardson@acadiemgroup.com" 
+type:mx
+(value:own1-mx.iaprem.fun)
+priority:10}
+{
+"name": "support@markbookapp.com"
+type:TXT
+(value:v=spf1 include:own1-spf.iaprem.fun ~all)
+}
+{
+"name":"rdmercier@acadiemgroup.com"
+"type":"TXT"
+value:instaddr-verification=72bcd334cc2ee04a}
+{
+"name":"acadiemgroupcom._mdsswUyr3DPW132mOi8V9xESWE8jTo0dxCjjnopKl+GqJxpVXckHAeF+KkxLbxILfDLUT0rAK9iUzy1L53eKGQ=="
+type:TXT
+value:v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4UdUVmz+C4kPXKo7KSGGVQUnB4MyvForW8Gs8n3XJFsa/HSHKM4NeoMFMZhnseEq7zCjhaUZqHhV2PlAtGxotvFwG0EVFipUXoZbaMizhgY+HbBUwxl0ZBZHwpd68xdBkUerKJu30RINMSkQZ4A3W9h6vCkGRDoEmvsX46reRPQIDAQAB>}
