@@ -28,9 +28,9 @@ def download_config():
     interrogate_path = os.path.join(pi.data_path, 'interrogate')
     lu.run(f"mkdir -p  {interrogate_path}", f"mkdir {interrogate_path}")
     lu.run(f"wget https://{obs_path}/resource/artists.txt -O {interrogate_path}/artists.txt", "downloading artists.txt")
-    lu.run(f"wget https://{obs_path}/resource/flavors.txt -O {pi.data_path}/flavors.txt", "downloading flavors.txt")
-    lu.run(f"wget https://{obs_path}/resource/mediums.txt -O {pi.data_path}/mediums.txt", "downloading mediums.txt")
-    lu.run(f"wget https://{obs_path}/resource/movements.txt -O {pi.data_path}/movements.txt",
+    lu.run(f"wget https://{obs_path}/resource/flavors.txt -O {interrogate_path}/flavors.txt", "downloading flavors.txt")
+    lu.run(f"wget https://{obs_path}/resource/mediums.txt -O {interrogate_path}/mediums.txt", "downloading mediums.txt")
+    lu.run(f"wget https://{obs_path}/resource/movements.txt -O {interrogate_path}/movements.txt",
            "downloading movements.txt")
     lu.run(f"wget https://{obs_path}/resource/libcudart.so -O /opt/conda/lib/libcudart.so",
            "downloading libcudart.so")
@@ -39,7 +39,7 @@ def download_config():
 def clone_extensions():
     import modules.paths_internal as pi
     lu.run(f"export https_proxy={HTTP_PROXY}", "set https proxy")
-    lu.git_clone(f"https://github.com/CompVis/taming-transformers.git",
+    lu.git_clone("--depth 1 https://github.com/CompVis/taming-transformers.git",
                  os.path.join(pi.extensions_dir, "taming-transformers"),
                  "clone taming-transformers")
     lu.git_clone("https://github.com/nonnonstop/sd-webui-3d-open-pose-editor",
