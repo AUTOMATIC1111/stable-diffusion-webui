@@ -58,9 +58,9 @@ def pil_to_temp_file(self, img, dir: str, format="png") -> str: # pylint: disabl
         if isinstance(key, str) and isinstance(value, str):
             metadata.add_text(key, value)
             use_metadata = True
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".png", dir=dir) as file_obj:
-        img.save(file_obj, pnginfo=(metadata if use_metadata else None))
-        name = file_obj.name
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".png", dir=dir) as tmp:
+        img.save(tmp, pnginfo=(metadata if use_metadata else None))
+        name = tmp.name
         shared.log.debug(f'Saving temp: image="{name}"')
     return name
 

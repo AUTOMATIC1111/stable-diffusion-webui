@@ -845,6 +845,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             else:
                 raise ValueError(f"Unknown backend {shared.backend}")
 
+            if not shared.opts.keep_incomplete and shared.state.interrupted:
+                x_samples_ddim = []
+
             if shared.cmd_opts.lowvram or shared.cmd_opts.medvram and shared.backend == shared.Backend.ORIGINAL:
                 modules.lowvram.send_everything_to_cpu()
                 devices.torch_gc()
@@ -945,7 +948,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         index_of_first_image=index_of_first_image,
         infotexts=infotexts,
     )
-    if p.scripts is not None and not shared.state.interrupted:
+    if p.scripts is not None and not (shared.state.interrupted or shared.state.skipped):
         p.scripts.postprocess(p, res)
     return res
 
