@@ -188,7 +188,7 @@ class OlivePipeline(diffusers.DiffusionPipeline):
     unoptimized: diffusers.DiffusionPipeline
     original_filename: str
 
-    def __init__(self, path, pipeline: diffusers.DiffusionPipeline, scheduler: diffusers.schedulers.scheduling_utils.KarrasDiffusionSchedulers = 0):
+    def __init__(self, path, pipeline: diffusers.DiffusionPipeline):
         self.original_filename = os.path.basename(path)
         self.unoptimized = pipeline
         del pipeline
