@@ -389,7 +389,7 @@ class FilenameGenerator:
         return formatted_time
 
     def sanitize(self, filename):
-        invalid_chars = '#<>.:;"/\\|?*\n\t\r'
+        invalid_chars = '#<>.;"/\\|?*\n\t\r'
         invalid_prefix = ''
         invalid_suffix = '.'
         fn, ext = os.path.splitext(filename)
