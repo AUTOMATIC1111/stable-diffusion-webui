@@ -396,7 +396,7 @@ class FilenameGenerator:
         return sanitized
 
     def sanitize(self, filename):
-        invalid_chars = '\'"\\|?*\n\t\r' # <https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file>
+        invalid_chars = '\'"|?*\n\t\r' # <https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file>
         invalid_folder = ':'
         invalid_files = ['CON', 'PRN', 'AUX', 'NUL', 'NULL', 'COM0', 'COM1', 'LPT0', 'LPT1']
         invalid_prefix = ', '
