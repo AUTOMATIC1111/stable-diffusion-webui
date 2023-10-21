@@ -297,7 +297,6 @@ class OlivePipeline(diffusers.DiffusionPipeline):
                         shutil.copyfile(weights_src_path, weights_dst_path)
         except Exception as e:
             log.error(f"Failed to optimize model '{self.original_filename}'.")
-            log.error(e)
             shutil.rmtree(temp_dir, ignore_errors=True)
             shutil.rmtree(out_dir, ignore_errors=True)
             pipeline = None
