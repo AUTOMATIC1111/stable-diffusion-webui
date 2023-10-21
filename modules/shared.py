@@ -437,7 +437,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
 
     "olive_sep": OptionInfo("<h2>Olive</h2>", "", gr.HTML),
     "olive_float16": OptionInfo(True, 'Use FP16 (will use FP32 if unchecked)'),
-    "olive_cache_optimized": OptionInfo(False, 'Cache optimized models'),
+    "olive_cache_optimized": OptionInfo(True, 'Cache optimized models'),
     "olive_garbage_collect": OptionInfo(False, 'Collect garbage at the end of each generation'),
 }))
 

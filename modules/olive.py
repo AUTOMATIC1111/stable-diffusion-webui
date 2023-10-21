@@ -215,15 +215,19 @@ class OlivePipeline(diffusers.DiffusionPipeline):
         from olive.workflows import run
         from olive.model import ONNXModel
 
+        if width != height:
+            log.warning("Olive received different width and height. The quality of the result is not guaranteed.")
+
         out_dir = os.path.join(cache_dir, f"{self.original_filename}-{width}w-{height}h")
         if os.path.isdir(out_dir):
             del self.unoptimized
             return OnnxStableDiffusionPipeline.from_pretrained(out_dir, provider=provider).apply(self)
 
         try:
-            shutil.copytree(
-                temp_dir, out_dir, ignore=shutil.ignore_patterns("weights.pb", "*.onnx", "*.safetensors", "*.ckpt")
-            )
+            if opts.olive_cache_optimized:
+                shutil.copytree(
+                    temp_dir, out_dir, ignore=shutil.ignore_patterns("weights.pb", "*.onnx", "*.safetensors", "*.ckpt")
+                )
 
             optimize_config["width"] = width
             optimize_config["height"] = height
@@ -256,7 +260,6 @@ class OlivePipeline(diffusers.DiffusionPipeline):
                 ).model_path
 
                 log.info(f"Optimized {submodel}")
-            shutil.rmtree("footprints")
             shutil.rmtree(temp_dir)
 
             kwargs = {
@@ -275,31 +278,32 @@ class OlivePipeline(diffusers.DiffusionPipeline):
                 **kwargs,
                 requires_safety_checker=False,
             ).apply(self)
-            pipeline.to_json_file(os.path.join(out_dir, "model_index.json"))
             del kwargs
+            if opts.olive_cache_optimized:
+                pipeline.to_json_file(os.path.join(out_dir, "model_index.json"))
 
-            for submodel in submodels:
-                src_path = optimized_model_paths[submodel]
-                src_parent = os.path.dirname(src_path)
-                dst_parent = os.path.join(out_dir, submodel)
-                dst_path = os.path.join(dst_parent, "model.onnx")
-                if not os.path.isdir(dst_parent):
-                    os.mkdir(dst_parent)
-                shutil.copyfile(src_path, dst_path)
+                for submodel in submodels:
+                    src_path = optimized_model_paths[submodel]
+                    src_parent = os.path.dirname(src_path)
+                    dst_parent = os.path.join(out_dir, submodel)
+                    dst_path = os.path.join(dst_parent, "model.onnx")
+                    if not os.path.isdir(dst_parent):
+                        os.mkdir(dst_parent)
+                    shutil.copyfile(src_path, dst_path)
 
-                weights_src_path = os.path.join(src_parent, (os.path.basename(src_path) + ".data"))
-                if os.path.isfile(weights_src_path):
-                    weights_dst_path = os.path.join(dst_parent, (os.path.basename(dst_path) + ".data"))
-                    shutil.copyfile(weights_src_path, weights_dst_path)
-            return pipeline
+                    weights_src_path = os.path.join(src_parent, (os.path.basename(src_path) + ".data"))
+                    if os.path.isfile(weights_src_path):
+                        weights_dst_path = os.path.join(dst_parent, (os.path.basename(dst_path) + ".data"))
+                        shutil.copyfile(weights_src_path, weights_dst_path)
         except Exception as e:
             log.error(f"Failed to optimize model '{self.original_filename}'.")
             log.error(e)
-            shutil.rmtree("cache", ignore_errors=True)
-            shutil.rmtree("footprints", ignore_errors=True)
             shutil.rmtree(temp_dir, ignore_errors=True)
             shutil.rmtree(out_dir, ignore_errors=True)
-            return self.unoptimized
+            pipeline = None
+        shutil.rmtree("cache", ignore_errors=True)
+        shutil.rmtree("footprints", ignore_errors=True)
+        return pipeline
 
 # -------------------------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
