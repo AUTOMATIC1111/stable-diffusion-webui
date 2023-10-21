@@ -38,10 +38,10 @@ tr { border-bottom: none !important; padding: 0.1em 0.5em !important; }
 .gradio-html .min { min-height: 0; }
 .gradio-html div.wrap { height: 100%; }
 .gradio-number { min-width: unset !important; max-width: 5em !important; }
-.gradio-slider { max-width: 50%; margin-right: var(--spacing-sm) !important; }
-.gradio-slider input[type="number"] { width: 6em; margin-left: 0.5em; }
 .gradio-textbox { overflow: visible !important; }
-.gradio-radio { padding: 0 !important; }
+.gradio-radio { padding: 0 !important; width: max-content !important; }
+.gradio-slider { margin-right: var(--spacing-sm) !important; width: max-content !important }
+.gradio-slider input[type="number"] { width: 6em; font-size: 0.8rem; height: 20px; margin-left: 0.5em; }
 
 /* custom gradio elements */
 .accordion-compact { padding: 8px 0px 4px 0px !important; }
