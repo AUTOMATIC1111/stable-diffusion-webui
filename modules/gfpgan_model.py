@@ -25,7 +25,7 @@ def gfpgann():
 
     if gfpgan_constructor is None:
         return None
-  
+
     models = modelloader.load_models(model_path, model_url, user_path, ext_filter=['.pth'])
 
     if len(models) == 1 and models[0].startswith("http"):
