@@ -316,17 +316,19 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         else:
             pass #Do nothing if compile is disabled
 
+    def update_sampler(sd_model, second_pass=False):
+        sampler_selection = p.latent_sampler if second_pass else p.sampler_name
+        is_karras_compatible = sd_model.__class__.__init__.__annotations__.get("scheduler", None) == diffusers.schedulers.scheduling_utils.KarrasDiffusionSchedulers
+        if hasattr(sd_model, 'scheduler') and sampler_selection != 'Default' and is_karras_compatible:
+            sampler = sd_samplers.all_samplers_map.get(sampler_selection, None)
+            if sampler is None:
+                sampler = sd_samplers.all_samplers_map.get("UniPC")
+            sd_samplers.create_sampler(sampler.name, sd_model)
+            # TODO extra_generation_params add sampler options
+            # p.extra_generation_params['Sampler options'] = ''
+
     recompile_model()
-
-    is_karras_compatible = shared.sd_model.__class__.__init__.__annotations__.get("scheduler", None) == diffusers.schedulers.scheduling_utils.KarrasDiffusionSchedulers
-    if hasattr(shared.sd_model, 'scheduler') and p.sampler_name != 'Default' and is_karras_compatible:
-        sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)
-        if sampler is None:
-            sampler = sd_samplers.all_samplers_map.get("UniPC")
-        sd_samplers.create_sampler(sampler.name, shared.sd_model)
-        # TODO extra_generation_params add sampler options
-        # p.extra_generation_params['Sampler options'] = ''
-
+    update_sampler(shared.sd_model)
     p.extra_generation_params['Pipeline'] = shared.sd_model.__class__.__name__
 
     if len(getattr(p, 'init_images', [])) > 0:
@@ -403,11 +405,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 p.ops.append('hires')
                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                 recompile_model(hires=True)
-                if ((not hasattr(shared.sd_model.scheduler, 'name')) or (p.latent_sampler == 'DPM SDE') or (shared.sd_model.scheduler.name != p.latent_sampler)) and (p.latent_sampler != 'Default') and is_karras_compatible:
-                    sampler = sd_samplers.all_samplers_map.get(p.latent_sampler, None)
-                    if sampler is None:
-                        sampler = sd_samplers.all_samplers_map.get("UniPC")
-                    sd_samplers.create_sampler(sampler.name, shared.sd_model)
+                update_sampler(shared.sd_model, second_pass=True)
                 hires_args = set_pipeline_args(
                     model=shared.sd_model,
                     prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
@@ -439,11 +437,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             shared.sd_model.to(devices.cpu)
             devices.torch_gc()
 
-        if ((not hasattr(shared.sd_refiner.scheduler, 'name')) or (p.latent_sampler == 'DPM SDE') or (shared.sd_refiner.scheduler.name != p.latent_sampler)) and (p.latent_sampler != 'Default'):
-            sampler = sd_samplers.all_samplers_map.get(p.latent_sampler, None)
-            if sampler is None:
-                sampler = sd_samplers.all_samplers_map.get("UniPC")
-            sd_samplers.create_sampler(sampler.name, shared.sd_refiner)
+        update_sampler(shared.sd_refiner, second_pass=True)
 
         if shared.state.interrupted or shared.state.skipped:
             return results
