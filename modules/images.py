@@ -19,6 +19,7 @@ from PIL import Image, ImageFont, ImageDraw, PngImagePlugin, ExifTags
 from modules import sd_samplers, shared, script_callbacks, errors, paths
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
+debug = errors.log.info if os.environ.get('SD_PATH_DEBUG', None) is not None else lambda *args, **kwargs: None
 
 
 try:
@@ -298,7 +299,7 @@ class FilenameGenerator:
         'model_name': lambda self: shared.sd_model.sd_checkpoint_info.model_name,
         'model_hash': lambda self: shared.sd_model.sd_checkpoint_info.shorthash,
 
-        'prompt': lambda self: self.prompt,
+        'prompt': lambda self: self.prompt_full(),
         'prompt_no_styles': lambda self: self.prompt_no_style(),
         'prompt_words': lambda self: self.prompt_words(),
         'prompt_hash': lambda self: hashlib.sha256(self.prompt.encode()).hexdigest()[0:8],
@@ -350,6 +351,9 @@ class FilenameGenerator:
         shorthash = hashlib.sha256(img_str).hexdigest()[0:8]
         return shorthash
 
+    def prompt_full(self):
+        return self.prompt_sanitize(self.prompt)
+
     def prompt_words(self):
         if self.prompt is None:
             return ''
@@ -358,7 +362,7 @@ class FilenameGenerator:
         no_brackets = re_brackets.sub('', no_network)
         words = [x for x in re_nonletters.split(no_brackets or "") if len(x) > 0]
         prompt = " ".join(words[0:shared.opts.directories_max_prompt_words])
-        return prompt
+        return self.prompt_sanitize(prompt)
 
     def prompt_no_style(self):
         if self.p is None or self.prompt is None:
@@ -369,7 +373,7 @@ class FilenameGenerator:
                 for part in style.split("{prompt}"):
                     prompt_no_style = prompt_no_style.replace(part, "").replace(", ,", ",")
                 prompt_no_style = prompt_no_style.replace(style, "")
-        return prompt_no_style
+        return self.prompt_sanitize(prompt_no_style)
 
     def datetime(self, *args):
         time_datetime = datetime.datetime.now()
@@ -385,20 +389,33 @@ class FilenameGenerator:
             formatted_time = time_zone_time.strftime(self.default_time_format)
         return formatted_time
 
+    def prompt_sanitize(self, prompt):
+        invalid_chars = '#<>:\'"\\|?*\n\t\r'
+        sanitized = prompt.translate({ ord(x): '_' for x in invalid_chars }).strip()
+        debug(f'Prompt sanitize: input="{prompt}" output={sanitized}')
+        return sanitized
+
     def sanitize(self, filename):
-        invalid_chars = '#<>:;"/\\|?*\n\t\r'
-        invalid_prefix = ''
-        invalid_suffix = '.'
-        parts = Path(filename).parts
-        for part in parts:
-            part = part.translate({ord(x): '_' for x in invalid_chars})
-            part = part.lstrip(invalid_prefix)
-            part = part.rstrip(invalid_suffix)
-        fn = Path(*parts)
-        max_length = os.statvfs(__file__).f_namemax if hasattr(os, 'statvfs') else 128
-        fn, ext = os.path.splitext(fn)
-        fn = fn[:max_length-max(4, len(ext))] + ext
-        # shared.log.debug(f'Filename sanitize: input={filename} parts={parts} output={fn}')
+        invalid_chars = '\'"|?*\n\t\r' # <https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file>
+        invalid_folder = ':'
+        invalid_files = ['CON', 'PRN', 'AUX', 'NUL', 'NULL', 'COM0', 'COM1', 'LPT0', 'LPT1']
+        invalid_prefix = ', '
+        invalid_suffix = '.,_ '
+        fn, ext = os.path.splitext(filename)
+        parts = Path(fn).parts
+        newparts = []
+        for i, part in enumerate(parts):
+            part = part.translate({ ord(x): '_' for x in invalid_chars })
+            if i > 0 or (len(part) >= 2 and part[1] != invalid_folder): # skip drive, otherwise remove
+                part = part.translate({ ord(x): '_' for x in invalid_folder })
+            part = part.lstrip(invalid_prefix).rstrip(invalid_suffix)
+            if part in invalid_files: # reserved names
+                [part := part.replace(word, '_') for word in invalid_files] # pylint: disable=expression-not-assigned
+            newparts.append(part)
+        fn = Path(*newparts)
+        max_length = os.statvfs(__file__).f_namemax - 32 if hasattr(os, 'statvfs') else 230
+        fn = str(fn)[:max_length-max(4, len(ext))].rstrip(invalid_suffix) + ext
+        debug(f'Filename sanitize: input="{filename}" parts={parts} output="{fn}" ext={ext} max={max_length} len={len(fn)}')
         return fn
 
     def apply(self, x):
@@ -474,7 +491,10 @@ def atomically_save_image():
             pnginfo_data = PngImagePlugin.PngInfo()
             for k, v in params.pnginfo.items():
                 pnginfo_data.add_text(k, str(v))
-            image.save(fn, format=image_format, compress_level=6, pnginfo=pnginfo_data if shared.opts.image_metadata else None)
+            try:
+                image.save(fn, format=image_format, compress_level=6, pnginfo=pnginfo_data if shared.opts.image_metadata else None)
+            except Exception as e:
+                shared.log.warning(f'Image save failed: {fn} {e}')
         elif image_format == 'JPEG':
             if image.mode == 'RGBA':
                 shared.log.warning('Saving RGBA image as JPEG: Alpha channel will be lost')
@@ -482,7 +502,10 @@ def atomically_save_image():
             elif image.mode == 'I;16':
                 image = image.point(lambda p: p * 0.0038910505836576).convert("L")
             exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo, encoding="unicode") } })
-            image.save(fn, format=image_format, optimize=True, quality=shared.opts.jpeg_quality, exif=exif_bytes)
+            try:
+                image.save(fn, format=image_format, optimize=True, quality=shared.opts.jpeg_quality, exif=exif_bytes)
+            except Exception as e:
+                shared.log.warning(f'Image save failed: {fn} {e}')
         elif image_format == 'WEBP':
             if image.mode == 'I;16':
                 image = image.point(lambda p: p * 0.0038910505836576).convert("RGB")
@@ -563,18 +586,19 @@ def save_image(image, path, basename = '', seed=None, prompt=None, extension=sha
     if info is not None:
         pnginfo[pnginfo_section_name] = info
     params = script_callbacks.ImageSaveParams(image, p, filename, pnginfo)
+    params.filename = namegen.sanitize(filename)
     script_callbacks.before_image_saved_callback(params)
     exifinfo = params.pnginfo.get('UserComment', '')
     exifinfo = (exifinfo + ', ' if len(exifinfo) > 0 else '') + params.pnginfo.get(pnginfo_section_name, '')
-    filename = namegen.sanitize(params.filename)
-    dirname = os.path.dirname(filename)
+    dirname = os.path.dirname(params.filename)
     os.makedirs(dirname, exist_ok=True)
-    filename, extension = os.path.splitext(filename)
+    filename, extension = os.path.splitext(params.filename)
     filename_txt = f"{filename}.txt" if shared.opts.save_txt and len(exifinfo) > 0 else None
     save_queue.put((params.image, filename, extension, params, exifinfo, filename_txt)) # actual save is executed in a thread that polls data from queue
     save_queue.join()
-
-    params.image.already_saved_as = params.filename
+    if not hasattr(params.image, 'already_saved_as'):
+        debug(f'Image marked: "{params.filename}"')
+        params.image.already_saved_as = params.filename
     script_callbacks.image_saved_callback(params)
     return params.filename, filename_txt
 

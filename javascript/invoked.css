@@ -77,7 +77,6 @@ div.tab-nav button.selected {background-color: var(--button-primary-background-f
 .label-wrap { background-color: #363c4a; padding: 16px 8px 8px 8px; border-radius: var(--radius-lg); padding-left: 8px !important; }
 .small-accordion .label-wrap { padding: 8px 0px 8px 0px; }
 .small-accordion .label-wrap .icon { margin-right: 1em; }
-.gradio-slider input[type="number"] { width: 4.5em; font-size: 0.8rem; height: 20px; }
 .gradio-button.tool { border: none; box-shadow: none; border-radius: var(--radius-lg);}
 button.selected {background: var(--button-primary-background-fill);}
 .center.boundedheight.flex {background-color: var(--input-background-fill);}

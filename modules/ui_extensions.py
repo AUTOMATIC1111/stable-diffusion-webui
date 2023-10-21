@@ -421,7 +421,6 @@ def create_ui():
                     update_extension_button = gr.Button(elem_id="update_extension_button", visible=False)
                     with gr.Column(scale=4):
                         search_text = gr.Text(label="Search")
-                        info = gr.HTML('Note: After any operation such as install/uninstall or enable/disable, please restart the server')
                     with gr.Column(scale=1):
                         sort_column = gr.Dropdown(value="default", label="Sort by", choices=list(sort_ordering.keys()), multiselect=False)
                     with gr.Column(scale=1):
@@ -429,6 +428,9 @@ def create_ui():
                         check = gr.Button(value="Update all installed", variant="primary")
                         apply = gr.Button(value="Apply changes", variant="primary")
                 list_extensions()
+                gr.HTML('<span style="color: var(--body-text-color)"><h2>Extension list</h2>⯀ Refesh extension list to download latest list with status<br>⯀ Check status of an extension by looking at status icon before installing it<br>⯀ After any operation such as install/uninstall or enable/disable, please restart the server<br></span>')
+                gr.HTML('')
+                info = gr.HTML('')
                 extensions_table = gr.HTML(create_html(search_text.value, sort_column.value))
                 check.click(
                     fn=wrap_gradio_gpu_call(check_updates, extra_outputs=[gr.update()]),

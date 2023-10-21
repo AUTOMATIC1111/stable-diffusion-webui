@@ -35,8 +35,8 @@ def find_sampler_config(name):
 
 
 def visible_sampler_names():
-    samplers = [x for x in all_samplers if x.name in shared.opts.show_samplers] if len(shared.opts.show_samplers) > 0 else all_samplers
-    return samplers
+    visible_samplers = [x for x in all_samplers if x.name in shared.opts.show_samplers] if len(shared.opts.show_samplers) > 0 else all_samplers
+    return visible_samplers
 
 
 def create_sampler(name, model):

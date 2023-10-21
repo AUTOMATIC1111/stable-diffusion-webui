@@ -237,7 +237,7 @@
   {"id":"","label":"latent nothing","localized":"","hint":"fill it with latent space zeroes"},
   {"id":"","label":"Whole picture","localized":"","hint":""},
   {"id":"","label":"Only masked","localized":"","hint":""},
-  {"id":"","label":"Only masked padding, pixels","localized":"","hint":""},
+  {"id":"","label":"Masked padding","localized":"","hint":""},
   {"id":"","label":"Scale","localized":"","hint":""},
   {"id":"","label":"Unused","localized":"","hint":""},
   {"id":"","label":"Image CFG scale","localized":"","hint":""}
