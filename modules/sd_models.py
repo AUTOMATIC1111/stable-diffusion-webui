@@ -147,6 +147,7 @@ def list_models():
     model_list = list(modelloader.load_models(model_path=model_path, model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=ext_filter, download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"]))
     if shared.backend == shared.Backend.DIFFUSERS:
         model_list += modelloader.load_diffusers_models(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir, clear=True)
+        model_list += modelloader.load_diffusers_models(model_path=shared.opts.olive_sideloaded_models_path, command_path=shared.opts.olive_sideloaded_models_path)
     for filename in sorted(model_list, key=str.lower):
         checkpoint_info = CheckpointInfo(filename)
         if checkpoint_info.name is not None:
@@ -790,6 +791,38 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         shared.log.debug(f'Diffusers loading: path="{checkpoint_info.path}"')
         pipeline, model_type = detect_pipeline(checkpoint_info.path, op)
         if os.path.isdir(checkpoint_info.path):
+            if shared.opts.olive_sideloaded_models_path in checkpoint_info.path:
+                try:
+                    from modules.olive import OnnxStableDiffusionPipeline, provider
+                    sd_model = OnnxStableDiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.olive_sideloaded_models_path, provider=provider)
+                    sd_model.model_type = sd_model.__class__.__name__
+                except Exception as e:
+                    shared.log.error(f'Failed loading {op}: {checkpoint_info.path} olive={e}')
+                    return
+            else:
+                err1 = None
+                err2 = None
+                err3 = None
+                try: # try autopipeline first, best choice but not all pipelines are available
+                    sd_model = diffusers.AutoPipelineForText2Image.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+                    sd_model.model_type = sd_model.__class__.__name__
+                except Exception as e:
+                    err1 = e
+                try: # try diffusion pipeline next second-best choice, works for most non-linked pipelines
+                    if err1 is not None:
+                        sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+                        sd_model.model_type = sd_model.__class__.__name__
+                except Exception as e:
+                    err2 = e
+                try: # try basic pipeline next just in case
+                    if err2 is not None:
+                        sd_model = diffusers.StableDiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+                        sd_model.model_type = sd_model.__class__.__name__
+                except Exception as e:
+                    err3 = e # ignore last error
+                if err3 is not None:
+                    shared.log.error(f'Failed loading {op}: {checkpoint_info.path} auto={err1} diffusion={err2}')
+                    return
             if model_type in ['InstaFlow']: # forced pipeline
                 sd_model = pipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
             else:

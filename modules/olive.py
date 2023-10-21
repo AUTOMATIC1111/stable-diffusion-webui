@@ -8,11 +8,8 @@ from typing import Union, Optional, Callable, List
 from transformers.models.clip.modeling_clip import CLIPTextModel, CLIPTextModelWithProjection
 from installer import log, args
 from modules.shared import opts, cmd_opts
-from modules.paths import models_path, sd_configs_path
+from modules.paths import sd_configs_path
 from modules.sd_models import CheckpointInfo
-
-temp_dir = os.path.join(models_path, "OliveTemp")
-cache_dir = os.path.join(models_path, "OliveCache")
 
 submodels = ("text_encoder", "unet", "vae_encoder", "vae_decoder",)
 
@@ -25,7 +22,18 @@ provider = (execution_provider, {
     "device_id": int(cmd_opts.device_id or 0),
 })
 
+class OnnxRuntimeModel(diffusers.OnnxRuntimeModel):
+    config = {}
+
+    def named_modules(self):
+        return ()
+
+
+diffusers.OnnxRuntimeModel = OnnxRuntimeModel
+
+
 class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline):
+    model_type: str
     sd_model_hash: str
     sd_checkpoint_info: CheckpointInfo
     sd_model_checkpoint: str
@@ -192,9 +200,9 @@ class OlivePipeline(diffusers.DiffusionPipeline):
         self.original_filename = os.path.basename(path)
         self.unoptimized = pipeline
         del pipeline
-        if not os.path.exists(temp_dir):
-            os.mkdir(temp_dir)
-        self.unoptimized.save_pretrained(temp_dir)
+        if not os.path.exists(opts.olive_temp_dir):
+            os.mkdir(opts.olive_temp_dir)
+        self.unoptimized.save_pretrained(opts.olive_temp_dir)
 
     @staticmethod
     def from_pretrained(pretrained_model_name_or_path, **kwargs):
@@ -218,7 +226,7 @@ class OlivePipeline(diffusers.DiffusionPipeline):
         if width != height:
             log.warning("Olive received different width and height. The quality of the result is not guaranteed.")
 
-        out_dir = os.path.join(cache_dir, f"{self.original_filename}-{width}w-{height}h")
+        out_dir = os.path.join(opts.olive_cached_models_path, f"{self.original_filename}-{width}w-{height}h")
         if os.path.isdir(out_dir):
             del self.unoptimized
             return OnnxStableDiffusionPipeline.from_pretrained(out_dir, provider=provider).apply(self)
@@ -226,7 +234,7 @@ class OlivePipeline(diffusers.DiffusionPipeline):
         try:
             if opts.olive_cache_optimized:
                 shutil.copytree(
-                    temp_dir, out_dir, ignore=shutil.ignore_patterns("weights.pb", "*.onnx", "*.safetensors", "*.ckpt")
+                    opts.olive_temp_dir, out_dir, ignore=shutil.ignore_patterns("weights.pb", "*.onnx", "*.safetensors", "*.ckpt")
                 )
 
             optimize_config["width"] = width
@@ -260,7 +268,7 @@ class OlivePipeline(diffusers.DiffusionPipeline):
                 ).model_path
 
                 log.info(f"Optimized {submodel}")
-            shutil.rmtree(temp_dir)
+            shutil.rmtree(opts.olive_temp_dir)
 
             kwargs = {
                 "tokenizer": self.unoptimized.tokenizer,
@@ -295,9 +303,9 @@ class OlivePipeline(diffusers.DiffusionPipeline):
                     if os.path.isfile(weights_src_path):
                         weights_dst_path = os.path.join(dst_parent, (os.path.basename(dst_path) + ".data"))
                         shutil.copyfile(weights_src_path, weights_dst_path)
-        except Exception as e:
+        except Exception:
             log.error(f"Failed to optimize model '{self.original_filename}'.")
-            shutil.rmtree(temp_dir, ignore_errors=True)
+            shutil.rmtree(opts.olive_temp_dir, ignore_errors=True)
             shutil.rmtree(out_dir, ignore_errors=True)
             pipeline = None
         shutil.rmtree("cache", ignore_errors=True)
@@ -312,7 +320,7 @@ class OlivePipeline(diffusers.DiffusionPipeline):
 optimize_config = {
     "is_sdxl": False,
 
-    "source": os.path.abspath(temp_dir),
+    "source": os.path.abspath(opts.olive_temp_dir),
 
     "width": 512,
     "height": 512,
