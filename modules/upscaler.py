@@ -190,3 +190,47 @@ class UpscalerNearest(Upscaler):
         super().__init__(False)
         self.name = "Nearest"
         self.scalers = [UpscalerData("Nearest", None, self)]
+
+def compile_upscaler(model, name=""):
+    try:
+        if modules.shared.opts.ipex_optimize_upscaler:
+            import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
+            from modules.devices import dtype as devices_dtype
+            model.training = False
+            model = ipex.optimize(model, dtype=devices_dtype, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+            modules.shared.log.info("Applied Upscaler IPEX Optimize.")
+    except Exception as err:
+        modules.shared.log.warning(f"Upscaler IPEX Optimize not supported: {err}")
+    try:
+        if modules.shared.opts.cuda_compile_upscaler and modules.shared.opts.cuda_compile_backend != 'none':
+            modules.shared.log.info(f"Upscaler Compiling: {name} mode={modules.shared.opts.cuda_compile_backend}")
+            import logging
+            import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
+            use_old_compiled_model_state = False
+
+            if modules.shared.opts.cuda_compile_backend == "openvino_fx":
+                from modules.intel.openvino import openvino_fx, openvino_clear_caches # pylint: disable=unused-import
+                from modules.sd_models import CompiledModelState
+
+                openvino_clear_caches()
+                torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
+
+                if modules.shared.compiled_model_state is not None:
+                    use_old_compiled_model_state = True
+                    old_compiled_model_state = modules.shared.compiled_model_state
+                modules.shared.compiled_model_state = CompiledModelState()
+
+            log_level = logging.WARNING if modules.shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
+            if hasattr(torch, '_logging'):
+                torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
+
+            torch._dynamo.config.verbose = modules.shared.opts.cuda_compile_verbose # pylint: disable=protected-access
+            torch._dynamo.config.suppress_errors = modules.shared.opts.cuda_compile_errors # pylint: disable=protected-access
+            model = torch.compile(model, mode=modules.shared.opts.cuda_compile_mode, backend=modules.shared.opts.cuda_compile_backend, fullgraph=modules.shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
+
+            if use_old_compiled_model_state:
+                modules.shared.compiled_model_state = old_compiled_model_state
+            modules.shared.log.info("Upscaler: Complilation done.")
+    except Exception as err:
+        modules.shared.log.warning(f"Model compile not supported: {err}")
+    return model

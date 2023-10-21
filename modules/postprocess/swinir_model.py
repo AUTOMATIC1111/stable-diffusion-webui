@@ -5,7 +5,7 @@ from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, T
 from modules.postprocess.swinir_model_arch import SwinIR as net
 from modules.postprocess.swinir_model_arch_v2 import Swin2SR as net2
 from modules import devices, script_callbacks, shared
-from modules.upscaler import Upscaler
+from modules.upscaler import Upscaler, compile_upscaler
 
 
 class UpscalerSwinIR(Upscaler):
@@ -58,6 +58,7 @@ class UpscalerSwinIR(Upscaler):
                     else:
                         model.load_state_dict(pretrained_model, strict=True)
                     shared.log.info(f"Upscaler loaded: type={self.name} model={info.local_data_path} param={param}")
+                    model = compile_upscaler(model, name=self.name)
                     self.models[info.local_data_path] = model
                     return model
                 except Exception as e:

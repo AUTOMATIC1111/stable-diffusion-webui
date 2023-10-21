@@ -255,8 +255,8 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "math_sep": OptionInfo("<h2>Execution precision</h2>", "", gr.HTML),
     "precision": OptionInfo("Autocast", "Precision type", gr.Radio, {"choices": ["Autocast", "Full"]}),
     "cuda_dtype": OptionInfo("FP32" if sys.platform == "darwin" or cmd_opts.use_openvino else "BF16" if devices.backend == "ipex" else "FP16", "Device precision type", gr.Radio, {"choices": ["FP32", "FP16", "BF16"]}),
-    "no_half": OptionInfo(False, "Use full precision for model (--no-half)", None, None, None),
-    "no_half_vae": OptionInfo(False, "Use full precision for VAE (--no-half-vae)"),
+    "no_half": OptionInfo(True if cmd_opts.use_openvino else False, "Use full precision for model (--no-half)", None, None, None),
+    "no_half_vae": OptionInfo(True if cmd_opts.use_openvino else False, "Use full precision for VAE (--no-half-vae)"),
     "upcast_sampling": OptionInfo(True if sys.platform == "darwin" else False, "Enable upcast sampling"),
     "upcast_attn": OptionInfo(False, "Enable upcast cross attention layer"),
     "cuda_cast_unet": OptionInfo(False, "Use fixed UNet precision"),
@@ -278,6 +278,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
 
     "cuda_compile_sep": OptionInfo("<h2>Model Compile</h2>", "", gr.HTML),
     "cuda_compile": OptionInfo(True if cmd_opts.use_openvino else False, "Enable model compile"),
+    "cuda_compile_upscaler": OptionInfo(False, "Enable upscaler compile"),
     "cuda_compile_backend": OptionInfo("openvino_fx" if cmd_opts.use_openvino else "none", "Model compile backend", gr.Radio, {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx']}),
     "cuda_compile_mode": OptionInfo("default", "Model compile mode", gr.Radio, {"choices": ['default', 'reduce-overhead', 'max-autotune']}),
     "cuda_compile_fullgraph": OptionInfo(False, "Model compile fullgraph"),
@@ -287,6 +288,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
 
     "ipex_sep": OptionInfo("<h2>IPEX, DirectML and OpenVINO</h2>", "", gr.HTML),
     "ipex_optimize": OptionInfo(True if devices.backend == "ipex" else False, "Enable IPEX Optimize for Intel GPUs"),
+    "ipex_optimize_upscaler": OptionInfo(True if devices.backend == "ipex" else False, "Enable IPEX Optimize for Intel GPUs with Upscalers"),
     "directml_memory_provider": OptionInfo(default_memory_provider, 'DirectML memory stats provider', gr.Radio, {"choices": memory_providers}),
     "openvino_disable_model_caching": OptionInfo(False, "OpenVINO disable model caching"),
     "openvino_hetero_gpu": OptionInfo(False, "OpenVINO use Hetero Device for single inference with multiple devices"),
