@@ -156,6 +156,10 @@ def ipex_hijacks():
         orig_func(input.to(weight.data.dtype), normalized_shape, weight, *args, **kwargs),
         lambda orig_func, input, normalized_shape=None, weight=None, *args, **kwargs:
         weight is not None and input.dtype != weight.data.dtype)
+    #SwinIR BF16:
+    CondFunc('torch.nn.functional.pad',
+        lambda orig_func, input, pad, mode='constant', value=None: orig_func(input.to(torch.float32), pad, mode=mode, value=value).to(dtype=torch.bfloat16),
+        lambda orig_func, input, pad, mode='constant', value=None: mode == 'reflect' and input.dtype == torch.bfloat16)
 
     #Diffusers Float64 (ARC GPUs doesn't support double or Float64):
     if not torch.xpu.has_fp64_dtype():
