@@ -444,9 +444,9 @@ class Script(scripts.Script):
             else:
                 return gr.update(), gr.update()
 
-        fill_x_button.click(fn=fill, inputs=[x_type, csv_mode], outputs=[x_values_dropdown])
-        fill_y_button.click(fn=fill, inputs=[y_type, csv_mode], outputs=[y_values_dropdown])
-        fill_z_button.click(fn=fill, inputs=[z_type, csv_mode], outputs=[z_values_dropdown])
+        fill_x_button.click(fn=fill, inputs=[x_type, csv_mode], outputs=[x_values, x_values_dropdown])
+        fill_y_button.click(fn=fill, inputs=[y_type, csv_mode], outputs=[y_values, y_values_dropdown])
+        fill_z_button.click(fn=fill, inputs=[z_type, csv_mode], outputs=[z_values, z_values_dropdown])
 
         def select_axis(axis_type, axis_values, axis_values_dropdown, csv_mode):
             choices = self.current_axis_options[axis_type].choices
@@ -700,3 +700,5 @@ class Script(scripts.Script):
                 del processed.all_seeds[1]
                 del processed.infotexts[1]
         return processed
+
+print('HERE', [x.name for x in sd_samplers.samplers])
