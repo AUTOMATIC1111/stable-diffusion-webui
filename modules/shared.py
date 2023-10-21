@@ -434,6 +434,11 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_aesthetics_score": OptionInfo(False, "Require aesthetics score"),
     "diffusers_pooled": OptionInfo("default", "Diffusers SDXL pooled embeds", gr.Radio, {"choices": ['default', 'weighted']}),
     "huggingface_token": OptionInfo('', 'HuggingFace token'),
+
+    "olive_sep": OptionInfo("<h2>Olive</h2>", "", gr.HTML),
+    "olive_float16": OptionInfo(True, 'Use FP16 (will use FP32 if unchecked)'),
+    "olive_cache_optimized": OptionInfo(False, 'Cache optimized models'),
+    "olive_garbage_collect": OptionInfo(False, 'Collect garbage at the end of each generation'),
 }))
 
 options_templates.update(options_section(('system-paths', "System Paths"), {
