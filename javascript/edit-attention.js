@@ -19,10 +19,16 @@ function keyupEditAttention(event) {
         let beforeParen = before.lastIndexOf(OPEN);
         if (beforeParen == -1) return false;
 
+        let beforeClosingParen = before.lastIndexOf(CLOSE);
+        if (beforeClosingParen != -1 && beforeClosingParen > beforeParen) return false;
+
         // Find closing parenthesis around current cursor
         const after = text.substring(selectionStart);
         let afterParen = after.indexOf(CLOSE);
         if (afterParen == -1) return false;
+
+        let afterOpeningParen = after.indexOf(OPEN);
+        if (afterOpeningParen != -1 && afterOpeningParen < beforeParen) return false;
 
         // Set the selection to the text between the parenthesis
         const parenContent = text.substring(beforeParen + 1, selectionStart + afterParen);
