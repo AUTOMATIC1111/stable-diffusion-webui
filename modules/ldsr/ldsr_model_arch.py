@@ -10,6 +10,7 @@ import safetensors.torch
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.util import instantiate_from_config, ismap
 from modules import devices, shared, sd_hijack
+from modules.upscaler import compile_upscaler
 
 cached_ldsr_model: torch.nn.Module = None
 
@@ -41,6 +42,7 @@ class LDSR:
                 model = model.to(memory_format=torch.channels_last)
             sd_hijack.model_hijack.hijack(model) # apply optimization
             model.eval()
+            model = compile_upscaler(model, name=self.modelPath)
             cached_ldsr_model = model
         return {"model": model}
 

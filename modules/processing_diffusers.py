@@ -1,3 +1,4 @@
+import os
 import time
 import math
 import inspect
@@ -20,8 +21,6 @@ from modules.sd_hijack_hypertile import hypertile_set
 
 def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_prompts):
     results = []
-    if p.enable_hr and p.hr_upscaler != 'None' and p.denoising_strength > 0 and len(getattr(p, 'init_images', [])) == 0:
-        p.is_hr_pass = True
     is_refiner_enabled = p.enable_hr and p.refiner_steps > 0 and p.refiner_start > 0 and p.refiner_start < 1 and shared.sd_refiner is not None
 
     if hasattr(p, 'init_images') and len(p.init_images) > 0:
@@ -62,11 +61,16 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             for j in range(len(decoded)):
                 images.save_image(decoded[j], path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix=suffix)
 
-    def diffusers_callback(_step: int, _timestep: int, latents: torch.FloatTensor):
-        shared.state.sampling_step += 1
-        shared.state.sampling_steps = p.steps
+    def diffusers_callback(step: int, _timestep: int, latents: torch.FloatTensor):
+        shared.state.sampling_step = step
         if p.is_hr_pass:
-            shared.state.sampling_steps += p.hr_second_pass_steps
+            shared.state.job = 'hires'
+            shared.state.sampling_steps = p.hr_second_pass_steps # add optional hires
+        elif p.is_refiner_pass:
+            shared.state.job = 'refine'
+            shared.state.sampling_steps = calculate_refiner_steps() # add optional refiner
+        else:
+            shared.state.sampling_steps = p.steps # base steps
         shared.state.current_latent = latents
         if shared.state.interrupted or shared.state.skipped:
             raise AssertionError('Interrupted...')
@@ -221,6 +225,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 parser = shared.opts.prompt_attention
             except Exception as e:
                 shared.log.error(f'Prompt parser encode: {e}')
+                if os.environ.get('SD_PROMPT_DEBUG', None) is not None:
+                    errors.display(e, 'Prompt parser encode')
         if 'prompt' in possible:
             if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and prompt_embed is not None:
                 if type(pooled) == list:
@@ -355,6 +361,14 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         else:
             return p.steps
 
+    def calculate_refiner_steps():
+        if p.refiner_start > 0 and p.refiner_start < 1 and refiner_is_sdxl:
+            refiner_steps = int(p.refiner_steps // (1 - p.refiner_start))
+        else:
+            refiner_steps = int(p.refiner_steps // p.denoising_strength + 1) if refiner_is_sdxl else p.refiner_steps
+        p.refiner_steps = min(99, refiner_steps)
+        return p.refiner_steps
+
     # pipeline type is set earlier in processing, but check for sanity
     if sd_models.get_diffusers_task(shared.sd_model) != sd_models.DiffusersTaskType.TEXT_2_IMAGE and len(getattr(p, 'init_images' ,[])) == 0: # reset pipeline
         shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
@@ -373,7 +387,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         clip_skip=p.clip_skip,
         desc='Base',
     )
-    # p.steps = base_args['num_inference_steps']
     p.extra_generation_params['CFG rescale'] = p.diffusers_guidance_rescale
     p.extra_generation_params["Sampler Eta"] = shared.opts.scheduler_eta if shared.opts.scheduler_eta is not None and shared.opts.scheduler_eta > 0 and shared.opts.scheduler_eta < 1 else None
     try:
@@ -393,6 +406,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         return results
 
     # optional hires pass
+    if p.enable_hr and p.hr_upscaler != 'None' and p.denoising_strength > 0 and len(getattr(p, 'init_images', [])) == 0:
+        p.is_hr_pass = True
     latent_scale_mode = shared.latent_upscale_modes.get(p.hr_upscaler, None) if (hasattr(p, "hr_upscaler") and p.hr_upscaler is not None) else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "None")
     if p.is_hr_pass:
         p.init_hr()
@@ -427,6 +442,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 except AssertionError as e:
                     shared.log.info(e)
                 p.init_images = []
+        p.is_hr_pass = False
 
     # optional refiner pass or decode
     if is_refiner_enabled:
@@ -446,26 +462,25 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             shared.sd_refiner.to(devices.device)
         refiner_is_sdxl = bool("StableDiffusionXL" in shared.sd_refiner.__class__.__name__)
         p.ops.append('refine')
+        p.is_refiner_pass = True
         shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
+        shared.sd_refiner = sd_models.set_diffuser_pipe(shared.sd_refiner, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
         for i in range(len(output.images)):
             image = output.images[i]
-            # if (image.shape[2] == 3) and (image.shape[0] % 8 != 0 or image.shape[1] % 8 != 0):
-            #    shared.log.warning(f'Refiner requires image size to be divisible by 8: {image.shape}')
-            #    results.append(image)
-            #    return results
             noise_level = round(350 * p.denoising_strength)
             output_type='latent' if hasattr(shared.sd_refiner, 'vae') else 'np'
             if shared.sd_refiner.__class__.__name__ == 'StableDiffusionUpscalePipeline':
                 image = vae_decode(latents=image, model=shared.sd_model, full_quality=p.full_quality, output_type='pil')
                 p.extra_generation_params['Noise level'] = noise_level
                 output_type = 'np'
+            calculate_refiner_steps()
             refiner_args = set_pipeline_args(
                 model=shared.sd_refiner,
                 prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts[i],
                 negative_prompts=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts[i],
-                num_inference_steps=int(p.refiner_steps // (1 - p.refiner_start)) if p.refiner_start > 0 and p.refiner_start < 1 and refiner_is_sdxl else int(p.refiner_steps // p.denoising_strength + 1) if refiner_is_sdxl else p.refiner_steps,
+                num_inference_steps=p.refiner_steps,
                 eta=shared.opts.scheduler_eta,
-                strength=p.denoising_strength,
+                # strength=p.denoising_strength,
                 noise_level=noise_level, # StableDiffusionUpscalePipeline only
                 guidance_scale=p.image_cfg_scale if p.image_cfg_scale is not None else p.cfg_scale,
                 guidance_rescale=p.diffusers_guidance_rescale,
@@ -476,7 +491,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 clip_skip=p.clip_skip,
                 desc='Refiner',
             )
-            # p.steps += refiner_args['num_inference_steps']
             try:
                 refiner_output = shared.sd_refiner(**refiner_args) # pylint: disable=not-callable
             except AssertionError as e:
@@ -491,9 +505,14 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             shared.log.debug('Moving to CPU: model=refiner')
             shared.sd_refiner.to(devices.cpu)
             devices.torch_gc()
+        p.is_refiner_pass = True
 
     # final decode since there is no refiner
     if not is_refiner_enabled:
-        results = vae_decode(latents=output.images, model=shared.sd_model, full_quality=p.full_quality)
+        if output is not None and output.images is not None and len(output.images) > 0:
+            results = vae_decode(latents=output.images, model=shared.sd_model, full_quality=p.full_quality)
+        else:
+            shared.log.warning('Processing returned no results')
+            results = []
 
     return results

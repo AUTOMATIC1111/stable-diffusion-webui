@@ -4,7 +4,7 @@ from PIL import Image
 import modules.scripts as scripts
 from modules import processing, shared, images, devices
 from modules.processing import Processed
-from modules.shared import opts, state
+from modules.shared import opts, state, log
 
 
 class Script(scripts.Script):
@@ -61,7 +61,7 @@ class Script(scripts.Script):
         batch_count = math.ceil(len(work) / batch_size)
         state.job_count = batch_count * upscale_count
 
-        print(f"SD upscaling will process a total of {len(work)} images tiled as {len(grid.tiles[0][2])}x{len(grid.tiles)} per upscale in a total of {state.job_count} batches.")
+        log.info(f"SD upscale: images={len(work)} tile={len(grid.tiles[0][2])}x{len(grid.tiles)} batches={state.job_count}")
 
         result_images = []
         for n in range(upscale_count):

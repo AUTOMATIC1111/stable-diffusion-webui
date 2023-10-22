@@ -700,5 +700,3 @@ class Script(scripts.Script):
                 del processed.all_seeds[1]
                 del processed.infotexts[1]
         return processed
-
-print('HERE', [x.name for x in sd_samplers.samplers])

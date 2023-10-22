@@ -16,8 +16,12 @@ Service release addressing all zero-day issues reported so far...
 - fix new style filename template
 - fix image name template using model name
 - fix model path using relative path
-- fix `torch-rocm` and `tensorflow-rocm` version detection (thanks @xangelix)
+- fix `torch-rocm` and `tensorflow-rocm` version detection, thanks @xangelix
 - fix chainner upscalers color clipping
+- fix for base+refiner workflow in diffusers mode: number of steps, diffuser pipe mode  
+- fix for prompt encoder with refiner in diffusers mode
+- fix prompts-from-file saving incorrect metadata
+- directml and ipex updates
 - force second requirements check on startup
 - remove lyco, multiple_tqdm
 - enhance extension compatibility for exensions directly importing codeformers  
@@ -26,8 +30,15 @@ Service release addressing all zero-day issues reported so far...
 - clearly mark external themes in ui
 - new option: *settings -> images -> keep incomplete*
   can be used to skip vae decode on aborted/skipped/interrupted image generations
-- update `openvino` (thanks @disty0)
+- update `openvino`, thanks @disty0
 - update `typing-extensions`
+
+### Dev branch
+
+- remove external clone of items in `/repositories`
+- add **lora oft** support, thanks @antis0007 and @ai-casanova
+- **upscalers compile** option, thanks @disty0
+
 
 **Themes**
 - all built-in themes are fully supported:  

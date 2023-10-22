@@ -3,7 +3,7 @@ import gradio as gr
 import modules.scripts as scripts
 from modules import images
 from modules.processing import process_images
-from modules.shared import opts, state
+from modules.shared import opts, state, log
 import modules.sd_samplers
 
 
@@ -86,7 +86,7 @@ class Script(scripts.Script):
         p.n_iter = math.ceil(len(all_prompts) / p.batch_size)
         p.do_not_save_grid = True
 
-        print(f"Prompt matrix will create {len(all_prompts)} images using a total of {p.n_iter} batches.")
+        log.info(f"Prompt-matrix: images={len(all_prompts)} batches={p.n_iter}")
 
         if prompt_type == "positive":
             p.prompt = all_prompts

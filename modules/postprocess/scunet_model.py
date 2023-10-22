@@ -5,7 +5,7 @@ from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, T
 from modules import devices
 from modules.postprocess.scunet_model_arch import SCUNet as net
 from modules.shared import opts, log, console, device
-from modules.upscaler import Upscaler
+from modules.upscaler import Upscaler, compile_upscaler
 
 
 class UpscalerSCUNet(Upscaler):
@@ -31,6 +31,7 @@ class UpscalerSCUNet(Upscaler):
             for _, v in model.named_parameters():
                 v.requires_grad = False
             model = model.to(device)
+            model = compile_upscaler(model, name=self.name)
             self.models[info.local_data_path] = model
         return model
 

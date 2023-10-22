@@ -9,6 +9,7 @@ from torch import nn
 from torch.nn import functional as F
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
 from modules.shared import log, console
+from modules.upscaler import compile_upscaler
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -75,9 +76,10 @@ class RealESRGANer():
         model.load_state_dict(loadnet[keyname], strict=True)
 
         model.eval()
-        self.model = model.to(self.device)
         if self.half:
-            self.model = self.model.half()
+            model = model.half()
+        model = compile_upscaler(model, name=self.name)
+        self.model = model.to(self.device)
 
     def dni(self, net_a, net_b, dni_weight, key='params', loc='cpu'):
         """Deep network interpolation.
