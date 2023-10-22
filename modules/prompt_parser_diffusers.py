@@ -6,8 +6,7 @@ from compel.embeddings_provider import BaseTextualInversionManager, EmbeddingsPr
 from modules import shared, prompt_parser
 
 
-debug_output = os.environ.get('SD_PROMPT_DEBUG', None)
-debug = shared.log.info if debug_output is not None else lambda *args, **kwargs: None
+debug = shared.log.info if os.environ.get('SD_PROMPT_DEBUG', None) is not None else lambda *args, **kwargs: None
 
 
 CLIP_SKIP_MAPPING = {
@@ -106,11 +105,11 @@ def prepare_embedding_providers(pipe, clip_skip):
             shared.log.warning(f"Prompt parser unsupported: clip_skip={clip_skip}")
             clip_skip = 2
         embedding_type = CLIP_SKIP_MAPPING[clip_skip]
-    if hasattr(pipe, "tokenizer") and hasattr(pipe, "text_encoder"):
-        embedding = EmbeddingsProvider(tokenizer=pipe.tokenizer, text_encoder=pipe.text_encoder, truncate=False, returned_embeddings_type=embedding_type)
+    if getattr(pipe, "tokenizer", None) is not None and getattr(pipe, "text_encoder", None) is not None:
+        embedding = EmbeddingsProvider(tokenizer=pipe.tokenizer, text_encoder=pipe.text_encoder, truncate=False, returned_embeddings_type=embedding_type, device=pipe.device)
         embeddings_providers.append(embedding)
-    if hasattr(pipe, "tokenizer_2") and hasattr(pipe, "text_encoder_2"):
-        embedding = EmbeddingsProvider(tokenizer=pipe.tokenizer_2, text_encoder=pipe.text_encoder_2, truncate=False, returned_embeddings_type=embedding_type)
+    if getattr(pipe, "tokenizer_2", None) is not None and getattr(pipe, "text_encoder_2", None) is not None:
+        embedding = EmbeddingsProvider(tokenizer=pipe.tokenizer_2, text_encoder=pipe.text_encoder_2, truncate=False, returned_embeddings_type=embedding_type, device=pipe.device)
         embeddings_providers.append(embedding)
     return embeddings_providers
 
@@ -140,7 +139,7 @@ def get_weighted_text_embeddings_sdxl(pipe, prompt: str = "", neg_prompt: str = 
     ns = [get_prompts_with_weights(p) for p in [neg_prompt, neg_prompt_2]]
     negatives = [t for t, w in ns]
     negative_weights = [w for t, w in ns]
-    if hasattr(pipe, "tokenizer_2") and not hasattr(pipe, "tokenizer"):
+    if getattr(pipe, "tokenizer_2", None) is not None and getattr(pipe, "tokenizer", None) is None:
         positives.pop(0)
         positive_weights.pop(0)
         negatives.pop(0)

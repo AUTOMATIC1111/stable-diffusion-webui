@@ -16,7 +16,7 @@ Service release addressing all zero-day issues reported so far...
 - fix new style filename template
 - fix image name template using model name
 - fix model path using relative path
-- fix `torch-rocm` and `tensorflow-rocm` version detection (thanks @xangelix)
+- fix `torch-rocm` and `tensorflow-rocm` version detection, thanks @xangelix
 - fix chainner upscalers color clipping
 - force second requirements check on startup
 - remove lyco, multiple_tqdm
@@ -26,7 +26,7 @@ Service release addressing all zero-day issues reported so far...
 - clearly mark external themes in ui
 - new option: *settings -> images -> keep incomplete*
   can be used to skip vae decode on aborted/skipped/interrupted image generations
-- update `openvino` (thanks @disty0)
+- update `openvino`, thanks @disty0
 - update `typing-extensions`
 
 ### Dev branch

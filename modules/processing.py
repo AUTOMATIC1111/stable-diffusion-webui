@@ -158,6 +158,7 @@ class StableDiffusionProcessing:
         self.clip_skip = clip_skip
         self.iteration = 0
         self.is_hr_pass = False
+        self.is_refiner_pass = False
         self.hr_force = False
         self.enable_hr = None
         self.refiner_steps = 5
