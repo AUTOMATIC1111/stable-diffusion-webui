@@ -266,6 +266,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
             already_loaded[net.name] = net
         for emb_name, embedding in net.bundle_embeddings.items():
             if embedding.loaded:
+                embedding.loaded = None
                 emb_db.register_embedding_by_name(None, shared.sd_model, emb_name)
 
     loaded_networks.clear()
