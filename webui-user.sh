@@ -11,7 +11,7 @@
 
 # Commandline arguments for webui.py, for example: export COMMANDLINE_ARGS="--medvram --opt-split-attention"
 #export COMMANDLINE_ARGS=""
-export COMMANDLINE_ARGS="--data-dir sd-data --allow-code --administrator --precision full --no-half --xformers --api --enable-insecure-extension-access --cors-allow-origins * --listen --ray"
+#export COMMANDLINE_ARGS="--data-dir sd-data --allow-code --administrator --precision full --no-half --xformers --api --enable-insecure-extension-access --cors-allow-origins * --listen --ray"
 
 # python3 executable
 #python_cmd="python3"
@@ -47,10 +47,10 @@ export ACCELERATE="True"
 #export NO_TCMALLOC="True"
 
 ###############ray############################
-export RAY_NUM_GPUS=1
-export RAY_MIN_REPLICAS=1
-export RAY_MAX_REPLICAS=2
-export RAY_PORT=7575
-export RAY_IP="0.0.0.0"
+#export RAY_NUM_GPUS=1
+#export RAY_MIN_REPLICAS=1
+#export RAY_MAX_REPLICAS=2
+#export RAY_PORT=7575
+#export RAY_IP="0.0.0.0"
 #export RAY_HEAD_ADDRESS='ray://ray-head:10001'
 #export RAY_DOCKER="True"
