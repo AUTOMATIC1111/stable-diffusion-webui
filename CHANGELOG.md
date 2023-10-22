@@ -18,6 +18,8 @@ Service release addressing all zero-day issues reported so far...
 - fix model path using relative path
 - fix `torch-rocm` and `tensorflow-rocm` version detection, thanks @xangelix
 - fix chainner upscalers color clipping
+- fix for base+refiner workflow in diffusers mode: number of steps, diffuser pipe mode  
+- fix for prompt encoder with refiner in diffusers mode
 - force second requirements check on startup
 - remove lyco, multiple_tqdm
 - enhance extension compatibility for exensions directly importing codeformers  
