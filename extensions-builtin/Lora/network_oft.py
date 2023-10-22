@@ -29,23 +29,27 @@ class NetworkModuleOFT(network.NetworkModule):
         self.block_size = self.out_dim // self.num_blocks
 
         self.org_module: list[torch.Module] = [self.sd_module]
-        self.org_weight = self.org_module[0].weight.to(self.org_module[0].weight.device, copy=True)
+        #self.org_weight = self.org_module[0].weight.to(self.org_module[0].weight.device, copy=True)
 
         init_multiplier = self.multiplier() * self.calc_scale()
         self.last_multiplier = init_multiplier
 
         self.R = self.get_weight(self.oft_blocks, init_multiplier)
 
+        self.hooks = []
         self.merged_weight = self.merge_weight()
-        self.apply_to()
+
+        #self.apply_to()
+        self.applied = False
         self.merged = False
 
     def merge_weight(self):
-        R = self.R.to(self.org_weight.device, dtype=self.org_weight.dtype)
-        if self.org_weight.dim() == 4:
-            weight = torch.einsum("oihw, op -> pihw", self.org_weight, R)
+        org_weight = self.org_module[0].weight
+        R = self.R.to(org_weight.device, dtype=org_weight.dtype)
+        if org_weight.dim() == 4:
+            weight = torch.einsum("oihw, op -> pihw", org_weight, R)
         else:
-            weight = torch.einsum("oi, op -> pi", self.org_weight, R)
+            weight = torch.einsum("oi, op -> pi", org_weight, R)
         return weight
 
     def replace_weight(self, new_weight):
@@ -55,17 +59,29 @@ class NetworkModuleOFT(network.NetworkModule):
         self.merged = True
 
     def restore_weight(self):
-        org_sd = self.org_module[0].state_dict()
-        org_sd['weight'] = self.org_weight
-        self.org_module[0].load_state_dict(org_sd)
-        self.merged = False
+        pass
+        #org_sd = self.org_module[0].state_dict()
+        #org_sd['weight'] = self.org_weight
+        #self.org_module[0].load_state_dict(org_sd)
+        #self.merged = False
 
     # FIXME: hook forward method of original linear, but how do we undo the hook when we are done?
     def apply_to(self):
-        self.org_forward = self.org_module[0].forward
-        #self.org_module[0].forward = self.forward
-        self.org_module[0].register_forward_pre_hook(self.pre_forward_hook)
-        self.org_module[0].register_forward_hook(self.forward_hook)
+        if not self.applied:
+            self.org_forward = self.org_module[0].forward
+            #self.org_module[0].forward = self.forward
+            prehook = self.org_module[0].register_forward_pre_hook(self.pre_forward_hook)
+            hook = self.org_module[0].register_forward_hook(self.forward_hook)
+            self.hooks.append(prehook)
+            self.hooks.append(hook)
+            self.applied = True
+    
+    def remove_from(self):
+        if self.applied:
+            for hook in self.hooks:
+                hook.remove()
+            self.hooks = []
+            self.applied = False
 
     def get_weight(self, oft_blocks, multiplier=None):
         multiplier = multiplier.to(oft_blocks.device, dtype=oft_blocks.dtype)
@@ -82,14 +98,22 @@ class NetworkModuleOFT(network.NetworkModule):
         return R
 
     def calc_updown(self, orig_weight):
+        if not self.applied:
+            self.apply_to()
+
+        self.merged_weight = self.merged_weight.to(orig_weight.device, dtype=orig_weight.dtype)
+
         updown = torch.zeros_like(orig_weight, device=orig_weight.device, dtype=orig_weight.dtype)
         output_shape = orig_weight.shape
-        orig_weight = self.merged_weight.to(orig_weight.device, dtype=orig_weight.dtype)
+        orig_weight = self.merged_weight
         #output_shape = self.oft_blocks.shape
 
         return self.finalize_updown(updown, orig_weight, output_shape)
 
     def pre_forward_hook(self, module, input):
+        #if not self.applied:
+        #    self.apply_to()
+
         multiplier = self.multiplier() * self.calc_scale()
 
         if not multiplier==self.last_multiplier or not self.merged:
@@ -97,7 +121,6 @@ class NetworkModuleOFT(network.NetworkModule):
             self.last_multiplier = multiplier
             self.merged_weight = self.merge_weight()
             self.replace_weight(self.merged_weight)
-
 
     def forward_hook(self, module, args, output):
         pass
