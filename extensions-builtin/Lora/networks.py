@@ -36,6 +36,7 @@ module_types = [
     network_full.ModuleTypeFull(),
     network_norm.ModuleTypeNorm(),
 ]
+convert_diffusers_name_to_compvis = lora_convert.convert_diffusers_name_to_compvis # supermerger compatibility item
 
 
 def assign_network_names_to_compvis_modules(sd_model):

@@ -587,11 +587,11 @@ def save_image(image, path, basename = '', seed=None, prompt=None, extension=sha
         pnginfo[pnginfo_section_name] = info
     params = script_callbacks.ImageSaveParams(image, p, filename, pnginfo)
     params.filename = namegen.sanitize(filename)
+    dirname = os.path.dirname(params.filename)
+    os.makedirs(dirname, exist_ok=True)
     script_callbacks.before_image_saved_callback(params)
     exifinfo = params.pnginfo.get('UserComment', '')
     exifinfo = (exifinfo + ', ' if len(exifinfo) > 0 else '') + params.pnginfo.get(pnginfo_section_name, '')
-    dirname = os.path.dirname(params.filename)
-    os.makedirs(dirname, exist_ok=True)
     filename, extension = os.path.splitext(params.filename)
     filename_txt = f"{filename}.txt" if shared.opts.save_txt and len(exifinfo) > 0 else None
     save_queue.put((params.image, filename, extension, params, exifinfo, filename_txt)) # actual save is executed in a thread that polls data from queue

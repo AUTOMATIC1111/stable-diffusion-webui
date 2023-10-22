@@ -29,6 +29,12 @@ Service release addressing all zero-day issues reported so far...
 - update `openvino` (thanks @disty0)
 - update `typing-extensions`
 
+### Dev branch
+
+- Remove external clone of items in `/repositories`
+- Implement Lora OFT, thanks @antis0007 and @ai-casanova
+
+
 **Themes**
 - all built-in themes are fully supported:  
   - *black-teal (default), light-teal, black-orange, invoked, amethyst-nightfall, midnight-barbie*  
