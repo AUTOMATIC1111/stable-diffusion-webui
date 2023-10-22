@@ -63,7 +63,7 @@ class NetworkModuleOFT(network.NetworkModule):
         orig_weight = orig_weight
 
         return self.finalize_updown(updown, orig_weight, output_shape)
-    
+
     # override to remove the multiplier/scale factor; it's already multiplied in get_weight
     def finalize_updown(self, updown, orig_weight, output_shape, ex_bias=None):
         #return super().finalize_updown(updown, orig_weight, output_shape, ex_bias)
