@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw
 import modules.scripts as scripts
 from modules import images, devices
 from modules.processing import Processed, process_images
-from modules.shared import opts, state
+from modules.shared import opts, state, log
 
 
 class Script(scripts.Script):
@@ -102,7 +102,7 @@ class Script(scripts.Script):
                 work_latent_mask.append(tiledata_latent_mask[2])
 
         batch_count = len(work)
-        print(f"Poor man's outpainting will process a total of {len(work)} images tiled as {len(grid.tiles[0][2])}x{len(grid.tiles)}.")
+        log.info(f"Poor-man-outpainting: images={len(work)} tiles={len(grid.tiles[0][2])}x{len(grid.tiles)}.")
 
         state.job_count = batch_count
 

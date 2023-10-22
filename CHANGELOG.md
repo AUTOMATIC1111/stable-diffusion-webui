@@ -20,6 +20,8 @@ Service release addressing all zero-day issues reported so far...
 - fix chainner upscalers color clipping
 - fix for base+refiner workflow in diffusers mode: number of steps, diffuser pipe mode  
 - fix for prompt encoder with refiner in diffusers mode
+- fix prompts-from-file saving incorrect metadata
+- directml and ipex updates
 - force second requirements check on startup
 - remove lyco, multiple_tqdm
 - enhance extension compatibility for exensions directly importing codeformers  
@@ -33,8 +35,9 @@ Service release addressing all zero-day issues reported so far...
 
 ### Dev branch
 
-- Remove external clone of items in `/repositories`
-- Implement Lora OFT, thanks @antis0007 and @ai-casanova
+- remove external clone of items in `/repositories`
+- add **lora oft** support, thanks @antis0007 and @ai-casanova
+- **upscalers compile** option, thanks @disty0
 
 
 **Themes**
