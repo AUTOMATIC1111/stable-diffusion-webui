@@ -54,7 +54,8 @@ class NetworkModuleOFT(network.NetworkModule):
         return R
 
     def calc_updown(self, orig_weight):
-        R = self.get_weight(self.oft_blocks, self.multiplier())
+        multiplier = self.multiplier() * self.calc_scale()
+        R = self.get_weight(self.oft_blocks, multiplier)
         merged_weight = self.merge_weight(R, orig_weight)
 
         updown = merged_weight.to(orig_weight.device, dtype=orig_weight.dtype) - orig_weight
@@ -62,3 +63,23 @@ class NetworkModuleOFT(network.NetworkModule):
         orig_weight = orig_weight
 
         return self.finalize_updown(updown, orig_weight, output_shape)
+    
+    # override to remove the multiplier/scale factor; it's already multiplied in get_weight
+    def finalize_updown(self, updown, orig_weight, output_shape, ex_bias=None):
+        #return super().finalize_updown(updown, orig_weight, output_shape, ex_bias)
+
+        if self.bias is not None:
+            updown = updown.reshape(self.bias.shape)
+            updown += self.bias.to(orig_weight.device, dtype=orig_weight.dtype)
+            updown = updown.reshape(output_shape)
+
+        if len(output_shape) == 4:
+            updown = updown.reshape(output_shape)
+
+        if orig_weight.size().numel() == updown.size().numel():
+            updown = updown.reshape(orig_weight.shape)
+
+        if ex_bias is not None:
+            ex_bias = ex_bias * self.multiplier()
+
+        return updown, ex_bias
