@@ -8,6 +8,14 @@
 .block.token-counter div{ display: inline; }
 .block.token-counter span{ padding: 0.1em 0.75em; }
 
+/* tooltips and statuses */ 
+.infotext { overflow-wrap: break-word; }
+.tooltip { display: block; position: fixed; top: 1em; right: 1em; padding: 0.5em; background: var(--input-background-fill); color: var(--body-text-color); border: 1pt solid var(--button-primary-border-color);
+  width: 22em; min-height: 1.3em; font-size: 0.8em; transition: opacity 0.2s ease-in; pointer-events: none; opacity: 0; z-index: 999; }
+.tooltip-show { opacity: 0.9; }
+.toolbutton-selected { background: var(--background-fill-primary) !important; }
+.jobStatus { position: fixed; bottom: 1em; right: 1em; background: var(--input-background-fill); padding: 0.4em; font-size: 0.8em; color: var(--body-text-color-subdued); }
+
 /* live preview */
 .progressDiv{ position: relative; height: 20px; background: #b4c0cc; margin-bottom: -3px; }
 .dark .progressDiv{ background: #424c5b; }
