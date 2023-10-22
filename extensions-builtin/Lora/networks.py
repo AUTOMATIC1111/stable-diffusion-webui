@@ -7,6 +7,7 @@ import network
 import network_lora
 import network_hada
 import network_ia3
+import network_oft
 import network_lokr
 import network_full
 import network_norm
@@ -32,6 +33,7 @@ module_types = [
     network_lora.ModuleTypeLora(),
     network_hada.ModuleTypeHada(),
     network_ia3.ModuleTypeIa3(),
+    network_oft.ModuleTypeOFT(),
     network_lokr.ModuleTypeLokr(),
     network_full.ModuleTypeFull(),
     network_norm.ModuleTypeNorm(),
