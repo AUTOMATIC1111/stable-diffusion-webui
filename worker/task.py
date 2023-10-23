@@ -131,7 +131,6 @@ class TaskType(IntEnum):
     OnePress = 8
     ClothesRepair = 9
     ModelCheck = 10
-    
 
 
 class TaskStatus(IntEnum):
@@ -267,7 +266,7 @@ class TaskProgress(SerializationObj):
         return p
 
     @classmethod
-    def new_ready(cls, task: Task, desc: str, eta_relative: int = 0, version: int = 0, cate: str = ""):
+    def new_ready(cls, task: Task, desc: str, eta_relative: int = 0):
         p = cls(task)
         p.status = TaskStatus.Ready
         p.task_desc = desc

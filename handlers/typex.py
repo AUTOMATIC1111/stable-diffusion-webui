@@ -26,6 +26,7 @@ class ModelType(IntEnum):
     Lora = 2
     Embedding = 3
     LyCORIS = 4
+    VAE = 5
 
 
 class OutImageType(IntEnum):
