@@ -164,7 +164,7 @@ class Script(scripts.Script):
                     copy_p.prompt = args.get("prompt") + " " + p.prompt
                 else:
                     copy_p.prompt = p.prompt + " " + args.get("prompt")
-           
+
             if args.get("negative_prompt") and p.negative_prompt:
                 if prompt_position == "start":
                     copy_p.negative_prompt = args.get("negative_prompt") + " " + p.negative_prompt
