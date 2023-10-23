@@ -70,7 +70,7 @@ def progressapi(req: ProgressRequest):
     if shared.state.job_count > 0:
         progress += shared.state.job_no / shared.state.job_count
     if shared.state.sampling_steps > 0 and shared.state.job_count > 0:
-        progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
+        progress += 1 / (shared.state.job_count / 2 if shared.state.processing_has_refined_job_count else 1) * shared.state.sampling_step / shared.state.sampling_steps
     progress = min(progress, 1)
     elapsed_since_start = time.time() - shared.state.time_start
     predicted_duration = elapsed_since_start / progress if progress > 0 else None
