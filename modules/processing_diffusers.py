@@ -362,6 +362,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             return p.steps
 
     def calculate_refiner_steps():
+        refiner_is_sdxl = bool("StableDiffusionXL" in shared.sd_refiner.__class__.__name__)
         if p.refiner_start > 0 and p.refiner_start < 1 and refiner_is_sdxl:
             refiner_steps = int(p.refiner_steps // (1 - p.refiner_start))
         else:
@@ -460,7 +461,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
         if shared.opts.diffusers_move_refiner and not getattr(shared.sd_refiner, 'has_accelerate', False):
             shared.sd_refiner.to(devices.device)
-        refiner_is_sdxl = bool("StableDiffusionXL" in shared.sd_refiner.__class__.__name__)
         p.ops.append('refine')
         p.is_refiner_pass = True
         shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
