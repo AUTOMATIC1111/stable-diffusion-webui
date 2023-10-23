@@ -111,7 +111,7 @@ def save_files(js_data, images, html_info, index):
             p.all_seeds.append(p.seed)
         while len(p.all_prompts) <= i:
             p.all_prompts.append(p.prompt)
-        while len(p.infotexts) <= i + 1:
+        while len(p.infotexts) <= i:
             p.infotexts.append(p.infotext)
         if 'name' in filedata and ('tmp' not in filedata['name']) and os.path.isfile(filedata['name']):
             fullfn = filedata['name']
