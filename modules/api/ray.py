@@ -10,7 +10,7 @@ import os
 #ray.init(os.environ.get("RAY_HEAD_ADDRESS", ""))
 #ray.init("ray://localhost:10001")
 if "RAY_HEAD_ADDRESS" in os.environ:
-    ray.init(os.environ.get("RAY_HEAD_ADDRESS"))
+    ray.init(address=os.environ.get("RAY_HEAD_ADDRESS"))
 else:
     ray.init()
 
