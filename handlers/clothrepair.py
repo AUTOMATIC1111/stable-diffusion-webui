@@ -464,6 +464,9 @@ class ClothesRepairTaskHandler(Txt2ImgTaskHandler):
 
     def _exec_ClothesRepair(self, task: Task) -> typing.Iterable[TaskProgress]:
 
+        # # todo debug
+        # task['clothes_img'] = task['clothes_img'].lstrip('xingzheaidraw/')
+
         full_task = ClothesRepairTask.exec_task(task)
         full_task.clothes_img = task['clothes_img']
         full_task.bg_color = task['bg_color']
@@ -479,9 +482,8 @@ class ClothesRepairTaskHandler(Txt2ImgTaskHandler):
         split_values = full_task.init_img.split(",")
         full_task.init_img = split_values
 
-        # base_model = os.path.join("oss://", full_task.base_model_path)
-        # model_checkpoint = sd_models.CheckpointInfo(base_model)
-        # modules.sd_models.reload_model_weights(info=model_checkpoint)
+        # # todo debug
+        # full_task.init_img[0] = full_task.init_img[0].lstrip('xingzheaidraw/')
 
         # task['alwayson_scripts'] = {'ControlNet': {'args': []}}
         progress = TaskProgress.new_ready(task, 'clothes_repair')
@@ -520,7 +522,7 @@ class ClothesRepairTaskHandler(Txt2ImgTaskHandler):
 
         dilation_amt = 60
 
-        if full_task.is_psed:
+        if not full_task.is_psed:
             if full_task.clothes_type == "shirt":
                 # 给衣服裁一块儿区域
                 x1, y1, width, height = coord1[0], coord1[1], coord2[0] - coord1[0], coord2[1] - coord1[1]
@@ -585,7 +587,7 @@ class ClothesRepairTaskHandler(Txt2ImgTaskHandler):
         tmp_mask = Image.fromarray(tmp_mask_arr.astype(np.uint8) * 255)
 
         # 根据是否是模板类似图决定需要改变背景颜色的图
-        if full_task.is_psed:
+        if not full_task.is_psed:
             clothes_img = fusion_image
         else:
             clothes_img = clothes_img
@@ -650,9 +652,10 @@ class ClothesRepairTaskHandler(Txt2ImgTaskHandler):
         images = save_processed_images_shanshu(processed,
                                                process_args.outpath_samples,
                                                process_args.outpath_grids,
-                                               process_args.outpath_scripts,
+                                               "process_args.outpath_scripts",
                                                task.id)
 
         progress = TaskProgress.new_finish(task, images)
         progress.update_seed(processed.all_seeds, processed.all_subseeds)
         yield progress
+
