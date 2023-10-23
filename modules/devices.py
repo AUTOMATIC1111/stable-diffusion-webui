@@ -71,6 +71,7 @@ def enable_tf32():
 errors.run(enable_tf32, "Enabling TF32")
 
 cpu: torch.device = torch.device("cpu")
+fp8: bool = False
 device: torch.device = None
 device_interrogate: torch.device = None
 device_gfpgan: torch.device = None
@@ -93,9 +94,12 @@ def cond_cast_float(input):
 nv_rng = None
 
 
-def autocast(disable=False):
+def autocast(disable=False, unet=False):
     if disable:
         return contextlib.nullcontext()
+
+    if unet and fp8 and device==cpu:
+        return torch.autocast("cpu", dtype=torch.bfloat16, enabled=True)
 
     if dtype == torch.float32 or shared.cmd_opts.precision == "full":
         return contextlib.nullcontext()

@@ -865,7 +865,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
-            with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
+            with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast(unet=True):
                 samples_ddim = p.sample(conditioning=p.c, unconditional_conditioning=p.uc, seeds=p.seeds, subseeds=p.subseeds, subseed_strength=p.subseed_strength, prompts=p.prompts)
 
             if getattr(samples_ddim, 'already_decoded', False):
