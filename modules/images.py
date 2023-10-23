@@ -726,16 +726,20 @@ def read_info_from_image(image: Image.Image) -> tuple[str | None, dict]:
     geninfo = items.pop('parameters', None)
 
     if "exif" in items:
-        exif = piexif.load(items["exif"])
-        exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
         try:
-            exif_comment = piexif.helper.UserComment.load(exif_comment)
-        except ValueError:
-            exif_comment = exif_comment.decode('utf8', errors="ignore")
-
+            exif = piexif.load(items["exif"])
+            exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
+        except:
+            exif_comment = None
         if exif_comment:
-            items['exif comment'] = exif_comment
-            geninfo = exif_comment
+            try:
+                exif_comment = piexif.helper.UserComment.load(exif_comment)
+            except ValueError:
+                exif_comment = exif_comment.decode('utf8', errors="ignore")
+
+            if exif_comment:
+                items['exif comment'] = exif_comment
+                geninfo = exif_comment
 
     for field in IGNORED_INFO_KEYS:
         items.pop(field, None)
