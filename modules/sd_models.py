@@ -396,7 +396,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         enable_fp8 = True
     elif model.is_sdxl and shared.cmd_opts.opt_unet_fp8_storage_xl:
         enable_fp8 = True
-    
+
     if enable_fp8:
         devices.fp8 = True
         if devices.device == devices.cpu:
