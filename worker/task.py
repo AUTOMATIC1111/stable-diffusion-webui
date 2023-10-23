@@ -271,8 +271,7 @@ class TaskProgress(SerializationObj):
         p.status = TaskStatus.Ready
         p.task_desc = desc
         p.eta_relative = eta_relative
-        p.version = version
-        p.cate = cate
+
         return p
 
     @classmethod
