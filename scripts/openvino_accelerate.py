@@ -49,7 +49,6 @@ from diffusers import (
     StableDiffusionImg2ImgPipeline,
     StableDiffusionInpaintPipeline,
     StableDiffusionControlNetPipeline,
-    ControlNetModel,
     StableDiffusionXLPipeline,
     StableDiffusionXLImg2ImgPipeline,
     StableDiffusionXLInpaintPipeline,
@@ -770,7 +769,7 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_ckpt
     cn_model="None"
     control_models = []
     control_images = []
-
+    print(p.extra_generation_params)
     for key in p.extra_generation_params.keys():
         if key.startswith('ControlNet'):
             control_images_cn = []
