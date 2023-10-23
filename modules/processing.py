@@ -51,11 +51,7 @@ def setup_color_correction(image):
 
 def apply_color_correction(correction, original_image):
     shared.log.debug("Applying color correction.")
-    image = Image.fromarray(cv2.cvtColor(exposure.match_histograms(
-        cv2.cvtColor(np.asarray(original_image), cv2.COLOR_RGB2LAB),
-        correction,
-        channel_axis=2
-    ), cv2.COLOR_LAB2RGB).astype("uint8"))
+    image = Image.fromarray(cv2.cvtColor(exposure.match_histograms(cv2.cvtColor(np.asarray(original_image), cv2.COLOR_RGB2LAB), correction, channel_axis=2), cv2.COLOR_LAB2RGB).astype("uint8"))
     image = blendLayers(image, original_image, BlendType.LUMINOSITY)
     return image
 
@@ -1050,21 +1046,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
 
-        def save_intermediate(image, index):
-            """saves image before applying hires fix, if enabled in options; takes as an argument either an image or batch with latent space images"""
-            if not shared.opts.save or self.do_not_save_samples or not shared.opts.save_images_before_highres_fix:
-                return
-            if not isinstance(image, Image.Image):
-                image = modules.sd_samplers.sample_to_image(image, index, approximation=0)
-            orig1 = self.extra_generation_params
-            orig2 = self.restore_faces
-            self.extra_generation_params = {}
-            self.restore_faces = False
-            info = create_infotext(self, self.all_prompts, self.all_seeds, self.all_subseeds, [], iteration=self.iteration, position_in_batch=index)
-            self.extra_generation_params = orig1
-            self.restore_faces = orig2
-            images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], shared.opts.samples_format, info=info, suffix="-before-hires")
-
         latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "None")
         if latent_scale_mode is not None:
             self.hr_force = False # no need to force anything
@@ -1087,13 +1068,26 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if self.is_hr_pass:
             target_width = self.hr_upscale_to_x
             target_height = self.hr_upscale_to_y
-            for i in range(samples.shape[0]):
-                save_intermediate(samples, i)
-            if latent_scale_mode is None or self.hr_force: # non-latent upscaling
+            decoded_samples = None
+            if shared.opts.save and shared.opts.save_images_before_highres_fix and not self.do_not_save_samples:
                 decoded_samples = decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae), self.full_quality)
-                lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
+                decoded_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
+                for i, x_sample in enumerate(decoded_samples):
+                    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
+                    x_sample = validate_sample(x_sample)
+                    image = Image.fromarray(x_sample)
+                    bak_extra_generation_params, bak_restore_faces = self.extra_generation_params, self.restore_faces
+                    self.extra_generation_params = {}
+                    self.restore_faces = False
+                    info = create_infotext(self, self.all_prompts, self.all_seeds, self.all_subseeds, [], iteration=self.iteration, position_in_batch=i)
+                    self.extra_generation_params, self.restore_faces = bak_extra_generation_params, bak_restore_faces
+                    images.save_image(image, self.outpath_samples, "", seeds[i], prompts[i], shared.opts.samples_format, info=info, suffix="-before-hires")
+            if latent_scale_mode is None or self.hr_force: # non-latent upscaling
+                if decoded_samples is None:
+                    decoded_samples = decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae), self.full_quality)
+                    decoded_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
                 batch_images = []
-                for _i, x_sample in enumerate(lowres_samples):
+                for _i, x_sample in enumerate(decoded_samples):
                     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                     x_sample = validate_sample(x_sample)
                     image = Image.fromarray(x_sample)
@@ -1101,18 +1095,14 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                     image = np.array(image).astype(np.float32) / 255.0
                     image = np.moveaxis(image, 2, 0)
                     batch_images.append(image)
-                decoded_samples = torch.from_numpy(np.array(batch_images))
-                decoded_samples = decoded_samples.to(device=shared.device, dtype=devices.dtype_vae)
-                decoded_samples = 2. * decoded_samples - 1.
+                resized_samples = torch.from_numpy(np.array(batch_images))
+                resized_samples = resized_samples.to(device=shared.device, dtype=devices.dtype_vae)
+                resized_samples = 2.0 * resized_samples - 1.0
                 if shared.opts.sd_vae_sliced_encode and len(decoded_samples) > 1:
-                    samples = torch.stack([
-                        self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(torch.unsqueeze(decoded_sample, 0)))[0]
-                        for decoded_sample
-                        in decoded_samples
-                    ])
+                    samples = torch.stack([self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(torch.unsqueeze(resized_sample, 0)))[0] for resized_sample in resized_samples])
                 else:
-                    samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
-                image_conditioning = self.img2img_image_conditioning(decoded_samples, samples)
+                    samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(resized_samples))
+                image_conditioning = self.img2img_image_conditioning(resized_samples, samples)
             else:
                 samples = torch.nn.functional.interpolate(samples, size=(target_height // 8, target_width // 8), mode=latent_scale_mode["mode"], antialias=latent_scale_mode["antialias"])
                 if getattr(self, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) < 1.0:

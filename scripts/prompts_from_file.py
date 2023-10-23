@@ -129,6 +129,7 @@ class Script(scripts.Script):
         images = []
         all_prompts = []
         all_seeds = []
+        all_negative = []
         infotexts = []
         for args in jobs:
             state.job = f"{state.job_no + 1} out of {state.job_count}"
@@ -136,10 +137,11 @@ class Script(scripts.Script):
             for k, v in args.items():
                 setattr(copy_p, k, v)
             proc = process_images(copy_p)
-            all_seeds.append(proc.seed)
-            images += proc.images
             if checkbox_iterate:
                 p.seed = p.seed + (p.batch_size * p.n_iter)
+            all_seeds += proc.all_seeds
             all_prompts += proc.all_prompts
+            all_negative += proc.all_negative_prompts
+            images += proc.images
             infotexts += proc.infotexts
-        return Processed(p, images, p.seed, "", all_prompts=all_prompts, all_seeds=all_seeds, infotexts=infotexts)
+        return Processed(p, images, p.seed, "", all_prompts=all_prompts, all_seeds=all_seeds, all_negative_prompts=all_negative, infotexts=infotexts)

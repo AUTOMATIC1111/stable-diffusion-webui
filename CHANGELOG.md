@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-20
+## Update for 2023-10-23
 
 Service release addressing all zero-day issues reported so far...
 
@@ -21,6 +21,8 @@ Service release addressing all zero-day issues reported so far...
 - fix for base+refiner workflow in diffusers mode: number of steps, diffuser pipe mode  
 - fix for prompt encoder with refiner in diffusers mode
 - fix prompts-from-file saving incorrect metadata
+- fix before-hires step
+- fix diffusers switch from invalid model
 - directml and ipex updates
 - force second requirements check on startup
 - remove lyco, multiple_tqdm
