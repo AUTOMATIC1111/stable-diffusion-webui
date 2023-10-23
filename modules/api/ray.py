@@ -9,23 +9,29 @@ import os
 
 #ray.init(os.environ.get("RAY_HEAD_ADDRESS", ""))
 #ray.init("ray://localhost:10001")
-if "RAY_HEAD_ADDRESS" in os.environ:
-    ray.init(address=os.environ.get("RAY_HEAD_ADDRESS"))
+
+
+ray_head_address = os.environ.get("RAY_HEAD_ADDRESS")
+print("RAY_HEAD_ADDRESS:", ray_head_address)
+
+if ray_head_address:
+    ray.init(address=ray_head_address)
 else:
     ray.init()
+
 
 def ray_only():
     serve.shutdown()
     if "RAY_DOCKER" in os.environ:
         print("starting ray in docker")
         serve.start(
-            detached=True, 
+            detached=True,
             http_options={
                         "host": os.environ.get("RAY_IP", "0.0.0.0"), 
                         "port": int(os.environ.get("RAY_PORT", 8000))
                         }
         )
-    else:    
+    else:
         serve.start(
             http_options={
                         "host": os.environ.get("RAY_IP", "0.0.0.0"), 
