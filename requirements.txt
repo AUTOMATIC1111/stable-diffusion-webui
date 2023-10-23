@@ -34,3 +34,4 @@ torchsde
 transformers==4.30.2
 ray[default]
 ray[serve]
+ray[client]
