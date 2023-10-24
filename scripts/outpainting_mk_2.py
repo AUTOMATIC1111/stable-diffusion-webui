@@ -197,7 +197,7 @@ class Script(scripts.Script):
                 np_image = (np.asarray(img) / 255.0).astype(np.float64)
                 np_mask = (np.asarray(mask) / 255.0).astype(np.float64)
                 noised = get_matched_noise(np_image, np_mask, noise_q, color_variation)
-                output_images.append(Image.fromarray(np.clip(noised * 255., 0., 255.).astype(np.uint8), mode="RGB"))
+                output_images.append(Image.fromarray(np.clip(255.0 * noised, 0.0, 255.0).astype(np.uint8), mode="RGB"))
 
                 target_width = min(process_width, init[n].width + pixels_horiz) if is_horiz else img.width
                 target_height = min(process_height, init[n].height + pixels_vert) if is_vert else img.height
