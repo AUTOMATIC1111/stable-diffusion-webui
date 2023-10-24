@@ -144,6 +144,11 @@ class FileStorage:
         os.makedirs(local_dir, exist_ok=True)
         return False
 
+    def get_keyname(self, remoting_path: str, bucket_name: str):
+        if remoting_path.startswith(bucket_name):
+            return remoting_path[len(bucket_name):].lstrip('/')
+        return remoting_path
+
     def close(self):
         pass
 
