@@ -178,7 +178,7 @@ def list_models():
                 shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
     elif shared.cmd_opts.ckpt != shared.default_sd_model_file and shared.cmd_opts.ckpt is not None:
         shared.log.warning(f"Checkpoint not found: {shared.cmd_opts.ckpt}")
-    shared.log.info(f'Available models: {shared.opts.ckpt_dir} items={len(checkpoints_list)} time={time.time()-t0:.2f}s')
+    shared.log.info(f'Available models: path="{shared.opts.ckpt_dir}" items={len(checkpoints_list)} time={time.time()-t0:.2f}s')
 
     checkpoints_list = dict(sorted(checkpoints_list.items(), key=lambda cp: cp[1].filename))
     if len(checkpoints_list) == 0:
