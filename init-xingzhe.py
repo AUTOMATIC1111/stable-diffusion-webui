@@ -39,86 +39,86 @@ def download_config():
 def clone_extensions():
     import modules.paths_internal as pi
     lu.run(f"export https_proxy={HTTP_PROXY}", "set https proxy")
-    lu.git_clone("--depth 1 https://github.com/CompVis/taming-transformers.git",
+    lu.git_clone("https://github.com/CompVis/taming-transformers.git",
                  os.path.join(pi.extensions_dir, "taming-transformers"),
-                 "clone taming-transformers")
+                 "clone taming-transformers", 1)
     lu.git_clone("https://github.com/nonnonstop/sd-webui-3d-open-pose-editor",
                  os.path.join(pi.extensions_dir, "sd-webui-3d-open-pose-editor"),
-                 "clone sd-webui-3d-open-pose-editor")
+                 "clone sd-webui-3d-open-pose-editor",1)
     lu.git_clone("https://github.com/KutsuyaYuki/ABG_extension",
-                 os.path.join(pi.extensions_dir, "ABG_extension"),
+                 os.path.join(pi.extensions_dir, "ABG_extension", 1),
                  "clone ABG_extension")
     lu.git_clone("https://github.com/Jackstrawcd/sd-webui-additional-networks.git",
                  os.path.join(pi.extensions_dir, "sd-webui-additional-networks.git"),
-                 "clone sd-webui-additional-networks.git")
+                 "clone sd-webui-additional-networks.git", 1)
     lu.git_clone("https://github.com/Bing-su/adetailer.git",
                  os.path.join(pi.extensions_dir, "adetailer"),
-                 "clone adetailer")
+                 "clone adetailer", 1)
     lu.git_clone("https://github.com/deforum-art/sd-webui-deforum",
                  os.path.join(pi.extensions_dir, "deforum"),
-                 "clone deforum")
+                 "clone deforum", 1)
     lu.git_clone("https://github.com/AlUlkesh/stable-diffusion-webui-images-browser",
                  os.path.join(pi.extensions_dir, "images-browser"),
-                 "clone images-browser")
+                 "clone images-browser", 1)
     lu.git_clone("https://github.com/hako-mikan/sd-webui-lora-block-weight",
                  os.path.join(pi.extensions_dir, "lora-block-weight"),
-                 "clone lora-block-weight")
+                 "clone lora-block-weight", 1)
     lu.git_clone("https://github.com/hnmr293/posex",
                  os.path.join(pi.extensions_dir, "posex"),
-                 "clone posex")
+                 "clone posex", 1)
     lu.git_clone("https://jihulab.com/xiaolxl_pub/sd-webui-prompt-all-in-one",
                  os.path.join(pi.extensions_dir, "prompt-all-in-one"),
-                 "clone prompt-all-in-one")
+                 "clone prompt-all-in-one", 1)
     lu.git_clone("https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg.git",
                  os.path.join(pi.extensions_dir, "rembg"),
-                 "clone rembg")
+                 "clone rembg", 1)
 
     lu.git_clone("https://github.com/Jackstrawcd/sd-webui-controlnet.git",
                  os.path.join(pi.extensions_dir, "sd-webui-controlnet"),
-                 "clone sd-webui-controlnet")
+                 "clone sd-webui-controlnet", 1)
     lu.git_clone("https://github.com/jexom/sd-webui-depth-lib.git",
                  os.path.join(pi.extensions_dir, "sd-webui-depth-lib"),
-                 "clone sd-webui-depth-lib")
+                 "clone sd-webui-depth-lib", 1)
 
     lu.git_clone("https://github.com/Jackstrawcd/sd-webui-llul.git",
                  os.path.join(pi.extensions_dir, "sd-webui-llul"),
-                 "clone sd-webui-llul")
+                 "clone sd-webui-llul", 1)
     lu.git_clone("https://github.com/continue-revolution/sd-webui-segment-anything.git",
                  os.path.join(pi.extensions_dir, "segment-anything"),
-                 "clone segment-anything")
+                 "clone segment-anything", 1)
     lu.git_clone("https://github.com/a2569875/stable-diffusion-webui-composable-lora",
                  os.path.join(pi.extensions_dir, "stable-diffusion-webui-composable-lora"),
-                 "clone stable-diffusion-webui-composable-lora")
+                 "clone stable-diffusion-webui-composable-lora", 1)
     lu.git_clone("https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
                  os.path.join(pi.extensions_dir, "stable-diffusion-webui-localization-zh_CN"),
-                 "clone stable-diffusion-webui-localization-zh_CN")
-    lu.git_clone("https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen",
+                 "clone stable-diffusion-webui-localization-zh_CN", 1)
+    lu.git_clone("https://github.com/xilai0715/stable-diffusion-webui-promptgen.git",
                  os.path.join(pi.extensions_dir, "stable-diffusion-webui-promptgen"),
-                 "clone stable-diffusion-webui-promptgen")
+                 "clone stable-diffusion-webui-promptgen", 1)
     lu.git_clone("https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer.git",
                  os.path.join(pi.extensions_dir, "stable-diffusion-webui-tokenizer"),
-                 "clone stable-diffusion-webui-tokenizer")
-    lu.git_clone("https://github.com/picobyte/stable-diffusion-webui-wd14-tagger.git",
+                 "clone stable-diffusion-webui-tokenizer", 1)
+    lu.git_clone("https://github.com/Jackstrawcd/stable-diffusion-webui-wd14-tagger.git",
                  os.path.join(pi.extensions_dir, "stable-diffusion-webui-wd14-tagger"),
-                 "clone stable-diffusion-webui-wd14-tagger")
+                 "clone stable-diffusion-webui-wd14-tagger", 1)
     lu.git_clone("https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git",
-                 os.path.join(pi.extensions_dir, "tagcomplete"),
+                 os.path.join(pi.extensions_dir, "tagcomplete", 1),
                  "clone tagcomplete")
     lu.git_clone("https://github.com/opparco/stable-diffusion-webui-two-shot.git",
-                 os.path.join(pi.extensions_dir, "two-shot"),
+                 os.path.join(pi.extensions_dir, "two-shot", 1),
                  "clone two-shot")
     lu.git_clone("https://github.com/xilai0715/sd-vide-frame.git",
                  os.path.join(pi.extensions_dir, "video--frame"),
-                 "clone video--frame")
+                 "clone video--frame", 1)
     lu.run(f"export https_proxy={HTTP_PROXY}", "unset https proxy")
 
     # 克隆公司自己开发的插件
     lu.git_clone("https://gitlab.ilongyuan.cn/qzai/sd_super_functions.git",
                  os.path.join(pi.extensions_dir, "sd_super_functions"),
-                 "clone sd_super_functions")
+                 "clone sd_super_functions", 1)
     lu.git_clone("https://gitlab.ilongyuan.cn/aigc/sd-webui-filemanager.git",
                  os.path.join(pi.extensions_dir, "sd-webui-filemanager"),
-                 "clone sd-webui-filemanager")
+                 "clone sd-webui-filemanager", 1)
 
 
 def install_worker_requirements():
