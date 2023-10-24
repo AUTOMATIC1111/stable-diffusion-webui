@@ -77,7 +77,7 @@ function markIfModified(setting_name, value) {
   tab_nav_indicator.classList.toggle('saved', saved.size > 0);
   if (changed_items.size > 0) tab_nav_indicator.title += `click to reset ${changed_items.size} unapplied changes in this tab\n`;
   if (saved.size > 0) tab_nav_indicator.title += `${saved.size} custom values\n${unsaved.size} default values}`;
-  elem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  elem.scrollIntoView({ behavior: 'smooth', block: 'center' }); // TODO why is scroll happening on every change if all pages are visible?
 }
 
 onAfterUiUpdate(async () => {
@@ -118,18 +118,6 @@ onAfterUiUpdate(async () => {
       });
     }, 50);
   };
-});
-
-onOptionsChanged(() => {
-  const elem = gradioApp().getElementById('sd_checkpoint_hash');
-  const sd_checkpoint_hash = opts.sd_checkpoint_hash || '';
-  const shorthash = sd_checkpoint_hash.substring(0, 10);
-
-  if (elem && elem.textContent !== shorthash) {
-    elem.textContent = shorthash;
-    elem.title = sd_checkpoint_hash;
-    elem.href = `https://google.com/search?q=${sd_checkpoint_hash}`;
-  }
 });
 
 onOptionsChanged(() => {

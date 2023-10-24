@@ -5,33 +5,31 @@
 Service release addressing all zero-day issues reported so far...
 
 **Fixes**
-- fix freeu for backend original and add it to xyz grid
+- fix **freeu** for backend original and add it to xyz grid
 - fix loading diffuser models in huggingface format from non-standard location
 - fix default styles looking in wrong location
 - fix missing upscaler folder on initial startup
 - fix handling of relative path for models
 - fix simple live preview device mismatch
 - fix batch img2img
-- fix diffusers dpm++ 2m, dpm++ 1s, deis samplers
+- fix diffusers samplers: dpm++ 2m, dpm++ 1s, deis
 - fix new style filename template
 - fix image name template using model name
 - fix model path using relative path
 - fix `torch-rocm` and `tensorflow-rocm` version detection, thanks @xangelix
-- fix chainner upscalers color clipping
+- fix **chainner** upscalers color clipping
 - fix for base+refiner workflow in diffusers mode: number of steps, diffuser pipe mode  
 - fix for prompt encoder with refiner in diffusers mode
 - fix prompts-from-file saving incorrect metadata
 - fix before-hires step
 - fix diffusers switch from invalid model
-- directml and ipex updates
+- **directml** and **ipex** updates
 - force second requirements check on startup
 - remove lyco, multiple_tqdm
 - enhance extension compatibility for exensions directly importing codeformers  
 - enhance extension compatibility for exensions directly accessing processing params  
 - css fixes
 - clearly mark external themes in ui
-- new option: *settings -> images -> keep incomplete*
-  can be used to skip vae decode on aborted/skipped/interrupted image generations
 - update `openvino`, thanks @disty0
 - update `typing-extensions`
 
@@ -39,7 +37,12 @@ Service release addressing all zero-day issues reported so far...
 
 - remove external clone of items in `/repositories`
 - add **lora oft** support, thanks @antis0007 and @ai-casanova
-- **upscalers compile** option, thanks @disty0
+- **upscalers**
+  - **compile compile** option, thanks @disty0
+  - **chainner** add high quality models from [Helaman](https://openmodeldb.info/users/helaman)
+  - **chainner** switch to `torchvision.transforms` for all image decode operations  
+- new option: *settings -> images -> keep incomplete*
+  can be used to skip vae decode on aborted/skipped/interrupted image generations
 
 
 **Themes**

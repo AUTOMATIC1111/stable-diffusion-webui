@@ -178,7 +178,7 @@ def list_models():
                 shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
     elif shared.cmd_opts.ckpt != shared.default_sd_model_file and shared.cmd_opts.ckpt is not None:
         shared.log.warning(f"Checkpoint not found: {shared.cmd_opts.ckpt}")
-    shared.log.info(f'Available models: {shared.opts.ckpt_dir} items={len(checkpoints_list)} time={time.time()-t0:.2f}s')
+    shared.log.info(f'Available models: path="{shared.opts.ckpt_dir}" items={len(checkpoints_list)} time={time.time()-t0:.2f}s')
 
     checkpoints_list = dict(sorted(checkpoints_list.items(), key=lambda cp: cp[1].filename))
     if len(checkpoints_list) == 0:
@@ -805,6 +805,9 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         pass
     else:
         diffusers_load_config['variant'] = shared.opts.diffusers_model_load_variant
+
+    if shared.opts.diffusers_pipeline == 'Custom Diffusers Pipeline':
+        diffusers_load_config['custom_pipeline'] = shared.opts.custom_diffusers_pipeline
 
     if shared.opts.data.get('sd_model_checkpoint', '') == 'model.ckpt' or shared.opts.data.get('sd_model_checkpoint', '') == '':
         shared.opts.data['sd_model_checkpoint'] = "runwayml/stable-diffusion-v1-5"
