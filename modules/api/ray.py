@@ -14,8 +14,7 @@ import os
 if "RAY_DOCKER" in os.environ:
     ray.init(
         dashboard_host=os.environ.get("RAY_DASHBOARD_HOST", "0.0.0.0"),
-        dashboard_port=int(os.environ.get("RAY_DASHBOARD_PORT", 8265)),
-        port=int(os.environ.get("RAY_GCS_PORT", 6379)),
+        dashboard_port=int(os.environ.get("RAY_DASHBOARD_PORT", 8265))
         )
 else:
     ray.init()
