@@ -1,0 +1,12 @@
+video_root: '/export/share/dongxuli/data/msrvtt_retrieval/videos'
+ann_root: 'annotation'
+
+# set pretrained as a file path or an url
+pretrained: 'https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_retrieval_coco.pth'
+
+# size of vit model; base or large
+vit: 'base'
+batch_size: 64
+k_test: 128
+image_size: 384
+num_frm_test: 8
