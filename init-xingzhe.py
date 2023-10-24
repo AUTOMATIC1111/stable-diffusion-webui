@@ -13,6 +13,8 @@ def install():
         f"https_proxy='{HTTP_PROXY}' git clone --depth 1 https://github.com/IDEA-Research/GroundingDINO.git ",
         "git GroundingDINO")
     lu.run("cd GroundingDINO;pip3 install -e .", "install GroundingDINO")
+    ##取消http代理
+    https_proxy(False)
 
 
 def download_config():
@@ -38,13 +40,12 @@ def download_config():
 
 def clone_extensions():
     import modules.paths_internal as pi
-    lu.run(f"export https_proxy={HTTP_PROXY}", "set https proxy")
     lu.git_clone("https://github.com/CompVis/taming-transformers.git",
                  os.path.join(pi.extensions_dir, "taming-transformers"),
                  "clone taming-transformers", 1)
     lu.git_clone("https://github.com/nonnonstop/sd-webui-3d-open-pose-editor",
                  os.path.join(pi.extensions_dir, "sd-webui-3d-open-pose-editor"),
-                 "clone sd-webui-3d-open-pose-editor",1)
+                 "clone sd-webui-3d-open-pose-editor", 1)
     lu.git_clone("https://github.com/KutsuyaYuki/ABG_extension",
                  os.path.join(pi.extensions_dir, "ABG_extension", 1),
                  "clone ABG_extension")
@@ -110,7 +111,6 @@ def clone_extensions():
     lu.git_clone("https://github.com/xilai0715/sd-vide-frame.git",
                  os.path.join(pi.extensions_dir, "video--frame"),
                  "clone video--frame", 1)
-    lu.run(f"export https_proxy={HTTP_PROXY}", "unset https proxy")
 
     # 克隆公司自己开发的插件
     lu.git_clone("https://gitlab.ilongyuan.cn/qzai/sd_super_functions.git",
@@ -121,6 +121,13 @@ def clone_extensions():
                  "clone sd-webui-filemanager", 1)
 
 
+def https_proxy(status):
+    if status:
+        lu.run(f"export https_proxy={HTTP_PROXY}", "set https proxy")
+    else:
+        lu.run(f"export https_proxy=''", "unset https proxy")
+
+
 def install_worker_requirements():
     from worker.install import install_pip_requirements
     install_pip_requirements()
@@ -128,8 +135,12 @@ def install_worker_requirements():
 
 def main():
     print(f"HTTP_PROXY :{HTTP_PROXY}")
+    ##开启http代理
+    https_proxy(True)
     install()
     install_worker_requirements()
+    ##取消http代理
+    https_proxy(False)
     download_config()
 
 
