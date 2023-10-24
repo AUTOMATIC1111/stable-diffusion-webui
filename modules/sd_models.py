@@ -806,6 +806,9 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     else:
         diffusers_load_config['variant'] = shared.opts.diffusers_model_load_variant
 
+    if shared.opts.diffusers_pipeline == 'Custom Diffusers Pipeline':
+        diffusers_load_config['custom_pipeline'] = shared.opts.custom_diffusers_pipeline
+
     if shared.opts.data.get('sd_model_checkpoint', '') == 'model.ckpt' or shared.opts.data.get('sd_model_checkpoint', '') == '':
         shared.opts.data['sd_model_checkpoint'] = "runwayml/stable-diffusion-v1-5"
 

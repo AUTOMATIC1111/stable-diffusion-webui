@@ -183,7 +183,7 @@ def download_civit_model(model_url: str, model_name: str, model_path: str, model
     return f'CivitAI download: name={model_name} url={model_url} path={model_path}'
 
 
-def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config: Dict[str, str] = None, token = None, variant = None, revision = None, mirror = None):
+def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config: Dict[str, str] = None, token = None, variant = None, revision = None, mirror = None, custom_pipeline = None):
     if hub_id is None or len(hub_id) == 0:
         return None
     from diffusers import DiffusionPipeline
@@ -204,6 +204,8 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         download_config["revision"] = revision
     if mirror is not None and len(mirror) > 0:
         download_config["mirror"] = mirror
+    if custom_pipeline is not None and len(custom_pipeline) > 0:
+        download_config["custom_pipeline"] = custom_pipeline
     shared.log.debug(f"Diffusers downloading: {hub_id} {download_config}")
     if token is not None and len(token) > 2:
         shared.log.debug(f"Diffusers authentication: {token}")
