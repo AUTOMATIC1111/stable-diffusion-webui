@@ -58,6 +58,5 @@ cache
 /localizations
 
 # unexcluded so folders get created
-!/repositories/.placeholder
 !/models/VAE-approx
 !/models/VAE-approx/model.pt
