@@ -170,9 +170,6 @@ class MongoTaskDumper(TaskDumper):
     def __init__(self, *args, **db_settings):
 
         mgo_config = db_settings or {}
-        if 'host' not in mgo_config:
-            raise ValueError('cannot found mongo host.')
-
         mgo = MongoClient(**db_settings or {})
         mgo.collect.create_index('task_id', unique=True)
         mgo.collect.create_index('status')

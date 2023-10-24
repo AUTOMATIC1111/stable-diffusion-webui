@@ -171,7 +171,8 @@ class Options:
 
     def load(self, filename):
         with open(filename, "r", encoding="utf8") as file:
-            self.data = json.load(file)
+            d = json.load(file)
+            self.data.update(d)
 
         # 1.6.0 VAE defaults
         if self.data.get('sd_vae_as_default') is not None and self.data.get('sd_vae_overrides_per_model_preferences') is None:

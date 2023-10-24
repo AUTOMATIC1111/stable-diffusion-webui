@@ -34,6 +34,8 @@ class OssFileStorage(FileStorage):
         access_key_id = env_vars.get(Env_AccessKey, '')
         secret_access_key = env_vars.get(Env_SecretKey, '')
         bucket = env_vars.get(Env_BucketKey, '')
+
+        self.bucket_name = bucket
         self.client = None
         if 'aliyun' in endpoint:
             self.endpoint = endpoint

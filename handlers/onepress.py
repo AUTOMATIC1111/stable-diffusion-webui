@@ -21,7 +21,6 @@ from loguru import logger
 from PIL import ImageOps, Image
 from handlers.txt2img import Txt2ImgTask, Txt2ImgTaskHandler
 from worker.task import TaskType, TaskProgress, Task, TaskStatus
-from worker.handler import RequirementItem
 from modules.processing import StableDiffusionProcessingImg2Img, process_images, Processed, fix_seed
 from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, \
     load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path

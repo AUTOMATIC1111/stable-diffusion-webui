@@ -69,16 +69,17 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  hr_prompt: str = None,
                  hr_negative_prompt: str = None,
                  disable_ad_face: bool = False,  # 关闭默认的ADetailer face
-                 xl_refiner: bool = False,  # 是否启用XLRefiner
-                 xl_refiner_ds: float = 0.2,  # XL 精描幅度
-                 xl_refiner_model_path: str = None,  # XL refiner模型文件
+                 enable_refiner: bool = False,  # 是否启用XLRefiner
+                 refiner_switch_at: float = 0.2,  # XL 精描切换时机
+                 refiner_checkpoint: str = None,  # XL refiner模型文件
                  **kwargs):
         override_settings = create_override_settings_dict(override_settings_texts or [])
 
         t2i_script_runner = modules.scripts.scripts_txt2img
         selectable_scripts, selectable_script_idx = get_selectable_script(t2i_script_runner, select_script_name)
         script_args = init_script_args(default_script_arg_txt2img, alwayson_scripts, selectable_scripts,
-                                       selectable_script_idx, select_script_args, t2i_script_runner, not disable_ad_face)
+                                       selectable_script_idx, select_script_args, t2i_script_runner,
+                                       not disable_ad_face, enable_refiner, refiner_switch_at, refiner_checkpoint)
 
         super(Txt2ImgTask, self).__init__(
             sd_model=shared.sd_model,
@@ -126,9 +127,9 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
         self.embedding = embeddings
         self.lycoris = lycoris_models
         self.select_script_nets = select_script_nets
-        self.xl_refiner = xl_refiner
-        self.xl_refiner_ds = xl_refiner_ds
-        self.xl_refiner_model_path = xl_refiner_model_path
+        self.xl_refiner = enable_refiner
+        self.refiner_switch_at = refiner_switch_at
+        self.xl_refiner_model_path = refiner_checkpoint
 
     def close(self):
         for obj in self.script_args:
@@ -140,7 +141,7 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                         v.close()
 
     @classmethod
-    def from_task(cls, task: Task, default_script_args: typing.Sequence):
+    def from_task(cls, task: Task, default_script_args: typing.Sequence, refiner_checkpoint: str = None):
         base_model_path = task['base_model_path']
         alwayson_scripts = task['alwayson_scripts']
         user_id = task['user_id']
@@ -172,6 +173,7 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
 
         if "nsfw" in prompt.lower():
             prompt = prompt.lower().replace('nsfw', '')
+        kwargs['refiner_checkpoint'] = refiner_checkpoint
 
         return cls(base_model_path,
                    user_id,
@@ -194,52 +196,52 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
         self.default_script_args = init_default_script_args(modules.scripts.scripts_txt2img)
         self._default_script_args_load_t = time.time()
 
-    def _build_txt2img_arg(self, progress: TaskProgress) -> Txt2ImgTask:
+    def _build_txt2img_arg(self, progress: TaskProgress, refiner_checkpoint: str = None) -> Txt2ImgTask:
         self._refresh_default_script_args()
-        t = Txt2ImgTask.from_task(progress.task, self.default_script_args)
+        t = Txt2ImgTask.from_task(progress.task, self.default_script_args, refiner_checkpoint)
         shared.state.current_latent_changed_callback = lambda: self._update_preview(progress)
         return t
 
-    def _get_local_checkpoint(self, task: Task):
-        progress = TaskProgress.new_prepare(task, f"0%")
-        xl_refiner_model_path = task.get('xl_refiner_model_path')
-        # 脚本任务
-        self._get_select_script_models(progress)
-
-        def base_model_progress_callback(*args):
-            if len(args) < 2:
-                return
-            transferred, total = args[0], args[1]
-            p = int(transferred * 100 / total)
-            if xl_refiner_model_path:
-                p = p * 0.5
-
-            current_progress = int(progress.task_desc[:-1])
-            if p % 5 == 0 and p >= current_progress + 5:
-                progress.task_desc = f"{p}%"
-                self._set_task_status(progress)
-
-        base_model_path = get_model_local_path(task.sd_model_path, ModelType.CheckPoint, base_model_progress_callback)
-        if not base_model_path or not os.path.isfile(base_model_path):
-            raise OSError(f'cannot found model:{task.sd_model_path}')
-
-        def refiner_model_progress_callback(*args):
-            if len(args) < 2:
-                return
-            transferred, total = args[0], args[1]
-            p = int(50 + transferred * 100 * 0.5 / total)
-
-            current_progress = int(progress.task_desc[:-1])
-            if p % 5 == 0 and p >= current_progress + 5:
-                progress.task_desc = f"{p}%"
-                self._set_task_status(progress)
-
-        xl_refiner_model = get_model_local_path(
-            xl_refiner_model_path, ModelType.CheckPoint, refiner_model_progress_callback)
-        if not xl_refiner_model or not os.path.isfile(xl_refiner_model):
-            raise OSError(f'cannot found model:{xl_refiner_model_path}')
-
-        return base_model_path, xl_refiner_model
+    # def _get_local_checkpoint(self, task: Task):
+    #     progress = TaskProgress.new_prepare(task, f"0%")
+    #     xl_refiner_model_path = task.get('xl_refiner_model_path')
+    #     # 脚本任务
+    #     self._get_select_script_models(progress)
+    #
+    #     def base_model_progress_callback(*args):
+    #         if len(args) < 2:
+    #             return
+    #         transferred, total = args[0], args[1]
+    #         p = int(transferred * 100 / total)
+    #         if xl_refiner_model_path:
+    #             p = p * 0.5
+    #
+    #         current_progress = int(progress.task_desc[:-1])
+    #         if p % 5 == 0 and p >= current_progress + 5:
+    #             progress.task_desc = f"{p}%"
+    #             self._set_task_status(progress)
+    #
+    #     base_model_path = get_model_local_path(task.sd_model_path, ModelType.CheckPoint, base_model_progress_callback)
+    #     if not base_model_path or not os.path.isfile(base_model_path):
+    #         raise OSError(f'cannot found model:{task.sd_model_path}')
+    #
+    #     def refiner_model_progress_callback(*args):
+    #         if len(args) < 2:
+    #             return
+    #         transferred, total = args[0], args[1]
+    #         p = int(50 + transferred * 100 * 0.5 / total)
+    #
+    #         current_progress = int(progress.task_desc[:-1])
+    #         if p % 5 == 0 and p >= current_progress + 5:
+    #             progress.task_desc = f"{p}%"
+    #             self._set_task_status(progress)
+    #
+    #     xl_refiner_model = get_model_local_path(
+    #         xl_refiner_model_path, ModelType.CheckPoint, refiner_model_progress_callback)
+    #     if not xl_refiner_model or not os.path.isfile(xl_refiner_model):
+    #         raise OSError(f'cannot found model:{xl_refiner_model_path}')
+    #
+    #     return base_model_path, xl_refiner_model
 
     def refiner_image(self, xl_refiner_model, images):
         sha256, _ = os.path.splitext(os.path.basename(xl_refiner_model))
@@ -247,11 +249,14 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
         # todo: batch exec refiner images
 
     def _exec_txt2img(self, task: Task) -> typing.Iterable[TaskProgress]:
-        base_model_path, xl_refiner_model = self._get_local_checkpoint(task)
+        local_model_paths = self._get_local_checkpoint(task)
+        base_model_path = local_model_paths if not isinstance(local_model_paths, tuple) else local_model_paths[0]
+        refiner_checkpoint = None if not isinstance(local_model_paths, tuple) else local_model_paths[1]
+
         load_sd_model_weights(base_model_path, task.model_hash)
         progress = TaskProgress.new_ready(task, f'model loaded, run t2i...')
         yield progress
-        process_args = self._build_txt2img_arg(progress)
+        process_args = self._build_txt2img_arg(progress, refiner_checkpoint)
         self._set_little_models(process_args)
         progress.status = TaskStatus.Running
         progress.task_desc = f't2i task({task.id}) running'

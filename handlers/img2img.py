@@ -114,6 +114,9 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  embeddings: typing.Sequence[str] = None,  # embeddings，用户和系统全部embedding列表
                  lycoris_models: typing.Sequence[str] = None,  # lycoris，用户和系统全部lycoris列表
                  disable_ad_face: bool = False,  # 关闭默认的ADetailer face
+                 enable_refiner: bool = False,  # 是否启用XLRefiner
+                 refiner_switch_at: float = 0.2,  # XL 精描切换时机
+                 refiner_checkpoint: str = None,  # XL refiner模型文件
                  **kwargs):
         override_settings = create_override_settings_dict(override_settings_texts or [])
         image = None
@@ -213,7 +216,8 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         i2i_script_runner = modules.scripts.scripts_img2img
         selectable_scripts, selectable_script_idx = get_selectable_script(i2i_script_runner, select_script_name)
         script_args = init_script_args(default_script_arg_img2img, alwayson_scripts, selectable_scripts,
-                                       selectable_script_idx, select_script_args, i2i_script_runner, not disable_ad_face)
+                                       selectable_script_idx, select_script_args, i2i_script_runner,
+                                       not disable_ad_face, enable_refiner, refiner_switch_at, refiner_checkpoint)
 
         super(Img2ImgTask, self).__init__(
             sd_model=shared.sd_model,
@@ -264,6 +268,9 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         self.embedding = embeddings
         self.lycoris = lycoris_models
         self.select_script_nets = select_script_nets
+        self.xl_refiner = enable_refiner
+        self.refiner_switch_at = refiner_switch_at
+        self.xl_refiner_model_path = refiner_checkpoint
 
         if mask:
             self.extra_generation_params["Mask blur"] = mask_blur
@@ -288,7 +295,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                         v.close()
 
     @classmethod
-    def from_task(cls, task: Task, default_script_arg_img2img: typing.Sequence):
+    def from_task(cls, task: Task, default_script_arg_img2img: typing.Sequence, refiner_checkpoint: str = None):
         base_model_path = task['base_model_path']
         alwayson_scripts = task['alwayson_scripts']
         user_id = task['user_id']
@@ -321,6 +328,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
 
         if "nsfw" in prompt.lower():
             prompt = prompt.lower().replace('nsfw', '')
+        kwargs['refiner_checkpoint'] = refiner_checkpoint
 
         return cls(base_model_path,
                    user_id,
@@ -412,11 +420,11 @@ class Img2ImgTaskHandler(TaskHandler):
         self.default_script_args = init_default_script_args(modules.scripts.scripts_img2img)
         self._default_script_args_load_t = time.time()
 
-    def _build_img2img_arg(self, progress: TaskProgress) -> Img2ImgTask:
+    def _build_img2img_arg(self, progress: TaskProgress, refiner_checkpoint: str = None) -> Img2ImgTask:
         # 可不使用定时刷新，直接初始化。
         self._refresh_default_script_args()
 
-        t = Img2ImgTask.from_task(progress.task, self.default_script_args)
+        t = Img2ImgTask.from_task(progress.task, self.default_script_args, refiner_checkpoint)
         shared.state.current_latent_changed_callback = lambda: self._update_preview(progress)
         return t
 
@@ -425,7 +433,7 @@ class Img2ImgTaskHandler(TaskHandler):
         下载大模型，或者脚本中的模型列表
         '''
         progress = TaskProgress.new_prepare(task, f"0%")
-
+        xl_refiner_model_path = task.get('xl_refiner_model_path')
         # 脚本任务
         self._get_select_script_models(progress)
 
@@ -434,7 +442,8 @@ class Img2ImgTaskHandler(TaskHandler):
                 return
             transferred, total = args[0], args[1]
             p = int(transferred * 100 / total)
-
+            if xl_refiner_model_path:
+                p = p * 0.5
             current_progress = int(progress.task_desc[:-1])
             if p % 5 == 0 and p >= current_progress + 5:
                 progress.task_desc = f"{p}%"
@@ -443,7 +452,26 @@ class Img2ImgTaskHandler(TaskHandler):
         base_model_path = get_model_local_path(task.sd_model_path, ModelType.CheckPoint, progress_callback)
         if not base_model_path or not os.path.isfile(base_model_path):
             raise OSError(f'cannot found model:{task.sd_model_path}')
-        return base_model_path
+
+        def refiner_model_progress_callback(*args):
+            if len(args) < 2:
+                return
+            transferred, total = args[0], args[1]
+            p = int(50 + transferred * 100 * 0.5 / total)
+
+            current_progress = int(progress.task_desc[:-1])
+            if p % 5 == 0 and p >= current_progress + 5:
+                progress.task_desc = f"{p}%"
+                self._set_task_status(progress)
+
+        if xl_refiner_model_path:
+            xl_refiner_model = get_model_local_path(
+                xl_refiner_model_path, ModelType.CheckPoint, refiner_model_progress_callback)
+            if not xl_refiner_model or not os.path.isfile(xl_refiner_model):
+                raise OSError(f'cannot found model:{xl_refiner_model_path}')
+            return base_model_path, xl_refiner_model
+        else:
+            return base_model_path
 
     def _get_local_embedding_dirs(self, embeddings: typing.Sequence[str]) -> typing.Set[str]:
         # embeddings = [get_model_local_path(p, ModelType.Embedding) for p in embeddings]
@@ -544,12 +572,15 @@ class Img2ImgTaskHandler(TaskHandler):
             pass
 
     def _exec_img2img(self, task: Task) -> typing.Iterable[TaskProgress]:
-        base_model_path = self._get_local_checkpoint(task)
+        local_model_paths = self._get_local_checkpoint(task)
+        base_model_path = local_model_paths if not isinstance(local_model_paths, tuple) else local_model_paths[0]
+        refiner_checkpoint = None if not isinstance(local_model_paths, tuple) else local_model_paths[1]
+
         load_sd_model_weights(base_model_path, task.model_hash)
         progress = TaskProgress.new_ready(task, f'model loaded, run i2i...')
         yield progress
         # 参数有使用到sd_model因此在切换模型后再构造参数。
-        process_args = self._build_img2img_arg(progress)
+        process_args = self._build_img2img_arg(progress, refiner_checkpoint)
         self._set_little_models(process_args)
         # if process_args.loras:
         #     # 设置LORA，具体实施在modules/exta_networks.py 中activate函数。

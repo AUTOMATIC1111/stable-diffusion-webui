@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2023/3/30 2:51 PM
 # @Author  : wangdongming
-# @Site    : 
+# @Site    :
 # @File    : utils.py
 # @Software: Hifive
 import io
@@ -201,7 +201,11 @@ default_alwayson_scripts = {
 
 def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: StrMapMap, selectable_scripts: Script,
                      selectable_idx: int, request_script_args: typing.Sequence, script_runner: ScriptRunner,
-                     enable_def_adetailer: bool = True):
+                     enable_def_adetailer: bool = True,
+                     enable_refiner: bool = False,    # 是否启用XLRefiner
+                     refiner_switch_at: float = 0.8,  # XL 精描切换时机
+                     refiner_checkpoint: str = None   # XL refiner模型文件
+                     ):
     script_args = [x for x in default_script_args]
 
     if selectable_scripts:
@@ -209,6 +213,17 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
         script_args[0] = selectable_idx + 1
 
     alwayson_scripts = alwayson_scripts or {}
+
+    if enable_refiner and os.path.isfile(refiner_checkpoint):
+        alwayson_scripts.update({
+            "Refiner": {'args': [
+                enable_refiner,
+                refiner_checkpoint,
+                refiner_switch_at
+            ]
+            }
+        })
+
     if not getattr(cmd_opts, 'disable_tss_def_alwayson', False):
         for k, v in default_alwayson_scripts.items():
             if not enable_def_adetailer and ADetailer == k:
@@ -305,6 +320,86 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, scrip
 
         if processed_image.mode == 'RGBA':
             processed_image = processed_image.convert("RGB")
+        full_path = os.path.join(out_obj.output_dir, filename)
+
+        pnginfo_data = PngInfo()
+        pnginfo_data.add_text('by', 'xingzhe')
+        size = f"{processed_image.width}*{processed_image.height}"
+        infotexts = proc.infotexts[n].replace('-automatic1111', "-xingzhe") \
+            if proc.infotexts and n < len(proc.infotexts) else ''
+        for k, v in processed_image.info.items():
+            if 'parameters' == k:
+                v = str(v).replace('-automatic1111', "-xingzhe")
+                print(f"image parameters:{v}")
+                infotexts = v
+                continue
+            pnginfo_data.add_text(k, str(v))
+        pnginfo_data.add_text('parameters', infotexts)
+
+        processed_image.save(full_path, pnginfo=pnginfo_data)
+        out_obj.add_image(full_path)
+
+    grid_keys = out_grid_image.multi_upload_keys(clean_upload_files)
+    image_keys = out_image.multi_upload_keys(clean_upload_files)
+    script_keys = out_script_image.multi_upload_keys(clean_upload_files)
+
+    if inspect:
+        out_grid_image.inspect(grid_keys)
+        out_image.inspect(image_keys)
+
+    output = {
+        'grids': grid_keys.to_dict(),
+        'samples': image_keys.to_dict()
+    }
+
+    all_keys = grid_keys + image_keys + script_keys
+    output.update({
+        'has_grid': proc.index_of_first_image > 0,
+        'all': all_keys.to_dict(),
+        'size': size
+    })
+
+    return output
+
+
+
+
+
+# 针对衫数人物
+def save_processed_images_shanshu(proc: Processed, output_dir: str, grid_dir: str, script_dir: str,
+                          task_id: str, clean_upload_files: bool = True, inspect=False):
+    if not output_dir:
+        raise ValueError('output is empty')
+
+    date = datetime.today().strftime('%Y/%m/%d')
+    output_dir = os.path.join(output_dir, date)
+    grid_dir = os.path.join(grid_dir, date)
+    script_dir = os.path.join(script_dir, date)
+
+    out_grid_image = ImageOutput(OutImageType.Grid, grid_dir)
+    out_image = ImageOutput(OutImageType.Image, output_dir)
+    out_script_image = ImageOutput(OutImageType.Script, script_dir)
+
+    size = ''
+    for n, processed_image in enumerate(proc.images):
+        ex = '.png'
+        if isinstance(processed_image, Image.Image) and hasattr(processed_image, 'already_saved_as'):
+            saved_as = getattr(processed_image, 'already_saved_as')
+            if saved_as:
+                _, ex = os.path.splitext(saved_as)
+
+        if n < proc.index_of_first_image:
+            filename = f"{task_id}{ex}"
+            out_obj = out_grid_image
+        elif n <= proc.index_of_end_image:
+            filename = f"{task_id}-{n}{ex}"
+            out_obj = out_image
+        else:
+            filename = f"{task_id}-{n}{ex}"
+            out_obj = out_script_image
+
+        # if processed_image.mode == 'RGBA':
+        #     processed_image = processed_image.convert("RGB")
         full_path = os.path.join(out_obj.output_dir, filename)
 
         pnginfo_data = PngInfo()

@@ -52,3 +52,7 @@ chardet
 cchardet
 xformers==0.0.20
 gdown
+strenum
+supervision
+voluptuous
+rembg
