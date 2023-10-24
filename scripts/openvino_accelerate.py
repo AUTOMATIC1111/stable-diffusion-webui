@@ -52,7 +52,6 @@ from diffusers import (
     StableDiffusionXLPipeline,
     StableDiffusionXLImg2ImgPipeline,
     StableDiffusionXLInpaintPipeline,
-    StableDiffusionXLControlNetPipeline,
     ControlNetModel,
     DDIMScheduler,
     DPMSolverMultistepScheduler,
@@ -544,16 +543,29 @@ def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching,
             elif (mode == 2):
                 sd_model = StableDiffusionXLInpaintPipeline(**sd_model.components)
             elif (mode == 3):
-                cn_model_dir_path = os.path.join(curr_dir_path, 'extensions', 'sd-webui-controlnet', 'models')
-                cn_model_path = os.path.join(cn_model_dir_path, model_state.cn_model)
-                if os.path.isfile(cn_model_path + '.pt'):
-                    cn_model_path = cn_model_path + '.pt'
-                elif os.path.isfile(cn_model_path + '.safetensors'):
-                    cn_model_path = cn_model_path + '.safetensors'
-                elif os.path.isfile(cn_model_path + '.pth'):
-                    cn_model_path = cn_model_path + '.pth'
-                controlnet = ControlNetModel.from_single_file(cn_model_path, local_files_only=True)
-                sd_model = StableDiffusionXLControlNetPipeline(**sd_model.components, controlnet=controlnet)
+                if (len(model_state.control_models) > 1):
+                    controlnet = []
+                    for cn_model in model_state.control_models:
+                        cn_model_dir_path = os.path.join(curr_dir_path, 'extensions', 'sd-webui-controlnet', 'models')
+                        cn_model_path = os.path.join(cn_model_dir_path, cn_model)
+                        if os.path.isfile(cn_model_path + '.pt'):
+                            cn_model_path = cn_model_path + '.pt'
+                        elif os.path.isfile(cn_model_path + '.safetensors'):
+                            cn_model_path = cn_model_path + '.safetensors'
+                        elif os.path.isfile(cn_model_path + '.pth'):
+                            cn_model_path = cn_model_path + '.pth'
+                        controlnet.append(ControlNetModel.from_single_file(cn_model_path, local_files_only=True))
+                else:
+                    cn_model_dir_path = os.path.join(curr_dir_path, 'extensions', 'sd-webui-controlnet', 'models')
+                    cn_model_path = os.path.join(cn_model_dir_path, model_state.control_models[0])
+                    if os.path.isfile(cn_model_path + '.pt'):
+                        cn_model_path = cn_model_path + '.pt'
+                    elif os.path.isfile(cn_model_path + '.safetensors'):
+                        cn_model_path = cn_model_path + '.safetensors'
+                    elif os.path.isfile(cn_model_path + '.pth'):
+                        cn_model_path = cn_model_path + '.pth'
+                    controlnet = ControlNetModel.from_single_file(cn_model_path, local_files_only=True)
+                sd_model = StableDiffusionControlNetPipeline(**sd_model.components, controlnet=controlnet)
                 sd_model.controlnet = torch.compile(sd_model.controlnet, backend="openvino_fx")
         else:
             if model_config != "None":
@@ -567,15 +579,28 @@ def get_diffusers_sd_model(model_config, vae_ckpt, sampler_name, enable_caching,
             elif (mode == 2):
                 sd_model = StableDiffusionInpaintPipeline(**sd_model.components)
             elif (mode == 3):
-                cn_model_dir_path = os.path.join(curr_dir_path, 'extensions', 'sd-webui-controlnet', 'models')
-                cn_model_path = os.path.join(cn_model_dir_path, model_state.cn_model)
-                if os.path.isfile(cn_model_path + '.pt'):
-                    cn_model_path = cn_model_path + '.pt'
-                elif os.path.isfile(cn_model_path + '.safetensors'):
-                    cn_model_path = cn_model_path + '.safetensors'
-                elif os.path.isfile(cn_model_path + '.pth'):
-                    cn_model_path = cn_model_path + '.pth'
-                controlnet = ControlNetModel.from_single_file(cn_model_path, local_files_only=True)
+                if (len(model_state.control_models) > 1):
+                    controlnet = []
+                    for cn_model in model_state.control_models:
+                        cn_model_dir_path = os.path.join(curr_dir_path, 'extensions', 'sd-webui-controlnet', 'models')
+                        cn_model_path = os.path.join(cn_model_dir_path, cn_model)
+                        if os.path.isfile(cn_model_path + '.pt'):
+                            cn_model_path = cn_model_path + '.pt'
+                        elif os.path.isfile(cn_model_path + '.safetensors'):
+                            cn_model_path = cn_model_path + '.safetensors'
+                        elif os.path.isfile(cn_model_path + '.pth'):
+                            cn_model_path = cn_model_path + '.pth'
+                        controlnet.append(ControlNetModel.from_single_file(cn_model_path, local_files_only=True))
+                else:
+                    cn_model_dir_path = os.path.join(curr_dir_path, 'extensions', 'sd-webui-controlnet', 'models')
+                    cn_model_path = os.path.join(cn_model_dir_path, model_state.control_models[0])
+                    if os.path.isfile(cn_model_path + '.pt'):
+                        cn_model_path = cn_model_path + '.pt'
+                    elif os.path.isfile(cn_model_path + '.safetensors'):
+                        cn_model_path = cn_model_path + '.safetensors'
+                    elif os.path.isfile(cn_model_path + '.pth'):
+                        cn_model_path = cn_model_path + '.pth'
+                    controlnet = ControlNetModel.from_single_file(cn_model_path, local_files_only=True)
                 sd_model = StableDiffusionControlNetPipeline(**sd_model.components, controlnet=controlnet)
                 sd_model.controlnet = torch.compile(sd_model.controlnet, backend="openvino_fx")
 
