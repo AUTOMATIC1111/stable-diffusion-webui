@@ -13,8 +13,6 @@ def install():
         f"https_proxy='{HTTP_PROXY}' git clone --depth 1 https://github.com/IDEA-Research/GroundingDINO.git ",
         "git GroundingDINO")
     lu.run("cd GroundingDINO;pip3 install -e .", "install GroundingDINO")
-    ##取消http代理
-    https_proxy(False)
 
 
 def download_config():
@@ -136,11 +134,11 @@ def install_worker_requirements():
 def main():
     print(f"HTTP_PROXY :{HTTP_PROXY}")
     ##开启http代理
-    https_proxy(True)
+    # https_proxy(True)
     install()
     install_worker_requirements()
     ##取消http代理
-    https_proxy(False)
+    # https_proxy(False)
     download_config()
 
 
