@@ -286,6 +286,15 @@ def close_pil(image: Image):
     image.close()
 
 
+def format_override_settings(override_settings):
+    new_settings = []
+    for item in override_settings or []:
+        if 'sd_vae:' in item:
+            item = str(item).replace("sd_vae", "VAE")
+        new_settings.append(item)
+    return new_settings
+
+
 def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, script_dir: str,
                           task_id: str, clean_upload_files: bool = True, inspect=False):
     if not output_dir:

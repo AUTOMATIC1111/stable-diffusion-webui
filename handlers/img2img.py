@@ -23,7 +23,7 @@ from modules.generation_parameters_copypaste import create_override_settings_dic
 from modules.img2img import process_batch
 from worker.task import TaskType, TaskProgress, Task, TaskStatus
 from modules.processing import StableDiffusionProcessingImg2Img, process_images, Processed, create_binary_mask
-from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, \
+from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, format_override_settings,\
     load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path, batch_model_local_paths
 from handlers.extension.controlnet import exec_control_net_annotator
 from worker.dumper import dumper
@@ -118,7 +118,8 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  refiner_switch_at: float = 0.2,  # XL 精描切换时机
                  refiner_checkpoint: str = None,  # XL refiner模型文件
                  **kwargs):
-        override_settings = create_override_settings_dict(override_settings_texts or [])
+        override_settings_texts = format_override_settings(override_settings_texts)
+        override_settings = create_override_settings_dict(override_settings_texts)
         image = None
         mask = None
         self.is_batch = False

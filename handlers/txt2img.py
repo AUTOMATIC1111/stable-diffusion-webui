@@ -16,7 +16,7 @@ from modules.generation_parameters_copypaste import create_override_settings_dic
 from worker.task import TaskType, TaskProgress, Task, TaskStatus
 from modules.processing import StableDiffusionProcessingTxt2Img, process_images, Processed
 from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, \
-    load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path
+    load_sd_model_weights, save_processed_images, format_override_settings
 from handlers.extension.controlnet import exec_control_net_annotator
 from handlers.img2img import Img2ImgTaskHandler, AlwaysonScriptsType
 
@@ -73,7 +73,8 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  refiner_switch_at: float = 0.2,  # XL 精描切换时机
                  refiner_checkpoint: str = None,  # XL refiner模型文件
                  **kwargs):
-        override_settings = create_override_settings_dict(override_settings_texts or [])
+        override_settings_texts = format_override_settings(override_settings_texts)
+        override_settings = create_override_settings_dict(override_settings_texts)
 
         t2i_script_runner = modules.scripts.scripts_txt2img
         selectable_scripts, selectable_script_idx = get_selectable_script(t2i_script_runner, select_script_name)
