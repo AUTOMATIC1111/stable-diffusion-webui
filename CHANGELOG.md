@@ -35,14 +35,31 @@ Service release addressing all zero-day issues reported so far...
 
 ### Dev branch
 
-- remove external clone of items in `/repositories`
-- add **lora oft** support, thanks @antis0007 and @ai-casanova
-- **upscalers**
-  - **compile compile** option, thanks @disty0
-  - **chainner** add high quality models from [Helaman](https://openmodeldb.info/users/helaman)
-  - **chainner** switch to `torchvision.transforms` for all image decode operations  
-- new option: *settings -> images -> keep incomplete*
-  can be used to skip vae decode on aborted/skipped/interrupted image generations
+*Note*: Pending release of `diffusers==0.22.0`
+
+- **Diffusers**
+  - new model type: [SegMind SSD-1B](https://huggingface.co/segmind/SSD-1B)  
+    its a distilled model, this time 50% smaller and faster version of SD-XL!  
+    test shows batch-size:4 with 1k images used less than 6.5GB of VRAM  
+    download using built-in **Huggingface** downloader: `segmind/SSD-1B`  
+  - new model type: [OpenAI Consistency Models](https://github.com/openai/consistency_models)  
+    near-instant generate in a one or two steps!  
+    current list of models is very limited as they are not general purpose models, but that is expected to change  
+    download using built-in **Huggingface** downloaded: `openai/diffusers`  
+  - add support for **Custom pipelines**, thanks @disty0  
+    custom pipelines can be downloaded using built-in **Huggingface** downloaded  
+    think of them as plugins for diffusers not unlike original extensions that modify behavior of `ldm` backend  
+    list of community pipelines: <https://github.com/huggingface/diffusers/tree/main/examples/community>  
+
+- **General**  
+  - add **Lora OFT** support, thanks @antis0007 and @ai-casanova  
+  - **Upscalers**  
+    - **compile compile** option, thanks @disty0  
+    - **chaiNNer** add high quality models from [Helaman](https://openmodeldb.info/users/helaman)  
+  - redesigned **progress bar** with full details on current operation
+  - new option: *settings -> images -> keep incomplete*  
+    can be used to skip vae decode on aborted/skipped/interrupted image generations  
+  - remove external clone of items in `/repositories`  
 
 
 **Themes**

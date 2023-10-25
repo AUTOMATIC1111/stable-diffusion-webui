@@ -1155,7 +1155,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         return None
     orig_state = copy.deepcopy(shared.state)
     shared.state = shared_state.State()
-    shared.state.begin(f'load-{op}')
+    shared.state.begin(f'load')
     if load_dict:
         shared.log.debug(f'Model dict: existing={sd_model is not None} target={checkpoint_info.filename} info={info}')
     else:

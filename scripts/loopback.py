@@ -90,7 +90,7 @@ class Script(scripts.Script):
                     elif append_interrogation == "DeepBooru":
                         p.prompt += deepbooru.model.tag(p.init_images[0])
 
-                state.job = f"Iteration {i + 1}/{loops}, batch {n + 1}/{batch_count}"
+                state.job = f"loopback iteration {i+1}/{loops} batch {n+1}/{batch_count}"
 
                 processed = processing.process_images(p)
 
