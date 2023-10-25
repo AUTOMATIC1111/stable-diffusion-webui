@@ -70,7 +70,11 @@
           "enable_bias_splitgelu": false,
           "enable_packed_qkv": true,
           "enable_packed_kv": true,
-          "enable_bias_add": false
+          "enable_bias_add": false,
+          "group_norm_channels_last": false,
+          "force_fp16_inputs": {
+            "GroupNorm": [0, 1, 2]
+          }
         },
         "force_fp32_ops": ["RandomNormalLike"]
       }
