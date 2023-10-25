@@ -65,7 +65,3 @@ Pillow==9.5.0
 timm==0.9.7
 pydantic==1.10.13
 typing-extensions==4.8.0
-
-torch==1.13.1
-torchvision==0.14.1
-torch-directml==0.1.13.1.dev230413

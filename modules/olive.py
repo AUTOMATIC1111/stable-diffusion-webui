@@ -4,6 +4,7 @@ import torch
 import shutil
 import diffusers
 import numpy as np
+import onnxruntime as ort
 from typing import Union, Optional, Callable, List
 from transformers.models.clip.modeling_clip import CLIPTextModel, CLIPTextModelWithProjection
 from installer import log, args
@@ -13,14 +14,23 @@ from modules.sd_models import CheckpointInfo
 
 submodels = ("text_encoder", "unet", "vae_encoder", "vae_decoder",)
 
-execution_provider = "CUDAExecutionProvider"
+available_execution_providers = ort.get_available_providers()
+execution_provider = "CUDAExecutionProvider" if "CUDAExecutionProvider" in available_execution_providers else "CPUExecutionProvider"
+execution_provider_options = {
+    "device_id": int(cmd_opts.device_id or 0),
+}
 if args.use_directml:
     execution_provider = "DmlExecutionProvider"
 elif args.use_rocm:
-    execution_provider = "ROCmExecutionProvider"
-provider = (execution_provider, {
-    "device_id": int(cmd_opts.device_id or 0),
-})
+    if "ROCMExecutionProvider" in available_execution_providers:
+        execution_provider = "ROCMExecutionProvider"
+        execution_provider_options["tunable_op_enable"] = 1
+        execution_provider_options["tunable_op_tuning_enable"] = 1
+    else:
+        log.warning("Currently, there's no pypi release for onnxruntime-rocm. Please download and install .whl file from https://download.onnxruntime.ai/ The inference will be fall back to CPU.")
+elif args.use_ipex or args.use_openvino:
+    execution_provider = "OpenVINOExecutionProvider"
+provider = (execution_provider, execution_provider_options,)
 
 class OnnxRuntimeModel(diffusers.OnnxRuntimeModel):
     config = {}
@@ -37,6 +47,12 @@ class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline):
     sd_model_hash: str
     sd_checkpoint_info: CheckpointInfo
     sd_model_checkpoint: str
+
+    @staticmethod
+    def from_pretrained(*args, **kwargs):
+        if "provider" not in kwargs:
+            kwargs["provider"] = provider
+        return diffusers.OnnxStableDiffusionPipeline.from_pretrained(*args, **kwargs)
 
     def apply(self, dummy_pipeline):
         self.sd_model_hash = dummy_pipeline.sd_model_hash
@@ -229,7 +245,9 @@ class OlivePipeline(diffusers.DiffusionPipeline):
         out_dir = os.path.join(opts.olive_cached_models_path, f"{self.original_filename}-{width}w-{height}h")
         if os.path.isdir(out_dir):
             del self.unoptimized
-            return OnnxStableDiffusionPipeline.from_pretrained(out_dir, provider=provider).apply(self)
+            return OnnxStableDiffusionPipeline.from_pretrained(
+                out_dir,
+            ).apply(self)
 
         try:
             if opts.olive_cache_optimized:
@@ -279,7 +297,7 @@ class OlivePipeline(diffusers.DiffusionPipeline):
             del self.unoptimized
             for submodel in submodels:
                 kwargs[submodel] = diffusers.OnnxRuntimeModel.from_pretrained(
-                    os.path.dirname(optimized_model_paths[submodel]), provider=provider,
+                    os.path.dirname(optimized_model_paths[submodel]),
                 )
 
             pipeline = OnnxStableDiffusionPipeline(
