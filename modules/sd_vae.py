@@ -134,10 +134,12 @@ def is_automatic():
 
 def resolve_vae_from_setting() -> VaeResolution:
     if shared.opts.sd_vae == "None":
+        print("vae none")
         return VaeResolution()
 
     vae_from_options = vae_dict.get(shared.opts.sd_vae, None)
     if vae_from_options is not None:
+        print(f"specified in settings:{vae_from_options}")
         return VaeResolution(vae_from_options, 'specified in settings')
 
     if not is_automatic():
@@ -263,6 +265,7 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
     else:
         vae_source = "from function argument"
 
+    print("vae file:", vae_file)
     if loaded_vae_file == vae_file:
         return
 
