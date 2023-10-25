@@ -77,7 +77,13 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 yield item
 
     def allowed_directories_for_previews(self):
-        return [shared.cmd_opts.lora_dir, shared.cmd_opts.lyco_dir_backcompat]
+        user_lora_dir = os.path.join(os.path.dirname(os.path.dirname(shared.cmd_opts.lora_dir)), "user-models", 'Lora')
+        user_lycoris_dir = os.path.join(os.path.dirname(os.path.dirname(shared.cmd_opts.lora_dir)), "user-models",
+                                        'Lycoris')
+        return [shared.cmd_opts.lora_dir,
+                shared.cmd_opts.lyco_dir_backcompat,
+                user_lora_dir,
+                user_lycoris_dir]
 
     def create_user_metadata_editor(self, ui, tabname):
         return LoraUserMetadataEditor(ui, tabname, self)

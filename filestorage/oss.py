@@ -55,7 +55,7 @@ class OssFileStorage(FileStorage):
             if os.path.isfile(remoting_path):
                 return remoting_path
             try:
-                key = remoting_path
+                key = self.get_keyname(remoting_path, self.bucket_name)
                 # bucket, key = self.extract_buack_key_from_path(remoting_path)
                 self.logger.info(f"download {key} from oss to {local_path}")
                 tmp_file = os.path.join(self.tmp_dir, os.path.basename(local_path))
@@ -78,7 +78,7 @@ class OssFileStorage(FileStorage):
         if not os.path.isfile(local_path):
             raise OSError(f'cannot found file:{local_path}')
         # bucket, key = self.extract_buack_key_from_path(remoting_path)
-        key = remoting_path
+        key = self.get_keyname(remoting_path, self.bucket_name)
         self.logger.info(f"upload file:{remoting_path}")
         # bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
         # 分片上传
@@ -93,7 +93,7 @@ class OssFileStorage(FileStorage):
 
     def upload_content(self, remoting_path, content) -> str:
         # bucket, key = self.extract_buack_key_from_path(remoting_path)
-        key = remoting_path
+        key = self.get_keyname(remoting_path, self.bucket_name)
         self.logger.info(f"upload file:{remoting_path}")
         # bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
         # 分片上传

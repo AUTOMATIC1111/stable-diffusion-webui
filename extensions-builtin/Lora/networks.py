@@ -503,9 +503,13 @@ def list_available_networks():
 
     candidates = list(shared.walk_files(shared.cmd_opts.lora_dir, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
     candidates += list(shared.walk_files(shared.cmd_opts.lyco_dir_backcompat, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
+
     user_lora_dir = os.path.join(os.path.dirname(os.path.dirname(shared.cmd_opts.lora_dir)), "user-models", 'Lora')
     if os.path.isdir(user_lora_dir):
         candidates += list(shared.walk_files(user_lora_dir, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
+    user_lycoris_dir = os.path.join(os.path.dirname(os.path.dirname(shared.cmd_opts.lora_dir)), "user-models", 'Lycoris')
+    if os.path.isdir(user_lora_dir):
+        candidates += list(shared.walk_files(user_lycoris_dir, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
 
     for filename in candidates:
         if os.path.isdir(filename):
