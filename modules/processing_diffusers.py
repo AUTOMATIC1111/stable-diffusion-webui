@@ -181,16 +181,17 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     def task_specific_kwargs(model):
         task_args = {}
-        if sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE:
+        is_img2img_model = bool("Zero123" in shared.sd_model.__class__.__name__)
+        if sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE and not is_img2img_model:
             p.ops.append('txt2img')
             task_args = {"height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8)}
-        elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE and len(getattr(p, 'init_images' ,[])) > 0:
+        elif (sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE or is_img2img_model) and len(getattr(p, 'init_images' ,[])) > 0:
             p.ops.append('img2img')
             task_args = {"image": p.init_images, "strength": p.denoising_strength}
         elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INSTRUCT and len(getattr(p, 'init_images' ,[])) > 0:
             p.ops.append('instruct')
             task_args = {"height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8), "image": p.init_images, "strength": p.denoising_strength}
-        elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INPAINTING and len(getattr(p, 'init_images' ,[])) > 0:
+        elif (sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INPAINTING or is_img2img_model) and len(getattr(p, 'init_images' ,[])) > 0:
             p.ops.append('inpaint')
             if getattr(p, 'mask', None) is None:
                 p.mask = TF.to_pil_image(torch.ones_like(TF.to_tensor(p.init_images[0]))).convert("L")
