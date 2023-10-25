@@ -16,20 +16,21 @@ submodels = ("text_encoder", "unet", "vae_encoder", "vae_decoder",)
 
 available_execution_providers = ort.get_available_providers()
 execution_provider = "CUDAExecutionProvider" if "CUDAExecutionProvider" in available_execution_providers else "CPUExecutionProvider"
-execution_provider_options = {
-    "device_id": int(cmd_opts.device_id or 0),
-}
+execution_provider_options = {}
 if args.use_directml:
     execution_provider = "DmlExecutionProvider"
+    execution_provider_options["device_id"] = int(cmd_opts.device_id or 0)
 elif args.use_rocm:
     if "ROCMExecutionProvider" in available_execution_providers:
         execution_provider = "ROCMExecutionProvider"
+        execution_provider_options["device_id"] = int(cmd_opts.device_id or 0)
         execution_provider_options["tunable_op_enable"] = 1
         execution_provider_options["tunable_op_tuning_enable"] = 1
     else:
         log.warning("Currently, there's no pypi release for onnxruntime-rocm. Please download and install .whl file from https://download.onnxruntime.ai/ The inference will be fall back to CPU.")
 elif args.use_ipex or args.use_openvino:
     execution_provider = "OpenVINOExecutionProvider"
+    execution_provider_options["device_type"] = "CPU" if any(openvino_cpu in cpu_module.lower() for cpu_module in cmd_opts.use_cpu for openvino_cpu in ["openvino", "all"]) else "GPU" + "_" + opts.cuda_dtype
 provider = (execution_provider, execution_provider_options,)
 
 class OnnxRuntimeModel(diffusers.OnnxRuntimeModel):
