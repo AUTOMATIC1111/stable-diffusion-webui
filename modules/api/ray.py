@@ -39,7 +39,7 @@ if __name__ == "__main__":
             dashboard_port=int(os.environ.get("RAY_DASHBOARD_PORT", 8265))
             )
     elif "RAY_HEAD_ADDRESS" in os.environ:
-        ray.init(os.environ.get("RAY_HEAD_ADDRESS", ""))
+        ray.init(address=os.environ.get("RAY_HEAD_ADDRESS", ""))
     elif "RAY_SERVE_ONLY" in os.environ:
         ray_only()
     else:
