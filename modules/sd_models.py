@@ -392,7 +392,9 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         devices.dtype_unet = torch.float16
         timer.record("apply half()")
 
-    if shared.cmd_opts.opt_unet_fp8_storage:
+    if devices.get_optimal_device_name() == "mps":
+        enable_fp8 = False
+    elif shared.cmd_opts.opt_unet_fp8_storage:
         enable_fp8 = True
     elif model.is_sdxl and shared.cmd_opts.opt_unet_fp8_storage_xl:
         enable_fp8 = True
