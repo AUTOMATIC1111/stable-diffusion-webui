@@ -11,14 +11,6 @@ import os
 #ray.init("ray://localhost:10001")
 
 
-if "RAY_DOCKER" in os.environ:
-    ray.init(
-        dashboard_host=os.environ.get("RAY_DASHBOARD_HOST", "0.0.0.0"),
-        dashboard_port=int(os.environ.get("RAY_DASHBOARD_PORT", 8265))
-        )
-else:
-    ray.init()
-
 
 def ray_only():
     serve.shutdown()
@@ -37,3 +29,18 @@ def ray_only():
     print("Done setting up replicas! Now accepting requests...")
     while True:
         time.sleep(1000)
+
+
+if __name__ == "__main__":
+
+    if "RAY_DOCKER" in os.environ:
+        ray.init(
+            dashboard_host=os.environ.get("RAY_DASHBOARD_HOST", "0.0.0.0"),
+            dashboard_port=int(os.environ.get("RAY_DASHBOARD_PORT", 8265))
+            )
+    elif "RAY_HEAD_ADDRESS" in os.environ:
+        ray.init(os.environ.get("RAY_HEAD_ADDRESS", ""))
+    elif "RAY_SERVE_ONLY" in os.environ:
+        ray_only()
+    else:
+        ray.init()
