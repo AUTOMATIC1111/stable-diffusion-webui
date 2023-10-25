@@ -29,8 +29,12 @@ elif args.use_rocm:
     else:
         log.warning("Currently, there's no pypi release for onnxruntime-rocm. Please download and install .whl file from https://download.onnxruntime.ai/ The inference will be fall back to CPU.")
 elif args.use_ipex or args.use_openvino:
+    from modules.intel.openvino import get_device as get_raw_openvino_device
     execution_provider = "OpenVINOExecutionProvider"
-    execution_provider_options["device_type"] = "CPU" if any(openvino_cpu in cpu_module.lower() for cpu_module in cmd_opts.use_cpu for openvino_cpu in ["openvino", "all"]) else "GPU" + "_" + opts.cuda_dtype
+    raw_openvino_device = get_raw_openvino_device()
+    if opts.openvino_dtype != "Default" and not opts.openvino_hetero_gpu:
+        raw_openvino_device = f"{raw_openvino_device}_{opts.openvino_dtype}"
+    execution_provider_options["device_type"] = raw_openvino_device
 provider = (execution_provider, execution_provider_options,)
 
 class OnnxRuntimeModel(diffusers.OnnxRuntimeModel):
