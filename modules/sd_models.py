@@ -860,14 +860,14 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 sd_model.model_type = sd_model.__class__.__name__
             except Exception as e:
                 err1 = e
-                shared.log.error(f'AutoPipeline: {e}')
+                # shared.log.error(f'AutoPipeline: {e}')
             try: # try diffusion pipeline next second-best choice, works for most non-linked pipelines
                 if err1 is not None:
                     sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
                     sd_model.model_type = sd_model.__class__.__name__
             except Exception as e:
                 err2 = e
-                shared.log.error(f'DiffusionPipeline: {e}')
+                # shared.log.error(f'DiffusionPipeline: {e}')
             try: # try basic pipeline next just in case
                 if err2 is not None:
                     sd_model = diffusers.StableDiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)

@@ -13,11 +13,13 @@ Mostly service release with support for several new models and additional optimi
     download using built-in **Huggingface** downloader: `segmind/SSD-1B`  
   - new model type: [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)  
     near-instant generate in a as little as 3 steps!  
-    download using built-in **Huggingface** downloaded: `SimianLuo/LCM_Dreamshaper_v7`  
+    download using built-in **Huggingface** downloader: `SimianLuo/LCM_Dreamshaper_v7`  
   - support for **Custom pipelines**, thanks @disty0  
-    custom pipelines can be downloaded using built-in **Huggingface** downloaded  
+    download using built-in **Huggingface** downloader  
     think of them as plugins for diffusers not unlike original extensions that modify behavior of `ldm` backend  
     list of community pipelines: <https://github.com/huggingface/diffusers/tree/main/examples/community>  
+    and make sure to check our reference one: `Disty0/zero123plus-pipeline`  
+    which generates 4 output images with different camera positions: front, side, top, back!  
   - extend support for [Free-U](https://github.com/ChenyangSi/FreeU)  
     improve generations quality at no cost (other than finding params that work for you)  
 - **General**  
