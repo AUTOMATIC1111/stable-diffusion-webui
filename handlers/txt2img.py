@@ -115,7 +115,7 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
             hr_negative_prompt=hr_negative_prompt
         )
 
-        self.outpath_scripts = f"output/{user_id}/img2img/scripts/",
+        self.outpath_scripts = f"output/{user_id}/img2img/scripts/"
         self.scripts = modules.scripts.scripts_txt2img
         self.script_args = script_args
         self.script_name = select_script_name
