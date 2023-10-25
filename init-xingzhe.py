@@ -133,11 +133,11 @@ def install_worker_requirements():
 
 def main():
     print(f"HTTP_PROXY :{HTTP_PROXY}")
-    ##开启http代理
+    # 开启http代理
     # https_proxy(True)
     install()
     install_worker_requirements()
-    ##取消http代理
+    # 取消http代理
     # https_proxy(False)
     download_config()
 
