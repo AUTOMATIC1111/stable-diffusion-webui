@@ -63,6 +63,9 @@ Requirements: typing.Mapping[TaskType, typing.List[typing.Union[RequirementItem,
         'onnxruntime-gpu',
         'insightface==0.7.1',
 
+    ],
+    TaskType.ClothesRepair: [
+        'segment_anything'
     ]
 }
 

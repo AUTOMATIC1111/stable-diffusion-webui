@@ -24,7 +24,9 @@ sam_model_cache = OrderedDict()
 sd_sam_model_dir = os.path.join(models_path, "sam")
 # sam_model_dir = sd_sam_model_dir if os.path.exists(sd_sam_model_dir) else scripts_sam_model_dir
 sam_model_dir = sd_sam_model_dir
-sam_model_list = [f for f in os.listdir(sam_model_dir) if os.path.isfile(os.path.join(sam_model_dir, f)) and f.split('.')[-1] != 'txt']
+sam_model_list = [
+    f for f in os.listdir(sam_model_dir) if os.path.isfile(os.path.join(sam_model_dir, f)) and f.split('.')[-1] != 'txt'
+] if os.path.isdir(sd_sam_model_dir) else []
 sam_device = device
 
 
@@ -35,7 +37,6 @@ def show_masks(image_np, masks: np.ndarray, alpha=0.5):
         color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
         image[mask] = image[mask] * (1 - alpha) + 255 * color.reshape(1, 1, -1) * alpha
     return image.astype(np.uint8)
-
 
 
 def load_sam_model(sam_checkpoint):

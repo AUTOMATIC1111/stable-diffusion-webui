@@ -23,7 +23,7 @@ from modules.processing import Processed
 from modules.scripts import Script, ScriptRunner
 from modules.sd_models import reload_model_weights, CheckpointInfo
 from handlers.formatter import format_alwayson_script_args
-from tools.environment import  S3ImageBucket, S3Tmp, S3SDWEB
+from tools.environment import S3ImageBucket, S3Tmp, S3SDWEB
 from filestorage import FileStorageCls, get_local_path, batch_download
 from handlers.typex import ModelLocation, ModelType, ImageOutput, OutImageType, UserModelLocation
 
@@ -202,9 +202,9 @@ default_alwayson_scripts = {
 def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: StrMapMap, selectable_scripts: Script,
                      selectable_idx: int, request_script_args: typing.Sequence, script_runner: ScriptRunner,
                      enable_def_adetailer: bool = True,
-                     enable_refiner: bool = False,    # 是否启用XLRefiner
+                     enable_refiner: bool = False,  # 是否启用XLRefiner
                      refiner_switch_at: float = 0.8,  # XL 精描切换时机
-                     refiner_checkpoint: str = None   # XL refiner模型文件
+                     refiner_checkpoint: str = None  # XL refiner模型文件
                      ):
     script_args = [x for x in default_script_args]
 
@@ -362,12 +362,9 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, scrip
     return output
 
 
-
-
-
 # 针对衫数人物
 def save_processed_images_shanshu(proc: Processed, output_dir: str, grid_dir: str, script_dir: str,
-                          task_id: str, clean_upload_files: bool = True, inspect=False):
+                                  task_id: str, clean_upload_files: bool = True, inspect=False):
     if not output_dir:
         raise ValueError('output is empty')
 
