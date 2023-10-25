@@ -46,7 +46,6 @@ function setProgress(res) {
   const perc = res && (progress > 0) ? `${Math.round(100.0 * progress)}%` : '';
   let sec = res?.eta || 0;
   let eta = '';
-  console.log('HERE', res);
   if (res?.paused) eta = 'Paused';
   else if (res?.completed || (progress > 0.99)) eta = 'Finishing';
   else if (sec === 0) eta = 'Starting';

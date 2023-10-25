@@ -42,10 +42,9 @@ Service release addressing all zero-day issues reported so far...
     its a distilled model, this time 50% smaller and faster version of SD-XL!  
     test shows batch-size:4 with 1k images used less than 6.5GB of VRAM  
     download using built-in **Huggingface** downloader: `segmind/SSD-1B`  
-  - new model type: [OpenAI Consistency Models](https://github.com/openai/consistency_models)  
-    near-instant generate in a one or two steps!  
-    current list of models is very limited as they are not general purpose models, but that is expected to change  
-    download using built-in **Huggingface** downloaded: `openai/diffusers`  
+  - new model type: [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)  
+    near-instant generate in a as little as 3 steps!  
+    download using built-in **Huggingface** downloaded: `SimianLuo/LCM_Dreamshaper_v7`  
   - add support for **Custom pipelines**, thanks @disty0  
     custom pipelines can be downloaded using built-in **Huggingface** downloaded  
     think of them as plugins for diffusers not unlike original extensions that modify behavior of `ldm` backend  
@@ -60,6 +59,8 @@ Service release addressing all zero-day issues reported so far...
   - new option: *settings -> images -> keep incomplete*  
     can be used to skip vae decode on aborted/skipped/interrupted image generations  
   - remove external clone of items in `/repositories`  
+  - switch core font in default theme to **noto-sans**  
+    previously system-ui font was used as default, but it lead to too much variations between browsers and platforms  
 
 
 **Themes**

@@ -1,6 +1,7 @@
 /* generic html tags */
+@font-face { font-family: 'NotoSans'; font-display: swap; font-style: normal; font-weight: 100; src: local('NotoSans'), url('notosans-nerdfont-regular.ttf') }
 :root, .light, .dark {
-  --font: 'system-ui', 'ui-sans-serif', 'system-ui', "Roboto", sans-serif;
+  --font: 'NotoSans';
   --font-mono: 'ui-monospace', 'Consolas', monospace;
   --font-size: 16px;
   --left-column: 490px;
@@ -34,10 +35,13 @@
   --spacing-xxl: 6px;
   --line-sm: 1.2em;
   --line-md: 1.4em;
+  --text-sm: 12px;
+  --text-md: 13px;
+  --text-lg: 15px;
 }
 
-html { font-size: var(--font-size); }
-body, button, input, select, textarea { font-family: var(--font);}
+html { font-size: var(--font-size); font-family: var(--font); }
+body, button, input, select, textarea { font-family: var(--font); }
 button { font-size: 1.2rem; max-width: 400px; }
 img { background-color: var(--background-color); }
 input[type=range] { height: var(--line-sm) !important; appearance: none !important; margin-top: 0 !important; min-width: 160px !important;
@@ -246,9 +250,6 @@ textarea[rows="1"] { height: 33px !important; width: 99% !important; padding: 8p
   --radius-xxl: 0;
   --text-xxs: 9px;
   --text-xs: 10px;
-  --text-sm: 12px;
-  --text-md: 14px;
-  --text-lg: 16px;
   --text-xl: 22px;
   --text-xxl: 26px;
   --body-text-size: var(--text-md);
