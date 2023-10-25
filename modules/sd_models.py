@@ -416,6 +416,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
                     module.to(torch.float8_e4m3fn)
             model.model.diffusion_model = model.model.diffusion_model.to(torch.float8_e4m3fn)
             timer.record("apply fp8 unet")
+        model.alphas_cumprod = model.alphas_cumprod.to(torch.float32)
 
     devices.unet_needs_upcast = shared.cmd_opts.upcast_sampling and devices.dtype == torch.float16 and devices.dtype_unet == torch.float16
 
