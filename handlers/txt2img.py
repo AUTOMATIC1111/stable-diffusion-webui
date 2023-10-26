@@ -65,9 +65,9 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  embeddings: typing.Sequence[str] = None,  # embeddings，用户和系统全部mbending列表
                  lycoris_models: typing.Sequence[str] = None,  # lycoris，用户和系统全部lycoris列表
                  compress_pnginfo: bool = True,  # 使用GZIP压缩图片信息（默认开启）
-                 hr_sampler_name: str = None,  # hr sampler
-                 hr_prompt: str = None,
-                 hr_negative_prompt: str = None,
+                 hr_sampler_name: str = None,     # hr sampler
+                 hr_prompt: str = None,           # hr prompt
+                 hr_negative_prompt: str = None,  # hr negative prompt
                  disable_ad_face: bool = False,  # 关闭默认的ADetailer face
                  enable_refiner: bool = False,  # 是否启用XLRefiner
                  refiner_switch_at: float = 0.2,  # XL 精描切换时机
@@ -112,8 +112,8 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
             outpath_samples=f"output/{user_id}/txt2img/samples/",
             outpath_grids=f"output/{user_id}/txt2img/grids/",
             hr_sampler_name=hr_sampler_name,
-            hr_prompt=hr_prompt,
-            hr_negative_prompt=hr_negative_prompt
+            hr_prompt=hr_prompt or "",
+            hr_negative_prompt=hr_negative_prompt or ""
         )
 
         self.outpath_scripts = f"output/{user_id}/img2img/scripts/"
