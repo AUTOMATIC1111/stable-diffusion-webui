@@ -4,10 +4,10 @@ import torch
 
 from modules import paths, sd_disable_initialization, devices
 
-sd_repo_configs_path = os.path.join(paths.paths['Stable Diffusion'], "configs", "stable-diffusion")
+sd_repo_configs_path = 'configs'
 config_default = paths.sd_default_config
-config_sd2 = os.path.join(sd_repo_configs_path, "v2-inference.yaml")
-config_sd2v = os.path.join(sd_repo_configs_path, "v2-inference-v.yaml")
+config_sd2 = os.path.join(sd_repo_configs_path, "v2-inference-512-base.yaml")
+config_sd2v = os.path.join(sd_repo_configs_path, "v2-inference-768-v.yaml")
 config_sd2_inpainting = os.path.join(sd_repo_configs_path, "v2-inpainting-inference.yaml")
 config_depth_model = os.path.join(sd_repo_configs_path, "v2-midas-inference.yaml")
 config_unclip = os.path.join(sd_repo_configs_path, "v2-1-stable-unclip-l-inference.yaml")

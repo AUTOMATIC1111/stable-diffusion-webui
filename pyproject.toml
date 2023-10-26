@@ -34,7 +34,11 @@ exclude = [
   "extensions-builtin",
   "modules/lora",
   "modules/dml",
-  "modules/models/diffusion",
+  "modules/k-diffusion",
+  "repositories/ldm",
+  "repositories/taming",
+  "repositories/blip",
+  "repositories/codeformer",
 ]
 ignore = [
 	"A003", # Class attirbute shadowing builtin

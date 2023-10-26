@@ -17,22 +17,13 @@ extensions_builtin_dir = paths_internal.extensions_builtin_dir
 # data_path = cmd_opts_pre.data
 sys.path.insert(0, script_path)
 
-# search for directory of stable diffusion in following places
-sd_path = None
-possible_sd_paths = [os.path.join(script_path, 'repositories/stable-diffusion-stability-ai'), '.', os.path.dirname(script_path)]
-for possible_sd_path in possible_sd_paths:
-    if os.path.exists(os.path.join(possible_sd_path, 'ldm/models/diffusion/ddpm.py')):
-        sd_path = os.path.abspath(possible_sd_path)
-        break
-
-assert sd_path is not None, f"Couldn't find Stable Diffusion in any of: {possible_sd_paths}"
-
+sd_path = os.path.join(script_path, 'repositories')
 path_dirs = [
-    (sd_path, 'ldm', 'Stable Diffusion', []),
-    (os.path.join(sd_path, '../taming-transformers'), 'taming', 'Taming Transformers', []),
-    (os.path.join(sd_path, '../CodeFormer'), 'inference_codeformer.py', 'CodeFormer', []),
-    (os.path.join(sd_path, '../BLIP'), 'models/blip.py', 'BLIP', []),
-    (os.path.join(sd_path, '../k-diffusion'), 'k_diffusion/sampling.py', 'k_diffusion', ["atstart"]),
+    (sd_path, 'ldm', 'ldm', []),
+    (sd_path, 'taming', 'Taming Transformers', []),
+    (os.path.join(sd_path, 'blip'), 'models/blip.py', 'BLIP', []),
+    (os.path.join(sd_path, 'codeformer'), 'inference_codeformer.py', 'CodeFormer', []),
+    (os.path.join('modules', 'k-diffusion'), 'k_diffusion/sampling.py', 'k_diffusion', ["atstart"]),
 ]
 
 paths = {}
