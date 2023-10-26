@@ -848,8 +848,6 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             vae = sd_vae.load_vae_diffusers(checkpoint_info.path, vae_file, vae_source)
             if vae is not None:
                 diffusers_load_config["vae"] = vae
-            if 'LCM' in checkpoint_info.path:
-                diffusers_load_config['custom_pipeline'] = 'latent_consistency_txt2img'
 
         if os.path.isdir(checkpoint_info.path):
             err1 = None
@@ -860,21 +858,18 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 sd_model.model_type = sd_model.__class__.__name__
             except Exception as e:
                 err1 = e
-                # shared.log.error(f'AutoPipeline: {e}')
             try: # try diffusion pipeline next second-best choice, works for most non-linked pipelines
                 if err1 is not None:
                     sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
                     sd_model.model_type = sd_model.__class__.__name__
             except Exception as e:
                 err2 = e
-                # shared.log.error(f'DiffusionPipeline: {e}')
             try: # try basic pipeline next just in case
                 if err2 is not None:
                     sd_model = diffusers.StableDiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
                     sd_model.model_type = sd_model.__class__.__name__
             except Exception as e:
                 err3 = e # ignore last error
-                shared.log.error(f'StableDiffusionPipeline: {e}')
             if err3 is not None:
                 shared.log.error(f'Failed loading {op}: {checkpoint_info.path} auto={err1} diffusion={err2}')
                 return
@@ -1160,7 +1155,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         return None
     orig_state = copy.deepcopy(shared.state)
     shared.state = shared_state.State()
-    shared.state.begin('load')
+    shared.state.begin(f'load-{op}')
     if load_dict:
         shared.log.debug(f'Model dict: existing={sd_model is not None} target={checkpoint_info.filename} info={info}')
     else:

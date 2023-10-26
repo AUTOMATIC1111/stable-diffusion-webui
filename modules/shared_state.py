@@ -13,6 +13,7 @@ class State:
     job_no = 0
     job_count = 0
     total_jobs = 0
+    processing_has_refined_job_count = False
     job_timestamp = '0'
     sampling_step = 0
     sampling_steps = 0
@@ -71,6 +72,7 @@ class State:
         self.job_no = 0
         self.job_timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         self.paused = False
+        self.processing_has_refined_job_count = False
         self.sampling_step = 0
         self.skipped = False
         self.textinfo = None

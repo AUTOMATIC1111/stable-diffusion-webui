@@ -1,4 +1,3 @@
-@font-face { font-family: 'Roboto'; font-display: swap; font-style: normal; font-weight: 100; src: local('Roboto'), url('roboto.ttf') }
 :root { --left-column: 490px; }
 a { font-weight: bold; cursor: pointer; }
 h2 { margin-top: 1em !important; font-size: 1.4em !important; }
@@ -73,7 +72,7 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 #txt2img_footer, #img2img_footer { height: fit-content; display: none; }
 #txt2img_generate_box, #img2img_generate_box { gap: 0.5em; flex-wrap: wrap-reverse; height: fit-content; }
 #txt2img_actions_column, #img2img_actions_column { gap: 0.5em; height: fit-content; }
-#txt2img_generate_box > button, #img2img_generate_box > button, #txt2img_enqueue, #img2img_enqueue { min-height: 42px; max-height: 42px; line-height: 1em; }
+#txt2img_generate_box > button, #img2img_generate_box > button { min-height: 42px; max-height: 42px; }
 #txt2img_generate_line2, #img2img_generate_line2, #txt2img_tools, #img2img_tools { display: flex; }
 #txt2img_generate_line2 > button, #img2img_generate_line2 > button, #extras_generate_box > button, #txt2img_tools > button, #img2img_tools > button { height: 2em; line-height: 0; font-size: var(--input-text-size);
   min-width: unset; display: block !important; margin-left: 0.4em; margin-right: 0.4em; }
@@ -97,6 +96,7 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
   width: 22em; min-height: 1.3em; font-size: 0.8em; transition: opacity 0.2s ease-in; pointer-events: none; opacity: 0; z-index: 999; }
 .tooltip-show { opacity: 0.9; }
 .toolbutton-selected { background: var(--background-fill-primary) !important; }
+.jobStatus { position: fixed; bottom: 1em; right: 1em; background: var(--input-background-fill); padding: 0.4em; font-size: 0.8em; color: var(--body-text-color-subdued); }
 
 /* settings */
 #si-sparkline-memo, #si-sparkline-load { background-color: #111; }
