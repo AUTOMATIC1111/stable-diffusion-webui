@@ -1,5 +1,6 @@
 import os
 import gradio as gr
+import glob
 
 from modules import localization, shared, scripts
 from modules.paths import script_path, data_path
@@ -29,6 +30,14 @@ def javascript_html():
 
     if shared.cmd_opts.theme:
         head += f'<script type="text/javascript">set_theme(\"{shared.cmd_opts.theme}\");</script>\n'
+
+    if os.path.exists(os.path.join(data_path, "javascript/extensions")):
+        extensionScripts = glob.glob(os.path.join(data_path, "javascript/extensions", "*.js"))
+        print(f"Found {len(extensionScripts)} javascript extensions...")
+        if len(extensionScripts) > 0:
+            for script in extensionScripts:
+                print(f"Loaded {os.path.basename(script)}")
+                head += f'<script type="text/javascript" src="{webpath(script)}"></script>\n'
 
     return head
 
