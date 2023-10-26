@@ -14,6 +14,7 @@
   width: 22em; min-height: 1.3em; font-size: 0.8em; transition: opacity 0.2s ease-in; pointer-events: none; opacity: 0; z-index: 999; }
 .tooltip-show { opacity: 0.9; }
 .toolbutton-selected { background: var(--background-fill-primary) !important; }
+.jobStatus { position: fixed; bottom: 1em; right: 1em; background: var(--input-background-fill); padding: 0.4em; font-size: 0.8em; color: var(--body-text-color-subdued); }
 
 /* live preview */
 .progressDiv{ position: relative; height: 20px; background: #b4c0cc; margin-bottom: -3px; }
@@ -93,7 +94,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-network-cards { display: flex; flex-wrap: wrap; overflow-y: auto; overflow-x: hidden; align-content: flex-start; width: -moz-available; width: -webkit-fill-available; }
 .extra-network-cards .card { height: fit-content; margin: 0 0 0.5em 0.5em; position: relative; scroll-snap-align: start; scroll-margin-top: 0; }
 .extra-network-cards .card .overlay { position: absolute; bottom: 0; padding: 0.2em; z-index: 10; width: 100%; background: none; }
-.extra-network-cards .card .overlay .name { text-shadow: 1px 1px black; color: white; overflow-wrap: break-word; }
+.extra-network-cards .card .overlay .name { font-size: 1.1em; font-weight: bold; text-shadow: 1px 1px black; color: white; overflow-wrap: break-word; }
 .extra-network-cards .card .preview { box-shadow: var(--button-shadow); min-height: 30px; }
 .extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
 .extra-network-cards .card:hover .preview { box-shadow: none; filter: grayscale(100%); }

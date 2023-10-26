@@ -40,6 +40,7 @@ def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args)
         btcrept = p.batch_size
         shared.log.info(f"Process batch: inputs={len(image_files)} outputs={p.n_iter * p.batch_size} per input")
     for i in range(0, len(image_files), window_size):
+        shared.state.job = f"{i+1} to {min(i+window_size, len(image_files))} out of {len(image_files)}"
         if shared.state.skipped:
             shared.state.skipped = False
         if shared.state.interrupted:

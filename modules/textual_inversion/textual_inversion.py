@@ -425,7 +425,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
         log_directory = f"{os.path.join(shared.cmd_opts.data_dir, 'train/log/embeddings')}"
     template_file = template_file.path
 
-    shared.state.job = "train"
+    shared.state.job = "train-embedding"
     shared.state.textinfo = "Initializing textual inversion training..."
     shared.state.job_count = steps
 
