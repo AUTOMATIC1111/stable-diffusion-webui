@@ -28,6 +28,8 @@ class State:
     server_start = None
     _server_command_signal = threading.Event()
     _server_command: Optional[str] = None
+    # 设置全局状态回调
+    current_latent_changed_callback = None
 
     def __init__(self):
         self.server_start = time.time()
@@ -124,7 +126,7 @@ class State:
         log.info("Ending job %s (%.2f seconds)", self.job, duration)
         self.job = ""
         self.job_count = 0
-
+        self.current_latent_changed_callback = None
         devices.torch_gc()
 
     def set_current_image(self):
