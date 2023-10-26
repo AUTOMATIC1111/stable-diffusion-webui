@@ -66,15 +66,20 @@ def progressapi(req: ProgressRequest):
     paused = shared.state.paused
     if not active:
         return InternalProgressResponse(job=shared.state.job, active=active, queued=queued, paused=paused, completed=completed, id_live_preview=-1, textinfo="Queued..." if queued else "Waiting...")
-    progress = 0
-    if shared.state.job_count > 0:
-        progress += shared.state.job_no / shared.state.job_count
-    if shared.state.sampling_steps > 0 and shared.state.job_count > 0:
-        progress += 1 / (shared.state.job_count / 2 if shared.state.processing_has_refined_job_count else 1) * shared.state.sampling_step / shared.state.sampling_steps
-    progress = min(progress, 1)
+    if shared.state.job_no > shared.state.job_count:
+        shared.state.job_count = shared.state.job_no
+    batch_x = max(shared.state.job_no, 0)
+    batch_y = max(shared.state.job_count, 1)
+    step_x = max(shared.state.sampling_step, 0)
+    step_y = max(shared.state.sampling_steps, 1)
+    current = step_y * batch_x + step_x
+    total = step_y * batch_y
+    progress = min(1, current / total if total > 0 else 0)
+
     elapsed_since_start = time.time() - shared.state.time_start
     predicted_duration = elapsed_since_start / progress if progress > 0 else None
     eta = predicted_duration - elapsed_since_start if predicted_duration is not None else None
+
     id_live_preview = req.id_live_preview
     live_preview = None
     shared.state.set_current_image()
@@ -83,4 +88,6 @@ def progressapi(req: ProgressRequest):
         shared.state.current_image.save(buffered, format='jpeg')
         live_preview = f'data:image/jpeg;base64,{base64.b64encode(buffered.getvalue()).decode("ascii")}'
         id_live_preview = shared.state.id_live_preview
-    return InternalProgressResponse(job=shared.state.job, active=active, queued=queued, paused=paused, completed=completed, progress=progress, eta=eta, live_preview=live_preview, id_live_preview=id_live_preview, textinfo=shared.state.textinfo)
+
+    res = InternalProgressResponse(job=shared.state.job, active=active, queued=queued, paused=paused, completed=completed, progress=progress, eta=eta, live_preview=live_preview, id_live_preview=id_live_preview, textinfo=shared.state.textinfo)
+    return res

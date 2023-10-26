@@ -135,9 +135,9 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
 
     def get_font(fontsize):
         try:
-            return ImageFont.truetype(shared.opts.font or 'html/roboto.ttf', fontsize)
+            return ImageFont.truetype(shared.opts.font or 'javascript/roboto.ttf', fontsize)
         except Exception:
-            return ImageFont.truetype('html/roboto.ttf', fontsize)
+            return ImageFont.truetype('javascript/roboto.ttf', fontsize)
 
     def draw_texts(drawing: ImageDraw, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
         for line in lines:

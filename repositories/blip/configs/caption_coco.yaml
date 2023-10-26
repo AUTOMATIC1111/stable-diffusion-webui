@@ -1,0 +1,33 @@
+image_root: '/export/share/datasets/vision/coco/images/'
+ann_root: 'annotation'
+coco_gt_root: 'annotation/coco_gt'
+
+# set pretrained as a file path or an url
+pretrained: 'https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_caption_capfilt_large.pth'
+
+# size of vit model; base or large
+vit: 'base'
+vit_grad_ckpt: False
+vit_ckpt_layer: 0
+batch_size: 32
+init_lr: 1e-5
+
+# vit: 'large'
+# vit_grad_ckpt: True
+# vit_ckpt_layer: 5
+# batch_size: 16
+# init_lr: 2e-6
+
+image_size: 384
+
+# generation configs
+max_length: 20  
+min_length: 5
+num_beams: 3
+prompt: 'a picture of '
+
+# optimizer
+weight_decay: 0.05
+min_lr: 0
+max_epoch: 5
+

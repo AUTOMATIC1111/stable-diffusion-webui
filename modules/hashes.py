@@ -69,7 +69,7 @@ def sha256(filename, title, use_addnet_hash=False):
     if not os.path.isfile(filename):
         return None
     orig_state = copy.deepcopy(shared.state)
-    shared.state.begin("hashing")
+    shared.state.begin("hash")
     if use_addnet_hash:
         if progress_ok:
             try:

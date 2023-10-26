@@ -157,7 +157,7 @@ def initialize():
 
 def load_model():
     if opts.sd_checkpoint_autoload:
-        shared.state.begin('load model')
+        shared.state.begin('load')
         thread_model = Thread(target=lambda: shared.sd_model)
         thread_model.start()
         thread_refiner = Thread(target=lambda: shared.sd_refiner)

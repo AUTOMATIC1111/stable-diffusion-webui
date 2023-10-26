@@ -1,0 +1,83 @@
+model:
+  base_learning_rate: 1.0e-04
+  target: ldm.models.diffusion.ddpm.ImageEmbeddingConditionedLatentDiffusion
+  params:
+    embedding_dropout: 0.25
+    parameterization: "v"
+    linear_start: 0.00085
+    linear_end: 0.0120
+    log_every_t: 200
+    timesteps: 1000
+    first_stage_key: "jpg"
+    cond_stage_key: "txt"
+    image_size: 96
+    channels: 4
+    cond_stage_trainable: false
+    conditioning_key: crossattn-adm
+    scale_factor: 0.18215
+    monitor: val/loss_simple_ema
+    use_ema: False
+
+    embedder_config:
+      target: ldm.modules.encoders.modules.ClipImageEmbedder
+      params:
+        model: "ViT-L/14"
+
+    noise_aug_config:
+      target: ldm.modules.encoders.modules.CLIPEmbeddingNoiseAugmentation
+      params:
+        clip_stats_path: "checkpoints/karlo_models/ViT-L-14_stats.th"
+        timestep_dim: 768
+        noise_schedule_config:
+          timesteps: 1000
+          beta_schedule: squaredcos_cap_v2
+
+    unet_config:
+      target: ldm.modules.diffusionmodules.openaimodel.UNetModel
+      params:
+        num_classes: "sequential"
+        adm_in_channels: 1536
+        use_checkpoint: True
+        image_size: 32 # unused
+        in_channels: 4
+        out_channels: 4
+        model_channels: 320
+        attention_resolutions: [ 4, 2, 1 ]
+        num_res_blocks: 2
+        channel_mult: [ 1, 2, 4, 4 ]
+        num_head_channels: 64 # need to fix for flash-attn
+        use_spatial_transformer: True
+        use_linear_in_transformer: True
+        transformer_depth: 1
+        context_dim: 1024
+        legacy: False
+
+    first_stage_config:
+      target: ldm.models.autoencoder.AutoencoderKL
+      params:
+        embed_dim: 4
+        monitor: val/rec_loss
+        ddconfig:
+          attn_type: "vanilla-xformers"
+          double_z: true
+          z_channels: 4
+          resolution: 256
+          in_channels: 3
+          out_ch: 3
+          ch: 128
+          ch_mult:
+            - 1
+            - 2
+            - 4
+            - 4
+          num_res_blocks: 2
+          attn_resolutions: [ ]
+          dropout: 0.0
+        lossconfig:
+          target: torch.nn.Identity
+
+    cond_stage_config:
+      target: ldm.modules.encoders.modules.FrozenOpenCLIPEmbedder
+      params:
+        freeze: True
+        layer: "penultimate"
