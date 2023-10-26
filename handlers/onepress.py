@@ -404,7 +404,6 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         super(OnePressTaskHandler, self).__init__()
         self.task_type = TaskType.OnePress
 
-
     def _exec(self, task: Task) -> typing.Iterable[TaskProgress]:
         # 根据任务的不同类型：执行不同的任务
         if task.minor_type == OnePressTaskType.Conversion:
@@ -417,11 +416,10 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         denoising_strength = 0.5
         cfg_scale = 7
 
-        return StableDiffusionProcessingImg2Img(
+        p = StableDiffusionProcessingImg2Img(
             sd_model=shared.sd_model,
             outpath_samples=t.outpath_samples,
             outpath_grids=t.outpath_grids,
-            outpath_scripts=t.outpath_grids,
             prompt=t.prompt,
             negative_prompt=t.negative_prompt,
             seed=-1,
@@ -439,6 +437,10 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
             mask=None,
             denoising_strength=denoising_strength
         )
+
+        p.outpath_scripts = t.outpath_grids
+
+        return p
 
     def _canny_process_i2i(self, p, alwayson_scripts):
         fix_seed(p)
