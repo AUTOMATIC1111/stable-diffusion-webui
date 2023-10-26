@@ -49,6 +49,10 @@ Env_Worker_State_File = "WORKER_STATE_FILE_PATH"
 Env_GSS_Count_API = "GSS_COUNT_API"
 Env_HostName = "hostname"
 Env_WorkerRunTrainRatio = "RUN_TRAIN_RATIO"
+# 不开启定期清除未使用模型文件
+Env_DontCleanModels = "DONT_CLEAN_MODELS"
+# 谛听审核APP KEY
+Env_DtAppKey = "DT_APPKEY"
 
 cache = {}
 

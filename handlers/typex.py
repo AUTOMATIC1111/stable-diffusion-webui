@@ -17,7 +17,7 @@ from loguru import logger
 from tools.image import compress_image
 from PIL.PngImagePlugin import PngInfo
 from filestorage import find_storage_classes_with_env, signature_url
-from tools.environment import get_file_storage_system_env, Env_BucketKey, S3SDWEB, S3ImageBucket
+from tools.environment import get_file_storage_system_env, Env_BucketKey, S3SDWEB, S3ImageBucket, Env_DtAppKey
 from tools.processor import MultiThreadWorker
 
 
@@ -229,13 +229,15 @@ class ImageOutput:
         forbidden_keys = defaultdict(int)
         try:
             if urls:
+                dt_appkey = os.getenv(Env_DtAppKey, 'QX9HNRAYMFLBIG7T')
+
                 resp = requests.post(api, json={
-                    'token': 'QX9HNRAYMFLBIG7T',
+                    'token': dt_appkey,
                     'scenes': ["politics", "porn"],
                     'tasks': list(urls.values())
                 }, timeout=5)
 
-                logger.info(f"request {api}")
+                logger.info(f"request {api}, app key:{dt_appkey}")
                 if resp:
                     data = resp.json()
                     logger.debug(f"response {resp.text}")
@@ -275,7 +277,3 @@ class ImageOutput:
             low_key = os.path.join(dirname, f'low-{basename}')
             if low_key in forbidden_keys:
                 images['high'][i] = default_cover
-
-
-
-

@@ -20,6 +20,7 @@ from worker.task_recv import TaskReceiver, TaskTimeout
 from threading import Thread, Condition, Lock
 from tools.model_hist import CkptLoadRecorder
 from worker.k8s_health import write_healthy, system_exit
+from tools.environment import Env_DontCleanModels
 
 
 class TaskExecutor(Thread):
@@ -160,6 +161,9 @@ class TaskExecutor(Thread):
 
     def _clean_disk(self, expire_days=14):
         # 根据mtime
+        if os.getenv(Env_DontCleanModels, "0") == "1":
+            logger.info("dont clean models...")
+            return
         dirnames = ['models/Stable-diffusion', 'models/Lora', 'models/LyCORIS']
         now = time.time()
         interval = expire_days*24*3600
