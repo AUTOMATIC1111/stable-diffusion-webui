@@ -72,14 +72,6 @@ def apply_overlay(image, paste_loc, index, overlays):
     return image
 
 
-def create_binary_mask(image):
-    if image.mode == 'RGBA' and image.getextrema()[-1] != (255, 255):
-        image = image.split()[-1].convert("L").point(lambda x: 255 if x > 128 else 0)
-    else:
-        image = image.convert('L')
-    return image
-
-
 def txt2img_image_conditioning(sd_model, x, width, height):
     if sd_model.model.conditioning_key in {'hybrid', 'concat'}: # Inpainting models
         # The "masked-image" in this case will just be all zeros since the entire image is masked.
