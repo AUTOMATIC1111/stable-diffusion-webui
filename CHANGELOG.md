@@ -44,6 +44,7 @@ Mostly service release with support for several new models and additional optimi
   - fix diffusers samplers: dpm++ 2m, dpm++ 1s, deis
   - fix new style filename template
   - fix image name template using model name
+  - fix image name sequence
   - fix model path using relative path
   - fix `torch-rocm` and `tensorflow-rocm` version detection, thanks @xangelix
   - fix **chainner** upscalers color clipping
