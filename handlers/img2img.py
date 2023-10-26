@@ -445,7 +445,7 @@ class Img2ImgTaskHandler(TaskHandler):
             p = int(transferred * 100 / total)
             if xl_refiner_model_path:
                 p = p * 0.5
-            current_progress = int(progress.task_desc[:-1])
+            current_progress = int(float(progress.task_desc[:-1]))
             if p % 5 == 0 and p >= current_progress + 5:
                 progress.task_desc = f"{p}%"
                 self._set_task_status(progress)
@@ -460,7 +460,7 @@ class Img2ImgTaskHandler(TaskHandler):
             transferred, total = args[0], args[1]
             p = int(50 + transferred * 100 * 0.5 / total)
 
-            current_progress = int(progress.task_desc[:-1])
+            current_progress = int(float(progress.task_desc[:-1]))
             if p % 5 == 0 and p >= current_progress + 5:
                 progress.task_desc = f"{p}%"
                 self._set_task_status(progress)
