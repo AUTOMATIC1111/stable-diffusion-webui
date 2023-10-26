@@ -214,7 +214,10 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
 
     alwayson_scripts = alwayson_scripts or {}
 
-    if enable_refiner and os.path.isfile(refiner_checkpoint):
+    if enable_refiner:
+        if not os.path.isfile(refiner_checkpoint):
+            raise ValueError('refiner_checkpoint not found')
+
         alwayson_scripts.update({
             "Refiner": {'args': [
                 enable_refiner,

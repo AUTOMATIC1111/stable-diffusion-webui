@@ -256,7 +256,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             do_not_save_samples=False
         )
 
-        self.outpath_scripts = f"output/{user_id}/img2img/scripts/" 
+        self.outpath_scripts = f"output/{user_id}/img2img/scripts/"
         self.scripts = i2i_script_runner
         self.script_name = select_script_name
         self.base_model_path = base_model_path
@@ -434,7 +434,7 @@ class Img2ImgTaskHandler(TaskHandler):
         下载大模型，或者脚本中的模型列表
         '''
         progress = TaskProgress.new_prepare(task, f"0%")
-        xl_refiner_model_path = task.get('xl_refiner_model_path')
+        xl_refiner_model_path = task.get('refiner_checkpoint')
         # 脚本任务
         self._get_select_script_models(progress)
 
