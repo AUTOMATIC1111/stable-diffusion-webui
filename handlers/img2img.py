@@ -256,7 +256,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             do_not_save_samples=False
         )
 
-        self.outpath_scripts = f"output/{user_id}/img2img/scripts/",
+        self.outpath_scripts = f"output/{user_id}/img2img/scripts/" 
         self.scripts = i2i_script_runner
         self.script_name = select_script_name
         self.base_model_path = base_model_path
