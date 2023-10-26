@@ -220,10 +220,11 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
         # processing.py中 sd_models.get_closet_checkpoint_match(p.refiner_checkpoint)
         # 通过get_closet_checkpoint_match查找的模型，checkpoint_aliases需要提前注册（使用的文件名不含路径）
         # 而worker下面获取的basename作为hash, 因此refiner_checkpoint需要取basename
+        basename, _ = os.path.splitext(os.path.basename(refiner_checkpoint))
         alwayson_scripts.update({
             "Refiner": {'args': [
                 enable_refiner,
-                os.path.basename(refiner_checkpoint),
+                basename,
                 refiner_switch_at
             ]
             }
