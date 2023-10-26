@@ -204,7 +204,13 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
                      enable_def_adetailer: bool = True,
                      enable_refiner: bool = False,  # 是否启用XLRefiner
                      refiner_switch_at: float = 0.8,  # XL 精描切换时机
-                     refiner_checkpoint: str = None  # XL refiner模型文件
+                     refiner_checkpoint: str = None,  # XL refiner模型文件
+                     seed: int = -1,  # 随机种子
+                     seed_enable_extras: bool = False,  # 是否启用随机种子扩展
+                     subseed: int = -1,  # 差异随机种子
+                     subseed_strength: float = 0,  # 差异强度
+                     seed_resize_from_h: int = 0,  # 重置尺寸种子-高度
+                     seed_resize_from_w: int = 0  # 重置尺寸种子-宽度
                      ):
     script_args = [x for x in default_script_args]
 
@@ -213,6 +219,17 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
         script_args[0] = selectable_idx + 1
 
     alwayson_scripts = alwayson_scripts or {}
+    alwayson_scripts.update({
+        "Seed": {
+            'args': [
+                seed,
+                seed_enable_extras,
+                subseed,
+                subseed_strength,
+                seed_resize_from_h,
+                seed_resize_from_w]
+        }
+    })
 
     if enable_refiner:
         if not os.path.isfile(refiner_checkpoint):
@@ -227,7 +244,8 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
                 basename,
                 refiner_switch_at
             ]
-            }
+            },
+
         })
 
     if not getattr(cmd_opts, 'disable_tss_def_alwayson', False):

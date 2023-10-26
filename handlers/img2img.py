@@ -23,7 +23,7 @@ from modules.generation_parameters_copypaste import create_override_settings_dic
 from modules.img2img import process_batch
 from worker.task import TaskType, TaskProgress, Task, TaskStatus
 from modules.processing import StableDiffusionProcessingImg2Img, process_images, Processed, create_binary_mask
-from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, format_override_settings,\
+from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, format_override_settings, \
     load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path, batch_model_local_paths
 from handlers.extension.controlnet import exec_control_net_annotator
 from worker.dumper import dumper
@@ -218,44 +218,43 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         selectable_scripts, selectable_script_idx = get_selectable_script(i2i_script_runner, select_script_name)
         script_args = init_script_args(default_script_arg_img2img, alwayson_scripts, selectable_scripts,
                                        selectable_script_idx, select_script_args, i2i_script_runner,
-                                       not disable_ad_face, enable_refiner, refiner_switch_at, refiner_checkpoint)
+                                       not disable_ad_face, enable_refiner, refiner_switch_at, refiner_checkpoint,
+                                       seed, seed_enable_extras, subseed, subseed_strength, seed_resize_from_h,
+                                       seed_resize_from_w)
 
-        super(Img2ImgTask, self).__init__(
-            sd_model=shared.sd_model,
-            outpath_samples=f"output/{user_id}/img2img/samples/",
-            outpath_grids=f"output/{user_id}/img2img/grids/",
-            prompt=prompt,
-            negative_prompt=negative_prompt,
-            styles=prompt_styles,
-            seed=seed,
-            subseed=subseed,
-            subseed_strength=subseed_strength,
-            seed_resize_from_h=seed_resize_from_h,
-            seed_resize_from_w=seed_resize_from_w,
-            seed_enable_extras=seed_enable_extras,
-            sampler_name=sampler_name or 'Euler a',
-            batch_size=batch_size,
-            n_iter=n_iter,
-            steps=steps,
-            cfg_scale=cfg_scale,  # 7
-            width=width,
-            height=height,
-            restore_faces=restore_faces,
-            tiling=tiling,
-            init_images=[image],
-            mask=mask,
-            mask_blur=mask_blur,
-            inpainting_fill=inpainting_fill,
-            resize_mode=resize_mode,
-            denoising_strength=denoising_strength,
-            image_cfg_scale=image_cfg_scale,  # 1.5
-            inpaint_full_res=inpaint_full_res,  # 0
-            inpaint_full_res_padding=inpaint_full_res_padding,  # 32
-            inpainting_mask_invert=inpainting_mask_invert,  # 0
-            override_settings=override_settings,
-            do_not_save_samples=False
-        )
-
+        self.sd_model = shared.sd_model
+        self.outpath_samples = f"output/{user_id}/img2img/samples/"
+        self.outpath_grids = f"output/{user_id}/img2img/grids/"
+        self.prompt = prompt
+        self.negative_prompt = negative_prompt
+        self.styles = prompt_styles
+        self.seed = seed
+        self.subseed = subseed
+        self.subseed_strength = subseed_strength
+        self.seed_resize_from_h = seed_resize_from_h
+        self.seed_resize_from_w = seed_resize_from_w
+        self.seed_enable_extras = seed_enable_extras
+        self.sampler_name = sampler_name or 'Euler a'
+        self.batch_size = batch_size
+        self.n_iter = n_iter
+        self.steps = steps
+        self.cfg_scale = cfg_scale  # 7
+        self.width = width
+        self.height = height
+        self.restore_faces = restore_faces
+        self.tiling = tiling
+        self.init_images = [image]
+        self.mask = mask
+        self.mask_blur = mask_blur
+        self.inpainting_fill = inpainting_fill
+        self.resize_mode = resize_mode
+        self.denoising_strength = denoising_strength
+        self.image_cfg_scale = image_cfg_scale  # 1.5
+        self.inpaint_full_res = inpaint_full_res  # 0
+        self.inpaint_full_res_padding = inpaint_full_res_padding  # 32
+        self.inpainting_mask_invert = inpainting_mask_invert  # 0
+        self.override_settings = override_settings
+        self.do_not_save_samples = False
         self.outpath_scripts = f"output/{user_id}/img2img/scripts/"
         self.scripts = i2i_script_runner
         self.script_name = select_script_name
@@ -280,6 +279,8 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             self.script_args = script_args
         else:
             self.script_args = tuple(script_args)
+
+        super(Img2ImgTask, self).__post_init__()
 
     def close(self):
         super(Img2ImgTask, self).close()

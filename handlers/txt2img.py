@@ -65,8 +65,8 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  embeddings: typing.Sequence[str] = None,  # embeddings，用户和系统全部mbending列表
                  lycoris_models: typing.Sequence[str] = None,  # lycoris，用户和系统全部lycoris列表
                  compress_pnginfo: bool = True,  # 使用GZIP压缩图片信息（默认开启）
-                 hr_sampler_name: str = None,     # hr sampler
-                 hr_prompt: str = None,           # hr prompt
+                 hr_sampler_name: str = None,  # hr sampler
+                 hr_prompt: str = None,  # hr prompt
                  hr_negative_prompt: str = None,  # hr negative prompt
                  disable_ad_face: bool = False,  # 关闭默认的ADetailer face
                  enable_refiner: bool = False,  # 是否启用XLRefiner
@@ -80,43 +80,42 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
         selectable_scripts, selectable_script_idx = get_selectable_script(t2i_script_runner, select_script_name)
         script_args = init_script_args(default_script_arg_txt2img, alwayson_scripts, selectable_scripts,
                                        selectable_script_idx, select_script_args, t2i_script_runner,
-                                       not disable_ad_face, enable_refiner, refiner_switch_at, refiner_checkpoint)
+                                       not disable_ad_face, enable_refiner, refiner_switch_at, refiner_checkpoint,
+                                       seed, seed_enable_extras, subseed, subseed_strength, seed_resize_from_h,
+                                       seed_resize_from_w)
 
-        super(Txt2ImgTask, self).__init__(
-            sd_model=shared.sd_model,
-            prompt=prompt,
-            negative_prompt=negative_prompt,
-            seed=seed,
-            subseed=subseed,
-            subseed_strength=subseed_strength,
-            seed_resize_from_h=seed_resize_from_h,
-            seed_resize_from_w=seed_resize_from_w,
-            seed_enable_extras=seed_enable_extras,
-            sampler_name=sampler_name,
-            batch_size=batch_size,
-            n_iter=n_iter,
-            steps=steps,
-            cfg_scale=cfg_scale,
-            width=width,
-            height=height,
-            restore_faces=restore_faces,
-            tiling=tiling,
-            enable_hr=enable_hr,
-            denoising_strength=denoising_strength if enable_hr else None,
-            hr_scale=hr_scale,
-            hr_upscaler=hr_upscaler,
-            hr_second_pass_steps=hr_second_pass_steps,
-            hr_resize_x=hr_resize_x,
-            hr_resize_y=hr_resize_y,
-            override_settings=override_settings,
-            outpath_samples=f"output/{user_id}/txt2img/samples/",
-            outpath_grids=f"output/{user_id}/txt2img/grids/",
-            hr_sampler_name=hr_sampler_name,
-            hr_prompt=hr_prompt or "",
-            hr_negative_prompt=hr_negative_prompt or ""
-        )
-
+        self.sd_model = shared.sd_model
+        self.prompt = prompt
+        self.negative_prompt = negative_prompt
+        self.seed = seed
+        self.subseed = subseed
+        self.subseed_strength = subseed_strength
+        self.seed_resize_from_h = seed_resize_from_h
+        self.seed_resize_from_w = seed_resize_from_w
+        self.seed_enable_extras = seed_enable_extras
+        self.sampler_name = sampler_name
+        self.batch_size = batch_size
+        self.n_iter = n_iter
+        self.steps = steps
+        self.cfg_scale = cfg_scale
+        self.width = width
+        self.height = height
+        self.restore_faces = restore_faces
+        self.tiling = tiling
+        self.enable_hr = enable_hr
+        self.denoising_strength = denoising_strength if enable_hr else None
+        self.hr_scale = hr_scale
+        self.hr_upscaler = hr_upscaler
+        self.hr_second_pass_steps = hr_second_pass_steps
+        self.hr_resize_x = hr_resize_x
+        self.hr_resize_y = hr_resize_y
+        self.override_settings = override_settings
+        self.outpath_samples = f"output/{user_id}/txt2img/samples/"
+        self.outpath_grids = f"output/{user_id}/txt2img/grids/"
         self.outpath_scripts = f"output/{user_id}/img2img/scripts/"
+        self.hr_sampler_name = hr_sampler_name
+        self.hr_prompt = hr_prompt or ""
+        self.hr_negative_prompt = hr_negative_prompt or ""
         self.scripts = modules.scripts.scripts_txt2img
         self.script_args = script_args
         self.script_name = select_script_name
@@ -131,6 +130,8 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
         self.xl_refiner = enable_refiner
         self.refiner_switch_at = refiner_switch_at
         self.xl_refiner_model_path = refiner_checkpoint
+
+        super(Txt2ImgTask, self).__post_init__()
 
     def close(self):
         for obj in self.script_args:
