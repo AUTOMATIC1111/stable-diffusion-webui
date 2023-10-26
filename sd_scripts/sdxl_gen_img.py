@@ -1,51 +1,3 @@
-"""
-VGG(
-  (features): Sequential(
-    (0): Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    (1): ReLU(inplace=True)
-    (2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    (3): ReLU(inplace=True)
-    (4): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
-    (5): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    (6): ReLU(inplace=True)
-    (7): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    (8): ReLU(inplace=True)
-    (9): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
-    (10): Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    (11): ReLU(inplace=True)
-    (12): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    (13): ReLU(inplace=True)
-    (14): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    (15): ReLU(inplace=True)
-    (16): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
-    (17): Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    (18): ReLU(inplace=True)
-    (19): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    (20): ReLU(inplace=True)
-    (21): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    (22): ReLU(inplace=True)
-    (23): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
-    (24): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    (25): ReLU(inplace=True)
-    (26): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    (27): ReLU(inplace=True)
-    (28): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    (29): ReLU(inplace=True)
-    (30): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
-  )
-  (avgpool): AdaptiveAvgPool2d(output_size=(7, 7))
-  (classifier): Sequential(
-    (0): Linear(in_features=25088, out_features=4096, bias=True)
-    (1): ReLU(inplace=True)
-    (2): Dropout(p=0.5, inplace=False)
-    (3): Linear(in_features=4096, out_features=4096, bias=True)
-    (4): ReLU(inplace=True)
-    (5): Dropout(p=0.5, inplace=False)
-    (6): Linear(in_features=4096, out_features=1000, bias=True)
-  )
-)
-"""
-
 import itertools
 import json
 from typing import Any, List, NamedTuple, Optional, Tuple, Union, Callable
@@ -93,29 +45,21 @@ from diffusers import (
     StableDiffusionPipeline,
 )
 from einops import rearrange
-from torch import einsum
 from tqdm import tqdm
 from torchvision import transforms
-from transformers import CLIPTextModel, CLIPTokenizer, CLIPModel, CLIPTextConfig
+from transformers import CLIPTextModel, CLIPTokenizer, CLIPVisionModelWithProjection, CLIPImageProcessor
 import PIL
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 
-import sd_scripts.library.model_util as model_util
-import sd_scripts.library.train_util as train_util
-from sd_scripts.networks.lora import LoRANetwork
-import sd_scripts.tools.original_control_net as original_control_net
-from sd_scripts.tools.original_control_net import ControlNetInfo
-from sd_scripts.library.original_unet import UNet2DConditionModel
-from sd_scripts.library.original_unet import FlashAttentionFunction
-
-from sd_scripts.XTI_hijack import unet_forward_XTI, downblock_forward_XTI, upblock_forward_XTI
-
-# Tokenizer: checkpointから読み込むのではなくあらかじめ提供されているものを使う
-TOKENIZER_PATH = "openai/clip-vit-large-patch14"
-V2_STABLE_DIFFUSION_PATH = "stabilityai/stable-diffusion-2"  # ここからtokenizerだけ使う
-
-DEFAULT_TOKEN_LENGTH = 75
+import library.model_util as model_util
+import library.train_util as train_util
+import library.sdxl_model_util as sdxl_model_util
+import library.sdxl_train_util as sdxl_train_util
+from networks.lora import LoRANetwork
+from library.sdxl_original_unet import SdxlUNet2DConditionModel
+from library.original_unet import FlashAttentionFunction
+from networks.control_net_lllite import ControlNetLLLite
 
 # scheduler:
 SCHEDULER_LINEAR_START = 0.00085
@@ -127,21 +71,7 @@ SCHEDLER_SCHEDULE = "scaled_linear"
 LATENT_CHANNELS = 4
 DOWNSAMPLING_FACTOR = 8
 
-# CLIP_ID_L14_336 = "openai/clip-vit-large-patch14-336"
-
-# CLIP guided SD関連
-CLIP_MODEL_PATH = "laion/CLIP-ViT-B-32-laion2B-s34B-b79K"
-FEATURE_EXTRACTOR_SIZE = (224, 224)
-FEATURE_EXTRACTOR_IMAGE_MEAN = [0.48145466, 0.4578275, 0.40821073]
-FEATURE_EXTRACTOR_IMAGE_STD = [0.26862954, 0.26130258, 0.27577711]
-
-VGG16_IMAGE_MEAN = [0.485, 0.456, 0.406]
-VGG16_IMAGE_STD = [0.229, 0.224, 0.225]
-VGG16_INPUT_RESIZE_DIV = 4
-
-# CLIP特徴量の取得時にcutoutを使うか：使う場合にはソースを書き換えてください
-NUM_CUTOUTS = 4
-USE_CUTOUTS = False
+CLIP_VISION_MODEL = "laion/CLIP-ViT-bigG-14-laion2B-39B-b160k"
 
 # region モジュール入れ替え部
 """
@@ -174,7 +104,8 @@ def replace_vae_modules(vae: diffusers.models.AutoencoderKL, mem_eff_attn, xform
     if mem_eff_attn:
         replace_vae_attn_to_memory_efficient()
     elif xformers:
-        replace_vae_attn_to_xformers()
+        # replace_vae_attn_to_xformers() # 解像度によってxformersがエラーを出す？
+        vae.set_use_memory_efficient_attention_xformers(True)  # とりあえずこっちを使う
     elif sdpa:
         replace_vae_attn_to_sdpa()
 
@@ -353,49 +284,15 @@ def replace_vae_attn_to_sdpa():
 
 
 class PipelineLike:
-    r"""
-    Pipeline for text-to-image generation using Stable Diffusion without tokens length limit, and support parsing
-    weighting in prompt.
-    This model inherits from [`DiffusionPipeline`]. Check the superclass documentation for the generic methods the
-    library implements for all the pipelines (such as downloading or saving, running on a particular device, etc.)
-    Args:
-        vae ([`AutoencoderKL`]):
-            Variational Auto-Encoder (VAE) Model to encode and decode images to and from latent representations.
-        text_encoder ([`CLIPTextModel`]):
-            Frozen text-encoder. Stable Diffusion uses the text portion of
-            [CLIP](https://huggingface.co/docs/transformers/model_doc/clip#transformers.CLIPTextModel), specifically
-            the [clip-vit-large-patch14](https://huggingface.co/openai/clip-vit-large-patch14) variant.
-        tokenizer (`CLIPTokenizer`):
-            Tokenizer of class
-            [CLIPTokenizer](https://huggingface.co/docs/transformers/v4.21.0/en/model_doc/clip#transformers.CLIPTokenizer).
-        unet ([`UNet2DConditionModel`]): Conditional U-Net architecture to denoise the encoded image latents.
-        scheduler ([`SchedulerMixin`]):
-            A scheduler to be used in combination with `unet` to denoise the encoded image latents. Can be one of
-            [`DDIMScheduler`], [`LMSDiscreteScheduler`], or [`PNDMScheduler`].
-        safety_checker ([`StableDiffusionSafetyChecker`]):
-            Classification module that estimates whether generated images could be considered offensive or harmful.
-            Please, refer to the [model card](https://huggingface.co/CompVis/stable-diffusion-v1-4) for details.
-        feature_extractor ([`CLIPFeatureExtractor`]):
-            Model that extracts features from generated images to be used as inputs for the `safety_checker`.
-    """
-
     def __init__(
         self,
         device,
         vae: AutoencoderKL,
-        text_encoder: CLIPTextModel,
-        tokenizer: CLIPTokenizer,
-        unet: UNet2DConditionModel,
+        text_encoders: List[CLIPTextModel],
+        tokenizers: List[CLIPTokenizer],
+        unet: SdxlUNet2DConditionModel,
         scheduler: Union[DDIMScheduler, PNDMScheduler, LMSDiscreteScheduler],
         clip_skip: int,
-        clip_model: CLIPModel,
-        clip_guidance_scale: float,
-        clip_image_guidance_scale: float,
-        vgg16_model: torchvision.models.VGG,
-        vgg16_guidance_scale: float,
-        vgg16_layer_no: int,
-        # safety_checker: StableDiffusionSafetyChecker,
-        # feature_extractor: CLIPFeatureExtractor,
     ):
         super().__init__()
         self.device = device
@@ -429,131 +326,54 @@ class PipelineLike:
             scheduler._internal_dict = FrozenDict(new_config)
 
         self.vae = vae
-        self.text_encoder = text_encoder
-        self.tokenizer = tokenizer
-        self.unet = unet
+        self.text_encoders = text_encoders
+        self.tokenizers = tokenizers
+        self.unet: SdxlUNet2DConditionModel = unet
         self.scheduler = scheduler
         self.safety_checker = None
 
+        self.clip_vision_model: CLIPVisionModelWithProjection = None
+        self.clip_vision_processor: CLIPImageProcessor = None
+        self.clip_vision_strength = 0.0
+
         # Textual Inversion
-        self.token_replacements = {}
+        self.token_replacements_list = []
+        for _ in range(len(self.text_encoders)):
+            self.token_replacements_list.append({})
 
-        # XTI
-        self.token_replacements_XTI = {}
-
-        # CLIP guidance
-        self.clip_guidance_scale = clip_guidance_scale
-        self.clip_image_guidance_scale = clip_image_guidance_scale
-        self.clip_model = clip_model
-        self.normalize = transforms.Normalize(mean=FEATURE_EXTRACTOR_IMAGE_MEAN, std=FEATURE_EXTRACTOR_IMAGE_STD)
-        self.make_cutouts = MakeCutouts(FEATURE_EXTRACTOR_SIZE)
-
-        # VGG16 guidance
-        self.vgg16_guidance_scale = vgg16_guidance_scale
-        if self.vgg16_guidance_scale > 0.0:
-            return_layers = {f"{vgg16_layer_no}": "feat"}
-            self.vgg16_feat_model = torchvision.models._utils.IntermediateLayerGetter(
-                vgg16_model.features, return_layers=return_layers
-            )
-            self.vgg16_normalize = transforms.Normalize(mean=VGG16_IMAGE_MEAN, std=VGG16_IMAGE_STD)
-
-        # ControlNet
-        self.control_nets: List[ControlNetInfo] = []
+        # ControlNet # not supported yet
+        self.control_nets: List[ControlNetLLLite] = []
         self.control_net_enabled = True  # control_netsが空ならTrueでもFalseでもControlNetは動作しない
 
     # Textual Inversion
-    def add_token_replacement(self, target_token_id, rep_token_ids):
-        self.token_replacements[target_token_id] = rep_token_ids
+    def add_token_replacement(self, text_encoder_index, target_token_id, rep_token_ids):
+        self.token_replacements_list[text_encoder_index][target_token_id] = rep_token_ids
 
     def set_enable_control_net(self, en: bool):
         self.control_net_enabled = en
 
-    def replace_token(self, tokens, layer=None):
-        new_tokens = []
-        for token in tokens:
-            if token in self.token_replacements:
-                replacer_ = self.token_replacements[token]
-                if layer:
-                    replacer = []
-                for r in replacer_:
-                    if r in self.token_replacements_XTI:
-                        replacer.append(self.token_replacements_XTI[r][layer])
-                    else:
-                        replacer = replacer_
-                new_tokens.extend(replacer)
-            else:
-                new_tokens.append(token)
-        return new_tokens
+    def get_token_replacer(self, tokenizer):
+        tokenizer_index = self.tokenizers.index(tokenizer)
+        token_replacements = self.token_replacements_list[tokenizer_index]
 
-    def add_token_replacement_XTI(self, target_token_id, rep_token_ids):
-        self.token_replacements_XTI[target_token_id] = rep_token_ids
+        def replace_tokens(tokens):
+            # print("replace_tokens", tokens, "=>", token_replacements)
+            if isinstance(tokens, torch.Tensor):
+                tokens = tokens.tolist()
+
+            new_tokens = []
+            for token in tokens:
+                if token in token_replacements:
+                    replacement = token_replacements[token]
+                    new_tokens.extend(replacement)
+                else:
+                    new_tokens.append(token)
+            return new_tokens
+
+        return replace_tokens
 
     def set_control_nets(self, ctrl_nets):
         self.control_nets = ctrl_nets
-
-    # region xformersとか使う部分：独自に書き換えるので関係なし
-
-    def enable_xformers_memory_efficient_attention(self):
-        r"""
-        Enable memory efficient attention as implemented in xformers.
-        When this option is enabled, you should observe lower GPU memory usage and a potential speed up at inference
-        time. Speed up at training time is not guaranteed.
-        Warning: When Memory Efficient Attention and Sliced attention are both enabled, the Memory Efficient Attention
-        is used.
-        """
-        self.unet.set_use_memory_efficient_attention_xformers(True)
-
-    def disable_xformers_memory_efficient_attention(self):
-        r"""
-        Disable memory efficient attention as implemented in xformers.
-        """
-        self.unet.set_use_memory_efficient_attention_xformers(False)
-
-    def enable_attention_slicing(self, slice_size: Optional[Union[str, int]] = "auto"):
-        r"""
-        Enable sliced attention computation.
-        When this option is enabled, the attention module will split the input tensor in slices, to compute attention
-        in several steps. This is useful to save some memory in exchange for a small speed decrease.
-        Args:
-            slice_size (`str` or `int`, *optional*, defaults to `"auto"`):
-                When `"auto"`, halves the input to the attention heads, so attention will be computed in two steps. If
-                a number is provided, uses as many slices as `attention_head_dim // slice_size`. In this case,
-                `attention_head_dim` must be a multiple of `slice_size`.
-        """
-        if slice_size == "auto":
-            # half the attention head size is usually a good trade-off between
-            # speed and memory
-            slice_size = self.unet.config.attention_head_dim // 2
-        self.unet.set_attention_slice(slice_size)
-
-    def disable_attention_slicing(self):
-        r"""
-        Disable sliced attention computation. If `enable_attention_slicing` was previously invoked, this method will go
-        back to computing attention in one step.
-        """
-        # set slice_size = `None` to disable `attention slicing`
-        self.enable_attention_slicing(None)
-
-    def enable_sequential_cpu_offload(self):
-        r"""
-        Offloads all models to CPU using accelerate, significantly reducing memory usage. When called, unet,
-        text_encoder, vae and safety checker have their state dicts saved to CPU and then are moved to a
-        `torch.device('meta') and loaded to GPU only when their specific submodule has its `forward` method called.
-        """
-        # accelerateが必要になるのでとりあえず省略
-        raise NotImplementedError("cpu_offload is omitted.")
-        # if is_accelerate_available():
-        #   from accelerate import cpu_offload
-        # else:
-        #   raise ImportError("Please install accelerate via `pip install accelerate`")
-
-        # device = self.device
-
-        # for cpu_offloaded_model in [self.unet, self.text_encoder, self.vae, self.safety_checker]:
-        #   if cpu_offloaded_model is not None:
-        #     cpu_offload(cpu_offloaded_model, device)
-
-    # endregion
 
     @torch.no_grad()
     def __call__(
@@ -562,8 +382,14 @@ class PipelineLike:
         negative_prompt: Optional[Union[str, List[str]]] = None,
         init_image: Union[torch.FloatTensor, PIL.Image.Image, List[PIL.Image.Image]] = None,
         mask_image: Union[torch.FloatTensor, PIL.Image.Image, List[PIL.Image.Image]] = None,
-        height: int = 512,
-        width: int = 512,
+        height: int = 1024,
+        width: int = 1024,
+        original_height: int = None,
+        original_width: int = None,
+        original_height_negative: int = None,
+        original_width_negative: int = None,
+        crop_top: int = 0,
+        crop_left: int = 0,
         num_inference_steps: int = 50,
         guidance_scale: float = 7.5,
         negative_scale: float = None,
@@ -581,84 +407,11 @@ class PipelineLike:
         is_cancelled_callback: Optional[Callable[[], bool]] = None,
         callback_steps: Optional[int] = 1,
         img2img_noise=None,
-        clip_prompts=None,
         clip_guide_images=None,
-        networks: Optional[List[LoRANetwork]] = None,
         **kwargs,
     ):
-        r"""
-        Function invoked when calling the pipeline for generation.
-        Args:
-            prompt (`str` or `List[str]`):
-                The prompt or prompts to guide the image generation.
-            negative_prompt (`str` or `List[str]`, *optional*):
-                The prompt or prompts not to guide the image generation. Ignored when not using guidance (i.e., ignored
-                if `guidance_scale` is less than `1`).
-            init_image (`torch.FloatTensor` or `PIL.Image.Image`):
-                `Image`, or tensor representing an image batch, that will be used as the starting point for the
-                process.
-            mask_image (`torch.FloatTensor` or `PIL.Image.Image`):
-                `Image`, or tensor representing an image batch, to mask `init_image`. White pixels in the mask will be
-                replaced by noise and therefore repainted, while black pixels will be preserved. If `mask_image` is a
-                PIL image, it will be converted to a single channel (luminance) before use. If it's a tensor, it should
-                contain one color channel (L) instead of 3, so the expected shape would be `(B, H, W, 1)`.
-            height (`int`, *optional*, defaults to 512):
-                The height in pixels of the generated image.
-            width (`int`, *optional*, defaults to 512):
-                The width in pixels of the generated image.
-            num_inference_steps (`int`, *optional*, defaults to 50):
-                The number of denoising steps. More denoising steps usually lead to a higher quality image at the
-                expense of slower inference.
-            guidance_scale (`float`, *optional*, defaults to 7.5):
-                Guidance scale as defined in [Classifier-Free Diffusion Guidance](https://arxiv.org/abs/2207.12598).
-                `guidance_scale` is defined as `w` of equation 2. of [Imagen
-                Paper](https://arxiv.org/pdf/2205.11487.pdf). Guidance scale is enabled by setting `guidance_scale >
-                1`. Higher guidance scale encourages to generate images that are closely linked to the text `prompt`,
-                usually at the expense of lower image quality.
-            strength (`float`, *optional*, defaults to 0.8):
-                Conceptually, indicates how much to transform the reference `init_image`. Must be between 0 and 1.
-                `init_image` will be used as a starting point, adding more noise to it the larger the `strength`. The
-                number of denoising steps depends on the amount of noise initially added. When `strength` is 1, added
-                noise will be maximum and the denoising process will run for the full number of iterations specified in
-                `num_inference_steps`. A value of 1, therefore, essentially ignores `init_image`.
-            num_images_per_prompt (`int`, *optional*, defaults to 1):
-                The number of images to generate per prompt.
-            eta (`float`, *optional*, defaults to 0.0):
-                Corresponds to parameter eta (η) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to
-                [`schedulers.DDIMScheduler`], will be ignored for others.
-            generator (`torch.Generator`, *optional*):
-                A [torch generator](https://pytorch.org/docs/stable/generated/torch.Generator.html) to make generation
-                deterministic.
-            latents (`torch.FloatTensor`, *optional*):
-                Pre-generated noisy latents, sampled from a Gaussian distribution, to be used as inputs for image
-                generation. Can be used to tweak the same generation with different prompts. If not provided, a latents
-                tensor will ge generated by sampling using the supplied random `generator`.
-            max_embeddings_multiples (`int`, *optional*, defaults to `3`):
-                The max multiple length of prompt embeddings compared to the max output length of text encoder.
-            output_type (`str`, *optional*, defaults to `"pil"`):
-                The output format of the generate image. Choose between
-                [PIL](https://pillow.readthedocs.io/en/stable/): `PIL.Image.Image` or `np.array`.
-            return_dict (`bool`, *optional*, defaults to `True`):
-                Whether or not to return a [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] instead of a
-                plain tuple.
-            callback (`Callable`, *optional*):
-                A function that will be called every `callback_steps` steps during inference. The function will be
-                called with the following arguments: `callback(step: int, timestep: int, latents: torch.FloatTensor)`.
-            is_cancelled_callback (`Callable`, *optional*):
-                A function that will be called every `callback_steps` steps during inference. If the function returns
-                `True`, the inference will be cancelled.
-            callback_steps (`int`, *optional*, defaults to 1):
-                The frequency at which the `callback` function will be called. If not specified, the callback will be
-                called at every step.
-        Returns:
-            `None` if cancelled by `is_cancelled_callback`,
-            [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] or `tuple`:
-            [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] if `return_dict` is True, otherwise a `tuple.
-            When returning a tuple, the first element is a list with the generated images, and the second element is a
-            list of `bool`s denoting whether the corresponding generated image likely represents "not-safe-for-work"
-            (nsfw) content, according to the `safety_checker`.
-        """
-        num_images_per_prompt = 1  # fixed
+        # TODO support secondary prompt
+        num_images_per_prompt = 1  # fixed because already prompt is repeated
 
         if isinstance(prompt, str):
             batch_size = 1
@@ -711,123 +464,112 @@ class PipelineLike:
                 " the batch size of `prompt`."
             )
 
-        if not self.token_replacements_XTI:
-            text_embeddings, uncond_embeddings, prompt_tokens = get_weighted_text_embeddings(
-                pipe=self,
+        tes_text_embs = []
+        tes_uncond_embs = []
+        tes_real_uncond_embs = []
+
+        for tokenizer, text_encoder in zip(self.tokenizers, self.text_encoders):
+            token_replacer = self.get_token_replacer(tokenizer)
+
+            # use last text_pool, because it is from text encoder 2
+            text_embeddings, text_pool, uncond_embeddings, uncond_pool, _ = get_weighted_text_embeddings(
+                tokenizer,
+                text_encoder,
                 prompt=prompt,
                 uncond_prompt=negative_prompt if do_classifier_free_guidance else None,
                 max_embeddings_multiples=max_embeddings_multiples,
                 clip_skip=self.clip_skip,
+                token_replacer=token_replacer,
+                device=self.device,
                 **kwargs,
             )
+            tes_text_embs.append(text_embeddings)
+            tes_uncond_embs.append(uncond_embeddings)
 
-        if negative_scale is not None:
-            _, real_uncond_embeddings, _ = get_weighted_text_embeddings(
-                pipe=self,
-                prompt=prompt,  # こちらのトークン長に合わせてuncondを作るので75トークン超で必須
-                uncond_prompt=[""] * batch_size,
-                max_embeddings_multiples=max_embeddings_multiples,
-                clip_skip=self.clip_skip,
-                **kwargs,
-            )
-
-        if self.token_replacements_XTI:
-            text_embeddings_concat = []
-            for layer in [
-                "IN01",
-                "IN02",
-                "IN04",
-                "IN05",
-                "IN07",
-                "IN08",
-                "MID",
-                "OUT03",
-                "OUT04",
-                "OUT05",
-                "OUT06",
-                "OUT07",
-                "OUT08",
-                "OUT09",
-                "OUT10",
-                "OUT11",
-            ]:
-                text_embeddings, uncond_embeddings, prompt_tokens = get_weighted_text_embeddings(
-                    pipe=self,
-                    prompt=prompt,
-                    uncond_prompt=negative_prompt if do_classifier_free_guidance else None,
+            if negative_scale is not None:
+                _, real_uncond_embeddings, _ = get_weighted_text_embeddings(
+                    token_replacer,
+                    prompt=prompt,  # こちらのトークン長に合わせてuncondを作るので75トークン超で必須
+                    uncond_prompt=[""] * batch_size,
                     max_embeddings_multiples=max_embeddings_multiples,
                     clip_skip=self.clip_skip,
-                    layer=layer,
+                    token_replacer=token_replacer,
+                    device=self.device,
                     **kwargs,
                 )
-                if do_classifier_free_guidance:
-                    if negative_scale is None:
-                        text_embeddings_concat.append(torch.cat([uncond_embeddings, text_embeddings]))
-                    else:
-                        text_embeddings_concat.append(torch.cat([uncond_embeddings, text_embeddings, real_uncond_embeddings]))
-                text_embeddings = torch.stack(text_embeddings_concat)
-        else:
-            if do_classifier_free_guidance:
-                if negative_scale is None:
-                    text_embeddings = torch.cat([uncond_embeddings, text_embeddings])
-                else:
-                    text_embeddings = torch.cat([uncond_embeddings, text_embeddings, real_uncond_embeddings])
+                tes_real_uncond_embs.append(real_uncond_embeddings)
 
-        # CLIP guidanceで使用するembeddingsを取得する
-        if self.clip_guidance_scale > 0:
-            clip_text_input = prompt_tokens
-            if clip_text_input.shape[1] > self.tokenizer.model_max_length:
-                # TODO 75文字を超えたら警告を出す？
-                print("trim text input", clip_text_input.shape)
-                clip_text_input = torch.cat(
-                    [clip_text_input[:, : self.tokenizer.model_max_length - 1], clip_text_input[:, -1].unsqueeze(1)], dim=1
-                )
-                print("trimmed", clip_text_input.shape)
+        # concat text encoder outputs
+        text_embeddings = tes_text_embs[0]
+        uncond_embeddings = tes_uncond_embs[0]
+        for i in range(1, len(tes_text_embs)):
+            text_embeddings = torch.cat([text_embeddings, tes_text_embs[i]], dim=2)  # n,77,2048
+            uncond_embeddings = torch.cat([uncond_embeddings, tes_uncond_embs[i]], dim=2)  # n,77,2048
 
-            for i, clip_prompt in enumerate(clip_prompts):
-                if clip_prompt is not None:  # clip_promptがあれば上書きする
-                    clip_text_input[i] = self.tokenizer(
-                        clip_prompt,
-                        padding="max_length",
-                        max_length=self.tokenizer.model_max_length,
-                        truncation=True,
-                        return_tensors="pt",
-                    ).input_ids.to(self.device)
+        if do_classifier_free_guidance:
+            if negative_scale is None:
+                text_embeddings = torch.cat([uncond_embeddings, text_embeddings])
+            else:
+                text_embeddings = torch.cat([uncond_embeddings, text_embeddings, real_uncond_embeddings])
 
-            text_embeddings_clip = self.clip_model.get_text_features(clip_text_input)
-            text_embeddings_clip = text_embeddings_clip / text_embeddings_clip.norm(p=2, dim=-1, keepdim=True)  # prompt複数件でもOK
-
-        if (
-            self.clip_image_guidance_scale > 0
-            or self.vgg16_guidance_scale > 0
-            and clip_guide_images is not None
-            or self.control_nets
-        ):
+        if self.control_nets:
+            # ControlNetのhintにguide imageを流用する
             if isinstance(clip_guide_images, PIL.Image.Image):
                 clip_guide_images = [clip_guide_images]
+            if isinstance(clip_guide_images[0], PIL.Image.Image):
+                clip_guide_images = [preprocess_image(im) for im in clip_guide_images]
+                clip_guide_images = torch.cat(clip_guide_images)
+            if isinstance(clip_guide_images, list):
+                clip_guide_images = torch.stack(clip_guide_images)
 
-            if self.clip_image_guidance_scale > 0:
-                clip_guide_images = [preprocess_guide_image(im) for im in clip_guide_images]
-                clip_guide_images = torch.cat(clip_guide_images, dim=0)
+            clip_guide_images = clip_guide_images.to(self.device, dtype=text_embeddings.dtype)
 
-                clip_guide_images = self.normalize(clip_guide_images).to(self.device).to(text_embeddings.dtype)
-                image_embeddings_clip = self.clip_model.get_image_features(clip_guide_images)
-                image_embeddings_clip = image_embeddings_clip / image_embeddings_clip.norm(p=2, dim=-1, keepdim=True)
-                if len(image_embeddings_clip) == 1:
-                    image_embeddings_clip = image_embeddings_clip.repeat((batch_size, 1, 1, 1))
-            elif self.vgg16_guidance_scale > 0:
-                size = (width // VGG16_INPUT_RESIZE_DIV, height // VGG16_INPUT_RESIZE_DIV)  # とりあえず1/4に（小さいか?）
-                clip_guide_images = [preprocess_vgg16_guide_image(im, size) for im in clip_guide_images]
-                clip_guide_images = torch.cat(clip_guide_images, dim=0)
+        # create size embs
+        if original_height is None:
+            original_height = height
+        if original_width is None:
+            original_width = width
+        if original_height_negative is None:
+            original_height_negative = original_height
+        if original_width_negative is None:
+            original_width_negative = original_width
+        if crop_top is None:
+            crop_top = 0
+        if crop_left is None:
+            crop_left = 0
+        emb1 = sdxl_train_util.get_timestep_embedding(torch.FloatTensor([original_height, original_width]).unsqueeze(0), 256)
+        uc_emb1 = sdxl_train_util.get_timestep_embedding(
+            torch.FloatTensor([original_height_negative, original_width_negative]).unsqueeze(0), 256
+        )
+        emb2 = sdxl_train_util.get_timestep_embedding(torch.FloatTensor([crop_top, crop_left]).unsqueeze(0), 256)
+        emb3 = sdxl_train_util.get_timestep_embedding(torch.FloatTensor([height, width]).unsqueeze(0), 256)
+        c_vector = torch.cat([emb1, emb2, emb3], dim=1).to(self.device, dtype=text_embeddings.dtype).repeat(batch_size, 1)
+        uc_vector = torch.cat([uc_emb1, emb2, emb3], dim=1).to(self.device, dtype=text_embeddings.dtype).repeat(batch_size, 1)
 
-                clip_guide_images = self.vgg16_normalize(clip_guide_images).to(self.device).to(text_embeddings.dtype)
-                image_embeddings_vgg16 = self.vgg16_feat_model(clip_guide_images)["feat"]
-                if len(image_embeddings_vgg16) == 1:
-                    image_embeddings_vgg16 = image_embeddings_vgg16.repeat((batch_size, 1, 1, 1))
-            else:
-                # ControlNetのhintにguide imageを流用する
-                # 前処理はControlNet側で行う
-                pass
+        if reginonal_network:
+            # use last pool for conditioning
+            num_sub_prompts = len(text_pool) // batch_size
+            text_pool = text_pool[num_sub_prompts - 1 :: num_sub_prompts]  # last subprompt
+
+        if init_image is not None and self.clip_vision_model is not None:
+            print(f"encode by clip_vision_model and apply clip_vision_strength={self.clip_vision_strength}")
+            vision_input = self.clip_vision_processor(init_image, return_tensors="pt", device=self.device)
+            pixel_values = vision_input["pixel_values"].to(self.device, dtype=text_embeddings.dtype)
+
+            clip_vision_embeddings = self.clip_vision_model(pixel_values=pixel_values, output_hidden_states=True, return_dict=True)
+            clip_vision_embeddings = clip_vision_embeddings.image_embeds
+
+            if len(clip_vision_embeddings) == 1 and batch_size > 1:
+                clip_vision_embeddings = clip_vision_embeddings.repeat((batch_size, 1))
+
+            clip_vision_embeddings = clip_vision_embeddings * self.clip_vision_strength
+            assert clip_vision_embeddings.shape == text_pool.shape, f"{clip_vision_embeddings.shape} != {text_pool.shape}"
+            text_pool = clip_vision_embeddings  # replace: same as ComfyUI (?)
+
+        c_vector = torch.cat([text_pool, c_vector], dim=1)
+        uc_vector = torch.cat([uncond_pool, uc_vector], dim=1)
+
+        vector_embeddings = torch.cat([uc_vector, c_vector])
 
         # set timesteps
         self.scheduler.set_timesteps(num_inference_steps, self.device)
@@ -897,7 +639,7 @@ class PipelineLike:
                 init_latents = init_image
             else:
                 if vae_batch_size >= batch_size:
-                    init_latent_dist = self.vae.encode(init_image).latent_dist
+                    init_latent_dist = self.vae.encode(init_image.to(self.vae.dtype)).latent_dist
                     init_latents = init_latent_dist.sample(generator=generator)
                 else:
                     if torch.cuda.is_available():
@@ -905,12 +647,14 @@ class PipelineLike:
                     init_latents = []
                     for i in tqdm(range(0, min(batch_size, len(init_image)), vae_batch_size)):
                         init_latent_dist = self.vae.encode(
-                            init_image[i : i + vae_batch_size] if vae_batch_size > 1 else init_image[i].unsqueeze(0)
+                            (init_image[i : i + vae_batch_size] if vae_batch_size > 1 else init_image[i].unsqueeze(0)).to(
+                                self.vae.dtype
+                            )
                         ).latent_dist
                         init_latents.append(init_latent_dist.sample(generator=generator))
                     init_latents = torch.cat(init_latents)
 
-                init_latents = 0.18215 * init_latents
+                init_latents = sdxl_model_util.VAE_SCALE_FACTOR * init_latents
 
             if len(init_latents) == 1:
                 init_latents = init_latents.repeat((batch_size, 1, 1, 1))
@@ -952,40 +696,54 @@ class PipelineLike:
         num_latent_input = (3 if negative_scale is not None else 2) if do_classifier_free_guidance else 1
 
         if self.control_nets:
-            guided_hints = original_control_net.get_guided_hints(self.control_nets, num_latent_input, batch_size, clip_guide_images)
+            # guided_hints = original_control_net.get_guided_hints(self.control_nets, num_latent_input, batch_size, clip_guide_images)
+            if self.control_net_enabled:
+                for control_net, _ in self.control_nets:
+                    with torch.no_grad():
+                        control_net.set_cond_image(clip_guide_images)
+            else:
+                for control_net, _ in self.control_nets:
+                    control_net.set_cond_image(None)
 
-        if reginonal_network:
-            num_sub_and_neg_prompts = len(text_embeddings) // batch_size
-            # last subprompt and negative prompt
-            text_emb_last = []
-            for j in range(batch_size):
-                text_emb_last.append(text_embeddings[(j + 1) * num_sub_and_neg_prompts - 2])
-                text_emb_last.append(text_embeddings[(j + 1) * num_sub_and_neg_prompts - 1])
-            text_emb_last = torch.stack(text_emb_last)
-        else:
-            text_emb_last = text_embeddings
-
+        each_control_net_enabled = [self.control_net_enabled] * len(self.control_nets)
         for i, t in enumerate(tqdm(timesteps)):
             # expand the latents if we are doing classifier free guidance
             latent_model_input = latents.repeat((num_latent_input, 1, 1, 1))
             latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
 
-            # predict the noise residual
+            # disable control net if ratio is set
             if self.control_nets and self.control_net_enabled:
-                noise_pred = original_control_net.call_unet_and_control_net(
-                    i,
-                    num_latent_input,
-                    self.unet,
-                    self.control_nets,
-                    guided_hints,
-                    i / len(timesteps),
-                    latent_model_input,
-                    t,
-                    text_embeddings,
-                    text_emb_last,
-                ).sample
-            else:
-                noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
+                for j, ((control_net, ratio), enabled) in enumerate(zip(self.control_nets, each_control_net_enabled)):
+                    if not enabled or ratio >= 1.0:
+                        continue
+                    if ratio < i / len(timesteps):
+                        print(f"ControlNet {j} is disabled (ratio={ratio} at {i} / {len(timesteps)})")
+                        control_net.set_cond_image(None)
+                        each_control_net_enabled[j] = False
+
+            # predict the noise residual
+            # TODO Diffusers' ControlNet
+            # if self.control_nets and self.control_net_enabled:
+            #     if reginonal_network:
+            #         num_sub_and_neg_prompts = len(text_embeddings) // batch_size
+            #         text_emb_last = text_embeddings[num_sub_and_neg_prompts - 2 :: num_sub_and_neg_prompts]  # last subprompt
+            #     else:
+            #         text_emb_last = text_embeddings
+
+            #     # not working yet
+            #     noise_pred = original_control_net.call_unet_and_control_net(
+            #         i,
+            #         num_latent_input,
+            #         self.unet,
+            #         self.control_nets,
+            #         guided_hints,
+            #         i / len(timesteps),
+            #         latent_model_input,
+            #         t,
+            #         text_emb_last,
+            #     ).sample
+            # else:
+            noise_pred = self.unet(latent_model_input, t, text_embeddings, vector_embeddings)
 
             # perform guidance
             if do_classifier_free_guidance:
@@ -1000,41 +758,6 @@ class PipelineLike:
                         noise_pred_uncond
                         + guidance_scale * (noise_pred_text - noise_pred_uncond)
                         - negative_scale * (noise_pred_negative - noise_pred_uncond)
-                    )
-
-            # perform clip guidance
-            if self.clip_guidance_scale > 0 or self.clip_image_guidance_scale > 0 or self.vgg16_guidance_scale > 0:
-                text_embeddings_for_guidance = (
-                    text_embeddings.chunk(num_latent_input)[1] if do_classifier_free_guidance else text_embeddings
-                )
-
-                if self.clip_guidance_scale > 0:
-                    noise_pred, latents = self.cond_fn(
-                        latents,
-                        t,
-                        i,
-                        text_embeddings_for_guidance,
-                        noise_pred,
-                        text_embeddings_clip,
-                        self.clip_guidance_scale,
-                        NUM_CUTOUTS,
-                        USE_CUTOUTS,
-                    )
-                if self.clip_image_guidance_scale > 0 and clip_guide_images is not None:
-                    noise_pred, latents = self.cond_fn(
-                        latents,
-                        t,
-                        i,
-                        text_embeddings_for_guidance,
-                        noise_pred,
-                        image_embeddings_clip,
-                        self.clip_image_guidance_scale,
-                        NUM_CUTOUTS,
-                        USE_CUTOUTS,
-                    )
-                if self.vgg16_guidance_scale > 0 and clip_guide_images is not None:
-                    noise_pred, latents = self.cond_fn_vgg16(
-                        latents, t, i, text_embeddings_for_guidance, noise_pred, image_embeddings_vgg16, self.vgg16_guidance_scale
                     )
 
             # compute the previous noisy sample x_t -> x_t-1
@@ -1053,18 +776,20 @@ class PipelineLike:
                     return None
 
         if return_latents:
-            return (latents, False)
+            return latents
 
-        latents = 1 / 0.18215 * latents
+        latents = 1 / sdxl_model_util.VAE_SCALE_FACTOR * latents
         if vae_batch_size >= batch_size:
-            image = self.vae.decode(latents).sample
+            image = self.vae.decode(latents.to(self.vae.dtype)).sample
         else:
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             images = []
             for i in tqdm(range(0, batch_size, vae_batch_size)):
                 images.append(
-                    self.vae.decode(latents[i : i + vae_batch_size] if vae_batch_size > 1 else latents[i].unsqueeze(0)).sample
+                    self.vae.decode(
+                        (latents[i : i + vae_batch_size] if vae_batch_size > 1 else latents[i].unsqueeze(0)).to(self.vae.dtype)
+                    ).sample
                 )
             image = torch.cat(images)
 
@@ -1073,516 +798,17 @@ class PipelineLike:
         # we always cast to float32 as this does not cause significant overhead and is compatible with bfloa16
         image = image.cpu().permute(0, 2, 3, 1).float().numpy()
 
-        if self.safety_checker is not None:
-            safety_checker_input = self.feature_extractor(self.numpy_to_pil(image), return_tensors="pt").to(self.device)
-            image, has_nsfw_concept = self.safety_checker(
-                images=image,
-                clip_input=safety_checker_input.pixel_values.to(text_embeddings.dtype),
-            )
-        else:
-            has_nsfw_concept = None
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         if output_type == "pil":
             # image = self.numpy_to_pil(image)
             image = (image * 255).round().astype("uint8")
             image = [Image.fromarray(im) for im in image]
 
-        # if not return_dict:
-        return (image, has_nsfw_concept)
+        return image
 
         # return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
-
-    def text2img(
-        self,
-        prompt: Union[str, List[str]],
-        negative_prompt: Optional[Union[str, List[str]]] = None,
-        height: int = 512,
-        width: int = 512,
-        num_inference_steps: int = 50,
-        guidance_scale: float = 7.5,
-        num_images_per_prompt: Optional[int] = 1,
-        eta: float = 0.0,
-        generator: Optional[torch.Generator] = None,
-        latents: Optional[torch.FloatTensor] = None,
-        max_embeddings_multiples: Optional[int] = 3,
-        output_type: Optional[str] = "pil",
-        return_dict: bool = True,
-        callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
-        callback_steps: Optional[int] = 1,
-        **kwargs,
-    ):
-        r"""
-        Function for text-to-image generation.
-        Args:
-            prompt (`str` or `List[str]`):
-                The prompt or prompts to guide the image generation.
-            negative_prompt (`str` or `List[str]`, *optional*):
-                The prompt or prompts not to guide the image generation. Ignored when not using guidance (i.e., ignored
-                if `guidance_scale` is less than `1`).
-            height (`int`, *optional*, defaults to 512):
-                The height in pixels of the generated image.
-            width (`int`, *optional*, defaults to 512):
-                The width in pixels of the generated image.
-            num_inference_steps (`int`, *optional*, defaults to 50):
-                The number of denoising steps. More denoising steps usually lead to a higher quality image at the
-                expense of slower inference.
-            guidance_scale (`float`, *optional*, defaults to 7.5):
-                Guidance scale as defined in [Classifier-Free Diffusion Guidance](https://arxiv.org/abs/2207.12598).
-                `guidance_scale` is defined as `w` of equation 2. of [Imagen
-                Paper](https://arxiv.org/pdf/2205.11487.pdf). Guidance scale is enabled by setting `guidance_scale >
-                1`. Higher guidance scale encourages to generate images that are closely linked to the text `prompt`,
-                usually at the expense of lower image quality.
-            num_images_per_prompt (`int`, *optional*, defaults to 1):
-                The number of images to generate per prompt.
-            eta (`float`, *optional*, defaults to 0.0):
-                Corresponds to parameter eta (η) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to
-                [`schedulers.DDIMScheduler`], will be ignored for others.
-            generator (`torch.Generator`, *optional*):
-                A [torch generator](https://pytorch.org/docs/stable/generated/torch.Generator.html) to make generation
-                deterministic.
-            latents (`torch.FloatTensor`, *optional*):
-                Pre-generated noisy latents, sampled from a Gaussian distribution, to be used as inputs for image
-                generation. Can be used to tweak the same generation with different prompts. If not provided, a latents
-                tensor will ge generated by sampling using the supplied random `generator`.
-            max_embeddings_multiples (`int`, *optional*, defaults to `3`):
-                The max multiple length of prompt embeddings compared to the max output length of text encoder.
-            output_type (`str`, *optional*, defaults to `"pil"`):
-                The output format of the generate image. Choose between
-                [PIL](https://pillow.readthedocs.io/en/stable/): `PIL.Image.Image` or `np.array`.
-            return_dict (`bool`, *optional*, defaults to `True`):
-                Whether or not to return a [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] instead of a
-                plain tuple.
-            callback (`Callable`, *optional*):
-                A function that will be called every `callback_steps` steps during inference. The function will be
-                called with the following arguments: `callback(step: int, timestep: int, latents: torch.FloatTensor)`.
-            callback_steps (`int`, *optional*, defaults to 1):
-                The frequency at which the `callback` function will be called. If not specified, the callback will be
-                called at every step.
-        Returns:
-            [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] or `tuple`:
-            [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] if `return_dict` is True, otherwise a `tuple.
-            When returning a tuple, the first element is a list with the generated images, and the second element is a
-            list of `bool`s denoting whether the corresponding generated image likely represents "not-safe-for-work"
-            (nsfw) content, according to the `safety_checker`.
-        """
-        return self.__call__(
-            prompt=prompt,
-            negative_prompt=negative_prompt,
-            height=height,
-            width=width,
-            num_inference_steps=num_inference_steps,
-            guidance_scale=guidance_scale,
-            num_images_per_prompt=num_images_per_prompt,
-            eta=eta,
-            generator=generator,
-            latents=latents,
-            max_embeddings_multiples=max_embeddings_multiples,
-            output_type=output_type,
-            return_dict=return_dict,
-            callback=callback,
-            callback_steps=callback_steps,
-            **kwargs,
-        )
-
-    def img2img(
-        self,
-        init_image: Union[torch.FloatTensor, PIL.Image.Image],
-        prompt: Union[str, List[str]],
-        negative_prompt: Optional[Union[str, List[str]]] = None,
-        strength: float = 0.8,
-        num_inference_steps: Optional[int] = 50,
-        guidance_scale: Optional[float] = 7.5,
-        num_images_per_prompt: Optional[int] = 1,
-        eta: Optional[float] = 0.0,
-        generator: Optional[torch.Generator] = None,
-        max_embeddings_multiples: Optional[int] = 3,
-        output_type: Optional[str] = "pil",
-        return_dict: bool = True,
-        callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
-        callback_steps: Optional[int] = 1,
-        **kwargs,
-    ):
-        r"""
-        Function for image-to-image generation.
-        Args:
-            init_image (`torch.FloatTensor` or `PIL.Image.Image`):
-                `Image`, or tensor representing an image batch, that will be used as the starting point for the
-                process.
-            prompt (`str` or `List[str]`):
-                The prompt or prompts to guide the image generation.
-            negative_prompt (`str` or `List[str]`, *optional*):
-                The prompt or prompts not to guide the image generation. Ignored when not using guidance (i.e., ignored
-                if `guidance_scale` is less than `1`).
-            strength (`float`, *optional*, defaults to 0.8):
-                Conceptually, indicates how much to transform the reference `init_image`. Must be between 0 and 1.
-                `init_image` will be used as a starting point, adding more noise to it the larger the `strength`. The
-                number of denoising steps depends on the amount of noise initially added. When `strength` is 1, added
-                noise will be maximum and the denoising process will run for the full number of iterations specified in
-                `num_inference_steps`. A value of 1, therefore, essentially ignores `init_image`.
-            num_inference_steps (`int`, *optional*, defaults to 50):
-                The number of denoising steps. More denoising steps usually lead to a higher quality image at the
-                expense of slower inference. This parameter will be modulated by `strength`.
-            guidance_scale (`float`, *optional*, defaults to 7.5):
-                Guidance scale as defined in [Classifier-Free Diffusion Guidance](https://arxiv.org/abs/2207.12598).
-                `guidance_scale` is defined as `w` of equation 2. of [Imagen
-                Paper](https://arxiv.org/pdf/2205.11487.pdf). Guidance scale is enabled by setting `guidance_scale >
-                1`. Higher guidance scale encourages to generate images that are closely linked to the text `prompt`,
-                usually at the expense of lower image quality.
-            num_images_per_prompt (`int`, *optional*, defaults to 1):
-                The number of images to generate per prompt.
-            eta (`float`, *optional*, defaults to 0.0):
-                Corresponds to parameter eta (η) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to
-                [`schedulers.DDIMScheduler`], will be ignored for others.
-            generator (`torch.Generator`, *optional*):
-                A [torch generator](https://pytorch.org/docs/stable/generated/torch.Generator.html) to make generation
-                deterministic.
-            max_embeddings_multiples (`int`, *optional*, defaults to `3`):
-                The max multiple length of prompt embeddings compared to the max output length of text encoder.
-            output_type (`str`, *optional*, defaults to `"pil"`):
-                The output format of the generate image. Choose between
-                [PIL](https://pillow.readthedocs.io/en/stable/): `PIL.Image.Image` or `np.array`.
-            return_dict (`bool`, *optional*, defaults to `True`):
-                Whether or not to return a [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] instead of a
-                plain tuple.
-            callback (`Callable`, *optional*):
-                A function that will be called every `callback_steps` steps during inference. The function will be
-                called with the following arguments: `callback(step: int, timestep: int, latents: torch.FloatTensor)`.
-            callback_steps (`int`, *optional*, defaults to 1):
-                The frequency at which the `callback` function will be called. If not specified, the callback will be
-                called at every step.
-        Returns:
-            [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] or `tuple`:
-            [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] if `return_dict` is True, otherwise a `tuple.
-            When returning a tuple, the first element is a list with the generated images, and the second element is a
-            list of `bool`s denoting whether the corresponding generated image likely represents "not-safe-for-work"
-            (nsfw) content, according to the `safety_checker`.
-        """
-        return self.__call__(
-            prompt=prompt,
-            negative_prompt=negative_prompt,
-            init_image=init_image,
-            num_inference_steps=num_inference_steps,
-            guidance_scale=guidance_scale,
-            strength=strength,
-            num_images_per_prompt=num_images_per_prompt,
-            eta=eta,
-            generator=generator,
-            max_embeddings_multiples=max_embeddings_multiples,
-            output_type=output_type,
-            return_dict=return_dict,
-            callback=callback,
-            callback_steps=callback_steps,
-            **kwargs,
-        )
-
-    def inpaint(
-        self,
-        init_image: Union[torch.FloatTensor, PIL.Image.Image],
-        mask_image: Union[torch.FloatTensor, PIL.Image.Image],
-        prompt: Union[str, List[str]],
-        negative_prompt: Optional[Union[str, List[str]]] = None,
-        strength: float = 0.8,
-        num_inference_steps: Optional[int] = 50,
-        guidance_scale: Optional[float] = 7.5,
-        num_images_per_prompt: Optional[int] = 1,
-        eta: Optional[float] = 0.0,
-        generator: Optional[torch.Generator] = None,
-        max_embeddings_multiples: Optional[int] = 3,
-        output_type: Optional[str] = "pil",
-        return_dict: bool = True,
-        callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
-        callback_steps: Optional[int] = 1,
-        **kwargs,
-    ):
-        r"""
-        Function for inpaint.
-        Args:
-            init_image (`torch.FloatTensor` or `PIL.Image.Image`):
-                `Image`, or tensor representing an image batch, that will be used as the starting point for the
-                process. This is the image whose masked region will be inpainted.
-            mask_image (`torch.FloatTensor` or `PIL.Image.Image`):
-                `Image`, or tensor representing an image batch, to mask `init_image`. White pixels in the mask will be
-                replaced by noise and therefore repainted, while black pixels will be preserved. If `mask_image` is a
-                PIL image, it will be converted to a single channel (luminance) before use. If it's a tensor, it should
-                contain one color channel (L) instead of 3, so the expected shape would be `(B, H, W, 1)`.
-            prompt (`str` or `List[str]`):
-                The prompt or prompts to guide the image generation.
-            negative_prompt (`str` or `List[str]`, *optional*):
-                The prompt or prompts not to guide the image generation. Ignored when not using guidance (i.e., ignored
-                if `guidance_scale` is less than `1`).
-            strength (`float`, *optional*, defaults to 0.8):
-                Conceptually, indicates how much to inpaint the masked area. Must be between 0 and 1. When `strength`
-                is 1, the denoising process will be run on the masked area for the full number of iterations specified
-                in `num_inference_steps`. `init_image` will be used as a reference for the masked area, adding more
-                noise to that region the larger the `strength`. If `strength` is 0, no inpainting will occur.
-            num_inference_steps (`int`, *optional*, defaults to 50):
-                The reference number of denoising steps. More denoising steps usually lead to a higher quality image at
-                the expense of slower inference. This parameter will be modulated by `strength`, as explained above.
-            guidance_scale (`float`, *optional*, defaults to 7.5):
-                Guidance scale as defined in [Classifier-Free Diffusion Guidance](https://arxiv.org/abs/2207.12598).
-                `guidance_scale` is defined as `w` of equation 2. of [Imagen
-                Paper](https://arxiv.org/pdf/2205.11487.pdf). Guidance scale is enabled by setting `guidance_scale >
-                1`. Higher guidance scale encourages to generate images that are closely linked to the text `prompt`,
-                usually at the expense of lower image quality.
-            num_images_per_prompt (`int`, *optional*, defaults to 1):
-                The number of images to generate per prompt.
-            eta (`float`, *optional*, defaults to 0.0):
-                Corresponds to parameter eta (η) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to
-                [`schedulers.DDIMScheduler`], will be ignored for others.
-            generator (`torch.Generator`, *optional*):
-                A [torch generator](https://pytorch.org/docs/stable/generated/torch.Generator.html) to make generation
-                deterministic.
-            max_embeddings_multiples (`int`, *optional*, defaults to `3`):
-                The max multiple length of prompt embeddings compared to the max output length of text encoder.
-            output_type (`str`, *optional*, defaults to `"pil"`):
-                The output format of the generate image. Choose between
-                [PIL](https://pillow.readthedocs.io/en/stable/): `PIL.Image.Image` or `np.array`.
-            return_dict (`bool`, *optional*, defaults to `True`):
-                Whether or not to return a [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] instead of a
-                plain tuple.
-            callback (`Callable`, *optional*):
-                A function that will be called every `callback_steps` steps during inference. The function will be
-                called with the following arguments: `callback(step: int, timestep: int, latents: torch.FloatTensor)`.
-            callback_steps (`int`, *optional*, defaults to 1):
-                The frequency at which the `callback` function will be called. If not specified, the callback will be
-                called at every step.
-        Returns:
-            [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] or `tuple`:
-            [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] if `return_dict` is True, otherwise a `tuple.
-            When returning a tuple, the first element is a list with the generated images, and the second element is a
-            list of `bool`s denoting whether the corresponding generated image likely represents "not-safe-for-work"
-            (nsfw) content, according to the `safety_checker`.
-        """
-        return self.__call__(
-            prompt=prompt,
-            negative_prompt=negative_prompt,
-            init_image=init_image,
-            mask_image=mask_image,
-            num_inference_steps=num_inference_steps,
-            guidance_scale=guidance_scale,
-            strength=strength,
-            num_images_per_prompt=num_images_per_prompt,
-            eta=eta,
-            generator=generator,
-            max_embeddings_multiples=max_embeddings_multiples,
-            output_type=output_type,
-            return_dict=return_dict,
-            callback=callback,
-            callback_steps=callback_steps,
-            **kwargs,
-        )
-
-    # CLIP guidance StableDiffusion
-    # copy from https://github.com/huggingface/diffusers/blob/main/examples/community/clip_guided_stable_diffusion.py
-
-    # バッチを分解して1件ずつ処理する
-    def cond_fn(
-        self,
-        latents,
-        timestep,
-        index,
-        text_embeddings,
-        noise_pred_original,
-        guide_embeddings_clip,
-        clip_guidance_scale,
-        num_cutouts,
-        use_cutouts=True,
-    ):
-        if len(latents) == 1:
-            return self.cond_fn1(
-                latents,
-                timestep,
-                index,
-                text_embeddings,
-                noise_pred_original,
-                guide_embeddings_clip,
-                clip_guidance_scale,
-                num_cutouts,
-                use_cutouts,
-            )
-
-        noise_pred = []
-        cond_latents = []
-        for i in range(len(latents)):
-            lat1 = latents[i].unsqueeze(0)
-            tem1 = text_embeddings[i].unsqueeze(0)
-            npo1 = noise_pred_original[i].unsqueeze(0)
-            gem1 = guide_embeddings_clip[i].unsqueeze(0)
-            npr1, cla1 = self.cond_fn1(lat1, timestep, index, tem1, npo1, gem1, clip_guidance_scale, num_cutouts, use_cutouts)
-            noise_pred.append(npr1)
-            cond_latents.append(cla1)
-
-        noise_pred = torch.cat(noise_pred)
-        cond_latents = torch.cat(cond_latents)
-        return noise_pred, cond_latents
-
-    @torch.enable_grad()
-    def cond_fn1(
-        self,
-        latents,
-        timestep,
-        index,
-        text_embeddings,
-        noise_pred_original,
-        guide_embeddings_clip,
-        clip_guidance_scale,
-        num_cutouts,
-        use_cutouts=True,
-    ):
-        latents = latents.detach().requires_grad_()
-
-        if isinstance(self.scheduler, LMSDiscreteScheduler):
-            sigma = self.scheduler.sigmas[index]
-            # the model input needs to be scaled to match the continuous ODE formulation in K-LMS
-            latent_model_input = latents / ((sigma**2 + 1) ** 0.5)
-        else:
-            latent_model_input = latents
-
-        # predict the noise residual
-        noise_pred = self.unet(latent_model_input, timestep, encoder_hidden_states=text_embeddings).sample
-
-        if isinstance(self.scheduler, (PNDMScheduler, DDIMScheduler)):
-            alpha_prod_t = self.scheduler.alphas_cumprod[timestep]
-            beta_prod_t = 1 - alpha_prod_t
-            # compute predicted original sample from predicted noise also called
-            # "predicted x_0" of formula (12) from https://arxiv.org/pdf/2010.02502.pdf
-            pred_original_sample = (latents - beta_prod_t ** (0.5) * noise_pred) / alpha_prod_t ** (0.5)
-
-            fac = torch.sqrt(beta_prod_t)
-            sample = pred_original_sample * (fac) + latents * (1 - fac)
-        elif isinstance(self.scheduler, LMSDiscreteScheduler):
-            sigma = self.scheduler.sigmas[index]
-            sample = latents - sigma * noise_pred
-        else:
-            raise ValueError(f"scheduler type {type(self.scheduler)} not supported")
-
-        sample = 1 / 0.18215 * sample
-        image = self.vae.decode(sample).sample
-        image = (image / 2 + 0.5).clamp(0, 1)
-
-        if use_cutouts:
-            image = self.make_cutouts(image, num_cutouts)
-        else:
-            image = transforms.Resize(FEATURE_EXTRACTOR_SIZE)(image)
-        image = self.normalize(image).to(latents.dtype)
-
-        image_embeddings_clip = self.clip_model.get_image_features(image)
-        image_embeddings_clip = image_embeddings_clip / image_embeddings_clip.norm(p=2, dim=-1, keepdim=True)
-
-        if use_cutouts:
-            dists = spherical_dist_loss(image_embeddings_clip, guide_embeddings_clip)
-            dists = dists.view([num_cutouts, sample.shape[0], -1])
-            loss = dists.sum(2).mean(0).sum() * clip_guidance_scale
-        else:
-            # バッチサイズが複数だと正しく動くかわからない
-            loss = spherical_dist_loss(image_embeddings_clip, guide_embeddings_clip).mean() * clip_guidance_scale
-
-        grads = -torch.autograd.grad(loss, latents)[0]
-
-        if isinstance(self.scheduler, LMSDiscreteScheduler):
-            latents = latents.detach() + grads * (sigma**2)
-            noise_pred = noise_pred_original
-        else:
-            noise_pred = noise_pred_original - torch.sqrt(beta_prod_t) * grads
-        return noise_pred, latents
-
-    # バッチを分解して一件ずつ処理する
-    def cond_fn_vgg16(self, latents, timestep, index, text_embeddings, noise_pred_original, guide_embeddings, guidance_scale):
-        if len(latents) == 1:
-            return self.cond_fn_vgg16_b1(
-                latents, timestep, index, text_embeddings, noise_pred_original, guide_embeddings, guidance_scale
-            )
-
-        noise_pred = []
-        cond_latents = []
-        for i in range(len(latents)):
-            lat1 = latents[i].unsqueeze(0)
-            tem1 = text_embeddings[i].unsqueeze(0)
-            npo1 = noise_pred_original[i].unsqueeze(0)
-            gem1 = guide_embeddings[i].unsqueeze(0)
-            npr1, cla1 = self.cond_fn_vgg16_b1(lat1, timestep, index, tem1, npo1, gem1, guidance_scale)
-            noise_pred.append(npr1)
-            cond_latents.append(cla1)
-
-        noise_pred = torch.cat(noise_pred)
-        cond_latents = torch.cat(cond_latents)
-        return noise_pred, cond_latents
-
-    # 1件だけ処理する
-    @torch.enable_grad()
-    def cond_fn_vgg16_b1(self, latents, timestep, index, text_embeddings, noise_pred_original, guide_embeddings, guidance_scale):
-        latents = latents.detach().requires_grad_()
-
-        if isinstance(self.scheduler, LMSDiscreteScheduler):
-            sigma = self.scheduler.sigmas[index]
-            # the model input needs to be scaled to match the continuous ODE formulation in K-LMS
-            latent_model_input = latents / ((sigma**2 + 1) ** 0.5)
-        else:
-            latent_model_input = latents
-
-        # predict the noise residual
-        noise_pred = self.unet(latent_model_input, timestep, encoder_hidden_states=text_embeddings).sample
-
-        if isinstance(self.scheduler, (PNDMScheduler, DDIMScheduler)):
-            alpha_prod_t = self.scheduler.alphas_cumprod[timestep]
-            beta_prod_t = 1 - alpha_prod_t
-            # compute predicted original sample from predicted noise also called
-            # "predicted x_0" of formula (12) from https://arxiv.org/pdf/2010.02502.pdf
-            pred_original_sample = (latents - beta_prod_t ** (0.5) * noise_pred) / alpha_prod_t ** (0.5)
-
-            fac = torch.sqrt(beta_prod_t)
-            sample = pred_original_sample * (fac) + latents * (1 - fac)
-        elif isinstance(self.scheduler, LMSDiscreteScheduler):
-            sigma = self.scheduler.sigmas[index]
-            sample = latents - sigma * noise_pred
-        else:
-            raise ValueError(f"scheduler type {type(self.scheduler)} not supported")
-
-        sample = 1 / 0.18215 * sample
-        image = self.vae.decode(sample).sample
-        image = (image / 2 + 0.5).clamp(0, 1)
-        image = transforms.Resize((image.shape[-2] // VGG16_INPUT_RESIZE_DIV, image.shape[-1] // VGG16_INPUT_RESIZE_DIV))(image)
-        image = self.vgg16_normalize(image).to(latents.dtype)
-
-        image_embeddings = self.vgg16_feat_model(image)["feat"]
-
-        # バッチサイズが複数だと正しく動くかわからない
-        loss = ((image_embeddings - guide_embeddings) ** 2).mean() * guidance_scale  # MSE style transferでコンテンツの損失はMSEなので
-
-        grads = -torch.autograd.grad(loss, latents)[0]
-        if isinstance(self.scheduler, LMSDiscreteScheduler):
-            latents = latents.detach() + grads * (sigma**2)
-            noise_pred = noise_pred_original
-        else:
-            noise_pred = noise_pred_original - torch.sqrt(beta_prod_t) * grads
-        return noise_pred, latents
-
-
-class MakeCutouts(torch.nn.Module):
-    def __init__(self, cut_size, cut_power=1.0):
-        super().__init__()
-
-        self.cut_size = cut_size
-        self.cut_power = cut_power
-
-    def forward(self, pixel_values, num_cutouts):
-        sideY, sideX = pixel_values.shape[2:4]
-        max_size = min(sideX, sideY)
-        min_size = min(sideX, sideY, self.cut_size)
-        cutouts = []
-        for _ in range(num_cutouts):
-            size = int(torch.rand([]) ** self.cut_power * (max_size - min_size) + min_size)
-            offsetx = torch.randint(0, sideX - size + 1, ())
-            offsety = torch.randint(0, sideY - size + 1, ())
-            cutout = pixel_values[:, :, offsety : offsety + size, offsetx : offsetx + size]
-            cutouts.append(torch.nn.functional.adaptive_avg_pool2d(cutout, self.cut_size))
-        return torch.cat(cutouts)
-
-
-def spherical_dist_loss(x, y):
-    x = torch.nn.functional.normalize(x, dim=-1)
-    y = torch.nn.functional.normalize(y, dim=-1)
-    return (x - y).norm(dim=-1).div(2).arcsin().pow(2).mul(2)
 
 
 re_attention = re.compile(
@@ -1694,7 +920,7 @@ def parse_prompt_attention(text):
     return res
 
 
-def get_prompts_with_weights(pipe: PipelineLike, prompt: List[str], max_length: int, layer=None):
+def get_prompts_with_weights(tokenizer: CLIPTokenizer, token_replacer, prompt: List[str], max_length: int):
     r"""
     Tokenize a list of prompts and return its tokens with weights of each token.
     No padding, starting or ending token is included.
@@ -1710,21 +936,21 @@ def get_prompts_with_weights(pipe: PipelineLike, prompt: List[str], max_length: 
         for word, weight in texts_and_weights:
             if word.strip() == "BREAK":
                 # pad until next multiple of tokenizer's max token length
-                pad_len = pipe.tokenizer.model_max_length - (len(text_token) % pipe.tokenizer.model_max_length)
+                pad_len = tokenizer.model_max_length - (len(text_token) % tokenizer.model_max_length)
                 print(f"BREAK pad_len: {pad_len}")
                 for i in range(pad_len):
                     # v2のときEOSをつけるべきかどうかわからないぜ
                     # if i == 0:
-                    #     text_token.append(pipe.tokenizer.eos_token_id)
+                    #     text_token.append(tokenizer.eos_token_id)
                     # else:
-                    text_token.append(pipe.tokenizer.pad_token_id)
+                    text_token.append(tokenizer.pad_token_id)
                     text_weight.append(1.0)
                 continue
 
             # tokenize and discard the starting and the ending token
-            token = pipe.tokenizer(word).input_ids[1:-1]
+            token = tokenizer(word).input_ids[1:-1]
 
-            token = pipe.replace_token(token, layer=layer)
+            token = token_replacer(token)  # for Textual Inversion
 
             text_token += token
             # copy the weight by length of token
@@ -1771,7 +997,7 @@ def pad_tokens_and_weights(tokens, weights, max_length, bos, eos, pad, no_boseos
 
 
 def get_unweighted_text_embeddings(
-    pipe: PipelineLike,
+    text_encoder: CLIPTextModel,
     text_input: torch.Tensor,
     chunk_length: int,
     clip_skip: int,
@@ -1786,6 +1012,7 @@ def get_unweighted_text_embeddings(
     max_embeddings_multiples = (text_input.shape[1] - 2) // (chunk_length - 2)
     if max_embeddings_multiples > 1:
         text_embeddings = []
+        pool = None
         for i in range(max_embeddings_multiples):
             # extract the i-th chunk
             text_input_chunk = text_input[:, i * (chunk_length - 2) : (i + 1) * (chunk_length - 2) + 2].clone()
@@ -1801,12 +1028,13 @@ def get_unweighted_text_embeddings(
                     if text_input_chunk[j, 1] == pad:  # BOSだけであとはPAD
                         text_input_chunk[j, 1] = eos
 
-            if clip_skip is None or clip_skip == 1:
-                text_embedding = pipe.text_encoder(text_input_chunk)[0]
-            else:
-                enc_out = pipe.text_encoder(text_input_chunk, output_hidden_states=True, return_dict=True)
-                text_embedding = enc_out["hidden_states"][-clip_skip]
-                text_embedding = pipe.text_encoder.text_model.final_layer_norm(text_embedding)
+            # -2 is same for Text Encoder 1 and 2
+            enc_out = text_encoder(text_input_chunk, output_hidden_states=True, return_dict=True)
+            text_embedding = enc_out["hidden_states"][-2]
+            if pool is None:
+                pool = enc_out.get("text_embeds", None)  # use 1st chunk, if provided
+                if pool is not None:
+                    pool = train_util.pool_workaround(text_encoder, enc_out["last_hidden_state"], text_input_chunk, eos)
 
             if no_boseos_middle:
                 if i == 0:
@@ -1822,17 +1050,17 @@ def get_unweighted_text_embeddings(
             text_embeddings.append(text_embedding)
         text_embeddings = torch.concat(text_embeddings, axis=1)
     else:
-        if clip_skip is None or clip_skip == 1:
-            text_embeddings = pipe.text_encoder(text_input)[0]
-        else:
-            enc_out = pipe.text_encoder(text_input, output_hidden_states=True, return_dict=True)
-            text_embeddings = enc_out["hidden_states"][-clip_skip]
-            text_embeddings = pipe.text_encoder.text_model.final_layer_norm(text_embeddings)
-    return text_embeddings
+        enc_out = text_encoder(text_input, output_hidden_states=True, return_dict=True)
+        text_embeddings = enc_out["hidden_states"][-2]
+        pool = enc_out.get("text_embeds", None)  # text encoder 1 doesn't return this
+        if pool is not None:
+            pool = train_util.pool_workaround(text_encoder, enc_out["last_hidden_state"], text_input, eos)
+    return text_embeddings, pool
 
 
 def get_weighted_text_embeddings(
-    pipe: PipelineLike,
+    tokenizer: CLIPTokenizer,
+    text_encoder: CLIPTextModel,
     prompt: Union[str, List[str]],
     uncond_prompt: Optional[Union[str, List[str]]] = None,
     max_embeddings_multiples: Optional[int] = 1,
@@ -1840,33 +1068,11 @@ def get_weighted_text_embeddings(
     skip_parsing: Optional[bool] = False,
     skip_weighting: Optional[bool] = False,
     clip_skip=None,
-    layer=None,
+    token_replacer=None,
+    device=None,
     **kwargs,
 ):
-    r"""
-    Prompts can be assigned with local weights using brackets. For example,
-    prompt 'A (very beautiful) masterpiece' highlights the words 'very beautiful',
-    and the embedding tokens corresponding to the words get multiplied by a constant, 1.1.
-    Also, to regularize of the embedding, the weighted embedding would be scaled to preserve the original mean.
-    Args:
-        pipe (`DiffusionPipeline`):
-            Pipe to provide access to the tokenizer and the text encoder.
-        prompt (`str` or `List[str]`):
-            The prompt or prompts to guide the image generation.
-        uncond_prompt (`str` or `List[str]`):
-            The unconditional prompt or prompts for guide the image generation. If unconditional prompt
-            is provided, the embeddings of prompt and uncond_prompt are concatenated.
-        max_embeddings_multiples (`int`, *optional*, defaults to `1`):
-            The max multiple length of prompt embeddings compared to the max output length of text encoder.
-        no_boseos_middle (`bool`, *optional*, defaults to `False`):
-            If the length of text token is multiples of the capacity of text encoder, whether reserve the starting and
-            ending token in each of the chunk in the middle.
-        skip_parsing (`bool`, *optional*, defaults to `False`):
-            Skip the parsing of brackets.
-        skip_weighting (`bool`, *optional*, defaults to `False`):
-            Skip the weighting. When the parsing is skipped, it is forced True.
-    """
-    max_length = (pipe.tokenizer.model_max_length - 2) * max_embeddings_multiples + 2
+    max_length = (tokenizer.model_max_length - 2) * max_embeddings_multiples + 2
     if isinstance(prompt, str):
         prompt = [prompt]
 
@@ -1877,20 +1083,18 @@ def get_weighted_text_embeddings(
     prompt = new_prompts
 
     if not skip_parsing:
-        prompt_tokens, prompt_weights = get_prompts_with_weights(pipe, prompt, max_length - 2, layer=layer)
+        prompt_tokens, prompt_weights = get_prompts_with_weights(tokenizer, token_replacer, prompt, max_length - 2)
         if uncond_prompt is not None:
             if isinstance(uncond_prompt, str):
                 uncond_prompt = [uncond_prompt]
-            uncond_tokens, uncond_weights = get_prompts_with_weights(pipe, uncond_prompt, max_length - 2, layer=layer)
+            uncond_tokens, uncond_weights = get_prompts_with_weights(tokenizer, token_replacer, uncond_prompt, max_length - 2)
     else:
-        prompt_tokens = [token[1:-1] for token in pipe.tokenizer(prompt, max_length=max_length, truncation=True).input_ids]
+        prompt_tokens = [token[1:-1] for token in tokenizer(prompt, max_length=max_length, truncation=True).input_ids]
         prompt_weights = [[1.0] * len(token) for token in prompt_tokens]
         if uncond_prompt is not None:
             if isinstance(uncond_prompt, str):
                 uncond_prompt = [uncond_prompt]
-            uncond_tokens = [
-                token[1:-1] for token in pipe.tokenizer(uncond_prompt, max_length=max_length, truncation=True).input_ids
-            ]
+            uncond_tokens = [token[1:-1] for token in tokenizer(uncond_prompt, max_length=max_length, truncation=True).input_ids]
             uncond_weights = [[1.0] * len(token) for token in uncond_tokens]
 
     # round up the longest length of tokens to a multiple of (model_max_length - 2)
@@ -1900,15 +1104,15 @@ def get_weighted_text_embeddings(
 
     max_embeddings_multiples = min(
         max_embeddings_multiples,
-        (max_length - 1) // (pipe.tokenizer.model_max_length - 2) + 1,
+        (max_length - 1) // (tokenizer.model_max_length - 2) + 1,
     )
     max_embeddings_multiples = max(1, max_embeddings_multiples)
-    max_length = (pipe.tokenizer.model_max_length - 2) * max_embeddings_multiples + 2
+    max_length = (tokenizer.model_max_length - 2) * max_embeddings_multiples + 2
 
     # pad the length of tokens and weights
-    bos = pipe.tokenizer.bos_token_id
-    eos = pipe.tokenizer.eos_token_id
-    pad = pipe.tokenizer.pad_token_id
+    bos = tokenizer.bos_token_id
+    eos = tokenizer.eos_token_id
+    pad = tokenizer.pad_token_id
     prompt_tokens, prompt_weights = pad_tokens_and_weights(
         prompt_tokens,
         prompt_weights,
@@ -1917,9 +1121,9 @@ def get_weighted_text_embeddings(
         eos,
         pad,
         no_boseos_middle=no_boseos_middle,
-        chunk_length=pipe.tokenizer.model_max_length,
+        chunk_length=tokenizer.model_max_length,
     )
-    prompt_tokens = torch.tensor(prompt_tokens, dtype=torch.long, device=pipe.device)
+    prompt_tokens = torch.tensor(prompt_tokens, dtype=torch.long, device=device)
     if uncond_prompt is not None:
         uncond_tokens, uncond_weights = pad_tokens_and_weights(
             uncond_tokens,
@@ -1929,32 +1133,32 @@ def get_weighted_text_embeddings(
             eos,
             pad,
             no_boseos_middle=no_boseos_middle,
-            chunk_length=pipe.tokenizer.model_max_length,
+            chunk_length=tokenizer.model_max_length,
         )
-        uncond_tokens = torch.tensor(uncond_tokens, dtype=torch.long, device=pipe.device)
+        uncond_tokens = torch.tensor(uncond_tokens, dtype=torch.long, device=device)
 
     # get the embeddings
-    text_embeddings = get_unweighted_text_embeddings(
-        pipe,
+    text_embeddings, text_pool = get_unweighted_text_embeddings(
+        text_encoder,
         prompt_tokens,
-        pipe.tokenizer.model_max_length,
+        tokenizer.model_max_length,
         clip_skip,
         eos,
         pad,
         no_boseos_middle=no_boseos_middle,
     )
-    prompt_weights = torch.tensor(prompt_weights, dtype=text_embeddings.dtype, device=pipe.device)
+    prompt_weights = torch.tensor(prompt_weights, dtype=text_embeddings.dtype, device=device)
     if uncond_prompt is not None:
-        uncond_embeddings = get_unweighted_text_embeddings(
-            pipe,
+        uncond_embeddings, uncond_pool = get_unweighted_text_embeddings(
+            text_encoder,
             uncond_tokens,
-            pipe.tokenizer.model_max_length,
+            tokenizer.model_max_length,
             clip_skip,
             eos,
             pad,
             no_boseos_middle=no_boseos_middle,
         )
-        uncond_weights = torch.tensor(uncond_weights, dtype=uncond_embeddings.dtype, device=pipe.device)
+        uncond_weights = torch.tensor(uncond_weights, dtype=uncond_embeddings.dtype, device=device)
 
     # assign weights to the prompts and normalize in the sense of mean
     # TODO: should we normalize by chunk or in a whole (current implementation)?
@@ -1971,25 +1175,8 @@ def get_weighted_text_embeddings(
             uncond_embeddings *= (previous_mean / current_mean).unsqueeze(-1).unsqueeze(-1)
 
     if uncond_prompt is not None:
-        return text_embeddings, uncond_embeddings, prompt_tokens
-    return text_embeddings, None, prompt_tokens
-
-
-def preprocess_guide_image(image):
-    image = image.resize(FEATURE_EXTRACTOR_SIZE, resample=Image.NEAREST)  # cond_fnと合わせる
-    image = np.array(image).astype(np.float32) / 255.0
-    image = image[None].transpose(0, 3, 1, 2)  # nchw
-    image = torch.from_numpy(image)
-    return image  # 0 to 1
-
-
-# VGG16の入力は任意サイズでよいので入力画像を適宜リサイズする
-def preprocess_vgg16_guide_image(image, size):
-    image = image.resize(size, resample=Image.NEAREST)  # cond_fnと合わせる
-    image = np.array(image).astype(np.float32) / 255.0
-    image = image[None].transpose(0, 3, 1, 2)  # nchw
-    image = torch.from_numpy(image)
-    return image  # 0 to 1
+        return text_embeddings, text_pool, uncond_embeddings, uncond_pool, prompt_tokens
+    return text_embeddings, text_pool, None, None, prompt_tokens
 
 
 def preprocess_image(image):
@@ -2144,6 +1331,12 @@ class BatchDataExt(NamedTuple):
     # バッチ分割が必要なデータ
     width: int
     height: int
+    original_width: int
+    original_height: int
+    original_width_negative: int
+    original_height_negative: int
+    crop_left: int
+    crop_top: int
     steps: int
     scale: float
     negative_scale: float
@@ -2169,62 +1362,15 @@ def main(args):
     highres_fix = args.highres_fix_scale is not None
     # assert not highres_fix or args.image_path is None, f"highres_fix doesn't work with img2img / highres_fixはimg2imgと同時に使えません"
 
-    if args.v_parameterization and not args.v2:
-        print("v_parameterization should be with v2 / v1でv_parameterizationを使用することは想定されていません")
-    if args.v2 and args.clip_skip is not None:
-        print("v2 with clip_skip will be unexpected / v2でclip_skipを使用することは想定されていません")
-
     # モデルを読み込む
     if not os.path.isfile(args.ckpt):  # ファイルがないならパターンで探し、一つだけ該当すればそれを使う
         files = glob.glob(args.ckpt)
         if len(files) == 1:
             args.ckpt = files[0]
 
-    use_stable_diffusion_format = os.path.isfile(args.ckpt)
-    if use_stable_diffusion_format:
-        print("load StableDiffusion checkpoint")
-        text_encoder, vae, unet = model_util.load_models_from_stable_diffusion_checkpoint(args.v2, args.ckpt)
-    else:
-        print("load Diffusers pretrained models")
-        loading_pipe = StableDiffusionPipeline.from_pretrained(args.ckpt, safety_checker=None, torch_dtype=dtype)
-        text_encoder = loading_pipe.text_encoder
-        vae = loading_pipe.vae
-        unet = loading_pipe.unet
-        tokenizer = loading_pipe.tokenizer
-        del loading_pipe
-
-        # Diffusers U-Net to original U-Net
-        original_unet = UNet2DConditionModel(
-            unet.config.sample_size,
-            unet.config.attention_head_dim,
-            unet.config.cross_attention_dim,
-            unet.config.use_linear_projection,
-            unet.config.upcast_attention,
-        )
-        original_unet.load_state_dict(unet.state_dict())
-        unet = original_unet
-
-    # VAEを読み込む
-    if args.vae is not None:
-        vae = model_util.load_vae(args.vae, dtype)
-        print("additional VAE loaded")
-
-    # # 置換するCLIPを読み込む
-    # if args.replace_clip_l14_336:
-    #   text_encoder = load_clip_l14_336(dtype)
-    #   print(f"large clip {CLIP_ID_L14_336} is loaded")
-
-    if args.clip_guidance_scale > 0.0 or args.clip_image_guidance_scale:
-        print("prepare clip model")
-        clip_model = CLIPModel.from_pretrained(CLIP_MODEL_PATH, torch_dtype=dtype)
-    else:
-        clip_model = None
-
-    if args.vgg16_guidance_scale > 0.0:
-        print("prepare resnet model")
-        vgg16_model = torchvision.models.vgg16(torchvision.models.VGG16_Weights.IMAGENET1K_V1)
-    else:
-        vgg16_model = None
+    (_, text_encoder1, text_encoder2, vae, unet, _, _) = sdxl_train_util._load_target_model(
+        args.ckpt, args.vae, sdxl_model_util.MODEL_VERSION_SDXL_BASE_V1_0, dtype
+    )
 
     # xformers、Hypernetwork対応
     if not args.diffusers_xformers:
@@ -2234,12 +1380,14 @@ def main(args):
 
     # tokenizerを読み込む
     print("loading tokenizer")
-    if use_stable_diffusion_format:
-        tokenizer = train_util.load_tokenizer(args)
+    tokenizer1, tokenizer2 = sdxl_train_util.load_tokenizers(args)
 
     # schedulerを用意する
     sched_init_args = {}
+    has_steps_offset = True
+    has_clip_sample = True
     scheduler_num_noises_per_step = 1
+
     if args.sampler == "ddim":
         scheduler_cls = DDIMScheduler
         scheduler_module = diffusers.schedulers.scheduling_ddim
@@ -2249,35 +1397,48 @@ def main(args):
     elif args.sampler == "pndm":
         scheduler_cls = PNDMScheduler
         scheduler_module = diffusers.schedulers.scheduling_pndm
+        has_clip_sample = False
     elif args.sampler == "lms" or args.sampler == "k_lms":
         scheduler_cls = LMSDiscreteScheduler
         scheduler_module = diffusers.schedulers.scheduling_lms_discrete
+        has_clip_sample = False
     elif args.sampler == "euler" or args.sampler == "k_euler":
         scheduler_cls = EulerDiscreteScheduler
         scheduler_module = diffusers.schedulers.scheduling_euler_discrete
+        has_clip_sample = False
     elif args.sampler == "euler_a" or args.sampler == "k_euler_a":
         scheduler_cls = EulerAncestralDiscreteScheduler
         scheduler_module = diffusers.schedulers.scheduling_euler_ancestral_discrete
+        has_clip_sample = False
     elif args.sampler == "dpmsolver" or args.sampler == "dpmsolver++":
         scheduler_cls = DPMSolverMultistepScheduler
         sched_init_args["algorithm_type"] = args.sampler
         scheduler_module = diffusers.schedulers.scheduling_dpmsolver_multistep
+        has_clip_sample = False
     elif args.sampler == "dpmsingle":
         scheduler_cls = DPMSolverSinglestepScheduler
         scheduler_module = diffusers.schedulers.scheduling_dpmsolver_singlestep
+        has_clip_sample = False
+        has_steps_offset = False
     elif args.sampler == "heun":
         scheduler_cls = HeunDiscreteScheduler
         scheduler_module = diffusers.schedulers.scheduling_heun_discrete
+        has_clip_sample = False
     elif args.sampler == "dpm_2" or args.sampler == "k_dpm_2":
         scheduler_cls = KDPM2DiscreteScheduler
         scheduler_module = diffusers.schedulers.scheduling_k_dpm_2_discrete
+        has_clip_sample = False
     elif args.sampler == "dpm_2_a" or args.sampler == "k_dpm_2_a":
         scheduler_cls = KDPM2AncestralDiscreteScheduler
         scheduler_module = diffusers.schedulers.scheduling_k_dpm_2_ancestral_discrete
         scheduler_num_noises_per_step = 2
+        has_clip_sample = False
 
-    if args.v_parameterization:
-        sched_init_args["prediction_type"] = "v_prediction"
+    # 警告を出さないようにする
+    if has_steps_offset:
+        sched_init_args["steps_offset"] = 1
+    if has_clip_sample:
+        sched_init_args["clip_sample"] = False
 
     # samplerの乱数をあらかじめ指定するための処理
 
@@ -2330,10 +1491,11 @@ def main(args):
         **sched_init_args,
     )
 
-    # clip_sample=Trueにする
-    if hasattr(scheduler.config, "clip_sample") and scheduler.config.clip_sample is False:
-        print("set clip_sample to True")
-        scheduler.config.clip_sample = True
+    # ↓以下は結局PipeでFalseに設定されるので意味がなかった
+    # # clip_sample=Trueにする
+    # if hasattr(scheduler.config, "clip_sample") and scheduler.config.clip_sample is False:
+    #     print("set clip_sample to True")
+    #     scheduler.config.clip_sample = True
 
     # deviceを決定する
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # "mps"を考量してない
@@ -2358,13 +1520,16 @@ def main(args):
         sli_vae.load_state_dict(vae.state_dict())  # vaeのパラメータをコピーする
         vae = sli_vae
         del sli_vae
-    vae.to(dtype).to(device)
-    text_encoder.to(dtype).to(device)
+
+    vae_dtype = dtype
+    if args.no_half_vae:
+        print("set vae_dtype to float32")
+        vae_dtype = torch.float32
+    vae.to(vae_dtype).to(device)
+
+    text_encoder1.to(dtype).to(device)
+    text_encoder2.to(dtype).to(device)
     unet.to(dtype).to(device)
-    if clip_model is not None:
-        clip_model.to(dtype).to(device)
-    if vgg16_model is not None:
-        vgg16_model.to(dtype).to(device)
 
     # networkを組み込む
     if args.network_module:
@@ -2379,6 +1544,7 @@ def main(args):
             network_merge = args.network_merge_n_models
         else:
             network_merge = 0
+        print(f"network_merge: {network_merge}")
 
         for i, network_module in enumerate(args.network_module):
             print("import network module:", network_module)
@@ -2410,7 +1576,7 @@ def main(args):
                     print(f"metadata for: {network_weight}: {metadata}")
 
             network, weights_sd = imported_module.create_network_from_weights(
-                network_mul, network_weight, vae, text_encoder, unet, for_inference=True, **net_kwargs
+                network_mul, network_weight, vae, [text_encoder1, text_encoder2], unet, for_inference=True, **net_kwargs
             )
             if network is None:
                 return
@@ -2421,7 +1587,7 @@ def main(args):
 
             if not mergeable or i >= network_merge:
                 # not merging
-                network.apply_to(text_encoder, unet)
+                network.apply_to([text_encoder1, text_encoder2], unet)
                 info = network.load_state_dict(weights_sd, False)  # network.load_weightsを使うようにするとよい
                 print(f"weights are loaded: {info}")
 
@@ -2436,7 +1602,7 @@ def main(args):
                 networks.append(network)
                 network_default_muls.append(network_mul)
             else:
-                network.merge_to(text_encoder, unet, weights_sd, dtype, device)
+                network.merge_to([text_encoder1, text_encoder2], unet, weights_sd, dtype, device)
 
     else:
         networks = []
@@ -2458,48 +1624,71 @@ def main(args):
         upscaler.to(dtype).to(device)
 
     # ControlNetの処理
-    control_nets: List[ControlNetInfo] = []
-    if args.control_net_models:
-        for i, model in enumerate(args.control_net_models):
-            prep_type = None if not args.control_net_preps or len(args.control_net_preps) <= i else args.control_net_preps[i]
-            weight = 1.0 if not args.control_net_weights or len(args.control_net_weights) <= i else args.control_net_weights[i]
+    control_nets: List[Tuple[ControlNetLLLite, float]] = []
+    # if args.control_net_models:
+    #     for i, model in enumerate(args.control_net_models):
+    #         prep_type = None if not args.control_net_preps or len(args.control_net_preps) <= i else args.control_net_preps[i]
+    #         weight = 1.0 if not args.control_net_weights or len(args.control_net_weights) <= i else args.control_net_weights[i]
+    #         ratio = 1.0 if not args.control_net_ratios or len(args.control_net_ratios) <= i else args.control_net_ratios[i]
+
+    #         ctrl_unet, ctrl_net = original_control_net.load_control_net(False, unet, model)
+    #         prep = original_control_net.load_preprocess(prep_type)
+    #         control_nets.append(ControlNetInfo(ctrl_unet, ctrl_net, prep, weight, ratio))
+    if args.control_net_lllite_models:
+        for i, model_file in enumerate(args.control_net_lllite_models):
+            print(f"loading ControlNet-LLLite: {model_file}")
+
+            from safetensors.torch import load_file
+
+            state_dict = load_file(model_file)
+            mlp_dim = None
+            cond_emb_dim = None
+            for key, value in state_dict.items():
+                if mlp_dim is None and "down.0.weight" in key:
+                    mlp_dim = value.shape[0]
+                elif cond_emb_dim is None and "conditioning1.0" in key:
+                    cond_emb_dim = value.shape[0] * 2
+                if mlp_dim is not None and cond_emb_dim is not None:
+                    break
+            assert mlp_dim is not None and cond_emb_dim is not None, f"invalid control net: {model_file}"
+
+            multiplier = (
+                1.0
+                if not args.control_net_multipliers or len(args.control_net_multipliers) <= i
+                else args.control_net_multipliers[i]
+            )
             ratio = 1.0 if not args.control_net_ratios or len(args.control_net_ratios) <= i else args.control_net_ratios[i]
 
-            ctrl_unet, ctrl_net = original_control_net.load_control_net(args.v2, unet, model)
-            prep = original_control_net.load_preprocess(prep_type)
-            control_nets.append(ControlNetInfo(ctrl_unet, ctrl_net, prep, weight, ratio))
+            control_net = ControlNetLLLite(unet, cond_emb_dim, mlp_dim, multiplier=multiplier)
+            control_net.apply_to()
+            control_net.load_state_dict(state_dict)
+            control_net.to(dtype).to(device)
+            control_net.set_batch_cond_only(False, False)
+            control_nets.append((control_net, ratio))
 
     if args.opt_channels_last:
         print(f"set optimizing: channels last")
-        text_encoder.to(memory_format=torch.channels_last)
+        text_encoder1.to(memory_format=torch.channels_last)
+        text_encoder2.to(memory_format=torch.channels_last)
         vae.to(memory_format=torch.channels_last)
         unet.to(memory_format=torch.channels_last)
-        if clip_model is not None:
-            clip_model.to(memory_format=torch.channels_last)
         if networks:
             for network in networks:
                 network.to(memory_format=torch.channels_last)
-        if vgg16_model is not None:
-            vgg16_model.to(memory_format=torch.channels_last)
 
         for cn in control_nets:
-            cn.unet.to(memory_format=torch.channels_last)
-            cn.net.to(memory_format=torch.channels_last)
+            cn.to(memory_format=torch.channels_last)
+            # cn.unet.to(memory_format=torch.channels_last)
+            # cn.net.to(memory_format=torch.channels_last)
 
     pipe = PipelineLike(
         device,
         vae,
-        text_encoder,
-        tokenizer,
+        [text_encoder1, text_encoder2],
+        [tokenizer1, tokenizer2],
         unet,
         scheduler,
         args.clip_skip,
-        clip_model,
-        args.clip_guidance_scale,
-        args.clip_image_guidance_scale,
-        vgg16_model,
-        args.vgg16_guidance_scale,
-        args.vgg16_guidance_layer,
     )
     pipe.set_control_nets(control_nets)
     print("pipeline is ready.")
@@ -2507,14 +1696,10 @@ def main(args):
     if args.diffusers_xformers:
         pipe.enable_xformers_memory_efficient_attention()
 
-    # Extended Textual Inversion および Textual Inversionを処理する
-    if args.XTI_embeddings:
-        diffusers.models.UNet2DConditionModel.forward = unet_forward_XTI
-        diffusers.models.unet_2d_blocks.CrossAttnDownBlock2D.forward = downblock_forward_XTI
-        diffusers.models.unet_2d_blocks.CrossAttnUpBlock2D.forward = upblock_forward_XTI
-
+    #  Textual Inversionを処理する
     if args.textual_inversion_embeddings:
-        token_ids_embeds = []
+        token_ids_embeds1 = []
+        token_ids_embeds2 = []
         for embeds_file in args.textual_inversion_embeddings:
             if model_util.is_safetensors(embeds_file):
                 from safetensors.torch import load_file
@@ -2525,103 +1710,52 @@ def main(args):
 
             if "string_to_param" in data:
                 data = data["string_to_param"]
-            embeds = next(iter(data.values()))
 
-            if type(embeds) != torch.Tensor:
-                raise ValueError(f"weight file does not contains Tensor / 重みファイルのデータがTensorではありません: {embeds_file}")
+            embeds1 = data["clip_l"]  # text encoder 1
+            embeds2 = data["clip_g"]  # text encoder 2
 
-            num_vectors_per_token = embeds.size()[0]
+            num_vectors_per_token = embeds1.size()[0]
             token_string = os.path.splitext(os.path.basename(embeds_file))[0]
+
             token_strings = [token_string] + [f"{token_string}{i+1}" for i in range(num_vectors_per_token - 1)]
 
             # add new word to tokenizer, count is num_vectors_per_token
-            num_added_tokens = tokenizer.add_tokens(token_strings)
-            assert (
-                num_added_tokens == num_vectors_per_token
-            ), f"tokenizer has same word to token string (filename). please rename the file / 指定した名前（ファイル名）のトークンが既に存在します。ファイルをリネームしてください: {embeds_file}"
+            num_added_tokens1 = tokenizer1.add_tokens(token_strings)
+            num_added_tokens2 = tokenizer2.add_tokens(token_strings)
+            assert num_added_tokens1 == num_vectors_per_token and num_added_tokens2 == num_vectors_per_token, (
+                f"tokenizer has same word to token string (filename): {embeds_file}"
+                + f" / 指定した名前（ファイル名）のトークンが既に存在します: {embeds_file}"
+            )
 
-            token_ids = tokenizer.convert_tokens_to_ids(token_strings)
-            print(f"Textual Inversion embeddings `{token_string}` loaded. Tokens are added: {token_ids}")
+            token_ids1 = tokenizer1.convert_tokens_to_ids(token_strings)
+            token_ids2 = tokenizer2.convert_tokens_to_ids(token_strings)
+            print(f"Textual Inversion embeddings `{token_string}` loaded. Tokens are added: {token_ids1} and {token_ids2}")
             assert (
-                min(token_ids) == token_ids[0] and token_ids[-1] == token_ids[0] + len(token_ids) - 1
-            ), f"token ids is not ordered"
-            assert len(tokenizer) - 1 == token_ids[-1], f"token ids is not end of tokenize: {len(tokenizer)}"
+                min(token_ids1) == token_ids1[0] and token_ids1[-1] == token_ids1[0] + len(token_ids1) - 1
+            ), f"token ids1 is not ordered"
+            assert (
+                min(token_ids2) == token_ids2[0] and token_ids2[-1] == token_ids2[0] + len(token_ids2) - 1
+            ), f"token ids2 is not ordered"
+            assert len(tokenizer1) - 1 == token_ids1[-1], f"token ids 1 is not end of tokenize: {len(tokenizer1)}"
+            assert len(tokenizer2) - 1 == token_ids2[-1], f"token ids 2 is not end of tokenize: {len(tokenizer2)}"
 
             if num_vectors_per_token > 1:
-                pipe.add_token_replacement(token_ids[0], token_ids)
+                pipe.add_token_replacement(0, token_ids1[0], token_ids1)  # hoge -> hoge, hogea, hogeb, ...
+                pipe.add_token_replacement(1, token_ids2[0], token_ids2)
 
-            token_ids_embeds.append((token_ids, embeds))
+            token_ids_embeds1.append((token_ids1, embeds1))
+            token_ids_embeds2.append((token_ids2, embeds2))
 
-        text_encoder.resize_token_embeddings(len(tokenizer))
-        token_embeds = text_encoder.get_input_embeddings().weight.data
-        for token_ids, embeds in token_ids_embeds:
+        text_encoder1.resize_token_embeddings(len(tokenizer1))
+        text_encoder2.resize_token_embeddings(len(tokenizer2))
+        token_embeds1 = text_encoder1.get_input_embeddings().weight.data
+        token_embeds2 = text_encoder2.get_input_embeddings().weight.data
+        for token_ids, embeds in token_ids_embeds1:
             for token_id, embed in zip(token_ids, embeds):
-                token_embeds[token_id] = embed
-
-    if args.XTI_embeddings:
-        XTI_layers = [
-            "IN01",
-            "IN02",
-            "IN04",
-            "IN05",
-            "IN07",
-            "IN08",
-            "MID",
-            "OUT03",
-            "OUT04",
-            "OUT05",
-            "OUT06",
-            "OUT07",
-            "OUT08",
-            "OUT09",
-            "OUT10",
-            "OUT11",
-        ]
-        token_ids_embeds_XTI = []
-        for embeds_file in args.XTI_embeddings:
-            if model_util.is_safetensors(embeds_file):
-                from safetensors.torch import load_file
-
-                data = load_file(embeds_file)
-            else:
-                data = torch.load(embeds_file, map_location="cpu")
-            if set(data.keys()) != set(XTI_layers):
-                raise ValueError("NOT XTI")
-            embeds = torch.concat(list(data.values()))
-            num_vectors_per_token = data["MID"].size()[0]
-
-            token_string = os.path.splitext(os.path.basename(embeds_file))[0]
-            token_strings = [token_string] + [f"{token_string}{i+1}" for i in range(num_vectors_per_token - 1)]
-
-            # add new word to tokenizer, count is num_vectors_per_token
-            num_added_tokens = tokenizer.add_tokens(token_strings)
-            assert (
-                num_added_tokens == num_vectors_per_token
-            ), f"tokenizer has same word to token string (filename). please rename the file / 指定した名前（ファイル名）のトークンが既に存在します。ファイルをリネームしてください: {embeds_file}"
-
-            token_ids = tokenizer.convert_tokens_to_ids(token_strings)
-            print(f"XTI embeddings `{token_string}` loaded. Tokens are added: {token_ids}")
-
-            # if num_vectors_per_token > 1:
-            pipe.add_token_replacement(token_ids[0], token_ids)
-
-            token_strings_XTI = []
-            for layer_name in XTI_layers:
-                token_strings_XTI += [f"{t}_{layer_name}" for t in token_strings]
-            tokenizer.add_tokens(token_strings_XTI)
-            token_ids_XTI = tokenizer.convert_tokens_to_ids(token_strings_XTI)
-            token_ids_embeds_XTI.append((token_ids_XTI, embeds))
-            for t in token_ids:
-                t_XTI_dic = {}
-                for i, layer_name in enumerate(XTI_layers):
-                    t_XTI_dic[layer_name] = t + (i + 1) * num_added_tokens
-                pipe.add_token_replacement_XTI(t, t_XTI_dic)
-
-            text_encoder.resize_token_embeddings(len(tokenizer))
-            token_embeds = text_encoder.get_input_embeddings().weight.data
-            for token_ids, embeds in token_ids_embeds_XTI:
-                for token_id, embed in zip(token_ids, embeds):
-                    token_embeds[token_id] = embed
+                token_embeds1[token_id] = embed
+        for token_ids, embeds in token_ids_embeds2:
+            for token_id, embed in zip(token_ids, embeds):
+                token_embeds2[token_id] = embed
 
     # promptを取得する
     if args.from_file is not None:
@@ -2674,6 +1808,19 @@ def main(args):
         init_images = load_images(args.image_path)
         assert len(init_images) > 0, f"No image / 画像がありません: {args.image_path}"
         print(f"loaded {len(init_images)} images for img2img")
+
+        # CLIP Vision
+        if args.clip_vision_strength is not None:
+            print(f"load CLIP Vision model: {CLIP_VISION_MODEL}")
+            vision_model = CLIPVisionModelWithProjection.from_pretrained(CLIP_VISION_MODEL, projection_dim=1280)
+            vision_model.to(device, dtype)
+            processor = CLIPImageProcessor.from_pretrained(CLIP_VISION_MODEL)
+
+            pipe.clip_vision_model = vision_model
+            pipe.clip_vision_processor = processor
+            pipe.clip_vision_strength = args.clip_vision_strength
+            print(f"CLIP Vision model loaded.")
+
     else:
         init_images = None
 
@@ -2687,7 +1834,7 @@ def main(args):
 
     # promptがないとき、画像のPngInfoから取得する
     if init_images is not None and len(prompt_list) == 0 and not args.interactive:
-        print("get prompts from images' meta data")
+        print("get prompts from images' metadata")
         for img in init_images:
             if "prompt" in img.text:
                 prompt = img.text["prompt"]
@@ -2751,7 +1898,7 @@ def main(args):
 
     prev_image = None  # for VGG16 guided
     if args.guide_image_path is not None:
-        print(f"load image for CLIP/VGG16/ControlNet guidance: {args.guide_image_path}")
+        print(f"load image for ControlNet guidance: {args.guide_image_path}")
         guide_images = []
         for p in args.guide_image_path:
             guide_images.extend(load_images(p))
@@ -2775,9 +1922,9 @@ def main(args):
 
     # デフォルト画像サイズを設定する：img2imgではこれらの値は無視される（またはW*Hにリサイズ済み）
     if args.W is None:
-        args.W = 512
+        args.W = 1024
     if args.H is None:
-        args.H = 512
+        args.H = 1024
 
     # 画像生成のループ
     os.makedirs(args.outdir, exist_ok=True)
@@ -2786,10 +1933,6 @@ def main(args):
     for gen_iter in range(args.n_iter):
         print(f"iteration {gen_iter+1}/{args.n_iter}")
         iter_seed = random.randint(0, 0x7FFFFFFF)
-
-        # shuffle prompt list
-        if args.shuffle_prompts:
-            random.shuffle(prompt_list)
 
         # バッチ処理の関数
         def process_batch(batch: List[BatchData], highres_fix, highres_1st=False):
@@ -2803,16 +1946,35 @@ def main(args):
                 print("process 1st stage")
                 batch_1st = []
                 for _, base, ext in batch:
-                    width_1st = int(ext.width * args.highres_fix_scale + 0.5)
-                    height_1st = int(ext.height * args.highres_fix_scale + 0.5)
+
+                    def scale_and_round(x):
+                        if x is None:
+                            return None
+                        return int(x * args.highres_fix_scale + 0.5)
+
+                    width_1st = scale_and_round(ext.width)
+                    height_1st = scale_and_round(ext.height)
                     width_1st = width_1st - width_1st % 32
                     height_1st = height_1st - height_1st % 32
+
+                    original_width_1st = scale_and_round(ext.original_width)
+                    original_height_1st = scale_and_round(ext.original_height)
+                    original_width_negative_1st = scale_and_round(ext.original_width_negative)
+                    original_height_negative_1st = scale_and_round(ext.original_height_negative)
+                    crop_left_1st = scale_and_round(ext.crop_left)
+                    crop_top_1st = scale_and_round(ext.crop_top)
 
                     strength_1st = ext.strength if args.highres_fix_strength is None else args.highres_fix_strength
 
                     ext_1st = BatchDataExt(
                         width_1st,
                         height_1st,
+                        original_width_1st,
+                        original_height_1st,
+                        original_width_negative_1st,
+                        original_height_negative_1st,
+                        crop_left_1st,
+                        crop_top_1st,
                         args.highres_fix_steps,
                         ext.scale,
                         ext.negative_scale,
@@ -2873,7 +2035,22 @@ def main(args):
             (
                 return_latents,
                 (step_first, _, _, _, init_image, mask_image, _, guide_image),
-                (width, height, steps, scale, negative_scale, strength, network_muls, num_sub_prompts),
+                (
+                    width,
+                    height,
+                    original_width,
+                    original_height,
+                    original_width_negative,
+                    original_height_negative,
+                    crop_left,
+                    crop_top,
+                    steps,
+                    scale,
+                    negative_scale,
+                    strength,
+                    network_muls,
+                    num_sub_prompts,
+                ),
             ) = batch[0]
             noise_shape = (LATENT_CHANNELS, height // DOWNSAMPLING_FACTOR, width // DOWNSAMPLING_FACTOR)
 
@@ -2971,7 +2148,7 @@ def main(args):
                     n.set_multiplier(m)
                     if regional_network:
                         n.set_current_generation(batch_size, num_sub_prompts, width, height, shared)
-                
+
                 if not regional_network and network_pre_calc:
                     for n in networks:
                         n.restore_weights()
@@ -2986,6 +2163,12 @@ def main(args):
                 mask_images,
                 height,
                 width,
+                original_height,
+                original_width,
+                original_height_negative,
+                original_width_negative,
+                crop_top,
+                crop_left,
                 steps,
                 scale,
                 negative_scale,
@@ -2998,7 +2181,7 @@ def main(args):
                 return_latents=return_latents,
                 clip_prompts=clip_prompts,
                 clip_guide_images=guide_images,
-            )[0]
+            )
             if highres_1st and not args.highres_fix_save_1st:  # return images or latents
                 return images
 
@@ -3022,6 +2205,12 @@ def main(args):
                     metadata.add_text("negative-scale", str(negative_scale))
                 if clip_prompt is not None:
                     metadata.add_text("clip-prompt", clip_prompt)
+                metadata.add_text("original-height", str(original_height))
+                metadata.add_text("original-width", str(original_width))
+                metadata.add_text("original-height-negative", str(original_height_negative))
+                metadata.add_text("original-width-negative", str(original_width_negative))
+                metadata.add_text("crop-top", str(crop_top))
+                metadata.add_text("crop-left", str(crop_left))
 
                 if args.use_original_file_name and init_images is not None:
                     if type(init_images) is list:
@@ -3081,6 +2270,12 @@ def main(args):
                     # parse prompt: if prompt is not changed, skip parsing
                     width = args.W
                     height = args.H
+                    original_width = args.original_width
+                    original_height = args.original_height
+                    original_width_negative = args.original_width_negative
+                    original_height_negative = args.original_height_negative
+                    crop_top = args.crop_top
+                    crop_left = args.crop_left
                     scale = args.scale
                     negative_scale = args.negative_scale
                     steps = args.steps
@@ -3107,6 +2302,42 @@ def main(args):
                             if m:
                                 height = int(m.group(1))
                                 print(f"height: {height}")
+                                continue
+
+                            m = re.match(r"ow (\d+)", parg, re.IGNORECASE)
+                            if m:
+                                original_width = int(m.group(1))
+                                print(f"original width: {original_width}")
+                                continue
+
+                            m = re.match(r"oh (\d+)", parg, re.IGNORECASE)
+                            if m:
+                                original_height = int(m.group(1))
+                                print(f"original height: {original_height}")
+                                continue
+
+                            m = re.match(r"nw (\d+)", parg, re.IGNORECASE)
+                            if m:
+                                original_width_negative = int(m.group(1))
+                                print(f"original width negative: {original_width_negative}")
+                                continue
+
+                            m = re.match(r"nh (\d+)", parg, re.IGNORECASE)
+                            if m:
+                                original_height_negative = int(m.group(1))
+                                print(f"original height negative: {original_height_negative}")
+                                continue
+
+                            m = re.match(r"ct (\d+)", parg, re.IGNORECASE)
+                            if m:
+                                crop_top = int(m.group(1))
+                                print(f"crop top: {crop_top}")
+                                continue
+
+                            m = re.match(r"cl (\d+)", parg, re.IGNORECASE)
+                            if m:
+                                crop_left = int(m.group(1))
+                                print(f"crop left: {crop_left}")
                                 continue
 
                             m = re.match(r"s (\d+)", parg, re.IGNORECASE)
@@ -3179,7 +2410,7 @@ def main(args):
                             print("predefined seeds are exhausted")
                             seed = None
                     elif args.iter_same_seed:
-                        seed = iter_seed
+                        seeds = iter_seed
                     else:
                         seed = None  # 前のを消す
 
@@ -3216,12 +2447,6 @@ def main(args):
                         guide_image = guide_images[p * c : p * c + c]
                     else:
                         guide_image = guide_images[global_step % len(guide_images)]
-                elif args.clip_image_guidance_scale > 0 or args.vgg16_guidance_scale > 0:
-                    if prev_image is None:
-                        print("Generate 1st image without guide image.")
-                    else:
-                        print("Use previous image as guide image.")
-                        guide_image = prev_image
 
                 if regional_network:
                     num_sub_prompts = len(prompt.split(" AND "))
@@ -3237,6 +2462,12 @@ def main(args):
                     BatchDataExt(
                         width,
                         height,
+                        original_width,
+                        original_height,
+                        original_width_negative,
+                        original_height_negative,
+                        crop_left,
+                        crop_top,
                         steps,
                         scale,
                         negative_scale,
@@ -3268,10 +2499,6 @@ def main(args):
 def setup_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--v2", action="store_true", help="load Stable Diffusion v2.0 model / Stable Diffusion 2.0のモデルを読み込む")
-    parser.add_argument(
-        "--v_parameterization", action="store_true", help="enable v-parameterization training / v-parameterization学習を有効にする"
-    )
     parser.add_argument("--prompt", type=str, default=None, help="prompt / プロンプト")
     parser.add_argument(
         "--from_file", type=str, default=None, help="if specified, load prompts from this file / 指定時はプロンプトをファイルから読み込む"
@@ -3299,6 +2526,26 @@ def setup_parser() -> argparse.ArgumentParser:
     parser.add_argument("--n_iter", type=int, default=1, help="sample this often / 繰り返し回数")
     parser.add_argument("--H", type=int, default=None, help="image height, in pixel space / 生成画像高さ")
     parser.add_argument("--W", type=int, default=None, help="image width, in pixel space / 生成画像幅")
+    parser.add_argument(
+        "--original_height", type=int, default=None, help="original height for SDXL conditioning / SDXLの条件付けに用いるoriginal heightの値"
+    )
+    parser.add_argument(
+        "--original_width", type=int, default=None, help="original width for SDXL conditioning / SDXLの条件付けに用いるoriginal widthの値"
+    )
+    parser.add_argument(
+        "--original_height_negative",
+        type=int,
+        default=None,
+        help="original height for SDXL unconditioning / SDXLのネガティブ条件付けに用いるoriginal heightの値",
+    )
+    parser.add_argument(
+        "--original_width_negative",
+        type=int,
+        default=None,
+        help="original width for SDXL unconditioning / SDXLのネガティブ条件付けに用いるoriginal widthの値",
+    )
+    parser.add_argument("--crop_top", type=int, default=None, help="crop top for SDXL conditioning / SDXLの条件付けに用いるcrop topの値")
+    parser.add_argument("--crop_left", type=int, default=None, help="crop left for SDXL conditioning / SDXLの条件付けに用いるcrop leftの値")
     parser.add_argument("--batch_size", type=int, default=1, help="batch size / バッチサイズ")
     parser.add_argument(
         "--vae_batch_size",
@@ -3312,6 +2559,7 @@ def setup_parser() -> argparse.ArgumentParser:
         default=None,
         help="number of slices to split image into for VAE to reduce VRAM usage, None for no splitting (default), slower if specified. 16 or 32 recommended / VAE処理時にVRAM使用量削減のため画像を分割するスライス数、Noneの場合は分割しない（デフォルト）、指定すると遅くなる。16か32程度を推奨",
     )
+    parser.add_argument("--no_half_vae", action="store_true", help="do not use fp16/bf16 precision for VAE / VAE処理時にfp16/bf16を使わない")
     parser.add_argument("--steps", type=int, default=50, help="number of ddim sampling steps / サンプリングステップ数")
     parser.add_argument(
         "--sampler",
@@ -3366,11 +2614,6 @@ def setup_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="use same seed for all prompts in iteration if no seed specified / 乱数seedの指定がないとき繰り返し内はすべて同じseedを使う（プロンプト間の差異の比較用）",
     )
-    parser.add_argument(
-        "--shuffle_prompts",
-        action="store_true",
-        help="shuffle prompts in iteration / 繰り返し内のプロンプトをシャッフルする",
-    )
     parser.add_argument("--fp16", action="store_true", help="use fp16 / fp16を指定し省メモリ化する")
     parser.add_argument("--bf16", action="store_true", help="use bfloat16 / bfloat16を指定し省メモリ化する")
     parser.add_argument("--xformers", action="store_true", help="use xformers / xformersを使用し高速化する")
@@ -3414,43 +2657,12 @@ def setup_parser() -> argparse.ArgumentParser:
         nargs="*",
         help="Embeddings files of Textual Inversion / Textual Inversionのembeddings",
     )
-    parser.add_argument(
-        "--XTI_embeddings",
-        type=str,
-        default=None,
-        nargs="*",
-        help="Embeddings files of Extended Textual Inversion / Extended Textual Inversionのembeddings",
-    )
     parser.add_argument("--clip_skip", type=int, default=None, help="layer number from bottom to use in CLIP / CLIPの後ろからn層目の出力を使う")
     parser.add_argument(
         "--max_embeddings_multiples",
         type=int,
         default=None,
         help="max embedding multiples, max token length is 75 * multiples / トークン長をデフォルトの何倍とするか 75*この値 がトークン長となる",
-    )
-    parser.add_argument(
-        "--clip_guidance_scale",
-        type=float,
-        default=0.0,
-        help="enable CLIP guided SD, scale for guidance (DDIM, PNDM, LMS samplers only) / CLIP guided SDを有効にしてこのscaleを適用する（サンプラーはDDIM、PNDM、LMSのみ）",
-    )
-    parser.add_argument(
-        "--clip_image_guidance_scale",
-        type=float,
-        default=0.0,
-        help="enable CLIP guided SD by image, scale for guidance / 画像によるCLIP guided SDを有効にしてこのscaleを適用する",
-    )
-    parser.add_argument(
-        "--vgg16_guidance_scale",
-        type=float,
-        default=0.0,
-        help="enable VGG16 guided SD by image, scale for guidance / 画像によるVGG16 guided SDを有効にしてこのscaleを適用する",
-    )
-    parser.add_argument(
-        "--vgg16_guidance_layer",
-        type=int,
-        default=20,
-        help="layer of VGG16 to calculate contents guide (1~30, 20 for conv4_2) / VGG16のcontents guideに使うレイヤー番号 (1~30、20はconv4_2)",
     )
     parser.add_argument(
         "--guide_image_path", type=str, default=None, nargs="*", help="image to CLIP guidance / CLIP guided SDでガイドに使う画像"
@@ -3498,12 +2710,17 @@ def setup_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--control_net_models", type=str, default=None, nargs="*", help="ControlNet models to use / 使用するControlNetのモデル名"
+        "--control_net_lllite_models", type=str, default=None, nargs="*", help="ControlNet models to use / 使用するControlNetのモデル名"
     )
+    # parser.add_argument(
+    #     "--control_net_models", type=str, default=None, nargs="*", help="ControlNet models to use / 使用するControlNetのモデル名"
+    # )
+    # parser.add_argument(
+    #     "--control_net_preps", type=str, default=None, nargs="*", help="ControlNet preprocess to use / 使用するControlNetのプリプロセス名"
+    # )
     parser.add_argument(
-        "--control_net_preps", type=str, default=None, nargs="*", help="ControlNet preprocess to use / 使用するControlNetのプリプロセス名"
+        "--control_net_multipliers", type=float, default=None, nargs="*", help="ControlNet multiplier / ControlNetの適用率"
     )
-    parser.add_argument("--control_net_weights", type=float, default=None, nargs="*", help="ControlNet weights / ControlNetの重み")
     parser.add_argument(
         "--control_net_ratios",
         type=float,
@@ -3511,7 +2728,13 @@ def setup_parser() -> argparse.ArgumentParser:
         nargs="*",
         help="ControlNet guidance ratio for steps / ControlNetでガイドするステップ比率",
     )
-    # parser.add_argument(
+    parser.add_argument(
+        "--clip_vision_strength",
+        type=float,
+        default=None,
+        help="enable CLIP Vision Conditioning for img2img with this strength / img2imgでCLIP Vision Conditioningを有効にしてこのstrengthで処理する",
+    )
+    # # parser.add_argument(
     #     "--control_net_image_path", type=str, default=None, nargs="*", help="image for ControlNet guidance / ControlNetでガイドに使う画像"
     # )
 
