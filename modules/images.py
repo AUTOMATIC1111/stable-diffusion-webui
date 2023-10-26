@@ -583,7 +583,7 @@ def save_image(image, path, basename = '', seed=None, prompt=None, extension=sha
     # sequence
     if shared.opts.save_images_add_number or '[seq]' in params.filename:
         if '[seq]' not in params.filename:
-            params.filename = f"[seq]-{params.filename}"
+            params.filename = os.path.join(os.path.dirname(params.filename), f"[seq]-{os.path.basename(params.filename)}")
         basecount = get_next_sequence_number(dirname, basename)
         for i in range(9999):
             seq = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
