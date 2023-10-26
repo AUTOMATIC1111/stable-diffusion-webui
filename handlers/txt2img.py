@@ -204,14 +204,14 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
         yield progress
         shared.state.begin()
         # shared.state.job_count = process_args.n_iter * process_args.batch_size
-
+        inference_start = time.time()
         if process_args.selectable_scripts:
             processed = process_args.scripts.run(process_args, *process_args.script_args)
         else:
             processed = process_images(process_args)
         shared.state.end()
         process_args.close()
-
+        inference_time = time.time() - inference_start
         progress.status = TaskStatus.Uploading
         yield progress
 
@@ -221,7 +221,7 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
                                        process_args.outpath_scripts,
                                        task.id,
                                        inspect=process_args.kwargs.get("need_audit", False))
-
+        images.update({'inference_time': inference_time})
         progress = TaskProgress.new_finish(task, images)
         progress.update_seed(processed.all_seeds, processed.all_subseeds)
 
