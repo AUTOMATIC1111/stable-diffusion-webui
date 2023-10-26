@@ -248,7 +248,7 @@ class ConversionTask(Txt2ImgTask):
                 full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
             else:
                 pass
-
+        full_task['override_settings_texts'] = ["sd_vae:Automatic"]
         return full_task, is_img2img, full_canny, part_canny
 
 
@@ -436,6 +436,7 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
             init_images=processed.images,
             mask=None,
             denoising_strength=denoising_strength
+
         )
 
         p.outpath_scripts = t.outpath_grids
