@@ -17,7 +17,7 @@ from loguru import logger
 from tools.image import compress_image
 from PIL.PngImagePlugin import PngInfo
 from filestorage import find_storage_classes_with_env, signature_url
-from tools.environment import get_file_storage_system_env, Env_BucketKey, S3SDWEB, S3ImageBucket, Env_DtAppKey
+from tools.environment import S3SDWEB, S3ImageBucket
 from tools.processor import MultiThreadWorker
 
 
@@ -26,6 +26,7 @@ class ModelType(IntEnum):
     Lora = 2
     Embedding = 3
     LyCORIS = 4
+    VAE = 5
 
 
 class OutImageType(IntEnum):
@@ -133,8 +134,7 @@ class ImageOutput:
     def upload_keys(self, clean_upload_file: bool = True):
         file_storage_system_cls = find_storage_classes_with_env()
         file_storage_system = file_storage_system_cls()
-        storage_env = get_file_storage_system_env()
-        bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
+
         low_files = self.get_local_low_images()
         # push s3
         if file_storage_system.name() != 'default':
@@ -143,7 +143,7 @@ class ImageOutput:
                 relative_path = low_file
                 if S3SDWEB not in low_file:
                     relative_path = os.path.join(S3SDWEB, low_file)
-                low_key = os.path.join(bucket, relative_path)
+                low_key = relative_path
                 file_storage_system.upload(low_file, low_key)
                 low_keys.append(low_key)
 
@@ -152,7 +152,7 @@ class ImageOutput:
                 relative_path = os.path.join(S3SDWEB, self.output_dir)
             for file_path in self.local_files:
                 filename = os.path.basename(file_path)
-                key = os.path.join(bucket, relative_path, filename)
+                key = os.path.join(relative_path, filename)
                 file_storage_system.upload(file_path, key)
                 keys.append(key)
 
@@ -170,8 +170,6 @@ class ImageOutput:
     def multi_upload_keys(self, clean_upload_file: bool = True):
         file_storage_system_cls = find_storage_classes_with_env()
         file_storage_system = file_storage_system_cls()
-        storage_env = get_file_storage_system_env()
-        bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
         low_files = self.get_local_low_images()
 
         if file_storage_system.name() != 'default':
@@ -180,7 +178,7 @@ class ImageOutput:
                 relative_path = low_file
                 if S3SDWEB not in low_file:
                     relative_path = os.path.join(S3SDWEB, low_file)
-                low_key = os.path.join(bucket, relative_path)
+                low_key = relative_path
                 worker_args.append((file_storage_system, low_file, low_key, low_keys))
 
             relative_path = self.output_dir
@@ -188,7 +186,7 @@ class ImageOutput:
                 relative_path = os.path.join(S3SDWEB, self.output_dir)
             for file_path in self.local_files:
                 filename = os.path.basename(file_path)
-                key = os.path.join(bucket, relative_path, filename)
+                key = os.path.join(relative_path, filename)
                 # file_storage_system.upload(file_path, key)
                 worker_args.append((file_storage_system, file_path, key, high_keys))
             if worker_args:
@@ -263,9 +261,8 @@ class ImageOutput:
         except Exception as e:
             logger.exception(f'request {api} failed')
             pass
-        storage_env = get_file_storage_system_env()
-        bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
-        default_cover = os.path.join(bucket, ForbiddenCoverKey)
+
+        default_cover = ForbiddenCoverKey
 
         for i, low_key in enumerate(images['low']):
             if low_key in forbidden_keys:

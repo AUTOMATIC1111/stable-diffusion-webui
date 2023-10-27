@@ -50,13 +50,14 @@ module.exports = {
     globals: {
         //script.js
         gradioApp: "readonly",
+        executeCallbacks: "readonly",
+        onAfterUiUpdate: "readonly",
+        onOptionsChanged: "readonly",
         onUiLoaded: "readonly",
         onUiUpdate: "readonly",
-        onOptionsChanged: "readonly",
         uiCurrentTab: "writable",
-        uiElementIsVisible: "readonly",
         uiElementInSight: "readonly",
-        executeCallbacks: "readonly",
+        uiElementIsVisible: "readonly",
         //ui.js
         opts: "writable",
         all_gallery_buttons: "readonly",
@@ -84,5 +85,13 @@ module.exports = {
         // imageviewer.js
         modalPrevImage: "readonly",
         modalNextImage: "readonly",
+        // token-counters.js
+        setupTokenCounters: "readonly",
+        // localStorage.js
+        localSet: "readonly",
+        localGet: "readonly",
+        localRemove: "readonly",
+        // resizeHandle.js
+        setupResizeHandle: "writable"
     }
 };

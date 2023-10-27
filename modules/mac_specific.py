@@ -1,20 +1,43 @@
+import logging
+
 import torch
 import platform
 from modules.sd_hijack_utils import CondFunc
 from packaging import version
+from modules import shared
+
+log = logging.getLogger(__name__)
 
 
-# has_mps is only available in nightly pytorch (for now) and macOS 12.3+.
-# check `getattr` and try it for compatibility
+# before torch version 1.13, has_mps is only available in nightly pytorch and macOS 12.3+,
+# use check `getattr` and try it for compatibility.
+# in torch version 1.13, backends.mps.is_available() and backends.mps.is_built() are introduced in to check mps availabilty,
+# since torch 2.0.1+ nightly build, getattr(torch, 'has_mps', False) was deprecated, see https://github.com/pytorch/pytorch/pull/103279
 def check_for_mps() -> bool:
-    if not getattr(torch, 'has_mps', False):
-        return False
-    try:
-        torch.zeros(1).to(torch.device("mps"))
-        return True
-    except Exception:
-        return False
+    if version.parse(torch.__version__) <= version.parse("2.0.1"):
+        if not getattr(torch, 'has_mps', False):
+            return False
+        try:
+            torch.zeros(1).to(torch.device("mps"))
+            return True
+        except Exception:
+            return False
+    else:
+        return torch.backends.mps.is_available() and torch.backends.mps.is_built()
+
+
 has_mps = check_for_mps()
+
+
+def torch_mps_gc() -> None:
+    try:
+        if shared.state.current_latent is not None:
+            log.debug("`current_latent` is set, skipping MPS garbage collection")
+            return
+        from torch.mps import empty_cache
+        empty_cache()
+    except Exception:
+        log.warning("MPS garbage collection failed", exc_info=True)
 
 
 # MPS workaround for https://github.com/pytorch/pytorch/issues/89784
@@ -29,9 +52,6 @@ def cumsum_fix(input, cumsum_func, *args, **kwargs):
 
 
 if has_mps:
-    # MPS fix for randn in torchsde
-    CondFunc('torchsde._brownian.brownian_interval._randn', lambda _, size, dtype, device, seed: torch.randn(size, dtype=dtype, device=torch.device("cpu"), generator=torch.Generator(torch.device("cpu")).manual_seed(int(seed))).to(device), lambda _, size, dtype, device, seed: device.type == 'mps')
-
     if platform.mac_ver()[0].startswith("13.2."):
         # MPS workaround for https://github.com/pytorch/pytorch/issues/95188, thanks to danieldk (https://github.com/explosion/curated-transformers/pull/124)
         CondFunc('torch.nn.functional.linear', lambda _, input, weight, bias: (torch.matmul(input, weight.t()) + bias) if bias is not None else torch.matmul(input, weight.t()), lambda _, input, weight, bias: input.numel() > 10485760)

@@ -19,28 +19,11 @@ function all_gallery_buttons() {
 }
 
 function selected_gallery_button() {
-    var allCurrentButtons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery].gradio-gallery .thumbnail-item.thumbnail-small.selected');
-    var visibleCurrentButton = null;
-    allCurrentButtons.forEach(function(elem) {
-        if (elem.parentElement.offsetParent) {
-            visibleCurrentButton = elem;
-        }
-    });
-    return visibleCurrentButton;
+    return all_gallery_buttons().find(elem => elem.classList.contains('selected')) ?? null;
 }
 
 function selected_gallery_index() {
-    var buttons = all_gallery_buttons();
-    var button = selected_gallery_button();
-
-    var result = -1;
-    buttons.forEach(function(v, i) {
-        if (v == button) {
-            result = i;
-        }
-    });
-
-    return result;
+    return all_gallery_buttons().findIndex(elem => elem.classList.contains('selected'));
 }
 
 function extract_image_from_gallery(gallery) {
@@ -152,11 +135,11 @@ function submit() {
     showSubmitButtons('txt2img', false);
 
     var id = randomId();
-    localStorage.setItem("txt2img_task_id", id);
+    localSet("txt2img_task_id", id);
 
     requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function() {
         showSubmitButtons('txt2img', true);
-        localStorage.removeItem("txt2img_task_id");
+        localRemove("txt2img_task_id");
         showRestoreProgressButton('txt2img', false);
     });
 
@@ -171,11 +154,11 @@ function submit_img2img() {
     showSubmitButtons('img2img', false);
 
     var id = randomId();
-    localStorage.setItem("img2img_task_id", id);
+    localSet("img2img_task_id", id);
 
     requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), function() {
         showSubmitButtons('img2img', true);
-        localStorage.removeItem("img2img_task_id");
+        localRemove("img2img_task_id");
         showRestoreProgressButton('img2img', false);
     });
 
@@ -189,9 +172,7 @@ function submit_img2img() {
 
 function restoreProgressTxt2img() {
     showRestoreProgressButton("txt2img", false);
-    var id = localStorage.getItem("txt2img_task_id");
-
-    id = localStorage.getItem("txt2img_task_id");
+    var id = localGet("txt2img_task_id");
 
     if (id) {
         requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function() {
@@ -205,7 +186,7 @@ function restoreProgressTxt2img() {
 function restoreProgressImg2img() {
     showRestoreProgressButton("img2img", false);
 
-    var id = localStorage.getItem("img2img_task_id");
+    var id = localGet("img2img_task_id");
 
     if (id) {
         requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), function() {
@@ -218,8 +199,8 @@ function restoreProgressImg2img() {
 
 
 onUiLoaded(function() {
-    showRestoreProgressButton('txt2img', localStorage.getItem("txt2img_task_id"));
-    showRestoreProgressButton('img2img', localStorage.getItem("img2img_task_id"));
+    showRestoreProgressButton('txt2img', localGet("txt2img_task_id"));
+    showRestoreProgressButton('img2img', localGet("img2img_task_id"));
 });
 
 
@@ -248,29 +229,8 @@ function confirm_clear_prompt(prompt, negative_prompt) {
 }
 
 
-var promptTokecountUpdateFuncs = {};
-
-function recalculatePromptTokens(name) {
-    if (promptTokecountUpdateFuncs[name]) {
-        promptTokecountUpdateFuncs[name]();
-    }
-}
-
-function recalculate_prompts_txt2img() {
-    recalculatePromptTokens('txt2img_prompt');
-    recalculatePromptTokens('txt2img_neg_prompt');
-    return Array.from(arguments);
-}
-
-function recalculate_prompts_img2img() {
-    recalculatePromptTokens('img2img_prompt');
-    recalculatePromptTokens('img2img_neg_prompt');
-    return Array.from(arguments);
-}
-
-
 var opts = {};
-onUiUpdate(function() {
+onAfterUiUpdate(function() {
     if (Object.keys(opts).length != 0) return;
 
     var json_elem = gradioApp().getElementById('settings_json');
@@ -302,28 +262,7 @@ onUiUpdate(function() {
 
     json_elem.parentElement.style.display = "none";
 
-    function registerTextarea(id, id_counter, id_button) {
-        var prompt = gradioApp().getElementById(id);
-        var counter = gradioApp().getElementById(id_counter);
-        var textarea = gradioApp().querySelector("#" + id + " > label > textarea");
-
-        if (counter.parentElement == prompt.parentElement) {
-            return;
-        }
-
-        prompt.parentElement.insertBefore(counter, prompt);
-        prompt.parentElement.style.position = "relative";
-
-        promptTokecountUpdateFuncs[id] = function() {
-            update_token_counter(id_button);
-        };
-        textarea.addEventListener("input", promptTokecountUpdateFuncs[id]);
-    }
-
-    registerTextarea('txt2img_prompt', 'txt2img_token_counter', 'txt2img_token_button');
-    registerTextarea('txt2img_neg_prompt', 'txt2img_negative_token_counter', 'txt2img_negative_token_button');
-    registerTextarea('img2img_prompt', 'img2img_token_counter', 'img2img_token_button');
-    registerTextarea('img2img_neg_prompt', 'img2img_negative_token_counter', 'img2img_negative_token_button');
+    setupTokenCounters();
 
     var show_all_pages = gradioApp().getElementById('settings_show_all_pages');
     var settings_tabs = gradioApp().querySelector('#settings div');
@@ -354,33 +293,6 @@ onOptionsChanged(function() {
 });
 
 let txt2img_textarea, img2img_textarea = undefined;
-let wait_time = 800;
-let token_timeouts = {};
-
-function update_txt2img_tokens(...args) {
-    update_token_counter("txt2img_token_button");
-    if (args.length == 2) {
-        return args[0];
-    }
-    return args;
-}
-
-function update_img2img_tokens(...args) {
-    update_token_counter(
-        "img2img_token_button"
-    );
-    if (args.length == 2) {
-        return args[0];
-    }
-    return args;
-}
-
-function update_token_counter(button_id) {
-    if (token_timeouts[button_id]) {
-        clearTimeout(token_timeouts[button_id]);
-    }
-    token_timeouts[button_id] = setTimeout(() => gradioApp().getElementById(button_id)?.click(), wait_time);
-}
 
 function restart_reload() {
     document.body.innerHTML = '<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>';

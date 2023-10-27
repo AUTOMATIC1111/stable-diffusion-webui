@@ -4,7 +4,7 @@ let lastHeadImg = null;
 
 let notificationButton = null;
 
-onUiUpdate(function() {
+onAfterUiUpdate(function() {
     if (notificationButton == null) {
         notificationButton = gradioApp().getElementById('request_notifications');
 
@@ -15,7 +15,7 @@ onUiUpdate(function() {
         }
     }
 
-    const galleryPreviews = gradioApp().querySelectorAll('div[id^="tab_"][style*="display: block"] div[id$="_results"] .thumbnail-item > img');
+    const galleryPreviews = gradioApp().querySelectorAll('div[id^="tab_"] div[id$="_results"] .thumbnail-item > img');
 
     if (galleryPreviews == null) return;
 

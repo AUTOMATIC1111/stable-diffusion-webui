@@ -136,6 +136,11 @@ function setupImageForLightbox(e) {
     var event = isFirefox ? 'mousedown' : 'click';
 
     e.addEventListener(event, function(evt) {
+        if (evt.button == 1) {
+            open(evt.target.src);
+            evt.preventDefault();
+            return;
+        }
         if (!opts.js_modal_lightbox || evt.button != 0) return;
 
         modalZoomSet(gradioApp().getElementById('modalImage'), opts.js_modal_lightbox_initially_zoomed);
@@ -170,7 +175,7 @@ function modalTileImageToggle(event) {
     event.stopPropagation();
 }
 
-onUiUpdate(function() {
+onAfterUiUpdate(function() {
     var fullImg_preview = gradioApp().querySelectorAll('.gradio-gallery > div > img');
     if (fullImg_preview != null) {
         fullImg_preview.forEach(setupImageForLightbox);

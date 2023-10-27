@@ -1,8 +1,7 @@
 import json
 import os
-import sys
-import traceback
 
+from modules import errors, scripts
 
 localizations = {}
 
@@ -17,7 +16,6 @@ def list_localizations(dirname):
 
         localizations[fn] = os.path.join(dirname, file)
 
-    from modules import scripts
     for file in scripts.list_scripts("localizations", ".json"):
         fn, ext = os.path.splitext(file.filename)
         localizations[fn] = file.path
@@ -31,7 +29,6 @@ def localization_js(current_localization_name: str) -> str:
             with open(fn, "r", encoding="utf8") as file:
                 data = json.load(file)
         except Exception:
-            print(f"Error loading localization from {fn}:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            errors.report(f"Error loading localization from {fn}", exc_info=True)
 
     return f"window.localization = {json.dumps(data)}"

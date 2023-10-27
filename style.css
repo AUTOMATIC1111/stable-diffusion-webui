@@ -2,12 +2,21 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600&display=swap');
 
+
+/* temporary fix to hide gradio crop tool until it's fixed https://github.com/gradio-app/gradio/issues/3810 */
+
+div.gradio-image button[aria-label="Edit"] {
+    display: none;
+}
+
+
 /* general gradio fixes */
 
 :root, .dark{
     --checkbox-label-gap: 0.25em 0.1em;
     --section-header-text-size: 12pt;
     --block-background-fill: transparent;
+
 }
 
 .block.padded:not(.gradio-accordion) {
@@ -42,12 +51,15 @@ div.form{
 .block.gradio-radio,
 .block.gradio-checkboxgroup,
 .block.gradio-number,
-.block.gradio-colorpicker
-{
+.block.gradio-colorpicker {
     border-width: 0 !important;
     box-shadow: none !important;
 }
 
+div.gradio-group, div.styler{
+    border-width: 0 !important;
+    background: none;
+}
 .gap.compact{
     padding: 0;
     gap: 0.2em 0;
@@ -133,6 +145,16 @@ a{
     cursor: pointer;
 }
 
+/* gradio 3.39 puts a lot of overflow: hidden all over the place for an unknown reason. */
+div.gradio-container, .block.gradio-textbox, div.gradio-group, div.gradio-dropdown{
+    overflow: visible !important;
+}
+
+/* align-items isn't enough and elements may overflow in Safari. */
+.unequal-height {
+    align-content: flex-start;
+}
+
 
 /* general styled components */
 
@@ -157,16 +179,6 @@ a{
     color: var(--button-secondary-text-color-hover);
 }
 
-.checkboxes-row{
-    margin-bottom: 0.5em;
-    margin-left: 0em;
-}
-.checkboxes-row > div{
-    flex: 0;
-    white-space: nowrap;
-    min-width: auto;
-}
-
 button.custom-button{
     border-radius: var(--button-large-radius);
     padding: var(--button-large-padding);
@@ -181,6 +193,13 @@ button.custom-button{
     transition: var(--button-transition);
     box-shadow: var(--button-shadow);
     text-align: center;
+}
+
+div.block.gradio-accordion {
+    border: 1px solid var(--block-border-color) !important;
+    border-radius: 8px !important;
+    margin: 2px 0;
+    padding: 8px 8px;
 }
 
 
@@ -223,24 +242,47 @@ button.custom-button{
 }
 
 [id$=_subseed_show] label{
-    margin-bottom: 0.5em;
+    margin-bottom: 0.65em;
     align-self: end;
 }
 
-.performance {
-    font-size: 0.85em;
-    color: #444;
+[id$=_seed_extras] > div{
+    gap: 0.5em;
 }
 
-.performance p{
+.html-log .comments{
+    padding-top: 0.5em;
+}
+
+.html-log .comments:empty{
+    padding-top: 0;
+}
+
+.html-log .performance {
+    font-size: 0.85em;
+    color: #444;
+    display: flex;
+}
+
+.html-log .performance p{
     display: inline-block;
 }
 
-.performance .time {
-    margin-right: 0;
+.html-log .performance p.time, .performance p.vram, .performance p.time abbr, .performance p.vram abbr {
+    margin-bottom: 0;
+    color: var(--block-title-text-color);
 }
 
-.performance .vram {
+.html-log .performance p.time {
+}
+
+.html-log .performance p.vram {
+    margin-left: auto;
+}
+
+.html-log .performance .measurement{
+    color: var(--body-text-color);
+    font-weight: bold;
 }
 
 #txt2img_generate, #img2img_generate {
@@ -253,8 +295,8 @@ button.custom-button{
     }
 }
 
-#txt2img_gallery img, #img2img_gallery img, #extras_gallery img{
-    object-fit: scale-down;
+.gradio-gallery .thumbnails img {
+    object-fit: scale-down !important;
 }
 #txt2img_actions_column, #img2img_actions_column {
     gap: 0.5em;
@@ -294,12 +336,6 @@ button.custom-button{
     border-radius: 0 0.5rem 0.5rem 0;
 }
 
-#txtimg_hr_finalres{
-    min-height: 0 !important;
-    padding: .625rem .75rem;
-    margin-left: -0.75em
-}
-
 #img2img_scale_resolution_preview.block{
     display: flex;
     align-items: end;
@@ -323,7 +359,7 @@ button.custom-button{
 }
 
 div.dimensions-tools{
-    min-width: 0 !important;
+    min-width: 1.6em !important;
     max-width: fit-content;
     flex-direction: column;
     place-content: center;
@@ -340,8 +376,8 @@ div#extras_scale_to_tab div.form{
     z-index: 5;
 }
 
-.image-buttons button{
-    min-width: auto;
+.image-buttons > .form{
+    justify-content: center;
 }
 
 .infotext {
@@ -362,17 +398,20 @@ div#extras_scale_to_tab div.form{
 
 /* settings */
 #quicksettings {
-    width: fit-content;
     align-items: end;
 }
 
 #quicksettings > div, #quicksettings > fieldset{
-    max-width: 24em;
-    min-width: 24em;
+    max-width: 36em;
+    width: fit-content;
+    flex: 0 1 fit-content;
     padding: 0;
     border: none;
     box-shadow: none;
     background: none;
+}
+#quicksettings > div.gradio-dropdown{
+    min-width: 24em !important;
 }
 
 #settings{
@@ -403,17 +442,28 @@ div#extras_scale_to_tab div.form{
     margin: 0 1.2em;
 }
 
-table.settings-value-table{
-    background: white;
+table.popup-table{
+    background: var(--body-background-fill);
+    color: var(--body-text-color);
     border-collapse: collapse;
     margin: 1em;
-    border: 4px solid white;
+    border: 4px solid var(--body-background-fill);
 }
 
-table.settings-value-table td{
+table.popup-table td{
     padding: 0.4em;
-    border: 1px solid #ccc;
+    border: 1px solid rgba(128, 128, 128, 0.5);
     max-width: 36em;
+}
+
+table.popup-table .muted{
+    color: #aaa;
+}
+
+table.popup-table .link{
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: bold;
 }
 
 .ui-defaults-none{
@@ -440,13 +490,42 @@ table.settings-value-table td{
     opacity: 0.75;
 }
 
+#sysinfo_download a.sysinfo_big_link{
+    font-size: 24pt;
+}
+
+#sysinfo_download a{
+    text-decoration: underline;
+}
+
+#sysinfo_validity{
+    font-size: 18pt;
+}
+
+#settings .settings-info{
+    max-width: 48em;
+    border: 1px dotted #777;
+    margin: 0;
+    padding: 1em;
+}
+
+
 /* live preview */
 .progressDiv{
-    position: relative;
+    position: absolute;
     height: 20px;
     background: #b4c0cc;
     border-radius: 3px !important;
-    margin-bottom: -3px;
+    top: -20px;
+    width: 100%;
+}
+
+.progress-container{
+    position: relative;
+}
+
+[id$=_results].mobile{
+    margin-top: 28px;
 }
 
 .dark .progressDiv{
@@ -471,19 +550,16 @@ table.settings-value-table td{
 .livePreview{
     position: absolute;
     z-index: 300;
-    background-color: white;
-    margin: -4px;
-}
-
-.dark .livePreview{
-    background-color: rgb(17 24 39 / var(--tw-bg-opacity));
+    background: var(--background-fill-primary);
+    width: 100%;
+    height: 100%;
 }
 
 .livePreview img{
     position: absolute;
     object-fit: contain;
     width: 100%;
-    height: 100%;
+    height: calc(100% - 60px);  /* to match gradio's height */
 }
 
 /* fullscreen popup (ie in Lora's (i) button) */
@@ -508,6 +584,9 @@ table.settings-value-table td{
     background-color: rgba(20, 20, 20, 0.95);
 }
 
+.global-popup *{
+    box-sizing: border-box;
+}
 
 .global-popup-close:before {
     content: "×";
@@ -547,15 +626,24 @@ table.settings-value-table td{
 
 .modalControls {
     display: flex;
+    position: absolute;
+    right: 0px;
+    left: 0px;
     gap: 1em;
     padding: 1em;
-    background-color: rgba(0,0,0,0.2);
+    background-color:rgba(0,0,0,0);
+    z-index: 1;
+    transition: 0.2s ease background-color;
+}
+.modalControls:hover {
+    background-color:rgba(0,0,0,0.9);
 }
 .modalClose {
     margin-left: auto;
 }
 .modalControls span{
     color: white;
+    text-shadow: 0px 0px 0.25em black;
     font-size: 35px;
     font-weight: bold;
     cursor: pointer;
@@ -681,9 +769,22 @@ table.settings-value-table td{
     margin: 0;
 }
 
-#available_extensions .date_added{
-    opacity: 0.85;
+#available_extensions .info{
+    margin: 0.5em 0;
+    display: flex;
+    margin-top: auto;
+    opacity: 0.80;
     font-size: 90%;
+}
+
+#available_extensions .date_added{
+    margin-right: auto;
+    display: inline-block;
+}
+
+#available_extensions .star_count{
+    margin-left: auto;
+    display: inline-block;
 }
 
 /* replace original footer with ours */
@@ -708,9 +809,14 @@ footer {
 /* extra networks UI */
 
 .extra-network-cards{
-    height: 725px;
-    overflow: scroll;
+    height: calc(100vh - 24rem);
+    overflow: clip scroll;
     resize: vertical;
+    min-height: 52rem;
+}
+
+.extra-networks > div.tab-nav{
+    min-height: 3.4rem;
 }
 
 .extra-networks > div > [id *= '_extra_']{
@@ -724,129 +830,91 @@ footer {
 .extra-network-subdirs button{
     margin: 0 0.15em;
 }
-.extra-networks .tab-nav .search{
-    display: inline-block;
-    max-width: 16em;
+.extra-networks .tab-nav .search,
+.extra-networks .tab-nav .sort,
+.extra-networks .tab-nav .show-dirs
+{
     margin: 0.3em;
     align-self: center;
+    width: auto;
+}
+
+.extra-networks .tab-nav .search {
     width: 16em;
+    max-width: 16em;
+}
+
+.extra-networks .tab-nav .sort {
+    width: 12em;
+    max-width: 12em;
 }
 
 #txt2img_extra_view, #img2img_extra_view {
     width: auto;
 }
 
-.extra-network-cards .nocards, .extra-network-thumbs .nocards{
+.extra-network-cards .nocards{
     margin: 1.25em 0.5em 0.5em 0.5em;
 }
 
-.extra-network-cards .nocards h1, .extra-network-thumbs .nocards h1{
+.extra-network-cards .nocards h1{
     font-size: 1.5em;
     margin-bottom: 1em;
 }
 
-.extra-network-cards .nocards li, .extra-network-thumbs .nocards li{
+.extra-network-cards .nocards li{
     margin-left: 0.5em;
 }
 
 
-.extra-network-cards .card .metadata-button:before, .extra-network-thumbs .card .metadata-button:before{
-    content: "🛈";
-}
-.extra-network-cards .card .metadata-button, .extra-network-thumbs .card .metadata-button{
+.extra-network-cards .card .button-row{
     display: none;
     position: absolute;
     color: white;
     right: 0;
+    z-index: 1
 }
-.extra-network-cards .card .metadata-button {
+.extra-network-cards .card:hover .button-row{
+    display: flex;
+}
+
+.extra-network-cards .card .card-button{
+    color: white;
+}
+
+.extra-network-cards .card .metadata-button:before{
+    content: "🛈";
+}
+
+.extra-network-cards .card .edit-button:before{
+    content: "🛠";
+}
+
+.extra-network-cards .card .card-button {
     text-shadow: 2px 2px 3px black;
-    padding: 0.25em;
-    font-size: 22pt;
+    padding: 0.25em 0.1em;
+    font-size: 200%;
     width: 1.5em;
 }
-.extra-network-thumbs .card .metadata-button {
-    text-shadow: 1px 1px 2px black;
-    padding: 0;
-    font-size: 16pt;
-    width: 1em;
-    top: -0.25em;
-}
-.extra-network-cards .card:hover .metadata-button, .extra-network-thumbs .card:hover .metadata-button{
-    display: inline-block;
-}
-.extra-network-cards .card .metadata-button:hover, .extra-network-thumbs .card .metadata-button:hover{
+.extra-network-cards .card .card-button:hover{
     color: red;
 }
 
 
-.extra-network-thumbs {
-    display: flex;
-    flex-flow: row wrap;
-    gap: 10px;
-}
-
-.extra-network-thumbs .card {
-    height: 6em;
-    width: 6em;
-    cursor: pointer;
-    background-image: url('./file=html/card-no-preview.png');
-    background-size: cover;
-    background-position: center center;
-    position: relative;
-}
-
-.extra-network-thumbs .card .preview{
+.standalone-card-preview.card .preview{
     position: absolute;
     object-fit: cover;
     width: 100%;
     height:100%;
 }
 
-.extra-network-thumbs .card:hover .additional a {
+.extra-network-cards .card, .standalone-card-preview.card{
     display: inline-block;
-}
-
-.extra-network-thumbs .actions .additional a {
-    background-image: url('./file=html/image-update.svg');
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center center;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 24px;
-    height: 24px;
-    display: none;
-    font-size: 0;
-    text-align: -9999;
-}
-
-.extra-network-thumbs .actions .name {
-    position: absolute;
-    bottom: 0;
-    font-size: 10px;
-    padding: 3px;
-    width: 100%;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    background: rgba(0,0,0,.5);
-    color: white;
-}
-
-.extra-network-thumbs .card:hover .actions .name {
-    white-space: normal;
-    word-break: break-all;
-}
-
-.extra-network-cards .card{
-    display: inline-block;
-    margin: 0.5em;
-    width: 16em;
-    height: 24em;
+    margin: 0.5rem;
+    width: 16rem;
+    height: 24rem;
     box-shadow: 0 0 5px rgba(128, 128, 128, 0.5);
-    border-radius: 0.2em;
+    border-radius: 0.2rem;
     position: relative;
 
     background-size: auto 100%;
@@ -878,10 +946,6 @@ footer {
 
 .extra-network-cards .card .actions *{
     color: white;
-}
-
-.extra-network-cards .card .actions:hover{
-    box-shadow: 0 0 0.75em 0.75em rgba(0,0,0,0.5) !important;
 }
 
 .extra-network-cards .card .actions .name{
@@ -923,4 +987,118 @@ footer {
     object-fit: cover;
     width: 100%;
     height:100%;
+}
+
+div.block.gradio-box.edit-user-metadata {
+    width: 56em;
+    background: var(--body-background-fill);
+    padding: 2em !important;
+}
+
+.edit-user-metadata .extra-network-name{
+    font-size: 18pt;
+    color: var(--body-text-color);
+}
+
+.edit-user-metadata .file-metadata{
+    color: var(--body-text-color);
+}
+
+.edit-user-metadata .file-metadata th{
+    text-align: left;
+}
+
+.edit-user-metadata .file-metadata th, .edit-user-metadata .file-metadata td{
+    padding: 0.3em 1em;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.edit-user-metadata .wrap.translucent{
+    background: var(--body-background-fill);
+}
+.edit-user-metadata .gradio-highlightedtext span{
+    word-break: break-word;
+}
+
+.edit-user-metadata-buttons{
+    margin-top: 1.5em;
+}
+
+
+
+
+div.block.gradio-box.popup-dialog, .popup-dialog {
+    width: 56em;
+    background: var(--body-background-fill);
+    padding: 2em !important;
+}
+
+div.block.gradio-box.popup-dialog > div:last-child, .popup-dialog > div:last-child{
+    margin-top: 1em;
+}
+
+div.block.input-accordion{
+
+}
+
+.input-accordion-extra{
+    flex: 0 0 auto !important;
+    margin: 0 0.5em 0 auto;
+}
+
+div.accordions > div.input-accordion{
+    min-width: fit-content !important;
+}
+
+div.accordions > div.gradio-accordion .label-wrap span{
+    white-space: nowrap;
+    margin-right: 0.25em;
+}
+
+div.accordions{
+    gap: 0.5em;
+}
+
+div.accordions > div.input-accordion.input-accordion-open{
+    flex: 1 auto;
+    flex-flow: column;
+}
+
+
+/* sticky right hand columns */
+
+#img2img_results, #txt2img_results, #extras_results {
+    position: sticky;
+    top: 0.5em;
+}
+
+body.resizing {
+    cursor: col-resize !important;
+}
+
+body.resizing * {
+    pointer-events: none !important;
+}
+
+body.resizing .resize-handle {
+    pointer-events: initial !important;
+}
+
+.resize-handle {
+    position: relative;
+    cursor: col-resize;
+    grid-column: 2 / 3;
+    min-width: 16px !important;
+    max-width: 16px !important;
+    height: 100%;
+}
+
+.resize-handle::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 7.5px;
+    border-left: 1px dashed var(--border-color-primary);
 }

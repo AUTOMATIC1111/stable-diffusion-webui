@@ -129,6 +129,8 @@ class TaskType(IntEnum):
     RefineImage = 6
     Digital = 7
     OnePress = 8
+    ClothesRepair = 9
+    ModelCheck = 10
 
 
 class TaskStatus(IntEnum):
@@ -202,6 +204,8 @@ class TaskProgress(SerializationObj):
         self.train = TrainTaskInfo()
         self.preview = None
         self.start_time = time.time()
+        self.version = 0
+        self.cate = ""
 
     @property
     def completed(self):
@@ -267,6 +271,7 @@ class TaskProgress(SerializationObj):
         p.status = TaskStatus.Ready
         p.task_desc = desc
         p.eta_relative = eta_relative
+
         return p
 
     @classmethod

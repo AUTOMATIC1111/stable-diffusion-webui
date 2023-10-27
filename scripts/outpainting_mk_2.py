@@ -145,7 +145,6 @@ class Script(scripts.Script):
         process_width = p.width
         process_height = p.height
 
-        p.mask_blur = mask_blur*4
         p.inpaint_full_res = False
         p.inpainting_fill = 1
         p.do_not_save_samples = True
@@ -155,6 +154,19 @@ class Script(scripts.Script):
         right = pixels if "right" in direction else 0
         up = pixels if "up" in direction else 0
         down = pixels if "down" in direction else 0
+
+        if left > 0 or right > 0:
+            mask_blur_x = mask_blur
+        else:
+            mask_blur_x = 0
+
+        if up > 0 or down > 0:
+            mask_blur_y = mask_blur
+        else:
+            mask_blur_y = 0
+
+        p.mask_blur_x = mask_blur_x*4
+        p.mask_blur_y = mask_blur_y*4
 
         init_img = p.init_images[0]
         target_w = math.ceil((init_img.width + left + right) / 64) * 64
@@ -191,10 +203,10 @@ class Script(scripts.Script):
                 mask = Image.new("RGB", (process_res_w, process_res_h), "white")
                 draw = ImageDraw.Draw(mask)
                 draw.rectangle((
-                    expand_pixels + mask_blur if is_left else 0,
-                    expand_pixels + mask_blur if is_top else 0,
-                    mask.width - expand_pixels - mask_blur if is_right else res_w,
-                    mask.height - expand_pixels - mask_blur if is_bottom else res_h,
+                    expand_pixels + mask_blur_x if is_left else 0,
+                    expand_pixels + mask_blur_y if is_top else 0,
+                    mask.width - expand_pixels - mask_blur_x if is_right else res_w,
+                    mask.height - expand_pixels - mask_blur_y if is_bottom else res_h,
                 ), fill="black")
 
                 np_image = (np.asarray(img) / 255.0).astype(np.float64)
@@ -224,10 +236,10 @@ class Script(scripts.Script):
             latent_mask = Image.new("RGB", (p.width, p.height), "white")
             draw = ImageDraw.Draw(latent_mask)
             draw.rectangle((
-                expand_pixels + mask_blur * 2 if is_left else 0,
-                expand_pixels + mask_blur * 2 if is_top else 0,
-                mask.width - expand_pixels - mask_blur * 2 if is_right else res_w,
-                mask.height - expand_pixels - mask_blur * 2 if is_bottom else res_h,
+                expand_pixels + mask_blur_x * 2 if is_left else 0,
+                expand_pixels + mask_blur_y * 2 if is_top else 0,
+                mask.width - expand_pixels - mask_blur_x * 2 if is_right else res_w,
+                mask.height - expand_pixels - mask_blur_y * 2 if is_bottom else res_h,
             ), fill="black")
             p.latent_mask = latent_mask
 

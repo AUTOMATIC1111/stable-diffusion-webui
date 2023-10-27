@@ -5,16 +5,18 @@
 # @Site    : 
 # @File    : txt2img.py
 # @Software: Hifive
+import os
 import time
 import typing
 import modules.scripts
 import modules.shared as shared
 from enum import IntEnum
+from handlers.typex import ModelType
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from worker.task import TaskType, TaskProgress, Task, TaskStatus
 from modules.processing import StableDiffusionProcessingTxt2Img, process_images, Processed
 from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, \
-    load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path
+    load_sd_model_weights, save_processed_images, format_override_settings
 from handlers.extension.controlnet import exec_control_net_annotator
 from handlers.img2img import Img2ImgTaskHandler, AlwaysonScriptsType
 
@@ -64,52 +66,56 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  lycoris_models: typing.Sequence[str] = None,  # lycoris，用户和系统全部lycoris列表
                  compress_pnginfo: bool = True,  # 使用GZIP压缩图片信息（默认开启）
                  hr_sampler_name: str = None,  # hr sampler
-                 hr_prompt: str = None,
-                 hr_negative_prompt: str = None,
+                 hr_prompt: str = None,  # hr prompt
+                 hr_negative_prompt: str = None,  # hr negative prompt
                  disable_ad_face: bool = False,  # 关闭默认的ADetailer face
+                 enable_refiner: bool = False,  # 是否启用XLRefiner
+                 refiner_switch_at: float = 0.2,  # XL 精描切换时机
+                 refiner_checkpoint: str = None,  # XL refiner模型文件
                  **kwargs):
-        override_settings = create_override_settings_dict(override_settings_texts or [])
+        override_settings_texts = format_override_settings(override_settings_texts)
+        override_settings = create_override_settings_dict(override_settings_texts)
 
         t2i_script_runner = modules.scripts.scripts_txt2img
         selectable_scripts, selectable_script_idx = get_selectable_script(t2i_script_runner, select_script_name)
         script_args = init_script_args(default_script_arg_txt2img, alwayson_scripts, selectable_scripts,
-                                       selectable_script_idx, select_script_args, t2i_script_runner, not disable_ad_face)
+                                       selectable_script_idx, select_script_args, t2i_script_runner,
+                                       not disable_ad_face, enable_refiner, refiner_switch_at, refiner_checkpoint,
+                                       seed, seed_enable_extras, subseed, subseed_strength, seed_resize_from_h,
+                                       seed_resize_from_w)
 
-        super(Txt2ImgTask, self).__init__(
-            sd_model=shared.sd_model,
-            prompt=prompt,
-            negative_prompt=negative_prompt,
-            seed=seed,
-            subseed=subseed,
-            subseed_strength=subseed_strength,
-            seed_resize_from_h=seed_resize_from_h,
-            seed_resize_from_w=seed_resize_from_w,
-            seed_enable_extras=seed_enable_extras,
-            sampler_name=sampler_name,
-            batch_size=batch_size,
-            n_iter=n_iter,
-            steps=steps,
-            cfg_scale=cfg_scale,
-            width=width,
-            height=height,
-            restore_faces=restore_faces,
-            tiling=tiling,
-            enable_hr=enable_hr,
-            denoising_strength=denoising_strength if enable_hr else None,
-            hr_scale=hr_scale,
-            hr_upscaler=hr_upscaler,
-            hr_second_pass_steps=hr_second_pass_steps,
-            hr_resize_x=hr_resize_x,
-            hr_resize_y=hr_resize_y,
-            override_settings=override_settings,
-            outpath_samples=f"output/{user_id}/txt2img/samples/",
-            outpath_scripts=f"output/{user_id}/txt2img/scripts/",
-            outpath_grids=f"output/{user_id}/txt2img/grids/",
-            hr_sampler_name=hr_sampler_name,
-            hr_prompt=hr_prompt,
-            hr_negative_prompt=hr_negative_prompt
-        )
-
+        self.sd_model = shared.sd_model
+        self.prompt = prompt
+        self.negative_prompt = negative_prompt
+        self.seed = seed
+        self.subseed = subseed
+        self.subseed_strength = subseed_strength
+        self.seed_resize_from_h = seed_resize_from_h
+        self.seed_resize_from_w = seed_resize_from_w
+        self.seed_enable_extras = seed_enable_extras
+        self.sampler_name = sampler_name
+        self.batch_size = batch_size
+        self.n_iter = n_iter
+        self.steps = steps
+        self.cfg_scale = cfg_scale
+        self.width = width
+        self.height = height
+        self.restore_faces = restore_faces
+        self.tiling = tiling
+        self.enable_hr = enable_hr
+        self.denoising_strength = denoising_strength if enable_hr else None
+        self.hr_scale = hr_scale
+        self.hr_upscaler = hr_upscaler
+        self.hr_second_pass_steps = hr_second_pass_steps
+        self.hr_resize_x = hr_resize_x
+        self.hr_resize_y = hr_resize_y
+        self.override_settings = override_settings
+        self.outpath_samples = f"output/{user_id}/txt2img/samples/"
+        self.outpath_grids = f"output/{user_id}/txt2img/grids/"
+        self.outpath_scripts = f"output/{user_id}/img2img/scripts/"
+        self.hr_sampler_name = hr_sampler_name
+        self.hr_prompt = hr_prompt or ""
+        self.hr_negative_prompt = hr_negative_prompt or ""
         self.scripts = modules.scripts.scripts_txt2img
         self.script_args = script_args
         self.script_name = select_script_name
@@ -121,6 +127,11 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
         self.embedding = embeddings
         self.lycoris = lycoris_models
         self.select_script_nets = select_script_nets
+        self.xl_refiner = enable_refiner
+        self.refiner_switch_at = refiner_switch_at
+        self.xl_refiner_model_path = refiner_checkpoint
+
+        super(Txt2ImgTask, self).__post_init__()
 
     def close(self):
         for obj in self.script_args:
@@ -132,7 +143,7 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                         v.close()
 
     @classmethod
-    def from_task(cls, task: Task, default_script_args: typing.Sequence):
+    def from_task(cls, task: Task, default_script_args: typing.Sequence, refiner_checkpoint: str = None):
         base_model_path = task['base_model_path']
         alwayson_scripts = task['alwayson_scripts']
         user_id = task['user_id']
@@ -164,6 +175,7 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
 
         if "nsfw" in prompt.lower():
             prompt = prompt.lower().replace('nsfw', '')
+        kwargs['refiner_checkpoint'] = refiner_checkpoint
 
         return cls(base_model_path,
                    user_id,
@@ -186,18 +198,67 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
         self.default_script_args = init_default_script_args(modules.scripts.scripts_txt2img)
         self._default_script_args_load_t = time.time()
 
-    def _build_txt2img_arg(self, progress: TaskProgress) -> Txt2ImgTask:
+    def _build_txt2img_arg(self, progress: TaskProgress, refiner_checkpoint: str = None) -> Txt2ImgTask:
         self._refresh_default_script_args()
-        t = Txt2ImgTask.from_task(progress.task, self.default_script_args)
+        t = Txt2ImgTask.from_task(progress.task, self.default_script_args, refiner_checkpoint)
         shared.state.current_latent_changed_callback = lambda: self._update_preview(progress)
         return t
 
+    # def _get_local_checkpoint(self, task: Task):
+    #     progress = TaskProgress.new_prepare(task, f"0%")
+    #     xl_refiner_model_path = task.get('xl_refiner_model_path')
+    #     # 脚本任务
+    #     self._get_select_script_models(progress)
+    #
+    #     def base_model_progress_callback(*args):
+    #         if len(args) < 2:
+    #             return
+    #         transferred, total = args[0], args[1]
+    #         p = int(transferred * 100 / total)
+    #         if xl_refiner_model_path:
+    #             p = p * 0.5
+    #
+    #         current_progress = int(progress.task_desc[:-1])
+    #         if p % 5 == 0 and p >= current_progress + 5:
+    #             progress.task_desc = f"{p}%"
+    #             self._set_task_status(progress)
+    #
+    #     base_model_path = get_model_local_path(task.sd_model_path, ModelType.CheckPoint, base_model_progress_callback)
+    #     if not base_model_path or not os.path.isfile(base_model_path):
+    #         raise OSError(f'cannot found model:{task.sd_model_path}')
+    #
+    #     def refiner_model_progress_callback(*args):
+    #         if len(args) < 2:
+    #             return
+    #         transferred, total = args[0], args[1]
+    #         p = int(50 + transferred * 100 * 0.5 / total)
+    #
+    #         current_progress = int(progress.task_desc[:-1])
+    #         if p % 5 == 0 and p >= current_progress + 5:
+    #             progress.task_desc = f"{p}%"
+    #             self._set_task_status(progress)
+    #
+    #     xl_refiner_model = get_model_local_path(
+    #         xl_refiner_model_path, ModelType.CheckPoint, refiner_model_progress_callback)
+    #     if not xl_refiner_model or not os.path.isfile(xl_refiner_model):
+    #         raise OSError(f'cannot found model:{xl_refiner_model_path}')
+    #
+    #     return base_model_path, xl_refiner_model
+
+    def refiner_image(self, xl_refiner_model, images):
+        sha256, _ = os.path.splitext(os.path.basename(xl_refiner_model))
+        load_sd_model_weights(xl_refiner_model, sha256)
+        # todo: batch exec refiner images
+
     def _exec_txt2img(self, task: Task) -> typing.Iterable[TaskProgress]:
-        base_model_path = self._get_local_checkpoint(task)
+        local_model_paths = self._get_local_checkpoint(task)
+        base_model_path = local_model_paths if not isinstance(local_model_paths, tuple) else local_model_paths[0]
+        refiner_checkpoint = None if not isinstance(local_model_paths, tuple) else local_model_paths[1]
+
         load_sd_model_weights(base_model_path, task.model_hash)
         progress = TaskProgress.new_ready(task, f'model loaded, run t2i...')
         yield progress
-        process_args = self._build_txt2img_arg(progress)
+        process_args = self._build_txt2img_arg(progress, refiner_checkpoint)
         self._set_little_models(process_args)
         progress.status = TaskStatus.Running
         progress.task_desc = f't2i task({task.id}) running'

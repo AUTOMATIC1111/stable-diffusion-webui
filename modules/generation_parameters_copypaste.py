@@ -6,10 +6,10 @@ import re
 
 import gradio as gr
 from modules.paths import data_path
-from modules import shared, ui_tempdir, script_callbacks
+from modules import shared, ui_tempdir, script_callbacks, processing
 from PIL import Image
 
-re_param_code = r'\s*([\w ]+):\s*("(?:\\"[^,]|\\"|\\|[^\"])+"|[^,]*)(?:,|$)'
+re_param_code = r'\s*([\w ]+):\s*("(?:\\.|[^\\"])+"|[^,]*)(?:,|$)'
 re_param = re.compile(re_param_code)
 re_imagesize = re.compile(r"^(\d+)x(\d+)$")
 re_hypernet_hash = re.compile("\(([0-9a-f]+)\)$")
@@ -32,10 +32,11 @@ class ParamBinding:
 
 def reset():
     paste_fields.clear()
+    registered_param_bindings.clear()
 
 
 def quote(text):
-    if ',' not in str(text) and '\n' not in str(text):
+    if ',' not in str(text) and '\n' not in str(text) and ':' not in str(text):
         return text
 
     return json.dumps(text, ensure_ascii=False)
@@ -55,7 +56,7 @@ def image_from_url_text(filedata):
     if filedata is None:
         return None
 
-    if type(filedata) == list and len(filedata) > 0 and type(filedata[0]) == dict and filedata[0].get("is_file", False):
+    if type(filedata) == list and filedata and type(filedata[0]) == dict and filedata[0].get("is_file", False):
         filedata = filedata[0]
 
     if type(filedata) == dict and filedata.get("is_file", False):
@@ -174,31 +175,6 @@ def send_image_and_dimensions(x):
     return img, w, h
 
 
-
-def find_hypernetwork_key(hypernet_name, hypernet_hash=None):
-    """Determines the config parameter name to use for the hypernet based on the parameters in the infotext.
-
-    Example: an infotext provides "Hypernet: ke-ta" and "Hypernet hash: 1234abcd". For the "Hypernet" config
-    parameter this means there should be an entry that looks like "ke-ta-10000(1234abcd)" to set it to.
-
-    If the infotext has no hash, then a hypernet with the same name will be selected instead.
-    """
-    hypernet_name = hypernet_name.lower()
-    if hypernet_hash is not None:
-        # Try to match the hash in the name
-        for hypernet_key in shared.hypernetworks.keys():
-            result = re_hypernet_hash.search(hypernet_key)
-            if result is not None and result[1] == hypernet_hash:
-                return hypernet_key
-    else:
-        # Fall back to a hypernet with the same name
-        for hypernet_key in shared.hypernetworks.keys():
-            if hypernet_key.lower().startswith(hypernet_name):
-                return hypernet_key
-
-    return None
-
-
 def restore_old_hires_fix_params(res):
     """for infotexts that specify old First pass size parameter, convert it into
     width, height, and hr scale"""
@@ -223,7 +199,6 @@ def restore_old_hires_fix_params(res):
     height = int(res.get("Size-2", 512))
 
     if firstpass_width == 0 or firstpass_height == 0:
-        from modules import processing
         firstpass_width, firstpass_height = processing.old_hires_fix_first_pass_dimensions(width, height)
 
     res['Size-1'] = firstpass_width
@@ -265,19 +240,30 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         else:
             prompt += ("" if prompt == "" else "\n") + line
 
+    if shared.opts.infotext_styles != "Ignore":
+        found_styles, prompt, negative_prompt = shared.prompt_styles.extract_styles_from_prompt(prompt, negative_prompt)
+
+        if shared.opts.infotext_styles == "Apply":
+            res["Styles array"] = found_styles
+        elif shared.opts.infotext_styles == "Apply if any" and found_styles:
+            res["Styles array"] = found_styles
+
     res["Prompt"] = prompt
     res["Negative prompt"] = negative_prompt
 
     for k, v in re_param.findall(lastline):
-        if v[0] == '"' and v[-1] == '"':
-            v = unquote(v)
+        try:
+            if v[0] == '"' and v[-1] == '"':
+                v = unquote(v)
 
-        m = re_imagesize.match(v)
-        if m is not None:
-            res[f"{k}-1"] = m.group(1)
-            res[f"{k}-2"] = m.group(2)
-        else:
-            res[k] = v
+            m = re_imagesize.match(v)
+            if m is not None:
+                res[f"{k}-1"] = m.group(1)
+                res[f"{k}-2"] = m.group(2)
+            else:
+                res[k] = v
+        except Exception:
+            print(f"Error parsing \"{k}: {v}\"")
 
     # Missing CLIP skip means it was set to 1 (the default)
     if "Clip skip" not in res:
@@ -294,6 +280,9 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "Hires sampler" not in res:
         res["Hires sampler"] = "Use same sampler"
 
+    if "Hires checkpoint" not in res:
+        res["Hires checkpoint"] = "Use same checkpoint"
+
     if "Hires prompt" not in res:
         res["Hires prompt"] = ""
 
@@ -306,31 +295,40 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "RNG" not in res:
         res["RNG"] = "GPU"
 
+    if "Schedule type" not in res:
+        res["Schedule type"] = "Automatic"
+
+    if "Schedule max sigma" not in res:
+        res["Schedule max sigma"] = 0
+
+    if "Schedule min sigma" not in res:
+        res["Schedule min sigma"] = 0
+
+    if "Schedule rho" not in res:
+        res["Schedule rho"] = 0
+
+    if "VAE Encoder" not in res:
+        res["VAE Encoder"] = "Full"
+
+    if "VAE Decoder" not in res:
+        res["VAE Decoder"] = "Full"
+
     return res
 
 
-settings_map = {}
+infotext_to_setting_name_mapping = [
 
-
+]
+"""Mapping of infotext labels to setting names. Only left for backwards compatibility - use OptionInfo(..., infotext='...') instead.
+Example content:
 
 infotext_to_setting_name_mapping = [
-    ('Clip skip', 'CLIP_stop_at_last_layers', ),
     ('Conditional mask weight', 'inpainting_mask_weight'),
     ('Model hash', 'sd_model_checkpoint'),
     ('ENSD', 'eta_noise_seed_delta'),
-    ('Noise multiplier', 'initial_noise_multiplier'),
-    ('Eta', 'eta_ancestral'),
-    ('Eta DDIM', 'eta_ddim'),
-    ('Discard penultimate sigma', 'always_discard_next_to_last_sigma'),
-    ('UniPC variant', 'uni_pc_variant'),
-    ('UniPC skip type', 'uni_pc_skip_type'),
-    ('UniPC order', 'uni_pc_order'),
-    ('UniPC lower order final', 'uni_pc_lower_order_final'),
-    ('Token merging ratio', 'token_merging_ratio'),
-    ('Token merging ratio hr', 'token_merging_ratio_hr'),
-    ('RNG', 'randn_source'),
-    ('NGMS', 's_min_uncond'),
+    ('Schedule type', 'k_sched_type'),
 ]
+"""
 
 
 def create_override_settings_dict(text_pairs):
@@ -351,7 +349,8 @@ def create_override_settings_dict(text_pairs):
 
         params[k] = v.strip()
 
-    for param_name, setting_name in infotext_to_setting_name_mapping:
+    mapping = [(info.infotext, k) for k, info in shared.opts.data_labels.items() if info.infotext]
+    for param_name, setting_name in mapping + infotext_to_setting_name_mapping:
         value = params.get(param_name, None)
 
         if value is None:
@@ -400,10 +399,16 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
         return res
 
     if override_settings_component is not None:
+        already_handled_fields = {key: 1 for _, key in paste_fields}
+
         def paste_settings(params):
             vals = {}
 
-            for param_name, setting_name in infotext_to_setting_name_mapping:
+            mapping = [(info.infotext, k) for k, info in shared.opts.data_labels.items() if info.infotext]
+            for param_name, setting_name in mapping + infotext_to_setting_name_mapping:
+                if param_name in already_handled_fields:
+                    continue
+
                 v = params.get(param_name, None)
                 if v is None:
                     continue
@@ -421,7 +426,7 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
 
             vals_pairs = [f"{k}: {v}" for k, v in vals.items()]
 
-            return gr.Dropdown.update(value=vals_pairs, choices=vals_pairs, visible=len(vals_pairs) > 0)
+            return gr.Dropdown.update(value=vals_pairs, choices=vals_pairs, visible=bool(vals_pairs))
 
         paste_fields = paste_fields + [(override_settings_component, paste_settings)]
 
@@ -438,5 +443,3 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
         outputs=[],
         show_progress=False,
     )
-
-

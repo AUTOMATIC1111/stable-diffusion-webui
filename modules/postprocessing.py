@@ -9,40 +9,34 @@ from modules.shared import opts
 def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, show_extras_results, *args, save_output: bool = True):
     devices.torch_gc()
 
-    shared.state.begin()
-    shared.state.job = 'extras'
+    shared.state.begin(job="extras")
 
-    image_data = []
-    image_names = []
     outputs = []
 
-    if extras_mode == 1:
-        for img in image_folder:
-            if isinstance(img, Image.Image):
-                image = img
-                fn = ''
-            else:
-                image = Image.open(os.path.abspath(img.name))
-                fn = os.path.splitext(img.orig_name)[0]
-            image_data.append(image)
-            image_names.append(fn)
-    elif extras_mode == 2:
-        assert not shared.cmd_opts.hide_ui_dir_config, '--hide-ui-dir-config option must be disabled'
-        assert input_dir, 'input directory not selected'
+    def get_images(extras_mode, image, image_folder, input_dir):
+        if extras_mode == 1:
+            for img in image_folder:
+                if isinstance(img, Image.Image):
+                    image = img
+                    fn = ''
+                else:
+                    image = Image.open(os.path.abspath(img.name))
+                    fn = os.path.splitext(img.orig_name)[0]
+                yield image, fn
+        elif extras_mode == 2:
+            assert not shared.cmd_opts.hide_ui_dir_config, '--hide-ui-dir-config option must be disabled'
+            assert input_dir, 'input directory not selected'
 
-        image_list = shared.listfiles(input_dir)
-        for filename in image_list:
-            try:
-                image = Image.open(filename)
-            except Exception:
-                continue
-            image_data.append(image)
-            image_names.append(filename)
-    else:
-        assert image, 'image not selected'
-
-        image_data.append(image)
-        image_names.append(None)
+            image_list = shared.listfiles(input_dir)
+            for filename in image_list:
+                try:
+                    image = Image.open(filename)
+                except Exception:
+                    continue
+                yield image, filename
+        else:
+            assert image, 'image not selected'
+            yield image, None
 
     if extras_mode == 2 and output_dir != '':
         outpath = output_dir
@@ -51,12 +45,16 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
 
     infotext = ''
 
-    for image, name in zip(image_data, image_names):
+    for image_data, name in get_images(extras_mode, image, image_folder, input_dir):
+        image_data: Image.Image
+
         shared.state.textinfo = name
 
-        existing_pnginfo = image.info or {}
+        parameters, existing_pnginfo = images.read_info_from_image(image_data)
+        if parameters:
+            existing_pnginfo["parameters"] = parameters
 
-        pp = scripts_postprocessing.PostprocessedImage(image.convert("RGB"))
+        pp = scripts_postprocessing.PostprocessedImage(image_data.convert("RGB"))
 
         scripts.scripts_postproc.run(pp, args)
 
@@ -76,6 +74,8 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
 
         if extras_mode != 2 or show_extras_results:
             outputs.append(pp.image)
+
+        image_data.close()
 
     devices.torch_gc()
 

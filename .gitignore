@@ -34,11 +34,12 @@ notification.mp3
 /test/stderr.txt
 /cache.json*
 /config_states/
+/node_modules
+/package-lock.json
+/.coverage*
 /cache.json
 cache.json.lock
 gradio/launches.json
 models/
 stable-diffusion-webui/
-/node_modules
-/package-lock.json
-/.coverage*
+

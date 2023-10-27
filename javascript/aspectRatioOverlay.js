@@ -81,7 +81,7 @@ function dimensionChange(e, is_width, is_height) {
 }
 
 
-onUiUpdate(function() {
+onAfterUiUpdate(function() {
     var arPreviewRect = gradioApp().querySelector('#imageARPreview');
     if (arPreviewRect) {
         arPreviewRect.style.display = 'none';

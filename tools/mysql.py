@@ -10,6 +10,7 @@ import threading
 import typing
 import time
 import pymysql
+from loguru import logger
 from tools.environment import get_mysql_env, Env_MysqlHost, \
     Env_MysqlPort, Env_MysqlPass, Env_MysqlUser, Env_MysqlDB
 
@@ -18,10 +19,14 @@ class MySQLClient(object):
 
     def __init__(self, addr=None, db=None, user=None, pwd=None, port=3306):
         settings = self.get_mysql_config(addr, port, db, user, pwd)
-        self.conn = pymysql.connect(**settings)
         self._closed = False
         self._connection_time = time.time()
         self.config = settings
+        try:
+            self.conn = pymysql.connect(**settings)
+        except Exception as ex:
+            self.conn = None
+            logger.warning(f"[MYSQL] > cannot connect mysql db:{ex}")
 
     @property
     def connect(self):
@@ -29,7 +34,7 @@ class MySQLClient(object):
 
     @property
     def available(self):
-        return not self._closed
+        return not self._closed and self.conn
 
     @property
     def must_reconnct(self):

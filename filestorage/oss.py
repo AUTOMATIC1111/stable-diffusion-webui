@@ -14,7 +14,7 @@ import oss2
 from filestorage.storage import FileStorage
 from tools.processor import MultiThreadWorker
 from tools.environment import get_file_storage_system_env, Env_EndponitKey, \
-    Env_AccessKey, Env_SecretKey
+    Env_AccessKey, Env_SecretKey, Env_BucketKey
 
 
 def download(obj, bucket, local_path, tmp):
@@ -33,12 +33,17 @@ class OssFileStorage(FileStorage):
         endpoint = env_vars.get(Env_EndponitKey, '')
         access_key_id = env_vars.get(Env_AccessKey, '')
         secret_access_key = env_vars.get(Env_SecretKey, '')
+        bucket = env_vars.get(Env_BucketKey, '')
+
+        self.bucket_name = bucket
         self.client = None
         if 'aliyun' in endpoint:
             self.endpoint = endpoint
             self.auth = oss2.Auth(access_key_id, secret_access_key)
+            self.bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
         else:
             self.auth = None
+            self.bucket = None
 
     def name(self):
         return 'aliyuncs'
@@ -50,11 +55,12 @@ class OssFileStorage(FileStorage):
             if os.path.isfile(remoting_path):
                 return remoting_path
             try:
-                bucket, key = self.extract_buack_key_from_path(remoting_path)
+                key = self.get_keyname(remoting_path, self.bucket_name)
+                # bucket, key = self.extract_buack_key_from_path(remoting_path)
                 self.logger.info(f"download {key} from oss to {local_path}")
                 tmp_file = os.path.join(self.tmp_dir, os.path.basename(local_path))
-                bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
-                oss2.resumable_download(bucket, key, tmp_file, progress_callback=progress_callback)
+                # bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
+                oss2.resumable_download(self.bucket, key, tmp_file, progress_callback=progress_callback)
                 if os.path.isfile(tmp_file):
                     shutil.move(tmp_file, local_path)
                     return local_path
@@ -71,14 +77,14 @@ class OssFileStorage(FileStorage):
     def upload(self, local_path, remoting_path) -> str:
         if not os.path.isfile(local_path):
             raise OSError(f'cannot found file:{local_path}')
-        bucket, key = self.extract_buack_key_from_path(remoting_path)
-
+        # bucket, key = self.extract_buack_key_from_path(remoting_path)
+        key = self.get_keyname(remoting_path, self.bucket_name)
         self.logger.info(f"upload file:{remoting_path}")
-        bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
+        # bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
         # 分片上传
         headers = oss2.CaseInsensitiveDict()
         headers['Content-Type'] = self.mmie(local_path)
-        resp = bucket.put_object_from_file(key, local_path)
+        resp = self.bucket.put_object_from_file(key, local_path)
 
         if resp.status < 300:
             return remoting_path
@@ -86,38 +92,38 @@ class OssFileStorage(FileStorage):
             raise OSError(f'cannot download file from oss, resp:{resp.errorMessage}, key: {remoting_path}')
 
     def upload_content(self, remoting_path, content) -> str:
-        bucket, key = self.extract_buack_key_from_path(remoting_path)
-
+        # bucket, key = self.extract_buack_key_from_path(remoting_path)
+        key = self.get_keyname(remoting_path, self.bucket_name)
         self.logger.info(f"upload file:{remoting_path}")
-        bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
+        # bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
         # 分片上传
         headers = oss2.CaseInsensitiveDict()
-        resp = bucket.put_object(key, content, headers)
+        resp = self.bucket.put_object(key, content, headers)
         if resp.status < 300:
             return remoting_path
         else:
             raise OSError(f'cannot download file from oss, resp:{resp.errorMessage}, key: {remoting_path}')
 
     def preview_url(self, remoting_path: str) -> str:
-        bucket, key = self.extract_buack_key_from_path(remoting_path)
-        bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
-        return bucket.sign_url('GET', key, 10 * 60)
+        # bucket, key = self.extract_buack_key_from_path(remoting_path)
+        # bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
+        return self.bucket.sign_url('GET', remoting_path, 10 * 60)
 
     def download_dir(self, remoting_dir: str, local_dir: str) -> bool:
         super(OssFileStorage, self).download_dir(remoting_dir, local_dir)
-        bucket_name, key = self.extract_buack_key_from_path(remoting_dir)
-        bucket = oss2.Bucket(self.auth, self.endpoint, bucket_name)
+        # bucket_name, key = self.extract_buack_key_from_path(remoting_dir)
+        # bucket = oss2.Bucket(self.auth, self.endpoint, bucket_name)
 
         tmp = os.path.join(self.tmp_dir, str(uuid.uuid4()))
         os.makedirs(tmp, exist_ok=True)
 
         args = []
         # 获取OBJ列表
-        for i, obj in enumerate(oss2.ObjectIteratorV2(bucket, prefix=key)):
+        for i, obj in enumerate(oss2.ObjectIteratorV2(self.bucket, prefix=remoting_dir)):
             if i >= 200:
                 break
             local_path = os.path.join(local_dir, os.path.basename(obj.key))
-            args.append((obj, bucket, local_path, tmp))
+            args.append((obj, self.bucket, local_path, tmp))
 
         # 下载列表~
         worker = MultiThreadWorker(args, download, 4)

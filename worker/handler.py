@@ -6,11 +6,9 @@
 # @File    : handler.py
 # @Software: Hifive
 import abc
-import random
 import time
 import typing
 import traceback
-
 import torch.cuda
 from modules.shared import mem_mon as vram_mon
 from worker.dumper import dumper
@@ -88,7 +86,7 @@ class TaskHandler:
 
 
 class DumpTaskHandler(TaskHandler, abc.ABC):
-    
+
     def __init__(self, task_type: TaskType):
         super(DumpTaskHandler, self).__init__(task_type)
 

@@ -15,7 +15,7 @@ from loguru import logger
 from worker.task_recv import Tmp
 from datetime import datetime
 from insightface.app import FaceAnalysis
-from tools.environment import get_file_storage_system_env, Env_BucketKey, S3ImageBucket, S3Tmp, S3SDWEB
+from tools.environment import S3Tmp, S3SDWEB
 from filestorage import FileStorageCls, get_local_path, batch_download, http_down
 
 
@@ -89,8 +89,7 @@ def upload_files(is_tmp, *files, dirname=None):
     keys = []
     if files:
         date = datetime.today().strftime('%Y/%m/%d')
-        storage_env = get_file_storage_system_env()
-        bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
+
         file_storage_system = FileStorageCls()
         relative = S3Tmp if is_tmp else S3SDWEB
         if dirname:
@@ -98,7 +97,7 @@ def upload_files(is_tmp, *files, dirname=None):
 
         for f in files:
             name = os.path.basename(f)
-            key = os.path.join(bucket, relative, date, name)
+            key = os.path.join(relative, date, name)
             file_storage_system.upload(f, key)
             keys.append(key)
     return keys

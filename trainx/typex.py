@@ -359,14 +359,14 @@ class TrainLoraTask(UserDict):
 
     def auto_batch_size(self):
         batch_size = self["batch_size"]
-        arr = self.resolution.split(",")
-        w, h = arr[0], arr[-1]
-
-        r = int(w) * int(h)
-        if r < 512 * 768:
-            return min(batch_size, 6)
-        elif r > 1024 * 1024:
-            return min(batch_size, 4)
+        # arr = self.resolution.split(",")
+        # w, h = arr[0], arr[-1]
+        #
+        # r = int(w) * int(h)
+        # if r < 512 * 768:
+        #     return min(batch_size, 6)
+        # elif r > 1024 * 1024:
+        #     return min(batch_size, 4)
 
         return batch_size
 
