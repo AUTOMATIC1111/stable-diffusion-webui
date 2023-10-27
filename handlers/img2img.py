@@ -272,15 +272,16 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         self.refiner_switch_at = refiner_switch_at
         self.xl_refiner_model_path = refiner_checkpoint
 
-        if mask:
-            self.extra_generation_params["Mask blur"] = mask_blur
-
         if selectable_scripts:
             self.script_args = script_args
         else:
             self.script_args = tuple(script_args)
 
         super(Img2ImgTask, self).__post_init__()
+        # extra_generation_params 赋值必须得在post_init后，
+        # 因为extra_generation_params初始化在post_init
+        if mask:
+            self.extra_generation_params["Mask blur"] = mask_blur
 
     def close(self):
         super(Img2ImgTask, self).close()
