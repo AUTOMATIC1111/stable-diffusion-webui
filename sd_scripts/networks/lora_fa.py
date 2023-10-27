@@ -3,6 +3,9 @@
 # https://github.com/microsoft/LoRA/blob/main/loralib/layers.py
 # https://github.com/cloneofsimo/lora/blob/master/lora_diffusion/lora.py
 
+# temporary implementation of LoRA-FA: https://arxiv.org/abs/2308.03303
+# need to be refactored and merged to lora.py
+
 import math
 import os
 from typing import Dict, List, Optional, Tuple, Type, Union
@@ -66,8 +69,12 @@ class LoRAModule(torch.nn.Module):
         self.scale = alpha / self.lora_dim
         self.register_buffer("alpha", torch.tensor(alpha))  # 定数として扱える
 
-        # same as microsoft's
-        torch.nn.init.kaiming_uniform_(self.lora_down.weight, a=math.sqrt(5))
+        # # same as microsoft's
+        # torch.nn.init.kaiming_uniform_(self.lora_down.weight, a=math.sqrt(5))
+
+        # according to the paper, initialize LoRA-A (down) as normal distribution
+        torch.nn.init.normal_(self.lora_down.weight, std=math.sqrt(2.0 / (in_dim + self.lora_dim)))
+
         torch.nn.init.zeros_(self.lora_up.weight)
 
         self.multiplier = multiplier
@@ -75,6 +82,19 @@ class LoRAModule(torch.nn.Module):
         self.dropout = dropout
         self.rank_dropout = rank_dropout
         self.module_dropout = module_dropout
+
+    def get_trainable_params(self):
+        params = self.named_parameters()
+        trainable_params = []
+        for param in params:
+            if param[0] == "lora_up.weight":  # up only
+                trainable_params.append(param[1])
+        return trainable_params
+
+    def requires_grad_(self, requires_grad: bool = True):
+        self.lora_up.requires_grad_(requires_grad)
+        self.lora_down.requires_grad_(False)
+        return self
 
     def apply_to(self):
         self.org_forward = self.org_module.forward
@@ -241,13 +261,9 @@ class LoRAInfModule(LoRAModule):
         else:
             area = x.size()[1]
 
-        mask = self.network.mask_dic.get(area, None)
+        mask = self.network.mask_dic[area]
         if mask is None:
-            # raise ValueError(f"mask is None for resolution {area}")
-            # emb_layers in SDXL doesn't have mask
-            # print(f"mask is None for resolution {area}, {x.size()}")
-            mask_size = (1, x.size()[1]) if len(x.size()) == 2 else (1, *x.size()[1:-1], 1)
-            return torch.ones(mask_size, dtype=x.dtype, device=x.device) / self.network.num_sub_prompts
+            raise ValueError(f"mask is None for resolution {area}")
         if len(x.size()) != 4:
             mask = torch.reshape(mask, (1, -1, 1))
         return mask
@@ -352,10 +368,9 @@ class LoRAInfModule(LoRAModule):
             out[-self.network.batch_size :] = x[-self.network.batch_size :]  # real_uncond
 
         # print("to_out_forward", self.lora_name, self.network.sub_prompt_index, self.network.num_sub_prompts)
-        # if num_sub_prompts > num of LoRAs, fill with zero
-        for i in range(len(masks)):
-            if masks[i] is None:
-                masks[i] = torch.zeros_like(masks[0])
+        # for i in range(len(masks)):
+        #     if masks[i] is None:
+        #         masks[i] = torch.zeros_like(masks[-1])
 
         mask = torch.cat(masks)
         mask_sum = torch.sum(mask, dim=0) + 1e-4
@@ -832,11 +847,14 @@ class LoRANetwork(torch.nn.Module):
 
                             dim = None
                             alpha = None
+
                             if modules_dim is not None:
+                                # モジュール指定あり
                                 if lora_name in modules_dim:
                                     dim = modules_dim[lora_name]
                                     alpha = modules_alpha[lora_name]
                             elif is_unet and block_dims is not None:
+                                # U-Netでblock_dims指定あり
                                 block_idx = get_block_index(lora_name)
                                 if is_linear or is_conv2d_1x1:
                                     dim = block_dims[block_idx]
@@ -845,6 +863,7 @@ class LoRANetwork(torch.nn.Module):
                                     dim = conv_block_dims[block_idx]
                                     alpha = conv_block_alphas[block_idx]
                             else:
+                                # 通常、すべて対象とする
                                 if is_linear or is_conv2d_1x1:
                                     dim = self.lora_dim
                                     alpha = self.alpha
@@ -853,6 +872,7 @@ class LoRANetwork(torch.nn.Module):
                                     alpha = self.conv_alpha
 
                             if dim is None or dim == 0:
+                                # skipした情報を出力
                                 if is_linear or is_conv2d_1x1 or (self.conv_lora_dim is not None or conv_block_dims is not None):
                                     skipped.append(lora_name)
                                 continue
@@ -979,7 +999,7 @@ class LoRANetwork(torch.nn.Module):
 
         print(f"weights are merged")
 
-    # 層別学習率用に層ごとの学習率に対する倍率を定義する
+    # 層別学習率用に層ごとの学習率に対する倍率を定義する　引数の順番が逆だがとりあえず気にしない
     def set_block_lr_weight(
         self,
         up_lr_weight: List[float] = None,
@@ -1009,14 +1029,16 @@ class LoRANetwork(torch.nn.Module):
 
         return lr_weight
 
+    # 二つのText Encoderに別々の学習率を設定できるようにするといいかも
     def prepare_optimizer_params(self, text_encoder_lr, unet_lr, default_lr):
         self.requires_grad_(True)
         all_params = []
 
-        def enumerate_params(loras):
+        def enumerate_params(loras: List[LoRAModule]):
             params = []
             for lora in loras:
-                params.extend(lora.parameters())
+                # params.extend(lora.parameters())
+                params.extend(lora.get_trainable_params())
             return params
 
         if self.text_encoder_loras:

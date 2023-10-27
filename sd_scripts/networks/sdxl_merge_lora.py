@@ -1,10 +1,12 @@
 import math
 import argparse
 import os
+import time
 import torch
 from safetensors.torch import load_file, save_file
-from sd_scripts.library import sai_model_spec, train_util
-import sd_scripts.library.model_util as model_util
+from tqdm import tqdm
+from library import sai_model_spec, sdxl_model_util, train_util
+import library.model_util as model_util
 import lora
 
 
@@ -35,15 +37,19 @@ def save_to_file(file_name, model, state_dict, dtype, metadata):
         torch.save(model, file_name)
 
 
-def merge_to_sd_model(text_encoder, unet, models, ratios, merge_dtype):
-    text_encoder.to(merge_dtype)
+def merge_to_sd_model(text_encoder1, text_encoder2, unet, models, ratios, merge_dtype):
+    text_encoder1.to(merge_dtype)
+    text_encoder1.to(merge_dtype)
     unet.to(merge_dtype)
 
     # create module map
     name_to_module = {}
-    for i, root_module in enumerate([text_encoder, unet]):
-        if i == 0:
-            prefix = lora.LoRANetwork.LORA_PREFIX_TEXT_ENCODER
+    for i, root_module in enumerate([text_encoder1, text_encoder2, unet]):
+        if i <= 1:
+            if i == 0:
+                prefix = lora.LoRANetwork.LORA_PREFIX_TEXT_ENCODER1
+            else:
+                prefix = lora.LoRANetwork.LORA_PREFIX_TEXT_ENCODER2
             target_replace_modules = lora.LoRANetwork.TEXT_ENCODER_TARGET_REPLACE_MODULE
         else:
             prefix = lora.LoRANetwork.LORA_PREFIX_UNET
@@ -64,7 +70,7 @@ def merge_to_sd_model(text_encoder, unet, models, ratios, merge_dtype):
         lora_sd, _ = load_state_dict(model, merge_dtype)
 
         print(f"merging...")
-        for key in lora_sd.keys():
+        for key in tqdm(lora_sd.keys()):
             if "lora_down" in key:
                 up_key = key.replace("lora_down", "lora_up")
                 alpha_key = key[: key.index("lora_down")] + "alpha"
@@ -86,11 +92,9 @@ def merge_to_sd_model(text_encoder, unet, models, ratios, merge_dtype):
 
                 # W <- W + U * D
                 weight = module.weight
+                # print(module_name, down_weight.size(), up_weight.size())
                 if len(weight.size()) == 2:
                     # linear
-                    if len(up_weight.size()) == 4:  # use linear projection mismatch
-                        up_weight = up_weight.squeeze(3).squeeze(2)
-                        down_weight = down_weight.squeeze(3).squeeze(2)
                     weight = weight + ratio * (up_weight @ down_weight) * scale
                 elif down_weight.size()[2:4] == (1, 1):
                     # conv2d 1x1
@@ -122,7 +126,7 @@ def merge_lora_models(models, ratios, merge_dtype, concat=False, shuffle=False):
 
         if lora_metadata is not None:
             if v2 is None:
-                v2 = lora_metadata.get(train_util.SS_METADATA_KEY_V2, None)  # return string
+                v2 = lora_metadata.get(train_util.SS_METADATA_KEY_V2, None)  # returns string, SDXLはv2がないのでFalseのはず
             if base_model is None:
                 base_model = lora_metadata.get(train_util.SS_METADATA_KEY_BASE_MODEL_VERSION, None)
 
@@ -154,9 +158,10 @@ def merge_lora_models(models, ratios, merge_dtype, concat=False, shuffle=False):
 
         # merge
         print(f"merging...")
-        for key in lora_sd.keys():
+        for key in tqdm(lora_sd.keys()):
             if "alpha" in key:
                 continue
+            
             if "lora_up" in key and concat:
                 concat_dim = 1
             elif "lora_down" in key and concat:
@@ -171,7 +176,7 @@ def merge_lora_models(models, ratios, merge_dtype, concat=False, shuffle=False):
 
             scale = math.sqrt(alpha / base_alpha) * ratio
             scale = abs(scale) if "lora_up" in key else scale # マイナスの重みに対応する。
-
+            
             if key in merged_sd:
                 assert (
                     merged_sd[key].size() == lora_sd[key].size() or concat_dim is not None
@@ -217,7 +222,7 @@ def merge_lora_models(models, ratios, merge_dtype, concat=False, shuffle=False):
     alphas = f"{alphas_list[0]}" if all_same_alphas else "Dynamic"
     metadata = train_util.build_minimum_network_metadata(v2, base_model, "networks.lora", dims, alphas, None)
 
-    return merged_sd, metadata, v2 == "True"
+    return merged_sd, metadata
 
 
 def merge(args):
@@ -240,9 +245,16 @@ def merge(args):
     if args.sd_model is not None:
         print(f"loading SD model: {args.sd_model}")
 
-        text_encoder, vae, unet = model_util.load_models_from_stable_diffusion_checkpoint(args.v2, args.sd_model)
+        (
+            text_model1,
+            text_model2,
+            vae,
+            unet,
+            logit_scale,
+            ckpt_info,
+        ) = sdxl_model_util.load_models_from_sdxl_checkpoint(sdxl_model_util.MODEL_VERSION_SDXL_BASE_V1_0, args.sd_model, "cpu")
 
-        merge_to_sd_model(text_encoder, unet, args.models, args.ratios, merge_dtype)
+        merge_to_sd_model(text_model1, text_model2, unet, args.models, args.ratios, merge_dtype)
 
         if args.no_metadata:
             sai_metadata = None
@@ -250,29 +262,15 @@ def merge(args):
             merged_from = sai_model_spec.build_merged_from([args.sd_model] + args.models)
             title = os.path.splitext(os.path.basename(args.save_to))[0]
             sai_metadata = sai_model_spec.build_metadata(
-                None,
-                args.v2,
-                args.v2,
-                False,
-                False,
-                False,
-                time.time(),
-                title=title,
-                merged_from=merged_from,
-                is_stable_diffusion_ckpt=True,
+                None, False, False, True, False, False, time.time(), title=title, merged_from=merged_from
             )
-            if args.v2:
-                # TODO read sai modelspec
-                print(
-                    "Cannot determine if model is for v-prediction, so save metadata as v-prediction / modelがv-prediction用か否か不明なため、仮にv-prediction用としてmetadataを保存します"
-                )
 
         print(f"saving SD model to: {args.save_to}")
-        model_util.save_stable_diffusion_checkpoint(
-            args.v2, args.save_to, text_encoder, unet, args.sd_model, 0, 0, sai_metadata, save_dtype, vae
+        sdxl_model_util.save_stable_diffusion_checkpoint(
+            args.save_to, text_model1, text_model2, unet, 0, 0, ckpt_info, vae, logit_scale, sai_metadata, save_dtype
         )
     else:
-        state_dict, metadata, v2 = merge_lora_models(args.models, args.ratios, merge_dtype, args.concat, args.shuffle)
+        state_dict, metadata = merge_lora_models(args.models, args.ratios, merge_dtype, args.concat, args.shuffle)
 
         print(f"calculating hashes and creating metadata...")
 
@@ -284,13 +282,8 @@ def merge(args):
             merged_from = sai_model_spec.build_merged_from(args.models)
             title = os.path.splitext(os.path.basename(args.save_to))[0]
             sai_metadata = sai_model_spec.build_metadata(
-                state_dict, v2, v2, False, True, False, time.time(), title=title, merged_from=merged_from
+                state_dict, False, False, True, True, False, time.time(), title=title, merged_from=merged_from
             )
-            if v2:
-                # TODO read sai modelspec
-                print(
-                    "Cannot determine if LoRA is for v-prediction, so save metadata as v-prediction / LoRAがv-prediction用か否か不明なため、仮にv-prediction用としてmetadataを保存します"
-                )
             metadata.update(sai_metadata)
 
         print(f"saving model to: {args.save_to}")
@@ -299,7 +292,6 @@ def merge(args):
 
 def setup_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--v2", action="store_true", help="load Stable Diffusion v2.x model / Stable Diffusion 2.xのモデルを読み込む")
     parser.add_argument(
         "--save_precision",
         type=str,
@@ -345,7 +337,7 @@ def setup_parser() -> argparse.ArgumentParser:
         help="shuffle lora weight./ "
         + "LoRAの重みをシャッフルする",
     )
-    
+
     return parser
 
 

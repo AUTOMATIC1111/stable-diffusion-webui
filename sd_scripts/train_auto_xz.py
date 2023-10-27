@@ -833,23 +833,23 @@ def train_auto(
     )
 
     return os.path.join(lora_path, lora_name + ".safetensors"), gender
-
-#MODEL_PATH = "/data/qll/stable-diffusion-webui/models/Stable-diffusion/AWPortrait_v1.2.safetensors"
-#PIC_SAVE_PATH = "/data/qll/pics/yijian_sanciyuan_train"
-#LORA_PATH = "/data/qll/stable-diffusion-webui/models/Lora"
-# model_p = "/data/qll/stable-diffusion-webui/models"
-# trigger_word = f"liuxiangxzai"
-# undesired_tags = ""  # 待测试五官
-# train_data_dir = "/moba_expert_data/qll/pics/liuxiang"
-# for i in range(3):
-#    train_auto(
-#        train_data_dir=train_data_dir,  # 训练的图片路径
-#        train_type=0,  # 训练的类别
-#        task_id="test",   # 任务id,作为Lora名称
-#        sd_model_path=MODEL_PATH, # 底模路径
-#        lora_path=LORA_PATH, # 文件夹名字
-#        general_model_path=model_p, # 通用路径,
-#        train_callback=train_callback, # callback函数
-#        other_args=None # 预留一个，以备用
-#    )
+if __name__ == "__main__":
+    MODEL_PATH = "/data/qll/stable-diffusion-webui/models/Stable-diffusion/Realistic_Vision_V2.0.safetensors"
+    PIC_SAVE_PATH = "/data/qll/pics/yijian_sanciyuan_train"
+    LORA_PATH = "/data/qll/stable-diffusion-webui/models/Lora"
+    model_p = "/data/qll/stable-diffusion-webui/models"
+    trigger_word = f""
+    undesired_tags = ""  # 待测试五官
+    train_data_dir = "/root/qll/pics/shuqi"
+    for i in range(1):
+        train_auto(
+        train_data_dir=train_data_dir,  # 训练的图片路径
+        train_type=0,  # 训练的类别
+        task_id="test_new",   # 任务id,作为Lora名称
+        sd_model_path=MODEL_PATH, # 底模路径
+        lora_path=LORA_PATH, # 文件夹名字
+        general_model_path=model_p, # 通用路径,
+        train_callback=train_callback, # callback函数
+        other_args=None # 预留一个，以备用
+    )
 

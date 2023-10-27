@@ -33,8 +33,10 @@ from . import train_util
 from .train_util import (
   DreamBoothSubset,
   FineTuningSubset,
+  ControlNetSubset,
   DreamBoothDataset,
   FineTuningDataset,
+  ControlNetDataset,
   DatasetGroup,
 )
 
@@ -54,6 +56,8 @@ class BaseSubsetParams:
   flip_aug: bool = False
   face_crop_aug_range: Optional[Tuple[float, float]] = None
   random_crop: bool = False
+  caption_prefix: Optional[str] = None
+  caption_suffix: Optional[str] = None
   caption_dropout_rate: float = 0.0
   caption_dropout_every_n_epochs: int = 0
   caption_tag_dropout_rate: float = 0.0
@@ -71,8 +75,13 @@ class FineTuningSubsetParams(BaseSubsetParams):
   metadata_file: Optional[str] = None
 
 @dataclass
+class ControlNetSubsetParams(BaseSubsetParams):
+  conditioning_data_dir: str = None
+  caption_extension: str = ".caption"
+
+@dataclass
 class BaseDatasetParams:
-  tokenizer: CLIPTokenizer = None
+  tokenizer: Union[CLIPTokenizer, List[CLIPTokenizer]] = None
   max_token_length: int = None
   resolution: Optional[Tuple[int, int]] = None
   debug_dataset: bool = False
@@ -97,12 +106,22 @@ class FineTuningDatasetParams(BaseDatasetParams):
   bucket_no_upscale: bool = False
 
 @dataclass
+class ControlNetDatasetParams(BaseDatasetParams):
+  batch_size: int = 1
+  enable_bucket: bool = False
+  min_bucket_reso: int = 256
+  max_bucket_reso: int = 1024
+  bucket_reso_steps: int = 64
+  bucket_no_upscale: bool = False
+
+@dataclass
 class SubsetBlueprint:
   params: Union[DreamBoothSubsetParams, FineTuningSubsetParams]
 
 @dataclass
 class DatasetBlueprint:
   is_dreambooth: bool
+  is_controlnet: bool
   params: Union[DreamBoothDatasetParams, FineTuningDatasetParams]
   subsets: Sequence[SubsetBlueprint]
 
@@ -142,6 +161,8 @@ class ConfigSanitizer:
     "keep_tokens": int,
     "token_warmup_min": int,
     "token_warmup_step": Any(float,int),
+    "caption_prefix": str,
+    "caption_suffix": str,
   }
   # DO means DropOut
   DO_SUBSET_ASCENDABLE_SCHEMA = {
@@ -162,6 +183,13 @@ class ConfigSanitizer:
   FT_SUBSET_DISTINCT_SCHEMA = {
     Required("metadata_file"): str,
     "image_dir": str,
+  }
+  CN_SUBSET_ASCENDABLE_SCHEMA = {
+    "caption_extension": str,
+  }
+  CN_SUBSET_DISTINCT_SCHEMA = {
+    Required("image_dir"): str,
+    Required("conditioning_data_dir"): str,
   }
 
   # datasets schema
@@ -192,8 +220,8 @@ class ConfigSanitizer:
     "dataset_repeats": "num_repeats",
   }
 
-  def __init__(self, support_dreambooth: bool, support_finetuning: bool, support_dropout: bool) -> None:
-    assert support_dreambooth or support_finetuning, "Neither DreamBooth mode nor fine tuning mode specified. Please specify one mode or more. / DreamBooth モードか fine tuning モードのどちらも指定されていません。1つ以上指定してください。"
+  def __init__(self, support_dreambooth: bool, support_finetuning: bool, support_controlnet: bool, support_dropout: bool) -> None:
+    assert support_dreambooth or support_finetuning or support_controlnet, "Neither DreamBooth mode nor fine tuning mode specified. Please specify one mode or more. / DreamBooth モードか fine tuning モードのどちらも指定されていません。1つ以上指定してください。"
 
     self.db_subset_schema = self.__merge_dict(
       self.SUBSET_ASCENDABLE_SCHEMA,
@@ -205,6 +233,13 @@ class ConfigSanitizer:
     self.ft_subset_schema = self.__merge_dict(
       self.SUBSET_ASCENDABLE_SCHEMA,
       self.FT_SUBSET_DISTINCT_SCHEMA,
+      self.DO_SUBSET_ASCENDABLE_SCHEMA if support_dropout else {},
+    )
+
+    self.cn_subset_schema = self.__merge_dict(
+      self.SUBSET_ASCENDABLE_SCHEMA,
+      self.CN_SUBSET_DISTINCT_SCHEMA,
+      self.CN_SUBSET_ASCENDABLE_SCHEMA,
       self.DO_SUBSET_ASCENDABLE_SCHEMA if support_dropout else {},
     )
 
@@ -223,13 +258,23 @@ class ConfigSanitizer:
       {"subsets": [self.ft_subset_schema]},
     )
 
+    self.cn_dataset_schema = self.__merge_dict(
+      self.DATASET_ASCENDABLE_SCHEMA,
+      self.SUBSET_ASCENDABLE_SCHEMA,
+      self.CN_SUBSET_ASCENDABLE_SCHEMA,
+      self.DO_SUBSET_ASCENDABLE_SCHEMA if support_dropout else {},
+      {"subsets": [self.cn_subset_schema]},
+    )
+
     if support_dreambooth and support_finetuning:
       def validate_flex_dataset(dataset_config: dict):
         subsets_config = dataset_config.get("subsets", [])
 
+        if support_controlnet and all(["conditioning_data_dir" in subset for subset in subsets_config]):
+          return Schema(self.cn_dataset_schema)(dataset_config)
         # check dataset meets FT style
         # NOTE: all FT subsets should have "metadata_file"
-        if all(["metadata_file" in subset for subset in subsets_config]):
+        elif all(["metadata_file" in subset for subset in subsets_config]):
           return Schema(self.ft_dataset_schema)(dataset_config)
         # check dataset meets DB style
         # NOTE: all DB subsets should have no "metadata_file"
@@ -241,13 +286,16 @@ class ConfigSanitizer:
       self.dataset_schema = validate_flex_dataset
     elif support_dreambooth:
       self.dataset_schema = self.db_dataset_schema
-    else:
+    elif support_finetuning:
       self.dataset_schema = self.ft_dataset_schema
+    elif support_controlnet:
+      self.dataset_schema = self.cn_dataset_schema
 
     self.general_schema = self.__merge_dict(
       self.DATASET_ASCENDABLE_SCHEMA,
       self.SUBSET_ASCENDABLE_SCHEMA,
       self.DB_SUBSET_ASCENDABLE_SCHEMA if support_dreambooth else {},
+      self.CN_SUBSET_ASCENDABLE_SCHEMA if support_controlnet else {},
       self.DO_SUBSET_ASCENDABLE_SCHEMA if support_dropout else {},
     )
 
@@ -318,7 +366,11 @@ class BlueprintGenerator:
       # NOTE: if subsets have no "metadata_file", these are DreamBooth datasets/subsets
       subsets = dataset_config.get("subsets", [])
       is_dreambooth = all(["metadata_file" not in subset for subset in subsets])
-      if is_dreambooth:
+      is_controlnet = all(["conditioning_data_dir" in subset for subset in subsets])
+      if is_controlnet:
+        subset_params_klass = ControlNetSubsetParams
+        dataset_params_klass = ControlNetDatasetParams
+      elif is_dreambooth:
         subset_params_klass = DreamBoothSubsetParams
         dataset_params_klass = DreamBoothDatasetParams
       else:
@@ -333,7 +385,7 @@ class BlueprintGenerator:
 
       params = self.generate_params_by_fallbacks(dataset_params_klass,
                                                  [dataset_config, general_config, argparse_config, runtime_params])
-      dataset_blueprints.append(DatasetBlueprint(is_dreambooth, params, subset_blueprints))
+      dataset_blueprints.append(DatasetBlueprint(is_dreambooth, is_controlnet, params, subset_blueprints))
 
     dataset_group_blueprint = DatasetGroupBlueprint(dataset_blueprints)
 
@@ -361,10 +413,13 @@ class BlueprintGenerator:
 
 
 def generate_dataset_group_by_blueprint(dataset_group_blueprint: DatasetGroupBlueprint):
-  datasets: List[Union[DreamBoothDataset, FineTuningDataset]] = []
+  datasets: List[Union[DreamBoothDataset, FineTuningDataset, ControlNetDataset]] = []
 
   for dataset_blueprint in dataset_group_blueprint.datasets:
-    if dataset_blueprint.is_dreambooth:
+    if dataset_blueprint.is_controlnet:
+      subset_klass = ControlNetSubset
+      dataset_klass = ControlNetDataset
+    elif dataset_blueprint.is_dreambooth:
       subset_klass = DreamBoothSubset
       dataset_klass = DreamBoothDataset
     else:
@@ -379,6 +434,7 @@ def generate_dataset_group_by_blueprint(dataset_group_blueprint: DatasetGroupBlu
   info = ""
   for i, dataset in enumerate(datasets):
     is_dreambooth = isinstance(dataset, DreamBoothDataset)
+    is_controlnet = isinstance(dataset, ControlNetDataset)
     info += dedent(f"""\
       [Dataset {i}]
         batch_size: {dataset.batch_size}
@@ -407,6 +463,8 @@ def generate_dataset_group_by_blueprint(dataset_group_blueprint: DatasetGroupBlu
           caption_dropout_rate: {subset.caption_dropout_rate}
           caption_dropout_every_n_epoches: {subset.caption_dropout_every_n_epochs}
           caption_tag_dropout_rate: {subset.caption_tag_dropout_rate}
+          caption_prefix: {subset.caption_prefix}
+          caption_suffix: {subset.caption_suffix}
           color_aug: {subset.color_aug}
           flip_aug: {subset.flip_aug}
           face_crop_aug_range: {subset.face_crop_aug_range}
@@ -421,7 +479,7 @@ def generate_dataset_group_by_blueprint(dataset_group_blueprint: DatasetGroupBlu
           class_tokens: {subset.class_tokens}
           caption_extension: {subset.caption_extension}
         \n"""), "    ")
-      else:
+      elif not is_controlnet:
         info += indent(dedent(f"""\
           metadata_file: {subset.metadata_file}
         \n"""), "    ")
@@ -495,6 +553,27 @@ def generate_dreambooth_subsets_config_by_subdirs(train_data_dir: Optional[str] 
   return subsets_config
 
 
+def generate_controlnet_subsets_config_by_subdirs(train_data_dir: Optional[str] = None, conditioning_data_dir: Optional[str] = None, caption_extension: str = ".txt"):
+  def generate(base_dir: Optional[str]):
+    if base_dir is None:
+      return []
+
+    base_dir: Path = Path(base_dir)
+    if not base_dir.is_dir():
+      return []
+
+    subsets_config = []
+    subset_config = {"image_dir": train_data_dir, "conditioning_data_dir": conditioning_data_dir, "caption_extension": caption_extension, "num_repeats": 1}
+    subsets_config.append(subset_config)
+
+    return subsets_config
+
+  subsets_config = []
+  subsets_config += generate(train_data_dir)
+
+  return subsets_config
+
+
 def load_user_config(file: str) -> dict:
   file: Path = Path(file)
   if not file.is_file():
@@ -523,6 +602,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument("--support_dreambooth", action="store_true")
   parser.add_argument("--support_finetuning", action="store_true")
+  parser.add_argument("--support_controlnet", action="store_true")
   parser.add_argument("--support_dropout", action="store_true")
   parser.add_argument("dataset_config")
   config_args, remain = parser.parse_known_args()
@@ -541,7 +621,7 @@ if __name__ == "__main__":
   print("\n[user_config]")
   print(user_config)
 
-  sanitizer = ConfigSanitizer(config_args.support_dreambooth, config_args.support_finetuning, config_args.support_dropout)
+  sanitizer = ConfigSanitizer(config_args.support_dreambooth, config_args.support_finetuning, config_args.support_controlnet, config_args.support_dropout)
   sanitized_user_config = sanitizer.sanitize_user_config(user_config)
 
   print("\n[sanitized_user_config]")
