@@ -16,6 +16,23 @@ def has_mps() -> bool:
         return mac_specific.has_mps
 
 
+def cuda_no_autocast(device_id=None) -> bool:
+    if device_id is None:
+        device_id = get_cuda_device_id()
+    return (
+        torch.cuda.get_device_capability(device_id) == (7, 5) 
+        and torch.cuda.get_device_name(device_id).startswith("NVIDIA GeForce GTX 16")
+    )
+
+
+def get_cuda_device_id():
+    return (
+        int(shared.cmd_opts.device_id) 
+        if shared.cmd_opts.device_id is not None and shared.cmd_opts.device_id.isdigit() 
+        else 0
+    ) or torch.cuda.current_device()
+
+
 def get_cuda_device_string():
     if shared.cmd_opts.device_id is not None:
         return f"cuda:{shared.cmd_opts.device_id}"
@@ -60,8 +77,7 @@ def enable_tf32():
 
         # enabling benchmark option seems to enable a range of cards to do fp16 when they otherwise can't
         # see https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/4407
-        device_id = (int(shared.cmd_opts.device_id) if shared.cmd_opts.device_id is not None and shared.cmd_opts.device_id.isdigit() else 0) or torch.cuda.current_device()
-        if torch.cuda.get_device_capability(device_id) == (7, 5) and torch.cuda.get_device_name(device_id).startswith("NVIDIA GeForce GTX 16"):
+        if cuda_no_autocast():
             torch.backends.cudnn.benchmark = True
 
         torch.backends.cuda.matmul.allow_tf32 = True
@@ -92,14 +108,43 @@ def cond_cast_float(input):
 
 
 nv_rng = None
+patch_module_list = [
+    torch.nn.Linear,
+    torch.nn.Conv2d,
+    torch.nn.MultiheadAttention,
+    torch.nn.GroupNorm,
+    torch.nn.LayerNorm,
+]
+
+@contextlib.contextmanager
+def manual_autocast():
+    def manual_cast_forward(self, *args, **kwargs):
+        org_dtype = next(self.parameters()).dtype
+        self.to(dtype)
+        result = self.org_forward(*args, **kwargs)
+        self.to(org_dtype)
+        return result
+    for module_type in patch_module_list:
+        org_forward = module_type.forward
+        module_type.forward = manual_cast_forward
+        module_type.org_forward = org_forward
+    try:
+        yield None
+    finally:
+        for module_type in patch_module_list:
+            module_type.forward = module_type.org_forward
 
 
-def autocast(disable=False, unet=False):
+def autocast(disable=False):
+    print(fp8, dtype, shared.cmd_opts.precision, device)
     if disable:
         return contextlib.nullcontext()
 
-    if unet and fp8 and device==cpu:
+    if fp8 and device==cpu:
         return torch.autocast("cpu", dtype=torch.bfloat16, enabled=True)
+
+    if fp8 and (dtype == torch.float32 or shared.cmd_opts.precision == "full" or cuda_no_autocast()):
+        return manual_autocast()
 
     if dtype == torch.float32 or shared.cmd_opts.precision == "full":
         return contextlib.nullcontext()
