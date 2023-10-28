@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-26
+## Update for 2023-10-2
 
 *Note*: Pending release of `diffusers==0.22.0`
 
@@ -20,7 +20,7 @@ Plus tons of fixes...
     download using built-in **Huggingface** downloader  
     think of them as plugins for diffusers not unlike original extensions that modify behavior of `ldm` backend  
     list of community pipelines: <https://github.com/huggingface/diffusers/tree/main/examples/community>  
-    and make sure to check our reference one: `Disty0/zero123plus-pipeline`  
+    and make sure to check our reference custom pipeline: `Disty0/zero123plus-pipeline`  
     which generates 4 output images with different camera positions: front, side, top, back!  
   - extend support for [Free-U](https://github.com/ChenyangSi/FreeU)  
     improve generations quality at no cost (other than finding params that work for you)  
