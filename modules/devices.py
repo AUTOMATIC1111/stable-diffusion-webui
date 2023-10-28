@@ -121,6 +121,8 @@ def manual_autocast():
     def manual_cast_forward(self, *args, **kwargs):
         org_dtype = next(self.parameters()).dtype
         self.to(dtype)
+        args = [arg.to(dtype) if isinstance(arg, torch.Tensor) else arg for arg in args]
+        kwargs = {k: v.to(dtype) if isinstance(v, torch.Tensor) else v for k, v in kwargs.items()}
         result = self.org_forward(*args, **kwargs)
         self.to(org_dtype)
         return result
@@ -136,7 +138,6 @@ def manual_autocast():
 
 
 def autocast(disable=False):
-    print(fp8, dtype, shared.cmd_opts.precision, device)
     if disable:
         return contextlib.nullcontext()
 
@@ -144,6 +145,9 @@ def autocast(disable=False):
         return torch.autocast("cpu", dtype=torch.bfloat16, enabled=True)
 
     if fp8 and (dtype == torch.float32 or shared.cmd_opts.precision == "full" or cuda_no_autocast()):
+        return manual_autocast()
+
+    if has_mps() and shared.cmd_opts.precision != "full":
         return manual_autocast()
 
     if dtype == torch.float32 or shared.cmd_opts.precision == "full":
