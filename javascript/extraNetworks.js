@@ -149,28 +149,32 @@ let sortVal = 0;
 
 function sortExtraNetworks() {
   const sortDesc = ['Name [A-Z]', 'Name [Z-A]', 'Date [Newest]', 'Date [Oldest]', 'Size [Largest]', 'Size [Smallest]'];
-  const tabname = getENActiveTab();
   const pagename = getENActivePage();
-  if (!tabname || !pagename) return 'sort error: unknown page';
-  const pg = gradioApp().getElementById(`${tabname.toLowerCase()}_${pagename.toLowerCase()}_cards`);
-  const cards = Array.from(pg.querySelectorAll('.card') || []);
-  if (cards.length === 0) return 'sort: no cards';
-  cards.sort((a, b) => {
-    switch (sortVal) {
-      case 0: return a.dataset.name ? a.dataset.name.localeCompare(b.dataset.name) : 0;
-      case 1: return b.dataset.name ? b.dataset.name.localeCompare(a.dataset.name) : 0;
-      case 2: return a.dataset.mtime && !isNaN(a.dataset.mtime) ? parseFloat(b.dataset.mtime) - parseFloat(a.dataset.mtime) : 0;
-      case 3: return b.dataset.mtime && !isNaN(b.dataset.mtime) ? parseFloat(a.dataset.mtime) - parseFloat(b.dataset.mtime) : 0;
-      case 4: return a.dataset.size && !isNaN(a.dataset.size) ? parseFloat(b.dataset.size) - parseFloat(a.dataset.size) : 0;
-      case 5: return b.dataset.size && !isNaN(b.dataset.size) ? parseFloat(a.dataset.size) - parseFloat(b.dataset.size) : 0;
-    }
-    return 0;
-  });
-  for (const card of cards) pg.appendChild(card);
+  if (!pagename) return 'sort error: unknown page';
+  const allPages = Array.from(gradioApp().querySelectorAll('.extra-network-cards'));
+  const pages = allPages.filter((el) => el.id.includes(pagename.toLowerCase()));
+  let num = 0;
+  for (const pg of pages) {
+    const cards = Array.from(pg.querySelectorAll('.card') || []);
+    num = cards.length;
+    if (num === 0) return 'sort: no cards';
+    cards.sort((a, b) => { // eslint-disable-line no-loop-func
+      switch (sortVal) {
+        case 0: return a.dataset.name ? a.dataset.name.localeCompare(b.dataset.name) : 0;
+        case 1: return b.dataset.name ? b.dataset.name.localeCompare(a.dataset.name) : 0;
+        case 2: return a.dataset.mtime && !isNaN(a.dataset.mtime) ? parseFloat(b.dataset.mtime) - parseFloat(a.dataset.mtime) : 0;
+        case 3: return b.dataset.mtime && !isNaN(b.dataset.mtime) ? parseFloat(a.dataset.mtime) - parseFloat(b.dataset.mtime) : 0;
+        case 4: return a.dataset.size && !isNaN(a.dataset.size) ? parseFloat(b.dataset.size) - parseFloat(a.dataset.size) : 0;
+        case 5: return b.dataset.size && !isNaN(b.dataset.size) ? parseFloat(a.dataset.size) - parseFloat(b.dataset.size) : 0;
+      }
+      return 0;
+    });
+    for (const card of cards) pg.appendChild(card);
+  }
   const desc = sortDesc[sortVal];
-  sortVal = (sortVal + 1) % 6;
-  log('sortExtraNetworks', tabname, pagename, desc);
-  return `sort page ${pagename} cards ${cards.length} by ${desc}`;
+  sortVal = (sortVal + 1) % sortDesc.length;
+  log('sortExtraNetworks', pagename, num, desc);
+  return `sort page ${pagename} cards ${num} by ${desc}`;
 }
 
 function refreshExtraNetworks(tabname) {
