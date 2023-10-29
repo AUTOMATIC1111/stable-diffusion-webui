@@ -85,7 +85,7 @@ class Options:
 
         if self.data is not None:
             if key in self.data or key in self.data_labels:
-            
+
                 # Check that settings aren't globally frozen
                 assert not cmd_opts.freeze_settings, "changing settings is disabled"
 
