@@ -163,6 +163,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 /* extensions */
 #tab_extensions table, #tab_config table{ border-collapse: collapse; }
 #tab_extensions table td, #tab_extensions table th, #tab_config table td, #tab_config table th { border: 1px solid #ccc; padding: 0.25em 0.5em; }
+#tab_extensions table tr:hover, #tab_config table tr:hover { background-color: var(--neutral-500) !important; }
 #tab_extensions table input[type="checkbox"] { margin-right: 0.5em; appearance: checkbox; }
 #tab_extensions button{ max-width: 16em; }
 #tab_extensions input[disabled="disabled"]{ opacity: 0.5; }
@@ -195,9 +196,10 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
 .extra-network-cards .card:hover .preview { box-shadow: none; filter: grayscale(100%); }
 .extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
-.extra-network-cards .card .overlay .tags { margin: 4px; display: none; overflow-wrap: break-word; }
-.extra-network-cards .card .overlay .tag { padding: 2px; margin: 2px; background: var(--neutral-700); cursor: pointer; display: inline-block; }
+.extra-network-cards .card .overlay .tags { display: none; overflow-wrap: break-word; }
+.extra-network-cards .card .overlay .tag { padding: 3px; background: rgba(70, 70, 70, 0.60); font-size: var(--text-lg); cursor: pointer; display: inline-block; margin-bottom: 4px; }
 .extra-network-cards .card .actions > span { padding: 4px; }
+.extra-network-cards .card .actions > span:hover { color: var(--highlight-color); }
 .extra-network-cards .card:hover .actions { display: block; }
 .extra-network-cards .card:hover .overlay .tags { display: block; }
 .extra-network-cards .card .actions { font-size: 3em; display: none; text-align-last: right; cursor: pointer; font-variant: unicase; position: absolute; z-index: 100; right: 0; height: 0.7em; width: 100%; background: rgba(0, 0, 0, 0.40); }

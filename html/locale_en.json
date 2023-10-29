@@ -16,6 +16,7 @@
   {"id":"","label":"⇰","localized":"","hint":"Apply selected styles to current prompt"},
   {"id":"","label":"⇩","localized":"","hint":"Save parameters from last generated image as style template"},
   {"id":"","label":"🕮","localized":"","hint":"Save parameters from last generated image as style template"},
+  {"id":"","label":"⇕","localized":"","hint":"Sort by: Name asc/desc, Size largest/smallest, Time newest/oldest"},
   {"id":"","label":"⟲","localized":"","hint":"Refresh"},
   {"id":"","label":"✕","localized":"","hint":"Close"},
   {"id":"","label":"⊜","localized":"","hint":"Fill"},

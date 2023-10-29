@@ -72,6 +72,30 @@ def apply_overlay(image, paste_loc, index, overlays):
     return image
 
 
+def create_binary_mask(image):
+    if image.mode == 'RGBA' and image.getextrema()[-1] != (255, 255):
+        image = image.split()[-1].convert("L").point(lambda x: 255 if x > 128 else 0)
+    else:
+        image = image.convert('L')
+    return image
+
+
+def images_tensor_to_samples(image, approximation=None, model=None):
+    if model is None:
+        model = shared.sd_model
+    model.first_stage_model.to(devices.dtype_vae)
+    image = image.to(shared.device, dtype=devices.dtype_vae)
+    image = image * 2 - 1
+    if len(image) > 1:
+        x_latent = torch.stack([
+            model.get_first_stage_encoding(model.encode_first_stage(torch.unsqueeze(img, 0)))[0]
+            for img in image
+        ])
+    else:
+        x_latent = model.get_first_stage_encoding(model.encode_first_stage(image))
+    return x_latent
+
+
 def txt2img_image_conditioning(sd_model, x, width, height):
     if sd_model.model.conditioning_key in {'hybrid', 'concat'}: # Inpainting models
         # The "masked-image" in this case will just be all zeros since the entire image is masked.

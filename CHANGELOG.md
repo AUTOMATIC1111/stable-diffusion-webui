@@ -15,21 +15,24 @@ Plus tons of fixes...
     download using built-in **Huggingface** downloader: `segmind/SSD-1B`  
   - new model type: [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)  
     near-instant generate in a as little as 3 steps!  
+    combined with OpenVINO, generate on CPU takes less than 10 seconds: <https://www.youtube.com/watch?v=b90ESUTLsRo>  
     download using built-in **Huggingface** downloader: `SimianLuo/LCM_Dreamshaper_v7`  
   - support for **Custom pipelines**, thanks @disty0  
     download using built-in **Huggingface** downloader  
     think of them as plugins for diffusers not unlike original extensions that modify behavior of `ldm` backend  
     list of community pipelines: <https://github.com/huggingface/diffusers/tree/main/examples/community>  
-    and make sure to check our reference custom pipeline: `Disty0/zero123plus-pipeline`  
-    which generates 4 output images with different camera positions: front, side, top, back!  
+  - new custom pipeline: `Disty0/zero123plus-pipeline`  
+    generate 4 output images with different camera positions: front, side, top, back!  
+    for more details, see <https://github.com/vladmandic/automatic/discussions/2421>  
   - extend support for [Free-U](https://github.com/ChenyangSi/FreeU)  
     improve generations quality at no cost (other than finding params that work for you)  
 - **General**  
   - add **Lora OFT** support, thanks @antis0007 and @ai-casanova  
   - **Upscalers**  
-    - **compile compile** option, thanks @disty0  
+    - **compile** option, thanks @disty0  
     - **chaiNNer** add high quality models from [Helaman](https://openmodeldb.info/users/helaman)  
-  - redesigned **progress bar** with full details on current operation  
+  - redesigned **Progress bar** with full details on current operation  
+  - **Extra networks** sort by name, size, date, etc.  
   - new option: *settings -> images -> keep incomplete*  
     can be used to skip vae decode on aborted/skipped/interrupted image generations  
   - remove external clone of items in `/repositories`  

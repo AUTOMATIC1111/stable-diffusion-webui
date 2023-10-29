@@ -53,6 +53,8 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 "local_preview": f"{path}.{shared.opts.samples_format}",
                 "metadata": json.dumps(l.metadata, indent=4) if l.metadata else None,
                 "tags": tags,
+                "mtime": os.path.getmtime(l.filename),
+                "size": os.path.getsize(l.filename),
             }
             return item
         except Exception as e:

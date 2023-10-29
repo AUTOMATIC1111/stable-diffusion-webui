@@ -88,7 +88,8 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .tab-nav { zoom: 120%; margin-top: 10px; margin-bottom: 10px; border-bottom: 2px solid var(--highlight-color) !important; padding-bottom: 2px; }
 .label-wrap { margin: 8px 0px 4px 0px; }
 .gradio-button.tool { border: none; background: none; box-shadow: none; filter: hue-rotate(340deg) saturate(0.5); }
-#tab_extensions table td, #tab_extensions table th, #tab_config table td, #tab_config table th { border: none; padding: 0.5em; }
+#tab_extensions table td, #tab_extensions table th, #tab_config table td, #tab_config table th { border: none; }
+#tab_extensions table tr:hover, #tab_config table tr:hover { background-color: var(--neutral-500) !important; }
 #tab_extensions table, #tab_config table { width: 96vw }
 #tab_extensions table thead, #tab_config table thead { background-color: var(--neutral-700); }
 #tab_extensions table, #tab_config table { background-color: #222222; }
