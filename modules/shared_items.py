@@ -26,7 +26,7 @@ def list_crossattention():
 
 def get_pipelines():
     import diffusers
-    from modules.olive import OnnxStableDiffusionPipeline, OlivePipeline
+    from modules.onnx import OnnxStableDiffusionPipeline, OlivePipeline
     from installer import log
     pipelines = { # note: not all pipelines can be used manually as they require prior pipeline next to decoder pipeline
         'Autodetect': None,

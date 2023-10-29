@@ -4,7 +4,7 @@
     "config": {
       "model_path": "",
       "model_loader": "unet_load",
-      "model_script": "modules/olive.py",
+      "model_script": "modules/onnx.py",
       "io_config": {
         "input_names": [
           "sample",
@@ -46,7 +46,7 @@
           "type": "latency",
           "sub_types": [{ "name": "avg" }],
           "user_config": {
-            "user_script": "modules/olive.py",
+            "user_script": "modules/onnx.py",
             "dataloader_func": "unet_data_loader",
             "batch_size": 2
           }

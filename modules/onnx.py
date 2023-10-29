@@ -22,10 +22,12 @@ if args.use_directml:
     execution_provider_options["device_id"] = int(cmd_opts.device_id or 0)
 elif args.use_rocm:
     if "ROCMExecutionProvider" in available_execution_providers:
+        from olive.hardware.accelerator import AcceleratorLookup
         execution_provider = "ROCMExecutionProvider"
         execution_provider_options["device_id"] = int(cmd_opts.device_id or 0)
         execution_provider_options["tunable_op_enable"] = 1
         execution_provider_options["tunable_op_tuning_enable"] = 1
+        AcceleratorLookup.EXECUTION_PROVIDERS["gpu"].append("ROCMExecutionProvider")
     else:
         log.warning("Currently, there's no pypi release for onnxruntime-rocm. Please download and install .whl file from https://download.onnxruntime.ai/ The inference will be fall back to CPU.")
 elif args.use_ipex or args.use_openvino:
@@ -213,6 +215,7 @@ class OlivePipeline(diffusers.DiffusionPipeline):
     sd_model_hash: str
     sd_checkpoint_info: CheckpointInfo
     sd_model_checkpoint: str
+    config = {}
 
     unoptimized: diffusers.DiffusionPipeline
     original_filename: str
@@ -270,6 +273,7 @@ class OlivePipeline(diffusers.DiffusionPipeline):
 
                 with open(os.path.join(sd_configs_path, "olive", f"config_{submodel}.json"), "r") as config_file:
                     olive_config = json.load(config_file)
+                olive_config["engine"]["execution_providers"] = [execution_provider]
                 olive_config["passes"]["optimize"]["config"]["float16"] = opts.olive_float16
 
                 run(olive_config)

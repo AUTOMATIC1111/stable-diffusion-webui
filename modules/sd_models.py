@@ -793,7 +793,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         if os.path.isdir(checkpoint_info.path):
             if shared.opts.olive_sideloaded_models_path in checkpoint_info.path:
                 try:
-                    from modules.olive import OnnxStableDiffusionPipeline
+                    from modules.onnx import OnnxStableDiffusionPipeline
                     sd_model = OnnxStableDiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.olive_sideloaded_models_path)
                     sd_model.model_type = sd_model.__class__.__name__
                 except Exception as e:
