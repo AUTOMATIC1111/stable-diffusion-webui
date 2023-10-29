@@ -5,39 +5,72 @@ import shutil
 import diffusers
 import numpy as np
 import onnxruntime as ort
+from enum import Enum
 from typing import Union, Optional, Callable, List
 from transformers.models.clip.modeling_clip import CLIPTextModel, CLIPTextModelWithProjection
-from installer import log, args
-from modules.shared import opts, cmd_opts
+from installer import log
+from modules import shared
 from modules.paths import sd_configs_path
 from modules.sd_models import CheckpointInfo
 
+class ExecutionProvider(str, Enum):
+    CPU = "CPUExecutionProvider"
+    DirectML = "DmlExecutionProvider"
+    CUDA = "CUDAExecutionProvider"
+    ROCm = "ROCMExecutionProvider"
+    OpenVINO = "OpenVINOExecutionProvider"
+
 submodels = ("text_encoder", "unet", "vae_encoder", "vae_decoder",)
 
-available_execution_providers = ort.get_available_providers()
-execution_provider = "CUDAExecutionProvider" if "CUDAExecutionProvider" in available_execution_providers else "CPUExecutionProvider"
-execution_provider_options = {}
-if args.use_directml:
-    execution_provider = "DmlExecutionProvider"
-    execution_provider_options["device_id"] = int(cmd_opts.device_id or 0)
-elif args.use_rocm:
-    if "ROCMExecutionProvider" in available_execution_providers:
-        from olive.hardware.accelerator import AcceleratorLookup
-        execution_provider = "ROCMExecutionProvider"
-        execution_provider_options["device_id"] = int(cmd_opts.device_id or 0)
-        execution_provider_options["tunable_op_enable"] = 1
-        execution_provider_options["tunable_op_tuning_enable"] = 1
-        AcceleratorLookup.EXECUTION_PROVIDERS["gpu"].append("ROCMExecutionProvider")
-    else:
-        log.warning("Currently, there's no pypi release for onnxruntime-rocm. Please download and install .whl file from https://download.onnxruntime.ai/ The inference will be fall back to CPU.")
-elif args.use_ipex or args.use_openvino:
-    from modules.intel.openvino import get_device as get_raw_openvino_device
-    execution_provider = "OpenVINOExecutionProvider"
-    raw_openvino_device = get_raw_openvino_device()
-    if opts.openvino_dtype != "Default" and not opts.openvino_hetero_gpu:
-        raw_openvino_device = f"{raw_openvino_device}_{opts.openvino_dtype}"
-    execution_provider_options["device_type"] = raw_openvino_device
-provider = (execution_provider, execution_provider_options,)
+available_execution_providers: List[ExecutionProvider] = ort.get_available_providers()
+
+EP_TO_NAME = {
+    ExecutionProvider.CPU: "cpu?", # TODO
+    ExecutionProvider.DirectML: "gpu-dml",
+    ExecutionProvider.CUDA: "gpu-?", # TODO
+    ExecutionProvider.ROCm: "gpu-rocm",
+    ExecutionProvider.OpenVINO: "?", # TODO
+}
+
+def get_default_execution_provider() -> ExecutionProvider:
+    from modules import devices
+    if devices.backend == "cpu":
+        return ExecutionProvider.CPU
+    elif devices.backend == "directml":
+        return ExecutionProvider.DirectML
+    elif devices.backend == "cuda":
+        return ExecutionProvider.CUDA
+    elif devices.backend == "rocm":
+        if ExecutionProvider.ROCm in available_execution_providers:
+            from olive.hardware.accelerator import AcceleratorLookup
+            AcceleratorLookup.EXECUTION_PROVIDERS["gpu"].append(ExecutionProvider.ROCm)
+            return ExecutionProvider.ROCm
+        else:
+            log.warning("Currently, there's no pypi release for onnxruntime-rocm. Please download and install .whl file from https://download.onnxruntime.ai/ The inference will be fall back to CPU.")
+    elif devices.backend == "ipex" or devices.backend == "openvino":
+        return ExecutionProvider.OpenVINO
+    return ExecutionProvider.CPU
+
+def get_execution_provider_options():
+    execution_provider_options = {
+        "device_id": int(shared.cmd_opts.device_id or 0),
+    }
+
+    if shared.opts.onnx_execution_provider == ExecutionProvider.ROCm:
+        if ExecutionProvider.ROCm in available_execution_providers:
+            execution_provider_options["tunable_op_enable"] = 1
+            execution_provider_options["tunable_op_tuning_enable"] = 1
+        else:
+            log.warning("Currently, there's no pypi release for onnxruntime-rocm. Please download and install .whl file from https://download.onnxruntime.ai/ The inference will be fall back to CPU.")
+    elif shared.opts.onnx_execution_provider == ExecutionProvider.OpenVINO:
+        from modules.intel.openvino import get_device as get_raw_openvino_device
+        raw_openvino_device = get_raw_openvino_device()
+        if shared.opts.openvino_dtype != "Default" and not shared.opts.openvino_hetero_gpu:
+            raw_openvino_device = f"{raw_openvino_device}_{shared.opts.openvino_dtype}"
+        execution_provider_options["device_type"] = raw_openvino_device
+        del execution_provider_options["device_id"]
+
+    return execution_provider_options
 
 class OnnxRuntimeModel(diffusers.OnnxRuntimeModel):
     config = {}
@@ -58,7 +91,7 @@ class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline):
     @staticmethod
     def from_pretrained(*args, **kwargs):
         if "provider" not in kwargs:
-            kwargs["provider"] = provider
+            kwargs["provider"] = (shared.opts.onnx_execution_provider, get_execution_provider_options(),)
         return diffusers.OnnxStableDiffusionPipeline.from_pretrained(*args, **kwargs)
 
     def apply(self, dummy_pipeline):
@@ -224,9 +257,9 @@ class OlivePipeline(diffusers.DiffusionPipeline):
         self.original_filename = os.path.basename(path)
         self.unoptimized = pipeline
         del pipeline
-        if not os.path.exists(opts.olive_temp_dir):
-            os.mkdir(opts.olive_temp_dir)
-        self.unoptimized.save_pretrained(opts.olive_temp_dir)
+        if not os.path.exists(shared.opts.olive_temp_dir):
+            os.mkdir(shared.opts.olive_temp_dir)
+        self.unoptimized.save_pretrained(shared.opts.olive_temp_dir)
 
     @staticmethod
     def from_pretrained(pretrained_model_name_or_path, **kwargs):
@@ -250,7 +283,7 @@ class OlivePipeline(diffusers.DiffusionPipeline):
         if width != height:
             log.warning("Olive received different width and height. The quality of the result is not guaranteed.")
 
-        out_dir = os.path.join(opts.olive_cached_models_path, f"{self.original_filename}-{width}w-{height}h")
+        out_dir = os.path.join(shared.opts.olive_cached_models_path, f"{self.original_filename}-{width}w-{height}h")
         if os.path.isdir(out_dir):
             del self.unoptimized
             return OnnxStableDiffusionPipeline.from_pretrained(
@@ -258,9 +291,9 @@ class OlivePipeline(diffusers.DiffusionPipeline):
             ).apply(self)
 
         try:
-            if opts.olive_cache_optimized:
+            if shared.opts.onnx_cache_optimized:
                 shutil.copytree(
-                    opts.olive_temp_dir, out_dir, ignore=shutil.ignore_patterns("weights.pb", "*.onnx", "*.safetensors", "*.ckpt")
+                    shared.opts.olive_temp_dir, out_dir, ignore=shutil.ignore_patterns("weights.pb", "*.onnx", "*.safetensors", "*.ckpt")
                 )
 
             optimize_config["width"] = width
@@ -273,12 +306,12 @@ class OlivePipeline(diffusers.DiffusionPipeline):
 
                 with open(os.path.join(sd_configs_path, "olive", f"config_{submodel}.json"), "r") as config_file:
                     olive_config = json.load(config_file)
-                olive_config["engine"]["execution_providers"] = [execution_provider]
-                olive_config["passes"]["optimize"]["config"]["float16"] = opts.olive_float16
+                olive_config["engine"]["execution_providers"] = [shared.opts.onnx_execution_provider]
+                olive_config["passes"]["optimize"]["config"]["float16"] = shared.opts.onnx_olive_float16
 
                 run(olive_config)
 
-                with open(os.path.join("footprints", f"{submodel}_gpu-dml_footprints.json"), "r") as footprint_file:
+                with open(os.path.join("footprints", f"{submodel}_{EP_TO_NAME[shared.opts.onnx_execution_provider]}_footprints.json"), "r") as footprint_file:
                     footprints = json.load(footprint_file)
                 conversion_footprint = None
                 optimizer_footprint = None
@@ -295,7 +328,7 @@ class OlivePipeline(diffusers.DiffusionPipeline):
                 ).model_path
 
                 log.info(f"Optimized {submodel}")
-            shutil.rmtree(opts.olive_temp_dir)
+            shutil.rmtree(shared.opts.olive_temp_dir)
 
             kwargs = {
                 "tokenizer": self.unoptimized.tokenizer,
@@ -314,7 +347,7 @@ class OlivePipeline(diffusers.DiffusionPipeline):
                 requires_safety_checker=False,
             ).apply(self)
             del kwargs
-            if opts.olive_cache_optimized:
+            if shared.opts.onnx_cache_optimized:
                 pipeline.to_json_file(os.path.join(out_dir, "model_index.json"))
 
                 for submodel in submodels:
@@ -332,7 +365,7 @@ class OlivePipeline(diffusers.DiffusionPipeline):
                         shutil.copyfile(weights_src_path, weights_dst_path)
         except Exception:
             log.error(f"Failed to optimize model '{self.original_filename}'.")
-            shutil.rmtree(opts.olive_temp_dir, ignore_errors=True)
+            shutil.rmtree(shared.opts.olive_temp_dir, ignore_errors=True)
             shutil.rmtree(out_dir, ignore_errors=True)
             pipeline = None
         shutil.rmtree("cache", ignore_errors=True)
@@ -346,8 +379,6 @@ class OlivePipeline(diffusers.DiffusionPipeline):
 
 optimize_config = {
     "is_sdxl": False,
-
-    "source": os.path.abspath(opts.olive_temp_dir),
 
     "width": 512,
     "height": 512,
@@ -379,7 +410,7 @@ def text_encoder_inputs(batchsize, torch_dtype):
 
 
 def text_encoder_load(model_name):
-    model = CLIPTextModel.from_pretrained(optimize_config["source"], subfolder="text_encoder")
+    model = CLIPTextModel.from_pretrained(os.path.abspath(shared.opts.olive_temp_dir), subfolder="text_encoder")
     return model
 
 
@@ -404,7 +435,7 @@ def text_encoder_2_inputs(batchsize, torch_dtype):
 
 
 def text_encoder_2_load(model_name):
-    model = CLIPTextModelWithProjection.from_pretrained(optimize_config["source"], subfolder="text_encoder_2")
+    model = CLIPTextModelWithProjection.from_pretrained(os.path.abspath(shared.opts.olive_temp_dir), subfolder="text_encoder_2")
     return model
 
 
@@ -456,7 +487,7 @@ def unet_inputs(batchsize, torch_dtype, is_conversion_inputs=False):
 
 
 def unet_load(model_name):
-    model = diffusers.UNet2DConditionModel.from_pretrained(optimize_config["source"], subfolder="unet")
+    model = diffusers.UNet2DConditionModel.from_pretrained(os.path.abspath(shared.opts.olive_temp_dir), subfolder="unet")
     return model
 
 
@@ -481,7 +512,7 @@ def vae_encoder_inputs(batchsize, torch_dtype):
 
 
 def vae_encoder_load(model_name):
-    source = os.path.join(optimize_config["source"], "vae")
+    source = os.path.join(os.path.abspath(shared.opts.olive_temp_dir), "vae")
     if not os.path.isdir(source):
         source += "_encoder"
     model = diffusers.AutoencoderKL.from_pretrained(source)
@@ -510,7 +541,7 @@ def vae_decoder_inputs(batchsize, torch_dtype):
 
 
 def vae_decoder_load(model_name):
-    source = os.path.join(optimize_config["source"], "vae")
+    source = os.path.join(os.path.abspath(shared.opts.olive_temp_dir), "vae")
     if not os.path.isdir(source):
         source += "_decoder"
     model = diffusers.AutoencoderKL.from_pretrained(source)
