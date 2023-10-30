@@ -2,6 +2,7 @@ import os
 import json
 import torch
 import shutil
+import importlib
 import diffusers
 import numpy as np
 import onnxruntime as ort
@@ -89,11 +90,25 @@ class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline):
     sd_model_checkpoint: str
 
     @staticmethod
-    def from_pretrained(*args, **kwargs):
-        if "provider" not in kwargs:
-            kwargs["provider"] = (shared.opts.onnx_execution_provider, get_execution_provider_options(),)
-        components = diffusers.OnnxStableDiffusionPipeline.from_pretrained(*args, **kwargs).components
-        return OnnxStableDiffusionPipeline(**components, requires_safety_checker=False)
+    def from_pretrained(pretrained_model_name_or_path: Optional[Union[str, os.PathLike]], **kwargs):
+        provider = (shared.opts.onnx_execution_provider, get_execution_provider_options(),)
+        init_dict = diffusers.OnnxStableDiffusionPipeline.extract_init_dict(diffusers.DiffusionPipeline.load_config(pretrained_model_name_or_path), **kwargs)[0]
+        init_kwargs = {}
+        for k, v in init_dict.items():
+            if not isinstance(v, list):
+                init_kwargs[k] = v
+                continue
+            library_name, constructor_name = v
+            if library_name is None or constructor_name is None:
+                init_kwargs[k] = None
+                continue
+            library = importlib.import_module(library_name)
+            constructor = getattr(library, constructor_name)
+            submodel_kwargs = {}
+            if issubclass(constructor, diffusers.OnnxRuntimeModel):
+                submodel_kwargs["provider"] = provider
+            init_kwargs[k] = constructor.from_pretrained(os.path.join(pretrained_model_name_or_path, k), **submodel_kwargs)
+        return OnnxStableDiffusionPipeline(**init_kwargs)
 
     def apply(self, dummy_pipeline):
         self.sd_model_hash = dummy_pipeline.sd_model_hash
