@@ -92,7 +92,8 @@ class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline):
     def from_pretrained(*args, **kwargs):
         if "provider" not in kwargs:
             kwargs["provider"] = (shared.opts.onnx_execution_provider, get_execution_provider_options(),)
-        return diffusers.OnnxStableDiffusionPipeline.from_pretrained(*args, **kwargs)
+        components = diffusers.OnnxStableDiffusionPipeline.from_pretrained(*args, **kwargs).components
+        return OnnxStableDiffusionPipeline(**components, requires_safety_checker=False)
 
     def apply(self, dummy_pipeline):
         self.sd_model_hash = dummy_pipeline.sd_model_hash
