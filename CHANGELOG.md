@@ -23,7 +23,7 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
   - support for **Custom pipelines**, thanks @disty0  
     download using built-in **Huggingface** downloader  
     think of them as plugins for diffusers not unlike original extensions that modify behavior of `ldm` backend  
-    list of community pipelines: <https://github.com/huggingface/diffusers/tree/main/examples/community>  
+    list of community pipelines: <https://github.com/huggingface/diffusers/blob/main/examples/community/README.md>  
   - new custom pipeline: `Disty0/zero123plus-pipeline`  
     generate 4 output images with different camera positions: front, side, top, back!  
     for more details, see <https://github.com/vladmandic/automatic/discussions/2421>  
