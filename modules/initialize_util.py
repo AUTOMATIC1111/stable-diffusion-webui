@@ -104,6 +104,18 @@ def validate_tls_options():
     startup_timer.record("TLS")
 
 
+def webui_auth_ldap(username, password):
+    from modules.shared_cmd_options import cmd_opts
+    import ldap
+    conn = ldap.initialize(cmd_opts.ldap_uri)
+    try:
+        conn.simple_bind_s(cmd_opts.ldap_bind_dn.replace('{username}', username), password)
+        return True
+    except Exception:
+        conn.unbind()
+        return False
+
+
 def get_gradio_auth_creds():
     """
     Convert the gradio_auth and gradio_auth_path commandline arguments into
