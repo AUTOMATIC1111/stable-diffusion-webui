@@ -1,9 +1,43 @@
+# this module must not have any dependencies as it first import
 import os
 import sys
-from modules import paths_internal, errors
+import json
+import argparse
+from modules.errors import log
 
+# parse args, parse again after we have the data-dir and early-read the config file
+parser = argparse.ArgumentParser(add_help=False)
+parser.add_argument("--ckpt", type=str, default=os.environ.get("SD_MODEL", None), help="Path to model checkpoint to load immediately, default: %(default)s")
+parser.add_argument("--data-dir", type=str, default=os.environ.get("SD_DATADIR", ''), help="Base path where all user data is stored, default: %(default)s")
+parser.add_argument("--models-dir", type=str, default=os.environ.get("SD_MODELSDIR", None), help="Base path where all models are stored, default: %(default)s",)
+cli = parser.parse_known_args()[0]
+parser.add_argument("--config", type=str, default=os.environ.get("SD_CONFIG", os.path.join(cli.data_dir, 'config.json')), help="Use specific server configuration file, default: %(default)s")
+cli = parser.parse_known_args()[0]
+config_path = cli.config if os.path.isabs(cli.config) else os.path.join(cli.data_dir, cli.config)
+try:
+    with open(config_path, 'r', encoding='utf8') as f:
+        config = json.load(f)
+except Exception as err:
+    print('Error loading config file: ${config_path} {err}')
+    config = {}
 
-debug = errors.log.info if os.environ.get('SD_PATH_DEBUG', None) is not None else lambda *args, **kwargs: None
+modules_path = os.path.dirname(os.path.realpath(__file__))
+script_path = os.path.dirname(modules_path)
+data_path = cli.data_dir
+models_config = cli.models_dir or config.get('models_dir') or 'models'
+models_path = models_config if os.path.isabs(models_config) else os.path.join(data_path, models_config)
+extensions_dir = os.path.join(data_path, "extensions")
+extensions_builtin_dir = "extensions-builtin"
+sd_configs_path = os.path.join(script_path, "configs")
+sd_default_config = os.path.join(sd_configs_path, "v1-inference.yaml")
+sd_model_file = cli.ckpt or os.path.join(script_path, 'model.ckpt') # not used
+default_sd_model_file = sd_model_file # not used
+debug = log.info if os.environ.get('SD_PATH_DEBUG', None) is not None else lambda *args, **kwargs: None
+
+if os.environ.get('SD_PATH_DEBUG', None) is not None:
+    print(f'Paths: script-path="{script_path}" data-dir="{data_path}" models-dir="{models_path}" config="{config_path}"')
+
+"""
 data_path = paths_internal.data_path
 script_path = paths_internal.script_path
 models_path = paths_internal.models_path
@@ -13,8 +47,8 @@ sd_model_file = paths_internal.sd_model_file
 default_sd_model_file = paths_internal.default_sd_model_file
 extensions_dir = paths_internal.extensions_dir
 extensions_builtin_dir = paths_internal.extensions_builtin_dir
+"""
 
-# data_path = cmd_opts_pre.data
 sys.path.insert(0, script_path)
 
 sd_path = os.path.join(script_path, 'repositories')
@@ -31,25 +65,26 @@ paths = {}
 for d, must_exist, what, _options in path_dirs:
     must_exist_path = os.path.abspath(os.path.join(script_path, d, must_exist))
     if not os.path.exists(must_exist_path):
-        errors.log.error(f'Required path not found: path={must_exist_path} item={what}')
+        log.error(f'Required path not found: path={must_exist_path} item={what}')
     else:
         d = os.path.abspath(d)
         sys.path.append(d)
         paths[what] = d
 
 
-def create_paths(opts):
-    def create_path(folder):
-        if folder is None or folder == '':
-            return
-        if os.path.exists(folder):
-            return
-        try:
-            os.makedirs(folder, exist_ok=True)
-            errors.log.info(f'Create folder={folder}')
-        except Exception as e:
-            errors.log.error(f'Create Failed folder={folder} {e}')
+def create_path(folder):
+    if folder is None or folder == '':
+        return
+    if os.path.exists(folder):
+        return
+    try:
+        os.makedirs(folder, exist_ok=True)
+        log.info(f'Create folder={folder}')
+    except Exception as e:
+        log.error(f'Create Failed folder={folder} {e}')
 
+
+def create_paths(opts):
     def fix_path(folder):
         tgt = opts.data.get(folder, None) or opts.data_labels[folder].default
         if tgt is None or tgt == '':

@@ -12,13 +12,13 @@ import gradio as gr
 import fasteners
 from rich.console import Console
 from modules import errors, shared_items, shared_state, cmd_args, ui_components, theme
-from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
+from modules.paths import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 from modules.dml import memory_providers, default_memory_provider, directml_do_hijack
 import modules.interrogate
 import modules.memmon
 import modules.styles
 import modules.devices as devices # pylint: disable=R0402
-import modules.paths_internal as paths
+import modules.paths as paths
 from installer import print_dict
 from installer import log as central_logger # pylint: disable=E0611
 
@@ -346,8 +346,8 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
 }))
 
 options_templates.update(options_section(('system-paths', "System Paths"), {
-    "temp_dir": OptionInfo("", "Directory for temporary images; leave empty for default", folder=True),
-    "clean_temp_dir_at_start": OptionInfo(True, "Cleanup non-default temporary directory when starting webui"),
+    "models_paths_sep_options": OptionInfo("<h2>Models paths</h2>", "", gr.HTML),
+    "models_dir": OptionInfo('models', "Base path where all models are stored", folder=True),
     "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Folder with stable diffusion models", folder=True),
     "diffusers_dir": OptionInfo(os.path.join(paths.models_path, 'Diffusers'), "Folder with Hugggingface models", folder=True),
     "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Folder with VAE files", folder=True),
@@ -366,6 +366,10 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "swinir_models_path": OptionInfo(os.path.join(paths.models_path, 'SwinIR'), "Folder with SwinIR models", folder=True),
     "ldsr_models_path": OptionInfo(os.path.join(paths.models_path, 'LDSR'), "Folder with LDSR models", folder=True),
     "clip_models_path": OptionInfo(os.path.join(paths.models_path, 'CLIP'), "Folder with CLIP models", folder=True),
+
+    "other_paths_sep_options": OptionInfo("<h2>Other paths</h2>", "", gr.HTML),
+    "temp_dir": OptionInfo("", "Directory for temporary images; leave empty for default", folder=True),
+    "clean_temp_dir_at_start": OptionInfo(True, "Cleanup non-default temporary directory when starting webui"),
 }))
 
 options_templates.update(options_section(('saving-images', "Image Options"), {

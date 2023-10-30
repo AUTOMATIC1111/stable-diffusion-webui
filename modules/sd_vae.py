@@ -3,7 +3,7 @@ import collections
 import glob
 from copy import deepcopy
 import torch
-from modules import shared, paths, paths_internal, devices, script_callbacks, sd_models
+from modules import shared, paths, devices, script_callbacks, sd_models
 
 
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
@@ -200,7 +200,7 @@ def load_vae_diffusers(model_file, vae_file=None, vae_source="unknown-source"):
         import diffusers
         if os.path.isfile(vae_file):
             _pipeline, model_type = sd_models.detect_pipeline(model_file, 'vae')
-            diffusers_load_config = { "config_file":  paths_internal.sd_default_config if model_type != 'Stable Diffusion XL' else os.path.join(paths_internal.sd_configs_path, 'sd_xl_base.yaml')}
+            diffusers_load_config = { "config_file":  paths.sd_default_config if model_type != 'Stable Diffusion XL' else os.path.join(paths.sd_configs_path, 'sd_xl_base.yaml')}
             vae = diffusers.AutoencoderKL.from_single_file(vae_file, **diffusers_load_config)
             vae = vae.to(devices.dtype_vae)
         else:

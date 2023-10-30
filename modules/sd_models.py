@@ -24,7 +24,7 @@ from modules import paths, shared, shared_items, shared_state, modelloader, devi
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
 from modules.memstats import memory_stats
-from modules.paths_internal import models_path, script_path
+from modules.paths import models_path, script_path
 
 try:
     import diffusers

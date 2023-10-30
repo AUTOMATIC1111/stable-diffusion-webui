@@ -28,9 +28,9 @@ def init_modules():
     parser = modules.cmd_args.parser
     installer.add_args(parser)
     args, _ = parser.parse_known_args()
-    import modules.paths_internal
-    script_path = modules.paths_internal.script_path
-    extensions_dir = modules.paths_internal.extensions_dir
+    import modules.paths
+    script_path = modules.paths.script_path
+    extensions_dir = modules.paths.extensions_dir
 
 
 def get_custom_args():

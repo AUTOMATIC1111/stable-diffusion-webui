@@ -661,7 +661,7 @@ def install_extensions():
     pkg_resources._initialize_master_working_set() # pylint: disable=protected-access
     pkgs = [f'{p.project_name}=={p._version}' for p in pkg_resources.working_set] # pylint: disable=protected-access,not-an-iterable
     log.debug(f'Installed packages: {len(pkgs)}')
-    from modules.paths_internal import extensions_builtin_dir, extensions_dir
+    from modules.paths import extensions_builtin_dir, extensions_dir
     extensions_duplicates = []
     extensions_enabled = []
     extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
@@ -795,7 +795,7 @@ def set_environment():
 
 def check_extensions():
     newest_all = os.path.getmtime('requirements.txt')
-    from modules.paths_internal import extensions_builtin_dir, extensions_dir
+    from modules.paths import extensions_builtin_dir, extensions_dir
     extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
     disabled_extensions_all = opts.get('disable_all_extensions', 'none')
     if disabled_extensions_all != 'none':
@@ -983,7 +983,7 @@ def extensions_preload(parser):
         log.info('Running in safe mode without user extensions')
     try:
         from modules.script_loading import preload_extensions
-        from modules.paths_internal import extensions_builtin_dir, extensions_dir
+        from modules.paths import extensions_builtin_dir, extensions_dir
         extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
         preload_time = {}
         for ext_dir in extension_folders:

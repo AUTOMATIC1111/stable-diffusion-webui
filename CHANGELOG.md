@@ -4,8 +4,11 @@
 
 *Note*: Pending release of `diffusers==0.22.0`
 
-Support for several new models and additional optimizations.
-Plus tons of fixes...
+Another pretty big release, this time with focus on  
+new models, new backends and optimizations and tons of fixes
+
+Also, [Wiki](https://github.com/vladmandic/automatic/wiki) has been updated with new content, so check it out!  
+Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVINO), [IntelArc](https://github.com/vladmandic/automatic/wiki/Intel-ARC), [DirectML](https://github.com/vladmandic/automatic/wiki/DirectML), [ONNX/Olive>](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime)
 
 - **Diffusers**
   - new model type: [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)  
@@ -24,6 +27,8 @@ Plus tons of fixes...
   - new custom pipeline: `Disty0/zero123plus-pipeline`  
     generate 4 output images with different camera positions: front, side, top, back!  
     for more details, see <https://github.com/vladmandic/automatic/discussions/2421>  
+  - new backend: **ONNX/Olive** (experimental)  
+    for details, see WiKi  
   - extend support for [Free-U](https://github.com/ChenyangSi/FreeU)  
     improve generations quality at no cost (other than finding params that work for you)  
 - **General**  
@@ -35,6 +40,8 @@ Plus tons of fixes...
   - **Extra networks** sort by name, size, date, etc.  
   - new option: *settings -> images -> keep incomplete*  
     can be used to skip vae decode on aborted/skipped/interrupted image generations  
+  - new option: *settings -> system paths -> models*  
+    can be used to set custom base path for *all* models (previously only as cli option)  
   - remove external clone of items in `/repositories`  
   - switch core font in default theme to **noto-sans**  
     previously default font was simply *system-ui*, but it lead to too much variations between browsers and platforms  
