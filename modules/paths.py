@@ -18,7 +18,7 @@ try:
     with open(config_path, 'r', encoding='utf8') as f:
         config = json.load(f)
 except Exception as err:
-    print('Error loading config file: ${config_path} {err}')
+    print(f'Error loading config file: ${config_path} {err}')
     config = {}
 
 modules_path = os.path.dirname(os.path.realpath(__file__))

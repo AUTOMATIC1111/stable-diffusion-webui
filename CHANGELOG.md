@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-2
+## Update for 2023-10-30
 
 *Note*: Pending release of `diffusers==0.22.0`
 

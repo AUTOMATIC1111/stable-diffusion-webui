@@ -119,9 +119,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .gradio-button.tool { filter: hue-rotate(180deg) saturate(0.5); }
 #txt2img_styles_row, #img2img_styles_row { margin-top: -6px; z-index: 200; }
 
-/* custom elements overrides */
-#steps-animation, #controlnet { border-width: 0; }
-
 /* based on gradio built-in dark theme */
 :root, .light, .dark {
   --body-background-fill: #000000; /* Black */

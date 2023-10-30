@@ -644,7 +644,7 @@ def create_ui(startup_timer = None):
                         steps, sampler_index = create_sampler_and_steps_selection(modules.sd_samplers.samplers_for_img2img, "img2img")
 
                     with gr.Accordion(open=False, label="Resize", elem_classes=["small-accordion"], elem_id="img2img_resize_group"):
-                        with FormRow():
+                        with gr.Row():
                             resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["None", "Resize fixed", "Crop and resize", "Resize and fill", "Latent upscale"], type="index", value="None")
 
                         with FormRow():

@@ -471,7 +471,7 @@ class ScriptRunner:
             for script in self.alwayson_scripts:
                 t0 = time.time()
                 elem_id = f'script_{"txt2img" if script.is_txt2img else "img2img"}_{script.title().lower().replace(" ", "_")}'
-                with gr.Group(elem_id=elem_id) as group:
+                with gr.Group(elem_id=elem_id, elem_classes=['extension-script']) as group:
                     create_script_ui(script, inputs, inputs_alwayson)
                 script.group = group
                 time_setup[script.title()] = time_setup.get(script.title(), 0) + (time.time()-t0)
