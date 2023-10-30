@@ -25,7 +25,7 @@ submodels = ("text_encoder", "unet", "vae_encoder", "vae_decoder",)
 available_execution_providers: List[ExecutionProvider] = ort.get_available_providers()
 
 EP_TO_NAME = {
-    ExecutionProvider.CPU: "cpu?", # TODO
+    ExecutionProvider.CPU: "cpu",
     ExecutionProvider.DirectML: "gpu-dml",
     ExecutionProvider.CUDA: "gpu-?", # TODO
     ExecutionProvider.ROCm: "gpu-rocm",
