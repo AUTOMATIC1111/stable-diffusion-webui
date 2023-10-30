@@ -438,7 +438,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "huggingface_token": OptionInfo('', 'HuggingFace token'),
 
     "onnx_sep": OptionInfo("<h2>ONNX Runtime</h2>", "", gr.HTML),
-    "onnx_execution_provider": OptionInfo(get_default_execution_provider(), 'Execution Provider', gr.Dropdown, lambda: {"choices": available_execution_providers }),
+    "onnx_execution_provider": OptionInfo(get_default_execution_provider().value, 'Execution Provider', gr.Dropdown, lambda: {"choices": available_execution_providers }),
     "onnx_olive_float16": OptionInfo(True, 'Use FP16 on Olive optimization (will use FP32 if unchecked)'),
     "onnx_cache_optimized": OptionInfo(True, 'Cache Olive optimized models'),
 }))
