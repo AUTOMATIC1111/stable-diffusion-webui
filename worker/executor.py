@@ -29,7 +29,7 @@ class TaskExecutor(Thread):
                  args=(), kwargs=None, *, daemon=None, train_only=False):
         self.recorder = ckpt_recorder
         self._handlers = {}
-        self.receiver = TaskReceiver(ckpt_recorder, train_only, self.can_exec_task)
+        self.receiver = TaskReceiver(ckpt_recorder, train_only, self.can_exec_task, self.before_receive_task)
         self.timeout = timeout if timeout > 0 else TaskTimeout
         self.__stop = False
         self.mutex = Lock()
@@ -102,12 +102,7 @@ class TaskExecutor(Thread):
                     self.nofity()
                     continue
                 handler(task, progress_callback=self.task_progress)
-                if random.randint(1, 10) < 3:
-                    torch_gc()
-                    free, total = vram_mon.cuda_mem_get_info()
-                    system_exit(free, total)
-                    # 释放磁盘空间
-                    self._clean_disk()
+
             except queue.Empty:
                 if random.randint(1, 10) < 3:
                     logger.info('task queue is empty...')
@@ -120,12 +115,25 @@ class TaskExecutor(Thread):
         write_healthy(False)
         self._close()
 
+    def before_receive_task(self, task_ids):
+        if random.randint(1, 10) < 3:
+            logger.info("before receive task, check memory info...")
+            torch_gc()
+            free, total = vram_mon.cuda_mem_get_info()
+            system_exit(free, total)
+
+        return True
+
     def _get_task(self):
         while self.is_alive() and not self.receiver.closed:
             with self.not_busy:
                 if not self.queue.full():
 
                     for task in self.receiver.task_iter():
+                        if random.randint(1, 10) < 3:
+
+                            # 释放磁盘空间
+                            self._clean_disk()
                         logger.info(f"====>>> preload task:{task.id}")
                         self.queue.put(task)
                         logger.info(f"====>>> push task:{task.id}")

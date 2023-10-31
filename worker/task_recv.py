@@ -132,7 +132,7 @@ def register_worker(worker_info: typing.Mapping):
             worker_id: now
         })
         conn.expire(SDWorkerZset, timedelta(hours=1))
-        conn.zremrangebyscore(SDWorkerZset,  now - 600, now)
+        conn.zremrangebyscore(SDWorkerZset, now - 600, now)
         pool.close()
     except:
         pass
@@ -141,7 +141,8 @@ def register_worker(worker_info: typing.Mapping):
 class TaskReceiver:
 
     def __init__(self, recoder: CkptLoadRecorder, train_only: bool = False,
-                 task_received_callback: typing.Callable = None):
+                 task_received_callback: typing.Callable = None,
+                 before_pop_task: typing.Callable = None):
         self.release_flag = None
         self.model_recoder = recoder
         self.redis_pool = RedisPool()
@@ -153,6 +154,7 @@ class TaskReceiver:
         self.group_id = get_worker_group()
         self.task_score_limit = 5 if cmd_opts.lowvram else (10 if cmd_opts.medvram else -1)
         self.task_received_callback = task_received_callback
+        self.before_pop_task = before_pop_task
 
         run_train_time_cfg = get_run_train_time_cfg()
         run_train_time_start = run_train_time_cfg[Env_Run_Train_Time_Start]
@@ -412,6 +414,12 @@ class TaskReceiver:
                 task = None
                 if values:
                     names = [v[0] for v in values]
+                    # before receive task
+                    if callable(self.before_pop_task):
+                        r = self.before_pop_task(*names)
+                        if not r:
+                            continue
+
                     rds.zrem(queue_name, *names)
                     for name, score in values:
 
