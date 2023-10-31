@@ -10,7 +10,6 @@ import os.path
 import shutil
 import typing
 import torch
-import psutil
 
 from modules.shared import mem_mon as vram_mon
 from loguru import logger

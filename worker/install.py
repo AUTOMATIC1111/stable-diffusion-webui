@@ -58,7 +58,7 @@ class RequirementItem:
 Requirements: typing.Mapping[TaskType, typing.List[typing.Union[RequirementItem, str]]] = {
     TaskType.Txt2Image: [
         'pynvml',
-        'psutil'
+
     ],
     TaskType.OnePress: [
         'onnxruntime-gpu',
