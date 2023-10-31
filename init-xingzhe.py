@@ -34,6 +34,9 @@ def download_config():
            "downloading movements.txt")
     lu.run(f"wget https://{obs_path}/resource/libcudart.so -O /opt/conda/lib/libcudart.so",
            "downloading libcudart.so")
+    lu.run(
+        f"wget https://{obs_path}/resource/builder.py -O /opt/conda/lib/python3.10/site-packages/google/protobuf/internal/builder.py",
+        "downloading protobuf build file")
 
 
 def clone_extensions():
