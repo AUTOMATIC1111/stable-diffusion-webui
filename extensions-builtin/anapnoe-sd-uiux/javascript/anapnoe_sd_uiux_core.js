@@ -79,8 +79,8 @@ async function getAllContributorsRecursive(repoName, page = 1, allContributors =
 
 localStorage.setItem('UiUxReady', "false");
 localStorage.setItem('UiUxComplete', "false");
-const default_ext_path = './file=extensions/anapnoe-sd-uiux/html/templates/';
-const default_libs_path = './file=extensions/anapnoe-sd-uiux/html/libs/';
+const default_ext_path = './file=extensions-builtin/anapnoe-sd-uiux/html/templates/';
+const default_libs_path = './file=extensions-builtin/anapnoe-sd-uiux/html/libs/';
 let total = 0;
 let active_main_tab;// = document.querySelector("#tab_txt2img");//null
 let loggerUiUx;
@@ -1174,7 +1174,7 @@ function setupLogger() {
 		link.rel = 'icon';
 		document.head.appendChild(link);
 	}
-	link.href = './file=extensions/anapnoe-sd-uiux/html/favicon.svg';
+	link.href = './file=extensions-builtin/anapnoe-sd-uiux/html/favicon.svg';
 
 
 	
