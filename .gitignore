@@ -55,6 +55,7 @@ cache
 /log
 /cert
 .vscode/
+.idea/
 /localizations
 
 # unexcluded so folders get created

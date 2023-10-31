@@ -568,20 +568,7 @@ def save_image(image, path, basename = '', seed=None, prompt=None, extension=sha
             file_decoration = "[seq]-[prompt_words]"
         file_decoration = namegen.apply(file_decoration)
         file_decoration += suffix
-        if shared.opts.save_images_add_number:
-            if '[seq]' not in file_decoration:
-                file_decoration = f"[seq]-{file_decoration}"
-            basecount = get_next_sequence_number(path, basename)
-            filename = None
-            for i in range(9999):
-                seq = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
-                filename = os.path.join(path, f"{file_decoration.replace('[seq]', seq)}.{extension}")
-                if not os.path.exists(filename):
-                    break
-        else:
-            filename = os.path.join(path, f"{file_decoration}.{extension}") if basename == '' else os.path.join(path, f"{basename}-{file_decoration}.{extension}")
-    else:
-        filename = os.path.join(path, f"{forced_filename}.{extension}")
+    filename = os.path.join(path, f"{file_decoration}.{extension}") if basename == '' else os.path.join(path, f"{basename}-{file_decoration}.{extension}")
     pnginfo = existing_info or {}
     if info is not None:
         pnginfo[pnginfo_section_name] = info
@@ -589,6 +576,19 @@ def save_image(image, path, basename = '', seed=None, prompt=None, extension=sha
     params.filename = namegen.sanitize(filename)
     dirname = os.path.dirname(params.filename)
     os.makedirs(dirname, exist_ok=True)
+    # sequence
+    if shared.opts.save_images_add_number or '[seq]' in params.filename:
+        if '[seq]' not in params.filename:
+            params.filename = os.path.join(os.path.dirname(params.filename), f"[seq]-{os.path.basename(params.filename)}")
+        basecount = get_next_sequence_number(dirname, basename)
+        for i in range(9999):
+            seq = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
+            filename = params.filename.replace('[seq]', seq)
+            if not os.path.exists(filename):
+                debug(f'Prompt sequence: input="{params.filename}" seq={seq} output="{filename}"')
+                params.filename = filename
+                break
+    # callbacks
     script_callbacks.before_image_saved_callback(params)
     exifinfo = params.pnginfo.get('UserComment', '')
     exifinfo = (exifinfo + ', ' if len(exifinfo) > 0 else '') + params.pnginfo.get(pnginfo_section_name, '')
