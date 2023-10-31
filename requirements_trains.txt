@@ -22,6 +22,3 @@ rembg==2.0.50
 opencv-contrib-python==4.7.0.72
 opencv-python==4.7.0.72
 opencv-python-headless==4.7.0.72
-
-
-
