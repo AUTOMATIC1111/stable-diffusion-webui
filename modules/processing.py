@@ -1517,6 +1517,11 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         self.init_latent = images_tensor_to_samples(image, approximation_indexes.get(opts.sd_vae_encode_method), self.sd_model)
         devices.torch_gc()
+        # 测试初始化 潜变量为NAN
+        try:
+            devices.test_for_nans(self.init_latent, "init")
+        except:
+            print(f"init_latent is nan, sd model:{self.sd_model.sd_checkpoint_info.name_for_extra}, vae:{opts.sd_vae_encode_method}")
 
         if self.resize_mode == 3:
             self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
