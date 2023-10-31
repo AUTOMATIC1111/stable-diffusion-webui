@@ -1,5 +1,5 @@
 @font-face { font-family: 'Roboto'; font-display: swap; font-style: normal; font-weight: 100; src: local('Roboto'), url('roboto.ttf') }
-:root { --left-column: 490px; }
+:root { --left-column: 500px; }
 a { font-weight: bold; cursor: pointer; }
 h2 { margin-top: 1em !important; font-size: 1.4em !important; }
 footer { display: none; }

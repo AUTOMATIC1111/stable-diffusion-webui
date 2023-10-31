@@ -45,6 +45,7 @@ def single_sample_to_image(sample, approximation=None):
             x_sample = x_sample[[2,1,0],:,:] # BGR to RGB
     elif approximation == 2: # TAESD
         x_sample = sd_vae_taesd.decode(sample)
+        x_sample = (1.0 + x_sample) / 2.0 # preview requires smaller range
     elif approximation == 3: # Full VAE
         x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0] * 0.5 + 0.5
     else:

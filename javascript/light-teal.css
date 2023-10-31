@@ -4,7 +4,7 @@
   --font: 'NotoSans';
   --font-mono: 'ui-monospace', 'Consolas', monospace;
   --font-size: 16px;
-  --left-column: 490px;
+  --left-column: 500px;
   --primary-50: #7dffff;
   --primary-100: #72e8e8;
   --primary-200: #67d2d2;
@@ -36,7 +36,7 @@
   --line-sm: 1.2em;
   --line-md: 1.4em;
   --text-sm: 12px;
-  --text-md: 13px;
+  --text-md: 14px;
   --text-lg: 15px;
 }
 

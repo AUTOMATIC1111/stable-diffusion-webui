@@ -2,7 +2,7 @@
 :root {
   --font: "Source Sans Pro", 'ui-sans-serif', 'system-ui', sans-serif;
   --font-size: 16px;
-  --left-column: 490px;
+  --left-column: 500px;
   --highlight-color: #8a3df6; /* Purple color */
   --inactive-color: #404040; /* Darker shade of gray */
   --background-color: #000000; /* Black */
