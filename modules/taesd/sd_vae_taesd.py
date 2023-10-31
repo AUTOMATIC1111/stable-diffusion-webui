@@ -80,5 +80,6 @@ def encode(image):
             taesd_models[f'{model_class}-encoder'] = TAESD(encoder_path=model_path, decoder_path=None)
             vae = taesd_models[f'{model_class}-encoder']
             vae.to(devices.device, devices.dtype_vae)
-    latents = vae.encoder(image).detach()
-    return latents
+    # image = vae.scale_latents(image)
+    latents = vae.encoder(image)
+    return latents.detach()

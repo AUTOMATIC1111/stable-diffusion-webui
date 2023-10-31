@@ -14,7 +14,7 @@ import modules.sd_vae as sd_vae
 import modules.taesd.sd_vae_taesd as sd_vae_taesd
 import modules.images as images
 import modules.errors as errors
-from modules.processing import StableDiffusionProcessing
+from modules.processing import StableDiffusionProcessing, create_random_tensors
 import modules.prompt_parser_diffusers as prompt_parser_diffusers
 from modules.sd_hijack_hypertile import hypertile_set
 
@@ -105,7 +105,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             devices.torch_gc()
         if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload:
             model.vae.to(devices.device)
-        encoded = model.vae.encode(image.to(model.vae.device, model.vae.dtype))
+        encoded = model.vae.encode(image.to(model.vae.device, model.vae.dtype)).latent_dist.sample()
         if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
             model.unet.to(unet_device)
         return encoded
@@ -147,6 +147,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         shared.state.job = prev_job
         return imgs
 
+    def t(x):
+        return f"\033[34m{str(tuple(x.shape)).ljust(24)}\033[0m (\033[31mmin {x.amin().item():+.4f}\033[0m / \033[32mmean {x.mean().item():+.4f}\033[0m / \033[33mmax {x.amax().item():+.4f}\033[0m)"
+
     def vae_encode(image, model, full_quality=True): # pylint: disable=unused-variable
         if shared.state.interrupted or shared.state.skipped:
             return []
@@ -155,6 +158,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             return []
         tensor = TF.to_tensor(image.convert("RGB")).unsqueeze(0).to(devices.device, devices.dtype_vae)
         if full_quality:
+            tensor = tensor * 2 - 1
             latents = full_vae_encode(image=tensor, model=shared.sd_model)
         else:
             latents = taesd_vae_encode(image=tensor)
@@ -198,6 +202,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             width = 8 * math.ceil(p.init_images[0].width / 8)
             height = 8 * math.ceil(p.init_images[0].height / 8)
             task_args = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength, "height": height, "width": width}
+        if model.__class__.__name__ == 'LatentConsistencyModelPipeline' and hasattr(p, 'init_images') and len(p.init_images) > 0:
+            init_latents = [vae_encode(image, model=shared.sd_model, full_quality=p.full_quality).squeeze(dim=0) for image in p.init_images]
+            init_latent = torch.stack(init_latents, dim=0).to(shared.device)
+            init_noise = p.denoising_strength * create_random_tensors(init_latent.shape[1:], seeds=p.all_seeds, subseeds=p.all_subseeds, subseed_strength=p.subseed_strength, p=p)
+            init_latent = (1 - p.denoising_strength) * init_latent + init_noise
+            task_args = {"latents": init_latent.to(model.dtype), "width": p.width, "height": p.height }
         return task_args
 
     def set_pipeline_args(model, prompts: list, negative_prompts: list, prompts_2: typing.Optional[list]=None, negative_prompts_2: typing.Optional[list]=None, desc:str='', **kwargs):
@@ -268,6 +278,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         clean = args.copy()
         clean.pop('callback', None)
         clean.pop('callback_steps', None)
+        if 'latents' in clean:
+            clean['latents'] = clean['latents'].shape
         if 'image' in clean:
             clean['image'] = type(clean['image'])
         if 'mask_image' in clean:
@@ -343,7 +355,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if shared.opts.diffusers_move_base and not getattr(shared.sd_model, 'has_accelerate', False):
         shared.sd_model.to(devices.device)
 
-    is_img2img = bool(sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE or sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING)
+    is_img2img = bool(sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE or
+                      sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING)
     use_refiner_start = bool(is_refiner_enabled and not p.is_hr_pass and not is_img2img and p.refiner_start > 0 and p.refiner_start < 1)
     use_denoise_start = bool(is_img2img and p.refiner_start > 0 and p.refiner_start < 1)
 

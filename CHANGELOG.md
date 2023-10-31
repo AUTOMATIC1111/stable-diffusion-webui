@@ -20,9 +20,10 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
     download using built-in **Huggingface** downloader: `segmind/SSD-1B`  
   - new model type: [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)  
     near-instant generate in a as little as 3 steps!  
-    combined with OpenVINO, generate on CPU takes less than 10 seconds: <https://www.youtube.com/watch?v=b90ESUTLsRo>  
+    combined with OpenVINO, generate on CPU takes less than 5-10 seconds: <https://www.youtube.com/watch?v=b90ESUTLsRo>  
     and absolute beast when combined with **HyperTile** and **TAESD** decoder resulting in **28 FPS**  
     (on RTX4090 for batch 16x16 at 512px)  
+    note: set sampler to **Default** before loading model as LCM comes with its own *LCMScheduler* sampler  
     download using built-in **Huggingface** downloader: `SimianLuo/LCM_Dreamshaper_v7`  
   - support for **Custom pipelines**, thanks @disty0  
     download using built-in **Huggingface** downloader  

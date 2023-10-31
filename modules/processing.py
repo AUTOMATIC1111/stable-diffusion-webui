@@ -1123,6 +1123,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 if shared.opts.sd_vae_sliced_encode and len(decoded_samples) > 1:
                     samples = torch.stack([self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(torch.unsqueeze(resized_sample, 0)))[0] for resized_sample in resized_samples])
                 else:
+                    # TODO add TEASD support
                     samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(resized_samples))
                 image_conditioning = self.img2img_image_conditioning(resized_samples, samples)
             else:
