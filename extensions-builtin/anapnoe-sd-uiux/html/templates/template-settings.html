@@ -1,0 +1,35 @@
+<div id="layout-settings-group" class="flexbox col">
+    <div id="layout-settings" class="layout">
+        <div class="layout-header">
+            <div class="flexbox row no-border no-br">              
+                <div data-selector="#settings_show_all_pages" data-parent-selector="#tab_settings" class="portal no-padding">
+                </div>
+				 <div data-selector="#settings_restart_gradio" data-parent-selector="#tab_settings" class="portal">
+                </div>
+                <div data-selector="#settings_submit" data-parent-selector="#tab_settings" class="portal">
+                </div>
+            </div>
+			<div data-selector="#settings_result" data-parent-selector="#tab_settings" data-vis="true" class="portal no-br no-tr hide-empty">
+			</div> 
+        </div>
+        <div class="layout-content">
+            <div id="split-settings" direction="horizontal" gutterSize="8" class="split panel no-tr">
+                <div data-minSize="0" data-initSize="10" id="split-settings-left" class="split-container">
+                    <div data-selector="#tab_settings .tab-nav" data-parent-selector="gradio-app" class="portal settings-tabs no-padding no-bg">
+                    </div>
+					
+                </div>
+                <div data-minSize="0" data-initSize="90" id="split-settings-right" class="split-container">
+                    <div class="xtabs-item">
+                        <div data-selector="#tab_settings > div" data-parent-selector="gradio-app" class="portal no-padding">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      <!--   
+		<div class="layout-footer">
+                    
+        </div> -->
+    </div>
+</div>

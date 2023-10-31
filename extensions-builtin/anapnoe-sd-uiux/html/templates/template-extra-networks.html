@@ -1,0 +1,55 @@
+<div id="layout_{{template_key}}" class="layout no-padding-one layout-extra-networks">
+    <div class="flexbox row padding">
+        <button toggle="true" class="ae-button shrink show-dirs">
+            <div class="mask-icon icon-node-tree">
+            </div>
+        </button>
+        <button class="ae-button shrink refresh-extra-networks" data-click="#txt2img_extra_refresh">
+            <div class="mask-icon refresh">
+            </div>
+        </button>
+        <input id="{{template_key}}_search" data-target="#{{template_key}}_cards .card" class="search_extra_networks" type="text" placeholder="Search..">
+		
+		<select name="order_by" data-target="#{{template_key}}_cards .card" id="{{template_key}}_order_by" class="extra_networks_order_by">
+		  <option selected value="data-sort-default">Default Sort</option>
+		  <option value="data-sort-date_created">Date Created</option>
+		  <option value="data-sort-date_modified">Date Modified</option>
+		  <option value="data-sort-name">Name</option>
+		</select>
+		
+		<button toggle="true" class="ae-button shrink reverse-order">
+            <div class="mask-icon icon-sort">
+            </div>
+        </button>
+    </div>
+    <div id="{{template_key}}_aside_split" direction="horizontal" gutterSize="8" class="split">
+        <div id="{{template_key}}_aside" data-minSize="0" data-initSize="0" class="split-container no-drag">
+            <div class="layout">
+                <div class="layout-content">
+                    <div search-field="#{{template_key}}_search" data-selector="#{{template_key}}_subdirs" data-parent-selector="#tab_txt2img" class="portal">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="{{template_key}}_main" data-minSize="0" data-initSize="100" class="split-container no-drag">
+            <div class="layout">
+                <div class="layout-content">
+                    <div class="xtabs auto-scroll">
+                        <div class="xtabs-items no-padding">
+                            <div id="{{template_key}}_cards_tabitem" class="xtabs-item">
+                                <div data-selector="#{{template_key}}_cards" data-parent-selector="#tab_txt2img" class="portal">
+                                </div>								
+                            </div>
+                        </div>
+                    </div>
+                </div>
+				<div id="{{template_key}}_main_footer" class="layout-footer ">
+				<div class="flexbox col model-preloader">
+				</div>
+				<div class="flexbox col model-selected">
+				</div>
+				</div>
+            </div>
+        </div>
+    </div>
+</div>
