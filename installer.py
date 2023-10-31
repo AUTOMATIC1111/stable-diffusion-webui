@@ -731,6 +731,14 @@ def ensure_base_requirements():
         import rich # pylint: disable=unused-import
     except ImportError:
         pass
+    try: # related to: https://github.com/microsoft/Olive/issues/675
+        import olive.workflows # pylint: disable=unused-import
+    except ImportError:
+        install('olive-ai', 'Olive')
+        try:
+            import olive.workflows
+        except ImportError:
+            log.error('Failed to install dependency: olive-ai.')
 
 
 def install_requirements():
