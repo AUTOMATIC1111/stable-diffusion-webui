@@ -7,7 +7,6 @@
 # @Software: Hifive
 import os
 import time
-import pstuil
 import psutil
 from loguru import logger
 from ctypes import CDLL
