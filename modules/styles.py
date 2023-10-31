@@ -9,7 +9,7 @@ from modules import paths
 
 
 class Style():
-    def __init__(self, name: str, desc: str = "", prompt: str = "", negative_prompt: str = "", extra: str = "", filename: str = "", preview: str = ""):
+    def __init__(self, name: str, desc: str = "", prompt: str = "", negative_prompt: str = "", extra: str = "", filename: str = "", preview: str = "", mtime: float = 0):
         self.name = name
         self.description = desc
         self.prompt = prompt
@@ -17,6 +17,7 @@ class Style():
         self.extra = extra
         self.filename = filename
         self.preview = preview
+        self.mtime = mtime
 
 def merge_prompts(style_prompt: str, prompt: str) -> str:
     if "{prompt}" in style_prompt:
@@ -105,7 +106,8 @@ class StyleDatabase:
                         negative_prompt=style.get("negative", ""),
                         extra=style.get("extra", ""),
                         preview=style.get("preview", None),
-                        filename=fn
+                        filename=fn,
+                        mtime=os.path.getmtime(fn),
                     )
             except Exception as e:
                 log.error(f'Failed to load style: file={fn} error={e}')

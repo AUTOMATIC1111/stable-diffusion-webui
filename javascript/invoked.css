@@ -126,9 +126,6 @@ button.selected {background: var(--button-primary-background-fill);}
 #txt2img_tools, #img2img_tools { margin-top: -4px; margin-bottom: -4px; }
 #txt2img_styles_row, #img2img_styles_row { margin-top: -6px; z-index: 200; }
 
-/* custom elements overrides */
-#steps-animation, #controlnet { border-width: 0; }
-
 /* based on gradio built-in dark theme */
 :root, .light, .dark {
   --body-background-fill: var(--background-color);

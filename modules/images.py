@@ -135,9 +135,9 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
 
     def get_font(fontsize):
         try:
-            return ImageFont.truetype(shared.opts.font or 'html/roboto.ttf', fontsize)
+            return ImageFont.truetype(shared.opts.font or 'javascript/roboto.ttf', fontsize)
         except Exception:
-            return ImageFont.truetype('html/roboto.ttf', fontsize)
+            return ImageFont.truetype('javascript/roboto.ttf', fontsize)
 
     def draw_texts(drawing: ImageDraw, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
         for line in lines:
@@ -553,13 +553,11 @@ def save_image(image, path, basename = '', seed=None, prompt=None, extension=sha
         return None, None
     if not check_grid_size([image]):
         return None, None
-    if path is None or len(path) == 0:
+    if path is None or len(path) == 0: # set default path to avoid errors when functions are triggered manually or via api and param is not set
         path = shared.opts.outdir_save
-
-    # namegen
     namegen = FilenameGenerator(p, seed, prompt, image, grid=grid)
     if shared.opts.save_to_dirs:
-        dirname = namegen.apply(shared.opts.directories_filename_pattern or "[date]")
+        dirname = namegen.apply(shared.opts.directories_filename_pattern or "[prompt_words]")
         path = os.path.join(path, dirname)
     if forced_filename is None:
         if short_filename or seed is None:
@@ -567,11 +565,10 @@ def save_image(image, path, basename = '', seed=None, prompt=None, extension=sha
         if shared.opts.samples_filename_pattern and len(shared.opts.samples_filename_pattern) > 0:
             file_decoration = shared.opts.samples_filename_pattern
         else:
-            file_decoration = "[seq]-[model_name]-[prompt_words]"
+            file_decoration = "[seq]-[prompt_words]"
         file_decoration = namegen.apply(file_decoration)
-        filename = os.path.join(path, f"{file_decoration}{suffix}.{extension}") if basename is None or basename == '' else os.path.join(path, f"{basename}-{file_decoration}{suffix}.{extension}")
-    else:
-        filename = os.path.join(path, f"{forced_filename}.{extension}")
+        file_decoration += suffix
+    filename = os.path.join(path, f"{file_decoration}.{extension}") if basename == '' else os.path.join(path, f"{basename}-{file_decoration}.{extension}")
     pnginfo = existing_info or {}
     if info is not None:
         pnginfo[pnginfo_section_name] = info
@@ -579,7 +576,6 @@ def save_image(image, path, basename = '', seed=None, prompt=None, extension=sha
     params.filename = namegen.sanitize(filename)
     dirname = os.path.dirname(params.filename)
     os.makedirs(dirname, exist_ok=True)
-
     # sequence
     if shared.opts.save_images_add_number or '[seq]' in params.filename:
         if '[seq]' not in params.filename:
@@ -592,7 +588,6 @@ def save_image(image, path, basename = '', seed=None, prompt=None, extension=sha
                 debug(f'Prompt sequence: input="{params.filename}" seq={seq} output="{filename}"')
                 params.filename = filename
                 break
-
     # callbacks
     script_callbacks.before_image_saved_callback(params)
     exifinfo = params.pnginfo.get('UserComment', '')

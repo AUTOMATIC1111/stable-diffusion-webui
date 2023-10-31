@@ -56,6 +56,8 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
                     "prompt": json.dumps(os.path.splitext(embedding.name)[0]),
                     "local_preview": f"{path}.{shared.opts.samples_format}",
                     "tags": tags,
+                    "mtime": os.path.getmtime(embedding.filename),
+                    "size": os.path.getsize(embedding.filename),
                 }
             except Exception as e:
                 shared.log.debug(f"Extra networks error: type=embedding file={embedding.filename} {e}")

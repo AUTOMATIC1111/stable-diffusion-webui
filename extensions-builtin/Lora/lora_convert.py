@@ -112,11 +112,12 @@ class KeyConvert:
             self.converter = self.diffusers
             self.is_sdxl = True if shared.sd_model_type == "sdxl" else False
             self.UNET_CONVERSION_MAP = make_unet_conversion_map() if self.is_sdxl else None
-            self.LORA_PREFIX_UNET = "lora_unet"
-            self.LORA_PREFIX_TEXT_ENCODER = "lora_te"
+            self.LORA_PREFIX_UNET = "lora_unet_"
+            self.LORA_PREFIX_TEXT_ENCODER = "lora_te_"
+            self.OFT_PREFIX_UNET = "oft_unet_"
             # SDXL: must starts with LORA_PREFIX_TEXT_ENCODER
-            self.LORA_PREFIX_TEXT_ENCODER1 = "lora_te1"
-            self.LORA_PREFIX_TEXT_ENCODER2 = "lora_te2"
+            self.LORA_PREFIX_TEXT_ENCODER1 = "lora_te1_"
+            self.LORA_PREFIX_TEXT_ENCODER2 = "lora_te2_"
 
     def original(self, key):
         key = convert_diffusers_name_to_compvis(key, self.is_sd2)
@@ -142,13 +143,12 @@ class KeyConvert:
         if self.is_sdxl:
             map_keys = list(self.UNET_CONVERSION_MAP.keys())  # prefix of U-Net modules
             map_keys.sort()
-            search_key = key.replace(self.LORA_PREFIX_UNET + "_", "").replace(self.LORA_PREFIX_TEXT_ENCODER1 + "_",
-                                                                              "").replace(
-                self.LORA_PREFIX_TEXT_ENCODER2 + "_", "")
+            search_key = key.replace(self.LORA_PREFIX_UNET, "").replace(self.OFT_PREFIX_UNET, "").replace(self.LORA_PREFIX_TEXT_ENCODER1, "").replace(self.LORA_PREFIX_TEXT_ENCODER2, "")
+
             position = bisect.bisect_right(map_keys, search_key)
             map_key = map_keys[position - 1]
             if search_key.startswith(map_key):
-                key = key.replace(map_key, self.UNET_CONVERSION_MAP[map_key]) # pylint: disable=unsubscriptable-object
+                key = key.replace(map_key, self.UNET_CONVERSION_MAP[map_key]).replace("oft","lora") # pylint: disable=unsubscriptable-object
         sd_module = shared.sd_model.network_layer_mapping.get(key, None)
         return key, sd_module
 

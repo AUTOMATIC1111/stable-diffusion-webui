@@ -56,21 +56,23 @@ Additional models will be added as they become available and there is public int
 - [Stable Diffusion](https://github.com/Stability-AI/stablediffusion/) 1.x and 2.x *(all variants)*
 - [Stable Diffusion XL](https://github.com/Stability-AI/generative-models)
 - [Kandinsky](https://github.com/ai-forever/Kandinsky-2) 2.1 and 2.2
-- [DeepFloyd IF](https://github.com/deep-floyd/IF)
-- [UniDiffusion](https://github.com/thu-ml/unidiffuser)
 - [SD-Distilled](https://huggingface.co/blog/sd_distillation) *(all variants)*
 - [Wuerstchen](https://huggingface.co/blog/wuertschen)  
+- [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)
+- [UniDiffusion](https://github.com/thu-ml/unidiffuser)
+- [DeepFloyd IF](https://github.com/deep-floyd/IF)
 
 ## Platform support
 
-- *nVidia* GPUs using **CUDA** libraries on both *Windows and Linux*
-- *AMD* GPUs using **ROCm** libraries on *Linux*.  
-  Support will be extended to *Windows* once AMD releases ROCm for Windows
-- *Intel Arc* GPUs using **OneAPI** with *IPEX XPU* libraries on both *Windows and Linux*
-- Any GPU compatible with *DirectX* on *Windows* using **DirectML** libraries.  
-  This includes support for AMD GPUs that are not supported by native ROCm libraries
-- Any GPU or device compatible with **OpenVINO** libraries on both *Windows and Linux*
-- *Apple M1/M2* on *OSX* using built-in support in Torch with **MPS** optimizations
+- *nVidia* GPUs using **CUDA** libraries on both *Windows and Linux*  
+- *AMD* GPUs using **ROCm** libraries on *Linux*  
+  Support will be extended to *Windows* once AMD releases ROCm for Windows  
+- *Intel Arc* GPUs using **OneAPI** with *IPEX XPU* libraries on both *Windows and Linux*  
+- Any GPU compatible with *DirectX* on *Windows* using **DirectML** libraries  
+  This includes support for AMD GPUs that are not supported by native ROCm libraries  
+- Any GPU or device compatible with **OpenVINO** libraries on both *Windows and Linux*  
+- *Apple M1/M2* on *OSX* using built-in support in Torch with **MPS** optimizations  
+- *ONNX/Olive* (experimental)  
 
 ## Install & Run
 

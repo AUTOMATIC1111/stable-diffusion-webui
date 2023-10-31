@@ -12,13 +12,13 @@ import gradio as gr
 import fasteners
 from rich.console import Console
 from modules import errors, shared_items, shared_state, cmd_args, ui_components, theme
-from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
+from modules.paths import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 from modules.dml import memory_providers, default_memory_provider, directml_do_hijack
 import modules.interrogate
 import modules.memmon
 import modules.styles
 import modules.devices as devices # pylint: disable=R0402
-import modules.paths_internal as paths
+import modules.paths as paths
 from installer import print_dict
 from installer import log as central_logger # pylint: disable=E0611
 
@@ -337,7 +337,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_attention_slicing": OptionInfo(False, "Enable attention slicing"),
     "diffusers_model_load_variant": OptionInfo("default", "Diffusers model loading variant", gr.Radio, {"choices": ['default', 'fp32', 'fp16']}),
     "diffusers_vae_load_variant": OptionInfo("default", "Diffusers VAE loading variant", gr.Radio, {"choices": ['default', 'fp32', 'fp16']}),
-    "custom_diffusers_pipeline": OptionInfo('hf-internal-testing/diffusers-dummy-pipeline', 'Custom Diffusers pipeline to use'),
+    "custom_diffusers_pipeline": OptionInfo('', 'Load custom Diffusers pipeline'),
     "diffusers_lora_loader": OptionInfo("diffusers" if cmd_opts.use_openvino else "sequential apply", "Diffusers LoRA loading variant", gr.Radio, {"choices": ['diffusers', 'sequential apply', 'merge and apply']}),
     "diffusers_force_zeros": OptionInfo(True, "Force zeros for prompts when empty"),
     "diffusers_aesthetics_score": OptionInfo(False, "Require aesthetics score"),
@@ -346,8 +346,8 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
 }))
 
 options_templates.update(options_section(('system-paths', "System Paths"), {
-    "temp_dir": OptionInfo("", "Directory for temporary images; leave empty for default", folder=True),
-    "clean_temp_dir_at_start": OptionInfo(True, "Cleanup non-default temporary directory when starting webui"),
+    "models_paths_sep_options": OptionInfo("<h2>Models paths</h2>", "", gr.HTML),
+    "models_dir": OptionInfo('models', "Base path where all models are stored", folder=True),
     "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Folder with stable diffusion models", folder=True),
     "diffusers_dir": OptionInfo(os.path.join(paths.models_path, 'Diffusers'), "Folder with Hugggingface models", folder=True),
     "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Folder with VAE files", folder=True),
@@ -366,6 +366,10 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "swinir_models_path": OptionInfo(os.path.join(paths.models_path, 'SwinIR'), "Folder with SwinIR models", folder=True),
     "ldsr_models_path": OptionInfo(os.path.join(paths.models_path, 'LDSR'), "Folder with LDSR models", folder=True),
     "clip_models_path": OptionInfo(os.path.join(paths.models_path, 'CLIP'), "Folder with CLIP models", folder=True),
+
+    "other_paths_sep_options": OptionInfo("<h2>Other paths</h2>", "", gr.HTML),
+    "temp_dir": OptionInfo("", "Directory for temporary images; leave empty for default", folder=True),
+    "clean_temp_dir_at_start": OptionInfo(True, "Cleanup non-default temporary directory when starting webui"),
 }))
 
 options_templates.update(options_section(('saving-images', "Image Options"), {
@@ -474,7 +478,7 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
     "schedulers_use_karras": OptionInfo(True, "Use Karras sigmas", gr.Checkbox, {"visible": False}),
     "schedulers_use_thresholding": OptionInfo(False, "Use dynamic thresholding", gr.Checkbox, {"visible": False}),
     "schedulers_use_loworder": OptionInfo(True, "Use simplified solvers in final steps", gr.Checkbox, {"visible": False}),
-    "schedulers_prediction_type": OptionInfo("default", "Override model prediction type", gr.Radio, {"choices": ['default', 'epsilon', 'sample', 'v_prediction'], "visible": False}),
+    "schedulers_prediction_type": OptionInfo("default", "Override model prediction type", gr.Radio, {"choices": ['default', 'epsilon', 'sample', 'v_prediction']}),
 
     # managed from ui.py for backend diffusers
     "schedulers_sep_diffusers": OptionInfo("<h2>Diffusers specific config</h2>", "", gr.HTML),

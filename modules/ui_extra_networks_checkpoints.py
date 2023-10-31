@@ -30,6 +30,8 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
                     "info": self.find_info(fn),
                     "metadata": checkpoint.metadata,
                     "onclick": '"' + html.escape(f"""return selectCheckpoint({json.dumps(name)})""") + '"',
+                    "mtime": os.path.getmtime(checkpoint.filename),
+                    "size": os.path.getsize(checkpoint.filename),
                 }
                 yield record
             except Exception as e:

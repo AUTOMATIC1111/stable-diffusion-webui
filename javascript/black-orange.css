@@ -1,7 +1,8 @@
 /* generic html tags */
+@font-face { font-family: 'NotoSans'; font-display: swap; font-style: normal; font-weight: 100; src: local('NotoSans'), url('notosans-nerdfont-regular.ttf') }
 :root, .light, .dark {
-  --font: "Source Sans Pro", 'ui-sans-serif', 'system-ui', "Roboto", sans-serif;
-  --font-mono: 'IBM Plex Mono', 'ui-monospace', 'Consolas', monospace;
+  --font: 'NotoSans';
+  --font-mono: 'ui-monospace', 'Consolas', monospace;
   --font-size: 16px;
   --left-column: 490px;
   --highlight-color: #ce6400;
@@ -18,15 +19,28 @@
   --primary-800: #9a3412;
   --primary-900: #7c2d12;
   --primary-950: #6c2e12;
-}
-.light, .dark {
+  --highlight-color: var(--primary-200);
+  --inactive-color: var(--primary--800);
+  --body-text-color: var(--neutral-100);
+  --body-text-color-subdued: var(--neutral-300);
+  --background-color: #000000;
+  --background-fill-primary: var(--neutral-700);
   --input-padding: 4px;
-  --radius-lg: 2px;
-  --radius-sm: 1px;
+  --input-background-fill: var(--neutral-800);
+  --input-shadow: 2px 2px 2px 2px var(--background-color);
+  --button-secondary-text-color: white;
+  --button-secondary-background-fill: linear-gradient(to bottom right, var(--neutral-400), var(--neutral-700));
+  --button-secondary-background-fill-hover: linear-gradient(to bottom right, var(--neutral-700), var(--neutral-400));
+  --block-title-text-color: var(--neutral-300);
+  --radius-sm: 2px;
+  --radius-lg: 4px;
   --spacing-md: 4px;
-  --spacing-xxl: 12px;
-  --line-sm: 1.3em;
-  --line-md: 1.3em;
+  --spacing-xxl: 6px;
+  --line-sm: 1.2em;
+  --line-md: 1.4em;
+  --text-sm: 12px;
+  --text-md: 13px;
+  --text-lg: 15px;
 }
 
 html { font-size: var(--font-size); }
@@ -118,9 +132,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #pnginfo_html2_info { margin-top: -18px; background-color: var(--input-background-fill); padding: var(--input-padding) }
 .gradio-button.tool { filter: hue-rotate(180deg) saturate(0.5); }
 #txt2img_styles_row, #img2img_styles_row { margin-top: -6px; z-index: 200; }
-
-/* custom elements overrides */
-#steps-animation, #controlnet { border-width: 0; }
 
 /* based on gradio built-in dark theme */
 :root, .light, .dark {
@@ -244,9 +255,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --radius-xxl: 0;
   --text-xxs: 9px;
   --text-xs: 10px;
-  --text-sm: 12px;
-  --text-md: 14px;
-  --text-lg: 16px;
   --text-xl: 22px;
   --text-xxl: 26px;
   --body-text-size: var(--text-md);

@@ -1,3 +1,4 @@
+@font-face { font-family: 'Roboto'; font-display: swap; font-style: normal; font-weight: 100; src: local('Roboto'), url('roboto.ttf') }
 :root { --left-column: 490px; }
 a { font-weight: bold; cursor: pointer; }
 h2 { margin-top: 1em !important; font-size: 1.4em !important; }
@@ -25,7 +26,7 @@ tr { border-bottom: none !important; padding: 0.1em 0.5em !important; }
 .gradio-button.secondary-down:hover { background: var(--button-secondary-background-fill-hover); color: var(--button-secondary-text-color-hover); }
 .gradio-button.tool { max-width: min-content; min-width: min-content !important; align-self: end; font-size: 1.4em; color: var(--body-text-color) !important; margin-bottom: var(--spacing-md); }
 .gradio-checkbox { margin: 0.75em 1.5em 0 0; align-self: center; }
-.gradio-column { min-width: unset !important; }
+.gradio-column { min-width: unset; }
 .gradio-container { max-width: unset !important; padding: var(--block-label-padding) !important; }
 .gradio-container .prose a, .gradio-container .prose a:visited{ color: unset; text-decoration: none; }
 
@@ -45,12 +46,12 @@ tr { border-bottom: none !important; padding: 0.1em 0.5em !important; }
 
 /* custom gradio elements */
 .accordion-compact { padding: 8px 0px 4px 0px !important; }
-.settings-accordion .gap { padding-right: 1000px; }
-.settings-accordion >div { flex-flow: wrap; }
-.small-accordion .form { min-width: var(--left-column) !important; }
+.settings-accordion > div { flex-flow: wrap; }
+.small-accordion .form { min-width: var(--left-column) !important; width: max-content; }
 .small-accordion .label-wrap .icon { margin-right: 1.6em; margin-left: 0.6em; color: var(--button-primary-border-color); }
 .small-accordion .label-wrap { padding: 16px 0px 8px 0px; margin: 0; border-top: 2px solid var(--button-secondary-border-color); }
 .small-accordion { width: fit-content !important; padding-left: 0 !important; }
+.extension-script { max-width: 50%; }
 button.custom-button{ border-radius: var(--button-large-radius); padding: var(--button-large-padding); font-weight: var(--button-large-text-weight); border: var(--button-border-width) solid var(--button-secondary-border-color);
     background: var(--button-secondary-background-fill); color: var(--button-secondary-text-color); font-size: var(--button-large-text-size);
     display: inline-flex; justify-content: center; align-items: center; transition: var(--button-transition); box-shadow: var(--button-shadow); text-align: center; }
@@ -72,7 +73,7 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 #txt2img_footer, #img2img_footer { height: fit-content; display: none; }
 #txt2img_generate_box, #img2img_generate_box { gap: 0.5em; flex-wrap: wrap-reverse; height: fit-content; }
 #txt2img_actions_column, #img2img_actions_column { gap: 0.5em; height: fit-content; }
-#txt2img_generate_box > button, #img2img_generate_box > button { min-height: 42px; max-height: 42px; }
+#txt2img_generate_box > button, #img2img_generate_box > button, #txt2img_enqueue, #img2img_enqueue { min-height: 42px; max-height: 42px; line-height: 1em; }
 #txt2img_generate_line2, #img2img_generate_line2, #txt2img_tools, #img2img_tools { display: flex; }
 #txt2img_generate_line2 > button, #img2img_generate_line2 > button, #extras_generate_box > button, #txt2img_tools > button, #img2img_tools > button { height: 2em; line-height: 0; font-size: var(--input-text-size);
   min-width: unset; display: block !important; margin-left: 0.4em; margin-right: 0.4em; }
@@ -96,7 +97,6 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
   width: 22em; min-height: 1.3em; font-size: 0.8em; transition: opacity 0.2s ease-in; pointer-events: none; opacity: 0; z-index: 999; }
 .tooltip-show { opacity: 0.9; }
 .toolbutton-selected { background: var(--background-fill-primary) !important; }
-.jobStatus { position: fixed; bottom: 1em; right: 1em; background: var(--input-background-fill); padding: 0.4em; font-size: 0.8em; color: var(--body-text-color-subdued); }
 
 /* settings */
 #si-sparkline-memo, #si-sparkline-load { background-color: #111; }
@@ -163,6 +163,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 /* extensions */
 #tab_extensions table, #tab_config table{ border-collapse: collapse; }
 #tab_extensions table td, #tab_extensions table th, #tab_config table td, #tab_config table th { border: 1px solid #ccc; padding: 0.25em 0.5em; }
+#tab_extensions table tr:hover, #tab_config table tr:hover { background-color: var(--neutral-500) !important; }
 #tab_extensions table input[type="checkbox"] { margin-right: 0.5em; appearance: checkbox; }
 #tab_extensions button{ max-width: 16em; }
 #tab_extensions input[disabled="disabled"]{ opacity: 0.5; }
@@ -195,9 +196,10 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
 .extra-network-cards .card:hover .preview { box-shadow: none; filter: grayscale(100%); }
 .extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
-.extra-network-cards .card .overlay .tags { margin: 4px; display: none; overflow-wrap: break-word; }
-.extra-network-cards .card .overlay .tag { padding: 2px; margin: 2px; background: var(--neutral-700); cursor: pointer; display: inline-block; }
+.extra-network-cards .card .overlay .tags { display: none; overflow-wrap: break-word; }
+.extra-network-cards .card .overlay .tag { padding: 3px; background: rgba(70, 70, 70, 0.60); font-size: var(--text-lg); cursor: pointer; display: inline-block; margin-bottom: 4px; }
 .extra-network-cards .card .actions > span { padding: 4px; }
+.extra-network-cards .card .actions > span:hover { color: var(--highlight-color); }
 .extra-network-cards .card:hover .actions { display: block; }
 .extra-network-cards .card:hover .overlay .tags { display: block; }
 .extra-network-cards .card .actions { font-size: 3em; display: none; text-align-last: right; cursor: pointer; font-variant: unicase; position: absolute; z-index: 100; right: 0; height: 0.7em; width: 100%; background: rgba(0, 0, 0, 0.40); }

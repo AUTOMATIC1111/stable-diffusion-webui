@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 import git
 from modules import shared, errors
-from modules.paths_internal import extensions_dir, extensions_builtin_dir
+from modules.paths import extensions_dir, extensions_builtin_dir
 
 
 extensions = []

@@ -28,6 +28,8 @@ class ExtraNetworksPageVAEs(ui_extra_networks.ExtraNetworksPage):
                     "info": self.find_info(fn),
                     "metadata": {},
                     "onclick": '"' + html.escape(f"""return selectVAE({json.dumps(name)})""") + '"',
+                    "mtime": os.path.getmtime(filename),
+                    "size": os.path.getsize(filename),
                 }
                 yield record
             except Exception as e:

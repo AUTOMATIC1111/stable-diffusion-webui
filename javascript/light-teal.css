@@ -1,6 +1,7 @@
 /* generic html tags */
+@font-face { font-family: 'NotoSans'; font-display: swap; font-style: normal; font-weight: 100; src: local('NotoSans'), url('notosans-nerdfont-regular.ttf') }
 :root, .light, .dark {
-  --font: 'system-ui', 'ui-sans-serif', 'system-ui', "Roboto", sans-serif;
+  --font: 'NotoSans';
   --font-mono: 'ui-monospace', 'Consolas', monospace;
   --font-size: 16px;
   --left-column: 490px;
@@ -34,6 +35,9 @@
   --spacing-xxl: 8px;
   --line-sm: 1.2em;
   --line-md: 1.4em;
+  --text-sm: 12px;
+  --text-md: 13px;
+  --text-lg: 15px;
 }
 
 html { font-size: var(--font-size); }
@@ -125,9 +129,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #txt2img_settings { min-width: var(--left-column); max-width: var(--left-column); background-color: #111111; padding-top: 16px; }
 #pnginfo_html2_info { margin-top: -18px; background-color: var(--input-background-fill); padding: var(--input-padding) }
 #txt2img_styles_row, #img2img_styles_row { margin-top: -6px; z-index: 200; }
-
-/* custom elements overrides */
-#steps-animation, #controlnet { border-width: 0; }
 
 /* based on gradio built-in dark theme */
 :root, .light, .dark {
@@ -308,9 +309,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --table-radius: var(--radius-lg);
   --table-row-focus: var(--color-accent-soft);
   --text-lg: 16px;
-  --text-md: 14px;
-  --text-sm: 12px;
-  --text-xl: 22px;
   --text-xs: 10px;
   --text-xxl: 26px;
   --text-xxs: 9px;

@@ -6,7 +6,7 @@ https://github.com/madebyollin/taesd
 """
 import os
 from PIL import Image
-from modules import devices, paths_internal
+from modules import devices, paths
 from modules.taesd.taesd import TAESD
 
 taesd_models = { 'sd-decoder': None, 'sd-encoder': None, 'sdxl-decoder': None, 'sdxl-encoder': None }
@@ -25,7 +25,7 @@ def download_model(model_path):
 def model(model_class = 'sd', model_type = 'decoder'):
     vae = taesd_models[f'{model_class}-{model_type}']
     if vae is None:
-        model_path = os.path.join(paths_internal.models_path, "TAESD", f"tae{model_class}_{model_type}.pth")
+        model_path = os.path.join(paths.models_path, "TAESD", f"tae{model_class}_{model_type}.pth")
         download_model(model_path)
         if os.path.exists(model_path):
             from modules.shared import log
@@ -52,7 +52,7 @@ def decode(latents):
         return Image.new('RGB', (8, 8), color = (0, 0, 0))
     vae = taesd_models[f'{model_class}-decoder']
     if vae is None:
-        model_path = os.path.join(paths_internal.models_path, "TAESD", f"tae{model_class}_decoder.pth")
+        model_path = os.path.join(paths.models_path, "TAESD", f"tae{model_class}_decoder.pth")
         download_model(model_path)
         if os.path.exists(model_path):
             taesd_models[f'{model_class}-decoder'] = TAESD(decoder_path=model_path, encoder_path=None)
@@ -73,7 +73,7 @@ def encode(image):
         return Image.new('RGB', (8, 8), color = (0, 0, 0))
     vae = taesd_models[f'{model_class}-encoder']
     if vae is None:
-        model_path = os.path.join(paths_internal.models_path, "TAESD", f"tae{model_class}_encoder.pth")
+        model_path = os.path.join(paths.models_path, "TAESD", f"tae{model_class}_encoder.pth")
         download_model(model_path)
         if os.path.exists(model_path):
             taesd_models[f'{model_class}-encoder'] = TAESD(encoder_path=model_path, decoder_path=None)

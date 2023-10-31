@@ -1,67 +1,79 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-25
+## Update for 2023-10-30
 
 *Note*: Pending release of `diffusers==0.22.0`
 
-Mostly service release with support for several new models and additional optimizations...
+Another pretty big release, this time with focus on  
+new models, new backends and optimizations and tons of fixes
+
+Also, [Wiki](https://github.com/vladmandic/automatic/wiki) has been updated with new content, so check it out!  
+Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVINO), [IntelArc](https://github.com/vladmandic/automatic/wiki/Intel-ARC), [DirectML](https://github.com/vladmandic/automatic/wiki/DirectML), [ONNX/Olive>](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime)
 
 - **Diffusers**
-  - new model type: [SegMind SSD-1B](https://huggingface.co/segmind/SSD-1B)  
-    its a distilled model, this time 50% smaller and faster version of SD-XL!  
+  - new model type: [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)  
+    its a *distilled* model, this time 50% smaller and faster version of SD-XL!  
+    (and quality does not suffer, its just more optimized)  
     test shows batch-size:4 with 1k images used less than 6.5GB of VRAM  
     download using built-in **Huggingface** downloader: `segmind/SSD-1B`  
   - new model type: [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)  
     near-instant generate in a as little as 3 steps!  
+    combined with OpenVINO, generate on CPU takes less than 10 seconds: <https://www.youtube.com/watch?v=b90ESUTLsRo>  
     download using built-in **Huggingface** downloader: `SimianLuo/LCM_Dreamshaper_v7`  
   - support for **Custom pipelines**, thanks @disty0  
     download using built-in **Huggingface** downloader  
     think of them as plugins for diffusers not unlike original extensions that modify behavior of `ldm` backend  
-    list of community pipelines: <https://github.com/huggingface/diffusers/tree/main/examples/community>  
-    and make sure to check our reference one: `Disty0/zero123plus-pipeline`  
-    which generates 4 output images with different camera positions: front, side, top, back!  
+    list of community pipelines: <https://github.com/huggingface/diffusers/blob/main/examples/community/README.md>  
+  - new custom pipeline: `Disty0/zero123plus-pipeline`  
+    generate 4 output images with different camera positions: front, side, top, back!  
+    for more details, see <https://github.com/vladmandic/automatic/discussions/2421>  
+  - new backend: **ONNX/Olive** (experimental)  
+    for details, see WiKi  
   - extend support for [Free-U](https://github.com/ChenyangSi/FreeU)  
     improve generations quality at no cost (other than finding params that work for you)  
 - **General**  
   - add **Lora OFT** support, thanks @antis0007 and @ai-casanova  
   - **Upscalers**  
-    - **compile compile** option, thanks @disty0  
+    - **compile** option, thanks @disty0  
     - **chaiNNer** add high quality models from [Helaman](https://openmodeldb.info/users/helaman)  
-  - redesigned **progress bar** with full details on current operation
+  - redesigned **Progress bar** with full details on current operation  
+  - **Extra networks** sort by name, size, date, etc.  
   - new option: *settings -> images -> keep incomplete*  
     can be used to skip vae decode on aborted/skipped/interrupted image generations  
+  - new option: *settings -> system paths -> models*  
+    can be used to set custom base path for *all* models (previously only as cli option)  
   - remove external clone of items in `/repositories`  
   - switch core font in default theme to **noto-sans**  
     previously default font was simply *system-ui*, but it lead to too much variations between browsers and platforms  
-- **Fixes**
-  - fix **freeu** for backend original and add it to xyz grid
-  - fix loading diffuser models in huggingface format from non-standard location
-  - fix default styles looking in wrong location
-  - fix missing upscaler folder on initial startup
-  - fix handling of relative path for models
-  - fix simple live preview device mismatch
-  - fix batch img2img
-  - fix diffusers samplers: dpm++ 2m, dpm++ 1s, deis
-  - fix new style filename template
-  - fix image name template using model name
-  - fix image name sequence
-  - fix model path using relative path
-  - fix `torch-rocm` and `tensorflow-rocm` version detection, thanks @xangelix
-  - fix **chainner** upscalers color clipping
+- **Fixes**  
+  - fix **freeu** for backend original and add it to xyz grid  
+  - fix loading diffuser models in huggingface format from non-standard location  
+  - fix default styles looking in wrong location  
+  - fix missing upscaler folder on initial startup  
+  - fix handling of relative path for models  
+  - fix simple live preview device mismatch  
+  - fix batch img2img  
+  - fix diffusers samplers: dpm++ 2m, dpm++ 1s, deis  
+  - fix new style filename template  
+  - fix image name template using model name  
+  - fix image name sequence  
+  - fix model path using relative path  
+  - fix `torch-rocm` and `tensorflow-rocm` version detection, thanks @xangelix  
+  - fix **chainner** upscalers color clipping  
   - fix for base+refiner workflow in diffusers mode: number of steps, diffuser pipe mode  
-  - fix for prompt encoder with refiner in diffusers mode
-  - fix prompts-from-file saving incorrect metadata
-  - fix before-hires step
-  - fix diffusers switch from invalid model
-  - **directml** and **ipex** updates
-  - force second requirements check on startup
-  - remove lyco, multiple_tqdm
+  - fix for prompt encoder with refiner in diffusers mode  
+  - fix prompts-from-file saving incorrect metadata  
+  - fix before-hires step  
+  - fix diffusers switch from invalid model  
+  - **directml** and **ipex** updates  
+  - force second requirements check on startup  
+  - remove **lyco**, multiple_tqdm  
   - enhance extension compatibility for exensions directly importing codeformers  
   - enhance extension compatibility for exensions directly accessing processing params  
-  - css fixes
-  - clearly mark external themes in ui
-  - update `openvino`, thanks @disty0
-  - update `typing-extensions`
+  - **css** fixes  
+  - clearly mark external themes in ui  
+  - update `openvino`, thanks @disty0  
+  - update `typing-extensions`  
 
 ## Update for 2023-10-17
 

@@ -118,14 +118,14 @@ class ExtraNetworksPage:
         self.list_time = 0
         # class additional is to keep old extensions happy
         self.card = '''
-            <div class='card' onclick={card_click} title='{name}' data-tab='{tabname}' data-page='{page}' data-name='{name}' data-filename='{filename}' data-tags='{tags}'>
+            <div class='card' onclick={card_click} title='{name}' data-tab='{tabname}' data-page='{page}' data-name='{name}' data-filename='{filename}' data-tags='{tags}' data-mtime='{mtime}' data-size='{size}'>
                 <div class='overlay'>
                     <span style="display:none" class='search_term'>{search_term}</span>
                     <div class='tags'></div>
                     <div class='name'>{title}</div>
                 </div>
                 <div class='actions'>
-                    <span title="Get details" onclick="showCardDetails(event)">&#x1f6c8;</span>
+                    <span class='details' title="Get details" onclick="showCardDetails(event)">&#x1f6c8;</span>
                     <div class='additional'><ul></ul></div>
                 </div>
                 <img class='preview' src='{preview}' style='width: {width}px; height: {height}px; object-fit: {fit}' loading='lazy'></img>
@@ -282,6 +282,8 @@ class ExtraNetworksPage:
                 "search_term": item.get("search_term", ""),
                 "description": item.get("description") or "",
                 "card_click": item.get("onclick", '"' + html.escape(f'return cardClicked({item.get("prompt", None)}, {"true" if self.allow_negative_prompt else "false"})') + '"'),
+                "mtime": item.get("mtime", 0),
+                "size": item.get("size", 0),
             }
             alias = item.get("alias", None)
             if alias is not None:
@@ -392,6 +394,7 @@ class ExtraNetworksUi:
         self.button_refresh: gr.Button = None
         self.button_scan: gr.Button = None
         self.button_save: gr.Button = None
+        self.button_sort: gr.Button = None
         self.button_apply: gr.Button = None
         self.button_close: gr.Button = None
         self.button_model: gr.Checkbox = None
@@ -485,7 +488,8 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         ui.button_refresh = ToolButton(symbols.refresh, elem_id=tabname+"_extra_refresh")
         ui.button_scan = ToolButton(symbols.scan, elem_id=tabname+"_extra_scan", visible=True)
         ui.button_save = ToolButton(symbols.book, elem_id=tabname+"_extra_save", visible=False)
-        ui.button_close = ToolButton(symbols.close, elem_id=tabname+"_extra_close")
+        ui.button_sort = ToolButton(symbols.sort, elem_id=tabname+"_extra_sort", visible=True)
+        ui.button_close = ToolButton(symbols.close, elem_id=tabname+"_extra_close", visible=True)
         ui.button_model = ToolButton(symbols.refine, elem_id=tabname+"_extra_model", visible=True)
         ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", elem_classes="textbox", lines=2, container=False)
         ui.description = gr.Textbox('', show_label=False, elem_id=tabname+"_description", elem_classes="textbox", lines=2, interactive=False, container=False)
@@ -700,9 +704,14 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         res = show_details(text=None, img=None, desc=None, info=None, meta=None, params=params)
         return res
 
+    def ui_sort_cards(msg):
+        shared.log.debug(f'Extra networks: {msg}')
+        return msg
+
     dummy_state = gr.State(value=False) # pylint: disable=abstract-class-instantiated
     button_parent.click(fn=toggle_visibility, inputs=[ui.visible], outputs=[ui.visible, container, button_parent])
     ui.button_close.click(fn=toggle_visibility, inputs=[ui.visible], outputs=[ui.visible, container])
+    ui.button_sort.click(fn=ui_sort_cards, _js='sortExtraNetworks', inputs=[ui.search], outputs=[ui.description])
     ui.button_refresh.click(fn=ui_refresh_click, _js='getENActivePage', inputs=[ui.search], outputs=ui.pages)
     ui.button_scan.click(fn=ui_scan_click, _js='getENActivePage', inputs=[ui.search], outputs=ui.pages)
     ui.button_save.click(fn=ui_save_click, inputs=[], outputs=ui.details_components + [ui.details])

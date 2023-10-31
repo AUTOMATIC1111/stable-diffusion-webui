@@ -25,6 +25,8 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
                     "search_term": self.search_terms_from_path(name),
                     "prompt": json.dumps(f"<hypernet:{name}:{shared.opts.extra_networks_default_multiplier}>"),
                     "local_preview": f"{fn}.{shared.opts.samples_format}",
+                    "mtime": os.path.getmtime(path),
+                    "size": os.path.getsize(path),
                 }
             except Exception as e:
                 shared.log.debug(f"Extra networks error: type=hypernetwork file={path} {e}")

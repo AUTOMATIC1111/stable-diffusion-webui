@@ -268,7 +268,7 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
         def index(ix, iy, iz):
             return ix + iy * len(xs) + iz * len(xs) * len(ys)
 
-        shared.state.job = f"{index(ix, iy, iz) + 1} out of {list_size}"
+        shared.state.job = 'grid'
         processed: Processed = cell(x, y, z, ix, iy, iz)
         if processed_result is None:
             processed_result = copy(processed)

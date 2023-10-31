@@ -85,6 +85,8 @@ class ExtraNetworksPageStyles(ui_extra_networks.ExtraNetworksPage):
                     "extra": getattr(style, 'extra', ''),
                     "local_preview": f"{fn}.{shared.opts.samples_format}",
                     "onclick": '"' + html.escape(f"""return selectStyle({json.dumps(name)})""") + '"',
+                    "mtime": getattr(style, 'mtime', 0),
+                    "size": os.path.getsize(style.filename),
                 }
             except Exception as e:
                 shared.log.debug(f"Extra networks error: type=style file={k} {e}")

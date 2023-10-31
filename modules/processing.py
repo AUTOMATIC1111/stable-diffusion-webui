@@ -80,6 +80,22 @@ def create_binary_mask(image):
     return image
 
 
+def images_tensor_to_samples(image, approximation=None, model=None):
+    if model is None:
+        model = shared.sd_model
+    model.first_stage_model.to(devices.dtype_vae)
+    image = image.to(shared.device, dtype=devices.dtype_vae)
+    image = image * 2 - 1
+    if len(image) > 1:
+        x_latent = torch.stack([
+            model.get_first_stage_encoding(model.encode_first_stage(torch.unsqueeze(img, 0)))[0]
+            for img in image
+        ])
+    else:
+        x_latent = model.get_first_stage_encoding(model.encode_first_stage(image))
+    return x_latent
+
+
 def txt2img_image_conditioning(sd_model, x, width, height):
     if sd_model.model.conditioning_key in {'hybrid', 'concat'}: # Inpainting models
         # The "masked-image" in this case will just be all zeros since the entire image is masked.
@@ -450,6 +466,8 @@ def decode_first_stage(model, x, full_quality=True):
         shared.log.debug(f'Decode VAE: skipped={shared.state.skipped} interrupted={shared.state.interrupted}')
         x_sample = torch.zeros((len(x), 3, x.shape[2] * 8, x.shape[3] * 8), dtype=devices.dtype_vae, device=devices.device)
         return x_sample
+    prev_job = shared.state.job
+    shared.state.job = 'vae'
     with devices.autocast(disable = x.dtype==devices.dtype_vae):
         try:
             if full_quality:
@@ -467,6 +485,7 @@ def decode_first_stage(model, x, full_quality=True):
         except Exception as e:
             x_sample = x
             shared.log.error(f'Decode VAE: {e}')
+    shared.state.job = prev_job
     return x_sample
 
 
@@ -777,12 +796,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         return ''
 
     ema_scope_context = p.sd_model.ema_scope if shared.backend == shared.Backend.ORIGINAL else nullcontext
+    shared.state.job_count = p.n_iter
     with devices.inference_context(), ema_scope_context():
         t0 = time.time()
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
-        if shared.state.job_count == -1:
-            shared.state.job_count = p.n_iter
         extra_network_data = None
         for n in range(p.n_iter):
             p.iteration = n
@@ -814,8 +832,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             step_multiplier = 1
             sampler_config = modules.sd_samplers.find_sampler_config(p.sampler_name)
             step_multiplier = 2 if sampler_config and sampler_config.options.get("second_order", False) else 1
-            if p.n_iter > 1:
-                shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
             if shared.backend == shared.Backend.ORIGINAL:
                 uc = get_conds_with_caching(modules.prompt_parser.get_learned_conditioning, p.negative_prompts, p.steps * step_multiplier, cached_uc)
@@ -921,7 +937,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                         output_images.append(image_mask_composite)
             del x_samples_ddim
             devices.torch_gc()
-            shared.state.nextjob()
 
         t1 = time.time()
         shared.log.info(f'Processed: images={len(output_images)} time={t1 - t0:.2f}s its={(p.steps * len(output_images)) / (t1 - t0):.2f} memory={modules.memstats.memory_stats()}')
@@ -1044,12 +1059,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             self.is_hr_pass = False
             return
         self.is_hr_pass = True
-        if not shared.state.processing_has_refined_job_count:
-            if shared.state.job_count == -1:
-                shared.state.job_count = self.n_iter
-            shared.state.job_count = shared.state.job_count * 2
-            shared.state.processing_has_refined_job_count = True
         hypertile_set(self, hr=True)
+        shared.state.job_count = 2 * self.n_iter
         shared.log.debug(f'Init hires: upscaler="{self.hr_upscaler}" sampler="{self.latent_sampler}" resize={self.hr_resize_x}x{self.hr_resize_y} upscale={self.hr_upscale_to_x}x{self.hr_upscale_to_y}')
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
@@ -1069,11 +1080,13 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             self.sampler.initialize(self)
         x = create_random_tensors([4, self.height // 8, self.width // 8], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
         samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
+        shared.state.nextjob()
         if not self.enable_hr or shared.state.interrupted or shared.state.skipped:
             return samples
 
         self.init_hr()
         if self.is_hr_pass:
+            prev_job = shared.state.job
             target_width = self.hr_upscale_to_x
             target_height = self.hr_upscale_to_y
             decoded_samples = None
@@ -1091,6 +1104,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                     self.extra_generation_params, self.restore_faces = bak_extra_generation_params, bak_restore_faces
                     images.save_image(image, self.outpath_samples, "", seeds[i], prompts[i], shared.opts.samples_format, info=info, suffix="-before-hires")
             if latent_scale_mode is None or self.hr_force: # non-latent upscaling
+                shared.state.job = 'upscale'
                 if decoded_samples is None:
                     decoded_samples = decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae), self.full_quality)
                     decoded_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
@@ -1120,6 +1134,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 if self.latent_sampler == "PLMS":
                     self.latent_sampler = 'UniPC'
             if self.hr_force or latent_scale_mode is not None:
+                shared.state.job = 'hires'
                 if self.denoising_strength > 0:
                     self.ops.append('hires')
                     devices.torch_gc() # GC now before running the next img2img to prevent running out of memory
@@ -1135,8 +1150,9 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 else:
                     self.ops.append('upscale')
             x = None
-            shared.state.nextjob()
             self.is_hr_pass = False
+            shared.state.job = prev_job
+            shared.state.nextjob()
 
         return samples
 
@@ -1301,6 +1317,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             samples = samples * self.nmask + self.init_latent * self.mask
         del x
         devices.torch_gc()
+        shared.state.nextjob()
         return samples
 
     def get_token_merging_ratio(self, for_hr=False):

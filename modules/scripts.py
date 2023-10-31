@@ -321,6 +321,7 @@ class ScriptRunner:
         self.paste_field_names = []
         self.script_load_ctr = 0
         self.is_img2img = False
+        self.inputs = [None]
 
     def initialize_scripts(self, is_img2img):
         from modules import scripts_auto_postprocessing
@@ -355,6 +356,31 @@ class ScriptRunner:
             except Exception as e:
                 log.error(f'Script initialize: {path} {e}')
 
+    def create_script_ui(self, script):
+        import modules.api.models as api_models
+        script.args_from = len(self.inputs)
+        script.args_to = len(self.inputs)
+        controls = wrap_call(script.ui, script.filename, "ui", script.is_img2img)
+        if controls is None:
+            return
+        script.name = wrap_call(script.title, script.filename, "title", default=script.filename).lower()
+        api_args = []
+        for control in controls:
+            control.custom_script_source = os.path.basename(script.filename)
+            arg_info = api_models.ScriptArg(label=control.label or "")
+            for field in ("value", "minimum", "maximum", "step", "choices"):
+                v = getattr(control, field, None)
+                if v is not None:
+                    setattr(arg_info, field, v)
+            api_args.append(arg_info)
+        script.api_info = api_models.ScriptInfo(name=script.name, is_img2img=script.is_img2img, is_alwayson=script.alwayson, args=api_args)
+        if script.infotext_fields is not None:
+            self.infotext_fields += script.infotext_fields
+        if script.paste_field_names is not None:
+            self.paste_field_names += script.paste_field_names
+        self.inputs += controls
+        script.args_to = len(self.inputs)
+
     def setup_ui_for_section(self, section, scriptlist=None):
         if scriptlist is None:
             scriptlist = self.alwayson_scripts
@@ -377,7 +403,7 @@ class ScriptRunner:
         inputs = []
         inputs_alwayson = [True]
 
-        def create_script_ui(script, inputs, inputs_alwayson):
+        def create_script_ui(script, inputs, inputs_alwayson): # TODO this is legacy implementation, see self.create_script_ui
             script.args_from = len(inputs)
             script.args_to = len(inputs)
             controls = wrap_call(script.ui, script.filename, "ui", script.is_img2img)
@@ -445,7 +471,7 @@ class ScriptRunner:
             for script in self.alwayson_scripts:
                 t0 = time.time()
                 elem_id = f'script_{"txt2img" if script.is_txt2img else "img2img"}_{script.title().lower().replace(" ", "_")}'
-                with gr.Group(elem_id=elem_id) as group:
+                with gr.Group(elem_id=elem_id, elem_classes=['extension-script']) as group:
                     create_script_ui(script, inputs, inputs_alwayson)
                 script.group = group
                 time_setup[script.title()] = time_setup.get(script.title(), 0) + (time.time()-t0)
