@@ -535,6 +535,41 @@ def network_MultiheadAttention_load_state_dict(self, *args, **kwargs):
     return originals.MultiheadAttention_load_state_dict(self, *args, **kwargs)
 
 
+def network_Linear_state_dict(self, *args, **kwargs):
+    with torch.no_grad():
+        network_restore_weights_from_backup(self)
+
+    return originals.Linear_state_dict(self, *args, **kwargs)
+
+
+def network_Conv2d_state_dict(self, *args, **kwargs):
+    with torch.no_grad():
+        network_restore_weights_from_backup(self)
+
+    return originals.Conv2d_state_dict(self, *args, **kwargs)
+
+
+def network_GroupNorm_state_dict(self, *args, **kwargs):
+    with torch.no_grad():
+        network_restore_weights_from_backup(self)
+
+    return originals.GroupNorm_state_dict(self, *args, **kwargs)
+
+
+def network_LayerNorm_state_dict(self, *args, **kwargs):
+    with torch.no_grad():
+        network_restore_weights_from_backup(self)
+
+    return originals.LayerNorm_state_dict(self, *args, **kwargs)
+
+
+def network_MultiheadAttention_state_dict(self, *args, **kwargs):
+    with torch.no_grad():
+        network_restore_weights_from_backup(self)
+
+    return originals.MultiheadAttention_state_dict(self, *args, **kwargs)
+
+
 def list_available_networks():
     available_networks.clear()
     available_network_aliases.clear()
