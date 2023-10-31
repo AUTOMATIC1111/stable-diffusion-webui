@@ -61,7 +61,7 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
     logger.info("====================================================")
     p = TaskProgress.new_running(task, 'running', 0)
 
-    def progress_callback(epoch, loss, num_train_epochs, p):
+    def progress_callback(epoch, loss, num_train_epochs, _):
         print(f">>> update progress, epoch:{epoch},loss:{loss},len:{len(p.train.epoch)}")
         free, total = vram_mon.cuda_mem_get_info()
         logger.info(f'[VRAM] free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
