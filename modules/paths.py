@@ -52,12 +52,14 @@ extensions_builtin_dir = paths_internal.extensions_builtin_dir
 sys.path.insert(0, script_path)
 
 sd_path = os.path.join(script_path, 'repositories')
+modules_path = os.path.join(script_path, 'modules')
+
 path_dirs = [
     (sd_path, 'ldm', 'ldm', []),
     (sd_path, 'taming', 'Taming Transformers', []),
     (os.path.join(sd_path, 'blip'), 'models/blip.py', 'BLIP', []),
     (os.path.join(sd_path, 'codeformer'), 'inference_codeformer.py', 'CodeFormer', []),
-    (os.path.join('modules', 'k-diffusion'), 'k_diffusion/sampling.py', 'k_diffusion', ["atstart"]),
+    (os.path.join(modules_path, 'k-diffusion'), 'k_diffusion/sampling.py', 'k_diffusion', ["atstart"]),
 ]
 
 paths = {}

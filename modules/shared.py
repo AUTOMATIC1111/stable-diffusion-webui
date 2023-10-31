@@ -933,7 +933,6 @@ class Shared(sys.modules[__name__].__class__): # this class is here to provide s
                 model_type = 'kandinsky'
             else:
                 model_type = self.sd_model.__class__.__name__
-            print('HERE', model_type)
         except Exception:
             model_type = 'unknown'
         return model_type
