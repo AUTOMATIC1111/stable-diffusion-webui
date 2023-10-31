@@ -118,7 +118,7 @@ def timer(t0: float, script, callback: str):
     t1 = time.time()
     s = round(t1 - t0, 2)
     if s > 0.1:
-        errors.log.debug(f'Script: {s}s {callback} {script}')
+        errors.log.debug(f'Script: {s} {callback} {script}')
 
 
 def clear_callbacks():

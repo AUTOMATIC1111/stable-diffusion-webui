@@ -17,7 +17,7 @@ import torch # pylint: disable=C0411
 # torch.set_num_threads(1)
 try:
     import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-    errors.log.debug(f'Loaded IPEX=={ipex.__version__}')
+    errors.log.debug(f'Load IPEX=={ipex.__version__}')
 except Exception:
     pass
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -40,4 +40,4 @@ errors.install([gradio])
 
 import diffusers # pylint: disable=W0611,C0411
 timer.startup.record("diffusers")
-errors.log.debug(f'Loaded packages: torch={getattr(torch, "__long_version__", torch.__version__)} diffusers={diffusers.__version__} gradio={gradio.__version__}')
+errors.log.debug(f'Load packages: torch={getattr(torch, "__long_version__", torch.__version__)} diffusers={diffusers.__version__} gradio={gradio.__version__}')

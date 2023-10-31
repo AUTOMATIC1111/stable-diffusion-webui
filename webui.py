@@ -105,7 +105,7 @@ def initialize():
     gfpgan.setup_model(opts.gfpgan_models_path)
     timer.startup.record("face-restore")
 
-    log.debug('Loading extensions')
+    log.debug('Load extensions')
     t_timer, t_total = modules.scripts.load_scripts()
     timer.startup.record("extensions")
     timer.startup.records["extensions"] = t_total # scripts can reset the time
@@ -294,9 +294,9 @@ def start_ui():
     modules.script_callbacks.app_started_callback(shared.demo, app)
     timer.startup.record("app-started")
 
-    time_setup = [f'{k}:{round(v,3)}s' for (k,v) in modules.scripts.time_setup.items() if v > 0.005]
+    time_setup = [f'{k}:{round(v,3)}' for (k,v) in modules.scripts.time_setup.items() if v > 0.005]
     shared.log.debug(f'Scripts setup: {time_setup}')
-    time_component = [f'{k}:{round(v,3)}s' for (k,v) in modules.scripts.time_component.items() if v > 0.005]
+    time_component = [f'{k}:{round(v,3)}' for (k,v) in modules.scripts.time_component.items() if v > 0.005]
     if len(time_component) > 0:
         shared.log.debug(f'Scripts components: {time_component}')
 

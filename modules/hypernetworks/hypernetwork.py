@@ -224,7 +224,7 @@ class Hypernetwork:
         self.filename = filename if os.path.exists(filename) else os.path.join(shared.opts.hypernetwork_dir, filename)
         if self.name is None:
             self.name = os.path.splitext(os.path.basename(self.filename))[0]
-        with progress.open(self.filename, 'rb', description=f'Loading hypernetwork: [cyan]{self.filename}', auto_refresh=True, console=shared.console) as f:
+        with progress.open(self.filename, 'rb', description=f'Load hypernetwork: [cyan]{self.filename}', auto_refresh=True, console=shared.console) as f:
             state_dict = torch.load(f, map_location='cpu')
         self.layer_structure = state_dict.get('layer_structure', [1, 2, 1])
         self.optional_info = state_dict.get('optional_info', None)
@@ -256,7 +256,7 @@ class Hypernetwork:
         if self.optimizer_state_dict:
             self.optimizer_name = optimizer_saved_dict.get('optimizer_name', 'AdamW')
             if shared.opts.print_hypernet_extra:
-                print("Loaded existing optimizer from checkpoint")
+                print("Load existing optimizer from checkpoint")
                 print(f"Optimizer name is {self.optimizer_name}")
         else:
             self.optimizer_name = "AdamW"

@@ -128,7 +128,7 @@ class StyleDatabase:
         if self.built_in:
             self.load_style(os.path.join('html', 'art-styles.json'), 'built-in')
 
-        log.debug(f'Loaded styles: folder={self.path} items={len(self.styles.keys())}')
+        log.debug(f'Load styles: folder="{self.path}" items={len(self.styles.keys())}')
 
     def find_style(self, name):
         found = [style for style in self.styles.values() if style.name == name]
@@ -184,7 +184,7 @@ class StyleDatabase:
                     self.styles[row["name"]] = Style(row["name"], row["prompt"] if "prompt" in row else row["text"], row.get("negative_prompt", ""))
                 except Exception:
                     log.error(f'Styles error: file={legacy_file} row={row}')
-            log.debug(f'Loaded legacy styles: file={legacy_file} items={len(self.styles.keys())}')
+            log.debug(f'Load legacy styles: file={legacy_file} items={len(self.styles.keys())}')
 
     """
     def save_csv(self, path: str) -> None:

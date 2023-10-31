@@ -269,7 +269,7 @@ def load_scripts():
             script_module = script_loading.load_module(scriptfile.path)
             register_scripts_from_module(script_module, scriptfile)
         except Exception as e:
-            errors.display(e, f'Loading script: {scriptfile.filename}')
+            errors.display(e, f'Load script: {scriptfile.filename}')
         finally:
             current_basedir = paths.script_path
             t.record(os.path.basename(scriptfile.basedir))
@@ -307,8 +307,8 @@ class ScriptSummary:
         total = sum(self.time.values())
         if total == 0:
             return
-        scripts = [f'{k}:{v}s' for k, v in self.time.items() if v > 0]
-        log.debug(f'Script: op={self.op} total={total}s scripts={scripts}')
+        scripts = [f'{k}:{v}' for k, v in self.time.items() if v > 0]
+        log.debug(f'Script: op={self.op} total={total} scripts={scripts}')
 
 
 class ScriptRunner:

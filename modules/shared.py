@@ -158,17 +158,25 @@ def list_samplers():
 
 
 def temp_disable_extensions():
+    disable_safe = ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris', 'sd-webui-agent-scheduler', 'clip-interrogator-ext', 'stable-diffusion-webui-rembg', 'sd-extension-chainner', 'stable-diffusion-webui-images-browser']
+    disable_diffusers = ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris']
+    disable_original = []
     disabled = []
     if cmd_opts.safe:
-        for ext in ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris', 'sd-webui-agent-scheduler', 'clip-interrogator-ext', 'stable-diffusion-webui-rembg', 'sd-extension-chainner', 'stable-diffusion-webui-images-browser']:
+        for ext in disable_safe:
             if ext not in opts.disabled_extensions:
                 disabled.append(ext)
         log.info(f'Safe mode disabling extensions: {disabled}')
     if backend == Backend.DIFFUSERS:
-        for ext in ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris']:
+        for ext in disable_diffusers:
             if ext not in opts.disabled_extensions:
                 disabled.append(ext)
-        log.info(f'Diffusers disabling uncompatible extensions: {disabled}')
+        log.info(f'Disabling uncompatible extensions: backend={backend} {disabled}')
+    if backend == Backend.ORIGINAL:
+        for ext in disable_original:
+            if ext not in opts.disabled_extensions:
+                disabled.append(ext)
+        log.info(f'Disabling uncompatible extensions: backend={backend} {disabled}')
     cmd_opts.controlnet_loglevel = 'WARNING'
     return disabled
 
@@ -184,7 +192,7 @@ def readfile(filename, silent=False):
                 if type(data) is str:
                     data = json.loads(data)
             if not silent:
-                log.debug(f'Reading: {filename} len={len(data)}')
+                log.debug(f'Read: file="{filename}" len={len(data)}')
     except Exception as e:
         if not silent:
             log.error(f'Reading failed: {filename} {e}')
@@ -213,7 +221,7 @@ def writefile(data, filename, mode='w', silent=False):
             else:
                 raise ValueError('not a valid object')
             if not silent:
-                log.debug(f'Saving: {filename} len={len(output)}')
+                log.debug(f'Save: file="{filename}" len={len(output)}')
             with open(filename, mode, encoding="utf8") as file:
                 file.write(output)
     except Exception as e:

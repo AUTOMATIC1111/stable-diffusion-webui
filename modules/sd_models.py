@@ -178,7 +178,7 @@ def list_models():
                 shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
     elif shared.cmd_opts.ckpt != shared.default_sd_model_file and shared.cmd_opts.ckpt is not None:
         shared.log.warning(f"Checkpoint not found: {shared.cmd_opts.ckpt}")
-    shared.log.info(f'Available models: path="{shared.opts.ckpt_dir}" items={len(checkpoints_list)} time={time.time()-t0:.2f}s')
+    shared.log.info(f'Available models: path="{shared.opts.ckpt_dir}" items={len(checkpoints_list)} time={time.time()-t0:.2f}')
 
     checkpoints_list = dict(sorted(checkpoints_list.items(), key=lambda cp: cp[1].filename))
     if len(checkpoints_list) == 0:
@@ -314,10 +314,10 @@ def get_state_dict_from_checkpoint(pl_sd):
 def write_metadata():
     global sd_metadata_pending # pylint: disable=global-statement
     if sd_metadata_pending == 0:
-        shared.log.debug(f"Model metadata: {sd_metadata_file} no changes")
+        shared.log.debug(f'Model metadata: file="{sd_metadata_file}" no changes')
         return
     shared.writefile(sd_metadata, sd_metadata_file)
-    shared.log.info(f"Model metadata saved: {sd_metadata_file} items={sd_metadata_pending} time={sd_metadata_timer:.2f}s")
+    shared.log.info(f'Model metadata saved: file="{sd_metadata_file}" items={sd_metadata_pending} time={sd_metadata_timer:.2f}')
     sd_metadata_pending = 0
 
 
@@ -424,7 +424,7 @@ def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unuse
             sd = get_state_dict_from_checkpoint(pl_sd)
         del pl_sd
     except Exception as e:
-        errors.display(e, f'loading model: {checkpoint_file}')
+        errors.display(e, f'Load model: {checkpoint_file}')
         sd = None
     return sd
 
@@ -826,7 +826,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             ckpt_basename = os.path.basename(shared.cmd_opts.ckpt)
             model_name = modelloader.find_diffuser(ckpt_basename)
             if model_name is not None:
-                shared.log.info(f'Loading model {op}: {model_name}')
+                shared.log.info(f'Load model {op}: {model_name}')
                 model_file = modelloader.download_diffusers_model(hub_id=model_name)
                 try:
                     shared.log.debug(f'Model load {op} config: {diffusers_load_config}')
@@ -986,7 +986,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     timer.record("load")
     devices.torch_gc(force=True)
     script_callbacks.model_loaded_callback(sd_model)
-    shared.log.info(f"Loaded {op}: time={timer.summary()} native={get_native(sd_model)} {memory_stats()}")
+    shared.log.info(f"Load {op}: time={timer.summary()} native={get_native(sd_model)} {memory_stats()}")
 
 
 class DiffusersTaskType(Enum):
@@ -1227,7 +1227,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
             timer.record("device")
     shared.state.end()
     shared.state = orig_state
-    shared.log.info(f"Loaded: {op} time={timer.summary()}")
+    shared.log.info(f"Load: {op} time={timer.summary()}")
     return sd_model
 
 

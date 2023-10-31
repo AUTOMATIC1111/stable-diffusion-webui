@@ -85,7 +85,7 @@ class State:
             log.debug(f'Access state.end: {sys._getframe().f_back.f_code.co_name}') # pylint: disable=protected-access
             self.time_start = time.time()
         if self.debug_output:
-            log.debug(f'State end: {self.job} time={time.time() - self.time_start:.2f}s')
+            log.debug(f'State end: {self.job} time={time.time() - self.time_start:.2f}')
         self.job = ""
         self.job_count = 0
         self.job_no = 0

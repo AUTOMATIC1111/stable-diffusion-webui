@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import sys
 import time
@@ -145,7 +147,6 @@ def start_server(immediate=True, server=None):
     if collected > 0:
         installer.log.debug(f'Memory {get_memory_stats()} Collected {collected}')
     module_spec = importlib.util.spec_from_file_location('webui', 'webui.py')
-    # installer.log.debug(f'Loading module: {module_spec}')
     server = importlib.util.module_from_spec(module_spec)
     installer.log.debug(f'Starting module: {server}')
     get_custom_args()
@@ -191,16 +192,17 @@ if __name__ == "__main__":
         installer.log.info('Forcing reinstall of all packages')
         installer.quick_allowed = False
     if args.skip_all:
-        installer.log.info('Skipping all checks')
+        installer.log.info('Startup: skip all')
         installer.quick_allowed = True
         init_paths()
     elif installer.check_timestamp():
-        installer.log.info('No changes detected: quick launch active')
+        installer.log.info('Startup: quick launch')
         installer.install_requirements()
         installer.install_packages()
         init_paths()
         installer.check_extensions()
     else:
+        installer.log.info('Startup: standard')
         installer.install_requirements()
         installer.install_packages()
         installer.install_repositories()
@@ -231,7 +233,7 @@ if __name__ == "__main__":
         if round(time.time()) % 120 == 0:
             state = f'job="{instance.state.job}" {instance.state.job_no}/{instance.state.job_count}' if instance.state.job != '' or instance.state.job_no != 0 or instance.state.job_count != 0 else 'idle'
             uptime = round(time.time() - instance.state.server_start)
-            installer.log.debug(f'Server alive={alive} jobs={instance.state.total_jobs} requests={requests} uptime={uptime}s memory {get_memory_stats()} {state}')
+            installer.log.debug(f'Server alive={alive} jobs={instance.state.total_jobs} requests={requests} uptime={uptime} memory {get_memory_stats()} {state}')
         if not alive:
             if uv is not None and uv.wants_restart:
                 installer.log.info('Server restarting...')

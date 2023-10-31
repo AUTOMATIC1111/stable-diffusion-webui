@@ -40,6 +40,7 @@ if os.environ.get('SD_PATH_DEBUG', None) is not None:
 
 
 def register_paths():
+    log.debug('Register paths')
     sys.path.insert(0, script_path)
     sd_path = os.path.join(script_path, 'repositories')
     path_dirs = [
@@ -66,9 +67,9 @@ def create_path(folder):
         return
     try:
         os.makedirs(folder, exist_ok=True)
-        log.info(f'Create folder={folder}')
+        log.info(f'Create: folder="{folder}"')
     except Exception as e:
-        log.error(f'Create Failed folder={folder} {e}')
+        log.error(f'Create failed: folder="{folder}" {e}')
 
 
 def create_paths(opts):
@@ -83,7 +84,7 @@ def create_paths(opts):
             fix = os.path.abspath(fix)
         fix = fix if os.path.isabs(fix) else os.path.relpath(fix, script_path)
         opts.data[folder] = fix
-        debug(f'Paths: folder={folder} original="{tgt}" target="{fix}"')
+        debug(f'Paths: folder="{folder}" original="{tgt}" target="{fix}"')
         return opts.data[folder]
 
     create_path(data_path)

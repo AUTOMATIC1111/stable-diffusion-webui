@@ -33,7 +33,7 @@ def model(model_class = 'sd', model_type = 'decoder'):
             vae = taesd_models[f'{model_class}-{model_type}']
             vae.eval()
             vae.to(devices.device, devices.dtype_vae)
-            log.info(f"Loaded VAE-TAESD: model={model_path}")
+            log.info(f"Load VAE-TAESD: model={model_path}")
         else:
             raise FileNotFoundError(f'TAESD model not found: {model_path}')
     if vae is None:
