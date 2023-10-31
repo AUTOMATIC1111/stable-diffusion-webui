@@ -277,6 +277,7 @@ class RenditionTask(Txt2ImgTask):
         self.init_img = init_img
         self.roop = roop
         self.batch_size = batch_size if batch_size != 0 else 1
+        
 
     @classmethod
     def exec_task(cls, task: Task):
