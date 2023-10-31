@@ -39,11 +39,11 @@
     --ae-border-size-neg: calc(var(--ae-border-size) * -1);
     --ae-border-size-x2: calc((var(--ae-border-size) * 2) + 0px);
 
-    --ae-group-bg-color: #0c171e;
+    --ae-group-bg-color: rgba(0, 0, 0, 0.25);
     --ae-group-padding: 2px;
     --ae-group-radius: 7px;
     --ae-group-border-size: 2px;
-    --ae-group-border-color: #0c171e;
+    --ae-group-border-color: rgba(0, 0, 0, 0.25);
     --ae-group-gap: 6px;
     
 }
