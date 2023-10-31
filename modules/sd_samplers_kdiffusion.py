@@ -1,15 +1,34 @@
-from collections import deque
+import sys
+import time
 import inspect
+from collections import deque
 import torch
-import k_diffusion.sampling
 from modules import prompt_parser
 from modules import devices
 from modules import sd_samplers_common
-
 import modules.shared as shared
 from modules.script_callbacks import CFGDenoiserParams, cfg_denoiser_callback
 from modules.script_callbacks import CFGDenoisedParams, cfg_denoised_callback
 from modules.script_callbacks import AfterCFGCallbackParams, cfg_after_cfg_callback
+
+
+# deal with k-diffusion imports
+k_sampling = None
+try:
+    import k_diffusion.sampling as k_sampling # pylint: disable=wrong-import-order
+except ImportError:
+    pass
+try:
+    if k_sampling is None:
+        import importlib
+        k_diffusion = importlib.import_module('modules.k-diffusion.k_diffusion')
+        k_sampling = k_diffusion.sampling
+except:
+    pass
+if k_sampling is None:
+    shared.log.info(f'Path search: {sys.path}')
+    shared.log.error("Module not found: k-diffusion")
+    sys.exit(1)
 
 
 samplers_k_diffusion = [
@@ -32,7 +51,7 @@ samplers_k_diffusion = [
 samplers_data_k_diffusion = [
     sd_samplers_common.SamplerData(label, lambda model, funcname=funcname: KDiffusionSampler(funcname, model), aliases, options)
     for label, funcname, aliases, options in samplers_k_diffusion
-    if hasattr(k_diffusion.sampling, funcname)
+    if hasattr(k_sampling, funcname)
 ]
 
 sampler_extra_params = {
@@ -79,7 +98,6 @@ class CFGDenoiser(torch.nn.Module):
             while shared.state.paused:
                 if shared.state.interrupted or shared.state.skipped:
                     raise sd_samplers_common.InterruptedException
-                import time
                 time.sleep(0.1)
         # at self.image_cfg_scale == 1.0 produced results for edit model are the same as with normal sampling,
         # so is_edit_model is set to False to support AND composition.
@@ -214,7 +232,7 @@ class KDiffusionSampler:
         denoiser = k_diffusion.external.CompVisVDenoiser if sd_model.parameterization == "v" else k_diffusion.external.CompVisDenoiser
         self.model_wrap = denoiser(sd_model, quantize=shared.opts.enable_quantization)
         self.funcname = funcname
-        self.func = getattr(k_diffusion.sampling, self.funcname)
+        self.func = getattr(k_sampling, self.funcname)
         self.extra_params = sampler_extra_params.get(funcname, [])
         self.model_wrap_cfg = CFGDenoiser(self.model_wrap)
         self.sampler_noises = None
@@ -258,7 +276,7 @@ class KDiffusionSampler:
         self.model_wrap_cfg.image_cfg_scale = getattr(p, 'image_cfg_scale', None)
         self.eta = p.eta if p.eta is not None else shared.opts.scheduler_eta
         self.s_min_uncond = getattr(p, 's_min_uncond', 0.0)
-        k_diffusion.sampling.torch = TorchHijack(self.sampler_noises if self.sampler_noises is not None else [])
+        k_sampling.torch = TorchHijack(self.sampler_noises if self.sampler_noises is not None else [])
         extra_params_kwargs = {}
         for param_name in self.extra_params:
             if hasattr(p, param_name) and param_name in inspect.signature(self.func).parameters:
@@ -277,17 +295,17 @@ class KDiffusionSampler:
         elif self.config.options.get('scheduler', None) == 'karras':
             sigma_min = p.s_min if p.s_min > 0 else self.model_wrap.sigmas[0].item()
             sigma_max = p.s_max if p.s_max > 0 else self.model_wrap.sigmas[-1].item()
-            sigmas = k_diffusion.sampling.get_sigmas_karras(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, device=shared.device)
+            sigmas = k_sampling.get_sigmas_karras(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, device=shared.device)
         elif self.config.options.get('scheduler', None) == 'exponential':
             sigma_min = p.s_min if p.s_min > 0 else self.model_wrap.sigmas[0].item()
             sigma_max = p.s_max if p.s_max > 0 else self.model_wrap.sigmas[-1].item()
-            sigmas = k_diffusion.sampling.get_sigmas_exponential(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, device=shared.device)
+            sigmas = k_sampling.get_sigmas_exponential(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, device=shared.device)
         elif self.config.options.get('scheduler', None) == 'polyexponential':
             sigma_min = p.s_min if p.s_min > 0 else self.model_wrap.sigmas[0].item()
             sigma_max = p.s_max if p.s_max > 0 else self.model_wrap.sigmas[-1].item()
-            sigmas = k_diffusion.sampling.get_sigmas_polyexponential(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, device=shared.device)
+            sigmas = k_sampling.get_sigmas_polyexponential(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, device=shared.device)
         elif self.config.options.get('scheduler', None) == 'vp':
-            sigmas = k_diffusion.sampling.get_sigmas_vp(n=steps, device=shared.device)
+            sigmas = k_sampling.get_sigmas_vp(n=steps, device=shared.device)
         if discard_next_to_last_sigma:
             sigmas = torch.cat([sigmas[:-2], sigmas[-1:]])
         return sigmas
@@ -296,7 +314,6 @@ class KDiffusionSampler:
         """For DPM++ SDE: manually create noise sampler to enable deterministic results across different batch sizes"""
         if shared.opts.no_dpmpp_sde_batch_determinism:
             return None
-        from k_diffusion.sampling import BrownianTreeNoiseSampler
         positive_sigmas = sigmas[sigmas > 0]
         if positive_sigmas.numel() > 0:
             sigma_min = positive_sigmas.min(dim=0)[0]
@@ -304,7 +321,7 @@ class KDiffusionSampler:
             sigma_min = 0
         sigma_max = sigmas.max()
         current_iter_seeds = p.all_seeds[p.iteration * p.batch_size:(p.iteration + 1) * p.batch_size]
-        return BrownianTreeNoiseSampler(x, sigma_min, sigma_max, seed=current_iter_seeds)
+        return k_sampling.BrownianTreeNoiseSampler(x, sigma_min, sigma_max, seed=current_iter_seeds)
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
         steps, t_enc = sd_samplers_common.setup_img2img_steps(p, steps)

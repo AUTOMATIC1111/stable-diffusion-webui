@@ -23,7 +23,7 @@ from installer import print_dict
 from installer import log as central_logger # pylint: disable=E0611
 
 
-errors.install(gr)
+errors.install([gr])
 demo: gr.Blocks = None
 log = central_logger
 progress_print_out = sys.stdout

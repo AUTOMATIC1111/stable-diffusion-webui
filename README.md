@@ -19,14 +19,14 @@
 
 All Individual features are not listed here, instead check [ChangeLog](CHANGELOG.md) for full list of changes.
 
-- Optimized processing with latest **torch** developments  
-  Including built-in support for `torch.compile`
 - Support for multiple backends!  
   **original** and **diffusers**
 - Support for multiple diffusion models!  
-  Stable Diffusion, SD-XL, Kandinsky, DeepFloyd IF, UniDiffusion, SD-Distilled, etc.  
+  **Stable Diffusion, SD-XL, LCM, Segmind, Kandinsky, Wuerstchen, DeepFloyd IF, UniDiffusion, SD-Distilled, etc.**  
 - Fully multiplatform with platform specific autodetection and tuning performed on install  
-  Windows / Linux / MacOS with CPU / nVidia / AMD / Intel / DirectML / OpenVINO  
+  **Windows / Linux / MacOS with CPU / nVidia / AMD / IntelArc / DirectML / OpenVINO / ONNX+Olive**  
+- Optimized processing with latest **torch** developments  
+  Including built-in support for `torch.compile`
 - Improved prompt parser  
 - Enhanced *Lora*/*Locon*/*Lyco* code supporting latest trends in training  
 - Built-in queue management  
@@ -35,7 +35,7 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
 - Modern localization and hints engine  
 - Broad compatibility with existing extensions ecosystem and new extensions manager  
 - Built in installer with automatic updates and dependency management  
-- Modernized UI (still based on Gradio) with theme support  
+- Modernized UI with theme support and number of built-in themes  
 
 ## Backend support
 
@@ -55,12 +55,13 @@ Additional models will be added as they become available and there is public int
 
 - [Stable Diffusion](https://github.com/Stability-AI/stablediffusion/) 1.x and 2.x *(all variants)*
 - [Stable Diffusion XL](https://github.com/Stability-AI/generative-models)
-- [Kandinsky](https://github.com/ai-forever/Kandinsky-2) 2.1 and 2.2
-- [SD-Distilled](https://huggingface.co/blog/sd_distillation) *(all variants)*
-- [Wuerstchen](https://huggingface.co/blog/wuertschen)  
 - [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)
+- [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)
+- [Kandinsky](https://github.com/ai-forever/Kandinsky-2) 2.1 and 2.2
+- [Wuerstchen](https://huggingface.co/blog/wuertschen)  
 - [UniDiffusion](https://github.com/thu-ml/unidiffuser)
 - [DeepFloyd IF](https://github.com/deep-floyd/IF)
+- [SD-Distilled](https://huggingface.co/blog/sd_distillation) *(all variants)*
 
 ## Platform support
 
