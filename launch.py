@@ -22,13 +22,18 @@ python = sys.executable # used by some extensions to run python
 skip_install = False # parsed by some extensions
 
 
-def init_modules():
-    global parser, args, script_path, extensions_dir # pylint: disable=global-statement
+def init_args():
+    global parser, args # pylint: disable=global-statement
     import modules.cmd_args
     parser = modules.cmd_args.parser
     installer.add_args(parser)
     args, _ = parser.parse_known_args()
+
+
+def init_paths():
+    global script_path, extensions_dir # pylint: disable=global-statement
     import modules.paths
+    modules.paths.register_paths()
     script_path = modules.paths.script_path
     extensions_dir = modules.paths.extensions_dir
 
@@ -161,7 +166,7 @@ def start_server(immediate=True, server=None):
 
 if __name__ == "__main__":
     installer.ensure_base_requirements()
-    init_modules() # setup argparser and default folders
+    init_args() # setup argparser and default folders
     installer.args = args
     installer.setup_logging()
     installer.log.info('Starting SD.Next')
@@ -188,16 +193,19 @@ if __name__ == "__main__":
     if args.skip_all:
         installer.log.info('Skipping all checks')
         installer.quick_allowed = True
+        init_paths()
     elif installer.check_timestamp():
         installer.log.info('No changes detected: quick launch active')
         installer.install_requirements()
         installer.install_packages()
+        init_paths()
         installer.check_extensions()
     else:
         installer.install_requirements()
         installer.install_packages()
         installer.install_repositories()
         installer.install_submodules()
+        init_paths()
         installer.install_extensions()
         installer.install_requirements() # redo requirements since extensions may change them
         installer.update_wiki()
