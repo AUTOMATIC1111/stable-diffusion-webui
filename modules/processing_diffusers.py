@@ -116,7 +116,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             return []
         decoded = torch.zeros((len(latents), 3, latents.shape[2] * 8, latents.shape[3] * 8), dtype=devices.dtype_vae, device=devices.device)
         for i in range(len(output.images)):
-            decoded[i] = (sd_vae_taesd.decode(latents[i]) * 2.0) - 1.0
+            decoded[i] = sd_vae_taesd.decode(latents[i])
         return decoded
 
     def taesd_vae_encode(image):

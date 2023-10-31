@@ -60,6 +60,7 @@ def decode(latents):
             vae.to(devices.device, devices.dtype_vae)
     enc = latents.unsqueeze(0).to(devices.device, devices.dtype_vae)
     image = vae.decoder(enc).clamp(0, 1).detach()
+    image = 2.0 * image - 1.0
     return image[0]
 
 

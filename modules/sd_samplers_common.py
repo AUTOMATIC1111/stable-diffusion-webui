@@ -31,7 +31,6 @@ def setup_img2img_steps(p, steps=None):
 
 
 def single_sample_to_image(sample, approximation=None):
-
     if approximation is None:
         approximation = approximation_indexes.get(shared.opts.show_progress_type, None)
         if approximation is None:

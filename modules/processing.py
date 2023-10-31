@@ -80,7 +80,7 @@ def create_binary_mask(image):
     return image
 
 
-def images_tensor_to_samples(image, approximation=None, model=None):
+def images_tensor_to_samples(image, approximation=None, model=None): # pylint: disable=unused-argument
     if model is None:
         model = shared.sd_model
     model.first_stage_model.to(devices.dtype_vae)
@@ -481,7 +481,7 @@ def decode_first_stage(model, x, full_quality=True):
             else:
                 x_sample = torch.zeros((len(x), 3, x.shape[2] * 8, x.shape[3] * 8), dtype=devices.dtype_vae, device=devices.device)
                 for i in range(len(x_sample)):
-                    x_sample[i] = (modules.taesd.sd_vae_taesd.decode(x[i]) * 2.0) - 1.0
+                    x_sample[i] = modules.taesd.sd_vae_taesd.decode(x[i])
         except Exception as e:
             x_sample = x
             shared.log.error(f'Decode VAE: {e}')

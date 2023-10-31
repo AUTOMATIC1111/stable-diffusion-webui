@@ -1,11 +1,11 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-30
+## Update for 2023-10-31
 
 *Note*: Pending release of `diffusers==0.22.0`
 
 Another pretty big release, this time with focus on  
-new models, new backends and optimizations and tons of fixes
+new models, new backends and optimizations - plus quite a few fixes  
 
 Also, [Wiki](https://github.com/vladmandic/automatic/wiki) has been updated with new content, so check it out!  
 Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVINO), [IntelArc](https://github.com/vladmandic/automatic/wiki/Intel-ARC), [DirectML](https://github.com/vladmandic/automatic/wiki/DirectML), [ONNX/Olive>](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime)
@@ -14,23 +14,28 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
   - new model type: [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)  
     its a *distilled* model, this time 50% smaller and faster version of SD-XL!  
     (and quality does not suffer, its just more optimized)  
-    test shows batch-size:4 with 1k images used less than 6.5GB of VRAM  
+    test shows batch-size:4 with 1k images at full quality used less than 6.5GB of VRAM  
+    and for further optimization, you can use built-in **TAESD** decoder,  
+    which results in batch-size:16 with 1k images using 7.9GB of VRAM
     download using built-in **Huggingface** downloader: `segmind/SSD-1B`  
   - new model type: [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)  
     near-instant generate in a as little as 3 steps!  
     combined with OpenVINO, generate on CPU takes less than 10 seconds: <https://www.youtube.com/watch?v=b90ESUTLsRo>  
+    and absolute beast when combined with **HyperTile** and **TAESD** decoder resulting in **28 FPS**  
+    (on RTX4090 for batch 16x16 at 512px)  
     download using built-in **Huggingface** downloader: `SimianLuo/LCM_Dreamshaper_v7`  
   - support for **Custom pipelines**, thanks @disty0  
     download using built-in **Huggingface** downloader  
     think of them as plugins for diffusers not unlike original extensions that modify behavior of `ldm` backend  
     list of community pipelines: <https://github.com/huggingface/diffusers/blob/main/examples/community/README.md>  
-  - new custom pipeline: `Disty0/zero123plus-pipeline`  
+  - new custom pipeline: `Disty0/zero123plus-pipeline`, thanks @disty0  
     generate 4 output images with different camera positions: front, side, top, back!  
     for more details, see <https://github.com/vladmandic/automatic/discussions/2421>  
-  - new backend: **ONNX/Olive** (experimental)  
-    for details, see WiKi  
+  - new backend: **ONNX/Olive** *(experimental)*, thanks @lshqqytiger  
+    for details, see [WiKi](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime)
   - extend support for [Free-U](https://github.com/ChenyangSi/FreeU)  
     improve generations quality at no cost (other than finding params that work for you)  
+  - updated `diffusers` to 0.22.0  
 - **General**  
   - add **Lora OFT** support, thanks @antis0007 and @ai-casanova  
   - **Upscalers**  
@@ -45,6 +50,9 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
   - remove external clone of items in `/repositories`  
   - switch core font in default theme to **noto-sans**  
     previously default font was simply *system-ui*, but it lead to too much variations between browsers and platforms  
+  - update **openvino**, thanks @disty0  
+  - update **ipex**, thanks @disty0  
+  - update **directml**, @lshqqytiger  
 - **Fixes**  
   - fix **freeu** for backend original and add it to xyz grid  
   - fix loading diffuser models in huggingface format from non-standard location  
@@ -65,14 +73,12 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
   - fix prompts-from-file saving incorrect metadata  
   - fix before-hires step  
   - fix diffusers switch from invalid model  
-  - **directml** and **ipex** updates  
   - force second requirements check on startup  
   - remove **lyco**, multiple_tqdm  
   - enhance extension compatibility for exensions directly importing codeformers  
   - enhance extension compatibility for exensions directly accessing processing params  
   - **css** fixes  
   - clearly mark external themes in ui  
-  - update `openvino`, thanks @disty0  
   - update `typing-extensions`  
 
 ## Update for 2023-10-17
