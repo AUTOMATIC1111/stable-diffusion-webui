@@ -15,7 +15,7 @@ import psutil
 from modules.shared import mem_mon as vram_mon
 from loguru import logger
 from worker.task import Task, TaskStatus, TaskProgress, TrainEpoch
-from sd_scripts.train_network_all import train_with_params
+from sd_scripts.train_network_all_auto import train_with_params
 from .typex import TrainLoraTask
 from .utils import upload_files
 from worker.task_send import RedisSender
