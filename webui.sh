@@ -38,7 +38,7 @@ fi
 # Name of the subdirectory (defaults to stable-diffusion-webui)
 if [[ -z "${clone_dir}" ]]
 then
-    clone_dir="stable-diffusion-webui-ux"
+    clone_dir="stable-diffusion-webui"
 fi
 
 # python3 executable
@@ -141,8 +141,9 @@ case "$gpu_info" in
     *"Navi 2"*) export HSA_OVERRIDE_GFX_VERSION=10.3.0
     ;;
     *"Navi 3"*) [[ -z "${TORCH_COMMAND}" ]] && \
-        export TORCH_COMMAND="pip install --pre torch==2.1.0.dev-20230614+rocm5.5 torchvision==0.16.0.dev-20230614+rocm5.5 --index-url https://download.pytorch.org/whl/nightly/rocm5.5"
-        # Navi 3 needs at least 5.5 which is only on the nightly chain
+         export TORCH_COMMAND="pip install --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/rocm5.6"
+        # Navi 3 needs at least 5.5 which is only on the nightly chain, previous versions are no longer online (torch==2.1.0.dev-20230614+rocm5.5 torchvision==0.16.0.dev-20230614+rocm5.5 torchaudio==2.1.0.dev-20230614+rocm5.5)
+        # so switch to nightly rocm5.6 without explicit versions this time
     ;;
     *"Renoir"*) export HSA_OVERRIDE_GFX_VERSION=9.0.0
         printf "\n%s\n" "${delimiter}"
@@ -187,7 +188,7 @@ else
     printf "\n%s\n" "${delimiter}"
     printf "Clone stable-diffusion-webui"
     printf "\n%s\n" "${delimiter}"
-    "${GIT}" clone https://github.com/anapnoe/stable-diffusion-webui-ux.git "${clone_dir}"
+    "${GIT}" clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git "${clone_dir}"
     cd "${clone_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/%s/, aborting...\e[0m" "${install_dir}" "${clone_dir}"; exit 1; }
 fi
 
@@ -245,7 +246,7 @@ while [[ "$KEEP_GOING" -eq "1" ]]; do
         printf "Launching launch.py..."
         printf "\n%s\n" "${delimiter}"
         prepare_tcmalloc
-        "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
+        "${python_cmd}" -u "${LAUNCH_SCRIPT}" "$@"
     fi
 
     if [[ ! -f tmp/restart ]]; then

@@ -1,13 +1,13 @@
 function gradioApp() {
-  const elems = document.getElementsByTagName('gradio-app');
-  const elem = elems.length == 0 ? document : elems[0];
+    const elems = document.getElementsByTagName('gradio-app');
+    const elem = elems.length == 0 ? document : elems[0];
 
-  if (elem !== document) {
-      elem.getElementById = function(id) {
-          return document.getElementById(id);
-      };
-  }
-  return elem.shadowRoot ? elem.shadowRoot : elem;
+    if (elem !== document) {
+        elem.getElementById = function(id) {
+            return document.getElementById(id);
+        };
+    }
+    return elem.shadowRoot ? elem.shadowRoot : elem;
 }
 
 /**
@@ -37,7 +37,7 @@ var uiCurrentTab = null;
  * The callback receives an array of MutationRecords as an argument.
  */
 function onUiUpdate(callback) {
-  uiUpdateCallbacks.push(callback);
+    uiUpdateCallbacks.push(callback);
 }
 
 /**
@@ -57,7 +57,7 @@ function onAfterUiUpdate(callback) {
  * The callback receives no arguments.
  */
 function onUiLoaded(callback) {
-  uiLoadedCallbacks.push(callback);
+    uiLoadedCallbacks.push(callback);
 }
 
 /**
@@ -65,7 +65,7 @@ function onUiLoaded(callback) {
  * The callback receives no arguments.
  */
 function onUiTabChange(callback) {
-  uiTabChangeCallbacks.push(callback);
+    uiTabChangeCallbacks.push(callback);
 }
 
 /**
@@ -74,7 +74,7 @@ function onUiTabChange(callback) {
  * @param callback
  */
 function onOptionsChanged(callback) {
-  optionsChangedCallbacks.push(callback);
+    optionsChangedCallbacks.push(callback);
 }
 
 function executeCallbacks(queue, arg) {
@@ -103,11 +103,11 @@ function scheduleAfterUiUpdateCallbacks() {
 var executedOnLoaded = false;
 
 document.addEventListener("DOMContentLoaded", function() {
-  var mutationObserver = new MutationObserver(function(m) {
-      if (!executedOnLoaded && gradioApp().querySelector('#txt2img_prompt')) {
-          executedOnLoaded = true;
-          executeCallbacks(uiLoadedCallbacks);
-      }
+    var mutationObserver = new MutationObserver(function(m) {
+        if (!executedOnLoaded && gradioApp().querySelector('#txt2img_prompt')) {
+            executedOnLoaded = true;
+            executeCallbacks(uiLoadedCallbacks);
+        }
 
         executeCallbacks(uiUpdateCallbacks, m);
         scheduleAfterUiUpdateCallbacks();
@@ -121,43 +121,43 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 /**
-* Add a ctrl+enter as a shortcut to start a generation
-*/
+ * Add a ctrl+enter as a shortcut to start a generation
+ */
 document.addEventListener('keydown', function(e) {
-  var handled = false;
-  if (e.key !== undefined) {
-      if ((e.key == "Enter" && (e.metaKey || e.ctrlKey || e.altKey))) handled = true;
-  } else if (e.keyCode !== undefined) {
-      if ((e.keyCode == 13 && (e.metaKey || e.ctrlKey || e.altKey))) handled = true;
-  }
-  if (handled) {
-      var button = get_uiCurrentTabContent().querySelector('button[id$=_generate]');
-      if (button) {
-          button.click();
-      }
-      e.preventDefault();
-  }
+    var handled = false;
+    if (e.key !== undefined) {
+        if ((e.key == "Enter" && (e.metaKey || e.ctrlKey || e.altKey))) handled = true;
+    } else if (e.keyCode !== undefined) {
+        if ((e.keyCode == 13 && (e.metaKey || e.ctrlKey || e.altKey))) handled = true;
+    }
+    if (handled) {
+        var button = get_uiCurrentTabContent().querySelector('button[id$=_generate]');
+        if (button) {
+            button.click();
+        }
+        e.preventDefault();
+    }
 });
 
 /**
-* checks that a UI element is not in another hidden element or tab content
-*/
+ * checks that a UI element is not in another hidden element or tab content
+ */
 function uiElementIsVisible(el) {
-  if (el === document) {
-      return true;
-  }
+    if (el === document) {
+        return true;
+    }
 
-  const computedStyle = getComputedStyle(el);
-  const isVisible = computedStyle.display !== 'none';
+    const computedStyle = getComputedStyle(el);
+    const isVisible = computedStyle.display !== 'none';
 
-  if (!isVisible) return false;
-  return uiElementIsVisible(el.parentNode);
+    if (!isVisible) return false;
+    return uiElementIsVisible(el.parentNode);
 }
 
 function uiElementInSight(el) {
-  const clRect = el.getBoundingClientRect();
-  const windowHeight = window.innerHeight;
-  const isOnScreen = clRect.bottom > 0 && clRect.top < windowHeight;
+    const clRect = el.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    const isOnScreen = clRect.bottom > 0 && clRect.top < windowHeight;
 
-  return isOnScreen;
+    return isOnScreen;
 }
