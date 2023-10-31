@@ -1,0 +1,323 @@
+<div id="anapnoe_app" class="flexbox col app">
+    <div id="main_wrapper" class="flexbox row no-wrap">
+        <div id="main-nav" class="layout shrink initial panel ">
+            <div class="layout-header">
+                <button title="Anapnoe" tabItemId="#no-split-app, #about_tabitem" tabGroup="main_group" class="xtabs-tab no-drag">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                        <polygon
+                            points="19.5,13.7 21.6,9.9 11.8,9.9 16.7,18.5 17.7,16.7 17.1,15.7 16.7,16.5 13.5,10.9 19.9,10.9 18.9,12.7 	" />
+                        <polygon
+                            points="17.3,11.7 15.8,11.7 20.2,19.3 3.8,19.3 12,5.2 14.2,9 15.8,9 12,2.5 1.5,20.7 22.5,20.7 	" />
+                    </svg>
+                </button>
+            </div>
+            <div id="main_nav_content" class="layout-content">
+				<!-- 
+				<button title="Workspace" id="workspace_nav" tabItemId="#no-split-app, #workspaces_tabitem" tabGroup="main_group"
+					data-click="#tabs" onclick="mainTabs(this, '#tab_anapnoe_dock')" class="xtabs-tab">
+					<div class="mask-icon icon-dock">
+					</div>
+					<span>Workspace</span>
+				</button> 
+				-->
+                <div id="main-nav-bar" class="flexbox col shrink">
+
+                    <button title="Txt2img" id="txt2img_nav" tabItemId="#split-app, #txt2img_tabitem" tabGroup="main_group"
+                        active="true" data-click="#tabs" onclick="mainTabs(this, '#tab_txt2img')" class="xtabs-tab">
+                        <div class="mask-icon icon-txt2img">
+                        </div>
+                        <span>Txt2img</span>
+                    </button>
+                    <button title="Img2img" id="img2img_nav" tabItemId="#split-app, #img2img_tabitem" tabGroup="main_group"
+                        data-click="#tabs" onclick="mainTabs(this, '#tab_img2img')" class="xtabs-tab">
+                        <div class="mask-icon icon-img2img">
+                        </div>
+                        <span>Img2img</span>
+                    </button>
+                    <button title="Extras" id="extras_nav" tabItemId="#split-app, #extras_tabitem" tabGroup="main_group"
+                        data-click="#tabs" onclick="mainTabs(this, '#tab_extras')" class="xtabs-tab">
+                        <div class="mask-icon icon-extras">
+                        </div>
+                        <span>Extras</span>
+                    </button>
+                    <!--  
+                    <button tabItemId="#model_merger_tabitem" tabGroup="main_group" onclick="mainTabs(this, '#tab_model_merger')" class="xtabs-tab">
+                        <div class="mask-icon icon-model-merger">
+                        </div>
+                        <span>Checkpoint Merger</span>
+                    </button> 
+                    -->
+                    <button title="Train" tabItemId="#split-app, #train_tabitem" tabGroup="main_group" data-click="#tabs"
+                        onclick="mainTabs(this, '#tab_train')" class="xtabs-tab">
+                        <div class="mask-icon icon-train">
+                        </div>
+                        <span>Train</span>
+                    </button>
+					
+					<!-- <button id="right_sidebar_button" tabItemId="#template-aside" tabGroup="main_group" class="xtabs-tab">
+					<div class="mask-icon icon-train"></div>
+					<span>Sidebar</span>
+					</button> -->
+					
+                    <div id="other_extensions" class="flexbox col">
+                    </div>
+					
+<!-- 					<button title="Sidebar" tabItemId="#template-right-sidebar" tabGroup="main_group" class="xtabs-tab">
+                        <div class="mask-icon icon-train">
+                        </div>
+                        <span>Sidebar</span>
+                    </button> -->
+                    <!-- 	
+                    <button tabItemId="#extensions_tabitem" tabGroup="main_group" data-click="#tabs" onclick="mainTabs(this, '#tab_extensions')" class="xtabs-tab">
+                        <div class="mask-icon icon-extensions">
+                        </div>
+                        <span >Extensions</span>
+                    </button> 
+                    -->
+                </div>
+            </div>
+            <div class="layout-footer">
+				<!-- 
+				<button title="Extensions" tabItemId="#no-split-app, #layout-extensions" tabGroup="main_group" id="btn_extensions" data-click="#tabs"
+                        onclick="mainTabs(this, '#tab_extensions')"class="xtabs-tab">
+				  <div class="mask-icon icon-extensions">
+				  </div>
+				  <span>Extensions</span>
+				</button>
+				<button title="Settings" tabItemId="#no-split-app, #layout-settings" tabGroup="main_group" id="btn_settings" data-click="#tabs"
+                        onclick="mainTabs(this, '#tab_settings')"class="xtabs-tab">
+					<div class="mask-icon icon-settings">
+					</div>
+					<span>Settings</span>
+				</button>
+                <div class="flexbox col spacer-v">
+				</div> 
+				-->				
+                <button title="Sponsors & Supporters" id="sponsors" tabItemId="#no-split-app, #sponsors_tabitem" tabGroup="main_group" class="xtabs-tab no-drag">
+                    <div class="mask-icon icon-vip">
+                    </div>
+                    <span>Sponsors & Supporters</span>
+                </button>
+                <button title="Contributors" id="contributors" tabItemId="#no-split-app, #contributors_tabitem" tabGroup="main_group" class="xtabs-tab no-drag">
+                    <div class="mask-icon icon-contributors">
+                    </div>
+                    <span>Contributors</span>
+                </button>
+				 <button id="popup_trigger" tabItemId="#popup_tabitem" tabGroup="popup_group" class="xtabs-tab">
+                    <div class="mask-icon icon-train">
+                    </div>
+                    <span>Popup</span>
+                </button>
+              <!--   <div class="ae-button">
+                    <div class="mask-icon accordion-icon icon-arrow-up">
+                    </div>
+                </div> -->
+            </div>
+        </div>
+
+
+		
+        <div id="layout_main_wrapper" class="layout grow initial">
+            <!--  
+            <div class="layout-header">
+                <div>Top Header
+                </div>
+            </div> 
+            -->
+			
+          
+				<!-- <div id="anapnoe_app_dock">
+                </div> -->
+				
+			<div class="layout-content">
+				<div class="flexbox row relative">
+			
+					<div id="no-split-app" class="xtabs-item">
+						<div id="about_tabitem_parent">
+							<div title="About" id="about_tabitem" class="xtabs-item no-padding">
+								<div id="template-about" class="template"></div>
+							</div>
+						</div>
+						<div id="sponsors_tabitem_parent">
+							<div title="Sponsors & Supporters" id="sponsors_tabitem" class="xtabs-item no-padding">
+								<div id="template-sponsors" class="template"></div>
+							</div>
+						</div>
+                        <div id="contributors_tabitem_parent">
+							<div title="Contributors" id="contributors_tabitem" class="xtabs-item no-padding">
+								
+							</div>
+						</div>
+						
+					<!-- 	<div id="template-extensions" class="template"></div>
+						<div id="template-settings" class="template"></div> -->
+						<!-- 	
+						<div title="Workspaces" id="workspaces_tabitem" class="xtabs-item  no-padding">
+							<div class="flexbox col">
+								<div id="workspaces_toolbar" class="flexbox row">								
+									
+								</div>
+								<div class="flexbox col">
+									<div data-parent-selector="gradio-app" data-selector="#tab_anapnoe_dock" class="portal no-bg">
+									</div>
+								</div>							
+							</div>
+							 
+						</div> 
+						-->
+					</div>
+			
+                    <div id="split-app" gutterSize="8" direction="horizontal" class="split">
+                        <div data-minSize="0" data-initSize="100" id="split-left" class="split-container">
+						<div id="txt2img_tabitem_parent">
+                            <div id="txt2img_tabitem" class="xtabs-item  no-padding">
+                                <div id="split" direction="horizontal" gutterSize="8" class="split">
+                                    <div title="txt2img params" data-minSize="0" data-initSize="50" id="iwse" class="split-container params">
+                                        <div id="template-txt2img-params" class="template"></div>
+                                    </div>
+                                    <div title="txt2img results" data-minSize="0" data-initSize="50" id="icly88" class="split-container">
+                                        <div id="template-txt2img-results" class="template"></div>
+                                    </div>
+                                </div>
+                            </div>
+							</div>
+							<div id="img2img_tabitem_parent">
+                            <div id="img2img_tabitem" class="xtabs-item  no-padding">
+                                <div id="split-img2img" direction="horizontal" gutterSize="8" class="split">
+                                    <div title="img2img params" title="txt2img" data-minSize="0" data-initSize="50" id="iwsei" class="split-container params">
+                                        <div id="template-img2img-params" class="template"></div>
+                                    </div>
+                                    <div title="img2img results" title="txt2img results" data-minSize="0" data-initSize="50" id="icly88i" class="split-container">
+                                        <div id="template-img2img-results" class="template"></div>
+                                    </div>
+                                </div>
+                            </div>
+							</div>
+							<div id="extras_tabitem_parent">
+                            <div id="extras_tabitem" class="xtabs-item  no-padding">
+                                <div id="splite" direction="horizontal" gutterSize="8" class="split">
+                                    <div title="Extras params" id="esp-c1" data-minSize="0" data-initSize="50" id="iwsee"
+                                        class="split-container params">
+                                        <div id="template-extras-params" class="template"></div>
+
+                                    </div>
+                                    <div title="Extras results" id="esp-c2" data-minSize="0" data-initSize="50" id="icly88e"
+                                        class="split-container">
+                                        <div id="template-extras-results" class="template"></div>
+                                    </div>
+                                </div>
+                            </div>
+							</div>
+                            <!--  
+                            <div id="model_merger_tabitem" class="xtabs-item">
+                                <div id="template-model-merger" class="template"></div>
+                                </div> 
+                            -->
+							<div id="train_tabitem_parent">
+                            <div id="train_tabitem" class="xtabs-item  no-padding">
+                                <div id="splitt" direction="horizontal" gutterSize="8" class="split">
+                                    <div title="Train params" id="esp-c1t" data-minSize="0" data-initSize="50" id="iwsee"
+                                        class="split-container params">
+                                        <div id="portal-39" data-parent-selector="gradio-app"
+                                            data-selector="#tab_train > div" class="portal no-bg">
+                                        </div>
+                                    </div>
+                                    <div title="Train results" id="esp-c2t" data-minSize="0" data-initSize="50" id="icly88e"
+                                        class="split-container">
+                                        <div id="template-train-results" class="template"></div>
+                                    </div>
+                                </div>
+                            </div>
+							</div>
+                            <div title="Popup" id="popup_tabitem" class="xtabs-item ae-popup">
+                                <div class="ae-popup-inner">
+                                    <div id="layout-popup-group" class="flexbox col">
+                                        <div id="layout-popup" class="layout">
+                                        <!-- 
+                                            <div class="layout-header">
+                                                <div class="flexbox col">
+                                                    <div id="md_title" data-parent-selector="#layout-popup-group" data-selector=".global-popup-inner .block.extra-network-name .extra-network-name" class="portal">
+                                                    </div>
+                                                </div>
+                                            </div> 
+                                        -->
+                                            <div class="layout-content">
+                                                <div class="flexbox col relative-height">
+                                                    <div id="portal-mn00" data-parent-selector=".global-popup"
+                                                        data-selector=".global-popup-inner" class="portal">
+                                                    </div>
+                                                    <button id="popup_close" tabGroup="popup_group" class="xtabs-tab no-drag">
+                                                        <div class="mask-icon icon-cancel">
+                                                        </div>
+                                                        <span>Close</span>
+                                                    </button>
+                                                </div>
+                                                <!-- 
+                                                <div id="portal-mn3" data-parent-selector="#layout-popup-group" data-selector=".global-popup-inner .block.extra-network-name + .form > .gradio-textbox" class="portal">
+                                                </div>                       
+                                                <div id="portal-mn5" data-parent-selector="#layout-popup-group" data-selector=".global-popup-inner .block.extra-network-name + .form + div + .form" class="portal">
+                                                </div>                                               
+                                                <div id="portal-mn6" data-parent-selector="#layout-popup-group" data-selector=".global-popup-inner [data-testid='highlighted-text'] .container" class="portal">
+                                                </div>                                                
+                                                <div id="portal-mn7" data-parent-selector="#layout-popup-group" data-selector=".global-popup-inner [data-testid='highlighted-text'] + .form > .gradio-textbox" class="portal">
+                                                </div>                                               
+                                                <div id="portal-mn8" data-parent-selector="#layout-popup-group" data-selector=".global-popup-inner [data-testid='highlighted-text'] + .form > .gradio-slider" class="portal">
+                                                </div>
+                                                <div class="flexbox col">
+                                                    <div id="md_rand" data-parent-selector="#layout-popup-group" data-selector=".global-popup-inner [data-testid='highlighted-text'] + .form + div .form" class="portal no-bg no-padding">
+                                                    </div>                                                   
+                                                    <div id="md_rand_generate" data-parent-selector="#layout-popup-group" data-selector=".global-popup-inner [data-testid='highlighted-text'] + .form + div button" class="portal">
+                                                    </div>
+                                                </div>
+                            
+                                                <div class="flexbox row">                       
+                                                    <div id="md_image" data-parent-selector="#layout-popup-group" data-selector=".global-popup-inner .gradio-html:has( .standalone-card-preview)" class="portal">
+                                                    </div>
+                                                    <div id="md_table" data-parent-selector="#layout-popup-group" data-selector=".global-popup-inner .block.extra-network-name + .form + div .gradio-html" class="portal">
+                                                    </div>
+                                                </div> 
+                                                -->
+                                            </div>
+                                            <!-- 	
+                                            <div class="layout-footer">	                      
+                                                <div id="portal-mn1" data-parent-selector="#layout-popup-group" data-selector=".global-popup-inner .edit-user-metadata-buttons" class="portal">
+                                                </div>                  
+                                            </div> 
+                                            -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 			
+                            <div id="extensions_tabitem" class="xtabs-item">
+                            <div id="template-extensions" class="template"></div>
+                            </div> 
+                            -->
+                          <!--   <div title="About" id="about_tabitem" class="xtabs-item">
+                                <div id="template-about" class="template"></div>
+                            </div> -->
+
+                        </div>
+                        <div data-minSize="0" data-initSize="50" id="split-right" class="split-container no-drag">                           
+							<div id="template-aside-extra-networks" class="template"></div>
+                        </div>
+                    </div>
+                </div>				
+            </div>
+			
+			
+            <!--  
+            <div class="layout-footer">
+                <div>Footer
+                </div>
+            </div> 
+            -->
+        </div>
+    </div>
+    <!--   
+    <div class="flexbox col app_footer ">
+        <div id="portal-39f" data-parent-selector="#footer" data-selector=".prose.gradio-html" class="portal no-bg">
+        </div>
+    </div> 
+    -->
+</div>

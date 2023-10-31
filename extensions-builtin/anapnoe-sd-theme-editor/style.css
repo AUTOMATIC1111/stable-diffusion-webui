@@ -1,0 +1,36 @@
+#theme_hidden,
+#setting_ui_header_tabs .theme,
+#setting_ui_hidden_tabs .theme {
+  display: none !important;
+}
+
+#tab_ui_theme [id*="color"] label {
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+#tab_ui_theme [id*="color"] label span {
+  min-width: 50% !important;
+}
+#tab_ui_theme [id*="color"] label input {
+  flex-grow: 1;
+  pointer-events: all;
+  cursor: pointer;
+}
+
+#settings_ui_theme > div > div {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+#settings_ui_theme > div > div > div {
+  max-width: 30%;
+}
+
+#tab_ui_theme > div {
+  padding: 16px !important;
+  padding-top: 0 !important;
+}
+
+#ui_theme_hsv + button {
+  min-width: unset;
+}
