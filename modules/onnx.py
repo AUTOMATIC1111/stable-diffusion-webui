@@ -322,6 +322,9 @@ class OlivePipeline(diffusers.DiffusionPipeline):
 
                 with open(os.path.join(sd_configs_path, "olive", f"config_{submodel}.json"), "r") as config_file:
                     olive_config = json.load(config_file)
+                olive_config["passes"]["optimize"]["config"]["float16"] = shared.opts.onnx_olive_float16
+                if (submodel == "unet" or "vae" in submodel) and (shared.opts.onnx_execution_provider == ExecutionProvider.CUDA or shared.opts.onnx_execution_provider == ExecutionProvider.ROCm):
+                    olive_config["passes"]["optimize"]["config"]["optimization_options"]["group_norm_channels_last"] = True
                 olive_config["engine"]["execution_providers"] = [shared.opts.onnx_execution_provider]
                 olive_config["passes"]["optimize"]["config"]["float16"] = shared.opts.onnx_olive_float16
 
@@ -379,8 +382,9 @@ class OlivePipeline(diffusers.DiffusionPipeline):
                     if os.path.isfile(weights_src_path):
                         weights_dst_path = os.path.join(dst_parent, (os.path.basename(dst_path) + ".data"))
                         shutil.copyfile(weights_src_path, weights_dst_path)
-        except Exception:
+        except Exception as e:
             log.error(f"Failed to optimize model '{self.original_filename}'.")
+            log.error(e) # for test.
             shutil.rmtree(shared.opts.olive_temp_dir, ignore_errors=True)
             shutil.rmtree(out_dir, ignore_errors=True)
             pipeline = None
