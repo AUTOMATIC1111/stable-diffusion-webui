@@ -42,29 +42,38 @@ preprocessor_aliases = {
     "pidinet_scribble": "scribble_pidinet",
     "inpaint": "inpaint_global_harmonious",
 }
+
 annotato_args_thr_a_dict = {
-    'canny': [1, 255],
-    'depth_leres': [0, 100],
-    'depth_leres++': [0, 100],
-    'mediapipe_face': [1, 10],
-    'mlsd': [0.01, 2],
-    'normal_midas': [0, 1],
-    'reference_adain': [0, 1],
-    'reference_adain+attn': [0, 1],
-    'reference_only': [0, 1],
-    'scribble_xdog': [1, 64],
-    'threshold': [0, 255],
-    'tile_colorfix': [3, 32],
-    'tile_colorfix+sharp': [3, 32],
-    'tile_resample': [1, 8]}
+    'revision_clipvision': [0.0, 1.0, 0.0],
+    'revision_ignore_prompt': [0.0, 1.0, 0.0],
+    'canny': [1, 255, 100],
+    'mlsd': [0.01, 2.0, 0.1],
+    'depth_leres': [0, 100, 0],
+    'depth_leres++': [0, 100, 0],
+    'normal_map': [0.0, 1.0, 0.4],
+    'threshold': [0, 255, 127],
+    'scribble_xdog': [1, 64, 32],
+    'blur_gaussian': [0.01, 64.0, 9.0],
+    'tile_resample': [1.0, 8.0, 1.0],
+    'tile_colorfix': [3.0, 32.0, 8.0],
+    'tile_colorfix+sharp': [3.0, 32.0, 8.0],
+    'reference_only': [0.0, 1.0, 0.5],
+    'reference_adain': [0.0, 1.0, 0.5],
+    'reference_adain+attn': [0.0, 1.0, 0.5],
+    'mediapipe_face': [1, 10, 1],
+    'recolor_luminance': [0.1, 2.0, 1.0],
+    'recolor_intensity': [0.1, 2.0, 1.0]}
+
 annotato_args_thr_b_dict = {
-    'canny': [1, 255],
-    'depth_leres': [0, 100],
-    'depth_leres++': [0, 100],
-    'mediapipe_face': [0.01, 1],
-    'mlsd': [0.01, 20],
-    'tile_colorfix+sharp': [0, 2]}
-reverse_preprocessor_aliases = {preprocessor_aliases[k]: k for k in preprocessor_aliases.keys()}
+    'canny': [1, 255, 200],
+    'mlsd': [0.01, 20.0, 0.1],
+    'depth_leres': [0, 100, 0],
+    'depth_leres++': [0, 100, 0],
+    'tile_colorfix+sharp': [0.0, 2.0, 1.0],
+    'mediapipe_face': [0.01, 1.0, 0.5]}
+
+reverse_preprocessor_aliases = {
+    preprocessor_aliases[k]: k for k in preprocessor_aliases.keys()}
 
 
 def HWC3(x):
@@ -148,10 +157,10 @@ def run_annotato_args_check(module, thr_a, thr_b):
     thr_b = thr_b
     if module in annotato_args_thr_a_dict.keys():
         if not min(annotato_args_thr_a_dict[module]) <= thr_a <= max(annotato_args_thr_a_dict[module]):
-            thr_a = min(annotato_args_thr_a_dict[module])
+            thr_a = annotato_args_thr_a_dict[module][2]
     if module in annotato_args_thr_b_dict.keys():
         if not min(annotato_args_thr_b_dict[module]) <= thr_b <= max(annotato_args_thr_b_dict[module]):
-            thr_b = min(annotato_args_thr_b_dict[module])
+            thr_b = annotato_args_thr_b_dict[module][2]
     return thr_a, thr_b
 
 
@@ -250,8 +259,11 @@ def exec_control_net_annotator(task: Task) -> typing.Iterable[TaskProgress]:
                 )
             if args.pres > 64:
                 # 参数校验：超过范围就取最小值
-                args.pthr_a, args.pthr_b = run_annotato_args_check(args.module, args.pthr_a, args.pthr_b)
-                result, is_image = preprocessor(img, res=args.pres, thr_a=args.pthr_a, thr_b=args.pthr_b)
+                args.pthr_a, args.pthr_b = run_annotato_args_check(
+                    args.module, args.pthr_a, args.pthr_b)
+
+                result, is_image = preprocessor(
+                    img, res=args.pres, thr_a=args.pthr_a, thr_b=args.pthr_b)
             else:
                 result, is_image = preprocessor(img)
 
@@ -321,8 +333,12 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
             def set_default(item):
                 image, mask = None, None
                 if item.get('enabled', False):
-                    image = get_tmp_local_path(item['image']['image']) if item['image']['image'] else None
-                    image = Image.open(image).convert('RGBA') if image else None
+
+                    image = get_tmp_local_path(
+                        item['image']['image']) if item['image']['image'] else None
+                    image = Image.open(image).convert(
+                        'RGBA') if image else None
+
                     size = image.size if image else None
                     image = np.array(image) if image else None
                     mask = item['image'].get('mask')
@@ -362,7 +378,9 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
                 control_unit['threshold_a'], control_unit['threshold_b'] = run_annotato_args_check(
                     control_unit['module'], control_unit['threshold_a'], control_unit['threshold_b'])
 
-                control_unit['module'] = strip_model_hash(control_unit['module'])
+                control_unit['module'] = strip_model_hash(
+                    control_unit['module'])
+
                 control_unit['model'] = strip_model_hash(control_unit['model'])
                 # if control_unit['model'] == 'None':
                 #     control_unit['model'] = 'none'
