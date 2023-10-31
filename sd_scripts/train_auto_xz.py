@@ -653,7 +653,7 @@ def train_auto(
                      process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
                      model_path=general_model_path,
                      filter_tags=undesired_tags, additional_tags=trigger_word)
-    train_callback(2)
+    train_callback(0, 0, 0, 2)
 
     if use_wd and os.getenv("DO_NOT_TRAIN_COPY_ORIGIN", "1") != "1":
         for f in os.listdir(train_dir):
@@ -688,7 +688,7 @@ def train_auto(
         )
 
         if callable(train_callback):
-            train_callback(4)
+            train_callback(0, 0, 0, 4)
 
     lora_name = f"{task_id}"
 

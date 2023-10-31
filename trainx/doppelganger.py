@@ -56,7 +56,7 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
         p.eta_relative = 35 * 60
         yield p
 
-        def train_progress_callback(progress):
+        def train_progress_callback(epoch, loss, num_train_epochs, progress):
             progress = progress if progress > 1 else progress * 100
             if progress - p.task_progress >= 2:
 
