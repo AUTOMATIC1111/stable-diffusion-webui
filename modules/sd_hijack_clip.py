@@ -161,7 +161,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
                     position += 1
                     continue
 
-                emb_len = int(embedding.vec.shape[0])
+                emb_len = int(embedding.vectors)
                 if len(chunk.tokens) + emb_len > self.chunk_length:
                     next_chunk()
 
@@ -245,6 +245,8 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
                 hashes.append(f"{name}: {shorthash}")
 
             if hashes:
+                if self.hijack.extra_generation_params.get("TI hashes"):
+                    hashes.append(self.hijack.extra_generation_params.get("TI hashes"))
                 self.hijack.extra_generation_params["TI hashes"] = ", ".join(hashes)
 
         if getattr(self.wrapped, 'return_pooled', False):
@@ -270,12 +272,17 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
 
         z = self.encode_with_transformers(tokens)
 
+        pooled = getattr(z, 'pooled', None)
+
         # restoring original mean is likely not correct, but it seems to work well to prevent artifacts that happen otherwise
         batch_multipliers = torch.asarray(batch_multipliers).to(devices.device)
         original_mean = z.mean()
-        z *= batch_multipliers.reshape(batch_multipliers.shape + (1,)).expand(z.shape)
+        z = z * batch_multipliers.reshape(batch_multipliers.shape + (1,)).expand(z.shape)
         new_mean = z.mean()
-        z *= (original_mean / new_mean)
+        z = z * (original_mean / new_mean)
+
+        if pooled is not None:
+            z.pooled = pooled
 
         return z
 

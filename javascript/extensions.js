@@ -1,3 +1,4 @@
+
 function extensions_apply(_disabled_list, _update_list, disable_all) {
     var disable = [];
     var update = [];
@@ -32,7 +33,7 @@ function extensions_check() {
 
 
     var id = randomId();
-    requestProgress(id, gradioApp().getElementById('extensions_installed_top'), null, function() {
+    requestProgress(id, gradioApp().getElementById('extensions_installed_html'), null, function() {
 
     });
 

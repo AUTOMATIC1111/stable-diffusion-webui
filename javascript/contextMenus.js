@@ -1,4 +1,4 @@
-/*
+
 var contextMenuInit = function() {
     let eventListenerApplied = false;
     let menuSpecs = new Map();
@@ -174,4 +174,3 @@ var addContextMenuEventListener = initResponse[2];
 //End example Context Menu Items
 
 onAfterUiUpdate(addContextMenuEventListener);
-*/

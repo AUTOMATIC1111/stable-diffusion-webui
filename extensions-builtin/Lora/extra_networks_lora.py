@@ -6,8 +6,13 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
     def __init__(self):
         super().__init__('lora')
 
+        self.errors = {}
+        """mapping of network names to the number of errors the network had during operation"""
+
     def activate(self, p, params_list):
         additional = shared.opts.sd_lora
+
+        self.errors.clear()
 
         if additional != "None" and additional in networks.available_networks and not any(x for x in params_list if x.items[0] == additional):
             p.all_prompts = [x + f"<lora:{additional}:{shared.opts.extra_networks_default_multiplier}>" for x in p.all_prompts]
@@ -56,4 +61,7 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
                 p.extra_generation_params["Lora hashes"] = ", ".join(network_hashes)
 
     def deactivate(self, p):
-        pass
+        if self.errors:
+            p.comment("Networks with errors: " + ", ".join(f"{k} ({v})" for k, v in self.errors.items()))
+
+            self.errors.clear()

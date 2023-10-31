@@ -1,3 +1,4 @@
+
 let currentWidth = null;
 let currentHeight = null;
 let arFrameTimeout = setTimeout(function() {}, 0);

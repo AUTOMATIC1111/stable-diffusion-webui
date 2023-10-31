@@ -47,7 +47,7 @@ def apply_unet(option=None):
     if current_unet_option is None:
         current_unet = None
 
-        if not (shared.cmd_opts.lowvram or shared.cmd_opts.medvram):
+        if not shared.sd_model.lowvram:
             shared.sd_model.model.diffusion_model.to(devices.device)
 
         return

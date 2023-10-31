@@ -1,11 +1,10 @@
 from functools import wraps
 import html
-import threading
 import time
 
-from modules import shared, progress, errors
+from modules import shared, progress, errors, devices, fifo_lock
 
-queue_lock = threading.Lock()
+queue_lock = fifo_lock.FIFOLock()
 
 
 def wrap_queued_call(func):
@@ -74,6 +73,8 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
 
             error_message = f'{type(e).__name__}: {e}'
             res = extra_outputs_array + [f"<div class='error'>{html.escape(error_message)}</div>"]
+
+        devices.torch_gc()
 
         shared.state.skipped = False
         shared.state.interrupted = False

@@ -1,4 +1,5 @@
 // attaches listeners to the txt2img and img2img galleries to update displayed generation param text when the image changes
+
 let txt2img_gallery, img2img_gallery, modal = undefined;
 onAfterUiUpdate(function() {
     if (!txt2img_gallery) {
@@ -6,6 +7,10 @@ onAfterUiUpdate(function() {
     }
     if (!img2img_gallery) {
         img2img_gallery = attachGalleryListeners("img2img");
+    }
+    if (!modal) {
+        modal = gradioApp().getElementById('lightboxModal');
+        modalObserver.observe(modal, {attributes: true, attributeFilter: ['style']});
     }
 });
 

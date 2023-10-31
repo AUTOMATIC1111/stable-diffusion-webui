@@ -25,9 +25,10 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         item = {
             "name": name,
             "filename": lora_on_disk.filename,
-            "preview": self.find_preview(path) if self.find_preview(path) else './file=html/card-no-preview.png',
+            "shorthash": lora_on_disk.shorthash,
+            "preview": self.find_preview(path),
             "description": self.find_description(path),
-            "search_term": self.search_terms_from_path(lora_on_disk.filename),
+            "search_term": self.search_terms_from_path(lora_on_disk.filename) + " " + (lora_on_disk.hash or ""),
             "local_preview": f"{path}.{shared.opts.samples_format}",
             "metadata": lora_on_disk.metadata,
             "sort_keys": {'default': index, **self.get_sort_keys(lora_on_disk.filename)},
@@ -67,7 +68,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
     def list_items(self):
         for index, name in enumerate(networks.available_networks):
             item = self.create_item(name, index)
-            
+
             if item is not None:
                 yield item
 

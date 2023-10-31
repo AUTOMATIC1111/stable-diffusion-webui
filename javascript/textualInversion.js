@@ -1,3 +1,6 @@
+
+
+
 function start_training_textual_inversion() {
     gradioApp().querySelector('#ti_error').innerHTML = '';
 

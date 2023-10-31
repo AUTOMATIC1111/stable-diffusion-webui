@@ -1,3 +1,5 @@
+// various hints and extra info for the settings tab
+
 var settingsHintsSetup = false;
 
 onOptionsChanged(function() {

@@ -1,55 +1,15 @@
-<div class="footer-wrapper">
-	<ul class="footer-links">		
-		<li>
-			<a href="/docs" data-tooltip="Use via API" data-position="top" class="top">
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M6.2,9.6c0.5-0.7,1-1.4,1.6-2c3.1-3.1,7.5-4,11.1-2.5c1.4,3.6,0.6,8-2.5,11.1c-0.6,0.6-1.3,1.1-2,1.6l0.1,2.3c0,0.2-0.1,0.4-0.3,0.4l-4,1c-0.2,0.1-0.5-0.1-0.5-0.3c0,0,0-0.1,0-0.1v-2.7c0-0.2-0.1-0.4-0.3-0.6l-3.2-3.2c-0.2-0.2-0.4-0.3-0.6-0.3H2.9c-0.2,0-0.4-0.2-0.4-0.4c0,0,0-0.1,0-0.1l1-4c0.1-0.2,0.2-0.3,0.4-0.3C3.9,9.5,6.2,9.6,6.2,9.6zM12.1,11.9c0.7,0.7,1.8,0.7,2.4,0c0.7-0.7,0.7-1.8,0-2.4c-0.7-0.7-1.8-0.7-2.4,0C11.4,10.2,11.4,11.3,12.1,11.9z"/></svg>				
-			</a>
-		</li>
-		<li>
-		  <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui" data-tooltip="Github" data-position="top" class="top">
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 2C6.475 2 2 6.475 2 12a9.994 9.994 0 0 0 6.838 9.488c.5.087.687-.213.687-.476 0-.237-.013-1.024-.013-1.862-2.512.463-3.162-.612-3.362-1.175-.113-.288-.6-1.175-1.025-1.413-.35-.187-.85-.65-.013-.662.788-.013 1.35.725 1.538 1.025.9 1.512 2.338 1.087 2.912.825.088-.65.35-1.087.638-1.337-2.225-.25-4.55-1.113-4.55-4.938 0-1.088.387-1.987 1.025-2.688-.1-.25-.45-1.275.1-2.65 0 0 .837-.262 2.75 1.026a9.28 9.28 0 0 1 2.5-.338c.85 0 1.7.112 2.5.337 1.912-1.3 2.75-1.024 2.75-1.024.55 1.375.2 2.4.1 2.65.637.7 1.025 1.587 1.025 2.687 0 3.838-2.337 4.688-4.562 4.938.362.312.675.912.675 1.85 0 1.337-.013 2.412-.013 2.75 0 .262.188.574.688.474A10.016 10.016 0 0 0 22 12c0-5.525-4.475-10-10-10z"/></svg></a>
-		</li>
-		<li>
-			<a href="https://gradio.app" data-tooltip="Gradio" data-position="top" class="top">
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M0,0H24V24H0V0Z" style="fill: none;"/><path d="M21.14,10.92h0s0-2.91,0-2.91L12.04,3.02v2.91l6.45,3.54-1.95,1.07-4.5-2.47v2.91l1.85,1.01-1.88,1.03-1.85-1.02,1.89-1.03v-2.93l-4.56,2.49-1.94-1.06,6.5-3.55V3L2.86,8.01h0s0,0,0,0v2.93l1.94,1.06-1.94,1.06h0s0,0,0,0v2.93l9.14,5.01,9.14-5.01v-.02h0s0-2.91,0-2.91l-1.94-1.06,1.93-1.06v-.02Zm-2.65,3.6l-6.49,3.56-6.46-3.54,1.94-1.06,4.53,2.48h0s4.55-2.5,4.55-2.5l1.93,1.06Z"/></svg>
-			</a>
-		</li>
-		<li>
-		  <a href="https://github.com/anapnoe/stable-diffusion-webui-ux" data-tooltip="UI/UX design by anapnoe" data-position="top" class="top">
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-				<polygon points="19.5,13.7 21.6,9.9 11.8,9.9 16.7,18.5 17.7,16.7 17.1,15.7 16.7,16.5 13.5,10.9 19.9,10.9 18.9,12.7 	"/>
-				<polygon points="17.3,11.7 15.8,11.7 20.2,19.3 3.8,19.3 12,5.2 14.2,9 15.8,9 12,2.5 1.5,20.7 22.5,20.7 	"/>
-			</svg>	
-		</li>
-		<li>
-			<a href="/" onclick="javascript:gradioApp().getElementById('settings_restart_gradio').click(); return false" data-tooltip="Reload UI" data-position="top" class="top">
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm4.82-4.924a7 7 0 1 0-1.852 1.266l-.975-1.755A5 5 0 1 1 17 12h-3l2.82 5.076z"/></svg>
-			</a>
-		</li>		
-		<li>
-			<div class="tooltip-html">
-				<i class="icon-info">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M13 18v2h4v2H7v-2h4v-2H2.992A.998.998 0 0 1 2 16.993V4.007C2 3.451 2.455 3 2.992 3h18.016c.548 0 .992.449.992 1.007v12.986c0 .556-.455 1.007-.992 1.007H13z"/></svg>	
-				</i>
-				<div class="top center">
-				   {versions}				   
-					<i></i>
-				</div>
-			</div>		
-		</li>
-		<li class="coffee-circle">
-			<div class="tooltip-html">			
-				<i class="coffee">
-					<a href="https://buymeacoffee.com/dayanbayah">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="red" d="M12.001 4.529c2.349-2.109 5.979-2.039 8.242.228 2.262 2.268 2.34 5.88.236 8.236l-8.48 8.492-8.478-8.492c-2.104-2.356-2.025-5.974.236-8.236 2.265-2.264 5.888-2.34 8.244-.228z"/></svg>
-					</a>
-				</i>
-				<div class="top">					
-					<img src="./file=html/200w.webp" width="160" height="90" alt="thanks for your support">
-					<i></i>
-					<p style="color:var(--ae-primary-color);">Your donation can help fund the continued development of Stable Diffusion web UI/UX project. Enjoy!</p>
-				</div>
-			</div>			
-		</li>		
-	</ul>
-</div> 
+<div>
+        <a href="{api_docs}">API</a>
+         • 
+        <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui">Github</a>
+         • 
+        <a href="https://gradio.app">Gradio</a>
+         • 
+        <a href="#" onclick="showProfile('./internal/profile-startup'); return false;">Startup profile</a>
+         • 
+        <a href="/" onclick="javascript:gradioApp().getElementById('settings_restart_gradio').click(); return false">Reload UI</a>
+</div>
+<br />
+<div class="versions">
+{versions}
+</div>
