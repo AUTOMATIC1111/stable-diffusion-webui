@@ -1,4 +1,4 @@
-# this module must not have any dependencies as it first import
+# this module must not have any dependencies as it is a very first import before webui even starts
 import os
 import sys
 import json
