@@ -913,7 +913,7 @@ class NetworkTrainer:
             #self.sample_images(accelerator, args, epoch + 1, global_step, accelerator.device, vae, tokenizer,text_encoder, unet)
             if callable(train_epoch_callback):
                 #train_epoch_callback(epoch + 1, loss_total / len(loss_list), num_train_epochs)
-                train_epoch_callback(epoch, loss, num_train_epochs, (epoch*1.0+1.0)*100.0/num_train_epochs)
+                train_epoch_callback(epoch + 1, loss_total / len(loss_list), num_train_epochs, (epoch*1.0+1.0)*100.0/num_train_epochs)
             # end of epoch
             if math.isnan(loss_total / len(loss_list)):
                 # nan(task failed)
