@@ -1,10 +1,15 @@
 import os
-import shutil
 from pathlib import Path
 import gradio as gr
 import modules.scripts as scripts
 from modules import script_callbacks, shared
-from datetime import datetime
+
+
+
+shared.options_templates.update(shared.options_section(('uiux_core', "Anapnoe UI-UX"), {
+    "uiux_enable_console_log": shared.OptionInfo(True, "Enable console log")
+ }))
+
 
 basedir = scripts.basedir() 
 html_folder = os.path.join(basedir, "html") 

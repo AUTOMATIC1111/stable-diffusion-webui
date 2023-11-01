@@ -75,8 +75,7 @@ async function getAllContributorsRecursive(repoName, page = 1, allContributors =
     // The base case: when the list is empty, return allContributors
     return allContributors;
 }
-
-
+   
 localStorage.setItem('UiUxReady', "false");
 localStorage.setItem('UiUxComplete', "false");
 const default_ext_path = './file=extensions-builtin/anapnoe-sd-uiux/html/templates/';
@@ -1101,56 +1100,57 @@ function setupLogger() {
 	loggerUiUx.id = "logger";
 	tempDiv.append(loggerUiUx);
 	document.body.append(tempDiv);
-	
-	(function (logger) {
-		console.old = console.log;
-		console.log = function () {
-			var output = "", arg, i;
-			
-			output += `
-			<div class="log-row"><span class="log-date">${new Date().toLocaleString().replace(',','')}</span>`;
-			for (i = 0; i < arguments.length; i++) {
-				arg = arguments[i];
-				const argstr = arg.toString().toLowerCase();
-				let acolor = "";
-				if(argstr.indexOf("remove") !== -1 || argstr.indexOf("error") !== -1){
-					acolor += " log-remove"
-				}else if(argstr.indexOf("loading") !== -1 
-				|| argstr.indexOf("| ref") !== -1 
-				|| argstr.indexOf("initial") !== -1 
-				|| argstr.indexOf("optimiz") !== -1 
-				|| argstr.indexOf("python") !== -1 				
-				|| argstr.indexOf("success") !== -1){
-					acolor += " log-load";
-				}else if(argstr.indexOf("[") !== -1){			
-					acolor += " log-object";
-				}
-				
-				if(arg.toString().indexOf(".css") !== -1 || arg.toString().indexOf(".html") !== -1 ){
-					acolor += " log-url";
-				}else if(arg.toString().indexOf("\n") !== -1 ){
-					output += "<br />"
-				}
 
-				output += `
-				<span class="log-${(typeof arg)} ${acolor}">`;				
-				if (
-					typeof arg === "object" &&
-					typeof JSON === "object" &&
-					typeof JSON.stringify === "function"
-				) {
-					output += JSON.stringify(arg);   
-				} else {
-					output += arg;   
-				}
+    (function (logger) {
+        console.old = console.log;
+        console.log = function () {
+            var output = "", arg, i;
+            
+            output += `
+            <div class="log-row"><span class="log-date">${new Date().toLocaleString().replace(',','')}</span>`;
+            for (i = 0; i < arguments.length; i++) {
+                arg = arguments[i];
+                const argstr = arg.toString().toLowerCase();
+                let acolor = "";
+                if(argstr.indexOf("remove") !== -1 || argstr.indexOf("error") !== -1){
+                    acolor += " log-remove"
+                }else if(argstr.indexOf("loading") !== -1 
+                || argstr.indexOf("| ref") !== -1 
+                || argstr.indexOf("initial") !== -1 
+                || argstr.indexOf("optimiz") !== -1 
+                || argstr.indexOf("python") !== -1 				
+                || argstr.indexOf("success") !== -1){
+                    acolor += " log-load";
+                }else if(argstr.indexOf("[") !== -1){			
+                    acolor += " log-object";
+                }
+                
+                if(arg.toString().indexOf(".css") !== -1 || arg.toString().indexOf(".html") !== -1 ){
+                    acolor += " log-url";
+                }else if(arg.toString().indexOf("\n") !== -1 ){
+                    output += "<br />"
+                }
 
-				output += " </span>";
-			}
+                output += `
+                <span class="log-${(typeof arg)} ${acolor}">`;				
+                if (
+                    typeof arg === "object" &&
+                    typeof JSON === "object" &&
+                    typeof JSON.stringify === "function"
+                ) {
+                    output += JSON.stringify(arg);   
+                } else {
+                    output += arg;   
+                }
 
-			logger.innerHTML += output + "</div>";
-			console.old.apply(undefined, arguments);
-		};
-	})(document.getElementById("logger"));
+                output += " </span>";
+            }
+
+            logger.innerHTML += output + "</div>";
+            console.old.apply(undefined, arguments);
+        };
+    })(document.getElementById("logger"));
+    
 
 	console.log(
 	'\n',"╔═╗╔═╦╦═╗╔═╦═╦╦═╦═╗",
@@ -1166,6 +1166,10 @@ function setupLogger() {
 	if(isFirefox){
 		console.log("Go to the Firefox about:config page, then search and toggle layout. css.has-selector. enabled")
 	}
+
+    if(!window.opts.uiux_enable_console_log){
+        console.log = function() {}
+    }
 	
 
 	let link = document.querySelector("link[rel~='icon']");
@@ -1175,9 +1179,6 @@ function setupLogger() {
 		document.head.appendChild(link);
 	}
 	link.href = './file=extensions-builtin/anapnoe-sd-uiux/html/favicon.svg';
-
-
-	
 
 	removeStyleAssets(); 
 
@@ -1190,13 +1191,17 @@ function observeGradioInit() {
 		//const t = gradioApp().querySelector("#txt2img_textual_inversion_cards_html .card:last-child");	
 		//const c = gradioApp().querySelector("#txt2img_checkpoints_cards_html .card:last-child");	
 		//const h = gradioApp().querySelector("#txt2img_hypernetworks_cards_html > div:first-child");	
-		//const l = gradioApp().querySelector("#txt2img_lora_cards_html .card:last-child");	
+		//const l = gradioApp().querySelector("#txt2img_lora_cards_html .card:last-child");	       
 		if (block) {
 		//if (block && t && c && h && l) {
-			observer.disconnect();
-			setTimeout(() => {
-				setupLogger();
-			}, 1000);
+            if (window.opts && Object.keys(window.opts).length) {
+                observer.disconnect();
+                setTimeout(() => {
+				    setupLogger();
+			    }, 1000);
+            }
+			
+        
 		}
 	});
 	observer.observe(gradioApp(), { childList: true, subtree: true });
@@ -1208,6 +1213,5 @@ function observeGradioInit() {
 });  */
 
 document.addEventListener("DOMContentLoaded", () => {
-	
 	observeGradioInit();
 });
