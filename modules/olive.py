@@ -38,7 +38,7 @@ EP_TO_NAME = {
     ExecutionProvider.DirectML: "gpu-dml",
     ExecutionProvider.CUDA: "gpu-?", # TODO
     ExecutionProvider.ROCm: "gpu-rocm",
-    ExecutionProvider.OpenVINO: "?", # TODO
+    ExecutionProvider.OpenVINO: "gpu", # Other devices can use --use-openvino instead of olive
 }
 
 class OlivePipeline(diffusers.DiffusionPipeline):

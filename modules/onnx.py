@@ -50,8 +50,8 @@ def get_execution_provider_options():
     elif shared.opts.onnx_execution_provider == ExecutionProvider.OpenVINO:
         from modules.intel.openvino import get_device as get_raw_openvino_device
         raw_openvino_device = get_raw_openvino_device()
-        if shared.opts.openvino_dtype != "Default" and not shared.opts.openvino_hetero_gpu:
-            raw_openvino_device = f"{raw_openvino_device}_{shared.opts.openvino_dtype}"
+        if shared.opts.onnx_olive_float16 and not shared.opts.openvino_hetero_gpu:
+            raw_openvino_device = f"{raw_openvino_device}_FP16"
         execution_provider_options["device_type"] = raw_openvino_device
         del execution_provider_options["device_id"]
 
