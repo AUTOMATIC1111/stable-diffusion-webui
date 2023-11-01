@@ -4,7 +4,7 @@
     "config": {
       "model_path": "",
       "model_loader": "vae_decoder_load",
-      "model_script": "modules/onnx.py",
+      "model_script": "modules/olive.py",
       "io_config": {
         "input_names": ["latent_sample", "return_dict"],
         "output_names": ["sample"],
@@ -36,7 +36,7 @@
           "type": "latency",
           "sub_types": [{ "name": "avg" }],
           "user_config": {
-            "user_script": "modules/onnx.py",
+            "user_script": "modules/olive.py",
             "dataloader_func": "vae_decoder_data_loader",
             "batch_size": 1
           }

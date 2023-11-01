@@ -29,8 +29,8 @@ except ModuleNotFoundError:
     sys.modules["torch._dynamo"] = {} # HACK torch 1.13.1 does not have _dynamo. will be removed.
 
 
-def init_modules():
-    global parser, args, script_path, extensions_dir # pylint: disable=global-statement
+def init_args():
+    global parser, args # pylint: disable=global-statement
     import modules.cmd_args
     parser = modules.cmd_args.parser
     installer.add_args(parser)
@@ -39,6 +39,10 @@ def init_modules():
 
 def init_paths():
     global script_path, extensions_dir # pylint: disable=global-statement
+    try:
+        import olive.workflows # pylint: disable=unused-import
+    except ModuleNotFoundError:
+        pass
     import modules.paths
     modules.paths.register_paths()
     script_path = modules.paths.script_path

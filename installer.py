@@ -583,7 +583,6 @@ def install_packages():
     install(clip_package, 'clip')
     invisiblewatermark_package = os.environ.get('INVISIBLEWATERMARK_PACKAGE', "git+https://github.com/patrickvonplaten/invisible-watermark.git@remove_onnxruntime_depedency")
     install(invisiblewatermark_package, 'invisible-watermark')
-    install('olive-ai', 'olive-ai', ignore=True)
     install('pi-heif', 'pi_heif', ignore=True)
     tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0')
     install(tensorflow_package, 'tensorflow-rocm' if 'rocm' in tensorflow_package else 'tensorflow', ignore=True)
@@ -731,14 +730,6 @@ def ensure_base_requirements():
         import rich # pylint: disable=unused-import
     except ImportError:
         pass
-    try: # related to: https://github.com/microsoft/Olive/issues/675
-        import olive.workflows # pylint: disable=unused-import
-    except ImportError:
-        install('olive-ai', 'Olive')
-        try:
-            import olive.workflows
-        except ImportError:
-            log.error('Failed to install dependency: olive-ai.')
 
 
 def install_requirements():

@@ -26,7 +26,8 @@ def list_crossattention():
 
 def get_pipelines():
     import diffusers
-    from modules.onnx import OnnxStableDiffusionPipeline, OlivePipeline
+    from modules.onnx import OnnxStableDiffusionPipeline
+    from modules.olive import OlivePipeline, is_available as is_olive_available
     from installer import log
     pipelines = { # note: not all pipelines can be used manually as they require prior pipeline next to decoder pipeline
         'Autodetect': None,
@@ -57,6 +58,8 @@ def get_pipelines():
     except Exception:
         pipelines['InstaFlow'] = getattr(diffusers, 'StableDiffusionPipeline', None)
 
+    if not is_olive_available:
+        del pipelines['ONNX Stable Diffusion with Olive']
     for k, v in pipelines.items():
         if k != 'Autodetect' and v is None:
             log.error(f'Not available: pipeline={k} diffusers={diffusers.__version__} path={diffusers.__file__}')
