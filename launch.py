@@ -43,6 +43,10 @@ def init_paths():
         import olive.workflows # pylint: disable=unused-import
     except ModuleNotFoundError:
         pass
+    import modules.cmd_args
+    parser = modules.cmd_args.parser
+    installer.add_args(parser)
+    args, _ = parser.parse_known_args()
     import modules.paths
     modules.paths.register_paths()
     script_path = modules.paths.script_path
