@@ -1513,6 +1513,7 @@ h1 {
     background-color: var(--ae-input-bg-color);
     border-radius: var(--ae-border-radius);
     border: var(--ae-border-size) solid var(--ae-input-bg-color);
+    aspect-ratio: 3/4;
 }
 
 *.actions {
