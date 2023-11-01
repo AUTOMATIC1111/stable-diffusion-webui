@@ -3,7 +3,7 @@ A bespoke, highly adaptable user interface for the Stable Diffusion, utilizing t
 
 ![](screenshot.png)
 
-## Todos
+## Todo
 - Mobile Support
 - Fullscreen Gallery Support
 - UI-UX Options in Settings
