@@ -1183,7 +1183,7 @@ function setupLogger() {
 
 }
 
-/* 
+
 function observeGradioInit() {
 	const observer = new MutationObserver(() => {
 		const block = gradioApp().querySelector("#tab_anapnoe_sd_uiux_core");			
@@ -1195,19 +1195,19 @@ function observeGradioInit() {
 		//if (block && t && c && h && l) {
 			observer.disconnect();
 			setTimeout(() => {
-				removeStyleAssets();
+				setupLogger();
 			}, 1000);
 		}
 	});
 	observer.observe(gradioApp(), { childList: true, subtree: true });
 } 
-*/
 
-onUiLoaded(function() {
+
+/* onUiLoaded(function() {
  	setupLogger();
-}); 
+});  */
 
-/* document.addEventListener("DOMContentLoaded", () => {
-	setupLogger();
+document.addEventListener("DOMContentLoaded", () => {
+	
 	observeGradioInit();
-}); */
+});
