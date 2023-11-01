@@ -468,8 +468,7 @@ function onUiUxReady(content_div){
 
 			console.log("Finishing optimizations for Extra Networks");
 			
-			const versions = gradioApp().querySelector(".versions");
-			console.log(versions.innerHTML);
+			
 
 			setupExtraNetworksSearchSort();
 
@@ -519,6 +518,19 @@ function onUiUxReady(content_div){
 			//const sidebar_tabs = document.querySelector('#sidebar_tabs');
 			//main_nav_content.append(sidebar_tabs);
 			showContributors()
+
+            // sd max resolution output
+            function sdMaxOutputResolution(value) {
+                gradioApp().querySelectorAll('[id$="2img_width"] input,[id$="2img_height"] input').forEach((elem) => {
+                    elem.max = value;
+                })
+            }
+            gradioApp().querySelector("#setting_uiux_max_resolution_output").addEventListener('input', function (e) {
+                let intvalue = parseInt(e.target.value);
+                intvalue = Math.min(Math.max(intvalue, 512), 16384);
+                sdMaxOutputResolution(intvalue);					
+            })	
+            sdMaxOutputResolution(window.opts.uiux_max_resolution_output);
 			
 
 
@@ -851,7 +863,7 @@ function initDefaultComponents(content_div) {
 	});
 
 	// step ticks for performant input range
-	function ui_show_range_ticks(value, interactive) {
+	function uiux_show_input_range_ticks(value, interactive) {
 		if (value) {
 			const range_selectors = "input[type='range']";
 			//const range_selectors = "[id$='_clone']:is(input[type='range'])";
@@ -882,13 +894,65 @@ function initDefaultComponents(content_div) {
 				});
 		}
 	}
-	/*  
-	gradioApp().querySelector("#setting_ui_show_range_ticks input").addEventListener("click", function (e) {
-		ui_show_range_ticks(e.target.checked, true);
+	 
+	gradioApp().querySelector("#setting_uiux_show_input_range_ticks input").addEventListener("click", function (e) {
+		uiux_show_input_range_ticks(e.target.checked, true);
 	});
-	ui_show_range_ticks(opts.ui_show_range_ticks);
-	*/
-	ui_show_range_ticks(true);
+	uiux_show_input_range_ticks(window.opts.uiux_show_input_range_ticks);
+
+
+    /* function remove_overrides(){	
+		let checked_overrides = [];
+		gradioApp().querySelectorAll("#setting_ignore_overrides input").forEach(function (elem, i){
+			if(elem.checked){
+				checked_overrides[i] = elem.nextElementSibling.innerHTML;
+			}			
+		})
+		//console.log(checked_overrides);
+		gradioApp().querySelectorAll("[id$='2img_override_settings'] .token").forEach(function (token){
+			let token_arr = token.querySelector("span").innerHTML.split(":");
+			let token_name = token_arr[0];
+			let token_value = token_arr[1];
+			token_value = token_value.replaceAll(" ", "");	
+			
+			if(token_name.indexOf("Model hash") != -1){
+				const info_label = gradioApp().querySelector("[id$='2img_override_settings'] label span");
+				info_label.innerHTML = "Override settings MDL: unknown";
+				for (let m=0; m<sdCheckpointModels.length; m++) {						
+					let m_str = sdCheckpointModels[m];					
+					if(m_str.indexOf(token_value) != -1 ){
+						info_label.innerHTML = "Override settings <i>MDL: " +  m_str.split("[")[0] + "</i>";
+						break;
+					}
+				}	
+			}
+			if(checked_overrides.indexOf(token_name) != -1){				
+				token.querySelector(".token-remove").click();
+				gradioApp().querySelector("[id$='2img_override_settings']").classList.add("show");				
+			}else{
+				// maybe we add them again, for now we can select and add the removed tokens manually from the drop down
+			}			
+		})
+	}
+	gradioApp().querySelector("#setting_ignore_overrides").addEventListener('click', function (e) {
+		setTimeout(function() { remove_overrides(); }, 100);		
+	}) */
+
+    function uiux_no_slider_layout(value) {
+        if (value) {
+            anapnoe_app.classList.add("no-slider-layout");
+        } else {
+            anapnoe_app.classList.remove("no-slider-layout");
+        }
+    }
+
+    gradioApp().querySelector("#setting_uiux_no_slider_layout input").addEventListener("click", function (e) {
+        uiux_no_slider_layout(e.target.checked, true);
+    });
+
+    uiux_no_slider_layout(window.opts.uiux_no_slider_layout);
+    
+
 
 	// try to attach Logger Screen to main before full UIUXReady
 	const asideconsole = document.querySelector("#layout-console-log");
@@ -1161,6 +1225,15 @@ function setupLogger() {
 
 	console.log("Initialize Anapnoe UI/UX runtime engine version 0.0.1");
 	console.log(navigator.userAgent);
+    const versions = gradioApp().querySelector(".versions");
+	console.log(versions.innerHTML);
+
+    console.log("Console log enabled: ", window.opts.uiux_enable_console_log);
+    console.log("Maximum resolution output: ", window.opts.uiux_max_resolution_output);
+    console.log("Ignore overrides: ", window.opts.uiux_ignore_overrides);
+    console.log("Show ticks for input range slider: ", window.opts.uiux_show_input_range_ticks);
+    
+ 
 
 	const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
 	if(isFirefox){

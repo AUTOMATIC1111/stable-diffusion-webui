@@ -294,6 +294,26 @@ body {
     margin-top: calc(var(--ae-input-height) * (1 - var(--ae-input-slider-height)) * 0.5);
     padding: 0;
 }
+* .no-slider-layout .gradio-slider input[type="range"] {
+    display:none;
+}
+* .no-slider-layout .gradio-slider .head {
+    flex-direction: column;
+    display: flex;
+}
+* .no-slider-layout .gradio-slider input[type="number"] {
+    line-height: var(--ae-input-line-height);
+    font-size: var(--ae-input-font-size);
+    padding: var(--ae-input-padding);
+    margin: 0;
+    min-height: var(--ae-input-height);
+}
+/* * .no-slider-layout .min-width,
+* .no-slider-layout .flexbox,
+* .no-slider-layout .gradio-slider{
+    min-width: unset !important;
+} */
+
 
 *.gradio-dropdown label {
     flex-direction: column;

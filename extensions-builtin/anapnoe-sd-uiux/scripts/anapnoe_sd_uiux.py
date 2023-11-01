@@ -3,11 +3,16 @@ from pathlib import Path
 import gradio as gr
 import modules.scripts as scripts
 from modules import script_callbacks, shared
-
+from modules.generation_parameters_copypaste import infotext_to_setting_name_mapping
 
 
 shared.options_templates.update(shared.options_section(('uiux_core', "Anapnoe UI-UX"), {
-    "uiux_enable_console_log": shared.OptionInfo(True, "Enable console log")
+    "uiux_enable_console_log": shared.OptionInfo(False, "Enable console log"),
+    "uiux_max_resolution_output": shared.OptionInfo(2048, "Max resolution output for txt2img and img2img"),
+    "uiux_show_input_range_ticks": shared.OptionInfo(True, "Show ticks for input range slider"),
+    "uiux_no_slider_layout": shared.OptionInfo(False, "No input range sliders"), 
+    "uiux_ignore_overrides": shared.OptionInfo([], "Ignore Overrides", gr.CheckboxGroup, lambda: {"choices": [x[0] for x in infotext_to_setting_name_mapping]}),
+    
  }))
 
 
