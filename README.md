@@ -4,9 +4,9 @@ A bespoke, highly adaptable user interface for the Stable Diffusion, utilizing t
 ![](screenshot.png)
 
 ## Todos
--Mobile Support
--Fullscreen Gallery Support
--UI-UX Options in Settings
+Mobile Support
+Fullscreen Gallery Support
+UI-UX Options in Settings
 
 ## Features
 [Detailed feature showcase with images](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features):
