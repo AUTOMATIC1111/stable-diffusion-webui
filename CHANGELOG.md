@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-31
+## Update for 2023-11-01
 
 *Note*: Pending release of `diffusers==0.22.0`
 
@@ -36,7 +36,6 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
     for details, see [WiKi](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime)
   - extend support for [Free-U](https://github.com/ChenyangSi/FreeU)  
     improve generations quality at no cost (other than finding params that work for you)  
-  - updated `diffusers` to 0.22.0  
 - **General**  
   - add **Lora OFT** support, thanks @antis0007 and @ai-casanova  
   - **Upscalers**  
@@ -49,8 +48,12 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
   - new option: *settings -> system paths -> models*  
     can be used to set custom base path for *all* models (previously only as cli option)  
   - remove external clone of items in `/repositories`  
-  - switch core font in default theme to **noto-sans**  
+- **UI**
+  - UI tweaks for default themes
+  - UI switch core font in default theme to **noto-sans**  
     previously default font was simply *system-ui*, but it lead to too much variations between browsers and platforms  
+- **Packages**
+  - updated `diffusers` to 0.22.0, `transformers` to 4.34.1  
   - update **openvino**, thanks @disty0  
   - update **ipex**, thanks @disty0  
   - update **directml**, @lshqqytiger  
@@ -72,6 +75,7 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
   - fix for base+refiner workflow in diffusers mode: number of steps, diffuser pipe mode  
   - fix for prompt encoder with refiner in diffusers mode  
   - fix prompts-from-file saving incorrect metadata  
+  - fix add/remove extra networks to prompt
   - fix before-hires step  
   - fix diffusers switch from invalid model  
   - force second requirements check on startup  

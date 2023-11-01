@@ -18,7 +18,7 @@ config_path = cli.config if os.path.isabs(cli.config) else os.path.join(cli.data
 try:
     with open(config_path, 'r', encoding='utf8') as f:
         config = json.load(f)
-except Exception as err:
+except Exception:
     config = {}
 
 modules_path = os.path.dirname(os.path.realpath(__file__))

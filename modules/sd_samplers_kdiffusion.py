@@ -23,7 +23,7 @@ try:
         import importlib
         k_diffusion = importlib.import_module('modules.k-diffusion.k_diffusion')
         k_sampling = k_diffusion.sampling
-except:
+except Exception:
     pass
 if k_sampling is None:
     shared.log.info(f'Path search: {sys.path}')

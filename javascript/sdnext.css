@@ -6,6 +6,7 @@ footer { display: none; }
 table { overflow-x: auto !important; overflow-y: auto !important; }
 td { border-bottom: none !important; padding: 0.1em 0.5em !important; }
 tr { border-bottom: none !important; padding: 0.1em 0.5em !important; }
+textarea { overflow-y: auto !important; }
 
 /* gradio elements */
 .block .padded:not(.gradio-accordion) { padding: 0 !important; margin-right: 0; min-width: 90px !important; }
@@ -24,9 +25,9 @@ tr { border-bottom: none !important; padding: 0.1em 0.5em !important; }
 .gradio-button.secondary-down { background: var(--button-secondary-background-fill); color: var(--button-secondary-text-color); }
 .gradio-button.secondary-down, .gradio-button.secondary-down:hover { box-shadow: 1px 1px 1px rgba(0,0,0,0.25) inset, 0px 0px 3px rgba(0,0,0,0.15) inset; }
 .gradio-button.secondary-down:hover { background: var(--button-secondary-background-fill-hover); color: var(--button-secondary-text-color-hover); }
-.gradio-button.tool { max-width: min-content; min-width: min-content !important; align-self: end; font-size: 1.4em; color: var(--body-text-color) !important; margin-bottom: var(--spacing-md); }
+.gradio-button.tool { max-width: min-content; min-width: min-content !important; align-self: end; font-size: 1.4em; color: var(--body-text-color) !important; margin-bottom: var(--spacing-md); align-self: center; }
 .gradio-checkbox { margin: 0.75em 1.5em 0 0; align-self: center; }
-.gradio-column { min-width: unset; }
+.gradio-column { min-width: min(160px, 100%) !important; }
 .gradio-container { max-width: unset !important; padding: var(--block-label-padding) !important; }
 .gradio-container .prose a, .gradio-container .prose a:visited{ color: unset; text-decoration: none; }
 
@@ -42,7 +43,7 @@ tr { border-bottom: none !important; padding: 0.1em 0.5em !important; }
 .gradio-textbox { overflow: visible !important; }
 .gradio-radio { padding: 0 !important; width: max-content !important; }
 .gradio-slider { margin-right: var(--spacing-sm) !important; width: max-content !important }
-.gradio-slider input[type="number"] { width: 6em; font-size: 0.8rem; height: 20px; margin-left: 0.5em; }
+.gradio-slider input[type="number"] { width: 6em; font-size: 0.8rem; height: 16px; text-align: right; }
 
 /* custom gradio elements */
 .accordion-compact { padding: 8px 0px 4px 0px !important; }
@@ -76,7 +77,7 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 #txt2img_generate_box > button, #img2img_generate_box > button, #txt2img_enqueue, #img2img_enqueue { min-height: 42px; max-height: 42px; line-height: 1em; }
 #txt2img_generate_line2, #img2img_generate_line2, #txt2img_tools, #img2img_tools { display: flex; }
 #txt2img_generate_line2 > button, #img2img_generate_line2 > button, #extras_generate_box > button, #txt2img_tools > button, #img2img_tools > button { height: 2em; line-height: 0; font-size: var(--input-text-size);
-  min-width: unset; display: block !important; margin-left: 0.4em; margin-right: 0.4em; }
+  min-width: unset; display: block !important; }
 #txt2img_prompt, #txt2img_neg_prompt, #img2img_prompt, #img2img_neg_prompt { display: contents; }
 .interrogate-col{ min-width: 0 !important; max-width: fit-content; margin-right: var(--spacing-xxl); }
 .interrogate-col > button{ flex: 1; }

@@ -245,13 +245,14 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
     return pipeline_dir
 
 
-def load_diffusers_models(model_path: str, command_path: str = None):
+def load_diffusers_models(model_path: str, command_path: str = None, clear=True):
     t0 = time.time()
     places = []
     places.append(model_path)
     if command_path is not None and command_path != model_path:
         places.append(command_path)
-    diffuser_repos.clear()
+    if clear:
+        diffuser_repos.clear()
     output = []
     for place in places:
         if not os.path.isdir(place):
@@ -272,20 +273,21 @@ def load_diffusers_models(model_path: str, command_path: str = None):
                         continue
                     _, name = folder.split("--", maxsplit=1)
                     name = name.replace("--", "/")
-                    snapshots = os.listdir(os.path.join(place, folder, "snapshots"))
+                    folder = os.path.join(place, folder)
+                    friendly = os.path.join(place, name)
+                    snapshots = os.listdir(os.path.join(folder, "snapshots"))
                     if len(snapshots) == 0:
                         shared.log.warning(f"Diffusers folder has no snapshots: location={place} folder={folder} name={name}")
                         continue
-                    commit = snapshots[-1]
-                    folder = os.path.join(place, folder, 'snapshots', commit)
-                    mtime = os.path.getmtime(folder)
-                    info = os.path.join(folder, "model_info.json")
-                    diffuser_repos.append({ 'name': name, 'filename': name, 'path': folder, 'hash': commit, 'mtime': mtime, 'model_info': info })
+                    commit = os.path.join(folder, 'snapshots', snapshots[-1])
+                    mtime = os.path.getmtime(commit)
+                    info = os.path.join(commit, "model_info.json")
+                    diffuser_repos.append({ 'name': name, 'filename': name, 'friendly': friendly, 'folder': folder, 'path': commit, 'hash': commit, 'mtime': mtime, 'model_info': info })
                     if os.path.exists(os.path.join(folder, 'hidden')):
                         continue
                     output.append(name)
                 except Exception as e:
-                    shared.log.error(f"Error analyzing diffusers model: {place}/{folder} {e}")
+                    shared.log.error(f"Error analyzing diffusers model: {folder} {e}")
         except Exception as e:
             shared.log.error(f"Error listing diffusers: {place} {e}")
     shared.log.debug(f'Scanning diffusers cache: {model_path} {command_path} items={len(output)} time={time.time()-t0:.2f}')
@@ -293,11 +295,12 @@ def load_diffusers_models(model_path: str, command_path: str = None):
 
 
 def find_diffuser(name: str):
-    import huggingface_hub as hf
-    if name in diffuser_repos:
-        return name
+    repo = [r for r in diffuser_repos if name == r['name'] or name == r['friendly'] or name == r['path']]
+    if len(repo) > 0:
+        return repo['name']
     if shared.cmd_opts.no_download:
         return None
+    import huggingface_hub as hf
     hf_api = hf.HfApi()
     hf_filter = hf.ModelFilter(
         model_name=name,

@@ -83,7 +83,7 @@ class CheckpointInfo:
             self.type = ext
             # self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
         else: # maybe a diffuser
-            repo = [r for r in modelloader.diffuser_repos if filename == r['filename']]
+            repo = [r for r in modelloader.diffuser_repos if filename == r['name']]
             if len(repo) == 0:
                 self.name = relname
                 self.filename = filename
@@ -99,8 +99,8 @@ class CheckpointInfo:
         self.title = self.name if self.shorthash is None else f'{self.name} [{self.shorthash}]'
         self.path = self.filename
         self.model_name = os.path.basename(self.name)
-        # shared.log.debug(f'Checkpoint: type={self.type} name={self.name} filename={self.filename} hash={self.shorthash} title={self.title}')
         self.metadata = read_metadata_from_safetensors(filename)
+        # shared.log.debug(f'Checkpoint: type={self.type} name={self.name} filename={self.filename} hash={self.shorthash} title={self.title}')
 
     def register(self):
         checkpoints_list[self.title] = self
@@ -162,7 +162,7 @@ def list_models():
         ext_filter = [".ckpt", ".safetensors"]
     model_list = modelloader.load_models(model_path=model_path, model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=ext_filter, download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
     if shared.backend == shared.Backend.DIFFUSERS:
-        model_list += modelloader.load_diffusers_models(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir)
+        model_list += modelloader.load_diffusers_models(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir, clear=True)
     for filename in sorted(model_list, key=str.lower):
         checkpoint_info = CheckpointInfo(filename)
         if checkpoint_info.name is not None:

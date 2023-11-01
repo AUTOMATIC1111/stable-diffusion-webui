@@ -27,7 +27,7 @@ def save_style(name, prompt, negative_prompt):
 
 def delete_style(name):
     if name == "":
-        return
+        return '', '', ''
     shared.prompt_styles.styles.pop(name, None)
     shared.prompt_styles.save_styles('')
     return '', '', ''

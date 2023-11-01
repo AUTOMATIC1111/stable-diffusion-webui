@@ -147,9 +147,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         shared.state.job = prev_job
         return imgs
 
-    def t(x):
-        return f"\033[34m{str(tuple(x.shape)).ljust(24)}\033[0m (\033[31mmin {x.amin().item():+.4f}\033[0m / \033[32mmean {x.mean().item():+.4f}\033[0m / \033[33mmax {x.amax().item():+.4f}\033[0m)"
-
     def vae_encode(image, model, full_quality=True): # pylint: disable=unused-variable
         if shared.state.interrupted or shared.state.skipped:
             return []

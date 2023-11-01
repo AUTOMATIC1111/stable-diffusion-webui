@@ -115,7 +115,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #quicksettings .gr-button-tool { font-size: 1.6rem; box-shadow: none; margin-left: -20px; margin-top: -2px; height: 2.4em; }
 #open_folder_extras, #footer, #style_pos_col, #style_neg_col, #roll_col, #extras_upscaler_2, #extras_upscaler_2_visibility, #txt2img_seed_resize_from_w, #txt2img_seed_resize_from_h { display: none; }
 #save-animation { border-radius: var(--radius-sm) !important; margin-bottom: 16px; background-color: #111111; }
-#script_list { padding: 4px; margin-top: 20px; margin-bottom: 20px; }
+#script_list { padding: 4px; margin-top: 16px; margin-bottom: 8px; }
 #settings > div.flex-wrap { width: 15em; }
 #tab_extensions table { background-color: #222222; }
 #txt2img_cfg_scale { min-width: 200px; }
@@ -246,8 +246,8 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --spacing-xxs: 1px;
   --spacing-xs: 2px;
   --spacing-sm: 4px;
-  --spacing-lg: 8px;
-  --spacing-xl: 10px;
+  --spacing-lg: 6px;
+  --spacing-xl: 8px;
   --radius-xxs: 0;
   --radius-xs: 0;
   --radius-md: 0;

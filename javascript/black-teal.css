@@ -31,8 +31,6 @@
   --block-title-text-color: var(--neutral-300);
   --radius-sm: 2px;
   --radius-lg: 4px;
-  --spacing-md: 4px;
-  --spacing-xxl: 6px;
   --line-sm: 1.2em;
   --line-md: 1.4em;
   --text-sm: 12px;
@@ -110,13 +108,13 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #img2img_label_copy_to_img2img { font-weight: normal; }
 #txt2img_prompt, #txt2img_neg_prompt, #img2img_prompt, #img2img_neg_prompt { background-color: var(--background-color); box-shadow: 4px 4px 4px 0px #333333  !important; }
 #txt2img_prompt > label > textarea, #txt2img_neg_prompt > label > textarea, #img2img_prompt > label > textarea, #img2img_neg_prompt > label > textarea { font-size: 1.0em; line-height: 1.4em; }
-#txt2img_styles, #img2img_styles { margin-top: -10px; margin-left: -10px; width: 100px; }
+#txt2img_styles, #img2img_styles { margin-top: -5px; }
 #img2img_settings { min-width: calc(2 * var(--left-column)); max-width: calc(2 * var(--left-column)); background-color: #111111; padding-top: 16px; }
 #interrogate, #deepbooru { margin: 0 0px 10px 0px; max-width: 80px; max-height: 80px; font-weight: normal; font-size: 0.95em; }
 #quicksettings .gr-button-tool { font-size: 1.6rem; box-shadow: none; margin-left: -20px; margin-top: -2px; height: 2.4em; }
 #open_folder_extras, #footer, #style_pos_col, #style_neg_col, #roll_col, #extras_upscaler_2, #extras_upscaler_2_visibility, #txt2img_seed_resize_from_w, #txt2img_seed_resize_from_h { display: none; }
 #save-animation { border-radius: var(--radius-sm) !important; margin-bottom: 16px; background-color: #111111; }
-#script_list { padding: 4px; margin-top: 16px; margin-bottom: 16px; }
+#script_list { padding: 4px; margin-top: 16px; margin-bottom: 8px; }
 #settings > div.flex-wrap { width: 15em; }
 #settings_search { margin-top: 1em; margin-left: 1em; }
 #settings_search textarea { padding: 0.5em; height: 2.2em !important; }
@@ -238,9 +236,10 @@ textarea[rows="1"] { height: 33px !important; width: 99% !important; padding: 8p
   --neutral-950: #0b0f19;
   --spacing-xxs: 1px;
   --spacing-xs: 2px;
-  --spacing-sm: 4px;
-  --spacing-lg: 8px;
-  --spacing-xl: 10px;
+  --spacing-sm: 3px;
+  --spacing-lg: 4px;
+  --spacing-xl: 5px;
+  --spacing-xxl: 6px;
   --radius-xxs: 0;
   --radius-xs: 0;
   --radius-md: 0;

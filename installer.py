@@ -158,9 +158,12 @@ def print_profile(profile: cProfile.Profile, msg: str):
 
 
 # check if package is installed
-def installed(package, friendly: str = None):
+def installed(package, friendly: str = None, reload = False, quiet = False):
     ok = True
     try:
+        if reload:
+            import imp # pylint: disable=deprecated-module
+            imp.reload(pkg_resources)
         if friendly:
             pkgs = friendly.split()
         else:
@@ -183,17 +186,24 @@ def installed(package, friendly: str = None):
                 if len(p) > 1:
                     exact = package_version == p[1]
                     ok = ok and (exact or args.experimental)
-                    if not exact:
+                    if not exact and not quiet:
                         if args.experimental:
                             log.warning(f"Package allowing experimental: {p[0]} {package_version} required {p[1]}")
                         else:
                             log.warning(f"Package wrong version: {p[0]} {package_version} required {p[1]}")
             else:
-                log.debug(f"Package version not found: {p[0]}")
+                if not quiet:
+                    log.debug(f"Package not found: {p[0]}")
         return ok
-    except ModuleNotFoundError:
-        log.debug(f"Package not installed: {pkgs}")
+    except Exception as e:
+        log.debug(f"Package error: {pkgs} {e}")
         return False
+
+
+def uninstall(package):
+    if installed(package, package):
+        log.warning(f'Uninstalling: {package}')
+        pip(f"uninstall {package} --yes --quiet", ignore=True, quiet=True)
 
 
 def pip(arg: str, ignore: bool = False, quiet: bool = False):
@@ -357,6 +367,7 @@ def check_torch():
     log.debug(f'Torch allowed: cuda={allow_cuda} rocm={allow_rocm} ipex={allow_ipex} diml={allow_directml} openvino={allow_openvino}')
     torch_command = os.environ.get('TORCH_COMMAND', '')
     xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
+    install('onnxruntime', 'onnxruntime', ignore=True)
     if torch_command != '':
         pass
     elif allow_cuda and (shutil.which('nvidia-smi') is not None or args.use_xformers or os.path.exists(os.path.join(os.environ.get('SystemRoot') or r'C:\Windows', 'System32', 'nvidia-smi.exe'))):
@@ -366,6 +377,7 @@ def check_torch():
         else:
             torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision --index-url https://download.pytorch.org/whl/cu118')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', '--pre xformers' if opts.get('cross_attention_optimization', '') == 'xFormers' else 'none')
+        install('onnxruntime-gpu', 'onnxruntime-gpu', ignore=True)
     elif allow_rocm and (shutil.which('rocminfo') is not None or os.path.exists('/opt/rocm/bin/rocminfo') or os.path.exists('/dev/kfd')):
         log.info('AMD ROCm toolkit detected')
         os.environ.setdefault('PYTORCH_HIP_ALLOC_CONF', 'garbage_collection_threshold:0.8,max_split_size_mb:512')
@@ -430,6 +442,7 @@ def check_torch():
             torchvision_pip = 'https://github.com/Nuullll/intel-extension-for-pytorch/releases/download/v2.0.110%2Bxpu-master%2Bdll-bundle/torchvision-0.15.2a0+fa99a53-cp310-cp310-win_amd64.whl'
             ipex_pip = 'https://github.com/Nuullll/intel-extension-for-pytorch/releases/download/v2.0.110%2Bxpu-master%2Bdll-bundle/intel_extension_for_pytorch-2.0.110+gitc6ea20b-cp310-cp310-win_amd64.whl'
             torch_command = os.environ.get('TORCH_COMMAND', f'{pytorch_pip} {torchvision_pip} {ipex_pip}')
+        install('onnxruntime-openvino', ignore=True)
     elif allow_openvino and args.use_openvino:
         log.info('Using OpenVINO')
         if "linux" in sys.platform:
@@ -463,6 +476,7 @@ def check_torch():
                 pytorch_pip = 'torch==2.1.0'
                 torchvision_pip = 'torchvision==0.16.0 --index-url https://download.pytorch.org/whl/cpu'
         torch_command = os.environ.get('TORCH_COMMAND', f'{pytorch_pip} {torchvision_pip}')
+        install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True)
     else:
         machine = platform.machine()
         if sys.platform == 'darwin':
@@ -472,6 +486,7 @@ def check_torch():
             torch_command = os.environ.get('TORCH_COMMAND', 'torch-directml')
             if 'torch' in torch_command and not args.version:
                 install(torch_command, 'torch torchvision')
+            install('onnxruntime-directml', 'onnxruntime-directml', ignore=True)
         else:
             log.info('Using CPU-only Torch')
             torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision')
@@ -525,10 +540,7 @@ def check_torch():
             if 'cu118' not in torch.__version__:
                 log.warning(f'Likely incompatible Cuda with: xformers=={xformers.__version__} installed: torch=={torch.__version__} required: torch==2.1.0+cu118 - build xformers manually or downgrade torch')
         elif not args.experimental and not args.use_xformers:
-            x = pkg_resources.working_set.by_key.get('xformers', None)
-            if x is not None:
-                log.warning(f'Not used, uninstalling: {x}')
-                pip('uninstall xformers --yes --quiet', ignore=True, quiet=True)
+            uninstall('xformers')
     except Exception as e:
         log.debug(f'Cannot install xformers package: {e}')
     if opts.get('cuda_compile_backend', '') == 'hidet':
@@ -572,7 +584,6 @@ def install_packages():
     install(clip_package, 'clip')
     invisiblewatermark_package = os.environ.get('INVISIBLEWATERMARK_PACKAGE', "git+https://github.com/patrickvonplaten/invisible-watermark.git@remove_onnxruntime_depedency")
     install(invisiblewatermark_package, 'invisible-watermark')
-    install('onnxruntime==1.15.1', 'onnxruntime', ignore=True)
     install('pi-heif', 'pi_heif', ignore=True)
     tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0')
     install(tensorflow_package, 'tensorflow-rocm' if 'rocm' in tensorflow_package else 'tensorflow', ignore=True)
@@ -580,10 +591,7 @@ def install_packages():
     if bitsandbytes_package is not None:
         install(bitsandbytes_package, 'bitsandbytes', ignore=True)
     elif not args.experimental:
-        bitsandbytes_package = pkg_resources.working_set.by_key.get('bitsandbytes', None)
-        if bitsandbytes_package is not None:
-            log.warning(f'Not used, uninstalling: {bitsandbytes_package}')
-            pip('uninstall bitsandbytes --yes --quiet', ignore=True, quiet=True)
+        uninstall('bitsandbytes')
     if args.profile:
         print_profile(pr, 'Packages')
 

@@ -158,7 +158,7 @@ def create_seed_inputs(tab):
             random_seed = ToolButton(symbols.random, elem_id=f"{tab}_random_seed", label='Random seed')
             reuse_seed = ToolButton(symbols.reuse, elem_id=f"{tab}_reuse_seed", label='Reuse seed')
         with FormRow(visible=True, elem_id=f"{tab}_subseed_row", variant="compact"):
-            subseed = gr.Number(label='Variation seed', value=-1, elem_id=f"{tab}_subseed", container=True)
+            subseed = gr.Number(label='Variation', value=-1, elem_id=f"{tab}_subseed", container=True)
             random_subseed = ToolButton(symbols.random, elem_id=f"{tab}_random_subseed")
             reuse_subseed = ToolButton(symbols.reuse, elem_id=f"{tab}_reuse_subseed")
             subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=f"{tab}_subseed_strength")
