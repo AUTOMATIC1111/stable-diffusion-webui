@@ -165,7 +165,7 @@
   {"id":"","label":"CLIP skip","localized":"","hint":"Clip skip is a feature that allows users to control the level of specificity of the prompt, the higher the CLIP skip value, the less deep the prompt will be interpreted. CLIP Skip 1 is typical while some anime models produce better results at  CLIP skip 2"},
   {"id":"","label":"Initial seed","localized":"","hint":"A value that determines the output of random number generator - if you create an image with same parameters and seed as another image, you'll get the same result"},
   {"id":"","label":"Extra","localized":"","hint":"Show additional options"},
-  {"id":"","label":"Variation seed","localized":"","hint":"Seed of a different picture to be mixed into the generation"},
+  {"id":"","label":"Variation","localized":"","hint":"Second seed to be mixed with primary seed"},
   {"id":"","label":"Variation strength","localized":"","hint":"How strong of a variation to produce. At 0, there will be no effect. At 1, you will get the complete picture with variation seed (except for ancestral samplers, where you will just get something)"},
   {"id":"","label":"Resize seed from width","localized":"","hint":"Make an attempt to produce a picture similar to what would have been produced with same seed at specified resolution"},
   {"id":"","label":"Resize seed from height","localized":"","hint":"Make an attempt to produce a picture similar to what would have been produced with same seed at specified resolution"},
