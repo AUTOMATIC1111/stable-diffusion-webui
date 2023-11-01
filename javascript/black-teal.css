@@ -280,7 +280,7 @@ textarea[rows="1"] { height: 33px !important; width: 99% !important; padding: 8p
   --form-gap-width: 1px;
   --layout-gap: var(--spacing-xxl);
   --panel-border-width: 0;
-  --section-header-text-size: var(--text-md);
+  --section-header-text-size: 13px;
   --section-header-text-weight: 400;
   --checkbox-border-radius: var(--radius-sm);
   --checkbox-label-gap: 2px;
@@ -299,7 +299,7 @@ textarea[rows="1"] { height: 33px !important; width: 99% !important; padding: 8p
   --loader-color: var(--color-accent);
   --prose-text-size: var(--text-md);
   --prose-text-weight: 400;
-  --prose-header-text-weight: 600;
+  --prose-header-text-weight: 400;
   --slider-color: ;
   --table-radius: var(--radius-lg);
   --button-large-padding: 2px 10px;

@@ -266,7 +266,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --panel-background-fill: var(--background-fill-secondary);
   --panel-border-color: var(--border-color-primary);
   --panel-border-width: 0;
-  --prose-header-text-weight: 600;
+  --prose-header-text-weight: 400;
   --prose-text-size: var(--text-md);
   --prose-text-weight: 400;
   --radio-circle: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");
@@ -286,7 +286,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --secondary-800: #1e40af;
   --secondary-900: #1e3a8a;
   --secondary-950: #1d3660;
-  --section-header-text-size: var(--text-md);
+  --section-header-text-size: 13px;
   --section-header-text-weight: 400;
   --shadow-drop-lg: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-drop: 0;
