@@ -9,7 +9,7 @@ from installer import log
 from modules import shared
 from modules.paths import sd_configs_path
 from modules.sd_models import CheckpointInfo
-from modules.onnx import ExecutionProvider, OnnxStableDiffusionPipeline
+from modules.onnx import ExecutionProvider, OnnxStableDiffusionPipeline, get_execution_provider_options
 
 is_available = "olive" in sys.modules # Olive is not available if it is not loaded at startup.
 
@@ -143,6 +143,7 @@ class OlivePipeline(diffusers.DiffusionPipeline):
             for submodel in submodels:
                 kwargs[submodel] = diffusers.OnnxRuntimeModel.from_pretrained(
                     os.path.dirname(optimized_model_paths[submodel]),
+                    provider=(shared.opts.onnx_execution_provider, get_execution_provider_options(),),
                 )
 
             pipeline = OnnxStableDiffusionPipeline(
