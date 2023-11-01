@@ -213,7 +213,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 
 /* specific elements */
 #modelmerger_interp_description { margin-top: 1em; margin-bottom: 1em; }
-#scripts_alwayson_txt2img, #scripts_alwayson_img2img { display: grid; padding: 0 }
+#scripts_alwayson_txt2img, #scripts_alwayson_img2img { padding: 0 }
 #scripts_alwayson_txt2img > .label-wrap, #scripts_alwayson_img2img > .label-wrap { background: var(--input-background-fill); padding: 0; margin: 0; border-radius: var(--radius-lg); }
 #scripts_alwayson_txt2img > .label-wrap > span, #scripts_alwayson_img2img > .label-wrap > span { padding: var(--spacing-xxl); }
 #scripts_alwayson_txt2img div { max-width: var(--left-column); }
