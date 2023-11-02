@@ -1358,7 +1358,7 @@ def train_with_params(
 
         print("auto_lr step1")
         lr = trainer.train(args, callback)
-        print("auto_lr step2",lr)
+        print("auto_lr step2", lr)
 
         args.auto_lr = False
         args.learning_rate = lr/auto_lr_param
@@ -1368,7 +1368,12 @@ def train_with_params(
         args.lr_scheduler_num_cycles = lr_scheduler_num_cycles if lr_scheduler_num_cycles!="" and lr_scheduler_num_cycles!=-1 else None
         args.lr_scheduler = lr_scheduler if lr_scheduler!="" and lr_scheduler!=-1 else None
         args.resolution = resolution
-    
+
+    for k, v in args.__dict__:
+        if str(k).startswith("_"):
+            continue
+        print(f"> {k}: {v}")
+
     return trainer.train(args, callback)
 
 
