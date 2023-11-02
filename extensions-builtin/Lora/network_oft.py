@@ -1,5 +1,6 @@
 import torch
 import network
+from einops import rearrange
 
 
 class ModuleTypeOFT(network.ModuleType):
@@ -30,35 +31,51 @@ class NetworkModuleOFT(network.NetworkModule):
 
         self.org_module: list[torch.Module] = [self.sd_module]
 
-    def merge_weight(self, R_weight, org_weight):
-        R_weight = R_weight.to(org_weight.device, dtype=org_weight.dtype)
-        if org_weight.dim() == 4:
-            weight = torch.einsum("oihw, op -> pihw", org_weight, R_weight)
-        else:
-            weight = torch.einsum("oi, op -> pi", org_weight, R_weight)
-        return weight
+    # def merge_weight(self, R_weight, org_weight):
+    #     R_weight = R_weight.to(org_weight.device, dtype=org_weight.dtype)
+    #     if org_weight.dim() == 4:
+    #         weight = torch.einsum("oihw, op -> pihw", org_weight, R_weight)
+    #     else:
+    #         weight = torch.einsum("oi, op -> pi", org_weight, R_weight)
+    #     weight = torch.einsum(
+    #         "k n m, k n ... -> k m ...", 
+    #         self.oft_diag * scale + torch.eye(self.block_size, device=device), 
+    #         org_weight
+    #     )
+    #     return weight
 
     def get_weight(self, oft_blocks, multiplier=None):
-        constraint = self.constraint.to(oft_blocks.device, dtype=oft_blocks.dtype)
+        # constraint = self.constraint.to(oft_blocks.device, dtype=oft_blocks.dtype)
 
-        block_Q = oft_blocks - oft_blocks.transpose(1, 2)
-        norm_Q = torch.norm(block_Q.flatten())
-        new_norm_Q = torch.clamp(norm_Q, max=constraint)
-        block_Q = block_Q * ((new_norm_Q + 1e-8) / (norm_Q + 1e-8))
-        m_I = torch.eye(self.block_size, device=oft_blocks.device).unsqueeze(0).repeat(self.num_blocks, 1, 1)
-        block_R = torch.matmul(m_I + block_Q, (m_I - block_Q).inverse())
+        # block_Q = oft_blocks - oft_blocks.transpose(1, 2)
+        # norm_Q = torch.norm(block_Q.flatten())
+        # new_norm_Q = torch.clamp(norm_Q, max=constraint)
+        # block_Q = block_Q * ((new_norm_Q + 1e-8) / (norm_Q + 1e-8))
+        # m_I = torch.eye(self.block_size, device=oft_blocks.device).unsqueeze(0).repeat(self.num_blocks, 1, 1)
+        # block_R = torch.matmul(m_I + block_Q, (m_I - block_Q).inverse())
 
-        block_R_weighted = multiplier * block_R + (1 - multiplier) * m_I
-        R = torch.block_diag(*block_R_weighted)
+        # block_R_weighted = multiplier * block_R + (1 - multiplier) * m_I
+        # R = torch.block_diag(*block_R_weighted)
+        #return R
+        return self.oft_blocks
 
-        return R
 
     def calc_updown(self, orig_weight):
         multiplier = self.multiplier() * self.calc_scale()
-        R = self.get_weight(self.oft_blocks, multiplier)
-        merged_weight = self.merge_weight(R, orig_weight)
+        #R = self.get_weight(self.oft_blocks, multiplier)
+        R = self.oft_blocks.to(orig_weight.device, dtype=orig_weight.dtype)
+        #merged_weight = self.merge_weight(R, orig_weight)
 
-        updown = merged_weight.to(orig_weight.device, dtype=orig_weight.dtype) - orig_weight
+        orig_weight = rearrange(orig_weight, '(k n) ... -> k n ...', k=self.num_blocks, n=self.block_size)
+        weight = torch.einsum(
+            'k n m, k n ... -> k m ...',
+            R * multiplier + torch.eye(self.block_size, device=orig_weight.device),
+            orig_weight
+        )
+        weight = rearrange(weight, 'k m ... -> (k m) ...')
+
+        #updown = merged_weight.to(orig_weight.device, dtype=orig_weight.dtype) - orig_weight
+        updown = weight.to(orig_weight.device, dtype=orig_weight.dtype) - orig_weight
         output_shape = orig_weight.shape
         orig_weight = orig_weight
 
