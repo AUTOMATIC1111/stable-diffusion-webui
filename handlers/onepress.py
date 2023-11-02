@@ -29,7 +29,17 @@ from typing import List, Union, Dict, Set, Tuple
 
 
 # conversion_action={"线稿":'line',"黑白":'black_white',"色块":'color','草图':'sketch','蜡笔':'crayon'}
+
 # rendition_style={"彩铅":'color_pencil',"浮世绘":'ukiyo',"山水画":'landscape',"极简水彩":'min_watercolor',"炫彩":'dazzle_color',"油画":'oil_paint'}
+# NOTE: 2023.10.30
+"""
+保持-{"山水画":'landscape',,"炫彩":'dazzle_color',"油画":'oil_paint'}
+调整-{'原极简水彩': 'min_watercolor', '原彩铅风': 'color_pencil', '原浮世绘风': 'ukiyo'}；
+新增-{'国风插画': 'chinese_illustration', '凤冠霞帔风格': 'chinese_wedding', '汉服服饰风格': 'chinese_hanfu',
+'婚纱服饰风格': 'wedding', '旗袍服饰风格': 'qipao', '西装服饰风格': 'suits', '简约头像': 'simple_headshots ', 'JK服饰风格': 'jk',
+'国风彩墨画': 'chinese_colorful', '艺术插画': 'art_illustration', '趣怪画': 'spoof', '插画头像': 'illustration_headshots'}
+"""
+
 
 def size_control(width, height):
     # 尺寸检查，最大1024*1024
@@ -42,40 +52,40 @@ def size_control(width, height):
 
 def get_multidiffusion_args():
     onepress_multidiffusion_args = {'Tiled-Diffusion': {'args':
-                                                            [{'batch_size': 1, 'causal_layers': False,
-                                                              'control_tensor_cpu': False, 'controls':
-                                                                  [{'blend_mode': 'Background', 'enable': False,
-                                                                    'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
-                                                                    'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
-                                                                    'y': 0.4},
-                                                                   {'blend_mode': 'Background', 'enable': False,
-                                                                    'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
-                                                                    'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
-                                                                    'y': 0.4},
-                                                                   {'blend_mode': 'Background', 'enable': False,
-                                                                    'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
-                                                                    'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
-                                                                    'y': 0.4},
-                                                                   {'blend_mode': 'Background', 'enable': False,
-                                                                    'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
-                                                                    'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
-                                                                    'y': 0.4},
-                                                                   {'blend_mode': 'Background', 'enable': False,
-                                                                    'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
-                                                                    'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
-                                                                    'y': 0.4},
-                                                                   {'blend_mode': 'Background', 'enable': False,
-                                                                    'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
-                                                                    'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
-                                                                    'y': 0.4},
-                                                                   {'blend_mode': 'Background', 'enable': False,
-                                                                    'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
-                                                                    'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
-                                                                    'y': 0.4},
-                                                                   {'blend_mode': 'Background', 'enable': False,
-                                                                    'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
-                                                                    'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
-                                                                    'y': 0.4}],
+                                                        [{'batch_size': 1, 'causal_layers': False,
+                                                          'control_tensor_cpu': False, 'controls':
+                                                          [{'blend_mode': 'Background', 'enable': False,
+                                                            'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
+                                                            'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
+                                                            'y': 0.4},
+                                                           {'blend_mode': 'Background', 'enable': False,
+                                                            'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
+                                                            'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
+                                                            'y': 0.4},
+                                                           {'blend_mode': 'Background', 'enable': False,
+                                                            'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
+                                                            'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
+                                                            'y': 0.4},
+                                                           {'blend_mode': 'Background', 'enable': False,
+                                                            'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
+                                                            'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
+                                                            'y': 0.4},
+                                                           {'blend_mode': 'Background', 'enable': False,
+                                                            'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
+                                                            'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
+                                                            'y': 0.4},
+                                                           {'blend_mode': 'Background', 'enable': False,
+                                                            'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
+                                                            'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
+                                                            'y': 0.4},
+                                                           {'blend_mode': 'Background', 'enable': False,
+                                                            'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
+                                                            'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
+                                                            'y': 0.4},
+                                                           {'blend_mode': 'Background', 'enable': False,
+                                                            'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
+                                                            'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
+                                                            'y': 0.4}],
 
                                                               'draw_background': False, 'enable_bbox_control': False,
                                                               'enabled': True, 'image_height': 1024,
@@ -123,6 +133,22 @@ def get_cn_args():
                         'weight': 1}
 
     return onepress_cn_args
+
+
+def change_cn_args(module, model,  weight=1, image=None, guidance_start=0, guidance_end=1):
+
+    cn_args = get_cn_args()
+    cn_args['enabled'] = True
+    cn_args['module'] = module  # 预处理器
+    cn_args['model'] = model  # 模型
+    cn_args['image']['image'] = image  # 图片入参
+    cn_args['weight'] = weight  # 权重
+    cn_args['guidance_start'] = guidance_start  # 引导初始值
+    cn_args['guidance_end'] = guidance_end  # 引导结束值
+    cn_args['threshold_a'] = -1
+    cn_args['threshold_b'] = -1
+
+    return cn_args
 
 
 def get_txt2img_args(prompt, width, height):
@@ -199,7 +225,8 @@ class ConversionTask(Txt2ImgTask):
             is_img2img = True
             init_img_inpaint = get_tmp_local_path(t.image)
             image = Image.open(init_img_inpaint).convert('RGB')
-            full_task.update(get_img2img_args(t.prompt, image.width, image.height, t.image))
+            full_task.update(get_img2img_args(
+                t.prompt, image.width, image.height, t.image))
             cn_args = get_cn_args()
             cn_args['enabled'] = True
             cn_args['module'] = 'scribble_pidinet'
@@ -209,14 +236,16 @@ class ConversionTask(Txt2ImgTask):
         else:
             init_img_inpaint = get_tmp_local_path(t.image)
             image = Image.open(init_img_inpaint).convert('RGB')
-            full_task.update(get_txt2img_args(t.prompt, image.width, image.height))
+            full_task.update(get_txt2img_args(
+                t.prompt, image.width, image.height))
             if t.action == 'line':  # 线稿
                 cn_args = get_cn_args()
                 cn_args['enabled'] = True
                 cn_args['module'] = 'invert (from white bg & black line)'
                 cn_args['model'] = 'control_v11p_sd15_lineart [43d4be0d]'
                 cn_args['image']['image'] = t.image
-                full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
+                full_task['alwayson_scripts']['ControlNet']['args'].append(
+                    cn_args)
             elif t.action == 'black_white':  # 黑白
                 cn_args_1 = get_cn_args()
                 cn_args_1['enabled'] = True
@@ -230,22 +259,26 @@ class ConversionTask(Txt2ImgTask):
                 cn_args_2['model'] = 'diff_control_sd15_depth_fp16 [978ef0a1]'
                 cn_args_2['image']['image'] = t.image
                 cn_args_2['weight'] = 0.4
-                full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args_1)
-                full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args_2)
+                full_task['alwayson_scripts']['ControlNet']['args'].append(
+                    cn_args_1)
+                full_task['alwayson_scripts']['ControlNet']['args'].append(
+                    cn_args_2)
             elif t.action == 'sketch':  # 草图
                 cn_args = get_cn_args()
                 cn_args['enabled'] = True
                 cn_args['module'] = 'canny'
                 cn_args['model'] = 'control_v11p_sd15_canny [d14c016b]'
                 cn_args['image']['image'] = t.image
-                full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
+                full_task['alwayson_scripts']['ControlNet']['args'].append(
+                    cn_args)
             elif t.action == 'color':  # 色块
                 cn_args = get_cn_args()
                 cn_args['enabled'] = True
                 cn_args['module'] = 'tile_colorfix+sharp'
                 cn_args['model'] = 'control_v11f1e_sd15_tile [a371b31b]'
                 cn_args['image']['image'] = t.image
-                full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
+                full_task['alwayson_scripts']['ControlNet']['args'].append(
+                    cn_args)
             else:
                 pass
         full_task['override_settings_texts'] = ["sd_vae:Automatic"]
@@ -277,7 +310,6 @@ class RenditionTask(Txt2ImgTask):
         self.init_img = init_img
         self.roop = roop
         self.batch_size = batch_size if batch_size != 0 else 1
-        
 
     @classmethod
     def exec_task(cls, task: Task):
@@ -296,35 +328,35 @@ class RenditionTask(Txt2ImgTask):
             task.get('batch_size', 1))
         full_task = deepcopy(task)
 
-        # 根据style的不同 把contorlnet的参数值加进去
-        full_task.update(get_txt2img_args(t.prompt, t.width, t.height))
+        # 图生图模式
+        is_img2img = False
+        if t.style in ['min_watercolor']:
+            is_img2img = True
+            full_task.update(get_img2img_args(
+                t.prompt, t.width, t.height, t.image))
+        else:
+            full_task.update(get_txt2img_args(t.prompt, t.width, t.height))
+
         full_task['prompt'] = t.prompt
+
+        full_task['steps'] = 30
         full_task['batch_size'] = t.batch_size
         full_task['alwayson_scripts'] = {'ControlNet': {'args': []}}
+
         # rendition_style={"彩铅":'color_pencil',"浮世绘":'ukiyo',"山水画":'landscape',"极简水彩":'min_watercolor',"炫彩":'dazzle_color',"油画":'oil_paint'}
-        if t.style in ['min_watercolor', 'dazzle_color', 'oil_paint']:  # 图生图模式 检测输入图片的
 
-            # 线稿固定人物形态
-            cn_args_1 = get_cn_args()
-            cn_args_1['enabled'] = True
-            cn_args_1['module'] = 'lineart_realistic'  # if t.style!='oil_paint'else 'lineart_realistic'
-            cn_args_1['model'] = 'control_v11p_sd15_lineart [43d4be0d]'
-            cn_args_1['image']['image'] = t.image
-            cn_args_1['weight'] = 1
-            cn_args_1['threshold_a'] = 0
-            cn_args_1['threshold_b'] = 0.5
-            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args_1)
-
+        # NOTE: 2023.10.30
+        # 保持
+        if t.style in ['dazzle_color', 'oil_paint']:
+            # module,model,image,weight=1,guidance_start=0,guidance_end=1
+            cn_args = change_cn_args(
+                'lineart_realistic', 'control_v11p_sd15_lineart [43d4be0d]', t.image, 1, 0, 0.5)
+            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
             if t.style == 'dazzle_color':
                 full_task['steps'] = 36
                 full_task['cfg_scale'] = 7
                 full_task['negative_prompt'] = "worst quality,low quality,normal quality"
-            # 极简水彩：step：30,cfg：4
-            if t.style == 'min_watercolor':
-                full_task['steps'] = 30
-                full_task['cfg_scale'] = 4
-
-        if t.style in ['color_pencil', 'ukiyo', 'landscape']:  # 彩铅
+        if t.style in ['landscape']:
             # 文生图添加高清修复
             full_task['enable_hr'] = True
             full_task['denoising_strength'] = 0.7
@@ -334,16 +366,68 @@ class RenditionTask(Txt2ImgTask):
             full_task['hr_second_pass_steps'] = 0
             full_task['hr_resize_x'] = 0
             full_task['hr_resize_y'] = 0
-        if full_task['lora_models'] == ['']: full_task['lora_models'] = None
-        return full_task
+
+        # 调整|新增
+        if t.style in ['min_watercolor']:
+            full_task['cfg_scale'] = 10
+            full_task['denoising_strength'] = 0.68
+            cn_args = change_cn_args(
+                'lineart_realistic', 'control_v11p_sd15_lineart', 1, t.image, 0, 1)  # min_watercolor
+            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
+
+        # 采样方法，默认DPM++ 2M SDE Karras
+        if t.style in ['min_watercolor', 'qipao', 'suits', 'simple_headshots', 'chinese_colorful']:
+            full_task['sampler_name'] = 'DPM++ SDE Karras'
+
+        # cfg_scale，默认7
+        if t.style in ['qipao', 'suits', 'simple_headshots']:
+            full_task['cfg_scale'] = 4
+
+        # steps,默认为30
+        if t.style in ['jk', 'color_pencil', 'ukiyo']:
+            full_task['steps'] = 20
+        if t.style in ['chinese_hanfu']:
+            full_task['steps'] = 45
+
+        # vae，默认为None；负向的embeddings，默认为None
+        if t.style in ['qipao', 'suits', 'simple_headshots']:
+            full_task['override_settings_texts'] = [
+                'sd_vae: vae-ft-mse-840000-ema-pruned.ckpt']
+        if t.style in ['chinese_illustration', 'chinese_wedding', 'chinese_hanfu', 'wedding', 'color_pencil', 'ukiyo', 'chinese_colorful', 'art_illustration', 'spoof', 'illustration_headshots']:
+            full_task['override_settings_texts'] = ['sd_vae: sdxl_vae1.0']
+
+        # CN,默认为空
+        if t.style in ['chinese_illustration', 'chinese_wedding', 'chinese_hanfu', 'wedding']:
+            cn_args = change_cn_args(
+                'openpose', 'thibaud_xl_openpose', 1, t.image, 0, 1)
+            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
+        if t.style in ['qipao']:
+            cn_args = change_cn_args(
+                'softedge_pidinet', 'control_v11p_sd15_softedge', 1, t.image, 0, 1)  # qipao
+            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
+        if t.style in ['jk']:
+            cn_args = change_cn_args(
+                'openpose', 'control_v11p_sd15_openpose', 1, t.image, 0, 1)
+            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
+        if t.style in ['suits']:
+            cn_args = change_cn_args(
+                'dw_openpose_full', 'control_v11p_sd15_openpose', 0.6, t.image, 0, 0.8)
+            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
+
+        # Lora,
+        if full_task['lora_models'] == ['']:
+            full_task['lora_models'] = None
+
+        return full_task, is_img2img
 
     @classmethod
     def exec_roop(cls, source_img: Image.Image, target_img: Image.Image, ):
 
         def get_face(img_data: np.ndarray, providers, det_size=(640, 640)):
-            # TODO 更换路径
-            models_dir = os.path.join(scripts.basedir(), "models" + os.path.sep + "roop" + os.path.sep + "buffalo_l")
-            face_analyser = insightface.app.FaceAnalysis(name=models_dir, providers=providers)
+            models_dir = os.path.join(
+                scripts.basedir(), "models" + os.path.sep + "roop" + os.path.sep + "buffalo_l")
+            face_analyser = insightface.app.FaceAnalysis(
+                name=models_dir, providers=providers)
             face_analyser.prepare(ctx_id=0, det_size=det_size)
             face = face_analyser.get(img_data)
 
@@ -374,12 +458,14 @@ class RenditionTask(Txt2ImgTask):
         # 交换人脸
         models_path = os.path.join(scripts.basedir(),
                                    "models" + os.path.sep + "roop" + os.path.sep + "inswapper_128.onnx")
-        face_swapper = insightface.model_zoo.get_model(models_path, providers=providers)
+        face_swapper = insightface.model_zoo.get_model(
+            models_path, providers=providers)
         result = target_img
         for _ in target_face:
             box = _.bbox.astype(np.int)
             point = ((box[2] + box[0]) / 2, (box[3] + box[1]) / 2)
-            dis = [math.sqrt((point[0] - k[0]) ** 2 + (point[1] - k[1]) ** 2) for k in source_point]
+            dis = [math.sqrt((point[0] - k[0]) ** 2 + (point[1] - k[1]) ** 2)
+                   for k in source_point]
             # 距离最近的人脸
             s_face = source_face[dis.index(min(dis))]
             result = face_swapper.get(result, _, s_face)
@@ -464,8 +550,10 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         p.init_images = [img] * p.batch_size
 
         i2i_script_runner = modules.scripts.scripts_img2img
-        default_script_arg_img2img = init_default_script_args(modules.scripts.scripts_img2img)
-        selectable_scripts, selectable_script_idx = get_selectable_script(i2i_script_runner, None)
+        default_script_arg_img2img = init_default_script_args(
+            modules.scripts.scripts_img2img)
+        selectable_scripts, selectable_script_idx = get_selectable_script(
+            i2i_script_runner, None)
         select_script_args = ''
         script_args = init_script_args(default_script_arg_img2img, alwayson_scripts, selectable_scripts,
                                        selectable_script_idx, select_script_args, i2i_script_runner)
@@ -482,7 +570,8 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
 
     def _exec_conversion(self, task: Task) -> typing.Iterable[TaskProgress]:
         logger.info("one press conversion func starting...")
-        full_task, is_img2img, full_canny, part_canny = ConversionTask.exec_task(task)
+        full_task, is_img2img, full_canny, part_canny = ConversionTask.exec_task(
+            task)
         logger.info("download model...")
         # 加载模型
         base_model_path = self._get_local_checkpoint(full_task)
@@ -490,11 +579,13 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         load_sd_model_weights(base_model_path, full_task.model_hash)
 
         # 第一阶段 上色
-        progress = TaskProgress.new_ready(full_task, f'model loaded, run onepress_paint...')
+        progress = TaskProgress.new_ready(
+            full_task, f'model loaded, run onepress_paint...')
         yield progress
 
         logger.info("download network models...")
-        process_args = self._build_img2img_arg(progress) if is_img2img else self._build_txt2img_arg(progress)
+        process_args = self._build_img2img_arg(
+            progress) if is_img2img else self._build_txt2img_arg(progress)
         self._set_little_models(process_args)
         progress.status = TaskStatus.Running
         progress.task_desc = f'onepress task({task.id}) running'
@@ -513,8 +604,10 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
                 alwayson_scripts.update(get_multidiffusion_args())
             # i2i
             logger.info("step 2, canny...")
-            processed_i2i_1 = self._build_gen_canny_i2i_args(process_args, processed)
-            processed_i2i = self._canny_process_i2i(processed_i2i_1, alwayson_scripts)
+            processed_i2i_1 = self._build_gen_canny_i2i_args(
+                process_args, processed)
+            processed_i2i = self._canny_process_i2i(
+                processed_i2i_1, alwayson_scripts)
             processed.images = processed_i2i.images
         logger.info("step 2 > ok")
         shared.state.end()
@@ -540,26 +633,38 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
 
     def _exec_rendition(self, task: Task) -> typing.Iterable[TaskProgress]:
 
+        # TODO 测试xl的使用，更新task参数
         logger.info("one press rendition func starting...")
+        full_task, is_img2img = RenditionTask.exec_task(task)
 
-        full_task = RenditionTask.exec_task(task)
-        # 去除脸部修复
-
-        # 加载模型
-        base_model_path = self._get_local_checkpoint(full_task)
+        # 适配xl
         logger.info("download model...")
+        local_model_paths = self._get_local_checkpoint(full_task)
+        base_model_path = local_model_paths if not isinstance(
+            local_model_paths, tuple) else local_model_paths[0]
+        refiner_checkpoint = None if not isinstance(
+            local_model_paths, tuple) else local_model_paths[1]
+
         load_sd_model_weights(base_model_path, full_task.model_hash)
-        progress = TaskProgress.new_ready(full_task, f'model loaded, run onepress_paint...')
+        progress = TaskProgress.new_ready(
+            full_task, f'model loaded, run t2i...')
         yield progress
 
-        logger.info("download network models...")
-        process_args = self._build_txt2img_arg(progress)
+        # 更新图生图模式，xl模式
+        process_args = self._build_txt2img_arg(
+            progress, refiner_checkpoint) if not is_img2img else self._build_img2img_arg(progress, refiner_checkpoint)
 
-        # 加载lora模型
         self._set_little_models(process_args)
         progress.status = TaskStatus.Running
         progress.task_desc = f'onepress task({task.id}) running'
         yield progress
+        shared.state.begin()
+
+        if process_args.selectable_scripts:
+            processed = process_args.scripts.run(
+                process_args, *process_args.script_args)
+        else:
+            processed = process_images(process_args)
 
         logger.info("step 1, rendition...")
         shared.state.begin()
@@ -575,14 +680,14 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
                 source_img = get_tmp_local_path(task['image'])
                 source_img = Image.open(source_img).convert('RGB')
                 target_img = img  #
-                # source_img: Image.Image, target_img: Image.Image, 
-                roop_result.append(RenditionTask.exec_roop(source_img, target_img))
+                # source_img: Image.Image, target_img: Image.Image,
+                roop_result.append(
+                    RenditionTask.exec_roop(source_img, target_img))
             processed.images = roop_result
             logger.info("step 2 > ok")
 
         shared.state.end()
         process_args.close()
-
         logger.info("step 3, upload images...")
         progress.status = TaskStatus.Uploading
         yield progress
