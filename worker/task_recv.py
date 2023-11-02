@@ -227,7 +227,7 @@ class TaskReceiver:
             if is_flexible_worker():
                 raise OSError('elastic resource cannot run with train only mode')
         worker_id = f"{group_id}:{self.task_score_limit}.{nvidia_video_card_id}"
-        exec_train = self.train_only or self._can_gener_img_worker_run_train()
+        exec_train = self.train_only or self._can_gener_img_worker_run_train(worker_id)
         model_hash_list = self.model_recoder.history()
 
         return {
@@ -301,7 +301,7 @@ class TaskReceiver:
                     if task:
                         return task
 
-    def _can_gener_img_worker_run_train(self):
+    def _can_gener_img_worker_run_train(self, worker_id=None):
         # 默认23点~凌晨5点(UTC 15~21)可以运行TRAIN
         utc = datetime.utcnow()
 
@@ -336,8 +336,10 @@ class TaskReceiver:
                     run_train_workers = workers[:run_train_worker_num]
                 else:
                     run_train_workers = []
-
-                no_group_worker_id = self.worker_id.replace(group_id + ":", '')
+                if not worker_id:
+                    no_group_worker_id = self.worker_id.replace(group_id + ":", '')
+                else:
+                    no_group_worker_id = worker_id.replace(group_id + ":", '')
                 logger.info(f"run train task worker ids:{';'.join(run_train_workers)}, current id:{no_group_worker_id}")
                 run_train_worker_flag = no_group_worker_id in run_train_workers
                 free, total = vram_mon.cuda_mem_get_info()
