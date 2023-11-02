@@ -35,7 +35,12 @@ def plaintext_to_html(text, classname=None):
     return f"<p class='{classname}'>{content}</p>" if classname else f"<p>{content}</p>"
 
 
-def save_files(js_data, images, do_make_zip, index):
+def save_files(js_data, images, do_make_zip, index, req:gr.Request):
+    pseudo = req.username    
+    shared.opts.outdir_save = "\\".join(shared.opts.outdir_samples.rsplit("\\", 1)[:-1]) # Cutting "favorites"
+    shared.opts.outdir_save = "\\".join(shared.opts.outdir_samples.rsplit("\\", 1)[:-1]) # Cutting "[user]"
+    shared.opts.outdir_save += f"\\{pseudo}\\favorites" # Adding new username + favorites
+        
     import csv
     filenames = []
     fullfns = []
@@ -106,7 +111,32 @@ def save_files(js_data, images, do_make_zip, index):
 
 def create_output_panel(tabname, outdir):
 
-    def open_folder(f):
+    def wrapOpenFolder(request: gr.Request):
+        pseudo = request.username
+        # Modifying paths for current user:
+        # GRIDS & IMAGES
+        shared.opts.outdir_samples =  "\\".join(shared.opts.outdir_samples.rsplit("\\", 1)[:-1]) # Cutting [user]
+        shared.opts.outdir_samples += f"\\{pseudo}" # Adding new username
+
+        shared.opts.outdir_grids = "\\".join(shared.opts.outdir_grids.rsplit("\\", 1)[:-1])
+        shared.opts.outdir_grids += f"\\{pseudo}"
+
+        # SAVE
+        shared.opts.outdir_save = "\\".join(shared.opts.outdir_samples.rsplit("\\", 1)[:-1]) # Cutting "favorites"
+        shared.opts.outdir_save = "\\".join(shared.opts.outdir_samples.rsplit("\\", 1)[:-1]) # Cutting "[user]"
+        shared.opts.outdir_save += f"\\{pseudo}\\favorites" # Adding new username + favorites
+        
+        # The outdir argument is passed by ui.py to the create_output_panel function which contanins this function
+        # We are refreshing it
+        if tabname == "txt2img":
+            outdir = shared.opts.outdir_txt2img_samples
+        elif tabname == "img2img":
+            outdir = shared.opts.outdir_img2img_samples
+
+        f = shared.opts.outdir_samples or outdir
+        return open_folder(f)
+
+    def open_folder(f):        
         if not os.path.exists(f):
             print(f'Folder "{f}" does not exist. After you create an image, the folder will be created.')
             return
@@ -150,7 +180,7 @@ Requested path was: {f}
                 }
 
             open_folder_button.click(
-                fn=lambda: open_folder(shared.opts.outdir_samples or outdir),
+                fn=wrapOpenFolder,
                 inputs=[],
                 outputs=[],
             )
