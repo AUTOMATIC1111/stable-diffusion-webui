@@ -350,7 +350,7 @@ class RenditionTask(Txt2ImgTask):
         if t.style in ['dazzle_color', 'oil_paint']:
             # module,model,image,weight=1,guidance_start=0,guidance_end=1
             cn_args = change_cn_args(
-                'lineart_realistic', 'control_v11p_sd15_lineart [43d4be0d]', t.image, 1, 0, 0.5)
+                'lineart_realistic', 'control_v11p_sd15_lineart [43d4be0d]', 1, t.image, 0, 0.5)
             full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
             if t.style == 'dazzle_color':
                 full_task['steps'] = 36
@@ -393,8 +393,10 @@ class RenditionTask(Txt2ImgTask):
         if t.style in ['qipao', 'suits', 'simple_headshots']:
             full_task['override_settings_texts'] = [
                 'sd_vae: vae-ft-mse-840000-ema-pruned.ckpt']
-        if t.style in ['chinese_illustration', 'chinese_wedding', 'chinese_hanfu', 'wedding', 'color_pencil', 'ukiyo', 'chinese_colorful', 'art_illustration', 'spoof', 'illustration_headshots']:
+        elif t.style in ['chinese_illustration', 'chinese_wedding', 'chinese_hanfu', 'wedding', 'color_pencil', 'ukiyo', 'chinese_colorful', 'art_illustration', 'spoof', 'illustration_headshots']:
             full_task['override_settings_texts'] = ['sd_vae: sdxl_vae1.0']
+        else:
+            full_task['override_settings_texts'] = ['sd_vae: None']
 
         # CN,默认为空
         if t.style in ['chinese_illustration', 'chinese_wedding', 'chinese_hanfu', 'wedding']:
