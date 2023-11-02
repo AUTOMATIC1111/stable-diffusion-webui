@@ -12,6 +12,13 @@ import gradio as gr
 def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, steps: int, sampler_name: str, n_iter: int, batch_size: int, cfg_scale: float, height: int, width: int, enable_hr: bool, denoising_strength: float, hr_scale: float, hr_upscaler: str, hr_second_pass_steps: int, hr_resize_x: int, hr_resize_y: int, hr_checkpoint_name: str, hr_sampler_name: str, hr_prompt: str, hr_negative_prompt, override_settings_texts, request: gr.Request, *args):
     override_settings = create_override_settings_dict(override_settings_texts)
 
+    opts.outdir_samples =  "\\".join(opts.outdir_samples.rsplit("\\", 1)[:-1]) # Cutting [user]
+    opts.outdir_samples += f"\\{request.username}" # Adding new username
+
+    opts.outdir_grids = "\\".join(opts.outdir_grids.rsplit("\\", 1)[:-1])
+    opts.outdir_grids += f"\\{request.username}"
+
+
     p = processing.StableDiffusionProcessingTxt2Img(
         sd_model=shared.sd_model,
         outpath_samples=opts.outdir_samples or opts.outdir_txt2img_samples,
@@ -42,6 +49,7 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
 
     p.scripts = modules.scripts.scripts_txt2img
     p.script_args = args
+
 
     p.user = request.username
 

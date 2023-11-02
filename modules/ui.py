@@ -370,7 +370,7 @@ def create_ui():
                                     hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False, min_width=0)
 
                                 with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
-                                    hr_upscaler = gr.Dropdown(label="Upscaler", elem_id="txt2img_hr_upscaler", choices=[*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]], value=shared.latent_upscale_default_mode)
+                                    hr_upscaler = gr.Dropdown(label="Upscaler \U000026a0\U0000fe0f Do not forget to put upscaling at 1 when no upscaler is selected!", elem_id="txt2img_hr_upscaler", choices=[*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]], value=shared.latent_upscale_default_mode)
                                     hr_second_pass_steps = gr.Slider(minimum=0, maximum=150, step=1, label='Hires steps', value=0, elem_id="txt2img_hires_steps")
                                     denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7, elem_id="txt2img_denoising_strength")
 
@@ -434,6 +434,13 @@ def create_ui():
 
             txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
 
+
+
+            # Upscaler value at 1 when no upscaler is selected
+            hr_upscaler.change(fn=(lambda x: gr.update(value=1)  if x == "None" else gr.update(value=2)), inputs=[hr_upscaler], outputs=[hr_scale])
+
+
+            
             txt2img_args = dict(
                 fn=wrap_gradio_gpu_call(modules.txt2img.txt2img, extra_outputs=[None, '', '']),
                 _js="submit",
@@ -1249,9 +1256,9 @@ def create_ui():
         (txt2img_interface, "txt2img", "txt2img"),
         (img2img_interface, "img2img", "img2img"),
         (extras_interface, "Extras", "extras"),
-        (pnginfo_interface, "PNG Info", "pnginfo"),
-        (modelmerger_ui.blocks, "Checkpoint Merger", "modelmerger"),
-        (train_interface, "Train", "train"),
+        (pnginfo_interface, "PNG Info", "pnginfo")
+	     #(modelmerger_ui.blocks, "Checkpoint Merger", "modelmerger")
+	     #(train_interface, "Train", "train")
     ]
 
     interfaces += script_callbacks.ui_tabs_callback()
@@ -1264,8 +1271,18 @@ def create_ui():
     for _interface, label, _ifid in interfaces:
         shared.tab_names.append(label)
 
+
     with gr.Blocks(theme=shared.gradio_theme, analytics_enabled=False, title="Stable Diffusion") as demo:
         settings.add_quicksettings()
+
+
+        if os.path.isfile("logos/logo.png"):
+            test_img = gr.Image(value='logos/logo.png', show_download_button=False, show_label=False, interactive=False, show_share_button = False,
+                            height=100, width=100, container=False, elem_id='logo')
+        else:
+            print('\033[34m[LOGO]\033[0m  No image found at "logos/logo.png"')
+
+
 
         parameters_copypaste.connect_paste_params_buttons()
 
@@ -1363,4 +1380,3 @@ def setup_ui_api(app):
 
     app.add_api_route("/internal/sysinfo", download_sysinfo, methods=["GET"])
     app.add_api_route("/internal/sysinfo-download", lambda: download_sysinfo(attachment=True), methods=["GET"])
-

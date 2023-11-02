@@ -135,7 +135,9 @@ def setup_model():
 
 
 def checkpoint_tiles(use_short=False):
-    return [x.short_title if use_short else x.title for x in checkpoints_list.values()]
+    l = [x.short_title if use_short else x.title for x in checkpoints_list.values()]
+    l.append("None")
+    return l
 
 
 def list_models():
