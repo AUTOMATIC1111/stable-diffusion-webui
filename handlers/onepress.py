@@ -392,11 +392,11 @@ class RenditionTask(Txt2ImgTask):
         # vae，默认为None；负向的embeddings，默认为None
         if t.style in ['qipao', 'suits', 'simple_headshots']:
             full_task['override_settings_texts'] = [
-                'sd_vae: vae-ft-mse-840000-ema-pruned.ckpt']
+                'sd_vae:vae-ft-mse-840000-ema-pruned.ckpt']
         elif t.style in ['chinese_illustration', 'chinese_wedding', 'chinese_hanfu', 'wedding', 'color_pencil', 'ukiyo', 'chinese_colorful', 'art_illustration', 'spoof', 'illustration_headshots']:
-            full_task['override_settings_texts'] = ['sd_vae: sdxl_vae1.0']
+            full_task['override_settings_texts'] = ['sd_vae:sdxl_vae1.0']
         else:
-            full_task['override_settings_texts'] = ['sd_vae: None']
+            full_task['override_settings_texts'] = ['sd_vae:None']
 
         # CN,默认为空
         if t.style in ['chinese_illustration', 'chinese_wedding', 'chinese_hanfu', 'wedding']:
