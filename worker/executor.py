@@ -125,33 +125,37 @@ class TaskExecutor(Thread):
         return True
 
     def _get_task(self):
-        while self.is_alive() and not self.receiver.closed:
+        while self.is_alive() and not self.receiver.closed and not self.__stop:
             with self.not_busy:
                 if not self.queue.full():
-
-                    for task in self.receiver.task_iter():
-                        if random.randint(1, 10) < 3:
-
-                            # 释放磁盘空间
-                            self._clean_disk()
-                        logger.info(f"====>>> preload task:{task.id}")
-                        self.queue.put(task)
-                        logger.info(f"====>>> push task:{task.id}")
-                        if isinstance(task, Task):
-                            logger.debug(f"====>>> waiting task:{task.id}, stop receive.")
-                            setattr(self.not_busy, "value", 1)
-                            try:
-                                timeout = 3600 * 16
-                                self.not_busy.wait(timeout=timeout)
-                                logger.info(f"====>>> acquire locker, time out:{timeout} seconds")
-                            except Exception as err:
-                                free, total = vram_mon.cuda_mem_get_info()
-                                logger.exception("executor cannot require locker, quit...")
-                                self.receiver.close()
-                                system_exit(free, total, True)
-                                break
-                            self.receiver.decr_train_concurrency(task)
-                            logger.debug(f"====>>> waiting task:{task.id}, begin receive.")
+                    try:
+                        for task in self.receiver.task_iter():
+                            if random.randint(1, 10) < 3:
+                                # 释放磁盘空间
+                                self._clean_disk()
+                            logger.info(f"====>>> preload task:{task.id}")
+                            self.queue.put(task)
+                            logger.info(f"====>>> push task:{task.id}")
+                            if isinstance(task, Task):
+                                logger.debug(f"====>>> waiting task:{task.id}, stop receive.")
+                                setattr(self.not_busy, "value", 1)
+                                try:
+                                    timeout = 3600 * 16
+                                    self.not_busy.wait(timeout=timeout)
+                                    logger.info(f"====>>> acquire locker, time out:{timeout} seconds")
+                                except Exception as err:
+                                    free, total = vram_mon.cuda_mem_get_info()
+                                    logger.exception("executor cannot require locker, quit...")
+                                    self.receiver.close()
+                                    system_exit(free, total, True)
+                                    break
+                                self.receiver.decr_train_concurrency(task)
+                                logger.debug(f"====>>> waiting task:{task.id}, begin receive.")
+                    except Exception:
+                        logger.exception("receive task failed, restart app...")
+                        self.receiver.close()
+                        self.__stop = True
+                        system_exit(0, 0, True)
                 else:
                     self.not_busy.wait()
         logger.info("=======> task receiver quit!!!!!!")
