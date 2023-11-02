@@ -736,7 +736,7 @@ def train_auto(
         learning_rate=0.0001,
         unet_lr=0.0001,
         text_encoder_lr=0.00001,
-        lr_scheduler="cosine_with_restarts",
+        lr_scheduler="constant",
         auto_lr=True,
         auto_lr_param=6,
 
