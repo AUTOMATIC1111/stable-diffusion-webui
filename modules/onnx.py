@@ -68,15 +68,15 @@ diffusers.OnnxRuntimeModel = OnnxRuntimeModel
 
 
 class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline):
-    model_type: str
+    model_type = diffusers.OnnxStableDiffusionPipeline.__name__
     sd_model_hash: str
     sd_checkpoint_info: CheckpointInfo
     sd_model_checkpoint: str
 
     @staticmethod
     def from_pretrained(pretrained_model_name_or_path: Optional[Union[str, os.PathLike]], **kwargs):
-        provider = (shared.opts.onnx_execution_provider, get_execution_provider_options(),)
-        init_dict = diffusers.OnnxStableDiffusionPipeline.extract_init_dict(diffusers.DiffusionPipeline.load_config(pretrained_model_name_or_path), **kwargs)[0]
+        kwargs["provider"] = kwargs["provider"] if "provider" in kwargs else (shared.opts.onnx_execution_provider, get_execution_provider_options(),)
+        init_dict = super(OnnxStableDiffusionPipeline, OnnxStableDiffusionPipeline).extract_init_dict(diffusers.DiffusionPipeline.load_config(pretrained_model_name_or_path), **kwargs)[0]
         init_kwargs = {}
         for k, v in init_dict.items():
             if not isinstance(v, list):
@@ -90,15 +90,15 @@ class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline):
             constructor = getattr(library, constructor_name)
             submodel_kwargs = {}
             if issubclass(constructor, diffusers.OnnxRuntimeModel):
-                submodel_kwargs["provider"] = provider
-            init_kwargs[k] = constructor.from_pretrained(os.path.join(pretrained_model_name_or_path, k), **submodel_kwargs)
+                submodel_kwargs["provider"] = kwargs["provider"]
+            try:
+                init_kwargs[k] = constructor.from_pretrained(
+                    os.path.join(pretrained_model_name_or_path, k),
+                    **submodel_kwargs,
+                )
+            except Exception:
+                pass
         return OnnxStableDiffusionPipeline(**init_kwargs)
-
-    def apply(self, dummy_pipeline):
-        self.sd_model_hash = dummy_pipeline.sd_model_hash
-        self.sd_checkpoint_info = dummy_pipeline.sd_checkpoint_info
-        self.sd_model_checkpoint = dummy_pipeline.sd_model_checkpoint
-        return self
 
     def __call__(
         self,
@@ -243,3 +243,5 @@ class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline):
             return (image, has_nsfw_concept)
 
         return diffusers.pipelines.stable_diffusion.StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
+
+diffusers.OnnxStableDiffusionPipeline = OnnxStableDiffusionPipeline

@@ -29,6 +29,15 @@ except ModuleNotFoundError:
     sys.modules["torch._dynamo"] = {} # HACK torch 1.13.1 does not have _dynamo. will be removed.
 
 
+def init_olive():
+    try:
+        if installer.opts['onnx_enable_olive']:
+            import olive.workflows # pylint: disable=unused-import
+            installer.log.debug('Load olive')
+    except Exception as e:
+        installer.log.error(f'Failed to load olive: {e}')
+
+
 def init_args():
     global parser, args # pylint: disable=global-statement
     import modules.cmd_args
@@ -200,6 +209,7 @@ if __name__ == "__main__":
     except Exception:
         pass
     installer.read_options()
+    init_olive()
     if args.skip_all:
         args.quick = True
     installer.check_python()

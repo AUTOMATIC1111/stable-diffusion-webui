@@ -147,7 +147,7 @@ def list_models():
     model_list = list(modelloader.load_models(model_path=model_path, model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=ext_filter, download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"]))
     if shared.backend == shared.Backend.DIFFUSERS:
         model_list += modelloader.load_diffusers_models(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir, clear=True)
-        model_list += modelloader.load_diffusers_models(model_path=shared.opts.olive_sideloaded_models_path, command_path=shared.opts.olive_sideloaded_models_path)
+        model_list += modelloader.load_diffusers_models(model_path=shared.opts.olive_sideloaded_models_path, command_path=shared.opts.olive_sideloaded_models_path, clear=False)
     for filename in sorted(model_list, key=str.lower):
         checkpoint_info = CheckpointInfo(filename)
         if checkpoint_info.name is not None:
@@ -790,8 +790,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
 
         shared.log.debug(f'Diffusers loading: path="{checkpoint_info.path}"')
         pipeline, model_type = detect_pipeline(checkpoint_info.path, op)
-        if os.path.isdir(checkpoint_info.path):
-            if shared.opts.olive_sideloaded_models_path in checkpoint_info.path:
+        if 'ONNX' in shared.opts.diffusers_pipeline:
+            from modules.onnx import get_execution_provider_options
+            diffusers_load_config['provider'] = (shared.opts.onnx_execution_provider, get_execution_provider_options(),)
+            if shared.opts.diffusers_pipeline == 'ONNX Stable Diffusion with Olive':
                 try:
                     from modules.onnx import OnnxStableDiffusionPipeline
                     sd_model = OnnxStableDiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.olive_sideloaded_models_path)

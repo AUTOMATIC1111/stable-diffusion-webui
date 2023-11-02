@@ -9,27 +9,24 @@ from installer import log
 from modules import shared
 from modules.paths import sd_configs_path
 from modules.sd_models import CheckpointInfo
-from modules.onnx import ExecutionProvider, OnnxStableDiffusionPipeline, get_execution_provider_options
+from modules.onnx import ExecutionProvider, get_execution_provider_options
 
 is_available = "olive" in sys.modules # Olive is not available if it is not loaded at startup.
 
 def enable_olive_onchange():
+    from installer import installed, install, uninstall
     if shared.opts.onnx_enable_olive:
-        if "olive" in sys.modules:
-            log.info("You already have Olive installed. No additional installation is required.")
-            return
-        from installer import install
-        install('olive-ai', 'Olive')
-        log.info("Olive is installed. Please restart ui completely to load Olive.")
+        if not installed('olive-ai', reload=True, quiet=True):
+            install('olive-ai', 'olive-ai')
     else:
-        from installer import pip
         global is_available
+        is_available = False
         if "olive" in sys.modules:
             del sys.modules["olive"]
-        is_available = False
         if shared.opts.diffusers_pipeline == 'ONNX Stable Diffusion with Olive':
             shared.opts.diffusers_pipeline = 'ONNX Stable Diffusion'
-        pip('uninstall olive-ai --yes --quiet', ignore=True, quiet=True)
+        if installed('olive-ai', reload=True, quiet=True):
+            uninstall('olive-ai')
 
 submodels = ("text_encoder", "unet", "vae_encoder", "vae_decoder",)
 
@@ -42,6 +39,7 @@ EP_TO_NAME = {
 }
 
 class OlivePipeline(diffusers.DiffusionPipeline):
+    model_type = diffusers.OnnxStableDiffusionPipeline.__name__
     sd_model_hash: str
     sd_checkpoint_info: CheckpointInfo
     sd_model_checkpoint: str
@@ -70,6 +68,12 @@ class OlivePipeline(diffusers.DiffusionPipeline):
     def from_ckpt(*args, **kwargs):
         return OlivePipeline.from_single_file(**args, **kwargs)
 
+    def derive_properties(self, pipeline: diffusers.OnnxStableDiffusionPipeline):
+        pipeline.sd_model_hash = self.sd_model_hash
+        pipeline.sd_checkpoint_info = self.sd_checkpoint_info
+        pipeline.sd_model_checkpoint = self.sd_model_checkpoint
+        return pipeline
+
     def to(self, *args, **kwargs):
         pass
 
@@ -85,11 +89,13 @@ class OlivePipeline(diffusers.DiffusionPipeline):
             log.warning("Olive received different width and height. The quality of the result is not guaranteed.")
 
         out_dir = os.path.join(shared.opts.olive_cached_models_path, f"{self.original_filename}-{width}w-{height}h")
-        if os.path.isdir(out_dir):
+        if os.path.isdir(out_dir): # already optimized (cached)
             del self.unoptimized
-            return OnnxStableDiffusionPipeline.from_pretrained(
-                out_dir,
-            ).apply(self)
+            return self.derive_properties(
+                diffusers.OnnxStableDiffusionPipeline.from_pretrained(
+                    out_dir,
+                )
+            )
 
         try:
             if shared.opts.onnx_cache_optimized:
@@ -146,10 +152,12 @@ class OlivePipeline(diffusers.DiffusionPipeline):
                     provider=(shared.opts.onnx_execution_provider, get_execution_provider_options(),),
                 )
 
-            pipeline = OnnxStableDiffusionPipeline(
-                **kwargs,
-                requires_safety_checker=False,
-            ).apply(self)
+            pipeline = self.derive_properties(
+                diffusers.OnnxStableDiffusionPipeline(
+                    **kwargs,
+                    requires_safety_checker=False,
+                )
+            )
             del kwargs
             if shared.opts.onnx_cache_optimized:
                 pipeline.to_json_file(os.path.join(out_dir, "model_index.json"))
