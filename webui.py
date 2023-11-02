@@ -312,6 +312,13 @@ def webui(restart=False):
     load_model()
     shared.opts.save(shared.config_filename)
     log.info(f"Startup time: {timer.startup.summary()}")
+    debug = log.info if os.environ.get('SD_SCRIPT_DEBUG', None) is not None else lambda *args, **kwargs: None
+    debug('Loaded scripts:')
+    for m in modules.scripts.scripts_data:
+        debug(f'  {m}')
+    debug('Loaded postprocessing scripts:')
+    for m in modules.scripts.postprocessing_scripts_data:
+        debug(f'  {m}')
     timer.startup.reset()
 
     if not restart:
