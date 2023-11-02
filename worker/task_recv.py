@@ -122,9 +122,9 @@ class TaskReceiverRecorder:
                 return int(time.time()) - d['timestamp']
 
 
-def register_worker(worker_info: typing.Mapping):
+def register_worker(worker_id: typing.Mapping):
     try:
-        worker_id = worker_info['worker_id']
+
         now = int(time.time())
         pool = RedisPool()
         conn = pool.get_connection()
@@ -132,10 +132,10 @@ def register_worker(worker_info: typing.Mapping):
             worker_id: now
         })
         conn.expire(SDWorkerZset, timedelta(hours=1))
-        conn.zremrangebyscore(SDWorkerZset, now - 600, now)
+        conn.zremrangebyscore(SDWorkerZset, 0, now - 3600*24)
         pool.close()
     except:
-        pass
+        logger.exception("cannot register worker")
 
 
 class TaskReceiver:
@@ -176,7 +176,7 @@ class TaskReceiver:
         self.timer = BackgroundScheduler()
 
         worker_info = self._worker_info()
-        self.timer.add_job(register_worker, 'interval', seconds=30, args=[worker_info])
+        self.timer.add_job(register_worker, 'interval', seconds=30, args=[worker_info['worker_id']])
         self.exception_ts = 0
         self.closed = False
         self.is_task_group_queue_only = is_task_group_queue_only()
@@ -400,7 +400,7 @@ class TaskReceiver:
         locker = redis_lock.Lock(rds, "task-lock-" + queue_name, expire=10)
         locked = False
         try:
-            # logger.debug("===> acquire locker: task-lock-" + queue_name)
+            logger.debug("===> acquire locker: task-lock-" + queue_name)
             locker.acquire(blocking=True, timeout=3)
             locked = True
             # self._preload_task(queue_name)
