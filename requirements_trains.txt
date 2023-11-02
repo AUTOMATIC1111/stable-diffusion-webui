@@ -11,7 +11,7 @@ altair==4.2.2
 easygui==0.98.3
 einops==0.6.0
 voluptuous==0.13.1
-safetensors>=0.2.6
+safetensors==0.2.6
 dadaptation
 lion-pytorch
 lycoris_lora
@@ -21,6 +21,6 @@ rembg==2.0.50
 opencv-contrib-python==4.7.0.72
 opencv-python==4.7.0.68
 opencv-python-headless==4.7.0.72
-diffusers[torch]==0.21.2
+diffusers[torch]==0.10.2
 ftfy==6.1.1
-accelerate==0.23.0
+accelerate==0.15.0
