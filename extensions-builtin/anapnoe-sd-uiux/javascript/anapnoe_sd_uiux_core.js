@@ -7,7 +7,7 @@ window.all_gallery_buttons = function(){
 		//console.log(tabitem, allGalleryButtons);
 		var allGalleryButtons = gradioApp().querySelectorAll(tabitem+' .gradio-gallery .thumbnails > .thumbnail-small');
 		allGalleryButtons?.forEach(function(elem) {
-			if (elem.parentElement.offsetParent) {
+			if (elem.parentElement.offsetParent && elem.parentElement.offsetParent !== document.body) {               
 				visibleGalleryButtons.push(elem);
 			}
 		});
@@ -719,6 +719,8 @@ function initDefaultComponents(content_div) {
 				}
 			});
 		}
+
+        
 	}
 
 	content_div.querySelectorAll(`.xtabs-tab`).forEach((el) => {
@@ -761,10 +763,20 @@ function initDefaultComponents(content_div) {
 				tabItem.classList.remove('fade-out');
 				tabItem.classList.add('fade-in');
 				//console.log('tab', tids, tabItem);
+                const mobile_attr = tabItem.getAttribute("mobile");              
+                if(mobile_attr){
+                    const mobile_target = anapnoe_app.querySelector(mobile_attr);      
+                    if(mobile_target){
+                        tabItem.append(mobile_target);
+                    }           
+                }
+
 			});
 
 			el.classList.add('active');
 			callToAction(el, tids, pid);
+
+           
 
 
 		});
