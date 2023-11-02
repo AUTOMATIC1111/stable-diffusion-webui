@@ -1369,11 +1369,6 @@ def train_with_params(
         args.lr_scheduler = lr_scheduler if lr_scheduler!="" and lr_scheduler!=-1 else None
         args.resolution = resolution
 
-    for k, v in args.__dict__:
-        if str(k).startswith("_"):
-            continue
-        print(f"> {k}: {v}")
-
     return trainer.train(args, callback)
 
 
