@@ -1,3 +1,4 @@
+httpx==0.24.1
 GitPython==3.1.32
 Pillow==9.5.0
 accelerate==0.21.0
