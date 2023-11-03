@@ -8,6 +8,7 @@ import torch
 import tqdm
 import gradio as gr
 import safetensors.torch
+from sd_meh.merge import merge_models
 
 from modules import shared, images, sd_models, sd_vae, sd_models_config
 
@@ -238,6 +239,111 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     shared.state.textinfo = "Checkpoint saved"
     shared.state.end()
     return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)], "Checkpoint saved to " + output_modelname]
+
+
+def run_MEHmodelmerger(id_task, primary_model_name, secondary_model_name, tertiary_model_name, merge_mode,base_alpha,
+                       base_beta, weights_alpha,
+                       weights_beta, precision, custom_name, checkpoint_format, save_metadata, preset, weights_clip, prune,
+                       re_basin, re_basin_iterations, device):  # pylint: disable=unused-argument
+    shared.state.begin('model-merge')
+    models = {
+            "model_a": sd_models.checkpoints_list[primary_model_name].filename,
+            "model_b": sd_models.checkpoints_list[secondary_model_name].filename,
+            }
+    if tertiary_model_name is not None:
+        models |= {"model_c": sd_models.checkpoints_list[tertiary_model_name].filename}
+    work_device = device
+    threads = 1
+    preset = preset if preset != "None" else None
+    block_weights_preset_alpha = block_weights_preset_beta = block_weights_preset_alpha_b = block_weights_preset_beta_b = preset if preset is not None else None
+    presets_alpha_lambda = presets_beta_lambda = None
+    logging_level = "INFO"
+
+
+    def fail(message):
+        shared.state.textinfo = message
+        shared.state.end()
+        return [*[gr.update() for _ in range(4)], message]
+
+
+
+    theta_0 = main(
+            model_a,
+            model_b,
+            model_c,
+            merge_mode,
+            weights_clip,
+            precision,
+            str(weights_alpha),
+            base_alpha,
+            str(weights_beta),
+            base_beta,
+            re_basin,
+            re_basin_iterations,
+            device,
+            work_device,
+            prune,
+            block_weights_preset_alpha,
+            block_weights_preset_beta,
+            threads,
+            block_weights_preset_alpha_b,
+            block_weights_preset_beta_b,
+            presets_alpha_lambda,
+            presets_beta_lambda,
+            logging_level,
+            )
+    ckpt_dir = shared.opts.ckpt_dir or sd_models.model_path
+    filename = custom_name
+    filename += "." + checkpoint_format
+    output_modelname = os.path.join(ckpt_dir, filename)
+    shared.state.textinfo = "Saving"
+    metadata = None
+    if save_metadata:
+        metadata = {"format": "pt", "sd_merge_models": {}}
+        merge_recipe = {
+            "type": "webui",  # indicate this model was merged with webui's built-in merger
+            "primary_model_hash": primary_model_info.sha256,
+            "secondary_model_hash": secondary_model_info.sha256 if secondary_model_info else None,
+            "tertiary_model_hash": tertiary_model_info.sha256 if tertiary_model_info else None,
+            "interp_method": interp_method,
+            "multiplier": multiplier,
+            "save_as_half": save_as_half,
+            "custom_name": custom_name,
+        }
+        metadata["sd_merge_recipe"] = json.dumps(merge_recipe)
+
+        def add_model_metadata(checkpoint_info):
+            checkpoint_info.calculate_shorthash()
+            metadata["sd_merge_models"][checkpoint_info.sha256] = {
+                "name": checkpoint_info.name,
+                "legacy_hash": checkpoint_info.hash,
+                "sd_merge_recipe": checkpoint_info.metadata.get("sd_merge_recipe", None)
+            }
+            metadata["sd_merge_models"].update(checkpoint_info.metadata.get("sd_merge_models", {}))
+
+        add_model_metadata(primary_model_info)
+        if secondary_model_info:
+            add_model_metadata(secondary_model_info)
+        if tertiary_model_info:
+            add_model_metadata(tertiary_model_info)
+        metadata["sd_merge_models"] = json.dumps(metadata["sd_merge_models"])
+
+    _, extension = os.path.splitext(output_modelname)
+    if extension.lower() == ".safetensors":
+        safetensors.torch.save_file(theta_0, output_modelname, metadata=metadata)
+    else:
+        torch.save(theta_0, output_modelname)
+
+    sd_models.list_models()
+    created_model = next((ckpt for ckpt in sd_models.checkpoints_list.values() if ckpt.name == filename), None)
+    if created_model:
+        created_model.calculate_shorthash()
+    create_config(output_modelname, config_source, primary_model_info, secondary_model_info, tertiary_model_info)
+    shared.log.info(f"Model merge saved: {output_modelname}.")
+    shared.state.textinfo = "Checkpoint saved"
+    shared.state.end()
+    return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)],
+            "Checkpoint saved to " + output_modelname]
 
 def run_modelconvert(model, checkpoint_formats, precision, conv_type, custom_name, unet_conv, text_encoder_conv, vae_conv, others_conv, fix_clip):
 

@@ -231,7 +231,7 @@ def create_output_panel(tabname):
             return result_gallery, generation_info, html_info, html_info_formatted, html_log
 
 
-def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
+def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id, visible: bool = True):
 
     def refresh():
         refresh_method()
@@ -241,7 +241,7 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
         return gr.update(**(args or {}))
 
     from modules.ui_components import ToolButton
-    refresh_button = ToolButton(value=symbols.refresh, elem_id=elem_id)
+    refresh_button = ToolButton(value=symbols.refresh, elem_id=elem_id, visible=visible)
     refresh_button.click(fn=refresh, inputs=[], outputs=[refresh_component])
     return refresh_button
 
