@@ -576,33 +576,16 @@ function onUiUxReady(content_div){
 
 
 			setupGenerateObservers();
-
-			localStorage.setItem('UiUxComplete', true);
+            uiuxOptionSettings();
 
 			//const main_nav_content = document.querySelector('#main_nav_content');
 			//const sidebar_tabs = document.querySelector('#sidebar_tabs');
 			//main_nav_content.append(sidebar_tabs);
-			showContributors()
-
-            // sd max resolution output
-            function sdMaxOutputResolution(value) {
-                gradioApp().querySelectorAll('[id$="2img_width"] input,[id$="2img_height"] input').forEach((elem) => {
-                    elem.max = value;
-                })
-            }
-            gradioApp().querySelector("#setting_uiux_max_resolution_output").addEventListener('input', function (e) {
-                let intvalue = parseInt(e.target.value);
-                intvalue = Math.min(Math.max(intvalue, 512), 16384);
-                sdMaxOutputResolution(intvalue);					
-            })	
-            sdMaxOutputResolution(window.opts.uiux_max_resolution_output);
-
+			showContributors()           
             switchMobile();
+            
+            localStorage.setItem('UiUxComplete', true);
 			
-
-
-			
-
 		}
 	}, 500); 
 
@@ -650,8 +633,6 @@ function setupGenerateObservers(){
 	});
 
 }
-
-
 
 function initDefaultComponents(content_div) {
 	const anapnoe_app = document.querySelector(anapnoe_app_id);
@@ -935,6 +916,30 @@ function initDefaultComponents(content_div) {
 
 	});
 
+
+	// try to attach Logger Screen to main before full UIUXReady
+	const asideconsole = document.querySelector("#layout-console-log");
+	asideconsole.append(loggerUiUx);
+	document.querySelector("#logger_screen")?.remove();
+
+
+}
+
+function uiuxOptionSettings(){
+
+    // sd max resolution output
+    function sdMaxOutputResolution(value) {
+        gradioApp().querySelectorAll('[id$="2img_width"] input,[id$="2img_height"] input').forEach((elem) => {
+            elem.max = value;
+        })
+    }
+    gradioApp().querySelector("#setting_uiux_max_resolution_output").addEventListener('input', function (e) {
+        let intvalue = parseInt(e.target.value);
+        intvalue = Math.min(Math.max(intvalue, 512), 16384);
+        sdMaxOutputResolution(intvalue);					
+    })	
+    sdMaxOutputResolution(window.opts.uiux_max_resolution_output);
+
 	// step ticks for performant input range
 	function uiux_show_input_range_ticks(value, interactive) {
 		if (value) {
@@ -1063,12 +1068,6 @@ function initDefaultComponents(content_div) {
     });
     uiux_show_labels_tabs(window.opts.uiux_show_labels_tabs);
     
-
-	// try to attach Logger Screen to main before full UIUXReady
-	const asideconsole = document.querySelector("#layout-console-log");
-	asideconsole.append(loggerUiUx);
-	document.querySelector("#logger_screen")?.remove();
-
 
 }
 
