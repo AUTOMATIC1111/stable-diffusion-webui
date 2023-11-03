@@ -41,6 +41,7 @@ scikit-image
 basicsr
 fasteners
 dctorch
+httpx==0.24.1
 compel==2.0.2
 torchsde==0.2.6
 antlr4-python3-runtime==4.9.3
