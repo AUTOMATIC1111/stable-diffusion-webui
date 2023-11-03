@@ -1856,6 +1856,12 @@ button.active .icon-sort {
     -webkit-mask-image: url(./html/svg/team-line.svg);
 }
 
+.icon-results{
+    -webkit-mask-image: url(./html/svg/computer-line.svg);
+}
+
+
+
 #contributors_grid {
     gap: 5px;
     align-items: flex-start;
@@ -2222,7 +2228,7 @@ button:hover svg {
 
 *.notransition.fade-in {
     display: flex !important;
-    position: initial !important;
+   /*  position: initial !important; */
 }
 *.notransition.fade-out {
     display: none !important;
@@ -3202,9 +3208,37 @@ input[type="checkbox"] {
     }
 }
 
+.default-desktop .mobile,
+.default-auto .mobile{
+    display:none;
+}
+.default-mobile .mobile{
+    display: flex;
+}
+.default-mobile .split-container.params{
+    min-width:100% !important;
+}
+.default-mobile .split-container.params ~ div{
+    display:none;
+}
+
+#txt2img_generate_group .generate{
+    flex-grow: 1;
+}
+
 @media (max-width: 768px) {
     .xtabs-tab span {
         display: none;
+    }
+
+    .default-auto .mobile{
+        display: flex;
+    }
+    .default-auto .split-container.params{
+        min-width:100% !important;
+    }
+    .default-auto .split-container.params ~ div{
+        display:none;
     }
 }
 

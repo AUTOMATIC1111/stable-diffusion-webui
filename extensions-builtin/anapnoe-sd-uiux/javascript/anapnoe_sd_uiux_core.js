@@ -86,6 +86,63 @@ let loggerUiUx;
 const split_instances = [];
 const anapnoe_app_id = "#anapnoe_app";
 
+function detectMobile() {
+    return ( ( window.innerWidth <= 768 ) );//&& ( window.innerHeight <= 600 ) );
+}
+function debounce(func){
+    var timer;
+    return function(event){
+      if(timer) clearTimeout(timer);
+      timer = setTimeout(func,100,event);
+    };
+}
+
+function applyDefaultLayout(isMobile){
+    anapnoe_app.querySelectorAll("[mobile]").forEach((tabItem) => {        
+        if(isMobile){
+            if(tabItem.childElementCount === 0){
+                const mobile_attr = tabItem.getAttribute("mobile");              
+                if(mobile_attr){
+                    const mobile_target = anapnoe_app.querySelector(mobile_attr);      
+                    if(mobile_target){
+                        tabItem.setAttribute("mobile-restore", `#${mobile_target.parentElement.id}`);
+                        tabItem.append(mobile_target);
+                        
+                    }           
+                }
+            }
+        }else{
+            if(tabItem.childElementCount > 0){
+                const mobile_attr = tabItem.getAttribute("mobile-restore");              
+                if(mobile_attr){
+                    const mobile_target = anapnoe_app.querySelector(mobile_attr);      
+                    if(mobile_target){
+                        mobile_target.append(tabItem.firstElementChild);
+                    }           
+                }
+            }
+        }           
+    });
+}
+
+function switchMobile(){
+    const optslayout = window.opts.uiux_default_layout;
+    //console.log(optslayout);
+    anapnoe_app.classList.add(`default-${optslayout.toLowerCase()}`);
+    if(optslayout === "Auto"){           
+        window.addEventListener("resize",debounce(function(e){
+            const isMobile = detectMobile();
+            applyDefaultLayout(isMobile);
+        }));
+    }else if(optslayout === "Mobile"){
+        applyDefaultLayout(true);
+    }else{
+        applyDefaultLayout(false);
+    }
+    
+}
+
+
 
 function getRootContainer() {
 	return document.getElementById('tab_anapnoe_sd_uiux_core');
@@ -384,13 +441,19 @@ function updateExtraNetworksCards(el){
 }
 
 function setupAnimationEventListeners(){
+
 	document.addEventListener('animationend', function (e) {
 		if (e.animationName === 'fade-out') {				
 			e.target.classList.add('hidden');
 		}
 	}); 
 
+    const notransition = window.opts.uiux_disable_transitions;
+
 	document.addEventListener('animationstart', function (e) {
+        if (notransition) {	
+            e.target.classList.add("notransition");
+        }
 		if (e.animationName === 'fade-out') {
 			if (e.target.className.indexOf('notransition') !== -1) {				
 				e.target.classList.add('hidden');
@@ -531,6 +594,8 @@ function onUiUxReady(content_div){
                 sdMaxOutputResolution(intvalue);					
             })	
             sdMaxOutputResolution(window.opts.uiux_max_resolution_output);
+
+            //switchMobile();
 			
 
 
@@ -583,6 +648,8 @@ function setupGenerateObservers(){
 	});
 
 }
+
+
 
 function initDefaultComponents(content_div) {
 	const anapnoe_app = document.querySelector(anapnoe_app_id);
@@ -763,14 +830,6 @@ function initDefaultComponents(content_div) {
 				tabItem.classList.remove('fade-out');
 				tabItem.classList.add('fade-in');
 				//console.log('tab', tids, tabItem);
-                const mobile_attr = tabItem.getAttribute("mobile");              
-                if(mobile_attr){
-                    const mobile_target = anapnoe_app.querySelector(mobile_attr);      
-                    if(mobile_target){
-                        tabItem.append(mobile_target);
-                    }           
-                }
-
 			});
 
 			el.classList.add('active');
@@ -1244,8 +1303,9 @@ function setupLogger() {
     console.log("Maximum resolution output: ", window.opts.uiux_max_resolution_output);
     console.log("Ignore overrides: ", window.opts.uiux_ignore_overrides);
     console.log("Show ticks for input range slider: ", window.opts.uiux_show_input_range_ticks);
+    console.log("Default layout: ", window.opts.uiux_default_layout);
+    console.log("Disable transitions: ", window.opts.uiux_disable_transitions);
     
- 
 
 	const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
 	if(isFirefox){
