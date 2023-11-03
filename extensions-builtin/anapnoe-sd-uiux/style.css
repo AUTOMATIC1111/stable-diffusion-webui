@@ -3222,7 +3222,8 @@ input[type="checkbox"] {
     display:none;
 }
 
-#txt2img_generate_group .generate{
+#txt2img_results_generate_tabitem .generate,
+#img2img_results_generate_tabitem .generate{
     flex-grow: 1;
 }
 

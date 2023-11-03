@@ -98,7 +98,8 @@ function debounce(func){
 }
 
 function applyDefaultLayout(isMobile){
-    anapnoe_app.querySelectorAll("[mobile]").forEach((tabItem) => {        
+    anapnoe_app.querySelectorAll("[mobile]").forEach((tabItem) => {   
+        //console.log(tabItem);     
         if(isMobile){
             if(tabItem.childElementCount === 0){
                 const mobile_attr = tabItem.getAttribute("mobile");              
@@ -113,11 +114,11 @@ function applyDefaultLayout(isMobile){
             }
         }else{
             if(tabItem.childElementCount > 0){
-                const mobile_attr = tabItem.getAttribute("mobile-restore");              
-                if(mobile_attr){
-                    const mobile_target = anapnoe_app.querySelector(mobile_attr);      
-                    if(mobile_target){
-                        mobile_target.append(tabItem.firstElementChild);
+                const mobile_restore_attr = tabItem.getAttribute("mobile-restore");              
+                if(mobile_restore_attr){                  
+                    const mobile_restore_target = anapnoe_app.querySelector(mobile_restore_attr);      
+                    if(mobile_restore_target){
+                        mobile_restore_target.append(tabItem.firstElementChild);
                     }           
                 }
             }
@@ -134,6 +135,7 @@ function switchMobile(){
             const isMobile = detectMobile();
             applyDefaultLayout(isMobile);
         }));
+        applyDefaultLayout(detectMobile());
     }else if(optslayout === "Mobile"){
         applyDefaultLayout(true);
     }else{
@@ -595,7 +597,7 @@ function onUiUxReady(content_div){
             })	
             sdMaxOutputResolution(window.opts.uiux_max_resolution_output);
 
-            //switchMobile();
+            switchMobile();
 			
 
 

@@ -1,6 +1,6 @@
 <div id="layout-img2img" class="layout">
     <div class="layout-header">
-        <div class="flexbox row shrink panel padding no-br">
+        <div id="img2img_header_panel" class="flexbox row shrink panel padding no-br">
             <div id="img2img_header" class="flexbox row no-wrap shrink no-labels flex-start group-row">
                 <button title="Prompts" tabItemId="#img2img_prompts_tabitem" tabGroup="img2img" id="img2img_prompts" active="true" class="xtabs-tab shrink">
                     <div class="mask-icon icon-prompt">
@@ -27,12 +27,17 @@
                     </div>
                     <span>Scripts</span>
                 </button>
+                <button title="img2img Results" tabItemId="#img2img_results_mobile_tabitem" tabGroup="img2img" id="img2img_results_mobile" class="xtabs-tab mobile">
+                    <div class="mask-icon icon-results">
+                    </div>
+                    <span>img2img Results</span>
+                </button>
              <!--    <button tabItemId="#img2img_temp_tabitem" tabGroup="img2img" class="xtabs-tab">
                     <div id="mask-icon-28i" class="mask-icon icon-bug">
                     </div>
                 </button> -->
             </div>
-            <div class="flexbox row flex-end group-row">
+            <div id="img2img_generate_group" class="flexbox row flex-end group-row">
                 <div title="Skip" data-selector="#img2img_skip" data-parent-selector="#tab_img2img" droppable="true" class="portal invisible shrink no-bg no-padding-one disable">
                     <div class="mask-icon icon-skip">
                     </div>
@@ -344,6 +349,11 @@
                         </div>
                     </div>
                 </div>
+                <div id="img2img_results_mobile_tabitem_group" class="flexbox col mobile">
+                    <div id="img2img_results_mobile_tabitem" mobile="#template-img2img-results" class="xtabs-item">
+                       
+                    </div>
+                </div>
                 <div id="img2img_temp_tabitem_group" class="flexbox col hidden">
                     <div id="img2img_temp_tabitem" class="xtabs-item">
                         <div id="accordioni" class="accordion">
@@ -371,6 +381,11 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+    <div id="img2img_results_generate_tabitem_group" class="flexbox col panel no-grow mobile">
+        <div id="img2img_results_generate_tabitem" mobile="#img2img_generate_group" class="xtabs-item">
+                        
         </div>
     </div>
     <!--  <div class="layout-footer">
