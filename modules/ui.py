@@ -273,8 +273,7 @@ def create_toprow(is_img2img):
                 negative_token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{id_part}_negative_token_counter", elem_classes=["token-counter"])
                 negative_token_button = gr.Button(visible=False, elem_id=f"{id_part}_negative_token_button")
             with gr.Row(elem_id=f"{id_part}_styles_row"):
-                # prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[style.name for style in modules.shared.prompt_styles.styles.values()], value=[], multiselect=True)
-                prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=['aaa'], value=[], multiselect=True)
+                prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[style.name for style in modules.shared.prompt_styles.styles.values()], value=[], multiselect=True)
                 prompt_styles_btn_refresh = ToolButton(symbols.refresh, elem_id=f"{id_part}_styles_refresh", visible=True)
                 prompt_styles_btn_refresh.click(fn=lambda: gr.update(choices=[style.name for style in modules.shared.prompt_styles.styles.values()]), inputs=[], outputs=[prompt_styles])
                 prompt_styles_btn_select = gr.Button('Select', elem_id=f"{id_part}_styles_select", visible=False)
