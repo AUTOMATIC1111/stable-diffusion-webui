@@ -241,6 +241,7 @@ function setupExtraNetworksForTab(tabname) {
   const btnSave = gradioApp().getElementById(`${tabname}_extra_save`);
   const btnClose = gradioApp().getElementById(`${tabname}_extra_close`);
   const btnSort = gradioApp().getElementById(`${tabname}_extra_sort`);
+  const btnView = gradioApp().getElementById(`${tabname}_extra_view`);
   const btnModel = gradioApp().getElementById(`${tabname}_extra_model`);
   const btnApply = gradioApp().getElementById(`${tabname}_extra_apply`);
   const buttons = document.createElement('span');
@@ -251,6 +252,7 @@ function setupExtraNetworksForTab(tabname) {
   if (btnScan) buttons.appendChild(btnScan);
   if (btnSave) buttons.appendChild(btnSave);
   if (btnSort) buttons.appendChild(btnSort);
+  if (btnView) buttons.appendChild(btnView);
   if (btnClose) buttons.appendChild(btnClose);
   btnModel.onclick = () => btnModel.classList.toggle('toolbutton-selected');
   tabs.appendChild(buttons);

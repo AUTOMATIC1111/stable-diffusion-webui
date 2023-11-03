@@ -572,6 +572,7 @@ options_templates.update(options_section(('interrogate', "Interrogate"), {
 options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_sep1": OptionInfo("<h2>Extra networks UI</h2>", "", gr.HTML),
     "extra_networks": OptionInfo(["All"], "Extra networks", ui_components.DropdownMulti, lambda: {"choices": ['All'] + [en.title for en in extra_networks]}),
+    "extra_networks_view": OptionInfo("gallery", "UI view", gr.Radio, {"choices": ["gallery", "list"]}),
     "extra_networks_card_cover": OptionInfo("sidebar", "UI position", gr.Radio, {"choices": ["cover", "inline", "sidebar"]}),
     "extra_networks_height": OptionInfo(53, "UI height (%)", gr.Slider, {"minimum": 10, "maximum": 100, "step": 1}),
     "extra_networks_sidebar_width": OptionInfo(35, "UI sidebar width (%)", gr.Slider, {"minimum": 10, "maximum": 80, "step": 1}),
@@ -783,7 +784,6 @@ parallel_processing_allowed = not cmd_opts.lowvram
 mem_mon = modules.memmon.MemUsageMonitor("MemMon", devices.device)
 if devices.backend == "directml":
     directml_do_hijack()
-
 
 class TotalTQDM: # compatibility with previous global-tqdm
     # import tqdm

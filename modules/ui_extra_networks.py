@@ -24,6 +24,28 @@ dir_cache = {} # key=path, value=(mtime, listdir(path))
 refresh_time = 0
 extra_pages = shared.extra_networks
 debug = shared.log.info if os.environ.get('SD_EN_DEBUG', None) is not None else lambda *args, **kwargs: None
+card_full = '''
+    <div class='card' onclick={card_click} title='{name}' data-tab='{tabname}' data-page='{page}' data-name='{name}' data-filename='{filename}' data-tags='{tags}' data-mtime='{mtime}' data-size='{size}'>
+        <div class='overlay'>
+            <span style="display:none" class='search_term'>{search_term}</span>
+            <div class='tags'></div>
+            <div class='name'>{title}</div>
+        </div>
+        <div class='actions'>
+            <span class='details' title="Get details" onclick="showCardDetails(event)">&#x1f6c8;</span>
+            <div class='additional'><ul></ul></div>
+        </div>
+        <img class='preview' src='{preview}' style='width: {width}px; height: {height}px; object-fit: {fit}' loading='lazy'></img>
+    </div>
+'''
+card_list = '''
+    <div class='card card-list' onclick={card_click} title='{name}' data-tab='{tabname}' data-page='{page}' data-name='{name}' data-filename='{filename}' data-tags='{tags}' data-mtime='{mtime}' data-size='{size}'>
+        <span class='details' title="Get details" onclick="showCardDetails(event)">&#x1f6c8;</span>&nbsp;
+        <div class='name'>{title}</div>&nbsp;
+        <div class='tags tags-list'></div>
+        <span style="display:none" class='search_term'>{search_term}</span>
+    </div>
+'''
 
 
 def listdir(path):
@@ -116,21 +138,8 @@ class ExtraNetworksPage:
         self.refresh_time = 0
         self.page_time = 0
         self.list_time = 0
-        # class additional is to keep old extensions happy
-        self.card = '''
-            <div class='card' onclick={card_click} title='{name}' data-tab='{tabname}' data-page='{page}' data-name='{name}' data-filename='{filename}' data-tags='{tags}' data-mtime='{mtime}' data-size='{size}'>
-                <div class='overlay'>
-                    <span style="display:none" class='search_term'>{search_term}</span>
-                    <div class='tags'></div>
-                    <div class='name'>{title}</div>
-                </div>
-                <div class='actions'>
-                    <span class='details' title="Get details" onclick="showCardDetails(event)">&#x1f6c8;</span>
-                    <div class='additional'><ul></ul></div>
-                </div>
-                <img class='preview' src='{preview}' style='width: {width}px; height: {height}px; object-fit: {fit}' loading='lazy'></img>
-            </div>
-        '''
+        self.view = shared.opts.extra_networks_view
+        self.card = card_full if shared.opts.extra_networks_view == 'gallery' else card_list
 
     def refresh(self):
         pass
@@ -219,7 +228,7 @@ class ExtraNetworksPage:
 
     def create_page(self, tabname, skip = False):
         debug(f'EN create-page: {self.name}')
-        if self.page_time > refresh_time: # cached page
+        if self.page_time > refresh_time and len(self.html) > 0: # cached page
             return self.html
         self_name_id = self.name.replace(" ", "_")
         if skip:
@@ -393,6 +402,7 @@ class ExtraNetworksUi:
         self.button_details: gr.Button = None
         self.button_refresh: gr.Button = None
         self.button_scan: gr.Button = None
+        self.button_view: gr.Button = None
         self.button_quicksave: gr.Button = None
         self.button_save: gr.Button = None
         self.button_sort: gr.Button = None
@@ -495,6 +505,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         ui.button_quicksave = ToolButton(symbols.book, elem_id=tabname+"_extra_quicksave", visible=False)
         ui.button_save = ToolButton(symbols.book, elem_id=tabname+"_extra_save", visible=False)
         ui.button_sort = ToolButton(symbols.sort, elem_id=tabname+"_extra_sort", visible=True)
+        ui.button_view = ToolButton(symbols.view, elem_id=tabname+"_extra_view", visible=True)
         ui.button_close = ToolButton(symbols.close, elem_id=tabname+"_extra_close", visible=True)
         ui.button_model = ToolButton(symbols.refine, elem_id=tabname+"_extra_model", visible=True)
         ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", elem_classes="textbox", lines=2, container=False)
@@ -692,6 +703,20 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         ui.search.update(value = ui.search.value)
         return pages
 
+    def ui_view_cards(title):
+        pages = []
+        for page in get_pages():
+            if title is None or title == '' or title == page.title or len(page.html) == 0:
+                shared.opts.extra_networks_view = page.view
+                page.view = 'gallery' if page.view == 'list' else 'list'
+                page.card = card_full if page.view == 'gallery' else card_list
+                page.html = ''
+                page.create_page(ui.tabname)
+                shared.log.debug(f"Refreshing Extra networks: page='{page.title}' items={len(page.items)} tab={ui.tabname} view={page.view}")
+            pages.append(page.html)
+        ui.search.update(value = ui.search.value)
+        return pages
+
     def ui_scan_click(title):
         from modules import ui_models
         if ui_models.search_metadata_civit is not None:
@@ -744,6 +769,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
     button_parent.click(fn=toggle_visibility, inputs=[ui.visible], outputs=[ui.visible, container, button_parent])
     ui.button_close.click(fn=toggle_visibility, inputs=[ui.visible], outputs=[ui.visible, container])
     ui.button_sort.click(fn=ui_sort_cards, _js='sortExtraNetworks', inputs=[ui.search], outputs=[ui.description])
+    ui.button_view.click(fn=ui_view_cards, inputs=[ui.search], outputs=ui.pages)
     ui.button_refresh.click(fn=ui_refresh_click, _js='getENActivePage', inputs=[ui.search], outputs=ui.pages)
     ui.button_scan.click(fn=ui_scan_click, _js='getENActivePage', inputs=[ui.search], outputs=ui.pages)
     ui.button_save.click(fn=ui_save_click, inputs=[], outputs=ui.details_components + [ui.details])
