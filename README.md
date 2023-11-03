@@ -4,9 +4,8 @@ A bespoke, highly adaptable user interface for the Stable Diffusion, utilizing t
 ![](screenshot.png)
 
 ## Todo
-- Mobile Support
+- Improve Mobile Support
 - Fullscreen Gallery Support
-- UI-UX Options in Settings
 
 
 ## Features
