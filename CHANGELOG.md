@@ -59,8 +59,11 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
 - **Packages**
   - updated `diffusers` to 0.22.0, `transformers` to 4.34.1  
   - update **openvino**, thanks @disty0  
-  - update **ipex**, thanks @disty0  
   - update **directml**, @lshqqytiger  
+- **Compute**  
+  - **OpenVINO**:  
+    - updated to mainstream `torch` *2.1.0*  
+    - support for **ESRGAN** upscalers  
 - **Fixes**  
   - fix **freeu** for backend original and add it to xyz grid  
   - fix loading diffuser models in huggingface format from non-standard location  
