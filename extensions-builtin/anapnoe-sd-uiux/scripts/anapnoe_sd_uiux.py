@@ -14,7 +14,9 @@ shared.options_templates.update(shared.options_section(('uiux_core', "Anapnoe UI
     "uiux_disable_transitions": shared.OptionInfo(False, "Disable transitions"),
     "uiux_default_layout": shared.OptionInfo("Auto", "Layout", gr.Radio, {"choices": ["Auto","Desktop", "Mobile"]}),    
     "uiux_ignore_overrides": shared.OptionInfo([], "Ignore Overrides", gr.CheckboxGroup, lambda: {"choices": [x[0] for x in infotext_to_setting_name_mapping]}),
-    
+    "uiux_show_labels_aside": shared.OptionInfo(False, "Show labels for aside tabs"),
+    "uiux_show_labels_main": shared.OptionInfo(False, "Show labels for main tabs"),
+    "uiux_show_labels_tabs": shared.OptionInfo(False, "Show labels for page tabs"),
  }))
 
 

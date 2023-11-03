@@ -1024,8 +1024,45 @@ function initDefaultComponents(content_div) {
     });
 
     uiux_no_slider_layout(window.opts.uiux_no_slider_layout);
-    
 
+    function uiux_show_labels_aside(value) {
+        if (value) {
+            anapnoe_app.classList.add("aside-labels");
+        } else {
+            anapnoe_app.classList.remove("aside-labels");
+        }
+    }
+    gradioApp().querySelector("#setting_uiux_show_labels_aside input").addEventListener("click", function (e) {
+        uiux_show_labels_aside(e.target.checked, true);
+    });
+    uiux_show_labels_aside(window.opts.uiux_show_labels_aside);
+
+
+    function uiux_show_labels_main(value) {
+        if (value) {
+            anapnoe_app.classList.add("main-labels");
+        } else {
+            anapnoe_app.classList.remove("main-labels");
+        }
+    }
+    gradioApp().querySelector("#setting_uiux_show_labels_main input").addEventListener("click", function (e) {
+        uiux_show_labels_main(e.target.checked, true);
+    });
+    uiux_show_labels_main(window.opts.uiux_show_labels_main);
+
+
+    function uiux_show_labels_tabs(value) {
+        if (value) {
+            anapnoe_app.classList.add("tab-labels");
+        } else {
+            anapnoe_app.classList.remove("tab-labels");
+        }
+    }
+    gradioApp().querySelector("#setting_uiux_show_labels_tabs input").addEventListener("click", function (e) {
+        uiux_show_labels_tabs(e.target.checked, true);
+    });
+    uiux_show_labels_tabs(window.opts.uiux_show_labels_tabs);
+    
 
 	// try to attach Logger Screen to main before full UIUXReady
 	const asideconsole = document.querySelector("#layout-console-log");
@@ -1307,7 +1344,10 @@ function setupLogger() {
     console.log("Show ticks for input range slider: ", window.opts.uiux_show_input_range_ticks);
     console.log("Default layout: ", window.opts.uiux_default_layout);
     console.log("Disable transitions: ", window.opts.uiux_disable_transitions);
-    
+    console.log("Aside labels: ", window.opts.uiux_show_labels_aside);
+    console.log("Main labels: ", window.opts.uiux_show_labels_main);
+    console.log("Tabs labels: ", window.opts.uiux_show_labels_tabs);
+
 
 	const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
 	if(isFirefox){

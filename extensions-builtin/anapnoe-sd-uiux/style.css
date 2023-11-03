@@ -2936,6 +2936,9 @@ iframe{
     padding: 0;
     background-color: transparent;
     line-height: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
 div#workspaces_tabitem > div {
@@ -3208,6 +3211,7 @@ input[type="checkbox"] {
     }
 }
 
+#sidebar_secondary_tabs a span,
 .default-desktop .mobile,
 .default-auto .mobile{
     display:none;
@@ -3225,6 +3229,26 @@ input[type="checkbox"] {
 #txt2img_results_generate_tabitem .generate,
 #img2img_results_generate_tabitem .generate{
     flex-grow: 1;
+}
+.aside-labels #sidebar_secondary_tabs a span,
+.main-labels #main-nav .xtabs-tab span,
+.tab-labels [id$="2img_header"] span ,
+.aside-labels #accordion-aside .xtabs-tab span {
+    display: flex !important;
+}
+.main-labels #main-nav .xtabs-tab,
+.tab-labels [id$="2img_header"] .xtabs-tab,
+.aside-labels #accordion-aside .xtabs-tab {
+    justify-content: flex-start;
+}
+#acc-arrow-button,
+.aside-labels .accordion-bar > div{
+    width:100%;
+}
+
+.aside-labels div#sidebar_secondary_tabs button {
+    width: 100%;
+    justify-content: flex-start;
 }
 
 @media (max-width: 768px) {
