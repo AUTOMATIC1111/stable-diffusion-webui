@@ -103,7 +103,7 @@ def decode_base64_to_image(encoding):
 
 def encode_pil_to_base64(image):
     with io.BytesIO() as output_bytes:
-        if image.format != None and image.format.lower() in ('gif', 'webp'):
+        if image.format is not None and image.format.lower() in ('gif', 'webp'):
             image.save(output_bytes, format=image.format, save_all=True)
         elif opts.samples_format.lower() == 'png':
             use_metadata = False
