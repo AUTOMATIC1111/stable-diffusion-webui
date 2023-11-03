@@ -51,6 +51,15 @@ window.extraNetworksEditUserMetadata = function(event, tabname, extraPage, cardN
     //event.stopPropagation();
 }
 
+window.get_uiCurrentTabContent = function(){
+    //console.log(active_main_tab);
+    if(active_main_tab.id === "tab_txt2img"){
+        return document.getElementById("txt2img_tabitem");
+    }else if(active_main_tab.id === "tab_img2img"){
+        return document.getElementById("img2img_tabitem");
+    }
+}
+
 async function getContributors(repoName, page = 1) {  
     let request = await fetch(`https://api.github.com/repos/${repoName}/contributors?per_page=100&page=${page}`, {
         method: 'GET',
@@ -159,9 +168,7 @@ function mainTabs(element, tab) {
 		ntab.style.display = 'block';
 		//console.log(tab, ntab);
 		active_main_tab = ntab;
-
 	}
-	
 }
 
 function setAttrSelector(parent_elem, content_div, count, index, length) {
@@ -817,9 +824,6 @@ function initDefaultComponents(content_div) {
 
 			el.classList.add('active');
 			callToAction(el, tids, pid);
-
-           
-
 
 		});
 
