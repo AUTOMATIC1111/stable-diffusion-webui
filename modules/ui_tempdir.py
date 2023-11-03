@@ -3,7 +3,7 @@ import tempfile
 from collections import namedtuple
 from pathlib import Path
 import gradio as gr
-from PIL import PngImagePlugin
+from PIL import Image, PngImagePlugin
 from modules import shared, errors
 
 
@@ -36,7 +36,7 @@ def check_tmp_file(gradio, filename):
     return ok
 
 
-def pil_to_temp_file(self, img, dir: str, format="png") -> str: # pylint: disable=redefined-builtin,unused-argument
+def pil_to_temp_file(self, img: Image, dir: str, format="png") -> str: # pylint: disable=redefined-builtin,unused-argument
     """
     # original gradio implementation
     bytes_data = gr.processing_utils.encode_pil_to_bytes(img, format)
@@ -62,9 +62,12 @@ def pil_to_temp_file(self, img, dir: str, format="png") -> str: # pylint: disabl
         if isinstance(key, str) and isinstance(value, str):
             metadata.add_text(key, value)
             use_metadata = True
+    if not os.path.exists(dir):
+        os.makedirs(dir, exist_ok=True)
+        shared.log.debug(f'Created temp folder: path="{dir}"')
     with tempfile.NamedTemporaryFile(delete=False, suffix=".png", dir=dir) as tmp:
-        img.save(tmp, pnginfo=(metadata if use_metadata else None))
         name = tmp.name
+        img.save(name, pnginfo=(metadata if use_metadata else None))
         shared.log.debug(f'Saving temp: image="{name}"')
     return name
 
