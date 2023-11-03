@@ -879,7 +879,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 shared.log.error(f'Failed loading {op}: {checkpoint_info.path} auto={err1} diffusion={err2}')
                 return
         elif os.path.isfile(checkpoint_info.path) and checkpoint_info.path.lower().endswith('.safetensors'):
-            diffusers_load_config["local_files_only"] = True
+            # diffusers_load_config["local_files_only"] = True
             diffusers_load_config["extract_ema"] = shared.opts.diffusers_extract_ema
             pipeline, model_type = detect_pipeline(checkpoint_info.path, op)
             if pipeline is None:

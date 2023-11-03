@@ -75,6 +75,8 @@
     //extraNetworks.js
     "requestGet": "readonly",
     "getENActiveTab": "readonly",
+    "quickApplyStyle": "readonly",
+    "quickSaveStyle": "readonly",
     // from python
     "localization": "readonly",
     // progressbar.js

@@ -216,6 +216,18 @@ function applyStyles(styles) {
   return newStyles.join('|');
 }
 
+function quickApplyStyle() {
+  const tabname = getENActiveTab();
+  const btnApply = gradioApp().getElementById(`${tabname}_extra_apply`);
+  if (btnApply) btnApply.click();
+}
+
+function quickSaveStyle() {
+  const tabname = getENActiveTab();
+  const btnSave = gradioApp().getElementById(`${tabname}_extra_quicksave`);
+  if (btnSave) btnSave.click();
+}
+
 // init
 
 function setupExtraNetworksForTab(tabname) {
@@ -242,6 +254,14 @@ function setupExtraNetworksForTab(tabname) {
   if (btnClose) buttons.appendChild(btnClose);
   btnModel.onclick = () => btnModel.classList.toggle('toolbutton-selected');
   tabs.appendChild(buttons);
+
+  // details
+  const detailsImg = gradioApp().getElementById(`${tabname}_extra_details_img`);
+  const detailsClose = gradioApp().getElementById(`${tabname}_extra_details_close`);
+  if (detailsImg && detailsClose) {
+    detailsImg.title = 'Close details';
+    detailsImg.onclick = () => detailsClose.click();
+  }
 
   // search and description
   const div = document.createElement('div');

@@ -126,7 +126,7 @@ def process_interrogate(interrogation_function, mode, ii_input_files, ii_input_d
             images = [f.name for f in ii_input_files]
         else:
             if not os.path.isdir(ii_input_dir):
-                log.error(f"Input directory not found: {ii_input_dir}")
+                log.error(f"Interrogate: Input directory not found: {ii_input_dir}")
                 return [gr.update(), None]
             images = modules.shared.listfiles(ii_input_dir)
         if ii_output_dir != "":
@@ -142,6 +142,9 @@ def process_interrogate(interrogation_function, mode, ii_input_files, ii_input_d
 
 
 def interrogate(image):
+    if image is None:
+        log.error("Interrogate: no image selected")
+        return gr.update()
     prompt = modules.shared.interrogator.interrogate(image.convert("RGB"))
     return gr.update() if prompt is None else prompt
 

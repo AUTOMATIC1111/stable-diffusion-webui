@@ -157,7 +157,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 
 /* context menu (ie for the generate button) */
 #context-menu { z-index: 9999; position: absolute; display: block; padding: var(--spacing-md); border: 2px solid var(--highlight-color); background: var(--background-fill-primary); color: var(--body-text-color); }
-.context-menu-items { list-style: none; margin: 0; padding: 0; }
+.context-menu-items { list-style: none; margin: 0; padding: 0; font-size: 0.9em; }
 .context-menu-items a { display: block; padding: var(--spacing-md); cursor: pointer; font-weight: normal; }
 .context-menu-items a:hover { background: var(--highlight-color) }
 
@@ -204,6 +204,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-network-cards .card:hover .actions { display: block; }
 .extra-network-cards .card:hover .overlay .tags { display: block; }
 .extra-network-cards .card .actions { font-size: 3em; display: none; text-align-last: right; cursor: pointer; font-variant: unicase; position: absolute; z-index: 100; right: 0; height: 0.7em; width: 100%; background: rgba(0, 0, 0, 0.40); }
+.extra-details-close { position: fixed; top: 0.2em; right: 0.2em; z-index: 99; background: var(--button-secondary-background-fill) !important; }
 #txt2img_description, #img2img_description { max-height: 63px; overflow-y: auto !important; }
 #txt2img_description > label > textarea, #img2img_description > label > textarea { font-size: 0.9em }
 

@@ -1,4 +1,4 @@
-let nvmlInterval = true; // eslint-disable-line prefer-const
+let nvmlInterval = null; // eslint-disable-line prefer-const
 let nvmlEl = null;
 let nvmlTable = null;
 
@@ -60,7 +60,13 @@ async function initNVML() {
     gradioApp().appendChild(nvmlEl);
     log('initNVML');
   }
-  nvmlInterval = setInterval(updateNVML, 1000);
+  if (nvmlInterval) {
+    clearInterval(nvmlInterval);
+    nvmlInterval = null;
+    nvmlEl.style.display = 'none';
+  } else {
+    nvmlInterval = setInterval(updateNVML, 1000);
+  }
 }
 
 async function disableNVML() {
