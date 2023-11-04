@@ -111,7 +111,7 @@ class OlivePipeline(diffusers.DiffusionPipeline):
             for submodel in submodels:
                 log.info(f"\nOptimizing {submodel}")
 
-                with open(os.path.join(sd_configs_path, "olive", f"config_{submodel}.json"), "r") as config_file:
+                with open(os.path.join(sd_configs_path, "olive", f"sd_{submodel}.json"), "r") as config_file:
                     olive_config = json.load(config_file)
                 olive_config["passes"]["optimize"]["config"]["float16"] = shared.opts.onnx_olive_float16
                 if (submodel == "unet" or "vae" in submodel) and (shared.opts.onnx_execution_provider == ExecutionProvider.CUDA or shared.opts.onnx_execution_provider == ExecutionProvider.ROCm):
