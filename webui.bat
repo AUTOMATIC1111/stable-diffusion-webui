@@ -1,3 +1,7 @@
+:: --------------------------------------------------------------------------------------------------------------
+:: Do not make any changes to this file, change the variables in webui-user.bat instead and call this file
+:: --------------------------------------------------------------------------------------------------------------
+
 @echo off
 
 if not defined PYTHON (set PYTHON=python)
