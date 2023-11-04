@@ -111,6 +111,7 @@ function requestProgress(id_task, progressEl, galleryEl, atEnd = null, onProgres
   };
 
   const start = (id_task, id_live_preview) => { // eslint-disable-line no-shadow
+    if (!opts.live_previews_enable || opts.live_preview_refresh_period === 0 || opts.show_progress_every_n_steps === 0) return;
     request('./internal/progress', { id_task, id_live_preview }, (res) => {
       lastState = res;
       const elapsedFromStart = (new Date() - dateStart) / 1000;

@@ -4,6 +4,7 @@ import math
 import time
 import hashlib
 import random
+import warnings
 from contextlib import nullcontext
 from typing import Any, Dict, List
 import torch
@@ -726,23 +727,17 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
 
 def validate_sample(sample):
-    ok = True
-    try:
-        sample = sample.astype(np.uint8)
-        return sample
-    except (Exception, Warning, RuntimeWarning) as e:
-        shared.log.error(f'Failed to validate sample values: {e}')
-        ok = False
-    if not ok:
-        try:
-            sample = np.nan_to_num(sample, nan=0, posinf=255, neginf=0)
-            sample = sample.astype(np.uint8)
-            shared.log.debug('Corrected sample values')
-        except (Exception, Warning, RuntimeWarning) as e:
-            shared.log.error(f'Failed to correct sample values: {e}')
-            sample = np.zeros_like(sample)
-            sample = sample.astype(np.uint8)
-    return sample
+    sample[0][0][0] = np.nan
+    with warnings.catch_warnings(record=True) as w:
+        cast = sample.astype(np.uint8)
+    if len(w) > 0:
+        nans = np.isnan(sample).sum()
+        shared.log.error(f'Failed to validate samples: sample={sample.shape} invalid={nans}')
+        cast = np.nan_to_num(sample)
+        minimum, maximum, mean = np.min(cast), np.max(cast), np.mean(cast)
+        cast = cast.astype(np.uint8)
+        shared.log.warning(f'Attempted to correct samples: min={minimum:.2f} max={maximum:.2f} mean={mean:.2f}')
+    return cast
 
 
 def process_images_inner(p: StableDiffusionProcessing) -> Processed:
