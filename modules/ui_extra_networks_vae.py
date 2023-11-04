@@ -24,13 +24,13 @@ class ExtraNetworksPageVAEs(ui_extra_networks.ExtraNetworksPage):
                     "search_term": self.search_terms_from_path(fn),
                     "preview": self.find_preview(fn),
                     "local_preview": f"{fn}.{shared.opts.samples_format}",
-                    "description": self.find_description(fn),
-                    "info": self.find_info(fn),
                     "metadata": {},
                     "onclick": '"' + html.escape(f"""return selectVAE({json.dumps(name)})""") + '"',
                     "mtime": os.path.getmtime(filename),
                     "size": os.path.getsize(filename),
                 }
+                record["info"] = self.find_info(fn)
+                record["description"] = self.find_description(fn, record["info"])
                 yield record
             except Exception as e:
                 shared.log.debug(f"Extra networks error: type=vae file={filename} {e}")

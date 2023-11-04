@@ -49,12 +49,12 @@ card_list = '''
 
 
 def listdir(path):
-    debug(f'EN list-dir: {path}')
     if not os.path.exists(path):
         return []
     if path in dir_cache and os.path.getmtime(path) == dir_cache[path][0]:
         return dir_cache[path][1]
     else:
+        # debug(f'EN list-dir list: {path}')
         dir_cache[path] = (os.path.getmtime(path), [os.path.join(path, f) for f in os.listdir(path)])
         return dir_cache[path][1]
 
@@ -138,6 +138,9 @@ class ExtraNetworksPage:
         self.refresh_time = 0
         self.page_time = 0
         self.list_time = 0
+        self.info_time = 0
+        self.desc_time = 0
+        self.dirs = {}
         self.view = shared.opts.extra_networks_view
         self.card = card_full if shared.opts.extra_networks_view == 'gallery' else card_list
 
@@ -210,7 +213,6 @@ class ExtraNetworksPage:
             self.missing_thumbs.clear()
 
     def create_items(self, tabname):
-        debug(f'EN create-items: {self.name}')
         if self.refresh_time is not None and self.refresh_time > refresh_time: # cached results
             return
         t0 = time.time()
@@ -223,7 +225,8 @@ class ExtraNetworksPage:
         for item in self.items:
             self.metadata[item["name"]] = item.get("metadata", {})
         t1 = time.time()
-        self.list_time = round(t1-t0, 2)
+        debug(f'EN create-items: page={self.name} items={len(self.items)} time={t1-t0:.2f}')
+        self.list_time += t1-t0
 
 
     def create_page(self, tabname, skip = False):
@@ -263,7 +266,7 @@ class ExtraNetworksPage:
             self.html = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
         else:
             return ''
-        shared.log.debug(f"Extra networks: page='{self.name}' items={len(self.items)} subdirs={len(subdirs)} tab={tabname} dirs={self.allowed_directories_for_previews()} time={self.list_time}")
+        shared.log.debug(f"Extra networks: page='{self.name}' items={len(self.items)} subdirs={len(subdirs)} tab={tabname} dirs={self.allowed_directories_for_previews()} list={self.list_time:.2f} desc={self.desc_time:.2f} info={self.info_time:.2f}")
         if len(self.missing_thumbs) > 0:
             threading.Thread(target=self.create_thumb).start()
         return self.html
@@ -305,8 +308,9 @@ class ExtraNetworksPage:
     def find_preview_file(self, path):
         fn = os.path.splitext(path)[0]
         preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
+        files = listdir(os.path.dirname(path))
         for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.preview.', '.']]:
-            if os.path.exists(file):
+            if file in files:
                 return file
         return 'html/card-no-preview.png'
 
@@ -315,14 +319,16 @@ class ExtraNetworksPage:
             return self.link_preview('html/card-no-preview.png')
         fn = os.path.splitext(path)[0]
         preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
+        files = listdir(os.path.dirname(path))
         for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.', '.preview.']]:
-            if os.path.exists(file):
+            if file in files:
                 if '.thumb.' not in file:
                     self.missing_thumbs.append(file)
                 return self.link_preview(file)
         return self.link_preview('html/card-no-preview.png')
 
-    def find_description(self, path):
+    def find_description(self, path, info=None):
+        t0 = time.time()
         class HTMLFilter(HTMLParser):
             text = ""
             def handle_data(self, data):
@@ -332,7 +338,8 @@ class ExtraNetworksPage:
                     self.text += '\n'
 
         fn = os.path.splitext(path)[0] + '.txt'
-        if os.path.exists(fn):
+        # if os.path.exists(fn):
+        if fn in listdir(os.path.dirname(path)):
             try:
                 with open(fn, "r", encoding="utf-8", errors="replace") as f:
                     txt = f.read()
@@ -340,20 +347,27 @@ class ExtraNetworksPage:
                     return txt
             except OSError:
                 pass
-        info = self.find_info(path)
+        if info is None:
+            info = self.find_info(path)
         desc = info.get('description', '') or ''
         f = HTMLFilter()
         f.feed(desc)
+        t1 = time.time()
+        self.desc_time += t1-t0
         return f.text
 
     def find_info(self, path):
+        t0 = time.time()
         fn = os.path.splitext(path)[0] + '.json'
-        if os.path.exists(fn):
+        # if os.path.exists(fn):
+        data = {}
+        if fn in listdir(os.path.dirname(path)):
             data = shared.readfile(fn, silent=True)
             if type(data) is list:
                 data = data[0]
-            return data
-        return {}
+        t1 = time.time()
+        self.info_time += t1-t0
+        return data
 
 
 def initialize():
@@ -524,8 +538,8 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         for page in get_pages():
             page.create_page(ui.tabname, skip_indexing)
             with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab") as tab:
-                hmtl = gr.HTML(page.html, elem_id=f'{tabname}{page.name}_extra_page', elem_classes="extra-networks-page")
-                ui.pages.append(hmtl)
+                page_html = gr.HTML(page.html, elem_id=f'{tabname}{page.name}_extra_page', elem_classes="extra-networks-page")
+                ui.pages.append(page_html)
                 tab.select(ui_tab_change, _js="getENActivePage", inputs=[ui.button_details], outputs=[ui.button_scan, ui.button_save, ui.button_model])
         # ui.tabs.change(fn=ui_tab_change, inputs=[], outputs=[ui.button_scan, ui.button_save])
 

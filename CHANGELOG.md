@@ -37,6 +37,9 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
   - extend support for [Free-U](https://github.com/ChenyangSi/FreeU)  
     improve generations quality at no cost (other than finding params that work for you)  
 - **General**  
+  - attempt to auto-fix invalid samples which occure due to math errors in lower precision  
+    example: `RuntimeWarning: invalid value encountered in cast: sample = sample.astype(np.uint8)`  
+    begone **black images** *(note: if it proves as working, this solution will need to be expanded to cover all scenarios)*  
   - add **Lora OFT** support, thanks @antis0007 and @ai-casanova  
   - **Upscalers**  
     - **compile** option, thanks @disty0  
@@ -54,10 +57,11 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
   - UI switch core font in default theme to **noto-sans**  
     previously default font was simply *system-ui*, but it lead to too much variations between browsers and platforms  
   - updated **Context menu**  
-    right-click on prompt or generate button
+    right-click on any button (e.g. generate button)
 - **Extra networks**  
   - sort by name, size, date, etc.  
   - switch between *gallery* and *list* views  
+  - faster enumeration of all networks on server startup  
 - **Packages**
   - updated `diffusers` to 0.22.0, `transformers` to 4.34.1  
   - update **openvino**, thanks @disty0  

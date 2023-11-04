@@ -263,7 +263,7 @@ def create_toprow(is_img2img):
                 pause = gr.Button('Pause', elem_id=f"{id_part}_pause")
                 pause.click(fn=lambda: modules.shared.state.pause(), _js='checkPaused', inputs=[], outputs=[])
             with gr.Row(elem_id=f"{id_part}_tools"):
-                button_paste = gr.Button(value='Restore', variant='secondary', elem_id="paste") # symbols.paste
+                button_paste = gr.Button(value='Restore', variant='secondary', elem_id=f"{id_part}_paste") # symbols.paste
                 button_clear = gr.Button(value='Clear', variant='secondary', elem_id=f"{id_part}_clear_prompt_btn") # symbols.clear
                 button_extra = gr.Button(value='Networks', variant='secondary', elem_id=f"{id_part}_extra_networks_btn") # symbols.networks
                 button_clear.click(fn=lambda *x: ['', ''], inputs=[prompt, negative_prompt], outputs=[prompt, negative_prompt], show_progress=False)

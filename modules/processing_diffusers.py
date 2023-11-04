@@ -143,6 +143,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             decoded = full_vae_decode(latents=latents, model=shared.sd_model)
         else:
             decoded = taesd_vae_decode(latents=latents)
+        # decoded = validate_sample(decoded) # TODO validate sample
         imgs = model.image_processor.postprocess(decoded, output_type=output_type)
         shared.state.job = prev_job
         return imgs

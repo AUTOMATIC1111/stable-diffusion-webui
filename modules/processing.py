@@ -727,7 +727,6 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
 
 def validate_sample(sample):
-    sample[0][0][0] = np.nan
     with warnings.catch_warnings(record=True) as w:
         cast = sample.astype(np.uint8)
     if len(w) > 0:

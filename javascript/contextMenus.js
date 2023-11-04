@@ -104,7 +104,7 @@ function initContextMenu() {
   };
 
   for (const tab of ['txt2img', 'img2img']) {
-    for (const el of ['prompt > label > textarea', 'generate']) {
+    for (const el of ['generate', 'interrupt', 'skip', 'pause', 'paste', 'clear_prompt', 'extra_networks_btn']) {
       const id = `#${tab}_${el}`;
       appendContextMenuOption(id, 'Copy to clipboard', () => navigator.clipboard.writeText(document.querySelector(`#${tab}_prompt > label > textarea`).value));
       appendContextMenuOption(id, 'Generate forever', () => generateForever(`#${tab}_generate`));
