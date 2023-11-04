@@ -269,7 +269,13 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
   --text-xs: 10px;
   --text-sm: 12px;
   --text-md: 14px;
-  --text-lg: 16px;
-  --text-xl: 18px;
-  --text-xxl: 20px;
+  --text-lg: 15px;
+  --text-xl: 16px;
+  --text-xxl: 17px;
+  --spacing-xxs: 1px;
+  --spacing-xs: 2px;
+  --spacing-sm: 3px;
+  --spacing-lg: 4px;
+  --spacing-xl: 5px;
+  --spacing-xxl: 6px;
 }
