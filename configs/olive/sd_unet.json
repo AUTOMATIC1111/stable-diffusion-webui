@@ -91,12 +91,12 @@
           "enable_packed_qkv": true,
           "enable_packed_kv": true,
           "enable_bias_add": false,
-          "group_norm_channels_last": false,
-          "force_fp16_inputs": {
-            "GroupNorm": [0, 1, 2]
-          }
+          "group_norm_channels_last": false
         },
-        "force_fp32_ops": ["RandomNormalLike"]
+        "force_fp32_ops": ["RandomNormalLike"],
+        "force_fp16_inputs": {
+          "GroupNorm": [0, 1, 2]
+        }
       }
     }
   },

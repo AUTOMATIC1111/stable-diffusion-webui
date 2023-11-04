@@ -3,14 +3,87 @@
     "type": "PyTorchModel",
     "config": {
       "model_path": "",
-      "model_loader": "text_encoder_load",
+      "model_loader": "text_encoder_2_load",
       "model_script": "modules/olive.py",
       "io_config": {
-        "input_names": ["input_ids"],
-        "output_names": ["last_hidden_state", "pooler_output"],
-        "dynamic_axes": { "input_ids": { "0": "batch", "1": "sequence" } }
+        "input_names": ["input_ids", "output_hidden_states"],
+        "output_names": [
+          "text_embeds",
+          "last_hidden_state",
+          "hidden_states.0",
+          "hidden_states.1",
+          "hidden_states.2",
+          "hidden_states.3",
+          "hidden_states.4",
+          "hidden_states.5",
+          "hidden_states.6",
+          "hidden_states.7",
+          "hidden_states.8",
+          "hidden_states.9",
+          "hidden_states.10",
+          "hidden_states.11",
+          "hidden_states.12",
+          "hidden_states.13",
+          "hidden_states.14",
+          "hidden_states.15",
+          "hidden_states.16",
+          "hidden_states.17",
+          "hidden_states.18",
+          "hidden_states.19",
+          "hidden_states.20",
+          "hidden_states.21",
+          "hidden_states.22",
+          "hidden_states.23",
+          "hidden_states.24",
+          "hidden_states.25",
+          "hidden_states.26",
+          "hidden_states.27",
+          "hidden_states.28",
+          "hidden_states.29",
+          "hidden_states.30",
+          "hidden_states.31",
+          "hidden_states.32"
+        ],
+        "dynamic_axes": {
+          "input_ids": { "0": "batch_size", "1": "sequence_length" },
+          "text_embeds": { "0": "batch_size", "1": "sequence_length" },
+          "last_hidden_state": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.0": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.1": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.2": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.3": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.4": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.5": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.6": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.7": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.8": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.9": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.10": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.11": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.12": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.13": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.14": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.15": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.16": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.17": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.18": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.19": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.20": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.21": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.22": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.23": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.24": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.25": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.26": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.27": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.28": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.29": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.30": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.31": { "0": "batch_size", "1": "sequence_length" },
+          "hidden_states.32": { "0": "batch_size", "1": "sequence_length" }
+        }
       },
-      "dummy_inputs_func": "text_encoder_conversion_inputs"
+      "dummy_inputs_func": "text_encoder_2_conversion_inputs"
     }
   },
   "systems": {
@@ -30,7 +103,7 @@
           "sub_types": [{ "name": "avg" }],
           "user_config": {
             "user_script": "modules/olive.py",
-            "dataloader_func": "text_encoder_data_loader",
+            "dataloader_func": "text_encoder_2_data_loader",
             "batch_size": 1
           }
         }
@@ -51,7 +124,7 @@
         "model_type": "clip",
         "float16": true,
         "use_gpu": true,
-        "keep_io_types": false,
+        "keep_io_types": true,
         "optimization_options": {
           "enable_gelu": true,
           "enable_layer_norm": true,
@@ -71,12 +144,12 @@
           "enable_packed_qkv": true,
           "enable_packed_kv": true,
           "enable_bias_add": false,
-          "group_norm_channels_last": false,
-          "force_fp16_inputs": {
-            "GroupNorm": [0, 1, 2]
-          }
+          "group_norm_channels_last": false
         },
-        "force_fp32_ops": ["RandomNormalLike"]
+        "force_fp32_ops": ["RandomNormalLike"],
+        "force_fp16_inputs": {
+          "GroupNorm": [0, 1, 2]
+        }
       }
     }
   },
@@ -90,7 +163,7 @@
     "host": "local_system",
     "target": "local_system",
     "cache_dir": "cache",
-    "output_name": "text_encoder",
+    "output_name": "text_encoder_2",
     "output_dir": "footprints",
     "execution_providers": ["DmlExecutionProvider"]
   }

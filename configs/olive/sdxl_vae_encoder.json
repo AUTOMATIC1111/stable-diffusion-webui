@@ -10,10 +10,16 @@
         "output_names": ["latent_sample"],
         "dynamic_axes": {
           "sample": {
-            "0": "batch",
-            "1": "channels",
+            "0": "batch_size",
+            "1": "num_channels",
             "2": "height",
             "3": "width"
+          },
+          "latent_sample": {
+            "0": "batch_size",
+            "1": "num_channels_latent",
+            "2": "height_latent",
+            "3": "width_latent"
           }
         }
       },
@@ -58,7 +64,7 @@
         "model_type": "vae",
         "float16": true,
         "use_gpu": true,
-        "keep_io_types": false,
+        "keep_io_types": true,
         "optimization_options": {
           "enable_gelu": true,
           "enable_layer_norm": true,
@@ -78,12 +84,12 @@
           "enable_packed_qkv": true,
           "enable_packed_kv": true,
           "enable_bias_add": false,
-          "group_norm_channels_last": false,
-          "force_fp16_inputs": {
-            "GroupNorm": [0, 1, 2]
-          }
+          "group_norm_channels_last": false
         },
-        "force_fp32_ops": ["RandomNormalLike"]
+        "force_fp32_ops": ["RandomNormalLike"],
+        "force_fp16_inputs": {
+          "GroupNorm": [0, 1, 2]
+        }
       }
     }
   },
