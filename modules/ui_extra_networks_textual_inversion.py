@@ -51,7 +51,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
                     "filename": embedding.filename,
                     "preview": self.find_preview(path),
                     "search_term": self.search_terms_from_path(name),
-                    "prompt": json.dumps(os.path.splitext(embedding.name)[0]),
+                    "prompt": json.dumps(f" {os.path.splitext(embedding.name)[0]}"),
                     "local_preview": f"{path}.{shared.opts.samples_format}",
                     "tags": tags,
                     "mtime": os.path.getmtime(embedding.filename),

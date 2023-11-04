@@ -61,6 +61,7 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
 - **Extra networks**  
   - sort by name, size, date, etc.  
   - switch between *gallery* and *list* views  
+  - add tags from user metadata (in addition to tags in model metadata) for **lora**  
   - faster enumeration of all networks on server startup  
 - **Packages**
   - updated `diffusers` to 0.22.0, `transformers` to 4.34.1  

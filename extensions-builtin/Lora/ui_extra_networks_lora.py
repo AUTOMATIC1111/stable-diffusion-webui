@@ -16,7 +16,8 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         l = networks.available_networks.get(name)
         try:
             path, _ext = os.path.splitext(l.filename)
-            possible_tags = l.metadata.get('ss_tag_frequency', {}) if l.metadata is not None else {}
+            name = os.path.splitext(os.path.relpath(l.filename, shared.cmd_opts.lora_dir))[0]
+
             if shared.backend == shared.Backend.ORIGINAL:
                 if l.sd_version == network.SdVersion.SDXL:
                     return None
@@ -29,6 +30,9 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 elif shared.sd_model_type == 'sd':
                     if l.sd_version == network.SdVersion.SDXL:
                         return None
+
+            # tags from model metedata
+            possible_tags = l.metadata.get('ss_tag_frequency', {}) if l.metadata is not None else {}
             if isinstance(possible_tags, str):
                 possible_tags = {}
             tags = {}
@@ -38,10 +42,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 if words[0] == '{}':
                     words[0] = 0
                 tags[' '.join(words[1:])] = words[0]
-            possible_tags = l.metadata.get('tags', []) if l.metadata is not None else []
-            for tag in possible_tags:
-                tags[tag] = 1
-            name = os.path.splitext(os.path.relpath(l.filename, shared.cmd_opts.lora_dir))[0]
+
             item = {
                 "type": 'Lora',
                 "name": name,
@@ -52,12 +53,21 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 "prompt": json.dumps(f" <lora:{l.get_alias()}:{shared.opts.extra_networks_default_multiplier}>"),
                 "local_preview": f"{path}.{shared.opts.samples_format}",
                 "metadata": json.dumps(l.metadata, indent=4) if l.metadata else None,
-                "tags": tags,
                 "mtime": os.path.getmtime(l.filename),
                 "size": os.path.getsize(l.filename),
             }
-            item["info"] = self.find_info(l.filename)
-            item["description"] = self.find_description(l.filename, item["info"]) # use existing info instead of double-read
+            info = self.find_info(l.filename)
+            item["info"] = info
+            item["description"] = self.find_description(l.filename, info) # use existing info instead of double-read
+
+            # tags from user metadata
+            possible_tags = info.get('tags', [])
+            if not isinstance(possible_tags, list):
+                possible_tags = [v for v in possible_tags.values()]
+            for v in possible_tags:
+                tags[v] = 0
+            item["tags"] = tags
+
             return item
         except Exception as e:
             shared.log.debug(f"Extra networks error: type=lora file={name} {e}")
