@@ -98,13 +98,15 @@ const anapnoe_app_id = "#anapnoe_app";
 function detectMobile() {
     return ( ( window.innerWidth <= 768 ) );//&& ( window.innerHeight <= 600 ) );
 }
+/* 
 function debounce(func){
     var timer;
     return function(event){
       if(timer) clearTimeout(timer);
       timer = setTimeout(func,100,event);
     };
-}
+} 
+*/
 
 function applyDefaultLayout(isMobile){
     anapnoe_app.querySelectorAll("[mobile]").forEach((tabItem) => {   
@@ -140,10 +142,16 @@ function switchMobile(){
     //console.log(optslayout);
     anapnoe_app.classList.add(`default-${optslayout.toLowerCase()}`);
     if(optslayout === "Auto"){           
-        window.addEventListener("resize",debounce(function(e){
+        /*  
+        window.addEventListener("resize", debounce(function(e){
             const isMobile = detectMobile();
             applyDefaultLayout(isMobile);
-        }));
+        })); 
+        */
+        window.addEventListener('resize', function(event){
+            const isMobile = detectMobile();
+            applyDefaultLayout(isMobile);
+        });
         applyDefaultLayout(detectMobile());
     }else if(optslayout === "Mobile"){
         applyDefaultLayout(true);
