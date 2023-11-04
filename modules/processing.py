@@ -886,6 +886,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             devices.torch_gc()
 
+            state.nextjob()
+
             if p.scripts is not None:
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
 
@@ -957,8 +959,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             del x_samples_ddim
 
             devices.torch_gc()
-
-            state.nextjob()
 
         if not infotexts:
             infotexts.append(Processed(p, []).infotext(p, 0))
