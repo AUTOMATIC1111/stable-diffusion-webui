@@ -373,9 +373,9 @@ def create_ui():
                 def hf_select(evt: gr.SelectData, data):
                     return data[evt.index[0]][0]
 
-                def hf_download_model(hub_id: str, token, variant, revision, mirror, olive_optimized):
+                def hf_download_model(hub_id: str, token, variant, revision, mirror, is_onnx, custom_pipeline):
                     from modules.modelloader import download_diffusers_model
-                    download_diffusers_model(hub_id, cache_dir=opts.olive_sideloaded_models_path if olive_optimized else opts.diffusers_dir, token=token, variant=variant, revision=revision, mirror=mirror)
+                    download_diffusers_model(hub_id, cache_dir=opts.onnx_sideloaded_models_path if is_onnx else opts.diffusers_dir, token=token, variant=variant, revision=revision, mirror=mirror, custom_pipeline=custom_pipeline)
                     from modules.sd_models import list_models # pylint: disable=W0621
                     list_models()
                     log.info(f'Diffuser model downloaded: model="{hub_id}"')
@@ -394,7 +394,7 @@ def create_ui():
                             with gr.Row():
                                 hf_variant = gr.Textbox(opts.cuda_dtype.lower(), label = 'Specify model variant', placeholder='')
                                 hf_revision = gr.Textbox('', label = 'Specify model revision', placeholder='')
-                                hf_olive = gr.Checkbox(False, label = 'Olive optimized')
+                                hf_onnx = gr.Checkbox(False, label = 'ONNX model')
                     with gr.Row():
                         hf_token = gr.Textbox('', label='Huggingface token', placeholder='optional access token for private or gated models')
                         hf_mirror = gr.Textbox('', label='Huggingface mirror', placeholder='optional mirror site for downloads')
@@ -411,7 +411,7 @@ def create_ui():
                 hf_search_text.submit(fn=hf_search, inputs=[hf_search_text], outputs=[hf_results])
                 hf_search_btn.click(fn=hf_search, inputs=[hf_search_text], outputs=[hf_results])
                 hf_results.select(fn=hf_select, inputs=[hf_results], outputs=[hf_selected])
-                hf_download_model_btn.click(fn=hf_download_model, inputs=[hf_selected, hf_token, hf_variant, hf_revision, hf_mirror, hf_olive], outputs=[models_outcome])
+                hf_download_model_btn.click(fn=hf_download_model, inputs=[hf_selected, hf_token, hf_variant, hf_revision, hf_mirror, hf_onnx, hf_custom_pipeline], outputs=[models_outcome])
 
             with gr.Tab(label="CivitAI"):
                 data = []

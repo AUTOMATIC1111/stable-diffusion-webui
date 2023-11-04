@@ -17,7 +17,6 @@ from modules import errors, shared_items, shared_state, cmd_args, theme
 from modules.paths import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 from modules.dml import memory_providers, default_memory_provider, directml_do_hijack
 from modules.onnx import available_execution_providers, get_default_execution_provider
-from modules.olive import enable_olive_onchange
 import modules.interrogate
 import modules.memmon
 import modules.styles
@@ -440,9 +439,9 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
 
     "onnx_sep": OptionInfo("<h2>ONNX Runtime</h2>", "", gr.HTML),
     "onnx_execution_provider": OptionInfo(get_default_execution_provider().value, 'Execution Provider', gr.Dropdown, lambda: {"choices": available_execution_providers }),
+    "onnx_cache_converted": OptionInfo(True, 'Cache converted models'),
 
     "onnx_olive_sep": OptionInfo("<h3>Olive</h3>", "", gr.HTML),
-    "onnx_enable_olive": OptionInfo(False, 'Enable pipeline for Olive', onchange=enable_olive_onchange),
     "onnx_olive_float16": OptionInfo(True, 'Olive use FP16 on optimization (will use FP32 if unchecked)'),
     "onnx_cache_optimized": OptionInfo(True, 'Olive cache optimized models'),
 }))
@@ -471,8 +470,8 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "swinir_models_path": OptionInfo(os.path.join(paths.models_path, 'SwinIR'), "Folder with SwinIR models", folder=True),
     "ldsr_models_path": OptionInfo(os.path.join(paths.models_path, 'LDSR'), "Folder with LDSR models", folder=True),
     "clip_models_path": OptionInfo(os.path.join(paths.models_path, 'CLIP'), "Folder with CLIP models", folder=True),
-    "olive_cached_models_path": OptionInfo(os.path.join(paths.models_path, 'Olive', 'cache'), "Folder with olive optimized cached models", folder=True),
-    "olive_sideloaded_models_path": OptionInfo(os.path.join(paths.models_path, 'Olive', 'sideloaded'), "Folder with olive optimized sideloaded models", folder=True),
+    "onnx_cached_models_path": OptionInfo(os.path.join(paths.models_path, 'ONNX', 'cache'), "Folder with ONNX cached models", folder=True),
+    "onnx_sideloaded_models_path": OptionInfo(os.path.join(paths.models_path, 'ONNX', 'sideloaded'), "Folder with ONNX models from huggingface", folder=True),
 
     "other_paths_sep_options": OptionInfo("<h2>Other paths</h2>", "", gr.HTML),
     "openvino_cache_path": OptionInfo('cache', "Directory for OpenVINO cache", folder=True),

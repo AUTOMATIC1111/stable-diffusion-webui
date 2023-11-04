@@ -31,9 +31,8 @@ except ModuleNotFoundError:
 
 def init_olive():
     try:
-        if installer.opts['onnx_enable_olive']:
-            import olive.workflows # pylint: disable=unused-import
-            installer.log.debug('Load olive')
+        import olive.workflows # pylint: disable=unused-import
+        installer.log.debug('Load olive')
     except Exception as e:
         installer.log.error(f'Failed to load olive: {e}')
 

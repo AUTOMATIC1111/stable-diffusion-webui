@@ -61,15 +61,6 @@
     }
   },
   "passes": {
-    "convert": {
-      "type": "OnnxConversion",
-      "config": {
-        "target_opset": 14,
-        "save_as_external_data": true,
-        "all_tensors_to_one_file": true,
-        "external_data_name": "weights.pb"
-      }
-    },
     "optimize": {
       "type": "OrtTransformersOptimization",
       "disable_search": true,

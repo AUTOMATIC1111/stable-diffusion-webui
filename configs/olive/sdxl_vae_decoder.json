@@ -51,12 +51,6 @@
     }
   },
   "passes": {
-    "convert": {
-      "type": "OnnxConversion",
-      "config": {
-        "target_opset": 14
-      }
-    },
     "optimize": {
       "type": "OrtTransformersOptimization",
       "disable_search": true,

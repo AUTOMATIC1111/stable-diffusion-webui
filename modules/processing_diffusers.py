@@ -21,8 +21,8 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
     orig_pipeline = shared.sd_model
     results = []
 
-    if isinstance(shared.sd_model, OlivePipeline):
-        shared.sd_model = shared.sd_model.optimize(p.width, p.height)
+    if hasattr(shared.sd_model, 'preprocess'):
+        shared.sd_model = shared.sd_model.preprocess(p.width, p.height, p.batch_size)
 
     def is_txt2img():
         return sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE

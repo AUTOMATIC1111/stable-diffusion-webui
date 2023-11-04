@@ -25,6 +25,8 @@ lpips
 omegaconf
 open-clip-torch
 opencv-contrib-python-headless
+olive-ai
+optimum
 piexif
 psutil
 pyyaml
