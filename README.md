@@ -124,10 +124,7 @@ SD.Next comes with several extensions pre-installed:
 
 - [ControlNet](https://github.com/Mikubill/sd-webui-controlnet)
 - [Agent Scheduler](https://github.com/ArtVentureX/sd-webui-agent-scheduler)
-- [Multi-Diffusion Tiled Diffusion and VAE](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111)
-- [LyCORIS](https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris)
 - [Image Browser](https://github.com/AlUlkesh/stable-diffusion-webui-images-browser)
-- [CLiP Interrogator](https://github.com/pharmapsychotic/clip-interrogator-ext)
 - [Rembg Background Removal](https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg)
 
 ### **Collab**

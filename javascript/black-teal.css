@@ -33,9 +33,6 @@
   --radius-lg: 4px;
   --line-sm: 1.2em;
   --line-md: 1.4em;
-  --text-sm: 12px;
-  --text-md: 14px;
-  --text-lg: 15px;
 }
 
 html { font-size: var(--font-size); font-family: var(--font); }
@@ -246,10 +243,6 @@ textarea[rows="1"] { height: 33px !important; width: 99% !important; padding: 8p
   --radius-md: 0;
   --radius-xl: 0;
   --radius-xxl: 0;
-  --text-xxs: 9px;
-  --text-xs: 10px;
-  --text-xl: 22px;
-  --text-xxl: 26px;
   --body-text-size: var(--text-md);
   --body-text-weight: 400;
   --embed-radius: var(--radius-lg);

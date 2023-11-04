@@ -40,9 +40,9 @@
   {"id":"","label":"disabled","localized":"","hint":""}
 ],
 "tabs": [
-  {"id":"","label":"From Text","localized":"","hint":"Create image from text"},
-  {"id":"","label":"From Image","localized":"","hint":"Create image from image"},
-  {"id":"","label":"Process Image","localized":"","hint":"Process existing image"},
+  {"id":"","label":"Text","localized":"","hint":"Create image from text"},
+  {"id":"","label":"Image","localized":"","hint":"Create image from image"},
+  {"id":"","label":"Process","localized":"","hint":"Process existing image"},
   {"id":"","label":"Train","localized":"","hint":"Run training or model merging"},
   {"id":"","label":"Models","localized":"","hint":"Convert or merge your models"},
   {"id":"","label":"Interrogator","localized":"","hint":"Run interrogate to get description of your image"},

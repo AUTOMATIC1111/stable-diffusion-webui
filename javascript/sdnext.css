@@ -263,3 +263,13 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 @keyframes move { from { background-position-x: 0, -40px; } to { background-position-x: 0, 40px; } }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes color { from { filter: hue-rotate(0deg) } to { filter: hue-rotate(360deg) } }
+
+:root, .light, .dark {
+  --text-xxs: 9px;
+  --text-xs: 10px;
+  --text-sm: 12px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-xxl: 20px;
+}

@@ -47,6 +47,8 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
   - new option: *settings -> system paths -> models*  
     can be used to set custom base path for *all* models (previously only as cli option)  
   - remove external clone of items in `/repositories`  
+  - **Interrogator** module has been removed from `extensions-builtin`  
+    and fully implemented (and improved) natively  
 - **UI**  
   - UI tweaks for default themes
   - UI switch core font in default theme to **noto-sans**  

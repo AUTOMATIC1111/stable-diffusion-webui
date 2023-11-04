@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, ui_loadsave, ui_train, ui_models
+from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, ui_loadsave, ui_train, ui_models, ui_interrogate
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path, data_path
 from modules.shared import opts, cmd_opts
@@ -635,7 +635,6 @@ def create_ui(startup_timer = None):
                         img2img_batch_inpaint_mask_dir = gr.Textbox(label="Inpaint batch mask directory", **modules.shared.hide_dirs, elem_id="img2img_batch_inpaint_mask_dir")
 
                     img2img_tabs = [tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]
-
                     for i, tab in enumerate(img2img_tabs):
                         tab.select(fn=lambda tabnum=i: tabnum, inputs=[], outputs=[img2img_selected_tab])
 
@@ -903,6 +902,11 @@ def create_ui(startup_timer = None):
         ui_models.create_ui()
         timer.startup.record("ui-models")
 
+    with gr.Blocks(analytics_enabled=False) as interrogate_interface:
+        ui_interrogate.create_ui()
+        timer.startup.record("ui-interrogate")
+
+
     def create_setting_component(key, is_quicksettings=False):
         def fun():
             return opts.data[key] if key in opts.data else opts.data_labels[key].default
@@ -1102,11 +1106,12 @@ def create_ui(startup_timer = None):
     timer.startup.record("ui-settings")
 
     interfaces = [
-        (txt2img_interface, "From Text", "txt2img"),
-        (img2img_interface, "From Image", "img2img"),
-        (extras_interface, "Process Image", "process"),
+        (txt2img_interface, "Text", "txt2img"),
+        (img2img_interface, "Image", "img2img"),
+        (extras_interface, "Process", "process"),
         (train_interface, "Train", "train"),
         (models_interface, "Models", "models"),
+        (interrogate_interface, "Interrogate", "interrogate"),
     ]
     interfaces += script_callbacks.ui_tabs_callback()
     interfaces += [(settings_interface, "System", "system")]
