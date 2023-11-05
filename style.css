@@ -204,6 +204,11 @@ div.block.gradio-accordion {
     padding: 8px 8px;
 }
 
+input[type="checkbox"].input-accordion-checkbox{
+    vertical-align: sub;
+    margin-right: 0.5em;
+}
+
 
 /* txt2img/img2img specific */
 
