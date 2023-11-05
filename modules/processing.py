@@ -142,7 +142,7 @@ class StableDiffusionProcessing:
     overlay_images: list = None
     eta: float = None
     do_not_reload_embeddings: bool = False
-    denoising_strength: float = 0
+    denoising_strength: float = None
     ddim_discretize: str = None
     s_min_uncond: float = None
     s_churn: float = None
@@ -533,6 +533,7 @@ class Processed:
         self.all_seeds = all_seeds or p.all_seeds or [self.seed]
         self.all_subseeds = all_subseeds or p.all_subseeds or [self.subseed]
         self.infotexts = infotexts or [info]
+        self.version = program_version()
 
     def js(self):
         obj = {
@@ -567,6 +568,7 @@ class Processed:
             "job_timestamp": self.job_timestamp,
             "clip_skip": self.clip_skip,
             "is_using_inpainting_conditioning": self.is_using_inpainting_conditioning,
+            "version": self.version,
         }
 
         return json.dumps(obj)
@@ -709,7 +711,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     if p.scripts is not None:
         p.scripts.before_process(p)
 
-    stored_opts = {k: opts.data[k] for k in p.override_settings.keys()}
+    stored_opts = {k: opts.data[k] if k in opts.data else opts.get_default(k) for k in p.override_settings.keys() if k in opts.data}
 
     try:
         # if no checkpoint override or the override checkpoint can't be found, remove override entry and load opts checkpoint
@@ -884,6 +886,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             devices.torch_gc()
 
+            state.nextjob()
+
             if p.scripts is not None:
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
 
@@ -956,7 +960,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             devices.torch_gc()
 
-            state.nextjob()
+        if not infotexts:
+            infotexts.append(Processed(p, []).infotext(p, 0))
 
         p.color_corrections = None
 

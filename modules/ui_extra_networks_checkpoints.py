@@ -10,6 +10,8 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
         super().__init__('Checkpoints')
 
+        self.allow_prompt = False
+
     def refresh(self):
         shared.refresh_checkpoints()
 
