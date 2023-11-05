@@ -25,9 +25,8 @@ refresh_time = 0
 extra_pages = shared.extra_networks
 debug = shared.log.info if os.environ.get('SD_EN_DEBUG', None) is not None else lambda *args, **kwargs: None
 card_full = '''
-    <div class='card' onclick={card_click} title='{name}' data-tab='{tabname}' data-page='{page}' data-name='{name}' data-filename='{filename}' data-tags='{tags}' data-mtime='{mtime}' data-size='{size}'>
+    <div class='card' onclick={card_click} title='{name}' data-tab='{tabname}' data-page='{page}' data-name='{name}' data-filename='{filename}' data-tags='{tags}' data-mtime='{mtime}' data-size='{size}' data-search='{search}'>
         <div class='overlay'>
-            <span style="display:none" class='search_term'>{search_term}</span>
             <div class='tags'></div>
             <div class='name'>{title}</div>
         </div>
@@ -39,11 +38,10 @@ card_full = '''
     </div>
 '''
 card_list = '''
-    <div class='card card-list' onclick={card_click} title='{name}' data-tab='{tabname}' data-page='{page}' data-name='{name}' data-filename='{filename}' data-tags='{tags}' data-mtime='{mtime}' data-size='{size}'>
+    <div class='card card-list' onclick={card_click} title='{name}' data-tab='{tabname}' data-page='{page}' data-name='{name}' data-filename='{filename}' data-tags='{tags}' data-mtime='{mtime}' data-size='{size}' data-search='{search}'>
         <span class='details' title="Get details" onclick="showCardDetails(event)">&#x1f6c8;</span>&nbsp;
         <div class='name'>{title}</div>&nbsp;
         <div class='tags tags-list'></div>
-        <span style="display:none" class='search_term'>{search_term}</span>
     </div>
 '''
 
@@ -258,6 +256,7 @@ class ExtraNetworksPage:
         self.create_items(tabname)
         self.create_xyz_grid()
         htmls = []
+        self.items.sort(key=lambda x: x["mtime"], reverse=True)
         for item in self.items:
             htmls.append(self.create_html(item, tabname))
         self.html += ''.join(htmls)
@@ -283,7 +282,7 @@ class ExtraNetworksPage:
                 "tabname": tabname,
                 "page": self.name,
                 "name": item["name"],
-                "title": item["name"].replace('_', ' '),
+                "title": os.path.basename(item["name"].replace('_', ' ')),
                 "filename": item["filename"],
                 "tags": '|'.join([item.get("tags")] if isinstance(item.get("tags", {}), str) else list(item.get("tags", {}).keys())),
                 "preview": html.escape(item.get("preview", self.link_preview('html/card-no-preview.png'))),
@@ -291,7 +290,7 @@ class ExtraNetworksPage:
                 "height": shared.opts.extra_networks_card_size if shared.opts.extra_networks_card_square else 'auto',
                 "fit": shared.opts.extra_networks_card_fit,
                 "prompt": item.get("prompt", None),
-                "search_term": item.get("search_term", ""),
+                "search": item.get("search_term", ""),
                 "description": item.get("description") or "",
                 "card_click": item.get("onclick", '"' + html.escape(f'return cardClicked({item.get("prompt", None)}, {"true" if self.allow_negative_prompt else "false"})') + '"'),
                 "mtime": item.get("mtime", 0),

@@ -413,7 +413,7 @@ class FilenameGenerator:
                 [part := part.replace(word, '_') for word in invalid_files] # pylint: disable=expression-not-assigned
             newparts.append(part)
         fn = Path(*newparts)
-        max_length = os.statvfs(__file__).f_namemax - 32 if hasattr(os, 'statvfs') else 230
+        max_length = max(230, os.statvfs(__file__).f_namemax - 32 if hasattr(os, 'statvfs') else 230)
         fn = str(fn)[:max_length-max(4, len(ext))].rstrip(invalid_suffix) + ext
         debug(f'Filename sanitize: input="{filename}" parts={parts} output="{fn}" ext={ext} max={max_length} len={len(fn)}')
         return fn

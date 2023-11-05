@@ -22,6 +22,7 @@
     "no-confusing-arrow":"off",
     "no-console":"off",
     "no-empty":"off",
+    "no-loop-func":"off",
     "no-mixed-operators":"off",
     "no-param-reassign":"off",
     "no-plusplus":"off",

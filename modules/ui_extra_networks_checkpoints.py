@@ -16,7 +16,6 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
         checkpoints = sd_models.checkpoints_list.copy()
         for name, checkpoint in checkpoints.items():
             try:
-                fn = os.path.splitext(checkpoint.filename)[0]
                 record = {
                     "type": 'Model',
                     "name": checkpoint.name,
@@ -24,15 +23,15 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
                     "filename": checkpoint.filename,
                     "hash": checkpoint.shorthash,
                     "search_term": self.search_terms_from_path(checkpoint.title),
-                    "preview": self.find_preview(fn),
-                    "local_preview": f"{fn}.{shared.opts.samples_format}",
+                    "preview": self.find_preview(checkpoint.filename),
+                    "local_preview": f"{os.path.splitext(checkpoint.filename)[0]}.{shared.opts.samples_format}",
                     "metadata": checkpoint.metadata,
                     "onclick": '"' + html.escape(f"""return selectCheckpoint({json.dumps(name)})""") + '"',
                     "mtime": os.path.getmtime(checkpoint.filename),
                     "size": os.path.getsize(checkpoint.filename),
                 }
-                record["info"] = self.find_info(fn)
-                record["description"] = self.find_description(fn, record["info"])
+                record["info"] = self.find_info(checkpoint.filename)
+                record["description"] = self.find_description(checkpoint.filename, record["info"])
                 yield record
             except Exception as e:
                 shared.log.debug(f"Extra networks error: type=model file={name} {e}")
