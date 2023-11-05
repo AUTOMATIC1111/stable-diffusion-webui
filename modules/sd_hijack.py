@@ -184,17 +184,19 @@ class StableDiffusionModelHijack:
             errors.display(e, "applying cross attention optimization")
             undo_optimizations()
 
-    def conv_ssd(self, m):
-            delattr(m.model.diffusion_model.middle_block, '1')
-            delattr(m.model.diffusion_model.middle_block, '2')
-            for i in ['9','8','7','6','5','4']:
-                delattr(m.model.diffusion_model.input_blocks[7][1].transformer_blocks,i)
-                delattr(m.model.diffusion_model.input_blocks[8][1].transformer_blocks,i)
-                delattr(m.model.diffusion_model.output_blocks[0][1].transformer_blocks,i)
-                delattr(m.model.diffusion_model.output_blocks[1][1].transformer_blocks,i)
-            delattr(m.model.diffusion_model.output_blocks[4][1].transformer_blocks,'1')
-            delattr(m.model.diffusion_model.output_blocks[5][1].transformer_blocks,'1')
-            devices.torch_gc()
+    def convert_sdxl_to_ssd(self, m):
+        """Converts an SDXL model to a Segmind Stable Diffusion model (see https://huggingface.co/segmind/SSD-1B)"""
+
+        delattr(m.model.diffusion_model.middle_block, '1')
+        delattr(m.model.diffusion_model.middle_block, '2')
+        for i in ['9', '8', '7', '6', '5', '4']:
+            delattr(m.model.diffusion_model.input_blocks[7][1].transformer_blocks, i)
+            delattr(m.model.diffusion_model.input_blocks[8][1].transformer_blocks, i)
+            delattr(m.model.diffusion_model.output_blocks[0][1].transformer_blocks, i)
+            delattr(m.model.diffusion_model.output_blocks[1][1].transformer_blocks, i)
+        delattr(m.model.diffusion_model.output_blocks[4][1].transformer_blocks, '1')
+        delattr(m.model.diffusion_model.output_blocks[5][1].transformer_blocks, '1')
+        devices.torch_gc()
 
     def hijack(self, m):
         conditioner = getattr(m, 'conditioner', None)

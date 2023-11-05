@@ -357,7 +357,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         sd_models_xl.extend_sdxl(model)
 
     if model.is_ssd:
-        sd_hijack.model_hijack.conv_ssd(model)
+        sd_hijack.model_hijack.convert_sdxl_to_ssd(model)
 
     if shared.opts.sd_checkpoint_cache > 0:
         # cache newly loaded model
