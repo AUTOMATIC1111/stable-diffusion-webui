@@ -103,6 +103,7 @@ class ExtraNetworksPage:
         self.name = title.lower()
         self.id_page = self.name.replace(" ", "_")
         self.card_page = shared.html("extra-networks-card.html")
+        self.allow_prompt = True
         self.allow_negative_prompt = False
         self.metadata = {}
         self.items = {}
@@ -367,7 +368,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
     related_tabs = []
 
     for page in ui.stored_extra_pages:
-        with gr.Tab(page.title, id=page.id_page) as tab:
+        with gr.Tab(page.title, elem_id=f"{tabname}_{page.id_page}", elem_classes=["extra-page"]) as tab:
             elem_id = f"{tabname}_{page.id_page}_cards_html"
             page_elem = gr.HTML('Loading...', elem_id=elem_id)
             ui.pages.append(page_elem)
@@ -389,11 +390,18 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
 
-    for tab in unrelated_tabs:
-        tab.select(fn=lambda: [gr.update(visible=False) for _ in range(5)], inputs=[], outputs=[edit_search, dropdown_sort, button_sortorder, button_refresh, checkbox_show_dirs], show_progress=False)
+    tab_controls = [edit_search, dropdown_sort, button_sortorder, button_refresh, checkbox_show_dirs]
 
-    for tab in related_tabs:
-        tab.select(fn=lambda: [gr.update(visible=True) for _ in range(5)], inputs=[], outputs=[edit_search, dropdown_sort, button_sortorder, button_refresh, checkbox_show_dirs], show_progress=False)
+    for tab in unrelated_tabs:
+        tab.select(fn=lambda: [gr.update(visible=False) for _ in tab_controls], _js='function(){ extraNetworksUrelatedTabSelected("' + tabname + '"); }', inputs=[], outputs=tab_controls, show_progress=False)
+
+    for page, tab in zip(ui.stored_extra_pages, related_tabs):
+        allow_prompt = "true" if page.allow_prompt else "false"
+        allow_negative_prompt = "true" if page.allow_negative_prompt else "false"
+
+        jscode = 'extraNetworksTabSelected("' + tabname + '", "' + f"{tabname}_{page.id_page}" + '", ' + allow_prompt + ', ' + allow_negative_prompt + ');'
+
+        tab.select(fn=lambda: [gr.update(visible=True) for _ in tab_controls],  _js='function(){ ' + jscode + ' }', inputs=[], outputs=tab_controls, show_progress=False)
 
     dropdown_sort.change(fn=lambda: None, _js="function(){ applyExtraNetworkSort('" + tabname + "'); }")
 

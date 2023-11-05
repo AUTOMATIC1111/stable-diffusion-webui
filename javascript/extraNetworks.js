@@ -26,6 +26,8 @@ function setupExtraNetworksForTab(tabname) {
     var refresh = gradioApp().getElementById(tabname + '_extra_refresh');
     var showDirsDiv = gradioApp().getElementById(tabname + '_extra_show_dirs');
     var showDirs = gradioApp().querySelector('#' + tabname + '_extra_show_dirs input');
+    var promptContainer = gradioApp().querySelector('.prompt-container-compact#' + tabname + '_prompt_container');
+    var negativePrompt = gradioApp().querySelector('#' + tabname + '_neg_prompt');
 
     tabs.appendChild(searchDiv);
     tabs.appendChild(sort);
@@ -107,6 +109,37 @@ function setupExtraNetworksForTab(tabname) {
     showDirs.checked = localGet('extra-networks-show-dirs', 1) == 1;
     showDirs.addEventListener("change", showDirsUpdate);
     showDirsUpdate();
+}
+
+function extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt) {
+    if (!gradioApp().querySelector('.toprow-compact-tools')) return; // only applicable for compact prompt layout
+
+    var promptContainer = gradioApp().getElementById(tabname + '_prompt_container');
+    var prompt = gradioApp().getElementById(tabname + '_prompt_row');
+    var negPrompt = gradioApp().getElementById(tabname + '_neg_prompt_row');
+    var elem = id ? gradioApp().getElementById(id) : null;
+
+    if (showNegativePrompt && elem) {
+        elem.insertBefore(negPrompt, elem.firstChild);
+    } else {
+        promptContainer.insertBefore(negPrompt, promptContainer.firstChild);
+    }
+
+    if (showPrompt && elem) {
+        elem.insertBefore(prompt, elem.firstChild);
+    } else {
+        promptContainer.insertBefore(prompt, promptContainer.firstChild);
+    }
+}
+
+
+function extraNetworksUrelatedTabSelected(tabname) { // called from python when user selects an unrelated tab (generate)
+    extraNetworksMovePromptToTab(tabname, '', false, false);
+}
+
+function extraNetworksTabSelected(tabname, id, showPrompt, showNegativePrompt) { // called from python when user selects an extra networks tab
+    extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt);
+
 }
 
 function applyExtraNetworkFilter(tabname) {

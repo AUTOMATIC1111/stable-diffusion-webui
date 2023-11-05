@@ -67,6 +67,8 @@ def reload_hypernetworks():
 
 
 ui_reorder_categories_builtin_items = [
+    "prompt",
+    "image",
     "inpaint",
     "sampler",
     "accordions",
