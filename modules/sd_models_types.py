@@ -23,7 +23,7 @@ class WebuiSdModel(LatentDiffusion):
 
     is_sdxl: bool
     """True if the model's architecture is SDXL or SSD"""
-    
+
     is_ssd: bool
     """True if the model is SSD"""
 

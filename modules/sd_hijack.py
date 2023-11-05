@@ -183,7 +183,7 @@ class StableDiffusionModelHijack:
         except Exception as e:
             errors.display(e, "applying cross attention optimization")
             undo_optimizations()
-            
+
     def conv_ssd(self, m):
             delattr(m.model.diffusion_model.middle_block, '1')
             delattr(m.model.diffusion_model.middle_block, '2')
