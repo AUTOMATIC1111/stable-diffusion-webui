@@ -281,7 +281,7 @@ button.selected {background: var(--button-primary-background-fill);}
   --prose-header-text-weight: 600;
   --slider-color: ;
   --table-radius: var(--radius-lg);
-  --button-large-padding: 2px 10px;
+  --button-large-padding: 2px 6px;
   --button-large-radius: var(--radius-lg);
   --button-large-text-size: var(--text-lg);
   --button-large-text-weight: 400;

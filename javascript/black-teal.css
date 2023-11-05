@@ -38,7 +38,7 @@ html { font-size: var(--font-size); font-family: var(--font); }
 body, button, input, select, textarea { font-family: var(--font); }
 button { font-size: 1.2rem; max-width: 400px; }
 img { background-color: var(--background-color); }
-input[type=range] { height: var(--line-sm) !important; appearance: none !important; margin-top: 0 !important; min-width: 160px !important;
+input[type=range] { height: var(--line-sm) !important; appearance: none !important; margin-top: 0 !important; min-width: 100% !important;
   background-color: var(--background-color) !important; width: 100% !important; background: transparent !important; }
 input[type=range]::-webkit-slider-runnable-track { width: 100% !important; height: var(--line-sm) !important; cursor: pointer !important; box-shadow: 2px 2px 3px #111111 !important;
   background: var(--input-background-fill) !important; border-radius: var(--radius-lg) !important; border: 0px solid #222222 !important; }
@@ -289,7 +289,7 @@ textarea[rows="1"] { height: 33px !important; width: 99% !important; padding: 8p
   --prose-header-text-weight: 400;
   --slider-color: ;
   --table-radius: var(--radius-lg);
-  --button-large-padding: 2px 10px;
+  --button-large-padding: 2px 6px;
   --button-large-radius: var(--radius-lg);
   --button-large-text-size: var(--text-lg);
   --button-large-text-weight: 400;

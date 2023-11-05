@@ -173,7 +173,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --button-cancel-border-color: #dc2626;
   --button-cancel-text-color-hover: var(--button-cancel-text-color);
   --button-cancel-text-color: white;
-  --button-large-padding: 2px 10px;
+  --button-large-padding: 2px 6px;
   --button-large-radius: var(--radius-lg);
   --button-large-text-size: var(--text-lg);
   --button-large-text-weight: 400;
