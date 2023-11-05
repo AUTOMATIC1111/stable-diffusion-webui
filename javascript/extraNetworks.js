@@ -27,7 +27,6 @@ function setupExtraNetworksForTab(tabname) {
     var showDirsDiv = gradioApp().getElementById(tabname + '_extra_show_dirs');
     var showDirs = gradioApp().querySelector('#' + tabname + '_extra_show_dirs input');
 
-    sort.dataset.sortkey = 'sortDefault';
     tabs.appendChild(searchDiv);
     tabs.appendChild(sort);
     tabs.appendChild(sortOrder);
@@ -49,20 +48,23 @@ function setupExtraNetworksForTab(tabname) {
 
             elem.style.display = visible ? "" : "none";
         });
+
+        applySort();
     };
 
     var applySort = function() {
+        var cards = gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card');
+
         var reverse = sortOrder.classList.contains("sortReverse");
-        var sortKey = sort.querySelector("input").value.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim();
-        sortKey = sortKey ? "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1) : "";
-        var sortKeyStore = sortKey ? sortKey + (reverse ? "Reverse" : "") : "";
-        if (!sortKey || sortKeyStore == sort.dataset.sortkey) {
+        var sortKey = sort.querySelector("input").value.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim() || "name";
+        sortKey = "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1);
+        var sortKeyStore = sortKey + "-" + (reverse ? "Descending" : "Ascending") + "-" + cards.length;
+
+        if (sortKeyStore == sort.dataset.sortkey) {
             return;
         }
-
         sort.dataset.sortkey = sortKeyStore;
 
-        var cards = gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card');
         cards.forEach(function(card) {
             card.originalParentElement = card.parentElement;
         });
@@ -88,15 +90,13 @@ function setupExtraNetworksForTab(tabname) {
     };
 
     search.addEventListener("input", applyFilter);
-    applyFilter();
-    ["change", "blur", "click"].forEach(function(evt) {
-        sort.querySelector("input").addEventListener(evt, applySort);
-    });
     sortOrder.addEventListener("click", function() {
         sortOrder.classList.toggle("sortReverse");
         applySort();
     });
+    applyFilter();
 
+    extraNetworksApplySort[tabname] = applySort;
     extraNetworksApplyFilter[tabname] = applyFilter;
 
     var showDirsUpdate = function() {
@@ -113,7 +113,12 @@ function applyExtraNetworkFilter(tabname) {
     setTimeout(extraNetworksApplyFilter[tabname], 1);
 }
 
+function applyExtraNetworkSort(tabname) {
+    setTimeout(extraNetworksApplySort[tabname], 1);
+}
+
 var extraNetworksApplyFilter = {};
+var extraNetworksApplySort = {};
 var activePromptTextarea = {};
 
 function setupExtraNetworks() {
