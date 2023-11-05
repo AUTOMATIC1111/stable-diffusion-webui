@@ -58,6 +58,8 @@ cache
 .idea/
 /localizations
 
-# unexcluded so folders get created
+# force included
 !/models/VAE-approx
 !/models/VAE-approx/model.pt
+!/models/Reference
+!/models/Reference/**/*

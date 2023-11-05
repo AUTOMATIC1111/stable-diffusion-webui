@@ -15,9 +15,10 @@ from collections import OrderedDict
 import gradio as gr
 from PIL import Image
 from starlette.responses import FileResponse, JSONResponse
-from modules import shared, scripts, modelloader
+from modules import paths, shared, scripts, modelloader
 from modules.ui_components import ToolButton
 import modules.ui_symbols as symbols
+
 
 allowed_dirs = []
 dir_cache = {} # key=path, value=(mtime, listdir(path))
@@ -238,8 +239,11 @@ class ExtraNetworksPage:
         allowed_folders = [os.path.abspath(x) for x in self.allowed_directories_for_previews()]
         for parentdir, dirs in {d: modelloader.directory_directories(d) for d in allowed_folders}.items():
             for tgt in dirs.keys():
-                if shared.opts.diffusers_dir in tgt:
-                    subdirs[os.path.basename(shared.opts.diffusers_dir)] = 1
+                if shared.backend == shared.Backend.DIFFUSERS:
+                    if os.path.join(paths.models_path, 'Reference') in tgt:
+                        subdirs['Reference'] = 1
+                    if shared.opts.diffusers_dir in tgt:
+                        subdirs[os.path.basename(shared.opts.diffusers_dir)] = 1
                 if 'models--' in tgt:
                     continue
                 subdir = tgt[len(parentdir):].replace("\\", "/")
@@ -737,7 +741,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         return ui_refresh_click(title)
 
     def ui_save_click():
-        from modules import paths, generation_parameters_copypaste
+        from modules import generation_parameters_copypaste
         filename = os.path.join(paths.data_path, "params.txt")
         if os.path.exists(filename):
             with open(filename, "r", encoding="utf8") as file:
@@ -749,7 +753,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         return res
 
     def ui_quicksave_click(name):
-        from modules import paths, generation_parameters_copypaste
+        from modules import generation_parameters_copypaste
         fn = os.path.join(paths.data_path, "params.txt")
         if os.path.exists(fn):
             with open(fn, "r", encoding="utf8") as file:

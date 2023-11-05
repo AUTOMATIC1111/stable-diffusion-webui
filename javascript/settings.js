@@ -89,7 +89,7 @@ onAfterUiUpdate(async () => {
   const jsdata = textarea.value;
   updateOpts(jsdata);
   executeCallbacks(optionsChangedCallbacks);
-  register_drag_drop();
+  registerDragDrop();
 
   Object.defineProperty(textarea, 'value', {
     set(newValue) {

@@ -11,6 +11,9 @@ Also, [Wiki](https://github.com/vladmandic/automatic/wiki) has been updated with
 Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVINO), [IntelArc](https://github.com/vladmandic/automatic/wiki/Intel-ARC), [DirectML](https://github.com/vladmandic/automatic/wiki/DirectML), [ONNX/Olive>](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime)
 
 - **Diffusers**
+  - since now **SD.Next** supports **12** different model types, we've added reference model for each type in  
+    *Extra networks -> Reference* for easier select & auto-download  
+    Models can still be downloaded manually, this is just a convenience feature & a showcase for supported models  
   - new model type: [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)  
     its a *distilled* model, this time 50% smaller and faster version of SD-XL!  
     (and quality does not suffer, its just more optimized)  

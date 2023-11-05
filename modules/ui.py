@@ -1157,9 +1157,9 @@ def create_ui(startup_timer = None):
             inputs=components,
             outputs=[text_settings, result],
         )
-        defaults_submit.click(fn=lambda: modules.shared.restore_defaults(restart=True), _js="restart_reload")
-        restart_submit.click(fn=lambda: modules.shared.restart_server(restart=True), _js="restart_reload")
-        shutdown_submit.click(fn=lambda: modules.shared.restart_server(restart=False), _js="restart_reload")
+        defaults_submit.click(fn=lambda: modules.shared.restore_defaults(restart=True), _js="restartReload")
+        restart_submit.click(fn=lambda: modules.shared.restart_server(restart=True), _js="restartReload")
+        shutdown_submit.click(fn=lambda: modules.shared.restart_server(restart=False), _js="restartReload")
 
         for _i, k, _item in quicksettings_list:
             component = component_dict[k]
@@ -1194,6 +1194,21 @@ def create_ui(startup_timer = None):
             outputs=[component_dict['sd_vae'], text_settings],
         )
 
+        def reference_submit(model):
+            from modules import modelloader
+            loaded = modelloader.load_reference(model)
+            if loaded:
+                return model if loaded else opts.sd_model_checkpoint
+            print('HERE', model, loaded)
+            return loaded
+
+        button_set_reference = gr.Button('Change reference', elem_id='change_reference', visible=False)
+        button_set_reference.click(
+            fn=reference_submit,
+            _js="function(v){ return desiredCheckpointName; }",
+            inputs=[component_dict['sd_model_checkpoint']],
+            outputs=[component_dict['sd_model_checkpoint']],
+        )
         component_keys = [k for k in opts.data_labels.keys() if k in component_dict]
 
         def get_settings_values():
