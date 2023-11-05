@@ -1,5 +1,3 @@
-import gc 
-
 import torch
 from torch.nn.functional import silu
 from types import MethodType
@@ -193,8 +191,7 @@ class StableDiffusionModelHijack:
                 delattr(m.model.diffusion_model.output_blocks[1][1].transformer_blocks,i)
             delattr(m.model.diffusion_model.output_blocks[4][1].transformer_blocks,'1')
             delattr(m.model.diffusion_model.output_blocks[5][1].transformer_blocks,'1')
-            torch.cuda.empty_cache()
-            gc.collect()
+            devices.torch_gc()
 
     def hijack(self, m):
         conditioner = getattr(m, 'conditioner', None)
