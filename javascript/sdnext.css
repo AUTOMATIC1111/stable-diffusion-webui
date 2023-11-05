@@ -279,3 +279,12 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
   --spacing-xl: 5px;
   --spacing-xxl: 6px;
 }
+
+
+/* Apply different styles for devices with coarse pointers */
+@media (hover: none) and (pointer: coarse) {
+    :root, .light, .dark { 
+    	--left-column: 100%;
+    }
+    .gradio-slider input[type="number"] { text-align: center; }
+}
