@@ -1,5 +1,6 @@
 import os
 import json
+import inspect
 from datetime import datetime
 import gradio as gr
 from modules import sd_models, sd_vae, extras
@@ -140,9 +141,9 @@ def create_ui():
                         models_outcome,
                     ]
                 )
-            with gr.Tab(label="MEH Merge"):
+            with gr.Tab(label="Advanced Merge"):
                 def sd_model_choices():
-                                return ['None'] + sd_models.checkpoint_tiles()
+                    return ['None'] + sd_models.checkpoint_tiles()
                 with gr.Row(equal_height=False):
                     with gr.Column(variant='compact'):
                         with FormRow():
@@ -157,31 +158,35 @@ def create_ui():
                             tertiary_model_name = gr.Dropdown(sd_model_choices(), label="Tertiary model", value="None", visible=False)
                             tertiary_refresh = create_refresh_button(tertiary_model_name, sd_models.list_models, lambda: {"choices": sd_model_choices()}, "refresh_checkpoint_C",visible=False)
                         with FormRow():
-                            alpha = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Alpha Ratio', value=0.5)
-                            beta = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Beta Ratio', value=None, visible=False)
-                        with InputAccordion(False, label="Block Merge", elem_id=f"block_merge") as block_accordion:
-                            with FormRow():
-                                alpha_label = gr.Markdown("# Alpha")
-                            with FormRow():
-                                preset = gr.Dropdown(choices=["None"]+list(BLOCK_WEIGHTS_PRESETS.keys()), value=None, label="Block Weight Preset", multiselect=True, max_choices=2)
-                                preset_lambda = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Preset Interpolation Ratio', value=None, visible=False)
-                                apply_preset = ToolButton('⇩', visible=True)
-                            with FormRow():
-                                base = gr.Textbox(value=None, label="Base", scale=1)
-                                in_blocks = gr.Textbox(value=None, label="In Blocks", scale=10)
-                                mid_block = gr.Textbox(value=None, label="Mid Block", scale=1)
-                                out_blocks = gr.Textbox(value=None, label="Out Block", scale=10)
-                            with FormRow():
-                                beta_label = gr.Markdown("# Beta", visible=False)
-                            with FormRow():
-                                beta_preset = gr.Dropdown(choices=["None"]+list(BLOCK_WEIGHTS_PRESETS.keys()), value=None, label="Block Weight Preset", multiselect=True, max_choices=2, interactive=True, visible=False)
-                                beta_preset_lambda = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Preset Interpolation Ratio', value=None, interactive=True, visible=False)
-                                beta_apply_preset = ToolButton('⇩', interactive=True, visible=False)
-                            with FormRow():
-                                beta_base = gr.Textbox(value=None, label="Base", scale=1, interactive=True, visible=False)
-                                beta_in_blocks = gr.Textbox(value=None, label="In Blocks", interactive=True, scale=10, visible=False)
-                                beta_mid_block = gr.Textbox(value=None, label="Mid Block", interactive=True, scale=1, visible=False)
-                                beta_out_blocks = gr.Textbox(value=None, label="Out Block", interactive=True, scale=10, visible=False)
+                            with gr.Tabs() as tabs:
+                                with gr.TabItem(label="Simple Merge", id=0):
+                                    with FormRow():
+                                        alpha = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Alpha Ratio', value=0.5)
+                                        beta = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Beta Ratio', value=None, visible=False)
+                                with gr.TabItem(label="Preset Block Merge", id=1):
+                                    with FormRow():
+                                        alpha_preset = gr.Dropdown(choices=["None"]+list(BLOCK_WEIGHTS_PRESETS.keys()), value=None, label="ALPHA Block Weight Preset", multiselect=True, max_choices=2)
+                                        alpha_preset_lambda = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Preset Interpolation Ratio', value=None, visible=False)
+                                        apply_preset = ToolButton('⇩', visible=True)
+                                    with FormRow():
+                                        beta_preset = gr.Dropdown(choices=["None"]+list(BLOCK_WEIGHTS_PRESETS.keys()), value=None, label="BETA Block Weight Preset", multiselect=True, max_choices=2, interactive=True, visible=False)
+                                        beta_preset_lambda = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Preset Interpolation Ratio', value=None, interactive=True, visible=False)
+                                        beta_apply_preset = ToolButton('⇩', interactive=True, visible=False)
+                                with gr.TabItem(label="Manual Block Merge", id=2):
+                                    with FormRow():
+                                        alpha_label = gr.Markdown("# Alpha")
+                                    with FormRow():
+                                        alpha_base = gr.Textbox(value=None, label="Base", min_width=70, scale=1)
+                                        alpha_in_blocks = gr.Textbox(value=None, label="In Blocks", scale=15)
+                                        alpha_mid_block = gr.Textbox(value=None, label="Mid Block", min_width=80, scale=1)
+                                        alpha_out_blocks = gr.Textbox(value=None, label="Out Block", scale=15)
+                                    with FormRow():
+                                        beta_label = gr.Markdown("# Beta", visible=False)
+                                    with FormRow():
+                                        beta_base = gr.Textbox(value=None, label="Base", min_width=70, scale=1, interactive=True, visible=False)
+                                        beta_in_blocks = gr.Textbox(value=None, label="In Blocks", interactive=True, scale=15, visible=False)
+                                        beta_mid_block = gr.Textbox(value=None, label="Mid Block", min_width=80, interactive=True, scale=1, visible=False)
+                                        beta_out_blocks = gr.Textbox(value=None, label="Out Block", interactive=True, scale=15, visible=False)
                         with FormRow():
                             weights_clip = gr.Checkbox(label="Weights Clip")
                             prune = gr.Checkbox(label="Prune")
@@ -189,22 +194,59 @@ def create_ui():
                         with FormRow():
                             re_basin_iterations = gr.Slider(minimum=0, maximum=25, step=1, label='Number of ReBasin Iterations', value=None, visible=False)
                         with FormRow():
-                            checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="safetensors", label="Model format")
+                            checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="safetensors", visible=False, label="Model format")
                         with FormRow():
                             precision = gr.Radio(choices=["fp16", "fp32"], value="fp16", label="Model precision")
                         with FormRow():
                             device = gr.Radio(choices=["cpu", "cuda"], value="cpu", label="Device")
                         with FormRow():
-                            bake_in_vae = gr.Dropdown(choices=["None"] + list(sd_vae.vae_dict), value="None", label="Bake in VAE")
+                            bake_in_vae = gr.Dropdown(choices=["None"] + list(sd_vae.vae_dict), value="None",  interactive=True, label="Bake in VAE")
                             create_refresh_button(bake_in_vae, sd_vae.refresh_vae_list, lambda: {"choices": ["None"] + list(sd_vae.vae_dict)}, "modelmerger_refresh_bake_in_vae")
                         with FormRow():
                             save_metadata = gr.Checkbox(value=True, label="Save metadata")
                         with gr.Row():
                             MEHmodelmerger_merge = gr.Button(value="Merge", variant='primary')
 
-                def MEHmodelmerger(*args):
+                def MEHmodelmerger(dummy_component,
+                        primary_model_name,
+                        secondary_model_name,
+                        tertiary_model_name,
+                        merge_mode,
+                        alpha,
+                        beta,
+                        alpha_preset,
+                        alpha_preset_lambda,
+                        alpha_base,
+                        alpha_in_blocks,
+                        alpha_mid_block,
+                        alpha_out_blocks,
+                        beta_preset,
+                        beta_preset_lambda,
+                        beta_base,
+                        beta_in_blocks,
+                        beta_mid_block,
+                        beta_out_blocks,
+                        precision,
+                        custom_name,
+                        checkpoint_format,
+                        save_metadata,
+                        weights_clip,
+                        prune,
+                        re_basin,
+                        re_basin_iterations,
+                        device,
+                        bake_in_vae):
+                    kwargs = {}
+                    for x in inspect.getfullargspec(MEHmodelmerger)[0]:
+                        kwargs[x] = locals()[x]
+                    for key in list(kwargs.keys()):
+                        if kwargs[key] in [None,"None","",0,[]]:
+                            del kwargs[key]
+
+                    # return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)], f"{kwargs}"]
+
                     try:
-                        results = extras.run_MEHmodelmerger(*args)
+                        results = extras.run_MEHmodelmerger(dummy_component, **kwargs)
                     except Exception as e:
                         modules.errors.display(e, 'model merge')
                         sd_models.list_models()  # to remove the potentially missing models from the list
@@ -240,17 +282,17 @@ def create_ui():
                         preset = interpolate(presets, ratio)
                     else:
                         preset = presets[0]
-                    preset = [str(x) for x in preset]
-                    preset = [preset[0],",".join(preset[1:13]),preset[13],",".join(preset[14:])]
-                    print(preset)
-                    return [gr.update(value=x) for x in preset]
+                    preset = ['%.3f' % x for x in preset]
+                    preset = [preset[0], ",".join(preset[1:13]),preset[13], ",".join(preset[14:])]
+                    return [gr.update(value=x) for x in preset]+[gr.update(selected=2)]
 
-                preset.change(fn=preset_visiblility, inputs=preset, outputs=preset_lambda)
-                beta_preset.change(fn=preset_visiblility, inputs=preset, outputs=beta_preset_lambda)
+                alpha_preset.change(fn=preset_visiblility, inputs=alpha_preset, outputs=alpha_preset_lambda)
+                beta_preset.change(fn=preset_visiblility, inputs=alpha_preset, outputs=beta_preset_lambda)
                 merge_mode.input(fn=tertiary, inputs=merge_mode, outputs=[tertiary_model_name, tertiary_refresh])
                 merge_mode.input(fn=beta_visibility, inputs=merge_mode, outputs=[beta, alpha_label, beta_label, beta_apply_preset, beta_preset, beta_base, beta_in_blocks, beta_mid_block, beta_out_blocks])
                 re_basin.change(fn=show_iters, inputs=re_basin,outputs=re_basin_iterations)
-                apply_preset.click(fn=load_presets,inputs=[preset, preset_lambda], outputs=[base,in_blocks,mid_block,out_blocks])
+                apply_preset.click(fn=load_presets,inputs=[alpha_preset, alpha_preset_lambda], outputs=[alpha_base,alpha_in_blocks,alpha_mid_block,alpha_out_blocks,tabs])
+                beta_apply_preset.click(fn=load_presets,inputs=[beta_preset, beta_preset_lambda], outputs=[beta_base,beta_in_blocks,beta_mid_block,beta_out_blocks,tabs])
                 MEHmodelmerger_merge.click(
                     fn=wrap_gradio_gpu_call(MEHmodelmerger, extra_outputs=lambda: [gr.update() for _ in range(4)]),
                     _js='modelmerger',
@@ -262,16 +304,28 @@ def create_ui():
                         merge_mode,
                         alpha,
                         beta,
+                        alpha_preset,
+                        alpha_preset_lambda,
+                        alpha_base,
+                        alpha_in_blocks,
+                        alpha_mid_block,
+                        alpha_out_blocks,
+                        beta_preset,
+                        beta_preset_lambda,
+                        beta_base,
+                        beta_in_blocks,
+                        beta_mid_block,
+                        beta_out_blocks,
                         precision,
                         custom_name,
                         checkpoint_format,
                         save_metadata,
-                        preset,
                         weights_clip,
                         prune,
                         re_basin,
                         re_basin_iterations,
-                        device
+                        device,
+                        bake_in_vae,
                     ],
                     outputs=[
                         primary_model_name,
