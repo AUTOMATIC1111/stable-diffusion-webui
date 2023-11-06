@@ -689,18 +689,18 @@ def create_ui():
                                 with gr.Column(scale=4):
                                     inpaint_full_res_padding = gr.Slider(label='Only masked padding, pixels', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
 
-                            def select_img2img_tab(tab):
-                                return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
-
-                            for i, elem in enumerate(img2img_tabs):
-                                elem.select(
-                                    fn=lambda tab=i: select_img2img_tab(tab),
-                                    inputs=[],
-                                    outputs=[inpaint_controls, mask_alpha],
-                                )
-
                     if category not in {"accordions"}:
                         scripts.scripts_img2img.setup_ui_for_section(category)
+
+            def select_img2img_tab(tab):
+                return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
+
+            for i, elem in enumerate(img2img_tabs):
+                elem.select(
+                    fn=lambda tab=i: select_img2img_tab(tab),
+                    inputs=[],
+                    outputs=[inpaint_controls, mask_alpha],
+                )
 
             img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples, toprow)
 
