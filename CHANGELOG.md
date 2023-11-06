@@ -2,8 +2,6 @@
 
 ## Update for 2023-11-01
 
-*Note*: Pending release of `diffusers==0.22.0`
-
 Another pretty big release, this time with focus on  
 new models, new backends and optimizations - plus quite a few fixes  
 

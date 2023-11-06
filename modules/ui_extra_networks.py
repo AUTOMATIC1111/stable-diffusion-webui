@@ -252,9 +252,14 @@ class ExtraNetworksPage:
                 if not self.is_empty(tgt):
                     subdirs[subdir] = 1
         subdirs = OrderedDict(sorted(subdirs.items()))
+        if shared.backend == shared.Backend.DIFFUSERS:
+            subdirs['Reference'] = 1
+            subdirs[os.path.basename(shared.opts.diffusers_dir)] = 1
+            subdirs.move_to_end(os.path.basename(shared.opts.diffusers_dir))
+            subdirs.move_to_end('Reference')
         if self.name == 'style' and shared.opts.extra_networks_styles:
             subdirs['built-in'] = 1
-        subdirs_html = "<button class='lg secondary gradio-button custom-button search-all' onclick='extraNetworksSearchButton(event)'>all</button><br>"
+        subdirs_html = "<button class='lg secondary gradio-button custom-button search-all' onclick='extraNetworksSearchButton(event)'>All</button><br>"
         subdirs_html += "".join([f"<button class='lg secondary gradio-button custom-button' onclick='extraNetworksSearchButton(event)'>{html.escape(subdir)}</button><br>" for subdir in subdirs if subdir != ''])
         self.html = ''
         self.create_items(tabname)

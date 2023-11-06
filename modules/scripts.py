@@ -366,6 +366,9 @@ class ScriptRunner:
         script.name = wrap_call(script.title, script.filename, "title", default=script.filename).lower()
         api_args = []
         for control in controls:
+            if not isinstance(control, gr.components.IOComponent):
+                log.error(f'Invalid script control: "{script.filename}" control={control}')
+                continue
             control.custom_script_source = os.path.basename(script.filename)
             arg_info = api_models.ScriptArg(label=control.label or "")
             for field in ("value", "minimum", "maximum", "step", "choices"):
@@ -412,6 +415,9 @@ class ScriptRunner:
             script.name = wrap_call(script.title, script.filename, "title", default=script.filename).lower()
             api_args = []
             for control in controls:
+                if not isinstance(control, gr.components.IOComponent):
+                    log.error(f'Invalid script control: "{script.filename}" control={control}')
+                    continue
                 control.custom_script_source = os.path.basename(script.filename)
                 arg_info = api_models.ScriptArg(label=control.label or "")
                 for field in ("value", "minimum", "maximum", "step", "choices"):
