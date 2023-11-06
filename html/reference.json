@@ -4,38 +4,48 @@
     "preview": "runwayml--stable-diffusion-v1-5.jpg"
   },
   "StabilityAI SD 2.1": {
-    "path": "stabilityai/stable-diffusion-2-1-base"
+    "path": "stabilityai/stable-diffusion-2-1-base",
+    "preview": "stabilityai--stable-diffusion-2.1-base.jpg"
   },
   "StabilityAI SD-XL 1.0 Base": {
     "path": "stabilityai/stable-diffusion-xl-base-1.0",
     "preview": "stabilityai--stable-diffusion-xl-base-1.0.jpg"
   },
   "Segmind SSD-1B": {
-    "path": "segmind/SSD-1B"
+    "path": "segmind/SSD-1B",
+    "preview": "segmind--ssd-1b.jpg"
   },
   "Segmind Tiny": {
-    "path": "segmind/tiny-sd"
+    "path": "segmind/tiny-sd",
+    "preview": "segmind--tiny-sd.jpg"
   },
   "LCM Dreamshaper 7": {
-    "path": "SimianLuo/LCM_Dreamshaper_v7"
+    "path": "SimianLuo/LCM_Dreamshaper_v7",
+    "preview": "simianluo--lcm_dreamshaper_v7.jpg"
   },
   "Pixart-α XL 2 Medium": {
-    "path": "PixArt-alpha/PixArt-XL-2-512x512"
+    "path": "PixArt-alpha/PixArt-XL-2-512x512",
+    "preview": "pixart-alpha--pixart-xl-2-512x512.jpg"
   },
   "Pixart-α XL 2 Large": {
-    "path": "PixArt-alpha/PixArt-XL-2-1024-MS"
+    "path": "PixArt-alpha/PixArt-XL-2-1024-MS",
+    "preview": "pixart-alpha--pixart-xl-2-1024-ms.jpg"
   },
   "Warp Wuerstchen": {
-    "path": "warp-ai/wuerstchen"
+    "path": "warp-ai/wuerstchen",
+    "preview": "warp-ai--wuerstchen.jpg"
   },
   "Kandinsky 2.1": {
-    "path": "kandinsky-community/kandinsky-2-1"
+    "path": "kandinsky-community/kandinsky-2-1",
+    "preview": "kandinsky-community--kandinsky-2-1.jpg"
   },
   "Kandinsky 2.2": {
-    "path": "kandinsky-community/kandinsky-2-2-decoder"
+    "path": "kandinsky-community/kandinsky-2-2-decoder",
+    "preview": "kandinsky-community--kandinsky-2-2-decoder.jpg"
   },
   "DeepFloyd IF Medium": {
-    "path": "DeepFloyd/IF-I-M-v1.0"
+    "path": "DeepFloyd/IF-I-M-v1.0",
+    "preview": "deepfloyd--if-i-m-v1.0.jpg"
   },
   "Tsinghua UniDiffuser": {
     "path": "thu-ml/unidiffuser-v1",
