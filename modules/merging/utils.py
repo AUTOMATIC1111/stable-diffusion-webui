@@ -30,7 +30,7 @@ class WeightClass:
                  model_a,
                  **kwargs,
                  ):
-        self.SDXL = True if "model.diffusion_model.middle_block.1.transformer_blocks.9.norm3.weight" in model_a.keys() else False
+        self.SDXL = "model.diffusion_model.middle_block.1.transformer_blocks.9.norm3.weight" in model_a.keys()
         self.NUM_INPUT_BLOCKS = 12 if not self.SDXL else 9
         self.NUM_MID_BLOCK = 1
         self.NUM_OUTPUT_BLOCKS = 12 if not self.SDXL else 9
@@ -59,13 +59,12 @@ class WeightClass:
                 else:
                     self.ratioDict[key] = self.ratioDict[key][0]
 
-
     def __call__(self, key, it=0):
         current_bases = {}
         if self.ratioDict.get("alpha", None):
-            current_bases["alpha"] = self.step_weights_and_bases(self.ratioDict["alpha"], it)
+            current_bases["alpha"] = self.step_weights_and_bases(self.ratioDict["alpha"])
         if self.ratioDict.get("beta", None):
-            current_bases["beta"] = self.step_weights_and_bases(self.ratioDict["beta"], it)
+            current_bases["beta"] = self.step_weights_and_bases(self.ratioDict["beta"])
 
         weight_index = 0
         if "model" in key:
@@ -92,22 +91,18 @@ class WeightClass:
                     raise ValueError(f"illegal block index {key}")
 
         current_bases = {k: w[weight_index] for k, w in current_bases.items()}
-        if self.re_basin:
-            current_bases = self.step_weights_and_bases(current_bases,self.it)
         return current_bases
 
-    def step_weights_and_bases(self,
-                               ratio,
-                               it: int = 0,
-                               ):
-        new_ratio = {
-            k:
-            1 - (1 - (1 + it) * v / self.iterations) / (1 - it * v / self.iterations)
-            if it > 0
-            else v / self.iterations
-            for k, v in ratio.items()
-        }
+    def step_weights_and_bases(self, ratio):
+        if not self.re_basin:
+            return ratio
 
+        new_ratio = [
+            1 - (1 - (1 + self.it) * v / self.iterations) / (1 - self.it * v / self.iterations)
+            if self.it > 0
+            else v / self.iterations
+            for v in ratio
+        ]
         return new_ratio
 
     def set_it(self, it):
