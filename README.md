@@ -22,7 +22,7 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
 - Support for multiple backends!  
   **original** and **diffusers**
 - Support for multiple diffusion models!  
-  **Stable Diffusion, SD-XL, LCM, Segmind, Kandinsky, Wuerstchen, DeepFloyd IF, UniDiffusion, SD-Distilled, etc.**  
+  **Stable Diffusion, SD-XL, LCM, Segmind, Kandinsky, Pixart-α, Wuerstchen, DeepFloyd IF, UniDiffusion, SD-Distilled, etc.**  
 - Fully multiplatform with platform specific autodetection and tuning performed on install  
   **Windows / Linux / MacOS with CPU / nVidia / AMD / IntelArc / DirectML / OpenVINO / ONNX+Olive**  
 - Optimized processing with latest **torch** developments  
