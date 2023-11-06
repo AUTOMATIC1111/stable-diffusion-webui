@@ -13,7 +13,6 @@ class State:
     job_no = 0
     job_count = 0
     total_jobs = 0
-    processing_has_refined_job_count = False
     job_timestamp = '0'
     sampling_step = 0
     sampling_steps = 0
@@ -72,7 +71,6 @@ class State:
         self.job_no = 0
         self.job_timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         self.paused = False
-        self.processing_has_refined_job_count = False
         self.sampling_step = 0
         self.skipped = False
         self.textinfo = None
@@ -87,7 +85,7 @@ class State:
             log.debug(f'Access state.end: {sys._getframe().f_back.f_code.co_name}') # pylint: disable=protected-access
             self.time_start = time.time()
         if self.debug_output:
-            log.debug(f'State end: {self.job} time={time.time() - self.time_start:.2f}s')
+            log.debug(f'State end: {self.job} time={time.time() - self.time_start:.2f}')
         self.job = ""
         self.job_count = 0
         self.job_no = 0

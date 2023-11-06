@@ -1,67 +1,113 @@
 # Change Log for SD.Next
 
-## Update for 2023-10-25
+## Update for 2023-11-06
 
-*Note*: Pending release of `diffusers==0.22.0`
+Another pretty big release, this time with focus on new models (3 new model types), new backends and optimizations
+Plus quite a few fixes  
 
-Mostly service release with support for several new models and additional optimizations...
+Also, [Wiki](https://github.com/vladmandic/automatic/wiki) has been updated with new content, so check it out!  
+Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVINO), [IntelArc](https://github.com/vladmandic/automatic/wiki/Intel-ARC), [DirectML](https://github.com/vladmandic/automatic/wiki/DirectML), [ONNX/Olive>](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime)
 
 - **Diffusers**
-  - new model type: [SegMind SSD-1B](https://huggingface.co/segmind/SSD-1B)  
-    its a distilled model, this time 50% smaller and faster version of SD-XL!  
-    test shows batch-size:4 with 1k images used less than 6.5GB of VRAM  
-    download using built-in **Huggingface** downloader: `segmind/SSD-1B`  
+  - since now **SD.Next** supports **12** different model types, we've added reference model for each type in  
+    *Extra networks -> Reference* for easier select & auto-download  
+    Models can still be downloaded manually, this is just a convenience feature & a showcase for supported models  
+  - new model type: [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)  
+    its a *distilled* model trained at 1024px, this time 50% smaller and faster version of SD-XL!  
+    (and quality does not suffer, its just more optimized)  
+    test shows batch-size:4 with 1k images at full quality used less than 6.5GB of VRAM  
+    and for further optimization, you can use built-in **TAESD** decoder,  
+    which results in batch-size:16 with 1k images using 7.9GB of VRAM
+    select from extra networks -> reference or download using built-in **Huggingface** downloader: `segmind/SSD-1B`  
+  - new model type: [Pixart-α XL 2](https://github.com/PixArt-alpha/PixArt-alpha)  
+    in medium/512px and large/1024px variations  
+    comparable in quality to SD 1.5 and SD-XL, but with better text encoder and highly optimized training pipeline  
+    so finetunes can be done in as little as 10% compared to SD/SD-XL (note that due to much larger text encodeder, it is a large model)  
+    select from extra networks -> reference or download using built-in **Huggingface** downloader: `PixArt-alpha/PixArt-XL-2-1024-MS`  
   - new model type: [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)  
-    near-instant generate in a as little as 3 steps!  
-    download using built-in **Huggingface** downloader: `SimianLuo/LCM_Dreamshaper_v7`  
+    trained at 512px, but with near-instant generate in a as little as 3 steps!  
+    combined with OpenVINO, generate on CPU takes less than 5-10 seconds: <https://www.youtube.com/watch?v=b90ESUTLsRo>  
+    and absolute beast when combined with **HyperTile** and **TAESD** decoder resulting in **28 FPS**  
+    (on RTX4090 for batch 16x16 at 512px)  
+    note: set sampler to **Default** before loading model as LCM comes with its own *LCMScheduler* sampler  
+    select from extra networks -> reference or download using built-in **Huggingface** downloader: `SimianLuo/LCM_Dreamshaper_v7`  
   - support for **Custom pipelines**, thanks @disty0  
     download using built-in **Huggingface** downloader  
     think of them as plugins for diffusers not unlike original extensions that modify behavior of `ldm` backend  
-    list of community pipelines: <https://github.com/huggingface/diffusers/tree/main/examples/community>  
-    and make sure to check our reference one: `Disty0/zero123plus-pipeline`  
-    which generates 4 output images with different camera positions: front, side, top, back!  
+    list of community pipelines: <https://github.com/huggingface/diffusers/blob/main/examples/community/README.md>  
+  - new custom pipeline: `Disty0/zero123plus-pipeline`, thanks @disty0  
+    generate 4 output images with different camera positions: front, side, top, back!  
+    for more details, see <https://github.com/vladmandic/automatic/discussions/2421>  
+  - new backend: **ONNX/Olive** *(experimental)*, thanks @lshqqytiger  
+    for details, see [WiKi](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime)
   - extend support for [Free-U](https://github.com/ChenyangSi/FreeU)  
     improve generations quality at no cost (other than finding params that work for you)  
 - **General**  
+  - attempt to auto-fix invalid samples which occure due to math errors in lower precision  
+    example: `RuntimeWarning: invalid value encountered in cast: sample = sample.astype(np.uint8)`  
+    begone **black images** *(note: if it proves as working, this solution will need to be expanded to cover all scenarios)*  
   - add **Lora OFT** support, thanks @antis0007 and @ai-casanova  
   - **Upscalers**  
-    - **compile compile** option, thanks @disty0  
+    - **compile** option, thanks @disty0  
     - **chaiNNer** add high quality models from [Helaman](https://openmodeldb.info/users/helaman)  
-  - redesigned **progress bar** with full details on current operation
+  - redesigned **Progress bar** with full details on current operation  
   - new option: *settings -> images -> keep incomplete*  
     can be used to skip vae decode on aborted/skipped/interrupted image generations  
+  - new option: *settings -> system paths -> models*  
+    can be used to set custom base path for *all* models (previously only as cli option)  
   - remove external clone of items in `/repositories`  
-  - switch core font in default theme to **noto-sans**  
+  - **Interrogator** module has been removed from `extensions-builtin`  
+    and fully implemented (and improved) natively  
+- **UI**  
+  - UI tweaks for default themes  
+  - UI switch core font in default theme to **noto-sans**  
     previously default font was simply *system-ui*, but it lead to too much variations between browsers and platforms  
-- **Fixes**
-  - fix **freeu** for backend original and add it to xyz grid
-  - fix loading diffuser models in huggingface format from non-standard location
-  - fix default styles looking in wrong location
-  - fix missing upscaler folder on initial startup
-  - fix handling of relative path for models
-  - fix simple live preview device mismatch
-  - fix batch img2img
-  - fix diffusers samplers: dpm++ 2m, dpm++ 1s, deis
-  - fix new style filename template
-  - fix image name template using model name
-  - fix image name sequence
-  - fix model path using relative path
-  - fix `torch-rocm` and `tensorflow-rocm` version detection, thanks @xangelix
-  - fix **chainner** upscalers color clipping
+  - UI tweaks for mobile devices, thanks @iDeNoh  
+  - updated **Context menu**  
+    right-click on any button in action menu (e.g. generate button)  
+- **Extra networks**  
+  - sort by name, size, date, etc.  
+  - switch between *gallery* and *list* views  
+  - add tags from user metadata (in addition to tags in model metadata) for **lora**  
+  - added **Reference** models for diffusers backend  
+  - faster enumeration of all networks on server startup  
+- **Packages**
+  - updated `diffusers` to 0.22.0, `transformers` to 4.34.1  
+  - update **openvino**, thanks @disty0  
+  - update **directml**, @lshqqytiger  
+- **Compute**  
+  - **OpenVINO**:  
+    - updated to mainstream `torch` *2.1.0*  
+    - support for **ESRGAN** upscalers  
+- **Fixes**  
+  - fix **freeu** for backend original and add it to xyz grid  
+  - fix loading diffuser models in huggingface format from non-standard location  
+  - fix default styles looking in wrong location  
+  - fix missing upscaler folder on initial startup  
+  - fix handling of relative path for models  
+  - fix simple live preview device mismatch  
+  - fix batch img2img  
+  - fix diffusers samplers: dpm++ 2m, dpm++ 1s, deis  
+  - fix new style filename template  
+  - fix image name template using model name  
+  - fix image name sequence  
+  - fix model path using relative path  
+  - fix safari/webkit layour, thanks @eadnams22
+  - fix `torch-rocm` and `tensorflow-rocm` version detection, thanks @xangelix  
+  - fix **chainner** upscalers color clipping  
   - fix for base+refiner workflow in diffusers mode: number of steps, diffuser pipe mode  
-  - fix for prompt encoder with refiner in diffusers mode
-  - fix prompts-from-file saving incorrect metadata
-  - fix before-hires step
-  - fix diffusers switch from invalid model
-  - **directml** and **ipex** updates
-  - force second requirements check on startup
-  - remove lyco, multiple_tqdm
+  - fix for prompt encoder with refiner in diffusers mode  
+  - fix prompts-from-file saving incorrect metadata  
+  - fix add/remove extra networks to prompt
+  - fix before-hires step  
+  - fix diffusers switch from invalid model  
+  - force second requirements check on startup  
+  - remove **lyco**, multiple_tqdm  
   - enhance extension compatibility for exensions directly importing codeformers  
   - enhance extension compatibility for exensions directly accessing processing params  
-  - css fixes
-  - clearly mark external themes in ui
-  - update `openvino`, thanks @disty0
-  - update `typing-extensions`
+  - **css** fixes  
+  - clearly mark external themes in ui  
+  - update `typing-extensions`  
 
 ## Update for 2023-10-17
 

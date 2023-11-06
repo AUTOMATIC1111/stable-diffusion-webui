@@ -22,6 +22,7 @@
     "no-confusing-arrow":"off",
     "no-console":"off",
     "no-empty":"off",
+    "no-loop-func":"off",
     "no-mixed-operators":"off",
     "no-param-reassign":"off",
     "no-plusplus":"off",
@@ -67,14 +68,16 @@
     "switch_to_extras": "readonly",
     "get_tab_index": "readonly",
     "create_submit_args": "readonly",
-    "restart_reload": "readonly",
+    "restartReload": "readonly",
     "updateInput": "readonly",
     "toggleCompact": "readonly",
     // settings.js
-    "register_drag_drop": "readonly",
+    "registerDragDrop": "readonly",
     //extraNetworks.js
     "requestGet": "readonly",
     "getENActiveTab": "readonly",
+    "quickApplyStyle": "readonly",
+    "quickSaveStyle": "readonly",
     // from python
     "localization": "readonly",
     // progressbar.js

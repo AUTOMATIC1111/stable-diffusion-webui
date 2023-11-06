@@ -86,25 +86,33 @@ const removeContextMenuOption = initResponse[1];
 const addContextMenuEventListener = initResponse[2];
 
 function initContextMenu() {
-  // Start example Context Menu Items
-  const generateOnRepeat = (genbuttonid, interruptbuttonid) => {
-    const genbutton = gradioApp().querySelector(genbuttonid);
-    const busy = document.getElementById('progressbar')?.style.display === 'block';
-    if (!busy) genbutton.click();
-    clearInterval(window.generateOnRepeatInterval);
-    window.generateOnRepeatInterval = setInterval(() => {
-      const pbBusy = document.getElementById('progressbar')?.style.display === 'block';
-      if (!pbBusy) genbutton.click();
-    }, 500);
+  const generateForever = (genbuttonid, interruptbuttonid) => {
+    if (window.generateOnRepeatInterval) {
+      log('generateForever: cancel');
+      clearInterval(window.generateOnRepeatInterval);
+      window.generateOnRepeatInterval = null;
+    } else {
+      log('generateForever: start');
+      const genbutton = gradioApp().querySelector(genbuttonid);
+      const busy = document.getElementById('progressbar')?.style.display === 'block';
+      if (!busy) genbutton.click();
+      window.generateOnRepeatInterval = setInterval(() => {
+        const pbBusy = document.getElementById('progressbar')?.style.display === 'block';
+        if (!pbBusy) genbutton.click();
+      }, 500);
+    }
   };
-  const cancelGenerateForever = () => clearInterval(window.generateOnRepeatInterval);
 
-  appendContextMenuOption('#txt2img_generate', 'Generate forever', () => generateOnRepeat('#txt2img_generate', '#txt2img_interrupt'));
-  appendContextMenuOption('#img2img_generate', 'Generate forever', () => generateOnRepeat('#img2img_generate', '#img2img_interrupt'));
-  appendContextMenuOption('#txt2img_generate', 'Cancel generate forever', cancelGenerateForever);
-  appendContextMenuOption('#img2img_generate', 'Cancel generate forever', cancelGenerateForever);
-  appendContextMenuOption('#txt2img_generate', 'Show NVML overlay', initNVML);
-  appendContextMenuOption('#txt2img_generate', 'Hide NVML overlay', disableNVML);
+  for (const tab of ['txt2img', 'img2img']) {
+    for (const el of ['generate', 'interrupt', 'skip', 'pause', 'paste', 'clear_prompt', 'extra_networks_btn']) {
+      const id = `#${tab}_${el}`;
+      appendContextMenuOption(id, 'Copy to clipboard', () => navigator.clipboard.writeText(document.querySelector(`#${tab}_prompt > label > textarea`).value));
+      appendContextMenuOption(id, 'Generate forever', () => generateForever(`#${tab}_generate`));
+      appendContextMenuOption(id, 'Apply selected style', quickApplyStyle);
+      appendContextMenuOption(id, 'Quick save style', quickSaveStyle);
+      appendContextMenuOption(id, 'nVidia overlay', initNVML);
+    }
+  }
 }
 
 onUiLoaded(initContextMenu);

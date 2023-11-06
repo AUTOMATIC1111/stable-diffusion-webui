@@ -45,18 +45,21 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
                 if embedding.tag is not None:
                     tags[embedding.tag]=1
                 name = os.path.splitext(embedding.basename)[0]
-                yield {
+                record = {
                     "type": 'Embedding',
                     "name": name,
                     "filename": embedding.filename,
-                    "preview": self.find_preview(path),
-                    "description": self.find_description(path),
-                    "info": self.find_info(path),
+                    "preview": self.find_preview(embedding.filename),
                     "search_term": self.search_terms_from_path(name),
-                    "prompt": json.dumps(os.path.splitext(embedding.name)[0]),
+                    "prompt": json.dumps(f" {os.path.splitext(embedding.name)[0]}"),
                     "local_preview": f"{path}.{shared.opts.samples_format}",
                     "tags": tags,
+                    "mtime": os.path.getmtime(embedding.filename),
+                    "size": os.path.getsize(embedding.filename),
                 }
+                record["info"] = self.find_info(embedding.filename)
+                record["description"] = self.find_description(embedding.filename, record["info"])
+                yield record
             except Exception as e:
                 shared.log.debug(f"Extra networks error: type=embedding file={embedding.filename} {e}")
 

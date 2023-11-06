@@ -14,10 +14,10 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
 
     def create_item(self, name):
         l = networks.available_networks.get(name)
-        # alias = lora_on_disk.get_alias()
         try:
             path, _ext = os.path.splitext(l.filename)
-            possible_tags = l.metadata.get('ss_tag_frequency', {}) if l.metadata is not None else {}
+            name = os.path.splitext(os.path.relpath(l.filename, shared.cmd_opts.lora_dir))[0]
+
             if shared.backend == shared.Backend.ORIGINAL:
                 if l.sd_version == network.SdVersion.SDXL:
                     return None
@@ -30,6 +30,9 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 elif shared.sd_model_type == 'sd':
                     if l.sd_version == network.SdVersion.SDXL:
                         return None
+
+            # tags from model metedata
+            possible_tags = l.metadata.get('ss_tag_frequency', {}) if l.metadata is not None else {}
             if isinstance(possible_tags, str):
                 possible_tags = {}
             tags = {}
@@ -39,7 +42,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 if words[0] == '{}':
                     words[0] = 0
                 tags[' '.join(words[1:])] = words[0]
-            name = os.path.splitext(os.path.relpath(l.filename, shared.cmd_opts.lora_dir))[0]
+
             item = {
                 "type": 'Lora',
                 "name": name,
@@ -47,57 +50,28 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 "hash": l.shorthash,
                 "search_term": self.search_terms_from_path(l.filename) + ' '.join(tags.keys()),
                 "preview": self.find_preview(l.filename),
-                "description": self.find_description(l.filename),
-                "info": self.find_info(l.filename),
                 "prompt": json.dumps(f" <lora:{l.get_alias()}:{shared.opts.extra_networks_default_multiplier}>"),
                 "local_preview": f"{path}.{shared.opts.samples_format}",
                 "metadata": json.dumps(l.metadata, indent=4) if l.metadata else None,
-                "tags": tags,
+                "mtime": os.path.getmtime(l.filename),
+                "size": os.path.getsize(l.filename),
             }
+            info = self.find_info(l.filename)
+            item["info"] = info
+            item["description"] = self.find_description(l.filename, info) # use existing info instead of double-read
+
+            # tags from user metadata
+            possible_tags = info.get('tags', [])
+            if not isinstance(possible_tags, list):
+                possible_tags = [v for v in possible_tags.values()]
+            for v in possible_tags:
+                tags[v] = 0
+            item["tags"] = tags
+
             return item
         except Exception as e:
             shared.log.debug(f"Extra networks error: type=lora file={name} {e}")
             return None
-
-        """
-        item = {
-            "name": name,
-            "filename": lora_on_disk.filename,
-            "shorthash": lora_on_disk.shorthash,
-            "preview": self.find_preview(path),
-            "description": self.find_description(path),
-            "search_term": self.search_terms_from_path(lora_on_disk.filename) + " " + (lora_on_disk.hash or ""),
-            "local_preview": f"{path}.{shared.opts.samples_format}",
-            "metadata": lora_on_disk.metadata,
-            "sort_keys": {'default': index, **self.get_sort_keys(lora_on_disk.filename)},
-            "sd_version": lora_on_disk.sd_version.name,
-        }
-        self.read_user_metadata(item)
-        activation_text = item["user_metadata"].get("activation text")
-        preferred_weight = item["user_metadata"].get("preferred weight", 0.0)
-        item["prompt"] = quote_js(f"<lora:{alias}:") + " + " + (str(preferred_weight) if preferred_weight else "opts.extra_networks_default_multiplier") + " + " + quote_js(">")
-        if activation_text:
-            item["prompt"] += " + " + quote_js(" " + activation_text)
-        sd_version = item["user_metadata"].get("sd version")
-        if sd_version in network.SdVersion.__members__:
-            item["sd_version"] = sd_version
-            sd_version = network.SdVersion[sd_version]
-        else:
-            sd_version = lora_on_disk.sd_version
-        if shared.opts.lora_show_all or not enable_filter:
-            pass
-        elif sd_version == network.SdVersion.Unknown:
-            model_version = network.SdVersion.SDXL if shared.sd_model.is_sdxl else network.SdVersion.SD2 if shared.sd_model.is_sd2 else network.SdVersion.SD1
-            if model_version.name in shared.opts.lora_hide_unknown_for_versions:
-                return None
-        elif shared.sd_model.is_sdxl and sd_version != network.SdVersion.SDXL:
-            return None
-        elif shared.sd_model.is_sd2 and sd_version != network.SdVersion.SD2:
-            return None
-        elif shared.sd_model.is_sd1 and sd_version != network.SdVersion.SD1:
-            return None
-        return item
-        """
 
     def list_items(self):
         for _index, name in enumerate(networks.available_networks):

@@ -43,7 +43,6 @@ cache
 !package.json
 
 # all dynamic stuff
-/repositories/**/*
 /extensions/**/*
 /outputs/**/*
 /embeddings/**/*
@@ -59,7 +58,8 @@ cache
 .idea/
 /localizations
 
-# unexcluded so folders get created
-!/repositories/.placeholder
+# force included
 !/models/VAE-approx
 !/models/VAE-approx/model.pt
+!/models/Reference
+!/models/Reference/**/*

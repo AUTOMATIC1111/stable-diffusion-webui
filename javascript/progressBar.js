@@ -42,24 +42,23 @@ function checkPaused(state) {
 function setProgress(res) {
   const elements = ['txt2img_generate', 'img2img_generate', 'extras_generate'];
   const progress = (res?.progress || 0);
+  const job = res?.job || '';
   const perc = res && (progress > 0) ? `${Math.round(100.0 * progress)}%` : '';
   let sec = res?.eta || 0;
   let eta = '';
   if (res?.paused) eta = 'Paused';
   else if (res?.completed || (progress > 0.99)) eta = 'Finishing';
-  else if (sec === 0) eta = `Init${res?.job?.length > 0 ? `: ${res.job}` : ''}`;
+  else if (sec === 0) eta = 'Starting';
   else {
     const min = Math.floor(sec / 60);
     sec %= 60;
-    eta = min > 0 ? `ETA: ${Math.round(min)}m ${Math.round(sec)}s` : `ETA: ${Math.round(sec)}s`;
+    eta = min > 0 ? `${Math.round(min)}m ${Math.round(sec)}s` : `${Math.round(sec)}s`;
   }
   document.title = `SD.Next ${perc}`;
   for (const elId of elements) {
     const el = document.getElementById(elId);
-    el.innerText = res
-      ? `${perc} ${eta}`
-      : 'Generate';
-    el.style.background = res
+    el.innerText = (res ? `${job} ${perc} ${eta}` : 'Generate');
+    el.style.background = res && (progress > 0)
       ? `linear-gradient(to right, var(--primary-500) 0%, var(--primary-800) ${perc}, var(--neutral-700) ${perc})`
       : 'var(--button-primary-background-fill)';
   }
@@ -106,16 +105,14 @@ function requestProgress(id_task, progressEl, galleryEl, atEnd = null, onProgres
     debug('taskEnd:', id_task);
     localStorage.removeItem('task');
     setProgress();
-    if (jobStatusEl) jobStatusEl.style.display = 'none';
     if (parentGallery && livePreview) parentGallery.removeChild(livePreview);
     checkPaused(true);
     if (atEnd) atEnd();
   };
 
   const start = (id_task, id_live_preview) => { // eslint-disable-line no-shadow
+    if (!opts.live_previews_enable || opts.live_preview_refresh_period === 0 || opts.show_progress_every_n_steps === 0) return;
     request('./internal/progress', { id_task, id_live_preview }, (res) => {
-      if (jobStatusEl) jobStatusEl.innerText = (res?.job || '').trim().toUpperCase();
-      if (jobStatusEl) jobStatusEl.style.display = jobStatusEl.innerText.length > 0 ? 'block' : 'none';
       lastState = res;
       const elapsedFromStart = (new Date() - dateStart) / 1000;
       hasStarted |= res.active;

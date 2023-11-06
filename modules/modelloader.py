@@ -85,7 +85,7 @@ def download_civit_preview(model_path: str, preview_url: str):
     block_size = 16384 # 16KB blocks
     written = 0
     img = None
-    shared.state.begin('civitai-download-preview')
+    shared.state.begin('civitai')
     try:
         with open(preview_file, 'wb') as f:
             with p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn(), console=shared.console) as progress:
@@ -142,7 +142,7 @@ def download_civit_model_thread(model_name, model_url, model_path, model_type, p
     total_size = int(r.headers.get('content-length', 0))
     res += f' size={round((starting_pos + total_size)/1024/1024)}Mb'
     shared.log.info(res)
-    shared.state.begin('civitai-download-model')
+    shared.state.begin('civitai')
     block_size = 16384 # 16KB blocks
     written = starting_pos
     global download_pbar # pylint: disable=global-statement
@@ -188,7 +188,7 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         return None
     from diffusers import DiffusionPipeline
     import huggingface_hub as hf
-    shared.state.begin('huggingface-download-model')
+    shared.state.begin('huggingface')
     if download_config is None:
         download_config = {
             "force_download": False,
@@ -213,21 +213,24 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
     pipeline_dir = None
 
     ok = True
+    err = None
     try:
         pipeline_dir = DiffusionPipeline.download(hub_id, **download_config)
     except Exception as e:
+        err = e
         ok = False
-        shared.log.warning(f"Diffusers download error: {hub_id} {e}")
-    if not ok:
+        # shared.log.warning(f"Diffusers download error: {hub_id} {e}")
+    if not ok and 'Repository Not Found' not in str(err):
         try:
             download_config.pop('load_connected_pipeline')
             download_config.pop('variant')
             pipeline_dir = hf.snapshot_download(hub_id, **download_config)
-        except Exception as e:
-            shared.log.warning(f"Diffusers hub download error: {hub_id} {e}")
+        except Exception:
+            # shared.log.warning(f"Diffusers download error: {hub_id} {e}")
+            pass
 
     if pipeline_dir is None:
-        shared.log.error(f"Diffusers no pipeline folder: {hub_id}")
+        shared.log.error(f"Diffusers download error: {hub_id} {err}")
         return None
     try:
         # TODO diffusers is this real error?
@@ -245,13 +248,14 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
     return pipeline_dir
 
 
-def load_diffusers_models(model_path: str, command_path: str = None):
+def load_diffusers_models(model_path: str, command_path: str = None, clear=True):
     t0 = time.time()
     places = []
     places.append(model_path)
     if command_path is not None and command_path != model_path:
         places.append(command_path)
-    diffuser_repos.clear()
+    if clear:
+        diffuser_repos.clear()
     output = []
     for place in places:
         if not os.path.isdir(place):
@@ -272,32 +276,34 @@ def load_diffusers_models(model_path: str, command_path: str = None):
                         continue
                     _, name = folder.split("--", maxsplit=1)
                     name = name.replace("--", "/")
-                    snapshots = os.listdir(os.path.join(place, folder, "snapshots"))
+                    folder = os.path.join(place, folder)
+                    friendly = os.path.join(place, name)
+                    snapshots = os.listdir(os.path.join(folder, "snapshots"))
                     if len(snapshots) == 0:
                         shared.log.warning(f"Diffusers folder has no snapshots: location={place} folder={folder} name={name}")
                         continue
-                    commit = snapshots[-1]
-                    folder = os.path.join(place, folder, 'snapshots', commit)
-                    mtime = os.path.getmtime(folder)
-                    info = os.path.join(folder, "model_info.json")
-                    diffuser_repos.append({ 'name': name, 'filename': name, 'path': folder, 'hash': commit, 'mtime': mtime, 'model_info': info })
+                    commit = os.path.join(folder, 'snapshots', snapshots[-1])
+                    mtime = os.path.getmtime(commit)
+                    info = os.path.join(commit, "model_info.json")
+                    diffuser_repos.append({ 'name': name, 'filename': name, 'friendly': friendly, 'folder': folder, 'path': commit, 'hash': commit, 'mtime': mtime, 'model_info': info })
                     if os.path.exists(os.path.join(folder, 'hidden')):
                         continue
                     output.append(name)
                 except Exception as e:
-                    shared.log.error(f"Error analyzing diffusers model: {place}/{folder} {e}")
+                    shared.log.error(f"Error analyzing diffusers model: {folder} {e}")
         except Exception as e:
             shared.log.error(f"Error listing diffusers: {place} {e}")
-    shared.log.debug(f'Scanning diffusers cache: {model_path} {command_path} items={len(output)} time={time.time()-t0:.2f}s')
+    shared.log.debug(f'Scanning diffusers cache: {model_path} {command_path} items={len(output)} time={time.time()-t0:.2f}')
     return output
 
 
 def find_diffuser(name: str):
-    import huggingface_hub as hf
-    if name in diffuser_repos:
-        return name
+    repo = [r for r in diffuser_repos if name == r['name'] or name == r['friendly'] or name == r['path']]
+    if len(repo) > 0:
+        return repo['name']
     if shared.cmd_opts.no_download:
         return None
+    import huggingface_hub as hf
     hf_api = hf.HfApi()
     hf_filter = hf.ModelFilter(
         model_name=name,
@@ -309,6 +315,23 @@ def find_diffuser(name: str):
     if len(models) > 0:
         return models[0].modelId
     return None
+
+
+def load_reference(name: str):
+    found = [r for r in diffuser_repos if name == r['name'] or name == r['friendly'] or name == r['path']]
+    if len(found) > 0: # already downloaded
+        shared.log.debug(f'Reference model: {found[0]}')
+        return True
+    shared.log.debug(f'Reference download: {name}')
+    model_dir = download_diffusers_model(name, shared.opts.diffusers_dir)
+    if model_dir is None:
+        shared.log.debug(f'Reference download failed: {name}')
+        return False
+    else:
+        shared.log.debug(f'Reference download complete: {name}')
+        from modules import sd_models
+        sd_models.list_models()
+        return True
 
 
 modelloader_directories = {}
@@ -574,4 +597,4 @@ def load_upscalers():
         datas += scaler.scalers
         names.append(name[8:])
     shared.sd_upscalers = sorted(datas, key=lambda x: x.name.lower() if not isinstance(x.scaler, (UpscalerNone, UpscalerLanczos, UpscalerNearest)) else "") # Special case for UpscalerNone keeps it at the beginning of the list.
-    shared.log.debug(f"Loaded upscalers: total={len(shared.sd_upscalers)} downloaded={len([x for x in shared.sd_upscalers if x.data_path is not None and os.path.isfile(x.data_path)])} user={len([x for x in shared.sd_upscalers if x.custom])} {names}")
+    shared.log.debug(f"Load upscalers: total={len(shared.sd_upscalers)} downloaded={len([x for x in shared.sd_upscalers if x.data_path is not None and os.path.isfile(x.data_path)])} user={len([x for x in shared.sd_upscalers if x.custom])} {names}")

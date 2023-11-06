@@ -105,7 +105,7 @@ def initialize():
     gfpgan.setup_model(opts.gfpgan_models_path)
     timer.startup.record("face-restore")
 
-    log.debug('Loading extensions')
+    log.debug('Load extensions')
     t_timer, t_total = modules.scripts.load_scripts()
     timer.startup.record("extensions")
     timer.startup.records["extensions"] = t_total # scripts can reset the time
@@ -157,7 +157,7 @@ def initialize():
 
 def load_model():
     if opts.sd_checkpoint_autoload:
-        shared.state.begin('load model')
+        shared.state.begin('load')
         thread_model = Thread(target=lambda: shared.sd_model)
         thread_model.start()
         thread_refiner = Thread(target=lambda: shared.sd_refiner)
@@ -294,9 +294,9 @@ def start_ui():
     modules.script_callbacks.app_started_callback(shared.demo, app)
     timer.startup.record("app-started")
 
-    time_setup = [f'{k}:{round(v,3)}s' for (k,v) in modules.scripts.time_setup.items() if v > 0.005]
+    time_setup = [f'{k}:{round(v,3)}' for (k,v) in modules.scripts.time_setup.items() if v > 0.005]
     shared.log.debug(f'Scripts setup: {time_setup}')
-    time_component = [f'{k}:{round(v,3)}s' for (k,v) in modules.scripts.time_component.items() if v > 0.005]
+    time_component = [f'{k}:{round(v,3)}' for (k,v) in modules.scripts.time_component.items() if v > 0.005]
     if len(time_component) > 0:
         shared.log.debug(f'Scripts components: {time_component}')
 
@@ -312,6 +312,13 @@ def webui(restart=False):
     load_model()
     shared.opts.save(shared.config_filename)
     log.info(f"Startup time: {timer.startup.summary()}")
+    debug = log.info if os.environ.get('SD_SCRIPT_DEBUG', None) is not None else lambda *args, **kwargs: None
+    debug('Loaded scripts:')
+    for m in modules.scripts.scripts_data:
+        debug(f'  {m}')
+    debug('Loaded postprocessing scripts:')
+    for m in modules.scripts.postprocessing_scripts_data:
+        debug(f'  {m}')
     timer.startup.reset()
 
     if not restart:

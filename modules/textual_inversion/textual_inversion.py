@@ -308,7 +308,7 @@ class EmbeddingDatabase:
         if self.previously_displayed_embeddings != displayed_embeddings:
             self.previously_displayed_embeddings = displayed_embeddings
             t1 = time.time()
-            shared.log.info(f"Loaded embeddings: loaded={len(self.word_embeddings)} skipped={len(self.skipped_embeddings)} time={t1-t0:.2f}s")
+            shared.log.info(f"Load embeddings: loaded={len(self.word_embeddings)} skipped={len(self.skipped_embeddings)} time={t1-t0:.2f}")
 
 
     def find_embedding_at_position(self, tokens, offset):
@@ -425,7 +425,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
         log_directory = f"{os.path.join(shared.cmd_opts.data_dir, 'train/log/embeddings')}"
     template_file = template_file.path
 
-    shared.state.job = "train-embedding"
+    shared.state.job = "train"
     shared.state.textinfo = "Initializing textual inversion training..."
     shared.state.job_count = steps
 
@@ -497,7 +497,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                 optimizer_state_dict = optimizer_saved_dict.get('optimizer_state_dict', None)
         if optimizer_state_dict is not None:
             optimizer.load_state_dict(optimizer_state_dict)
-            shared.log.info("Loaded existing optimizer from checkpoint")
+            shared.log.info("Load existing optimizer from checkpoint")
         else:
             shared.log.info("No saved optimizer exists in checkpoint")
 

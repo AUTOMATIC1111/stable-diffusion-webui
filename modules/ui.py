@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, ui_loadsave, ui_train, ui_models
+from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, ui_loadsave, ui_train, ui_models, ui_interrogate
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path, data_path
 from modules.shared import opts, cmd_opts
@@ -126,7 +126,7 @@ def process_interrogate(interrogation_function, mode, ii_input_files, ii_input_d
             images = [f.name for f in ii_input_files]
         else:
             if not os.path.isdir(ii_input_dir):
-                log.error(f"Input directory not found: {ii_input_dir}")
+                log.error(f"Interrogate: Input directory not found: {ii_input_dir}")
                 return [gr.update(), None]
             images = modules.shared.listfiles(ii_input_dir)
         if ii_output_dir != "":
@@ -142,6 +142,9 @@ def process_interrogate(interrogation_function, mode, ii_input_files, ii_input_d
 
 
 def interrogate(image):
+    if image is None:
+        log.error("Interrogate: no image selected")
+        return gr.update()
     prompt = modules.shared.interrogator.interrogate(image.convert("RGB"))
     return gr.update() if prompt is None else prompt
 
@@ -158,7 +161,7 @@ def create_seed_inputs(tab):
             random_seed = ToolButton(symbols.random, elem_id=f"{tab}_random_seed", label='Random seed')
             reuse_seed = ToolButton(symbols.reuse, elem_id=f"{tab}_reuse_seed", label='Reuse seed')
         with FormRow(visible=True, elem_id=f"{tab}_subseed_row", variant="compact"):
-            subseed = gr.Number(label='Variation seed', value=-1, elem_id=f"{tab}_subseed", container=True)
+            subseed = gr.Number(label='Variation', value=-1, elem_id=f"{tab}_subseed", container=True)
             random_subseed = ToolButton(symbols.random, elem_id=f"{tab}_random_subseed")
             reuse_subseed = ToolButton(symbols.reuse, elem_id=f"{tab}_reuse_subseed")
             subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=f"{tab}_subseed_strength")
@@ -260,7 +263,7 @@ def create_toprow(is_img2img):
                 pause = gr.Button('Pause', elem_id=f"{id_part}_pause")
                 pause.click(fn=lambda: modules.shared.state.pause(), _js='checkPaused', inputs=[], outputs=[])
             with gr.Row(elem_id=f"{id_part}_tools"):
-                button_paste = gr.Button(value='Restore', variant='secondary', elem_id="paste") # symbols.paste
+                button_paste = gr.Button(value='Restore', variant='secondary', elem_id=f"{id_part}_paste") # symbols.paste
                 button_clear = gr.Button(value='Clear', variant='secondary', elem_id=f"{id_part}_clear_prompt_btn") # symbols.clear
                 button_extra = gr.Button(value='Networks', variant='secondary', elem_id=f"{id_part}_extra_networks_btn") # symbols.networks
                 button_clear.click(fn=lambda *x: ['', ''], inputs=[prompt, negative_prompt], outputs=[prompt, negative_prompt], show_progress=False)
@@ -271,6 +274,8 @@ def create_toprow(is_img2img):
                 negative_token_button = gr.Button(visible=False, elem_id=f"{id_part}_negative_token_button")
             with gr.Row(elem_id=f"{id_part}_styles_row"):
                 prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[style.name for style in modules.shared.prompt_styles.styles.values()], value=[], multiselect=True)
+                prompt_styles_btn_refresh = ToolButton(symbols.refresh, elem_id=f"{id_part}_styles_refresh", visible=True)
+                prompt_styles_btn_refresh.click(fn=lambda: gr.update(choices=[style.name for style in modules.shared.prompt_styles.styles.values()]), inputs=[], outputs=[prompt_styles])
                 prompt_styles_btn_select = gr.Button('Select', elem_id=f"{id_part}_styles_select", visible=False)
                 prompt_styles_btn_select.click(_js="applyStyles", fn=parse_style, inputs=[prompt_styles], outputs=[prompt_styles])
                 prompt_styles_btn_apply = ToolButton(symbols.apply, elem_id=f"{id_part}_extra_apply", visible=False)
@@ -630,7 +635,6 @@ def create_ui(startup_timer = None):
                         img2img_batch_inpaint_mask_dir = gr.Textbox(label="Inpaint batch mask directory", **modules.shared.hide_dirs, elem_id="img2img_batch_inpaint_mask_dir")
 
                     img2img_tabs = [tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]
-
                     for i, tab in enumerate(img2img_tabs):
                         tab.select(fn=lambda tabnum=i: tabnum, inputs=[], outputs=[img2img_selected_tab])
 
@@ -644,7 +648,7 @@ def create_ui(startup_timer = None):
                         steps, sampler_index = create_sampler_and_steps_selection(modules.sd_samplers.samplers_for_img2img, "img2img")
 
                     with gr.Accordion(open=False, label="Resize", elem_classes=["small-accordion"], elem_id="img2img_resize_group"):
-                        with FormRow():
+                        with gr.Row():
                             resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["None", "Resize fixed", "Crop and resize", "Resize and fill", "Latent upscale"], type="index", value="None")
 
                         with FormRow():
@@ -898,6 +902,11 @@ def create_ui(startup_timer = None):
         ui_models.create_ui()
         timer.startup.record("ui-models")
 
+    with gr.Blocks(analytics_enabled=False) as interrogate_interface:
+        ui_interrogate.create_ui()
+        timer.startup.record("ui-interrogate")
+
+
     def create_setting_component(key, is_quicksettings=False):
         def fun():
             return opts.data[key] if key in opts.data else opts.data_labels[key].default
@@ -1097,11 +1106,12 @@ def create_ui(startup_timer = None):
     timer.startup.record("ui-settings")
 
     interfaces = [
-        (txt2img_interface, "From Text", "txt2img"),
-        (img2img_interface, "From Image", "img2img"),
-        (extras_interface, "Process Image", "process"),
+        (txt2img_interface, "Text", "txt2img"),
+        (img2img_interface, "Image", "img2img"),
+        (extras_interface, "Process", "process"),
         (train_interface, "Train", "train"),
         (models_interface, "Models", "models"),
+        (interrogate_interface, "Interrogate", "interrogate"),
     ]
     interfaces += script_callbacks.ui_tabs_callback()
     interfaces += [(settings_interface, "System", "system")]
@@ -1147,9 +1157,9 @@ def create_ui(startup_timer = None):
             inputs=components,
             outputs=[text_settings, result],
         )
-        defaults_submit.click(fn=lambda: modules.shared.restore_defaults(restart=True), _js="restart_reload")
-        restart_submit.click(fn=lambda: modules.shared.restart_server(restart=True), _js="restart_reload")
-        shutdown_submit.click(fn=lambda: modules.shared.restart_server(restart=False), _js="restart_reload")
+        defaults_submit.click(fn=lambda: modules.shared.restore_defaults(restart=True), _js="restartReload")
+        restart_submit.click(fn=lambda: modules.shared.restart_server(restart=True), _js="restartReload")
+        shutdown_submit.click(fn=lambda: modules.shared.restart_server(restart=False), _js="restartReload")
 
         for _i, k, _item in quicksettings_list:
             component = component_dict[k]
@@ -1184,6 +1194,20 @@ def create_ui(startup_timer = None):
             outputs=[component_dict['sd_vae'], text_settings],
         )
 
+        def reference_submit(model):
+            from modules import modelloader
+            loaded = modelloader.load_reference(model)
+            if loaded:
+                return model if loaded else opts.sd_model_checkpoint
+            return loaded
+
+        button_set_reference = gr.Button('Change reference', elem_id='change_reference', visible=False)
+        button_set_reference.click(
+            fn=reference_submit,
+            _js="function(v){ return desiredCheckpointName; }",
+            inputs=[component_dict['sd_model_checkpoint']],
+            outputs=[component_dict['sd_model_checkpoint']],
+        )
         component_keys = [k for k in opts.data_labels.keys() if k in component_dict]
 
         def get_settings_values():

@@ -43,7 +43,7 @@ def nn_approximation(sample): # Approximate NN
         sd_vae_approx_model.load_state_dict(approx_weights)
         sd_vae_approx_model.eval()
         sd_vae_approx_model.to(devices.device, devices.dtype)
-        shared.log.debug(f'Loaded VAE decode approximate: model="{model_path}"')
+        shared.log.debug(f'Load VAE decode approximate: model="{model_path}"')
     try:
         in_sample = sample.to(devices.device, devices.dtype).unsqueeze(0)
         x_sample = sd_vae_approx_model(in_sample)

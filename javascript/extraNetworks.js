@@ -1,4 +1,5 @@
 const activePromptTextarea = {};
+let sortVal = 0;
 
 // helpers
 
@@ -58,7 +59,8 @@ function readCardTags(el, tags) {
     e.preventDefault();
     e.stopPropagation();
     const textarea = activePromptTextarea[getENActiveTab()];
-    if (textarea.value.indexOf(tag) !== -1) textarea.value = textarea.value.replace(tag, '');
+    if (textarea.value.indexOf(` ${tag}`) !== -1) textarea.value = textarea.value.replace(` ${tag}`, '');
+    else if (textarea.value.indexOf(`${tag} `) !== -1) textarea.value = textarea.value.replace(` ${tag} `, '');
     else textarea.value += ` ${tag}`;
     updateInput(textarea);
   };
@@ -91,22 +93,28 @@ async function filterExtraNetworksForTab(tabname, searchTerm) {
   let found = 0;
   let items = 0;
   const t0 = performance.now();
-  const cards = Array.from(gradioApp().querySelectorAll(`#${tabname}_extra_tabs div.card`));
-  cards.forEach((elem) => {
-    items += 1;
-    if (searchTerm === '') {
-      elem.style.display = '';
-    } else {
-      let text = `${elem.querySelector('.name').textContent.toLowerCase()} ${elem.querySelector('.search_term').textContent}`;
-      text = text.toLowerCase().replace('models--', 'Diffusers').replace('\\', '/');
-      if (text.indexOf(searchTerm) === -1) {
-        elem.style.display = 'none';
-      } else {
+  const pagename = getENActivePage();
+  if (!pagename) return;
+  const allPages = Array.from(gradioApp().querySelectorAll('.extra-network-cards'));
+  const pages = allPages.filter((el) => el.id.includes(pagename.toLowerCase()));
+  for (const pg of pages) {
+    const cards = Array.from(pg.querySelectorAll('.card') || []);
+    cards.forEach((elem) => {
+      items += 1;
+      if (searchTerm === '') {
         elem.style.display = '';
-        found += 1;
+      } else {
+        let text = elem.dataset.search.toLowerCase();
+        text = text.toLowerCase().replace('models--', 'Diffusers').replace('\\', '/');
+        if (text.indexOf(searchTerm) === -1) {
+          elem.style.display = 'none';
+        } else {
+          elem.style.display = '';
+          found += 1;
+        }
       }
-    }
-  });
+    });
+  }
   const t1 = performance.now();
   if (found > 0) log(`filterExtraNetworks: text=${searchTerm} items=${items} match=${found} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
   else log(`filterExtraNetworks: text=all items=${items} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
@@ -142,6 +150,36 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
     return true;
   }
   return false;
+}
+
+function sortExtraNetworks() {
+  const sortDesc = ['Name [A-Z]', 'Name [Z-A]', 'Date [Newest]', 'Date [Oldest]', 'Size [Largest]', 'Size [Smallest]'];
+  const pagename = getENActivePage();
+  if (!pagename) return 'sort error: unknown page';
+  const allPages = Array.from(gradioApp().querySelectorAll('.extra-network-cards'));
+  const pages = allPages.filter((el) => el.id.includes(pagename.toLowerCase()));
+  let num = 0;
+  for (const pg of pages) {
+    const cards = Array.from(pg.querySelectorAll('.card') || []);
+    num = cards.length;
+    if (num === 0) return 'sort: no cards';
+    cards.sort((a, b) => { // eslint-disable-line no-loop-func
+      switch (sortVal) {
+        case 0: return a.dataset.name ? a.dataset.search.localeCompare(b.dataset.name) : 0;
+        case 1: return b.dataset.name ? b.dataset.search.localeCompare(a.dataset.name) : 0;
+        case 2: return a.dataset.mtime && !isNaN(a.dataset.mtime) ? parseFloat(b.dataset.mtime) - parseFloat(a.dataset.mtime) : 0;
+        case 3: return b.dataset.mtime && !isNaN(b.dataset.mtime) ? parseFloat(a.dataset.mtime) - parseFloat(b.dataset.mtime) : 0;
+        case 4: return a.dataset.size && !isNaN(a.dataset.size) ? parseFloat(b.dataset.size) - parseFloat(a.dataset.size) : 0;
+        case 5: return b.dataset.size && !isNaN(b.dataset.size) ? parseFloat(a.dataset.size) - parseFloat(b.dataset.size) : 0;
+      }
+      return 0;
+    });
+    for (const card of cards) pg.appendChild(card);
+  }
+  const desc = sortDesc[sortVal];
+  sortVal = (sortVal + 1) % sortDesc.length;
+  log('sortExtraNetworks', pagename, num, desc);
+  return `sort page ${pagename} cards ${num} by ${desc}`;
 }
 
 function refreshExtraNetworks(tabname) {
@@ -183,6 +221,18 @@ function applyStyles(styles) {
   return newStyles.join('|');
 }
 
+function quickApplyStyle() {
+  const tabname = getENActiveTab();
+  const btnApply = gradioApp().getElementById(`${tabname}_extra_apply`);
+  if (btnApply) btnApply.click();
+}
+
+function quickSaveStyle() {
+  const tabname = getENActiveTab();
+  const btnSave = gradioApp().getElementById(`${tabname}_extra_quicksave`);
+  if (btnSave) btnSave.click();
+}
+
 // init
 
 function setupExtraNetworksForTab(tabname) {
@@ -195,6 +245,8 @@ function setupExtraNetworksForTab(tabname) {
   const btnScan = gradioApp().getElementById(`${tabname}_extra_scan`);
   const btnSave = gradioApp().getElementById(`${tabname}_extra_save`);
   const btnClose = gradioApp().getElementById(`${tabname}_extra_close`);
+  const btnSort = gradioApp().getElementById(`${tabname}_extra_sort`);
+  const btnView = gradioApp().getElementById(`${tabname}_extra_view`);
   const btnModel = gradioApp().getElementById(`${tabname}_extra_model`);
   const btnApply = gradioApp().getElementById(`${tabname}_extra_apply`);
   const buttons = document.createElement('span');
@@ -204,9 +256,19 @@ function setupExtraNetworksForTab(tabname) {
   if (btnApply) buttons.appendChild(btnApply);
   if (btnScan) buttons.appendChild(btnScan);
   if (btnSave) buttons.appendChild(btnSave);
+  if (btnSort) buttons.appendChild(btnSort);
+  if (btnView) buttons.appendChild(btnView);
   if (btnClose) buttons.appendChild(btnClose);
   btnModel.onclick = () => btnModel.classList.toggle('toolbutton-selected');
   tabs.appendChild(buttons);
+
+  // details
+  const detailsImg = gradioApp().getElementById(`${tabname}_extra_details_img`);
+  const detailsClose = gradioApp().getElementById(`${tabname}_extra_details_close`);
+  if (detailsImg && detailsClose) {
+    detailsImg.title = 'Close details';
+    detailsImg.onclick = () => detailsClose.click();
+  }
 
   // search and description
   const div = document.createElement('div');

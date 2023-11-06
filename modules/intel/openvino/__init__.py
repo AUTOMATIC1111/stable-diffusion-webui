@@ -126,10 +126,16 @@ def cached_model_name(model_hash_str, device, args, cache_root, reversed = False
 
     inputs_str = ""
     for input_data in args:
-        if reversed:
-            inputs_str = "_" + str(input_data.type()) + str(input_data.size())[11:-1].replace(" ", "") + inputs_str
+        if isinstance(input_data, torch.SymInt):
+            if reversed:
+                inputs_str = "_" + "torch.SymInt" + inputs_str
+            else:
+                inputs_str += "_" + "torch.SymInt1"
         else:
-            inputs_str += "_" + str(input_data.type()) + str(input_data.size())[11:-1].replace(" ", "")
+            if reversed:
+                inputs_str = "_" + str(input_data.type()) + str(input_data.size())[11:-1].replace(" ", "") + inputs_str
+            else:
+                inputs_str += "_" + str(input_data.type()) + str(input_data.size())[11:-1].replace(" ", "")
     inputs_str = sha256(inputs_str.encode('utf-8')).hexdigest()
     file_name += inputs_str
 
@@ -196,8 +202,12 @@ def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_na
         input_shapes = []
         input_types = []
         for input_data in args:
-            input_types.append(input_data.type())
-            input_shapes.append(input_data.size())
+            if isinstance(input_data, torch.SymInt):
+                input_types.append(torch.SymInt)
+                input_shapes.append([1])
+            else:
+                input_types.append(input_data.type())
+                input_shapes.append(input_data.size())
 
         decoder = TorchFXPythonDecoder(gm, gm, input_shapes=input_shapes, input_types=input_types)
 
@@ -339,6 +349,7 @@ def partition_graph(gm: GraphModule, use_python_fusion_cache: bool, model_hash_s
 def openvino_fx(subgraph, example_inputs):
     executor_parameters = None
     inputs_reversed = False
+    maybe_fs_cached_name = None
     if not shared.opts.openvino_disable_model_caching:
         os.environ.setdefault('OPENVINO_TORCH_MODEL_CACHING', "1")
         # Create a hash to be used for caching

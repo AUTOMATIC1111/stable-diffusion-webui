@@ -14,7 +14,7 @@ import modules.sd_vae as sd_vae
 import modules.taesd.sd_vae_taesd as sd_vae_taesd
 import modules.images as images
 import modules.errors as errors
-from modules.processing import StableDiffusionProcessing
+from modules.processing import StableDiffusionProcessing, create_random_tensors
 import modules.prompt_parser_diffusers as prompt_parser_diffusers
 from modules.sd_hijack_hypertile import hypertile_set
 
@@ -61,16 +61,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             for j in range(len(decoded)):
                 images.save_image(decoded[j], path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix=suffix)
 
-    def diffusers_callback(step: int, _timestep: int, latents: torch.FloatTensor):
+    def diffusers_callback_legacy(step: int, _timestep: int, latents: torch.FloatTensor):
         shared.state.sampling_step = step
-        if p.is_hr_pass:
-            shared.state.job = 'hires'
-            shared.state.sampling_steps = p.hr_second_pass_steps # add optional hires
-        elif p.is_refiner_pass:
-            shared.state.job = 'refine'
-            shared.state.sampling_steps = calculate_refiner_steps() # add optional refiner
-        else:
-            shared.state.sampling_steps = p.steps # base steps
         shared.state.current_latent = latents
         if shared.state.interrupted or shared.state.skipped:
             raise AssertionError('Interrupted...')
@@ -80,6 +72,20 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 if shared.state.interrupted or shared.state.skipped:
                     raise AssertionError('Interrupted...')
                 time.sleep(0.1)
+
+    def diffusers_callback(_pipe, step: int, _timestep: int, kwargs: dict):
+        latents = kwargs['latents']
+        shared.state.sampling_step = step
+        shared.state.current_latent = latents
+        if shared.state.interrupted or shared.state.skipped:
+            raise AssertionError('Interrupted...')
+        if shared.state.paused:
+            shared.log.debug('Sampling paused')
+            while shared.state.paused:
+                if shared.state.interrupted or shared.state.skipped:
+                    raise AssertionError('Interrupted...')
+                time.sleep(0.1)
+        return {'latents': latents}
 
     def full_vae_decode(latents, model):
         t0 = time.time()
@@ -101,7 +107,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
             model.unet.to(unet_device)
         t1 = time.time()
-        shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={upcast} images={latents.shape[0]} latents={latents.shape} time={round(t1-t0, 3)}s')
+        shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={upcast} images={latents.shape[0]} latents={latents.shape} time={round(t1-t0, 3)}')
         return decoded
 
     def full_vae_encode(image, model):
@@ -113,7 +119,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             devices.torch_gc()
         if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload:
             model.vae.to(devices.device)
-        encoded = model.vae.encode(image.to(model.vae.device, model.vae.dtype))
+        encoded = model.vae.encode(image.to(model.vae.device, model.vae.dtype)).latent_dist.sample()
         if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
             model.unet.to(unet_device)
         return encoded
@@ -124,7 +130,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             return []
         decoded = torch.zeros((len(latents), 3, latents.shape[2] * 8, latents.shape[3] * 8), dtype=devices.dtype_vae, device=devices.device)
         for i in range(len(output.images)):
-            decoded[i] = (sd_vae_taesd.decode(latents[i]) * 2.0) - 1.0
+            decoded[i] = sd_vae_taesd.decode(latents[i])
         return decoded
 
     def taesd_vae_encode(image):
@@ -133,6 +139,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         return encoded
 
     def vae_decode(latents, model, output_type='np', full_quality=True):
+        prev_job = shared.state.job
+        shared.state.job = 'vae'
         if not torch.is_tensor(latents): # already decoded
             return latents
         if latents.shape[0] == 0:
@@ -149,7 +157,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             decoded = full_vae_decode(latents=latents, model=shared.sd_model)
         else:
             decoded = taesd_vae_decode(latents=latents)
+        # decoded = validate_sample(decoded) # TODO validate sample
         imgs = model.image_processor.postprocess(decoded, output_type=output_type)
+        shared.state.job = prev_job
         return imgs
 
     def vae_encode(image, model, full_quality=True): # pylint: disable=unused-variable
@@ -160,6 +170,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             return []
         tensor = TF.to_tensor(image.convert("RGB")).unsqueeze(0).to(devices.device, devices.dtype_vae)
         if full_quality:
+            tensor = tensor * 2 - 1
             latents = full_vae_encode(image=tensor, model=shared.sd_model)
         else:
             latents = taesd_vae_encode(image=tensor)
@@ -186,22 +197,29 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     def task_specific_kwargs(model):
         task_args = {}
-        if sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE:
+        is_img2img_model = bool("Zero123" in shared.sd_model.__class__.__name__)
+        if sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE and not is_img2img_model:
             p.ops.append('txt2img')
             task_args = {"height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8)}
-        elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE and len(getattr(p, 'init_images' ,[])) > 0:
+        elif (sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE or is_img2img_model) and len(getattr(p, 'init_images' ,[])) > 0:
             p.ops.append('img2img')
             task_args = {"image": p.init_images, "strength": p.denoising_strength}
         elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INSTRUCT and len(getattr(p, 'init_images' ,[])) > 0:
             p.ops.append('instruct')
             task_args = {"height": 8 * math.ceil(p.height / 8), "width": 8 * math.ceil(p.width / 8), "image": p.init_images, "strength": p.denoising_strength}
-        elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INPAINTING and len(getattr(p, 'init_images' ,[])) > 0:
+        elif (sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INPAINTING or is_img2img_model) and len(getattr(p, 'init_images' ,[])) > 0:
             p.ops.append('inpaint')
             if getattr(p, 'mask', None) is None:
                 p.mask = TF.to_pil_image(torch.ones_like(TF.to_tensor(p.init_images[0]))).convert("L")
             width = 8 * math.ceil(p.init_images[0].width / 8)
             height = 8 * math.ceil(p.init_images[0].height / 8)
             task_args = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength, "height": height, "width": width}
+        if model.__class__.__name__ == 'LatentConsistencyModelPipeline' and hasattr(p, 'init_images') and len(p.init_images) > 0:
+            init_latents = [vae_encode(image, model=shared.sd_model, full_quality=p.full_quality).squeeze(dim=0) for image in p.init_images]
+            init_latent = torch.stack(init_latents, dim=0).to(shared.device)
+            init_noise = p.denoising_strength * create_random_tensors(init_latent.shape[1:], seeds=p.all_seeds, subseeds=p.all_subseeds, subseed_strength=p.subseed_strength, p=p)
+            init_latent = (1 - p.denoising_strength) * init_latent + init_noise
+            task_args = {"latents": init_latent.to(model.dtype), "width": p.width, "height": p.height }
         return task_args
 
     def set_pipeline_args(model, prompts: list, negative_prompts: list, prompts_2: typing.Optional[list]=None, negative_prompts_2: typing.Optional[list]=None, desc:str='', **kwargs):
@@ -254,7 +272,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if 'callback_steps' in possible:
             args['callback_steps'] = 1
         if 'callback' in possible:
-            args['callback'] = diffusers_callback
+            args['callback'] = diffusers_callback_legacy
+        elif 'callback_on_step_end_tensor_inputs' in possible:
+            args['callback_on_step_end'] = diffusers_callback
+            args['callback_on_step_end_tensor_inputs'] = ['latents']
         for arg in kwargs:
             if arg in possible: # add kwargs
                 args[arg] = kwargs[arg]
@@ -267,11 +288,14 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             else:
                 pass
                 # shared.log.debug(f'Diffuser not supported: pipeline={pipeline.__class__.__name__} task={sd_models.get_diffusers_task(model)} arg={arg}')
-        # shared.log.debug(f'Diffuser pipeline: {pipeline.__class__.__name__} possible={possible}')
+        # shared.log.debug(f'Diffuser pipeline: {model.__class__.__name__} possible={possible}')
         hypertile_set(p, hr=len(getattr(p, 'init_images', [])))
         clean = args.copy()
         clean.pop('callback', None)
         clean.pop('callback_steps', None)
+        clean.pop('callback_on_step_end', None)
+        if 'latents' in clean:
+            clean['latents'] = clean['latents'].shape
         if 'image' in clean:
             clean['image'] = type(clean['image'])
         if 'mask_image' in clean:
@@ -347,7 +371,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if shared.opts.diffusers_move_base and not getattr(shared.sd_model, 'has_accelerate', False):
         shared.sd_model.to(devices.device)
 
-    is_img2img = bool(sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE or sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING)
+    is_img2img = bool(sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE or
+                      sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING)
     use_refiner_start = bool(is_refiner_enabled and not p.is_hr_pass and not is_img2img and p.refiner_start > 0 and p.refiner_start < 1)
     use_denoise_start = bool(is_img2img and p.refiner_start > 0 and p.refiner_start < 1)
 
@@ -388,6 +413,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         clip_skip=p.clip_skip,
         desc='Base',
     )
+    shared.state.sampling_steps = base_args['num_inference_steps']
     p.extra_generation_params['CFG rescale'] = p.diffusers_guidance_rescale
     p.extra_generation_params["Sampler Eta"] = shared.opts.scheduler_eta if shared.opts.scheduler_eta is not None and shared.opts.scheduler_eta > 0 and shared.opts.scheduler_eta < 1 else None
     try:
@@ -403,6 +429,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if hasattr(shared.sd_model, 'embedding_db') and len(shared.sd_model.embedding_db.embeddings_used) > 0:
         p.extra_generation_params['Embeddings'] = ', '.join(shared.sd_model.embedding_db.embeddings_used)
 
+    shared.state.nextjob()
     if shared.state.interrupted or shared.state.skipped:
         return results
 
@@ -412,16 +439,20 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     latent_scale_mode = shared.latent_upscale_modes.get(p.hr_upscaler, None) if (hasattr(p, "hr_upscaler") and p.hr_upscaler is not None) else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "None")
     if p.is_hr_pass:
         p.init_hr()
+        prev_job = shared.state.job
         if p.width != p.hr_upscale_to_x or p.height != p.hr_upscale_to_y:
             p.ops.append('upscale')
             if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_highres_fix and hasattr(shared.sd_model, 'vae'):
                 save_intermediate(latents=output.images, suffix="-before-hires")
+            shared.state.job = 'upscale'
             output.images = hires_resize(latents=output.images)
             if latent_scale_mode is not None or p.hr_force:
                 p.ops.append('hires')
                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                 recompile_model(hires=True)
                 update_sampler(shared.sd_model, second_pass=True)
+                if p.hr_second_pass_steps == 0:
+                    p.hr_second_pass_steps = p.steps
                 hires_args = set_pipeline_args(
                     model=shared.sd_model,
                     prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
@@ -438,15 +469,22 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     strength=p.denoising_strength,
                     desc='Hires',
                 )
+                shared.state.job = 'hires'
+                shared.state.sampling_steps = hires_args['num_inference_steps']
                 try:
                     output = shared.sd_model(**hires_args) # pylint: disable=not-callable
                 except AssertionError as e:
                     shared.log.info(e)
                 p.init_images = []
+        shared.state.job = prev_job
+        shared.state.nextjob()
         p.is_hr_pass = False
 
     # optional refiner pass or decode
     if is_refiner_enabled:
+        prev_job = shared.state.job
+        shared.state.job = 'refine'
+        shared.state.job_count +=1
         if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_refiner and hasattr(shared.sd_model, 'vae'):
             save_intermediate(latents=output.images, suffix="-before-refiner")
         if shared.opts.diffusers_move_base and not getattr(shared.sd_model, 'has_accelerate', False):
@@ -491,6 +529,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 clip_skip=p.clip_skip,
                 desc='Refiner',
             )
+            shared.state.sampling_steps = refiner_args['num_inference_steps']
             try:
                 refiner_output = shared.sd_refiner(**refiner_args) # pylint: disable=not-callable
             except AssertionError as e:
@@ -505,7 +544,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             shared.log.debug('Moving to CPU: model=refiner')
             shared.sd_refiner.to(devices.cpu)
             devices.torch_gc()
-        p.is_refiner_pass = True
+        shared.state.job = prev_job
+        shared.state.nextjob()
+        p.is_refiner_pass = False
 
     # final decode since there is no refiner
     if not is_refiner_enabled:

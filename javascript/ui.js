@@ -211,7 +211,7 @@ function recalculate_prompts_inpaint(...args) {
   return Array.from(arguments);
 }
 
-function register_drag_drop() {
+function registerDragDrop() {
   const qs = gradioApp().getElementById('quicksettings');
   if (!qs) return;
   qs.addEventListener('dragover', (evt) => {
@@ -297,7 +297,7 @@ function getTranslation(...args) {
   return null;
 }
 
-function monitor_server_status() {
+function monitorServerStatus() {
   document.open();
   document.write(`
     <html>
@@ -305,12 +305,12 @@ function monitor_server_status() {
       <body style="background: #222222; font-size: 1rem; font-family:monospace; margin-top:20%; color:lightgray; text-align:center">
         <h1>Waiting for server...</h1>
         <script>
-          function monitor_server_status() {
+          function monitorServerStatus() {
             fetch('/sdapi/v1/progress')
-              .then((res) => { !res?.ok ? setTimeout(monitor_server_status, 1000) : location.reload(); })
-              .catch((e) => setTimeout(monitor_server_status, 1000))
+              .then((res) => { !res?.ok ? setTimeout(monitorServerStatus, 1000) : location.reload(); })
+              .catch((e) => setTimeout(monitorServerStatus, 1000))
           }
-          window.onload = () => monitor_server_status();
+          window.onload = () => monitorServerStatus();
         </script>
       </body>
     </html>
@@ -318,12 +318,12 @@ function monitor_server_status() {
   document.close();
 }
 
-function restart_reload() {
+function restartReload() {
   document.body.style = 'background: #222222; font-size: 1rem; font-family:monospace; margin-top:20%; color:lightgray; text-align:center';
   document.body.innerHTML = '<h1>Server shutdown in progress...</h1>';
   fetch('/sdapi/v1/progress')
-    .then((res) => setTimeout(restart_reload, 1000))
-    .catch((e) => setTimeout(monitor_server_status, 500));
+    .then((res) => setTimeout(restartReload, 1000))
+    .catch((e) => setTimeout(monitorServerStatus, 500));
   return [];
 }
 
@@ -351,6 +351,11 @@ function selectVAE(name) {
   log(`Change VAE: ${desiredVAEName}`);
 }
 
+function selectReference(name) {
+  desiredCheckpointName = name;
+  gradioApp().getElementById('change_reference').click();
+}
+
 function currentImg2imgSourceResolution(_a, _b, scaleBy) {
   const img = gradioApp().querySelector('#mode_img2img > div[style="display: block;"] img');
   return img ? [img.naturalWidth, img.naturalHeight, scaleBy] : [0, 0, scaleBy];
@@ -361,7 +366,7 @@ function updateImg2imgResizeToTextAfterChangingImage() {
   return [];
 }
 
-function create_theme_element() {
+function createThemeElement() {
   const el = document.createElement('img');
   el.id = 'theme-preview';
   el.className = 'theme-preview';
@@ -393,7 +398,7 @@ function previewTheme() {
       if (theme) {
         window.open(theme.subdomain, '_blank');
       } else {
-        const el = document.getElementById('theme-preview') || create_theme_element();
+        const el = document.getElementById('theme-preview') || createThemeElement();
         el.style.display = el.style.display === 'block' ? 'none' : 'block';
         name = name.replace('/', '-');
         el.src = `/file=html/${name}.jpg`;

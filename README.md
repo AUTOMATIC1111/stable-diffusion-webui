@@ -19,14 +19,14 @@
 
 All Individual features are not listed here, instead check [ChangeLog](CHANGELOG.md) for full list of changes.
 
-- Optimized processing with latest **torch** developments  
-  Including built-in support for `torch.compile`
 - Support for multiple backends!  
   **original** and **diffusers**
 - Support for multiple diffusion models!  
-  Stable Diffusion, SD-XL, Kandinsky, DeepFloyd IF, UniDiffusion, SD-Distilled, etc.  
+  **Stable Diffusion, SD-XL, LCM, Segmind, Kandinsky, Pixart-α, Wuerstchen, DeepFloyd IF, UniDiffusion, SD-Distilled, etc.**  
 - Fully multiplatform with platform specific autodetection and tuning performed on install  
-  Windows / Linux / MacOS with CPU / nVidia / AMD / Intel / DirectML / OpenVINO  
+  **Windows / Linux / MacOS with CPU / nVidia / AMD / IntelArc / DirectML / OpenVINO / ONNX+Olive**  
+- Optimized processing with latest **torch** developments  
+  Including built-in support for `torch.compile`
 - Improved prompt parser  
 - Enhanced *Lora*/*Locon*/*Lyco* code supporting latest trends in training  
 - Built-in queue management  
@@ -35,7 +35,7 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
 - Modern localization and hints engine  
 - Broad compatibility with existing extensions ecosystem and new extensions manager  
 - Built in installer with automatic updates and dependency management  
-- Modernized UI (still based on Gradio) with theme support  
+- Modernized UI with theme support and number of built-in themes  
 
 ## Backend support
 
@@ -53,24 +53,28 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
 
 Additional models will be added as they become available and there is public interest in them
 
-- [Stable Diffusion](https://github.com/Stability-AI/stablediffusion/) 1.x and 2.x *(all variants)*
-- [Stable Diffusion XL](https://github.com/Stability-AI/generative-models)
+- [RunwayML Stable Diffusion](https://github.com/Stability-AI/stablediffusion/) 1.x and 2.x *(all variants)*
+- [StabilityAI Stable Diffusion XL](https://github.com/Stability-AI/generative-models)
+- [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)
+- [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)
 - [Kandinsky](https://github.com/ai-forever/Kandinsky-2) 2.1 and 2.2
-- [DeepFloyd IF](https://github.com/deep-floyd/IF)
-- [UniDiffusion](https://github.com/thu-ml/unidiffuser)
-- [SD-Distilled](https://huggingface.co/blog/sd_distillation) *(all variants)*
-- [Wuerstchen](https://huggingface.co/blog/wuertschen)  
+- [Pixart-α XL 2](https://github.com/PixArt-alpha/PixArt-alpha) Medium and Large
+- [Warp Wuerstchen](https://huggingface.co/blog/wuertschen)  
+- [Tsinghua UniDiffusion](https://github.com/thu-ml/unidiffuser)
+- [DeepFloyd IF](https://github.com/deep-floyd/IF) Medium and Large
+- [Segmind SD Distilled](https://huggingface.co/blog/sd_distillation) *(all variants)*
 
 ## Platform support
 
-- *nVidia* GPUs using **CUDA** libraries on both *Windows and Linux*
-- *AMD* GPUs using **ROCm** libraries on *Linux*.  
-  Support will be extended to *Windows* once AMD releases ROCm for Windows
-- *Intel Arc* GPUs using **OneAPI** with *IPEX XPU* libraries on both *Windows and Linux*
-- Any GPU compatible with *DirectX* on *Windows* using **DirectML** libraries.  
-  This includes support for AMD GPUs that are not supported by native ROCm libraries
-- Any GPU or device compatible with **OpenVINO** libraries on both *Windows and Linux*
-- *Apple M1/M2* on *OSX* using built-in support in Torch with **MPS** optimizations
+- *nVidia* GPUs using **CUDA** libraries on both *Windows and Linux*  
+- *AMD* GPUs using **ROCm** libraries on *Linux*  
+  Support will be extended to *Windows* once AMD releases ROCm for Windows  
+- *Intel Arc* GPUs using **OneAPI** with *IPEX XPU* libraries on both *Windows and Linux*  
+- Any GPU compatible with *DirectX* on *Windows* using **DirectML** libraries  
+  This includes support for AMD GPUs that are not supported by native ROCm libraries  
+- Any GPU or device compatible with **OpenVINO** libraries on both *Windows and Linux*  
+- *Apple M1/M2* on *OSX* using built-in support in Torch with **MPS** optimizations  
+- *ONNX/Olive* (experimental)  
 
 ## Install & Run
 
@@ -121,10 +125,7 @@ SD.Next comes with several extensions pre-installed:
 
 - [ControlNet](https://github.com/Mikubill/sd-webui-controlnet)
 - [Agent Scheduler](https://github.com/ArtVentureX/sd-webui-agent-scheduler)
-- [Multi-Diffusion Tiled Diffusion and VAE](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111)
-- [LyCORIS](https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris)
 - [Image Browser](https://github.com/AlUlkesh/stable-diffusion-webui-images-browser)
-- [CLiP Interrogator](https://github.com/pharmapsychotic/clip-interrogator-ext)
 - [Rembg Background Removal](https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg)
 
 ### **Collab**

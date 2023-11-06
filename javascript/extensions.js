@@ -5,7 +5,7 @@ function extensions_apply(extensions_disabled_list, extensions_update_list, disa
     if (x.name.startsWith('enable_') && !x.checked) disable.push(x.name.substring(7));
     if (x.name.startsWith('update_') && x.checked) update.push(x.name.substring(7));
   });
-  restart_reload();
+  restartReload();
   log('Extensions apply:', { disable, update });
   return [JSON.stringify(disable), JSON.stringify(update), disable_all];
 }

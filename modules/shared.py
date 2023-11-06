@@ -12,18 +12,18 @@ import gradio as gr
 import fasteners
 from rich.console import Console
 from modules import errors, shared_items, shared_state, cmd_args, ui_components, theme
-from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
+from modules.paths import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 from modules.dml import memory_providers, default_memory_provider, directml_do_hijack
 import modules.interrogate
 import modules.memmon
 import modules.styles
 import modules.devices as devices # pylint: disable=R0402
-import modules.paths_internal as paths
+import modules.paths as paths
 from installer import print_dict
 from installer import log as central_logger # pylint: disable=E0611
 
 
-errors.install(gr)
+errors.install([gr])
 demo: gr.Blocks = None
 log = central_logger
 progress_print_out = sys.stdout
@@ -158,17 +158,25 @@ def list_samplers():
 
 
 def temp_disable_extensions():
+    disable_safe = ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris', 'sd-webui-agent-scheduler', 'clip-interrogator-ext', 'stable-diffusion-webui-rembg', 'sd-extension-chainner', 'stable-diffusion-webui-images-browser']
+    disable_diffusers = ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris']
+    disable_original = []
     disabled = []
     if cmd_opts.safe:
-        for ext in ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris', 'sd-webui-agent-scheduler', 'clip-interrogator-ext', 'stable-diffusion-webui-rembg', 'sd-extension-chainner', 'stable-diffusion-webui-images-browser']:
+        for ext in disable_safe:
             if ext not in opts.disabled_extensions:
                 disabled.append(ext)
         log.info(f'Safe mode disabling extensions: {disabled}')
     if backend == Backend.DIFFUSERS:
-        for ext in ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris']:
+        for ext in disable_diffusers:
             if ext not in opts.disabled_extensions:
                 disabled.append(ext)
-        log.info(f'Diffusers disabling uncompatible extensions: {disabled}')
+        log.info(f'Disabling uncompatible extensions: backend={backend} {disabled}')
+    if backend == Backend.ORIGINAL:
+        for ext in disable_original:
+            if ext not in opts.disabled_extensions:
+                disabled.append(ext)
+        log.info(f'Disabling uncompatible extensions: backend={backend} {disabled}')
     cmd_opts.controlnet_loglevel = 'WARNING'
     return disabled
 
@@ -184,7 +192,7 @@ def readfile(filename, silent=False):
                 if type(data) is str:
                     data = json.loads(data)
             if not silent:
-                log.debug(f'Reading: {filename} len={len(data)}')
+                log.debug(f'Read: file="{filename}" len={len(data)}')
     except Exception as e:
         if not silent:
             log.error(f'Reading failed: {filename} {e}')
@@ -213,7 +221,7 @@ def writefile(data, filename, mode='w', silent=False):
             else:
                 raise ValueError('not a valid object')
             if not silent:
-                log.debug(f'Saving: {filename} len={len(output)}')
+                log.debug(f'Save: file="{filename}" len={len(output)}')
             with open(filename, mode, encoding="utf8") as file:
                 file.write(output)
     except Exception as e:
@@ -278,7 +286,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
 
     "cuda_compile_sep": OptionInfo("<h2>Model Compile</h2>", "", gr.HTML),
     "cuda_compile": OptionInfo(True if cmd_opts.use_openvino else False, "Enable model compile"),
-    "cuda_compile_upscaler": OptionInfo(False, "Enable upscaler compile"),
+    "cuda_compile_upscaler": OptionInfo(True if cmd_opts.use_openvino else False, "Enable upscaler compile"),
     "cuda_compile_backend": OptionInfo("openvino_fx" if cmd_opts.use_openvino else "none", "Model compile backend", gr.Radio, {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx']}),
     "cuda_compile_mode": OptionInfo("default", "Model compile mode", gr.Radio, {"choices": ['default', 'reduce-overhead', 'max-autotune']}),
     "cuda_compile_fullgraph": OptionInfo(False, "Model compile fullgraph"),
@@ -337,7 +345,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_attention_slicing": OptionInfo(False, "Enable attention slicing"),
     "diffusers_model_load_variant": OptionInfo("default", "Diffusers model loading variant", gr.Radio, {"choices": ['default', 'fp32', 'fp16']}),
     "diffusers_vae_load_variant": OptionInfo("default", "Diffusers VAE loading variant", gr.Radio, {"choices": ['default', 'fp32', 'fp16']}),
-    "custom_diffusers_pipeline": OptionInfo('hf-internal-testing/diffusers-dummy-pipeline', 'Custom Diffusers pipeline to use'),
+    "custom_diffusers_pipeline": OptionInfo('', 'Load custom Diffusers pipeline'),
     "diffusers_lora_loader": OptionInfo("diffusers" if cmd_opts.use_openvino else "sequential apply", "Diffusers LoRA loading variant", gr.Radio, {"choices": ['diffusers', 'sequential apply', 'merge and apply']}),
     "diffusers_force_zeros": OptionInfo(True, "Force zeros for prompts when empty"),
     "diffusers_aesthetics_score": OptionInfo(False, "Require aesthetics score"),
@@ -346,8 +354,8 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
 }))
 
 options_templates.update(options_section(('system-paths', "System Paths"), {
-    "temp_dir": OptionInfo("", "Directory for temporary images; leave empty for default", folder=True),
-    "clean_temp_dir_at_start": OptionInfo(True, "Cleanup non-default temporary directory when starting webui"),
+    "models_paths_sep_options": OptionInfo("<h2>Models paths</h2>", "", gr.HTML),
+    "models_dir": OptionInfo('models', "Base path where all models are stored", folder=True),
     "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Folder with stable diffusion models", folder=True),
     "diffusers_dir": OptionInfo(os.path.join(paths.models_path, 'Diffusers'), "Folder with Hugggingface models", folder=True),
     "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Folder with VAE files", folder=True),
@@ -366,6 +374,10 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "swinir_models_path": OptionInfo(os.path.join(paths.models_path, 'SwinIR'), "Folder with SwinIR models", folder=True),
     "ldsr_models_path": OptionInfo(os.path.join(paths.models_path, 'LDSR'), "Folder with LDSR models", folder=True),
     "clip_models_path": OptionInfo(os.path.join(paths.models_path, 'CLIP'), "Folder with CLIP models", folder=True),
+
+    "other_paths_sep_options": OptionInfo("<h2>Other paths</h2>", "", gr.HTML),
+    "temp_dir": OptionInfo("", "Directory for temporary images; leave empty for default", folder=True),
+    "clean_temp_dir_at_start": OptionInfo(True, "Cleanup non-default temporary directory when starting webui"),
 }))
 
 options_templates.update(options_section(('saving-images', "Image Options"), {
@@ -474,7 +486,7 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
     "schedulers_use_karras": OptionInfo(True, "Use Karras sigmas", gr.Checkbox, {"visible": False}),
     "schedulers_use_thresholding": OptionInfo(False, "Use dynamic thresholding", gr.Checkbox, {"visible": False}),
     "schedulers_use_loworder": OptionInfo(True, "Use simplified solvers in final steps", gr.Checkbox, {"visible": False}),
-    "schedulers_prediction_type": OptionInfo("default", "Override model prediction type", gr.Radio, {"choices": ['default', 'epsilon', 'sample', 'v_prediction'], "visible": False}),
+    "schedulers_prediction_type": OptionInfo("default", "Override model prediction type", gr.Radio, {"choices": ['default', 'epsilon', 'sample', 'v_prediction']}),
 
     # managed from ui.py for backend diffusers
     "schedulers_sep_diffusers": OptionInfo("<h2>Diffusers specific config</h2>", "", gr.HTML),
@@ -560,6 +572,7 @@ options_templates.update(options_section(('interrogate', "Interrogate"), {
 options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_sep1": OptionInfo("<h2>Extra networks UI</h2>", "", gr.HTML),
     "extra_networks": OptionInfo(["All"], "Extra networks", ui_components.DropdownMulti, lambda: {"choices": ['All'] + [en.title for en in extra_networks]}),
+    "extra_networks_view": OptionInfo("gallery", "UI view", gr.Radio, {"choices": ["gallery", "list"]}),
     "extra_networks_card_cover": OptionInfo("sidebar", "UI position", gr.Radio, {"choices": ["cover", "inline", "sidebar"]}),
     "extra_networks_height": OptionInfo(53, "UI height (%)", gr.Slider, {"minimum": 10, "maximum": 100, "step": 1}),
     "extra_networks_sidebar_width": OptionInfo(35, "UI sidebar width (%)", gr.Slider, {"minimum": 10, "maximum": 80, "step": 1}),
@@ -772,7 +785,6 @@ mem_mon = modules.memmon.MemUsageMonitor("MemMon", devices.device)
 if devices.backend == "directml":
     directml_do_hijack()
 
-
 class TotalTQDM: # compatibility with previous global-tqdm
     # import tqdm
     def __init__(self):
@@ -923,6 +935,8 @@ class Shared(sys.modules[__name__].__class__): # this class is here to provide s
                 model_type = 'sdxl'
             elif "StableDiffusion" in self.sd_model.__class__.__name__:
                 model_type = 'sd'
+            elif "LatentConsistencyModel" in self.sd_model.__class__.__name__:
+                model_type = 'sd' # lcm is compatible with sd
             elif "Kandinsky" in self.sd_model.__class__.__name__:
                 model_type = 'kandinsky'
             else:

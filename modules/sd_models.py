@@ -24,7 +24,7 @@ from modules import paths, shared, shared_items, shared_state, modelloader, devi
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
 from modules.memstats import memory_stats
-from modules.paths_internal import models_path, script_path
+from modules.paths import models_path, script_path
 
 try:
     import diffusers
@@ -83,7 +83,7 @@ class CheckpointInfo:
             self.type = ext
             # self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
         else: # maybe a diffuser
-            repo = [r for r in modelloader.diffuser_repos if filename == r['filename']]
+            repo = [r for r in modelloader.diffuser_repos if filename == r['name']]
             if len(repo) == 0:
                 self.name = relname
                 self.filename = filename
@@ -99,8 +99,8 @@ class CheckpointInfo:
         self.title = self.name if self.shorthash is None else f'{self.name} [{self.shorthash}]'
         self.path = self.filename
         self.model_name = os.path.basename(self.name)
-        # shared.log.debug(f'Checkpoint: type={self.type} name={self.name} filename={self.filename} hash={self.shorthash} title={self.title}')
         self.metadata = read_metadata_from_safetensors(filename)
+        # shared.log.debug(f'Checkpoint: type={self.type} name={self.name} filename={self.filename} hash={self.shorthash} title={self.title}')
 
     def register(self):
         checkpoints_list[self.title] = self
@@ -162,7 +162,7 @@ def list_models():
         ext_filter = [".ckpt", ".safetensors"]
     model_list = modelloader.load_models(model_path=model_path, model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=ext_filter, download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
     if shared.backend == shared.Backend.DIFFUSERS:
-        model_list += modelloader.load_diffusers_models(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir)
+        model_list += modelloader.load_diffusers_models(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir, clear=True)
     for filename in sorted(model_list, key=str.lower):
         checkpoint_info = CheckpointInfo(filename)
         if checkpoint_info.name is not None:
@@ -178,7 +178,7 @@ def list_models():
                 shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
     elif shared.cmd_opts.ckpt != shared.default_sd_model_file and shared.cmd_opts.ckpt is not None:
         shared.log.warning(f"Checkpoint not found: {shared.cmd_opts.ckpt}")
-    shared.log.info(f'Available models: path="{shared.opts.ckpt_dir}" items={len(checkpoints_list)} time={time.time()-t0:.2f}s')
+    shared.log.info(f'Available models: path="{shared.opts.ckpt_dir}" items={len(checkpoints_list)} time={time.time()-t0:.2f}')
 
     checkpoints_list = dict(sorted(checkpoints_list.items(), key=lambda cp: cp[1].filename))
     if len(checkpoints_list) == 0:
@@ -203,13 +203,13 @@ def list_models():
 def update_model_hashes():
     txt = []
     lst = [ckpt for ckpt in checkpoints_list.values() if ckpt.hash is None]
-    shared.log.info(f'Models list: short hash missing for {len(lst)} out of {len(checkpoints_list)} models')
+    # shared.log.info(f'Models list: short hash missing for {len(lst)} out of {len(checkpoints_list)} models')
     for ckpt in lst:
         ckpt.hash = model_hash(ckpt.filename)
-        txt.append(f'Calculated short hash: <b>{ckpt.title}</b> {ckpt.hash}')
-    txt.append(f'Updated short hashes for <b>{len(lst)}</b> out of <b>{len(checkpoints_list)}</b> models')
+        # txt.append(f'Calculated short hash: <b>{ckpt.title}</b> {ckpt.hash}')
+    # txt.append(f'Updated short hashes for <b>{len(lst)}</b> out of <b>{len(checkpoints_list)}</b> models')
     lst = [ckpt for ckpt in checkpoints_list.values() if ckpt.sha256 is None or ckpt.shorthash is None]
-    shared.log.info(f'Models list: full hash missing for {len(lst)} out of {len(checkpoints_list)} models')
+    shared.log.info(f'Models list: hash missing={len(lst)} total={len(checkpoints_list)}')
     for ckpt in lst:
         ckpt.sha256 = hashes.sha256(ckpt.filename, f"checkpoint/{ckpt.name}")
         ckpt.shorthash = ckpt.sha256[0:10] if ckpt.sha256 is not None else None
@@ -314,10 +314,10 @@ def get_state_dict_from_checkpoint(pl_sd):
 def write_metadata():
     global sd_metadata_pending # pylint: disable=global-statement
     if sd_metadata_pending == 0:
-        shared.log.debug(f"Model metadata: {sd_metadata_file} no changes")
+        shared.log.debug(f'Model metadata: file="{sd_metadata_file}" no changes')
         return
     shared.writefile(sd_metadata, sd_metadata_file)
-    shared.log.info(f"Model metadata saved: {sd_metadata_file} items={sd_metadata_pending} time={sd_metadata_timer:.2f}s")
+    shared.log.info(f'Model metadata saved: file="{sd_metadata_file}" items={sd_metadata_pending} time={sd_metadata_timer:.2f}')
     sd_metadata_pending = 0
 
 
@@ -424,7 +424,7 @@ def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unuse
             sd = get_state_dict_from_checkpoint(pl_sd)
         del pl_sd
     except Exception as e:
-        errors.display(e, f'loading model: {checkpoint_file}')
+        errors.display(e, f'Load model: {checkpoint_file}')
         sd = None
     return sd
 
@@ -806,8 +806,12 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     else:
         diffusers_load_config['variant'] = shared.opts.diffusers_model_load_variant
 
-    if shared.opts.diffusers_pipeline == 'Custom Diffusers Pipeline':
+    if shared.opts.diffusers_pipeline == 'Custom Diffusers Pipeline' and len(shared.opts.custom_diffusers_pipeline) > 0:
+        shared.log.debug(f'Diffusers custom pipeline: {shared.opts.custom_diffusers_pipeline}')
         diffusers_load_config['custom_pipeline'] = shared.opts.custom_diffusers_pipeline
+
+    # if 'LCM' in checkpoint_info.path:
+        #    diffusers_load_config['custom_pipeline'] = 'latent_consistency_txt2img'
 
     if shared.opts.data.get('sd_model_checkpoint', '') == 'model.ckpt' or shared.opts.data.get('sd_model_checkpoint', '') == '':
         shared.opts.data['sd_model_checkpoint'] = "runwayml/stable-diffusion-v1-5"
@@ -826,7 +830,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             ckpt_basename = os.path.basename(shared.cmd_opts.ckpt)
             model_name = modelloader.find_diffuser(ckpt_basename)
             if model_name is not None:
-                shared.log.info(f'Loading model {op}: {model_name}')
+                shared.log.info(f'Load model {op}: {model_name}')
                 model_file = modelloader.download_diffusers_model(hub_id=model_name)
                 try:
                     shared.log.debug(f'Model load {op} config: {diffusers_load_config}')
@@ -858,23 +862,26 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 sd_model.model_type = sd_model.__class__.__name__
             except Exception as e:
                 err1 = e
+                # shared.log.error(f'AutoPipeline: {e}')
             try: # try diffusion pipeline next second-best choice, works for most non-linked pipelines
                 if err1 is not None:
                     sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
                     sd_model.model_type = sd_model.__class__.__name__
             except Exception as e:
                 err2 = e
+                # shared.log.error(f'DiffusionPipeline: {e}')
             try: # try basic pipeline next just in case
                 if err2 is not None:
                     sd_model = diffusers.StableDiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
                     sd_model.model_type = sd_model.__class__.__name__
             except Exception as e:
                 err3 = e # ignore last error
+                shared.log.error(f'StableDiffusionPipeline: {e}')
             if err3 is not None:
                 shared.log.error(f'Failed loading {op}: {checkpoint_info.path} auto={err1} diffusion={err2}')
                 return
         elif os.path.isfile(checkpoint_info.path) and checkpoint_info.path.lower().endswith('.safetensors'):
-            diffusers_load_config["local_files_only"] = True
+            # diffusers_load_config["local_files_only"] = True
             diffusers_load_config["extract_ema"] = shared.opts.diffusers_extract_ema
             pipeline, model_type = detect_pipeline(checkpoint_info.path, op)
             if pipeline is None:
@@ -969,19 +976,20 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         shared.log.error("Failed to load diffusers model")
         errors.display(e, "loading Diffusers model")
 
-    from modules.textual_inversion import textual_inversion
-    sd_model.embedding_db = textual_inversion.EmbeddingDatabase()
-    if op == 'refiner':
-        model_data.sd_refiner = sd_model
-    else:
-        model_data.sd_model = sd_model
-    sd_model.embedding_db.add_embedding_dir(shared.opts.embeddings_dir)
-    sd_model.embedding_db.load_textual_inversion_embeddings(force_reload=True)
+    if sd_model is not None:
+        from modules.textual_inversion import textual_inversion
+        sd_model.embedding_db = textual_inversion.EmbeddingDatabase()
+        if op == 'refiner':
+            model_data.sd_refiner = sd_model
+        else:
+            model_data.sd_model = sd_model
+        sd_model.embedding_db.add_embedding_dir(shared.opts.embeddings_dir)
+        sd_model.embedding_db.load_textual_inversion_embeddings(force_reload=True)
 
     timer.record("load")
     devices.torch_gc(force=True)
     script_callbacks.model_loaded_callback(sd_model)
-    shared.log.info(f"Loaded {op}: time={timer.summary()} native={get_native(sd_model)} {memory_stats()}")
+    shared.log.info(f"Load {op}: time={timer.summary()} native={get_native(sd_model)} {memory_stats()}")
 
 
 class DiffusersTaskType(Enum):
@@ -1155,7 +1163,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         return None
     orig_state = copy.deepcopy(shared.state)
     shared.state = shared_state.State()
-    shared.state.begin(f'load-{op}')
+    shared.state.begin('load')
     if load_dict:
         shared.log.debug(f'Model dict: existing={sd_model is not None} target={checkpoint_info.filename} info={info}')
     else:
@@ -1222,7 +1230,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
             timer.record("device")
     shared.state.end()
     shared.state = orig_state
-    shared.log.info(f"Loaded: {op} time={timer.summary()}")
+    shared.log.info(f"Load: {op} time={timer.summary()}")
     return sd_model
 
 

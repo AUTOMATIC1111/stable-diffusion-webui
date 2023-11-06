@@ -320,8 +320,8 @@ def create_html(search_text, sort_column):
         installed = get_installed(ext)
         author = ''
         try:
-            if 'github' in ext_url:
-                author = ext_url.split('/')[-2].split(':')[-1] if '/' in ext_url else ext_url.split(':')[1].split('/')[0]
+            if 'github' in ext['url']:
+                author = ext['url'].split('/')[-2].split(':')[-1] if '/' in ext['url'] else ext['url'].split(':')[1].split('/')[0]
                 author = f"Author: {author}"
                 updated = datetime.timestamp(datetime.fromisoformat(ext.get('updated', '2000-01-01T00:00:00.000Z').rstrip('Z')))
         except Exception:

@@ -59,7 +59,7 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
             if network_hashes:
                 p.extra_generation_params["Lora hashes"] = ", ".join(network_hashes)
         if len(names) > 0:
-            shared.log.info(f'Applying LoRA: {names} patch={t1-t0:.2f}s load={t2-t1:.2f}s')
+            shared.log.info(f'Applying LoRA: {names} patch={t1-t0:.2f} load={t2-t1:.2f}')
         elif self.active:
             self.active = False
 
@@ -69,7 +69,7 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
             if networks.debug:
                 shared.log.debug("LoRA deactivate")
         if self.active and networks.debug:
-            shared.log.debug(f"LoRA end: load={networks.timer['load']:.2f}s apply={networks.timer['apply']:.2f}s restore={networks.timer['restore']:.2f}s")
+            shared.log.debug(f"LoRA end: load={networks.timer['load']:.2f} apply={networks.timer['apply']:.2f} restore={networks.timer['restore']:.2f}")
         if self.errors:
             p.comment("Networks with errors: " + ", ".join(f"{k} ({v})" for k, v in self.errors.items()))
             for k, v in self.errors.items():

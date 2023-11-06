@@ -40,7 +40,7 @@ class Upscaler:
         self.mod_scale = None
         self.model_download_path = None
         if self.user_path is not None and len(self.user_path) > 0 and not os.path.exists(self.user_path):
-            modules.shared.log.info(f'Upscaler create: folder={self.user_path}')
+            modules.shared.log.info(f'Upscaler create: folder="{self.user_path}"')
         if self.model_path is None and self.name:
             self.model_path = os.path.join(modules.shared.models_path, self.name)
         if self.model_path and create_dirs:

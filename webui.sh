@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-#################################################
-# Please do not make any changes to this file,  #
-# change the variables in webui-user.sh instead #
-#################################################
+# -------------------------------------------------------------------------------------------------------------
+# Do not make any changes to this file, change the variables in webui-user.sh instead and call this file
+# -------------------------------------------------------------------------------------------------------------
 
 # change to local directory
 cd -- "$(dirname -- "$0")"
@@ -18,9 +17,9 @@ then
 fi
 
 # python3 executable
-if [[ -z "${python_cmd}" ]]
+if [[ -z "${PYTHON}" ]]
 then
-    python_cmd="python3"
+    PYTHON="python3"
 fi
 
 # git executable
@@ -51,7 +50,7 @@ then
     exit 1
 fi
 
-for preq in "${GIT}" "${python_cmd}"
+for preq in "${GIT}" "${PYTHON}"
 do
     if ! hash "${preq}" &>/dev/null
     then
@@ -60,7 +59,7 @@ do
     fi
 done
 
-if ! "${python_cmd}" -c "import venv" &>/dev/null
+if ! "${PYTHON}" -c "import venv" &>/dev/null
 then
     echo "Error: python3-venv is not installed"
     exit 1
@@ -69,7 +68,7 @@ fi
 echo "Create and activate python venv"
 if [[ ! -d "${venv_dir}" ]]
 then
-    "${python_cmd}" -m venv "${venv_dir}"
+    "${PYTHON}" -m venv "${venv_dir}"
     first_launch=1
 fi
 
@@ -102,5 +101,5 @@ then
     exec ipexrun --multi-task-manager 'taskset' --memory-allocator 'jemalloc' launch.py "$@"
 else
     echo "Launching launch.py..."
-    exec "${python_cmd}" launch.py "$@"
+    exec "${PYTHON}" launch.py "$@"
 fi

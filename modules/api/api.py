@@ -356,68 +356,53 @@ class Api:
 
     def extras_batch_images_api(self, req: models.ExtrasBatchImagesRequest):
         reqDict = setUpscalers(req)
-
         image_list = reqDict.pop('imageList', [])
         image_folder = [decode_base64_to_image(x.data) for x in image_list]
-
         with self.queue_lock:
             result = postprocessing.run_extras(extras_mode=1, image_folder=image_folder, image="", input_dir="", output_dir="", save_output=False, **reqDict)
-
         return models.ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
 
     def pnginfoapi(self, req: models.PNGInfoRequest):
         if not req.image.strip():
             return models.PNGInfoResponse(info="")
-
         image = decode_base64_to_image(req.image.strip())
         if image is None:
             return models.PNGInfoResponse(info="")
-
         geninfo, items = images.read_info_from_image(image)
         if geninfo is None:
             geninfo = ""
-
         items = {**{'parameters': geninfo}, **items}
-
         return models.PNGInfoResponse(info=geninfo, items=items)
 
     def progressapi(self, req: models.ProgressRequest = Depends()):
-        # copy from check_progress_call of ui.py
-
         if shared.state.job_count == 0:
             return models.ProgressResponse(progress=0, eta_relative=0, state=shared.state.dict(), textinfo=shared.state.textinfo)
 
-        # avoid dividing zero
-        progress = 0.01
-
-        if shared.state.job_count > 0:
-            progress += shared.state.job_no / shared.state.job_count
-        if shared.state.sampling_steps > 0:
-            progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
-
-        time_since_start = time.time() - shared.state.time_start
-        eta = time_since_start / progress
-        eta_relative = eta-time_since_start
-
-        progress = min(progress, 1)
-
         shared.state.set_current_image()
-
         current_image = None
         if shared.state.current_image and not req.skip_current_image:
             current_image = encode_pil_to_base64(shared.state.current_image)
 
-        return models.ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image, textinfo=shared.state.textinfo)
+        batch_x = max(shared.state.job_no, 0)
+        batch_y = max(shared.state.job_count, 1)
+        step_x = max(shared.state.sampling_step, 0)
+        step_y = max(shared.state.sampling_steps, 1)
+        current = step_y * batch_x + step_x
+        total = step_y * batch_y
+        progress = current / total if current > 0 and total > 0 else 0
+        time_since_start = time.time() - shared.state.time_start
+        eta_relative = (time_since_start / progress) - time_since_start if progress > 0 else 0
+
+        res = models.ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image, textinfo=shared.state.textinfo)
+        return res
+
 
     def interrogateapi(self, interrogatereq: models.InterrogateRequest):
         image_b64 = interrogatereq.image
         if image_b64 is None:
             raise HTTPException(status_code=404, detail="Image not found")
-
         img = decode_base64_to_image(image_b64)
         img = img.convert('RGB')
-
-        # Override object param
         with self.queue_lock:
             if interrogatereq.model == "clip":
                 processed = shared.interrogator.interrogate(img)
@@ -425,7 +410,6 @@ class Api:
                 processed = deepbooru.model.tag(img)
             else:
                 raise HTTPException(status_code=404, detail="Model not found")
-
         return models.InterrogateResponse(caption=processed)
 
     def interruptapi(self):
@@ -473,18 +457,8 @@ class Api:
     def get_sd_vaes(self):
         return [{"model_name": x, "filename": vae_dict[x]} for x in vae_dict.keys()]
 
-
     def get_upscalers(self):
-        return [
-            {
-                "name": upscaler.name,
-                "model_name": upscaler.scaler.model_name,
-                "model_path": upscaler.data_path,
-                "model_url": None,
-                "scale": upscaler.scale,
-            }
-            for upscaler in shared.sd_upscalers
-        ]
+        return [{"name": upscaler.name, "model_name": upscaler.scaler.model_name, "model_path": upscaler.data_path, "model_url": None, "scale": upscaler.scale} for upscaler in shared.sd_upscalers]
 
     def get_sd_models(self):
         return [{"title": x.title, "name": x.name, "filename": x.filename, "type": x.type, "hash": x.shorthash, "sha256": x.sha256, "config": find_checkpoint_config_near_filename(x)} for x in checkpoints_list.values()]
@@ -500,23 +474,13 @@ class Api:
 
     def get_embeddings(self):
         db = sd_hijack.model_hijack.embedding_db
-
         def convert_embedding(embedding):
-            return {
-                "step": embedding.step,
-                "sd_checkpoint": embedding.sd_checkpoint,
-                "sd_checkpoint_name": embedding.sd_checkpoint_name,
-                "shape": embedding.shape,
-                "vectors": embedding.vectors,
-            }
+            return {"step": embedding.step, "sd_checkpoint": embedding.sd_checkpoint, "sd_checkpoint_name": embedding.sd_checkpoint_name, "shape": embedding.shape, "vectors": embedding.vectors}
 
         def convert_embeddings(embeddings):
             return {embedding.name: convert_embedding(embedding) for embedding in embeddings.values()}
 
-        return {
-            "loaded": convert_embeddings(db.word_embeddings),
-            "skipped": convert_embeddings(db.skipped_embeddings),
-        }
+        return {"loaded": convert_embeddings(db.word_embeddings), "skipped": convert_embeddings(db.skipped_embeddings)}
 
     def get_extra_networks(self, page: Optional[str] = None, name: Optional[str] = None, filename: Optional[str] = None, title: Optional[str] = None, fullname: Optional[str] = None, hash: Optional[str] = None): # pylint: disable=redefined-builtin
         res = []
@@ -553,7 +517,7 @@ class Api:
 
     def create_embedding(self, args: dict):
         try:
-            shared.state.begin('api-create-embedding')
+            shared.state.begin('api-embedding')
             filename = create_embedding(**args) # create empty embedding
             sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings() # reload embeddings so new one can be immediately used
             shared.state.end()
@@ -564,7 +528,7 @@ class Api:
 
     def create_hypernetwork(self, args: dict):
         try:
-            shared.state.begin('api-create-hypernetwork')
+            shared.state.begin('api-hypernetwork')
             filename = create_hypernetwork(**args) # create empty embedding # pylint: disable=E1111
             shared.state.end()
             return models.CreateResponse(info = f"create hypernetwork filename: {filename}")
@@ -590,7 +554,7 @@ class Api:
 
     def train_embedding(self, args: dict):
         try:
-            shared.state.begin('api-train-embedding')
+            shared.state.begin('api-embedding')
             apply_optimizations = False
             error = None
             filename = ''
@@ -611,7 +575,7 @@ class Api:
 
     def train_hypernetwork(self, args: dict):
         try:
-            shared.state.begin('api-train-hypernetwork')
+            shared.state.begin('api-hypernetwork')
             shared.loaded_hypernetworks = []
             apply_optimizations = False
             error = None

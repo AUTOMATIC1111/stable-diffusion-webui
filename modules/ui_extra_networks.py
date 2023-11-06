@@ -15,24 +15,45 @@ from collections import OrderedDict
 import gradio as gr
 from PIL import Image
 from starlette.responses import FileResponse, JSONResponse
-from modules import shared, scripts, modelloader
+from modules import paths, shared, scripts, modelloader
 from modules.ui_components import ToolButton
 import modules.ui_symbols as symbols
+
 
 allowed_dirs = []
 dir_cache = {} # key=path, value=(mtime, listdir(path))
 refresh_time = 0
 extra_pages = shared.extra_networks
 debug = shared.log.info if os.environ.get('SD_EN_DEBUG', None) is not None else lambda *args, **kwargs: None
+card_full = '''
+    <div class='card' onclick={card_click} title='{name}' data-tab='{tabname}' data-page='{page}' data-name='{name}' data-filename='{filename}' data-tags='{tags}' data-mtime='{mtime}' data-size='{size}' data-search='{search}'>
+        <div class='overlay'>
+            <div class='tags'></div>
+            <div class='name'>{title}</div>
+        </div>
+        <div class='actions'>
+            <span class='details' title="Get details" onclick="showCardDetails(event)">&#x1f6c8;</span>
+            <div class='additional'><ul></ul></div>
+        </div>
+        <img class='preview' src='{preview}' style='width: {width}px; height: {height}px; object-fit: {fit}' loading='lazy'></img>
+    </div>
+'''
+card_list = '''
+    <div class='card card-list' onclick={card_click} title='{name}' data-tab='{tabname}' data-page='{page}' data-name='{name}' data-filename='{filename}' data-tags='{tags}' data-mtime='{mtime}' data-size='{size}' data-search='{search}'>
+        <span class='details' title="Get details" onclick="showCardDetails(event)">&#x1f6c8;</span>&nbsp;
+        <div class='name'>{title}</div>&nbsp;
+        <div class='tags tags-list'></div>
+    </div>
+'''
 
 
 def listdir(path):
-    debug(f'EN list-dir: {path}')
     if not os.path.exists(path):
         return []
     if path in dir_cache and os.path.getmtime(path) == dir_cache[path][0]:
         return dir_cache[path][1]
     else:
+        # debug(f'EN list-dir list: {path}')
         dir_cache[path] = (os.path.getmtime(path), [os.path.join(path, f) for f in os.listdir(path)])
         return dir_cache[path][1]
 
@@ -116,21 +137,11 @@ class ExtraNetworksPage:
         self.refresh_time = 0
         self.page_time = 0
         self.list_time = 0
-        # class additional is to keep old extensions happy
-        self.card = '''
-            <div class='card' onclick={card_click} title='{name}' data-tab='{tabname}' data-page='{page}' data-name='{name}' data-filename='{filename}' data-tags='{tags}'>
-                <div class='overlay'>
-                    <span style="display:none" class='search_term'>{search_term}</span>
-                    <div class='tags'></div>
-                    <div class='name'>{title}</div>
-                </div>
-                <div class='actions'>
-                    <span title="Get details" onclick="showCardDetails(event)">&#x1f6c8;</span>
-                    <div class='additional'><ul></ul></div>
-                </div>
-                <img class='preview' src='{preview}' style='width: {width}px; height: {height}px; object-fit: {fit}' loading='lazy'></img>
-            </div>
-        '''
+        self.info_time = 0
+        self.desc_time = 0
+        self.dirs = {}
+        self.view = shared.opts.extra_networks_view
+        self.card = card_full if shared.opts.extra_networks_view == 'gallery' else card_list
 
     def refresh(self):
         pass
@@ -201,7 +212,6 @@ class ExtraNetworksPage:
             self.missing_thumbs.clear()
 
     def create_items(self, tabname):
-        debug(f'EN create-items: {self.name}')
         if self.refresh_time is not None and self.refresh_time > refresh_time: # cached results
             return
         t0 = time.time()
@@ -214,12 +224,13 @@ class ExtraNetworksPage:
         for item in self.items:
             self.metadata[item["name"]] = item.get("metadata", {})
         t1 = time.time()
-        self.list_time = round(t1-t0, 2)
+        debug(f'EN create-items: page={self.name} items={len(self.items)} time={t1-t0:.2f}')
+        self.list_time += t1-t0
 
 
     def create_page(self, tabname, skip = False):
         debug(f'EN create-page: {self.name}')
-        if self.page_time > refresh_time: # cached page
+        if self.page_time > refresh_time and len(self.html) > 0: # cached page
             return self.html
         self_name_id = self.name.replace(" ", "_")
         if skip:
@@ -228,8 +239,11 @@ class ExtraNetworksPage:
         allowed_folders = [os.path.abspath(x) for x in self.allowed_directories_for_previews()]
         for parentdir, dirs in {d: modelloader.directory_directories(d) for d in allowed_folders}.items():
             for tgt in dirs.keys():
-                if shared.opts.diffusers_dir in tgt:
-                    subdirs[os.path.basename(shared.opts.diffusers_dir)] = 1
+                if shared.backend == shared.Backend.DIFFUSERS:
+                    if os.path.join(paths.models_path, 'Reference') in tgt:
+                        subdirs['Reference'] = 1
+                    if shared.opts.diffusers_dir in tgt:
+                        subdirs[os.path.basename(shared.opts.diffusers_dir)] = 1
                 if 'models--' in tgt:
                     continue
                 subdir = tgt[len(parentdir):].replace("\\", "/")
@@ -238,14 +252,20 @@ class ExtraNetworksPage:
                 if not self.is_empty(tgt):
                     subdirs[subdir] = 1
         subdirs = OrderedDict(sorted(subdirs.items()))
+        if shared.backend == shared.Backend.DIFFUSERS and self.name == 'model':
+            subdirs['Reference'] = 1
+            subdirs[os.path.basename(shared.opts.diffusers_dir)] = 1
+            subdirs.move_to_end(os.path.basename(shared.opts.diffusers_dir))
+            subdirs.move_to_end('Reference')
         if self.name == 'style' and shared.opts.extra_networks_styles:
             subdirs['built-in'] = 1
-        subdirs_html = "<button class='lg secondary gradio-button custom-button search-all' onclick='extraNetworksSearchButton(event)'>all</button><br>"
+        subdirs_html = "<button class='lg secondary gradio-button custom-button search-all' onclick='extraNetworksSearchButton(event)'>All</button><br>"
         subdirs_html += "".join([f"<button class='lg secondary gradio-button custom-button' onclick='extraNetworksSearchButton(event)'>{html.escape(subdir)}</button><br>" for subdir in subdirs if subdir != ''])
         self.html = ''
         self.create_items(tabname)
         self.create_xyz_grid()
         htmls = []
+        self.items.sort(key=lambda x: x["mtime"], reverse=True)
         for item in self.items:
             htmls.append(self.create_html(item, tabname))
         self.html += ''.join(htmls)
@@ -254,7 +274,7 @@ class ExtraNetworksPage:
             self.html = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
         else:
             return ''
-        shared.log.debug(f"Extra networks: page='{self.name}' items={len(self.items)} subdirs={len(subdirs)} tab={tabname} dirs={self.allowed_directories_for_previews()} time={self.list_time}s")
+        shared.log.debug(f"Extra networks: page='{self.name}' items={len(self.items)} subdirs={len(subdirs)} tab={tabname} dirs={self.allowed_directories_for_previews()} list={self.list_time:.2f} desc={self.desc_time:.2f} info={self.info_time:.2f}")
         if len(self.missing_thumbs) > 0:
             threading.Thread(target=self.create_thumb).start()
         return self.html
@@ -271,7 +291,7 @@ class ExtraNetworksPage:
                 "tabname": tabname,
                 "page": self.name,
                 "name": item["name"],
-                "title": item["name"].replace('_', ' '),
+                "title": os.path.basename(item["name"].replace('_', ' ')),
                 "filename": item["filename"],
                 "tags": '|'.join([item.get("tags")] if isinstance(item.get("tags", {}), str) else list(item.get("tags", {}).keys())),
                 "preview": html.escape(item.get("preview", self.link_preview('html/card-no-preview.png'))),
@@ -279,9 +299,11 @@ class ExtraNetworksPage:
                 "height": shared.opts.extra_networks_card_size if shared.opts.extra_networks_card_square else 'auto',
                 "fit": shared.opts.extra_networks_card_fit,
                 "prompt": item.get("prompt", None),
-                "search_term": item.get("search_term", ""),
+                "search": item.get("search_term", ""),
                 "description": item.get("description") or "",
                 "card_click": item.get("onclick", '"' + html.escape(f'return cardClicked({item.get("prompt", None)}, {"true" if self.allow_negative_prompt else "false"})') + '"'),
+                "mtime": item.get("mtime", 0),
+                "size": item.get("size", 0),
             }
             alias = item.get("alias", None)
             if alias is not None:
@@ -292,26 +314,30 @@ class ExtraNetworksPage:
             return ""
 
     def find_preview_file(self, path):
-        fn = os.path.splitext(path)[0]
+        if path is None:
+            return 'html/card-no-preview.png'
+        if shared.opts.diffusers_dir in path:
+            path = os.path.relpath(path, shared.opts.diffusers_dir)
+            ref = os.path.join(paths.models_path, 'Reference')
+            fn = os.path.join(ref, path.replace('models--', '').replace('\\', '/').split('/')[0])
+            files = listdir(ref)
+        else:
+            files = listdir(os.path.dirname(path))
+            fn = os.path.splitext(path)[0]
         preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
-        for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.preview.', '.']]:
-            if os.path.exists(file):
+        for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.', '.preview.']]:
+            if file in files:
+                if '.thumb.' not in file:
+                    self.missing_thumbs.append(file)
                 return file
         return 'html/card-no-preview.png'
 
     def find_preview(self, path):
-        if path is None:
-            return self.link_preview('html/card-no-preview.png')
-        fn = os.path.splitext(path)[0]
-        preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
-        for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.', '.preview.']]:
-            if os.path.exists(file):
-                if '.thumb.' not in file:
-                    self.missing_thumbs.append(file)
-                return self.link_preview(file)
-        return self.link_preview('html/card-no-preview.png')
+        preview_file = self.find_preview_file(path)
+        return self.link_preview(preview_file)
 
-    def find_description(self, path):
+    def find_description(self, path, info=None):
+        t0 = time.time()
         class HTMLFilter(HTMLParser):
             text = ""
             def handle_data(self, data):
@@ -321,7 +347,8 @@ class ExtraNetworksPage:
                     self.text += '\n'
 
         fn = os.path.splitext(path)[0] + '.txt'
-        if os.path.exists(fn):
+        # if os.path.exists(fn):
+        if fn in listdir(os.path.dirname(path)):
             try:
                 with open(fn, "r", encoding="utf-8", errors="replace") as f:
                     txt = f.read()
@@ -329,20 +356,27 @@ class ExtraNetworksPage:
                     return txt
             except OSError:
                 pass
-        info = self.find_info(path)
+        if info is None:
+            info = self.find_info(path)
         desc = info.get('description', '') or ''
         f = HTMLFilter()
         f.feed(desc)
+        t1 = time.time()
+        self.desc_time += t1-t0
         return f.text
 
     def find_info(self, path):
+        t0 = time.time()
         fn = os.path.splitext(path)[0] + '.json'
-        if os.path.exists(fn):
+        # if os.path.exists(fn):
+        data = {}
+        if fn in listdir(os.path.dirname(path)):
             data = shared.readfile(fn, silent=True)
             if type(data) is list:
                 data = data[0]
-            return data
-        return {}
+        t1 = time.time()
+        self.info_time += t1-t0
+        return data
 
 
 def initialize():
@@ -391,7 +425,10 @@ class ExtraNetworksUi:
         self.button_details: gr.Button = None
         self.button_refresh: gr.Button = None
         self.button_scan: gr.Button = None
+        self.button_view: gr.Button = None
+        self.button_quicksave: gr.Button = None
         self.button_save: gr.Button = None
+        self.button_sort: gr.Button = None
         self.button_apply: gr.Button = None
         self.button_close: gr.Button = None
         self.button_model: gr.Checkbox = None
@@ -446,14 +483,14 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         return is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary"))
 
     with ui.details:
-        details_close = ToolButton(symbols.close, elem_id=tabname+"_extra_details_close")
+        details_close = ToolButton(symbols.close, elem_id=tabname+"_extra_details_close", elem_classes=['extra-details-close'])
         details_close.click(fn=lambda: gr.update(visible=False), inputs=[], outputs=[ui.details])
         with gr.Row():
             with gr.Column(scale=1):
                 text = gr.HTML('<div>title</div>')
                 ui.details_components.append(text)
             with gr.Column(scale=1):
-                img = gr.Image(value=None, show_label=False, interactive=False, container=True)
+                img = gr.Image(value=None, show_label=False, interactive=False, container=False, show_download_button=False, show_info=False, elem_id=tabname+"_extra_details_img", elem_classes=['extra-details-img'])
                 ui.details_components.append(img)
                 with gr.Row():
                     btn_save_img = gr.Button('Replace', elem_classes=['small-button'])
@@ -465,12 +502,16 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                 with gr.Row():
                     btn_save_desc = gr.Button('Save', elem_classes=['small-button'])
                     btn_delete_desc = gr.Button('Delete', elem_classes=['small-button'])
+                    btn_close_info = gr.Button('Close', elem_classes=['small-button'])
+                    btn_close_info.click(fn=lambda: gr.update(visible=False), inputs=[], outputs=[ui.details])
             with gr.Tab('Model metadata'):
                 info = gr.JSON({}, show_label=False)
                 ui.details_components.append(info)
                 with gr.Row():
                     btn_save_info = gr.Button('Save', elem_classes=['small-button'])
                     btn_delete_info = gr.Button('Delete', elem_classes=['small-button'])
+                    btn_close_info = gr.Button('Close', elem_classes=['small-button'])
+                    btn_close_info.click(fn=lambda: gr.update(visible=False), inputs=[], outputs=[ui.details])
             with gr.Tab('Embedded metadata'):
                 meta = gr.JSON({}, show_label=False)
                 ui.details_components.append(meta)
@@ -484,8 +525,11 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
 
         ui.button_refresh = ToolButton(symbols.refresh, elem_id=tabname+"_extra_refresh")
         ui.button_scan = ToolButton(symbols.scan, elem_id=tabname+"_extra_scan", visible=True)
+        ui.button_quicksave = ToolButton(symbols.book, elem_id=tabname+"_extra_quicksave", visible=False)
         ui.button_save = ToolButton(symbols.book, elem_id=tabname+"_extra_save", visible=False)
-        ui.button_close = ToolButton(symbols.close, elem_id=tabname+"_extra_close")
+        ui.button_sort = ToolButton(symbols.sort, elem_id=tabname+"_extra_sort", visible=True)
+        ui.button_view = ToolButton(symbols.view, elem_id=tabname+"_extra_view", visible=True)
+        ui.button_close = ToolButton(symbols.close, elem_id=tabname+"_extra_close", visible=True)
         ui.button_model = ToolButton(symbols.refine, elem_id=tabname+"_extra_model", visible=True)
         ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", elem_classes="textbox", lines=2, container=False)
         ui.description = gr.Textbox('', show_label=False, elem_id=tabname+"_description", elem_classes="textbox", lines=2, interactive=False, container=False)
@@ -503,8 +547,8 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         for page in get_pages():
             page.create_page(ui.tabname, skip_indexing)
             with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab") as tab:
-                hmtl = gr.HTML(page.html, elem_id=f'{tabname}{page.name}_extra_page', elem_classes="extra-networks-page")
-                ui.pages.append(hmtl)
+                page_html = gr.HTML(page.html, elem_id=f'{tabname}{page.name}_extra_page', elem_classes="extra-networks-page")
+                ui.pages.append(page_html)
                 tab.select(ui_tab_change, _js="getENActivePage", inputs=[ui.button_details], outputs=[ui.button_scan, ui.button_save, ui.button_model])
         # ui.tabs.change(fn=ui_tab_change, inputs=[], outputs=[ui.button_scan, ui.button_save])
 
@@ -527,9 +571,9 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             image.thumbnail((512, 512), Image.HAMMING)
         try:
             image.save(ui.last_item.local_preview, quality=50)
-            shared.log.debug(f'Extra network save image: item={ui.last_item.name} filename={ui.last_item.local_preview}')
+            shared.log.debug(f'Extra network save image: item={ui.last_item.name} filename="{ui.last_item.local_preview}"')
         except Exception as e:
-            shared.log.error(f'Extra network save image: item={ui.last_item.name} filename={ui.last_item.local_preview} {e}')
+            shared.log.error(f'Extra network save image: item={ui.last_item.name} filename="{ui.last_item.local_preview}" {e}')
         return image
 
     def fn_delete_img():
@@ -538,7 +582,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.preview.', '.']]:
             if os.path.exists(file):
                 os.remove(file)
-                shared.log.debug(f'Extra network delete image: item={ui.last_item.name} filename={file}')
+                shared.log.debug(f'Extra network delete image: item={ui.last_item.name} filename="{file}"')
         return 'html/card-no-preview.png'
 
     def fn_save_desc(desc):
@@ -550,7 +594,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             fn = os.path.splitext(ui.last_item.filename)[0] + '.txt'
             with open(fn, 'w', encoding='utf-8') as f:
                 f.write(desc)
-            shared.log.debug(f'Extra network save desc: item={ui.last_item.name} filename={fn}')
+            shared.log.debug(f'Extra network save desc: item={ui.last_item.name} filename="{fn}"')
         return desc
 
     def fn_delete_desc(desc):
@@ -561,7 +605,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         else:
             fn = os.path.splitext(ui.last_item.filename)[0] + '.txt'
         if os.path.exists(fn):
-            shared.log.debug(f'Extra network delete desc: item={ui.last_item.name} filename={fn}')
+            shared.log.debug(f'Extra network delete desc: item={ui.last_item.name} filename="{fn}"')
             os.remove(fn)
             return ''
         return desc
@@ -569,7 +613,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
     def fn_save_info(info):
         fn = os.path.splitext(ui.last_item.filename)[0] + '.json'
         shared.writefile(info, fn, silent=True)
-        shared.log.debug(f'Extra network save info: item={ui.last_item.name} filename={fn}')
+        shared.log.debug(f'Extra network save info: item={ui.last_item.name} filename="{fn}"')
         return info
 
     def fn_delete_info(info):
@@ -577,7 +621,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             return info
         fn = os.path.splitext(ui.last_item.filename)[0] + '.json'
         if os.path.exists(fn):
-            shared.log.debug(f'Extra network delete info: item={ui.last_item.name} filename={fn}')
+            shared.log.debug(f'Extra network delete info: item={ui.last_item.name} filename="{fn}"')
             os.remove(fn)
             return ''
         return info
@@ -607,6 +651,8 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             if ui.last_item.preview.startswith('data:'):
                 b64str = ui.last_item.preview.split(',',1)[1]
                 img = Image.open(io.BytesIO(base64.b64decode(b64str)))
+            elif hasattr(item, 'local_preview') and os.path.exists(item.local_preview):
+                img = item.local_preview
             else:
                 img = page.find_preview_file(item.filename)
             lora = ''
@@ -614,7 +660,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             style = ''
             note = ''
             if not os.path.exists(item.filename):
-                note = f'<br><h3>File is not yet saved</h3>Target filename: {item.filename}'
+                note = f'<br>Target filename: {item.filename}'
             if page.title == 'Model':
                 merge = len(list(meta.get('sd_merge_models', {})))
                 if merge > 0:
@@ -652,7 +698,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                 '''
                 desc = f'Name: {os.path.basename(item.name)}\nDescription: {item.description}\nPrompt: {item.prompt}\nNegative: {item.negative}\nExtra: {item.extra}\n'
             text = f'''
-                <h2 style="border-bottom: 1px solid var(--button-primary-border-color); margin-bottom: 1em; margin-top: -1.3em !important;">{item.name}</h2>
+                <h2 style="border-bottom: 1px solid var(--button-primary-border-color); margin: 0em 0px 1em 0 !important">{item.name}</h2>
                 <table style="width: 100%; line-height: 1.3em;"><tbody>
                     <tr><td>Type</td><td>{page.title}</td></tr>
                     <tr><td>Alias</td><td>{getattr(item, 'alias', 'N/A')}</td></tr>
@@ -682,6 +728,20 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         ui.search.update(value = ui.search.value)
         return pages
 
+    def ui_view_cards(title):
+        pages = []
+        for page in get_pages():
+            if title is None or title == '' or title == page.title or len(page.html) == 0:
+                shared.opts.extra_networks_view = page.view
+                page.view = 'gallery' if page.view == 'list' else 'list'
+                page.card = card_full if page.view == 'gallery' else card_list
+                page.html = ''
+                page.create_page(ui.tabname)
+                shared.log.debug(f"Refreshing Extra networks: page='{page.title}' items={len(page.items)} tab={ui.tabname} view={page.view}")
+            pages.append(page.html)
+        ui.search.update(value = ui.search.value)
+        return pages
+
     def ui_scan_click(title):
         from modules import ui_models
         if ui_models.search_metadata_civit is not None:
@@ -689,7 +749,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         return ui_refresh_click(title)
 
     def ui_save_click():
-        from modules import paths, generation_parameters_copypaste
+        from modules import generation_parameters_copypaste
         filename = os.path.join(paths.data_path, "params.txt")
         if os.path.exists(filename):
             with open(filename, "r", encoding="utf8") as file:
@@ -700,12 +760,45 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         res = show_details(text=None, img=None, desc=None, info=None, meta=None, params=params)
         return res
 
+    def ui_quicksave_click(name):
+        from modules import generation_parameters_copypaste
+        fn = os.path.join(paths.data_path, "params.txt")
+        if os.path.exists(fn):
+            with open(fn, "r", encoding="utf8") as file:
+                prompt = file.read()
+        else:
+            prompt = ''
+        params = generation_parameters_copypaste.parse_generation_parameters(prompt)
+        fn = os.path.join(shared.opts.styles_dir, os.path.splitext(name)[0] + '.json')
+        item = {
+            "type": 'Style',
+            "name": name,
+            "title": name,
+            "filename": fn,
+            "search_term": None,
+            "preview": None,
+            "description": '',
+            "prompt": params.get('Prompt', ''),
+            "negative": params.get('Negative prompt', ''),
+            "extra": '',
+            "local_preview": None,
+        }
+        shared.writefile(item, fn, silent=True)
+        shared.log.debug(f"Extra network quick save style: item={item['name']} filename='{fn}'")
+
+    def ui_sort_cards(msg):
+        shared.log.debug(f'Extra networks: {msg}')
+        return msg
+
     dummy_state = gr.State(value=False) # pylint: disable=abstract-class-instantiated
     button_parent.click(fn=toggle_visibility, inputs=[ui.visible], outputs=[ui.visible, container, button_parent])
     ui.button_close.click(fn=toggle_visibility, inputs=[ui.visible], outputs=[ui.visible, container])
+    ui.button_sort.click(fn=ui_sort_cards, _js='sortExtraNetworks', inputs=[ui.search], outputs=[ui.description])
+    ui.button_view.click(fn=ui_view_cards, inputs=[ui.search], outputs=ui.pages)
     ui.button_refresh.click(fn=ui_refresh_click, _js='getENActivePage', inputs=[ui.search], outputs=ui.pages)
     ui.button_scan.click(fn=ui_scan_click, _js='getENActivePage', inputs=[ui.search], outputs=ui.pages)
     ui.button_save.click(fn=ui_save_click, inputs=[], outputs=ui.details_components + [ui.details])
+    ui.button_quicksave.click(fn=ui_quicksave_click, _js="() => prompt('Prompt name', '')", inputs=[ui.search], outputs=[])
     ui.button_details.click(show_details, _js="getCardDetails", inputs=ui.details_components + [dummy_state], outputs=ui.details_components + [ui.details])
     ui.state.change(state_change, inputs=[ui.state], outputs=[])
     return ui

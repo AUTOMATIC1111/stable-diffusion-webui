@@ -298,7 +298,7 @@ def prepare_options():
         options.lora.in_json = os.path.join(args.process_dir, args.name + '.json')
     if args.type == 'lyco':
         log.info('train using lycoris network')
-        options.lora.output_dir = args.lyco_dir
+        options.lora.output_dir = args.lora_dir
         options.lora.network_module = 'lycoris.kohya'
         options.lora.in_json = os.path.join(args.process_dir, args.name + '.json')
     # lora specific
