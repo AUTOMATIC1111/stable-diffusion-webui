@@ -1,8 +1,8 @@
 # Change Log for SD.Next
 
-## Update for 2023-11-01
+## Update for 2023-11-06
 
-Another pretty big release, this time with focus on new models (3 new model types), new backends (olive) and optimizations
+Another pretty big release, this time with focus on new models (3 new model types), new backends and optimizations
 Plus quite a few fixes  
 
 Also, [Wiki](https://github.com/vladmandic/automatic/wiki) has been updated with new content, so check it out!  
