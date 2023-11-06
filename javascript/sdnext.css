@@ -277,5 +277,26 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
   --spacing-sm: 3px;
   --spacing-lg: 4px;
   --spacing-xl: 5px;
-  --spacing-xxl: 6px;
+  --spacing-xxl: 6px; 
+}
+
+/* Apply different styles for devices with coarse pointers */
+
+@media (hover: none) and (pointer: coarse) {
+
+  /* Screens 400px and smaller */
+  @media (max-width: 425px) {
+    :root, .light, .dark { --left-column: 100%; }
+    #settings {display: flex;gap: var(--layout-gap);flex-wrap: wrap;flex-direction: row;}
+    .gradio-slider input[type="number"] { width: 4em; font-size: 0.8rem; height: 16px; text-align: center; }
+  }
+
+  /* Screens 400px and larger up to 1080px  */
+  @media (max-width: 1080px) and (min-width:425px) {
+    :root, .light, .dark { --left-column: 39%; }
+    #scripts_alwayson_txt2img div { max-width: 99%; }
+    #settings {display: flex;gap: var(--layout-gap);flex-wrap: wrap;flex-direction: row;}
+    .gradio-slider input[type="number"] { width: 4em; font-size: 0.8rem; height: 16px; text-align: center; }
+  }  
+  
 }

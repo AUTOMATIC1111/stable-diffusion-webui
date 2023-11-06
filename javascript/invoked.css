@@ -3,7 +3,6 @@
   --font: 'system-ui', 'ui-sans-serif', 'system-ui', "Roboto", sans-serif;
   --font-mono: 'ui-monospace', 'Consolas', monospace;
   --font-size: 16px;
-  --left-column: 500px;
   --primary-100: #2b303b;
   --primary-200: #15181e;
   --primary-300: #0a0c0e;
@@ -282,7 +281,7 @@ button.selected {background: var(--button-primary-background-fill);}
   --prose-header-text-weight: 600;
   --slider-color: ;
   --table-radius: var(--radius-lg);
-  --button-large-padding: 2px 10px;
+  --button-large-padding: 2px 6px;
   --button-large-radius: var(--radius-lg);
   --button-large-text-size: var(--text-lg);
   --button-large-text-weight: 400;
