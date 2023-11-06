@@ -17,7 +17,7 @@ from loguru import logger
 from tools.image import compress_image
 from PIL.PngImagePlugin import PngInfo
 from filestorage import find_storage_classes_with_env, signature_url
-from tools.environment import S3SDWEB, S3ImageBucket
+from tools.environment import S3SDWEB, S3ImageBucket, Env_DtAppKey
 from tools.processor import MultiThreadWorker
 
 

@@ -281,7 +281,7 @@ class ConversionTask(Txt2ImgTask):
                     cn_args)
             else:
                 pass
-        full_task['override_settings_texts'] = ["sd_vae:Automatic"]
+        full_task['override_settings_texts'] = ["sd_vae:None"]
         return full_task, is_img2img, full_canny, part_canny
 
 
