@@ -280,14 +280,15 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
   --spacing-xxl: 6px; 
 }
 
-/* Apply different styles for devices with coarse pointers */
 
+/* Apply different styles for devices with coarse pointers dependant on screen resolution */
 @media (hover: none) and (pointer: coarse) {
 
   /* Screens 400px and smaller */
   @media (max-width: 425px) {
     :root, .light, .dark { --left-column: 100%; }
     #settings {display: flex;gap: var(--layout-gap);flex-wrap: wrap;flex-direction: row;}
+    #txt2img_results, #img2img_results, #extras_results { background-color: var(--background-color); padding: 0; min-width: calc(min(320px, 100%)) !important;}
     .gradio-slider input[type="number"] { width: 4em; font-size: 0.8rem; height: 16px; text-align: center; }
   }
 
@@ -296,6 +297,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
     :root, .light, .dark { --left-column: 39%; }
     #scripts_alwayson_txt2img div { max-width: 99%; }
     #settings {display: flex;gap: var(--layout-gap);flex-wrap: wrap;flex-direction: row;}
+    #txt2img_results, #img2img_results, #extras_results { background-color: var(--background-color); padding: 0;}
     .gradio-slider input[type="number"] { width: 4em; font-size: 0.8rem; height: 16px; text-align: center; }
   }  
   

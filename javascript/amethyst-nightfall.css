@@ -107,7 +107,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 
 #extras_upscale { margin-top: 10px }
 #txt2img_progress_row > div { min-width: var(--left-column); max-width: var(--left-column); }
-#txt2img_results, #img2img_results, #extras_results { background-color: var(--background-color); padding: 0; min-width: calc(min(320px, 100%)) !important;}
 #txt2img_seed_row { padding: 0; margin-top: 8px; }
 #txt2img_settings { min-width: var(--left-column); max-width: var(--left-column); background-color: #111111; padding-top: 16px; }
 #txt2img_subseed_row { padding: 0; margin-top: 16px; }
