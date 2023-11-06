@@ -17,6 +17,12 @@
   "LCM Dreamshaper 7": {
     "path": "SimianLuo/LCM_Dreamshaper_v7"
   },
+  "Pixart-α XL 2 Medium": {
+    "path": "PixArt-alpha/PixArt-XL-2-512x512"
+  },
+  "Pixart-α XL 2 Large": {
+    "path": "PixArt-alpha/PixArt-XL-2-1024-MS"
+  },
   "Warp Wuerstchen": {
     "path": "warp-ai/wuerstchen"
   },
@@ -33,8 +39,5 @@
     "path": "thu-ml/unidiffuser-v1",
     "desc": "UniDiffuser is a unified diffusion framework to fit all distributions relevant to a set of multi-modal data in one transformer. UniDiffuser is able to perform image, text, text-to-image, image-to-text, and image-text pair generation by setting proper timesteps without additional overhead.\nSpecifically, UniDiffuser employs a variation of transformer, called U-ViT, which parameterizes the joint noise prediction network. Other components perform as encoders and decoders of different modalities, including a pretrained image autoencoder from Stable Diffusion, a pretrained image ViT-B/32 CLIP encoder, a pretrained text ViT-L CLIP encoder, and a GPT-2 text decoder finetuned by ourselves.",
     "preview": "unidiffuser-v1.jpg"
-  },
-  "Sudo-AI Zero123": {
-    "path": "sudo-ai/zero123plus-v1.1"
   }
 }

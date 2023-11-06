@@ -1199,7 +1199,6 @@ def create_ui(startup_timer = None):
             loaded = modelloader.load_reference(model)
             if loaded:
                 return model if loaded else opts.sd_model_checkpoint
-            print('HERE', model, loaded)
             return loaded
 
         button_set_reference = gr.Button('Change reference', elem_id='change_reference', visible=False)
