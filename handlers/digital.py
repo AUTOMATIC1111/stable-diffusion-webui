@@ -95,7 +95,8 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
                                        tasks[0].outpath_grids,
                                        tasks[0].outpath_scripts,
                                        task.id,
-                                       inspect=False)
+                                       inspect=False,
+                                       forbidden_review=True)
 
         progress = TaskProgress.new_finish(task, images)
         progress.update_seed(all_seeds, all_subseeds)

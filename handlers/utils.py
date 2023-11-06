@@ -320,7 +320,8 @@ def format_override_settings(override_settings):
 
 
 def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, script_dir: str,
-                          task_id: str, clean_upload_files: bool = True, inspect=False):
+                          task_id: str, clean_upload_files: bool = True, inspect: bool = False,
+                          forbidden_review: bool = False):
     if not output_dir:
         raise ValueError('output is empty')
 
@@ -377,8 +378,8 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, scrip
     script_keys = out_script_image.multi_upload_keys(clean_upload_files)
 
     if inspect:
-        out_grid_image.inspect(grid_keys)
-        out_image.inspect(image_keys)
+        out_grid_image.inspect(grid_keys, forbidden_review)
+        out_image.inspect(image_keys, forbidden_review)
 
     output = {
         'grids': grid_keys.to_dict(),

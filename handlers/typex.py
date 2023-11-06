@@ -204,7 +204,7 @@ class ImageOutput:
             # local
         return ImageKeys(self.local_files, low_files)
 
-    def inspect(self, images: ImageKeys):
+    def inspect(self, images: ImageKeys, forbidden_review=False):
         api = 'https://diting.xingzheai.cn/api/v1.0/image/inspect'
         urls = {}
         url_inspect_map = {}
@@ -245,7 +245,7 @@ class ImageOutput:
                             img_res = image_item['result']
                             url = image_item['url']
                             for scene in img_res:
-                                if scene['scene'] == 'porn':
+                                if scene['scene'] == 'porn' and not forbidden_review:
                                     forbidden_flag = scene.get('suggestion', 'pass') == 'block'
                                 else:
                                     forbidden_flag = scene.get('suggestion', 'pass') != 'pass'
