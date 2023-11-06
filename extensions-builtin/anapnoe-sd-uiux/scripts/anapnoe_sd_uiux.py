@@ -3,9 +3,8 @@ from pathlib import Path
 import gradio as gr
 import modules.scripts as scripts
 from modules import script_callbacks, shared
-from modules.generation_parameters_copypaste import infotext_to_setting_name_mapping
 
-
+mapping = [(info.infotext, k) for k, info in shared.opts.data_labels.items() if info.infotext]
 shared.options_templates.update(shared.options_section(('uiux_core', "Anapnoe UI-UX"), {
     "uiux_enable_console_log": shared.OptionInfo(False, "Enable console log"),
     "uiux_max_resolution_output": shared.OptionInfo(2048, "Max resolution output for txt2img and img2img"),
@@ -13,11 +12,11 @@ shared.options_templates.update(shared.options_section(('uiux_core', "Anapnoe UI
     "uiux_no_slider_layout": shared.OptionInfo(False, "No input range sliders"),
     "uiux_disable_transitions": shared.OptionInfo(False, "Disable transitions"),
     "uiux_default_layout": shared.OptionInfo("Auto", "Layout", gr.Radio, {"choices": ["Auto","Desktop", "Mobile"]}),    
-    "uiux_ignore_overrides": shared.OptionInfo([], "Ignore Overrides", gr.CheckboxGroup, lambda: {"choices": [x[0] for x in infotext_to_setting_name_mapping]}),
     "uiux_show_labels_aside": shared.OptionInfo(False, "Show labels for aside tabs"),
     "uiux_show_labels_main": shared.OptionInfo(False, "Show labels for main tabs"),
     "uiux_show_labels_tabs": shared.OptionInfo(False, "Show labels for page tabs"),
- }))
+    "uiux_ignore_overrides": shared.OptionInfo([], "Ignore Overrides", gr.CheckboxGroup, lambda: {"choices": list(mapping)})
+}))
 
 
 basedir = scripts.basedir() 
@@ -78,7 +77,10 @@ async () => {
 
 def on_ui_tabs():
 
+    #print(mapping)
+
     with gr.Blocks(analytics_enabled=False) as anapnoe_sd_uiux_core: 
+        #override_settings = gr.CheckboxGroup(label="Ignore override settings", elem_id="ignore_overrides", choices=list(mapping))
         """ with gr.Row():
             with gr.Column(): 
                 with gr.Row():            
