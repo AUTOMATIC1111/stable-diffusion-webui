@@ -6,7 +6,7 @@ Another pretty big release, this time with focus on new models (3 new model type
 Plus quite a few fixes  
 
 Also, [Wiki](https://github.com/vladmandic/automatic/wiki) has been updated with new content, so check it out!  
-Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVINO), [IntelArc](https://github.com/vladmandic/automatic/wiki/Intel-ARC), [DirectML](https://github.com/vladmandic/automatic/wiki/DirectML), [ONNX/Olive>](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime)
+Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVINO), [IntelArc](https://github.com/vladmandic/automatic/wiki/Intel-ARC), [DirectML](https://github.com/vladmandic/automatic/wiki/DirectML), [ONNX/Olive](https://github.com/vladmandic/automatic/wiki/ONNX-Olive)
 
 - **Diffusers**
   - since now **SD.Next** supports **12** different model types, we've added reference model for each type in  
