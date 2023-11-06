@@ -1,12 +1,14 @@
 {
   "RunwayML SD 1.5": {
-    "path": "runwayml/stable-diffusion-v1-5"
+    "path": "runwayml/stable-diffusion-v1-5",
+    "preview": "runwayml--stable-diffusion-v1-5.jpg"
   },
   "StabilityAI SD 2.1": {
     "path": "stabilityai/stable-diffusion-2-1-base"
   },
   "StabilityAI SD-XL 1.0 Base": {
-    "path": "stabilityai/stable-diffusion-xl-base-1.0"
+    "path": "stabilityai/stable-diffusion-xl-base-1.0",
+    "preview": "stabilityai--stable-diffusion-xl-base-1.0.jpg"
   },
   "Segmind SSD-1B": {
     "path": "segmind/SSD-1B"
@@ -38,6 +40,6 @@
   "Tsinghua UniDiffuser": {
     "path": "thu-ml/unidiffuser-v1",
     "desc": "UniDiffuser is a unified diffusion framework to fit all distributions relevant to a set of multi-modal data in one transformer. UniDiffuser is able to perform image, text, text-to-image, image-to-text, and image-text pair generation by setting proper timesteps without additional overhead.\nSpecifically, UniDiffuser employs a variation of transformer, called U-ViT, which parameterizes the joint noise prediction network. Other components perform as encoders and decoders of different modalities, including a pretrained image autoencoder from Stable Diffusion, a pretrained image ViT-B/32 CLIP encoder, a pretrained text ViT-L CLIP encoder, and a GPT-2 text decoder finetuned by ourselves.",
-    "preview": "unidiffuser-v1.jpg"
+    "preview": "thu-ml--unidiffuser-v1.jpg"
   }
 }

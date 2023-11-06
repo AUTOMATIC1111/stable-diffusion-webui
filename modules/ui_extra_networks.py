@@ -252,7 +252,7 @@ class ExtraNetworksPage:
                 if not self.is_empty(tgt):
                     subdirs[subdir] = 1
         subdirs = OrderedDict(sorted(subdirs.items()))
-        if shared.backend == shared.Backend.DIFFUSERS:
+        if shared.backend == shared.Backend.DIFFUSERS and self.name == 'model':
             subdirs['Reference'] = 1
             subdirs[os.path.basename(shared.opts.diffusers_dir)] = 1
             subdirs.move_to_end(os.path.basename(shared.opts.diffusers_dir))
@@ -314,26 +314,27 @@ class ExtraNetworksPage:
             return ""
 
     def find_preview_file(self, path):
-        fn = os.path.splitext(path)[0]
-        preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
-        files = listdir(os.path.dirname(path))
-        for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.preview.', '.']]:
-            if file in files:
-                return file
-        return 'html/card-no-preview.png'
-
-    def find_preview(self, path):
         if path is None:
-            return self.link_preview('html/card-no-preview.png')
-        fn = os.path.splitext(path)[0]
+            return 'html/card-no-preview.png'
+        if shared.opts.diffusers_dir in path:
+            path = os.path.relpath(path, shared.opts.diffusers_dir)
+            ref = os.path.join(paths.models_path, 'Reference')
+            fn = os.path.join(ref, path.replace('models--', '').replace('\\', '/').split('/')[0])
+            files = listdir(ref)
+        else:
+            files = listdir(os.path.dirname(path))
+            fn = os.path.splitext(path)[0]
         preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
-        files = listdir(os.path.dirname(path))
         for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.', '.preview.']]:
             if file in files:
                 if '.thumb.' not in file:
                     self.missing_thumbs.append(file)
-                return self.link_preview(file)
-        return self.link_preview('html/card-no-preview.png')
+                return file
+        return 'html/card-no-preview.png'
+
+    def find_preview(self, path):
+        preview_file = self.find_preview_file(path)
+        return self.link_preview(preview_file)
 
     def find_description(self, path, info=None):
         t0 = time.time()
@@ -650,6 +651,8 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             if ui.last_item.preview.startswith('data:'):
                 b64str = ui.last_item.preview.split(',',1)[1]
                 img = Image.open(io.BytesIO(base64.b64decode(b64str)))
+            elif hasattr(item, 'local_preview') and os.path.exists(item.local_preview):
+                img = item.local_preview
             else:
                 img = page.find_preview_file(item.filename)
             lora = ''
@@ -657,7 +660,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             style = ''
             note = ''
             if not os.path.exists(item.filename):
-                note = f'<br><h3>File is not yet saved</h3>Target filename: {item.filename}'
+                note = f'<br>Target filename: {item.filename}'
             if page.title == 'Model':
                 merge = len(list(meta.get('sd_merge_models', {})))
                 if merge > 0:
