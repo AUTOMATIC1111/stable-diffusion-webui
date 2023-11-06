@@ -213,21 +213,24 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
     pipeline_dir = None
 
     ok = True
+    err = None
     try:
         pipeline_dir = DiffusionPipeline.download(hub_id, **download_config)
     except Exception as e:
+        err = e
         ok = False
-        shared.log.warning(f"Diffusers download error: {hub_id} {e}")
-    if not ok:
+        # shared.log.warning(f"Diffusers download error: {hub_id} {e}")
+    if not ok and 'Repository Not Found' not in str(err):
         try:
             download_config.pop('load_connected_pipeline')
             download_config.pop('variant')
             pipeline_dir = hf.snapshot_download(hub_id, **download_config)
-        except Exception as e:
-            shared.log.warning(f"Diffusers hub download error: {hub_id} {e}")
+        except Exception:
+            # shared.log.warning(f"Diffusers download error: {hub_id} {e}")
+            pass
 
     if pipeline_dir is None:
-        shared.log.error(f"Diffusers no pipeline folder: {hub_id}")
+        shared.log.error(f"Diffusers download error: {hub_id} {err}")
         return None
     try:
         # TODO diffusers is this real error?
@@ -312,6 +315,23 @@ def find_diffuser(name: str):
     if len(models) > 0:
         return models[0].modelId
     return None
+
+
+def load_reference(name: str):
+    found = [r for r in diffuser_repos if name == r['name'] or name == r['friendly'] or name == r['path']]
+    if len(found) > 0: # already downloaded
+        shared.log.debug(f'Reference model: {found[0]}')
+        return True
+    shared.log.debug(f'Reference download: {name}')
+    model_dir = download_diffusers_model(name, shared.opts.diffusers_dir)
+    if model_dir is None:
+        shared.log.debug(f'Reference download failed: {name}')
+        return False
+    else:
+        shared.log.debug(f'Reference download complete: {name}')
+        from modules import sd_models
+        sd_models.list_models()
+        return True
 
 
 modelloader_directories = {}

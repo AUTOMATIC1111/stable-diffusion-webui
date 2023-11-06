@@ -25,7 +25,7 @@ textarea { overflow-y: auto !important; }
 .gradio-button.secondary-down { background: var(--button-secondary-background-fill); color: var(--button-secondary-text-color); }
 .gradio-button.secondary-down, .gradio-button.secondary-down:hover { box-shadow: 1px 1px 1px rgba(0,0,0,0.25) inset, 0px 0px 3px rgba(0,0,0,0.15) inset; }
 .gradio-button.secondary-down:hover { background: var(--button-secondary-background-fill-hover); color: var(--button-secondary-text-color-hover); }
-.gradio-button.tool { max-width: min-content; min-width: min-content !important; align-self: end; font-size: 1.4em; color: var(--body-text-color) !important; margin-bottom: var(--spacing-md); align-self: center; }
+.gradio-button.tool { max-width: min-content; min-width: min-content !important; align-self: end; font-size: 1.4em; color: var(--body-text-color) !important; margin-top: auto; margin-bottom: var(--spacing-md); align-self: center; }
 .gradio-checkbox { margin: 0.75em 1.5em 0 0; align-self: center; }
 .gradio-column { min-width: min(160px, 100%) !important; }
 .gradio-container { max-width: unset !important; padding: var(--block-label-padding) !important; }
@@ -103,7 +103,7 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 /* settings */
 #si-sparkline-memo, #si-sparkline-load { background-color: #111; }
 #quicksettings { width: fit-content; }
-#quicksettings > button { padding: 0 1em 0 0; align-self: end; margin-bottom: var(--text-lg); }
+#quicksettings > button { padding: 0 1em 0 0; align-self: end; margin-bottom: var(--text-sm); }
 #settings { display: flex; gap: var(--layout-gap); }
 #settings div { border: none; gap: 0; margin: 0 0 var(--layout-gap) 0px; padding: 0; }
 #settings .gr-group { max-width: 70em; }
@@ -185,7 +185,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-networks .tab-nav > button { margin-right: 0; height: 24px; padding: 2px 4px 2px 4px; }
 .extra-networks .buttons { position: absolute; right: 0; margin: -4px; background: var(--background-color); }
 .extra-networks .buttons > button { margin-left: -0.4em; height: 1.4em; color: var(--primary-300) !important; }
-.extra-networks .custom-button { width: 120px; width: 100%; background: none; justify-content: left; text-align: left; padding: 2px 8px 2px 16px; text-indent: -8px; box-shadow: none; line-break: auto; }
+.extra-networks .custom-button { width: 120px; width: 100%; background: none; justify-content: left; text-align: left; padding: 3px 3px 3px 12px; text-indent: -6px; box-shadow: none; line-break: auto; }
 .extra-networks .custom-button:hover { background: var(--button-primary-background-fill) }
 .extra-networks-tab { padding: 0 !important; }
 .extra-network-subdirs { background: var(--input-background-fill); overflow-x: hidden; overflow-y: auto; min-width: max(15%, 120px); padding-top: 0.5em; margin-top: -4px !important; }
@@ -199,7 +199,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-network-cards .card:hover .preview { box-shadow: none; filter: grayscale(100%); }
 .extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
 .extra-network-cards .card .overlay .tags { display: none; overflow-wrap: break-word; }
-.extra-network-cards .card .overlay .tag { padding: 3px; background: rgba(70, 70, 70, 0.60); font-size: var(--text-lg); cursor: pointer; display: inline-block; margin-bottom: 4px; }
+.extra-network-cards .card .overlay .tag { padding: 2px; margin: 2px; background: rgba(70, 70, 70, 0.60); font-size: var(--text-md); cursor: pointer; display: inline-block; }
 .extra-network-cards .card .actions > span { padding: 4px; }
 .extra-network-cards .card .actions > span:hover { color: var(--highlight-color); }
 .extra-network-cards .card:hover .actions { display: block; }
@@ -263,3 +263,19 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 @keyframes move { from { background-position-x: 0, -40px; } to { background-position-x: 0, 40px; } }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes color { from { filter: hue-rotate(0deg) } to { filter: hue-rotate(360deg) } }
+
+:root, .light, .dark {
+  --text-xxs: 9px;
+  --text-xs: 10px;
+  --text-sm: 12px;
+  --text-md: 14px;
+  --text-lg: 15px;
+  --text-xl: 16px;
+  --text-xxl: 17px;
+  --spacing-xxs: 1px;
+  --spacing-xs: 2px;
+  --spacing-sm: 3px;
+  --spacing-lg: 4px;
+  --spacing-xl: 5px;
+  --spacing-xxl: 6px;
+}

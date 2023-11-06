@@ -11,6 +11,9 @@ Also, [Wiki](https://github.com/vladmandic/automatic/wiki) has been updated with
 Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVINO), [IntelArc](https://github.com/vladmandic/automatic/wiki/Intel-ARC), [DirectML](https://github.com/vladmandic/automatic/wiki/DirectML), [ONNX/Olive>](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime)
 
 - **Diffusers**
+  - since now **SD.Next** supports **12** different model types, we've added reference model for each type in  
+    *Extra networks -> Reference* for easier select & auto-download  
+    Models can still be downloaded manually, this is just a convenience feature & a showcase for supported models  
   - new model type: [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)  
     its a *distilled* model, this time 50% smaller and faster version of SD-XL!  
     (and quality does not suffer, its just more optimized)  
@@ -37,6 +40,9 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
   - extend support for [Free-U](https://github.com/ChenyangSi/FreeU)  
     improve generations quality at no cost (other than finding params that work for you)  
 - **General**  
+  - attempt to auto-fix invalid samples which occure due to math errors in lower precision  
+    example: `RuntimeWarning: invalid value encountered in cast: sample = sample.astype(np.uint8)`  
+    begone **black images** *(note: if it proves as working, this solution will need to be expanded to cover all scenarios)*  
   - add **Lora OFT** support, thanks @antis0007 and @ai-casanova  
   - **Upscalers**  
     - **compile** option, thanks @disty0  
@@ -47,20 +53,27 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
   - new option: *settings -> system paths -> models*  
     can be used to set custom base path for *all* models (previously only as cli option)  
   - remove external clone of items in `/repositories`  
+  - **Interrogator** module has been removed from `extensions-builtin`  
+    and fully implemented (and improved) natively  
 - **UI**  
   - UI tweaks for default themes
   - UI switch core font in default theme to **noto-sans**  
     previously default font was simply *system-ui*, but it lead to too much variations between browsers and platforms  
   - updated **Context menu**  
-    right-click on prompt or generate button
+    right-click on any button (e.g. generate button)
 - **Extra networks**  
   - sort by name, size, date, etc.  
   - switch between *gallery* and *list* views  
+  - add tags from user metadata (in addition to tags in model metadata) for **lora**  
+  - faster enumeration of all networks on server startup  
 - **Packages**
   - updated `diffusers` to 0.22.0, `transformers` to 4.34.1  
   - update **openvino**, thanks @disty0  
-  - update **ipex**, thanks @disty0  
   - update **directml**, @lshqqytiger  
+- **Compute**  
+  - **OpenVINO**:  
+    - updated to mainstream `torch` *2.1.0*  
+    - support for **ESRGAN** upscalers  
 - **Fixes**  
   - fix **freeu** for backend original and add it to xyz grid  
   - fix loading diffuser models in huggingface format from non-standard location  

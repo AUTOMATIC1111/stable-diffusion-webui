@@ -1,3 +1,7 @@
+# --------------------------------------------------------------------------------------------------------------
+# Do not make any changes to this file, change the variables in webui-user.ps1 instead and call this file
+# --------------------------------------------------------------------------------------------------------------
+
 function ShowStdOutStdErr {
     Write-Output "exit code: $LASTEXITCODE"
 

@@ -41,4 +41,4 @@ errors.install([gradio])
 
 import diffusers # pylint: disable=W0611,C0411
 timer.startup.record("diffusers")
-errors.log.debug(f'Load packages: torch={getattr(torch, "__long_version__", torch.__version__)} diffusers={diffusers.__version__} gradio={gradio.__version__}')
+errors.log.info(f'Load packages: torch={getattr(torch, "__long_version__", torch.__version__)} diffusers={diffusers.__version__} gradio={gradio.__version__}')

@@ -508,8 +508,6 @@ def check_torch():
             import xformers
             if torch.__version__ != '2.0.1+cu118' and xformers.__version__ in ['0.0.22', '0.0.21', '0.0.20']:
                 log.warning(f'Likely incompatible torch with: xformers=={xformers.__version__} installed: torch=={torch.__version__} required: torch==2.1.0+cu118 - build xformers manually or downgrade torch')
-            if 'cu118' not in torch.__version__:
-                log.warning(f'Likely incompatible Cuda with: xformers=={xformers.__version__} installed: torch=={torch.__version__} required: torch==2.1.0+cu118 - build xformers manually or downgrade torch')
         elif not args.experimental and not args.use_xformers:
             uninstall('xformers')
     except Exception as e:

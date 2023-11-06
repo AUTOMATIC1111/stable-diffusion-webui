@@ -45,6 +45,7 @@ dctorch
 httpx==0.24.1
 compel==2.0.2
 torchsde==0.2.6
+clip-interrogator==0.6.0
 antlr4-python3-runtime==4.9.3
 requests==2.31.0
 tqdm==4.66.1

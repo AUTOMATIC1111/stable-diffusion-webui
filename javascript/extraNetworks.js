@@ -1,4 +1,5 @@
 const activePromptTextarea = {};
+let sortVal = 0;
 
 // helpers
 
@@ -92,22 +93,28 @@ async function filterExtraNetworksForTab(tabname, searchTerm) {
   let found = 0;
   let items = 0;
   const t0 = performance.now();
-  const cards = Array.from(gradioApp().querySelectorAll(`#${tabname}_extra_tabs div.card`));
-  cards.forEach((elem) => {
-    items += 1;
-    if (searchTerm === '') {
-      elem.style.display = '';
-    } else {
-      let text = `${elem.querySelector('.name').textContent.toLowerCase()} ${elem.querySelector('.search_term').textContent}`;
-      text = text.toLowerCase().replace('models--', 'Diffusers').replace('\\', '/');
-      if (text.indexOf(searchTerm) === -1) {
-        elem.style.display = 'none';
-      } else {
+  const pagename = getENActivePage();
+  if (!pagename) return;
+  const allPages = Array.from(gradioApp().querySelectorAll('.extra-network-cards'));
+  const pages = allPages.filter((el) => el.id.includes(pagename.toLowerCase()));
+  for (const pg of pages) {
+    const cards = Array.from(pg.querySelectorAll('.card') || []);
+    cards.forEach((elem) => {
+      items += 1;
+      if (searchTerm === '') {
         elem.style.display = '';
-        found += 1;
+      } else {
+        let text = elem.dataset.search.toLowerCase();
+        text = text.toLowerCase().replace('models--', 'Diffusers').replace('\\', '/');
+        if (text.indexOf(searchTerm) === -1) {
+          elem.style.display = 'none';
+        } else {
+          elem.style.display = '';
+          found += 1;
+        }
       }
-    }
-  });
+    });
+  }
   const t1 = performance.now();
   if (found > 0) log(`filterExtraNetworks: text=${searchTerm} items=${items} match=${found} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
   else log(`filterExtraNetworks: text=all items=${items} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
@@ -145,8 +152,6 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
   return false;
 }
 
-let sortVal = 0;
-
 function sortExtraNetworks() {
   const sortDesc = ['Name [A-Z]', 'Name [Z-A]', 'Date [Newest]', 'Date [Oldest]', 'Size [Largest]', 'Size [Smallest]'];
   const pagename = getENActivePage();
@@ -160,8 +165,8 @@ function sortExtraNetworks() {
     if (num === 0) return 'sort: no cards';
     cards.sort((a, b) => { // eslint-disable-line no-loop-func
       switch (sortVal) {
-        case 0: return a.dataset.name ? a.dataset.name.localeCompare(b.dataset.name) : 0;
-        case 1: return b.dataset.name ? b.dataset.name.localeCompare(a.dataset.name) : 0;
+        case 0: return a.dataset.name ? a.dataset.search.localeCompare(b.dataset.name) : 0;
+        case 1: return b.dataset.name ? b.dataset.search.localeCompare(a.dataset.name) : 0;
         case 2: return a.dataset.mtime && !isNaN(a.dataset.mtime) ? parseFloat(b.dataset.mtime) - parseFloat(a.dataset.mtime) : 0;
         case 3: return b.dataset.mtime && !isNaN(b.dataset.mtime) ? parseFloat(a.dataset.mtime) - parseFloat(b.dataset.mtime) : 0;
         case 4: return a.dataset.size && !isNaN(a.dataset.size) ? parseFloat(b.dataset.size) - parseFloat(a.dataset.size) : 0;

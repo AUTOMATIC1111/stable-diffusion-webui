@@ -33,9 +33,6 @@
   --radius-lg: 4px;
   --line-sm: 1.2em;
   --line-md: 1.4em;
-  --text-sm: 12px;
-  --text-md: 14px;
-  --text-lg: 15px;
 }
 
 html { font-size: var(--font-size); }
@@ -297,20 +294,10 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --size-9: 64px;
   --slider_color: None;
   --slider-color: ;
-  --spacing-xxs: 1px;
-  --spacing-xs: 2px;
-  --spacing-sm: 3px;
-  --spacing-lg: 4px;
-  --spacing-xl: 5px;
-  --spacing-xxl: 6px;
   --stat-background-fill: linear-gradient(to right, var(--primary-400), var(--primary-600));
   --table-border-color: var(--neutral-700);
   --table-even-background-fill: #222222;
   --table-odd-background-fill: #333333;
   --table-radius: var(--radius-lg);
   --table-row-focus: var(--color-accent-soft);
-  --text-lg: 16px;
-  --text-xs: 10px;
-  --text-xxl: 26px;
-  --text-xxs: 9px;
 }

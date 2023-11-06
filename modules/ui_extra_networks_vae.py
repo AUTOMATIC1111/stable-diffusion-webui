@@ -14,23 +14,22 @@ class ExtraNetworksPageVAEs(ui_extra_networks.ExtraNetworksPage):
     def list_items(self):
         for name, filename in sd_vae.vae_dict.items():
             try:
-                fn = os.path.splitext(filename)[0]
                 record = {
                     "type": 'VAE',
                     "name": name,
                     "title": name,
-                    "filename": fn,
-                    "hash": hashes.sha256_from_cache(filename, f"vae/{fn}"),
-                    "search_term": self.search_terms_from_path(fn),
-                    "preview": self.find_preview(fn),
-                    "local_preview": f"{fn}.{shared.opts.samples_format}",
-                    "description": self.find_description(fn),
-                    "info": self.find_info(fn),
+                    "filename": filename,
+                    "hash": hashes.sha256_from_cache(filename, f"vae/{filename}"),
+                    "search_term": self.search_terms_from_path(filename),
+                    "preview": self.find_preview(filename),
+                    "local_preview": f"{os.path.splitext(filename)[0]}.{shared.opts.samples_format}",
                     "metadata": {},
                     "onclick": '"' + html.escape(f"""return selectVAE({json.dumps(name)})""") + '"',
                     "mtime": os.path.getmtime(filename),
                     "size": os.path.getsize(filename),
                 }
+                record["info"] = self.find_info(filename)
+                record["description"] = self.find_description(filename, record["info"])
                 yield record
             except Exception as e:
                 shared.log.debug(f"Extra networks error: type=vae file={filename} {e}")
