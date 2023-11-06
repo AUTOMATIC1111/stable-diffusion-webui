@@ -216,6 +216,7 @@ api_middleware(app)
                         "min_replicas": int(os.environ.get("RAY_MIN_REPLICAS", 0)),
                         "max_replicas": int(os.environ.get("RAY_MAX_REPLICAS", 0))
                         },
+    route_prefix="/sdapi/v1"
     )
 @serve.ingress(app)
 class Raypi:

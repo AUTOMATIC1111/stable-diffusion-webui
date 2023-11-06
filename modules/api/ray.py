@@ -11,32 +11,37 @@ import os
 #ray.init("ray://localhost:10001")
 
 
+ray_head_address = os.environ.get("RAY_ADDRESS")
+print("RAY_ADDRESS:", ray_head_address)
+
+if ray_head_address:
+    #ray.init(address=ray_head_address)
+    ray.init(address=ray_head_address)
+    #ray.init(address="172.21.0.3:6388")
+else:
+    ray.init()
+
+
+entrypoint = Raypi.bind()
 
 def ray_only():
     serve.shutdown()
-
     if "RAY_DOCKER" in os.environ:
-        ray.init(
-            dashboard_host=os.environ.get("RAY_DASHBOARD_HOST", "0.0.0.0"),
-            dashboard_port=int(os.environ.get("RAY_DASHBOARD_PORT", 8265))
-            )
-    elif "RAY_HEAD_ADDRESS" in os.environ:
-        ray.init(address=os.environ.get("RAY_HEAD_ADDRESS", ""))
-    elif "RAY_SERVE_ONLY" in os.environ:
-        pass
-    else:
-        ray.init()
-
-
-    print("starting ray")
-    serve.start(
-            
+        print("starting ray in docker")
+        serve.start(
+            detached=True,
             http_options={
                         "host": os.environ.get("RAY_IP", "0.0.0.0"), 
                         "port": int(os.environ.get("RAY_PORT", 8000))
                         }
         )
-
+    else:
+        serve.start(
+            http_options={
+                        "host": os.environ.get("RAY_IP", "0.0.0.0"), 
+                        "port": int(os.environ.get("RAY_PORT", 8000))
+                        }
+        )
     print(f"Starting Raypi on port {os.environ.get('RAY_PORT', 8000)}")
     serve.run(Raypi.bind(), port=int(os.environ.get("RAY_PORT", 8000)), route_prefix="/sdapi/v1")  #route_prefix="/sdapi/v1" # Call the launch_ray method to get the FastAPI app
     print("Done setting up replicas! Now accepting requests...")
