@@ -33,6 +33,7 @@ rich
 safetensors
 scipy
 tb_nightly
+tensordict
 toml
 torchdiffeq
 voluptuous

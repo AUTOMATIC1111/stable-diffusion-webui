@@ -8,7 +8,8 @@ import torch
 import tqdm
 import gradio as gr
 import safetensors.torch
-from sd_meh.merge import merge_models
+from modules.merging.merge import merge_models
+from modules.merging.utils import TRIPLE_METHODS
 
 from modules import shared, images, sd_models, sd_vae, sd_models_config
 
@@ -232,6 +233,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         metadata["sd_merge_models"] = json.dumps(metadata["sd_merge_models"])
 
     _, extension = os.path.splitext(output_modelname)
+    theta_0 = theta_0.to_dict()
     if extension.lower() == ".safetensors":
         safetensors.torch.save_file(theta_0, output_modelname, metadata=metadata)
     else:
@@ -249,11 +251,29 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
 
 
 def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
-    shared.state.begin('model-merge')
+    shared.state.begin('merge')
+
+    def fail(message):
+        shared.state.textinfo = message
+        shared.state.end()
+        return [*[gr.update() for _ in range(4)], message]
+
     kwargs["models"] = {
         "model_a": sd_models.checkpoints_list[kwargs.get("primary_model_name", None)].filename,
         "model_b": sd_models.checkpoints_list[kwargs.get("secondary_model_name", None)].filename,
     }
+
+    if kwargs.get("primary_model_name", None) in [None, 'None']:
+        return fail("Failed: Merging requires a primary model.")
+    primary_model_info = sd_models.checkpoints_list[kwargs.get("primary_model_name", None)]
+    if kwargs.get("secondary_model_name", None) in [None, 'None']:
+        return fail("Failed: Merging requires a secondary model.")
+    secondary_model_info = sd_models.checkpoints_list[kwargs.get("secondary_model_name", None)]
+    if kwargs.get("tertiary_model_name", None) in [None, 'None'] and kwargs.get("merge_mode", None) in TRIPLE_METHODS:
+        return fail(f"Failed: Interpolation method ({kwargs.get('merge_mode', None)}) requires a tertiary model.")
+    tertiary_model_info = sd_models.checkpoints_list[tertiary_model_name] if kwargs.get("merge_mode",
+                                                                                        None) in TRIPLE_METHODS else None
+
     del kwargs["primary_model_name"]
     del kwargs["secondary_model_name"]
     if kwargs.get("tertiary_model_name", None) is not None:
@@ -261,12 +281,14 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
         del kwargs["tertiary_model_name"]
 
     try:
-        alpha = [float(x) for x in [kwargs["alpha_base"]] + kwargs["alpha_in_blocks"].split(",") + [kwargs["alpha_mid_block"]] + kwargs["alpha_out_blocks"].split(",")]
-        assert len(alpha) == 26 or len(alpha) == 20, "Alpha Block Weights are wrong length (26 or 20 for SDXL) falling back"
+        alpha = [float(x) for x in
+                 [kwargs["alpha_base"]] + kwargs["alpha_in_blocks"].split(",") + [kwargs["alpha_mid_block"]] + kwargs[
+                     "alpha_out_blocks"].split(",")]
+        assert len(alpha) == 26 or len(
+            alpha) == 20, "Alpha Block Weights are wrong length (26 or 20 for SDXL) falling back"
         kwargs["alpha"] = alpha
     except Exception as e:
         kwargs["alpha"] = kwargs.get("alpha_preset", kwargs["alpha"])
-        print(e)
     finally:
         kwargs.pop("alpha_base", None)
         kwargs.pop("alpha_in_blocks", None)
@@ -275,12 +297,14 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
         kwargs.pop("alpha_preset", None)
     if kwargs.get("beta", False):
         try:
-            beta = [float(x) for x in [kwargs["beta_base"]] + kwargs["beta_in_blocks"].split(",") + [kwargs["beta_mid_block"]] + kwargs["beta_out_blocks"].split(",")]
-            assert len(beta) == 26 or len(beta) == 20, "Beta Block Weights are wrong length (26 or 20 for SDXL) falling back"
+            beta = [float(x) for x in
+                    [kwargs["beta_base"]] + kwargs["beta_in_blocks"].split(",") + [kwargs["beta_mid_block"]] + kwargs[
+                        "beta_out_blocks"].split(",")]
+            assert len(beta) == 26 or len(
+                beta) == 20, "Beta Block Weights are wrong length (26 or 20 for SDXL) falling back"
             kwargs["beta"] = beta
         except Exception as e:
             kwargs["beta"] = kwargs.get("beta_preset", kwargs["beta"])
-            print(e)
         finally:
             kwargs.pop("beta_base", None)
             kwargs.pop("beta_in_blocks", None)
@@ -288,31 +312,29 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
             kwargs.pop("beta_out_blocks", None)
             kwargs.pop("beta_preset", None)
 
-    return [*[gr.update() for _ in range(4)], f"{kwargs}"]
+    try:
+        theta_0 = merge_models(**kwargs)
+    except Exception as e:
+        return fail(f"{e}")
 
-    def fail(message):
-        shared.state.textinfo = message
-        shared.state.end()
-        return [*[gr.update() for _ in range(4)], message]
-
-    theta_0 = merge_models(**kwargs)
     ckpt_dir = shared.opts.ckpt_dir or sd_models.model_path
-    filename = custom_name
+    filename = kwargs.get("custom_name", "Unamed_Merge")
     filename += "." + kwargs.get("checkpoint_format", None)
     output_modelname = os.path.join(ckpt_dir, filename)
     shared.state.textinfo = "Saving"
     metadata = None
-    if save_metadata:
+    if kwargs.get("save_metadata", False):
         metadata = {"format": "pt", "sd_merge_models": {}}
         merge_recipe = {
             "type": "SDNext",  # indicate this model was merged with webui's built-in merger
             "primary_model_hash": primary_model_info.sha256,
             "secondary_model_hash": secondary_model_info.sha256 if secondary_model_info else None,
             "tertiary_model_hash": tertiary_model_info.sha256 if tertiary_model_info else None,
-            "interp_method": interp_method,
-            "multiplier": multiplier,
-            "save_as_half": save_as_half,
-            "custom_name": custom_name,
+            "merge_mode": kwargs.get('merge_mode', None),
+            "alpha": kwargs.get('alpha', None),
+            "beta": kwargs.get('beta', None),
+            "precision": kwargs.get('precision', None),
+            "custom_name": kwargs.get("custom_name", "Unamed_Merge"),
         }
         metadata["sd_merge_recipe"] = json.dumps(merge_recipe)
 
@@ -333,6 +355,7 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
         metadata["sd_merge_models"] = json.dumps(metadata["sd_merge_models"])
 
     _, extension = os.path.splitext(output_modelname)
+    theta_0 = theta_0.to_dict()
     if extension.lower() == ".safetensors":
         safetensors.torch.save_file(theta_0, output_modelname, metadata=metadata)
     else:
@@ -342,7 +365,6 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
     created_model = next((ckpt for ckpt in sd_models.checkpoints_list.values() if ckpt.name == filename), None)
     if created_model:
         created_model.calculate_shorthash()
-    create_config(output_modelname, config_source, primary_model_info, secondary_model_info, tertiary_model_info)
     shared.log.info(f"Model merge saved: {output_modelname}.")
     shared.state.textinfo = "Checkpoint saved"
     shared.state.end()
