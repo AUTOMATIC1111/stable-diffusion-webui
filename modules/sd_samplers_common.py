@@ -54,8 +54,8 @@ def samples_to_images_tensor(sample, approximation=None, model=None):
     elif approximation == 4:
         with devices.autocast(), torch.no_grad():
             x_sample = sd_vae_consistency.decoder_model()(
-                sample.to(devices.device, devices.dtype)/0.18215,
-                schedule=[1.0],
+                sample.detach().to(devices.device, devices.dtype)/0.18215,
+                schedule=[float(i.strip()) for i in shared.opts.sd_vae_consistency_schedule.split(',')],
             )
         sd_vae_consistency.unload()
     else:
