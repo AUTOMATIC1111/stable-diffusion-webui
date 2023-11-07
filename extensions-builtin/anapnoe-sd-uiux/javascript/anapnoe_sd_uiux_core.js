@@ -1101,7 +1101,6 @@ function uiuxOptionSettings(){
         uiux_show_labels_tabs(e.target.checked, true);
     });
     uiux_show_labels_tabs(window.opts.uiux_show_labels_tabs);
-    
 
 }
 

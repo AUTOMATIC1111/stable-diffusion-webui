@@ -491,6 +491,7 @@ body {
     font-size: 13px;
     line-height: 16px;
     color: var(--ae-label-color);
+    overflow-wrap: anywhere;
 }
 
 *.gradio-image .image-container {
@@ -3258,6 +3259,11 @@ input[type="checkbox"] {
 .aside-labels div#sidebar_secondary_tabs button {
     width: 100%;
     justify-content: flex-start;
+}
+
+.info-results-container {
+    overflow-y: auto;
+    max-height:33vh;
 }
 
 @media (max-width: 768px) {
