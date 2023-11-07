@@ -442,6 +442,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "onnx_cache_converted": OptionInfo(True, 'Cache converted models'),
 
     "onnx_olive_sep": OptionInfo("<h3>Olive</h3>", "", gr.HTML),
+    "onnx_enable_olive": OptionInfo(False, 'Optimize ONNX pipeline using Olive before every generation'),
     "onnx_olive_float16": OptionInfo(True, 'Olive use FP16 on optimization (will use FP32 if unchecked)'),
     "onnx_cache_optimized": OptionInfo(True, 'Olive cache optimized models'),
 }))

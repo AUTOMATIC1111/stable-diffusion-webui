@@ -9,7 +9,7 @@ import diffusers
 import optimum.onnxruntime
 from enum import Enum
 from abc import ABCMeta
-from typing import Any, Dict, Union, Optional, Callable, List
+from typing import Union, Optional, Callable, Type, List, Any, Dict
 from installer import log
 from modules import shared, olive
 from modules.paths import sd_configs_path
@@ -45,7 +45,7 @@ def get_default_execution_provider() -> ExecutionProvider:
         if ExecutionProvider.ROCm in available_execution_providers:
             return ExecutionProvider.ROCm
         else:
-            log.warning("Currently, there's no pypi release for onnxruntime-rocm. Please download and install .whl file from https://download.onnxruntime.ai/ The inference will be fall back to CPU.")
+            log.warning("Currently, there's no pypi release for onnxruntime-rocm. Please download and install .whl file from https://download.onnxruntime.ai/")
     elif devices.backend == "ipex" or devices.backend == "openvino":
         return ExecutionProvider.OpenVINO
     return ExecutionProvider.CPU
@@ -90,6 +90,7 @@ class OnnxPipelineBase(diffusers.DiffusionPipeline, metaclass=ABCMeta):
     sd_model_checkpoint: str
 
     def __init__(self):
+        log.warning("Olive implementation is experimental. It contains potentially an issue and is subject to change at any time.")
         self.model_type = self.__class__.__name__
 
 
@@ -290,6 +291,61 @@ class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline, OnnxPip
 diffusers.OnnxStableDiffusionPipeline = OnnxStableDiffusionPipeline
 
 
+class OnnxStableDiffusionImg2ImgPipeline(diffusers.OnnxStableDiffusionImg2ImgPipeline, OnnxPipelineBase):
+    def __init__(
+        self,
+        vae_encoder: diffusers.OnnxRuntimeModel,
+        vae_decoder: diffusers.OnnxRuntimeModel,
+        text_encoder: diffusers.OnnxRuntimeModel,
+        tokenizer,
+        unet: diffusers.OnnxRuntimeModel,
+        scheduler,
+        safety_checker: diffusers.OnnxRuntimeModel,
+        feature_extractor,
+        requires_safety_checker: bool = True
+    ):
+        super().__init__(vae_encoder, vae_decoder, text_encoder, tokenizer, unet, scheduler, safety_checker, feature_extractor, requires_safety_checker)
+
+    @staticmethod
+    def from_pretrained(pretrained_model_name_or_path: Optional[Union[str, os.PathLike]], **kwargs):
+        sess_options = kwargs.get("sess_options", ort.SessionOptions())
+        provider = kwargs.get("provider", (shared.opts.onnx_execution_provider, get_execution_provider_options(),))
+        model_config = super(OnnxStableDiffusionImg2ImgPipeline, OnnxStableDiffusionImg2ImgPipeline).extract_init_dict(diffusers.DiffusionPipeline.load_config(pretrained_model_name_or_path))
+        init_dict = {}
+        for d in model_config:
+            if 'unet' in d:
+                init_dict = d
+                break
+        init_kwargs = {}
+        for k, v in init_dict.items():
+            if not isinstance(v, list):
+                init_kwargs[k] = v
+                continue
+            library_name, constructor_name = v
+            if library_name is None or constructor_name is None:
+                init_kwargs[k] = None
+                continue
+            library = importlib.import_module(library_name)
+            constructor = getattr(library, constructor_name)
+            submodel_kwargs = {}
+            if issubclass(constructor, diffusers.OnnxRuntimeModel):
+                submodel_kwargs["sess_options"] = sess_options
+                submodel_kwargs["provider"] = provider
+            try:
+                init_kwargs[k] = constructor.from_pretrained(
+                    os.path.join(pretrained_model_name_or_path, k),
+                    **submodel_kwargs,
+                )
+            except Exception:
+                pass
+        return OnnxStableDiffusionImg2ImgPipeline(**init_kwargs)
+
+
+OnnxStableDiffusionImg2ImgPipeline.__module__ = 'diffusers'
+OnnxStableDiffusionImg2ImgPipeline.__name__ = 'OnnxStableDiffusionImg2ImgPipeline'
+diffusers.OnnxStableDiffusionImg2ImgPipeline = OnnxStableDiffusionImg2ImgPipeline
+
+
 class OnnxStableDiffusionXLPipeline(optimum.onnxruntime.ORTStableDiffusionXLPipeline, OnnxPipelineBase):
     def __init__(
         self,
@@ -315,16 +371,33 @@ OnnxStableDiffusionXLPipeline.__name__ = 'ORTStableDiffusionXLPipeline'
 diffusers.OnnxStableDiffusionXLPipeline = OnnxStableDiffusionXLPipeline
 
 
-class OnnxAutoPipeline(OnnxPipelineBase):
-    """
-    Possible Cases:
-    1. from .ckpt or .safetensors
-    2. from downloaded non-Onnx model
-    3. from downloaded Onnx model
-    4. from cached converted Onnx model
-    5. from cached optimized model
-    """
-    constructor: Union[diffusers.OnnxStableDiffusionPipeline, diffusers.OnnxStableDiffusionXLPipeline]
+class OnnxStableDiffusionXLImg2ImgPipeline(optimum.onnxruntime.ORTStableDiffusionXLImg2ImgPipeline, OnnxPipelineBase):
+    def __init__(
+        self,
+        vae_decoder_session,
+        text_encoder_session,
+        unet_session,
+        config: Dict[str, Any],
+        tokenizer,
+        scheduler,
+        feature_extractor = None,
+        vae_encoder_session = None,
+        text_encoder_2_session = None,
+        tokenizer_2 = None,
+        use_io_binding: bool | None = None,
+        model_save_dir = None,
+        add_watermarker: bool | None = None
+    ):
+        super().__init__(vae_decoder_session, text_encoder_session, unet_session, config, tokenizer, scheduler, feature_extractor, vae_encoder_session, text_encoder_2_session, tokenizer_2, use_io_binding, model_save_dir, add_watermarker)
+
+
+OnnxStableDiffusionXLImg2ImgPipeline.__module__ = 'optimum.onnxruntime.modeling_diffusion'
+OnnxStableDiffusionXLImg2ImgPipeline.__name__ = 'ORTStableDiffusionXLImg2ImgPipeline'
+diffusers.OnnxStableDiffusionXLImg2ImgPipeline = OnnxStableDiffusionXLImg2ImgPipeline
+
+
+class OnnxAutoPipelineBase(OnnxPipelineBase):
+    constructor: Type[diffusers.DiffusionPipeline]
     config = {}
 
     pipeline: diffusers.DiffusionPipeline
@@ -334,39 +407,6 @@ class OnnxAutoPipeline(OnnxPipelineBase):
         self.original_filename = os.path.basename(path)
         self.pipeline = pipeline
         del pipeline
-        if os.path.exists(shared.opts.onnx_temp_dir):
-            shutil.rmtree(shared.opts.onnx_temp_dir)
-        os.mkdir(shared.opts.onnx_temp_dir)
-        self.constructor = diffusers.OnnxStableDiffusionXLPipeline if hasattr(self.pipeline, "text_encoder_2") else diffusers.OnnxStableDiffusionPipeline
-        self.model_type = self.constructor.__name__
-        self.pipeline.save_pretrained(shared.opts.onnx_temp_dir)
-
-    @staticmethod
-    def from_pretrained(pretrained_model_name_or_path, **kwargs):
-        pipeline = None
-        try: # load from Onnx SD model
-            pipeline = diffusers.OnnxStableDiffusionPipeline.from_pretrained(pretrained_model_name_or_path, **kwargs)
-        except Exception:
-            pass
-        if pipeline is None:
-            try: # load from Onnx SDXL model
-                pipeline = diffusers.OnnxStableDiffusionXLPipeline.from_pretrained(pretrained_model_name_or_path, **kwargs)
-            except Exception:
-                pass
-        if pipeline is None:
-            try: # load from non-Onnx model
-                pipeline = diffusers.DiffusionPipeline.from_pretrained(pretrained_model_name_or_path, **kwargs)
-            except Exception:
-                pass
-        return OnnxAutoPipeline(pretrained_model_name_or_path, pipeline)
-
-    @staticmethod
-    def from_single_file(pretrained_model_name_or_path, **kwargs):
-        return OnnxAutoPipeline(pretrained_model_name_or_path, diffusers.StableDiffusionPipeline.from_single_file(pretrained_model_name_or_path, **kwargs))
-
-    @staticmethod
-    def from_ckpt(*args, **kwargs):
-        return OnnxAutoPipeline.from_single_file(**args, **kwargs)
 
     def derive_properties(self, pipeline: OnnxPipelineBase):
         pipeline.sd_model_hash = self.sd_model_hash
@@ -380,7 +420,8 @@ class OnnxAutoPipeline(OnnxPipelineBase):
     def convert(self):
         if shared.opts.onnx_execution_provider == ExecutionProvider.ROCm:
             from olive.hardware.accelerator import AcceleratorLookup
-            AcceleratorLookup.EXECUTION_PROVIDERS["gpu"].append(ExecutionProvider.ROCm)
+            if ExecutionProvider.ROCm not in AcceleratorLookup.EXECUTION_PROVIDERS["gpu"]:
+                AcceleratorLookup.EXECUTION_PROVIDERS["gpu"].append(ExecutionProvider.ROCm)
 
         out_dir = os.path.join(shared.opts.onnx_cached_models_path, self.original_filename)
         if os.path.isdir(out_dir): # already converted (cached)
@@ -397,6 +438,12 @@ class OnnxAutoPipeline(OnnxPipelineBase):
 
             shutil.rmtree("cache", ignore_errors=True)
             shutil.rmtree("footprints", ignore_errors=True)
+
+            if os.path.exists(shared.opts.onnx_temp_dir):
+                shutil.rmtree(shared.opts.onnx_temp_dir)
+            os.mkdir(shared.opts.onnx_temp_dir)
+
+            self.pipeline.save_pretrained(shared.opts.onnx_temp_dir)
 
             kwargs = {
                 "tokenizer": self.pipeline.tokenizer,
@@ -452,22 +499,21 @@ class OnnxAutoPipeline(OnnxPipelineBase):
                 )
             )
 
-            if shared.opts.onnx_cache_converted:
-                self.pipeline.to_json_file(os.path.join(out_dir, "model_index.json"))
+            self.pipeline.to_json_file(os.path.join(out_dir, "model_index.json"))
 
-                for submodel in submodels:
-                    src_path = converted_model_paths[submodel]
-                    src_parent = os.path.dirname(src_path)
-                    dst_parent = os.path.join(out_dir, submodel)
-                    dst_path = os.path.join(dst_parent, "model.onnx")
-                    if not os.path.isdir(dst_parent):
-                        os.mkdir(dst_parent)
-                    shutil.copyfile(src_path, dst_path)
+            for submodel in submodels:
+                src_path = converted_model_paths[submodel]
+                src_parent = os.path.dirname(src_path)
+                dst_parent = os.path.join(out_dir, submodel)
+                dst_path = os.path.join(dst_parent, "model.onnx")
+                if not os.path.isdir(dst_parent):
+                    os.mkdir(dst_parent)
+                shutil.copyfile(src_path, dst_path)
 
-                    weights_src_path = os.path.join(src_parent, "weights.pb")
-                    if os.path.isfile(weights_src_path):
-                        weights_dst_path = os.path.join(dst_parent, "weights.pb")
-                        shutil.copyfile(weights_src_path, weights_dst_path)
+                weights_src_path = os.path.join(src_parent, "weights.pb")
+                if os.path.isfile(weights_src_path):
+                    weights_dst_path = os.path.join(dst_parent, "weights.pb")
+                    shutil.copyfile(weights_src_path, weights_dst_path)
         except Exception as e:
             log.error(f"Failed to convert model '{self.original_filename}'.")
             log.error(e) # for test.
@@ -589,13 +635,83 @@ class OnnxAutoPipeline(OnnxPipelineBase):
         olive.height = height
         olive.batch_size = batch_size
 
-        olive.is_sdxl = self.constructor == diffusers.OnnxStableDiffusionXLPipeline
+        olive.is_sdxl = "XL" in self.constructor.__name__
 
         self.convert()
 
-        if shared.opts.diffusers_pipeline == 'ONNX Stable Diffusion with Olive':
+        if shared.opts.onnx_enable_olive:
             if width != height:
                 log.warning("Olive detected different width and height. The quality of the result is not guaranteed.")
             self.optimize()
 
+        if not shared.opts.onnx_cache_converted:
+            shutil.rmtree(os.path.join(shared.opts.onnx_cached_models_path, self.original_filename))
+
         return self.pipeline
+
+
+class OnnxAutoPipelineForText2Image(OnnxAutoPipelineBase):
+    def __init__(self, path, pipeline: diffusers.DiffusionPipeline):
+        super().__init__(path, pipeline)
+        self.constructor = diffusers.OnnxStableDiffusionXLPipeline if hasattr(self.pipeline, "text_encoder_2") else diffusers.OnnxStableDiffusionPipeline
+        self.model_type = self.constructor.__name__
+
+    @staticmethod
+    def from_pretrained(pretrained_model_name_or_path, **kwargs):
+        pipeline = None
+        try: # load from Onnx SD model
+            pipeline = diffusers.OnnxStableDiffusionPipeline.from_pretrained(pretrained_model_name_or_path, **kwargs)
+        except Exception:
+            pass
+        if pipeline is None:
+            try: # load from Onnx SDXL model
+                pipeline = diffusers.OnnxStableDiffusionXLPipeline.from_pretrained(pretrained_model_name_or_path, **kwargs)
+            except Exception:
+                pass
+        if pipeline is None:
+            try: # load from non-Onnx model
+                pipeline = diffusers.AutoPipelineForText2Image.from_pretrained(pretrained_model_name_or_path, **kwargs)
+            except Exception:
+                pass
+        return OnnxAutoPipelineForText2Image(pretrained_model_name_or_path, pipeline)
+
+    @staticmethod
+    def from_single_file(pretrained_model_name_or_path, **kwargs):
+        return OnnxAutoPipelineForText2Image(pretrained_model_name_or_path, diffusers.StableDiffusionPipeline.from_single_file(pretrained_model_name_or_path, **kwargs))
+
+    @staticmethod
+    def from_ckpt(*args, **kwargs):
+        return OnnxAutoPipelineForText2Image.from_single_file(**args, **kwargs)
+
+class OnnxAutoPipelineForImage2Image(OnnxAutoPipelineBase):
+    def __init__(self, path, pipeline: diffusers.DiffusionPipeline):
+        super().__init__(path, pipeline)
+        self.constructor = diffusers.OnnxStableDiffusionXLImg2ImgPipeline if hasattr(self.pipeline, "text_encoder_2") else diffusers.OnnxStableDiffusionImg2ImgPipeline
+        self.model_type = self.constructor.__name__
+
+    @staticmethod
+    def from_pretrained(pretrained_model_name_or_path, **kwargs):
+        pipeline = None
+        try: # load from Onnx SD model
+            pipeline = diffusers.OnnxStableDiffusionImg2ImgPipeline.from_pretrained(pretrained_model_name_or_path, **kwargs)
+        except Exception:
+            pass
+        if pipeline is None:
+            try: # load from Onnx SDXL model
+                pipeline = diffusers.OnnxStableDiffusionXLImg2ImgPipeline.from_pretrained(pretrained_model_name_or_path, **kwargs)
+            except Exception:
+                pass
+        if pipeline is None:
+            try: # load from non-Onnx model
+                pipeline = diffusers.AutoPipelineForImage2Image.from_pretrained(pretrained_model_name_or_path, **kwargs)
+            except Exception:
+                pass
+        return OnnxAutoPipelineForImage2Image(pretrained_model_name_or_path, pipeline)
+
+    @staticmethod
+    def from_single_file(pretrained_model_name_or_path, **kwargs):
+        return OnnxAutoPipelineForImage2Image(pretrained_model_name_or_path, diffusers.StableDiffusionPipeline.from_single_file(pretrained_model_name_or_path, **kwargs))
+
+    @staticmethod
+    def from_ckpt(*args, **kwargs):
+        return OnnxAutoPipelineForImage2Image.from_single_file(**args, **kwargs)
