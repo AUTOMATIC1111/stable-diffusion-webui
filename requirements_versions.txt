@@ -29,3 +29,4 @@ torch
 torchdiffeq==0.2.3
 torchsde==0.2.5
 transformers==4.30.2
+httpx==0.24.1
