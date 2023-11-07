@@ -267,7 +267,8 @@ class ExtraNetworksPage:
         self.create_items(tabname)
         self.create_xyz_grid()
         htmls = []
-        self.items.sort(key=lambda x: x["mtime"], reverse=True)
+        if len(self.items) > 0 and self.items[0].get('mtime', None) is not None:
+            self.items.sort(key=lambda x: x["mtime"], reverse=True)
         for item in self.items:
             htmls.append(self.create_html(item, tabname))
         self.html += ''.join(htmls)
