@@ -263,6 +263,11 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     args['negative_pooled_prompt_embeds'] = negative_pooled
             else:
                 args['negative_prompt'] = negative_prompts
+        if hasattr(model, 'scheduler') and hasattr(model.scheduler, 'noise_sampler_seed') and hasattr(model.scheduler, 'noise_sampler'):
+            model.scheduler.noise_sampler = None # noise needs to be reset instead of using cached values
+            model.scheduler.noise_sampler_seed = seeds[0] # some schedulers have internal noise generator and do not use pipeline generator
+        if 'noise_sampler_seed' in possible:
+            args['noise_sampler_seed'] = seeds[0]
         if 'guidance_scale' in possible:
             args['guidance_scale'] = p.cfg_scale
         if 'generator' in possible:
@@ -294,6 +299,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         clean.pop('callback', None)
         clean.pop('callback_steps', None)
         clean.pop('callback_on_step_end', None)
+        clean.pop('callback_on_step_end_tensor_inputs', None)
         if 'latents' in clean:
             clean['latents'] = clean['latents'].shape
         if 'image' in clean:

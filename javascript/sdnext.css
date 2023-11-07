@@ -106,11 +106,10 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 #quicksettings > button { padding: 0 1em 0 0; align-self: end; margin-bottom: var(--text-sm); }
 #settings { display: flex; gap: var(--layout-gap); }
 #settings div { border: none; gap: 0; margin: 0 0 var(--layout-gap) 0px; padding: 0; }
-#settings .gr-group { max-width: 70em; }
 #settings > div.tab-content { flex: 10 0 75%; display: grid; }
 #settings > div.tab-content > div { border: none; padding: 0; }
 #settings > div.tab-content > div > div > div > div > div { flex-direction: unset; }
-#settings > div.tab-nav { display: grid; grid-template-columns: repeat(auto-fill, .5em minmax(10em, 1fr)); flex: 1 0 auto; width: 12em; align-self: flex-start; gap: var(--spacing-lg); }
+#settings > div.tab-nav { display: grid; grid-template-columns: repeat(auto-fill, .5em minmax(10em, 1fr)); flex: 1 0 auto; width: 12em; align-self: flex-start; gap: var(--spacing-xxl); }
 #settings > div.tab-nav button { display: block; border: none; text-align: left; white-space: initial; padding: 0; }
 #settings > div.tab-nav > #settings_show_all_pages { padding: var(--size-2) var(--size-4); }
 #settings .block.gradio-checkbox { margin: 0; width: auto; }

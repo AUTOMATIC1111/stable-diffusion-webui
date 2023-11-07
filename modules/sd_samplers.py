@@ -53,14 +53,14 @@ def create_sampler(name, model):
         sampler.config = config
         sampler.initialize(p=None)
         sampler.name = name
-        shared.log.debug(f'Sampler: sampler={sampler.name} config={sampler.config.options}')
+        shared.log.debug(f'Sampler: sampler="{sampler.name}" config={sampler.config.options}')
         return sampler
     elif shared.backend == shared.Backend.DIFFUSERS:
         sampler = config.constructor(model)
         if not hasattr(model, 'scheduler_config'):
             model.scheduler_config = sampler.sampler.config.copy()
         model.scheduler = sampler.sampler
-        shared.log.debug(f'Sampler: sampler={sampler.name} config={sampler.config}')
+        shared.log.debug(f'Sampler: sampler="{sampler.name}" config={sampler.config}')
         return sampler.sampler
     else:
         return None
