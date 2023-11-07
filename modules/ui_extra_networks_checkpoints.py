@@ -1,7 +1,9 @@
+import os
 import html
 import json
-import os
+import concurrent
 from modules import shared, ui_extra_networks, sd_models, paths
+
 
 reference_dir = os.path.join(paths.models_path, 'Reference')
 
@@ -36,31 +38,38 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
                 "description": v.get('desc', ''),
             }
 
+    def create_item(self, name):
+        record = None
+        try:
+            checkpoint: sd_models.CheckpointInfo = sd_models.checkpoints_list.get(name)
+            exists = os.path.exists(checkpoint.filename)
+            record = {
+                "type": 'Model',
+                "name": checkpoint.name,
+                "title": checkpoint.title,
+                "filename": checkpoint.filename,
+                "hash": checkpoint.shorthash,
+                "search_term": self.search_terms_from_path(checkpoint.title),
+                "preview": self.find_preview(checkpoint.filename),
+                "local_preview": f"{os.path.splitext(checkpoint.filename)[0]}.{shared.opts.samples_format}",
+                "metadata": checkpoint.metadata,
+                "onclick": '"' + html.escape(f"""return selectCheckpoint({json.dumps(name)})""") + '"',
+                "mtime": os.path.getmtime(checkpoint.filename) if exists else 0,
+                "size": os.path.getsize(checkpoint.filename) if exists else 0,
+            }
+            record["info"] = self.find_info(checkpoint.filename)
+            record["description"] = self.find_description(checkpoint.filename, record["info"])
+        except Exception as e:
+            shared.log.debug(f"Extra networks error: type=model file={name} {e}")
+        return record
+
     def list_items(self):
-        checkpoint: sd_models.CheckpointInfo
-        checkpoints = sd_models.checkpoints_list.copy()
-        for name, checkpoint in checkpoints.items():
-            try:
-                exists = os.path.exists(checkpoint.filename)
-                record = {
-                    "type": 'Model',
-                    "name": checkpoint.name,
-                    "title": checkpoint.title,
-                    "filename": checkpoint.filename,
-                    "hash": checkpoint.shorthash,
-                    "search_term": self.search_terms_from_path(checkpoint.title),
-                    "preview": self.find_preview(checkpoint.filename),
-                    "local_preview": f"{os.path.splitext(checkpoint.filename)[0]}.{shared.opts.samples_format}",
-                    "metadata": checkpoint.metadata,
-                    "onclick": '"' + html.escape(f"""return selectCheckpoint({json.dumps(name)})""") + '"',
-                    "mtime": os.path.getmtime(checkpoint.filename) if exists else 0,
-                    "size": os.path.getsize(checkpoint.filename) if exists else 0,
-                }
-                record["info"] = self.find_info(checkpoint.filename)
-                record["description"] = self.find_description(checkpoint.filename, record["info"])
-                yield record
-            except Exception as e:
-                shared.log.debug(f"Extra networks error: type=model file={name} {e}")
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            future_items = {executor.submit(self.create_item, cp): cp for cp in list(sd_models.checkpoints_list.copy())}
+            for future in concurrent.futures.as_completed(future_items):
+                item = future.result()
+                if item is not None:
+                    yield item
         for record in self.list_reference():
             yield record
 

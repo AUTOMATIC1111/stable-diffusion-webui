@@ -222,6 +222,8 @@ class ExtraNetworksPage:
             self.items = []
             shared.log.error(f'Extra networks error listing items: class={self.__class__.__name__} tab={tabname} {e}')
         for item in self.items:
+            if item is None:
+                continue
             self.metadata[item["name"]] = item.get("metadata", {})
         t1 = time.time()
         debug(f'EN create-items: page={self.name} items={len(self.items)} time={t1-t0:.2f}')
@@ -237,7 +239,7 @@ class ExtraNetworksPage:
             return f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'></div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>Extra network page not ready<br>Click refresh to try again</div>"
         subdirs = {}
         allowed_folders = [os.path.abspath(x) for x in self.allowed_directories_for_previews()]
-        for parentdir, dirs in {d: modelloader.directory_directories(d) for d in allowed_folders}.items():
+        for parentdir, dirs in {d: modelloader.directory_list(d) for d in allowed_folders}.items():
             for tgt in dirs.keys():
                 if shared.backend == shared.Backend.DIFFUSERS:
                     if os.path.join(paths.models_path, 'Reference') in tgt:
@@ -539,9 +541,11 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             refresh_time = time.time()
         threads = []
         for page in get_pages():
-            # page.create_items(ui.tabname)
-            threads.append(threading.Thread(target=page.create_items, args=[ui.tabname]))
-            threads[-1].start()
+            if os.environ.get('SD_EN_DEBUG', None) is not None:
+                threads.append(threading.Thread(target=page.create_items, args=[ui.tabname]))
+                threads[-1].start()
+            else:
+                page.create_items(ui.tabname)
         for thread in threads:
             thread.join()
         for page in get_pages():
