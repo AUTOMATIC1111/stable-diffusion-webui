@@ -110,7 +110,7 @@ class StyleDatabase:
             for file in os.listdir(path):
                 if fnmatch.fnmatch(file, fileglob):
                     self.styles[file.upper()] = PromptStyle(
-                        f"{file.upper()}", None, None, "divider"
+                        f"{file.upper()}", None, None, "do_not_save"
                     )
                     self.load_from_csv(os.path.join(path, file))
         elif not os.path.exists(self.path):
@@ -166,6 +166,9 @@ class StyleDatabase:
             if style.path:
                 style_paths.add(style.path)
 
+        # Remove any paths for styles that are just list dividers
+        style_paths.remove("do_not_save")
+
         csv_names = [os.path.split(path)[1].lower() for path in style_paths]
 
         for style_path in style_paths:
@@ -179,8 +182,6 @@ class StyleDatabase:
                 writer.writeheader()
                 for style in (s for s in self.styles.values() if s.path == style_path):
                     # Skip style list dividers, e.g. "STYLES.CSV"
-                    if style.path.lower() == "divider":
-                        continue
                     if style.name.lower().strip("# ") in csv_names:
                         continue
                     # Write style fields, ignoring the path field
