@@ -1185,7 +1185,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     def init(self, all_prompts, all_seeds, all_subseeds):
         if shared.backend == shared.Backend.DIFFUSERS and self.image_mask is not None:
             shared.sd_model = modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.INPAINTING)
-            self.sd_model.dtype = self.sd_model.unet.dtype
+            # self.sd_model.dtype = self.sd_model.unet.dtype
         elif shared.backend == shared.Backend.DIFFUSERS and self.image_mask is None:
             shared.sd_model = modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
 

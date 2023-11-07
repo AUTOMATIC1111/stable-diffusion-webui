@@ -2,8 +2,11 @@
 
 ## Update for 2023-11-07
 
-- **Scheduler**: Fix DPM SDE
-- **Extra networks**: Use multi-threading for 5x load speedup
+- **Extra networks**  
+  - Use multi-threading for 5x load speedup  
+- **Diffusers**  
+  - Fix DPM SDE scheduler  
+  - Fix inpaint  
 
 ## Update for 2023-11-06
 
