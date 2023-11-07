@@ -1,5 +1,10 @@
 # Change Log for SD.Next
 
+## Update for 2023-11-07
+
+- **Scheduler**: Fix DPM SDE
+- **Extra networks**: Use multi-threading for 5x load speedup
+
 ## Update for 2023-11-06
 
 Another pretty big release, this time with focus on new models (3 new model types), new backends and optimizations
