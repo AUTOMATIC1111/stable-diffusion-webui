@@ -30,4 +30,5 @@ def decoder_model():
 def unload():
     global sd_vae_consistency_models
     if sd_vae_consistency_models is not None:
+        devices.torch_gc()
         sd_vae_consistency_models.ckpt.to('cpu')
