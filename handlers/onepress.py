@@ -563,6 +563,7 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
 
         p.scripts = i2i_script_runner
         p.script_args = script_args
+        p.override_settings = {'sd_vae': 'None'}
         proc = modules.scripts.scripts_img2img.run(p, *script_args)
         if proc is None:
             proc = process_images(p)
