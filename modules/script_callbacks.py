@@ -1,7 +1,7 @@
 import inspect
 import os
 from collections import namedtuple
-from typing import Optional, Dict, Any
+from typing import Optional, Any
 
 from fastapi import FastAPI
 from gradio import Blocks
@@ -258,7 +258,7 @@ def image_grid_callback(params: ImageGridLoopParams):
             report_exception(c, 'image_grid')
 
 
-def infotext_pasted_callback(infotext: str, params: Dict[str, Any]):
+def infotext_pasted_callback(infotext: str, params: dict[str, Any]):
     for c in callback_map['callbacks_infotext_pasted']:
         try:
             c.callback(infotext, params)
@@ -449,7 +449,7 @@ def on_infotext_pasted(callback):
     """register a function to be called before applying an infotext.
     The callback is called with two arguments:
        - infotext: str - raw infotext.
-       - result: Dict[str, any] - parsed infotext parameters.
+       - result: dict[str, any] - parsed infotext parameters.
     """
     add_callback(callback_map['callbacks_infotext_pasted'], callback)
 

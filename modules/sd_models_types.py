@@ -22,7 +22,10 @@ class WebuiSdModel(LatentDiffusion):
     """structure with additional information about the file with model's weights"""
 
     is_sdxl: bool
-    """True if the model's architecture is SDXL"""
+    """True if the model's architecture is SDXL or SSD"""
+
+    is_ssd: bool
+    """True if the model is SSD"""
 
     is_sd2: bool
     """True if the model's architecture is SD 2.x"""

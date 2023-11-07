@@ -33,8 +33,11 @@ function updateOnBackgroundChange() {
     const modalImage = gradioApp().getElementById("modalImage");
     if (modalImage && modalImage.offsetParent) {
         let currentButton = selected_gallery_button();
-
-        if (currentButton?.children?.length > 0 && modalImage.src != currentButton.children[0].src) {
+        let preview = gradioApp().querySelectorAll('.livePreview > img');
+        if (preview.length > 0) {
+            // show preview image if available
+            modalImage.src = preview[preview.length - 1].src;
+        } else if (currentButton?.children?.length > 0 && modalImage.src != currentButton.children[0].src) {
             modalImage.src = currentButton.children[0].src;
             if (modalImage.style.display === 'none') {
                 const modal = gradioApp().getElementById("lightboxModal");
