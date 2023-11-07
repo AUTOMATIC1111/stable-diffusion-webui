@@ -296,7 +296,7 @@ class StableDiffusionProcessing:
         return conditioning
 
     def edit_image_conditioning(self, source_image):
-        conditioning_image = images_tensor_to_samples(source_image*0.5+0.5, approximation_indexes.get(opts.sd_vae_encode_method))
+        conditioning_image = shared.sd_model.encode_first_stage(source_image).mode()
 
         return conditioning_image
 
