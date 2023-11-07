@@ -10,6 +10,7 @@ from modules import images as imgutil
 from modules.generation_parameters_copypaste import create_override_settings_dict, parse_generation_parameters
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
 from modules.shared import opts, state
+from modules.sd_models import get_closet_checkpoint_match
 import modules.shared as shared
 import modules.processing as processing
 from modules.ui import plaintext_to_html
@@ -41,7 +42,8 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
     cfg_scale = p.cfg_scale
     sampler_name = p.sampler_name
     steps = p.steps
-
+    override_settings = p.override_settings
+    sd_model_checkpoint_override = get_closet_checkpoint_match(override_settings.get("sd_model_checkpoint", None))
     for i, image in enumerate(images):
         state.job = f"{i+1} out of {len(images)}"
         if state.skipped:
@@ -104,15 +106,27 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
             p.sampler_name = parsed_parameters.get("Sampler", sampler_name)
             p.steps = int(parsed_parameters.get("Steps", steps))
 
+            model_info = get_closet_checkpoint_match(parsed_parameters.get("Model hash", None))
+            if model_info is not None:
+                p.override_settings['sd_model_checkpoint'] = model_info.name
+            elif sd_model_checkpoint_override:
+                p.override_settings['sd_model_checkpoint'] = sd_model_checkpoint_override
+            else:
+                p.override_settings.pop("sd_model_checkpoint", None)
+
+        if output_dir:
+            p.outpath_samples = output_dir
+            p.override_settings['save_to_dirs'] = False
+            p.override_settings['save_images_replace_action'] = "Add number suffix"
+            if p.n_iter > 1 or p.batch_size > 1:
+                p.override_settings['samples_filename_pattern'] = f'{image_path.stem}-[generation_number]'
+            else:
+                p.override_settings['samples_filename_pattern'] = f'{image_path.stem}'
+
         proc = modules.scripts.scripts_img2img.run(p, *args)
+
         if proc is None:
-            if output_dir:
-                p.outpath_samples = output_dir
-                p.override_settings['save_to_dirs'] = False
-                if p.n_iter > 1 or p.batch_size > 1:
-                    p.override_settings['samples_filename_pattern'] = f'{image_path.stem}-[generation_number]'
-                else:
-                    p.override_settings['samples_filename_pattern'] = f'{image_path.stem}'
+            p.override_settings.pop('save_images_replace_action', None)
             process_images(p)
 
 
@@ -189,7 +203,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
 
     p.user = request.username
 
-    if shared.cmd_opts.enable_console_prompts:
+    if shared.opts.enable_console_prompts:
         print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
 
     if mask:

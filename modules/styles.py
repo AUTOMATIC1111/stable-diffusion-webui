@@ -54,7 +54,6 @@ def extract_style_text_from_prompt(style_text, prompt):
     else:
         if prompt.endswith(style_text):
             prompt = prompt[: len(prompt) - len(style_text)]
-
             if prompt.endswith(", "):
                 prompt = prompt[:-2]
 
