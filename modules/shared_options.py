@@ -64,6 +64,7 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "save_incomplete_images": OptionInfo(False, "Save incomplete images").info("save images that has been interrupted in mid-generation; even if not saved, they will still show up in webui output."),
 
     "notification_audio": OptionInfo(True, "Play notification sound after image generation").info("notification.mp3 should be present in the root directory").needs_reload_ui(),
+    "notification_volume": OptionInfo(100, "Notification sound volume", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}).info("in %"),
 }))
 
 options_templates.update(options_section(('saving-paths', "Paths for saving"), {
