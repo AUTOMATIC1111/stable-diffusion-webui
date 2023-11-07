@@ -26,7 +26,11 @@ onAfterUiUpdate(function() {
     lastHeadImg = headImg;
 
     // play notification sound if available
-    gradioApp().querySelector('#audio_notification audio')?.play();
+    const notificationAudio = gradioApp().querySelector('#audio_notification audio');
+    if (notificationAudio) {
+        notificationAudio.volume = opts.notification_volume / 100.0 || 1.0;
+        notificationAudio.play();
+    }
 
     if (document.hasFocus()) return;
 

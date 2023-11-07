@@ -104,7 +104,7 @@ def save_files(js_data, images, do_make_zip, index):
     return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0]}")
 
 
-def create_output_panel(tabname, outdir):
+def create_output_panel(tabname, outdir, toprow=None):
 
     def open_folder(f):
         if not os.path.exists(f):
@@ -130,12 +130,15 @@ Requested path was: {f}
             else:
                 sp.Popen(["xdg-open", path])
 
-    with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
-        with gr.Group(elem_id=f"{tabname}_gallery_container"):
-            result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery", columns=4, preview=True, height=shared.opts.gallery_height or None)
+    with gr.Column(elem_id=f"{tabname}_results"):
+        if toprow:
+            toprow.create_inline_toprow_image()
 
-        generation_info = None
-        with gr.Column():
+        with gr.Column(variant='panel', elem_id=f"{tabname}_results_panel"):
+            with gr.Group(elem_id=f"{tabname}_gallery_container"):
+                result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery", columns=4, preview=True, height=shared.opts.gallery_height or None)
+
+            generation_info = None
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
                 open_folder_button = ToolButton(folder_symbol, elem_id=f'{tabname}_open_folder', visible=not shared.cmd_opts.hide_ui_dir_config, tooltip="Open images output directory.")
 
