@@ -1,40 +1,67 @@
 {
   "RunwayML SD 1.5": {
-    "path": "runwayml/stable-diffusion-v1-5"
+    "path": "runwayml/stable-diffusion-v1-5",
+    "desc": "Stable Diffusion 1.5 is the base model all other 1.5 checkpoint were trained from. It's a latent text-to-image diffusion model capable of generating photo-realistic images given any text input. The Stable-Diffusion-v1-5 checkpoint was initialized with the weights of the Stable-Diffusion-v1-2 checkpoint and subsequently fine-tuned on 595k steps at resolution 512x512.",
+    "preview": "runwayml--stable-diffusion-v1-5.jpg"
   },
   "StabilityAI SD 2.1": {
-    "path": "stabilityai/stable-diffusion-2-1-base"
+    "path": "stabilityai/stable-diffusion-2-1-base",
+    "desc": "This stable-diffusion-2-1 model is fine-tuned from stable-diffusion-2 (768-v-ema.ckpt) with an additional 55k steps on the same dataset. Improvement over base 1.5 model, but never really took off.",
+    "preview": "stabilityai--stable-diffusion-2.1-base.jpg"
   },
   "StabilityAI SD-XL 1.0 Base": {
-    "path": "stabilityai/stable-diffusion-xl-base-1.0"
+    "path": "stabilityai/stable-diffusion-xl-base-1.0",
+    "desc": "Stable Diffusion XL (SDXL) is the latest AI image generation model that is tailored towards more photorealistic outputs with more detailed imagery and composition compared to previous SD models, including SD 2.1. It can make realistic faces, legible text within the images, and better image composition, all while using shorter and simpler prompts at a greatly increased base resolution of 1024x1024. Just like its predecessors, SDXL has the ability to generate image variations using image-to-image prompting, inpainting (reimagining of the selected parts of an image), and outpainting (creating new parts that lie outside the image borders).",
+    "preview": "stabilityai--stable-diffusion-xl-base-1.0.jpg"
   },
   "Segmind SSD-1B": {
-    "path": "segmind/SSD-1B"
+    "path": "segmind/SSD-1B",
+    "desc": "The Segmind Stable Diffusion Model (SSD-1B) offers a compact, efficient, and distilled version of the SDXL model. At 50% smaller and 60% faster than Stable Diffusion XL (SDXL), it provides quick and seamless performance without sacrificing image quality.",
+    "preview": "segmind--ssd-1b.jpg"
   },
   "Segmind Tiny": {
-    "path": "segmind/tiny-sd"
+    "path": "segmind/tiny-sd",
+    "desc": "Segmind's Tiny-SD offers a compact, efficient, and distilled version of Realistic Vision 4.0 and is up to 80% faster than SD1.5",
+    "preview": "segmind--tiny-sd.jpg"
   },
   "LCM Dreamshaper 7": {
-    "path": "SimianLuo/LCM_Dreamshaper_v7"
+    "path": "SimianLuo/LCM_Dreamshaper_v7",
+    "desc": "Latent Consistencey Models enable swift inference with minimal steps on any pre-trained LDMs, including Stable Diffusion. By distilling classifier-free guidance into the model's input, LCM can generate high-quality images in very short inference time. LCM can generate quality images in as few as 3-4 steps, making it blazingly fast.",
+    "preview": "simianluo--lcm_dreamshaper_v7.jpg"
+  },
+  "Pixart-α XL 2 Medium 512": {
+    "path": "PixArt-alpha/PixArt-XL-2-512x512",
+    "desc": "PixArt-α is a Transformer-based T2I diffusion model whose image generation quality is competitive with state-of-the-art image generators (e.g., Imagen, SDXL, and even Midjourney), and the training speed markedly surpasses existing large-scale T2I models. Extensive experiments demonstrate that PIXART-α excels in image quality, artistry, and semantic control. It can directly generate 512px images from text prompts within a single sampling process.",
+    "preview": "pixart-alpha--pixart-xl-2-512x512.jpg"
+  },
+  "Pixart-α XL 2 Large 1024": {
+    "path": "PixArt-alpha/PixArt-XL-2-1024-MS",
+    "desc": "PixArt-α is a Transformer-based T2I diffusion model whose image generation quality is competitive with state-of-the-art image generators (e.g., Imagen, SDXL, and even Midjourney), and the training speed markedly surpasses existing large-scale T2I models. Extensive experiments demonstrate that PIXART-α excels in image quality, artistry, and semantic control. It can directly generate 1024px images from text prompts within a single sampling process.",
+    "preview": "pixart-alpha--pixart-xl-2-1024-ms.jpg"
   },
   "Warp Wuerstchen": {
-    "path": "warp-ai/wuerstchen"
+    "path": "warp-ai/wuerstchen",
+    "desc": "Würstchen is a diffusion model whose text-conditional model works in a highly compressed latent space of images. Why is this important? Compressing data can reduce computational costs for both training and inference by magnitudes. Training on 1024x1024 images, is way more expensive than training at 32x32. Usually, other works make use of a relatively small compression, in the range of 4x - 8x spatial compression. Würstchen takes this to an extreme. Through its novel design, we achieve a 42x spatial compression. Würstchen employs a two-stage compression, what we call Stage A and Stage B. Stage A is a VQGAN, and Stage B is a Diffusion Autoencoder (more details can be found in the paper). A third model, Stage C, is learned in that highly compressed latent space. This training requires fractions of the compute used for current top-performing models, allowing also cheaper and faster inference.",
+    "preview": "warp-ai--wuerstchen.jpg"
   },
   "Kandinsky 2.1": {
-    "path": "kandinsky-community/kandinsky-2-1"
+    "path": "kandinsky-community/kandinsky-2-1",
+    "desc": "Kandinsky 2.1 is a text-conditional diffusion model based on unCLIP and latent diffusion, composed of a transformer-based image prior model, a unet diffusion model, and a decoder. Kandinsky 2.1 inherits best practices from Dall-E 2 and Latent diffusion while introducing some new ideas. It uses the CLIP model as a text and image encoder, and diffusion image prior (mapping) between latent spaces of CLIP modalities. This approach increases the visual performance of the model and unveils new horizons in blending images and text-guided image manipulation.",
+    "preview": "kandinsky-community--kandinsky-2-1.jpg"
   },
   "Kandinsky 2.2": {
-    "path": "kandinsky-community/kandinsky-2-2-decoder"
+    "path": "kandinsky-community/kandinsky-2-2-decoder",
+    "desc": "Kandinsky 2.2 is a text-conditional diffusion model (+0.1!) based on unCLIP and latent diffusion, composed of a transformer-based image prior model, a unet diffusion model, and a decoder. Kandinsky 2.1 inherits best practices from Dall-E 2 and Latent diffusion while introducing some new ideas. It uses the CLIP model as a text and image encoder, and diffusion image prior (mapping) between latent spaces of CLIP modalities. This approach increases the visual performance of the model and unveils new horizons in blending images and text-guided image manipulation.",
+    "preview": "kandinsky-community--kandinsky-2-2-decoder.jpg"
   },
   "DeepFloyd IF Medium": {
-    "path": "DeepFloyd/IF-I-M-v1.0"
+    "path": "DeepFloyd/IF-I-M-v1.0",
+    "desc": "DeepFloyd-IF is a pixel-based text-to-image triple-cascaded diffusion model, that can generate pictures with new state-of-the-art for photorealism and language understanding. The result is a highly efficient model that outperforms current state-of-the-art models, achieving a zero-shot FID-30K score of 6.66 on the COCO dataset. It is modular and composed of frozen text mode and three pixel cascaded diffusion modules, each designed to generate images of increasing resolution: 64x64, 256x256, and 1024x1024.",
+    "preview": "deepfloyd--if-i-m-v1.0.jpg"
   },
   "Tsinghua UniDiffuser": {
     "path": "thu-ml/unidiffuser-v1",
     "desc": "UniDiffuser is a unified diffusion framework to fit all distributions relevant to a set of multi-modal data in one transformer. UniDiffuser is able to perform image, text, text-to-image, image-to-text, and image-text pair generation by setting proper timesteps without additional overhead.\nSpecifically, UniDiffuser employs a variation of transformer, called U-ViT, which parameterizes the joint noise prediction network. Other components perform as encoders and decoders of different modalities, including a pretrained image autoencoder from Stable Diffusion, a pretrained image ViT-B/32 CLIP encoder, a pretrained text ViT-L CLIP encoder, and a GPT-2 text decoder finetuned by ourselves.",
-    "preview": "unidiffuser-v1.jpg"
-  },
-  "Sudo-AI Zero123": {
-    "path": "sudo-ai/zero123plus-v1.1"
+    "preview": "thu-ml--unidiffuser-v1.jpg"
   }
 }

@@ -806,8 +806,12 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     else:
         diffusers_load_config['variant'] = shared.opts.diffusers_model_load_variant
 
-    if shared.opts.diffusers_pipeline == 'Custom Diffusers Pipeline':
+    if shared.opts.diffusers_pipeline == 'Custom Diffusers Pipeline' and len(shared.opts.custom_diffusers_pipeline) > 0:
+        shared.log.debug(f'Diffusers custom pipeline: {shared.opts.custom_diffusers_pipeline}')
         diffusers_load_config['custom_pipeline'] = shared.opts.custom_diffusers_pipeline
+
+    # if 'LCM' in checkpoint_info.path:
+        #    diffusers_load_config['custom_pipeline'] = 'latent_consistency_txt2img'
 
     if shared.opts.data.get('sd_model_checkpoint', '') == 'model.ckpt' or shared.opts.data.get('sd_model_checkpoint', '') == '':
         shared.opts.data['sd_model_checkpoint'] = "runwayml/stable-diffusion-v1-5"
@@ -848,8 +852,6 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             vae = sd_vae.load_vae_diffusers(checkpoint_info.path, vae_file, vae_source)
             if vae is not None:
                 diffusers_load_config["vae"] = vae
-            if 'LCM' in checkpoint_info.path:
-                diffusers_load_config['custom_pipeline'] = 'latent_consistency_txt2img'
 
         if os.path.isdir(checkpoint_info.path):
             err1 = None
@@ -974,14 +976,15 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         shared.log.error("Failed to load diffusers model")
         errors.display(e, "loading Diffusers model")
 
-    from modules.textual_inversion import textual_inversion
-    sd_model.embedding_db = textual_inversion.EmbeddingDatabase()
-    if op == 'refiner':
-        model_data.sd_refiner = sd_model
-    else:
-        model_data.sd_model = sd_model
-    sd_model.embedding_db.add_embedding_dir(shared.opts.embeddings_dir)
-    sd_model.embedding_db.load_textual_inversion_embeddings(force_reload=True)
+    if sd_model is not None:
+        from modules.textual_inversion import textual_inversion
+        sd_model.embedding_db = textual_inversion.EmbeddingDatabase()
+        if op == 'refiner':
+            model_data.sd_refiner = sd_model
+        else:
+            model_data.sd_model = sd_model
+        sd_model.embedding_db.add_embedding_dir(shared.opts.embeddings_dir)
+        sd_model.embedding_db.load_textual_inversion_embeddings(force_reload=True)
 
     timer.record("load")
     devices.torch_gc(force=True)

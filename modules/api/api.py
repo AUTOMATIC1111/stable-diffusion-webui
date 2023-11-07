@@ -389,10 +389,9 @@ class Api:
         step_y = max(shared.state.sampling_steps, 1)
         current = step_y * batch_x + step_x
         total = step_y * batch_y
-        progress = current / total if total > 0 else 0
-
+        progress = current / total if current > 0 and total > 0 else 0
         time_since_start = time.time() - shared.state.time_start
-        eta_relative = (time_since_start / progress) - time_since_start
+        eta_relative = (time_since_start / progress) - time_since_start if progress > 0 else 0
 
         res = models.ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image, textinfo=shared.state.textinfo)
         return res

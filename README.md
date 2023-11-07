@@ -22,7 +22,7 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
 - Support for multiple backends!  
   **original** and **diffusers**
 - Support for multiple diffusion models!  
-  **Stable Diffusion, SD-XL, LCM, Segmind, Kandinsky, Wuerstchen, DeepFloyd IF, UniDiffusion, SD-Distilled, etc.**  
+  **Stable Diffusion, SD-XL, LCM, Segmind, Kandinsky, Pixart-α, Wuerstchen, DeepFloyd IF, UniDiffusion, SD-Distilled, etc.**  
 - Fully multiplatform with platform specific autodetection and tuning performed on install  
   **Windows / Linux / MacOS with CPU / nVidia / AMD / IntelArc / DirectML / OpenVINO / ONNX+Olive**  
 - Optimized processing with latest **torch** developments  
@@ -53,15 +53,16 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
 
 Additional models will be added as they become available and there is public interest in them
 
-- [Stable Diffusion](https://github.com/Stability-AI/stablediffusion/) 1.x and 2.x *(all variants)*
-- [Stable Diffusion XL](https://github.com/Stability-AI/generative-models)
+- [RunwayML Stable Diffusion](https://github.com/Stability-AI/stablediffusion/) 1.x and 2.x *(all variants)*
+- [StabilityAI Stable Diffusion XL](https://github.com/Stability-AI/generative-models)
 - [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)
 - [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)
 - [Kandinsky](https://github.com/ai-forever/Kandinsky-2) 2.1 and 2.2
-- [Wuerstchen](https://huggingface.co/blog/wuertschen)  
-- [UniDiffusion](https://github.com/thu-ml/unidiffuser)
-- [DeepFloyd IF](https://github.com/deep-floyd/IF)
-- [SD-Distilled](https://huggingface.co/blog/sd_distillation) *(all variants)*
+- [Pixart-α XL 2](https://github.com/PixArt-alpha/PixArt-alpha) Medium and Large
+- [Warp Wuerstchen](https://huggingface.co/blog/wuertschen)  
+- [Tsinghua UniDiffusion](https://github.com/thu-ml/unidiffuser)
+- [DeepFloyd IF](https://github.com/deep-floyd/IF) Medium and Large
+- [Segmind SD Distilled](https://huggingface.co/blog/sd_distillation) *(all variants)*
 
 ## Platform support
 

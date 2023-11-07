@@ -152,7 +152,7 @@ def context_hypertile_vae(p):
         log.warning(f'Hypertile VAE disabled: width={width} height={height} are not divisible by 8')
         return nullcontext()
     if vae is None:
-        shared.log.warning('Hypertile VAE is enabled but no VAE model was found')
+        # shared.log.warning('Hypertile VAE is enabled but no VAE model was found')
         return nullcontext()
     else:
         shared.log.info(f'Applying hypertile: vae={shared.opts.hypertile_vae_tile}')
@@ -178,7 +178,7 @@ def context_hypertile_unet(p):
         log.warning(f'Hypertile UNet disabled: width={width} height={height} are not divisible by 8')
         return nullcontext()
     if unet is None:
-        shared.log.warning('Hypertile UNet is enabled but no Unet model was found')
+        # shared.log.warning('Hypertile UNet is enabled but no Unet model was found')
         return nullcontext()
     else:
         shared.log.info(f'Applying hypertile: unet={shared.opts.hypertile_unet_tile}')

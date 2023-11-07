@@ -61,7 +61,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             for j in range(len(decoded)):
                 images.save_image(decoded[j], path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix=suffix)
 
-    def diffusers_callback(step: int, _timestep: int, latents: torch.FloatTensor):
+    def diffusers_callback_legacy(step: int, _timestep: int, latents: torch.FloatTensor):
         shared.state.sampling_step = step
         shared.state.current_latent = latents
         if shared.state.interrupted or shared.state.skipped:
@@ -72,6 +72,20 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 if shared.state.interrupted or shared.state.skipped:
                     raise AssertionError('Interrupted...')
                 time.sleep(0.1)
+
+    def diffusers_callback(_pipe, step: int, _timestep: int, kwargs: dict):
+        latents = kwargs['latents']
+        shared.state.sampling_step = step
+        shared.state.current_latent = latents
+        if shared.state.interrupted or shared.state.skipped:
+            raise AssertionError('Interrupted...')
+        if shared.state.paused:
+            shared.log.debug('Sampling paused')
+            while shared.state.paused:
+                if shared.state.interrupted or shared.state.skipped:
+                    raise AssertionError('Interrupted...')
+                time.sleep(0.1)
+        return {'latents': latents}
 
     def full_vae_decode(latents, model):
         t0 = time.time()
@@ -258,7 +272,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if 'callback_steps' in possible:
             args['callback_steps'] = 1
         if 'callback' in possible:
-            args['callback'] = diffusers_callback
+            args['callback'] = diffusers_callback_legacy
+        elif 'callback_on_step_end_tensor_inputs' in possible:
+            args['callback_on_step_end'] = diffusers_callback
+            args['callback_on_step_end_tensor_inputs'] = ['latents']
         for arg in kwargs:
             if arg in possible: # add kwargs
                 args[arg] = kwargs[arg]
@@ -271,11 +288,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             else:
                 pass
                 # shared.log.debug(f'Diffuser not supported: pipeline={pipeline.__class__.__name__} task={sd_models.get_diffusers_task(model)} arg={arg}')
-        # shared.log.debug(f'Diffuser pipeline: {pipeline.__class__.__name__} possible={possible}')
+        # shared.log.debug(f'Diffuser pipeline: {model.__class__.__name__} possible={possible}')
         hypertile_set(p, hr=len(getattr(p, 'init_images', [])))
         clean = args.copy()
         clean.pop('callback', None)
         clean.pop('callback_steps', None)
+        clean.pop('callback_on_step_end', None)
         if 'latents' in clean:
             clean['latents'] = clean['latents'].shape
         if 'image' in clean:
@@ -433,6 +451,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                 recompile_model(hires=True)
                 update_sampler(shared.sd_model, second_pass=True)
+                if p.hr_second_pass_steps == 0:
+                    p.hr_second_pass_steps = p.steps
                 hires_args = set_pipeline_args(
                     model=shared.sd_model,
                     prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
