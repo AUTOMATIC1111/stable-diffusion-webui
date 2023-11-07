@@ -31,23 +31,29 @@ def apply_styles_to_prompt(prompt, styles):
     return prompt
 
 
-re_spaces = re.compile("\s{2,}+")
-re_commas = re.compile("(, )+")
+# A dictionary of regular expressions to tidy up the prompt text
+re_list = [
+    {"a_before_vowel", re.compile("([Aa])\s+([AEIOUaeiou])"), "$1n $2"},
+    {"multiple commas", re.compile("(,+\s+)+,?"), ", "},
+    {"multiple spaces", re.compile("\s{2,}"), " "},
+]
 
 
 def extract_style_text_from_prompt(style_text, prompt):
-    stripped_prompt = re.sub(re_spaces, " ", prompt.strip())
-    stripped_prompt = re.sub(re_commas, ", ", prompt.strip(","))
-    stripped_style_text = re.sub(re_spaces, " ", style_text.strip())
-    stripped_style_text = re.sub(re_commas, ", ", style_text.strip(","))
-    if "{prompt}" in stripped_style_text:
-        left, right = stripped_style_text.split("{prompt}", 2)
-        if stripped_prompt.startswith(left) and stripped_prompt.endswith(right):
-            prompt = stripped_prompt[len(left) : len(stripped_prompt) - len(right)]
+    for var in ["style_text", "prompt"]:
+        text = locals()[var]
+        for _, regex, replace in re_list:
+            text = regex.sub(" ", replace, text)
+        locals()[var] = text
+
+    if "{prompt}" in style_text:
+        left, right = style_text.split("{prompt}", 2)
+        if prompt.startswith(left) and prompt.endswith(right):
+            prompt = prompt[len(left) : len(prompt) - len(right)]
             return True, prompt
     else:
-        if stripped_prompt.endswith(stripped_style_text):
-            prompt = stripped_prompt[: len(stripped_prompt) - len(stripped_style_text)]
+        if prompt.endswith(style_text):
+            prompt = prompt[: len(prompt) - len(style_text)]
 
             if prompt.endswith(", "):
                 prompt = prompt[:-2]
@@ -173,6 +179,8 @@ class StyleDatabase:
                 writer.writeheader()
                 for style in (s for s in self.styles.values() if s.path == style_path):
                     # Skip style list dividers, e.g. "STYLES.CSV"
+                    if style.path.lower() == "divider":
+                        continue
                     if style.name.lower().strip("# ") in csv_names:
                         continue
                     # Write style fields, ignoring the path field
