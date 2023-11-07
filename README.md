@@ -91,6 +91,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Eased resolution restriction: generated image's dimensions must be a multiple of 8 rather than 64
 - Now with a license!
 - Reorder elements in the UI from settings screen
+- [Segmind Stable Diffusion](https://huggingface.co/segmind/SSD-1B) support
 
 ## Installation and Running
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for:

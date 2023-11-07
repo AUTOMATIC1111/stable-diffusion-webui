@@ -296,7 +296,7 @@ class StableDiffusionProcessing:
         return conditioning
 
     def edit_image_conditioning(self, source_image):
-        conditioning_image = images_tensor_to_samples(source_image*0.5+0.5, approximation_indexes.get(opts.sd_vae_encode_method))
+        conditioning_image = shared.sd_model.encode_first_stage(source_image).mode()
 
         return conditioning_image
 
@@ -886,6 +886,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             devices.torch_gc()
 
+            state.nextjob()
+
             if p.scripts is not None:
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
 
@@ -957,8 +959,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             del x_samples_ddim
 
             devices.torch_gc()
-
-            state.nextjob()
 
         if not infotexts:
             infotexts.append(Processed(p, []).infotext(p, 0))
