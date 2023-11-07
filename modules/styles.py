@@ -38,13 +38,13 @@ def extract_style_text_from_prompt(style_text, prompt):
     if "{prompt}" in stripped_style_text:
         left, right = stripped_style_text.split("{prompt}", 2)
         if stripped_prompt.startswith(left) and stripped_prompt.endswith(right):
-            prompt = stripped_prompt[len(left):len(stripped_prompt)-len(right)]
+            prompt = stripped_prompt[len(left) : len(stripped_prompt) - len(right)]
             return True, prompt
     else:
         if stripped_prompt.endswith(stripped_style_text):
-            prompt = stripped_prompt[:len(stripped_prompt)-len(stripped_style_text)]
+            prompt = stripped_prompt[: len(stripped_prompt) - len(stripped_style_text)]
 
-            if prompt.endswith(', '):
+            if prompt.endswith(", "):
                 prompt = prompt[:-2]
 
             return True, prompt
@@ -56,11 +56,15 @@ def extract_style_from_prompts(style: PromptStyle, prompt, negative_prompt):
     if not style.prompt and not style.negative_prompt:
         return False, prompt, negative_prompt
 
-    match_positive, extracted_positive = extract_style_text_from_prompt(style.prompt, prompt)
+    match_positive, extracted_positive = extract_style_text_from_prompt(
+        style.prompt, prompt
+    )
     if not match_positive:
         return False, prompt, negative_prompt
 
-    match_negative, extracted_negative = extract_style_text_from_prompt(style.negative_prompt, negative_prompt)
+    match_negative, extracted_negative = extract_style_text_from_prompt(
+        style.negative_prompt, negative_prompt
+    )
     if not match_negative:
         return False, prompt, negative_prompt
 
@@ -81,13 +85,15 @@ class StyleDatabase:
         if not os.path.exists(self.path):
             return
 
-        with open(self.path, "r", encoding="utf-8-sig", newline='') as file:
+        with open(self.path, "r", encoding="utf-8-sig", newline="") as file:
             reader = csv.DictReader(file, skipinitialspace=True)
             for row in reader:
                 # Support loading old CSV format with "name, text"-columns
                 prompt = row["prompt"] if "prompt" in row else row["text"]
                 negative_prompt = row.get("negative_prompt", "")
-                self.styles[row["name"]] = PromptStyle(row["name"], prompt, negative_prompt)
+                self.styles[row["name"]] = PromptStyle(
+                    row["name"], prompt, negative_prompt
+                )
 
     def get_style_prompts(self, styles):
         return [self.styles.get(x, self.no_style).prompt for x in styles]
@@ -96,17 +102,21 @@ class StyleDatabase:
         return [self.styles.get(x, self.no_style).negative_prompt for x in styles]
 
     def apply_styles_to_prompt(self, prompt, styles):
-        return apply_styles_to_prompt(prompt, [self.styles.get(x, self.no_style).prompt for x in styles])
+        return apply_styles_to_prompt(
+            prompt, [self.styles.get(x, self.no_style).prompt for x in styles]
+        )
 
     def apply_negative_styles_to_prompt(self, prompt, styles):
-        return apply_styles_to_prompt(prompt, [self.styles.get(x, self.no_style).negative_prompt for x in styles])
+        return apply_styles_to_prompt(
+            prompt, [self.styles.get(x, self.no_style).negative_prompt for x in styles]
+        )
 
     def save_styles(self, path: str) -> None:
         # Always keep a backup file around
         if os.path.exists(path):
             shutil.copy(path, f"{path}.bak")
 
-        with open(path, "w", encoding="utf-8-sig", newline='') as file:
+        with open(path, "w", encoding="utf-8-sig", newline="") as file:
             writer = csv.DictWriter(file, fieldnames=PromptStyle._fields)
             writer.writeheader()
             writer.writerows(style._asdict() for k, style in self.styles.items())
@@ -120,7 +130,9 @@ class StyleDatabase:
             found_style = None
 
             for style in applicable_styles:
-                is_match, new_prompt, new_neg_prompt = extract_style_from_prompts(style, prompt, negative_prompt)
+                is_match, new_prompt, new_neg_prompt = extract_style_from_prompts(
+                    style, prompt, negative_prompt
+                )
                 if is_match:
                     found_style = style
                     prompt = new_prompt
