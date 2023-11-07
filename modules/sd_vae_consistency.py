@@ -5,8 +5,6 @@ Improved decoding for stable diffusion vaes.
 https://github.com/openai/consistencydecoder
 """
 import os
-import torch
-import torch.nn as nn
 
 from modules import devices, paths_internal, shared
 from consistencydecoder import ConsistencyDecoder
