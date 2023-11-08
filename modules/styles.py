@@ -135,7 +135,9 @@ class StyleDatabase:
                 if fnmatch.fnmatch(file, fileglob):
                     filelist.append(file)
                     # Add a visible divider to the style list
-                    divider = f"{'-' * 20} {file.upper()} {'-' * 20}"
+                    half_len = round(len(file) / 2)
+                    divider = f"{'-' * (20 - half_len)} {file.upper()}"
+                    divider = f"{divider} {'-' * (40 - len(divider))}"
                     self.styles[divider] = PromptStyle(
                         f"{divider}", None, None, "do_not_save"
                     )
