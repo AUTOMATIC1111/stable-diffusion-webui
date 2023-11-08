@@ -206,12 +206,14 @@ def parse_generation_parameters(x: str):
     res = {}
     if x is None:
         return res
-    remaining = x.strip()
+    remaining = x.replace('\n', ' ').strip()
     if len(remaining) == 0:
         return res
     remaining = x[7:] if x.startswith('Prompt: ') else x
-    res["Prompt"], remaining = remaining.split(' Negative prompt: ', maxsplit=1) if ' Negative prompt: ' in remaining else (remaining, '')
-    res["Negative prompt"], remaining = remaining.split(' Steps: ', maxsplit=1) if ' Steps: ' in remaining else (remaining, None)
+    prompt, remaining = remaining.split('Negative prompt: ', maxsplit=1) if 'Negative prompt: ' in remaining else (remaining, '')
+    res["Prompt"] = prompt.strip()
+    negative, remaining = remaining.split('Steps: ', maxsplit=1) if 'Steps: ' in remaining else (remaining, None)
+    res["Negative prompt"] = negative.strip()
     if remaining is None:
         return res
     remaining = f'Steps: {remaining}'

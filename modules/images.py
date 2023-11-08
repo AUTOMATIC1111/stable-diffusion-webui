@@ -559,16 +559,17 @@ def save_image(image, path, basename = '', seed=None, prompt=None, extension=sha
     if shared.opts.save_to_dirs:
         dirname = namegen.apply(shared.opts.directories_filename_pattern or "[prompt_words]")
         path = os.path.join(path, dirname)
+    file_decoration = ''
     if forced_filename is None:
-        if short_filename or seed is None:
-            file_decoration = ""
         if shared.opts.samples_filename_pattern and len(shared.opts.samples_filename_pattern) > 0:
             file_decoration = shared.opts.samples_filename_pattern
         else:
             file_decoration = "[seq]-[prompt_words]"
         file_decoration = namegen.apply(file_decoration)
         file_decoration += suffix
-    filename = os.path.join(path, f"{file_decoration}.{extension}") if basename == '' else os.path.join(path, f"{basename}-{file_decoration}.{extension}")
+        filename = os.path.join(path, f"{file_decoration}.{extension}") if basename == '' else os.path.join(path, f"{basename}-{file_decoration}.{extension}")
+    else:
+        filename = forced_filename
     pnginfo = existing_info or {}
     if info is not None:
         pnginfo[pnginfo_section_name] = info
