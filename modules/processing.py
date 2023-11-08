@@ -588,7 +588,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
         args["Denoising strength"] = p.denoising_strength
         args["Latent sampler"] = p.latent_sampler
         args["Image CFG scale"] = p.image_cfg_scale
-        args["CFG rescale"] = p.diffusers_guidance_rescale if shared.backend == shared.Backend.DIFFUSERS else None
+        args["CFG rescale"] = p.diffusers_guidance_rescale
     if 'refine' in p.ops:
         args["Second pass"] = p.enable_hr
         args["Refiner"] = None if (not shared.opts.add_model_name_to_info) or (not shared.sd_refiner) or (not shared.sd_refiner.sd_checkpoint_info.model_name) else shared.sd_refiner.sd_checkpoint_info.model_name.replace(',', '').replace(':', '')
@@ -597,7 +597,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
         args['Refiner start'] = p.refiner_start
         args["Hires steps"] = p.hr_second_pass_steps
         args["Latent sampler"] = p.latent_sampler
-        args["CFG rescale"] = p.diffusers_guidance_rescale if shared.backend == shared.Backend.DIFFUSERS else None
+        args["CFG rescale"] = p.diffusers_guidance_rescale
     if 'img2img' in p.ops or 'inpaint' in p.ops:
         args["Init image size"] = f"{getattr(p, 'init_img_width', 0)}x{getattr(p, 'init_img_height', 0)}"
         args["Init image hash"] = getattr(p, 'init_img_hash', None)
@@ -756,7 +756,13 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     return res
 
 
-def validate_sample(sample):
+def validate_sample(tensor):
+    if tensor.dtype == torch.bfloat16: # numpy does not support bf16
+        tensor = tensor.to(torch.float16)
+    if shared.backend == shared.Backend.ORIGINAL:
+        sample = 255.0 * np.moveaxis(tensor.cpu().numpy(), 0, 2)
+    else:
+        sample = 255. * tensor
     with warnings.catch_warnings(record=True) as w:
         cast = sample.astype(np.uint8)
     if len(w) > 0:
@@ -914,7 +920,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     image = x_sample
                     x_sample = np.array(x_sample)
                 else:
-                    x_sample = 255. * (np.moveaxis(x_sample.cpu().numpy(), 0, 2) if shared.backend == shared.Backend.ORIGINAL else x_sample)
                     x_sample = validate_sample(x_sample)
                     image = Image.fromarray(x_sample)
                 if p.restore_faces:
@@ -1118,7 +1123,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 decoded_samples = decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae), self.full_quality)
                 decoded_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
                 for i, x_sample in enumerate(decoded_samples):
-                    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                     x_sample = validate_sample(x_sample)
                     image = Image.fromarray(x_sample)
                     bak_extra_generation_params, bak_restore_faces = self.extra_generation_params, self.restore_faces
@@ -1134,7 +1138,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                     decoded_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
                 batch_images = []
                 for _i, x_sample in enumerate(decoded_samples):
-                    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                     x_sample = validate_sample(x_sample)
                     image = Image.fromarray(x_sample)
                     image = images.resize_image(1, image, target_width, target_height, upscaler_name=self.hr_upscaler)

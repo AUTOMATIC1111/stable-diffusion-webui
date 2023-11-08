@@ -513,7 +513,7 @@ def create_ui(startup_timer = None):
             txt2img_paste_fields = [
                 (txt2img_prompt, "Prompt"),
                 (txt2img_negative_prompt, "Negative prompt"),
-                # (txt2img_prompt_styles, "Styles"),
+                (txt2img_prompt_styles, "Styles"),
                 (steps, "Steps"),
                 (seed, "Seed"),
                 (sampler_index, "Sampler"),
@@ -530,8 +530,8 @@ def create_ui(startup_timer = None):
                 (refiner_start, "Refiner start"),
                 (full_quality, "Full quality"),
                 (restore_faces, "Face restoration"),
-                (batch_size, "Batch size"),
-                (batch_count, "Batch count"),
+                (batch_count, "Batch-1"),
+                (batch_size, "Batch-2"),
                 (seed_resize_from_w, "Seed resize from-1"),
                 (seed_resize_from_h, "Seed resize from-2"),
                 (enable_hr, "Second pass"),
@@ -548,6 +548,7 @@ def create_ui(startup_timer = None):
                 (tiling, "Tiling"),
                 (refiner_negative, "Negative2"),
                 (refiner_prompt, "Prompt2"),
+                # TODO restore params complete list
                 *modules.scripts.scripts_txt2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields, override_settings)

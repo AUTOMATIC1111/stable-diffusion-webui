@@ -268,7 +268,7 @@ def select_checkpoint(op='model'):
         shared.log.info(f'Select: {op}="{checkpoint_info.title if checkpoint_info is not None else None}"')
         return checkpoint_info
     if len(checkpoints_list) == 0 and not shared.cmd_opts.no_download:
-        shared.log.error("Cannot generate without a checkpoint")
+        shared.log.warning("Cannot generate without a checkpoint")
         shared.log.info("Set system paths to use existing folders in a different location")
         shared.log.info("Or use --ckpt <path-to-checkpoint> to force using existing checkpoint")
         return None

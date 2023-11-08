@@ -3,20 +3,20 @@ import io
 import os
 import re
 import json
-
 from PIL import Image
 import gradio as gr
 from modules.paths import data_path
 from modules import shared, ui_tempdir, script_callbacks, images
+
 
 re_param_code = r'\s*([\w ]+):\s*("(?:\\"[^,]|\\"|\\|[^\"])+"|[^,]*)(?:,|$)'
 re_param = re.compile(re_param_code)
 re_imagesize = re.compile(r"^(\d+)x(\d+)$")
 re_hypernet_hash = re.compile("\(([0-9a-f]+)\)$") # pylint: disable=anomalous-backslash-in-string
 type_of_gr_update = type(gr.update())
-
 paste_fields = {}
 registered_param_bindings = []
+debug = shared.log.info if os.environ.get('SD_PASTE_DEBUG', None) is not None else lambda *args, **kwargs: None
 
 
 class ParamBinding:
@@ -203,37 +203,19 @@ def find_hypernetwork_key(hypernet_name, hypernet_hash=None):
 
 
 def parse_generation_parameters(x: str):
-    """parses generation parameters string, the one you see in text field under the picture in UI:
-```
-girl with an artist's beret, determined, blue eyes, desert scene, computer monitors, heavy makeup, by Alphonse Mucha and Charlie Bowater, ((eyeshadow)), (coquettish), detailed, intricate
-Negative prompt: ugly, fat, obese, chubby, (((deformed))), [blurry], bad anatomy, disfigured, poorly drawn face, mutation, mutated, (extra_limb), (ugly), (poorly drawn hands), messy drawing
-Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model hash: 45dee52b
-```
-
-    returns a dict with field values
-    """
-    if x is None:
-        return {}
     res = {}
-    prompt = ""
-    negative_prompt = ""
-    done_with_prompt = False
-    *lines, lastline = x.strip().split("\n")
-    if len(re_param.findall(lastline)) < 3:
-        lines.append(lastline)
-        lastline = ''
-    for line in lines:
-        line = line.strip()
-        if line.startswith("Negative prompt:"):
-            done_with_prompt = True
-            line = line[16:].strip()
-        if done_with_prompt:
-            negative_prompt += ("" if negative_prompt == "" else "\n") + line
-        else:
-            prompt += ("" if prompt == "" else "\n") + line
-    res["Prompt"] = prompt
-    res["Negative prompt"] = negative_prompt
-    for k, v in re_param.findall(lastline):
+    if x is None:
+        return res
+    remaining = x.strip()
+    if len(remaining) == 0:
+        return res
+    remaining = x[7:] if x.startswith('Prompt: ') else x
+    res["Prompt"], remaining = remaining.split(' Negative prompt: ', maxsplit=1) if ' Negative prompt: ' in remaining else (remaining, '')
+    res["Negative prompt"], remaining = remaining.split(' Steps: ', maxsplit=1) if ' Steps: ' in remaining else (remaining, None)
+    if remaining is None:
+        return res
+    remaining = f'Steps: {remaining}'
+    for k, v in re_param.findall(remaining):
         try:
             if v[0] == '"' and v[-1] == '"':
                 v = unquote(v)
@@ -245,16 +227,9 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
                 res[k] = v
         except Exception:
             pass
-
-    # Missing CLIP skip means it was set to 1 (the default)
-    if "Clip skip" not in res:
-        res["Clip skip"] = "1"
-    hypernet = res.get("Hypernet", None)
-    if hypernet is not None:
-        res["Prompt"] += f"""<hypernet:{hypernet}:{res.get("Hypernet strength", "1.0")}>"""
-    if "Hires resize-1" not in res:
-        res["Hires resize-1"] = 0
-        res["Hires resize-2"] = 0
+    res["Full quality"] = res.get('VAE', None) != 'TAESD'
+    for k, v in res.items():
+        debug(f"Parse prompt: '{k}'={v}")
     return res
 
 
@@ -328,16 +303,16 @@ def create_override_settings_dict(text_pairs):
 def connect_paste(button, local_paste_fields, input_comp, override_settings_component, tabname):
 
     def paste_func(prompt):
-        if prompt is not None and 'Negative prompt' not in prompt and 'Steps' not in prompt:
-            prompt = None
-        if not prompt and not shared.cmd_opts.hide_ui_dir_config:
+        if prompt is None or len(prompt.strip()) == 0 and not shared.cmd_opts.hide_ui_dir_config:
             filename = os.path.join(data_path, "params.txt")
             if os.path.exists(filename):
                 with open(filename, "r", encoding="utf8") as file:
                     prompt = file.read()
+                    shared.log.debug(f'Paste prompt last: {prompt}')
             else:
                 prompt = ''
-        shared.log.debug(f'Paste prompt: {prompt}')
+        else:
+            shared.log.debug(f'Paste prompt current: {prompt}')
         params = parse_generation_parameters(prompt)
         script_callbacks.infotext_pasted_callback(prompt, params)
         res = []
@@ -346,6 +321,8 @@ def connect_paste(button, local_paste_fields, input_comp, override_settings_comp
                 v = key(params)
             else:
                 v = params.get(key, None)
+            if v is not None:
+                debug(f"Parse apply: '{key}'={v}")
             if v is None:
                 res.append(gr.update())
             elif isinstance(v, type_of_gr_update):
