@@ -3265,6 +3265,23 @@ input[type="checkbox"] {
     overflow-y: auto;
     max-height:33vh;
 }
+#layout_main_wrapper {
+    padding-left: 0;
+}
+.template > .layout {
+    padding-right: var(--ae-border-size);
+}
+
+.template > .full-height {
+    padding-left: var(--ae-border-size);
+    padding-right: var(--ae-border-size);
+}
+#split-right.v-expand{
+    margin-left: calc(var(--ae-border-size) * -1);
+}
+#split-right:not(.v-expand) #accordion-aside{
+    margin-left: var(--ae-border-size);
+}
 
 @media (max-width: 768px) {
     .xtabs-tab span {
