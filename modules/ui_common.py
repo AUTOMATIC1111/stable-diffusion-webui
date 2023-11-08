@@ -93,6 +93,7 @@ def save_files(js_data, images, html_info, index):
             self.index_of_first_image = getattr(self, 'index_of_first_image', 0)
             self.infotexts = getattr(self, 'infotexts', [html_info])
             self.infotext = self.infotexts[0] if len(self.infotexts) > 0 else html_info
+            self.outpath_grids = None
     try:
         data = json.loads(js_data)
     except Exception:
