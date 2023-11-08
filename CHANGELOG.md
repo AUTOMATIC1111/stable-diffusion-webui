@@ -1,12 +1,18 @@
 # Change Log for SD.Next
 
-## Update for 2023-11-07
+## Update for 2023-11-08
 
 - **Extra networks**  
   - Use multi-threading for 5x load speedup  
+- **General**:
+  - Reworked parser when pasting previously generated images/prompts
 - **Diffusers**  
   - Fix DPM SDE scheduler  
+- **Fixes**
   - Fix inpaint  
+  - More uniform models paths
+  - Improve extension compatibility
+  - Improve BF16 support
 
 ## Update for 2023-11-06
 
