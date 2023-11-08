@@ -14,6 +14,21 @@ class PromptStyle(typing.NamedTuple):
     path: str = None
 
 
+def clean_text(text: str):
+    """
+    Clean up the prompt and style text to make it easier to match against each other.
+    """
+    # A dictionary of regular expressions to tidy up the prompt text
+    re_list = [
+        ("multiple commas", re.compile("(,+\s+)+,?"), ", "),
+        ("multiple spaces", re.compile("\s{2,}"), " "),
+    ]
+    for _, regex, replace in re_list:
+        text = regex.sub(replace, text)
+
+    return text
+
+
 def merge_prompts(style_prompt: str, prompt: str) -> str:
     if "{prompt}" in style_prompt:
         res = style_prompt.replace("{prompt}", prompt)
@@ -28,32 +43,26 @@ def apply_styles_to_prompt(prompt, styles):
     for style in styles:
         prompt = merge_prompts(style, prompt)
 
-    return prompt
-
-
-# A dictionary of regular expressions to tidy up the prompt text
-re_list = [
-    {"a_before_vowel", re.compile("([Aa])\s+([AEIOUaeiou])"), "$1n $2"},
-    {"multiple commas", re.compile("(,+\s+)+,?"), ", "},
-    {"multiple spaces", re.compile("\s{2,}"), " "},
-]
+    return clean_text(prompt)
 
 
 def extract_style_text_from_prompt(style_text, prompt):
-    for var in ["style_text", "prompt"]:
-        text = locals()[var]
-        for _, regex, replace in re_list:
-            text = regex.sub(" ", replace, text)
-        locals()[var] = text
+    cleaned = {"style": clean_text(style_text), "prompt": clean_text(prompt)}
 
-    if "{prompt}" in style_text:
-        left, right = style_text.split("{prompt}", 2)
-        if prompt.startswith(left) and prompt.endswith(right):
-            prompt = prompt[len(left) : len(prompt) - len(right)]
+    if "{prompt}" in cleaned["style"]:
+        # Work out whether the prompt is wrapped in the style text. If so, we
+        # return True and the "inner" prompt text.
+        left, right = cleaned["style"].split("{prompt}", 2)
+        if cleaned["prompt"].startswith(left) and cleaned["prompt"].endswith(right):
+            prompt = cleaned["prompt"][len(left) : len(cleaned["prompt"]) - len(right)]
+            if prompt.endswith(", "):
+                prompt = prompt[:-2]
             return True, prompt
     else:
-        if prompt.endswith(style_text):
-            prompt = prompt[: len(prompt) - len(style_text)]
+        # Work out whether the prompt ends with the style text. If so, we return
+        # True and the prompt text up to where the style text starts.
+        if cleaned["prompt"].endswith(cleaned["style"]):
+            prompt = cleaned["prompt"][: len(cleaned["prompt"]) - len(cleaned["style"])]
             if prompt.endswith(", "):
                 prompt = prompt[:-2]
 
