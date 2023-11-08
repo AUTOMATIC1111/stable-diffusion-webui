@@ -23,6 +23,8 @@ The workspaces extension empowers you to create customized views and organize th
 
 ![workspaces](https://github.com/anapnoe/stable-diffusion-webui-ux/assets/124302297/15db3c70-6fbf-4692-85f3-85cd8df58f47)
 
+[Become a supporter and get early access to Workspaces for UI-UX.](https://buymeacoffee.com/dayanbayah)
+
 ## Todo
 - Improve Mobile Support
 - Fullscreen Gallery Support
