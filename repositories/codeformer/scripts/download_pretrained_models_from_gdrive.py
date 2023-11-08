@@ -1,18 +1,16 @@
-import argparse
 import os
+from modules import paths
 from os import path as osp
-
-# from basicsr.utils.download_util import download_file_from_google_drive
 import gdown
 
 
-def download_pretrained_models(method, file_ids):
-    save_path_root = f'./weights/{method}'
-    os.makedirs(save_path_root, exist_ok=True)
+model_dir = os.path.join(paths.models_path, 'Codeformer')
 
+
+def download_pretrained_models(file_ids):
     for file_name, file_id in file_ids.items():
         file_url = 'https://drive.google.com/uc?id='+file_id
-        save_path = osp.abspath(osp.join(save_path_root, file_name))
+        save_path = osp.abspath(osp.join(model_dir, file_name))
         if osp.exists(save_path):
             user_response = input(f'{file_name} already exist. Do you want to cover it? Y/N\n')
             if user_response.lower() == 'y':
@@ -29,21 +27,13 @@ def download_pretrained_models(method, file_ids):
             # download_file_from_google_drive(file_id, save_path)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        'method',
-        type=str,
-        help=("Options: 'CodeFormer' 'facelib'. Set to 'all' to download all the models."))
-    args = parser.parse_args()
-
     # file name: file id
     # 'dlib': {
     #     'mmod_human_face_detector-4cb19393.dat': '1qD-OqY8M6j4PWUP_FtqfwUPFPRMu6ubX',
     #     'shape_predictor_5_face_landmarks-c4b1e980.dat': '1vF3WBUApw4662v9Pw6wke3uk1qxnmLdg',
     #     'shape_predictor_68_face_landmarks-fbdc2cb8.dat': '1tJyIVdCHaU6IDMDx86BZCxLGZfsWB8yq'
     # }
-    file_ids = {
+    urls = {
         'CodeFormer': {
             'codeformer.pth': '1v_E_vZvP-dQPF55Kc5SRCjaKTQXDz-JB'
         },
@@ -52,9 +42,5 @@ if __name__ == '__main__':
             'parsing_parsenet.pth': '16pkohyZZ8ViHGBk3QtVqxLZKzdo466bK'
         }
     }
-
-    if args.method == 'all':
-        for method in file_ids.keys():
-            download_pretrained_models(method, file_ids[method])
-    else:
-        download_pretrained_models(args.method, file_ids[args.method])
+    for method in urls.keys():
+        download_pretrained_models(urls[method])
