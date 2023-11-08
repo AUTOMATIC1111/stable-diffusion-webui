@@ -3,6 +3,26 @@ A bespoke, highly adaptable user interface for the Stable Diffusion, utilizing t
 
 ![](screenshot.png)
 
+## Optimizasions
+- Replacing all default Gradio stylesheets in the DOM with an optimized version that promote better visual coherence across components.
+- Eliminating inline styles and Svelte classes from the DOM to minimize clutter and improve efficiency.
+- Removing unnecessary "img2img Extra Networks" from the DOM to reduce duplicated images and event listeners.
+- Eradicating inline event listeners from "txt2img Extra Networks" cards and action buttons.
+- Applying an event delegation pattern to further streamline the code by consolidating event handling for "txt2img Extra Networks" cards and action buttons.
+
+## Features webui-ux 
+- A versatile micro-template engine that can be leveraged by other extensions
+- Customizable theme styles through a user-friendly configuration interface
+- Robust logging capabilities via built-in console logs
+- Option to ignore overrides
+- Support for tick marks on input range sliders for improved usability
+- Ability to switch between slider and number input modes, allowing users to enter values manually without displaying the slider.
+
+## Workspaces UI-UX (work in progress)
+The workspaces extension empowers you to create customized views and organize them according to your unique preferences. With an intuitive drag-and-drop interface, you can design workflows that are perfectly tailored to your specific requirements, giving you ultimate control over your work environment.
+
+![workspaces](https://github.com/anapnoe/stable-diffusion-webui-ux/assets/124302297/15db3c70-6fbf-4692-85f3-85cd8df58f47)
+
 ## Todo
 - Improve Mobile Support
 - Fullscreen Gallery Support
