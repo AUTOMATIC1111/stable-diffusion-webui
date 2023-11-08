@@ -1102,6 +1102,25 @@ function uiuxOptionSettings(){
     });
     uiux_show_labels_tabs(window.opts.uiux_show_labels_tabs);
 
+    
+    const comp_mobile_scale_range = gradioApp().querySelector("#setting_uiux_mobile_scale input[type=range]");
+    comp_mobile_scale_range.classList.add("hidden");
+    const comp_mobile_scale = gradioApp().querySelector("#setting_uiux_mobile_scale input[type=number]");
+    function uiux_mobile_scale(value) {
+        const viewport = document.head.querySelector('meta[name="viewport"]');
+        viewport.setAttribute("content", `width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=${value}`);      
+    }
+    comp_mobile_scale.addEventListener("change", function (e) { 
+        //e.preventDefault();
+        //e.stopImmediatePropagation()
+        comp_mobile_scale.value = e.target.value;
+        window.updateInput(comp_mobile_scale);
+        console.log('change', e.target.value);
+        uiux_mobile_scale(e.target.value);   
+    });
+    
+    uiux_mobile_scale(window.opts.uiux_mobile_scale);
+
 }
 
 function setupOnLoadResources() {
