@@ -5,7 +5,6 @@ import os
 import csv
 import json
 from installer import log
-from modules import paths
 
 
 class Style():
@@ -66,6 +65,8 @@ def apply_styles_to_extra(p, style: Style):
 
 class StyleDatabase:
     def __init__(self, opts):
+        from modules import paths
+
         self.no_style = Style("None")
         self.styles = {}
         self.path = opts.styles_dir

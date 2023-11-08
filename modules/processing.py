@@ -7,6 +7,7 @@ import random
 import warnings
 from contextlib import nullcontext
 from typing import Any, Dict, List
+from dataclasses import dataclass, field
 import torch
 import numpy as np
 import cv2
@@ -115,6 +116,7 @@ def txt2img_image_conditioning(sd_model, x, width, height):
         return x.new_zeros(x.shape[0], 5, 1, 1, dtype=x.dtype, device=x.device)
 
 
+@dataclass(repr=False)
 class StableDiffusionProcessing:
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
@@ -203,10 +205,38 @@ class StableDiffusionProcessing:
         self.all_hr_negative_prompts = []
         self.comments = {}
         self.is_api = False
+        self.scripts_value: modules.scripts.ScriptRunner = field(default=None, init=False)
+        self.script_args_value: list = field(default=None, init=False)
+        self.scripts_setup_complete: bool = field(default=False, init=False)
+
 
     @property
     def sd_model(self):
         return shared.sd_model
+
+    @property
+    def scripts(self):
+        return self.scripts_value
+
+    @scripts.setter
+    def scripts(self, value):
+        self.scripts_value = value
+        if self.scripts_value and self.script_args_value and not self.scripts_setup_complete:
+            self.setup_scripts()
+
+    @property
+    def script_args(self):
+        return self.script_args_value
+
+    @script_args.setter
+    def script_args(self, value):
+        self.script_args_value = value
+        if self.scripts_value and self.script_args_value and not self.scripts_setup_complete:
+            self.setup_scripts()
+
+    def setup_scripts(self):
+        self.scripts_setup_complete = True
+        self.scripts.setup_scrips(self, is_ui=not self.is_api)
 
     def comment(self, text):
         self.comments[text] = 1
