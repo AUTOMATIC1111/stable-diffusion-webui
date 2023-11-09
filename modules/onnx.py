@@ -12,7 +12,9 @@ import optimum.onnxruntime
 from enum import Enum
 from abc import ABCMeta
 from typing import Union, Optional, Callable, Type, List, Any, Dict
-from diffusers.image_processor import VaeImageProcessor
+from diffusers.pipelines.onnx_utils import ORT_TO_NP_TYPE
+from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
+from diffusers.image_processor import VaeImageProcessor, PipelineImageInput
 from installer import log
 from modules import shared, olive
 from modules.paths import sd_configs_path
@@ -76,9 +78,19 @@ def get_execution_provider_options():
     return execution_provider_options
 
 
-class OnnxRuntimeModel(diffusers.OnnxRuntimeModel):
+class OnnxFakeModule:
+    device = torch.device("cpu")
+    dtype = torch.float32
+
+    def to(self, *args, **kwargs):
+        return self
+
+    def type(self, *args, **kwargs):
+        return self
+
+
+class OnnxRuntimeModel(OnnxFakeModule, diffusers.OnnxRuntimeModel):
     config = {} # dummy
-    dtype = torch.float32 # dummy
 
     def named_modules(self): # dummy
         return ()
@@ -89,7 +101,7 @@ OnnxRuntimeModel.__module__ = 'diffusers'
 diffusers.OnnxRuntimeModel = OnnxRuntimeModel
 
 
-class OnnxPipelineBase(diffusers.DiffusionPipeline, metaclass=ABCMeta):
+class OnnxPipelineBase(OnnxFakeModule, diffusers.DiffusionPipeline, metaclass=ABCMeta):
     model_type: str
     sd_model_hash: str
     sd_checkpoint_info: CheckpointInfo
@@ -158,9 +170,6 @@ class OnnxPipelineBase(diffusers.DiffusionPipeline, metaclass=ABCMeta):
                 pass
         return cls(**init_kwargs)
 
-    def to(self, *args, **kwargs): # dummy
-        return self
-
 
 class OnnxRawPipeline(OnnxPipelineBase):
     constructor: Type[OnnxPipelineBase]
@@ -175,6 +184,16 @@ class OnnxRawPipeline(OnnxPipelineBase):
         self.constructor = constructor
         self.pipeline = pipeline
         del pipeline
+
+    def __getattr__(self, name: str) -> Any:
+        if name in submodels_sd or name in submodels_sdxl:
+            return getattr(self.pipeline, name)
+        return super().__getattr__(name)
+
+    def __setattr__(self, name: str, value: Any):
+        if name in submodels_sd or name in submodels_sdxl:
+            return setattr(self.pipeline, name, value)
+        return super().__setattr__(name, value)
 
     @property
     def scheduler(self):
@@ -500,7 +519,7 @@ class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline, OnnxPip
         timestep_dtype = next(
             (input.type for input in self.unet.model.get_inputs() if input.name == "timestep"), "tensor(float)"
         )
-        timestep_dtype = diffusers.pipelines.onnx_utils.ORT_TO_NP_TYPE[timestep_dtype]
+        timestep_dtype = ORT_TO_NP_TYPE[timestep_dtype]
 
         for i, t in enumerate(self.progress_bar(self.scheduler.timesteps)):
             # expand the latents if we are doing classifier free guidance
@@ -564,7 +583,7 @@ class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline, OnnxPip
         if not return_dict:
             return (image, has_nsfw_concept)
 
-        return diffusers.pipelines.stable_diffusion.StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
+        return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
 
 
 diffusers.OnnxStableDiffusionPipeline = OnnxStableDiffusionPipeline
@@ -592,7 +611,7 @@ class OnnxStableDiffusionImg2ImgPipeline(diffusers.OnnxStableDiffusionImg2ImgPip
     def __call__(
         self,
         prompt: Union[str, List[str]],
-        image: Union[np.ndarray, PIL.Image.Image] = None,
+        image: PipelineImageInput = None,
         strength: float = 0.8,
         num_inference_steps: Optional[int] = 50,
         guidance_scale: Optional[float] = 7.5,
@@ -688,7 +707,7 @@ class OnnxStableDiffusionImg2ImgPipeline(diffusers.OnnxStableDiffusionImg2ImgPip
         timestep_dtype = next(
             (input.type for input in self.unet.model.get_inputs() if input.name == "timestep"), "tensor(float)"
         )
-        timestep_dtype = diffusers.pipelines.onnx_utils.ORT_TO_NP_TYPE[timestep_dtype]
+        timestep_dtype = ORT_TO_NP_TYPE[timestep_dtype]
 
         for i, t in enumerate(self.progress_bar(timesteps)):
             # expand the latents if we are doing classifier free guidance
@@ -755,7 +774,7 @@ class OnnxStableDiffusionImg2ImgPipeline(diffusers.OnnxStableDiffusionImg2ImgPip
         if not return_dict:
             return (image, has_nsfw_concept)
 
-        return diffusers.pipelines.stable_diffusion.StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
+        return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
 
 
 OnnxStableDiffusionImg2ImgPipeline.__module__ = 'diffusers'
@@ -765,8 +784,6 @@ diffusers.pipelines.auto_pipeline.AUTO_IMAGE2IMAGE_PIPELINES_MAPPING["onnx-stabl
 
 
 class OnnxStableDiffusionInpaintPipeline(diffusers.OnnxStableDiffusionInpaintPipeline, OnnxPipelineBase):
-    image_processor: VaeImageProcessor
-
     def __init__(
         self,
         vae_encoder: diffusers.OnnxRuntimeModel,
@@ -780,7 +797,192 @@ class OnnxStableDiffusionInpaintPipeline(diffusers.OnnxStableDiffusionInpaintPip
         requires_safety_checker: bool = True
     ):
         super().__init__(vae_encoder, vae_decoder, text_encoder, tokenizer, unet, scheduler, safety_checker, feature_extractor, requires_safety_checker)
-        self.image_processor = VaeImageProcessor(vae_scale_factor=64)
+
+    @torch.no_grad()
+    def __call__(
+        self,
+        prompt: Union[str, List[str]],
+        image: PipelineImageInput,
+        mask_image: PipelineImageInput,
+        masked_image_latents: torch.FloatTensor = None,
+        height: Optional[int] = 512,
+        width: Optional[int] = 512,
+        strength: float = 1.0,
+        num_inference_steps: int = 50,
+        guidance_scale: float = 7.5,
+        negative_prompt: Optional[Union[str, List[str]]] = None,
+        num_images_per_prompt: Optional[int] = 1,
+        eta: float = 0.0,
+        generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
+        latents: Optional[np.ndarray] = None,
+        prompt_embeds: Optional[np.ndarray] = None,
+        negative_prompt_embeds: Optional[np.ndarray] = None,
+        output_type: Optional[str] = "pil",
+        return_dict: bool = True,
+        callback: Optional[Callable[[int, int, np.ndarray], None]] = None,
+        callback_steps: int = 1,
+    ):
+        # check inputs. Raise error if not correct
+        self.check_inputs(
+            prompt, height, width, callback_steps, negative_prompt, prompt_embeds, negative_prompt_embeds
+        )
+
+        # define call parameters
+        if prompt is not None and isinstance(prompt, str):
+            batch_size = 1
+        elif prompt is not None and isinstance(prompt, list):
+            batch_size = len(prompt)
+        else:
+            batch_size = prompt_embeds.shape[0]
+
+        # set timesteps
+        self.scheduler.set_timesteps(num_inference_steps)
+
+        # here `guidance_scale` is defined analog to the guidance weight `w` of equation (2)
+        # of the Imagen paper: https://arxiv.org/pdf/2205.11487.pdf . `guidance_scale = 1`
+        # corresponds to doing no classifier free guidance.
+        do_classifier_free_guidance = guidance_scale > 1.0
+
+        prompt_embeds = self._encode_prompt(
+            prompt,
+            num_images_per_prompt,
+            do_classifier_free_guidance,
+            negative_prompt,
+            prompt_embeds=prompt_embeds,
+            negative_prompt_embeds=negative_prompt_embeds,
+        )
+
+        num_channels_latents = diffusers.pipelines.stable_diffusion.pipeline_onnx_stable_diffusion_inpaint.NUM_LATENT_CHANNELS
+        latents_shape = (batch_size * num_images_per_prompt, num_channels_latents, height // 8, width // 8)
+        latents_dtype = prompt_embeds.dtype
+        if latents is None:
+            if isinstance(generator, list):
+                generator = [g.seed() for g in generator]
+                if len(generator) == 1:
+                    generator = generator[0]
+
+            latents = np.random.default_rng(generator).standard_normal(latents_shape).astype(latents_dtype)
+        else:
+            if latents.shape != latents_shape:
+                raise ValueError(f"Unexpected latents shape, got {latents.shape}, expected {latents_shape}")
+
+        # prepare mask and masked_image
+        mask, masked_image = diffusers.pipelines.stable_diffusion.pipeline_onnx_stable_diffusion_inpaint.prepare_mask_and_masked_image(image[0], mask_image, latents_shape[-2:])
+        mask = mask.astype(latents.dtype)
+        masked_image = masked_image.astype(latents.dtype)
+
+        masked_image_latents = self.vae_encoder(sample=masked_image)[0]
+        masked_image_latents = 0.18215 * masked_image_latents
+
+        # duplicate mask and masked_image_latents for each generation per prompt
+        mask = mask.repeat(batch_size * num_images_per_prompt, 0)
+        masked_image_latents = masked_image_latents.repeat(batch_size * num_images_per_prompt, 0)
+
+        mask = np.concatenate([mask] * 2) if do_classifier_free_guidance else mask
+        masked_image_latents = (
+            np.concatenate([masked_image_latents] * 2) if do_classifier_free_guidance else masked_image_latents
+        )
+
+        num_channels_mask = mask.shape[1]
+        num_channels_masked_image = masked_image_latents.shape[1]
+
+        unet_input_channels = diffusers.pipelines.stable_diffusion.pipeline_onnx_stable_diffusion_inpaint.NUM_UNET_INPUT_CHANNELS
+        if num_channels_latents + num_channels_mask + num_channels_masked_image != unet_input_channels:
+            raise ValueError(
+                "Incorrect configuration settings! The config of `pipeline.unet` expects"
+                f" {unet_input_channels} but received `num_channels_latents`: {num_channels_latents} +"
+                f" `num_channels_mask`: {num_channels_mask} + `num_channels_masked_image`: {num_channels_masked_image}"
+                f" = {num_channels_latents+num_channels_masked_image+num_channels_mask}. Please verify the config of"
+                " `pipeline.unet` or your `mask_image` or `image` input."
+            )
+
+        # set timesteps
+        self.scheduler.set_timesteps(num_inference_steps)
+
+        # scale the initial noise by the standard deviation required by the scheduler
+        latents = latents * np.float64(self.scheduler.init_noise_sigma)
+
+        # prepare extra kwargs for the scheduler step, since not all schedulers have the same signature
+        # eta (η) is only used with the DDIMScheduler, it will be ignored for other schedulers.
+        # eta corresponds to η in DDIM paper: https://arxiv.org/abs/2010.02502
+        # and should be between [0, 1]
+        accepts_eta = "eta" in set(inspect.signature(self.scheduler.step).parameters.keys())
+        extra_step_kwargs = {}
+        if accepts_eta:
+            extra_step_kwargs["eta"] = eta
+
+        timestep_dtype = next(
+            (input.type for input in self.unet.model.get_inputs() if input.name == "timestep"), "tensor(float)"
+        )
+        timestep_dtype = ORT_TO_NP_TYPE[timestep_dtype]
+
+        for i, t in enumerate(self.progress_bar(self.scheduler.timesteps)):
+            # expand the latents if we are doing classifier free guidance
+            latent_model_input = np.concatenate([latents] * 2) if do_classifier_free_guidance else latents
+            # concat latents, mask, masked_image_latnets in the channel dimension
+            latent_model_input = self.scheduler.scale_model_input(torch.from_numpy(latent_model_input), t)
+            latent_model_input = latent_model_input.cpu().numpy()
+            latent_model_input = np.concatenate([latent_model_input, mask, masked_image_latents], axis=1)
+
+            # predict the noise residual
+            timestep = np.array([t], dtype=timestep_dtype)
+            noise_pred = self.unet(sample=latent_model_input, timestep=timestep, encoder_hidden_states=prompt_embeds)[
+                0
+            ]
+
+            # perform guidance
+            if do_classifier_free_guidance:
+                noise_pred_uncond, noise_pred_text = np.split(noise_pred, 2)
+                noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
+
+            # compute the previous noisy sample x_t -> x_t-1
+            scheduler_output = self.scheduler.step(
+                torch.from_numpy(noise_pred), t, torch.from_numpy(latents), **extra_step_kwargs
+            )
+            latents = scheduler_output.prev_sample.numpy()
+
+            # call the callback, if provided
+            if callback is not None and i % callback_steps == 0:
+                step_idx = i // getattr(self.scheduler, "order", 1)
+                callback(step_idx, t, latents)
+
+        latents = 1 / 0.18215 * latents
+
+        has_nsfw_concept = None
+
+        if not output_type == "latent":
+            # image = self.vae_decoder(latent_sample=latents)[0]
+            # it seems likes there is a strange result for using half-precision vae decoder if batchsize>1
+            image = np.concatenate(
+                [self.vae_decoder(latent_sample=latents[i : i + 1])[0] for i in range(latents.shape[0])]
+            )
+
+            image = np.clip(image / 2 + 0.5, 0, 1)
+            image = image.transpose((0, 2, 3, 1))
+
+            if self.safety_checker is not None:
+                safety_checker_input = self.feature_extractor(
+                    self.numpy_to_pil(image), return_tensors="np"
+                ).pixel_values.astype(image.dtype)
+
+                images, has_nsfw_concept = [], []
+                for i in range(image.shape[0]):
+                    image_i, has_nsfw_concept_i = self.safety_checker(
+                        clip_input=safety_checker_input[i : i + 1], images=image[i : i + 1]
+                    )
+                    images.append(image_i)
+                    has_nsfw_concept.append(has_nsfw_concept_i[0])
+                image = np.concatenate(images)
+
+            if output_type == "pil":
+                image = self.numpy_to_pil(image)
+        else:
+            image = latents
+
+        if not return_dict:
+            return (image, has_nsfw_concept)
+
+        return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
 
 
 OnnxStableDiffusionInpaintPipeline.__module__ = 'diffusers'
