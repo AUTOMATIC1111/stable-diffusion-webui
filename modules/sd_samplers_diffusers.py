@@ -17,6 +17,7 @@ try:
         UniPCMultistepScheduler,
         LMSDiscreteScheduler,
         KDPM2AncestralDiscreteScheduler,
+        LCMScheduler,
     )
 except Exception as e:
     import diffusers
@@ -40,6 +41,7 @@ config = {
     'LMSD': { 'use_karras_sigmas': False, 'timestep_spacing': 'linspace', 'steps_offset': 0 },
     'PNDM': { 'skip_prk_steps': False, 'set_alpha_to_one': False, 'steps_offset': 0 },
     'UniPC': { 'solver_order': 2, 'thresholding': False, 'sample_max_value': 1.0, 'predict_x0': 'bh2', 'lower_order_final': True },
+    'LCM': { 'num_train_timesteps': 1000, 'beta_start': 0.00085, 'beta_end': 0.012, 'beta_schedule': "scaled_linear", 'set_alpha_to_one': True, 'rescale_betas_zero_snr': False },      
 }
 
 samplers_data_diffusers = [
@@ -58,6 +60,7 @@ samplers_data_diffusers = [
     sd_samplers_common.SamplerData('Euler', lambda model: DiffusionSampler('Euler', EulerDiscreteScheduler, model), [], {}),
     sd_samplers_common.SamplerData('Euler a', lambda model: DiffusionSampler('Euler a', EulerAncestralDiscreteScheduler, model), [], {}),
     sd_samplers_common.SamplerData('Heun', lambda model: DiffusionSampler('Heun', HeunDiscreteScheduler, model), [], {}),
+    sd_samplers_common.SamplerData('LCM', lambda model: DiffusionSampler('Heun', LCMScheduler, model), [], {}),
 ]
 
 class DiffusionSampler:

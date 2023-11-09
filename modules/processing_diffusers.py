@@ -387,22 +387,25 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             steps = (p.steps // (1.0 - p.refiner_start)) if shared.sd_model_type == 'sdxl' else p.steps
         if os.environ.get('SD_STEPS_DEBUG', None) is not None:
             shared.log.debug(f'Steps: type=base input={p.steps} output={steps} refiner={use_refiner_start}')
-        return int(steps)
+        return max(2, int(steps))
 
     def calculate_hires_steps():
-        steps = (p.hr_second_pass_steps * p.denoising_strength) if p.hr_second_pass_steps > 0 else (p.steps * p.denoising_strength)
+        # denoising strength is applied to steps by diffusers so this is no-op
+        # steps = (p.hr_second_pass_steps * p.denoising_strength) if p.hr_second_pass_steps > 0 else (p.steps * p.denoising_strength)
+        steps = p.hr_second_pass_steps if p.hr_second_pass_steps > 0 else p.steps
         if os.environ.get('SD_STEPS_DEBUG', None) is not None:
             shared.log.debug(f'Steps: type=hires input={p.hr_second_pass_steps} output={steps} denoise={p.denoising_strength}')
-        return int(steps)
+        return max(2, int(steps))
 
     def calculate_refiner_steps():
+        # diffusers apply additional math to refiner steps, but we leave numbers as-is without correction
         if p.refiner_start > 0 and p.refiner_start < 1:
-            steps = (p.refiner_steps // p.refiner_start) if p.refiner_steps > 0 else (p.steps // p.refiner_start)
+            steps = ((1 - p.refiner_start) * p.refiner_steps) if p.refiner_steps > 0 else ((1 - p.refiner_start) * p.steps)
         else:
             steps = (p.denoising_strength * p.refiner_steps) if p.refiner_steps > 0 else (p.denoising_strength * p.steps)
         if os.environ.get('SD_STEPS_DEBUG', None) is not None:
             shared.log.debug(f'Steps: type=refiner input={p.refiner_steps} output={steps} start={p.refiner_start} denoise={p.denoising_strength}')
-        return int(steps)
+        return max(2, int(steps))
 
     # pipeline type is set earlier in processing, but check for sanity
     if sd_models.get_diffusers_task(shared.sd_model) != sd_models.DiffusersTaskType.TEXT_2_IMAGE and len(getattr(p, 'init_images' ,[])) == 0: # reset pipeline
@@ -460,8 +463,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                 recompile_model(hires=True)
                 update_sampler(shared.sd_model, second_pass=True)
-                if p.hr_second_pass_steps == 0:
-                    p.hr_second_pass_steps = p.steps
                 hires_args = set_pipeline_args(
                     model=shared.sd_model,
                     prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
