@@ -1,3 +1,8 @@
+## 1.6.1
+
+### Bug Fixes:
+ * fix an error causing the webui to fail to start ([#13839](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/13839))
+
 ## 1.6.0
 
 ### Features:
