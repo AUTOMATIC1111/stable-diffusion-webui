@@ -14,6 +14,7 @@
   - Updated logic for calculating **steps** when using base/hires/refiner workflows  
   - Safe model offloading for non-standard models
   - Fix **DPM SDE** scheduler  
+  - Update to `diffusers==0.23.0`  
 - **Extra networks**  
   - Use multi-threading for 5x load speedup  
 - **General**:
