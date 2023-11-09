@@ -87,9 +87,10 @@ class InterrogateModels:
     def load_blip_model(self):
         self.create_fake_fairscale()
         import models.blip # pylint: disable=no-name-in-module
-
+        model_path = os.path.join(paths.models_path, "BLIP")
+        shared.log.debug(f'Loading interrogate model: type=BLIP folder={model_path}')
         files = modelloader.load_models(
-            model_path=os.path.join(paths.models_path, "BLIP"),
+            model_path=model_path,
             model_url='https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_caption_capfilt_large.pth',
             ext_filter=[".pth"],
             download_name='model_base_caption_capfilt_large.pth',

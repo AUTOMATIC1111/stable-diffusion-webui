@@ -532,6 +532,8 @@ def atomically_save_image():
             file.write(exifinfo)
         if shared.opts.save_log_fn != '' and len(exifinfo) > 0:
             fn = os.path.join(paths.data_path, shared.opts.save_log_fn)
+            if not fn.endswith('.json'):
+                fn += '.json'
             entries = shared.readfile(fn)
             idx = len(list(entries))
             if idx == 0:
