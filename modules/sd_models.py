@@ -333,7 +333,7 @@ class SkipWritingToConfig:
         SkipWritingToConfig.skip = self.previous
 
 
-def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer):
+def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer, cache_state_dict: bool=True):
     sd_model_hash = checkpoint_info.calculate_shorthash()
     timer.record("calculate hash")
 
@@ -353,7 +353,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     model.load_state_dict(state_dict, strict=False)
     timer.record("apply weights to model")
 
-    if shared.opts.sd_checkpoint_cache > 0:
+    if shared.opts.sd_checkpoint_cache > 0 and cache_state_dict:
         # cache newly loaded model
         checkpoints_loaded[checkpoint_info] = state_dict
 
@@ -623,7 +623,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
         }
 
     with sd_disable_initialization.LoadStateDictOnMeta(state_dict, device=model_target_device(sd_model), weight_dtype_conversion=weight_dtype_conversion):
-        load_model_weights(sd_model, checkpoint_info, state_dict, timer)
+        load_model_weights(sd_model, checkpoint_info, state_dict, timer, cache_state_dict=False)
     timer.record("load weights from state dict")
 
     send_model_to_device(sd_model)
