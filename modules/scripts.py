@@ -491,10 +491,14 @@ class ScriptRunner:
 
             arg_info = api_models.ScriptArg(label=control.label or "")
 
-            for field in ("value", "minimum", "maximum", "step", "choices"):
+            for field in ("value", "minimum", "maximum", "step"):
                 v = getattr(control, field, None)
                 if v is not None:
                     setattr(arg_info, field, v)
+
+            choices = getattr(control, 'choices', None)  # as of gradio 3.41, some items in choices are strings, and some are tuples where the first elem is the string
+            if choices is not None:
+                arg_info.choices = [x[0] if isinstance(x, tuple) else x for x in choices]
 
             api_args.append(arg_info)
 
