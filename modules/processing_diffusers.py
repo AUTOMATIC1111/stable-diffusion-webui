@@ -384,22 +384,22 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     def calculate_base_steps():
         steps = p.steps
         if use_refiner_start:
-            steps = p.steps // (1.0 - p.refiner_start) if shared.sd_model_type == 'sdxl' else p.steps
+            steps = (p.steps // (1.0 - p.refiner_start)) if shared.sd_model_type == 'sdxl' else p.steps
         if os.environ.get('SD_STEPS_DEBUG', None) is not None:
             shared.log.debug(f'Steps: type=base input={p.steps} output={steps} refiner={use_refiner_start}')
         return int(steps)
 
     def calculate_hires_steps():
-        steps = p.hr_second_pass_steps * p.denoising_strength if p.hr_second_pass_steps > 0 else p.steps * p.denoising_strength
+        steps = (p.hr_second_pass_steps * p.denoising_strength) if p.hr_second_pass_steps > 0 else (p.steps * p.denoising_strength)
         if os.environ.get('SD_STEPS_DEBUG', None) is not None:
             shared.log.debug(f'Steps: type=hires input={p.hr_second_pass_steps} output={steps} denoise={p.denoising_strength}')
         return int(steps)
 
     def calculate_refiner_steps():
         if p.refiner_start > 0 and p.refiner_start < 1:
-            steps = p.refiner_steps // p.refiner_start if p.refiner_steps > 0 else p.steps // p.refiner_start
+            steps = (p.refiner_steps // p.refiner_start) if p.refiner_steps > 0 else (p.steps // p.refiner_start)
         else:
-            steps = p.denoising_strength * p.refiner_steps if p.refiner_steps > 0 else p.denoising_strength * p.steps
+            steps = (p.denoising_strength * p.refiner_steps) if p.refiner_steps > 0 else (p.denoising_strength * p.steps)
         if os.environ.get('SD_STEPS_DEBUG', None) is not None:
             shared.log.debug(f'Steps: type=refiner input={p.refiner_steps} output={steps} start={p.refiner_start} denoise={p.denoising_strength}')
         return int(steps)
