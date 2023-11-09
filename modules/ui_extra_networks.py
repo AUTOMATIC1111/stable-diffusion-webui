@@ -160,6 +160,7 @@ class ExtraNetworksPage:
 """ for subdir in subdirs])
 
         self.items = {x["name"]: x for x in self.list_items()}
+        print("NUMBER OF SELF ITEMS", len(self.items))
         for item in self.items.values():
             metadata = item.get("metadata")
             if metadata:

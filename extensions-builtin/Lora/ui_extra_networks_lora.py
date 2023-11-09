@@ -51,8 +51,6 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
             sd_version = lora_on_disk.sd_version
 
 
-        print("I am within LORA")
-        print(shared.sd_model)
         if shared.opts.lora_show_all or not enable_filter:
             print("1")
             pass
@@ -68,12 +66,12 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
             print("4")
             return None
         elif shared.sd_model.is_sd1 and sd_version != network.SdVersion.SD1:
-            print("5")
             return None
 
         return item
 
     def list_items(self):
+        print(networks.available_networks)
         for index, name in enumerate(networks.available_networks):
             item = self.create_item(name, index)
 
