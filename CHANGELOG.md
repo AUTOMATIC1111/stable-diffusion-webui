@@ -3,31 +3,33 @@
 ## Update for 2023-11-08
 
 - **Diffusers**  
-  - **LCM** support for any *SD 1.5* or *SD-XL* model!
-    - download [lcm-lora-sd15](https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/tree/main) and/or [lcm-lora-sdxl](https://huggingface.co/latent-consistency/lcm-lora-sdxl/tree/main)
-    - load for favorite *SD 1.5* or *SD-XL* model
-    - load **lcm lora**
-    - set **sampler** to **LCM**
+  - **LCM** support for any *SD 1.5* or *SD-XL* model!  
+    - download [lcm-lora-sd15](https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/tree/main) and/or [lcm-lora-sdxl](https://huggingface.co/latent-consistency/lcm-lora-sdxl/tree/main)  
+    - load for favorite *SD 1.5* or *SD-XL* model *(original LCM was SD 1.5 only, this is both)*  
+    - load **lcm lora**  
+    - set **sampler** to **LCM**  
     - set number of steps to some low number, for SD-XL 6-7 steps is normally sufficient  
       note: LCM scheduler does not support steps higher than 50  
+  - Add `cli/lcm_convert.py` script to convert any SD 1.5 or SD-XL model to LCM model  
+    by baking in LORA and uploading to Huggingface, thanks @Disty0  
   - Add additional pipeline types for manual model loads when loading from `safetensors`  
   - Updated logic for calculating **steps** when using base/hires/refiner workflows  
-  - Safe model offloading for non-standard models
+  - Safe model offloading for non-standard models  
   - Fix **DPM SDE** scheduler  
   - Update to `diffusers==0.23.0`  
 - **Extra networks**  
   - Use multi-threading for 5x load speedup  
-- **General**:
+- **General**:  
   - Reworked parser when pasting previously generated images/prompts  
     includes all `txt2img`, `img2img` and `override` params  
   - Add refiner options to XYZ Grid  
-- **Fixes**
+- **Fixes**  
   - Fix inpaint  
-  - Fix manual grid image save
-  - Fix img2img init image save
-  - More uniform models paths
-  - Improve extension compatibility
-  - Improve BF16 support
+  - Fix manual grid image save  
+  - Fix img2img init image save  
+  - More uniform models paths  
+  - Improve extension compatibility  
+  - Improve BF16 support  
 
 ## Update for 2023-11-06
 
