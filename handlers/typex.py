@@ -22,6 +22,7 @@ from tools.processor import MultiThreadWorker
 
 
 class ModelType(IntEnum):
+    Unknown = -1
     CheckPoint = 1
     Lora = 2
     Embedding = 3

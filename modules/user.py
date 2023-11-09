@@ -7,6 +7,7 @@
 # @Software: Hifive
 import json
 import os
+import re
 import time
 import base64
 import os
@@ -20,7 +21,7 @@ from Crypto import Random
 from tools.mysql import get_mysql_cli
 
 
-def authorization(user, password):
+def authorization(user, password, ip: str = None):
     auths = {
         "admin": "Admin123",
     }
@@ -42,11 +43,11 @@ def authorization(user, password):
     elif user in auths and auths.get(user) == password:
         res['expire_time'] = 3600 * 24 + int(time.time())
     else:
-        res['expire_time'] = find_users_from_db(user, password)
+        res['expire_time'] = find_users_from_db(user, password, ip)
     return res
 
 
-def find_users_from_db(username, password) -> int:
+def find_users_from_db(username, password, ip: str = None) -> int:
     host = os.getenv('MysqlHost')
     if host:
         cli = get_mysql_cli()
@@ -54,6 +55,12 @@ def find_users_from_db(username, password) -> int:
             res = cli.query("SELECT * FROM user WHERE username=%s AND password=%s", (username, password))
             if res:
                 expire = res.get('expire', -1)
+                ip_expr = res.get('ip', "")
+                if ip_expr:
+                    # expr: 192.168*, 192.168.1.1
+                    m = re.match(str(ip_expr).replace("*", ".*"), str(ip))
+                    if not m:
+                        return -1
                 if 0 == expire or expire > time.time():
                     endpoint = os.getenv("Endpoint")
                     if endpoint and res.get('endpoint'):
@@ -90,7 +97,7 @@ def bytes_to_key(data: bytes, salt: bytes, output: int = 48):
 
 def encrypt(message: str, passphrase: str):
     salt = Random.new().read(8)
-    key_iv = bytes_to_key(passphrase.encode(), salt, 32+16)
+    key_iv = bytes_to_key(passphrase.encode(), salt, 32 + 16)
     key = key_iv[:32]
     iv = key_iv[32:]
     aes = AES.new(key, AES.MODE_CBC, iv)
