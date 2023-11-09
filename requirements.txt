@@ -23,6 +23,7 @@ pytorch_lightning
 realesrgan
 requests
 resize-right
+httpx==0.24.1
 
 safetensors
 scikit-image>=0.19

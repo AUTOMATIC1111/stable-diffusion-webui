@@ -50,17 +50,25 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         else:
             sd_version = lora_on_disk.sd_version
 
+
+        print("I am within LORA")
+        print(shared.sd_model)
         if shared.opts.lora_show_all or not enable_filter:
+            print("1")
             pass
         elif sd_version == network.SdVersion.Unknown:
+            print("2")
             model_version = network.SdVersion.SDXL if shared.sd_model.is_sdxl else network.SdVersion.SD2 if shared.sd_model.is_sd2 else network.SdVersion.SD1
             if model_version.name in shared.opts.lora_hide_unknown_for_versions:
                 return None
         elif shared.sd_model.is_sdxl and sd_version != network.SdVersion.SDXL:
+            print("3")
             return None
         elif shared.sd_model.is_sd2 and sd_version != network.SdVersion.SD2:
+            print("4")
             return None
         elif shared.sd_model.is_sd1 and sd_version != network.SdVersion.SD1:
+            print("5")
             return None
 
         return item
