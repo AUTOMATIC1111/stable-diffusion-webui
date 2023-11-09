@@ -8,8 +8,10 @@
   - Reworked parser when pasting previously generated images/prompts  
     includes all `txt2img`, `img2img` and `override` params  
 - **Diffusers**  
-  - Fix DPM SDE scheduler  
   - Add additional pipeline types for manual model loads when loading from `safetensors`  
+  - Updated logic for calculating steps when using base/hires/refiner workflows  
+  - Safe model offloading for non-standard models
+  - Fix DPM SDE scheduler  
 - **Fixes**
   - Fix inpaint  
   - Fix manual grid image save
