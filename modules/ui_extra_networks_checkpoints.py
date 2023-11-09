@@ -2,10 +2,10 @@ import os
 import html
 import json
 import concurrent
-from modules import shared, ui_extra_networks, sd_models, paths
+from modules import shared, ui_extra_networks, sd_models
 
 
-reference_dir = os.path.join(paths.models_path, 'Reference')
+reference_dir = os.path.join('models', 'Reference')
 
 class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):

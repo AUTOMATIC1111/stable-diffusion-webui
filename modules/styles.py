@@ -136,18 +136,33 @@ class StyleDatabase:
         return found[0] if len(found) > 0 else self.no_style
 
     def get_style_prompts(self, styles):
+        if styles is None or not isinstance(styles, list):
+            log.error(f'Invalid styles: {styles}')
+            return []
         return [self.find_style(x).prompt for x in styles]
 
     def get_negative_style_prompts(self, styles):
+        if styles is None or not isinstance(styles, list):
+            log.error(f'Invalid styles: {styles}')
+            return []
         return [self.find_style(x).negative_prompt for x in styles]
 
     def apply_styles_to_prompt(self, prompt, styles):
+        if styles is None or not isinstance(styles, list):
+            log.error(f'Invalid styles: {styles}')
+            return prompt
         return apply_styles_to_prompt(prompt, [self.find_style(x).prompt for x in styles])
 
     def apply_negative_styles_to_prompt(self, prompt, styles):
+        if styles is None or not isinstance(styles, list):
+            log.error(f'Invalid styles: {styles}')
+            return prompt
         return apply_styles_to_prompt(prompt, [self.find_style(x).negative_prompt for x in styles])
 
     def apply_styles_to_extra(self, p):
+        if p.styles is None or not isinstance(p.styles, list):
+            log.error(f'Invalid styles: {p.styles}')
+            return
         for style in p.styles:
             s = self.find_style(style)
             apply_styles_to_extra(p, s)
@@ -173,19 +188,25 @@ class StyleDatabase:
                 log.error(f'Failed to save style: name={name} file={path} error={e}')
         count = len(list(self.styles))
         if count > 0:
-            log.debug(f'Saved styles: {path} {count}')
+            log.debug(f'Saved styles: folder="{path}" items={count}')
 
     def load_csv(self, legacy_file):
         if not os.path.isfile(legacy_file):
             return
         with open(legacy_file, "r", encoding="utf-8-sig", newline='') as file:
             reader = csv.DictReader(file, skipinitialspace=True)
+            num = 0
             for row in reader:
                 try:
-                    self.styles[row["name"]] = Style(row["name"], row["prompt"] if "prompt" in row else row["text"], row.get("negative_prompt", ""))
+                    name = row["name"]
+                    prompt = row["prompt"] if "prompt" in row else row["text"]
+                    negative = row.get("negative_prompt", "") if "negative_prompt" in row else row.get("negative", "")
+                    self.styles[name] = Style(name, desc=name, prompt=prompt, negative_prompt=negative, extra="")
+                    log.debug(f'Migrated style: {self.styles[name].__dict__}')
+                    num += 1
                 except Exception:
-                    log.error(f'Styles error: file={legacy_file} row={row}')
-            log.debug(f'Load legacy styles: file={legacy_file} items={len(self.styles.keys())}')
+                    log.error(f'Styles error: file="{legacy_file}" row={row}')
+            log.info(f'Load legacy styles: file="{legacy_file}" loaded={num} created={len(list(self.styles))}')
 
     """
     def save_csv(self, path: str) -> None:

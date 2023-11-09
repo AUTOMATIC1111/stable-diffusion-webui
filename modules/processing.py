@@ -166,11 +166,6 @@ class StableDiffusionProcessing:
         self.disable_extra_networks = False
         self.token_merging_ratio = 0
         self.token_merging_ratio_hr = 0
-        if not seed_enable_extras:
-            self.subseed = -1
-            self.subseed_strength = 0
-            self.seed_resize_from_h = 0
-            self.seed_resize_from_w = 0
         self.scripts = None
         self.script_args = script_args or []
         self.per_script_args = {}
@@ -603,6 +598,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
         args["Init image hash"] = getattr(p, 'init_img_hash', None)
         args["Mask weight"] = getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None
         args['Resize mode'] = getattr(p, 'resize_mode', None)
+        args['Resize scale'] = getattr(p, 'scale_by', None)
         args["Mask blur"] = p.mask_blur if getattr(p, 'mask', None) is not None and getattr(p, 'mask_blur', 0) > 0 else None
         args["Denoising strength"] = getattr(p, 'denoising_strength', None)
     if 'face' in p.ops:

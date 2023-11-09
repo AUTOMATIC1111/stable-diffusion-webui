@@ -27,7 +27,7 @@ def list_crossattention():
 def get_pipelines():
     import diffusers
     from installer import log
-    pipelines = {
+    pipelines = { # note: not all pipelines can be used manually as they require prior pipeline next to decoder pipeline
         'Autodetect': None,
         'Stable Diffusion': getattr(diffusers, 'StableDiffusionPipeline', None),
         'Stable Diffusion Img2Img': getattr(diffusers, 'StableDiffusionImg2ImgPipeline', None),
@@ -37,9 +37,15 @@ def get_pipelines():
         'Stable Diffusion XL Img2Img': getattr(diffusers, 'StableDiffusionXLImg2ImgPipeline', None),
         'Stable Diffusion XL Inpaint': getattr(diffusers, 'StableDiffusionXLInpaintPipeline', None),
         'Stable Diffusion XL Instruct': getattr(diffusers, 'StableDiffusionXLInstructPix2PixPipeline', None),
+        'Latent Consistency Model': getattr(diffusers, 'LatentConsistencyModelPipeline', None),
+        'PixArt Alpha': getattr(diffusers, 'PixArtAlphaPipeline', None),
+        'UniDiffuser': getattr(diffusers, 'UniDiffuserPipeline', None),
+        'Wuerstchen': getattr(diffusers, 'WuerstchenCombinedPipeline', None),
+        'Kandinsky 2.1': getattr(diffusers, 'KandinskyPipeline', None),
+        'Kandinsky 2.2': getattr(diffusers, 'KandinskyV22Pipeline', None),
+        'DeepFloyd IF': getattr(diffusers, 'IFPipeline', None),
         'Custom Diffusers Pipeline': getattr(diffusers, 'DiffusionPipeline', None),
-        # 'Test': getattr(diffusers, 'TestPipeline', None),
-        # 'Kandinsky V1', 'Kandinsky V2', 'DeepFloyd IF', 'Shap-E', 'Kandinsky V1 Img2Img', 'Kandinsky V2 Img2Img', 'DeepFloyd IF Img2Img', 'Shap-E Img2Img',
+        # Segmind SSD-1B, Segmind Tiny
     }
     for k, v in pipelines.items():
         if k != 'Autodetect' and v is None:

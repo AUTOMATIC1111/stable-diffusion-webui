@@ -511,44 +511,48 @@ def create_ui(startup_timer = None):
             txt_prompt_img.change(fn=modules.images.image_data, inputs=[txt_prompt_img], outputs=[txt2img_prompt, txt_prompt_img])
 
             txt2img_paste_fields = [
+                # prompt
                 (txt2img_prompt, "Prompt"),
                 (txt2img_negative_prompt, "Negative prompt"),
-                (txt2img_prompt_styles, "Styles"),
-                (steps, "Steps"),
-                (seed, "Seed"),
-                (sampler_index, "Sampler"),
-                (cfg_scale, "CFG scale"),
+                # main
                 (width, "Size-1"),
                 (height, "Size-2"),
-                (subseed, "Variation seed"),
-                (subseed_strength, "Variation strength"),
-                (clip_skip, "Clip skip"),
-                (latent_index, "Latent sampler"),
-                (latent_index, "Secondary sampler"),
-                (denoising_strength, "Denoising strength"),
-                (refiner_steps, "Refiner steps"),
-                (refiner_start, "Refiner start"),
-                (full_quality, "Full quality"),
-                (restore_faces, "Face restoration"),
+                # sampler
+                (sampler_index, "Sampler"),
+                (steps, "Steps"),
+                # batch
                 (batch_count, "Batch-1"),
                 (batch_size, "Batch-2"),
-                (seed_resize_from_w, "Seed resize from-1"),
-                (seed_resize_from_h, "Seed resize from-2"),
+                # seed
+                (seed, "Seed"),
+                (subseed, "Variation seed"),
+                (subseed_strength, "Variation strength"),
+                # advanced
+                (cfg_scale, "CFG scale"),
+                (clip_skip, "Clip skip"),
+                (image_cfg_scale, "Image CFG scale"),
+                (diffusers_guidance_rescale, "CFG rescale"),
+                (full_quality, "Full quality"),
+                (restore_faces, "Face restoration"),
+                (tiling, "Tiling"),
+                # second pass
                 (enable_hr, "Second pass"),
-                (hr_force, "Hires force"),
-                (hr_scale, "Hires upscale"),
+                (latent_index, "Latent sampler"),
+                (denoising_strength, "Denoising strength"),
                 (hr_upscaler, "Hires upscaler"),
+                (hr_force, "Hires force"),
                 (hr_second_pass_steps, "Hires steps"),
+                (hr_scale, "Hires upscale"),
                 (hr_resize_x, "Hires resize-1"),
                 (hr_resize_y, "Hires resize-2"),
-                (diffusers_guidance_rescale, "CFG rescale"),
-                (image_cfg_scale, "Image CFG scale"),
-                (refiner_steps, "Refiner steps"),
+                # refiner
                 (refiner_start, "Refiner start"),
-                (tiling, "Tiling"),
-                (refiner_negative, "Negative2"),
+                (refiner_steps, "Refiner steps"),
                 (refiner_prompt, "Prompt2"),
-                # TODO restore params complete list
+                (refiner_negative, "Negative2"),
+                # hidden
+                (seed_resize_from_w, "Seed resize from-1"),
+                (seed_resize_from_h, "Seed resize from-2"),
                 *modules.scripts.scripts_txt2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields, override_settings)
@@ -839,46 +843,45 @@ def create_ui(startup_timer = None):
 
             ui_extra_networks.setup_ui(extra_networks_ui_img2img, img2img_gallery)
             img2img_paste_fields = [
+                # prompt
                 (img2img_prompt, "Prompt"),
                 (img2img_negative_prompt, "Negative prompt"),
-                # (img2img_prompt_styles, "Styles"),
-                (steps, "Steps"),
-                (seed, "Seed"),
+                # sampler
                 (sampler_index, "Sampler"),
-                (cfg_scale, "CFG scale"),
+                (steps, "Steps"),
+                # resize
+                (resize_mode, "Resize mode"),
                 (width, "Size-1"),
                 (height, "Size-2"),
+                (scale_by, "Resize scale"),
+                # batch
+                (batch_count, "Batch-1"),
+                (batch_size, "Batch-2"),
+                # seed
+                (seed, "Seed"),
                 (subseed, "Variation seed"),
                 (subseed_strength, "Variation strength"),
-                (full_quality, "Full quality"),
-                (clip_skip, "Clip skip"),
-                (latent_index, "Latent sampler"),
-                (latent_index, "Secondary sampler"),
+                # denoise
                 (denoising_strength, "Denoising strength"),
+                (refiner_start, "Refiner start"),
+                # advanced
+                (cfg_scale, "CFG scale"),
+                (image_cfg_scale, "Image CFG scale"),
+                (clip_skip, "Clip skip"),
+                (diffusers_guidance_rescale, "CFG rescale"),
+                (full_quality, "Full quality"),
                 (restore_faces, "Face restoration"),
-                (batch_size, "Batch size"),
-                (batch_count, "Batch count"),
+                (tiling, "Tiling"),
+                # inpaint
+                (mask_blur, "Mask blur"),
+                (mask_alpha, "Mask alpha"),
+                (inpainting_mask_invert, "Mask invert"),
+                (inpainting_fill, "Masked content"),
+                (inpaint_full_res, "Mask area"),
+                (inpaint_full_res_padding, "Masked padding"),
+                # hidden
                 (seed_resize_from_w, "Seed resize from-1"),
                 (seed_resize_from_h, "Seed resize from-2"),
-                (resize_mode, "Resize mode"),
-                (image_cfg_scale, "Image CFG scale"),
-                (diffusers_guidance_rescale, "CFG rescale"),
-                (tiling, "Tiling"),
-                (mask_blur, "Mask blur"),
-                # TODO scale_by add to paste fields
-                (scale_by, "UNKNOWN"),
-                # from txt2img
-                (hr_force, "Hires force"),
-                (hr_scale, "Hires upscale"),
-                (hr_upscaler, "Hires upscaler"),
-                (hr_second_pass_steps, "Hires steps"),
-                (hr_second_pass_steps, "Hires steps"),
-                (hr_resize_x, "Hires resize-1"),
-                (hr_resize_y, "Hires resize-2"),
-                (refiner_steps, "Refiner steps"),
-                (refiner_start, "Refiner start"),
-                (refiner_prompt, "Prompt2"),
-                (refiner_negative, "Negative2"),
                 *modules.scripts.scripts_img2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields, override_settings)

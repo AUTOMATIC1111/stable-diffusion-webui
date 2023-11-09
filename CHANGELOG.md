@@ -5,11 +5,15 @@
 - **Extra networks**  
   - Use multi-threading for 5x load speedup  
 - **General**:
-  - Reworked parser when pasting previously generated images/prompts
+  - Reworked parser when pasting previously generated images/prompts  
+    includes all `txt2img`, `img2img` and `override` params  
 - **Diffusers**  
   - Fix DPM SDE scheduler  
+  - Add additional pipeline types for manual model loads when loading from `safetensors`  
 - **Fixes**
   - Fix inpaint  
+  - Fix manual grid image save
+  - Fix img2img init image save
   - More uniform models paths
   - Improve extension compatibility
   - Improve BF16 support

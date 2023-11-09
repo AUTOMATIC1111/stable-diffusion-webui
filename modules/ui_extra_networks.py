@@ -321,7 +321,7 @@ class ExtraNetworksPage:
             return 'html/card-no-preview.png'
         if shared.opts.diffusers_dir in path:
             path = os.path.relpath(path, shared.opts.diffusers_dir)
-            ref = os.path.join(paths.models_path, 'Reference')
+            ref = os.path.join('models', 'Reference')
             fn = os.path.join(ref, path.replace('models--', '').replace('\\', '/').split('/')[0])
             files = listdir(ref)
         else:
