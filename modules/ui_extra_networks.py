@@ -40,9 +40,11 @@ card_full = '''
 '''
 card_list = '''
     <div class='card card-list' onclick={card_click} title='{name}' data-tab='{tabname}' data-page='{page}' data-name='{name}' data-filename='{filename}' data-tags='{tags}' data-mtime='{mtime}' data-size='{size}' data-search='{search}'>
-        <span class='details' title="Get details" onclick="showCardDetails(event)">&#x1f6c8;</span>&nbsp;
-        <div class='name'>{title}</div>&nbsp;
-        <div class='tags tags-list'></div>
+        <div style='display: flex'>
+            <span class='details' title="Get details" onclick="showCardDetails(event)">&#x1f6c8;</span>&nbsp;
+            <div class='name'>{title}</div>&nbsp;
+            <div class='tags tags-list'></div>
+        </div>
     </div>
 '''
 
