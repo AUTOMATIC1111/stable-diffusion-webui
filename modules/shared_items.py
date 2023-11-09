@@ -26,7 +26,7 @@ def list_crossattention():
 
 def get_pipelines():
     import diffusers
-    from modules.onnx import OnnxAutoPipelineForText2Image, OnnxAutoPipelineForImage2Image
+    from modules import onnx
     from installer import log
     pipelines = { # note: not all pipelines can be used manually as they require prior pipeline next to decoder pipeline
         'Autodetect': None,
@@ -39,8 +39,11 @@ def get_pipelines():
         'Stable Diffusion XL Img2Img': getattr(diffusers, 'StableDiffusionXLImg2ImgPipeline', None),
         'Stable Diffusion XL Inpaint': getattr(diffusers, 'StableDiffusionXLInpaintPipeline', None),
         'Stable Diffusion XL Instruct': getattr(diffusers, 'StableDiffusionXLInstructPix2PixPipeline', None),
-        'ONNX Stable Diffusion (or XL)': OnnxAutoPipelineForText2Image,
-        'ONNX Stable Diffusion (or XL) Img2Img': OnnxAutoPipelineForImage2Image,
+        'ONNX Stable Diffusion': getattr(onnx, 'OnnxStableDiffusionPipeline', None),
+        'ONNX Stable Diffusion Img2Img': getattr(onnx, 'OnnxStableDiffusionImg2ImgPipeline', None),
+        'ONNX Stable Diffusion Inpaint': getattr(onnx, 'OnnxStableDiffusionInpaintPipeline', None),
+        'ONNX Stable Diffusion XL': getattr(onnx, 'OnnxStableDiffusionXLPipeline', None),
+        'ONNX Stable Diffusion XL Img2Img': getattr(onnx, 'OnnxStableDiffusionXLImg2ImgPipeline', None),
         'Latent Consistency Model': getattr(diffusers, 'LatentConsistencyModelPipeline', None),
         'PixArt Alpha': getattr(diffusers, 'PixArtAlphaPipeline', None),
         'UniDiffuser': getattr(diffusers, 'UniDiffuserPipeline', None),
