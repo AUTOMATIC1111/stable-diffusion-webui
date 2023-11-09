@@ -646,6 +646,14 @@ def detect_pipeline(f: str, op: str = 'model'):
                 guess = 'Stable Diffusion XL Instruct'
             else:
                 guess = 'Stable Diffusion'
+            if 'LCM_' in f or 'LCM-' in f:
+                if shared.backend == shared.Backend.ORIGINAL:
+                    shared.log.warning(f'Model detected as LCM model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                guess = 'Latent Consistency Model'
+            if 'PixArt' in f:
+                if shared.backend == shared.Backend.ORIGINAL:
+                    shared.log.warning(f'Model detected as PixArt Alpha model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                guess = 'PixArt Alpha'
             pipeline = shared_items.get_pipelines().get(guess, None)
             shared.log.info(f'Autodetect: {op}="{guess}" class={pipeline.__name__} file="{f}" size={size}MB')
         except Exception as e:
