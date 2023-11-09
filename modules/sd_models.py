@@ -777,7 +777,7 @@ def set_diffuser_options(sd_model, vae, op: str):
         shared.log.debug(f'Setting {op} VAE: name={sd_vae.loaded_vae_file} upcast={sd_model.vae.config.get("force_upcast", None)}')
     if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):
         sd_model.enable_xformers_memory_efficient_attention()
-    if shared.opts.opt_channelslast:
+    if shared.opts.opt_channelslast and hasattr(sd_model, 'unet'):
         shared.log.debug(f'Setting {op}: enable channels last')
         sd_model.unet.to(memory_format=torch.channels_last)
 

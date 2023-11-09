@@ -89,12 +89,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     def full_vae_decode(latents, model):
         t0 = time.time()
-        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
+        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False) and hasattr(model, 'unet'):
             shared.log.debug('Moving to CPU: model=UNet')
             unet_device = model.unet.device
             model.unet.to(devices.cpu)
             devices.torch_gc()
-        if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload:
+        if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload and hasattr(model, 'vae'):
             model.vae.to(devices.device)
         latents.to(model.vae.device)
 
@@ -104,7 +104,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             latents = latents.to(next(iter(model.vae.post_quant_conv.parameters())).dtype)
 
         decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
-        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
+        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False) and hasattr(model, 'unet'):
             model.unet.to(unet_device)
         t1 = time.time()
         shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={upcast} images={latents.shape[0]} latents={latents.shape} time={round(t1-t0, 3)}')
@@ -112,15 +112,15 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     def full_vae_encode(image, model):
         shared.log.debug(f'VAE encode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)}')
-        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
+        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False) and hasattr(model, 'unet'):
             shared.log.debug('Moving to CPU: model=UNet')
             unet_device = model.unet.device
             model.unet.to(devices.cpu)
             devices.torch_gc()
-        if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload:
+        if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload and hasattr(model, 'vae'):
             model.vae.to(devices.device)
         encoded = model.vae.encode(image.to(model.vae.device, model.vae.dtype)).latent_dist.sample()
-        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
+        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False) and hasattr(model, 'unet'):
             model.unet.to(unet_device)
         return encoded
 
