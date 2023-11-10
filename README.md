@@ -121,6 +121,8 @@ Alternatively, use online services (like Google Colab):
 sudo apt install wget git python3 python3-venv libgl1 libglib2.0-0
 # Red Hat-based:
 sudo dnf install wget git python3
+# openSUSE-based:
+sudo zypper install wget git python3
 # Arch-based:
 sudo pacman -S wget git python3
 ```
