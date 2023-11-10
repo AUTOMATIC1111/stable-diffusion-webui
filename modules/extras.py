@@ -318,7 +318,7 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
         return fail(f"{e}")
 
     ckpt_dir = shared.opts.ckpt_dir or sd_models.model_path
-    filename = kwargs.get("custom_name", "Unamed_Merge")
+    filename = kwargs.get("custom_name", "Unnamed_Merge")
     filename += "." + kwargs.get("checkpoint_format", None)
     output_modelname = os.path.join(ckpt_dir, filename)
     shared.state.textinfo = "Saving"

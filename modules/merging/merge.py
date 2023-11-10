@@ -135,7 +135,7 @@ def merge_models(
     threads: int = 1,
     **kwargs,
 ) -> Dict:
-    iterations = kwargs.get("iterations", 1)
+    iterations = kwargs.get("re_basin_iterations", 1)
     thetas = load_thetas(models, prune, device, precision)
 
     log.info(f"start merging with {merge_mode} method")
@@ -190,7 +190,7 @@ def un_prune_model(
                     merged.update({key: merged[key].half()})
         del original_a
         gc.collect()
-        log_vram("remove original_a")
+        # log_vram("remove original_a")
         original_b = load_sd_model(models["model_b"], device)
         for key in tqdm(original_b.keys(), desc="un-prune model b"):
             if KEY_POSITION_IDS in key:
@@ -266,12 +266,9 @@ def rebasin_merge(
     model_a = thetas["model_a"].clone()
     perm_spec = sdunet_permutation_spec()
 
-    print("Init rebasin iterations")
     for it in range(iterations):
-        print(f"Rebasin iteration {it}")
-        log_vram(f"{it} iteration start")
+        log_vram(f"Rebasin iteration {it}")
         weight_matcher.set_it(it)
-        log_vram("weights & bases, before simple merge")
 
         # normal block merge we already know and love
         thetas["model_a"] = simple_merge(
