@@ -271,8 +271,7 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
     secondary_model_info = sd_models.checkpoints_list[kwargs.get("secondary_model_name", None)]
     if kwargs.get("tertiary_model_name", None) in [None, 'None'] and kwargs.get("merge_mode", None) in TRIPLE_METHODS:
         return fail(f"Failed: Interpolation method ({kwargs.get('merge_mode', None)}) requires a tertiary model.")
-    tertiary_model_info = sd_models.checkpoints_list[tertiary_model_name] if kwargs.get("merge_mode",
-                                                                                        None) in TRIPLE_METHODS else None
+    tertiary_model_info = sd_models.checkpoints_list[kwargs.get("tertiary_model_name", None)] if kwargs.get("merge_mode", None) in TRIPLE_METHODS else None
 
     del kwargs["primary_model_name"]
     del kwargs["secondary_model_name"]
@@ -287,7 +286,7 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
         assert len(alpha) == 26 or len(
             alpha) == 20, "Alpha Block Weights are wrong length (26 or 20 for SDXL) falling back"
         kwargs["alpha"] = alpha
-    except Exception as e:
+    except:
         kwargs["alpha"] = kwargs.get("alpha_preset", kwargs["alpha"])
     finally:
         kwargs.pop("alpha_base", None)
@@ -295,6 +294,7 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
         kwargs.pop("alpha_mid_block", None)
         kwargs.pop("alpha_out_blocks", None)
         kwargs.pop("alpha_preset", None)
+
     if kwargs.get("beta", False):
         try:
             beta = [float(x) for x in
@@ -303,7 +303,7 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
             assert len(beta) == 26 or len(
                 beta) == 20, "Beta Block Weights are wrong length (26 or 20 for SDXL) falling back"
             kwargs["beta"] = beta
-        except Exception as e:
+        except:
             kwargs["beta"] = kwargs.get("beta_preset", kwargs["beta"])
         finally:
             kwargs.pop("beta_base", None)
@@ -355,7 +355,11 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
         metadata["sd_merge_models"] = json.dumps(metadata["sd_merge_models"])
 
     _, extension = os.path.splitext(output_modelname)
-    theta_0 = theta_0.to_dict()
+    try:
+        theta_0 = theta_0.to_dict()
+    except:
+        pass
+
     if extension.lower() == ".safetensors":
         safetensors.torch.save_file(theta_0, output_modelname, metadata=metadata)
     else:
