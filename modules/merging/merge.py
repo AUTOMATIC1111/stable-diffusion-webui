@@ -9,6 +9,7 @@ import safetensors.torch
 import torch
 from tqdm import tqdm
 
+from modules.shared import log
 from modules.merging import merge_methods
 from modules.merging.utils import WeightClass
 from modules.merging.model import SDModel
@@ -18,8 +19,6 @@ from modules.merging.rebasin import (
     update_model_a,
     weight_matching,
 )
-
-# logging.getLogger("sd_meh").addHandler(logging.NullHandler())
 
 MAX_TOKENS = 77
 
@@ -97,7 +96,7 @@ def restore_sd_model(original_model: Dict, merged_model: Dict) -> Dict:
 
 def log_vram(txt=""):
     alloc = torch.cuda.memory_allocated(0)
-    # logging.debug(f"{txt} VRAM: {alloc*1e-9:5.3f}GB")
+    log.info(f"{txt} VRAM: {alloc*1e-9:5.3f}GB")
 
 
 def load_thetas(
@@ -130,16 +129,16 @@ def merge_models(
     precision: str = "full",
     weights_clip: bool = False,
     re_basin: bool = False,
-    iterations: int = 1,
     device: str = "cpu",
     work_device: Optional[str] = None,
     prune: bool = False,
     threads: int = 1,
     **kwargs,
 ) -> Dict:
+    iterations = kwargs.get("iterations", 1)
     thetas = load_thetas(models, prune, device, precision)
 
-    # logging.info(f"start merging with {merge_mode} method")
+    log.info(f"start merging with {merge_mode} method")
     weight_matcher = WeightClass(thetas["model_a"], **kwargs)
     if re_basin:
         merged = rebasin_merge(
@@ -177,7 +176,7 @@ def un_prune_model(
     precision: str,
 ) -> Dict:
     if prune:
-        # logging.info("Un-pruning merged model")
+        log.info("Un-pruning merged model")
         del thetas
         gc.collect()
         log_vram("remove thetas")
@@ -432,7 +431,7 @@ def get_merge_method_args(
 
 
 def save_model(model, output_file, file_format) -> None:
-    # logging.info(f"Saving {output_file}")
+    log.info(f"Saving {output_file}")
     if file_format == "safetensors":
         safetensors.torch.save_file(
             model if type(model) == dict else model.to_dict(),
