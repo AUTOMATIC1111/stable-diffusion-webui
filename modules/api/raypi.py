@@ -211,11 +211,11 @@ def api_middleware(app: FastAPI):
 api_middleware(app)
 
 @serve.deployment(    
-    #ray_actor_options={"num_gpus": int(os.environ.get("RAY_NUM_GPUS", 0))},
-    #autoscaling_config={
-    #                    "min_replicas": int(os.environ.get("RAY_MIN_REPLICAS", 0)),
-    #                    "max_replicas": int(os.environ.get("RAY_MAX_REPLICAS", 0))
-    #                    },
+    ray_actor_options={"num_gpus": int(os.environ.get("RAY_NUM_GPUS", 0))},
+    autoscaling_config={
+                        "min_replicas": int(os.environ.get("RAY_MIN_REPLICAS", 0)),
+                        "max_replicas": int(os.environ.get("RAY_MAX_REPLICAS", 0))
+                        },
     #route_prefix="/sdapi/v1"
     )
 @serve.ingress(app)
@@ -804,3 +804,6 @@ class Raypi:
     def stop_webui(request):
         shared.state.server_command = "stop"
         return Response("Stopping.")
+
+
+entrypoint = Raypi.bind()
