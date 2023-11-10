@@ -54,3 +54,24 @@ def system_exit(free, total, threshold=0.2, coercive=False):
             logger.info(f"out of memory:{used}/{total}(GB), kill current process...")
             _exit()
 
+
+def process_health():
+    # 获取PID为1的进程对象
+    init_process = psutil.Process(1)
+
+    # 获取PID为1的进程的所有子进程
+    children = init_process.children()
+
+    # 处理子进程
+    for child in children:
+        pid = child.pid
+        process = psutil.Process(pid)
+        status = process.status()
+        create_time = process.create_time()
+        memory = process.memory_info().rss / 1024 / 1024 / 1024
+        uptime = time.time() - create_time
+        ##子进程补偿：超过24小时，状态不为running且不是主程1 的子进程触发进程结束信号
+        if uptime > 84600 and status != 'running' and pid != 1:
+            print(
+                f"process:pid={pid},status={status},create_time={create_time},uptime={uptime}s,memory={memory} is time out ,then kill it {pid}")
+            process.terminate()
