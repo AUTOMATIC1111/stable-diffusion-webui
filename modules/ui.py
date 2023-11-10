@@ -4,7 +4,7 @@ import os
 import sys
 from functools import reduce
 import warnings
-from contextlib import suppress
+from contextlib import ExitStack
 
 import gradio as gr
 import gradio.utils
@@ -271,7 +271,11 @@ def create_ui():
         extra_tabs.__enter__()
 
         with gr.Tab("Generation", id="txt2img_generation") as txt2img_generation_tab, ResizeHandleRow(equal_height=False):
-            with gr.Accordion("Open for Settings", open=False) if shared.opts.txt2img_settings_accordion else suppress(), gr.Column(variant='compact', elem_id="txt2img_settings"):
+            with ExitStack() as stack:
+                if shared.opts.txt2img_settings_accordion:
+                    stack.enter_context(gr.Accordion("Open for Settings", open=False))
+                stack.enter_context(gr.Column(variant='compact', elem_id="txt2img_settings"))
+
                 scripts.scripts_txt2img.prepare_ui()
 
                 for category in ordered_ui_categories():
@@ -490,7 +494,10 @@ def create_ui():
         extra_tabs.__enter__()
 
         with gr.Tab("Generation", id="img2img_generation") as img2img_generation_tab, ResizeHandleRow(equal_height=False):
-            with gr.Accordion("Open for Settings", open=False) if shared.opts.img2img_settings_accordion else suppress(), gr.Column(variant='compact', elem_id="img2img_settings"):
+            with ExitStack() as stack:
+                if shared.opts.img2img_settings_accordion:
+                    stack.enter_context(gr.Accordion("Open for Settings", open=False))
+                stack.enter_context(gr.Column(variant='compact', elem_id="img2img_settings"))
 
                 copy_image_buttons = []
                 copy_image_destinations = {}
