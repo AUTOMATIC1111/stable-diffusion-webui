@@ -51,6 +51,19 @@ class Upscaler:
         except Exception:
             pass
 
+    def find_folder(self, folder, scalers, loaded):
+        for fn in os.listdir(folder): # from folder
+            if not fn.endswith('.pth') and not fn.endswith('.pt'):
+                continue
+            file_name = os.path.join(folder, fn)
+            if file_name not in loaded:
+                model_name = os.path.splitext(fn)[0]
+                scaler = UpscalerData(name=f'{self.name} {model_name}', path=file_name, upscaler=self)
+                scaler.custom = True
+                scalers.append(scaler)
+                loaded.append(file_name)
+                modules.shared.log.debug(f'Upscaler type={self.name} folder="{folder}" model="{model_name}" path="{file_name}"')
+
     def find_scalers(self):
         scalers = []
         loaded = []
@@ -66,6 +79,8 @@ class Upscaler:
                 # modules.shared.log.debug(f'Upscaler type={self.name} folder="{self.user_path}" model="{model[0]}" path="{model_path}"')
         if not os.path.exists(self.user_path):
             return scalers
+        self.find_folder(self.user_path, scalers, loaded)
+        """
         for fn in os.listdir(self.user_path): # from folder
             if not fn.endswith('.pth') and not fn.endswith('.pt'):
                 continue
@@ -77,6 +92,7 @@ class Upscaler:
                 scalers.append(scaler)
                 loaded.append(file_name)
                 # modules.shared.log.debug(f'Upscaler type={self.name} folder="{self.user_path}" model="{model_name}" path="{file_name}"')
+        """
         return scalers
 
     @abstractmethod
