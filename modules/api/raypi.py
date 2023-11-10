@@ -211,7 +211,9 @@ def api_middleware(app: FastAPI):
 api_middleware(app)
 
 @serve.deployment(    
-    ray_actor_options={"num_gpus": int(os.environ.get("RAY_NUM_GPUS", 0))},
+    ray_actor_options={"num_gpus": int(os.environ.get("RAY_NUM_GPUS", 0)),
+                       "num_cpus": int(os.environ.get("RAY_NUM_CPUS", 0))
+                       },
     autoscaling_config={
                         "min_replicas": int(os.environ.get("RAY_MIN_REPLICAS", 0)),
                         "max_replicas": int(os.environ.get("RAY_MAX_REPLICAS", 0))

@@ -49,6 +49,7 @@
 
 ###############ray############################
 #export RAY_NUM_GPUS=1
+#export RAY_NUM_CPUS=1
 #export RAY_MIN_REPLICAS=1
 #export RAY_MAX_REPLICAS=2
 #export RAY_PORT=7575
