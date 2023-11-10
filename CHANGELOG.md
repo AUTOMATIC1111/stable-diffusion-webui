@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-11-08
+## Update for 2023-11-10
 
 - **Diffusers**  
   - **LCM** support for any *SD 1.5* or *SD-XL* model!  
@@ -24,11 +24,14 @@
   - Reworked parser when pasting previously generated images/prompts  
     includes all `txt2img`, `img2img` and `override` params  
   - Add refiner options to XYZ Grid  
+  - Support custom upscalers in subfolders  
+  - Support `--ckpt none` to skip loading a model  
 - **Fixes**  
   - Fix inpaint  
   - Fix manual grid image save  
   - Fix img2img init image save  
   - More uniform models paths  
+  - Safe scripts callback execution  
   - Improve extension compatibility  
   - Improve BF16 support  
 
