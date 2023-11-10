@@ -677,7 +677,7 @@ def print_profile(profile, msg: str):
 def process_images(p: StableDiffusionProcessing) -> Processed:
     if not hasattr(p.sd_model, 'sd_checkpoint_info'):
         return None
-    if p.scripts is not None:
+    if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
         p.scripts.before_process(p)
     stored_opts = {}
     for k, v in p.override_settings.copy().items():
@@ -803,7 +803,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         p.all_subseeds = [int(subseed) + x for x in range(len(p.all_prompts))]
     if os.path.exists(shared.opts.embeddings_dir) and not p.do_not_reload_embeddings and shared.backend == shared.Backend.ORIGINAL:
         modules.sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=False)
-    if p.scripts is not None:
+    if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
         p.scripts.process(p)
     infotexts = []
     output_images = []
@@ -841,7 +841,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             p.negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
             p.seeds = p.all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             p.subseeds = p.all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
-            if p.scripts is not None:
+            if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
                 p.scripts.before_process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
             if len(p.prompts) == 0:
                 break
@@ -849,7 +849,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if not p.disable_extra_networks:
                 with devices.autocast():
                     modules.extra_networks.activate(p, extra_network_data)
-            if p.scripts is not None:
+            if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
                 p.scripts.process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
             if n == 0:
                 with open(os.path.join(modules.paths.data_path, "params.txt"), "w", encoding="utf8") as file:
@@ -898,9 +898,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if shared.cmd_opts.lowvram or shared.cmd_opts.medvram and shared.backend == shared.Backend.ORIGINAL:
                 modules.lowvram.send_everything_to_cpu()
                 devices.torch_gc()
-            if p.scripts is not None:
+            if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
-            if p.scripts is not None:
+            if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
                 p.prompts = p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
                 p.negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
                 batch_params = modules.scripts.PostprocessBatchListArgs(list(x_samples_ddim))
@@ -928,7 +928,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     p.ops.append('face')
                     x_sample = modules.face_restoration.restore_faces(x_sample)
                     image = Image.fromarray(x_sample)
-                if p.scripts is not None:
+                if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
                     pp = modules.scripts.PostprocessImageArgs(image)
                     p.scripts.postprocess_image(p, pp)
                     image = pp.image
@@ -993,7 +993,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         index_of_first_image=index_of_first_image,
         infotexts=infotexts,
     )
-    if p.scripts is not None and not (shared.state.interrupted or shared.state.skipped):
+    if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner) and not (shared.state.interrupted or shared.state.skipped):
         p.scripts.postprocess(p, res)
     return res
 
