@@ -89,14 +89,16 @@ class Extension:
 
         self.have_info_from_repo = True
 
-    def list_files(self, subdir, extension):
+    def list_files(self, subdir, extension, load_order=None):
+        if load_order is None:
+            load_order = {}
         dirpath = os.path.join(self.path, subdir)
         if not os.path.isdir(dirpath):
             return []
 
         res = []
         for filename in sorted(os.listdir(dirpath)):
-            res.append(scripts.ScriptFile(self.path, filename, os.path.join(dirpath, filename)))
+            res.append(scripts.ScriptFile(self.path, filename, os.path.join(dirpath, filename), load_order.get(filename)))
 
         res = [x for x in res if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
 

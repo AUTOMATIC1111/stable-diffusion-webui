@@ -1,7 +1,9 @@
 import os
 import re
 import sys
+import json
 import inspect
+from pathlib import Path
 from collections import namedtuple
 from dataclasses import dataclass
 
@@ -305,24 +307,34 @@ def basedir():
     return current_basedir
 
 
-ScriptFile = namedtuple("ScriptFile", ["basedir", "filename", "path"])
+ScriptFile = namedtuple("ScriptFile", ["basedir", "filename", "path", "load_order"])
 
 scripts_data = []
 postprocessing_scripts_data = []
 ScriptClassData = namedtuple("ScriptClassData", ["script_class", "path", "basedir", "module"])
 
 
-def list_scripts(scriptdirname, extension, *, include_extensions=True):
+def list_scripts(scriptdirname, extension, *, include_extensions=True, read_property=False):
     scripts_list = []
 
     basedir = os.path.join(paths.script_path, scriptdirname)
     if os.path.exists(basedir):
         for filename in sorted(os.listdir(basedir)):
-            scripts_list.append(ScriptFile(paths.script_path, filename, os.path.join(basedir, filename)))
+            scripts_list.append(ScriptFile(paths.script_path, filename, os.path.join(basedir, filename), None))
 
     if include_extensions:
         for ext in extensions.active():
-            scripts_list += ext.list_files(scriptdirname, extension)
+            property_path = os.path.join(ext.path, 'webui-extension-property.json')
+            scripts_load_order = None
+            if read_property:
+                try:
+                    with open(property_path, 'r', encoding='utf-8') as file:
+                        scripts_load_order = json.load(file).get('load_order')
+                except FileNotFoundError:
+                    pass
+                except Exception as e:
+                    print(e)
+            scripts_list += ext.list_files(scriptdirname, extension, scripts_load_order)
 
     scripts_list = [x for x in scripts_list if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
 
@@ -351,7 +363,7 @@ def load_scripts():
     postprocessing_scripts_data.clear()
     script_callbacks.clear_callbacks()
 
-    scripts_list = list_scripts("scripts", ".py") + list_scripts("modules/processing_scripts", ".py", include_extensions=False)
+    scripts_list = list_scripts("scripts", ".py", read_property=True) + list_scripts("modules/processing_scripts", ".py", include_extensions=False)
 
     syspath = sys.path
 
@@ -365,15 +377,33 @@ def load_scripts():
             elif issubclass(script_class, scripts_postprocessing.ScriptPostprocessing):
                 postprocessing_scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
 
-    def orderby(basedir):
-        # 1st webui, 2nd extensions-builtin, 3rd extensions
-        priority = {os.path.join(paths.script_path, "extensions-builtin"):1, paths.script_path:0}
-        for key in priority:
-            if basedir.startswith(key):
-                return priority[key]
-        return 9999
+    priority = {paths.extensions_dir: 300, paths.extensions_builtin_dir: 200, os.path.join(paths.script_path, 'scripts'): 100, paths.script_path: 0}
 
-    for scriptfile in sorted(scripts_list, key=lambda x: [orderby(x.basedir), x]):
+    def script_load_order(script_file):
+        """
+        retrieve Scripts load order based on the following priority
+        1. User defined load order script_load_order_override
+        2. Default load order specified by extension properties
+        3. Auto assign load order base on script type
+            3-1. internal webui scripts: 0
+            3-2. built-in scripts: 100
+            3-3. built-in extensions: 200
+            3-4. extension: 300
+            other: 10000 (Error)
+        if multiple Scripts have the same load order then the script_file.path will be used for comparison
+        """
+
+        # load order user override or specified by script property
+        load_order = shared.opts.script_load_order_override.get(script_file.path) or script_file.load_order
+        if load_order is not None:
+            return [load_order, script_file.path]
+        # Auto assign load order base on script type
+        for key in priority:
+            if Path(script_file.path).is_relative_to(key):
+                return [priority[key], script_file.path]
+        return [10000, script_file.path]
+
+    for scriptfile in sorted(scripts_list, key=script_load_order):
         try:
             if scriptfile.basedir != paths.script_path:
                 sys.path = [scriptfile.basedir] + sys.path
