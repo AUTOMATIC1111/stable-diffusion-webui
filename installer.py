@@ -201,7 +201,7 @@ def installed(package, friendly: str = None, reload = False, quiet = False):
 
 
 def uninstall(package):
-    if installed(package, package):
+    if installed(package, package, quiet=True):
         log.warning(f'Uninstalling: {package}')
         pip(f"uninstall {package} --yes --quiet", ignore=True, quiet=True)
 

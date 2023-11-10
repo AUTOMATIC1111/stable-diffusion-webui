@@ -13,7 +13,6 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
     def list_items(self):
         for name, path in shared.hypernetworks.items():
             try:
-                fn = os.path.splitext(path)[0]
                 name = os.path.relpath(os.path.splitext(path)[0], shared.opts.hypernetwork_dir)
                 yield {
                     "type": 'Hypernetwork',

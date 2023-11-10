@@ -86,6 +86,17 @@ def apply_checkpoint(p, x, xs):
         p.override_settings['sd_model_checkpoint'] = info.name
 
 
+def apply_refiner(p, x, xs):
+    if x == shared.opts.sd_model_refiner:
+        return
+    info = sd_models.get_closet_checkpoint_match(x)
+    if info is None:
+        shared.log.warning(f"XYZ grid: apply refiner unknown checkpoint: {x}")
+    else:
+        sd_models.reload_model_weights(shared.sd_refiner, info)
+        p.override_settings['sd_model_refiner'] = info.name
+
+
 def apply_dict(p, x, xs):
     if x == shared.opts.sd_model_dict:
         return
@@ -240,11 +251,12 @@ axis_options = [
     AxisOption("[Second pass] upscaler", str, apply_field("hr_upscaler"), choices=lambda: [*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]]),
     AxisOption("[Second pass] sampler", str, apply_latent_sampler, fmt=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
     AxisOption("[Second pass] denoising Strength", float, apply_field("denoising_strength")),
-    AxisOption("[Second pass] steps", int, apply_field("hr_second_pass_steps")),
+    AxisOption("[Second pass] hires steps", int, apply_field("hr_second_pass_steps")),
     AxisOption("[Second pass] CFG scale", float, apply_field("image_cfg_scale")),
     AxisOption("[Second pass] guidance rescale", float, apply_field("diffusers_guidance_rescale")),
-    AxisOption("[Second pass] refiner start", float, apply_field("refiner_start")),
-    AxisOption("[Second pass] refiner start", float, apply_field("refiner_start")),
+    AxisOption("[Refiner] model", str, apply_refiner, fmt=format_value, cost=1.0, choices=lambda: sorted(sd_models.checkpoints_list)),
+    AxisOption("[Refiner] refiner start", float, apply_field("refiner_start")),
+    AxisOption("[Refiner] refiner steps", float, apply_field("refiner_steps")),
     AxisOption("[TOME] Token merging ratio (txt2img)", float, apply_override('token_merging_ratio')),
     AxisOption("[TOME] Token merging ratio (hires)", float, apply_override('token_merging_ratio_hr')),
     AxisOption("[FreeU] 1st stage backbone factor", float, apply_setting('freeu_b1')),

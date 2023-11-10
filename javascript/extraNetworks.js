@@ -40,6 +40,7 @@ const setENState = (state) => {
 // methods
 
 function showCardDetails(event) {
+  console.log('showCardDetails', event)
   const tabname = getENActiveTab();
   const btn = gradioApp().getElementById(`${tabname}_extra_details_btn`);
   btn.click();

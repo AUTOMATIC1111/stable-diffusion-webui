@@ -1,6 +1,7 @@
 import os
 import html
 import json
+import concurrent
 from modules import shared, extra_networks, ui_extra_networks, styles
 
 
@@ -62,35 +63,44 @@ class ExtraNetworksPageStyles(ui_extra_networks.ExtraNetworksPage):
         }
         return item
 
-    def list_items(self):
-        for k, style in shared.prompt_styles.styles.items():
-            try:
-                fn = os.path.splitext(getattr(style, 'filename', ''))[0]
-                name = getattr(style, 'name', '')
-                if name == '':
-                    continue
-                txt = f'Prompt: {getattr(style, "prompt", "")}'
-                if len(getattr(style, 'negative_prompt', '')) > 0:
-                    txt += f'\nNegative: {style.negative_prompt}'
-                yield {
-                    "type": 'Style',
-                    "name": name,
-                    "title": k,
-                    "filename": style.filename,
-                    "search_term": f'{txt} {self.search_terms_from_path(name)}',
-                    "preview": style.preview if getattr(style, 'preview', None) is not None and style.preview.startswith('data:') else self.find_preview(fn),
-                    "description": style.description if getattr(style, 'description', None) is not None and len(style.description) > 0 else txt,
-                    "prompt": getattr(style, 'prompt', ''),
-                    "negative": getattr(style, 'negative_prompt', ''),
-                    "extra": getattr(style, 'extra', ''),
-                    "local_preview": f"{fn}.{shared.opts.samples_format}",
-                    "onclick": '"' + html.escape(f"""return selectStyle({json.dumps(name)})""") + '"',
-                    "mtime": getattr(style, 'mtime', 0),
-                    "size": os.path.getsize(style.filename),
-                }
-            except Exception as e:
-                shared.log.debug(f"Extra networks error: type=style file={k} {e}")
+    def create_item(self, k):
+        item = None
+        try:
+            style = shared.prompt_styles.styles.get(k)
+            fn = os.path.splitext(getattr(style, 'filename', ''))[0]
+            name = getattr(style, 'name', '')
+            if name == '':
+                return item
+            txt = f'Prompt: {getattr(style, "prompt", "")}'
+            if len(getattr(style, 'negative_prompt', '')) > 0:
+                txt += f'\nNegative: {style.negative_prompt}'
+            item = {
+                "type": 'Style',
+                "name": name,
+                "title": k,
+                "filename": style.filename,
+                "search_term": f'{txt} {self.search_terms_from_path(name)}',
+                "preview": style.preview if getattr(style, 'preview', None) is not None and style.preview.startswith('data:') else self.find_preview(fn),
+                "description": style.description if getattr(style, 'description', None) is not None and len(style.description) > 0 else txt,
+                "prompt": getattr(style, 'prompt', ''),
+                "negative": getattr(style, 'negative_prompt', ''),
+                "extra": getattr(style, 'extra', ''),
+                "local_preview": f"{fn}.{shared.opts.samples_format}",
+                "onclick": '"' + html.escape(f"""return selectStyle({json.dumps(name)})""") + '"',
+                "mtime": getattr(style, 'mtime', 0),
+                "size": os.path.getsize(style.filename),
+            }
+        except Exception as e:
+            shared.log.debug(f"Extra networks error: type=style file={k} {e}")
+        return item
 
+    def list_items(self):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            future_items = {executor.submit(self.create_item, style): style for style in list(shared.prompt_styles.styles)}
+            for future in concurrent.futures.as_completed(future_items):
+                item = future.result()
+                if item is not None:
+                    yield item
 
     def allowed_directories_for_previews(self):
         return [v for v in [shared.opts.styles_dir] if v is not None] + ['html']

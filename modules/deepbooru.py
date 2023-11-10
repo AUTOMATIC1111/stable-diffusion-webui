@@ -16,9 +16,10 @@ class DeepDanbooru:
     def load(self):
         if self.model is not None:
             return
-
+        model_path = os.path.join(paths.models_path, "DeepDanbooru")
+        shared.log.debug(f'Loading interrogate model: type=DeepDanbooru folder={model_path}')
         files = modelloader.load_models(
-            model_path=os.path.join(paths.models_path, "torch_deepdanbooru"),
+            model_path=model_path,
             model_url='https://github.com/AUTOMATIC1111/TorchDeepDanbooru/releases/download/v1/model-resnet_custom_v3.pt',
             ext_filter=[".pt"],
             download_name='model-resnet_custom_v3.pt',

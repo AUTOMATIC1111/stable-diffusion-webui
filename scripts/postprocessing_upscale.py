@@ -16,7 +16,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
             with FormRow(elem_id="extras_upscale"):
                 with gr.Tabs(elem_id="extras_resize_mode"):
                     with gr.TabItem('Scale by', elem_id="extras_scale_by_tab") as tab_scale_by:
-                        upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=4, elem_id="extras_upscaling_resize")
+                        upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=2.0, elem_id="extras_upscaling_resize")
 
                     with gr.TabItem('Scale to', elem_id="extras_scale_to_tab") as tab_scale_to:
                         with FormRow():

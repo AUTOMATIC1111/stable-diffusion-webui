@@ -7,6 +7,7 @@ import random
 import warnings
 from contextlib import nullcontext
 from typing import Any, Dict, List
+from dataclasses import dataclass, field
 import torch
 import numpy as np
 import cv2
@@ -115,6 +116,7 @@ def txt2img_image_conditioning(sd_model, x, width, height):
         return x.new_zeros(x.shape[0], 5, 1, 1, dtype=x.dtype, device=x.device)
 
 
+@dataclass(repr=False)
 class StableDiffusionProcessing:
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
@@ -164,11 +166,6 @@ class StableDiffusionProcessing:
         self.disable_extra_networks = False
         self.token_merging_ratio = 0
         self.token_merging_ratio_hr = 0
-        if not seed_enable_extras:
-            self.subseed = -1
-            self.subseed_strength = 0
-            self.seed_resize_from_h = 0
-            self.seed_resize_from_w = 0
         self.scripts = None
         self.script_args = script_args or []
         self.per_script_args = {}
@@ -203,10 +200,38 @@ class StableDiffusionProcessing:
         self.all_hr_negative_prompts = []
         self.comments = {}
         self.is_api = False
+        self.scripts_value: modules.scripts.ScriptRunner = field(default=None, init=False)
+        self.script_args_value: list = field(default=None, init=False)
+        self.scripts_setup_complete: bool = field(default=False, init=False)
+
 
     @property
     def sd_model(self):
         return shared.sd_model
+
+    @property
+    def scripts(self):
+        return self.scripts_value
+
+    @scripts.setter
+    def scripts(self, value):
+        self.scripts_value = value
+        if self.scripts_value and self.script_args_value and not self.scripts_setup_complete:
+            self.setup_scripts()
+
+    @property
+    def script_args(self):
+        return self.script_args_value
+
+    @script_args.setter
+    def script_args(self, value):
+        self.script_args_value = value
+        if self.scripts_value and self.script_args_value and not self.scripts_setup_complete:
+            self.setup_scripts()
+
+    def setup_scripts(self):
+        self.scripts_setup_complete = True
+        self.scripts.setup_scrips(self, is_ui=not self.is_api)
 
     def comment(self, text):
         self.comments[text] = 1
@@ -558,7 +583,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
         args["Denoising strength"] = p.denoising_strength
         args["Latent sampler"] = p.latent_sampler
         args["Image CFG scale"] = p.image_cfg_scale
-        args["CFG rescale"] = p.diffusers_guidance_rescale if shared.backend == shared.Backend.DIFFUSERS else None
+        args["CFG rescale"] = p.diffusers_guidance_rescale
     if 'refine' in p.ops:
         args["Second pass"] = p.enable_hr
         args["Refiner"] = None if (not shared.opts.add_model_name_to_info) or (not shared.sd_refiner) or (not shared.sd_refiner.sd_checkpoint_info.model_name) else shared.sd_refiner.sd_checkpoint_info.model_name.replace(',', '').replace(':', '')
@@ -567,12 +592,13 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
         args['Refiner start'] = p.refiner_start
         args["Hires steps"] = p.hr_second_pass_steps
         args["Latent sampler"] = p.latent_sampler
-        args["CFG rescale"] = p.diffusers_guidance_rescale if shared.backend == shared.Backend.DIFFUSERS else None
+        args["CFG rescale"] = p.diffusers_guidance_rescale
     if 'img2img' in p.ops or 'inpaint' in p.ops:
         args["Init image size"] = f"{getattr(p, 'init_img_width', 0)}x{getattr(p, 'init_img_height', 0)}"
         args["Init image hash"] = getattr(p, 'init_img_hash', None)
         args["Mask weight"] = getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None
         args['Resize mode'] = getattr(p, 'resize_mode', None)
+        args['Resize scale'] = getattr(p, 'scale_by', None)
         args["Mask blur"] = p.mask_blur if getattr(p, 'mask', None) is not None and getattr(p, 'mask_blur', 0) > 0 else None
         args["Denoising strength"] = getattr(p, 'denoising_strength', None)
     if 'face' in p.ops:
@@ -651,7 +677,7 @@ def print_profile(profile, msg: str):
 def process_images(p: StableDiffusionProcessing) -> Processed:
     if not hasattr(p.sd_model, 'sd_checkpoint_info'):
         return None
-    if p.scripts is not None:
+    if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
         p.scripts.before_process(p)
     stored_opts = {}
     for k, v in p.override_settings.copy().items():
@@ -726,7 +752,13 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     return res
 
 
-def validate_sample(sample):
+def validate_sample(tensor):
+    if tensor.dtype == torch.bfloat16: # numpy does not support bf16
+        tensor = tensor.to(torch.float16)
+    if shared.backend == shared.Backend.ORIGINAL:
+        sample = 255.0 * np.moveaxis(tensor.cpu().numpy(), 0, 2)
+    else:
+        sample = 255. * tensor
     with warnings.catch_warnings(record=True) as w:
         cast = sample.astype(np.uint8)
     if len(w) > 0:
@@ -771,7 +803,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         p.all_subseeds = [int(subseed) + x for x in range(len(p.all_prompts))]
     if os.path.exists(shared.opts.embeddings_dir) and not p.do_not_reload_embeddings and shared.backend == shared.Backend.ORIGINAL:
         modules.sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=False)
-    if p.scripts is not None:
+    if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
         p.scripts.process(p)
     infotexts = []
     output_images = []
@@ -809,7 +841,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             p.negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
             p.seeds = p.all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             p.subseeds = p.all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
-            if p.scripts is not None:
+            if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
                 p.scripts.before_process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
             if len(p.prompts) == 0:
                 break
@@ -817,7 +849,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if not p.disable_extra_networks:
                 with devices.autocast():
                     modules.extra_networks.activate(p, extra_network_data)
-            if p.scripts is not None:
+            if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
                 p.scripts.process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
             if n == 0:
                 with open(os.path.join(modules.paths.data_path, "params.txt"), "w", encoding="utf8") as file:
@@ -866,9 +898,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if shared.cmd_opts.lowvram or shared.cmd_opts.medvram and shared.backend == shared.Backend.ORIGINAL:
                 modules.lowvram.send_everything_to_cpu()
                 devices.torch_gc()
-            if p.scripts is not None:
+            if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
-            if p.scripts is not None:
+            if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
                 p.prompts = p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
                 p.negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
                 batch_params = modules.scripts.PostprocessBatchListArgs(list(x_samples_ddim))
@@ -884,7 +916,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     image = x_sample
                     x_sample = np.array(x_sample)
                 else:
-                    x_sample = 255. * (np.moveaxis(x_sample.cpu().numpy(), 0, 2) if shared.backend == shared.Backend.ORIGINAL else x_sample)
                     x_sample = validate_sample(x_sample)
                     image = Image.fromarray(x_sample)
                 if p.restore_faces:
@@ -897,7 +928,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     p.ops.append('face')
                     x_sample = modules.face_restoration.restore_faces(x_sample)
                     image = Image.fromarray(x_sample)
-                if p.scripts is not None:
+                if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
                     pp = modules.scripts.PostprocessImageArgs(image)
                     p.scripts.postprocess_image(p, pp)
                     image = pp.image
@@ -962,7 +993,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         index_of_first_image=index_of_first_image,
         infotexts=infotexts,
     )
-    if p.scripts is not None and not (shared.state.interrupted or shared.state.skipped):
+    if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner) and not (shared.state.interrupted or shared.state.skipped):
         p.scripts.postprocess(p, res)
     return res
 
@@ -1088,7 +1119,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 decoded_samples = decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae), self.full_quality)
                 decoded_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
                 for i, x_sample in enumerate(decoded_samples):
-                    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                     x_sample = validate_sample(x_sample)
                     image = Image.fromarray(x_sample)
                     bak_extra_generation_params, bak_restore_faces = self.extra_generation_params, self.restore_faces
@@ -1104,7 +1134,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                     decoded_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
                 batch_images = []
                 for _i, x_sample in enumerate(decoded_samples):
-                    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                     x_sample = validate_sample(x_sample)
                     image = Image.fromarray(x_sample)
                     image = images.resize_image(1, image, target_width, target_height, upscaler_name=self.hr_upscaler)
@@ -1185,7 +1214,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     def init(self, all_prompts, all_seeds, all_subseeds):
         if shared.backend == shared.Backend.DIFFUSERS and self.image_mask is not None:
             shared.sd_model = modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.INPAINTING)
-            self.sd_model.dtype = self.sd_model.unet.dtype
+            # self.sd_model.dtype = self.sd_model.unet.dtype
         elif shared.backend == shared.Backend.DIFFUSERS and self.image_mask is None:
             shared.sd_model = modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
 

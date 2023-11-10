@@ -89,12 +89,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     def full_vae_decode(latents, model):
         t0 = time.time()
-        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
+        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False) and hasattr(model, 'unet'):
             shared.log.debug('Moving to CPU: model=UNet')
             unet_device = model.unet.device
             model.unet.to(devices.cpu)
             devices.torch_gc()
-        if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload:
+        if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload and hasattr(model, 'vae'):
             model.vae.to(devices.device)
         latents.to(model.vae.device)
 
@@ -104,7 +104,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             latents = latents.to(next(iter(model.vae.post_quant_conv.parameters())).dtype)
 
         decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
-        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
+        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False) and hasattr(model, 'unet'):
             model.unet.to(unet_device)
         t1 = time.time()
         shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={upcast} images={latents.shape[0]} latents={latents.shape} time={round(t1-t0, 3)}')
@@ -112,15 +112,15 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     def full_vae_encode(image, model):
         shared.log.debug(f'VAE encode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)}')
-        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
+        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False) and hasattr(model, 'unet'):
             shared.log.debug('Moving to CPU: model=UNet')
             unet_device = model.unet.device
             model.unet.to(devices.cpu)
             devices.torch_gc()
-        if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload:
+        if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload and hasattr(model, 'vae'):
             model.vae.to(devices.device)
         encoded = model.vae.encode(image.to(model.vae.device, model.vae.dtype)).latent_dist.sample()
-        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False):
+        if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False) and hasattr(model, 'unet'):
             model.unet.to(unet_device)
         return encoded
 
@@ -263,6 +263,11 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     args['negative_pooled_prompt_embeds'] = negative_pooled
             else:
                 args['negative_prompt'] = negative_prompts
+        if hasattr(model, 'scheduler') and hasattr(model.scheduler, 'noise_sampler_seed') and hasattr(model.scheduler, 'noise_sampler'):
+            model.scheduler.noise_sampler = None # noise needs to be reset instead of using cached values
+            model.scheduler.noise_sampler_seed = seeds[0] # some schedulers have internal noise generator and do not use pipeline generator
+        if 'noise_sampler_seed' in possible:
+            args['noise_sampler_seed'] = seeds[0]
         if 'guidance_scale' in possible:
             args['guidance_scale'] = p.cfg_scale
         if 'generator' in possible:
@@ -294,6 +299,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         clean.pop('callback', None)
         clean.pop('callback_steps', None)
         clean.pop('callback_on_step_end', None)
+        clean.pop('callback_on_step_end_tensor_inputs', None)
         if 'latents' in clean:
             clean['latents'] = clean['latents'].shape
         if 'image' in clean:
@@ -371,29 +377,35 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if shared.opts.diffusers_move_base and not getattr(shared.sd_model, 'has_accelerate', False):
         shared.sd_model.to(devices.device)
 
-    is_img2img = bool(sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE or
-                      sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING)
+    is_img2img = bool(sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE or sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING)
     use_refiner_start = bool(is_refiner_enabled and not p.is_hr_pass and not is_img2img and p.refiner_start > 0 and p.refiner_start < 1)
     use_denoise_start = bool(is_img2img and p.refiner_start > 0 and p.refiner_start < 1)
 
     def calculate_base_steps():
+        steps = p.steps
         if use_refiner_start:
-            return int(p.steps // p.refiner_start + 1) if shared.sd_model_type == 'sdxl' else p.steps
-        elif use_denoise_start and shared.sd_model_type == 'sdxl':
-            return int(p.steps // (1 - p.refiner_start))
-        elif is_img2img:
-            return int(p.steps // p.denoising_strength + 1)
-        else:
-            return p.steps
+            steps = (p.steps // (1.0 - p.refiner_start)) if shared.sd_model_type == 'sdxl' else p.steps
+        if os.environ.get('SD_STEPS_DEBUG', None) is not None:
+            shared.log.debug(f'Steps: type=base input={p.steps} output={steps} refiner={use_refiner_start}')
+        return max(2, int(steps))
+
+    def calculate_hires_steps():
+        # denoising strength is applied to steps by diffusers so this is no-op
+        # steps = (p.hr_second_pass_steps * p.denoising_strength) if p.hr_second_pass_steps > 0 else (p.steps * p.denoising_strength)
+        steps = p.hr_second_pass_steps if p.hr_second_pass_steps > 0 else p.steps
+        if os.environ.get('SD_STEPS_DEBUG', None) is not None:
+            shared.log.debug(f'Steps: type=hires input={p.hr_second_pass_steps} output={steps} denoise={p.denoising_strength}')
+        return max(2, int(steps))
 
     def calculate_refiner_steps():
-        refiner_is_sdxl = bool("StableDiffusionXL" in shared.sd_refiner.__class__.__name__)
-        if p.refiner_start > 0 and p.refiner_start < 1 and refiner_is_sdxl:
-            refiner_steps = int(p.refiner_steps // (1 - p.refiner_start))
+        # diffusers apply additional math to refiner steps, but we leave numbers as-is without correction
+        if p.refiner_start > 0 and p.refiner_start < 1:
+            steps = ((1 - p.refiner_start) * p.refiner_steps) if p.refiner_steps > 0 else ((1 - p.refiner_start) * p.steps)
         else:
-            refiner_steps = int(p.refiner_steps // p.denoising_strength + 1) if refiner_is_sdxl else p.refiner_steps
-        p.refiner_steps = min(99, refiner_steps)
-        return p.refiner_steps
+            steps = (p.denoising_strength * p.refiner_steps) if p.refiner_steps > 0 else (p.denoising_strength * p.steps)
+        if os.environ.get('SD_STEPS_DEBUG', None) is not None:
+            shared.log.debug(f'Steps: type=refiner input={p.refiner_steps} output={steps} start={p.refiner_start} denoise={p.denoising_strength}')
+        return max(2, int(steps))
 
     # pipeline type is set earlier in processing, but check for sanity
     if sd_models.get_diffusers_task(shared.sd_model) != sd_models.DiffusersTaskType.TEXT_2_IMAGE and len(getattr(p, 'init_images' ,[])) == 0: # reset pipeline
@@ -451,15 +463,13 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                 recompile_model(hires=True)
                 update_sampler(shared.sd_model, second_pass=True)
-                if p.hr_second_pass_steps == 0:
-                    p.hr_second_pass_steps = p.steps
                 hires_args = set_pipeline_args(
                     model=shared.sd_model,
                     prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
                     negative_prompts=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
                     prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
                     negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
-                    num_inference_steps=int(p.hr_second_pass_steps // p.denoising_strength + 1),
+                    num_inference_steps=calculate_hires_steps(),
                     eta=shared.opts.scheduler_eta,
                     guidance_scale=p.image_cfg_scale if p.image_cfg_scale is not None else p.cfg_scale,
                     guidance_rescale=p.diffusers_guidance_rescale,
@@ -511,12 +521,11 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 image = vae_decode(latents=image, model=shared.sd_model, full_quality=p.full_quality, output_type='pil')
                 p.extra_generation_params['Noise level'] = noise_level
                 output_type = 'np'
-            calculate_refiner_steps()
             refiner_args = set_pipeline_args(
                 model=shared.sd_refiner,
                 prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts[i],
                 negative_prompts=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts[i],
-                num_inference_steps=p.refiner_steps,
+                num_inference_steps=calculate_refiner_steps(),
                 eta=shared.opts.scheduler_eta,
                 # strength=p.denoising_strength,
                 noise_level=noise_level, # StableDiffusionUpscalePipeline only
