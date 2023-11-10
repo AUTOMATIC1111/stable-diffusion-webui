@@ -11,7 +11,7 @@
     - set number of steps to some low number, for SD-XL 6-7 steps is normally sufficient  
       note: LCM scheduler does not support steps higher than 50
     - set cfg to 1 or 2  
-  - Add `cli/lcm-convert.py` script to convert any SD 1.5 or SD-XL model to LCM model  
+  - Add `cli/lcm_convert.py` script to convert any SD 1.5 or SD-XL model to LCM model  
     by baking in LORA and uploading to Huggingface, thanks @Disty0  
   - Add additional pipeline types for manual model loads when loading from `safetensors`  
   - Updated logic for calculating **steps** when using base/hires/refiner workflows  
