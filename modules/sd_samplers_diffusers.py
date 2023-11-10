@@ -73,10 +73,10 @@ class DiffusionSampler:
             return
         for key, value in config.get('All', {}).items(): # apply global defaults
             self.config[key] = value
-        shared.log.debug(f'Sampler: name={name} type=all config={self.config}')
+        # shared.log.debug(f'Sampler: name={name} type=all config={self.config}')
         for key, value in config.get(name, {}).items(): # apply diffusers per-scheduler defaults
             self.config[key] = value
-        shared.log.debug(f'Sampler: name={name} type=scheduler config={self.config}')
+        # shared.log.debug(f'Sampler: name={name} type=scheduler config={self.config}')
         if hasattr(model.scheduler, 'scheduler_config'): # find model defaults
             orig_config = model.scheduler.scheduler_config
         else:
@@ -84,11 +84,11 @@ class DiffusionSampler:
         for key, value in orig_config.items(): # apply model defaults
             if key in self.config:
                 self.config[key] = value
-        shared.log.debug(f'Sampler: name={name} type=model config={self.config}')
+        # shared.log.debug(f'Sampler: name={name} type=model config={self.config}')
         for key, value in kwargs.items(): # apply user args, if any
             if key in self.config:
                 self.config[key] = value
-        shared.log.debug(f'Sampler: name={name} type=user config={self.config}')
+        # shared.log.debug(f'Sampler: name={name} type=user config={self.config}')
         # finally apply user preferences
         if shared.opts.schedulers_prediction_type != 'default':
             self.config['prediction_type'] = shared.opts.schedulers_prediction_type
