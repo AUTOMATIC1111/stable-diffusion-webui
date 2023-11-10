@@ -9,7 +9,8 @@
     - load **lcm lora**  
     - set **sampler** to **LCM**  
     - set number of steps to some low number, for SD-XL 6-7 steps is normally sufficient  
-      note: LCM scheduler does not support steps higher than 50  
+      note: LCM scheduler does not support steps higher than 50
+    - set cfg to 1 or 2  
   - Add `cli/lcm_convert.py` script to convert any SD 1.5 or SD-XL model to LCM model  
     by baking in LORA and uploading to Huggingface, thanks @Disty0  
   - Add additional pipeline types for manual model loads when loading from `safetensors`  
