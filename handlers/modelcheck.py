@@ -167,10 +167,14 @@ class ModelCheckTaskHandler(Txt2ImgTaskHandler):
             logger.info(f"number of all modules: {all_modules_num}")
 
             r = base_model_version(keys, lora_modules_num, all_modules_num)
-            result = r.to_dict() if r else {}
+            if r and r.model_type == ModelType.Unknown:
+                progress = TaskProgress.new_failed(task, "未能识别")
+                yield progress
+            else:
+                result = r.to_dict() if r else {}
+                progress.set_finish_result(result)
+                yield progress
 
-            progress.set_finish_result(result)
-            yield progress
         except Exception as e:
             task_desc = f'"模型正常加载但是检测失败了" {e}'
             progress = TaskProgress.new_failed(task, task_desc, traceback.format_exc())
