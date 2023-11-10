@@ -160,6 +160,9 @@ def init_default_script_args(script_runner):
 
     # get default values
     for script in script_runner.scripts:
+        if script.args_from == script.args_to:
+            continue
+
         script_args[script.args_from:script.args_to] = script.default_values
 
     return script_args
