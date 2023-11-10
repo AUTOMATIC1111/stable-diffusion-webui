@@ -44,9 +44,9 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
 - **Original**: Based on [LDM](https://github.com/Stability-AI/stablediffusion) reference implementation and significantly expanded on by [A1111](https://github.com/AUTOMATIC1111/stable-diffusion-webui)  
   This is the default backend and it is fully compatible with all existing functionality and extensions  
   It supports **SD 1.x** and **SD 2.x** models  
+  All other model types such as SD-XL, LCM, PixArt, Segmind, Kandinsky, etc. require backend **Diffusers**  
 - **Diffusers**: Based on new [Huggingface Diffusers](https://huggingface.co/docs/diffusers/index) implementation  
-  It supports All models listed below  
-  It is also the *only backend* that supports **Stable Diffusion XL** model  
+  It supports *original* SD models as well as *all* models listed below  
   See [wiki article](https://github.com/vladmandic/automatic/wiki/Diffusers) for more information  
 
 ## Model support
@@ -58,11 +58,18 @@ Additional models will be added as they become available and there is public int
 - [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)
 - [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)
 - [Kandinsky](https://github.com/ai-forever/Kandinsky-2) 2.1 and 2.2
-- [Pixart-α XL 2](https://github.com/PixArt-alpha/PixArt-alpha) Medium and Large
+- [PixArt-α XL 2](https://github.com/PixArt-alpha/PixArt-alpha) Medium and Large
 - [Warp Wuerstchen](https://huggingface.co/blog/wuertschen)  
 - [Tsinghua UniDiffusion](https://github.com/thu-ml/unidiffuser)
 - [DeepFloyd IF](https://github.com/deep-floyd/IF) Medium and Large
 - [Segmind SD Distilled](https://huggingface.co/blog/sd_distillation) *(all variants)*
+
+*Notes*:
+- Loading any model other than standard SD 1.x / SD 2.x requires use of backend **Diffusers**  
+  Loading any other models using **Original** backend is not supproted  
+- Loading manually download model `.safetensors` files is supported for SD 1.x / SD 2.x / SD-XL models only  
+  For all other model types, use backend **Diffusers** and use built in Model downloader or  
+  select model from Networks -> Models -> Reference list in which case it will be auto-downloaded and loaded  
 
 ## Platform support
 
