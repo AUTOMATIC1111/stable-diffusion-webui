@@ -4,6 +4,7 @@ from random import shuffle
 from typing import NamedTuple
 import torch
 from scipy.optimize import linear_sum_assignment
+from modules.shared import log
 
 SPECIAL_KEYS = [
     "first_stage_model.decoder.norm_out.weight",
@@ -2227,7 +2228,7 @@ def inner_matching(
     if newL - oldL != 0:
         linear_sum += abs((newL - oldL).item())
         number += 1
-        logging.info(f" permutation {p}: {newL - oldL}")
+        log.info(f" permutation {p}: {newL - oldL}")
 
     progress = progress or newL > oldL + 1e-12
 
