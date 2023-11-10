@@ -11,18 +11,18 @@ import os
 #ray.init("ray://localhost:10001")
 
 
-#ray_head_address = os.environ.get("RAY_ADDRESS")
-#print("RAY_ADDRESS:", ray_head_address)
-#
-#if ray_head_address:
-#    #ray.init(address=ray_head_address)
-#    ray.init(address=ray_head_address)
-#    #ray.init(address="172.21.0.3:6388")
-#else:
-#    ray.init()
-#
+ray_head_address = os.environ.get("RAY_ADDRESS")
+print("RAY_ADDRESS:", ray_head_address)
 
-entrypoint = Raypi.bind()
+if ray_head_address:
+    #ray.init(address=ray_head_address)
+    ray.init(address=ray_head_address)
+    #ray.init(address="172.21.0.3:6388")
+else:
+    ray.init()
+
+
+#entrypoint = Raypi.bind()
 
 def ray_only():
     serve.shutdown()
