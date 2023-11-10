@@ -1,4 +1,4 @@
-## Description
+## RSS Builder by B!soft markbook RSS feed
 
 * a simple description of what you're trying to accomplish
 * a summary of changes in code
