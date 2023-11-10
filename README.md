@@ -37,6 +37,8 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
 - Built in installer with automatic updates and dependency management  
 - Modernized UI with theme support and number of built-in themes  
 
+<br>![screenshot](html/black-teal.jpg)<br>
+
 ## Backend support
 
 **SD.Next** supports two main backends: *Original* and *Diffusers* which can be switched on-the-fly:
@@ -95,8 +97,8 @@ Additional models will be added as they become available and there is public int
 - Server can run without virtual environment,  
   but it is recommended to use it to avoid library version conflicts with other applications  
 - **nVidia/CUDA** / **AMD/ROCm** / **Intel/OneAPI** are auto-detected if present and available,  
-   but for any other use case specify required parameter explicitly or wrong packages may be installed  
-  as installer will assume CPU-only environment  
+  For any other use case such as **DirectML**, **ONNX/Olive**, **OpenVINO** specify required parameter explicitly  
+  or wrong packages may be installed as installer will assume CPU-only environment  
 - Full startup sequence is logged in `sdnext.log`, so if you encounter any issues, please check it first  
 
 ### Run
@@ -105,24 +107,47 @@ Once SD.Next is installed, simply run `webui.ps1` or `webui.bat` (*Windows*) or 
 
 Below is partial list of all available parameters, run `webui --help` for the full list:
 
+    Server options:
+      --config CONFIG                  Use specific server configuration file, default: config.json
+      --ui-config UI_CONFIG            Use specific UI configuration file, default: ui-config.json
+      --medvram                        Split model stages and keep only active part in VRAM, default: False
+      --lowvram                        Split model components and keep only active part in VRAM, default: False
+      --ckpt CKPT                      Path to model checkpoint to load immediately, default: None
+      --vae VAE                        Path to VAE checkpoint to load immediately, default: None
+      --data-dir DATA_DIR              Base path where all user data is stored, default:
+      --models-dir MODELS_DIR          Base path where all models are stored, default: models
+      --share                          Enable UI accessible through Gradio site, default: False
+      --insecure                       Enable extensions tab regardless of other options, default: False
+      --listen                         Launch web server using public IP address, default: False
+      --auth AUTH                      Set access authentication like "user:pwd,user:pwd""
+      --autolaunch                     Open the UI URL in the system's default browser upon launch
+      --docs                           Mount Gradio docs at /docs, default: False
+      --no-hashing                     Disable hashing of checkpoints, default: False
+      --no-metadata                    Disable reading of metadata from models, default: False
+      --no-download                    Disable download of default model, default: False
+      --backend {original,diffusers}   force model pipeline type
+
     Setup options:
+      --debug                          Run installer with debug logging, default: False
+      --reset                          Reset main repository to latest version, default: False
+      --upgrade                        Upgrade main repository to latest version, default: False
+      --requirements                   Force re-check of requirements, default: False
+      --quick                          Run with startup sequence only, default: False
       --use-directml                   Use DirectML if no compatible GPU is detected, default: False
       --use-openvino                   Use Intel OpenVINO backend, default: False
       --use-ipex                       Force use Intel OneAPI XPU backend, default: False
       --use-cuda                       Force use nVidia CUDA backend, default: False
       --use-rocm                       Force use AMD ROCm backend, default: False
-      --skip-update                    Skip update of extensions and submodules, default: False
+      --use-xformers                   Force use xFormers cross-optimization, default: False
       --skip-requirements              Skips checking and installing requirements, default: False
       --skip-extensions                Skips running individual extension installers, default: False
       --skip-git                       Skips running all GIT operations, default: False
       --skip-torch                     Skips running Torch checks, default: False
+      --skip-all                       Skips running all checks, default: False
+      --experimental                   Allow unsupported versions of libraries, default: False
       --reinstall                      Force reinstallation of all requirements, default: False
-      --debug                          Run installer with debug logging, default: False
-      --reset                          Reset main repository to latest version, default: False
-      --upgrade                        Upgrade main repository to latest version, default: False
       --safe                           Run in safe mode with no user extensions
 
-<br>![screenshot](html/black-teal.jpg)<br>
 
 ## Notes
 
@@ -133,7 +158,6 @@ SD.Next comes with several extensions pre-installed:
 - [ControlNet](https://github.com/Mikubill/sd-webui-controlnet)
 - [Agent Scheduler](https://github.com/ArtVentureX/sd-webui-agent-scheduler)
 - [Image Browser](https://github.com/AlUlkesh/stable-diffusion-webui-images-browser)
-- [Rembg Background Removal](https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg)
 
 ### **Collab**
 
@@ -150,10 +174,10 @@ The idea behind the fork is to enable latest technologies and advances in text-t
 
 > *Sometimes this is not the same as "as simple as possible to use".*
 
-If you are looking an amazing simple-to-use Stable Diffusion tool, I'd suggest [InvokeAI](https://invoke-ai.github.io/InvokeAI/) specifically due to its automated installer and ease of use.  
-
 General goals:
 
+- Multi-model
+  - Enable usage of as many as possible txt2img and img2img generative models  
 - Cross-platform
   - Create uniform experience while automatically managing any platform specific differences
 - Performance
