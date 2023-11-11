@@ -359,6 +359,23 @@ def get_short_path(path: Path):
 script_default_order = {paths.extensions_dir: 700, paths.extensions_builtin_dir: 500, os.path.join(paths.script_path, 'scripts'): 300, paths.script_path: 100}
 
 
+def assign_script_default_order(file_path):
+    """Assign load order base on script type
+    Args:
+        file_path: path to script file
+    Returns: order number
+        internal webui scripts: 100
+        built-in scripts: 300
+        built-in extensions: 500
+        extension: 700
+        other: 10000 (should never reach)
+    """
+    for key in script_default_order:
+        if file_path.is_relative_to(key):
+            return script_default_order[key]
+    return 10000
+
+
 def load_scripts():
     global current_basedir
     scripts_data.clear()
@@ -382,28 +399,19 @@ def load_scripts():
     def get_script_load_order(script_file):
         """get script file load order based on the following priority
         1. User defined load order shared.opts.script_order_override {key: order}
-            key: short_path
+            key: object_id : "short_path"
             order: number
         2. Default load order specified by extension properties
-        3. Assign load order base on script type
-            3-1. internal webui scripts: 100
-            3-2. built-in scripts: 300
-            3-3. built-in extensions: 500
-            3-4. extension: 700
-        other: 10000 (Error)
-        if multiple scripts file have the same load order then the short_path will be used for comparison
+        3. Assign order using assign_script_default_order()
+        
+        if multiple scripts file have the same load order then the object_id will be used for comparison
         """
         path = Path(script_file.path)
-        short_path = get_short_path(path)
-        # load order user override or specified by script property
-        load_order = shared.opts.script_order_override.get(short_path) or script_file.load_order
-        if load_order is not None:
-            return [load_order, short_path]
-        # assign load order base on script type
-        for key in script_default_order:
-            if path.is_relative_to(key):
-                return [script_default_order[key], short_path]
-        return [10000, short_path]
+        object_id = get_short_path(path)
+        order = shared.opts.script_order_override.get(object_id) or script_file.load_order
+        if order is None:
+            return [assign_script_default_order(path), object_id]
+        return [order, object_id]
 
     for scriptfile in sorted(scripts_list, key=get_script_load_order):
         try:
@@ -438,33 +446,22 @@ def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
     return default
 
 
-def get_function_order(script_path, script_class, function_name):
+def get_function_execution_order(script_path, script_class, function_name):
     """get execution order of function_name for class based on the following priority
     1. User defined execution order shared.opts.script_order_override {key: order}
-        key: short_path>ScriptClassName>function_name
+        key: object_id: "short_path>ScriptClassName>function_name"
         order: number
     2. Default execution order specified by function attribute function_name.order
-    3. Assign load order base on script type
-        3-1. internal webui scripts: 100
-        3-2. built-in scripts: 300
-        3-3. built-in extensions: 500
-        3-4. extension: 700
-    other: 10000 (Error)
+    3. Assign order using assign_script_default_order()
+
     if multiple scripts file have the same load order then the short_path will be used for comparison
     """
     path = Path(script_path)
-    short_path = get_short_path(path)
-    fn_path = f'{short_path}>{script_class.__name__}>{function_name}'
-    # scripts callback order override or specified by function attribute
-    order = shared.opts.script_order_override.get(fn_path) or getattr(getattr(script_class, function_name), 'order', None)
-    if order is not None:
-        return [order, fn_path]
-    # assign load order base on script type
-    for key in script_default_order:
-        if path.is_relative_to(key):
-            return [script_default_order[key], fn_path]
-    return [10000, fn_path]
-
+    object_id = f'{get_short_path(path)}>{script_class.__name__}>{function_name}'
+    order = shared.opts.script_order_override.get(object_id) or getattr(getattr(script_class, function_name), 'order', None)
+    if order is None:
+        return [assign_script_default_order(path), object_id]
+    return [order, object_id]
 
 class ScriptRunner:
     def __init__(self):
@@ -505,15 +502,15 @@ class ScriptRunner:
     ]
 
     def init_script_callback_map(self):
-        self.alwayson_scripts.sort(key=lambda x: get_function_order(x.filename, x.__class__, 'title'))
-        self.selectable_scripts.sort(key=lambda x: get_function_order(x.filename, x.__class__, 'title'))
-        self.scripts.sort(key=lambda x: get_function_order(x.filename, x.__class__, 'title'))
+        self.alwayson_scripts.sort(key=lambda x: get_function_execution_order(x.filename, x.__class__, 'title'))
+        self.selectable_scripts.sort(key=lambda x: get_function_execution_order(x.filename, x.__class__, 'title'))
+        self.scripts.sort(key=lambda x: get_function_execution_order(x.filename, x.__class__, 'title'))
 
         self.script_callback_map = {
-            key: sorted(self.alwayson_scripts, key=lambda x: get_function_order(x.filename, x.__class__, key)) for key in self.alwayson_scripts_callbacks
+            key: sorted(self.alwayson_scripts, key=lambda x: get_function_execution_order(x.filename, x.__class__, key)) for key in self.alwayson_scripts_callbacks
         }
         self.script_callback_map.update({
-            key: sorted(self.scripts, key=lambda x: get_function_order(x.filename, x.__class__, key)) for key in self.base_scripts_callbacks
+            key: sorted(self.scripts, key=lambda x: get_function_execution_order(x.filename, x.__class__, key)) for key in self.base_scripts_callbacks
         })
 
     def initialize_scripts(self, is_img2img):
@@ -526,7 +523,7 @@ class ScriptRunner:
         auto_processing_scripts = scripts_auto_postprocessing.create_auto_preprocessing_script_data()
 
         script_list = auto_processing_scripts + scripts_data
-        for script_data in sorted(script_list, key=lambda x: get_function_order(x.path, x.script_class, 'show')):
+        for script_data in sorted(script_list, key=lambda x: get_function_execution_order(x.path, x.script_class, 'show')):
             script = script_data.script_class()
             script.filename = script_data.path
             script.is_txt2img = not is_img2img
