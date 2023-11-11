@@ -356,7 +356,12 @@ def get_short_path(path: Path):
             return path
 
 
-script_default_order = {paths.extensions_dir: 700, paths.extensions_builtin_dir: 500, os.path.join(paths.script_path, 'scripts'): 300, paths.script_path: 100}
+script_default_order = {
+    paths.extensions_dir: 70000,
+    paths.extensions_builtin_dir: 50000,
+    os.path.join(paths.script_path, 'scripts'): 30000,
+    paths.script_path: 1000000
+}
 
 
 def assign_script_default_order(file_path):
@@ -364,16 +369,16 @@ def assign_script_default_order(file_path):
     Args:
         file_path: path to script file
     Returns: order number
-        internal webui scripts: 100
-        built-in scripts: 300
-        built-in extensions: 500
-        extension: 700
-        other: 10000 (should never reach)
+        internal webui scripts: 10000
+        built-in scripts: 30000
+        built-in extensions: 50000
+        extension: 70000
+        other: 1000000 (should never reach)
     """
     for key in script_default_order:
         if file_path.is_relative_to(key):
             return script_default_order[key]
-    return 10000
+    return 1000000
 
 
 def load_scripts():
@@ -403,7 +408,7 @@ def load_scripts():
             order: number
         2. Default load order specified by extension properties
         3. Assign order using assign_script_default_order()
-        
+
         if multiple scripts file have the same load order then the object_id will be used for comparison
         """
         path = Path(script_file.path)
