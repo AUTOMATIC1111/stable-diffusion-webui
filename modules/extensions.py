@@ -183,7 +183,6 @@ def list_extensions():
                     config.read(os.path.join(path, "sd_webui_metadata.ini"))
                     canonical_name = config.get("Extension", "Name", fallback=canonical_name)
                     requires = config.get("Extension", "Requires", fallback=None)
-                    continue
                 except Exception:
                     errors.report(f"Error reading sd_webui_metadata.ini for extension {extension_dirname}. "
                                   f"Will load regardless.", exc_info=True)
