@@ -244,8 +244,8 @@ class Script:
 
         May be called in show() or ui() - but it may be too late in the latter as some components may already be created.
 
-        This function is an alternative to before_component in that it also called to run before a component is created, but
-        it doesn't require to be called for every created component - just for the one you need.
+        This function is an alternative to before_component in that it is also called before a component is created, but
+        it doesn't require being called for every created component - just for the one you need.
         """
         if self.on_before_component_elem_id is None:
             self.on_before_component_elem_id = []
@@ -399,7 +399,7 @@ def load_scripts():
         load_order = shared.opts.script_order_override.get(short_path) or script_file.load_order
         if load_order is not None:
             return [load_order, short_path]
-        # Auto assign load order base on script type
+        # assign load order base on script type
         for key in script_default_order:
             if path.is_relative_to(key):
                 return [script_default_order[key], short_path]
@@ -458,14 +458,12 @@ def get_function_order(script_path, script_class, function_name):
     # scripts callback order override or specified by function attribute
     order = shared.opts.script_order_override.get(fn_path) or getattr(getattr(script_class, function_name), 'order', None)
     if order is not None:
-        print(order, fn_path)
         return [order, fn_path]
-    # Auto assign load order base on script type
+    # assign load order base on script type
     for key in script_default_order:
         if path.is_relative_to(key):
-            print(script_default_order[key], fn_path)
             return [script_default_order[key], fn_path]
-    return [order, 10000]
+    return [10000, fn_path]
 
 
 class ScriptRunner:
