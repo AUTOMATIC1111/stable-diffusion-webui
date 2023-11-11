@@ -334,23 +334,23 @@ def load_reference(name: str):
         return True
 
 
-modelloader_directories = {}
+cache_folders = {}
 cache_last = 0
 cache_time = 1
 
 
-def directory_has_changed(dir:str, *, recursive:bool=True) -> bool: # pylint: disable=redefined-builtin
+def directory_updated(path:str, *, recursive:bool=True) -> bool: # pylint: disable=redefined-builtin
     try:
-        dir = os.path.abspath(dir)
-        if dir not in modelloader_directories:
+        path = os.path.abspath(path)
+        if path not in cache_folders:
             return True
         if cache_last > (time.time() - cache_time):
             return False
-        if not (os.path.exists(dir) and os.path.isdir(dir) and os.path.getmtime(dir) == modelloader_directories[dir][0]):
+        if not (os.path.exists(path) and os.path.isdir(path) and os.path.getmtime(path) == cache_folders[path][0]):
             return True
         if recursive:
-            for _dir in modelloader_directories:
-                if _dir.startswith(dir) and _dir != dir and not (os.path.exists(_dir) and os.path.isdir(_dir) and os.path.getmtime(_dir) == modelloader_directories[_dir][0]):
+            for folder in cache_folders:
+                if folder.startswith(path) and folder != path and not (os.path.exists(folder) and os.path.isdir(folder) and os.path.getmtime(folder) == cache_folders[folder][0]):
                     return True
     except Exception as e:
         shared.log.error(f"Filesystem Error: {e.__class__.__name__}({e})")
@@ -358,44 +358,48 @@ def directory_has_changed(dir:str, *, recursive:bool=True) -> bool: # pylint: di
     return False
 
 
-def directory_directories(dir:str, *, recursive:bool=True) -> dict[str,tuple[float,list[str]]]: # pylint: disable=redefined-builtin
-    dir = os.path.abspath(dir)
-    if directory_has_changed(dir, recursive=recursive):
-        for _dir in list(modelloader_directories):
-            if os.path.exists(_dir) or os.path.isdir(_dir):
+def directory_list(path:str, *, recursive:bool=True) -> dict[str,tuple[float,list[str]]]: # pylint: disable=redefined-builtin
+    path = os.path.abspath(path)
+    res = {}
+    if not os.path.exists(path):
+        return res
+    if directory_updated(path, recursive=recursive):
+        for folder in list(cache_folders):
+            del cache_folders[folder]
+            if os.path.exists(folder) or os.path.isdir(folder):
                 continue
-            del modelloader_directories[_dir]
-        for _dir, _files in walk(dir, lambda e, path: shared.log.debug(f"FS walk error: {e} {path}")):
+        for folder, files in walk(path, lambda e, path: shared.log.debug(f"FS walk error: {e} {path}")):
+            if not os.path.exists(folder):
+                continue
             try:
-                mtime = os.path.getmtime(_dir)
-                if _dir not in modelloader_directories or mtime != modelloader_directories[_dir][0]:
-                    modelloader_directories[_dir] = (mtime, [os.path.join(_dir, fn) for fn in _files])
+                mtime = os.path.getmtime(folder)
+                if folder not in cache_folders or mtime != cache_folders[folder][0]:
+                    cache_folders[folder] = (mtime, [os.path.join(folder, fn) for fn in files])
             except Exception as e:
                 shared.log.error(f"Filesystem Error: {e.__class__.__name__}({e})")
-                del modelloader_directories[_dir]
-    res = {}
-    for _dir in modelloader_directories:
-        if _dir == dir or (recursive and _dir.startswith(dir)):
-            res[_dir] = modelloader_directories[_dir]
+                del cache_folders[folder]
+    for folder in cache_folders:
+        if folder == path or (recursive and folder.startswith(path)):
+            res[folder] = cache_folders[folder]
             if not recursive:
                 break
     return res
 
 
-def directory_mtime(dir:str, *, recursive:bool=True) -> float: # pylint: disable=redefined-builtin
-    return float(max(0, *[mtime for mtime, _ in directory_directories(dir, recursive=recursive).values()]))
+def directory_mtime(path:str, *, recursive:bool=True) -> float: # pylint: disable=redefined-builtin
+    return float(max(0, *[mtime for mtime, _ in directory_list(path, recursive=recursive).values()]))
 
 
 def directories_file_paths(directories:dict) -> list[str]:
     return sum([dat[1] for dat in directories.values()],[])
 
 
-def unique_directories(directories:list[str], *, recursive:bool=True) -> list[str]:
+def directories_unique(directories:list[str], *, recursive:bool=True) -> list[str]:
     '''Ensure no empty, or duplicates'''
-    directories = { os.path.abspath(dir): True for dir in directories if dir }.keys()
+    directories = { os.path.abspath(path): True for path in directories if path }.keys()
     if recursive:
         '''If we are going recursive, then directories that are children of other directories are redundant'''
-        directories = [dir for dir in directories if not any(_dir != dir and dir.startswith(os.path.join(_dir,'')) for _dir in directories)]
+        directories = [path for path in directories if not any(d != path and path.startswith(os.path.join(d,'')) for d in directories)]
     return directories
 
 
@@ -404,7 +408,7 @@ def unique_paths(paths:list[str]) -> list[str]:
 
 
 def directory_files(*directories:list[str], recursive:bool=True) -> list[str]:
-    return unique_paths(sum([[*directories_file_paths(directory_directories(dir, recursive=recursive))] for dir in unique_directories(directories, recursive=recursive)],[]))
+    return unique_paths(sum([[*directories_file_paths(directory_list(d, recursive=recursive))] for d in directories_unique(directories, recursive=recursive)],[]))
 
 
 def extension_filter(ext_filter=None, ext_blacklist=None):
@@ -485,7 +489,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
     @param ext_filter: An optional list of filename extensions to filter by
     @return: A list of paths containing the desired model(s)
     """
-    places = unique_directories([model_path, command_path])
+    places = directories_unique([model_path, command_path])
     output = []
     try:
         output:list = [*filter(extension_filter(ext_filter, ext_blacklist), directory_files(*places))]

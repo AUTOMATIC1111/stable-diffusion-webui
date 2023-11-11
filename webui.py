@@ -156,7 +156,7 @@ def initialize():
 
 
 def load_model():
-    if opts.sd_checkpoint_autoload:
+    if opts.sd_checkpoint_autoload and (shared.cmd_opts.ckpt is not None and shared.cmd_opts.ckpt.lower() != 'none'):
         shared.state.begin('load')
         thread_model = Thread(target=lambda: shared.sd_model)
         thread_model.start()

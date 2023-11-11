@@ -211,6 +211,11 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     p.extra_generation_params['Resize mode'] = resize_mode
     if mask:
         p.extra_generation_params["Mask blur"] = mask_blur
+        p.extra_generation_params["Mask alpha"] = mask_alpha
+        p.extra_generation_params["Mask invert"] = inpainting_mask_invert
+        p.extra_generation_params["Mask content"] = inpainting_fill
+        p.extra_generation_params["Mask area"] = inpaint_full_res
+        p.extra_generation_params["Mask padding"] = inpaint_full_res_padding
     p.is_batch = mode == 5
     if p.is_batch:
         process_batch(p, img2img_batch_files, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir, args)

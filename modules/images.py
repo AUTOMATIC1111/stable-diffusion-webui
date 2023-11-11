@@ -532,6 +532,8 @@ def atomically_save_image():
             file.write(exifinfo)
         if shared.opts.save_log_fn != '' and len(exifinfo) > 0:
             fn = os.path.join(paths.data_path, shared.opts.save_log_fn)
+            if not fn.endswith('.json'):
+                fn += '.json'
             entries = shared.readfile(fn)
             idx = len(list(entries))
             if idx == 0:
@@ -547,7 +549,7 @@ save_thread = threading.Thread(target=atomically_save_image, daemon=True)
 save_thread.start()
 
 
-def save_image(image, path, basename = '', seed=None, prompt=None, extension=shared.opts.samples_format, info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None): # pylint: disable=unused-argument
+def save_image(image, path, basename='', seed=None, prompt=None, extension=shared.opts.samples_format, info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix='', save_to_dirs=None): # pylint: disable=unused-argument
     if image is None:
         shared.log.warning('Image is none')
         return None, None
@@ -556,26 +558,30 @@ def save_image(image, path, basename = '', seed=None, prompt=None, extension=sha
     if path is None or len(path) == 0: # set default path to avoid errors when functions are triggered manually or via api and param is not set
         path = shared.opts.outdir_save
     namegen = FilenameGenerator(p, seed, prompt, image, grid=grid)
+    suffix = suffix if suffix is not None else ''
+    basename = basename if basename is not None else ''
     if shared.opts.save_to_dirs:
         dirname = namegen.apply(shared.opts.directories_filename_pattern or "[prompt_words]")
         path = os.path.join(path, dirname)
     if forced_filename is None:
-        if short_filename or seed is None:
-            file_decoration = ""
         if shared.opts.samples_filename_pattern and len(shared.opts.samples_filename_pattern) > 0:
             file_decoration = shared.opts.samples_filename_pattern
         else:
             file_decoration = "[seq]-[prompt_words]"
         file_decoration = namegen.apply(file_decoration)
-        file_decoration += suffix
-    filename = os.path.join(path, f"{file_decoration}.{extension}") if basename == '' else os.path.join(path, f"{basename}-{file_decoration}.{extension}")
+        file_decoration += suffix if suffix is not None else ''
+        filename = os.path.join(path, f"{file_decoration}.{extension}") if basename == '' else os.path.join(path, f"{basename}-{file_decoration}.{extension}")
+    else:
+        forced_filename += suffix if suffix is not None else ''
+        filename = os.path.join(path, f"{forced_filename}.{extension}") if basename == '' else os.path.join(path, f"{basename}-{forced_filename}.{extension}")
     pnginfo = existing_info or {}
     if info is not None:
         pnginfo[pnginfo_section_name] = info
     params = script_callbacks.ImageSaveParams(image, p, filename, pnginfo)
     params.filename = namegen.sanitize(filename)
     dirname = os.path.dirname(params.filename)
-    os.makedirs(dirname, exist_ok=True)
+    if dirname is not None and len(dirname) > 0:
+        os.makedirs(dirname, exist_ok=True)
     # sequence
     if shared.opts.save_images_add_number or '[seq]' in params.filename:
         if '[seq]' not in params.filename:

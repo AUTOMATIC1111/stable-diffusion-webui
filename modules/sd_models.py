@@ -268,7 +268,7 @@ def select_checkpoint(op='model'):
         shared.log.info(f'Select: {op}="{checkpoint_info.title if checkpoint_info is not None else None}"')
         return checkpoint_info
     if len(checkpoints_list) == 0 and not shared.cmd_opts.no_download:
-        shared.log.error("Cannot generate without a checkpoint")
+        shared.log.warning("Cannot generate without a checkpoint")
         shared.log.info("Set system paths to use existing folders in a different location")
         shared.log.info("Or use --ckpt <path-to-checkpoint> to force using existing checkpoint")
         return None
@@ -646,6 +646,14 @@ def detect_pipeline(f: str, op: str = 'model'):
                 guess = 'Stable Diffusion XL Instruct'
             else:
                 guess = 'Stable Diffusion'
+            if 'LCM_' in f or 'LCM-' in f:
+                if shared.backend == shared.Backend.ORIGINAL:
+                    shared.log.warning(f'Model detected as LCM model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                guess = 'Latent Consistency Model'
+            if 'PixArt' in f:
+                if shared.backend == shared.Backend.ORIGINAL:
+                    shared.log.warning(f'Model detected as PixArt Alpha model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                guess = 'PixArt Alpha'
             pipeline = shared_items.get_pipelines().get(guess, None)
             shared.log.info(f'Autodetect: {op}="{guess}" class={pipeline.__name__} file="{f}" size={size}MB')
         except Exception as e:
@@ -777,7 +785,7 @@ def set_diffuser_options(sd_model, vae, op: str):
         shared.log.debug(f'Setting {op} VAE: name={sd_vae.loaded_vae_file} upcast={sd_model.vae.config.get("force_upcast", None)}')
     if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):
         sd_model.enable_xformers_memory_efficient_attention()
-    if shared.opts.opt_channelslast:
+    if shared.opts.opt_channelslast and hasattr(sd_model, 'unet'):
         shared.log.debug(f'Setting {op}: enable channels last')
         sd_model.unet.to(memory_format=torch.channels_last)
 

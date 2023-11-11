@@ -1,5 +1,6 @@
 import os
 import json
+import concurrent
 import network
 import networks
 from modules import shared, ui_extra_networks
@@ -8,6 +9,7 @@ from modules import shared, ui_extra_networks
 class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
         super().__init__('Lora')
+        self.list_time = 0
 
     def refresh(self):
         networks.list_available_networks()
@@ -74,10 +76,12 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
             return None
 
     def list_items(self):
-        for _index, name in enumerate(networks.available_networks):
-            item = self.create_item(name)
-            if item is not None:
-                yield item
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            future_items = {executor.submit(self.create_item, net): net for net in networks.available_networks}
+            for future in concurrent.futures.as_completed(future_items):
+                item = future.result()
+                if item is not None:
+                    yield item
 
     def allowed_directories_for_previews(self):
         return [shared.cmd_opts.lora_dir, shared.cmd_opts.lyco_dir]

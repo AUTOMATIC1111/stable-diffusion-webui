@@ -170,7 +170,7 @@ function submit_postprocessing(...args) {
   return args;
 }
 
-const submit = submit_txt2img;
+window.submit = submit_txt2img;
 
 function modelmerger(...args) {
   const id = randomId();

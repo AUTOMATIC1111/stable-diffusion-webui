@@ -319,6 +319,7 @@ def create_html(search_text, sort_column):
     for ext in sorted(extensions_list, key=sort_function, reverse=sort_reverse):
         installed = get_installed(ext)
         author = ''
+        updated = datetime.timestamp(datetime.now())
         try:
             if 'github' in ext['url']:
                 author = ext['url'].split('/')[-2].split(':')[-1] if '/' in ext['url'] else ext['url'].split(':')[1].split('/')[0]

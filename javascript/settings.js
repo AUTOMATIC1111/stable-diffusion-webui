@@ -77,7 +77,7 @@ function markIfModified(setting_name, value) {
   tab_nav_indicator.classList.toggle('saved', saved.size > 0);
   if (changed_items.size > 0) tab_nav_indicator.title += `click to reset ${changed_items.size} unapplied changes in this tab\n`;
   if (saved.size > 0) tab_nav_indicator.title += `${saved.size} custom values\n${unsaved.size} default values}`;
-  elem.scrollIntoView({ behavior: 'smooth', block: 'center' }); // TODO why is scroll happening on every change if all pages are visible?
+  // elem.scrollIntoView({ behavior: 'smooth', block: 'center' }); // TODO why is scroll happening on every change if all pages are visible?
 }
 
 onAfterUiUpdate(async () => {
@@ -105,9 +105,10 @@ onAfterUiUpdate(async () => {
     },
   });
 
-  const settings_search = gradioApp().querySelectorAll('#settings_search > label > textarea')[0];
-  settings_search.oninput = (e) => {
+  const settingsSearch = gradioApp().querySelectorAll('#settings_search > label > textarea')[0];
+  settingsSearch.oninput = (e) => {
     setTimeout(() => {
+      log('settingsSearch', e.target.value)
       showAllSettings();
       gradioApp().querySelectorAll('#tab_settings .tabitem').forEach((section) => {
         section.querySelectorAll('.dirtyable').forEach((setting) => {
@@ -131,23 +132,23 @@ onOptionsChanged(() => {
 function initSettings() {
   if (settingsInitialized) return;
   settingsInitialized = true;
-  const tab_nav_element = gradioApp().querySelector('#settings > .tab-nav');
-  const tab_nav_buttons = gradioApp().querySelectorAll('#settings > .tab-nav > button');
-  const tab_elements = gradioApp().querySelectorAll('#settings > div:not(.tab-nav)');
+  const tabNavElements = gradioApp().querySelector('#settings > .tab-nav');
+  const tabNavButtons = gradioApp().querySelectorAll('#settings > .tab-nav > button');
+  const tabElements = gradioApp().querySelectorAll('#settings > div:not(.tab-nav)');
   const observer = new MutationObserver((mutations) => {
-    const show_all_pages_dummy = gradioApp().getElementById('settings_show_all_pages');
-    if (show_all_pages_dummy.style.display === 'none') { return; }
-    const mutation_on_style = (mut) => mut.type === 'attributes' && mut.attributeName === 'style';
-    if (mutations.some(mutation_on_style)) showAllSettings();
+    const showAllPages = gradioApp().getElementById('settings_show_all_pages');
+    if (showAllPages.style.display === 'none') return;
+    const mutation = (mut) => mut.type === 'attributes' && mut.attributeName === 'style'
+    if (mutations.some(mutation)) showAllSettings();
   });
-  const tab_content_wrapper = document.createElement('div');
-  tab_content_wrapper.className = 'tab-content';
-  tab_nav_element.parentElement.insertBefore(tab_content_wrapper, tab_nav_element.nextSibling);
-  tab_elements.forEach((elem, index) => {
-    const tab_name = elem.id.replace('settings_', '');
-    const indicator = gradioApp().getElementById(`modification_indicator_${tab_name}`);
-    tab_nav_element.insertBefore(indicator, tab_nav_buttons[index]);
-    tab_content_wrapper.appendChild(elem);
+  const tabContentWrapper = document.createElement('div');
+  tabContentWrapper.className = 'tab-content';
+  tabNavElements.parentElement.insertBefore(tabContentWrapper, tabNavElements.nextSibling);
+  tabElements.forEach((elem, index) => {
+    const tabName = elem.id.replace('settings_', '');
+    const indicator = gradioApp().getElementById(`modification_indicator_${tabName}`);
+    tabNavElements.insertBefore(indicator, tabNavButtons[index]);
+    tabContentWrapper.appendChild(elem);
     observer.observe(elem, { attributes: true, attributeFilter: ['style'] });
   });
   log('initSettings');

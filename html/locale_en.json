@@ -61,7 +61,7 @@
   {"id":"","label":"Skip","localized":"","hint":"Stop processing current job and continue processing"},
   {"id":"","label":"Interrupt","localized":"","hint":"Interrupt current processing job"},
   {"id":"","label":"Pause","localized":"","hint":"Pause processing"},
-  {"id":"","label":"Restore","localized":"","hint":"Restore parameters from last known generated image"},
+  {"id":"","label":"Restore","localized":"","hint":"Restore parameters from current prompt or last known generated image"},
   {"id":"","label":"Clear","localized":"","hint":"Clear prompts"},
   {"id":"","label":"Networks","localized":"","hint":"Open extra network interface"},
   {"id":"","label":"Interrogate\nCLIP","localized":"","hint":"Run interrogate using CLIP model"},

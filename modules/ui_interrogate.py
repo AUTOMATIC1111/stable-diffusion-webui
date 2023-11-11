@@ -35,7 +35,7 @@ class BatchWriter:
 def load(clip_model_name):
     global ci # pylint: disable=global-statement
     if ci is None:
-        config = Config(device=devices.get_optimal_device(), cache_path=os.path.join(paths.models_path, 'clip-interrogator'), clip_model_name=clip_model_name, quiet=True)
+        config = Config(device=devices.get_optimal_device(), cache_path=os.path.join(paths.models_path, 'Interrogator'), clip_model_name=clip_model_name, quiet=True)
         if low_vram:
             config.apply_low_vram_defaults()
         shared.log.info(f'Interrogate load: config={config}')
