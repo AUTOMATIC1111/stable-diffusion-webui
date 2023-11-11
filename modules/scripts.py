@@ -1,7 +1,6 @@
 import os
 import re
 import sys
-import json
 import inspect
 from pathlib import Path
 from collections import namedtuple
@@ -313,7 +312,7 @@ postprocessing_scripts_data = []
 ScriptClassData = namedtuple("ScriptClassData", ["script_class", "path", "basedir", "module"])
 
 
-def list_scripts(scriptdirname, extension, *, include_extensions=True, read_property=False):
+def list_scripts(scriptdirname, extension, *, include_extensions=True):
     scripts_list = []
 
     basedir = os.path.join(paths.script_path, scriptdirname)
@@ -323,17 +322,7 @@ def list_scripts(scriptdirname, extension, *, include_extensions=True, read_prop
 
     if include_extensions:
         for ext in extensions.active():
-            property_path = os.path.join(ext.path, 'webui-extension-property.json')
-            scripts_load_order = None
-            if read_property:
-                try:
-                    with open(property_path, 'r', encoding='utf-8') as file:
-                        scripts_load_order = json.load(file).get('load_order')
-                except FileNotFoundError:
-                    pass
-                except Exception as e:
-                    print(e)
-            scripts_list += ext.list_files(scriptdirname, extension, scripts_load_order)
+            scripts_list += ext.list_files(scriptdirname, extension)
 
     scripts_list = [x for x in scripts_list if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
 
@@ -376,7 +365,7 @@ def load_scripts():
     postprocessing_scripts_data.clear()
     script_callbacks.clear_callbacks()
 
-    scripts_list = list_scripts("scripts", ".py", read_property=True) + list_scripts("modules/processing_scripts", ".py", include_extensions=False)
+    scripts_list = list_scripts("scripts", ".py") + list_scripts("modules/processing_scripts", ".py", include_extensions=False)
 
     syspath = sys.path
 

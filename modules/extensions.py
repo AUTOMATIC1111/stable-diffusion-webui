@@ -1,4 +1,5 @@
 import os
+import json
 import threading
 
 from modules import shared, errors, cache, scripts
@@ -89,12 +90,19 @@ class Extension:
 
         self.have_info_from_repo = True
 
-    def list_files(self, subdir, extension, load_order=None):
-        if load_order is None:
-            load_order = {}
+    def list_files(self, subdir, extension):
         dirpath = os.path.join(self.path, subdir)
         if not os.path.isdir(dirpath):
             return []
+
+        load_order = {}
+        try:
+            with open(os.path.join(self.path, 'webui-extension-properties.json'), 'r', encoding='utf-8') as file:
+                load_order = json.load(file).get('load_order')
+        except FileNotFoundError:
+            pass
+        except Exception as e:
+            print(e)
 
         res = []
         for filename in sorted(os.listdir(dirpath)):
