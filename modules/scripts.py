@@ -371,9 +371,8 @@ def list_scripts(scriptdirname, extension, *, include_extensions=True):
     # resolve dependencies
 
     loaded_extensions = set()
-    for _, script_data in script_dependency_map.items():
-        if script_data['extension'] is not None:
-            loaded_extensions.add(script_data['extension'])
+    for ext in extensions.active():
+        loaded_extensions.add(ext.canonical_name)
 
     for script_filename, script_data in script_dependency_map.items():
         # load before requires inverse dependency
