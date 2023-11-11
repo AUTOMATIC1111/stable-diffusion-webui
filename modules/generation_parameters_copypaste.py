@@ -211,6 +211,8 @@ def parse_generation_parameters(x: str):
         return res
     remaining = x[7:] if x.startswith('Prompt: ') else x
     remaining = x[11:] if x.startswith('parameters: ') else x
+    if 'Steps: ' in remaining and 'Negative prompt: ' not in remaining:
+        remaining = remaining.replace('Steps: ', 'Negative prompt: , Steps: ')
     prompt, remaining = remaining.strip().split('Negative prompt: ', maxsplit=1) if 'Negative prompt: ' in remaining else (remaining, '')
     res["Prompt"] = prompt.strip()
     negative, remaining = remaining.strip().split('Steps: ', maxsplit=1) if 'Steps: ' in remaining else (remaining, None)

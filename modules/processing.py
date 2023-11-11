@@ -851,10 +851,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     modules.extra_networks.activate(p, extra_network_data)
             if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
                 p.scripts.process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
-            if n == 0:
-                with open(os.path.join(modules.paths.data_path, "params.txt"), "w", encoding="utf8") as file:
-                    processed = Processed(p, [], p.seed, "")
-                    file.write(processed.infotext(p, 0))
             step_multiplier = 1
             sampler_config = modules.sd_samplers.find_sampler_config(p.sampler_name)
             step_multiplier = 2 if sampler_config and sampler_config.options.get("second_order", False) else 1

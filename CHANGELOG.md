@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-11-10
+## Update for 2023-11-11
 
 - **Diffusers**  
   - **LCM** support for any *SD 1.5* or *SD-XL* model!  
@@ -20,6 +20,7 @@
   - Update to `diffusers==0.23.0`  
 - **Extra networks**  
   - Use multi-threading for 5x load speedup  
+  - Better Lora trigger words support  
 - **General**:  
   - Reworked parser when pasting previously generated images/prompts  
     includes all `txt2img`, `img2img` and `override` params  
@@ -27,6 +28,7 @@
   - Support custom upscalers in subfolders  
   - Support `--ckpt none` to skip loading a model  
 - **Fixes**  
+  - Fix `params.txt` saved before actual image
   - Fix inpaint  
   - Fix manual grid image save  
   - Fix img2img init image save  

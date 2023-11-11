@@ -4,7 +4,7 @@ from collections import namedtuple
 from pathlib import Path
 import gradio as gr
 from PIL import Image, PngImagePlugin
-from modules import shared, errors
+from modules import shared, errors, paths
 
 
 Savedfile = namedtuple("Savedfile", ["name"])
@@ -69,6 +69,10 @@ def pil_to_temp_file(self, img: Image, dir: str, format="png") -> str: # pylint:
         name = tmp.name
         img.save(name, pnginfo=(metadata if use_metadata else None))
         shared.log.debug(f'Saving temp: image="{name}"')
+    params = ', '.join([f'{k}: {v}' for k, v in img.info.items()])
+    params = params[12:] if params.startswith('parameters: ') else params
+    with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
+        file.write(params)
     return name
 
 

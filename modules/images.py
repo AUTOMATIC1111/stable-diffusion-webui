@@ -541,6 +541,8 @@ def atomically_save_image():
             entry = { 'id': idx, 'filename': filename, 'time': datetime.datetime.now().isoformat(), 'info': exifinfo }
             entries.append(entry)
             shared.writefile(entries, fn, mode='w')
+        with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
+            file.write(exifinfo)
         save_queue.task_done()
 
 

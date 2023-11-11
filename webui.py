@@ -44,6 +44,7 @@ except Exception:
     pass
 
 state = shared.state
+backend = shared.backend
 if not modules.loader.initialized:
     timer.startup.record("libraries")
     log.setLevel(logging.DEBUG if cmd_opts.debug else logging.INFO)
@@ -274,7 +275,7 @@ def start_ui():
         shared.log.info(f'API Docs: {local_url[:-1]}/docs') # pylint: disable=unsubscriptable-object
     if share_url is not None:
         shared.log.info(f'Share URL: {share_url}')
-    shared.log.debug(f'Gradio registered functions: {len(shared.demo.fns)}')
+    shared.log.debug(f'Gradio functions: registered={len(shared.demo.fns)}')
     shared.demo.server.wants_restart = False
     setup_middleware(app, cmd_opts)
 
