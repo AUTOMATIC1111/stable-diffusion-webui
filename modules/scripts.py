@@ -335,15 +335,9 @@ def list_scripts(scriptdirname, extension, *, include_extensions=True):
         for ext in extensions.active():
             extension_scripts_list = ext.list_files(scriptdirname, extension)
             for extension_script in extension_scripts_list:
-                # this is built on the assumption that script name is unique.
-                # I think bad thing is gonna happen if name collide in the current implementation anyway, but we
-                # will need to refactor here if this assumption is broken later on.
-                if extension_script.filename in script_dependency_map:
-                    errors.report(f"Duplicate script name \"{extension_script.filename}\" found in extensions "
-                                  f"\"{ext.name}\" and \"{script_dependency_map[extension_script.filename]['extension_dirname'] or 'builtin'}\". "
-                                  f"The current loading file will be discarded.", exc_info=False)
-                    continue
-
+                script_canonical_name = ext.canonical_name + "/" + extension_script.filename
+                if ext.is_builtin:
+                    script_canonical_name = "builtin/" + script_canonical_name
                 relative_path = scriptdirname + "/" + extension_script.filename
 
                 requires = None
@@ -359,7 +353,7 @@ def list_scripts(scriptdirname, extension, *, include_extensions=True):
                 load_after = [x.strip() for x in load_after.split(',')] if load_after else []
                 load_before = [x.strip() for x in load_before.split(',')] if load_before else []
 
-                script_dependency_map[extension_script.filename] = {
+                script_dependency_map[script_canonical_name] = {
                     "extension": ext.canonical_name,
                     "extension_dirname": ext.name,
                     "script_file": extension_script,
@@ -374,60 +368,45 @@ def list_scripts(scriptdirname, extension, *, include_extensions=True):
     for ext in extensions.active():
         loaded_extensions.add(ext.canonical_name)
 
-    for script_filename, script_data in script_dependency_map.items():
+    for script_canonical_name, script_data in script_dependency_map.items():
         # load before requires inverse dependency
         # in this case, append the script name into the load_after list of the specified script
         for load_before_script in script_data['load_before']:
-            if load_before_script.startswith('ext:'):
-                # if this requires an extension to be loaded before
-                required_extension = load_before_script[4:]
+            # if this requires an individual script to be loaded before
+            if load_before_script in script_dependency_map:
+                script_dependency_map[load_before_script]['load_after'].append(script_canonical_name)
+            elif load_before_script in loaded_extensions:
                 for _, script_data2 in script_dependency_map.items():
-                    if script_data2['extension'] == required_extension:
-                        script_data2['load_after'].append(script_filename)
+                    if script_data2['extension'] == load_before_script:
+                        script_data2['load_after'].append(script_canonical_name)
                         break
-            else:
-                # if this requires an individual script to be loaded before
-                if load_before_script in script_dependency_map:
-                    script_dependency_map[load_before_script]['load_after'].append(script_filename)
 
         # resolve extension name in load_after lists
-        for load_after_script in script_data['load_after']:
-            if load_after_script.startswith('ext:'):
-                # if this requires an extension to be loaded after
-                required_extension = load_after_script[4:]
-                for script_file_name2, script_data2 in script_dependency_map.items():
-                    if script_data2['extension'] == required_extension:
-                        script_data['load_after'].append(script_file_name2)
-
-        # remove all extension names in load_after lists
-        script_data['load_after'] = [x for x in script_data['load_after'] if not x.startswith('ext:')]
+        for load_after_script in list(script_data['load_after']):
+            if load_after_script not in script_dependency_map and load_after_script in loaded_extensions:
+                script_data['load_after'].remove(load_after_script)
+                for script_canonical_name2, script_data2 in script_dependency_map.items():
+                    if script_data2['extension'] == load_after_script:
+                        script_data['load_after'].remove(script_canonical_name2)
+                        break
 
     # build the DAG
     sorter = TopologicalSorter()
-    for script_filename, script_data in script_dependency_map.items():
+    for script_canonical_name, script_data in script_dependency_map.items():
         requirement_met = True
         for required_script in script_data['requires']:
-            if required_script.startswith('ext:'):
-                # if this requires an extension to be installed
-                required_extension = required_script[4:]
-                if required_extension not in loaded_extensions:
-                    errors.report(f"Script \"{script_filename}\" requires extension \"{required_extension}\" to "
-                                  f"be loaded, but it is not. Skipping.",
-                                  exc_info=False)
-                    requirement_met = False
-                    break
-            else:
-                # if this requires an individual script to be loaded
-                if required_script not in script_dependency_map:
-                    errors.report(f"Script \"{script_filename}\" requires script \"{required_script}\" to "
-                                  f"be loaded, but it is not. Skipping.",
-                                  exc_info=False)
-                    requirement_met = False
-                    break
+            # if this requires an individual script to be loaded
+            if required_script not in script_dependency_map and required_script not in loaded_extensions:
+                errors.report(f"Script \"{script_canonical_name}\" "
+                              f"requires \"{required_script}\" to "
+                              f"be loaded, but it is not. Skipping.",
+                              exc_info=False)
+                requirement_met = False
+                break
         if not requirement_met:
             continue
 
-        sorter.add(script_filename, *script_data['load_after'])
+        sorter.add(script_canonical_name, *script_data['load_after'])
 
     # sort the scripts
     try:
@@ -436,8 +415,8 @@ def list_scripts(scriptdirname, extension, *, include_extensions=True):
         errors.report("Cycle detected in script dependencies. Scripts will load in ascending order.", exc_info=True)
         ordered_script = script_dependency_map.keys()
 
-    for script_filename in ordered_script:
-        script_data = script_dependency_map[script_filename]
+    for script_canonical_name in ordered_script:
+        script_data = script_dependency_map[script_canonical_name]
         scripts_list.append(script_data['script_file'])
 
     scripts_list = [x for x in scripts_list if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
