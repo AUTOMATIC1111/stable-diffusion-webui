@@ -162,7 +162,7 @@ def list_extensions():
     extension_dependency_map = {}
 
     # scan through extensions directory and load metadata
-    for dirname in [extensions_dir, extensions_builtin_dir]:
+    for dirname in [extensions_builtin_dir, extensions_dir]:
         if not os.path.isdir(dirname):
             continue
 
