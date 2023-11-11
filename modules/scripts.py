@@ -117,7 +117,6 @@ class Script:
         """
         pass
 
-
     def before_process(self, p, *args):
         """
         This function is called very early during processing begins for AlwaysVisible scripts.
@@ -244,9 +243,9 @@ class Script:
         """
         Calls callback before a component is created. The callback function is called with a single argument of type OnComponent.
 
-        May be called in show() or ui() - but it may be too late in latter as some components may already be created.
+        May be called in show() or ui() - but it may be too late in the latter as some components may already be created.
 
-        This function is an alternative to before_component in that it also cllows to run before a component is created, but
+        This function is an alternative to before_component in that it also called to run before a component is created, but
         it doesn't require to be called for every created component - just for the one you need.
         """
         if self.on_before_component_elem_id is None:
@@ -357,6 +356,20 @@ def list_files_with_name(filename):
     return res
 
 
+def get_short_path(path: Path):
+    """Returns the relative path if input path is sub-dir of data_path or script_path"""
+    try:
+        return path.relative_to(paths.data_path)
+    except ValueError:
+        try:
+            return path.relative_to(paths.script_path)
+        except ValueError:
+            return path
+
+
+script_default_order = {paths.extensions_dir: 700, paths.extensions_builtin_dir: 500, os.path.join(paths.script_path, 'scripts'): 300, paths.script_path: 100}
+
+
 def load_scripts():
     global current_basedir
     scripts_data.clear()
@@ -377,33 +390,33 @@ def load_scripts():
             elif issubclass(script_class, scripts_postprocessing.ScriptPostprocessing):
                 postprocessing_scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
 
-    priority = {paths.extensions_dir: 300, paths.extensions_builtin_dir: 200, os.path.join(paths.script_path, 'scripts'): 100, paths.script_path: 0}
-
-    def script_load_order(script_file):
-        """
-        retrieve Scripts load order based on the following priority
-        1. User defined load order script_load_order_override
+    def get_script_load_order(script_file):
+        """get script file load order based on the following priority
+        1. User defined load order shared.opts.script_order_override {key: order}
+            key: short_path
+            order: number
         2. Default load order specified by extension properties
-        3. Auto assign load order base on script type
-            3-1. internal webui scripts: 0
-            3-2. built-in scripts: 100
-            3-3. built-in extensions: 200
-            3-4. extension: 300
-            other: 10000 (Error)
-        if multiple Scripts have the same load order then the script_file.path will be used for comparison
+        3. Assign load order base on script type
+            3-1. internal webui scripts: 100
+            3-2. built-in scripts: 300
+            3-3. built-in extensions: 500
+            3-4. extension: 700
+        other: 10000 (Error)
+        if multiple scripts file have the same load order then the short_path will be used for comparison
         """
-
+        path = Path(script_file.path)
+        short_path = get_short_path(path)
         # load order user override or specified by script property
-        load_order = shared.opts.script_load_order_override.get(script_file.path) or script_file.load_order
+        load_order = shared.opts.script_order_override.get(short_path) or script_file.load_order
         if load_order is not None:
-            return [load_order, script_file.path]
+            return [load_order, short_path]
         # Auto assign load order base on script type
-        for key in priority:
-            if Path(script_file.path).is_relative_to(key):
-                return [priority[key], script_file.path]
-        return [10000, script_file.path]
+        for key in script_default_order:
+            if path.is_relative_to(key):
+                return [script_default_order[key], short_path]
+        return [10000, short_path]
 
-    for scriptfile in sorted(scripts_list, key=script_load_order):
+    for scriptfile in sorted(scripts_list, key=get_script_load_order):
         try:
             if scriptfile.basedir != paths.script_path:
                 sys.path = [scriptfile.basedir] + sys.path
@@ -436,6 +449,36 @@ def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
     return default
 
 
+def get_function_order(script_path, script_class, function_name):
+    """get execution order of function_name for class based on the following priority
+    1. User defined execution order shared.opts.script_order_override {key: order}
+        key: short_path>ScriptClassName>function_name
+        order: number
+    2. Default execution order specified by function attribute function_name.order
+    3. Assign load order base on script type
+        3-1. internal webui scripts: 100
+        3-2. built-in scripts: 300
+        3-3. built-in extensions: 500
+        3-4. extension: 700
+    other: 10000 (Error)
+    if multiple scripts file have the same load order then the short_path will be used for comparison
+    """
+    path = Path(script_path)
+    short_path = get_short_path(path)
+    fn_path = f'{short_path}>{script_class.__name__}>{function_name}'
+    # scripts callback order override or specified by function attribute
+    order = shared.opts.script_order_override.get(fn_path) or getattr(getattr(script_class, function_name), 'order', None)
+    if order is not None:
+        print(order, fn_path)
+        return [order, fn_path]
+    # Auto assign load order base on script type
+    for key in script_default_order:
+        if path.is_relative_to(key):
+            print(script_default_order[key], fn_path)
+            return [script_default_order[key], fn_path]
+    return [order, 10000]
+
+
 class ScriptRunner:
     def __init__(self):
         self.scripts = []
@@ -446,12 +489,45 @@ class ScriptRunner:
         self.infotext_fields = []
         self.paste_field_names = []
         self.inputs = [None]
+        self.script_callback_map = {}
 
         self.on_before_component_elem_id = {}
         """dict of callbacks to be called before an element is created; key=elem_id, value=list of callbacks"""
 
         self.on_after_component_elem_id = {}
         """dict of callbacks to be called after an element is created; key=elem_id, value=list of callbacks"""
+
+    alwayson_scripts_callbacks = [
+        'ui',
+        'setup',
+        'before_process',
+        'process',
+        'before_process_batch',
+        'after_extra_networks_activate',
+        'process_batch',
+        'before_hr',
+        'postprocess',
+        'postprocess_batch',
+        'postprocess_batch_list',
+        'postprocess_image',
+    ]
+
+    base_scripts_callbacks = [
+        'before_component',
+        'after_component',
+    ]
+
+    def init_script_callback_map(self):
+        self.alwayson_scripts.sort(key=lambda x: get_function_order(x.filename, x.__class__, 'title'))
+        self.selectable_scripts.sort(key=lambda x: get_function_order(x.filename, x.__class__, 'title'))
+        self.scripts.sort(key=lambda x: get_function_order(x.filename, x.__class__, 'title'))
+
+        self.script_callback_map = {
+            key: sorted(self.alwayson_scripts, key=lambda x: get_function_order(x.filename, x.__class__, key)) for key in self.alwayson_scripts_callbacks
+        }
+        self.script_callback_map.update({
+            key: sorted(self.scripts, key=lambda x: get_function_order(x.filename, x.__class__, key)) for key in self.base_scripts_callbacks
+        })
 
     def initialize_scripts(self, is_img2img):
         from modules import scripts_auto_postprocessing
@@ -462,7 +538,8 @@ class ScriptRunner:
 
         auto_processing_scripts = scripts_auto_postprocessing.create_auto_preprocessing_script_data()
 
-        for script_data in auto_processing_scripts + scripts_data:
+        script_list = auto_processing_scripts + scripts_data
+        for script_data in sorted(script_list, key=lambda x: get_function_order(x.path, x.script_class, 'show')):
             script = script_data.script_class()
             script.filename = script_data.path
             script.is_txt2img = not is_img2img
@@ -480,6 +557,7 @@ class ScriptRunner:
                 self.scripts.append(script)
                 self.selectable_scripts.append(script)
 
+        self.init_script_callback_map()
         self.apply_on_before_component_callbacks()
 
     def apply_on_before_component_callbacks(self):
@@ -550,7 +628,7 @@ class ScriptRunner:
 
     def setup_ui_for_section(self, section, scriptlist=None):
         if scriptlist is None:
-            scriptlist = self.alwayson_scripts
+            scriptlist = self.script_callback_map['ui']
 
         for script in scriptlist:
             if script.alwayson and script.section != section:
@@ -580,7 +658,7 @@ class ScriptRunner:
         self.setup_ui_for_section(None, self.selectable_scripts)
 
         def select_script(script_index):
-            selected_script = self.selectable_scripts[script_index - 1] if script_index>0 else None
+            selected_script = self.selectable_scripts[script_index - 1] if script_index > 0 else None
 
             return [gr.update(visible=selected_script == s) for s in self.selectable_scripts]
 
@@ -639,7 +717,7 @@ class ScriptRunner:
         return processed
 
     def before_process(self, p):
-        for script in self.alwayson_scripts:
+        for script in self.script_callback_map['before_process']:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.before_process(p, *script_args)
@@ -647,7 +725,7 @@ class ScriptRunner:
                 errors.report(f"Error running before_process: {script.filename}", exc_info=True)
 
     def process(self, p):
-        for script in self.alwayson_scripts:
+        for script in self.script_callback_map['process']:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.process(p, *script_args)
@@ -655,7 +733,7 @@ class ScriptRunner:
                 errors.report(f"Error running process: {script.filename}", exc_info=True)
 
     def before_process_batch(self, p, **kwargs):
-        for script in self.alwayson_scripts:
+        for script in self.script_callback_map['before_process_batch']:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.before_process_batch(p, *script_args, **kwargs)
@@ -663,7 +741,7 @@ class ScriptRunner:
                 errors.report(f"Error running before_process_batch: {script.filename}", exc_info=True)
 
     def after_extra_networks_activate(self, p, **kwargs):
-        for script in self.alwayson_scripts:
+        for script in self.script_callback_map['after_extra_networks_activate']:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.after_extra_networks_activate(p, *script_args, **kwargs)
@@ -671,7 +749,7 @@ class ScriptRunner:
                 errors.report(f"Error running after_extra_networks_activate: {script.filename}", exc_info=True)
 
     def process_batch(self, p, **kwargs):
-        for script in self.alwayson_scripts:
+        for script in self.script_callback_map['process_batch']:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.process_batch(p, *script_args, **kwargs)
@@ -679,7 +757,7 @@ class ScriptRunner:
                 errors.report(f"Error running process_batch: {script.filename}", exc_info=True)
 
     def postprocess(self, p, processed):
-        for script in self.alwayson_scripts:
+        for script in self.script_callback_map['postprocess']:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess(p, processed, *script_args)
@@ -687,7 +765,7 @@ class ScriptRunner:
                 errors.report(f"Error running postprocess: {script.filename}", exc_info=True)
 
     def postprocess_batch(self, p, images, **kwargs):
-        for script in self.alwayson_scripts:
+        for script in self.script_callback_map['postprocess_batch']:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess_batch(p, *script_args, images=images, **kwargs)
@@ -695,7 +773,7 @@ class ScriptRunner:
                 errors.report(f"Error running postprocess_batch: {script.filename}", exc_info=True)
 
     def postprocess_batch_list(self, p, pp: PostprocessBatchListArgs, **kwargs):
-        for script in self.alwayson_scripts:
+        for script in self.script_callback_map['postprocess_batch_list']:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess_batch_list(p, pp, *script_args, **kwargs)
@@ -703,7 +781,7 @@ class ScriptRunner:
                 errors.report(f"Error running postprocess_batch_list: {script.filename}", exc_info=True)
 
     def postprocess_image(self, p, pp: PostprocessImageArgs):
-        for script in self.alwayson_scripts:
+        for script in self.script_callback_map['postprocess_image']:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess_image(p, pp, *script_args)
@@ -717,7 +795,7 @@ class ScriptRunner:
             except Exception:
                 errors.report(f"Error running on_before_component: {script.filename}", exc_info=True)
 
-        for script in self.scripts:
+        for script in self.script_callback_map['before_component']:
             try:
                 script.before_component(component, **kwargs)
             except Exception:
@@ -730,7 +808,7 @@ class ScriptRunner:
             except Exception:
                 errors.report(f"Error running on_after_component: {script.filename}", exc_info=True)
 
-        for script in self.scripts:
+        for script in self.script_callback_map['after_component']:
             try:
                 script.after_component(component, **kwargs)
             except Exception:
@@ -758,7 +836,7 @@ class ScriptRunner:
                     self.scripts[si].args_to = args_to
 
     def before_hr(self, p):
-        for script in self.alwayson_scripts:
+        for script in self.script_callback_map['before_hr']:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.before_hr(p, *script_args)
@@ -766,7 +844,7 @@ class ScriptRunner:
                 errors.report(f"Error running before_hr: {script.filename}", exc_info=True)
 
     def setup_scrips(self, p, *, is_ui=True):
-        for script in self.alwayson_scripts:
+        for script in self.script_callback_map['setup']:
             if not is_ui and script.setup_for_ui_only:
                 continue
 
