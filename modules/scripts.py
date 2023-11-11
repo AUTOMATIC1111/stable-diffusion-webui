@@ -322,6 +322,9 @@ def list_scripts(scriptdirname, extension, *, include_extensions=True):
     root_script_basedir = os.path.join(paths.script_path, scriptdirname)
     if os.path.exists(root_script_basedir):
         for filename in sorted(os.listdir(root_script_basedir)):
+            if not os.path.isfile(os.path.join(root_script_basedir, filename)):
+                continue
+
             script_dependency_map[filename] = {
                 "extension": None,
                 "extension_dirname": None,
@@ -335,19 +338,27 @@ def list_scripts(scriptdirname, extension, *, include_extensions=True):
         for ext in extensions.active():
             extension_scripts_list = ext.list_files(scriptdirname, extension)
             for extension_script in extension_scripts_list:
+                if not os.path.isfile(extension_script.path):
+                    continue
+
                 script_canonical_name = ext.canonical_name + "/" + extension_script.filename
                 if ext.is_builtin:
                     script_canonical_name = "builtin/" + script_canonical_name
                 relative_path = scriptdirname + "/" + extension_script.filename
 
-                requires = None
-                load_before = None
-                load_after = None
+                requires = ''
+                load_before = ''
+                load_after = ''
 
                 if ext.metadata is not None:
-                    requires = ext.metadata.get(relative_path, "Requires", fallback=None)
-                    load_before = ext.metadata.get(relative_path, "Before", fallback=None)
-                    load_after = ext.metadata.get(relative_path, "After", fallback=None)
+                    requires = ext.metadata.get(relative_path, "Requires", fallback='')
+                    load_before = ext.metadata.get(relative_path, "Before", fallback='')
+                    load_after = ext.metadata.get(relative_path, "After", fallback='')
+
+                    # propagate directory level metadata
+                    requires = requires + ',' + ext.metadata.get(scriptdirname, "Requires", fallback='')
+                    load_before = load_before + ',' + ext.metadata.get(scriptdirname, "Before", fallback='')
+                    load_after = load_after + ',' + ext.metadata.get(scriptdirname, "After", fallback='')
 
                 requires = list(filter(None, re.split(r"[,\s]+", requires.lower()))) if requires else []
                 load_after = list(filter(None, re.split(r"[,\s]+", load_after.lower()))) if load_after else []
@@ -387,7 +398,7 @@ def list_scripts(scriptdirname, extension, *, include_extensions=True):
                 script_data['load_after'].remove(load_after_script)
                 for script_canonical_name2, script_data2 in script_dependency_map.items():
                     if script_data2['extension'] == load_after_script:
-                        script_data['load_after'].remove(script_canonical_name2)
+                        script_data['load_after'].append(script_canonical_name2)
                         break
 
     # build the DAG
