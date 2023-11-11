@@ -2,6 +2,7 @@ import configparser
 import functools
 import os
 import threading
+import re
 
 from modules import shared, errors, cache, scripts
 from modules.gitpython_hack import Repo
@@ -48,7 +49,8 @@ class Extension:
                 config.read(os.path.join(self.path, "sd_webui_metadata.ini"))
                 return config
             except Exception:
-                errors.report(f"Error reading sd_webui_metadata.ini for extension {self.canonical_name}.", exc_info=True)
+                errors.report(f"Error reading sd_webui_metadata.ini for extension {self.canonical_name}.",
+                              exc_info=True)
         return None
 
     def to_dict(self):
@@ -70,6 +72,7 @@ class Extension:
                 self.do_read_info_from_repo()
 
                 return self.to_dict()
+
         try:
             d = cache.cached_data_for_file('extensions-git', self.name, os.path.join(self.path, ".git"), read_from_repo)
             self.from_dict(d)
@@ -194,8 +197,8 @@ def list_extensions():
                               f"The current loading extension will be discarded.", exc_info=False)
                 continue
 
-            # we want to wash the data to lowercase and remove whitespaces just in case
-            requires = [x.strip() for x in requires.lower().split(',')] if requires else []
+            # both "," and " " are accepted as separator
+            requires = list(filter(None, re.split(r"[,\s]+", requires.lower()))) if requires else []
 
             extension_dependency_map[canonical_name] = {
                 "dirname": extension_dirname,

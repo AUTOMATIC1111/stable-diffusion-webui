@@ -349,9 +349,9 @@ def list_scripts(scriptdirname, extension, *, include_extensions=True):
                     load_before = ext.metadata.get(relative_path, "Before", fallback=None)
                     load_after = ext.metadata.get(relative_path, "After", fallback=None)
 
-                requires = [x.strip() for x in requires.split(',')] if requires else []
-                load_after = [x.strip() for x in load_after.split(',')] if load_after else []
-                load_before = [x.strip() for x in load_before.split(',')] if load_before else []
+                requires = list(filter(None, re.split(r"[,\s]+", requires.lower()))) if requires else []
+                load_after = list(filter(None, re.split(r"[,\s]+", load_after.lower()))) if load_after else []
+                load_before = list(filter(None, re.split(r"[,\s]+", load_before.lower()))) if load_before else []
 
                 script_dependency_map[script_canonical_name] = {
                     "extension": ext.canonical_name,
