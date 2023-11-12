@@ -138,8 +138,9 @@ class ExtraNetworksPage:
                         continue
 
                     subdir = os.path.abspath(x)[len(parentdir):].replace("\\", "/")
-                    while subdir.startswith("/"):
-                        subdir = subdir[1:]
+                    
+                    if not subdir.startswith("/"):
+                        subdir = "/" + subdir
 
                     is_empty = len(os.listdir(x)) == 0
                     if not is_empty and not subdir.endswith("/"):
