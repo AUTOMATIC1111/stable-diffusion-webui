@@ -254,7 +254,7 @@ axis_options = [
     AxisOption("[Second pass] hires steps", int, apply_field("hr_second_pass_steps")),
     AxisOption("[Second pass] CFG scale", float, apply_field("image_cfg_scale")),
     AxisOption("[Second pass] guidance rescale", float, apply_field("diffusers_guidance_rescale")),
-    AxisOption("[Refiner] model", str, apply_refiner, fmt=format_value, cost=1.0, choices=lambda: sorted(sd_models.checkpoints_list)),
+    AxisOption("[Refiner] model", str, apply_refiner, fmt=format_value, cost=1.0, choices=lambda: ['None'] + sorted(sd_models.checkpoints_list)),
     AxisOption("[Refiner] refiner start", float, apply_field("refiner_start")),
     AxisOption("[Refiner] refiner steps", float, apply_field("refiner_steps")),
     AxisOption("[TOME] Token merging ratio (txt2img)", float, apply_override('token_merging_ratio')),

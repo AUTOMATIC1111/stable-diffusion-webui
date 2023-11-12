@@ -899,15 +899,26 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 if model_type.startswith('Stable Diffusion'):
                     diffusers_load_config['force_zeros_for_empty_prompt '] = shared.opts.diffusers_force_zeros
                     diffusers_load_config['requires_aesthetics_score'] = shared.opts.diffusers_aesthetics_score
-                    diffusers_load_config['config_files'] = {
-                        'v1': 'configs/v1-inference.yaml',
-                        'v2': 'configs/v2-inference-768-v.yaml',
-                        'xl': 'configs/sd_xl_base.yaml',
-                        'xl_refiner': 'configs/sd_xl_refiner.yaml',
-                    }
+                    if 'inpainting' in checkpoint_info.path.lower():
+                        diffusers_load_config['config_files'] = {
+                            'v1': 'configs/v1-inpainting-inference.yaml',
+                            'v2': 'configs/v2-inference-768-v.yaml',
+                            'xl': 'configs/sd_xl_base.yaml',
+                            'xl_refiner': 'configs/sd_xl_refiner.yaml',
+                        }
+                    else:
+                        diffusers_load_config['config_files'] = {
+                            'v1': 'configs/v1-inference.yaml',
+                            'v2': 'configs/v2-inference-768-v.yaml',
+                            'xl': 'configs/sd_xl_base.yaml',
+                            'xl_refiner': 'configs/sd_xl_refiner.yaml',
+                        }
                 if hasattr(pipeline, 'from_single_file'):
                     diffusers_load_config['use_safetensors'] = True
                     sd_model = pipeline.from_single_file(checkpoint_info.path, **diffusers_load_config)
+                    if sd_model is not None and hasattr(sd_model, 'unet') and hasattr(sd_model.unet, 'config') and 'inpainting' in checkpoint_info.path.lower():
+                        shared.log.debug('Model patch: type=inpaint')
+                        sd_model.unet.config.in_channels = 9
                 elif hasattr(pipeline, 'from_ckpt'):
                     sd_model = pipeline.from_ckpt(checkpoint_info.path, **diffusers_load_config)
                 else:
