@@ -17,7 +17,7 @@
   "Segmind SSD-1B": {
     "path": "segmind/SSD-1B",
     "desc": "The Segmind Stable Diffusion Model (SSD-1B) offers a compact, efficient, and distilled version of the SDXL model. At 50% smaller and 60% faster than Stable Diffusion XL (SDXL), it provides quick and seamless performance without sacrificing image quality.",
-    "preview": "segmind--ssd-1b.jpg"
+    "preview": "segmind--SSD-1B.jpg"
   },
   "Segmind Tiny": {
     "path": "segmind/tiny-sd",
@@ -27,17 +27,17 @@
   "LCM SD-1.5 Dreamshaper 7": {
     "path": "SimianLuo/LCM_Dreamshaper_v7",
     "desc": "Latent Consistencey Models enable swift inference with minimal steps on any pre-trained LDMs, including Stable Diffusion. By distilling classifier-free guidance into the model's input, LCM can generate high-quality images in very short inference time. LCM can generate quality images in as few as 3-4 steps, making it blazingly fast.",
-    "preview": "simianluo--lcm_dreamshaper_v7.jpg"
+    "preview": "SimianLuo--LCM_Dreamshaper_v7.jpg"
   },
   "Pixart-α XL 2 Medium 512": {
     "path": "PixArt-alpha/PixArt-XL-2-512x512",
     "desc": "PixArt-α is a Transformer-based T2I diffusion model whose image generation quality is competitive with state-of-the-art image generators (e.g., Imagen, SDXL, and even Midjourney), and the training speed markedly surpasses existing large-scale T2I models. Extensive experiments demonstrate that PIXART-α excels in image quality, artistry, and semantic control. It can directly generate 512px images from text prompts within a single sampling process.",
-    "preview": "pixart-alpha--pixart-xl-2-512x512.jpg"
+    "preview": "PixArt-alpha--PixArt-XL-2-512x512.jpg"
   },
   "Pixart-α XL 2 Large 1024": {
     "path": "PixArt-alpha/PixArt-XL-2-1024-MS",
     "desc": "PixArt-α is a Transformer-based T2I diffusion model whose image generation quality is competitive with state-of-the-art image generators (e.g., Imagen, SDXL, and even Midjourney), and the training speed markedly surpasses existing large-scale T2I models. Extensive experiments demonstrate that PIXART-α excels in image quality, artistry, and semantic control. It can directly generate 1024px images from text prompts within a single sampling process.",
-    "preview": "pixart-alpha--pixart-xl-2-1024-ms.jpg"
+    "preview": "PixArt-alpha--PixArt-XL-2-1024-MS.jpg"
   },
   "Warp Wuerstchen": {
     "path": "warp-ai/wuerstchen",
@@ -57,7 +57,7 @@
   "DeepFloyd IF Medium": {
     "path": "DeepFloyd/IF-I-M-v1.0",
     "desc": "DeepFloyd-IF is a pixel-based text-to-image triple-cascaded diffusion model, that can generate pictures with new state-of-the-art for photorealism and language understanding. The result is a highly efficient model that outperforms current state-of-the-art models, achieving a zero-shot FID-30K score of 6.66 on the COCO dataset. It is modular and composed of frozen text mode and three pixel cascaded diffusion modules, each designed to generate images of increasing resolution: 64x64, 256x256, and 1024x1024.",
-    "preview": "deepfloyd--if-i-m-v1.0.jpg"
+    "preview": "DeepFloyd--IF-I-M-v1.0.jpg"
   },
   "Tsinghua UniDiffuser": {
     "path": "thu-ml/unidiffuser-v1",

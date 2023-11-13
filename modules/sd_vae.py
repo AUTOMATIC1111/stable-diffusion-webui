@@ -91,6 +91,8 @@ def refresh_vae_list():
         candidates += glob.iglob(path, recursive=True)
     for filepath in candidates:
         name = get_filename(filepath)
+        if name == 'VAE':
+            continue
         if shared.backend == shared.Backend.ORIGINAL:
             vae_dict[name] = filepath
         else:

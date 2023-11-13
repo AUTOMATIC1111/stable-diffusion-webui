@@ -329,10 +329,10 @@ class ExtraNetworksPage:
         else:
             files = listdir(os.path.dirname(path))
             fn = os.path.splitext(path)[0]
-        preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
-        for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.', '.preview.']]:
+        exts = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
+        for file in [f'{fn}{mid}{ext}' for ext in exts for mid in ['.thumb.', '.', '.preview.']]:
             if file in files:
-                if '.thumb.' not in file:
+                if 'Reference' not in file and '.thumb.' not in file:
                     self.missing_thumbs.append(file)
                 return file
         return 'html/card-no-preview.png'

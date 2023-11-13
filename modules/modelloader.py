@@ -274,6 +274,8 @@ def load_diffusers_models(model_path: str, command_path: str = None, clear=True)
                 try:
                     if "--" not in folder:
                         continue
+                    if folder.endswith("-prior"):
+                        continue
                     _, name = folder.split("--", maxsplit=1)
                     name = name.replace("--", "/")
                     folder = os.path.join(place, folder)

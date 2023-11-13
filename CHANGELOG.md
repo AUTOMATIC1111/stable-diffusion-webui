@@ -42,6 +42,7 @@
   - Safe scripts callback execution  
   - Improved extension compatibility  
   - Improved BF16 support  
+  - Match previews for reference models with downloaded models
 
 ## Update for 2023-11-06
 
