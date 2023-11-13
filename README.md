@@ -13,7 +13,7 @@ A bespoke, highly adaptable user interface for the Stable Diffusion, utilizing t
 ## Features webui-ux 
 - A versatile micro-template engine that can be leveraged by other extensions
 - Customizable theme styles through a user-friendly configuration interface
-- Robust logging capabilities via built-in console logs
+- Built-in console log
 - Option to ignore overrides
 - Support for tick marks on input range sliders for improved usability
 - Ability to switch between slider and number input modes, allowing users to enter values manually without displaying the slider.
