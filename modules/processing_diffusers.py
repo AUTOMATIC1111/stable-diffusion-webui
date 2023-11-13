@@ -98,7 +98,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             model.vae.to(devices.device)
         latents.to(model.vae.device)
 
-        upcast = (model.vae.dtype == torch.float16) and model.vae.config.force_upcast and hasattr(model, 'upcast_vae')
+        upcast = (model.vae.dtype == torch.float16) and getattr(model.vae.config, 'force_upcast', False) and hasattr(model, 'upcast_vae')
         if upcast: # this is done by diffusers automatically if output_type != 'latent'
             model.upcast_vae()
             latents = latents.to(next(iter(model.vae.post_quant_conv.parameters())).dtype)
