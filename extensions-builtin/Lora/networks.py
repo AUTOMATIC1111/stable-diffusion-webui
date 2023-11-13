@@ -74,6 +74,24 @@ def assign_network_names_to_compvis_modules(sd_model):
     sd_model.network_layer_mapping = network_layer_mapping
 
 
+def load_diffusers(name, network_on_disk):
+    t0 = time.time()
+    cached = lora_cache.get(name, None)
+    if debug:
+        shared.log.debug(f'LoRA load: name={name} file={network_on_disk.filename} {"cached" if cached else ""}')
+    if cached is not None:
+        return cached
+    if shared.backend != shared.Backend.DIFFUSERS:
+        return None
+    shared.sd_model.load_lora_weights(network_on_disk.filename)
+    net = network.Network(name, network_on_disk)
+    net.mtime = os.path.getmtime(network_on_disk.filename)
+    lora_cache[name] = net
+    t1 = time.time()
+    timer['load'] += t1 - t0
+    return net
+
+
 def load_network(name, network_on_disk):
     t0 = time.time()
     cached = lora_cache.get(name, None)
@@ -142,7 +160,10 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
         net = None
         if network_on_disk is not None:
             try:
-                net = load_network(name, network_on_disk)
+                if shared.backend == shared.Backend.DIFFUSERS and os.environ.get('SD_LORA_DIFFUSERS', None):
+                    net = load_diffusers(name, network_on_disk)
+                else:
+                    net = load_network(name, network_on_disk)
             except Exception as e:
                 shared.log.error(f"LoRA load failed: file={network_on_disk.filename}")
                 if debug:

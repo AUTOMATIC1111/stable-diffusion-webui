@@ -247,7 +247,6 @@ infotext_to_setting_name_mapping = [
     ('VAE', 'sd_vae'),
     ('Parser', 'prompt_attention'),
     ('Color correction', 'img2img_color_correction'),
-    ('LoRA method', 'diffusers_lora_loader'),
     # Samplers
     ('Sampler Eta', 'scheduler_eta'),
     ('Sampler ENSD', 'eta_noise_seed_delta'),
