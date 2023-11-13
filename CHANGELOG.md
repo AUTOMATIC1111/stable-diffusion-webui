@@ -10,7 +10,7 @@
     - set **sampler** to **LCM**  
     - set number of steps to some low number, for SD-XL 6-7 steps is normally sufficient  
       note: LCM scheduler does not support steps higher than 50
-    - set cfg to 1 or 2  
+    - set CFG to 1-2  
   - Add `cli/lcm-convert.py` script to convert any SD 1.5 or SD-XL model to LCM model  
     by baking in LORA and uploading to Huggingface, thanks @Disty0  
   - Support for [Stable Fast](https://github.com/chengzeyi/stable-fast) model compile on *Windows/Linux/WSL2* with *CUDA*  
@@ -25,6 +25,7 @@
   - Add support for **OpenAI Consistency decoder VAE**
   - Enhance prompt parsing with long prompts and support for *BREAK* keyword  
     Change-in-behavior: new line in prompt now means *BREAK*  
+  - Add alternative Lora loading algorithm, triggered if `SD_LORA_DIFFUSERS` is set  
   - Update to `diffusers==0.23.0`  
 - **Extra networks**  
   - Use multi-threading for 5x load speedup  
