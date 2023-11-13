@@ -1863,7 +1863,9 @@ button.active .icon-sort {
     -webkit-mask-image: url(./html/svg/computer-line.svg);
 }
 
-
+.icon-menuadd{
+    -webkit-mask-image: url(./html/svg/menu-add-fill.svg);
+}
 
 #contributors_grid {
     gap: 5px;
@@ -3245,6 +3247,7 @@ input[type="checkbox"] {
 .tab-labels [id$="2img_header"] span ,
 .aside-labels #accordion-aside .xtabs-tab span {
     display: flex !important;
+    text-transform: capitalize;
 }
 .main-labels #main-nav .xtabs-tab,
 .tab-labels [id$="2img_header"] .xtabs-tab,
@@ -3281,6 +3284,23 @@ input[type="checkbox"] {
 }
 #split-right:not(.v-expand) #accordion-aside{
     margin-left: var(--ae-border-size);
+}
+[toggle] .wrap{
+    display:none;
+}
+
+.default-mobile #split-right:not(.v-expand) { 
+    position: fixed;
+    inset: var(--ae-panel-padding);
+    z-index: 999;
+    background-color: var(--ae-main-bg-color);
+    outline: var(--ae-border-size) solid var(--ae-main-bg-color);
+}
+.default-mobile #split-right:not(.v-expand) #accordion-aside {
+    margin-left: var(--ae-panel-padding);
+}
+.default-mobile .template > .full-height {
+    padding: var(--ae-panel-padding);
 }
 
 @media (max-width: 768px) {

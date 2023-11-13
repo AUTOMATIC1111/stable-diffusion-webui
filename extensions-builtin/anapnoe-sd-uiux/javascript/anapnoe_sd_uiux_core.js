@@ -135,6 +135,13 @@ function applyDefaultLayout(isMobile){
             }
         }           
     });
+
+    if(isMobile){ 
+        anapnoe_app.querySelector(".accordion-vertical.expand #mask-icon-acc-arrow")?.click();
+        anapnoe_app.classList.add("default-mobile");
+    }else{
+        anapnoe_app.classList.remove("default-mobile");
+    }
 }
 
 function switchMobile(){
@@ -153,12 +160,12 @@ function switchMobile(){
             applyDefaultLayout(isMobile);
         });
         applyDefaultLayout(detectMobile());
+
     }else if(optslayout === "Mobile"){
         applyDefaultLayout(true);
     }else{
         applyDefaultLayout(false);
-    }
-    
+    }   
 }
 
 
@@ -598,6 +605,7 @@ function onUiUxReady(content_div){
 			//main_nav_content.append(sidebar_tabs);
 			showContributors()           
             switchMobile();
+            
             
             localStorage.setItem('UiUxComplete', true);
 			
