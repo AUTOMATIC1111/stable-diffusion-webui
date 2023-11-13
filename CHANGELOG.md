@@ -23,7 +23,8 @@
   - Fix **DPM SDE** scheduler  
   - Better support for SD 1.5 **inpainting** models  
   - Add support for **OpenAI Consistency decoder VAE**
-  - Enhance prompt parsing with long prompts and support for *BREAK* keyword
+  - Enhance prompt parsing with long prompts and support for *BREAK* keyword  
+    Change-in-behavior: new line in prompt now means *BREAK*  
   - Update to `diffusers==0.23.0`  
 - **Extra networks**  
   - Use multi-threading for 5x load speedup  
