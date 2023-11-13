@@ -230,7 +230,7 @@ def compile_upscaler(model, name=""):
 
             if modules.shared.opts.cuda_compile_backend == "openvino_fx":
                 from modules.intel.openvino import openvino_fx, openvino_clear_caches # pylint: disable=unused-import
-                from modules.sd_models import CompiledModelState
+                from modules.sd_models_compile import CompiledModelState
 
                 openvino_clear_caches()
                 torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
