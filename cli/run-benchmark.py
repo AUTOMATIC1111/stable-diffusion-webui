@@ -16,7 +16,7 @@ options = Map({
     'restore_faces': False,
     'prompt': 'photo of two dice on a table',
     'negative_prompt': 'foggy, blurry',
-    'steps': 20,
+    'steps': 50,
     'batch_size': 1,
     'n_iter': 1,
     'seed': -1,
@@ -28,7 +28,8 @@ options = Map({
 
 
 # batch = [1, 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128]
-batch = [1, 1, 2, 4, 8, 12, 16]
+# batch = [1, 1, 2, 4, 8, 12, 16]
+batch = [4, 4]
 oom = 0
 
 
