@@ -285,8 +285,9 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "torch_gc_threshold": OptionInfo(90, "VRAM usage threshold before running Torch GC to clear up VRAM", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
 
     "cuda_compile_sep": OptionInfo("<h2>Model Compile</h2>", "", gr.HTML),
-    "cuda_compile": OptionInfo(True if cmd_opts.use_openvino else False, "Enable model compile"),
-    "cuda_compile_upscaler": OptionInfo(True if cmd_opts.use_openvino else False, "Enable upscaler compile"),
+    "cuda_compile": OptionInfo(True if cmd_opts.use_openvino else False, "Compile UNet"),
+    "cuda_compile_vae": OptionInfo(True if cmd_opts.use_openvino else False, "Compile VAE"),
+    "cuda_compile_upscaler": OptionInfo(True if cmd_opts.use_openvino else False, "Compile upscaler"),
     "cuda_compile_backend": OptionInfo("openvino_fx" if cmd_opts.use_openvino else "none", "Model compile backend", gr.Radio, {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx']}),
     "cuda_compile_mode": OptionInfo("default", "Model compile mode", gr.Radio, {"choices": ['default', 'reduce-overhead', 'max-autotune']}),
     "cuda_compile_fullgraph": OptionInfo(False, "Model compile fullgraph"),
