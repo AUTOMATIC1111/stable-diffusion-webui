@@ -122,7 +122,7 @@ class GridAnnotation:
         self.size = None
 
 
-def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
+def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0, title=None):
     def wrap(drawing, text, font, line_length):
         lines = ['']
         for word in text.split():
@@ -163,7 +163,8 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
     assert rows == len(ver_texts), f'bad number of vertical texts: {len(ver_texts)}; must be {rows}'
     calc_img = Image.new("RGB", (1, 1), "white")
     calc_d = ImageDraw.Draw(calc_img)
-    for texts, allowed_width in zip(hor_texts + ver_texts, [width] * len(hor_texts) + [pad_left] * len(ver_texts)):
+    title_texts = [title] if title else [[GridAnnotation()]]
+    for texts, allowed_width in zip(hor_texts + ver_texts + title_texts, [width] * len(hor_texts) + [pad_left] * len(ver_texts) + [(width+margin)*cols]):
         items = [] + texts
         texts.clear()
         for line in items:
@@ -176,19 +177,27 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
     hor_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing for lines in hor_texts]
     ver_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing * len(lines) for lines in ver_texts]
     pad_top = 0 if sum(hor_text_heights) == 0 else max(hor_text_heights) + line_spacing * 2
-    result = Image.new("RGB", (im.width + pad_left + margin * (cols-1), im.height + pad_top + margin * (rows-1)), "white")
+    title_pad = 0
+    if title:
+        title_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing for lines in title_texts]
+        title_pad = 0 if sum(title_text_heights) == 0 else max(title_text_heights) + line_spacing * 2
+    result = Image.new("RGB", (im.width + pad_left + margin * (cols-1), im.height + pad_top + title_pad + margin * (rows-1)), "white")
     for row in range(rows):
         for col in range(cols):
             cell = im.crop((width * col, height * row, width * (col+1), height * (row+1)))
-            result.paste(cell, (pad_left + (width + margin) * col, pad_top + (height + margin) * row))
+            result.paste(cell, (pad_left + (width + margin) * col, pad_top + title_pad + (height + margin) * row))
     d = ImageDraw.Draw(result)
+    if title:
+        x = pad_left + ((width+margin)*cols) / 2
+        y = title_pad / 2 - title_text_heights[0] / 2
+        draw_texts(d, x, y, title_texts[0], fnt, fontsize)
     for col in range(cols):
         x = pad_left + (width + margin) * col + width / 2
-        y = pad_top / 2 - hor_text_heights[col] / 2
+        y = (pad_top / 2 - hor_text_heights[col] / 2) + title_pad
         draw_texts(d, x, y, hor_texts[col], fnt, fontsize)
     for row in range(rows):
         x = pad_left / 2
-        y = pad_top + (height + margin) * row + height / 2 - ver_text_heights[row] / 2
+        y = (pad_top + (height + margin) * row + height / 2 - ver_text_heights[row] / 2) + title_pad
         draw_texts(d, x, y, ver_texts[row], fnt, fontsize)
     return result
 
