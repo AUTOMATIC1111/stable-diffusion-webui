@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-11-11
+## Update for 2023-11-13
 
 - **Diffusers**  
   - **LCM** support for any *SD 1.5* or *SD-XL* model!  
@@ -13,6 +13,10 @@
     - set cfg to 1 or 2  
   - Add `cli/lcm-convert.py` script to convert any SD 1.5 or SD-XL model to LCM model  
     by baking in LORA and uploading to Huggingface, thanks @Disty0  
+  - Support for [Stable Fast](https://github.com/chengzeyi/stable-fast) model compile on *Windows/Linux/WSL2* with *CUDA*  
+    See [Wiki:Benchmark](https://github.com/vladmandic/automatic/wiki/Benchmark) for details and comparisment  
+    of different backends, precision modes, advanced settings and compile modes  
+    hint: **100+ it/s** on RTX4090 with no special tweaks  
   - Add additional pipeline types for manual model loads when loading from `safetensors`  
   - Updated logic for calculating **steps** when using base/hires/refiner workflows  
   - Safe model offloading for non-standard models  
@@ -25,6 +29,7 @@
 - **General**:  
   - Reworked parser when pasting previously generated images/prompts  
     includes all `txt2img`, `img2img` and `override` params  
+  - Reworked **model compile**
   - Add refiner options to XYZ Grid  
   - Support custom upscalers in subfolders  
   - Support `--ckpt none` to skip loading a model  
@@ -35,8 +40,8 @@
   - Fix img2img init image save  
   - More uniform models paths  
   - Safe scripts callback execution  
-  - Improve extension compatibility  
-  - Improve BF16 support  
+  - Improved extension compatibility  
+  - Improved BF16 support  
 
 ## Update for 2023-11-06
 

@@ -178,7 +178,7 @@ class StableDiffusionModelHijack:
             except Exception as err:
                 shared.log.warning(f"IPEX Optimize not supported: {err}")
 
-        if opts.cuda_compile and opts.cuda_compile_backend != 'none' and shared.backend == shared.Backend.ORIGINAL:
+        if (opts.cuda_compile or opts.cuda_compile_vae or opts.cuda_compile_upscaler) and shared.opts.cuda_compile_backend != 'none' and shared.backend == shared.Backend.ORIGINAL:
             try:
                 import logging
                 shared.log.info(f"Compiling pipeline={m.model.__class__.__name__} mode={opts.cuda_compile_backend}")
@@ -199,6 +199,8 @@ class StableDiffusionModelHijack:
                     hidet.torch.dynamo_config.use_tensor_core(True)
                     hidet.torch.dynamo_config.search_space(2)
                 m.model = torch.compile(m.model, mode=opts.cuda_compile_mode, backend=opts.cuda_compile_backend, fullgraph=opts.cuda_compile_fullgraph, dynamic=False)
+                from installer import setup_logging
+                setup_logging()
                 shared.log.info("Model complilation done.")
             except Exception as err:
                 shared.log.warning(f"Model compile not supported: {err}")
