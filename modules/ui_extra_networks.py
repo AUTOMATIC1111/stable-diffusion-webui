@@ -138,7 +138,6 @@ class ExtraNetworksPage:
                         continue
 
                     subdir = os.path.abspath(x)[len(parentdir):].replace("\\", "/")
-                    
                     if not subdir.startswith("/"):
                         subdir = "/" + subdir
 
