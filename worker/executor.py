@@ -19,8 +19,8 @@ from modules.devices import torch_gc
 from worker.task_recv import TaskReceiver, TaskTimeout
 from threading import Thread, Condition, Lock
 from tools.model_hist import CkptLoadRecorder
-from worker.k8s_health import write_healthy, system_exit
 from tools.environment import Env_DontCleanModels
+from worker.k8s_health import write_healthy, system_exit, process_health
 
 
 class TaskExecutor(Thread):
@@ -121,6 +121,7 @@ class TaskExecutor(Thread):
             torch_gc()
             free, total = vram_mon.cuda_mem_get_info()
             system_exit(free, total)
+            process_health()
 
         return True
 
