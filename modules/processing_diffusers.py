@@ -183,6 +183,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             negative_prompts = [negative_prompts]
         while len(negative_prompts) < len(prompts):
             negative_prompts.append(negative_prompts[-1])
+        while len(prompts) < len(negative_prompts):
+            prompts.append(prompts[-1])
         if type(prompts_2) is str:
             prompts_2 = [prompts_2]
         if type(prompts_2) is list:
