@@ -345,10 +345,10 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
     for i in range(z_count):
         start_index = (i * len(xs) * len(ys)) + i
         end_index = start_index + len(xs) * len(ys)
-        if not no_grid and images.check_grid_size(processed_result.images[start_index:end_index]):
+        if (not no_grid or include_sub_grids) and images.check_grid_size(processed_result.images[start_index:end_index]):
             grid = images.image_grid(processed_result.images[start_index:end_index], rows=len(ys))
             if draw_legend:
-                grid = images.draw_grid_annotations(grid, processed_result.images[start_index].size[0], processed_result.images[start_index].size[1], hor_texts, ver_texts, margin_size)
+                grid = images.draw_grid_annotations(grid, processed_result.images[start_index].size[0], processed_result.images[start_index].size[1], hor_texts, ver_texts, margin_size, title=title_texts[i])
             processed_result.images.insert(i, grid)
         processed_result.all_prompts.insert(i, processed_result.all_prompts[start_index])
         processed_result.all_seeds.insert(i, processed_result.all_seeds[start_index])
@@ -357,7 +357,7 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
     if not no_grid and images.check_grid_size(processed_result.images[:z_count]):
         z_grid = images.image_grid(processed_result.images[:z_count], rows=1)
         if draw_legend:
-            z_grid = images.draw_grid_annotations(z_grid, sub_grid_size[0], sub_grid_size[1], title_texts, [[images.GridAnnotation()]])
+            z_grid = images.draw_grid_annotations(z_grid, sub_grid_size[0], sub_grid_size[1], [[images.GridAnnotation()] for _ in z_labels], [[images.GridAnnotation()]])
         processed_result.images.insert(0, z_grid)
     #processed_result.all_prompts.insert(0, processed_result.all_prompts[0])
     #processed_result.all_seeds.insert(0, processed_result.all_seeds[0])
@@ -699,9 +699,13 @@ class Script(scripts.Script):
         z_count = len(zs)
         processed.infotexts[:1+z_count] = grid_infotext[:1+z_count] # Set the grid infotexts to the real ones with extra_generation_params (1 main grid + z_count sub-grids)
         if not include_lone_images:
-            processed.images = processed.images[:z_count+1] # Don't need sub-images anymore, drop from list:
+             # Don't need sub-images anymore, drop from list:
+            if no_grid and include_sub_grids:
+                processed.images = processed.images[:z_count] # we don't have the main grid image, and need zero additional sub-images
+            else:
+                processed.images = processed.images[:z_count+1] # we either have the main grid image, or need one sub-images
         if shared.opts.grid_save: # Auto-save main and sub-grids:
-            grid_count = z_count + 1 if z_count > 1 else 1
+            grid_count = z_count + ( 1 if not no_grid and z_count > 1 else 0 )
             for g in range(grid_count):
                 adj_g = g-1 if g > 0 else g
                 images.save_image(processed.images[g], p.outpath_grids, "xyz_grid", info=processed.infotexts[g], extension=shared.opts.grid_format, prompt=processed.all_prompts[adj_g], seed=processed.all_seeds[adj_g], grid=True, p=processed)
@@ -711,4 +715,9 @@ class Script(scripts.Script):
                 del processed.all_prompts[1]
                 del processed.all_seeds[1]
                 del processed.infotexts[1]
+        elif no_grid:
+            ##del processed.images[0]
+            #del processed.all_prompts[0]
+            #del processed.all_seeds[0]
+            del processed.infotexts[0]
         return processed
