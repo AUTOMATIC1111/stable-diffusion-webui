@@ -279,6 +279,7 @@ class ExtraNetworksPage:
             "date_created": int(stat.st_ctime or 0),
             "date_modified": int(stat.st_mtime or 0),
             "name": pth.name.lower(),
+            "path": str(pth.parent).lower(),
         }
 
     def find_preview(self, path):
