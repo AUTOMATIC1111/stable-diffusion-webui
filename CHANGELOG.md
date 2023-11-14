@@ -36,6 +36,7 @@
     includes all `txt2img`, `img2img` and `override` params  
   - Reworked **model compile**
   - Add refiner options to XYZ Grid  
+  - Add option to create only subimages in XYZ grid, thanks @midcoastal
   - Support custom upscalers in subfolders  
   - Add additional image info when loading image in process tab  
   - Support `--ckpt none` to skip loading a model  

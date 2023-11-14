@@ -179,7 +179,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0, tit
     pad_top = 0 if sum(hor_text_heights) == 0 else max(hor_text_heights) + line_spacing * 2
     title_pad = 0
     if title:
-        title_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing for lines in title_texts]
+        title_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing for lines in title_texts] # pylint: disable=unsubscriptable-object
         title_pad = 0 if sum(title_text_heights) == 0 else max(title_text_heights) + line_spacing * 2
     result = Image.new("RGB", (im.width + pad_left + margin * (cols-1), im.height + pad_top + title_pad + margin * (rows-1)), "white")
     for row in range(rows):
@@ -695,7 +695,7 @@ Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}
         items['width'] = image.width
         items['height'] = image.height
         items['mode'] = image.mode
-    except Exception as e:
+    except Exception:
         pass
 
     return geninfo, items

@@ -1,4 +1,4 @@
- # pylint: disable=unused-argument, attribute-defined-outside-init
+# pylint: disable=unused-argument
 
 import re
 import csv
@@ -366,6 +366,14 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
 
 
 class SharedSettingsStackHelper(object):
+    vae = None
+    schedulers_solver_order = None
+    token_merging_ratio_hr = None
+    token_merging_ratio = None
+    sd_model_checkpoint = None
+    sd_model_dict = None
+    sd_vae_checkpoint = None
+
     def __enter__(self):
         #Save overridden settings so they can be restored later.
         self.vae = shared.opts.sd_vae
@@ -398,6 +406,8 @@ re_range_count = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\[(\d+)\
 re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\[(\d+(?:.\d*)?)\s*])?\s*")
 
 class Script(scripts.Script):
+    current_axis_options = []
+
     def title(self):
         return "X/Y/Z Grid"
 
@@ -716,8 +726,8 @@ class Script(scripts.Script):
                 del processed.all_seeds[1]
                 del processed.infotexts[1]
         elif no_grid:
-            ##del processed.images[0]
-            #del processed.all_prompts[0]
-            #del processed.all_seeds[0]
+            # del processed.images[0]
+            # del processed.all_prompts[0]
+            # del processed.all_seeds[0]
             del processed.infotexts[0]
         return processed
