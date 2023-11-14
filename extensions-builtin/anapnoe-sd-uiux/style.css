@@ -514,9 +514,9 @@ body {
     position: relative;
 } */
 
-* [data-testid="image"] img {
+/* * [data-testid="image"] img {
     max-height: 40vh;
-}
+} */
 
 *.block {
     border: 0 !important;
@@ -768,15 +768,48 @@ button:hover .mask-icon{
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 25vh;
+    min-height: 15vh;
     width: 100%;
     height: 100%;
+    position: absolute !important;
+    top:0;
 }
-
+:not(.portal)>.gradio-video .wrap{
+    position: relative !important;
+    z-index: 0;
+}
 [data-testid="block-info"] {
     display: flex;
     flex-direction: column;
     text-wrap: wrap;
+}
+.gradio-video .controls .inner{
+ display: flex;
+    max-height: 25px;
+    gap: 5px;
+    align-items: center;   
+}
+.gradio-video .controls .inner > *{
+    display: flex;
+    text-wrap: nowrap;
+}
+.gradio-video .controls .inner > progress{
+    display: flex;
+    flex-grow: 1;
+    min-width: 50%;
+}
+.gradio-video .controls .inner > [role="button"]{  
+    max-width: 20px;
+}
+.gradio-video .controls {
+    width: 100%;
+    padding: 5px;
+}
+.gradio-video .svelte-19sk1im{
+    position: absolute;
+    z-index: 2;
+    padding: var(--ae-panel-padding);
+    right: var(--ae-panel-padding);
 }
 
 *.gradio-dropdown {
@@ -1421,12 +1454,14 @@ li.item span {
     width: 100%;
 }
 
+* .gradio-video video,
 * [data-testid="image"] img {
     object-fit: contain;
     width: 100%;
     height: 100%;
 }
 
+* .gradio-video .wrap,
 * [data-testid="image"] .wrap {
     display: flex;
     flex-direction: column;
@@ -2681,7 +2716,7 @@ span.star_count b {
 .tabs_extensions td:nth-child(1) a {
     font-size: 14px;
 }
-
+.gradio-video,
 .gradio-image {
     height: 100%;
     width: 100%;
@@ -2799,23 +2834,23 @@ span.star_count b {
 
   
   .image-container img.absolute-img {
-    /* position: relative !important; */
-    position: absolute !important;
+    position: relative !important;
+   /*  position: absolute !important; */
   }
   
-  .image-container img {
+  /* .image-container img {
     max-height: 50vh !important;
-  }
+  } */
   
   .image-container {
-    min-height: 25vh !important;
+    min-height: 15vh !important;
    /*  height: auto !important; */
     display: flex;
     position:relative;
   }
-  .image-container:has(canvas) {
+  /* .image-container:has(canvas) {
     min-height: 50vh !important;
-  }
+  } */
   
   .absolute-img {
     position: relative;
@@ -2827,12 +2862,11 @@ span.star_count b {
   }
   
   div[data-testid="image"] canvas {
-    width: auto !important;
-    height: 100% !important;
+    width: 100%!important;
+    height: auto !important;
     position: absolute !important;
-   /*  top: 0 !important;
-    left: 0 !important; */
     border: 0 !important;
+    inset: 0;
   }
   
  
@@ -2884,6 +2918,7 @@ flex-grow:1;
 .group-row > *{
     border-radius: 0 !important;
 }
+
 .group-row > *:last-child button,
 .group-row > *:last-child{
     border-top-right-radius: var(--ae-border-radius) !important;
