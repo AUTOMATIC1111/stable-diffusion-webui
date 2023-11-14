@@ -14,7 +14,7 @@ import network_norm
 import lora_convert
 import torch
 import diffusers.models.lora
-from modules import shared, devices, sd_models, errors, scripts, sd_hijack
+from modules import shared, devices, sd_models, sd_models_compile, errors, scripts, sd_hijack
 
 
 debug = os.environ.get('SD_LORA_DEBUG', None)
@@ -193,7 +193,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
 
     if recompile_model:
         shared.log.info("LoRA recompiling model")
-        sd_models.compile_diffusers(shared.sd_model)
+        sd_models_compile.compile_diffusers(shared.sd_model)
 
 
 def network_restore_weights_from_backup(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.GroupNorm, torch.nn.LayerNorm, torch.nn.MultiheadAttention, diffusers.models.lora.LoRACompatibleLinear, diffusers.models.lora.LoRACompatibleConv]):
