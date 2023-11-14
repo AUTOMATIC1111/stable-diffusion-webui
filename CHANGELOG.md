@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-11-13
+## Update for 2023-11-14
 
 - **Diffusers**  
   - **LCM** support for any *SD 1.5* or *SD-XL* model!  
@@ -9,14 +9,14 @@
     - load **lcm lora** *(note: lcm lora is processed differently than any other lora)*  
     - set **sampler** to **LCM**  
     - set number of steps to some low number, for SD-XL 6-7 steps is normally sufficient  
-      note: LCM scheduler does not support steps higher than 50
-    - set CFG to 1-2  
+      note: LCM scheduler does not support steps higher than 50  
+    - set CFG to between 1 and 2  
   - Add `cli/lcm-convert.py` script to convert any SD 1.5 or SD-XL model to LCM model  
     by baking in LORA and uploading to Huggingface, thanks @Disty0  
   - Support for [Stable Fast](https://github.com/chengzeyi/stable-fast) model compile on *Windows/Linux/WSL2* with *CUDA*  
     See [Wiki:Benchmark](https://github.com/vladmandic/automatic/wiki/Benchmark) for details and comparisment  
     of different backends, precision modes, advanced settings and compile modes  
-    hint: **100+ it/s** on RTX4090 with no special tweaks  
+    *Hint*: **100+ it/s** is possible on *RTX4090* with no special tweaks  
   - Add additional pipeline types for manual model loads when loading from `safetensors`  
   - Updated logic for calculating **steps** when using base/hires/refiner workflows  
   - Safe model offloading for non-standard models  
