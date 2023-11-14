@@ -30,6 +30,7 @@
 - **Extra networks**  
   - Use multi-threading for 5x load speedup  
   - Better Lora trigger words support  
+  - Auto refresh styles on change  
 - **General**:  
   - Reworked parser when pasting previously generated images/prompts  
     includes all `txt2img`, `img2img` and `override` params  
