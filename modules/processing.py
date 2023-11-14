@@ -58,7 +58,7 @@ def apply_color_correction(correction, original_image):
     return image
 
 
-def apply_overlay(image, paste_loc, index, overlays):
+def apply_overlay(image: Image, paste_loc, index, overlays):
     if overlays is None or index >= len(overlays):
         return image
     overlay = overlays[index]

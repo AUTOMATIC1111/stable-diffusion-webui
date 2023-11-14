@@ -6,7 +6,7 @@
   - **LCM** support for any *SD 1.5* or *SD-XL* model!  
     - download [lcm-lora-sd15](https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/tree/main) and/or [lcm-lora-sdxl](https://huggingface.co/latent-consistency/lcm-lora-sdxl/tree/main)  
     - load for favorite *SD 1.5* or *SD-XL* model *(original LCM was SD 1.5 only, this is both)*  
-    - load **lcm lora**  
+    - load **lcm lora** *(note: lcm lora is processed differently than any other lora)*  
     - set **sampler** to **LCM**  
     - set number of steps to some low number, for SD-XL 6-7 steps is normally sufficient  
       note: LCM scheduler does not support steps higher than 50
@@ -36,6 +36,7 @@
   - Reworked **model compile**
   - Add refiner options to XYZ Grid  
   - Support custom upscalers in subfolders  
+  - Add additional image info when loading image in process tab  
   - Support `--ckpt none` to skip loading a model  
 - **Fixes**  
   - Fix `params.txt` saved before actual image

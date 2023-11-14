@@ -204,6 +204,7 @@ def draw_prompt_matrix(im, width, height, all_prompts, margin=0):
 
 
 def resize_image(resize_mode, im, width, height, upscaler_name=None, output_type='image'):
+    # shared.log.debug(f'Image resize: mode={resize_mode} resolution={width}x{height} upscaler={upscaler_name}')
     """
     Resizes an image with the specified resize_mode, width, and height.
     Args:
@@ -628,7 +629,7 @@ def safe_decode_string(s: bytes):
     return None
 
 
-def read_info_from_image(image):
+def read_info_from_image(image: Image):
     items = image.info or {}
     geninfo = items.pop('parameters', None)
     if geninfo is None:
@@ -680,6 +681,14 @@ Negative prompt: {json_info["uc"]}
 Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Clip skip: 2, ENSD: 31337"""
         except Exception as e:
             errors.display(e, 'novelai image parser')
+
+    try:
+        items['width'] = image.width
+        items['height'] = image.height
+        items['mode'] = image.mode
+    except Exception as e:
+        pass
+
     return geninfo, items
 
 

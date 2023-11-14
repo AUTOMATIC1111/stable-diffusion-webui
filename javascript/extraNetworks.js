@@ -40,7 +40,7 @@ const setENState = (state) => {
 // methods
 
 function showCardDetails(event) {
-  console.log('showCardDetails', event)
+  console.log('showCardDetails', event);
   const tabname = getENActiveTab();
   const btn = gradioApp().getElementById(`${tabname}_extra_details_btn`);
   btn.click();
@@ -183,7 +183,7 @@ function sortExtraNetworks() {
   return `sort page ${pagename} cards ${num} by ${desc}`;
 }
 
-function refreshExtraNetworks(tabname) {
+function refreshENInput(tabname) {
   log('refreshExtraNetworks', tabname, gradioApp().querySelector(`#${tabname}_extra_networks textarea`)?.value);
   gradioApp().querySelector(`#${tabname}_extra_networks textarea`)?.dispatchEvent(new Event('input'));
 }
@@ -232,6 +232,27 @@ function quickSaveStyle() {
   const tabname = getENActiveTab();
   const btnSave = gradioApp().getElementById(`${tabname}_extra_quicksave`);
   if (btnSave) btnSave.click();
+}
+
+let enDirty = false;
+function closeDetailsEN(args) {
+  // log('closeDetailsEN');
+  enDirty = true;
+  const tabname = getENActiveTab();
+  const btnClose = gradioApp().getElementById(`${tabname}_extra_details_close`);
+  if (btnClose) setTimeout(() => btnClose.click(), 100);
+  const btnRefresh = gradioApp().getElementById(`${tabname}_extra_refresh`);
+  if (btnRefresh && enDirty) setTimeout(() => btnRefresh.click(), 100);
+  return args;
+}
+
+function refeshDetailsEN(args) {
+  log(`refeshDetailsEN: ${enDirty}`);
+  const tabname = getENActiveTab();
+  const btnRefresh = gradioApp().getElementById(`${tabname}_extra_refresh`);
+  if (btnRefresh && enDirty) setTimeout(() => btnRefresh.click(), 100);
+  enDirty = false;
+  return args;
 }
 
 // init
