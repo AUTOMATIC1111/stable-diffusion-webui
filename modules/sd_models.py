@@ -790,7 +790,11 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
 
         shared.log.debug(f'Diffusers loading: path="{checkpoint_info.path}"')
         pipeline, model_type = detect_pipeline(checkpoint_info.path, op)
-        if os.path.isdir(checkpoint_info.path):
+        if 'ONNX' in shared.opts.diffusers_pipeline and os.path.isdir(checkpoint_info.path):
+            pipeline = shared_items.get_pipelines().get(shared.opts.diffusers_pipeline, None)
+            if pipeline is not None:
+                sd_model = pipeline.from_pretrained(checkpoint_info.path)
+        elif os.path.isdir(checkpoint_info.path):
             err1 = None
             err2 = None
             err3 = None
