@@ -77,8 +77,8 @@ def assign_network_names_to_compvis_modules(sd_model):
 def load_diffusers(name, network_on_disk):
     t0 = time.time()
     cached = lora_cache.get(name, None)
-    if debug:
-        shared.log.debug(f'LoRA load: name={name} file={network_on_disk.filename} {"cached" if cached else ""}')
+    # if debug:
+    shared.log.debug(f'LoRA load: name={name} file={network_on_disk.filename} type=diffusers {"cached" if cached else ""}')
     if cached is not None:
         return cached
     if shared.backend != shared.Backend.DIFFUSERS:
@@ -160,7 +160,9 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
         net = None
         if network_on_disk is not None:
             try:
-                if shared.backend == shared.Backend.DIFFUSERS and os.environ.get('SD_LORA_DIFFUSERS', None):
+                if shared.backend == shared.Backend.DIFFUSERS and (os.environ.get('SD_LORA_DIFFUSERS', None)
+                                                                   or getattr(network_on_disk, 'shorthash', None) == 'aaebf6360f7d' # lcm sd15
+                                                                   or getattr(network_on_disk, 'shorthash', None) == '3d18b05e4f56'): # lcm sdxl
                     net = load_diffusers(name, network_on_disk)
                 else:
                     net = load_network(name, network_on_disk)
