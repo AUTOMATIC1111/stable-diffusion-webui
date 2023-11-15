@@ -43,11 +43,17 @@ def get_model_local_path(remoting_path: str, model_type: ModelType, progress_cal
     os.makedirs(UserModelLocation[model_type], exist_ok=True)
     dst = os.path.join(UserModelLocation[model_type], os.path.basename(remoting_path))
     if os.path.isfile(dst):
+        if model_type == ModelType.CheckPoint:
+            checkpoint = CheckpointInfo(dst)
+            checkpoint.register()
         return dst
 
     os.makedirs(ModelLocation[model_type], exist_ok=True)
     dst = os.path.join(ModelLocation[model_type], os.path.basename(remoting_path))
     if os.path.isfile(dst):
+        if model_type == ModelType.CheckPoint:
+            checkpoint = CheckpointInfo(dst)
+            checkpoint.register()
         return dst
 
     dst = get_local_path(remoting_path, dst, progress_callback=progress_callback)
