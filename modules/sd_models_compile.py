@@ -43,6 +43,9 @@ def optimize_openvino():
         torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
         if shared.compiled_model_state is None:
             shared.compiled_model_state = CompiledModelState()
+        else:
+            shared.compiled_model_state.compiled_cache.clear()
+            shared.compiled_model_state.partitioned_modules.clear()
         shared.compiled_model_state.first_pass = True if not shared.opts.cuda_compile_precompile else False
     except Exception as e:
         shared.log.warning(f"Model compile: task=OpenVINO: {e}")

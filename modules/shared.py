@@ -300,7 +300,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "ipex_optimize_upscaler": OptionInfo(True if devices.backend == "ipex" else False, "Enable IPEX Optimize for Intel GPUs with Upscalers"),
     "directml_memory_provider": OptionInfo(default_memory_provider, 'DirectML memory stats provider', gr.Radio, {"choices": memory_providers}),
     "directml_catch_nan": OptionInfo(False, "DirectML retry specific operation when NaN is produced if possible. (makes generation slower)"),
-    "openvino_disable_model_caching": OptionInfo(False, "OpenVINO disable model caching"),
+    "openvino_disable_model_caching": OptionInfo(True, "OpenVINO disable model caching"),
     "openvino_hetero_gpu": OptionInfo(False, "OpenVINO use Hetero Device for single inference with multiple devices"),
     "openvino_remove_cpu_from_hetero": OptionInfo(False, "OpenVINO remove CPU from Hetero Device"),
     "openvino_remove_igpu_from_hetero": OptionInfo(False, "OpenVINO remove iGPU from Hetero Device"),
