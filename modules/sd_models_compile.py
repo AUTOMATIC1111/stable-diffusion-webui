@@ -15,6 +15,7 @@ class CompiledModelState:
         self.partition_id = 0
         self.cn_model = []
         self.lora_model = []
+        self.lora_compile = False
         self.compiled_cache = {}
         self.partitioned_modules = {}
 
@@ -44,6 +45,9 @@ def optimize_openvino():
         if shared.compiled_model_state is None:
             shared.compiled_model_state = CompiledModelState()
         else:
+            if not shared.compiled_model_state.lora_compile:
+                shared.compiled_model_state.lora_compile = False
+                shared.compiled_model_state.lora_model = []
             shared.compiled_model_state.compiled_cache.clear()
             shared.compiled_model_state.partitioned_modules.clear()
         shared.compiled_model_state.first_pass = True if not shared.opts.cuda_compile_precompile else False

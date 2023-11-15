@@ -155,6 +155,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
         if not shared.opts.openvino_disable_model_caching:
             shared.log.warning("LoRa: Disabling OpenVINO model caching")
             shared.opts.openvino_disable_model_caching = True
+        shared.compiled_model_state.lora_compile = True
         sd_models.unload_model_weights(op='model')
         shared.opts.cuda_compile = False
         sd_models.reload_model_weights(op='model')
