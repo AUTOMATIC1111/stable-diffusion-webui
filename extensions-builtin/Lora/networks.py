@@ -149,7 +149,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
                     break
         else:
             recompile_model = True
-        shared.compiled_model_state.lora_model = []
+            shared.compiled_model_state.lora_model = []
     if recompile_model:
         sd_models.unload_model_weights(op='model')
         shared.opts.cuda_compile = False
@@ -160,6 +160,8 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
         net = None
         if network_on_disk is not None:
             try:
+                if recompile_model:
+                    shared.compiled_model_state.lora_model.append(f"{name}:{te_multipliers[i] if te_multipliers else 1.0}")
                 if shared.backend == shared.Backend.DIFFUSERS and (os.environ.get('SD_LORA_DIFFUSERS', None)
                                                                    or getattr(network_on_disk, 'shorthash', None) == 'aaebf6360f7d' # lcm sd15
                                                                    or getattr(network_on_disk, 'shorthash', None) == '3d18b05e4f56'): # lcm sdxl
