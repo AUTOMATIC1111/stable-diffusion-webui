@@ -33,10 +33,7 @@ def BUILD_MAP_UNPACK(self, inst):
         )
 tmp_torch = sys.modules["torch"]
 tmp_torch.BUILD_MAP_UNPACK_WITH_CALL = BUILD_MAP_UNPACK
-
-compiled_cache = {}
 max_openvino_partitions = 0
-partitioned_modules = {}
 
 DEFAULT_OPENVINO_PYTHON_CONFIG = MappingProxyType(
     {
@@ -180,13 +177,6 @@ def execute_cached(compiled_model, *args):
     result = [torch.from_numpy(res[out]) for out in compiled_model.outputs]
     return result
 
-def openvino_clear_caches():
-    global partitioned_modules
-    global compiled_cache
-
-    compiled_cache.clear()
-    partitioned_modules.clear()
-
 def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_name=""):
     core = Core()
 
@@ -279,21 +269,20 @@ def openvino_execute(gm: GraphModule, *args, executor_parameters=None, partition
         "use_python_fusion_cache",
         DEFAULT_OPENVINO_PYTHON_CONFIG["use_python_fusion_cache"],
     )
-    global compiled_cache
 
     model_hash_str = executor_parameters.get("model_hash_str", None)
     if model_hash_str is not None:
         model_hash_str = model_hash_str + str(partition_id)
 
-    if use_cache and (partition_id in compiled_cache):
-        compiled = compiled_cache[partition_id]
+    if use_cache and (partition_id in shared.compiled_model_state.compiled_cache):
+        compiled = shared.compiled_model_state.compiled_cache[partition_id]
     else:
         if (shared.compiled_model_state.cn_model != [] and file_name is not None
                 and os.path.isfile(file_name + ".xml") and os.path.isfile(file_name + ".bin")):
             compiled = openvino_compile_cached_model(file_name, *args)
         else:
             compiled = openvino_compile(gm, *args, model_hash_str=model_hash_str, file_name=file_name)
-        compiled_cache[partition_id] = compiled
+        shared.compiled_model_state.compiled_cache[partition_id] = compiled
 
     flat_args, _ = tree_flatten(args)
     ov_inputs = [a.detach().cpu().numpy() for a in flat_args]
@@ -308,8 +297,6 @@ def openvino_execute(gm: GraphModule, *args, executor_parameters=None, partition
 def openvino_execute_partitioned(gm: GraphModule, *args, executor_parameters=None, file_name=""):
     executor_parameters = executor_parameters or DEFAULT_OPENVINO_PYTHON_CONFIG
 
-    global partitioned_modules
-
     use_python_fusion_cache = executor_parameters.get(
         "use_python_fusion_cache",
         DEFAULT_OPENVINO_PYTHON_CONFIG["use_python_fusion_cache"],
@@ -323,11 +310,11 @@ def openvino_execute_partitioned(gm: GraphModule, *args, executor_parameters=Non
         else:
             signature = signature + "_" + str(idx) + ":" + type(input_data).__name__ + ":val(" + str(input_data) + ")"
 
-    if signature not in partitioned_modules:
-        partitioned_modules[signature] = partition_graph(gm, use_python_fusion_cache=use_python_fusion_cache,
+    if signature not in shared.compiled_model_state.partitioned_modules:
+        shared.compiled_model_state.partitioned_modules[signature] = partition_graph(gm, use_python_fusion_cache=use_python_fusion_cache,
                                                          model_hash_str=model_hash_str, file_name=file_name)
 
-    return partitioned_modules[signature](*args)
+    return shared.compiled_model_state.partitioned_modules[signature](*args)
 
 def partition_graph(gm: GraphModule, use_python_fusion_cache: bool, model_hash_str: str = None, file_name=""):
     global max_openvino_partitions

@@ -15,6 +15,8 @@ class CompiledModelState:
         self.partition_id = 0
         self.cn_model = []
         self.lora_model = []
+        self.compiled_cache = {}
+        self.partitioned_modules = {}
 
 
 def optimize_ipex(sd_model):
@@ -37,8 +39,7 @@ def optimize_ipex(sd_model):
 
 def optimize_openvino():
     try:
-        from modules.intel.openvino import openvino_fx, openvino_clear_caches # pylint: disable=unused-import
-        openvino_clear_caches()
+        from modules.intel.openvino import openvino_fx # pylint: disable=unused-import
         torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
         if shared.compiled_model_state is None:
             shared.compiled_model_state = CompiledModelState()
