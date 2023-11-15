@@ -149,7 +149,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
                     break
         else:
             recompile_model = True
-            shared.compiled_model_state.lora_model = []
+        shared.compiled_model_state.lora_model = []
     if recompile_model:
         sd_models.unload_model_weights(op='model')
         shared.opts.cuda_compile = False
