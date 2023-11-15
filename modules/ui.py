@@ -421,7 +421,7 @@ def create_ui(startup_timer = None):
                             cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='CFG scale', value=6.0, elem_id="txt2img_cfg_scale")
                             clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=14, step=1, elem_id='txt2img_clip_skip', interactive=True)
                         with FormRow():
-                            image_cfg_scale = gr.Slider(minimum=1.1, maximum=30.0, step=0.1, label='Secondary CFG scale', value=6.0, elem_id="txt2img_image_cfg_scale")
+                            image_cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='Secondary CFG scale', value=6.0, elem_id="txt2img_image_cfg_scale")
                             diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
                         with FormRow():
                             full_quality = gr.Checkbox(label='Full quality', value=True, elem_id="txt2img_full_quality")
@@ -711,8 +711,8 @@ def create_ui(startup_timer = None):
 
                     with gr.Accordion(open=False, label="Advanced", elem_classes=["small-accordion"], elem_id="img2img_advanced_group"):
                         with FormRow():
-                            cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG scale', value=6.0, elem_id="img2img_cfg_scale")
-                            image_cfg_scale = gr.Slider(minimum=0, maximum=30.0, step=0.05, label='Image CFG scale', value=1.5, elem_id="img2img_image_cfg_scale")
+                            cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='CFG scale', value=6.0, elem_id="img2img_cfg_scale")
+                            image_cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.15, label='Image CFG scale', value=1.5, elem_id="img2img_image_cfg_scale")
                         with FormRow():
                             clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=4, step=1, elem_id='img2img_clip_skip', interactive=True)
                             diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
@@ -729,7 +729,7 @@ def create_ui(startup_timer = None):
                             with gr.Column():
                                 inpainting_mask_invert = gr.Radio(label='Mask mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
                             with gr.Column():
-                                inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='original', type="index", elem_id="img2img_inpainting_fill")
+                                inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'noise', 'nothing'], value='original', type="index", elem_id="img2img_inpainting_fill")
                         with FormRow():
                             with gr.Column():
                                 inpaint_full_res = gr.Radio(label="Inpaint area", choices=["Whole picture", "Only masked"], type="index", value="Whole picture", elem_id="img2img_inpaint_full_res")

@@ -31,10 +31,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             p.height = tgt_height
             p.width = tgt_width
             hypertile_set(p)
-            if getattr(p, 'mask', None) is not None:
-                p.mask = images.resize_image(1, p.mask, tgt_width, tgt_height, upscaler_name=None)
-            if getattr(p, 'mask_for_overlay', None) is not None:
-                p.mask_for_overlay = images.resize_image(1, p.mask_for_overlay, tgt_width, tgt_height, upscaler_name=None)
+        if getattr(p, 'mask', None) is not None and p.mask.size != (tgt_width, tgt_height):
+            p.mask = images.resize_image(1, p.mask, tgt_width, tgt_height, upscaler_name=None)
+        if getattr(p, 'mask_for_overlay', None) is not None and p.mask_for_overlay.size != (tgt_width, tgt_height):
+            p.mask_for_overlay = images.resize_image(1, p.mask_for_overlay, tgt_width, tgt_height, upscaler_name=None)
 
     def hires_resize(latents): # input=latents output=pil
         latent_upscaler = shared.latent_upscale_modes.get(p.hr_upscaler, None)
@@ -215,7 +215,30 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 p.mask = TF.to_pil_image(torch.ones_like(TF.to_tensor(p.init_images[0]))).convert("L")
             width = 8 * math.ceil(p.init_images[0].width / 8)
             height = 8 * math.ceil(p.init_images[0].height / 8)
+
+            # option-1: use images as inputs
             task_args = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength, "height": height, "width": width}
+
+            """ # option-2: preprocess images into latents using diffusers
+            vae_scale_factor = 2 ** (len(model.vae.config.block_out_channels) - 1)
+            image_processor = diffusers.image_processor.VaeImageProcessor(vae_scale_factor=vae_scale_factor)
+            mask_processor = diffusers.image_processor.VaeImageProcessor(vae_scale_factor=vae_scale_factor, do_normalize=False, do_binarize=True, do_convert_grayscale=True)
+            init_image = image_processor.preprocess(p.init_images[0], width=width, height=height)
+            mask_image = mask_processor.preprocess(p.mask, width=width, height=height)
+            task_args = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength, "height": height, "width": width}
+            """
+
+            """ # option-2: manually assemble masked image latents
+            masked_image_latents = []
+            mask_image = TF.to_tensor(p.mask)
+            for init_image in p.init_images:
+                init_image = TF.to_tensor(p.init_images[0])
+                masked_image = init_image * (mask_image > 0.5)
+                masked_image_latents.append(torch.cat([masked_image, mask_image], dim=0))
+            masked_image_latents = torch.stack(masked_image_latents, dim=0).to(shared.device)
+            task_args = {"image": p.init_images, "mask_image": mask_image, "masked_image_latents": masked_image_latents, "strength": p.denoising_strength, "height": height, "width": width}
+            """
+
         if model.__class__.__name__ == 'LatentConsistencyModelPipeline' and hasattr(p, 'init_images') and len(p.init_images) > 0:
             init_latents = [vae_encode(image, model=shared.sd_model, full_quality=p.full_quality).squeeze(dim=0) for image in p.init_images]
             init_latent = torch.stack(init_latents, dim=0).to(shared.device)
@@ -307,6 +330,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             clean['image'] = type(clean['image'])
         if 'mask_image' in clean:
             clean['mask_image'] = type(clean['mask_image'])
+        if 'masked_image_latents' in clean:
+            clean['masked_image_latents'] = type(clean['masked_image_latents'])
         if 'prompt' in clean:
             clean['prompt'] = len(clean['prompt'])
         if 'negative_prompt' in clean:
@@ -407,6 +432,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if os.environ.get('SD_STEPS_DEBUG', None) is not None:
             shared.log.debug(f'Steps: type=refiner input={p.refiner_steps} output={steps} start={p.refiner_start} denoise={p.denoising_strength}')
         return max(2, int(steps))
+
+    a = 1
+    a = (a * 2)
 
     # pipeline type is set earlier in processing, but check for sanity
     if sd_models.get_diffusers_task(shared.sd_model) != sd_models.DiffusersTaskType.TEXT_2_IMAGE and len(getattr(p, 'init_images' ,[])) == 0:

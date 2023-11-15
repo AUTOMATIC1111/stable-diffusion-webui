@@ -53,14 +53,14 @@ opencv-python-headless==4.7.0.72
 diffusers==0.23.0
 einops==0.4.1
 gradio==3.43.2
-huggingface_hub==0.18.0
+huggingface_hub==0.19.2
 numexpr==2.8.4
 numpy==1.24.4
 numba==0.57.1
 pandas==1.5.3
 protobuf==3.20.3
 pytorch_lightning==1.9.4
-transformers==4.34.1
+transformers==4.35.1
 tomesd==0.1.3
 urllib3==1.26.15
 Pillow==9.5.0
