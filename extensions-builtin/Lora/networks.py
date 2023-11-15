@@ -164,7 +164,8 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
                     shared.compiled_model_state.lora_model.append(f"{name}:{te_multipliers[i] if te_multipliers else 1.0}")
                 if shared.backend == shared.Backend.DIFFUSERS and (os.environ.get('SD_LORA_DIFFUSERS', None)
                                                                    or getattr(network_on_disk, 'shorthash', None) == 'aaebf6360f7d' # lcm sd15
-                                                                   or getattr(network_on_disk, 'shorthash', None) == '3d18b05e4f56'): # lcm sdxl
+                                                                   or getattr(network_on_disk, 'shorthash', None) == '3d18b05e4f56' # lcm sdxl
+                                                                   or (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx")):
                     net = load_diffusers(name, network_on_disk)
                 else:
                     net = load_network(name, network_on_disk)
