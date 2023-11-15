@@ -35,6 +35,7 @@ DEPTH_LAYERS = {
         "output_blocks.11.1.transformer_blocks.0.attn1",
         # SD 1.5 VAE
         "decoder.mid_block.attentions.0",
+        "decoder.mid.attn_1",
     ],
     1: [
         # SD 1.5 U-Net (diffusers)
