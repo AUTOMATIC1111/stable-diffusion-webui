@@ -146,11 +146,15 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
             for i, name in enumerate(names):
                 if shared.compiled_model_state.lora_model[i] != f"{name}:{te_multipliers[i] if te_multipliers else 1.0}":
                     recompile_model = True
+                    shared.compiled_model_state.lora_model = []
                     break
         else:
             recompile_model = True
-        shared.compiled_model_state.lora_model = []
+            shared.compiled_model_state.lora_model = []
     if recompile_model:
+        if not shared.opts.openvino_disable_model_caching:
+            shared.log.warning("LoRa: Disabling OpenVINO model caching")
+            shared.opts.openvino_disable_model_caching = True
         sd_models.unload_model_weights(op='model')
         shared.opts.cuda_compile = False
         sd_models.reload_model_weights(op='model')
