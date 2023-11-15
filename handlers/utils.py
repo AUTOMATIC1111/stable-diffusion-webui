@@ -187,7 +187,13 @@ def get_selectable_script(script_runner, script_name):
 
 def script_name_to_index(name, scripts):
     try:
-        return [script.title().lower().replace(' ', '-') for script in scripts].index(name.lower().replace(' ', '-'))
+        x = name.lower().replace(' ', '-')
+        script_names = [script.title().lower().replace(' ', '-') for script in scripts]
+        if x in script_names:
+            return script_names.index(x)
+        else:
+            x = name.lower().replace("_", "-")  # for tile-diffusion
+            return script_names.index(x)
     except:
         raise Exception(f"Script '{name}' not found")
 
@@ -271,7 +277,7 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
             if not alwayson_script.alwayson:
                 raise Exception(f"Cannot have a selectable script in the always on scripts params")
             # always on script with no arg should always run so you don't really need to add them to the requests
-            if "args" in alwayson_scripts[alwayson_script_name]:
+            if "args" in alwayson_scripts[alwayson_script_name] or {}:
                 real_script_args = format_alwayson_script_args(alwayson_script_name,
                                                                script_runner.is_img2img,
                                                                alwayson_scripts[alwayson_script_name]["args"])

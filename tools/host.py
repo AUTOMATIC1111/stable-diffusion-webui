@@ -6,6 +6,8 @@
 # @File    : host.py
 # @Software: Hifive
 import socket
+import time
+from loguru import logger
 
 
 def get_host_ip():
@@ -20,10 +22,14 @@ def get_host_ip():
     return ip
 
 
-def get_host_name():
-    try:
-        hostname = socket.gethostname()
+def get_host_name(retry_times=0, delay=2):
+    retry_times = retry_times if retry_times > 0 else 1
+    for _ in range(retry_times):
+        try:
+            hostname = socket.gethostname()
+            return hostname
+        except Exception as err:
+            logger.warning(f"cannot get host name:{err}")
+            time.sleep(delay)
+    return None
 
-        return hostname
-    except:
-        return None

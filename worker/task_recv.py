@@ -201,7 +201,8 @@ class TaskReceiver:
         hostname = get_host_name()
         # hostname = 'sdplus-saas-qa-568ff9745c-rcwm6'
         try:
-            int(hostname[-16:-6], 16)
+            x = hostname.split("-")[-2]
+            int(x, 16)
             hostname = 'Host:' + hostname
         except:
             hostname = None

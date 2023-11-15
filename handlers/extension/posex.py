@@ -25,9 +25,9 @@ class PosexFormatter(AlwaysonScriptArgsFormatter):
         def obj_to_array(obj: typing.Mapping) -> typing.Sequence:
             # 如果是[OBJ1, OBJ2]形式的，需要转换为ARRAY
             if isinstance(obj, dict):
-                return [args['enabled'],
-                        args['base64'],
-                        args['cn_num']]
+                return [args.get('enabled', False),
+                        args.get('base64', ''),
+                        args.get('cn_num', 0)]
             return obj
 
         posex_script_args = args

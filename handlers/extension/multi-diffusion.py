@@ -8,8 +8,8 @@
 import typing
 from handlers.formatter import AlwaysonScriptArgsFormatter
 
-Multidiffusion = "Tiled-Diffusion"
-TiledVAE = 'Tiled-VAE'
+Multidiffusion = "Tiled_Diffusion"
+TiledVAE = 'Tiled_VAE'
 
 
 class MultiDiffusionFormatter(AlwaysonScriptArgsFormatter):
@@ -23,16 +23,16 @@ class MultiDiffusionFormatter(AlwaysonScriptArgsFormatter):
             # 如果是[OBJ1, OBJ2]形式的，需要转换为ARRAY
             if isinstance(obj, dict):
                 array = [
-                    obj['enabled'],
-                    obj['method'],
+                    obj.get('enabled', False),
+                    obj.get('method', ""),
                     obj.get('overwrite_size', False),
-                    obj['keep_input_size'],
-                    obj['image_width'],
-                    obj['image_height'],
-                    obj['tile_width'],
-                    obj['tile_height'],
-                    obj['overlap'],
-                    obj['batch_size'],
+                    obj.get('keep_input_size', 0),
+                    obj.get('image_width', 0),
+                    obj.get('image_height', 0),
+                    obj.get('tile_width', 0),
+                    obj.get('tile_height', 0),
+                    obj.get('overlap', 0),
+                    obj.get('batch_size', 0),
                     obj.get('upscaler') or obj.get('upscaler_name'),
                     obj['scale_factor'],
                     obj['noise_inverse'],
