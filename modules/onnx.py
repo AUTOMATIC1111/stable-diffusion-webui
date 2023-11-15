@@ -438,11 +438,13 @@ class OnnxRawPipeline(OnnxPipelineBase):
                 return self.derive_properties(load_pipeline(diffusers.OnnxStableDiffusionXLPipeline if self.is_sdxl else diffusers.OnnxStableDiffusionPipeline, converted_dir))
             out_dir = optimized_dir
 
+        pipeline = self.derive_properties(load_pipeline(diffusers.OnnxStableDiffusionXLPipeline if self.is_sdxl else diffusers.OnnxStableDiffusionPipeline, out_dir))
+
         if not shared.opts.onnx_cache_converted:
             shutil.rmtree(converted_dir)
         shutil.rmtree(shared.opts.onnx_temp_dir)
 
-        return self.derive_properties(load_pipeline(diffusers.OnnxStableDiffusionXLPipeline if self.is_sdxl else diffusers.OnnxStableDiffusionPipeline, out_dir))
+        return pipeline
 
 
 class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline, OnnxPipelineBase):
