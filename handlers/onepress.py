@@ -39,6 +39,10 @@ from typing import List, Union, Dict, Set, Tuple
 '婚纱服饰风格': 'wedding', '旗袍服饰风格': 'qipao', '西装服饰风格': 'suits', '简约头像': 'simple_headshots ', 'JK服饰风格': 'jk',
 '国风彩墨画': 'chinese_colorful', '艺术插画': 'art_illustration', '趣怪画': 'spoof', '插画头像': 'illustration_headshots'}
 """
+# NOTE: 2023.11.16
+"""
+调整-{'原极简水彩': 'min_watercolor','国风插画': 'chinese_illustration','简约头像': 'simple_headshots ', 'JK服饰风格': 'jk',,"油画":'oil_paint'}
+"""
 
 
 def size_control(width, height):
@@ -338,17 +342,13 @@ class RenditionTask(Txt2ImgTask):
             full_task.update(get_txt2img_args(t.prompt, t.width, t.height))
 
         full_task['prompt'] = t.prompt
-
+        full_task['negative_prompt'] = ""
         full_task['steps'] = 30
         full_task['batch_size'] = t.batch_size
         full_task['alwayson_scripts'] = {'ControlNet': {'args': []}}
 
-        # rendition_style={"彩铅":'color_pencil',"浮世绘":'ukiyo',"山水画":'landscape',"极简水彩":'min_watercolor',"炫彩":'dazzle_color',"油画":'oil_paint'}
-
-        # NOTE: 2023.10.30
-        # 保持
-        if t.style in ['dazzle_color', 'oil_paint']:
-            # module,model,image,weight=1,guidance_start=0,guidance_end=1
+        if t.style in ['dazzle_color']:
+            full_task['negative_prompt'] = '(worst quality:2), (low quality:2), (normal quality:2), lowres, normal quality,M,nsfw,'
             cn_args = change_cn_args(
                 'lineart_realistic', 'control_v11p_sd15_lineart [43d4be0d]', 1, t.image, 0, 0.5)
             full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
@@ -357,7 +357,7 @@ class RenditionTask(Txt2ImgTask):
                 full_task['cfg_scale'] = 7
                 full_task['negative_prompt'] = "worst quality,low quality,normal quality"
         if t.style in ['landscape']:
-            # 文生图添加高清修复
+            full_task['negative_prompt'] = '(worst quality:2), (low quality:2), (normal quality:2), lowres, normal quality,M,nsfw,'
             full_task['enable_hr'] = True
             full_task['denoising_strength'] = 0.7
             full_task['tiling'] = False
@@ -367,30 +367,35 @@ class RenditionTask(Txt2ImgTask):
             full_task['hr_resize_x'] = 0
             full_task['hr_resize_y'] = 0
 
-        # 调整|新增
-        if t.style in ['min_watercolor']:
-            full_task['cfg_scale'] = 10
-            full_task['denoising_strength'] = 0.68
-            cn_args = change_cn_args(
-                'lineart_realistic', 'control_v11p_sd15_lineart', 1, t.image, 0, 1)  # min_watercolor
-            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
+        if t.style in ['min_watercolor']: # 图生图 重绘幅度
+            full_task['denoising_strength'] = 0.7
 
-        # 采样方法，默认DPM++ 2M SDE Karras
-        if t.style in ['min_watercolor', 'qipao', 'suits', 'simple_headshots', 'chinese_colorful']:
+        # sampler_name，默认DPM++ 2M SDE Karras
+        if t.style in ['qipao', 'simple_headshots', 'chinese_colorful']:
             full_task['sampler_name'] = 'DPM++ SDE Karras'
+        if t.style in ['min_watercolor','oil_paint']:
+            full_task['sampler_name'] = 'Euler a'
+        if t.style in ['suits']:
+            full_task['sampler_name'] = 'DPM++ SDE'
+        if t.style in ['ukiyo']:
+            full_task['sampler_name'] = 'DPM++ 2S a Karras'
 
         # cfg_scale，默认7
-        if t.style in ['qipao', 'suits', 'simple_headshots']:
+        if t.style in ['qipao', 'oil_paint']:
             full_task['cfg_scale'] = 4
+        if t.style in ['simple_headshots']:
+            full_task['cfg_scale'] = 4.5
 
         # steps,默认为30
-        if t.style in ['jk', 'color_pencil', 'ukiyo']:
+        if t.style in ['min_watercolor', 'suits', 'jk', 'color_pencil', 'ukiyo']:
             full_task['steps'] = 20
         if t.style in ['chinese_hanfu']:
             full_task['steps'] = 45
+        if t.style in ['simple_headshots']:
+            full_task['steps'] = 36
 
         # vae，默认为None；负向的embeddings，默认为None
-        if t.style in ['qipao', 'suits', 'simple_headshots']:
+        if t.style in ['qipao', 'suits']:
             full_task['override_settings_texts'] = [
                 'sd_vae:vae-ft-mse-840000-ema-pruned.ckpt']
         elif t.style in ['chinese_illustration', 'chinese_wedding', 'chinese_hanfu', 'wedding', 'color_pencil', 'ukiyo', 'chinese_colorful', 'art_illustration', 'spoof', 'illustration_headshots']:
@@ -399,7 +404,7 @@ class RenditionTask(Txt2ImgTask):
             full_task['override_settings_texts'] = ['sd_vae:None']
 
         # CN,默认为空
-        if t.style in ['chinese_illustration', 'chinese_wedding', 'chinese_hanfu', 'wedding']:
+        if t.style in ['chinese_wedding', 'chinese_hanfu', 'wedding']:
             cn_args = change_cn_args(
                 'openpose', 'thibaud_xl_openpose', 1, t.image, 0, 1)
             full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
@@ -409,11 +414,19 @@ class RenditionTask(Txt2ImgTask):
             full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
         if t.style in ['jk']:
             cn_args = change_cn_args(
-                'openpose', 'control_v11p_sd15_openpose', 1, t.image, 0, 1)
+                'dw_openpose_full', 'control_v11p_sd15_openpose', 1, t.image, 0, 1)  # jk
             full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
         if t.style in ['suits']:
             cn_args = change_cn_args(
-                'dw_openpose_full', 'control_v11p_sd15_openpose', 0.6, t.image, 0, 0.8)
+                'openpose_full', 'control_v11p_sd15_openpose', 1, t.image, 0, 1)  # suits
+            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
+        if t.style in ['min_watercolor','oil_paint']:
+            cn_args = change_cn_args(
+                'canny', 'control_v11p_sd15_canny', 1, t.image, 0, 1)  # min_watercolor.oil_paint
+            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
+        if t.style in ['chinese_illustration']:
+            cn_args = change_cn_args(
+                'dw_openpose_full', 'thibaud_xl_openpose_256lora', 1.5, t.image, 0, 1)  # chinese_illustration
             full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
 
         # Lora,
