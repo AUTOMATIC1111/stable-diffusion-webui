@@ -33,24 +33,11 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                     if l.sd_version == network.SdVersion.SDXL:
                         return None
 
-            # tags from model metedata
-            possible_tags = l.metadata.get('ss_tag_frequency', {}) if l.metadata is not None else {}
-            if isinstance(possible_tags, str):
-                possible_tags = {}
-            tags = {}
-            for k, v in possible_tags.items():
-                words = k.split('_', 1) if '_' in k else [v, k]
-                words = [str(w).replace('.json', '') for w in words]
-                if words[0] == '{}':
-                    words[0] = 0
-                tags[' '.join(words[1:])] = words[0]
-
             item = {
                 "type": 'Lora',
                 "name": name,
                 "filename": l.filename,
                 "hash": l.shorthash,
-                "search_term": self.search_terms_from_path(l.filename) + ' '.join(tags.keys()),
                 "preview": self.find_preview(l.filename),
                 "prompt": json.dumps(f" <lora:{l.get_alias()}:{shared.opts.extra_networks_default_multiplier}>"),
                 "local_preview": f"{path}.{shared.opts.samples_format}",
@@ -59,16 +46,44 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 "size": os.path.getsize(l.filename),
             }
             info = self.find_info(l.filename)
-            item["info"] = info
-            item["description"] = self.find_description(l.filename, info) # use existing info instead of double-read
 
-            # tags from user metadata
-            possible_tags = info.get('tags', [])
+            tags = {}
+            possible_tags = l.metadata.get('ss_tag_frequency', {}) if l.metadata is not None else {} # tags from model metedata
+            if isinstance(possible_tags, str):
+                possible_tags = {}
+            for k, v in possible_tags.items():
+                words = k.split('_', 1) if '_' in k else [v, k]
+                words = [str(w).replace('.json', '') for w in words]
+                if words[0] == '{}':
+                    words[0] = 0
+                tag = ' '.join(words[1:])
+                tags[tag] = words[0]
+            versions = info.get('modelVersions', []) # trigger words from info json
+            for v in versions:
+                possible_tags = v.get('trainedWords', [])
+                if isinstance(possible_tags, list):
+                    for tag in possible_tags:
+                        if tag not in tags:
+                            tags[tag] = 0
+            search = {}
+            possible_tags = info.get('tags', []) # tags from info json
             if not isinstance(possible_tags, list):
                 possible_tags = [v for v in possible_tags.values()]
             for v in possible_tags:
-                tags[v] = 0
-            item["tags"] = tags
+                search[v] = 0
+            if len(list(tags)) == 0:
+                tags = search
+
+            bad_chars = [';', ':', '<', ">", "*", '?', '\'', '\"']
+            clean_tags = {}
+            for k, v in tags.items():
+                tag = ''.join(i for i in k if not i in bad_chars)
+                clean_tags[tag] = v
+
+            item["info"] = info
+            item["description"] = self.find_description(l.filename, info) # use existing info instead of double-read
+            item["tags"] = clean_tags
+            item["search_term"] = f'{self.search_terms_from_path(l.filename)} {" ".join(tags.keys())} {" ".join(search.keys())}'
 
             return item
         except Exception as e:

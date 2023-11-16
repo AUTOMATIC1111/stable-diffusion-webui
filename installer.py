@@ -447,7 +447,36 @@ def check_torch():
         install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True) # TODO numpy version conflicts with tensorflow and doesn't support Python 3.11
     elif allow_openvino and args.use_openvino:
         log.info('Using OpenVINO')
-        torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.1.0 torchvision==0.16.0 --index-url https://download.pytorch.org/whl/cpu')
+        if "linux" in sys.platform:
+            if sys.version_info[1] == 11:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp311-cp311-linux_x86_64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp311-cp311-linux_x86_64.whl'
+            elif sys.version_info[1] == 10:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp310-cp310-linux_x86_64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp310-cp310-linux_x86_64.whl'
+            elif sys.version_info[1] == 8:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp38-cp38-linux_x86_64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp38-cp38-linux_x86_64.whl'
+            else:
+                pytorch_pip = 'torch==2.1.0'
+                torchvision_pip = 'torchvision==0.16.0 --index-url https://download.pytorch.org/whl/cpu'
+        elif sys.platform == 'darwin':
+            pytorch_pip = 'torch==2.1.0'
+            torchvision_pip = 'torchvision==0.16.0 --index-url https://download.pytorch.org/whl/cpu'
+        else:
+            if sys.version_info[1] == 11:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp311-cp311-win_amd64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp311-cp311-win_amd64.whl'
+            elif sys.version_info[1] == 10:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp310-cp310-win_amd64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp310-cp310-win_amd64.whl'
+            elif sys.version_info[1] == 8:
+                pytorch_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torch-2.1.0.dev20230820+cpu-cp38-cp38-win_amd64.whl'
+                torchvision_pip = 'https://github.com/Disty0/automatic/releases/download/openvino_pre_release_pytorch/torchvision-0.16.0.dev20230820+cpu-cp38-cp38-win_amd64.whl'
+            else:
+                pytorch_pip = 'torch==2.1.0'
+                torchvision_pip = 'torchvision==0.16.0 --index-url https://download.pytorch.org/whl/cpu'
+        torch_command = os.environ.get('TORCH_COMMAND', f'{pytorch_pip} {torchvision_pip}')
     else:
         machine = platform.machine()
         if sys.platform == 'darwin':
@@ -516,7 +545,7 @@ def check_torch():
         install('hidet', 'hidet')
     if args.use_openvino or opts.get('cuda_compile_backend', '') == 'openvino_fx':
         uninstall('openvino')
-        install('openvino-nightly==2023.2.0.dev20231102', 'openvino-nightly')
+        install('openvino-nightly==2023.3.0.dev20231114', 'openvino-nightly')
         install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True) # TODO numpy version conflicts with tensorflow and doesn't support Python 3.11
         os.environ.setdefault('PYTORCH_TRACING_MODE', 'TORCHFX')
         os.environ.setdefault('NEOReadDebugKeys', '1')

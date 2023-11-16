@@ -44,6 +44,7 @@ except Exception:
     pass
 
 state = shared.state
+backend = shared.backend
 if not modules.loader.initialized:
     timer.startup.record("libraries")
     log.setLevel(logging.DEBUG if cmd_opts.debug else logging.INFO)
@@ -246,6 +247,8 @@ def start_ui():
             with open(cmd_opts.auth_file, 'r', encoding="utf8") as file:
                 for line in file.readlines():
                     gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
+    if len(gradio_auth_creds) > 0:
+        log.info(f'Authentication enabled: {gradio_auth_creds}')
 
     global local_url # pylint: disable=global-statement
     stdout = io.StringIO()
@@ -274,7 +277,7 @@ def start_ui():
         shared.log.info(f'API Docs: {local_url[:-1]}/docs') # pylint: disable=unsubscriptable-object
     if share_url is not None:
         shared.log.info(f'Share URL: {share_url}')
-    shared.log.debug(f'Gradio registered functions: {len(shared.demo.fns)}')
+    shared.log.debug(f'Gradio functions: registered={len(shared.demo.fns)}')
     shared.demo.server.wants_restart = False
     setup_middleware(app, cmd_opts)
 

@@ -58,7 +58,7 @@ def apply_color_correction(correction, original_image):
     return image
 
 
-def apply_overlay(image, paste_loc, index, overlays):
+def apply_overlay(image: Image, paste_loc, index, overlays):
     if overlays is None or index >= len(overlays):
         return image
     overlay = overlays[index]
@@ -686,6 +686,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             p.override_settings.pop(k, None)
     for k in p.override_settings.keys():
         stored_opts[k] = shared.opts.data.get(k, None) or shared.opts.data_labels[k].default
+    res = None
     try:
         # if no checkpoint override or the override checkpoint can't be found, remove override entry and load opts checkpoint
         if p.override_settings.get('sd_model_checkpoint', None) is not None and modules.sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
@@ -851,10 +852,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     modules.extra_networks.activate(p, extra_network_data)
             if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
                 p.scripts.process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
-            if n == 0:
-                with open(os.path.join(modules.paths.data_path, "params.txt"), "w", encoding="utf8") as file:
-                    processed = Processed(p, [], p.seed, "")
-                    file.write(processed.infotext(p, 0))
             step_multiplier = 1
             sampler_config = modules.sd_samplers.find_sampler_config(p.sampler_name)
             step_multiplier = 2 if sampler_config and sampler_config.options.get("second_order", False) else 1
@@ -1214,7 +1211,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     def init(self, all_prompts, all_seeds, all_subseeds):
         if shared.backend == shared.Backend.DIFFUSERS and self.image_mask is not None:
             shared.sd_model = modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.INPAINTING)
-            # self.sd_model.dtype = self.sd_model.unet.dtype
         elif shared.backend == shared.Backend.DIFFUSERS and self.image_mask is None:
             shared.sd_model = modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
 
@@ -1229,6 +1225,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         else:
             self.ops.append('img2img')
         crop_region = None
+
         image_mask = self.image_mask
         if image_mask is not None:
             if type(image_mask) == list:
@@ -1254,6 +1251,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 self.mask_for_overlay = Image.fromarray(np_mask)
             self.overlay_images = []
         latent_mask = self.latent_mask if self.latent_mask is not None else image_mask
+
         add_color_corrections = shared.opts.img2img_color_correction and self.color_corrections is None
         if add_color_corrections:
             self.color_corrections = []
@@ -1284,14 +1282,12 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if crop_region is not None:
                 image = image.crop(crop_region)
                 image = images.resize_image(3, image, self.width, self.height)
-            if shared.backend == shared.Backend.DIFFUSERS:
-                unprocessed.append(image)
-            self.init_images = [image] # assign early for diffusers
-            if image_mask is not None:
-                if self.inpainting_fill != 1:
-                    image = modules.masking.fill(image, latent_mask)
+            if image_mask is not None and self.inpainting_fill != 1:
+                image = modules.masking.fill(image, latent_mask)
             if add_color_corrections:
                 self.color_corrections.append(setup_color_correction(image))
+            if shared.backend == shared.Backend.DIFFUSERS:
+                unprocessed.append(image) # assign early for diffusers
             image = np.array(image).astype(np.float32) / 255.0
             image = np.moveaxis(image, 2, 0)
             imgs.append(image)
@@ -1308,8 +1304,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         else:
             raise RuntimeError(f"bad number of images passed: {len(imgs)}; expecting {self.batch_size} or less")
         if shared.backend == shared.Backend.DIFFUSERS:
-            # we've already set self.init_images and self.mask and we dont need any more processing
-            return
+            return # we've already set self.init_images and self.mask and we dont need any more processing
 
         image = torch.from_numpy(batch_images)
         image = 2. * image - 1.

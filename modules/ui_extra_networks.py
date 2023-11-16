@@ -329,10 +329,10 @@ class ExtraNetworksPage:
         else:
             files = listdir(os.path.dirname(path))
             fn = os.path.splitext(path)[0]
-        preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
-        for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.', '.preview.']]:
+        exts = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
+        for file in [f'{fn}{mid}{ext}' for ext in exts for mid in ['.thumb.', '.', '.preview.']]:
             if file in files:
-                if '.thumb.' not in file:
+                if 'Reference' not in file and '.thumb.' not in file:
                     self.missing_thumbs.append(file)
                 return file
         return 'html/card-no-preview.png'
@@ -440,6 +440,7 @@ class ExtraNetworksUi:
         self.details_components: list = []
         self.last_item: dict = None
         self.last_page: ExtraNetworksPage = None
+        self.state: gr.State = None
 
 
 def create_ui(container, button_parent, tabname, skip_indexing = False):
@@ -505,18 +506,18 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                 desc = gr.Textbox('', show_label=False, lines=8, placeholder="Extra network description...")
                 ui.details_components.append(desc)
                 with gr.Row():
-                    btn_save_desc = gr.Button('Save', elem_classes=['small-button'])
-                    btn_delete_desc = gr.Button('Delete', elem_classes=['small-button'])
-                    btn_close_info = gr.Button('Close', elem_classes=['small-button'])
-                    btn_close_info.click(fn=lambda: gr.update(visible=False), inputs=[], outputs=[ui.details])
+                    btn_save_desc = gr.Button('Save', elem_classes=['small-button'], elem_id=f'{tabname}_extra_details_save_desc')
+                    btn_delete_desc = gr.Button('Delete', elem_classes=['small-button'], elem_id=f'{tabname}_extra_details_delete_desc')
+                    btn_close_desc = gr.Button('Close', elem_classes=['small-button'], elem_id=f'{tabname}_extra_details_close_desc')
+                    btn_close_desc.click(fn=lambda: gr.update(visible=False), _js='refeshDetailsEN', inputs=[], outputs=[ui.details])
             with gr.Tab('Model metadata'):
                 info = gr.JSON({}, show_label=False)
                 ui.details_components.append(info)
                 with gr.Row():
-                    btn_save_info = gr.Button('Save', elem_classes=['small-button'])
-                    btn_delete_info = gr.Button('Delete', elem_classes=['small-button'])
-                    btn_close_info = gr.Button('Close', elem_classes=['small-button'])
-                    btn_close_info.click(fn=lambda: gr.update(visible=False), inputs=[], outputs=[ui.details])
+                    btn_save_info = gr.Button('Save', elem_classes=['small-button'], elem_id=f'{tabname}_extra_details_save_info')
+                    btn_delete_info = gr.Button('Delete', elem_classes=['small-button'], elem_id=f'{tabname}_extra_details_delete_info')
+                    btn_close_info = gr.Button('Close', elem_classes=['small-button'], elem_id=f'{tabname}_extra_details_close_info')
+                    btn_close_info.click(fn=lambda: gr.update(visible=False), _js='refeshDetailsEN', inputs=[], outputs=[ui.details])
             with gr.Tab('Embedded metadata'):
                 meta = gr.JSON({}, show_label=False)
                 ui.details_components.append(meta)
@@ -559,7 +560,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                 tab.select(ui_tab_change, _js="getENActivePage", inputs=[ui.button_details], outputs=[ui.button_scan, ui.button_save, ui.button_model])
         # ui.tabs.change(fn=ui_tab_change, inputs=[], outputs=[ui.button_scan, ui.button_save])
 
-    def fn_save_img():
+    def fn_save_img(image):
         if ui.last_item is None or ui.last_item.local_preview is None:
             return 'html/card-no-preview.png'
         images = list(ui.gallery.temp_files) # gallery cannot be used as input component so looking at most recently registered temp files
@@ -572,7 +573,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         except Exception as e:
             shared.log.error(f'Extra network error opening image: item={ui.last_item.name} {e}')
             return 'html/card-no-preview.png'
-        fn_delete_img()
+        fn_delete_img(image)
         if image.width > 512 or image.height > 512:
             image = image.convert('RGB')
             image.thumbnail((512, 512), Image.HAMMING)
@@ -583,7 +584,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             shared.log.error(f'Extra network save image: item={ui.last_item.name} filename="{ui.last_item.local_preview}" {e}')
         return image
 
-    def fn_delete_img():
+    def fn_delete_img(_image):
         preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
         fn = os.path.splitext(ui.last_item.filename)[0]
         for file in [f'{fn}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.preview.', '.']]:
@@ -633,12 +634,12 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             return ''
         return info
 
-    btn_save_img.click(fn=fn_save_img, inputs=[], outputs=[img])
-    btn_delete_img.click(fn=fn_delete_img, inputs=[], outputs=[img])
-    btn_save_desc.click(fn=fn_save_desc, inputs=[desc], outputs=[desc])
-    btn_delete_desc.click(fn=fn_delete_desc, inputs=[desc], outputs=[desc])
-    btn_save_info.click(fn=fn_save_info, inputs=[info], outputs=[info])
-    btn_delete_info.click(fn=fn_delete_info, inputs=[info], outputs=[info])
+    btn_save_img.click(fn=fn_save_img, _js='closeDetailsEN', inputs=[img], outputs=[img])
+    btn_delete_img.click(fn=fn_delete_img, _js='closeDetailsEN', inputs=[img], outputs=[img])
+    btn_save_desc.click(fn=fn_save_desc, _js='closeDetailsEN', inputs=[desc], outputs=[desc])
+    btn_delete_desc.click(fn=fn_delete_desc, _js='closeDetailsEN', inputs=[desc], outputs=[desc])
+    btn_save_info.click(fn=fn_save_info, _js='closeDetailsEN', inputs=[info], outputs=[info])
+    btn_delete_info.click(fn=fn_delete_info, _js='closeDetailsEN', inputs=[info], outputs=[info])
 
     def show_details(text, img, desc, info, meta, params):
         page, item = get_item(state, params)
@@ -797,7 +798,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         shared.log.debug(f'Extra networks: {msg}')
         return msg
 
-    dummy_state = gr.State(value=False) # pylint: disable=abstract-class-instantiated
+    dummy = gr.State(value=False) # pylint: disable=abstract-class-instantiated
     button_parent.click(fn=toggle_visibility, inputs=[ui.visible], outputs=[ui.visible, container, button_parent])
     ui.button_close.click(fn=toggle_visibility, inputs=[ui.visible], outputs=[ui.visible, container])
     ui.button_sort.click(fn=ui_sort_cards, _js='sortExtraNetworks', inputs=[ui.search], outputs=[ui.description])
@@ -806,7 +807,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
     ui.button_scan.click(fn=ui_scan_click, _js='getENActivePage', inputs=[ui.search], outputs=ui.pages)
     ui.button_save.click(fn=ui_save_click, inputs=[], outputs=ui.details_components + [ui.details])
     ui.button_quicksave.click(fn=ui_quicksave_click, _js="() => prompt('Prompt name', '')", inputs=[ui.search], outputs=[])
-    ui.button_details.click(show_details, _js="getCardDetails", inputs=ui.details_components + [dummy_state], outputs=ui.details_components + [ui.details])
+    ui.button_details.click(show_details, _js="getCardDetails", inputs=ui.details_components + [dummy], outputs=ui.details_components + [ui.details])
     ui.state.change(state_change, inputs=[ui.state], outputs=[])
     return ui
 

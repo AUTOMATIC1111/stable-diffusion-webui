@@ -1,39 +1,60 @@
 # Change Log for SD.Next
 
-## Update for 2023-11-10
+## Update for 2023-11-14
 
 - **Diffusers**  
   - **LCM** support for any *SD 1.5* or *SD-XL* model!  
     - download [lcm-lora-sd15](https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/tree/main) and/or [lcm-lora-sdxl](https://huggingface.co/latent-consistency/lcm-lora-sdxl/tree/main)  
     - load for favorite *SD 1.5* or *SD-XL* model *(original LCM was SD 1.5 only, this is both)*  
-    - load **lcm lora**  
+    - load **lcm lora** *(note: lcm lora is processed differently than any other lora)*  
     - set **sampler** to **LCM**  
     - set number of steps to some low number, for SD-XL 6-7 steps is normally sufficient  
-      note: LCM scheduler does not support steps higher than 50
-    - set cfg to 1 or 2  
+      note: LCM scheduler does not support steps higher than 50  
+    - set CFG to between 1 and 2  
   - Add `cli/lcm-convert.py` script to convert any SD 1.5 or SD-XL model to LCM model  
     by baking in LORA and uploading to Huggingface, thanks @Disty0  
+  - Support for [Stable Fast](https://github.com/chengzeyi/stable-fast) model compile on *Windows/Linux/WSL2* with *CUDA*  
+    See [Wiki:Benchmark](https://github.com/vladmandic/automatic/wiki/Benchmark) for details and comparisment  
+    of different backends, precision modes, advanced settings and compile modes  
+    *Hint*: **100+ it/s** is possible on *RTX4090* with no special tweaks  
   - Add additional pipeline types for manual model loads when loading from `safetensors`  
   - Updated logic for calculating **steps** when using base/hires/refiner workflows  
   - Safe model offloading for non-standard models  
   - Fix **DPM SDE** scheduler  
+  - Better support for SD 1.5 **inpainting** models  
+  - Add support for **OpenAI Consistency decoder VAE**
+  - Enhance prompt parsing with long prompts and support for *BREAK* keyword  
+    Change-in-behavior: new line in prompt now means *BREAK*  
+  - Add alternative Lora loading algorithm, triggered if `SD_LORA_DIFFUSERS` is set  
   - Update to `diffusers==0.23.0`  
 - **Extra networks**  
   - Use multi-threading for 5x load speedup  
-- **General**:  
+  - Better Lora trigger words support  
+  - Auto refresh styles on change  
+- **General**  
   - Reworked parser when pasting previously generated images/prompts  
     includes all `txt2img`, `img2img` and `override` params  
-  - Add refiner options to XYZ Grid  
+  - Reworked **model compile**
   - Support custom upscalers in subfolders  
+  - Add additional image info when loading image in process tab  
+  - Better file locking when sharing config and/or models between multiple instances  
+  - Handle custom API endpoints when using auth  
+  - Show logged in user in log when accessing via UI and/or API  
   - Support `--ckpt none` to skip loading a model  
+- **XYZ grid**
+  - Add refiner options to XYZ Grid  
+  - Add option to create only subimages in XYZ grid, thanks @midcoastal
+  - Allow custom font, background and text color in settings
 - **Fixes**  
+  - Fix `params.txt` saved before actual image
   - Fix inpaint  
   - Fix manual grid image save  
   - Fix img2img init image save  
   - More uniform models paths  
   - Safe scripts callback execution  
-  - Improve extension compatibility  
-  - Improve BF16 support  
+  - Improved extension compatibility  
+  - Improved BF16 support  
+  - Match previews for reference models with downloaded models
 
 ## Update for 2023-11-06
 

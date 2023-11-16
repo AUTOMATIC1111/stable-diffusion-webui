@@ -16,7 +16,7 @@ options = Map({
     'restore_faces': False,
     'prompt': 'photo of two dice on a table',
     'negative_prompt': 'foggy, blurry',
-    'steps': 20,
+    'steps': 50,
     'batch_size': 1,
     'n_iter': 1,
     'seed': -1,

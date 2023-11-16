@@ -128,7 +128,7 @@ def get_memory_stats():
     process = psutil.Process(os.getpid())
     res = process.memory_info()
     ram_total = 100 * res.rss / process.memory_percent()
-    return f'used={gb(res.rss)} total={gb(ram_total)}'
+    return f'{gb(res.rss)}/{gb(ram_total)}'
 
 
 def start_server(immediate=True, server=None):
@@ -145,7 +145,7 @@ def start_server(immediate=True, server=None):
     if not immediate:
         time.sleep(3)
     if collected > 0:
-        installer.log.debug(f'Memory {get_memory_stats()} Collected {collected}')
+        installer.log.debug(f'Memory: {get_memory_stats()} collected={collected}')
     module_spec = importlib.util.spec_from_file_location('webui', 'webui.py')
     server = importlib.util.module_from_spec(module_spec)
     installer.log.debug(f'Starting module: {server}')
@@ -233,7 +233,7 @@ if __name__ == "__main__":
         if round(time.time()) % 120 == 0:
             state = f'job="{instance.state.job}" {instance.state.job_no}/{instance.state.job_count}' if instance.state.job != '' or instance.state.job_no != 0 or instance.state.job_count != 0 else 'idle'
             uptime = round(time.time() - instance.state.server_start)
-            installer.log.debug(f'Server alive={alive} jobs={instance.state.total_jobs} requests={requests} uptime={uptime} memory {get_memory_stats()} {state}')
+            installer.log.debug(f'Server: alive={alive} jobs={instance.state.total_jobs} requests={requests} uptime={uptime} memory={get_memory_stats()} backend={instance.backend} {state}')
         if not alive:
             if uv is not None and uv.wants_restart:
                 installer.log.info('Server restarting...')

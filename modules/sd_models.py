@@ -20,8 +20,7 @@ import tomesd
 from transformers import logging as transformers_logging
 import ldm.modules.midas as midas
 from ldm.util import instantiate_from_config
-from modules import paths, shared, shared_items, shared_state, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config
-from modules.sd_hijack_inpainting import do_inpainting_hijack
+from modules import paths, shared, shared_items, shared_state, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config, sd_models_compile, sd_hijack_inpainting
 from modules.timer import Timer
 from modules.memstats import memory_stats
 from modules.paths import models_path, script_path
@@ -117,18 +116,6 @@ class CheckpointInfo:
         self.title = f'{self.name} [{self.shorthash}]'
         self.register()
         return self.shorthash
-
-
-#Used by OpenVINO, can be used with TensorRT or Olive
-class CompiledModelState:
-    def __init__(self):
-        self.first_pass = True
-        self.height = 512
-        self.width = 512
-        self.batch_size = 1
-        self.partition_id = 0
-        self.cn_model = []
-        self.lora_model = []
 
 
 class NoWatermark:
@@ -340,7 +327,7 @@ def read_metadata_from_safetensors(filename):
         if not os.path.isfile(sd_metadata_file):
             sd_metadata = {}
         else:
-            sd_metadata = shared.readfile(sd_metadata_file)
+            sd_metadata = shared.readfile(sd_metadata_file, lock=True)
     res = sd_metadata.get(filename, None)
     if res is not None:
         return res
@@ -594,7 +581,7 @@ model_data = ModelData()
 
 def change_backend():
     shared.log.info(f'Backend changed: {shared.backend}')
-    shared.log.warning('Server restart required to apply all changes')
+    shared.log.warning('Full server restart required to apply all changes')
     if shared.backend == shared.Backend.ORIGINAL:
         change_from = shared.Backend.DIFFUSERS
     else:
@@ -673,51 +660,6 @@ def detect_pipeline(f: str, op: str = 'model'):
     return pipeline, guess
 
 
-def compile_diffusers(sd_model):
-    try:
-        if shared.opts.ipex_optimize:
-            import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-            sd_model.unet.training = False
-            sd_model.unet = ipex.optimize(sd_model.unet, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
-            if hasattr(sd_model, 'vae'):
-                sd_model.vae.training = False
-                sd_model.vae = ipex.optimize(sd_model.vae, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
-            if hasattr(sd_model, 'movq'):
-                sd_model.movq.training = False
-                sd_model.movq = ipex.optimize(sd_model.movq, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
-            shared.log.info("Applied IPEX Optimize.")
-    except Exception as err:
-        shared.log.warning(f"IPEX Optimize not supported: {err}")
-
-    try:
-        if shared.opts.cuda_compile and shared.opts.cuda_compile_backend != 'none':
-            shared.log.info(f"Compiling pipeline={sd_model.__class__.__name__} shape={8 * sd_model.unet.config.sample_size} mode={shared.opts.cuda_compile_backend}")
-            import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
-            if shared.opts.cuda_compile_backend == "openvino_fx":
-                torch._dynamo.reset() # pylint: disable=protected-access
-                from modules.intel.openvino import openvino_fx, openvino_clear_caches # pylint: disable=unused-import
-                openvino_clear_caches()
-                torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
-                if shared.compiled_model_state is None:
-                    shared.compiled_model_state = CompiledModelState()
-                shared.compiled_model_state.first_pass = True if not shared.opts.cuda_compile_precompile else False
-            log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
-            if hasattr(torch, '_logging'):
-                torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
-            torch._dynamo.config.verbose = shared.opts.cuda_compile_verbose # pylint: disable=protected-access
-            torch._dynamo.config.suppress_errors = shared.opts.cuda_compile_errors # pylint: disable=protected-access
-            sd_model.unet = torch.compile(sd_model.unet, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
-            if hasattr(sd_model, 'vae'):
-                sd_model.vae.decode = torch.compile(sd_model.vae.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
-            if hasattr(sd_model, 'movq'):
-                sd_model.movq.decode = torch.compile(sd_model.movq.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
-            if shared.opts.cuda_compile_precompile:
-                sd_model("dummy prompt")
-            shared.log.info("Complilation done.")
-    except Exception as err:
-        shared.log.warning(f"Model compile not supported: {err}")
-
-
 def set_diffuser_options(sd_model, vae, op: str):
     if sd_model is None:
         shared.log.warning(f'{op} is not loaded')
@@ -774,10 +716,8 @@ def set_diffuser_options(sd_model, vae, op: str):
             sd_model.vae = vae
         if shared.opts.diffusers_vae_upcast != 'default':
             if shared.opts.diffusers_vae_upcast == 'true':
-                # sd_model.vae.config["force_upcast"] = True
                 sd_model.vae.config.force_upcast = True
             else:
-                # sd_model.vae.config["force_upcast"] = False
                 sd_model.vae.config.force_upcast = False
             if shared.opts.no_half_vae:
                 devices.dtype_vae = torch.float32
@@ -785,6 +725,18 @@ def set_diffuser_options(sd_model, vae, op: str):
         shared.log.debug(f'Setting {op} VAE: name={sd_vae.loaded_vae_file} upcast={sd_model.vae.config.get("force_upcast", None)}')
     if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):
         sd_model.enable_xformers_memory_efficient_attention()
+
+    if shared.opts.diffusers_eval:
+        if hasattr(sd_model, "unet"):
+            sd_model.unet.requires_grad_(False)
+            sd_model.unet.eval()
+        if hasattr(sd_model, "vae"):
+            sd_model.vae.requires_grad_(False)
+            sd_model.vae.eval()
+        if hasattr(sd_model, "text_encoder"):
+            sd_model.text_encoder.requires_grad_(False)
+            sd_model.text_encoder.eval()
+
     if shared.opts.opt_channelslast and hasattr(sd_model, 'unet'):
         shared.log.debug(f'Setting {op}: enable channels last')
         sd_model.unet.to(memory_format=torch.channels_last)
@@ -899,15 +851,26 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 if model_type.startswith('Stable Diffusion'):
                     diffusers_load_config['force_zeros_for_empty_prompt '] = shared.opts.diffusers_force_zeros
                     diffusers_load_config['requires_aesthetics_score'] = shared.opts.diffusers_aesthetics_score
-                    diffusers_load_config['config_files'] = {
-                        'v1': 'configs/v1-inference.yaml',
-                        'v2': 'configs/v2-inference-768-v.yaml',
-                        'xl': 'configs/sd_xl_base.yaml',
-                        'xl_refiner': 'configs/sd_xl_refiner.yaml',
-                    }
+                    if 'inpainting' in checkpoint_info.path.lower():
+                        diffusers_load_config['config_files'] = {
+                            'v1': 'configs/v1-inpainting-inference.yaml',
+                            'v2': 'configs/v2-inference-768-v.yaml',
+                            'xl': 'configs/sd_xl_base.yaml',
+                            'xl_refiner': 'configs/sd_xl_refiner.yaml',
+                        }
+                    else:
+                        diffusers_load_config['config_files'] = {
+                            'v1': 'configs/v1-inference.yaml',
+                            'v2': 'configs/v2-inference-768-v.yaml',
+                            'xl': 'configs/sd_xl_base.yaml',
+                            'xl_refiner': 'configs/sd_xl_refiner.yaml',
+                        }
                 if hasattr(pipeline, 'from_single_file'):
                     diffusers_load_config['use_safetensors'] = True
                     sd_model = pipeline.from_single_file(checkpoint_info.path, **diffusers_load_config)
+                    if sd_model is not None and hasattr(sd_model, 'unet') and hasattr(sd_model.unet, 'config') and 'inpainting' in checkpoint_info.path.lower():
+                        shared.log.debug('Model patch: type=inpaint')
+                        sd_model.unet.config.in_channels = 9
                 elif hasattr(pipeline, 'from_ckpt'):
                     sd_model = pipeline.from_ckpt(checkpoint_info.path, **diffusers_load_config)
                 else:
@@ -961,7 +924,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             elif not getattr(sd_model, 'has_accelerate', False):
                 sd_model.to(devices.device)
 
-            compile_diffusers(sd_model)
+            sd_models_compile.compile_diffusers(sd_model)
 
         if sd_model is None:
             shared.log.error('Diffuser model not loaded')
@@ -1091,7 +1054,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
             current_checkpoint_info = model_data.sd_refiner.sd_checkpoint_info
             unload_model_weights(op=op)
 
-    do_inpainting_hijack()
+    sd_hijack_inpainting.do_inpainting_hijack()
     devices.set_cuda_params()
     if already_loaded_state_dict is not None:
         state_dict = already_loaded_state_dict
