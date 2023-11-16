@@ -56,7 +56,7 @@ def image_grid(imgs, batch_size=1, rows=None):
     params = script_callbacks.ImageGridLoopParams(imgs, cols, rows)
     script_callbacks.image_grid_callback(params)
     w, h = imgs[0].size
-    grid = Image.new('RGB', size=(params.cols * w, params.rows * h), color='black')
+    grid = Image.new('RGB', size=(params.cols * w, params.rows * h), color=shared.opts.grid_background)
     for i, img in enumerate(params.imgs):
         grid.paste(img, box=(i % params.cols * w, i // params.cols * h))
     return grid
@@ -141,37 +141,36 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0, tit
 
     def draw_texts(drawing: ImageDraw, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
         for line in lines:
-            fnt = initial_fnt
+            font = initial_fnt
             fontsize = initial_fontsize
-            while drawing.multiline_textsize(line.text, font=fnt)[0] > line.allowed_width and fontsize > 0:
-                fontsize -= 1
-                fnt = get_font(fontsize)
-            drawing.multiline_text((draw_x, draw_y + line.size[1] / 2), line.text, font=fnt, fill=color_active if line.is_active else color_inactive, anchor="mm", align="center")
+            while drawing.multiline_textsize(line.text, font=font)[0] > line.allowed_width and fontsize > 0:
+                fontsize -= 2
+                font = get_font(fontsize)
+            drawing.multiline_text((draw_x, draw_y + line.size[1] / 2), line.text, font=font, fill=shared.opts.font_color if line.is_active else color_inactive, anchor="mm", align="center")
             if not line.is_active:
                 drawing.line((draw_x - line.size[0] // 2, draw_y + line.size[1] // 2, draw_x + line.size[0] // 2, draw_y + line.size[1] // 2), fill=color_inactive, width=4)
             draw_y += line.size[1] + line_spacing
 
     fontsize = (width + height) // 25
     line_spacing = fontsize // 2
-    fnt = get_font(fontsize)
-    color_active = (0, 0, 0)
-    color_inactive = (153, 153, 153)
+    font = get_font(fontsize)
+    color_inactive = (127, 127, 127)
     pad_left = 0 if sum([sum([len(line.text) for line in lines]) for lines in ver_texts]) == 0 else width * 3 // 4
     cols = im.width // width
     rows = im.height // height
     assert cols == len(hor_texts), f'bad number of horizontal texts: {len(hor_texts)}; must be {cols}'
     assert rows == len(ver_texts), f'bad number of vertical texts: {len(ver_texts)}; must be {rows}'
-    calc_img = Image.new("RGB", (1, 1), "white")
+    calc_img = Image.new("RGB", (1, 1), shared.opts.grid_background)
     calc_d = ImageDraw.Draw(calc_img)
     title_texts = [title] if title else [[GridAnnotation()]]
     for texts, allowed_width in zip(hor_texts + ver_texts + title_texts, [width] * len(hor_texts) + [pad_left] * len(ver_texts) + [(width+margin)*cols]):
         items = [] + texts
         texts.clear()
         for line in items:
-            wrapped = wrap(calc_d, line.text, fnt, allowed_width)
+            wrapped = wrap(calc_d, line.text, font, allowed_width)
             texts += [GridAnnotation(x, line.is_active) for x in wrapped]
         for line in texts:
-            bbox = calc_d.multiline_textbbox((0, 0), line.text, font=fnt)
+            bbox = calc_d.multiline_textbbox((0, 0), line.text, font=font)
             line.size = (bbox[2] - bbox[0], bbox[3] - bbox[1])
             line.allowed_width = allowed_width
     hor_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing for lines in hor_texts]
@@ -181,7 +180,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0, tit
     if title:
         title_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing for lines in title_texts] # pylint: disable=unsubscriptable-object
         title_pad = 0 if sum(title_text_heights) == 0 else max(title_text_heights) + line_spacing * 2
-    result = Image.new("RGB", (im.width + pad_left + margin * (cols-1), im.height + pad_top + title_pad + margin * (rows-1)), "white")
+    result = Image.new("RGB", (im.width + pad_left + margin * (cols-1), im.height + pad_top + title_pad + margin * (rows-1)), shared.opts.grid_background)
     for row in range(rows):
         for col in range(cols):
             cell = im.crop((width * col, height * row, width * (col+1), height * (row+1)))
@@ -190,15 +189,15 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0, tit
     if title:
         x = pad_left + ((width+margin)*cols) / 2
         y = title_pad / 2 - title_text_heights[0] / 2
-        draw_texts(d, x, y, title_texts[0], fnt, fontsize)
+        draw_texts(d, x, y, title_texts[0], font, fontsize)
     for col in range(cols):
         x = pad_left + (width + margin) * col + width / 2
         y = (pad_top / 2 - hor_text_heights[col] / 2) + title_pad
-        draw_texts(d, x, y, hor_texts[col], fnt, fontsize)
+        draw_texts(d, x, y, hor_texts[col], font, fontsize)
     for row in range(rows):
         x = pad_left / 2
         y = (pad_top + (height + margin) * row + height / 2 - ver_text_heights[row] / 2) + title_pad
-        draw_texts(d, x, y, ver_texts[row], fnt, fontsize)
+        draw_texts(d, x, y, ver_texts[row], font, fontsize)
     return result
 
 

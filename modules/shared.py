@@ -419,6 +419,9 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
     "grid_save": OptionInfo(True, "Always save all generated image grids"),
     "grid_format": OptionInfo('jpg', 'File format for grids', gr.Dropdown, {"choices": ["jpg", "png", "webp", "tiff", "jp2"]}),
     "n_rows": OptionInfo(-1, "Grid row count", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
+    "grid_background": OptionInfo("#000000", "Grid background color", ui_components.FormColorPicker, {}),
+    "font": OptionInfo("", "Font file"),
+    "font_color": OptionInfo("#FFFFFF", "Font color", ui_components.FormColorPicker, {}),
 
     "save_sep_options": OptionInfo("<h2>Intermediate Image Saving</h2>", "", gr.HTML),
     "save_init_img": OptionInfo(False, "Save copy of img2img init images"),
@@ -470,7 +473,6 @@ options_templates.update(options_section(('ui', "User Interface"), {
     "disable_weights_auto_swap": OptionInfo(True, "Do not change selected model when reading generation parameters"),
     "send_seed": OptionInfo(True, "Send seed when sending prompt or image to other interface"),
     "send_size": OptionInfo(True, "Send size when sending prompt or image to another interface"),
-    "font": OptionInfo("", "Font for image grids that have text"),
     "keyedit_precision_attention": OptionInfo(0.1, "Ctrl+up/down precision when editing (attention:1.1)", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001, "visible": False}),
     "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001, "visible": False}),
     "keyedit_delimiters": OptionInfo(".,\/!?%^*;:{}=`~()", "Ctrl+up/down word delimiters", gr.Textbox, { "visible": False }), # pylint: disable=anomalous-backslash-in-string
