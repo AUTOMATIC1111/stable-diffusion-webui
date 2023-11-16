@@ -1,6 +1,19 @@
 import os
 import logging
 
+from tqdm.auto import tqdm
+
+class TqdmLoggingHandler(logging.Handler):
+    def __init__(self, level=logging.INFO):
+        super().__init__(level)
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            tqdm.write(msg)
+            self.flush()
+        except Exception:
+            self.handleError(record)
 
 def setup_logging(loglevel):
     if loglevel is None:
@@ -12,5 +25,6 @@ def setup_logging(loglevel):
             level=log_level,
             format='%(asctime)s %(levelname)s [%(name)s] %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S',
+            handlers=[TqdmLoggingHandler()]
         )
 
