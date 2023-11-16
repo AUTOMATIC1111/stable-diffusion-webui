@@ -327,7 +327,7 @@ def read_metadata_from_safetensors(filename):
         if not os.path.isfile(sd_metadata_file):
             sd_metadata = {}
         else:
-            sd_metadata = shared.readfile(sd_metadata_file)
+            sd_metadata = shared.readfile(sd_metadata_file, lock=True)
     res = sd_metadata.get(filename, None)
     if res is not None:
         return res

@@ -185,7 +185,7 @@ class StableDiffusionModelHijack:
                 import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
                 if shared.opts.cuda_compile_backend == "openvino_fx":
                     torch._dynamo.reset() # pylint: disable=protected-access
-                    from modules.intel.openvino import openvino_fx, openvino_clear_caches # pylint: disable=unused-import
+                    from modules.intel.openvino import openvino_fx, openvino_clear_caches # pylint: disable=unused-import, no-name-in-module
                     openvino_clear_caches()
                     torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
                 log_level = logging.WARNING if opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
@@ -199,11 +199,12 @@ class StableDiffusionModelHijack:
                     hidet.torch.dynamo_config.use_tensor_core(True)
                     hidet.torch.dynamo_config.search_space(2)
                 m.model = torch.compile(m.model, mode=opts.cuda_compile_mode, backend=opts.cuda_compile_backend, fullgraph=opts.cuda_compile_fullgraph, dynamic=False)
-                from installer import setup_logging
-                setup_logging()
                 shared.log.info("Model complilation done.")
             except Exception as err:
                 shared.log.warning(f"Model compile not supported: {err}")
+            finally:
+                from installer import setup_logging
+                setup_logging()
 
         self.optimization_method = apply_optimizations()
         self.clip = m.cond_stage_model

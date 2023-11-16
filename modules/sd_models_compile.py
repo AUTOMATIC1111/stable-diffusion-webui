@@ -93,6 +93,7 @@ def compile_torch(sd_model):
     try:
         import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
         torch._dynamo.reset() # pylint: disable=protected-access
+        shared.log.debug(f"Model compile available backends: {torch._dynamo.list_backends()}") # pylint: disable=protected-access
         if shared.opts.ipex_optimize:
             optimize_ipex(sd_model)
         if shared.opts.cuda_compile_backend == "openvino_fx":

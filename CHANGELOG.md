@@ -39,6 +39,9 @@
   - Add option to create only subimages in XYZ grid, thanks @midcoastal
   - Support custom upscalers in subfolders  
   - Add additional image info when loading image in process tab  
+  - Better file locking when sharing config and/or models between multiple instances  
+  - Handle custom API endpoints when using auth  
+  - Show logged in user in log when accessing via UI and/or API  
   - Support `--ckpt none` to skip loading a model  
 - **Fixes**  
   - Fix `params.txt` saved before actual image

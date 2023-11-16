@@ -66,7 +66,6 @@ class Upscaler:
                 scalers.append(scaler)
                 loaded.append(file_name)
                 modules.shared.log.debug(f'Upscaler type={self.name} folder="{folder}" model="{model_name}" path="{file_name}"')
-                print(f'Upscaler type={self.name} folder="{folder}" model="{model_name}" path="{file_name}"')
 
     def find_scalers(self):
         scalers = []
