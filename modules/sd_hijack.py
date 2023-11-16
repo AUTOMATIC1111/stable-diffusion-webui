@@ -184,6 +184,20 @@ class StableDiffusionModelHijack:
             errors.display(e, "applying cross attention optimization")
             undo_optimizations()
 
+    def convert_sdxl_to_ssd(self, m):
+        """Converts an SDXL model to a Segmind Stable Diffusion model (see https://huggingface.co/segmind/SSD-1B)"""
+
+        delattr(m.model.diffusion_model.middle_block, '1')
+        delattr(m.model.diffusion_model.middle_block, '2')
+        for i in ['9', '8', '7', '6', '5', '4']:
+            delattr(m.model.diffusion_model.input_blocks[7][1].transformer_blocks, i)
+            delattr(m.model.diffusion_model.input_blocks[8][1].transformer_blocks, i)
+            delattr(m.model.diffusion_model.output_blocks[0][1].transformer_blocks, i)
+            delattr(m.model.diffusion_model.output_blocks[1][1].transformer_blocks, i)
+        delattr(m.model.diffusion_model.output_blocks[4][1].transformer_blocks, '1')
+        delattr(m.model.diffusion_model.output_blocks[5][1].transformer_blocks, '1')
+        devices.torch_gc()
+
     def hijack(self, m):
         conditioner = getattr(m, 'conditioner', None)
         if conditioner:
@@ -242,7 +256,11 @@ class StableDiffusionModelHijack:
 
         self.layers = flatten(m)
 
+        import modules.models.diffusion.ddpm_edit
+
         if isinstance(m, ldm.models.diffusion.ddpm.LatentDiffusion):
+            sd_unet.original_forward = ldm_original_forward
+        elif isinstance(m, modules.models.diffusion.ddpm_edit.LatentDiffusion):
             sd_unet.original_forward = ldm_original_forward
         elif isinstance(m, sgm.models.diffusion.DiffusionEngine):
             sd_unet.original_forward = sgm_original_forward

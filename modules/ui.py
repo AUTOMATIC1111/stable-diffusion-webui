@@ -12,7 +12,7 @@ from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
 from modules import gradio_extensons  # noqa: F401
-from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, shared_items, ui_settings, timer, sysinfo, ui_checkpoint_merger, ui_prompt_styles, scripts, sd_samplers, processing, ui_extra_networks
+from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, shared_items, ui_settings, timer, sysinfo, ui_checkpoint_merger, scripts, sd_samplers, processing, ui_extra_networks, ui_toprow
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML, InputAccordion, ResizeHandleRow
 from modules.paths import script_path
 from modules.ui_common import create_refresh_button
@@ -25,7 +25,6 @@ import modules.hypernetworks.ui as hypernetworks_ui
 import modules.textual_inversion.ui as textual_inversion_ui
 import modules.textual_inversion.textual_inversion as textual_inversion
 import modules.shared as shared
-import modules.images
 from modules import prompt_parser
 from modules.sd_hijack import model_hijack
 from modules.generation_parameters_copypaste import image_from_url_text
@@ -177,79 +176,6 @@ def update_negative_prompt_token_counter(text, steps):
     return update_token_counter(text, steps, is_positive=False)
 
 
-class Toprow:
-    """Creates a top row UI with prompts, generate button, styles, extra little buttons for things, and enables some functionality related to their operation"""
-
-    def __init__(self, is_img2img):
-        id_part = "img2img" if is_img2img else "txt2img"
-        self.id_part = id_part
-
-        with gr.Row(elem_id=f"{id_part}_toprow", variant="compact"):
-            with gr.Column(elem_id=f"{id_part}_prompt_container", scale=6):
-                with gr.Row():
-                    with gr.Column(scale=80):
-                        with gr.Row():
-                            self.prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=3, placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
-                            self.prompt_img = gr.File(label="", elem_id=f"{id_part}_prompt_image", file_count="single", type="binary", visible=False)
-
-                with gr.Row():
-                    with gr.Column(scale=80):
-                        with gr.Row():
-                            self.negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
-
-            self.button_interrogate = None
-            self.button_deepbooru = None
-            if is_img2img:
-                with gr.Column(scale=1, elem_classes="interrogate-col"):
-                    self.button_interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
-                    self.button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
-
-            with gr.Column(scale=1, elem_id=f"{id_part}_actions_column"):
-                with gr.Row(elem_id=f"{id_part}_generate_box", elem_classes="generate-box"):
-                    self.interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt", elem_classes="generate-box-interrupt")
-                    self.skip = gr.Button('Skip', elem_id=f"{id_part}_skip", elem_classes="generate-box-skip")
-                    self.submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
-
-                    self.skip.click(
-                        fn=lambda: shared.state.skip(),
-                        inputs=[],
-                        outputs=[],
-                    )
-
-                    self.interrupt.click(
-                        fn=lambda: shared.state.interrupt(),
-                        inputs=[],
-                        outputs=[],
-                    )
-
-                with gr.Row(elem_id=f"{id_part}_tools"):
-                    self.paste = ToolButton(value=paste_symbol, elem_id="paste", tooltip="Read generation parameters from prompt or last generation if prompt is empty into user interface.")
-                    self.clear_prompt_button = ToolButton(value=clear_prompt_symbol, elem_id=f"{id_part}_clear_prompt", tooltip="Clear prompt")
-                    self.apply_styles = ToolButton(value=ui_prompt_styles.styles_materialize_symbol, elem_id=f"{id_part}_style_apply", tooltip="Apply all selected styles to prompts.")
-                    self.restore_progress_button = ToolButton(value=restore_progress_symbol, elem_id=f"{id_part}_restore_progress", visible=False, tooltip="Restore progress")
-
-                    self.token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{id_part}_token_counter", elem_classes=["token-counter"])
-                    self.token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
-                    self.negative_token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{id_part}_negative_token_counter", elem_classes=["token-counter"])
-                    self.negative_token_button = gr.Button(visible=False, elem_id=f"{id_part}_negative_token_button")
-
-                    self.clear_prompt_button.click(
-                        fn=lambda *x: x,
-                        _js="confirm_clear_prompt",
-                        inputs=[self.prompt, self.negative_prompt],
-                        outputs=[self.prompt, self.negative_prompt],
-                    )
-
-                self.ui_styles = ui_prompt_styles.UiPromptStyles(id_part, self.prompt, self.negative_prompt)
-                self.ui_styles.setup_apply_button(self.apply_styles)
-
-        self.prompt_img.change(
-            fn=modules.images.image_data,
-            inputs=[self.prompt_img],
-            outputs=[self.prompt, self.prompt_img],
-            show_progress=False,
-        )
-
 
 def setup_progressbar(*args, **kwargs):
     pass
@@ -288,8 +214,8 @@ def apply_setting(key, value):
     return getattr(opts, key)
 
 
-def create_output_panel(tabname, outdir):
-    return ui_common.create_output_panel(tabname, outdir)
+def create_output_panel(tabname, outdir, toprow=None):
+    return ui_common.create_output_panel(tabname, outdir, toprow)
 
 
 def create_sampler_and_steps_selection(choices, tabname):
@@ -336,7 +262,7 @@ def create_ui():
     scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        toprow = Toprow(is_img2img=False)
+        toprow = ui_toprow.Toprow(is_img2img=False, is_compact=shared.opts.compact_prompt_box)
 
         dummy_component = gr.Label(visible=False)
 
@@ -348,6 +274,9 @@ def create_ui():
                 scripts.scripts_txt2img.prepare_ui()
 
                 for category in ordered_ui_categories():
+                    if category == "prompt":
+                        toprow.create_inline_toprow_prompts()
+
                     if category == "sampler":
                         steps, sampler_name = create_sampler_and_steps_selection(sd_samplers.visible_sampler_names(), "txt2img")
 
@@ -442,7 +371,7 @@ def create_ui():
                     show_progress=False,
                 )
 
-            txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
+            txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples, toprow)
 
             txt2img_args = dict(
                 fn=wrap_gradio_gpu_call(modules.txt2img.txt2img, extra_outputs=[None, '', '']),
@@ -554,7 +483,7 @@ def create_ui():
     scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        toprow = Toprow(is_img2img=True)
+        toprow = ui_toprow.Toprow(is_img2img=True, is_compact=shared.opts.compact_prompt_box)
 
         extra_tabs = gr.Tabs(elem_id="img2img_extra_tabs")
         extra_tabs.__enter__()
@@ -577,85 +506,89 @@ def create_ui():
                             button = gr.Button(title)
                             copy_image_buttons.append((button, name, elem))
 
-                with gr.Tabs(elem_id="mode_img2img"):
-                    img2img_selected_tab = gr.State(0)
-
-                    with gr.TabItem('img2img', id='img2img', elem_id="img2img_img2img_tab") as tab_img2img:
-                        init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA", height=opts.img2img_editor_height)
-                        add_copy_image_controls('img2img', init_img)
-
-                    with gr.TabItem('Sketch', id='img2img_sketch', elem_id="img2img_img2img_sketch_tab") as tab_sketch:
-                        sketch = gr.Image(label="Image for img2img", elem_id="img2img_sketch", show_label=False, source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGB", height=opts.img2img_editor_height, brush_color=opts.img2img_sketch_default_brush_color)
-                        add_copy_image_controls('sketch', sketch)
-
-                    with gr.TabItem('Inpaint', id='inpaint', elem_id="img2img_inpaint_tab") as tab_inpaint:
-                        init_img_with_mask = gr.Image(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA", height=opts.img2img_editor_height, brush_color=opts.img2img_inpaint_mask_brush_color)
-                        add_copy_image_controls('inpaint', init_img_with_mask)
-
-                    with gr.TabItem('Inpaint sketch', id='inpaint_sketch', elem_id="img2img_inpaint_sketch_tab") as tab_inpaint_color:
-                        inpaint_color_sketch = gr.Image(label="Color sketch inpainting", show_label=False, elem_id="inpaint_sketch", source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGB", height=opts.img2img_editor_height, brush_color=opts.img2img_inpaint_sketch_default_brush_color)
-                        inpaint_color_sketch_orig = gr.State(None)
-                        add_copy_image_controls('inpaint_sketch', inpaint_color_sketch)
-
-                        def update_orig(image, state):
-                            if image is not None:
-                                same_size = state is not None and state.size == image.size
-                                has_exact_match = np.any(np.all(np.array(image) == np.array(state), axis=-1))
-                                edited = same_size and has_exact_match
-                                return image if not edited or state is None else state
-
-                        inpaint_color_sketch.change(update_orig, [inpaint_color_sketch, inpaint_color_sketch_orig], inpaint_color_sketch_orig)
-
-                    with gr.TabItem('Inpaint upload', id='inpaint_upload', elem_id="img2img_inpaint_upload_tab") as tab_inpaint_upload:
-                        init_img_inpaint = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil", elem_id="img_inpaint_base")
-                        init_mask_inpaint = gr.Image(label="Mask", source="upload", interactive=True, type="pil", image_mode="RGBA", elem_id="img_inpaint_mask")
-
-                    with gr.TabItem('Batch', id='batch', elem_id="img2img_batch_tab") as tab_batch:
-                        hidden = '<br>Disabled when launched with --hide-ui-dir-config.' if shared.cmd_opts.hide_ui_dir_config else ''
-                        gr.HTML(
-                            "<p style='padding-bottom: 1em;' class=\"text-gray-500\">Process images in a directory on the same machine where the server is running." +
-                            "<br>Use an empty output directory to save pictures normally instead of writing to the output directory." +
-                            f"<br>Add inpaint batch mask directory to enable inpaint batch processing."
-                            f"{hidden}</p>"
-                        )
-                        img2img_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs, elem_id="img2img_batch_input_dir")
-                        img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, elem_id="img2img_batch_output_dir")
-                        img2img_batch_inpaint_mask_dir = gr.Textbox(label="Inpaint batch mask directory (required for inpaint batch processing only)", **shared.hide_dirs, elem_id="img2img_batch_inpaint_mask_dir")
-                        with gr.Accordion("PNG info", open=False):
-                            img2img_batch_use_png_info = gr.Checkbox(label="Append png info to prompts", **shared.hide_dirs, elem_id="img2img_batch_use_png_info")
-                            img2img_batch_png_info_dir = gr.Textbox(label="PNG info directory", **shared.hide_dirs, placeholder="Leave empty to use input directory", elem_id="img2img_batch_png_info_dir")
-                            img2img_batch_png_info_props = gr.CheckboxGroup(["Prompt", "Negative prompt", "Seed", "CFG scale", "Sampler", "Steps", "Model hash"], label="Parameters to take from png info", info="Prompts from png info will be appended to prompts set in ui.")
-
-                    img2img_tabs = [tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]
-
-                    for i, tab in enumerate(img2img_tabs):
-                        tab.select(fn=lambda tabnum=i: tabnum, inputs=[], outputs=[img2img_selected_tab])
-
-                def copy_image(img):
-                    if isinstance(img, dict) and 'image' in img:
-                        return img['image']
-
-                    return img
-
-                for button, name, elem in copy_image_buttons:
-                    button.click(
-                        fn=copy_image,
-                        inputs=[elem],
-                        outputs=[copy_image_destinations[name]],
-                    )
-                    button.click(
-                        fn=lambda: None,
-                        _js=f"switch_to_{name.replace(' ', '_')}",
-                        inputs=[],
-                        outputs=[],
-                    )
-
-                with FormRow():
-                    resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
-
                 scripts.scripts_img2img.prepare_ui()
 
                 for category in ordered_ui_categories():
+                    if category == "prompt":
+                        toprow.create_inline_toprow_prompts()
+
+                    if category == "image":
+                        with gr.Tabs(elem_id="mode_img2img"):
+                            img2img_selected_tab = gr.State(0)
+
+                            with gr.TabItem('img2img', id='img2img', elem_id="img2img_img2img_tab") as tab_img2img:
+                                init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA", height=opts.img2img_editor_height)
+                                add_copy_image_controls('img2img', init_img)
+
+                            with gr.TabItem('Sketch', id='img2img_sketch', elem_id="img2img_img2img_sketch_tab") as tab_sketch:
+                                sketch = gr.Image(label="Image for img2img", elem_id="img2img_sketch", show_label=False, source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGB", height=opts.img2img_editor_height, brush_color=opts.img2img_sketch_default_brush_color)
+                                add_copy_image_controls('sketch', sketch)
+
+                            with gr.TabItem('Inpaint', id='inpaint', elem_id="img2img_inpaint_tab") as tab_inpaint:
+                                init_img_with_mask = gr.Image(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA", height=opts.img2img_editor_height, brush_color=opts.img2img_inpaint_mask_brush_color)
+                                add_copy_image_controls('inpaint', init_img_with_mask)
+
+                            with gr.TabItem('Inpaint sketch', id='inpaint_sketch', elem_id="img2img_inpaint_sketch_tab") as tab_inpaint_color:
+                                inpaint_color_sketch = gr.Image(label="Color sketch inpainting", show_label=False, elem_id="inpaint_sketch", source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGB", height=opts.img2img_editor_height, brush_color=opts.img2img_inpaint_sketch_default_brush_color)
+                                inpaint_color_sketch_orig = gr.State(None)
+                                add_copy_image_controls('inpaint_sketch', inpaint_color_sketch)
+
+                                def update_orig(image, state):
+                                    if image is not None:
+                                        same_size = state is not None and state.size == image.size
+                                        has_exact_match = np.any(np.all(np.array(image) == np.array(state), axis=-1))
+                                        edited = same_size and has_exact_match
+                                        return image if not edited or state is None else state
+
+                                inpaint_color_sketch.change(update_orig, [inpaint_color_sketch, inpaint_color_sketch_orig], inpaint_color_sketch_orig)
+
+                            with gr.TabItem('Inpaint upload', id='inpaint_upload', elem_id="img2img_inpaint_upload_tab") as tab_inpaint_upload:
+                                init_img_inpaint = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil", elem_id="img_inpaint_base")
+                                init_mask_inpaint = gr.Image(label="Mask", source="upload", interactive=True, type="pil", image_mode="RGBA", elem_id="img_inpaint_mask")
+
+                            with gr.TabItem('Batch', id='batch', elem_id="img2img_batch_tab") as tab_batch:
+                                hidden = '<br>Disabled when launched with --hide-ui-dir-config.' if shared.cmd_opts.hide_ui_dir_config else ''
+                                gr.HTML(
+                                    "<p style='padding-bottom: 1em;' class=\"text-gray-500\">Process images in a directory on the same machine where the server is running." +
+                                    "<br>Use an empty output directory to save pictures normally instead of writing to the output directory." +
+                                    f"<br>Add inpaint batch mask directory to enable inpaint batch processing."
+                                    f"{hidden}</p>"
+                                )
+                                img2img_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs, elem_id="img2img_batch_input_dir")
+                                img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, elem_id="img2img_batch_output_dir")
+                                img2img_batch_inpaint_mask_dir = gr.Textbox(label="Inpaint batch mask directory (required for inpaint batch processing only)", **shared.hide_dirs, elem_id="img2img_batch_inpaint_mask_dir")
+                                with gr.Accordion("PNG info", open=False):
+                                    img2img_batch_use_png_info = gr.Checkbox(label="Append png info to prompts", **shared.hide_dirs, elem_id="img2img_batch_use_png_info")
+                                    img2img_batch_png_info_dir = gr.Textbox(label="PNG info directory", **shared.hide_dirs, placeholder="Leave empty to use input directory", elem_id="img2img_batch_png_info_dir")
+                                    img2img_batch_png_info_props = gr.CheckboxGroup(["Prompt", "Negative prompt", "Seed", "CFG scale", "Sampler", "Steps", "Model hash"], label="Parameters to take from png info", info="Prompts from png info will be appended to prompts set in ui.")
+
+                            img2img_tabs = [tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]
+
+                            for i, tab in enumerate(img2img_tabs):
+                                tab.select(fn=lambda tabnum=i: tabnum, inputs=[], outputs=[img2img_selected_tab])
+
+                        def copy_image(img):
+                            if isinstance(img, dict) and 'image' in img:
+                                return img['image']
+
+                            return img
+
+                        for button, name, elem in copy_image_buttons:
+                            button.click(
+                                fn=copy_image,
+                                inputs=[elem],
+                                outputs=[copy_image_destinations[name]],
+                            )
+                            button.click(
+                                fn=lambda: None,
+                                _js=f"switch_to_{name.replace(' ', '_')}",
+                                inputs=[],
+                                outputs=[],
+                            )
+
+                        with FormRow():
+                            resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
+
                     if category == "sampler":
                         steps, sampler_name = create_sampler_and_steps_selection(sd_samplers.visible_sampler_names(), "img2img")
 
@@ -756,20 +689,20 @@ def create_ui():
                                 with gr.Column(scale=4):
                                     inpaint_full_res_padding = gr.Slider(label='Only masked padding, pixels', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
 
-                            def select_img2img_tab(tab):
-                                return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
-
-                            for i, elem in enumerate(img2img_tabs):
-                                elem.select(
-                                    fn=lambda tab=i: select_img2img_tab(tab),
-                                    inputs=[],
-                                    outputs=[inpaint_controls, mask_alpha],
-                                )
-
                     if category not in {"accordions"}:
                         scripts.scripts_img2img.setup_ui_for_section(category)
 
-            img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples)
+            def select_img2img_tab(tab):
+                return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
+
+            for i, elem in enumerate(img2img_tabs):
+                elem.select(
+                    fn=lambda tab=i: select_img2img_tab(tab),
+                    inputs=[],
+                    outputs=[inpaint_controls, mask_alpha],
+                )
+
+            img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples, toprow)
 
             img2img_args = dict(
                 fn=wrap_gradio_gpu_call(modules.img2img.img2img, extra_outputs=[None, '', '']),
