@@ -21,11 +21,11 @@ from tools.wrapper import FuncExecTimeWrapper
 from modules.shared import cmd_opts
 from modules.processing import Processed
 from modules.scripts import Script, ScriptRunner
-from modules.sd_models import reload_model_weights, CheckpointInfo
 from handlers.formatter import format_alwayson_script_args
 from tools.environment import S3ImageBucket, S3Tmp, S3SDWEB
 from filestorage import FileStorageCls, get_local_path, batch_download
 from handlers.typex import ModelLocation, ModelType, ImageOutput, OutImageType, UserModelLocation
+from modules.sd_models import reload_model_weights, CheckpointInfo, get_closet_checkpoint_match, list_models
 
 StrMapMap = typing.Dict[str, typing.Mapping[str, typing.Any]]
 
@@ -39,28 +39,28 @@ def get_model_local_path(remoting_path: str, model_type: ModelType, progress_cal
         raise OSError(f'remoting path is empty')
     if os.path.isfile(remoting_path):
         return remoting_path
+
+    def ckpt_register(model_path: str):
+        if model_type == ModelType.CheckPoint and os.path.isfile(model_path):
+            checkpoint = CheckpointInfo(model_path)
+            checkpoint.register()
+
     # 判断user-models下
     os.makedirs(UserModelLocation[model_type], exist_ok=True)
     dst = os.path.join(UserModelLocation[model_type], os.path.basename(remoting_path))
     if os.path.isfile(dst):
-        if model_type == ModelType.CheckPoint:
-            checkpoint = CheckpointInfo(dst)
-            checkpoint.register()
+        ckpt_register(dst)
         return dst
 
     os.makedirs(ModelLocation[model_type], exist_ok=True)
     dst = os.path.join(ModelLocation[model_type], os.path.basename(remoting_path))
     if os.path.isfile(dst):
-        if model_type == ModelType.CheckPoint:
-            checkpoint = CheckpointInfo(dst)
-            checkpoint.register()
+        ckpt_register(dst)
         return dst
 
     dst = get_local_path(remoting_path, dst, progress_callback=progress_callback)
     if os.path.isfile(dst):
-        if model_type == ModelType.CheckPoint:
-            checkpoint = CheckpointInfo(dst)
-            checkpoint.register()
+        ckpt_register(dst)
         return dst
 
 
@@ -252,15 +252,27 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
         # processing.py中 sd_models.get_closet_checkpoint_match(p.refiner_checkpoint)
         # 通过get_closet_checkpoint_match查找的模型，checkpoint_aliases需要提前注册（使用的文件名不含路径）
         # 而worker下面获取的basename作为hash, 因此refiner_checkpoint需要取basename
-        basename, _ = os.path.splitext(os.path.basename(refiner_checkpoint))
+        basename = os.path.basename(refiner_checkpoint)
+        name_for_extra, _ = os.path.splitext(basename)
+
+        # 防止文件过期被删
+        os.popen(f'touch {refiner_checkpoint}')
+        checkpoint = CheckpointInfo(refiner_checkpoint)
+        logger.debug(f"[XL REFINER] => register refiner model({name_for_extra}) ids:{checkpoint.ids}")
+        checkpoint.register()
+
+        # 检查是否能获取
+        # if not get_closet_checkpoint_match(name_for_extra):
+        #     logger.warning("cannot got refiner model, list models...")
+        #     list_models()
+
         alwayson_scripts.update({
             "Refiner": {'args': [
                 enable_refiner,
-                basename,
+                name_for_extra,
                 refiner_switch_at
             ]
             },
-
         })
 
     if not getattr(cmd_opts, 'disable_tss_def_alwayson', False):
