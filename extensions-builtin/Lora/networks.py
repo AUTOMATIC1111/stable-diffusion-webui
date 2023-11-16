@@ -175,7 +175,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
                 else:
                     net = load_network(name, network_on_disk)
             except Exception as e:
-                shared.log.error(f"LoRA load failed: file={network_on_disk.filename}")
+                shared.log.error(f"LoRA load failed: file={network_on_disk.filename} {e}")
                 if debug:
                     errors.display(e, f"LoRA load failed file={network_on_disk.filename}")
                 continue
