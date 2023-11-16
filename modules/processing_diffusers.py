@@ -408,27 +408,41 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     use_denoise_start = bool(is_img2img and p.refiner_start > 0 and p.refiner_start < 1)
 
     def calculate_base_steps():
-        steps = p.steps
-        if use_refiner_start:
-            steps = (p.steps // (1.0 - p.refiner_start)) if shared.sd_model_type == 'sdxl' else p.steps
+        if is_img2img:
+            if use_denoise_start and shared.sd_model_type == 'sdxl':
+                steps = p.steps // (1 - p.refiner_start)
+            else:
+                steps = (p.steps // p.denoising_strength) + 1
+        elif use_refiner_start and shared.sd_model_type == 'sdxl':
+            steps = (p.steps // p.refiner_start) + 1
+        else:
+            steps = p.steps
+
         if os.environ.get('SD_STEPS_DEBUG', None) is not None:
             shared.log.debug(f'Steps: type=base input={p.steps} output={steps} refiner={use_refiner_start}')
         return max(2, int(steps))
 
     def calculate_hires_steps():
-        # denoising strength is applied to steps by diffusers so this is no-op
-        # steps = (p.hr_second_pass_steps * p.denoising_strength) if p.hr_second_pass_steps > 0 else (p.steps * p.denoising_strength)
-        steps = p.hr_second_pass_steps if p.hr_second_pass_steps > 0 else p.steps
+        if p.hr_second_pass_steps > 0:
+            steps = (p.hr_second_pass_steps // p.denoising_strength) + 1
+        else:
+            steps = (p.steps // p.denoising_strength) + 1
+
         if os.environ.get('SD_STEPS_DEBUG', None) is not None:
             shared.log.debug(f'Steps: type=hires input={p.hr_second_pass_steps} output={steps} denoise={p.denoising_strength}')
         return max(2, int(steps))
 
     def calculate_refiner_steps():
-        # diffusers apply additional math to refiner steps, but we leave numbers as-is without correction
-        if p.refiner_start > 0 and p.refiner_start < 1:
-            steps = ((1 - p.refiner_start) * p.refiner_steps) if p.refiner_steps > 0 else ((1 - p.refiner_start) * p.steps)
+        if "StableDiffusionXL" in shared.sd_refiner.__class__.__name__:
+            if p.refiner_start > 0 and p.refiner_start < 1:
+                #steps = p.refiner_steps // (1 - p.refiner_start) # SDXL with denoise strenght
+                steps = (p.refiner_steps // (1 - p.refiner_start) // 2) + 1
+            else:
+                steps = (p.refiner_steps // p.denoising_strength) + 1
         else:
-            steps = (p.denoising_strength * p.refiner_steps) if p.refiner_steps > 0 else (p.denoising_strength * p.steps)
+            #steps = p.refiner_steps # SD 1.5 with denoise strenght
+            steps = (p.refiner_steps * 1.25) + 1
+
         if os.environ.get('SD_STEPS_DEBUG', None) is not None:
             shared.log.debug(f'Steps: type=refiner input={p.refiner_steps} output={steps} start={p.refiner_start} denoise={p.denoising_strength}')
         return max(2, int(steps))
