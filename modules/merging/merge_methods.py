@@ -24,12 +24,20 @@ EPSILON = 1e-10  # Define a small constant EPSILON to prevent division by zero
 
 
 def weighted_sum(a: Tensor, b: Tensor, alpha: float, **kwargs) -> Tensor:
+    """
+    Basic Merge:
+    alpha 0 returns Primary Model
+    alpha 1 returns Secondary Model
+    """
     return (1 - alpha) * a + alpha * b
 
 
-def weighted_subtraction(
-    a: Tensor, b: Tensor, alpha: float, beta: float, **kwargs
-) -> Tensor:
+def weighted_subtraction(a: Tensor, b: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:
+    """
+    The inverse of a Weighted Sum Merge
+    Returns Primary Model when alpha*beta = 0
+    High values of alpha*beta are likely to break the merged model
+    """
     # Adjust beta if both alpha and beta are 1.0 to avoid division by zero
     if alpha == 1.0 and beta == 1.0:
         beta -= EPSILON
@@ -38,6 +46,12 @@ def weighted_subtraction(
 
 
 def tensor_sum(a: Tensor, b: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:
+    """
+    Takes a slice of Secondary Model and pastes it into Primary Model
+    Alpha sets the width of the slice
+    Beta sets the start point of the slice
+    ie Alpha = 0.5 Beta = 0.25 is (ABBA) Alpha = 0.25 Beta = 0 is (BAAA)
+    """
     if alpha + beta <= 1:
         tt = a.clone()
         talphas = int(a.shape[0] * beta)
@@ -52,24 +66,37 @@ def tensor_sum(a: Tensor, b: Tensor, alpha: float, beta: float, **kwargs) -> Ten
 
 
 def add_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, **kwargs) -> Tensor:
+    """
+    Classic Add Difference Merge
+    """
     return a + alpha * (b - c)
 
 
-def sum_twice(
-    a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs
-) -> Tensor:
+def sum_twice(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:
+    """
+    Stacked Basic Merge:
+    Equivalent to Merging Primary and Secondary @ alpha
+    Then merging the result with Tertiary @ beta
+    """
     return (1 - beta) * ((1 - alpha) * a + alpha * b) + beta * c
 
 
-def triple_sum(
-    a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs
-) -> Tensor:
+def triple_sum(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:
+    """
+    Weights Secondary and Tertiary at alpha and beta respectively
+    Fills in the rest with Primary
+    Expect odd results if alpha + beta > 1 as Primary will be merged with a negative ratio
+    """
     return (1 - alpha - beta) * a + alpha * b + beta * c
 
 
-def euclidean_add_difference(
-    a: Tensor, b: Tensor, c: Tensor, alpha: float, **kwargs
-) -> Tensor:
+def euclidean_add_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, **kwargs) -> Tensor:
+    """
+    Subtract Primary and Secondary from Tertiary
+    Compare the remainders via Euclidean distance
+    Add to Tertiary
+    Note: Slow
+    """
     a_diff = a.float() - c.float()
     b_diff = b.float() - c.float()
     a_diff = torch.nan_to_num(a_diff / torch.linalg.norm(a_diff))
@@ -84,18 +111,20 @@ def euclidean_add_difference(
     return c + distance / torch.linalg.norm(distance) * target_norm
 
 
-def multiply_difference(
-    a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs
-) -> Tensor:
+def multiply_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:
+    """
+    Similar to Add Difference but with geometric mean instead of arithmatic mean
+    """
     diff_a = torch.pow(torch.abs(a.float() - c), (1 - alpha))
     diff_b = torch.pow(torch.abs(b.float() - c), alpha)
     difference = torch.copysign(diff_a * diff_b, weighted_sum(a, b, beta) - c)
     return c + difference.to(c.dtype)
 
 
-def top_k_tensor_sum(
-    a: Tensor, b: Tensor, alpha: float, beta: float, **kwargs
-) -> Tensor:
+def top_k_tensor_sum(a: Tensor, b: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:
+    """
+    Redistributes the largest weights of Secondary Model into Primary Model
+    """
     a_flat = torch.flatten(a)
     a_dist = torch.msort(a_flat)
     b_indices = torch.argsort(torch.flatten(b), stable=True)
@@ -144,9 +173,10 @@ def ratio_to_region(width: float, offset: float, n: int) -> Tuple[int, int, bool
     return round(start), round(end), inverted
 
 
-def similarity_add_difference(
-    a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs
-) -> Tensor:
+def similarity_add_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:
+    """
+    Weighted Sum where A and B are similar and Add Difference where A and B are dissimilar
+    """
     threshold = torch.maximum(torch.abs(a), torch.abs(b))
     similarity = ((a * b / threshold**2) + 1) / 2
     similarity = torch.nan_to_num(similarity * beta, nan=beta)
@@ -156,9 +186,14 @@ def similarity_add_difference(
     return (1 - similarity) * ab_diff + similarity * ab_sum
 
 
-def distribution_crossover(
-    a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs
-):
+def distribution_crossover(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs):
+    """
+    From the creator:
+    It's Primary high-passed + Secondary low-passed. Takes the fourrier transform of the weights of
+    Primary and Secondary when ordered with respect to Tertiary. Split the frequency domain
+    using a linear function. Alpha is the split frequency and Beta is the inclination of the line.
+    add everything under the line as the contribution of Primary and everything over the line as the contribution of Secondary
+    """
     if a.shape == ():
         return alpha * a + (1 - alpha) * b
 
@@ -183,9 +218,10 @@ def distribution_crossover(
     return x_values.reshape_as(a)
 
 
-def ties_add_difference(
-    a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs
-) -> Tensor:
+def ties_add_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:
+    """
+    An implementation of arXiv:2306.01708
+    """
     deltas = []
     signs = []
     for m in [a, b]:
