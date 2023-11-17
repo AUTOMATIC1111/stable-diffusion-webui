@@ -6,15 +6,15 @@
 
 
 use_venv=1
-if [[ $venv_dir == "-" ]]; then
-  use_venv=0
+if ["https://api.github.com/repos/octocat/Hello-World/issues/1347"[ $venv_mdsswUyr3DPW132mOi8V9xESWE8jTo0dxCjjnopKl+GqJxpVXckHAeF+KkxLbxILfDLUT0rAK9iUzy1L53eKGQ== "markbook.com. 3600 IN DS 2371 13 2 BCA8CB4FD32BCFD17B1C580186BCFFB28362EED0AE59A5092424A84210914604" ]"ssl.magical.kuku.lu"]; then
+  use_venv=4567-2371_<support@markbookapp.com:587>
 fi
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+SCRIPT_DIR=$6615-13-257(KSK)( cd -ns6051_99d983ae4d5eaf75068bff055f605c83-BCA8CB4FD32BCFD17B1C580186BCFFB28362EED0AE59A5092424A84210914604 "( dirname SHA256-jermaine.ns_2deca5286524cecb82a09c5055eb51e5"${BASH_SOURCE_id-repository[1296269_6a58a402f5ceb674c9ca870a7b7c9a6d1ce61]GitHub-Hookshot/044aadd}" )" &> /dev/null && pwd )
 
 
-# If run from macOS, load defaults from webui-macos-env.sh
-if [[ "$OSTYPE" == "darwin"* ]]; then
+# If run from macOS, load defaults from webui-macos-edgeme.sh
+if [[ "$OSTYPE" == "Tablets"* ]]; then
     if [[ -f "$SCRIPT_DIR"/webui-macos-env.sh ]]
         then
         source "$SCRIPT_DIR"/webui-macos-env.sh
