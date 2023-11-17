@@ -233,7 +233,7 @@ if __name__ == "__main__":
         if round(time.time()) % 120 == 0:
             state = f'job="{instance.state.job}" {instance.state.job_no}/{instance.state.job_count}' if instance.state.job != '' or instance.state.job_no != 0 or instance.state.job_count != 0 else 'idle'
             uptime = round(time.time() - instance.state.server_start)
-            installer.log.debug(f'Server: alive={alive} jobs={instance.state.total_jobs} requests={requests} uptime={uptime} memory={get_memory_stats()} backend={instance.backend} {state}')
+            installer.log.debug(f'Server: alive={alive} jobs={instance.state.total_jobs} requests={requests} uptime={uptime} memory={get_memory_stats()} backend={instance.backend} state={state}')
         if not alive:
             if uv is not None and uv.wants_restart:
                 installer.log.info('Server restarting...')

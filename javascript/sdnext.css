@@ -234,6 +234,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extras { gap: 0.2em 1em !important }
 #extras_generate, #extras_interrupt, #extras_skip { display: block !important; position: relative; height: 36px; }
 #extras_upscale { margin-top: 10px }
+#pnginfo_html_info { line-height: 1.5em; }
 
 /* log monitor */
 .log-monitor { display: none; justify-content: unset !important; overflow: hidden; padding: 0; margin-top: auto; font-family: monospace; font-size: 0.85em; }

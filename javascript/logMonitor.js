@@ -39,7 +39,7 @@ async function initLogMonitor() {
     <table id="logMonitor" style="width: 100%;">
       <thead style="display: block; text-align: left; border-bottom: solid 1px var(--button-primary-border-color)">
         <tr>
-          <th style="width: 170px">Time</th>
+          <th style="width: 160px">Time</th>
           <th>Level</th>
           <th style="width: 72px">Facility</th>
           <th style="width: 124px">Module</th>

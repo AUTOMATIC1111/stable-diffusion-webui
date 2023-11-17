@@ -595,51 +595,52 @@ def change_backend():
     refresh_vae_list()
 
 
-def detect_pipeline(f: str, op: str = 'model'):
+def detect_pipeline(f: str, op: str = 'model', warning=True):
     if not f.endswith('.safetensors'):
         return None, None
     guess = shared.opts.diffusers_pipeline
+    warn = shared.log.warning if warning else lambda *args, **kwargs: None
     if guess == 'Autodetect':
         try:
             size = round(os.path.getsize(f) / 1024 / 1024)
             if size < 128:
-                shared.log.warning(f'Model size smaller than expected: {f} size={size} MB')
+                warn(f'Model size smaller than expected: {f} size={size} MB')
             elif (size >= 316 and size <= 324) or (size >= 156 and size <= 164): # 320 or 160
-                shared.log.warning(f'Model detected as VAE model, but attempting to load as model: {op}={f} size={size} MB')
+                warn(f'Model detected as VAE model, but attempting to load as model: {op}={f} size={size} MB')
                 guess = 'VAE'
             elif size >= 5351 and size <= 5359: # 5353
                 guess = 'Stable Diffusion' # SD v2
             elif size >= 5791 and size <= 5799: # 5795
                 if shared.backend == shared.Backend.ORIGINAL:
-                    shared.log.warning(f'Model detected as SD-XL refiner model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    warn(f'Model detected as SD-XL refiner model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 if op == 'model':
-                    shared.log.warning(f'Model detected as SD-XL refiner model, but attempting to load a base model: {op}={f} size={size} MB')
+                    warn(f'Model detected as SD-XL refiner model, but attempting to load a base model: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion XL'
             elif (size >= 6611 and size <= 6619) or (size >= 6771 and size <= 6779): # 6617, HassakuXL is 6776
                 if shared.backend == shared.Backend.ORIGINAL:
-                    shared.log.warning(f'Model detected as SD-XL base model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    warn(f'Model detected as SD-XL base model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion XL'
             elif size >= 3361 and size <= 3369: # 3368
                 if shared.backend == shared.Backend.ORIGINAL:
-                    shared.log.warning(f'Model detected as SD upscale model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    warn(f'Model detected as SD upscale model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion Upscale'
             elif size >= 4891 and size <= 4899: # 4897
                 if shared.backend == shared.Backend.ORIGINAL:
-                    shared.log.warning(f'Model detected as SD XL inpaint model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    warn(f'Model detected as SD XL inpaint model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion XL Inpaint'
             elif size >= 9791 and size <= 9799: # 9794
                 if shared.backend == shared.Backend.ORIGINAL:
-                    shared.log.warning(f'Model detected as SD XL instruct pix2pix model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    warn(f'Model detected as SD XL instruct pix2pix model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion XL Instruct'
             else:
                 guess = 'Stable Diffusion'
             if 'LCM_' in f or 'LCM-' in f:
                 if shared.backend == shared.Backend.ORIGINAL:
-                    shared.log.warning(f'Model detected as LCM model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    warn(f'Model detected as LCM model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Latent Consistency Model'
             if 'PixArt' in f:
                 if shared.backend == shared.Backend.ORIGINAL:
-                    shared.log.warning(f'Model detected as PixArt Alpha model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    warn(f'Model detected as PixArt Alpha model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'PixArt Alpha'
             pipeline = shared_items.get_pipelines().get(guess, None)
             shared.log.info(f'Autodetect: {op}="{guess}" class={pipeline.__name__} file="{f}" size={size}MB')
