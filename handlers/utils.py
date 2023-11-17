@@ -403,19 +403,26 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, scrip
     image_keys = out_image.multi_upload_keys(clean_upload_files)
     script_keys = out_script_image.multi_upload_keys(clean_upload_files)
 
-    if inspect:
-        out_grid_image.inspect(grid_keys, forbidden_review)
-        out_image.inspect(image_keys, forbidden_review)
-
+    # if inspect:
+    #     out_grid_image.inspect(grid_keys, forbidden_review)
+    #     out_image.inspect(image_keys, forbidden_review)
+    #
     output = {
         'grids': grid_keys.to_dict(),
         'samples': image_keys.to_dict()
     }
+    #
+    # all_keys = grid_keys + image_keys + script_keys
+
+    forbidden_keys = {}
+    if inspect:
+        forbidden_keys = out_image.inspect(image_keys, forbidden_review)
 
     all_keys = grid_keys + image_keys + script_keys
+    has_grid = proc.index_of_first_image > 0
     output.update({
-        'has_grid': proc.index_of_first_image > 0,
-        'all': all_keys.to_dict(),
+        'has_grid': has_grid,
+        'all': all_keys.to_dict(forbidden_keys, has_grid),
         'size': size
     })
 

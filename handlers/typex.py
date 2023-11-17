@@ -68,7 +68,8 @@ class ImageKeys(UserDict):
         low = self['low'] + ik['low']
         return ImageKeys(high, low)
 
-    def sorted_keys(self, keys: typing.Sequence):
+    def sorted_keys(self, keys: typing.Sequence, forbidden_keys: typing.Mapping[str, typing.Any] = None,
+                    has_grid: bool = False):
         def sort_file(p: str):
             basename, _ = os.path.splitext(os.path.basename(p))
 
@@ -86,11 +87,20 @@ class ImageKeys(UserDict):
         if not keys:
             return []
 
-        return sorted(keys, key=sort_file)
+        sorted_keys = sorted(keys, key=sort_file)
+        if forbidden_keys and sorted_keys:
+            for i in range(len(sorted_keys)):
+                key = sorted_keys[i]
+                if key in forbidden_keys:
+                    sorted_keys[i] = ForbiddenCoverKey
+            if has_grid:
+                sorted_keys[0] = ForbiddenCoverKey
 
-    def to_dict(self):
-        self['high'] = self.sorted_keys(self['high'])
-        self['low'] = self.sorted_keys(self['low'])
+        return sorted_keys
+
+    def to_dict(self, forbidden_keys: typing.Mapping[str, typing.Any] = None, has_grid: bool = False):
+        self['high'] = self.sorted_keys(self['high'], forbidden_keys, has_grid)
+        self['low'] = self.sorted_keys(self['low'], forbidden_keys, has_grid)
         return dict(self)
 
 
@@ -263,15 +273,16 @@ class ImageOutput:
             logger.exception(f'request {api} failed')
             pass
 
-        default_cover = ForbiddenCoverKey
+        # default_cover = ForbiddenCoverKey
 
-        for i, low_key in enumerate(images['low']):
-            if low_key in forbidden_keys:
-                images['low'][i] = default_cover
-
-        for i, high_key in enumerate(images['high']):
-            dirname = os.path.dirname(high_key)
-            basename = os.path.basename(high_key)
-            low_key = os.path.join(dirname, f'low-{basename}')
-            if low_key in forbidden_keys:
-                images['high'][i] = default_cover
+        # for i, low_key in enumerate(images['low']):
+        #     if low_key in forbidden_keys:
+        #         images['low'][i] = default_cover
+        #
+        # for i, high_key in enumerate(images['high']):
+        #     dirname = os.path.dirname(high_key)
+        #     basename = os.path.basename(high_key)
+        #     low_key = os.path.join(dirname, f'low-{basename}')
+        #     if low_key in forbidden_keys:
+        #         images['high'][i] = default_cover
+        return forbidden_keys
