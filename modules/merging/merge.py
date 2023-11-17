@@ -96,7 +96,7 @@ def restore_sd_model(original_model: Dict, merged_model: Dict) -> Dict:
 
 
 def log_vram(txt=""):
-    log.info(f"{txt} VRAM: {modules.memstats.memory_stats()}")
+    log.debug(f"{txt} VRAM: {modules.memstats.memory_stats()}")
 
 
 def load_thetas(

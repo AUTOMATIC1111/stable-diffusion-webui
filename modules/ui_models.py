@@ -167,6 +167,8 @@ def create_ui():
                         with FormRow():
                             merge_mode = gr.Dropdown(choices=merge_methods.__all__, value="weighted_sum",
                                                      label="Interpolation Method")
+                            merge_mode_help = ToolButton('❔', visible=True)
+                            merge_mode_docs = gr.Textbox(value=None, visible=False)
                         with FormRow():
                             primary_model_name = gr.Dropdown(sd_model_choices(), label="Primary model", value="None")
                             create_refresh_button(primary_model_name, sd_models.list_models,
@@ -323,6 +325,10 @@ def create_ui():
                     else:
                         return gr.Slider.update(value=None, visible=False)
 
+                def show_help(mode):
+                    doc = getattr(merge_methods, mode).__doc__
+                    return gr.update(value=doc, visible=True, interactive=False)
+
                 def load_presets(presets, ratio):
                     for i, p in enumerate(presets):
                         presets[i] = BLOCK_WEIGHTS_PRESETS[p]
@@ -339,7 +345,7 @@ def create_ui():
                         return [gr.update(choices=["None"] + list(SDXL_BLOCK_WEIGHTS_PRESETS.keys())) for _ in range(2)]
                     else:
                         return [gr.update(choices=["None"] + list(BLOCK_WEIGHTS_PRESETS.keys())) for _ in range(2)]
-
+                merge_mode_help.click(fn=show_help, inputs=merge_mode, outputs=merge_mode_docs)
                 sdxl.change(fn=preset_choices, inputs=sdxl, outputs=[alpha_preset, beta_preset])
                 alpha_preset.change(fn=preset_visiblility, inputs=alpha_preset, outputs=alpha_preset_lambda)
                 beta_preset.change(fn=preset_visiblility, inputs=alpha_preset, outputs=beta_preset_lambda)
