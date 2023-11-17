@@ -1,0 +1,57 @@
+name: Deploy Images to GHCR
+
+
+
+on:
+  pull_request:
+    types: [labeled]
+
+jobs:
+      cancel_outstanding:
+        name: Detect and cancel outstanding runs of this workflow
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+          - name: Cancel Previous Runs
+            if: ${{ (github.event.label.name == 'release') && !contains(github.event.pull_request.labels.*.name, 'skip-cancel') }}
+            uses: styfle/cancel-workflow-action@0.11.0
+            with:
+              access_token: ${{ secrets.GITHUB_TOKEN }}
+  
+
+      push-store-image:
+        permissions: write-all
+        runs-on: ubuntu-latest
+        if: ${{ (github.event.label.name == 'release' ) && !contains(github.event.pull_request.labels.*.name, 'skip-cancel') }}
+        steps:
+          - name: 'Checkout GitHub Action'
+            uses: actions/checkout@main
+          - name: envvars
+            run: |
+                 echo "RELEASE=$(cat build/vars/BUILD_TAG)" >> $GITHUB_ENV
+                 echo "REGISTRY=$(cat build/vars/REGISTRY)" >> $GITHUB_ENV
+
+
+          - name: Login to GitHub Container Registry
+            uses: docker/login-action@v2
+            with:
+              registry: ghcr.io
+              username: ${{ github.actor }}
+              password: ${{ secrets.GITHUB_TOKEN }}
+
+
+          - name: free space
+            run: |
+                bash .github/workflows/freespace.sh              
+          ##https://github.com/orgs/community/discussions/25678
+          - name: 'free up space'
+
+            run: |
+                rm -rf /opt/hostedtoolcache
+
+          - name: 'Build sd-web-ui image'
+            run: |
+              cd build && \
+              RELEASE=${{ env.RELEASE }} \
+              REGISTRY=${{ env.REGISTRY }} \
+              docker buildx bake sd-web-ui -f docker-bake.hcl --push
