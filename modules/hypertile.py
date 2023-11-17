@@ -337,7 +337,7 @@ def hypertile_context_vae(model:nn.Module, aspect_ratio:float, tile_size:int, op
     """
     Returns context manager for VAE
     """
-    enabled = not opts.hypertile_split_vae_attn
+    enabled = opts.hypertile_split_vae_attn
     swap_size = opts.hypertile_swap_size_vae
     max_depth = opts.hypertile_max_depth_vae
     tile_size_max = opts.hypertile_max_tile_vae
@@ -355,7 +355,7 @@ def hypertile_context_unet(model:nn.Module, aspect_ratio:float, tile_size:int, o
     """
     Returns context manager for U-Net
     """
-    enabled = not opts.hypertile_split_unet_attn
+    enabled = opts.hypertile_split_unet_attn
     swap_size = opts.hypertile_swap_size_unet
     max_depth = opts.hypertile_max_depth_unet
     tile_size_max = opts.hypertile_max_tile_unet
