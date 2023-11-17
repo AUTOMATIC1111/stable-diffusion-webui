@@ -170,6 +170,7 @@ DEPTH_LAYERS_XL = {
         "middle_block.1.transformer_blocks.8.attn1",
         "middle_block.1.transformer_blocks.9.attn1",
     ],
+    3 : [] # TODO - separate layers for SD-XL
 }
 
 
