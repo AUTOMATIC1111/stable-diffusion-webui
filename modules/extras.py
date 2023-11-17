@@ -9,7 +9,7 @@ import tqdm
 import gradio as gr
 import safetensors.torch
 from modules.merging.merge import merge_models
-from modules.merging.utils import TRIPLE_METHODS
+from modules.merging.merge_utils import TRIPLE_METHODS
 
 from modules import shared, images, sd_models, sd_vae, sd_models_config
 
