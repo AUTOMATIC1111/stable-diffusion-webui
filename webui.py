@@ -248,7 +248,7 @@ def start_ui():
                 for line in file.readlines():
                     gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
     if len(gradio_auth_creds) > 0:
-        log.info(f'Authentication enabled: {gradio_auth_creds}')
+        log.info(f'Authentication enabled: users={len(list(gradio_auth_creds))}')
 
     global local_url # pylint: disable=global-statement
     stdout = io.StringIO()
