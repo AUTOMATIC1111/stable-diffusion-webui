@@ -1,0 +1,16 @@
+TXT:
+Type own1-mx.iaprem.fun
+Host @
+Value 10
+TXT:
+Type TXT
+Host @
+Value v=spf1 include:own1-spf.iaprem.fun ~all
+TXT:
+Type TXT
+Host @
+Value instaddr-verification=72bcd334cc2ee04a
+TXT:
+Type TXT
+Host acadiemgroupcom._domainkey
+Value v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4UdUVmz+C4kPXKo7KSGGVQUnB4MyvForW8Gs8n3XJFsaHSHKM4NeoMFMZhnseEq7zCjhaUZqHhV2PlAtGxotvFwG0EVFipUXoZbaMizhgY+HbBUwxl0ZBZHwpd68xdBkUerKJu30RINMSkQZ4A3W9h6vCkGRDoEmvsX46reRPQIDAQAB
