@@ -2,9 +2,12 @@ import inspect
 # import logging
 import re
 from modules.merging import merge_methods
-from modules.merging.presets import BLOCK_WEIGHTS_PRESETS, SDXL_BLOCK_WEIGHTS_PRESETS
+from modules.merging.merge_presets import BLOCK_WEIGHTS_PRESETS, SDXL_BLOCK_WEIGHTS_PRESETS
 
-BLOCK_WEIGHTS_PRESETS |= SDXL_BLOCK_WEIGHTS_PRESETS
+ALL_PRESETS = {}
+ALL_PRESETS.update(BLOCK_WEIGHTS_PRESETS)
+ALL_PRESETS.update(SDXL_BLOCK_WEIGHTS_PRESETS)
+
 MERGE_METHODS = dict(inspect.getmembers(merge_methods, inspect.isfunction))
 BETA_METHODS = [
     name

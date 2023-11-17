@@ -11,8 +11,8 @@ from modules.shared import opts, log, req
 import modules.errors
 import modules.hashes
 from modules.merging import merge_methods
-from modules.merging.utils import BETA_METHODS, TRIPLE_METHODS, interpolate
-from modules.merging.presets import BLOCK_WEIGHTS_PRESETS, SDXL_BLOCK_WEIGHTS_PRESETS
+from modules.merging.merge_utils import BETA_METHODS, TRIPLE_METHODS, interpolate
+from modules.merging.merge_presets import BLOCK_WEIGHTS_PRESETS, SDXL_BLOCK_WEIGHTS_PRESETS
 
 search_metadata_civit = None
 
@@ -242,7 +242,7 @@ def create_ui():
                         with FormRow():
                             precision = gr.Radio(choices=["fp16", "fp32"], value="fp16", label="Model precision")
                         with FormRow():
-                            device = gr.Radio(choices=["cpu", "cuda"], value="cpu", label="Device")
+                            work_device = gr.Radio(choices=["cpu", "cuda"], value="cpu", label="Device")
                         with FormRow():
                             bake_in_vae = gr.Dropdown(choices=["None"] + list(sd_vae.vae_dict), value="None",
                                                       interactive=True, label="Bake in VAE")
@@ -281,7 +281,7 @@ def create_ui():
                                    prune,
                                    re_basin,
                                    re_basin_iterations,
-                                   device,
+                                   work_device,
                                    bake_in_vae):
                     kwargs = {}
                     for x in inspect.getfullargspec(MEHmodelmerger)[0]:
@@ -289,8 +289,6 @@ def create_ui():
                     for key in list(kwargs.keys()):
                         if kwargs[key] in [None, "None", "", 0, []]:
                             del kwargs[key]
-
-                    # return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)], f"{kwargs}"]
 
                     try:
                         results = extras.run_MEHmodelmerger(dummy_component, **kwargs)
@@ -386,7 +384,7 @@ def create_ui():
                         prune,
                         re_basin,
                         re_basin_iterations,
-                        device,
+                        work_device,
                         bake_in_vae,
                     ],
                     outputs=[

@@ -9,11 +9,12 @@ import safetensors.torch
 import torch
 from tqdm import tqdm
 
+import modules.memstats
 from modules.shared import log
 from modules.merging import merge_methods
-from modules.merging.utils import WeightClass
-from modules.merging.model import SDModel
-from modules.merging.rebasin import (
+from modules.merging.merge_utils import WeightClass
+from modules.merging.merge_model import SDModel
+from modules.merging.merge_rebasin import (
     apply_permutation,
     sdunet_permutation_spec,
     update_model_a,
@@ -95,8 +96,7 @@ def restore_sd_model(original_model: Dict, merged_model: Dict) -> Dict:
 
 
 def log_vram(txt=""):
-    alloc = torch.cuda.memory_allocated(0)
-    log.info(f"{txt} VRAM: {alloc*1e-9:5.3f}GB")
+    log.info(f"{txt} VRAM: {modules.memstats.memory_stats()}")
 
 
 def load_thetas(
