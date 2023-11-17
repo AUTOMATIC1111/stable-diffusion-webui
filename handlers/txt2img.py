@@ -73,6 +73,8 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  refiner_switch_at: float = 0.2,  # XL 精描切换时机
                  refiner_checkpoint: str = None,  # XL refiner模型文件
                  **kwargs):
+        # "upcast_attn": false # 将交叉关注层向上转型到float32
+        #
         override_settings_texts = format_override_settings(override_settings_texts)
         override_settings = create_override_settings_dict(override_settings_texts)
 
