@@ -16,7 +16,6 @@ from loguru import logger
 from datetime import datetime
 from worker.task_recv import Tmp
 from PIL.PngImagePlugin import PngInfo
-from tools.encryptor import des_encrypt
 from tools.wrapper import FuncExecTimeWrapper
 from modules.shared import cmd_opts
 from modules.processing import Processed

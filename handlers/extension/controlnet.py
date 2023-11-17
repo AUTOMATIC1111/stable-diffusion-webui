@@ -354,20 +354,20 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
 
                 control_unit = {
                     'enabled': item.get('enabled', False),
-                    'guess_mode': item.get('guess_mode', False),
+                    # 'guess_mode': item.get('guess_mode', False),
                     'guidance_start': item.get('guidance_start', 0) or 0,
                     'guidance_end': item.get('guidance_end', 1) or 1,
                     'image': {
                         'image': image,
                         'mask': mask,
                     },
-                    'invert_image': item.get('invert_image', False),
+                    # 'invert_image': item.get('invert_image', False),
                     'low_vram': item.get('low_vram', False),
                     'model': item.get('model', 'none') or 'none',
                     'module': item.get('module', 'none') or 'none',
                     'processor_res': item.get('processor_res', 64),
                     'resize_mode': item.get('resize_mode', 'Crop and Resize') or 'Crop and Resize',
-                    'rgbbgr_mode': item.get('rgbbgr_mode', False),
+                    # 'rgbbgr_mode': item.get('rgbbgr_mode', False),
                     'threshold_a': item.get('threshold_a', 64),
                     'threshold_b': item.get('threshold_b', 64),
                     'weight': item.get('weight', 1) or 1,
