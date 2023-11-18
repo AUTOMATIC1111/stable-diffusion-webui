@@ -35,7 +35,10 @@ All individual features are not listed here, instead check [ChangeLog](CHANGELOG
 - Built in installer with automatic updates and dependency management  
 - Modernized UI with theme support and number of built-in themes *(dark and light)*  
 
-<br>![screenshot](html/black-teal.jpg)<br>
+<br>
+![Screenshot-Dark](html/black-teal.jpg)
+![Screenshot-Light](html/light-teal.jpg)
+<br>
 
 ## Backend support
 

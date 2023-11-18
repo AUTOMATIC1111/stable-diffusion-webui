@@ -253,8 +253,10 @@ class ExtraNetworksPage:
                 subdir = tgt[len(parentdir):].replace("\\", "/")
                 while subdir.startswith("/"):
                     subdir = subdir[1:]
-                if not self.is_empty(tgt):
+                # if not self.is_empty(tgt):
+                if not subdir.startswith("."):
                     subdirs[subdir] = 1
+        debug(f"Extra networks: page='{self.name}' subfolders={list(subdirs)}")
         subdirs = OrderedDict(sorted(subdirs.items()))
         if shared.backend == shared.Backend.DIFFUSERS and self.name == 'model':
             subdirs['Reference'] = 1
@@ -279,7 +281,7 @@ class ExtraNetworksPage:
             self.html = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
         else:
             return ''
-        shared.log.debug(f"Extra networks: page='{self.name}' items={len(self.items)} subdirs={len(subdirs)} tab={tabname} dirs={self.allowed_directories_for_previews()} list={self.list_time:.2f} desc={self.desc_time:.2f} info={self.info_time:.2f}")
+        shared.log.debug(f"Extra networks: page='{self.name}' items={len(self.items)} subfolders={len(subdirs)} tab={tabname} folders={self.allowed_directories_for_previews()} list={self.list_time:.2f} desc={self.desc_time:.2f} info={self.info_time:.2f}")
         if len(self.missing_thumbs) > 0:
             threading.Thread(target=self.create_thumb).start()
         return self.html
