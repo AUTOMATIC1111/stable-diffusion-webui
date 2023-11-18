@@ -16,35 +16,35 @@
 
 ## Notable features
 
-All individual features are not listed here, instead check [ChangeLog](CHANGELOG.md) for full list of changes.
+All individual features are not listed here, instead check [ChangeLog](CHANGELOG.md) for full list of changes
 - Multiple backends!  
-  ▹ *Original | Diffusers*
+  ▹ **Original | Diffusers**
 - Multiple diffusion models!  
-  ▹ *Stable Diffusion | SD-XL | LCM | Segmind | Kandinsky | Pixart-α | Würstchen | DeepFloyd IF | UniDiffusion | SD-Distilled | etc.*
+  ▹ **Stable Diffusion | SD-XL | LCM | Segmind | Kandinsky | Pixart-α | Würstchen | DeepFloyd IF | UniDiffusion | SD-Distilled | etc.**
 - Multiplatform!  
- ▹ *Windows | Linux | MacOS with CPU | nVidia | AMD | IntelArc | DirectML | OpenVINO | ONNX+Olive*
+ ▹ **Windows | Linux | MacOS with CPU | nVidia | AMD | IntelArc | DirectML | OpenVINO | ONNX+Olive**
 - Platform specific autodetection and tuning performed on install
-- Optimized processing with latest `torch` developments with built-in support for `torch.compile`
+- Optimized processing with latest `torch` developments with built-in support for `torch.compile` and multiple compile backends
 - Improved prompt parser  
-- Enhanced *Lora*/*Locon*/*Lyco* code supporting latest trends in training  
+- Enhanced *Lora*/*LoCon*/*Lyco* code supporting latest trends in training  
 - Built-in queue management  
 - Advanced metadata caching and handling to speed up operations  
 - Enterprise level logging and hardened API  
 - Modern localization and hints engine  
 - Broad compatibility with existing extensions ecosystem and new extensions manager  
 - Built in installer with automatic updates and dependency management  
-- Modernized UI with theme support and number of built-in themes  
+- Modernized UI with theme support and number of built-in themes *(dark and light)*  
 
 <br>![screenshot](html/black-teal.jpg)<br>
 
 ## Backend support
 
-**SD.Next** supports two main backends: *Original* and *Diffusers* which can be switched on-the-fly:
+**SD.Next** supports two main backends: *Original* and *Diffusers*:
 
 - **Original**: Based on [LDM](https://github.com/Stability-AI/stablediffusion) reference implementation and significantly expanded on by [A1111](https://github.com/AUTOMATIC1111/stable-diffusion-webui)  
   This is the default backend and it is fully compatible with all existing functionality and extensions  
   It supports **SD 1.x** and **SD 2.x** models  
-  All other model types such as SD-XL, LCM, PixArt, Segmind, Kandinsky, etc. require backend **Diffusers**  
+  All other model types such as *SD-XL, LCM, PixArt, Segmind, Kandinsky, etc.* require backend **Diffusers**  
 - **Diffusers**: Based on new [Huggingface Diffusers](https://huggingface.co/docs/diffusers/index) implementation  
   It supports *original* SD models as well as *all* models listed below  
   See [wiki article](https://github.com/vladmandic/automatic/wiki/Diffusers) for more information  
@@ -91,11 +91,13 @@ Additional models will be added as they become available and there is public int
 - [FAQ](https://github.com/vladmandic/automatic/discussions/1011)
 
 > [!TIP]
-> - Server can run without virtual environment,but it is recommended to use it to avoid library version conflicts with other applications  
+> - Server can run without virtual environment,  
+  Recommended to use `VENV` to avoid library version conflicts with other applications  
 > - **nVidia/CUDA** / **AMD/ROCm** / **Intel/OneAPI** are auto-detected if present and available,  
   For any other use case such as **DirectML**, **ONNX/Olive**, **OpenVINO** specify required parameter explicitly  
   or wrong packages may be installed as installer will assume CPU-only environment  
-> - Full startup sequence is logged in `sdnext.log`, so if you encounter any issues, please check it first  
+> - Full startup sequence is logged in `sdnext.log`,  
+  so if you encounter any issues, please check it first  
 
 ### Run
 

@@ -32,6 +32,7 @@
   - Better Lora trigger words support  
   - Auto refresh styles on change  
 - **General**  
+  - Support for **Torch 2.1.1** with CUDA 12.1 or CUDA 11.8  
   - Configurable location for HF cache folder  
     Default is standard `~/.cache/huggingface/hub`  
   - Reworked parser when pasting previously generated images/prompts  

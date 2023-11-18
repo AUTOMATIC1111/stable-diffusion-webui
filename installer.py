@@ -782,6 +782,7 @@ def set_environment():
     os.environ.setdefault('CUDA_DEVICE_DEFAULT_PERSISTING_L2_CACHE_PERCENTAGE_LIMIT', '0')
     os.environ.setdefault('CUDA_LAUNCH_BLOCKING', '0')
     os.environ.setdefault('CUDA_MODULE_LOADING', 'LAZY')
+    os.environ.setdefault('TORCH_CUDNN_V8_API_ENABLED', '1')
     os.environ.setdefault('FORCE_CUDA', '1')
     os.environ.setdefault('GRADIO_ANALYTICS_ENABLED', 'False')
     os.environ.setdefault('HF_HUB_DISABLE_EXPERIMENTAL_WARNING', '1')
