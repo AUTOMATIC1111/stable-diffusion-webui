@@ -1,4 +1,5 @@
 import datetime
+import json
 import mimetypes
 import os
 import sys
@@ -77,6 +78,7 @@ extra_networks_symbol = '\U0001F3B4'  # 🎴
 switch_values_symbol = '\U000021C5' # ⇅
 restore_progress_symbol = '\U0001F300' # 🌀
 detect_image_size_symbol = '\U0001F4D0'  # 📐
+up_down_symbol = '\u2195\ufe0f' # ↕️
 
 
 plaintext_to_html = ui_common.plaintext_to_html
@@ -88,7 +90,21 @@ def send_gradio_gallery_to_image(x):
     return image_from_url_text(x[0])
 
 
+def add_style(name: str, prompt: str, negative_prompt: str):
+    if name is None:
+        return [gr_show() for x in range(4)]
+
+    style = modules.styles.PromptStyle(name, prompt, negative_prompt)
+    shared.prompt_styles.styles[style.name] = style
+    # Save all loaded prompt styles: this allows us to update the storage format in the future more easily, because we
+    # reserialize all styles every time we save them
+    shared.prompt_styles.save_styles(shared.styles_filename)
+
+    return [gr.Dropdown.update(visible=True, choices=list(shared.prompt_styles.styles)) for _ in range(2)]
+
+
 def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resize_y):
+
     if not enable:
         return ""
 
@@ -96,6 +112,7 @@ def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resiz
     p.calculate_target_resolution()
 
     return f"from <span class='resolution'>{p.width}x{p.height}</span> to <span class='resolution'>{p.hr_resize_x or p.hr_upscale_to_x}x{p.hr_resize_y or p.hr_upscale_to_y}</span>"
+
 
 
 def resize_from_to_html(width, height, scale_by):
@@ -106,6 +123,13 @@ def resize_from_to_html(width, height, scale_by):
         return "no image selected"
 
     return f"resize: from <span class='resolution'>{width}x{height}</span> to <span class='resolution'>{target_width}x{target_height}</span>"
+
+
+def apply_styles(prompt, prompt_neg, styles):
+    prompt = shared.prompt_styles.apply_styles_to_prompt(prompt, styles)
+    prompt_neg = shared.prompt_styles.apply_negative_styles_to_prompt(prompt_neg, styles)
+
+    return [gr.Textbox.update(value=prompt), gr.Textbox.update(value=prompt_neg), gr.Dropdown.update(value=[])]
 
 
 def process_interrogate(interrogation_function, mode, ii_input_dir, ii_output_dir, *ii_singles):
@@ -218,6 +242,8 @@ class Toprow:
                     self.paste = ToolButton(value=paste_symbol, elem_id="paste")
                     self.clear_prompt_button = ToolButton(value=clear_prompt_symbol, elem_id=f"{id_part}_clear_prompt")
                     self.restore_progress_button = ToolButton(value=restore_progress_symbol, elem_id=f"{id_part}_restore_progress", visible=False)
+                    self.prompt_style_apply = ToolButton(value=apply_style_symbol, elem_id=f"{id_part}_style_apply")
+                    self.save_style = ToolButton(value=save_style_symbol, elem_id=f"{id_part}_style_create")
 
                     self.token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{id_part}_token_counter", elem_classes=["token-counter"])
                     self.token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
@@ -489,6 +515,18 @@ def create_ui():
                     html_log,
                 ],
                 show_progress=False,
+            )
+            toprow.save_style.click(
+                fn=add_style,
+                _js="ask_for_style_name",
+                inputs=[dummy_component, toprow.prompt, toprow.negative_prompt],
+                outputs=[toprow.ui_styles.dropdown, toprow.ui_styles.dropdown],
+            )
+            toprow.prompt_style_apply.click(
+                fn=apply_styles,
+                _js="update_txt2img_tokens",
+                inputs=[toprow.prompt, toprow.negative_prompt, toprow.ui_styles.dropdown],
+                outputs=[toprow.prompt, toprow.negative_prompt, toprow.ui_styles.dropdown],
             )
 
             txt2img_paste_fields = [
@@ -865,6 +903,19 @@ def create_ui():
 
             toprow.token_button.click(fn=update_token_counter, inputs=[toprow.prompt, steps], outputs=[toprow.token_counter])
             toprow.negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[toprow.negative_prompt, steps], outputs=[toprow.negative_token_counter])
+            
+            toprow.save_style.click(
+                fn=add_style,
+                _js="ask_for_style_name",
+                inputs=[dummy_component, toprow.prompt, toprow.negative_prompt],
+                outputs=[toprow.ui_styles.dropdown, toprow.ui_styles.dropdown],
+            )
+            toprow.prompt_style_apply.click(
+                fn=apply_styles,
+                _js="update_img2img_tokens",
+                inputs=[toprow.prompt, toprow.negative_prompt, toprow.ui_styles.dropdown],
+                outputs=[toprow.prompt, toprow.negative_prompt, toprow.ui_styles.dropdown],
+            )
 
             img2img_paste_fields = [
                 (toprow.prompt, "Prompt"),
@@ -1363,4 +1414,3 @@ def setup_ui_api(app):
 
     app.add_api_route("/internal/sysinfo", download_sysinfo, methods=["GET"])
     app.add_api_route("/internal/sysinfo-download", lambda: download_sysinfo(attachment=True), methods=["GET"])
-
