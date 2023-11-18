@@ -1,5 +1,4 @@
 import inspect
-# import logging
 import re
 from modules.merging import merge_methods
 from modules.merging.merge_presets import BLOCK_WEIGHTS_PRESETS, SDXL_BLOCK_WEIGHTS_PRESETS

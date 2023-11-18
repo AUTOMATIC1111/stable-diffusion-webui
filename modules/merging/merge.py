@@ -1,26 +1,27 @@
 import os
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-# from pathlib import Path
 from typing import Dict, Optional, Tuple
-
 import safetensors.torch
 import torch
 from tqdm import tqdm
-
 import modules.memstats
 import modules.devices as devices
 from modules.shared import log
 from modules.sd_models import read_state_dict
 from modules.merging import merge_methods
 from modules.merging.merge_utils import WeightClass
-# from modules.merging.merge_model import SDModel
 from modules.merging.merge_rebasin import (
     apply_permutation,
     sdunet_permutation_spec,
     update_model_a,
     weight_matching,
 )
+##########################################################
+# Files in modules.merging are heavily modified
+# versions of sd-meh by @s1dxl used with his blessing
+# orginal code can be found @ https://github.com/s1dlx/meh
+##########################################################
 
 MAX_TOKENS = 77
 
@@ -36,12 +37,6 @@ KEY_POSITION_IDS = ".".join(
 )
 
 
-NAI_KEYS = {
-    "cond_stage_model.transformer.embeddings.": "cond_stage_model.transformer.text_model.embeddings.",
-    "cond_stage_model.transformer.encoder.": "cond_stage_model.transformer.text_model.encoder.",
-    "cond_stage_model.transformer.final_layer_norm.": "cond_stage_model.transformer.text_model.final_layer_norm.",
-}
-
 
 def fix_clip(model: Dict) -> Dict:
     if KEY_POSITION_IDS in model.keys():
@@ -52,29 +47,6 @@ def fix_clip(model: Dict) -> Dict:
         )
 
     return model
-
-
-def fix_key(model: Dict, key: str) -> Dict:
-    for nk in NAI_KEYS:
-        if key.startswith(nk):
-            model[key.replace(nk, NAI_KEYS[nk])] = model[key]
-            del model[key]
-
-    return model
-
-
-# https://github.com/j4ded/sdweb-merge-block-weighted-gui/blob/master/scripts/mbw/merge_block_weighted.py#L115
-def fix_model(model: Dict) -> Dict:
-    for k in model.keys():
-        model = fix_key(model, k)
-    return fix_clip(model)
-
-
-# def load_sd_model(model: os.PathLike | str, device: torch.device = None) -> Dict:
-#     if isinstance(model, str):
-#         model = Path(model)
-#
-#     return SDModel(model, device).load_model()
 
 
 def prune_sd_model(model: Dict) -> Dict:
@@ -201,7 +173,7 @@ def un_prune_model(
                     merged.update({key: merged[key].half()})
         del original_b
 
-    return fix_model(merged)
+    return fix_clip(merged)
 
 
 def simple_merge(
@@ -247,7 +219,7 @@ def simple_merge(
 
     log_vram("after stage 2")
 
-    return fix_model(thetas["model_a"])
+    return fix_clip(thetas["model_a"])
 
 
 def rebasin_merge(
