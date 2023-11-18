@@ -160,6 +160,7 @@ def create_ui():
                 def sd_model_choices():
                     return ['None'] + sd_models.checkpoint_tiles()
 
+
                 with gr.Row(equal_height=False):
                     with gr.Column(variant='compact'):
                         with FormRow():
@@ -167,8 +168,7 @@ def create_ui():
                         with FormRow():
                             merge_mode = gr.Dropdown(choices=merge_methods.__all__, value="weighted_sum",
                                                      label="Interpolation Method")
-                        with FormRow():
-                            merge_mode_docs = gr.HTML(value=None, visible=False)
+                            merge_mode_docs = gr.HTML(value=getattr(merge_methods, "weighted_sum").__doc__.replace("\n", "<br>"))
                         with FormRow():
                             primary_model_name = gr.Dropdown(sd_model_choices(), label="Primary model", value="None")
                             create_refresh_button(primary_model_name, sd_models.list_models,
@@ -322,15 +322,16 @@ def create_ui():
                     else:
                         return gr.Slider.update(value=None, visible=False)
 
+                def show_help(mode):
+                    doc = getattr(merge_methods, mode).__doc__.replace("\n", "<br>")
+                    return gr.update(value=doc, visible=True)
+
                 def preset_visiblility(x):
                     if len(x) == 2:
                         return gr.Slider.update(value=0.5, visible=True)
                     else:
                         return gr.Slider.update(value=None, visible=False)
 
-                def show_help(mode):
-                    doc = getattr(merge_methods, mode).__doc__
-                    return gr.update(value=doc, visible=True)
 
                 def load_presets(presets, ratio):
                     for i, p in enumerate(presets):
@@ -339,7 +340,7 @@ def create_ui():
                         preset = interpolate(presets, ratio)
                     else:
                         preset = presets[0]
-                    preset = ['%.3f' % x for x in preset]
+                    preset = ['%.3f' % x if int(x) != x else str(x) for x in preset]
                     preset = [preset[0], ",".join(preset[1:13]), preset[13], ",".join(preset[14:])]
                     return [gr.update(value=x) for x in preset] + [gr.update(selected=2)]
 
