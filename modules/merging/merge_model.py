@@ -14,7 +14,7 @@ class SDModel:
 
     def load_model(self):
         # logging.info(f"Loading: {self.model_path}")
-        if os.path.splitext(self.model_path) == ".safetensors":
+        if os.path.splitext(self.model_path)[1] == ".safetensors":
             ckpt = safetensors.torch.load_file(
                 self.model_path,
                 device=self.device,

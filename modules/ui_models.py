@@ -290,7 +290,6 @@ def create_ui():
                     for key in list(kwargs.keys()):
                         if kwargs[key] in [None, "None", "", 0, []]:
                             del kwargs[key]
-
                     try:
                         results = extras.run_MEHmodelmerger(dummy_component, **kwargs)
                     except Exception as e:
