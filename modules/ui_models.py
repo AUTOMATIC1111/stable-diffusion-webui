@@ -160,7 +160,6 @@ def create_ui():
                 def sd_model_choices():
                     return ['None'] + sd_models.checkpoint_tiles()
 
-
                 with gr.Row(equal_height=False):
                     with gr.Column(variant='compact'):
                         with FormRow():
@@ -291,9 +290,6 @@ def create_ui():
                     for key in list(kwargs.keys()):
                         if kwargs[key] in [None, "None", "", 0, []]:
                             del kwargs[key]
-                    if kwargs["device"] == "shuffle":
-                        kwargs["device"] = "cpu"
-                        kwargs["work_device"] = "cuda"
 
                     try:
                         results = extras.run_MEHmodelmerger(dummy_component, **kwargs)
@@ -331,7 +327,6 @@ def create_ui():
                         return gr.Slider.update(value=0.5, visible=True)
                     else:
                         return gr.Slider.update(value=None, visible=False)
-
 
                 def load_presets(presets, ratio):
                     for i, p in enumerate(presets):

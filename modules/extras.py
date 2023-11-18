@@ -11,7 +11,7 @@ import safetensors.torch
 from modules.merging.merge import merge_models
 from modules.merging.merge_utils import TRIPLE_METHODS
 
-from modules import shared, images, sd_models, sd_vae, sd_models_config
+from modules import shared, images, sd_models, sd_vae, sd_models_config, devices
 
 checkpoint_dict_skip_on_merge = ["cond_stage_model.transformer.text_model.embeddings.position_ids"]
 
@@ -313,7 +313,14 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
             kwargs.pop("beta_preset", None)
 
     if kwargs["device"] == "cuda":
+        kwargs["device"] == devices.device
         sd_models.unload_model_weights()
+    elif kwargs["device"] == "shuffle":
+        kwargs["device"] = torch.device("cpu")
+        kwargs["work_device"] = devices.device
+    else:
+        kwargs["device"] = torch.device("cpu")
+
 
     try:
         theta_0 = merge_models(**kwargs)
