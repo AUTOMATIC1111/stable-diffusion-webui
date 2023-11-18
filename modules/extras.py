@@ -85,11 +85,10 @@ def run_modelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
         alpha = [float(x) for x in
                  [kwargs["alpha_base"]] + kwargs["alpha_in_blocks"].split(",") + [kwargs["alpha_mid_block"]] + kwargs[
                      "alpha_out_blocks"].split(",")]
-        assert len(alpha) == 26 or len(
-            alpha) == 20, "Alpha Block Weights are wrong length (26 or 20 for SDXL) falling back"
+        assert len(alpha) == 26 or len(alpha) == 20, "Alpha Block Weights are wrong length (26 or 20 for SDXL) falling back"
         kwargs["alpha"] = alpha
-    except AssertionError as e:
-        shared.log.info(e)
+    except Exception as e:
+        shared.log.warn(f"Merge: {e}")
         kwargs["alpha"] = kwargs.get("alpha_preset", kwargs["alpha"])
     finally:
         kwargs.pop("alpha_base", None)
@@ -101,13 +100,11 @@ def run_modelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
     if kwargs.get("beta", False):
         try:
             beta = [float(x) for x in
-                    [kwargs["beta_base"]] + kwargs["beta_in_blocks"].split(",") + [kwargs["beta_mid_block"]] + kwargs[
-                        "beta_out_blocks"].split(",")]
-            assert len(beta) == 26 or len(
-                beta) == 20, "Beta Block Weights are wrong length (26 or 20 for SDXL) falling back"
+                    [kwargs["beta_base"]] + kwargs["beta_in_blocks"].split(",") + [kwargs["beta_mid_block"]] + kwargs["beta_out_blocks"].split(",")]
+            assert len(beta) == 26 or len(beta) == 20, "Beta Block Weights are wrong length (26 or 20 for SDXL) falling back"
             kwargs["beta"] = beta
-        except AssertionError as e:
-            shared.log.info(e)
+        except Exception as e:
+            shared.log.warn(f"Merge: {e}")
             kwargs["beta"] = kwargs.get("beta_preset", kwargs["beta"])
         finally:
             kwargs.pop("beta_base", None)
@@ -132,7 +129,7 @@ def run_modelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
 
     bake_in_vae_filename = sd_vae.vae_dict.get(kwargs.get("bake_in_vae", None), None)
     if bake_in_vae_filename is not None:
-        shared.log.info(f"Model merge: baking in VAE: {bake_in_vae_filename}")
+        shared.log.info(f"Merge: baking in VAE: {bake_in_vae_filename}")
         shared.state.textinfo = 'Baking in VAE'
         vae_dict = sd_vae.load_vae_dict(bake_in_vae_filename)
         for key in vae_dict.keys():
@@ -196,7 +193,7 @@ def run_modelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
         created_model.calculate_shorthash()
     if kwargs["device"].type != "cpu":
         devices.torch_gc(force=True)
-    shared.log.info(f"Model merge saved: {output_modelname}.")
+    shared.log.info(f"Merge saved: {output_modelname}.")
     shared.state.textinfo = "Checkpoint saved"
     shared.state.end()
     return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)],
