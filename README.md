@@ -1,32 +1,30 @@
 <div align="center">
-  
+
 # SD.Next
 
 **Stable Diffusion implementation with advanced features**
-
-<br>  
 
 [![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/vladmandic)
 ![Last Commit](https://img.shields.io/github/last-commit/vladmandic/automatic?svg=true)
 ![License](https://img.shields.io/github/license/vladmandic/automatic?svg=true)
 [![Discord](https://img.shields.io/discord/1101998836328697867?logo=Discord&svg=true)](https://discord.gg/VjvR2tabEX)
 
-### [Wiki](https://github.com/vladmandic/automatic/wiki) | [Discord](https://discord.gg/VjvR2tabEX) | [Changelog](CHANGELOG.md)
+[Wiki](https://github.com/vladmandic/automatic/wiki) | [Discord](https://discord.gg/VjvR2tabEX) | [Changelog](CHANGELOG.md)
 
 </div>
+</br>
 
-## Top-13 Features (10 wasn't enough)
+## Notable features
 
-All Individual features are not listed here, instead check [ChangeLog](CHANGELOG.md) for full list of changes.
-
-- Support for multiple backends!  
-  **original** and **diffusers**
-- Support for multiple diffusion models!  
-  **Stable Diffusion, SD-XL, LCM, Segmind, Kandinsky, Pixart-α, Wuerstchen, DeepFloyd IF, UniDiffusion, SD-Distilled, etc.**  
-- Fully multiplatform with platform specific autodetection and tuning performed on install  
-  **Windows / Linux / MacOS with CPU / nVidia / AMD / IntelArc / DirectML / OpenVINO / ONNX+Olive**  
-- Optimized processing with latest **torch** developments  
-  Including built-in support for `torch.compile`
+All individual features are not listed here, instead check [ChangeLog](CHANGELOG.md) for full list of changes.
+- Multiple backends!  
+  ▹ *Original | Diffusers*
+- Multiple diffusion models!  
+  ▹ *Stable Diffusion | SD-XL | LCM | Segmind | Kandinsky | Pixart-α | Würstchen | DeepFloyd IF | UniDiffusion | SD-Distilled | etc.*
+- Multiplatform!  
+ ▹ *Windows | Linux | MacOS with CPU | nVidia | AMD | IntelArc | DirectML | OpenVINO | ONNX+Olive*
+- Platform specific autodetection and tuning performed on install
+- Optimized processing with latest `torch` developments with built-in support for `torch.compile`
 - Improved prompt parser  
 - Enhanced *Lora*/*Locon*/*Lyco* code supporting latest trends in training  
 - Built-in queue management  
@@ -66,11 +64,11 @@ Additional models will be added as they become available and there is public int
 - [DeepFloyd IF](https://github.com/deep-floyd/IF) Medium and Large
 - [Segmind SD Distilled](https://huggingface.co/blog/sd_distillation) *(all variants)*
 
-*Notes*:
-- Loading any model other than standard SD 1.x / SD 2.x requires use of backend **Diffusers**  
-  Loading any other models using **Original** backend is not supproted  
-- Loading manually download model `.safetensors` files is supported for SD 1.x / SD 2.x / SD-XL models only  
-  For all other model types, use backend **Diffusers** and use built in Model downloader or  
+> [!IMPORTANT]
+> - Loading any model other than standard SD 1.x / SD 2.x requires use of backend **Diffusers**  
+> - Loading any other models using **Original** backend is not supproted  
+> - Loading manually download model `.safetensors` files is supported for SD 1.x / SD 2.x / SD-XL models only  
+> - For all other model types, use backend **Diffusers** and use built in Model downloader or  
   select model from Networks -> Models -> Reference list in which case it will be auto-downloaded and loaded  
 
 ## Platform support
@@ -86,20 +84,18 @@ Additional models will be added as they become available and there is public int
 - *ONNX/Olive* (experimental)  
 
 ## Install & Run
-
+## Install
 - [Step-by-step install guide](https://github.com/vladmandic/automatic/wiki/Installation)
 - [Advanced install notes](https://github.com/vladmandic/automatic/wiki/Advanced-Install)
-
-### Installation Notes
-
 - [Common installation errors](https://github.com/vladmandic/automatic/discussions/1627)  
 - [FAQ](https://github.com/vladmandic/automatic/discussions/1011)
-- Server can run without virtual environment,  
-  but it is recommended to use it to avoid library version conflicts with other applications  
-- **nVidia/CUDA** / **AMD/ROCm** / **Intel/OneAPI** are auto-detected if present and available,  
+
+> [!TIP]
+> - Server can run without virtual environment,but it is recommended to use it to avoid library version conflicts with other applications  
+> - **nVidia/CUDA** / **AMD/ROCm** / **Intel/OneAPI** are auto-detected if present and available,  
   For any other use case such as **DirectML**, **ONNX/Olive**, **OpenVINO** specify required parameter explicitly  
   or wrong packages may be installed as installer will assume CPU-only environment  
-- Full startup sequence is logged in `sdnext.log`, so if you encounter any issues, please check it first  
+> - Full startup sequence is logged in `sdnext.log`, so if you encounter any issues, please check it first  
 
 ### Run
 
@@ -172,7 +168,7 @@ but although it diverged considerably, any substantial features to original work
 
 The idea behind the fork is to enable latest technologies and advances in text-to-image generation.
 
-> *Sometimes this is not the same as "as simple as possible to use".*
+*Sometimes this is not the same as "as simple as possible to use".*
 
 General goals:
 
@@ -207,7 +203,7 @@ General goals:
 ### **Sponsors**
 
 <div align="center">
-<!-- sponsors --><a href="https://github.com/allangrant"><img src="https://github.com/allangrant.png" width="60px" alt="Allan Grant" /></a><a href="https://github.com/demib72"><img src="https://github.com/demib72.png" width="60px" alt="Michael Harris" /></a><a href="https://github.com/BrentOzar"><img src="https://github.com/BrentOzar.png" width="60px" alt="Brent Ozar" /></a><a href="https://github.com/AimwiseTonix"><img src="https://github.com/AimwiseTonix.png" width="60px" alt="ToniX" /></a><a href="https://github.com/inktomi"><img src="https://github.com/inktomi.png" width="60px" alt="Matthew Runo" /></a><a href="https://github.com/HELLO-WORLD-SAS"><img src="https://github.com/HELLO-WORLD-SAS.png" width="60px" alt="HELLO WORLD SAS" /></a><a href="https://github.com/4joeknight4"><img src="https://github.com/4joeknight4.png" width="60px" alt="" /></a><a href="https://github.com/SaladTechnologies"><img src="https://github.com/SaladTechnologies.png" width="60px" alt="Salad Technologies" /></a><a href="https://github.com/mantzaris"><img src="https://github.com/mantzaris.png" width="60px" alt="a.v.mantzaris" /></a><a href="https://github.com/anothertal3"><img src="https://github.com/anothertal3.png" width="60px" alt="" /></a><!-- sponsors -->
+<!-- sponsors --><a href="https://github.com/Tillerz"><img src="https://github.com/Tillerz.png" width="60px" alt="Tillerz" /></a><a href="https://github.com/allangrant"><img src="https://github.com/allangrant.png" width="60px" alt="Allan Grant" /></a><a href="https://github.com/demib72"><img src="https://github.com/demib72.png" width="60px" alt="Michael Harris" /></a><a href="https://github.com/BrentOzar"><img src="https://github.com/BrentOzar.png" width="60px" alt="Brent Ozar" /></a><a href="https://github.com/AimwiseTonix"><img src="https://github.com/AimwiseTonix.png" width="60px" alt="ToniX" /></a><a href="https://github.com/inktomi"><img src="https://github.com/inktomi.png" width="60px" alt="Matthew Runo" /></a><a href="https://github.com/HELLO-WORLD-SAS"><img src="https://github.com/HELLO-WORLD-SAS.png" width="60px" alt="HELLO WORLD SAS" /></a><a href="https://github.com/4joeknight4"><img src="https://github.com/4joeknight4.png" width="60px" alt="" /></a><a href="https://github.com/SaladTechnologies"><img src="https://github.com/SaladTechnologies.png" width="60px" alt="Salad Technologies" /></a><a href="https://github.com/mantzaris"><img src="https://github.com/mantzaris.png" width="60px" alt="a.v.mantzaris" /></a><!-- sponsors -->
 </div>
 
 <br>
