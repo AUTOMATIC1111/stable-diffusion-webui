@@ -311,7 +311,7 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
             kwargs.pop("beta_mid_block", None)
             kwargs.pop("beta_out_blocks", None)
             kwargs.pop("beta_preset", None)
-            
+
     if kwargs["device"] == "cuda":
         sd_models.unload_model_weights()
 
