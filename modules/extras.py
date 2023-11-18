@@ -286,7 +286,8 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
         assert len(alpha) == 26 or len(
             alpha) == 20, "Alpha Block Weights are wrong length (26 or 20 for SDXL) falling back"
         kwargs["alpha"] = alpha
-    except:
+    except AssertionError as e:
+        shared.log.info(e)
         kwargs["alpha"] = kwargs.get("alpha_preset", kwargs["alpha"])
     finally:
         kwargs.pop("alpha_base", None)
@@ -303,7 +304,8 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
             assert len(beta) == 26 or len(
                 beta) == 20, "Beta Block Weights are wrong length (26 or 20 for SDXL) falling back"
             kwargs["beta"] = beta
-        except:
+        except AssertionError as e:
+            shared.log.info(e)
             kwargs["beta"] = kwargs.get("beta_preset", kwargs["beta"])
         finally:
             kwargs.pop("beta_base", None)
@@ -313,14 +315,13 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
             kwargs.pop("beta_preset", None)
 
     if kwargs["device"] == "cuda":
-        kwargs["device"] == devices.device
+        kwargs["device"] = devices.device
         sd_models.unload_model_weights()
     elif kwargs["device"] == "shuffle":
         kwargs["device"] = torch.device("cpu")
         kwargs["work_device"] = devices.device
     else:
         kwargs["device"] = torch.device("cpu")
-
 
     try:
         theta_0 = merge_models(**kwargs)
@@ -390,6 +391,7 @@ def run_MEHmodelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
     created_model = next((ckpt for ckpt in sd_models.checkpoints_list.values() if ckpt.name == filename), None)
     if created_model:
         created_model.calculate_shorthash()
+    devices.torch_gc(force=True)
     shared.log.info(f"Model merge saved: {output_modelname}.")
     shared.state.textinfo = "Checkpoint saved"
     shared.state.end()
