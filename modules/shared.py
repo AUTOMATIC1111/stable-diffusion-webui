@@ -307,7 +307,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_compile_vae": OptionInfo(True if cmd_opts.use_openvino else False, "Compile VAE"),
     "cuda_compile_upscaler": OptionInfo(True if cmd_opts.use_openvino else False, "Compile upscaler"),
     "cuda_compile_backend": OptionInfo("openvino_fx" if cmd_opts.use_openvino else "none", "Model compile backend", gr.Radio, {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx', 'stable-fast']}),
-    "cuda_compile_mode": OptionInfo("default", "Model compile mode", gr.Radio, {"choices": ['default', 'reduce-overhead', 'max-autotune']}),
+    "cuda_compile_mode": OptionInfo("default", "Model compile mode", gr.Radio, {"choices": ['default', 'reduce-overhead', 'max-autotune', 'max-autotune-no-cudagraphs']}),
     "cuda_compile_fullgraph": OptionInfo(False, "Model compile fullgraph"),
     "cuda_compile_precompile": OptionInfo(False if cmd_opts.use_openvino else True, "Model compile precompile"),
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),

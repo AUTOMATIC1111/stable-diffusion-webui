@@ -18,10 +18,8 @@ import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin, ExifTags
 from modules import sd_samplers, shared, script_callbacks, errors, paths
 
-LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
+
 debug = errors.log.info if os.environ.get('SD_PATH_DEBUG', None) is not None else lambda *args, **kwargs: None
-
-
 try:
     from pi_heif import register_heif_opener
     register_heif_opener()
@@ -143,8 +141,8 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0, tit
         for line in lines:
             font = initial_fnt
             fontsize = initial_fontsize
-            while drawing.multiline_textsize(line.text, font=font)[0] > line.allowed_width and fontsize > 0:
-                fontsize -= 2
+            while drawing.multiline_textbbox((0,0), text=line.text, font=font)[0] > line.allowed_width and fontsize > 0:
+                fontsize -= 1
                 font = get_font(fontsize)
             drawing.multiline_text((draw_x, draw_y + line.size[1] / 2), line.text, font=font, fill=shared.opts.font_color if line.is_active else color_inactive, anchor="mm", align="center")
             if not line.is_active:
@@ -230,7 +228,7 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None, output_type
 
     def resize(im, w, h):
         if upscaler_name is None or upscaler_name == "None" or im.mode == 'L':
-            return im.resize((w, h), resample=LANCZOS)
+            return im.resize((w, h), resample=Image.Resampling.LANCZOS)
         scale = max(w / im.width, h / im.height)
         if scale > 1.0:
             upscalers = [x for x in shared.sd_upscalers if x.name == upscaler_name]
@@ -241,7 +239,7 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None, output_type
                 upscaler = upscalers[0]
             im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
         if im.width != w or im.height != h:
-            im = im.resize((w, h), resample=LANCZOS)
+            im = im.resize((w, h), resample=Image.Resampling.LANCZOS)
         return im
 
     if resize_mode == 0:

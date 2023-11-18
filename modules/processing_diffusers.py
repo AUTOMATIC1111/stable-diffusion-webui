@@ -42,16 +42,14 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if latent_upscaler is not None:
             latents = torch.nn.functional.interpolate(latents, size=(p.hr_upscale_to_y // 8, p.hr_upscale_to_x // 8), mode=latent_upscaler["mode"], antialias=latent_upscaler["antialias"])
         first_pass_images = vae_decode(latents=latents, model=shared.sd_model, full_quality=p.full_quality, output_type='pil')
-        p.init_images = []
+        resized_images = []
         for img in first_pass_images:
             if latent_upscaler is None:
-                init_image = images.resize_image(1, img, p.hr_upscale_to_x, p.hr_upscale_to_y, upscaler_name=p.hr_upscaler)
+                resized_image = images.resize_image(1, img, p.hr_upscale_to_x, p.hr_upscale_to_y, upscaler_name=p.hr_upscaler)
             else:
-                init_image = img
-            # if is_refiner_enabled:
-            #    init_image = vae_encode(init_image, model=shared.sd_model, full_quality=p.full_quality)
-            p.init_images.append(init_image)
-        return p.init_images
+                resized_image = img
+            resized_images.append(resized_image)
+        return resized_images
 
     def save_intermediate(latents, suffix):
         for i in range(len(latents)):
@@ -470,7 +468,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         desc='Base',
     )
     shared.state.sampling_steps = base_args['num_inference_steps']
-    p.extra_generation_params['CFG rescale'] = p.diffusers_guidance_rescale
     p.extra_generation_params["Sampler Eta"] = shared.opts.scheduler_eta if shared.opts.scheduler_eta is not None and shared.opts.scheduler_eta > 0 and shared.opts.scheduler_eta < 1 else None
     try:
         output = shared.sd_model(**base_args) # pylint: disable=not-callable
@@ -490,7 +487,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         return results
 
     # optional hires pass
-    if p.enable_hr and p.hr_upscaler != 'None' and p.denoising_strength > 0 and len(getattr(p, 'init_images', [])) == 0:
+    if p.enable_hr and getattr(p, 'hr_upscaler', 'None') != 'None' and len(getattr(p, 'init_images', [])) == 0:
         p.is_hr_pass = True
     latent_scale_mode = shared.latent_upscale_modes.get(p.hr_upscaler, None) if (hasattr(p, "hr_upscaler") and p.hr_upscaler is not None) else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "None")
     if p.is_hr_pass:
@@ -502,7 +499,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 save_intermediate(latents=output.images, suffix="-before-hires")
             shared.state.job = 'upscale'
             output.images = hires_resize(latents=output.images)
-            if latent_scale_mode is not None or p.hr_force:
+            if (latent_scale_mode is not None or p.hr_force) and p.denoising_strength > 0:
                 p.ops.append('hires')
                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                 recompile_model(hires=True)
@@ -519,7 +516,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     guidance_rescale=p.diffusers_guidance_rescale,
                     output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
                     clip_skip=p.clip_skip,
-                    image=p.init_images,
+                    image=output.images,
                     strength=p.denoising_strength,
                     desc='Hires',
                 )

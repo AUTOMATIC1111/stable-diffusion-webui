@@ -76,6 +76,9 @@ def compile_stablefast(sd_model):
     warnings.filterwarnings("ignore", category=torch.jit.TracerWarning)
     config.enable_cuda_graph = shared.opts.cuda_compile_fullgraph
     config.enable_jit_freeze = shared.opts.diffusers_eval
+    config.memory_format = torch.channels_last if shared.opts.opt_channelslast else torch.contiguous_format
+    # config.enable_cnn_optimization
+    # config.prefer_lowp_gemm
     try:
         t0 = time.time()
         sd_model = sf.compile(sd_model, config)

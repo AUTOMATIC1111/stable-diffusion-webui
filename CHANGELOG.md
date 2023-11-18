@@ -43,13 +43,14 @@
   - Support `--ckpt none` to skip loading a model  
 - **XYZ grid**
   - Add refiner options to XYZ Grid  
-  - Add option to create only subimages in XYZ grid, thanks @midcoastal
+  - Add option to create only subgrids in XYZ grid, thanks @midcoastal
   - Allow custom font, background and text color in settings
 - **Fixes**  
   - Fix `params.txt` saved before actual image
   - Fix inpaint  
   - Fix manual grid image save  
   - Fix img2img init image save  
+  - Fix upscale in txt2img for batch counts when no hires is used  
   - More uniform models paths  
   - Safe scripts callback execution  
   - Improved extension compatibility  
