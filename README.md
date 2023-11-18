@@ -17,15 +17,14 @@
 ## Notable features
 
 All individual features are not listed here, instead check [ChangeLog](CHANGELOG.md) for full list of changes.
-- Broad support
-  - Multiple backends!  
-    **Original | Diffusers**
-  - Multiple diffusion models!  
-    **Stable Diffusion | SD-XL | LCM | Segmind | Kandinsky | Pixart-α | Würstchen | DeepFloyd IF | UniDiffusion | SD-Distilled | etc.**
-  - Multiplatform with platform specific autodetection and tuning performed on install  
-    **Windows | Linux | MacOS with CPU | nVidia | AMD | IntelArc | DirectML | OpenVINO | ONNX+Olive**
-- Optimized processing with latest **torch** developments  
-  Including built-in support for `torch.compile`
+- Multiple backends!  
+  ▹ *Original | Diffusers*
+- Multiple diffusion models!  
+  ▹ *Stable Diffusion | SD-XL | LCM | Segmind | Kandinsky | Pixart-α | Würstchen | DeepFloyd IF | UniDiffusion | SD-Distilled | etc.*
+- Multiplatform!  
+ ▹ *Windows | Linux | MacOS with CPU | nVidia | AMD | IntelArc | DirectML | OpenVINO | ONNX+Olive*
+- Platform specific autodetection and tuning performed on install
+- Optimized processing with latest `torch` developments with built-in support for `torch.compile`
 - Improved prompt parser  
 - Enhanced *Lora*/*Locon*/*Lyco* code supporting latest trends in training  
 - Built-in queue management  
@@ -65,11 +64,11 @@ Additional models will be added as they become available and there is public int
 - [DeepFloyd IF](https://github.com/deep-floyd/IF) Medium and Large
 - [Segmind SD Distilled](https://huggingface.co/blog/sd_distillation) *(all variants)*
 
-*Notes*:
-- Loading any model other than standard SD 1.x / SD 2.x requires use of backend **Diffusers**  
-  Loading any other models using **Original** backend is not supproted  
-- Loading manually download model `.safetensors` files is supported for SD 1.x / SD 2.x / SD-XL models only  
-  For all other model types, use backend **Diffusers** and use built in Model downloader or  
+> [!IMPORTANT]
+> - Loading any model other than standard SD 1.x / SD 2.x requires use of backend **Diffusers**  
+> - Loading any other models using **Original** backend is not supproted  
+> - Loading manually download model `.safetensors` files is supported for SD 1.x / SD 2.x / SD-XL models only  
+> - For all other model types, use backend **Diffusers** and use built in Model downloader or  
   select model from Networks -> Models -> Reference list in which case it will be auto-downloaded and loaded  
 
 ## Platform support
@@ -85,20 +84,18 @@ Additional models will be added as they become available and there is public int
 - *ONNX/Olive* (experimental)  
 
 ## Install & Run
-
+## Install
 - [Step-by-step install guide](https://github.com/vladmandic/automatic/wiki/Installation)
 - [Advanced install notes](https://github.com/vladmandic/automatic/wiki/Advanced-Install)
-
-### Installation Notes
-
 - [Common installation errors](https://github.com/vladmandic/automatic/discussions/1627)  
 - [FAQ](https://github.com/vladmandic/automatic/discussions/1011)
-- Server can run without virtual environment,  
-  but it is recommended to use it to avoid library version conflicts with other applications  
-- **nVidia/CUDA** / **AMD/ROCm** / **Intel/OneAPI** are auto-detected if present and available,  
+
+> [!TIP]
+> - Server can run without virtual environment,but it is recommended to use it to avoid library version conflicts with other applications  
+> - **nVidia/CUDA** / **AMD/ROCm** / **Intel/OneAPI** are auto-detected if present and available,  
   For any other use case such as **DirectML**, **ONNX/Olive**, **OpenVINO** specify required parameter explicitly  
   or wrong packages may be installed as installer will assume CPU-only environment  
-- Full startup sequence is logged in `sdnext.log`, so if you encounter any issues, please check it first  
+> - Full startup sequence is logged in `sdnext.log`, so if you encounter any issues, please check it first  
 
 ### Run
 
@@ -171,7 +168,7 @@ but although it diverged considerably, any substantial features to original work
 
 The idea behind the fork is to enable latest technologies and advances in text-to-image generation.
 
-> *Sometimes this is not the same as "as simple as possible to use".*
+*Sometimes this is not the same as "as simple as possible to use".*
 
 General goals:
 
