@@ -989,6 +989,26 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     has_accelerate = getattr(pipe, "has_accelerate", None)
     embedding_db = getattr(pipe, "embedding_db", None)
 
+    # TODO implement alternative diffusion pipelines
+    """
+    from collections import OrderedDict
+    AUTO_TEXT2IMAGE_PIPELINES_MAPPING = OrderedDict(
+        [
+            ("stable-diffusion", diffusers.StableDiffusionPipeline),
+            ("stable-diffusion-xl", diffusers.StableDiffusionXLPipeline),
+            ("if", diffusers.IFPipeline),
+            ("kandinsky", diffusers.KandinskyCombinedPipeline),
+            ("kandinsky22", diffusers.KandinskyV22CombinedPipeline),
+            ("stable-diffusion-controlnet", diffusers.StableDiffusionControlNetPipeline),
+            ("stable-diffusion-xl-controlnet", diffusers.StableDiffusionXLControlNetPipeline),
+            ("wuerstchen", diffusers.WuerstchenCombinedPipeline),
+            ("lcm", diffusers.LatentConsistencyModelPipeline),
+            ("pixart", diffusers.PixArtAlphaPipeline),
+        ]
+    )
+    diffusers.pipelines.auto_pipeline.AUTO_TEXT2IMAGE_PIPELINES_MAPPING = AUTO_TEXT2IMAGE_PIPELINES_MAPPING
+    """
+
     if shared.opts.diffusers_force_inpaint:
         if new_pipe_type == DiffusersTaskType.IMAGE_2_IMAGE:
             new_pipe_type = DiffusersTaskType.INPAINTING # sdxl may work better with init mask
