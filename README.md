@@ -1,30 +1,29 @@
 <div align="center">
-  
+
 # SD.Next
 
 **Stable Diffusion implementation with advanced features**
-
-<br>  
 
 [![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/vladmandic)
 ![Last Commit](https://img.shields.io/github/last-commit/vladmandic/automatic?svg=true)
 ![License](https://img.shields.io/github/license/vladmandic/automatic?svg=true)
 [![Discord](https://img.shields.io/discord/1101998836328697867?logo=Discord&svg=true)](https://discord.gg/VjvR2tabEX)
 
-### [Wiki](https://github.com/vladmandic/automatic/wiki) | [Discord](https://discord.gg/VjvR2tabEX) | [Changelog](CHANGELOG.md)
+[Wiki](https://github.com/vladmandic/automatic/wiki) | [Discord](https://discord.gg/VjvR2tabEX) | [Changelog](CHANGELOG.md)
 
 </div>
+</br>
 
-## Top-13 Features (10 wasn't enough)
+## Notable features
 
-All Individual features are not listed here, instead check [ChangeLog](CHANGELOG.md) for full list of changes.
-
-- Support for multiple backends!  
-  **original** and **diffusers**
-- Support for multiple diffusion models!  
-  **Stable Diffusion, SD-XL, LCM, Segmind, Kandinsky, Pixart-α, Wuerstchen, DeepFloyd IF, UniDiffusion, SD-Distilled, etc.**  
-- Fully multiplatform with platform specific autodetection and tuning performed on install  
-  **Windows / Linux / MacOS with CPU / nVidia / AMD / IntelArc / DirectML / OpenVINO / ONNX+Olive**  
+All individual features are not listed here, instead check [ChangeLog](CHANGELOG.md) for full list of changes.
+- Broad support
+  - Multiple backends!  
+    **Original | Diffusers**
+  - Multiple diffusion models!  
+    **Stable Diffusion | SD-XL | LCM | Segmind | Kandinsky | Pixart-α | Würstchen | DeepFloyd IF | UniDiffusion | SD-Distilled | etc.**
+  - Multiplatform with platform specific autodetection and tuning performed on install  
+    **Windows | Linux | MacOS with CPU | nVidia | AMD | IntelArc | DirectML | OpenVINO | ONNX+Olive**
 - Optimized processing with latest **torch** developments  
   Including built-in support for `torch.compile`
 - Improved prompt parser  
