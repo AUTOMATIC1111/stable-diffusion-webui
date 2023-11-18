@@ -23,7 +23,7 @@ __all__ = [
 EPSILON = 1e-10  # Define a small constant EPSILON to prevent division by zero
 
 
-def weighted_sum(a: Tensor, b: Tensor, alpha: float, **kwargs) -> Tensor:
+def weighted_sum(a: Tensor, b: Tensor, alpha: float, **kwargs) -> Tensor:  # pylint: disable=unused-argument
     """
     Basic Merge:
     alpha 0 returns Primary Model
@@ -32,7 +32,7 @@ def weighted_sum(a: Tensor, b: Tensor, alpha: float, **kwargs) -> Tensor:
     return (1 - alpha) * a + alpha * b
 
 
-def weighted_subtraction(a: Tensor, b: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:
+def weighted_subtraction(a: Tensor, b: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:  # pylint: disable=unused-argument
     """
     The inverse of a Weighted Sum Merge
     Returns Primary Model when alpha*beta = 0
@@ -45,7 +45,7 @@ def weighted_subtraction(a: Tensor, b: Tensor, alpha: float, beta: float, **kwar
     return (a - alpha * beta * b) / (1 - alpha * beta)
 
 
-def tensor_sum(a: Tensor, b: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:
+def tensor_sum(a: Tensor, b: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:  # pylint: disable=unused-argument
     """
     Takes a slice of Secondary Model and pastes it into Primary Model
     Alpha sets the width of the slice
@@ -65,14 +65,14 @@ def tensor_sum(a: Tensor, b: Tensor, alpha: float, beta: float, **kwargs) -> Ten
     return tt
 
 
-def add_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, **kwargs) -> Tensor:
+def add_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, **kwargs) -> Tensor:  # pylint: disable=unused-argument
     """
     Classic Add Difference Merge
     """
     return a + alpha * (b - c)
 
 
-def sum_twice(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:
+def sum_twice(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:  # pylint: disable=unused-argument
     """
     Stacked Basic Merge:
     Equivalent to Merging Primary and Secondary @ alpha
@@ -81,7 +81,7 @@ def sum_twice(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwar
     return (1 - beta) * ((1 - alpha) * a + alpha * b) + beta * c
 
 
-def triple_sum(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:
+def triple_sum(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:  # pylint: disable=unused-argument
     """
     Weights Secondary and Tertiary at alpha and beta respectively
     Fills in the rest with Primary
@@ -90,7 +90,7 @@ def triple_sum(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwa
     return (1 - alpha - beta) * a + alpha * b + beta * c
 
 
-def euclidean_add_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, **kwargs) -> Tensor:
+def euclidean_add_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, **kwargs) -> Tensor:  # pylint: disable=unused-argument
     """
     Subtract Primary and Secondary from Tertiary
     Compare the remainders via Euclidean distance
@@ -111,7 +111,7 @@ def euclidean_add_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, **kw
     return c + distance / torch.linalg.norm(distance) * target_norm
 
 
-def multiply_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:
+def multiply_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:  # pylint: disable=unused-argument
     """
     Similar to Add Difference but with geometric mean instead of arithmatic mean
     """
@@ -121,7 +121,7 @@ def multiply_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: flo
     return c + difference.to(c.dtype)
 
 
-def top_k_tensor_sum(a: Tensor, b: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:
+def top_k_tensor_sum(a: Tensor, b: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:  # pylint: disable=unused-argument
     """
     Redistributes the largest weights of Secondary Model into Primary Model
     """
@@ -173,7 +173,7 @@ def ratio_to_region(width: float, offset: float, n: int) -> Tuple[int, int, bool
     return round(start), round(end), inverted
 
 
-def similarity_add_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:
+def similarity_add_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:  # pylint: disable=unused-argument
     """
     Weighted Sum where A and B are similar and Add Difference where A and B are dissimilar
     """
@@ -186,7 +186,7 @@ def similarity_add_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, bet
     return (1 - similarity) * ab_diff + similarity * ab_sum
 
 
-def distribution_crossover(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs):
+def distribution_crossover(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs):  # pylint: disable=unused-argument
     """
     From the creator:
     It's Primary high-passed + Secondary low-passed. Takes the fourrier transform of the weights of
@@ -218,7 +218,7 @@ def distribution_crossover(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: 
     return x_values.reshape_as(a)
 
 
-def ties_add_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:
+def ties_add_difference(a: Tensor, b: Tensor, c: Tensor, alpha: float, beta: float, **kwargs) -> Tensor:  # pylint: disable=unused-argument
     """
     An implementation of arXiv:2306.01708
     """

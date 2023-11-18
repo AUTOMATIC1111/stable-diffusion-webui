@@ -31,23 +31,23 @@ def permutation_spec_from_axes_to_perm(axes_to_perm: dict) -> PermutationSpec:
 
 
 def sdunet_permutation_spec() -> PermutationSpec:
-    conv = lambda name, p_in, p_out: {
+    conv = lambda name, p_in, p_out: {  # pylint: disable=unnecessary-lambda-assignment
         f"{name}.weight": (
             p_out,
             p_in,
         ),
         f"{name}.bias": (p_out,),
     }
-    norm = lambda name, p: {f"{name}.weight": (p,), f"{name}.bias": (p,)}
+    norm = lambda name, p: {f"{name}.weight": (p,), f"{name}.bias": (p,)}  # pylint: disable=unnecessary-lambda-assignment
     dense = (
-        lambda name, p_in, p_out, bias=True: {
+        lambda name, p_in, p_out, bias=True: {  # pylint: disable=unnecessary-lambda-assignment
             f"{name}.weight": (p_out, p_in),
             f"{name}.bias": (p_out,),
         }
         if bias
         else {f"{name}.weight": (p_out, p_in)}
     )
-    skip = lambda name, p_in, p_out: {
+    skip = lambda name, p_in, p_out: {  # pylint: disable=unnecessary-lambda-assignment
         f"{name}": (
             p_out,
             p_in,
@@ -57,7 +57,7 @@ def sdunet_permutation_spec() -> PermutationSpec:
     }
 
     # Unet Res blocks
-    easyblock = lambda name, p_in, p_out: {
+    easyblock = lambda name, p_in, p_out: {  # pylint: disable=unnecessary-lambda-assignment
         **norm(f"{name}.in_layers.0", p_in),
         **conv(f"{name}.in_layers.2", p_in, f"P_{name}_inner"),
         **dense(
@@ -68,7 +68,7 @@ def sdunet_permutation_spec() -> PermutationSpec:
     }
 
     # Text Encoder blocks
-    easyblock2 = lambda name, p: {
+    easyblock2 = lambda name, p: {  # pylint: disable=unnecessary-lambda-assignment
         **norm(f"{name}.norm1", p),
         **conv(f"{name}.conv1", p, f"P_{name}_inner"),
         **norm(f"{name}.norm2", f"P_{name}_inner"),
@@ -76,7 +76,7 @@ def sdunet_permutation_spec() -> PermutationSpec:
     }
 
     # This is for blocks that use a residual connection, but change the number of channels via a Conv.
-    shortcutblock = lambda name, p_in, p_out: {
+    shortcutblock = lambda name, p_in, p_out: {  # pylint: disable=unnecessary-lambda-assignment
         **norm(f"{name}.norm1", p_in),
         **conv(f"{name}.conv1", p_in, f"P_{name}_inner"),
         **norm(f"{name}.norm2", f"P_{name}_inner"),

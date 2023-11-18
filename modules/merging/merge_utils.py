@@ -109,4 +109,3 @@ class WeightClass:
 
     def set_it(self, it):
         self.it = it
-        return

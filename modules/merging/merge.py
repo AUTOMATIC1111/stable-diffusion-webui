@@ -309,7 +309,7 @@ def simple_merge_key(progress, key, thetas, *args, **kwargs):
         progress.update()
 
 
-def merge_key(
+def merge_key(  # pylint: disable=inconsistent-return-statements
     key: str,
     thetas: Dict,
     weight_matcher: WeightClass,
