@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import Dict, Optional, Tuple
 import safetensors.torch
 import torch
+from tensordict import TensorDict
 from tqdm import tqdm
 import modules.memstats
 import modules.devices as devices
@@ -35,7 +36,6 @@ KEY_POSITION_IDS = ".".join(
         "position_ids",
     ]
 )
-
 
 
 def fix_clip(model: Dict) -> Dict:
@@ -80,9 +80,9 @@ def load_thetas(
 ) -> Dict:
     log_vram("before loading models")
     if prune:
-        thetas = {k: prune_sd_model(read_state_dict(m, "cpu")) for k, m in models.items()}
+        thetas = {k: prune_sd_model(TensorDict.from_dict(read_state_dict(m, "cpu"))) for k, m in models.items()}
     else:
-        thetas = {k: read_state_dict(m, device) for k, m in models.items()}
+        thetas = {k: TensorDict.from_dict(read_state_dict(m, device)) for k, m in models.items()}
 
     for model_key, model in thetas.items():
         for key, block in model.items():
@@ -152,7 +152,7 @@ def un_prune_model(
         del thetas
         devices.torch_gc(force=True)
         log_vram("remove thetas")
-        original_a = read_state_dict(models["model_a"], device)
+        original_a = TensorDict.from_dict(read_state_dict(models["model_a"], device))
         for key in tqdm(original_a.keys(), desc="un-prune model a"):
             if KEY_POSITION_IDS in key:
                 continue
@@ -162,8 +162,7 @@ def un_prune_model(
                     merged.update({key: merged[key].half()})
         del original_a
         devices.torch_gc(force=True)
-        # log_vram("remove original_a")
-        original_b = read_state_dict(models["model_b"], device)
+        original_b = TensorDict.from_dict(read_state_dict(models["model_b"], device))
         for key in tqdm(original_b.keys(), desc="un-prune model b"):
             if KEY_POSITION_IDS in key:
                 continue

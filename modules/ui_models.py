@@ -4,7 +4,7 @@ import inspect
 from datetime import datetime
 import gradio as gr
 from modules import sd_models, sd_vae, extras
-from modules.ui_components import FormRow, ToolButton, InputAccordion
+from modules.ui_components import FormRow, ToolButton
 from modules.ui_common import create_refresh_button
 from modules.call_queue import wrap_gradio_gpu_call
 from modules.shared import opts, log, req
@@ -75,88 +75,6 @@ def create_ui():
                 )
 
             with gr.Tab(label="Merge"):
-                with gr.Row(equal_height=False):
-                    with gr.Column(variant='compact'):
-                        with FormRow():
-                            custom_name = gr.Textbox(label="New model name")
-                        with FormRow():
-                            def sd_model_choices():
-                                return ['None'] + sd_models.checkpoint_tiles()
-
-                            primary_model_name = gr.Dropdown(sd_model_choices(), label="Primary model", value="None")
-                            create_refresh_button(primary_model_name, sd_models.list_models,
-                                                  lambda: {"choices": sd_model_choices()}, "refresh_checkpoint_A")
-                            secondary_model_name = gr.Dropdown(sd_model_choices(), label="Secondary model",
-                                                               value="None")
-                            create_refresh_button(secondary_model_name, sd_models.list_models,
-                                                  lambda: {"choices": sd_model_choices()}, "refresh_checkpoint_B")
-                            tertiary_model_name = gr.Dropdown(sd_model_choices(), label="Tertiary model", value="None")
-                            create_refresh_button(tertiary_model_name, sd_models.list_models,
-                                                  lambda: {"choices": sd_model_choices()}, "refresh_checkpoint_C")
-                        with FormRow():
-                            interp_method = gr.Radio(choices=["No interpolation", "Weighted sum", "Add difference"],
-                                                     value="Weighted sum", label="Interpolation Method")
-                            interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05,
-                                                      label='Interpolation ratio from Primary to Secondary', value=0.5)
-                        with FormRow():
-                            checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="safetensors",
-                                                         label="Model format")
-                        with gr.Box():
-                            save_as_half = gr.Radio(choices=["fp16", "fp32"], value="fp16", label="Model precision",
-                                                    type="index")
-                        with FormRow():
-                            config_source = gr.Radio(choices=["Primary", "Secondary", "Tertiary", "None"],
-                                                     value="Primary", label="Model configuration", type="index")
-                        with FormRow():
-                            bake_in_vae = gr.Dropdown(choices=["None"] + list(sd_vae.vae_dict), value="None",
-                                                      label="Bake in VAE")
-                            create_refresh_button(bake_in_vae, sd_vae.refresh_vae_list,
-                                                  lambda: {"choices": ["None"] + list(sd_vae.vae_dict)},
-                                                  "modelmerger_refresh_bake_in_vae")
-                        with FormRow():
-                            discard_weights = gr.Textbox(value="", label="Discard weights with matching name")
-                        with FormRow():
-                            save_metadata = gr.Checkbox(value=True, label="Save metadata")
-                        with gr.Row():
-                            modelmerger_merge = gr.Button(value="Merge", variant='primary')
-
-                def modelmerger(*args):
-                    try:
-                        results = extras.run_modelmerger(*args)
-                    except Exception as e:
-                        modules.errors.display(e, 'model merge')
-                        sd_models.list_models()  # to remove the potentially missing models from the list
-                        return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)],
-                                f"Error merging checkpoints: {e}"]
-                    return results
-
-                modelmerger_merge.click(
-                    fn=wrap_gradio_gpu_call(modelmerger, extra_outputs=lambda: [gr.update() for _ in range(4)]),
-                    _js='modelmerger',
-                    inputs=[
-                        dummy_component,
-                        primary_model_name,
-                        secondary_model_name,
-                        tertiary_model_name,
-                        interp_method,
-                        interp_amount,
-                        save_as_half,
-                        custom_name,
-                        checkpoint_format,
-                        config_source,
-                        bake_in_vae,
-                        discard_weights,
-                        save_metadata,
-                    ],
-                    outputs=[
-                        primary_model_name,
-                        secondary_model_name,
-                        tertiary_model_name,
-                        dummy_component,
-                        models_outcome,
-                    ]
-                )
-            with gr.Tab(label="Advanced Merge"):
                 def sd_model_choices():
                     return ['None'] + sd_models.checkpoint_tiles()
 
@@ -167,7 +85,8 @@ def create_ui():
                         with FormRow():
                             merge_mode = gr.Dropdown(choices=merge_methods.__all__, value="weighted_sum",
                                                      label="Interpolation Method")
-                            merge_mode_docs = gr.HTML(value=getattr(merge_methods, "weighted_sum").__doc__.replace("\n", "<br>"))
+                            merge_mode_docs = gr.HTML(
+                                value=getattr(merge_methods, "weighted_sum").__doc__.replace("\n", "<br>"))
                         with FormRow():
                             primary_model_name = gr.Dropdown(sd_model_choices(), label="Primary model", value="None")
                             create_refresh_button(primary_model_name, sd_models.list_models,
@@ -253,45 +172,45 @@ def create_ui():
                         with FormRow():
                             save_metadata = gr.Checkbox(value=True, label="Save metadata")
                         with gr.Row():
-                            MEHmodelmerger_merge = gr.Button(value="Merge", variant='primary')
+                            modelmerger_merge = gr.Button(value="Merge", variant='primary')
 
-                def MEHmodelmerger(dummy_component,
-                                   primary_model_name,
-                                   secondary_model_name,
-                                   tertiary_model_name,
-                                   merge_mode,
-                                   alpha,
-                                   beta,
-                                   alpha_preset,
-                                   alpha_preset_lambda,
-                                   alpha_base,
-                                   alpha_in_blocks,
-                                   alpha_mid_block,
-                                   alpha_out_blocks,
-                                   beta_preset,
-                                   beta_preset_lambda,
-                                   beta_base,
-                                   beta_in_blocks,
-                                   beta_mid_block,
-                                   beta_out_blocks,
-                                   precision,
-                                   custom_name,
-                                   checkpoint_format,
-                                   save_metadata,
-                                   weights_clip,
-                                   prune,
-                                   re_basin,
-                                   re_basin_iterations,
-                                   device,
-                                   bake_in_vae):
+                def modelmerger(dummy_component,
+                                primary_model_name,
+                                secondary_model_name,
+                                tertiary_model_name,
+                                merge_mode,
+                                alpha,
+                                beta,
+                                alpha_preset,
+                                alpha_preset_lambda,
+                                alpha_base,
+                                alpha_in_blocks,
+                                alpha_mid_block,
+                                alpha_out_blocks,
+                                beta_preset,
+                                beta_preset_lambda,
+                                beta_base,
+                                beta_in_blocks,
+                                beta_mid_block,
+                                beta_out_blocks,
+                                precision,
+                                custom_name,
+                                checkpoint_format,
+                                save_metadata,
+                                weights_clip,
+                                prune,
+                                re_basin,
+                                re_basin_iterations,
+                                device,
+                                bake_in_vae):
                     kwargs = {}
-                    for x in inspect.getfullargspec(MEHmodelmerger)[0]:
+                    for x in inspect.getfullargspec(modelmerger)[0]:
                         kwargs[x] = locals()[x]
                     for key in list(kwargs.keys()):
                         if kwargs[key] in [None, "None", "", 0, []]:
                             del kwargs[key]
                     try:
-                        results = extras.run_MEHmodelmerger(dummy_component, **kwargs)
+                        results = extras.run_modelmerger(dummy_component, **kwargs)
                     except Exception as e:
                         modules.errors.display(e, 'model merge')
                         sd_models.list_models()  # to remove the potentially missing models from the list
@@ -358,8 +277,8 @@ def create_ui():
                 beta_apply_preset.click(fn=load_presets, inputs=[beta_preset, beta_preset_lambda],
                                         outputs=[beta_base, beta_in_blocks, beta_mid_block, beta_out_blocks, tabs])
 
-                MEHmodelmerger_merge.click(
-                    fn=wrap_gradio_gpu_call(MEHmodelmerger, extra_outputs=lambda: [gr.update() for _ in range(4)]),
+                modelmerger_merge.click(
+                    fn=wrap_gradio_gpu_call(modelmerger, extra_outputs=lambda: [gr.update() for _ in range(4)]),
                     _js='modelmerger',
                     inputs=[
                         dummy_component,
