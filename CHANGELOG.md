@@ -32,6 +32,8 @@
   - Better Lora trigger words support  
   - Auto refresh styles on change  
 - **General**  
+  - Configurable location for HF cache folder  
+    Default is standard `~/.cache/huggingface/hub`  
   - Reworked parser when pasting previously generated images/prompts  
     includes all `txt2img`, `img2img` and `override` params  
   - Reworked **model compile**

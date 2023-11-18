@@ -126,13 +126,13 @@ def compile_torch(sd_model):
 
 def compile_diffusers(sd_model):
     if not (shared.opts.cuda_compile or shared.opts.cuda_compile_vae or shared.opts.cuda_compile_upscaler):
-        return
+        return sd_model
     if not hasattr(sd_model, 'unet') or not hasattr(sd_model.unet, 'config'):
         shared.log.warning('Model compile enabled but model has no Unet')
-        return
+        return sd_model
     if shared.opts.cuda_compile_backend == 'none':
         shared.log.warning('Model compile enabled but no backend specified')
-        return
+        return sd_model
     size = 8*getattr(sd_model.unet.config, 'sample_size', 0)
     shared.log.info(f"Model compile: pipeline={sd_model.__class__.__name__} shape={size} mode={shared.opts.cuda_compile_mode} backend={shared.opts.cuda_compile_backend} fullgraph={shared.opts.cuda_compile_fullgraph} unet={shared.opts.cuda_compile} vae={shared.opts.cuda_compile_vae} upscaler={shared.opts.cuda_compile_upscaler}")
     if shared.opts.cuda_compile_backend == 'stable-fast':

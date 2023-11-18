@@ -203,7 +203,7 @@ class ExtraNetworksPage:
                     os.remove(f)
                 elif img.width > 1024 or img.height > 1024 or os.path.getsize(f) > 65536:
                     img = img.convert('RGB')
-                    img.thumbnail((512, 512), Image.HAMMING)
+                    img.thumbnail((512, 512), Image.Resampling.HAMMING)
                     img.save(fn, quality=50)
                     img.close()
                     created += 1
@@ -576,7 +576,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         fn_delete_img(image)
         if image.width > 512 or image.height > 512:
             image = image.convert('RGB')
-            image.thumbnail((512, 512), Image.HAMMING)
+            image.thumbnail((512, 512), Image.Resampling.HAMMING)
         try:
             image.save(ui.last_item.local_preview, quality=50)
             shared.log.debug(f'Extra network save image: item={ui.last_item.name} filename="{ui.last_item.local_preview}"')

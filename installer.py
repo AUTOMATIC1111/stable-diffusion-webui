@@ -795,6 +795,8 @@ def set_environment():
     os.environ.setdefault('TF_ENABLE_ONEDNN_OPTS', '0')
     os.environ.setdefault('USE_TORCH', '1')
     os.environ.setdefault('UVICORN_TIMEOUT_KEEP_ALIVE', '60')
+    os.environ.setdefault('HF_HUB_CACHE', opts.get('hfcache_dir', os.path.join(os.path.expanduser('~'), '.cache', 'huggingface', 'hub')))
+    log.debug(f'Cache folder: {os.environ.get("HF_HUB_CACHE")}')
     if sys.platform == 'darwin':
         os.environ.setdefault('PYTORCH_ENABLE_MPS_FALLBACK', '1')
 

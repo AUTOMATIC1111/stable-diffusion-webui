@@ -377,6 +377,7 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "models_dir": OptionInfo('models', "Base path where all models are stored", folder=True),
     "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Folder with stable diffusion models", folder=True),
     "diffusers_dir": OptionInfo(os.path.join(paths.models_path, 'Diffusers'), "Folder with Hugggingface models", folder=True),
+    "hfcache_dir": OptionInfo(os.path.join(os.path.expanduser('~'), '.cache', 'huggingface', 'hub'), "Folder for Hugggingface cache", folder=True),
     "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Folder with VAE files", folder=True),
     "sd_lora": OptionInfo("", "Add LoRA to prompt", gr.Textbox, {"visible": False}),
     "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Folder with LoRA network(s)", folder=True),
