@@ -1,7 +1,7 @@
 import os
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from pathlib import Path
+# from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 import safetensors.torch
@@ -11,9 +11,10 @@ from tqdm import tqdm
 import modules.memstats
 import modules.devices as devices
 from modules.shared import log
+from modules.sd_models import read_state_dict
 from modules.merging import merge_methods
 from modules.merging.merge_utils import WeightClass
-from modules.merging.merge_model import SDModel
+# from modules.merging.merge_model import SDModel
 from modules.merging.merge_rebasin import (
     apply_permutation,
     sdunet_permutation_spec,
@@ -69,11 +70,11 @@ def fix_model(model: Dict) -> Dict:
     return fix_clip(model)
 
 
-def load_sd_model(model: os.PathLike | str, device: torch.device = None) -> Dict:
-    if isinstance(model, str):
-        model = Path(model)
-
-    return SDModel(model, device).load_model()
+# def load_sd_model(model: os.PathLike | str, device: torch.device = None) -> Dict:
+#     if isinstance(model, str):
+#         model = Path(model)
+#
+#     return SDModel(model, device).load_model()
 
 
 def prune_sd_model(model: Dict) -> Dict:
@@ -107,9 +108,9 @@ def load_thetas(
 ) -> Dict:
     log_vram("before loading models")
     if prune:
-        thetas = {k: prune_sd_model(load_sd_model(m, "cpu")) for k, m in models.items()}
+        thetas = {k: prune_sd_model(read_state_dict(m, "cpu")) for k, m in models.items()}
     else:
-        thetas = {k: load_sd_model(m, device) for k, m in models.items()}
+        thetas = {k: read_state_dict(m, device) for k, m in models.items()}
 
     for model_key, model in thetas.items():
         for key, block in model.items():
@@ -170,7 +171,7 @@ def un_prune_model(
     merged: Dict,
     thetas: Dict,
     models: Dict,
-    device: str,
+    device: torch.device,
     prune: bool,
     precision: str,
 ) -> Dict:
@@ -179,7 +180,7 @@ def un_prune_model(
         del thetas
         devices.torch_gc(force=True)
         log_vram("remove thetas")
-        original_a = load_sd_model(models["model_a"], device)
+        original_a = read_state_dict(models["model_a"], device)
         for key in tqdm(original_a.keys(), desc="un-prune model a"):
             if KEY_POSITION_IDS in key:
                 continue
@@ -190,7 +191,7 @@ def un_prune_model(
         del original_a
         devices.torch_gc(force=True)
         # log_vram("remove original_a")
-        original_b = load_sd_model(models["model_b"], device)
+        original_b = read_state_dict(models["model_b"], device)
         for key in tqdm(original_b.keys(), desc="un-prune model b"):
             if KEY_POSITION_IDS in key:
                 continue
