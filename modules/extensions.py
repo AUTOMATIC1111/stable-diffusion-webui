@@ -43,13 +43,13 @@ class Extension:
 
     @functools.cached_property
     def metadata(self):
-        if os.path.isfile(os.path.join(self.path, "sd_webui_metadata.ini")):
+        if os.path.isfile(os.path.join(self.path, "metadata.ini")):
             try:
                 config = configparser.ConfigParser()
-                config.read(os.path.join(self.path, "sd_webui_metadata.ini"))
+                config.read(os.path.join(self.path, "metadata.ini"))
                 return config
             except Exception:
-                errors.report(f"Error reading sd_webui_metadata.ini for extension {self.canonical_name}.",
+                errors.report(f"Error reading metadata.ini for extension {self.canonical_name}.",
                               exc_info=True)
         return None
 
@@ -177,14 +177,14 @@ def list_extensions():
             canonical_name = extension_dirname
             requires = None
 
-            if os.path.isfile(os.path.join(path, "sd_webui_metadata.ini")):
+            if os.path.isfile(os.path.join(path, "metadata.ini")):
                 try:
                     config = configparser.ConfigParser()
-                    config.read(os.path.join(path, "sd_webui_metadata.ini"))
+                    config.read(os.path.join(path, "metadata.ini"))
                     canonical_name = config.get("Extension", "Name", fallback=canonical_name)
                     requires = config.get("Extension", "Requires", fallback=None)
                 except Exception:
-                    errors.report(f"Error reading sd_webui_metadata.ini for extension {extension_dirname}. "
+                    errors.report(f"Error reading metadata.ini for extension {extension_dirname}. "
                                   f"Will load regardless.", exc_info=True)
 
             canonical_name = canonical_name.lower().strip()
