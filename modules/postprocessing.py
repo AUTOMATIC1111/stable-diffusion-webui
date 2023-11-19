@@ -78,7 +78,7 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
         image_data.close()
 
     devices.torch_gc()
-
+    shared.state.end()
     return outputs, ui_common.plaintext_to_html(infotext), ''
 
 
