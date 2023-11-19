@@ -133,9 +133,18 @@ document.addEventListener('keydown', function(e) {
     if (isEnter && isModifierKey) {
         if (interruptButton.style.display === 'block') {
             interruptButton.click();
-            setTimeout(function() {
-                generateButton.click();
-            }, 500);
+            const callback = (mutationList) => {
+                for (const mutation of mutationList) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                        if (interruptButton.style.display === 'none') {
+                            generateButton.click();
+                            observer.disconnect();
+                        }
+                    }
+                }
+            };
+            const observer = new MutationObserver(callback);
+            observer.observe(interruptButton, {attributes: true});
         } else {
             generateButton.click();
         }
