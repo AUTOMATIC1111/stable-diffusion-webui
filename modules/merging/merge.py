@@ -162,9 +162,9 @@ def un_prune_model(
                 unpruned += 1
                 if precision == "fp16":
                     merged.update({key: merged[key].half()})
-        if unpruned != 0:
-            log.info(f"Merge: {unpruned} unmerged keys restored from Primary Model")
-            unpruned = 0
+        if unpruned > 248:  # VAE has 248 keys, and we are purposely restoring it here
+            log.info(f"Merge: {unpruned - 248} unmerged keys restored from Primary Model")
+        unpruned = 0
         del original_a
         devices.torch_gc(force=True)
         original_b = TensorDict.from_dict(read_state_dict(models["model_b"], device))

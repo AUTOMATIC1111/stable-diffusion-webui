@@ -244,9 +244,9 @@ def create_ui():
 
                 def show_unload(device):
                     if device == "gpu":
-                        return gr.update(visble=True)
+                        return gr.update(visible=True)
                     else:
-                        return gr.update(visble=False)
+                        return gr.update(visible=False)
 
 
                 def preset_visiblility(x):
