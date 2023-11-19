@@ -162,10 +162,11 @@ def create_ui():
                         with FormRow():
                             precision = gr.Radio(choices=["fp16", "fp32"], value="fp16", label="Model precision")
                         with FormRow():
-                            device = gr.Radio(choices=["cpu", "shuffle", "cuda"], value="cpu", label="Merge Device")
+                            device = gr.Radio(choices=["cpu", "shuffle", "gpu"], value="cpu", label="Merge Device")
+                            unload = gr.Checkbox(label="Unload Current Model from VRAM", value=False, visible=False)
                         with FormRow():
                             bake_in_vae = gr.Dropdown(choices=["None"] + list(sd_vae.vae_dict), value="None",
-                                                      interactive=True, label="Bake in VAE")
+                                                      interactive=True, label="Replace VAE")
                             create_refresh_button(bake_in_vae, sd_vae.refresh_vae_list,
                                                   lambda: {"choices": ["None"] + list(sd_vae.vae_dict)},
                                                   "modelmerger_refresh_bake_in_vae")
@@ -202,6 +203,7 @@ def create_ui():
                                 re_basin,
                                 re_basin_iterations,
                                 device,
+                                unload,
                                 bake_in_vae):
                     kwargs = {}
                     for x in inspect.getfullargspec(modelmerger)[0]:
@@ -240,6 +242,13 @@ def create_ui():
                     doc = getattr(merge_methods, mode).__doc__.replace("\n", "<br>")
                     return gr.update(value=doc, visible=True)
 
+                def show_unload(device):
+                    if device == "gpu":
+                        return gr.update(visble=True)
+                    else:
+                        return gr.update(visble=False)
+
+
                 def preset_visiblility(x):
                     if len(x) == 2:
                         return gr.Slider.update(value=0.5, visible=True)
@@ -262,7 +271,7 @@ def create_ui():
                         return [gr.update(choices=["None"] + list(SDXL_BLOCK_WEIGHTS_PRESETS.keys())) for _ in range(2)]
                     else:
                         return [gr.update(choices=["None"] + list(BLOCK_WEIGHTS_PRESETS.keys())) for _ in range(2)]
-
+                device.change(fn=show_unload, inputs=device, outputs=unload)
                 merge_mode.change(fn=show_help, inputs=merge_mode, outputs=merge_mode_docs)
                 sdxl.change(fn=preset_choices, inputs=sdxl, outputs=[alpha_preset, beta_preset])
                 alpha_preset.change(fn=preset_visiblility, inputs=alpha_preset, outputs=alpha_preset_lambda)
@@ -309,6 +318,7 @@ def create_ui():
                         re_basin,
                         re_basin_iterations,
                         device,
+                        unload,
                         bake_in_vae,
                     ],
                     outputs=[

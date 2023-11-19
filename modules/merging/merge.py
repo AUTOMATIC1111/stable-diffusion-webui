@@ -54,7 +54,7 @@ def prune_sd_model(model: Dict) -> Dict:
     for k in keys:
         if (
             not k.startswith("model.diffusion_model.")
-            and not k.startswith("first_stage_model.")
+            # and not k.startswith("first_stage_model.")
             and not k.startswith("cond_stage_model.")
         ):
             del model[k]
@@ -153,23 +153,31 @@ def un_prune_model(
         devices.torch_gc(force=True)
         log_vram("remove thetas")
         original_a = TensorDict.from_dict(read_state_dict(models["model_a"], device))
-        for key in tqdm(original_a.keys(), desc="un-prune model a"):
+        unpruned = 0
+        for key in original_a.keys():
             if KEY_POSITION_IDS in key:
                 continue
             if "model" in key and key not in merged.keys():
                 merged.update({key: original_a[key]})
+                unpruned += 1
                 if precision == "fp16":
                     merged.update({key: merged[key].half()})
+        if unpruned != 0:
+            log.info(f"Merge: {unpruned} unmerged keys restored from Primary Model")
+            unpruned = 0
         del original_a
         devices.torch_gc(force=True)
         original_b = TensorDict.from_dict(read_state_dict(models["model_b"], device))
-        for key in tqdm(original_b.keys(), desc="un-prune model b"):
+        for key in original_b.keys():
             if KEY_POSITION_IDS in key:
                 continue
             if "model" in key and key not in merged.keys():
                 merged.update({key: original_b[key]})
+                unpruned += 1
                 if precision == "fp16":
                     merged.update({key: merged[key].half()})
+        if unpruned != 0:
+            log.info(f"Merge: {unpruned} unmerged keys restored from Secondary Model")
         del original_b
 
     return fix_clip(merged)

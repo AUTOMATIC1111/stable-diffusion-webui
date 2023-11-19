@@ -61,24 +61,24 @@ def run_modelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
         return [*[gr.update() for _ in range(4)], message]
 
     kwargs["models"] = {
-        "model_a": sd_models.checkpoints_list[kwargs.get("primary_model_name", None)].filename,
-        "model_b": sd_models.checkpoints_list[kwargs.get("secondary_model_name", None)].filename,
+        "model_a": sd_models.get_closet_checkpoint_match(kwargs.get("primary_model_name", None)).filename,
+        "model_b": sd_models.get_closet_checkpoint_match(kwargs.get("secondary_model_name", None)).filename,
     }
 
     if kwargs.get("primary_model_name", None) in [None, 'None']:
         return fail("Failed: Merging requires a primary model.")
-    primary_model_info = sd_models.checkpoints_list[kwargs.get("primary_model_name", None)]
+    primary_model_info = sd_models.get_closet_checkpoint_match(kwargs.get("primary_model_name", None))
     if kwargs.get("secondary_model_name", None) in [None, 'None']:
         return fail("Failed: Merging requires a secondary model.")
-    secondary_model_info = sd_models.checkpoints_list[kwargs.get("secondary_model_name", None)]
+    secondary_model_info = sd_models.get_closet_checkpoint_match(kwargs.get("secondary_model_name", None))
     if kwargs.get("tertiary_model_name", None) in [None, 'None'] and kwargs.get("merge_mode", None) in TRIPLE_METHODS:
         return fail(f"Failed: Interpolation method ({kwargs.get('merge_mode', None)}) requires a tertiary model.")
-    tertiary_model_info = sd_models.checkpoints_list[kwargs.get("tertiary_model_name", None)] if kwargs.get("merge_mode", None) in TRIPLE_METHODS else None
+    tertiary_model_info = sd_models.get_closet_checkpoint_match(kwargs.get("tertiary_model_name", None)) if kwargs.get("merge_mode", None) in TRIPLE_METHODS else None
 
     del kwargs["primary_model_name"]
     del kwargs["secondary_model_name"]
     if kwargs.get("tertiary_model_name", None) is not None:
-        kwargs["models"] |= {"model_c": sd_models.checkpoints_list[kwargs.get("tertiary_model_name", None)].filename}
+        kwargs["models"] |= {"model_c": sd_models.get_closet_checkpoint_match(kwargs.get("tertiary_model_name", None)).filename}
         del kwargs["tertiary_model_name"]
 
     try:
@@ -113,19 +113,25 @@ def run_modelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
             kwargs.pop("beta_out_blocks", None)
             kwargs.pop("beta_preset", None)
 
-    if kwargs["device"] == "cuda":
+    if kwargs["device"] == "gpu":
         kwargs["device"] = devices.device
-        sd_models.unload_model_weights()
     elif kwargs["device"] == "shuffle":
         kwargs["device"] = torch.device("cpu")
         kwargs["work_device"] = devices.device
     else:
         kwargs["device"] = torch.device("cpu")
+    if kwargs.pop("unload", False):
+        sd_models.unload_model_weights()
 
     try:
         theta_0 = merge_models(**kwargs)
     except Exception as e:
         return fail(f"{e}")
+
+    try:
+        theta_0 = theta_0.to_dict() #TensorDict -> Dict if necessary
+    except:
+        pass
 
     bake_in_vae_filename = sd_vae.vae_dict.get(kwargs.get("bake_in_vae", None), None)
     if bake_in_vae_filename is not None:
@@ -177,10 +183,6 @@ def run_modelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
 
     _, extension = os.path.splitext(output_modelname)
 
-    try:
-        theta_0 = theta_0.to_dict()
-    except:
-        pass
 
     if extension.lower() == ".safetensors":
         safetensors.torch.save_file(theta_0, output_modelname, metadata=metadata)
