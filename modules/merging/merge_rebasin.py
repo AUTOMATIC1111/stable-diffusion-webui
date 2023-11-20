@@ -67,7 +67,7 @@ def sdunet_permutation_spec() -> PermutationSpec:
         **conv(f"{name}.out_layers.3", f"P_{name}_inner4", p_out),
     }
 
-    # Text Encoder blocks
+    # VAE blocks - Unused
     easyblock2 = lambda name, p: {  # pylint: disable=unnecessary-lambda-assignment
         **norm(f"{name}.norm1", p),
         **conv(f"{name}.conv1", p, f"P_{name}_inner"),
@@ -1510,83 +1510,6 @@ def sdunet_permutation_spec() -> PermutationSpec:
             ),
             **norm("model.diffusion_model.out.0", "P_bg324"),
             **conv("model.diffusion_model.out.2", "P_bg325", "P_bg326"),
-            # Text Encoder
-            # encoder down
-            **conv("first_stage_model.encoder.conv_in", "P_bg327", "P_bg328"),
-            **easyblock2("first_stage_model.encoder.down.0.block.0", "P_bg328"),
-            **easyblock2("first_stage_model.encoder.down.0.block.1", "P_bg328"),
-            **conv(
-                "first_stage_model.encoder.down.0.downsample.conv", "P_bg328", "P_bg329"
-            ),
-            **shortcutblock(
-                "first_stage_model.encoder.down.1.block.0", "P_bg330", "P_bg331"
-            ),
-            **easyblock2("first_stage_model.encoder.down.1.block.1", "P_bg331"),
-            **conv(
-                "first_stage_model.encoder.down.1.downsample.conv", "P_bg331", "P_bg332"
-            ),
-            **shortcutblock(
-                "first_stage_model.encoder.down.2.block.0", "P_bg332", "P_bg333"
-            ),
-            **easyblock2("first_stage_model.encoder.down.2.block.1", "P_bg333"),
-            **conv(
-                "first_stage_model.encoder.down.2.downsample.conv", "P_bg333", "P_bg334"
-            ),
-            **easyblock2("first_stage_model.encoder.down.3.block.0", "P_bg334"),
-            **easyblock2("first_stage_model.encoder.down.3.block.1", "P_bg334"),
-            # encoder mid-block
-            **easyblock2("first_stage_model.encoder.mid.block_1", "P_bg334"),
-            **norm("first_stage_model.encoder.mid.attn_1.norm", "P_bg334"),
-            **conv("first_stage_model.encoder.mid.attn_1.q", "P_bg334", "P_bg335"),
-            **conv("first_stage_model.encoder.mid.attn_1.k", "P_bg334", "P_bg335"),
-            **conv("first_stage_model.encoder.mid.attn_1.v", "P_bg334", "P_bg335"),
-            **conv(
-                "first_stage_model.encoder.mid.attn_1.proj_out", "P_bg335", "P_bg336"
-            ),
-            **easyblock2("first_stage_model.encoder.mid.block_2", "P_bg336"),
-            **norm("first_stage_model.encoder.norm_out", "P_bg337"),
-            **conv("first_stage_model.encoder.conv_out", "P_bg338", "P_bg339"),
-            **conv("first_stage_model.decoder.conv_in", "P_bg340", "P_bg341"),
-            # decoder mid-block
-            **easyblock2("first_stage_model.decoder.mid.block_1", "P_bg342"),
-            **norm("first_stage_model.decoder.mid.attn_1.norm", "P_bg342"),
-            **conv("first_stage_model.decoder.mid.attn_1.q", "P_bg342", "P_bg343"),
-            **conv("first_stage_model.decoder.mid.attn_1.k", "P_bg342", "P_bg343"),
-            **conv("first_stage_model.decoder.mid.attn_1.v", "P_bg342", "P_bg343"),
-            **conv(
-                "first_stage_model.decoder.mid.attn_1.proj_out", "P_bg343", "P_bg344"
-            ),
-            **easyblock2("first_stage_model.decoder.mid.block_2", "P_bg345"),
-            # decoder up
-            **shortcutblock(
-                "first_stage_model.decoder.up.0.block.0", "P_bg346", "P_bg347"
-            ),
-            **easyblock2("first_stage_model.decoder.up.0.block.1", "P_bg348"),
-            **easyblock2("first_stage_model.decoder.up.0.block.2", "P_bg349"),
-            **shortcutblock(
-                "first_stage_model.decoder.up.1.block.0", "P_bg350", "P_bg351"
-            ),
-            **easyblock2("first_stage_model.decoder.up.1.block.1", "P_bg352"),
-            **easyblock2("first_stage_model.decoder.up.1.block.2", "P_bg353"),
-            **conv(
-                "first_stage_model.decoder.up.1.upsample.conv", "P_bg353", "P_bg354"
-            ),
-            **easyblock2("first_stage_model.decoder.up.2.block.0", "P_bg355"),
-            **easyblock2("first_stage_model.decoder.up.2.block.1", "P_bg355"),
-            **easyblock2("first_stage_model.decoder.up.2.block.2", "P_bg355"),
-            **conv(
-                "first_stage_model.decoder.up.2.upsample.conv", "P_bg355", "P_bg356"
-            ),
-            **easyblock2("first_stage_model.decoder.up.3.block.0", "P_bg356"),
-            **easyblock2("first_stage_model.decoder.up.3.block.1", "P_bg356"),
-            **easyblock2("first_stage_model.decoder.up.3.block.2", "P_bg356"),
-            **conv(
-                "first_stage_model.decoder.up.3.upsample.conv", "P_bg356", "P_bg357"
-            ),
-            **norm("first_stage_model.decoder.norm_out", "P_bg358"),
-            **conv("first_stage_model.decoder.conv_out", "P_bg359", "P_bg360"),
-            **conv("first_stage_model.quant_conv", "P_bg361", "P_bg362"),
-            **conv("first_stage_model.post_quant_conv", "P_bg363", "P_bg364"),
             **skip(
                 "cond_stage_model.transformer.text_model.embeddings.position_ids",
                 None,
@@ -2261,7 +2184,7 @@ def weight_matching(
     linear_sum = 0
     number = 0
 
-    special_layers = ["P_bg324", "P_bg358", "P_bg337"]
+    special_layers = ["P_bg324"]
     for _i in range(max_iter):
         progress = False
         shuffle(special_layers)
