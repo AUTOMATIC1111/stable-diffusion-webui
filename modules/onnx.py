@@ -101,13 +101,16 @@ diffusers.OnnxRuntimeModel = OnnxRuntimeModel
 
 
 def load_init_dict(cls: Type[diffusers.DiffusionPipeline], path: os.PathLike):
-    dicts = cls.extract_init_dict(diffusers.DiffusionPipeline.load_config(path))
-    if 'unet' in dicts:
-        return dicts
-    for dict in dicts:
-        if 'unet' in dict:
-            return dict
-    return None
+    merged: Dict[str, Any] = {}
+    extracted = cls.extract_init_dict(diffusers.DiffusionPipeline.load_config(path))
+    for dict in extracted:
+        merged.update(dict)
+    merged = merged.items()
+    R: Dict[str, Tuple[str]] = {}
+    for k, v in merged:
+        if isinstance(v, list):
+            R[k] = v
+    return R
 
 
 def load_submodel(path: os.PathLike, submodel_name: str, item: List[Union[str, None]], **kwargs):
@@ -176,33 +179,33 @@ class OnnxPipelineBase(OnnxFakeModule, diffusers.DiffusionPipeline, metaclass=AB
 
 class OnnxRawPipeline(OnnxPipelineBase):
     config = {}
-    is_sdxl: bool
+    _is_sdxl: bool
     path: os.PathLike
     original_filename: str
 
     constructor: Type[OnnxPipelineBase]
     submodels: List[str]
     load_runtime_model: Callable
-    init_dict: Dict
+    init_dict: Dict[str, Tuple[str]] = {}
 
     scheduler: Any = None # for Img2Img
 
     def __init__(self, constructor: Type[OnnxPipelineBase], path: os.PathLike):
         self.model_type = constructor.__name__
-        self.is_sdxl = 'XL' in self.model_type
+        self._is_sdxl = 'XL' in self.model_type
         self.path = path
         self.original_filename = os.path.basename(path)
 
         self.constructor = constructor
-        self.submodels = submodels_sdxl if self.is_sdxl else submodels_sd
-        self.load_runtime_model = diffusers.OnnxRuntimeModel.load_model if self.is_sdxl else diffusers.OnnxRuntimeModel.from_pretrained
+        self.submodels = submodels_sdxl if self._is_sdxl else submodels_sd
+        self.load_runtime_model = diffusers.OnnxRuntimeModel.load_model if self._is_sdxl else diffusers.OnnxRuntimeModel.from_pretrained
         if os.path.isdir(path):
             self.init_dict = load_init_dict(constructor, path)
             self.scheduler = load_submodel(self.path, "scheduler", self.init_dict["scheduler"])
         else:
             try:
                 cls = None
-                if self.is_sdxl:
+                if self._is_sdxl:
                     cls = diffusers.StableDiffusionXLPipeline
                 else:
                     cls = diffusers.StableDiffusionPipeline
@@ -216,6 +219,8 @@ class OnnxRawPipeline(OnnxPipelineBase):
                 self.init_dict = load_init_dict(constructor, shared.opts.onnx_temp_dir)
             except Exception:
                 log.error('Failed to load pipeline to optimize.')
+        if "vae" in self.init_dict:
+            del self.init_dict["vae"]
 
     def derive_properties(self, pipeline: diffusers.DiffusionPipeline):
         pipeline.sd_model_hash = self.sd_model_hash
@@ -225,11 +230,6 @@ class OnnxRawPipeline(OnnxPipelineBase):
         return pipeline
 
     def convert(self, in_dir: os.PathLike):
-        if shared.opts.onnx_execution_provider == ExecutionProvider.ROCm:
-            from olive.hardware.accelerator import AcceleratorLookup
-            if ExecutionProvider.ROCm not in AcceleratorLookup.EXECUTION_PROVIDERS["gpu"]:
-                AcceleratorLookup.EXECUTION_PROVIDERS["gpu"].append(ExecutionProvider.ROCm)
-
         out_dir = os.path.join(shared.opts.onnx_cached_models_path, self.original_filename)
         if os.path.isdir(out_dir): # already converted (cached)
             return out_dir
@@ -251,7 +251,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
             for submodel in self.submodels:
                 log.info(f"\nConverting {submodel}")
 
-                with open(os.path.join(sd_configs_path, "onnx", f"{'sdxl' if self.is_sdxl else 'sd'}_{submodel}.json"), "r") as config_file:
+                with open(os.path.join(sd_configs_path, "onnx", f"{'sdxl' if self._is_sdxl else 'sd'}_{submodel}.json"), "r") as config_file:
                     conversion_config = json.load(config_file)
                 conversion_config["input_model"]["config"]["model_path"] = os.path.abspath(in_dir)
                 conversion_config["engine"]["execution_providers"] = [shared.opts.onnx_execution_provider]
@@ -351,7 +351,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
             for submodel in self.submodels:
                 log.info(f"\nOptimizing {submodel}")
 
-                with open(os.path.join(sd_configs_path, "olive", f"{'sdxl' if self.is_sdxl else 'sd'}_{submodel}.json"), "r") as config_file:
+                with open(os.path.join(sd_configs_path, "olive", f"{'sdxl' if self._is_sdxl else 'sd'}_{submodel}.json"), "r") as config_file:
                     olive_config = json.load(config_file)
                 olive_config["input_model"]["config"]["model_path"] = os.path.abspath(os.path.join(in_dir, submodel, "model.onnx"))
                 olive_config["passes"]["optimize"]["config"]["float16"] = shared.opts.onnx_olive_float16
@@ -420,12 +420,12 @@ class OnnxRawPipeline(OnnxPipelineBase):
         olive.height = height
         olive.batch_size = batch_size
 
-        olive.is_sdxl = self.is_sdxl
+        olive.is_sdxl = self._is_sdxl
 
         converted_dir = self.convert(self.path if os.path.isdir(self.path) else shared.opts.onnx_temp_dir)
         if converted_dir is None:
             log.error('Failed to convert model. The generation will fall back to unconverted one.')
-            return self.derive_properties(load_pipeline(diffusers.StableDiffusionXLPipeline if self.is_sdxl else diffusers.StableDiffusionPipeline, self.path))
+            return self.derive_properties(load_pipeline(diffusers.StableDiffusionXLPipeline if self._is_sdxl else diffusers.StableDiffusionPipeline, self.path))
         out_dir = converted_dir
 
         if shared.opts.onnx_enable_olive:
@@ -435,10 +435,10 @@ class OnnxRawPipeline(OnnxPipelineBase):
             optimized_dir = self.optimize(converted_dir)
             if optimized_dir is None:
                 log.error('Failed to optimize pipeline. The generation will fall back to unoptimized one.')
-                return self.derive_properties(load_pipeline(diffusers.OnnxStableDiffusionXLPipeline if self.is_sdxl else diffusers.OnnxStableDiffusionPipeline, converted_dir))
+                return self.derive_properties(load_pipeline(diffusers.OnnxStableDiffusionXLPipeline if self._is_sdxl else diffusers.OnnxStableDiffusionPipeline, converted_dir))
             out_dir = optimized_dir
 
-        pipeline = self.derive_properties(load_pipeline(diffusers.OnnxStableDiffusionXLPipeline if self.is_sdxl else diffusers.OnnxStableDiffusionPipeline, out_dir))
+        pipeline = self.derive_properties(load_pipeline(diffusers.OnnxStableDiffusionXLPipeline if self._is_sdxl else diffusers.OnnxStableDiffusionPipeline, out_dir))
 
         if not shared.opts.onnx_cache_converted:
             shutil.rmtree(converted_dir)
@@ -1010,7 +1010,7 @@ diffusers.OnnxStableDiffusionInpaintPipeline = OnnxStableDiffusionInpaintPipelin
 diffusers.pipelines.auto_pipeline.AUTO_INPAINT_PIPELINES_MAPPING["onnx-stable-diffusion"] = diffusers.OnnxStableDiffusionInpaintPipeline
 
 
-class OnnxStableDiffusionXLPipeline(optimum.onnxruntime.ORTStableDiffusionXLPipeline, OnnxPipelineBase):
+class OnnxStableDiffusionXLPipeline(OnnxPipelineBase, optimum.onnxruntime.ORTStableDiffusionXLPipeline):
     def __init__(
         self,
         vae_decoder_session,
@@ -1027,7 +1027,7 @@ class OnnxStableDiffusionXLPipeline(optimum.onnxruntime.ORTStableDiffusionXLPipe
         model_save_dir = None,
         add_watermarker: bool | None = None
     ):
-        super().__init__(vae_decoder_session, text_encoder_session, unet_session, config, tokenizer, scheduler, feature_extractor, vae_encoder_session, text_encoder_2_session, tokenizer_2, use_io_binding, model_save_dir, add_watermarker)
+        super(optimum.onnxruntime.ORTStableDiffusionXLPipeline, self).__init__(vae_decoder_session, text_encoder_session, unet_session, config, tokenizer, scheduler, feature_extractor, vae_encoder_session, text_encoder_2_session, tokenizer_2, use_io_binding, model_save_dir, add_watermarker)
 
 
 OnnxStableDiffusionXLPipeline.__module__ = 'optimum.onnxruntime.modeling_diffusion'
@@ -1036,7 +1036,7 @@ diffusers.OnnxStableDiffusionXLPipeline = OnnxStableDiffusionXLPipeline
 diffusers.pipelines.auto_pipeline.AUTO_TEXT2IMAGE_PIPELINES_MAPPING["onnx-stable-diffusion-xl"] = diffusers.OnnxStableDiffusionXLPipeline
 
 
-class OnnxStableDiffusionXLImg2ImgPipeline(optimum.onnxruntime.ORTStableDiffusionXLImg2ImgPipeline, OnnxPipelineBase):
+class OnnxStableDiffusionXLImg2ImgPipeline(OnnxPipelineBase, optimum.onnxruntime.ORTStableDiffusionXLImg2ImgPipeline):
     def __init__(
         self,
         vae_decoder_session,
@@ -1053,7 +1053,7 @@ class OnnxStableDiffusionXLImg2ImgPipeline(optimum.onnxruntime.ORTStableDiffusio
         model_save_dir = None,
         add_watermarker: bool | None = None
     ):
-        super().__init__(vae_decoder_session, text_encoder_session, unet_session, config, tokenizer, scheduler, feature_extractor, vae_encoder_session, text_encoder_2_session, tokenizer_2, use_io_binding, model_save_dir, add_watermarker)
+        super(optimum.onnxruntime.ORTStableDiffusionXLImg2ImgPipeline, self).__init__(vae_decoder_session, text_encoder_session, unet_session, config, tokenizer, scheduler, feature_extractor, vae_encoder_session, text_encoder_2_session, tokenizer_2, use_io_binding, model_save_dir, add_watermarker)
 
 
 OnnxStableDiffusionXLImg2ImgPipeline.__module__ = 'optimum.onnxruntime.modeling_diffusion'

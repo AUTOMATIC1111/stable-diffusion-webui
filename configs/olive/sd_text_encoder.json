@@ -43,6 +43,7 @@
       "disable_search": true,
       "config": {
         "model_type": "clip",
+        "opt_level": 0,
         "float16": true,
         "use_gpu": true,
         "keep_io_types": false,
