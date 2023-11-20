@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import inspect
+from graphlib import TopologicalSorter, CycleError
 from collections import namedtuple
 from dataclasses import dataclass
 
@@ -314,15 +315,120 @@ ScriptClassData = namedtuple("ScriptClassData", ["script_class", "path", "basedi
 
 def list_scripts(scriptdirname, extension, *, include_extensions=True):
     scripts_list = []
+    script_dependency_map = {}
 
-    basedir = os.path.join(paths.script_path, scriptdirname)
-    if os.path.exists(basedir):
-        for filename in sorted(os.listdir(basedir)):
-            scripts_list.append(ScriptFile(paths.script_path, filename, os.path.join(basedir, filename)))
+    # build script dependency map
+
+    root_script_basedir = os.path.join(paths.script_path, scriptdirname)
+    if os.path.exists(root_script_basedir):
+        for filename in sorted(os.listdir(root_script_basedir)):
+            if not os.path.isfile(os.path.join(root_script_basedir, filename)):
+                continue
+
+            script_dependency_map[filename] = {
+                "extension": None,
+                "extension_dirname": None,
+                "script_file": ScriptFile(paths.script_path, filename, os.path.join(root_script_basedir, filename)),
+                "requires": [],
+                "load_before": [],
+                "load_after": [],
+            }
 
     if include_extensions:
         for ext in extensions.active():
-            scripts_list += ext.list_files(scriptdirname, extension)
+            extension_scripts_list = ext.list_files(scriptdirname, extension)
+            for extension_script in extension_scripts_list:
+                if not os.path.isfile(extension_script.path):
+                    continue
+
+                script_canonical_name = ext.canonical_name + "/" + extension_script.filename
+                if ext.is_builtin:
+                    script_canonical_name = "builtin/" + script_canonical_name
+                relative_path = scriptdirname + "/" + extension_script.filename
+
+                requires = ''
+                load_before = ''
+                load_after = ''
+
+                if ext.metadata is not None:
+                    requires = ext.metadata.get(relative_path, "Requires", fallback='')
+                    load_before = ext.metadata.get(relative_path, "Before", fallback='')
+                    load_after = ext.metadata.get(relative_path, "After", fallback='')
+
+                    # propagate directory level metadata
+                    requires = requires + ',' + ext.metadata.get(scriptdirname, "Requires", fallback='')
+                    load_before = load_before + ',' + ext.metadata.get(scriptdirname, "Before", fallback='')
+                    load_after = load_after + ',' + ext.metadata.get(scriptdirname, "After", fallback='')
+
+                requires = list(filter(None, re.split(r"[,\s]+", requires.lower()))) if requires else []
+                load_after = list(filter(None, re.split(r"[,\s]+", load_after.lower()))) if load_after else []
+                load_before = list(filter(None, re.split(r"[,\s]+", load_before.lower()))) if load_before else []
+
+                script_dependency_map[script_canonical_name] = {
+                    "extension": ext.canonical_name,
+                    "extension_dirname": ext.name,
+                    "script_file": extension_script,
+                    "requires": requires,
+                    "load_before": load_before,
+                    "load_after": load_after,
+                }
+
+    # resolve dependencies
+
+    loaded_extensions = set()
+    for ext in extensions.active():
+        loaded_extensions.add(ext.canonical_name)
+
+    for script_canonical_name, script_data in script_dependency_map.items():
+        # load before requires inverse dependency
+        # in this case, append the script name into the load_after list of the specified script
+        for load_before_script in script_data['load_before']:
+            # if this requires an individual script to be loaded before
+            if load_before_script in script_dependency_map:
+                script_dependency_map[load_before_script]['load_after'].append(script_canonical_name)
+            elif load_before_script in loaded_extensions:
+                for _, script_data2 in script_dependency_map.items():
+                    if script_data2['extension'] == load_before_script:
+                        script_data2['load_after'].append(script_canonical_name)
+                        break
+
+        # resolve extension name in load_after lists
+        for load_after_script in list(script_data['load_after']):
+            if load_after_script not in script_dependency_map and load_after_script in loaded_extensions:
+                script_data['load_after'].remove(load_after_script)
+                for script_canonical_name2, script_data2 in script_dependency_map.items():
+                    if script_data2['extension'] == load_after_script:
+                        script_data['load_after'].append(script_canonical_name2)
+                        break
+
+    # build the DAG
+    sorter = TopologicalSorter()
+    for script_canonical_name, script_data in script_dependency_map.items():
+        requirement_met = True
+        for required_script in script_data['requires']:
+            # if this requires an individual script to be loaded
+            if required_script not in script_dependency_map and required_script not in loaded_extensions:
+                errors.report(f"Script \"{script_canonical_name}\" "
+                              f"requires \"{required_script}\" to "
+                              f"be loaded, but it is not. Skipping.",
+                              exc_info=False)
+                requirement_met = False
+                break
+        if not requirement_met:
+            continue
+
+        sorter.add(script_canonical_name, *script_data['load_after'])
+
+    # sort the scripts
+    try:
+        ordered_script = sorter.static_order()
+    except CycleError:
+        errors.report("Cycle detected in script dependencies. Scripts will load in ascending order.", exc_info=True)
+        ordered_script = script_dependency_map.keys()
+
+    for script_canonical_name in ordered_script:
+        script_data = script_dependency_map[script_canonical_name]
+        scripts_list.append(script_data['script_file'])
 
     scripts_list = [x for x in scripts_list if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
 
@@ -365,15 +471,9 @@ def load_scripts():
             elif issubclass(script_class, scripts_postprocessing.ScriptPostprocessing):
                 postprocessing_scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
 
-    def orderby(basedir):
-        # 1st webui, 2nd extensions-builtin, 3rd extensions
-        priority = {os.path.join(paths.script_path, "extensions-builtin"):1, paths.script_path:0}
-        for key in priority:
-            if basedir.startswith(key):
-                return priority[key]
-        return 9999
-
-    for scriptfile in sorted(scripts_list, key=lambda x: [orderby(x.basedir), x]):
+    # here the scripts_list is already ordered
+    # processing_script is not considered though
+    for scriptfile in scripts_list:
         try:
             if scriptfile.basedir != paths.script_path:
                 sys.path = [scriptfile.basedir] + sys.path
