@@ -44,6 +44,8 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
     steps = p.steps
     override_settings = p.override_settings
     sd_model_checkpoint_override = get_closet_checkpoint_match(override_settings.get("sd_model_checkpoint", None))
+    batch_results = None
+    discard_further_results = False
     for i, image in enumerate(images):
         state.job = f"{i+1} out of {len(images)}"
         if state.skipped:
@@ -127,7 +129,21 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
 
         if proc is None:
             p.override_settings.pop('save_images_replace_action', None)
-            process_images(p)
+            proc = process_images(p)
+
+        if not discard_further_results and proc:
+            if batch_results:
+                batch_results.images.extend(proc.images)
+                batch_results.infotexts.extend(proc.infotexts)
+            else:
+                batch_results = proc
+
+            if 0 <= shared.opts.img2img_batch_show_results_limit < len(batch_results.images):
+                discard_further_results = True
+                batch_results.images = batch_results.images[:int(shared.opts.img2img_batch_show_results_limit)]
+                batch_results.infotexts = batch_results.infotexts[:int(shared.opts.img2img_batch_show_results_limit)]
+
+    return batch_results
 
 
 def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_name: str, mask_blur: int, mask_alpha: float, inpainting_fill: int, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, denoising_strength: float, selected_scale_tab: int, height: int, width: int, scale_by: float, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, override_settings_texts, img2img_batch_use_png_info: bool, img2img_batch_png_info_props: list, img2img_batch_png_info_dir: str, request: gr.Request, *args):
@@ -212,10 +228,10 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     with closing(p):
         if is_batch:
             assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
+            processed = process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir, args, to_scale=selected_scale_tab == 1, scale_by=scale_by, use_png_info=img2img_batch_use_png_info, png_info_props=img2img_batch_png_info_props, png_info_dir=img2img_batch_png_info_dir)
 
-            process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir, args, to_scale=selected_scale_tab == 1, scale_by=scale_by, use_png_info=img2img_batch_use_png_info, png_info_props=img2img_batch_png_info_props, png_info_dir=img2img_batch_png_info_dir)
-
-            processed = Processed(p, [], p.seed, "")
+            if processed is None:
+                processed = Processed(p, [], p.seed, "")
         else:
             processed = modules.scripts.scripts_img2img.run(p, *args)
             if processed is None:
