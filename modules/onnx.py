@@ -421,6 +421,12 @@ class OnnxRawPipeline(OnnxPipelineBase):
         olive.batch_size = batch_size
 
         olive.is_sdxl = self._is_sdxl
+        if olive.is_sdxl:
+            olive.hidden_state_size = 2048
+            olive.time_ids_size = 6
+        else:
+            olive.hidden_state_size = height + 256
+            olive.time_ids_size = 5
 
         converted_dir = self.convert(self.path if os.path.isdir(self.path) else shared.opts.onnx_temp_dir)
         if converted_dir is None:

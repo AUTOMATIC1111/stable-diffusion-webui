@@ -9,6 +9,8 @@ is_sdxl = False
 width = 512
 height = 512
 batch_size = 1
+hidden_state_size = 768
+time_ids_size = 5
 
 
 # -------------------------------------------------------------------------
@@ -92,24 +94,24 @@ def unet_inputs(batchsize, torch_dtype, is_conversion_inputs=False):
         inputs = {
             "sample": torch.rand((2 * batchsize, 4, height // 8, width // 8), dtype=torch_dtype),
             "timestep": torch.rand((1,), dtype=torch_dtype),
-            "encoder_hidden_states": torch.rand((2 * batchsize, 77, height * 2), dtype=torch_dtype),
+            "encoder_hidden_states": torch.rand((2 * batchsize, 77, hidden_state_size), dtype=torch_dtype),
         }
 
         if is_conversion_inputs:
             inputs["additional_inputs"] = {
                 "added_cond_kwargs": {
                     "text_embeds": torch.rand((2 * batchsize, 1280), dtype=torch_dtype),
-                    "time_ids": torch.rand((2 * batchsize, 6), dtype=torch_dtype),
+                    "time_ids": torch.rand((2 * batchsize, time_ids_size), dtype=torch_dtype),
                 }
             }
         else:
             inputs["text_embeds"] = torch.rand((2 * batchsize, 1280), dtype=torch_dtype)
-            inputs["time_ids"] = torch.rand((2 * batchsize, 6), dtype=torch_dtype)
+            inputs["time_ids"] = torch.rand((2 * batchsize, time_ids_size), dtype=torch_dtype)
     else:
         inputs = {
             "sample": torch.rand((batchsize, 4, height // 8, width // 8), dtype=torch_dtype),
             "timestep": torch.rand((batchsize,), dtype=torch_dtype),
-            "encoder_hidden_states": torch.rand((batchsize, 77, height + 256), dtype=torch_dtype),
+            "encoder_hidden_states": torch.rand((batchsize, 77, hidden_state_size), dtype=torch_dtype),
             "return_dict": False,
         }
 
@@ -117,12 +119,12 @@ def unet_inputs(batchsize, torch_dtype, is_conversion_inputs=False):
             inputs["additional_inputs"] = {
                 "added_cond_kwargs": {
                     "text_embeds": torch.rand((1, 1280), dtype=torch_dtype),
-                    "time_ids": torch.rand((1, 5), dtype=torch_dtype),
+                    "time_ids": torch.rand((1, time_ids_size), dtype=torch_dtype),
                 }
             }
         else:
             inputs["onnx::Concat_4"] = torch.rand((1, 1280), dtype=torch_dtype)
-            inputs["onnx::Shape_5"] = torch.rand((1, 5), dtype=torch_dtype)
+            inputs["onnx::Shape_5"] = torch.rand((1, time_ids_size), dtype=torch_dtype)
 
     return inputs
 
