@@ -551,6 +551,8 @@ class ModelData:
                     self.sd_model = reload_model_weights(op='model')
                     if self.sd_model is not None:
                         self.sd_model.is_sdxl = False # a1111 compatibility item
+                        self.sd_model.is_sd2 = False # a1111 compatibility item
+                        self.sd_model.is_sd1 = True # a1111 compatibility item
                     self.initial = False
                 except Exception as e:
                     shared.log.error("Failed to load stable diffusion model")
