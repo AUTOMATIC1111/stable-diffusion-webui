@@ -21,7 +21,13 @@ class VAEApprox(nn.Module):
 
     def forward(self, x):
         extra = 11
-        x = nn.functional.interpolate(x, (x.shape[2] * 2, x.shape[3] * 2))
+        try:
+            x = nn.functional.interpolate(x, (x.shape[2] * 2, x.shape[3] * 2))
+        except RuntimeError as e:
+            if "not implemented for" in str(e) and "Half" in str(e):
+                x = nn.functional.interpolate(x.to(torch.float32), (x.shape[2] * 2, x.shape[3] * 2)).to(x.dtype)
+            else:
+                print(f"An unexpected RuntimeError occurred: {str(e)}")
         x = nn.functional.pad(x, (extra, extra, extra, extra))
 
         for layer in [self.conv1, self.conv2, self.conv3, self.conv4, self.conv5, self.conv6, self.conv7, self.conv8, ]:
