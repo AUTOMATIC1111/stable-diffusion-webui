@@ -38,7 +38,7 @@ def create_ui():
                     create_refresh_button(model_name, sd_models.list_models,
                                           lambda: {"choices": sd_models.checkpoint_tiles()}, "refresh_checkpoint_Z")
                 with gr.Row():
-                    custom_name = gr.Textbox(label="New model name")
+                    custom_name = gr.Textbox(label="Output model name")
                 with gr.Row():
                     precision = gr.Radio(choices=["fp32", "fp16", "bf16"], value="fp16", label="Model precision")
                     m_type = gr.Radio(choices=["disabled", "no-ema", "ema-only"], value="disabled",
@@ -149,10 +149,14 @@ def create_ui():
                                         beta_out_blocks = gr.Textbox(value=None, label="Out Block", interactive=True,
                                                                      scale=15, visible=False)
                         with FormRow():
-                            weights_clip = gr.Checkbox(label="Weights Clip")
-                            prune = gr.Checkbox(label="Prune", value=True, visible=False)
-                            re_basin = gr.Checkbox(label="ReBasin")
+                            overwrite = gr.Checkbox(label="Overwrite model")
                         with FormRow():
+                            save_metadata = gr.Checkbox(value=True, label="Save metadata")
+                        with FormRow():
+                            weights_clip = gr.Checkbox(label="Weights clip")
+                            prune = gr.Checkbox(label="Prune", value=True, visible=False)
+                        with FormRow():
+                            re_basin = gr.Checkbox(label="ReBasin")
                             re_basin_iterations = gr.Slider(minimum=0, maximum=25, step=1,
                                                             label='Number of ReBasin Iterations', value=None,
                                                             visible=False)
@@ -170,55 +174,62 @@ def create_ui():
                             create_refresh_button(bake_in_vae, sd_vae.refresh_vae_list,
                                                   lambda: {"choices": ["None"] + list(sd_vae.vae_dict)},
                                                   "modelmerger_refresh_bake_in_vae")
-                        with FormRow():
-                            save_metadata = gr.Checkbox(value=True, label="Save metadata")
                         with gr.Row():
                             modelmerger_merge = gr.Button(value="Merge", variant='primary')
 
-                def modelmerger(dummy_component,
-                                primary_model_name,
-                                secondary_model_name,
-                                tertiary_model_name,
-                                merge_mode,
-                                alpha,
-                                beta,
-                                alpha_preset,
-                                alpha_preset_lambda,
-                                alpha_base,
-                                alpha_in_blocks,
-                                alpha_mid_block,
-                                alpha_out_blocks,
-                                beta_preset,
-                                beta_preset_lambda,
-                                beta_base,
-                                beta_in_blocks,
-                                beta_mid_block,
-                                beta_out_blocks,
-                                precision,
-                                custom_name,
-                                checkpoint_format,
-                                save_metadata,
-                                weights_clip,
-                                prune,
-                                re_basin,
-                                re_basin_iterations,
-                                device,
-                                unload,
-                                bake_in_vae):
+                def modelmerger(dummy_component, # dummy function just to get argspec later
+                                overwrite, # pylint: disable=unused-argument
+                                primary_model_name, # pylint: disable=unused-argument
+                                secondary_model_name, # pylint: disable=unused-argument
+                                tertiary_model_name, # pylint: disable=unused-argument
+                                merge_mode, # pylint: disable=unused-argument
+                                alpha, # pylint: disable=unused-argument
+                                beta, # pylint: disable=unused-argument
+                                alpha_preset, # pylint: disable=unused-argument
+                                alpha_preset_lambda, # pylint: disable=unused-argument
+                                alpha_base, # pylint: disable=unused-argument
+                                alpha_in_blocks, # pylint: disable=unused-argument
+                                alpha_mid_block, # pylint: disable=unused-argument
+                                alpha_out_blocks, # pylint: disable=unused-argument
+                                beta_preset, # pylint: disable=unused-argument
+                                beta_preset_lambda, # pylint: disable=unused-argument
+                                beta_base, # pylint: disable=unused-argument
+                                beta_in_blocks, # pylint: disable=unused-argument
+                                beta_mid_block, # pylint: disable=unused-argument
+                                beta_out_blocks, # pylint: disable=unused-argument
+                                precision, # pylint: disable=unused-argument
+                                custom_name, # pylint: disable=unused-argument
+                                checkpoint_format, # pylint: disable=unused-argument
+                                save_metadata, # pylint: disable=unused-argument
+                                weights_clip, # pylint: disable=unused-argument
+                                prune, # pylint: disable=unused-argument
+                                re_basin, # pylint: disable=unused-argument
+                                re_basin_iterations, # pylint: disable=unused-argument
+                                device, # pylint: disable=unused-argument
+                                unload, # pylint: disable=unused-argument
+                                bake_in_vae): # pylint: disable=unused-argument
                     kwargs = {}
                     for x in inspect.getfullargspec(modelmerger)[0]:
                         kwargs[x] = locals()[x]
                     for key in list(kwargs.keys()):
                         if kwargs[key] in [None, "None", "", 0, []]:
                             del kwargs[key]
-                    try:
-                        results = extras.run_modelmerger(dummy_component, **kwargs)
-                    except Exception as e:
-                        modules.errors.display(e, 'model merge')
-                        sd_models.list_models()  # to remove the potentially missing models from the list
-                        return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)],
-                                f"Error merging checkpoints: {e}"]
-                    return results
+                    del kwargs['dummy_component']
+                    if kwargs.get("custom_name", None) is None:
+                        log.error('Merge: no output model specified')
+                        return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)], "No output model specified"]
+                    elif kwargs.get("primary_model_name", None) is None or kwargs.get("secondary_model_name", None) is None:
+                        log.error('Merge: no models selected')
+                        return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)], "No models selected"]
+                    else:
+                        log.debug(f'Merge start: {kwargs}')
+                        try:
+                            results = extras.run_modelmerger(dummy_component, **kwargs)
+                        except Exception as e:
+                            modules.errors.display(e, 'Merge')
+                            sd_models.list_models()  # to remove the potentially missing models from the list
+                            return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)], f"Error merging checkpoints: {e}"]
+                        return results
 
                 def tertiary(mode):
                     if mode in TRIPLE_METHODS:
@@ -262,7 +273,7 @@ def create_ui():
                         preset = interpolate(presets, ratio)
                     else:
                         preset = presets[0]
-                    preset = ['%.3f' % x if int(x) != x else str(x) for x in preset]
+                    preset = ['%.3f' % x if int(x) != x else str(x) for x in preset] # pylint: disable=consider-using-f-string
                     preset = [preset[0], ",".join(preset[1:13]), preset[13], ",".join(preset[14:])]
                     return [gr.update(value=x) for x in preset] + [gr.update(selected=2)]
 
@@ -291,6 +302,7 @@ def create_ui():
                     _js='modelmerger',
                     inputs=[
                         dummy_component,
+                        overwrite,
                         primary_model_name,
                         secondary_model_name,
                         tertiary_model_name,

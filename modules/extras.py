@@ -1,6 +1,7 @@
 import os
 import html
 import json
+import time
 import shutil
 
 import torch
@@ -54,6 +55,7 @@ def to_half(tensor, enable):
 
 def run_modelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
     shared.state.begin('merge')
+    t0 = time.time()
 
     def fail(message):
         shared.state.textinfo = message
@@ -81,43 +83,39 @@ def run_modelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
         kwargs["models"] |= {"model_c": sd_models.get_closet_checkpoint_match(kwargs.get("tertiary_model_name", None)).filename}
         del kwargs["tertiary_model_name"]
 
-    try:
-        alpha = [float(x) for x in
-                 [kwargs["alpha_base"]] + kwargs["alpha_in_blocks"].split(",") + [kwargs["alpha_mid_block"]] + kwargs[
-                     "alpha_out_blocks"].split(",")]
-        assert len(alpha) == 26 or len(alpha) == 20, "Alpha Block Weights are wrong length (26 or 20 for SDXL) falling back"
-        kwargs["alpha"] = alpha
-    except KeyError as ke:
-        shared.log.warn(f"Merge: Malformed manual block weight at {ke} falling back")
+    if hasattr(kwargs, "alpha_base") and hasattr(kwargs, "alpha_in_blocks") and hasattr(kwargs, "alpha_mid_block") and hasattr(kwargs, "alpha_out_blocks"):
+        try:
+            alpha = [float(x) for x in
+                    [kwargs["alpha_base"]] + kwargs["alpha_in_blocks"].split(",") + [kwargs["alpha_mid_block"]] + kwargs["alpha_out_blocks"].split(",")]
+            assert len(alpha) == 26 or len(alpha) == 20, "Alpha Block Weights are wrong length (26 or 20 for SDXL) falling back"
+            kwargs["alpha"] = alpha
+        except KeyError as ke:
+            shared.log.warning(f"Merge: Malformed manual block weight: {ke}")
+    elif hasattr(kwargs, "alpha_preset") or hasattr(kwargs, "alpha"):
         kwargs["alpha"] = kwargs.get("alpha_preset", kwargs["alpha"])
-    except AssertionError as e:
-        shared.log.warn(f"Merge: {e}")
-        kwargs["alpha"] = kwargs.get("alpha_preset", kwargs["alpha"])
-    finally:
-        kwargs.pop("alpha_base", None)
-        kwargs.pop("alpha_in_blocks", None)
-        kwargs.pop("alpha_mid_block", None)
-        kwargs.pop("alpha_out_blocks", None)
-        kwargs.pop("alpha_preset", None)
 
-    if kwargs.get("beta", False):
+    kwargs.pop("alpha_base", None)
+    kwargs.pop("alpha_in_blocks", None)
+    kwargs.pop("alpha_mid_block", None)
+    kwargs.pop("alpha_out_blocks", None)
+    kwargs.pop("alpha_preset", None)
+
+    if hasattr(kwargs, "beta_base") and hasattr(kwargs, "beta_in_blocks") and hasattr(kwargs, "beta_mid_block") and hasattr(kwargs, "beta_out_blocks"):
         try:
             beta = [float(x) for x in
                     [kwargs["beta_base"]] + kwargs["beta_in_blocks"].split(",") + [kwargs["beta_mid_block"]] + kwargs["beta_out_blocks"].split(",")]
             assert len(beta) == 26 or len(beta) == 20, "Beta Block Weights are wrong length (26 or 20 for SDXL) falling back"
             kwargs["beta"] = beta
         except KeyError as ke:
-            shared.log.warn(f"Merge: Malformed manual block weight at {ke} falling back")
-            kwargs["beta"] = kwargs.get("beta_preset", kwargs["beta"])
-        except AssertionError as e:
-            shared.log.warn(f"Merge: {e}")
-            kwargs["beta"] = kwargs.get("beta_preset", kwargs["beta"])
-        finally:
-            kwargs.pop("beta_base", None)
-            kwargs.pop("beta_in_blocks", None)
-            kwargs.pop("beta_mid_block", None)
-            kwargs.pop("beta_out_blocks", None)
-            kwargs.pop("beta_preset", None)
+            shared.log.warning(f"Merge: Malformed manual block weight: {ke}")
+    elif hasattr(kwargs, "beta_preset") or hasattr(kwargs, "beta"):
+        kwargs["beta"] = kwargs.get("beta_preset", kwargs["beta"])
+
+    kwargs.pop("beta_base", None)
+    kwargs.pop("beta_in_blocks", None)
+    kwargs.pop("beta_mid_block", None)
+    kwargs.pop("beta_out_blocks", None)
+    kwargs.pop("beta_preset", None)
 
     if kwargs["device"] == "gpu":
         kwargs["device"] = devices.device
@@ -141,8 +139,8 @@ def run_modelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
 
     bake_in_vae_filename = sd_vae.vae_dict.get(kwargs.get("bake_in_vae", None), None)
     if bake_in_vae_filename is not None:
-        shared.log.info(f"Merge: baking in VAE: {bake_in_vae_filename}")
-        shared.state.textinfo = 'Baking in VAE'
+        shared.log.info(f"Merge VAE='{bake_in_vae_filename}'")
+        shared.state.textinfo = 'Merge VAE'
         vae_dict = sd_vae.load_vae_dict(bake_in_vae_filename)
         for key in vae_dict.keys():
             theta_0_key = 'first_stage_model.' + key
@@ -154,7 +152,7 @@ def run_modelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
     filename = kwargs.get("custom_name", "Unnamed_Merge")
     filename += "." + kwargs.get("checkpoint_format", None)
     output_modelname = os.path.join(ckpt_dir, filename)
-    shared.state.textinfo = "Saving"
+    shared.state.textinfo = "merge saving"
     metadata = None
     if kwargs.get("save_metadata", False):
         metadata = {"format": "pt", "sd_merge_models": {}}
@@ -189,23 +187,22 @@ def run_modelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
 
     _, extension = os.path.splitext(output_modelname)
 
-
+    if os.path.exists(output_modelname) and not kwargs.get("overwrite", False):
+        return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)], f"Model alredy exists: {output_modelname}"]
     if extension.lower() == ".safetensors":
         safetensors.torch.save_file(theta_0, output_modelname, metadata=metadata)
     else:
         torch.save(theta_0, output_modelname)
 
+    t1 = time.time()
+    shared.log.info(f"Merge complete: saved='{output_modelname}' time={t1-t0:.2f}")
     sd_models.list_models()
     created_model = next((ckpt for ckpt in sd_models.checkpoints_list.values() if ckpt.name == filename), None)
     if created_model:
         created_model.calculate_shorthash()
-    if kwargs["device"].type != "cpu":
-        devices.torch_gc(force=True)
-    shared.log.info(f"Merge saved: {output_modelname}.")
-    shared.state.textinfo = "Checkpoint saved"
+    devices.torch_gc(force=True)
     shared.state.end()
-    return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)],
-            "Checkpoint saved to " + output_modelname]
+    return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)], f"Model saved to {output_modelname}"]
 
 
 def run_modelconvert(model, checkpoint_formats, precision, conv_type, custom_name, unet_conv, text_encoder_conv,

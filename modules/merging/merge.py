@@ -5,10 +5,9 @@ from typing import Dict, Optional, Tuple
 import safetensors.torch
 import torch
 from tensordict import TensorDict
-from tqdm import tqdm
 import modules.memstats
 import modules.devices as devices
-from modules.shared import log
+from modules.shared import log, console
 from modules.sd_models import read_state_dict
 from modules.merging import merge_methods
 from modules.merging.merge_utils import WeightClass
@@ -69,7 +68,7 @@ def restore_sd_model(original_model: Dict, merged_model: Dict) -> Dict:
 
 
 def log_vram(txt=""):
-    log.debug(f"{txt} VRAM: {modules.memstats.memory_stats()}")
+    log.debug(f"Merge {txt}: {modules.memstats.memory_stats()}")
 
 
 def load_thetas(
@@ -78,7 +77,6 @@ def load_thetas(
     device: torch.device,
     precision: str,
 ) -> Dict:
-    log_vram("before loading models")
     if prune:
         thetas = {k: prune_sd_model(TensorDict.from_dict(read_state_dict(m, "cpu"))) for k, m in models.items()}
     else:
@@ -104,13 +102,11 @@ def merge_models(
     device: torch.device = None,
     work_device: torch.device = None,
     prune: bool = False,
-    threads: int = 1,
+    threads: int = 4,
     **kwargs,
 ) -> Dict:
-    iterations = kwargs.get("re_basin_iterations", 1)
     thetas = load_thetas(models, prune, device, precision)
-
-    log.info(f"start merging with {merge_mode} method")
+    # log.info(f'Merge start: models={models.values()} precision={precision} clip={weights_clip} rebasin={re_basin} prune={prune} threads={threads}')
     weight_matcher = WeightClass(thetas["model_a"], **kwargs)
     if re_basin:
         merged = rebasin_merge(
@@ -119,7 +115,7 @@ def merge_models(
             merge_mode,
             precision=precision,
             weights_clip=weights_clip,
-            iterations=iterations,
+            iterations=kwargs.get("re_basin_iterations", 1),
             device=device,
             work_device=work_device,
             threads=threads,
@@ -148,10 +144,9 @@ def un_prune_model(
     precision: str,
 ) -> Dict:
     if prune:
-        log.info("Un-pruning merged model")
+        log.info("Merge restoring pruned keys")
         del thetas
-        devices.torch_gc(force=True)
-        log_vram("remove thetas")
+        devices.torch_gc(force=False)
         original_a = TensorDict.from_dict(read_state_dict(models["model_a"], device))
         unpruned = 0
         for key in original_a.keys():
@@ -163,10 +158,9 @@ def un_prune_model(
                 if precision == "fp16":
                     merged.update({key: merged[key].half()})
         if unpruned > 248:  # VAE has 248 keys, and we are purposely restoring it here
-            log.info(f"Merge: {unpruned - 248} unmerged keys restored from Primary Model")
+            log.debug(f"Merge restored from primary model: keys={unpruned - 248}")
         unpruned = 0
         del original_a
-        devices.torch_gc(force=True)
         original_b = TensorDict.from_dict(read_state_dict(models["model_b"], device))
         for key in original_b.keys():
             if KEY_POSITION_IDS in key:
@@ -177,8 +171,9 @@ def un_prune_model(
                 if precision == "fp16":
                     merged.update({key: merged[key].half()})
         if unpruned != 0:
-            log.info(f"Merge: {unpruned} unmerged keys restored from Secondary Model")
+            log.debug(f"Merge restored from secondary model: keys={unpruned}")
         del original_b
+        devices.torch_gc(force=False)
 
     return fix_clip(merged)
 
@@ -191,15 +186,19 @@ def simple_merge(
     weights_clip: bool = False,
     device: torch.device = None,
     work_device: torch.device = None,
-    threads: int = 1,
+    threads: int = 4,
 ) -> Dict:
     futures = []
-    with tqdm(thetas["model_a"].keys(), desc="stage 1") as progress:
+    # with tqdm(thetas["model_a"].keys(), desc="Merge") as progress:
+    import rich.progress as p
+    with p.Progress(p.TextColumn('[cyan]{task.description}'), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TextColumn('[cyan]keys={task.fields[keys]}'), console=console) as progress:
+        task = progress.add_task(description="Merging", total=len(thetas["model_a"].keys()), keys=len(thetas["model_a"].keys()))
         with ThreadPoolExecutor(max_workers=threads) as executor:
             for key in thetas["model_a"].keys():
                 future = executor.submit(
                     simple_merge_key,
                     progress,
+                    task,
                     key,
                     thetas,
                     weight_matcher,
@@ -214,17 +213,15 @@ def simple_merge(
         for res in futures:
             res.result()
 
-    log_vram("after stage 1")
-
-    for key in tqdm(thetas["model_b"].keys(), desc="stage 2"):
-        if KEY_POSITION_IDS in key:
-            continue
-        if "model" in key and key not in thetas["model_a"].keys():
-            thetas["model_a"].update({key: thetas["model_b"][key]})
-            if precision == "fp16":
-                thetas["model_a"].update({key: thetas["model_a"][key].half()})
-
-    log_vram("after stage 2")
+    if len(thetas["model_b"]) > 0:
+        log.debug(f'Merge update thetas: keys={len(thetas["model_b"])}')
+        for key in thetas["model_b"].keys():
+            if KEY_POSITION_IDS in key:
+                continue
+            if "model" in key and key not in thetas["model_a"].keys():
+                thetas["model_a"].update({key: thetas["model_b"][key]})
+                if precision == "fp16":
+                    thetas["model_a"].update({key: thetas["model_a"][key].half()})
 
     return fix_clip(thetas["model_a"])
 
@@ -240,13 +237,12 @@ def rebasin_merge(
     work_device: torch.device = None,
     threads: int = 1,
 ):
-    # WARNING: not sure how this does when 3 models are involved...
-
+    # not sure how this does when 3 models are involved...
     model_a = thetas["model_a"].clone()
     perm_spec = sdunet_permutation_spec()
 
     for it in range(iterations):
-        log_vram(f"Rebasin iteration {it}")
+        log_vram(f"rebasin: iteration={it}")
         weight_matcher.set_it(it)
 
         # normal block merge we already know and love
@@ -261,8 +257,6 @@ def rebasin_merge(
             threads,
         )
 
-        log_vram("simple merge done")
-
         # find permutations
         perm_1, y = weight_matching(
             perm_spec,
@@ -273,12 +267,7 @@ def rebasin_merge(
             usefp16=precision == "fp16",
             device=device,
         )
-
-        log_vram("weight matching #1 done")
-
         thetas["model_a"] = apply_permutation(perm_spec, perm_1, thetas["model_a"])
-
-        log_vram("apply perm 1 done")
 
         perm_2, z = weight_matching(
             perm_spec,
@@ -290,16 +279,12 @@ def rebasin_merge(
             device=device,
         )
 
-        log_vram("weight matching #2 done")
-
         new_alpha = torch.nn.functional.normalize(
             torch.sigmoid(torch.Tensor([y, z])), p=1, dim=0
         ).tolist()[0]
         thetas["model_a"] = update_model_a(
             perm_spec, perm_2, thetas["model_a"], new_alpha
         )
-
-        log_vram("model a updated")
 
     if weights_clip:
         clip_thetas = thetas.copy()
@@ -309,12 +294,11 @@ def rebasin_merge(
     return thetas["model_a"]
 
 
-def simple_merge_key(progress, key, thetas, *args, **kwargs):
+def simple_merge_key(progress, task, key, thetas, *args, **kwargs):
     with merge_key_context(key, thetas, *args, **kwargs) as result:
         if result is not None:
             thetas["model_a"].update({key: result.detach().clone()})
-
-        progress.update()
+    progress.update(task, advance=1)
 
 
 def merge_key(  # pylint: disable=inconsistent-return-statements
@@ -407,7 +391,7 @@ def get_merge_method_args(
 
 
 def save_model(model, output_file, file_format) -> None:
-    log.info(f"Saving {output_file}")
+    log.info(f"Merge saving: model='{output_file}'")
     if file_format == "safetensors":
         safetensors.torch.save_file(
             model if type(model) == dict else model.to_dict(),

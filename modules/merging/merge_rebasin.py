@@ -2228,7 +2228,7 @@ def inner_matching(
     if newL - oldL != 0:
         linear_sum += abs((newL - oldL).item())
         number += 1
-        log.info(f" permutation {p}: {newL - oldL}")
+        log.debug(f"Merge Rebasin permutation: {p}={newL-oldL}")
 
     progress = progress or newL > oldL + 1e-12
 
@@ -2262,12 +2262,11 @@ def weight_matching(
     number = 0
 
     special_layers = ["P_bg324", "P_bg358", "P_bg337"]
-    for _ in range(max_iter):
+    for _i in range(max_iter):
         progress = False
         shuffle(special_layers)
         for p in special_layers:
             n = perm_sizes[p]
-
             linear_sum, number, perm, progress = inner_matching(
                 n,
                 ps,
@@ -2281,6 +2280,7 @@ def weight_matching(
                 perm,
                 device,
             )
+        progress = True
         if not progress:
             break
 
