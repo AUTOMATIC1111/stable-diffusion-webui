@@ -194,7 +194,7 @@ def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_na
         for input_data in args:
             if isinstance(input_data, torch.SymInt):
                 input_types.append(torch.SymInt)
-                input_shapes.append([1])
+                input_shapes.append(1)
             else:
                 input_types.append(input_data.type())
                 input_shapes.append(input_data.size())
