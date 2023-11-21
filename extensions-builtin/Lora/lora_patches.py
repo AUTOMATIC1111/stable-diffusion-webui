@@ -2,6 +2,7 @@ import torch
 import networks
 from modules import patches, shared
 
+
 class LoraPatches:
     def __init__(self):
         self.active = False
