@@ -515,8 +515,8 @@ def check_torch():
     if opts.get('cuda_compile_backend', '') == 'hidet':
         install('hidet', 'hidet')
     if args.use_openvino or opts.get('cuda_compile_backend', '') == 'openvino_fx':
-        uninstall('openvino')
-        install('openvino-nightly==2023.2.0.dev20231102', 'openvino-nightly')
+        uninstall('openvino-nightly') # TODO remove after people had enough time upgrading
+        install('openvino==2023.2.0', 'openvino')
         install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True) # TODO numpy version conflicts with tensorflow and doesn't support Python 3.11
         os.environ.setdefault('PYTORCH_TRACING_MODE', 'TORCHFX')
         os.environ.setdefault('NEOReadDebugKeys', '1')
