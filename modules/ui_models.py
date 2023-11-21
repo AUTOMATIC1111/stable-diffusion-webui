@@ -7,7 +7,7 @@ from modules import sd_models, sd_vae, extras
 from modules.ui_components import FormRow, ToolButton
 from modules.ui_common import create_refresh_button
 from modules.call_queue import wrap_gradio_gpu_call
-from modules.shared import opts, log, req
+from modules.shared import opts, log, req, readfile
 import modules.errors
 import modules.hashes
 from modules.merging import merge_methods
@@ -35,17 +35,14 @@ def create_ui():
             with gr.Tab(label="Convert"):
                 with gr.Row():
                     model_name = gr.Dropdown(sd_models.checkpoint_tiles(), label="Original model")
-                    create_refresh_button(model_name, sd_models.list_models,
-                                          lambda: {"choices": sd_models.checkpoint_tiles()}, "refresh_checkpoint_Z")
+                    create_refresh_button(model_name, sd_models.list_models, lambda: {"choices": sd_models.checkpoint_tiles()}, "refresh_checkpoint_Z")
                 with gr.Row():
                     custom_name = gr.Textbox(label="Output model name")
                 with gr.Row():
                     precision = gr.Radio(choices=["fp32", "fp16", "bf16"], value="fp16", label="Model precision")
-                    m_type = gr.Radio(choices=["disabled", "no-ema", "ema-only"], value="disabled",
-                                      label="Model pruning methods")
+                    m_type = gr.Radio(choices=["disabled", "no-ema", "ema-only"], value="disabled", label="Model pruning methods")
                 with gr.Row():
-                    checkpoint_formats = gr.CheckboxGroup(choices=["ckpt", "safetensors"], value=["safetensors"],
-                                                          label="Model Format")
+                    checkpoint_formats = gr.CheckboxGroup(choices=["ckpt", "safetensors"], value=["safetensors"], label="Model Format")
                 with gr.Row():
                     show_extra_options = gr.Checkbox(label="Show extra options", value=False)
                     fix_clip = gr.Checkbox(label="Fix clip", value=False)
@@ -83,31 +80,21 @@ def create_ui():
                         with FormRow():
                             custom_name = gr.Textbox(label="New model name")
                         with FormRow():
-                            merge_mode = gr.Dropdown(choices=merge_methods.__all__, value="weighted_sum",
-                                                     label="Interpolation Method")
-                            merge_mode_docs = gr.HTML(
-                                value=getattr(merge_methods, "weighted_sum").__doc__.replace("\n", "<br>"))
+                            merge_mode = gr.Dropdown(choices=merge_methods.__all__, value="weighted_sum", label="Interpolation Method")
+                            merge_mode_docs = gr.HTML(value=getattr(merge_methods, "weighted_sum").__doc__.replace("\n", "<br>"))
                         with FormRow():
                             primary_model_name = gr.Dropdown(sd_model_choices(), label="Primary model", value="None")
-                            create_refresh_button(primary_model_name, sd_models.list_models,
-                                                  lambda: {"choices": sd_model_choices()}, "refresh_checkpoint_A")
-                            secondary_model_name = gr.Dropdown(sd_model_choices(), label="Secondary model",
-                                                               value="None")
-                            create_refresh_button(secondary_model_name, sd_models.list_models,
-                                                  lambda: {"choices": sd_model_choices()}, "refresh_checkpoint_B")
-                            tertiary_model_name = gr.Dropdown(sd_model_choices(), label="Tertiary model", value="None",
-                                                              visible=False)
-                            tertiary_refresh = create_refresh_button(tertiary_model_name, sd_models.list_models,
-                                                                     lambda: {"choices": sd_model_choices()},
-                                                                     "refresh_checkpoint_C", visible=False)
+                            create_refresh_button(primary_model_name, sd_models.list_models, lambda: {"choices": sd_model_choices()}, "refresh_checkpoint_A")
+                            secondary_model_name = gr.Dropdown(sd_model_choices(), label="Secondary model", value="None")
+                            create_refresh_button(secondary_model_name, sd_models.list_models, lambda: {"choices": sd_model_choices()}, "refresh_checkpoint_B")
+                            tertiary_model_name = gr.Dropdown(sd_model_choices(), label="Tertiary model", value="None", visible=False)
+                            tertiary_refresh = create_refresh_button(tertiary_model_name, sd_models.list_models, lambda: {"choices": sd_model_choices()}, "refresh_checkpoint_C", visible=False)
                         with FormRow():
                             with gr.Tabs() as tabs:
                                 with gr.TabItem(label="Simple Merge", id=0):
                                     with FormRow():
-                                        alpha = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Alpha Ratio',
-                                                          value=0.5)
-                                        beta = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Beta Ratio',
-                                                         value=None, visible=False)
+                                        alpha = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Alpha Ratio', value=0.5)
+                                        beta = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Beta Ratio', value=None, visible=False)
                                 with gr.TabItem(label="Preset Block Merge", id=1):
                                     with FormRow():
                                         sdxl = gr.Checkbox(label="SDXL")
@@ -115,18 +102,11 @@ def create_ui():
                                         alpha_preset = gr.Dropdown(
                                             choices=["None"] + list(BLOCK_WEIGHTS_PRESETS.keys()), value=None,
                                             label="ALPHA Block Weight Preset", multiselect=True, max_choices=2)
-                                        alpha_preset_lambda = gr.Slider(minimum=0.0, maximum=1.0, step=0.05,
-                                                                        label='Preset Interpolation Ratio', value=None,
-                                                                        visible=False)
+                                        alpha_preset_lambda = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Preset Interpolation Ratio', value=None, visible=False)
                                         apply_preset = ToolButton('⇨', visible=True)
                                     with FormRow():
-                                        beta_preset = gr.Dropdown(choices=["None"] + list(BLOCK_WEIGHTS_PRESETS.keys()),
-                                                                  value=None, label="BETA Block Weight Preset",
-                                                                  multiselect=True, max_choices=2, interactive=True,
-                                                                  visible=False)
-                                        beta_preset_lambda = gr.Slider(minimum=0.0, maximum=1.0, step=0.05,
-                                                                       label='Preset Interpolation Ratio', value=None,
-                                                                       interactive=True, visible=False)
+                                        beta_preset = gr.Dropdown(choices=["None"] + list(BLOCK_WEIGHTS_PRESETS.keys()), value=None, label="BETA Block Weight Preset", multiselect=True, max_choices=2, interactive=True, visible=False)
+                                        beta_preset_lambda = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Preset Interpolation Ratio', value=None, interactive=True, visible=False)
                                         beta_apply_preset = ToolButton('⇨', interactive=True, visible=False)
                                 with gr.TabItem(label="Manual Block Merge", id=2):
                                     with FormRow():
@@ -134,20 +114,15 @@ def create_ui():
                                     with FormRow():
                                         alpha_base = gr.Textbox(value=None, label="Base", min_width=70, scale=1)
                                         alpha_in_blocks = gr.Textbox(value=None, label="In Blocks", scale=15)
-                                        alpha_mid_block = gr.Textbox(value=None, label="Mid Block", min_width=80,
-                                                                     scale=1)
+                                        alpha_mid_block = gr.Textbox(value=None, label="Mid Block", min_width=80, scale=1)
                                         alpha_out_blocks = gr.Textbox(value=None, label="Out Block", scale=15)
                                     with FormRow():
                                         beta_label = gr.Markdown("# Beta", visible=False)
                                     with FormRow():
-                                        beta_base = gr.Textbox(value=None, label="Base", min_width=70, scale=1,
-                                                               interactive=True, visible=False)
-                                        beta_in_blocks = gr.Textbox(value=None, label="In Blocks", interactive=True,
-                                                                    scale=15, visible=False)
-                                        beta_mid_block = gr.Textbox(value=None, label="Mid Block", min_width=80,
-                                                                    interactive=True, scale=1, visible=False)
-                                        beta_out_blocks = gr.Textbox(value=None, label="Out Block", interactive=True,
-                                                                     scale=15, visible=False)
+                                        beta_base = gr.Textbox(value=None, label="Base", min_width=70, scale=1, interactive=True, visible=False)
+                                        beta_in_blocks = gr.Textbox(value=None, label="In Blocks", interactive=True, scale=15, visible=False)
+                                        beta_mid_block = gr.Textbox(value=None, label="Mid Block", min_width=80, interactive=True, scale=1, visible=False)
+                                        beta_out_blocks = gr.Textbox(value=None, label="Out Block", interactive=True, scale=15, visible=False)
                         with FormRow():
                             overwrite = gr.Checkbox(label="Overwrite model")
                         with FormRow():
@@ -157,20 +132,16 @@ def create_ui():
                             prune = gr.Checkbox(label="Prune", value=True, visible=False)
                         with FormRow():
                             re_basin = gr.Checkbox(label="ReBasin")
-                            re_basin_iterations = gr.Slider(minimum=0, maximum=25, step=1,
-                                                            label='Number of ReBasin Iterations', value=None,
-                                                            visible=False)
+                            re_basin_iterations = gr.Slider(minimum=0, maximum=25, step=1, label='Number of ReBasin Iterations', value=None, visible=False)
                         with FormRow():
-                            checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="safetensors",
-                                                         visible=False, label="Model format")
+                            checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="safetensors", visible=False, label="Model format")
                         with FormRow():
                             precision = gr.Radio(choices=["fp16", "fp32"], value="fp16", label="Model precision")
                         with FormRow():
                             device = gr.Radio(choices=["cpu", "shuffle", "gpu"], value="cpu", label="Merge Device")
                             unload = gr.Checkbox(label="Unload Current Model from VRAM", value=False, visible=False)
                         with FormRow():
-                            bake_in_vae = gr.Dropdown(choices=["None"] + list(sd_vae.vae_dict), value="None",
-                                                      interactive=True, label="Replace VAE")
+                            bake_in_vae = gr.Dropdown(choices=["None"] + list(sd_vae.vae_dict), value="None", interactive=True, label="Replace VAE")
                             create_refresh_button(bake_in_vae, sd_vae.refresh_vae_list,
                                                   lambda: {"choices": ["None"] + list(sd_vae.vae_dict)},
                                                   "modelmerger_refresh_bake_in_vae")
@@ -288,14 +259,10 @@ def create_ui():
                 alpha_preset.change(fn=preset_visiblility, inputs=alpha_preset, outputs=alpha_preset_lambda)
                 beta_preset.change(fn=preset_visiblility, inputs=alpha_preset, outputs=beta_preset_lambda)
                 merge_mode.input(fn=tertiary, inputs=merge_mode, outputs=[tertiary_model_name, tertiary_refresh])
-                merge_mode.input(fn=beta_visibility, inputs=merge_mode,
-                                 outputs=[beta, alpha_label, beta_label, beta_apply_preset, beta_preset, beta_base,
-                                          beta_in_blocks, beta_mid_block, beta_out_blocks])
+                merge_mode.input(fn=beta_visibility, inputs=merge_mode, outputs=[beta, alpha_label, beta_label, beta_apply_preset, beta_preset, beta_base, beta_in_blocks, beta_mid_block, beta_out_blocks])
                 re_basin.change(fn=show_iters, inputs=re_basin, outputs=re_basin_iterations)
-                apply_preset.click(fn=load_presets, inputs=[alpha_preset, alpha_preset_lambda],
-                                   outputs=[alpha_base, alpha_in_blocks, alpha_mid_block, alpha_out_blocks, tabs])
-                beta_apply_preset.click(fn=load_presets, inputs=[beta_preset, beta_preset_lambda],
-                                        outputs=[beta_base, beta_in_blocks, beta_mid_block, beta_out_blocks, tabs])
+                apply_preset.click(fn=load_presets, inputs=[alpha_preset, alpha_preset_lambda], outputs=[alpha_base, alpha_in_blocks, alpha_mid_block, alpha_out_blocks, tabs])
+                beta_apply_preset.click(fn=load_presets, inputs=[beta_preset, beta_preset_lambda], outputs=[beta_base, beta_in_blocks, beta_mid_block, beta_out_blocks, tabs])
 
                 modelmerger_merge.click(
                     fn=wrap_gradio_gpu_call(modelmerger, extra_outputs=lambda: [gr.update() for _ in range(4)]),
@@ -393,20 +360,12 @@ def create_ui():
                 def hf_search(keyword):
                     import huggingface_hub as hf
                     hf_api = hf.HfApi()
-                    model_filter = hf.ModelFilter(
-                        model_name=keyword,
-                        # task='text-to-image',
-                        library=['diffusers'],
-                    )
-                    models = hf_api.list_models(filter=model_filter, full=True, limit=50, sort="downloads",
-                                                direction=-1)
+                    model_filter = hf.ModelFilter(model_name=keyword, library=['diffusers'])
+                    models = hf_api.list_models(filter=model_filter, full=True, limit=50, sort="downloads", direction=-1)
                     data.clear()
                     for model in models:
-                        tags = [t for t in model.tags if
-                                not t.startswith('diffusers') and not t.startswith('license') and not t.startswith(
-                                    'arxiv') and len(t) > 2]
-                        data.append([model.modelId, model.pipeline_tag, tags, model.downloads, model.lastModified,
-                                     f'https://huggingface.co/{model.modelId}'])
+                        tags = [t for t in model.tags if not t.startswith('diffusers') and not t.startswith('license') and not t.startswith('arxiv') and len(t) > 2]
+                        data.append([model.modelId, model.pipeline_tag, tags, model.downloads, model.lastModified, f'https://huggingface.co/{model.modelId}'])
                     return data
 
                 def hf_select(evt: gr.SelectData, data):
@@ -414,8 +373,7 @@ def create_ui():
 
                 def hf_download_model(hub_id: str, token, variant, revision, mirror, custom_pipeline):
                     from modules.modelloader import download_diffusers_model
-                    download_diffusers_model(hub_id, cache_dir=opts.diffusers_dir, token=token, variant=variant,
-                                             revision=revision, mirror=mirror, custom_pipeline=custom_pipeline)
+                    download_diffusers_model(hub_id, cache_dir=opts.diffusers_dir, token=token, variant=variant, revision=revision, mirror=mirror, custom_pipeline=custom_pipeline)
                     from modules.sd_models import list_models  # pylint: disable=W0621
                     list_models()
                     log.info(f'Diffuser model downloaded: model="{hub_id}"')
@@ -429,20 +387,15 @@ def create_ui():
                     with gr.Row():
                         with gr.Column(scale=2):
                             with gr.Row():
-                                hf_selected = gr.Textbox('', label='Select model',
-                                                         placeholder='select model from search results or enter model name manually')
+                                hf_selected = gr.Textbox('', label='Select model', placeholder='select model from search results or enter model name manually')
                         with gr.Column(scale=1):
                             with gr.Row():
-                                hf_variant = gr.Textbox(opts.cuda_dtype.lower(), label='Specify model variant',
-                                                        placeholder='')
+                                hf_variant = gr.Textbox(opts.cuda_dtype.lower(), label='Specify model variant', placeholder='')
                                 hf_revision = gr.Textbox('', label='Specify model revision', placeholder='')
                     with gr.Row():
-                        hf_token = gr.Textbox('', label='Huggingface token',
-                                              placeholder='optional access token for private or gated models')
-                        hf_mirror = gr.Textbox('', label='Huggingface mirror',
-                                               placeholder='optional mirror site for downloads')
-                        hf_custom_pipeline = gr.Textbox('', label='Custom pipeline',
-                                                        placeholder='optional pipeline for downloads')
+                        hf_token = gr.Textbox('', label='Huggingface token', placeholder='optional access token for private or gated models')
+                        hf_mirror = gr.Textbox('', label='Huggingface mirror', placeholder='optional mirror site for downloads')
+                        hf_custom_pipeline = gr.Textbox('', label='Custom pipeline', placeholder='optional pipeline for downloads')
                 with gr.Column(scale=1):
                     gr.HTML('<br>')
                     hf_download_model_btn = gr.Button(value="Download model", variant='primary')
@@ -450,16 +403,12 @@ def create_ui():
                 with gr.Row():
                     hf_headers = ['Name', 'Pipeline', 'Tags', 'Downloads', 'Updated', 'URL']
                     hf_types = ['str', 'str', 'str', 'number', 'date', 'markdown']
-                    hf_results = gr.DataFrame(None, label='Search results', show_label=True, interactive=False,
-                                              wrap=True, overflow_row_behaviour='paginate', max_rows=10,
-                                              headers=hf_headers, datatype=hf_types, type='array')
+                    hf_results = gr.DataFrame(None, label='Search results', show_label=True, interactive=False, wrap=True, overflow_row_behaviour='paginate', max_rows=10, headers=hf_headers, datatype=hf_types, type='array')
 
                 hf_search_text.submit(fn=hf_search, inputs=[hf_search_text], outputs=[hf_results])
                 hf_search_btn.click(fn=hf_search, inputs=[hf_search_text], outputs=[hf_results])
                 hf_results.select(fn=hf_select, inputs=[hf_results], outputs=[hf_selected])
-                hf_download_model_btn.click(fn=hf_download_model,
-                                            inputs=[hf_selected, hf_token, hf_variant, hf_revision, hf_mirror,
-                                                    hf_custom_pipeline], outputs=[models_outcome])
+                hf_download_model_btn.click(fn=hf_download_model, inputs=[hf_selected, hf_token, hf_variant, hf_revision, hf_mirror, hf_custom_pipeline], outputs=[models_outcome])
 
             with gr.Tab(label="CivitAI"):
                 data = []
@@ -512,16 +461,9 @@ def create_ui():
                     for model in data:
                         if model['id'] == model_id:
                             for d in model['modelVersions']:
-                                if d.get('images') is not None and len(d['images']) > 0 and len(
-                                        d['images'][0]['url']) > 0:
+                                if d.get('images') is not None and len(d['images']) > 0 and len(d['images'][0]['url']) > 0:
                                     preview_img = d['images'][0]['url']
-                                data2.append([
-                                    d['id'],
-                                    d['modelId'],
-                                    d['name'],
-                                    d['baseModel'],
-                                    d['createdAt'],
-                                ])
+                                data2.append([d['id'], d['modelId'], d['name'], d['baseModel'], d['createdAt']])
                     log.debug(f'CivitAI select: model="{in_data[evt.index[0]]}" versions={len(data2)}')
                     return data2, None, preview_img
 
@@ -535,14 +477,8 @@ def create_ui():
                                 if variant['id'] == variant_id:
                                     for f in variant['files']:
                                         try:
-                                            if os.path.splitext(f['name'])[1].lower() in ['.safetensors', '.ckpt',
-                                                                                          '.pt', '.pth', '.bin']:
-                                                data3.append([
-                                                    f['name'],
-                                                    round(f['sizeKB']),
-                                                    json.dumps(f['metadata']),
-                                                    f['downloadUrl'],
-                                                ])
+                                            if os.path.splitext(f['name'])[1].lower() in ['.safetensors', '.ckpt', '.pt', '.pth', '.bin']:
+                                                data3.append([f['name'], round(f['sizeKB']), json.dumps(f['metadata']), f['downloadUrl']])
                                         except Exception:
                                             pass
                     log.debug(f'CivitAI select: model="{in_data[evt.index[0]]}" files={len(data3)}')
@@ -552,8 +488,7 @@ def create_ui():
                     log.debug(f'CivitAI select: variant={in_data[evt.index[0]]}')
                     return in_data[evt.index[0]][3], in_data[evt.index[0]][0], gr.update(interactive=True)
 
-                def civit_download_model(model_url: str, model_name: str, model_path: str, model_type: str,
-                                         image_url: str):
+                def civit_download_model(model_url: str, model_name: str, model_path: str, model_type: str, image_url: str):
                     if model_url is None or len(model_url) == 0:
                         return 'No model selected'
                     try:
@@ -580,14 +515,12 @@ def create_ui():
                             continue
                         for item in page.list_items():
                             meta = os.path.splitext(item['filename'])[0] + '.json'
-                            if ('card-no-preview.png' in item['preview'] or not os.path.isfile(
-                                    meta)) and os.path.isfile(item['filename']):
+                            if ('card-no-preview.png' in item['preview'] or not os.path.isfile(meta)) and os.path.isfile(item['filename']):
                                 sha = item.get('hash', None)
                                 found = False
                                 if sha is not None and len(sha) > 0:
                                     r = req(f'https://civitai.com/api/v1/model-versions/by-hash/{sha}')
-                                    log.debug(
-                                        f'CivitAI search: name="{item["name"]}" hash={sha} status={r.status_code}')
+                                    log.debug(f'CivitAI search: name="{item["name"]}" hash={sha} status={r.status_code}')
                                     if r.status_code == 200:
                                         d = r.json()
                                         res.append(download_civit_meta(item['filename'], d['modelId']))
@@ -599,12 +532,10 @@ def create_ui():
                                                 if 'error' not in img_res:
                                                     found = True
                                                     break
-                                if not found and civit_previews_rehash and os.stat(item['filename']).st_size < (
-                                        1024 * 1024 * 1024):
+                                if not found and civit_previews_rehash and os.stat(item['filename']).st_size < (1024 * 1024 * 1024):
                                     sha = modules.hashes.calculate_sha256(item['filename'], quiet=True)[:10]
                                     r = req(f'https://civitai.com/api/v1/model-versions/by-hash/{sha}')
-                                    log.debug(
-                                        f'CivitAI search: name="{item["name"]}" hash={sha} status={r.status_code}')
+                                    log.debug(f'CivitAI search: name="{item["name"]}" hash={sha} status={r.status_code}')
                                     if r.status_code == 200:
                                         d = r.json()
                                         res.append(download_civit_meta(item['filename'], d['modelId']))
@@ -623,8 +554,7 @@ def create_ui():
                 search_metadata_civit = civit_search_metadata
 
                 with gr.Row():
-                    gr.HTML(
-                        '<h2>Fetch information</h2>Fetches preview and metadata information for all models with missing information<br>Models with existing previews and information are not updated<br>')
+                    gr.HTML('<h2>Fetch information</h2>Fetches preview and metadata information for all models with missing information<br>Models with existing previews and information are not updated<br>')
                 with gr.Row():
                     civit_previews_btn = gr.Button(value="Start", variant='primary')
                 with gr.Row():
@@ -634,8 +564,7 @@ def create_ui():
                     gr.HTML('<h2>Search for models</h2>')
                 with gr.Row():
                     with gr.Column(scale=1):
-                        civit_model_type = gr.Dropdown(label='Model type', choices=['SD 1.5', 'SD XL', 'LoRA', 'Other'],
-                                                       value='LoRA')
+                        civit_model_type = gr.Dropdown(label='Model type', choices=['SD 1.5', 'SD XL', 'LoRA', 'Other'], value='LoRA')
                     with gr.Column(scale=15):
                         with gr.Row():
                             civit_search_text = gr.Textbox('', label='Search models', placeholder='keyword')
@@ -647,15 +576,11 @@ def create_ui():
                     gr.HTML('<h2>Download model</h2>')
                 with gr.Row():
                     civit_download_model_btn = gr.Button(value="Download", variant='primary')
-                    gr.HTML(
-                        '<span style="line-height: 2em">Select a model, model version and and model variant from the search results to download or enter model URL manually</span><br>')
+                    gr.HTML('<span style="line-height: 2em">Select a model, model version and and model variant from the search results to download or enter model URL manually</span><br>')
                 with gr.Row():
-                    civit_name = gr.Textbox('', label='Model name', placeholder='select model from search results',
-                                            visible=True)
-                    civit_selected = gr.Textbox('', label='Model URL', placeholder='select model from search results',
-                                                visible=True)
-                    civit_path = gr.Textbox('', label='Download path',
-                                            placeholder='optional subfolder path where to save model', visible=True)
+                    civit_name = gr.Textbox('', label='Model name', placeholder='select model from search results', visible=True)
+                    civit_selected = gr.Textbox('', label='Model URL', placeholder='select model from search results', visible=True)
+                    civit_path = gr.Textbox('', label='Download path', placeholder='optional subfolder path where to save model', visible=True)
                 with gr.Row():
                     gr.HTML('<h2>Search results</h2>')
                 with gr.Row():
@@ -685,26 +610,108 @@ def create_ui():
                     visible = len(component) > 0 if component is not None else False
                     return gr.update(visible=visible)
 
-                civit_search_text.submit(fn=civit_search_model,
-                                         inputs=[civit_search_text, civit_search_tag, civit_model_type],
-                                         outputs=[civit_search_res, civit_results1, civit_results2, civit_results3])
-                civit_search_tag.submit(fn=civit_search_model,
-                                        inputs=[civit_search_text, civit_search_tag, civit_model_type],
-                                        outputs=[civit_search_res, civit_results1, civit_results2, civit_results3])
-                civit_search_btn.click(fn=civit_search_model,
-                                       inputs=[civit_search_text, civit_search_tag, civit_model_type],
-                                       outputs=[civit_search_res, civit_results1, civit_results2, civit_results3])
-                civit_results1.select(fn=civit_select1, inputs=[civit_results1],
-                                      outputs=[civit_results2, civit_results3, models_image])
+                civit_search_text.submit(fn=civit_search_model, inputs=[civit_search_text, civit_search_tag, civit_model_type], outputs=[civit_search_res, civit_results1, civit_results2, civit_results3])
+                civit_search_tag.submit(fn=civit_search_model, inputs=[civit_search_text, civit_search_tag, civit_model_type], outputs=[civit_search_res, civit_results1, civit_results2, civit_results3])
+                civit_search_btn.click(fn=civit_search_model, inputs=[civit_search_text, civit_search_tag, civit_model_type], outputs=[civit_search_res, civit_results1, civit_results2, civit_results3])
+                civit_results1.select(fn=civit_select1, inputs=[civit_results1], outputs=[civit_results2, civit_results3, models_image])
                 civit_results2.select(fn=civit_select2, inputs=[civit_results2], outputs=[civit_results3])
-                civit_results3.select(fn=civit_select3, inputs=[civit_results3],
-                                      outputs=[civit_selected, civit_name, civit_search_btn])
+                civit_results3.select(fn=civit_select3, inputs=[civit_results3], outputs=[civit_selected, civit_name, civit_search_btn])
                 civit_results1.change(fn=is_visible, inputs=[civit_results1], outputs=[civit_results1])
                 civit_results2.change(fn=is_visible, inputs=[civit_results2], outputs=[civit_results2])
                 civit_results3.change(fn=is_visible, inputs=[civit_results3], outputs=[civit_results3])
-                civit_download_model_btn.click(fn=civit_download_model,
-                                               inputs=[civit_selected, civit_name, civit_path, civit_model_type,
-                                                       models_image], outputs=[models_outcome])
-                civit_previews_btn.click(fn=civit_search_metadata,
-                                         inputs=[civit_previews_rehash, civit_previews_rehash],
-                                         outputs=[models_outcome])
+                civit_download_model_btn.click(fn=civit_download_model, inputs=[civit_selected, civit_name, civit_path, civit_model_type, models_image], outputs=[models_outcome])
+                civit_previews_btn.click(fn=civit_search_metadata, inputs=[civit_previews_rehash, civit_previews_rehash], outputs=[models_outcome])
+
+            with gr.Tab(label="Update"):
+                with gr.Row():
+                    gr.HTML('Fetch most recent information about all installed models<br>')
+                with gr.Row():
+                    civit_update_btn = gr.Button(value="Update", variant='primary')
+
+                with gr.Row():
+                    civit_headers4 = ['ID', 'File', 'Name', 'Versions', 'Current', 'Latest', 'Update available']
+                    civit_types4 = ['number', 'str', 'str', 'number', 'str', 'str', 'bool']
+                    civit_results4 = gr.DataFrame(value=None, label=None, show_label=False, interactive=False, wrap=True, overflow_row_behaviour='paginate', max_rows=100, headers=civit_headers4, datatype=civit_types4, type='array', visible=True)
+
+                with gr.Row():
+                    civit_update_download_btn = gr.Button(value="Download", variant='primary', visible=False)
+
+                class CivitModel:
+                    def __init__(self, name, fn, sha = None, meta = {}):
+                        self.name = name
+                        self.id = meta.get('id', 0)
+                        self.fn = fn
+                        self.sha = sha
+                        self.meta = meta
+                        self.versions = 0
+                        self.vername = ''
+                        self.latest = ''
+                        self.url = None
+                        self.status = False
+                    def array(self):
+                        return [self.id, self.fn, self.name, self.versions, self.vername, self.latest, self.status]
+
+                selected_model: CivitModel = None
+                update_data = []
+
+                def civit_update_metadata():
+                    nonlocal update_data
+                    log.debug('CivitAI update metadata: models')
+                    from modules.ui_extra_networks import get_pages
+                    from modules.modelloader import download_civit_meta
+                    res = []
+                    page: modules.ui_extra_networks.ExtraNetworksPage = get_pages('model')[0]
+                    table_data = []
+                    update_data.clear()
+                    for item in page.list_items():
+                        model = CivitModel(name=item['name'], fn=item['filename'], sha=item.get('hash', None), meta=item.get('metadata', {}))
+                        if model.sha is None or len(model.sha) == 0:
+                            res.append(f'CivitAI skip search: name="{model.name}" hash=None')
+                        else:
+                            r = req(f'https://civitai.com/api/v1/model-versions/by-hash/{model.sha}')
+                            res.append(f'CivitAI search: name="{model.name}" hash={model.sha} status={r.status_code}')
+                            if r.status_code == 200:
+                                d = r.json()
+                                model.id = d['modelId']
+                                download_civit_meta(model.fn, model.id)
+                                fn = os.path.splitext(item['filename'])[0] + '.json'
+                                model.meta = readfile(fn, silent=True)
+                                model.name = model.meta.get('name', model.name)
+                                model.versions = len(model.meta.get('modelVersions', []))
+                        versions = model.meta.get('modelVersions', [])
+                        if len(versions) > 0:
+                            model.latest = versions[0].get('name', '')
+                        for ver in versions:
+                            for f in ver.get('files', []):
+                                for h in f.get('hashes', {}).values():
+                                    if h[:8].upper() == model.sha[:8].upper():
+                                        model.vername = ver.get('name', '')
+                                        model.url = f.get('downloadUrl', None)
+                                        model.status = model.vername != model.latest
+                                        break
+                        log.debug(res[-1])
+                        update_data.append(model)
+                        table_data.append(model.array())
+                        yield gr.update(value=table_data), '<br>'.join([r for r in res if len(r) > 0])
+                    return '<br>'.join([r for r in res if len(r) > 0])
+
+                def civit_update_select(evt: gr.SelectData, in_data):
+                    nonlocal selected_model, update_data
+                    try:
+                        selected_model = [m for m in update_data if m.fn == in_data[evt.index[0]][1]][0]
+                    except:
+                        selected_model = None
+                    if selected_model is None or selected_model.url is None or not selected_model.status:
+                        return [gr.update(value='Model update not available'), gr.update(visible=False)]
+                    else:
+                        return [gr.update(), gr.update(visible=True)]
+
+                def civit_update_download():
+                    if selected_model is None or selected_model.url is None or not selected_model.status:
+                        return 'Model update not available'
+                    model_name = f'{selected_model.name} {selected_model.latest}'
+                    return civit_download_model(selected_model.url, model_name, model_path='', model_type='Model', image_url=None)
+
+                civit_update_btn.click(fn=civit_update_metadata, inputs=[], outputs=[civit_results4, models_outcome])
+                civit_results4.select(fn=civit_update_select, inputs=[civit_results4], outputs=[models_outcome, civit_update_download_btn])
+                civit_update_download_btn.click(fn=civit_update_download, inputs=[], outputs=[models_outcome])

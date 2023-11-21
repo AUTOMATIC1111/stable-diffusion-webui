@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-11-14
+## Update for 2023-11-21
 
 - **Diffusers**  
   - **LCM** support for any *SD 1.5* or *SD-XL* model!  
@@ -27,13 +27,18 @@
     Change-in-behavior: new line in prompt now means *BREAK*  
   - Add alternative Lora loading algorithm, triggered if `SD_LORA_DIFFUSERS` is set  
   - Update to `diffusers==0.23.0`  
-- **Model merge**
-  - completely redesigned, now based on best-of-class `meh` by @s1dlx  
-    and heavily modified for additional functionality and fully integrated by @AI-Casanova (thanks!)  
-  - merge SD or SD-XL models using *simple merge* (12 methods),  
-    using one of *presets* (20 built-in presets) or custom block merge values  
-  - merge with ReBasin permuatations and/or clipping protection  
-  - fully multithreaded for fastest merge possible  
+- **Models**
+  - **Model merge**
+    - completely redesigned, now based on best-of-class `meh` by @s1dlx  
+      and heavily modified for additional functionality and fully integrated by @AI-Casanova (thanks!)  
+    - merge SD or SD-XL models using *simple merge* (12 methods),  
+      using one of *presets* (20 built-in presets) or custom block merge values  
+    - merge with ReBasin permuatations and/or clipping protection  
+    - fully multithreaded for fastest merge possible  
+  - **Model update** *(experimental)*
+    - under UI -> Models - Update
+    - scan existing models for updated metadata on CivitAI and  
+      provide download functionality for models with available  
 - **Extra networks**  
   - Use multi-threading for 5x load speedup  
   - Better Lora trigger words support  
