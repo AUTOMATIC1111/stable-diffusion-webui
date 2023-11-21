@@ -41,7 +41,7 @@ from typing import List, Union, Dict, Set, Tuple
 """
 # NOTE: 2023.11.16
 """
-调整-{'原极简水彩': 'min_watercolor','国风插画': 'chinese_illustration','简约头像': 'simple_headshots ', 'JK服饰风格': 'jk',,"油画":'oil_paint'}
+调整-{'原极简水彩': 'min_watercolor','国风插画': 'chinese_illustration','简约头像': 'simple_headshots ', 'JK服饰风格': 'jk',"油画":'oil_paint'}
 """
 
 
@@ -120,21 +120,26 @@ def get_llul_args():
 
 
 def get_cn_args():
-    onepress_cn_args = {'control_mode': 'Balanced',
-                        'enabled': False,
-                        'guess_mode': False,
-                        'guidance_end': 1,
-                        'guidance_start': 0,
-                        'image': {'image': None, 'mask': None},
-                        'invert_image': False, 'low_vram': False, 'model': None, 'module': None,
-                        'pixel_perfect': True,
-                        'model': None,
-                        'module': None,
-                        'resize_mode': 'Scale to Fit (Inner Fit)',
-                        'processor_res': 512,
-                        'threshold_a': 1,
-                        'threshold_b': -1,
-                        'weight': 1}
+    onepress_cn_args = {
+        "control_mode": "Balanced",
+        "enabled": True,
+        "guess_mode": False,
+        "guidance_end": 1,
+        "guidance_start": 0,
+        "image": {"image": None, "mask": None},
+        "invert_image": False,
+        "isShowModel": True,
+        "low_vram": False,
+        "model": None,
+        "module": None,
+        "pixel_perfect": True,
+        "processor_res": 512,
+        "resize_mode": "Scale to Fit (Inner Fit)",
+        "tempMask": None,
+        "threshold_a": 1,
+        "threshold_b": -1,
+        "weight": 1
+    }
 
     return onepress_cn_args
 
@@ -231,11 +236,8 @@ class ConversionTask(Txt2ImgTask):
             image = Image.open(init_img_inpaint).convert('RGB')
             full_task.update(get_img2img_args(
                 t.prompt, image.width, image.height, t.image))
-            cn_args = get_cn_args()
-            cn_args['enabled'] = True
-            cn_args['module'] = 'scribble_pidinet'
-            cn_args['model'] = 'control_v11p_sd15_scribble [d4ba51ff]'
-            cn_args['image']['image'] = t.image
+            cn_args = change_cn_args(
+                'scribble_pidinet', 'control_v11p_sd15_scribble [d4ba51ff]', 1, t.image, 0, 1)
             full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
         else:
             init_img_inpaint = get_tmp_local_path(t.image)
@@ -243,48 +245,32 @@ class ConversionTask(Txt2ImgTask):
             full_task.update(get_txt2img_args(
                 t.prompt, image.width, image.height))
             if t.action == 'line':  # 线稿
-                cn_args = get_cn_args()
-                cn_args['enabled'] = True
-                cn_args['module'] = 'invert (from white bg & black line)'
-                cn_args['model'] = 'control_v11p_sd15_lineart [43d4be0d]'
-                cn_args['image']['image'] = t.image
+                cn_args = change_cn_args('invert (from white bg & black line)',
+                                         'control_v11p_sd15_lineart [43d4be0d]', 1, t.image, 0, 1)
                 full_task['alwayson_scripts']['ControlNet']['args'].append(
                     cn_args)
             elif t.action == 'black_white':  # 黑白
-                cn_args_1 = get_cn_args()
-                cn_args_1['enabled'] = True
-                cn_args_1['module'] = 'lineart_realistic'
-                cn_args_1['model'] = 'control_v11p_sd15_lineart [43d4be0d]'
-                cn_args_1['image']['image'] = t.image
-                cn_args_1['weight'] = 0.6
-                cn_args_2 = get_cn_args()
-                cn_args_2['enabled'] = True
-                cn_args_2['module'] = 'depth_zoe'
-                cn_args_2['model'] = 'diff_control_sd15_depth_fp16 [978ef0a1]'
-                cn_args_2['image']['image'] = t.image
-                cn_args_2['weight'] = 0.4
+                cn_args_1 = change_cn_args(
+                    'lineart_realistic', 'control_v11p_sd15_lineart [43d4be0d]', 0.6, t.image, 0, 1)
+                cn_args_2 = change_cn_args(
+                    'depth_zoe', 'diff_control_sd15_depth_fp16 [978ef0a1]', 0.4, t.image, 0, 1)
                 full_task['alwayson_scripts']['ControlNet']['args'].append(
                     cn_args_1)
                 full_task['alwayson_scripts']['ControlNet']['args'].append(
                     cn_args_2)
             elif t.action == 'sketch':  # 草图
-                cn_args = get_cn_args()
-                cn_args['enabled'] = True
-                cn_args['module'] = 'canny'
-                cn_args['model'] = 'control_v11p_sd15_canny [d14c016b]'
-                cn_args['image']['image'] = t.image
+                cn_args = change_cn_args(
+                    'canny', 'control_v11p_sd15_canny [d14c016b]', 1, t.image, 0, 1)
                 full_task['alwayson_scripts']['ControlNet']['args'].append(
                     cn_args)
             elif t.action == 'color':  # 色块
-                cn_args = get_cn_args()
-                cn_args['enabled'] = True
-                cn_args['module'] = 'tile_colorfix+sharp'
-                cn_args['model'] = 'control_v11f1e_sd15_tile [a371b31b]'
-                cn_args['image']['image'] = t.image
+                cn_args = change_cn_args(
+                    'tile_colorfix+sharp', 'control_v11f1e_sd15_tile [a371b31b]', 1, t.image, 0, 1)
                 full_task['alwayson_scripts']['ControlNet']['args'].append(
                     cn_args)
             else:
                 pass
+
         full_task['override_settings_texts'] = ["sd_vae:None"]
         return full_task, is_img2img, full_canny, part_canny
 
@@ -330,109 +316,25 @@ class RenditionTask(Txt2ImgTask):
             task.get('lora_models', None),
             task.get('roop', False),
             task.get('batch_size', 1))
+
+        extra_args = deepcopy(task['extra_args'])
+        task.pop("extra_args")
         full_task = deepcopy(task)
-
+        full_task.update(extra_args)
         # 图生图模式
-        is_img2img = False
-        if t.style in ['min_watercolor']:
-            is_img2img = True
-            full_task.update(get_img2img_args(
-                t.prompt, t.width, t.height, t.image))
-        else:
-            full_task.update(get_txt2img_args(t.prompt, t.width, t.height))
-
-        full_task['prompt'] = t.prompt
-        full_task['negative_prompt'] = ""
-        full_task['steps'] = 30
-        full_task['batch_size'] = t.batch_size
-        full_task['alwayson_scripts'] = {'ControlNet': {'args': []}}
-
-        if t.style in ['dazzle_color']:
-            full_task['negative_prompt'] = '(worst quality:2), (low quality:2), (normal quality:2), lowres, normal quality,M,nsfw,'
-            cn_args = change_cn_args(
-                'lineart_realistic', 'control_v11p_sd15_lineart [43d4be0d]', 1, t.image, 0, 0.5)
-            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
-            if t.style == 'dazzle_color':
-                full_task['steps'] = 36
-                full_task['cfg_scale'] = 7
-                full_task['negative_prompt'] = "worst quality,low quality,normal quality"
-        if t.style in ['landscape']:
-            full_task['negative_prompt'] = '(worst quality:2), (low quality:2), (normal quality:2), lowres, normal quality,M,nsfw,'
-            full_task['enable_hr'] = True
-            full_task['denoising_strength'] = 0.7
-            full_task['tiling'] = False
-            full_task['hr_scale'] = 2
-            full_task['hr_upscaler'] = 'ESRGAN_4x'
-            full_task['hr_second_pass_steps'] = 0
-            full_task['hr_resize_x'] = 0
-            full_task['hr_resize_y'] = 0
-
-        if t.style in ['min_watercolor']: # 图生图 重绘幅度
-            full_task['denoising_strength'] = 0.7
-
-        # sampler_name，默认DPM++ 2M SDE Karras
-        if t.style in ['qipao', 'simple_headshots', 'chinese_colorful']:
-            full_task['sampler_name'] = 'DPM++ SDE Karras'
-        if t.style in ['min_watercolor','oil_paint']:
-            full_task['sampler_name'] = 'Euler a'
-        if t.style in ['suits']:
-            full_task['sampler_name'] = 'DPM++ SDE'
-        if t.style in ['ukiyo']:
-            full_task['sampler_name'] = 'DPM++ 2S a Karras'
-
-        # cfg_scale，默认7
-        if t.style in ['qipao', 'oil_paint']:
-            full_task['cfg_scale'] = 4
-        if t.style in ['simple_headshots']:
-            full_task['cfg_scale'] = 4.5
-
-        # steps,默认为30
-        if t.style in ['min_watercolor', 'suits', 'jk', 'color_pencil', 'ukiyo']:
-            full_task['steps'] = 20
-        if t.style in ['chinese_hanfu']:
-            full_task['steps'] = 45
-        if t.style in ['simple_headshots']:
-            full_task['steps'] = 36
-
-        # vae，默认为None；负向的embeddings，默认为None
-        if t.style in ['qipao', 'suits']:
-            full_task['override_settings_texts'] = [
-                'sd_vae:vae-ft-mse-840000-ema-pruned.ckpt']
-        elif t.style in ['chinese_illustration', 'chinese_wedding', 'chinese_hanfu', 'wedding', 'color_pencil', 'ukiyo', 'chinese_colorful', 'art_illustration', 'spoof', 'illustration_headshots']:
-            full_task['override_settings_texts'] = ['sd_vae:sdxl_vae1.0']
-        else:
-            full_task['override_settings_texts'] = ['sd_vae:None']
-
-        # CN,默认为空
-        if t.style in ['chinese_wedding', 'chinese_hanfu', 'wedding']:
-            cn_args = change_cn_args(
-                'openpose', 'thibaud_xl_openpose', 1, t.image, 0, 1)
-            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
-        if t.style in ['qipao']:
-            cn_args = change_cn_args(
-                'softedge_pidinet', 'control_v11p_sd15_softedge', 1, t.image, 0, 1)  # qipao
-            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
-        if t.style in ['jk']:
-            cn_args = change_cn_args(
-                'dw_openpose_full', 'control_v11p_sd15_openpose', 1, t.image, 0, 1)  # jk
-            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
-        if t.style in ['suits']:
-            cn_args = change_cn_args(
-                'openpose_full', 'control_v11p_sd15_openpose', 1, t.image, 0, 1)  # suits
-            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
-        if t.style in ['min_watercolor','oil_paint']:
-            cn_args = change_cn_args(
-                'canny', 'control_v11p_sd15_canny', 1, t.image, 0, 1)  # min_watercolor.oil_paint
-            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
-        if t.style in ['chinese_illustration']:
-            cn_args = change_cn_args(
-                'dw_openpose_full', 'thibaud_xl_openpose_256lora', 1.5, t.image, 0, 1)  # chinese_illustration
-            full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
-
-        # Lora,
+        is_img2img = extra_args['rendition_is_img2img']
+        if is_img2img:
+            full_task['init_img']=t.image
+        #更新 controlnet的图片
+        if 'ControlNet' in full_task['alwayson_scripts']:
+            length=len(full_task['alwayson_scripts']['ControlNet']['args'])
+            for i in range(0,length):
+                full_task['alwayson_scripts']['ControlNet']['args'][i]['image']['image']=t.image
+        # Lora
         if full_task['lora_models'] == ['']:
             full_task['lora_models'] = None
-
+        if full_task['embeddings'] == ['']:
+            full_task['embeddings'] = None
         return full_task, is_img2img
 
     @classmethod
