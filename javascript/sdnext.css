@@ -9,7 +9,7 @@ tr { border-bottom: none !important; padding: 0.1em 0.5em !important; }
 textarea { overflow-y: auto !important; }
 
 /* gradio elements */
-.block .padded:not(.gradio-accordion) {padding: 0 !important;margin-right: 0;min-width: 90px !important;}
+.block .padded:not(.gradio-accordion) { padding: 0 !important; margin-right: 0; min-width: 90px !important; }
 .compact { gap: 1em 0.2em; background: transparent !important; padding: 0 !important; }
 .flex-break { flex-basis: 100% !important; }
 .form { border-width: 0; box-shadow: none; background: transparent; overflow: visible; gap: 0.5em 1em; flex-grow: 1 !important; }
@@ -27,12 +27,12 @@ textarea { overflow-y: auto !important; }
 .gradio-button.secondary-down:hover { background: var(--button-secondary-background-fill-hover); color: var(--button-secondary-text-color-hover); }
 .gradio-button.tool { max-width: min-content; min-width: min-content !important; align-self: end; font-size: 1.4em; color: var(--body-text-color) !important; margin-top: auto; margin-bottom: var(--spacing-md); align-self: center; }
 .gradio-checkbox { margin: 0.75em 1.5em 0 0; align-self: center; }
-.gradio-column {min-width: min(160px, 100%) !important;}
+.gradio-column { min-width: min(160px, 100%) !important; }
 .gradio-container { max-width: unset !important; padding: var(--block-label-padding) !important; }
 .gradio-container .prose a, .gradio-container .prose a:visited{ color: unset; text-decoration: none; }
 .gradio-dropdown { margin-right: var(--spacing-sm) !important; min-width:160px; max-width:fit-content }
-.gradio-dropdown ul.options {z-index: 1000;min-width: fit-content;max-height: 33vh !important;white-space: nowrap;}
-.gradio-dropdown ul.options li.item {padding: var(--spacing-xs);}
+.gradio-dropdown ul.options { z-index: 1000; min-width: fit-content; max-height: 33vh !important; white-space: nowrap; }
+.gradio-dropdown ul.options li.item { padding: var(--spacing-xs); }
 .gradio-dropdown ul.options li.item:not(:has(.hide)) { background-color: var(--primary-500); }
 .gradio-dropdown .token { padding: var(--spacing-xs); }
 .gradio-dropdown span { margin-bottom: 0 !important; font-size: 0.9em; }
@@ -48,8 +48,8 @@ textarea { overflow-y: auto !important; }
 
 /* custom gradio elements */
 .accordion-compact { padding: 8px 0px 4px 0px !important; }
-.settings-accordion > div {flex-flow: wrap;}
-.small-accordion .form {min-width: var(--left-column) !important;max-width: max-content;}
+.settings-accordion > div { flex-flow: wrap; }
+.small-accordion .form { min-width: var(--left-column) !important; max-width: max-content; }
 .small-accordion .label-wrap .icon { margin-right: 1.6em; margin-left: 0.6em; color: var(--button-primary-border-color); }
 .small-accordion .label-wrap { padding: 16px 0px 8px 0px; margin: 0; border-top: 2px solid var(--button-secondary-border-color); }
 .small-accordion { width: fit-content !important; padding-left: 0 !important; }
@@ -105,16 +105,16 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 #si-sparkline-memo, #si-sparkline-load { background-color: #111; }
 #quicksettings { width: fit-content; }
 #quicksettings > button { padding: 0 1em 0 0; align-self: end; margin-bottom: var(--text-sm); }
-#settings {display: flex;gap: var(--layout-gap);}
-#settings div {border: none;gap: 0;margin: 0 0 var(--layout-gap) 0px;padding: 0;}
-#settings > div.tab-content {flex: 10 0 75%;display: grid;}
+#settings { display: flex; gap: var(--layout-gap); }
+#settings div { border: none; gap: 0; margin: 0 0 var(--layout-gap) 0px; padding: 0; }
+#settings > div.tab-content { flex: 10 0 75%; display: grid; }
 #settings > div.tab-content > div { border: none; padding: 0; }
-#settings > div.tab-content > div > div > div > div > div {flex-direction: unset;}
-#settings > div.tab-nav {display: grid;grid-template-columns: repeat(auto-fill, .5em minmax(10em, 1fr));flex: 1 0 auto;width: 12em;align-self: flex-start;gap: var(--spacing-xxl);}
+#settings > div.tab-content > div > div > div > div > div { flex-direction: unset; }
+#settings > div.tab-nav { display: grid; grid-template-columns: repeat(auto-fill, .5em minmax(10em, 1fr)); flex: 1 0 auto; width: 12em; align-self: flex-start; gap: var(--spacing-xxl); }
 #settings > div.tab-nav button { display: block; border: none; text-align: left; white-space: initial; padding: 0; }
 #settings > div.tab-nav > #settings_show_all_pages { padding: var(--size-2) var(--size-4); }
 #settings .block.gradio-checkbox { margin: 0; width: auto; }
-#settings .dirtyable {gap: .5em;:;}
+#settings .dirtyable { gap: .5em; }
 #settings .dirtyable.hidden { display: none; }
 #settings .modification-indicator { height: 1.2em; border-radius: 1em !important; padding: 0; width: 0; margin-right: 0.5em; }
 #settings .modification-indicator:disabled { visibility: hidden; }
@@ -282,45 +282,6 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 
 /* Apply different styles for devices with coarse pointers dependant on screen resolution */
 @media (hover: none) and (pointer: coarse) {
-
-  /* Screens 400px and smaller */
-  @media (max-width: 399px) {
-    :root, .light, .dark { --left-column: 100%; }
-    /* maintain single column for from image operations on larger mobile devices */
-    #txt2img_results, #img2img_results, #extras_results { min-width: calc(min(320px, 100%)) !important;}
-    /* maintain single column for from image operations on larger mobile devices */
-    #img2img_settings, #img2img_results { min-width: 100% !important; max-width: 100% !important;}
-    /* fix inpaint image display being too large for mobile displays */
-    #img2img_sketch, #img2maskimg, #inpaint_sketch {display: flex;alignment-baseline:after-edge !important;overflow: auto !important;resize: none !important;}
-    #img2maskimg canvas { width: 100% !important; max-height: 100% !important; height: auto !important; }
-    
-    /* fix from text/image UI elements to prevent them from moving around within the UI */
-    #txt2img_sampler, #txt2img_batch, #txt2img_seed_group, #txt2img_advanced, #txt2img_second_pass, #img2img_sampling_group, #img2img_resize_group, #img2img_batch_group, #img2img_seed_group, #img2img_denoise_group, #img2img_advanced_group { width: 100% !important; }
-    
-    /* adjust slider input fields as they were too large for mobile devices. */
-    .gradio-slider input[type="number"] { width: 4em; font-size: 0.8rem; height: 16px; text-align: center; }
-    
-    /* Various interface elements default to row, this breaks UI placement on mobile. */
-    #component-886, #component-1915, #component-2018 div, #component-2044 div > div, #component-2087 div, #component-2091 div, #component-2140 div, #component-2144 div, #component-3435 div  { display:flex; flex-wrap: wrap; align-content:flex-start;  flex-direction: column; }
-    
-    /* move image preview/output to bottom of page */
-    #models_tab { flex-direction: column-reverse !important; }
-    #component-3464 div { display: flex; flex-direction: row; justify-content: flex-start; flex-wrap: wrap; }
-    #enqueue_keyboard_shortcut_modifiers, #enqueue_keyboard_shortcut_key div { max-width: 40% !important;}
-    #component-2906, #component-2953, #component-2957 {max-width: 85%;}
-    #settings > div.tab-nav {gap: var(--layout-gap);display: flex;flex-wrap: wrap;flex-direction: column;align-content: flex-start;align-items: flex-start;justify-content: flex-start;}
-    #settings { gap: var(--layout-gap); display: flex; flex-wrap: wrap; flex-direction: row; }
-    
-    /* enable scrolling on extensions tab */
-    #tab_extensions table, #tab_config table{ border-collapse: collapse; display: block; overflow-x:auto;}
-    
-    /* increase scrollbar size to make it finger friendly */
-    ::-webkit-scrollbar { width: 25px !important; height:25px; }
-    
-  }
-
-/* Apply different styles for devices with coarse pointers dependant on screen resolution */
-@media (hover: none) and (pointer: coarse) {
   
   /* Do not affect displays larger than 1024px wide.  */
   @media (max-width: 1024px) {
@@ -390,4 +351,5 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
     .gradio-slider input[type="number"] { width: 4em; font-size: 0.8rem; height: 16px; text-align: center; }
     #txt2img_settings .block .padded:not(.gradio-accordion) {padding: 0 !important;margin-right: 0; min-width: 100% !important; width:100% !important;}
   }  
+    
 }
