@@ -109,7 +109,7 @@ def parse_args():
     group_train.add_argument('--algo', type=str, default=None, choices=['locon', 'loha', 'lokr', 'ia3'], required=False, help='alternative lyco algoritm, default: %(default)s')
     group_train.add_argument('--args', type=str, default=None, required=False, help='lora/lyco additional network arguments, default: %(default)s')
     group_train.add_argument('--optimizer', type=str, default='AdamW', required=False, help='optimizer type, default: %(default)s')
-    group_train.add_argument('--precision', type=str, choices=['fp16', 'fp32'], default='fp16', required=True, help='training precision, default: %(default)s')
+    group_train.add_argument('--precision', type=str, choices=['fp16', 'fp32'], default='fp16', required=False, help='training precision, default: %(default)s')
     group_train.add_argument('--sdxl', default = False, action='store_true', help = "run sdxl training, default: %(default)s")
     # AdamW (default), AdamW8bit, PagedAdamW8bit, Lion8bit, PagedLion8bit, Lion, SGDNesterov, SGDNesterov8bit, DAdaptation(DAdaptAdamPreprint), DAdaptAdaGrad, DAdaptAdam, DAdaptAdan, DAdaptAdanIP, DAdaptLion, DAdaptSGD, AdaFactor
 
@@ -164,8 +164,13 @@ def verify_args():
         exit(1)
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if args.type == 'lora' and not server_ok and not args.dir:
-        log.error('offline lora training requires lora')
+        log.error('offline lora training requires --dir <lora folder>')
         exit(1)
+    if args.type == 'lora':
+        import transformers
+        if transformers.__version__ != '4.30.2':
+            log.error(f'lora training requires specific transformers version: current {transformers.__version__} required transformers==4.30.2')
+            exit(1)
     args.lora_dir = server_options.options.lora_dir or args.dir
     if not os.path.isabs(args.lora_dir):
         args.lora_dir = os.path.join(base_dir, args.lora_dir)

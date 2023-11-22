@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-11-21
+## Update for 2023-11-22
 
 - **Diffusers**  
   - **LCM** support for any *SD 1.5* or *SD-XL* model!  
@@ -35,8 +35,8 @@
       using one of *presets* (20 built-in presets) or custom block merge values  
     - merge with ReBasin permuatations and/or clipping protection  
     - fully multithreaded for fastest merge possible  
-  - **Model update** *(experimental)*
-    - under UI -> Models - Update
+  - **Model update**  
+    - under UI -> Models - Update  
     - scan existing models for updated metadata on CivitAI and  
       provide download functionality for models with available  
 - **Extra networks**  

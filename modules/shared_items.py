@@ -43,6 +43,7 @@ def get_pipelines():
         'Wuerstchen': getattr(diffusers, 'WuerstchenCombinedPipeline', None),
         'Kandinsky 2.1': getattr(diffusers, 'KandinskyPipeline', None),
         'Kandinsky 2.2': getattr(diffusers, 'KandinskyV22Pipeline', None),
+        # 'Kandinsky 3': getattr(diffusers, 'KandinskyV3Pipeline', None),
         'DeepFloyd IF': getattr(diffusers, 'IFPipeline', None),
         'Custom Diffusers Pipeline': getattr(diffusers, 'DiffusionPipeline', None),
         # Segmind SSD-1B, Segmind Tiny

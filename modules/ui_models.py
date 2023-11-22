@@ -627,12 +627,16 @@ def create_ui():
                     gr.HTML('Fetch most recent information about all installed models<br>')
                 with gr.Row():
                     civit_update_btn = gr.Button(value="Update", variant='primary')
-
                 with gr.Row():
-                    civit_headers4 = ['ID', 'File', 'Name', 'Versions', 'Current', 'Latest', 'Update available']
-                    civit_types4 = ['number', 'str', 'str', 'number', 'str', 'str', 'bool']
-                    civit_results4 = gr.DataFrame(value=None, label=None, show_label=False, interactive=False, wrap=True, overflow_row_behaviour='paginate', max_rows=100, headers=civit_headers4, datatype=civit_types4, type='array', visible=True)
-
+                    gr.HTML('<h2>Update scan results</h2>')
+                with gr.Row():
+                    civit_headers4 = ['ID', 'File', 'Name', 'Versions', 'Current', 'Latest', 'Update']
+                    civit_types4 = ['number', 'str', 'str', 'number', 'str', 'str', 'str']
+                    civit_widths4 = ['10%', '25%', '25%', '5%', '10%', '10%', '15%']
+                    civit_results4 = gr.DataFrame(value=None, label=None, show_label=False, interactive=False, wrap=True, overflow_row_behaviour='paginate',
+                                                  row_count=20, max_rows=100, headers=civit_headers4, datatype=civit_types4, type='array', column_widths=civit_widths4)
+                with gr.Row():
+                    gr.HTML('<h3>Select model from the list and download update if available</h3>')
                 with gr.Row():
                     civit_update_download_btn = gr.Button(value="Download", variant='primary', visible=False)
 
@@ -646,8 +650,10 @@ def create_ui():
                         self.versions = 0
                         self.vername = ''
                         self.latest = ''
+                        self.latest_hashes = []
+                        self.latest_name = ''
                         self.url = None
-                        self.status = False
+                        self.status = 'Not found'
                     def array(self):
                         return [self.id, self.fn, self.name, self.versions, self.vername, self.latest, self.status]
 
@@ -663,6 +669,7 @@ def create_ui():
                     page: modules.ui_extra_networks.ExtraNetworksPage = get_pages('model')[0]
                     table_data = []
                     update_data.clear()
+                    all_hashes = [(item.get('hash', None) or 'XXXXXXXX').upper()[:8] for item in page.list_items()]
                     for item in page.list_items():
                         model = CivitModel(name=item['name'], fn=item['filename'], sha=item.get('hash', None), meta=item.get('metadata', {}))
                         if model.sha is None or len(model.sha) == 0:
@@ -681,13 +688,23 @@ def create_ui():
                         versions = model.meta.get('modelVersions', [])
                         if len(versions) > 0:
                             model.latest = versions[0].get('name', '')
+                            model.latest_hashes.clear()
+                            for v in versions[0].get('files', []):
+                                for h in v.get('hashes', {}).values():
+                                    model.latest_hashes.append(h[:8].upper())
                         for ver in versions:
                             for f in ver.get('files', []):
                                 for h in f.get('hashes', {}).values():
                                     if h[:8].upper() == model.sha[:8].upper():
                                         model.vername = ver.get('name', '')
                                         model.url = f.get('downloadUrl', None)
-                                        model.status = model.vername != model.latest
+                                        model.latest_name = f.get('name', '')
+                                        if model.vername == model.latest:
+                                            model.status = 'Latest'
+                                        elif any(map(lambda v: v in model.latest_hashes, all_hashes)):
+                                            model.status = 'Downloaded'
+                                        else:
+                                            model.status = 'Available'
                                         break
                         log.debug(res[-1])
                         update_data.append(model)
@@ -701,15 +718,18 @@ def create_ui():
                         selected_model = [m for m in update_data if m.fn == in_data[evt.index[0]][1]][0]
                     except:
                         selected_model = None
-                    if selected_model is None or selected_model.url is None or not selected_model.status:
+                    if selected_model is None or selected_model.url is None or selected_model.status != 'Available':
                         return [gr.update(value='Model update not available'), gr.update(visible=False)]
                     else:
                         return [gr.update(), gr.update(visible=True)]
 
                 def civit_update_download():
-                    if selected_model is None or selected_model.url is None or not selected_model.status:
+                    if selected_model is None or selected_model.url is None or selected_model.status != 'Available':
                         return 'Model update not available'
-                    model_name = f'{selected_model.name} {selected_model.latest}'
+                    if selected_model.latest_name is None or len(selected_model.latest_name) == 0:
+                        model_name = f'{selected_model.name} {selected_model.latest}.safetensors'
+                    else:
+                        model_name = selected_model.latest_name
                     return civit_download_model(selected_model.url, model_name, model_path='', model_type='Model', image_url=None)
 
                 civit_update_btn.click(fn=civit_update_metadata, inputs=[], outputs=[civit_results4, models_outcome])
