@@ -1010,10 +1010,6 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     )
     diffusers.pipelines.auto_pipeline.AUTO_TEXT2IMAGE_PIPELINES_MAPPING = AUTO_TEXT2IMAGE_PIPELINES_MAPPING
     """
-
-    if shared.opts.diffusers_force_inpaint:
-        if new_pipe_type == DiffusersTaskType.IMAGE_2_IMAGE:
-            new_pipe_type = DiffusersTaskType.INPAINTING # sdxl may work better with init mask
     try:
         if new_pipe_type == DiffusersTaskType.TEXT_2_IMAGE:
             new_pipe = diffusers.AutoPipelineForText2Image.from_pipe(pipe)

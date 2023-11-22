@@ -368,7 +368,6 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_eval": OptionInfo(True, "Force model eval"),
     "diffusers_force_zeros": OptionInfo(True, "Force zeros for prompts when empty"),
     "diffusers_aesthetics_score": OptionInfo(False, "Require aesthetics score"),
-    "diffusers_force_inpaint": OptionInfo(False, 'Diffusers force inpaint pipeline'),
     "diffusers_pooled": OptionInfo("default", "Diffusers SDXL pooled embeds (experimental)", gr.Radio, {"choices": ['default', 'weighted']}),
 }))
 
@@ -531,9 +530,9 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
     'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "bh2", "vary_coeff"]}),
     'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}),
     "ddim_discretize": OptionInfo('uniform', "DDIM discretize img2img", gr.Radio, {"choices": ['uniform', 'quad']}),
-    # TODO pad_cond_uncond implementation missing
+    # TODO pad_cond_uncond implementation missing for original backend
     "pad_cond_uncond": OptionInfo(True, "Pad prompt and negative prompt to be same length", gr.Checkbox, {"visible": False}),
-    # TODO batch_cond-uncond implementation missing
+    # TODO batch_cond-uncond implementation missing for original backend
     "batch_cond_uncond": OptionInfo(True, "Do conditional and unconditional denoising in one batch", gr.Checkbox, {"visible": False}),
 }))
 
