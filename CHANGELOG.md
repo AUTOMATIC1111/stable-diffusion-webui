@@ -16,7 +16,7 @@
   - Support for [Stable Fast](https://github.com/chengzeyi/stable-fast) model compile on *Windows/Linux/WSL2* with *CUDA*  
     See [Wiki:Benchmark](https://github.com/vladmandic/automatic/wiki/Benchmark) for details and comparisment  
     of different backends, precision modes, advanced settings and compile modes  
-    *Hint*: **100+ it/s** is possible on *RTX4090* with no special tweaks  
+    *Hint*: **70+ it/s** is possible on *RTX4090* with no special tweaks  
   - Add additional pipeline types for manual model loads when loading from `safetensors`  
   - Updated logic for calculating **steps** when using base/hires/refiner workflows  
   - Safe model offloading for non-standard models  
@@ -44,6 +44,7 @@
   - Better Lora trigger words support  
   - Auto refresh styles on change  
 - **General**  
+  - Many **mobile UI** optimizations, thanks @iDeNoh
   - Support for **Torch 2.1.1** with CUDA 12.1 or CUDA 11.8  
   - Configurable location for HF cache folder  
     Default is standard `~/.cache/huggingface/hub`  

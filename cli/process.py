@@ -182,7 +182,7 @@ def interrogate_image(res: Result, tag: str = None):
 
 def resize_image(res: Result):
     resized = res.image
-    resized.thumbnail((options.process.target_size, options.process.target_size), Image.HAMMING)
+    resized.thumbnail((options.process.target_size, options.process.target_size), Image.Resampling.HAMMING)
     res.image = resized
     res.ops.append('resize')
     return res

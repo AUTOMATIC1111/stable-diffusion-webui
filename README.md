@@ -48,10 +48,10 @@ All individual features are not listed here, instead check [ChangeLog](CHANGELOG
 
 - **Original**: Based on [LDM](https://github.com/Stability-AI/stablediffusion) reference implementation and significantly expanded on by [A1111](https://github.com/AUTOMATIC1111/stable-diffusion-webui)  
   This is the default backend and it is fully compatible with all existing functionality and extensions  
-  It supports **SD 1.x** and **SD 2.x** models  
+  Supports **SD 1.x** and **SD 2.x** models  
   All other model types such as *SD-XL, LCM, PixArt, Segmind, Kandinsky, etc.* require backend **Diffusers**  
 - **Diffusers**: Based on new [Huggingface Diffusers](https://huggingface.co/docs/diffusers/index) implementation  
-  It supports *original* SD models as well as *all* models listed below  
+  Supports *original* SD models as well as *all* models listed below  
   See [wiki article](https://github.com/vladmandic/automatic/wiki/Diffusers) for more information  
 
 ## Model support
@@ -164,9 +164,9 @@ SD.Next comes with several extensions pre-installed:
 
 ### **Collab**
 
-- To avoid having this repo rely just on me, I'd love to have additional maintainers with full admin rights. If you're interested, ping me!  
+- We'd love to have additional maintainers with full admin rights. If you're interested, ping us!  
 - In addition to general cross-platform code, desire is to have a lead for each of the main platforms.
-This should be fully cross-platform, but I would really love to have additional contributors and/or maintainers to join and help lead the efforts on different platforms.
+This should be fully cross-platform, but we'd really love to have additional contributors and/or maintainers to join and help lead the efforts on different platforms.
 
 ### **Goals**
 
