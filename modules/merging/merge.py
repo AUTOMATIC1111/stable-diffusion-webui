@@ -72,7 +72,7 @@ def log_vram(txt=""):
 
 
 def load_thetas(
-    models: Dict[str, os.PathLike | str],
+    models: Dict[str, os.PathLike],
     prune: bool,
     device: torch.device,
     precision: str,
@@ -94,7 +94,7 @@ def load_thetas(
 
 
 def merge_models(
-    models: Dict[str, os.PathLike | str],
+    models: Dict[str, os.PathLike],
     merge_mode: str,
     precision: str = "fp16",
     weights_clip: bool = False,
