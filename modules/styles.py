@@ -14,6 +14,22 @@ class PromptStyle(typing.NamedTuple):
     path: str = None
 
 
+def clean_text(text: str) -> str:
+    """
+    Iterating through a list of regular expressions and replacement strings, we
+    clean up the prompt and style text to make it easier to match against each
+    other.
+    """
+    re_list = [
+        ("multiple commas", re.compile("(,+\s+)+,?"), ", "),
+        ("multiple spaces", re.compile("\s{2,}"), " "),
+    ]
+    for _, regex, replace in re_list:
+        text = regex.sub(replace, text)
+
+    return text.strip(", ")
+
+
 def merge_prompts(style_prompt: str, prompt: str) -> str:
     if "{prompt}" in style_prompt:
         res = style_prompt.replace("{prompt}", prompt)
@@ -28,51 +44,55 @@ def apply_styles_to_prompt(prompt, styles):
     for style in styles:
         prompt = merge_prompts(style, prompt)
 
-    return prompt
+    return clean_text(prompt)
 
 
-# A dictionary of regular expressions to tidy up the prompt text
-re_list = [
-    {"a_before_vowel", re.compile("([Aa])\s+([AEIOUaeiou])"), "$1n $2"},
-    {"multiple commas", re.compile("(,+\s+)+,?"), ", "},
-    {"multiple spaces", re.compile("\s{2,}"), " "},
-]
+def unwrap_style_text_from_prompt(style_text, prompt):
+    """
+    Checks the prompt to see if the style text is wrapped around it. If so,
+    returns True plus the prompt text without the style text. Otherwise, returns
+    False with the original prompt.
 
-
-def extract_style_text_from_prompt(style_text, prompt):
-    for var in ["style_text", "prompt"]:
-        text = locals()[var]
-        for _, regex, replace in re_list:
-            text = regex.sub(" ", replace, text)
-        locals()[var] = text
-
-    if "{prompt}" in style_text:
-        left, right = style_text.split("{prompt}", 2)
-        if prompt.startswith(left) and prompt.endswith(right):
-            prompt = prompt[len(left) : len(prompt) - len(right)]
+    Note that the "cleaned" version of the style text is only used for matching
+    purposes here. It isn't returned; the original style text is not modified.
+    """
+    stripped_prompt = clean_text(prompt)
+    stripped_style_text = clean_text(style_text)
+    if "{prompt}" in stripped_style_text:
+        # Work out whether the prompt is wrapped in the style text. If so, we
+        # return True and the "inner" prompt text that isn't part of the style.
+        left, right = stripped_style_text.split("{prompt}", 2)
+        if stripped_prompt.startswith(left) and stripped_prompt.endswith(right):
+            prompt = stripped_prompt[len(left) : len(stripped_prompt) - len(right)]
             return True, prompt
     else:
-        if prompt.endswith(style_text):
-            prompt = prompt[: len(prompt) - len(style_text)]
+        # Work out whether the given prompt ends with the style text. If so, we
+        # return True and the prompt text up to where the style text starts.
+        if stripped_prompt.endswith(stripped_style_text):
+            prompt = stripped_prompt[: len(stripped_prompt) - len(stripped_style_text)]
             if prompt.endswith(", "):
                 prompt = prompt[:-2]
-
             return True, prompt
 
     return False, prompt
 
 
-def extract_style_from_prompts(style: PromptStyle, prompt, negative_prompt):
+def extract_original_prompts(style: PromptStyle, prompt, negative_prompt):
+    """
+    Takes a style and compares it to the prompt and negative prompt. If the style
+    matches, returns True plus the prompt and negative prompt with the style text
+    removed. Otherwise, returns False with the original prompt and negative prompt.
+    """
     if not style.prompt and not style.negative_prompt:
         return False, prompt, negative_prompt
 
-    match_positive, extracted_positive = extract_style_text_from_prompt(
+    match_positive, extracted_positive = unwrap_style_text_from_prompt(
         style.prompt, prompt
     )
     if not match_positive:
         return False, prompt, negative_prompt
 
-    match_negative, extracted_negative = extract_style_text_from_prompt(
+    match_negative, extracted_negative = unwrap_style_text_from_prompt(
         style.negative_prompt, negative_prompt
     )
     if not match_negative:
@@ -98,20 +118,32 @@ class StyleDatabase:
         self.reload()
 
     def reload(self):
+        """
+        Clears the style database and reloads the styles from the CSV file(s)
+        matching the path used to initialize the database.
+        """
         self.styles.clear()
 
         path, filename = os.path.split(self.path)
 
-        # if the filename component of the path contains a wildcard,
-        # e.g. styles*.csv, load all matching files
         if "*" in filename:
             fileglob = filename.split("*")[0] + "*.csv"
+            filelist = []
             for file in os.listdir(path):
                 if fnmatch.fnmatch(file, fileglob):
-                    self.styles[file.upper()] = PromptStyle(
-                        f"{file.upper()}", None, None, "do_not_save"
+                    filelist.append(file)
+                    # Add a visible divider to the style list
+                    half_len = round(len(file) / 2)
+                    divider = f"{'-' * (20 - half_len)} {file.upper()}"
+                    divider = f"{divider} {'-' * (40 - len(divider))}"
+                    self.styles[divider] = PromptStyle(
+                        f"{divider}", None, None, "do_not_save"
                     )
+                    # Add styles from this CSV file
                     self.load_from_csv(os.path.join(path, file))
+            if len(filelist) == 0:
+                print(f"No styles found in {path} matching {fileglob}")
+                return
         elif not os.path.exists(self.path):
             print(f"Style database not found: {self.path}")
             return
@@ -132,6 +164,27 @@ class StyleDatabase:
                 self.styles[row["name"]] = PromptStyle(
                     row["name"], prompt, negative_prompt, path
                 )
+
+    def get_style_paths(self) -> list():
+        """
+        Returns a list of all distinct paths, including the default path, of
+        files that styles are loaded from."""
+        # Update any styles without a path to the default path
+        for style in list(self.styles.values()):
+            if not style.path:
+                self.styles[style.name] = style._replace(path=self.default_path)
+
+        # Create a list of all distinct paths, including the default path
+        style_paths = set()
+        style_paths.add(self.default_path)
+        for _, style in self.styles.items():
+            if style.path:
+                style_paths.add(style.path)
+
+        # Remove any paths for styles that are just list dividers
+        style_paths.remove("do_not_save")
+
+        return list(style_paths)
 
     def get_style_prompts(self, styles):
         return [self.styles.get(x, self.no_style).prompt for x in styles]
@@ -197,7 +250,7 @@ class StyleDatabase:
             found_style = None
 
             for style in applicable_styles:
-                is_match, new_prompt, new_neg_prompt = extract_style_from_prompts(
+                is_match, new_prompt, new_neg_prompt = extract_original_prompts(
                     style, prompt, negative_prompt
                 )
                 if is_match:
