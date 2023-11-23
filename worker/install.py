@@ -38,9 +38,9 @@ class RequirementItem:
                 if expr in s:
                     return expr
 
-        expr = search_expr(requirement_expr)
-        if expr:
-            array = [x.strip() for x in requirement_expr.split(' ') if x.strip()]
+        expr_str = search_expr(requirement_expr)
+        if expr_str:
+            array = [x.strip() for x in requirement_expr.split(expr_str) if x.strip()]
         else:
             array = [requirement_expr.strip()]
         if len(array) < 1 or len(array) > 2:
@@ -49,8 +49,8 @@ class RequirementItem:
         name = array[0]
         ver, expr = None, None
         if len(array) == 2:
-            ver = RequirementVersionExpr(expr)
-            expr = array[1]
+            ver = array[1]
+            expr = RequirementVersionExpr(expr_str)
 
         return cls(name, ver, expr)
 
@@ -105,22 +105,22 @@ def install_pip_requirements():
             for require in requirements:
                 require = require if isinstance(require, RequirementItem) else RequirementItem.from_expr(require)
                 package_name = require.package_name
-                if require.require_expr == RequirementVersionExpr.Equal:
+                if require.expr == RequirementVersionExpr.Equal:
                     tiny_pip_package(require, task_type,
                                      lambda installed_ver, package_ver: installed_ver != package_ver)
 
-                elif require.require_expr == RequirementVersionExpr.GreaterThanEqual:
+                elif require.expr == RequirementVersionExpr.GreaterThanEqual:
                     tiny_pip_package(require, task_type,
                                      lambda installed_ver, package_ver: installed_ver < package_ver)
-                elif require.require_expr == RequirementVersionExpr.GreaterThan:
+                elif require.expr == RequirementVersionExpr.GreaterThan:
                     tiny_pip_package(require, task_type,
                                      lambda installed_ver, package_ver: installed_ver <= package_ver)
 
-                elif require.require_expr == RequirementVersionExpr.LessThan:
+                elif require.expr == RequirementVersionExpr.LessThan:
                     tiny_pip_package(require, task_type,
                                      lambda installed_ver, package_ver: installed_ver >= package_ver)
 
-                elif require.require_expr == RequirementVersionExpr.LessThanEqual:
+                elif require.expr == RequirementVersionExpr.LessThanEqual:
                     tiny_pip_package(require, task_type,
                                      lambda installed_ver, package_ver: installed_ver > package_ver)
                 elif not launch_utils.is_installed(package_name):
