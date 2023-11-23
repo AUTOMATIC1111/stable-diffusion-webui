@@ -2,6 +2,9 @@
 
 ## Update for 2023-11-23
 
+New release, primarily focused around three major new features: full **LCM** support, completely new **Model Merge** functionality and **Stable-fast** compile support  
+Also included are several other improvements and large number of hotfixes - see full changelog for details  
+
 - **Diffusers**  
   - **LCM** support for any *SD 1.5* or *SD-XL* model!  
     - download [lcm-lora-sd15](https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/tree/main) and/or [lcm-lora-sdxl](https://huggingface.co/latent-consistency/lcm-lora-sdxl/tree/main)  
