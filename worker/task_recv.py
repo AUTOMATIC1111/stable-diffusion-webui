@@ -48,6 +48,7 @@ Tmp = 'tmp'
 SDWorkerZset = 'sd-workers'
 ElasticResWorkerFlag = "[ElasticRes]"
 TrainOnlyWorkerFlag = "[TrainOnly]"
+MaintainKey = "maintain"
 
 
 def find_files_from_dir(directory, *args):
@@ -132,7 +133,7 @@ def register_worker(worker_id: typing.Mapping):
             worker_id: now
         })
         conn.expire(SDWorkerZset, timedelta(hours=1))
-        conn.zremrangebyscore(SDWorkerZset, 0, now - 3600*24)
+        conn.zremrangebyscore(SDWorkerZset, 0, now - 3600 * 24)
         pool.close()
     except:
         logger.exception("cannot register worker")
@@ -396,6 +397,25 @@ class TaskReceiver:
             rds.setex(f"task:worker:{task_id}", timedelta(hours=2), self.worker_id)
             return t
 
+    def _check_cluster_status(self):
+        '''
+        检测集群服务状态，如果是维护状态就陷入睡眠
+        '''
+        while 1:
+            rds = self.redis_pool.get_connection()
+            flag = rds.get(MaintainKey) or "0"
+            try:
+                awake_ts = int(flag)
+                if time.time() < awake_ts:
+                    time_array = time.localtime(awake_ts)
+                    date_time = time.strftime("%Y-%m-%d %H:%M:%S", time_array)
+                    logger.info(f"[Maintain] task receiver sleeping till: {date_time}...")
+                    time.sleep(5)
+                else:
+                    break
+            except:
+                break
+
     def _extract_queue_task(self, queue_name: str, retry: int = 1):
         queue_name = queue_name.decode('utf8') if isinstance(queue_name, bytes) else queue_name
         rds = self.redis_pool.get_connection()
@@ -506,6 +526,7 @@ class TaskReceiver:
 
     def get_one_task(self, block: bool = True, sleep_time: float = 4) -> typing.Optional[Task]:
         while not self.closed:
+            self._check_cluster_status()
             st = time.time()
             if self.train_only:
                 task = self._search_train_task()
@@ -527,6 +548,7 @@ class TaskReceiver:
     def task_iter(self, sleep_time: float = 2) -> typing.Iterable[Task]:
         while not self.closed:
             try:
+                self._check_cluster_status()
                 st = time.time()
 
                 # 释放弹性资源，不再获取任务主动
