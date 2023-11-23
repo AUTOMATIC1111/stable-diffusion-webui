@@ -212,7 +212,7 @@ def parse_generation_parameters(x: str):
     remaining = x[7:] if x.startswith('Prompt: ') else x
     remaining = x[11:] if x.startswith('parameters: ') else x
     if 'Steps: ' in remaining and 'Negative prompt: ' not in remaining:
-        remaining = remaining.replace('Steps: ', 'Negative prompt: , Steps: ')
+        remaining = remaining.replace('Steps: ', 'Negative prompt: Steps: ')
     prompt, remaining = remaining.strip().split('Negative prompt: ', maxsplit=1) if 'Negative prompt: ' in remaining else (remaining, '')
     res["Prompt"] = prompt.strip()
     negative, remaining = remaining.strip().split('Steps: ', maxsplit=1) if 'Steps: ' in remaining else (remaining, None)
@@ -247,7 +247,6 @@ infotext_to_setting_name_mapping = [
     ('VAE', 'sd_vae'),
     ('Parser', 'prompt_attention'),
     ('Color correction', 'img2img_color_correction'),
-    ('LoRA method', 'diffusers_lora_loader'),
     # Samplers
     ('Sampler Eta', 'scheduler_eta'),
     ('Sampler ENSD', 'eta_noise_seed_delta'),

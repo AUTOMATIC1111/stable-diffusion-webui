@@ -190,7 +190,7 @@ def installed(package, friendly: str = None, reload = False, quiet = False):
                         if args.experimental:
                             log.warning(f"Package allowing experimental: {p[0]} {package_version} required {p[1]}")
                         else:
-                            log.warning(f"Package wrong version: {p[0]} {package_version} required {p[1]}")
+                            log.warning(f"Package version mismatch: {p[0]} {package_version} required {p[1]}")
             else:
                 if not quiet:
                     log.debug(f"Package not found: {p[0]}")
@@ -442,12 +442,11 @@ def check_torch():
             torchvision_pip = 'https://github.com/Nuullll/intel-extension-for-pytorch/releases/download/v2.0.110%2Bxpu-master%2Bdll-bundle/torchvision-0.15.2a0+fa99a53-cp310-cp310-win_amd64.whl'
             ipex_pip = 'https://github.com/Nuullll/intel-extension-for-pytorch/releases/download/v2.0.110%2Bxpu-master%2Bdll-bundle/intel_extension_for_pytorch-2.0.110+gitc6ea20b-cp310-cp310-win_amd64.whl'
             torch_command = os.environ.get('TORCH_COMMAND', f'{pytorch_pip} {torchvision_pip} {ipex_pip}')
-        uninstall('openvino-nightly')
         install('openvino', 'openvino', ignore=True)
         install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True) # TODO numpy version conflicts with tensorflow and doesn't support Python 3.11
     elif allow_openvino and args.use_openvino:
         log.info('Using OpenVINO')
-        torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.1.0 torchvision==0.16.0 --index-url https://download.pytorch.org/whl/cpu')
+        torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.1.1 torchvision==0.16.1 --index-url https://download.pytorch.org/whl/cpu')
     else:
         machine = platform.machine()
         if sys.platform == 'darwin':
@@ -747,26 +746,29 @@ def install_requirements():
 # set environment variables controling the behavior of various libraries
 def set_environment():
     log.debug('Setting environment tuning')
-    os.environ.setdefault('USE_TORCH', '1')
-    os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
     os.environ.setdefault('ACCELERATE', 'True')
-    os.environ.setdefault('FORCE_CUDA', '1')
     os.environ.setdefault('ATTN_PRECISION', 'fp16')
-    os.environ.setdefault('PYTORCH_CUDA_ALLOC_CONF', 'garbage_collection_threshold:0.8,max_split_size_mb:512')
-    os.environ.setdefault('CUDA_LAUNCH_BLOCKING', '0')
-    os.environ.setdefault('CUDA_CACHE_DISABLE', '0')
     os.environ.setdefault('CUDA_AUTO_BOOST', '1')
-    os.environ.setdefault('CUDA_MODULE_LOADING', 'LAZY')
+    os.environ.setdefault('CUDA_CACHE_DISABLE', '0')
     os.environ.setdefault('CUDA_DEVICE_DEFAULT_PERSISTING_L2_CACHE_PERCENTAGE_LIMIT', '0')
+    os.environ.setdefault('CUDA_LAUNCH_BLOCKING', '0')
+    os.environ.setdefault('CUDA_MODULE_LOADING', 'LAZY')
+    os.environ.setdefault('TORCH_CUDNN_V8_API_ENABLED', '1')
+    os.environ.setdefault('FORCE_CUDA', '1')
     os.environ.setdefault('GRADIO_ANALYTICS_ENABLED', 'False')
-    os.environ.setdefault('SAFETENSORS_FAST_GPU', '1')
+    os.environ.setdefault('HF_HUB_DISABLE_EXPERIMENTAL_WARNING', '1')
+    os.environ.setdefault('HF_HUB_DISABLE_TELEMETRY', '1')
+    os.environ.setdefault('K_DIFFUSION_USE_COMPILE', '0')
     os.environ.setdefault('NUMEXPR_MAX_THREADS', '16')
     os.environ.setdefault('PYTHONHTTPSVERIFY', '0')
-    os.environ.setdefault('HF_HUB_DISABLE_TELEMETRY', '1')
-    os.environ.setdefault('HF_HUB_DISABLE_EXPERIMENTAL_WARNING', '1')
-    os.environ.setdefault('UVICORN_TIMEOUT_KEEP_ALIVE', '60')
-    os.environ.setdefault('K_DIFFUSION_USE_COMPILE', '0')
+    os.environ.setdefault('PYTORCH_CUDA_ALLOC_CONF', 'garbage_collection_threshold:0.8,max_split_size_mb:512')
+    os.environ.setdefault('SAFETENSORS_FAST_GPU', '1')
+    os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
     os.environ.setdefault('TF_ENABLE_ONEDNN_OPTS', '0')
+    os.environ.setdefault('USE_TORCH', '1')
+    os.environ.setdefault('UVICORN_TIMEOUT_KEEP_ALIVE', '60')
+    os.environ.setdefault('HF_HUB_CACHE', opts.get('hfcache_dir', os.path.join(os.path.expanduser('~'), '.cache', 'huggingface', 'hub')))
+    log.debug(f'Cache folder: {os.environ.get("HF_HUB_CACHE")}')
     if sys.platform == 'darwin':
         os.environ.setdefault('PYTORCH_ENABLE_MPS_FALLBACK', '1')
 

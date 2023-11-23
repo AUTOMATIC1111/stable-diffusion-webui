@@ -16,7 +16,7 @@ def dump_cache():
 def cache(subsection):
     global cache_data # pylint: disable=global-statement
     if cache_data is None:
-        cache_data = {} if not os.path.isfile(cache_filename) else shared.readfile(cache_filename)
+        cache_data = {} if not os.path.isfile(cache_filename) else shared.readfile(cache_filename, lock=True)
     s = cache_data.get(subsection, {})
     cache_data[subsection] = s
     return s

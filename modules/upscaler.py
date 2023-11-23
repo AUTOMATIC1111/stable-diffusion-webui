@@ -7,8 +7,8 @@ import modules.shared
 from modules import modelloader
 
 
-LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
-NEAREST = (Image.Resampling.NEAREST if hasattr(Image, 'Resampling') else Image.NEAREST)
+LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.Resampling.LANCZOS)
+NEAREST = (Image.Resampling.NEAREST if hasattr(Image, 'Resampling') else Image.Resampling.NEAREST)
 models = None
 
 class Upscaler:
@@ -66,7 +66,6 @@ class Upscaler:
                 scalers.append(scaler)
                 loaded.append(file_name)
                 modules.shared.log.debug(f'Upscaler type={self.name} folder="{folder}" model="{model_name}" path="{file_name}"')
-                print(f'Upscaler type={self.name} folder="{folder}" model="{model_name}" path="{file_name}"')
 
     def find_scalers(self):
         scalers = []
@@ -226,19 +225,10 @@ def compile_upscaler(model, name=""):
             modules.shared.log.info(f"Upscaler Compiling: {name} mode={modules.shared.opts.cuda_compile_backend}")
             import logging
             import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
-            use_old_compiled_model_state = False
 
             if modules.shared.opts.cuda_compile_backend == "openvino_fx":
-                from modules.intel.openvino import openvino_fx, openvino_clear_caches # pylint: disable=unused-import
-                from modules.sd_models import CompiledModelState
-
-                openvino_clear_caches()
+                from modules.intel.openvino import openvino_fx # pylint: disable=unused-import
                 torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
-
-                if modules.shared.compiled_model_state is not None:
-                    use_old_compiled_model_state = True
-                    old_compiled_model_state = modules.shared.compiled_model_state
-                modules.shared.compiled_model_state = CompiledModelState()
 
             log_level = logging.WARNING if modules.shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
             if hasattr(torch, '_logging'):
@@ -248,8 +238,6 @@ def compile_upscaler(model, name=""):
             torch._dynamo.config.suppress_errors = modules.shared.opts.cuda_compile_errors # pylint: disable=protected-access
             model = torch.compile(model, mode=modules.shared.opts.cuda_compile_mode, backend=modules.shared.opts.cuda_compile_backend, fullgraph=modules.shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
 
-            if use_old_compiled_model_state:
-                modules.shared.compiled_model_state = old_compiled_model_state
             modules.shared.log.info("Upscaler: Complilation done.")
     except Exception as err:
         modules.shared.log.warning(f"Model compile not supported: {err}")

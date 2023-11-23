@@ -1,42 +1,77 @@
 # Change Log for SD.Next
 
-## Update for 2023-11-11
+## Update for 2023-11-23
 
 - **Diffusers**  
   - **LCM** support for any *SD 1.5* or *SD-XL* model!  
     - download [lcm-lora-sd15](https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/tree/main) and/or [lcm-lora-sdxl](https://huggingface.co/latent-consistency/lcm-lora-sdxl/tree/main)  
     - load for favorite *SD 1.5* or *SD-XL* model *(original LCM was SD 1.5 only, this is both)*  
-    - load **lcm lora**  
+    - load **lcm lora** *(note: lcm lora is processed differently than any other lora)*  
     - set **sampler** to **LCM**  
     - set number of steps to some low number, for SD-XL 6-7 steps is normally sufficient  
-      note: LCM scheduler does not support steps higher than 50
-    - set cfg to 1 or 2  
+      note: LCM scheduler does not support steps higher than 50  
+    - set CFG to between 1 and 2  
   - Add `cli/lcm-convert.py` script to convert any SD 1.5 or SD-XL model to LCM model  
     by baking in LORA and uploading to Huggingface, thanks @Disty0  
+  - Support for [Stable Fast](https://github.com/chengzeyi/stable-fast) model compile on *Windows/Linux/WSL2* with *CUDA*  
+    See [Wiki:Benchmark](https://github.com/vladmandic/automatic/wiki/Benchmark) for details and comparisment  
+    of different backends, precision modes, advanced settings and compile modes  
+    *Hint*: **70+ it/s** is possible on *RTX4090* with no special tweaks  
   - Add additional pipeline types for manual model loads when loading from `safetensors`  
   - Updated logic for calculating **steps** when using base/hires/refiner workflows  
+  - Improve **model offloading** for both model and sequential cpu offload when dealing with meta tensors
   - Safe model offloading for non-standard models  
   - Fix **DPM SDE** scheduler  
-  - Better support for SD 1.5 **inpainting** models
-  - Update to `diffusers==0.23.0`  
+  - Better support for SD 1.5 **inpainting** models  
+  - Add support for **OpenAI Consistency decoder VAE**
+  - Enhance prompt parsing with long prompts and support for *BREAK* keyword  
+    Change-in-behavior: new line in prompt now means *BREAK*  
+  - Add alternative Lora loading algorithm, triggered if `SD_LORA_DIFFUSERS` is set  
+- **Models**
+  - **Model merge**
+    - completely redesigned, now based on best-of-class `meh` by @s1dlx  
+      and heavily modified for additional functionality and fully integrated by @AI-Casanova (thanks!)  
+    - merge SD or SD-XL models using *simple merge* (12 methods),  
+      using one of *presets* (20 built-in presets) or custom block merge values  
+    - merge with ReBasin permuatations and/or clipping protection  
+    - fully multithreaded for fastest merge possible  
+  - **Model update**  
+    - under UI -> Models - Update  
+    - scan existing models for updated metadata on CivitAI and  
+      provide download functionality for models with available  
 - **Extra networks**  
   - Use multi-threading for 5x load speedup  
   - Better Lora trigger words support  
-- **General**:  
+  - Auto refresh styles on change  
+- **General**  
+  - Many **mobile UI** optimizations, thanks @iDeNoh
+  - Support for **Torch 2.1.1** with CUDA 12.1 or CUDA 11.8  
+  - Configurable location for HF cache folder  
+    Default is standard `~/.cache/huggingface/hub`  
   - Reworked parser when pasting previously generated images/prompts  
     includes all `txt2img`, `img2img` and `override` params  
-  - Add refiner options to XYZ Grid  
+  - Reworked **model compile**
   - Support custom upscalers in subfolders  
+  - Add additional image info when loading image in process tab  
+  - Better file locking when sharing config and/or models between multiple instances  
+  - Handle custom API endpoints when using auth  
+  - Show logged in user in log when accessing via UI and/or API  
   - Support `--ckpt none` to skip loading a model  
+- **XYZ grid**
+  - Add refiner options to XYZ Grid  
+  - Add option to create only subgrids in XYZ grid, thanks @midcoastal
+  - Allow custom font, background and text color in settings
 - **Fixes**  
   - Fix `params.txt` saved before actual image
   - Fix inpaint  
   - Fix manual grid image save  
   - Fix img2img init image save  
+  - Fix upscale in txt2img for batch counts when no hires is used  
   - More uniform models paths  
   - Safe scripts callback execution  
-  - Improve extension compatibility  
-  - Improve BF16 support  
+  - Improved extension compatibility  
+  - Improved BF16 support  
+  - Match previews for reference models with downloaded models
 
 ## Update for 2023-11-06
 

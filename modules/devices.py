@@ -134,7 +134,7 @@ def torch_gc(force=False):
     if oom > previous_oom:
         previous_oom = oom
         log.warning(f'GPU out-of-memory error: {mem}')
-    if used > shared.opts.torch_gc_threshold:
+    if used >= shared.opts.torch_gc_threshold:
         log.info(f'GPU high memory utilization: {used}% {mem}')
         force = True
     if not force:

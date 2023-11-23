@@ -178,14 +178,14 @@ class StableDiffusionModelHijack:
             except Exception as err:
                 shared.log.warning(f"IPEX Optimize not supported: {err}")
 
-        if opts.cuda_compile and opts.cuda_compile_backend != 'none' and shared.backend == shared.Backend.ORIGINAL:
+        if (opts.cuda_compile or opts.cuda_compile_vae or opts.cuda_compile_upscaler) and shared.opts.cuda_compile_backend != 'none' and shared.backend == shared.Backend.ORIGINAL:
             try:
                 import logging
                 shared.log.info(f"Compiling pipeline={m.model.__class__.__name__} mode={opts.cuda_compile_backend}")
                 import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
                 if shared.opts.cuda_compile_backend == "openvino_fx":
                     torch._dynamo.reset() # pylint: disable=protected-access
-                    from modules.intel.openvino import openvino_fx, openvino_clear_caches # pylint: disable=unused-import
+                    from modules.intel.openvino import openvino_fx, openvino_clear_caches # pylint: disable=unused-import, no-name-in-module
                     openvino_clear_caches()
                     torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
                 log_level = logging.WARNING if opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
@@ -202,6 +202,9 @@ class StableDiffusionModelHijack:
                 shared.log.info("Model complilation done.")
             except Exception as err:
                 shared.log.warning(f"Model compile not supported: {err}")
+            finally:
+                from installer import setup_logging
+                setup_logging()
 
         self.optimization_method = apply_optimizations()
         self.clip = m.cond_stage_model

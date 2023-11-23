@@ -103,9 +103,6 @@ def ipex_hijacks():
     CondFunc('torch.empty',
         lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
         lambda orig_func, *args, device=None, **kwargs: check_device(device))
-    CondFunc('torch.load',
-        lambda orig_func, *args, map_location=None, **kwargs: orig_func(*args, return_xpu(map_location), **kwargs),
-        lambda orig_func, *args, map_location=None, **kwargs: map_location is None or check_device(map_location))
     CondFunc('torch.randn',
         lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
         lambda orig_func, *args, device=None, **kwargs: check_device(device))
@@ -121,6 +118,10 @@ def ipex_hijacks():
     CondFunc('torch.linspace',
         lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
         lambda orig_func, *args, device=None, **kwargs: check_device(device))
+    CondFunc('torch.load',
+        lambda orig_func, f, map_location=None, pickle_module=None, *, weights_only=False, mmap=None, **kwargs:
+        orig_func(orig_func, f, map_location=return_xpu(map_location), pickle_module=pickle_module, weights_only=weights_only, mmap=mmap, **kwargs),
+        lambda orig_func, f, map_location=None, pickle_module=None, *, weights_only=False, mmap=None, **kwargs: check_device(map_location))
 
     CondFunc('torch.Generator',
         lambda orig_func, device=None: torch.xpu.Generator(device),

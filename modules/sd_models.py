@@ -20,8 +20,7 @@ import tomesd
 from transformers import logging as transformers_logging
 import ldm.modules.midas as midas
 from ldm.util import instantiate_from_config
-from modules import paths, shared, shared_items, shared_state, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config
-from modules.sd_hijack_inpainting import do_inpainting_hijack
+from modules import paths, shared, shared_items, shared_state, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config, sd_models_compile, sd_hijack_inpainting
 from modules.timer import Timer
 from modules.memstats import memory_stats
 from modules.paths import models_path, script_path
@@ -117,18 +116,6 @@ class CheckpointInfo:
         self.title = f'{self.name} [{self.shorthash}]'
         self.register()
         return self.shorthash
-
-
-#Used by OpenVINO, can be used with TensorRT or Olive
-class CompiledModelState:
-    def __init__(self):
-        self.first_pass = True
-        self.height = 512
-        self.width = 512
-        self.batch_size = 1
-        self.partition_id = 0
-        self.cn_model = []
-        self.lora_model = []
 
 
 class NoWatermark:
@@ -340,7 +327,7 @@ def read_metadata_from_safetensors(filename):
         if not os.path.isfile(sd_metadata_file):
             sd_metadata = {}
         else:
-            sd_metadata = shared.readfile(sd_metadata_file)
+            sd_metadata = shared.readfile(sd_metadata_file, lock=True)
     res = sd_metadata.get(filename, None)
     if res is not None:
         return res
@@ -400,7 +387,7 @@ def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unuse
         return None
     try:
         pl_sd = None
-        with progress.open(checkpoint_file, 'rb', description=f'[cyan]Loading weights: [yellow]{checkpoint_file}', auto_refresh=True, console=shared.console) as f:
+        with progress.open(checkpoint_file, 'rb', description=f'[cyan]Loading model: [yellow]{checkpoint_file}', auto_refresh=True, console=shared.console) as f:
             _, extension = os.path.splitext(checkpoint_file)
             if extension.lower() == ".ckpt" and shared.opts.sd_disable_ckpt:
                 shared.log.warning(f"Checkpoint loading disabled: {checkpoint_file}")
@@ -596,7 +583,7 @@ model_data = ModelData()
 
 def change_backend():
     shared.log.info(f'Backend changed: {shared.backend}')
-    shared.log.warning('Server restart required to apply all changes')
+    shared.log.warning('Full server restart required to apply all changes')
     if shared.backend == shared.Backend.ORIGINAL:
         change_from = shared.Backend.DIFFUSERS
     else:
@@ -610,51 +597,52 @@ def change_backend():
     refresh_vae_list()
 
 
-def detect_pipeline(f: str, op: str = 'model'):
+def detect_pipeline(f: str, op: str = 'model', warning=True):
     if not f.endswith('.safetensors'):
         return None, None
     guess = shared.opts.diffusers_pipeline
+    warn = shared.log.warning if warning else lambda *args, **kwargs: None
     if guess == 'Autodetect':
         try:
             size = round(os.path.getsize(f) / 1024 / 1024)
             if size < 128:
-                shared.log.warning(f'Model size smaller than expected: {f} size={size} MB')
+                warn(f'Model size smaller than expected: {f} size={size} MB')
             elif (size >= 316 and size <= 324) or (size >= 156 and size <= 164): # 320 or 160
-                shared.log.warning(f'Model detected as VAE model, but attempting to load as model: {op}={f} size={size} MB')
+                warn(f'Model detected as VAE model, but attempting to load as model: {op}={f} size={size} MB')
                 guess = 'VAE'
             elif size >= 5351 and size <= 5359: # 5353
                 guess = 'Stable Diffusion' # SD v2
             elif size >= 5791 and size <= 5799: # 5795
                 if shared.backend == shared.Backend.ORIGINAL:
-                    shared.log.warning(f'Model detected as SD-XL refiner model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    warn(f'Model detected as SD-XL refiner model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 if op == 'model':
-                    shared.log.warning(f'Model detected as SD-XL refiner model, but attempting to load a base model: {op}={f} size={size} MB')
+                    warn(f'Model detected as SD-XL refiner model, but attempting to load a base model: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion XL'
             elif (size >= 6611 and size <= 6619) or (size >= 6771 and size <= 6779): # 6617, HassakuXL is 6776
                 if shared.backend == shared.Backend.ORIGINAL:
-                    shared.log.warning(f'Model detected as SD-XL base model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    warn(f'Model detected as SD-XL base model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion XL'
             elif size >= 3361 and size <= 3369: # 3368
                 if shared.backend == shared.Backend.ORIGINAL:
-                    shared.log.warning(f'Model detected as SD upscale model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    warn(f'Model detected as SD upscale model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion Upscale'
             elif size >= 4891 and size <= 4899: # 4897
                 if shared.backend == shared.Backend.ORIGINAL:
-                    shared.log.warning(f'Model detected as SD XL inpaint model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    warn(f'Model detected as SD XL inpaint model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion XL Inpaint'
             elif size >= 9791 and size <= 9799: # 9794
                 if shared.backend == shared.Backend.ORIGINAL:
-                    shared.log.warning(f'Model detected as SD XL instruct pix2pix model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    warn(f'Model detected as SD XL instruct pix2pix model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion XL Instruct'
             else:
                 guess = 'Stable Diffusion'
             if 'LCM_' in f or 'LCM-' in f:
                 if shared.backend == shared.Backend.ORIGINAL:
-                    shared.log.warning(f'Model detected as LCM model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    warn(f'Model detected as LCM model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Latent Consistency Model'
             if 'PixArt' in f:
                 if shared.backend == shared.Backend.ORIGINAL:
-                    shared.log.warning(f'Model detected as PixArt Alpha model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    warn(f'Model detected as PixArt Alpha model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'PixArt Alpha'
             pipeline = shared_items.get_pipelines().get(guess, None)
             shared.log.info(f'Autodetect: {op}="{guess}" class={pipeline.__name__} file="{f}" size={size}MB')
@@ -673,55 +661,6 @@ def detect_pipeline(f: str, op: str = 'model'):
         shared.log.warning(f'Autodetect: pipeline not recognized: {guess}: {op}={f} size={size}')
         pipeline = diffusers.StableDiffusionPipeline
     return pipeline, guess
-
-
-def compile_diffusers(sd_model):
-    try:
-        if shared.opts.ipex_optimize:
-            import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-            sd_model.unet.training = False
-            sd_model.unet = ipex.optimize(sd_model.unet, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
-            if hasattr(sd_model, 'vae'):
-                sd_model.vae.training = False
-                sd_model.vae = ipex.optimize(sd_model.vae, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
-            if hasattr(sd_model, 'movq'):
-                sd_model.movq.training = False
-                sd_model.movq = ipex.optimize(sd_model.movq, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
-            shared.log.info("Applied IPEX Optimize.")
-    except Exception as err:
-        shared.log.warning(f"IPEX Optimize not supported: {err}")
-
-    try:
-        if (shared.opts.cuda_compile or shared.opts.cuda_compile_vae or shared.opts.cuda_compile_upscaler) and shared.opts.cuda_compile_backend != 'none':
-            shared.log.info(f"Compiling pipeline={sd_model.__class__.__name__} shape={8 * sd_model.unet.config.sample_size} mode={shared.opts.cuda_compile_backend}")
-            import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
-            if shared.opts.cuda_compile_backend == "openvino_fx":
-                torch._dynamo.reset() # pylint: disable=protected-access
-                from modules.intel.openvino import openvino_fx, openvino_clear_caches # pylint: disable=unused-import
-                openvino_clear_caches()
-                torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
-                if shared.compiled_model_state is None:
-                    shared.compiled_model_state = CompiledModelState()
-                shared.compiled_model_state.first_pass = True if not shared.opts.cuda_compile_precompile else False
-            log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
-            if hasattr(torch, '_logging'):
-                torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
-            torch._dynamo.config.verbose = shared.opts.cuda_compile_verbose # pylint: disable=protected-access
-            torch._dynamo.config.suppress_errors = shared.opts.cuda_compile_errors # pylint: disable=protected-access
-            if shared.opts.cuda_compile:
-                sd_model.unet = torch.compile(sd_model.unet, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
-            if shared.opts.cuda_compile_vae:
-                if hasattr(sd_model, 'vae'):
-                    sd_model.vae.decode = torch.compile(sd_model.vae.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
-                if hasattr(sd_model, 'movq'):
-                    sd_model.movq.decode = torch.compile(sd_model.movq.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
-            from installer import setup_logging
-            setup_logging()
-            if shared.opts.cuda_compile_precompile:
-                sd_model("dummy prompt")
-            shared.log.info("Complilation done.")
-    except Exception as err:
-        shared.log.warning(f"Model compile not supported: {err}")
 
 
 def set_diffuser_options(sd_model, vae, op: str):
@@ -780,10 +719,8 @@ def set_diffuser_options(sd_model, vae, op: str):
             sd_model.vae = vae
         if shared.opts.diffusers_vae_upcast != 'default':
             if shared.opts.diffusers_vae_upcast == 'true':
-                # sd_model.vae.config["force_upcast"] = True
                 sd_model.vae.config.force_upcast = True
             else:
-                # sd_model.vae.config["force_upcast"] = False
                 sd_model.vae.config.force_upcast = False
             if shared.opts.no_half_vae:
                 devices.dtype_vae = torch.float32
@@ -791,6 +728,18 @@ def set_diffuser_options(sd_model, vae, op: str):
         shared.log.debug(f'Setting {op} VAE: name={sd_vae.loaded_vae_file} upcast={sd_model.vae.config.get("force_upcast", None)}')
     if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):
         sd_model.enable_xformers_memory_efficient_attention()
+
+    if shared.opts.diffusers_eval:
+        if hasattr(sd_model, "unet"):
+            sd_model.unet.requires_grad_(False)
+            sd_model.unet.eval()
+        if hasattr(sd_model, "vae"):
+            sd_model.vae.requires_grad_(False)
+            sd_model.vae.eval()
+        if hasattr(sd_model, "text_encoder"):
+            sd_model.text_encoder.requires_grad_(False)
+            sd_model.text_encoder.eval()
+
     if shared.opts.opt_channelslast and hasattr(sd_model, 'unet'):
         shared.log.debug(f'Setting {op}: enable channels last')
         sd_model.unet.to(memory_format=torch.channels_last)
@@ -978,7 +927,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             elif not getattr(sd_model, 'has_accelerate', False):
                 sd_model.to(devices.device)
 
-            compile_diffusers(sd_model)
+            sd_models_compile.compile_diffusers(sd_model)
 
         if sd_model is None:
             shared.log.error('Diffuser model not loaded')
@@ -1042,9 +991,25 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     has_accelerate = getattr(pipe, "has_accelerate", None)
     embedding_db = getattr(pipe, "embedding_db", None)
 
-    if shared.opts.diffusers_force_inpaint:
-        if new_pipe_type == DiffusersTaskType.IMAGE_2_IMAGE:
-            new_pipe_type = DiffusersTaskType.INPAINTING # sdxl may work better with init mask
+    # TODO implement alternative diffusion pipelines
+    """
+    from collections import OrderedDict
+    AUTO_TEXT2IMAGE_PIPELINES_MAPPING = OrderedDict(
+        [
+            ("stable-diffusion", diffusers.StableDiffusionPipeline),
+            ("stable-diffusion-xl", diffusers.StableDiffusionXLPipeline),
+            ("if", diffusers.IFPipeline),
+            ("kandinsky", diffusers.KandinskyCombinedPipeline),
+            ("kandinsky22", diffusers.KandinskyV22CombinedPipeline),
+            ("stable-diffusion-controlnet", diffusers.StableDiffusionControlNetPipeline),
+            ("stable-diffusion-xl-controlnet", diffusers.StableDiffusionXLControlNetPipeline),
+            ("wuerstchen", diffusers.WuerstchenCombinedPipeline),
+            ("lcm", diffusers.LatentConsistencyModelPipeline),
+            ("pixart", diffusers.PixArtAlphaPipeline),
+        ]
+    )
+    diffusers.pipelines.auto_pipeline.AUTO_TEXT2IMAGE_PIPELINES_MAPPING = AUTO_TEXT2IMAGE_PIPELINES_MAPPING
+    """
     try:
         if new_pipe_type == DiffusersTaskType.TEXT_2_IMAGE:
             new_pipe = diffusers.AutoPipelineForText2Image.from_pipe(pipe)
@@ -1108,7 +1073,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
             current_checkpoint_info = model_data.sd_refiner.sd_checkpoint_info
             unload_model_weights(op=op)
 
-    do_inpainting_hijack()
+    sd_hijack_inpainting.do_inpainting_hijack()
     devices.set_cuda_params()
     if already_loaded_state_dict is not None:
         state_dict = already_loaded_state_dict

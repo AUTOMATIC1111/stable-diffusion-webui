@@ -145,7 +145,7 @@ class Api:
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
-        self.add_api_route("/sdapi/v1/log", self.get_log_buffer, methods=["GET"], response_model=List) # bypass auth
+        self.add_api_route("/sdapi/v1/log", self.get_log_buffer, methods=["GET"], response_model=List)
         self.add_api_route("/sdapi/v1/start", self.session_start, methods=["GET"])
         self.add_api_route("/sdapi/v1/motd", self.get_motd, methods=["GET"], response_model=str)
         self.add_api_route("/sdapi/v1/extra-networks", self.get_extra_networks, methods=["GET"], response_model=List[models.ExtraNetworkItem])
@@ -153,11 +153,12 @@ class Api:
         self.default_script_arg_img2img = []
 
     def add_api_route(self, path: str, endpoint, **kwargs):
-        if shared.cmd_opts.auth or shared.cmd_opts.auth_file:
+        if (shared.cmd_opts.auth or shared.cmd_opts.auth_file) and shared.cmd_opts.api_only:
             return self.app.add_api_route(path, endpoint, dependencies=[Depends(self.auth)], **kwargs)
         return self.app.add_api_route(path, endpoint, **kwargs)
 
     def auth(self, credentials: HTTPBasicCredentials = Depends(HTTPBasic())):
+        # this is only needed for api-only since otherwise auth is handled in gradio/routes.py
         if credentials.username in self.credentials:
             if compare_digest(credentials.password, self.credentials[credentials.username]):
                 return True
@@ -170,7 +171,9 @@ class Api:
         return lines
 
     def session_start(self, req: Request, agent: Optional[str] = None):
-        shared.log.info(f'Browser session: client={req.client.host} agent={agent}')
+        token = req.cookies.get("access-token") or req.cookies.get("access-token-unsecure")
+        user = self.app.tokens.get(token)
+        shared.log.info(f'Browser session: user={user} client={req.client.host} agent={agent}')
         return {}
 
     def get_motd(self):

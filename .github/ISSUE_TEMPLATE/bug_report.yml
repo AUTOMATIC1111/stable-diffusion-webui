@@ -38,18 +38,18 @@ body:
   - type: markdown
     attributes:
       value: |
-        If issue is setup, installation or startup related, please check `sdnext.log` before reporting  
-  - type: markdown
-    attributes:
-      value: |
-        If you have additional extensions installed, try to reproduce the issue with user extensions disabled  
-        And if the issue is with compatibility with specific extension, mark it as such when creating the issue  
-        Try running with `--safe` command line flag with disables loading of user-installed extensions  
-  - type: markdown
-    attributes:
-      value: |
-        If possible update to latest version before reporting the issue as older versions cannot be properly supported  
-        And search existing **issues** and **discussions** before creating a new one  
+        Please follow these guidelines when creating an issue:  
+        - If possible update to latest version before reporting the issue as older versions cannot be properly supported  
+          And search existing **issues** and **discussions** before creating a new one  
+        - If issue cannot be clearly seen in the provided log, run SD.Next with debug logging enabled by adding `--debug` to your command line parameters
+        - If issue is setup, installation or startup related, please check `sdnext.log` before reporting  
+          And if possible, perform reinstallation of required dependencies by running SD.Next with `--reinstall` command line flag  
+        - If issue is after recent update of SD.Next, try to reproduce it using clean installation to avoid issues due to old configuration  
+        - If you have additional extensions installed, try to reproduce the issue with user extensions disabled  
+          And if the issue is with compatibility with specific extension, mark it as such when creating the issue  
+          Try running with `--safe` command line flag with disables loading of user-installed extensions  
+        - If issue is in functionality marked as *experimental* or relates to *dev* branch, reach out on Discord before creating an issue  
+          To see which issues are new/updated/experimental, check [CHANGELOG](https://github.com/vladmandic/automatic/blob/master/CHANGELOG.md)
   - type: textarea
     id: logs
     attributes:
@@ -73,13 +73,28 @@ body:
     validations:
       required: true
   - type: dropdown
+    id: branch
+    attributes:
+      label: Branch
+      description: What is the branch you're using?
+      options:
+        - Master
+        - Dev
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
     id: model
     attributes:
       label: Model
       description: What is the model type you're using?
       options:
         - SD 1.5
+        - SD 2.1
         - SD-XL
+        - LCM
+        - PixArt
+        - SSD
         - Kandinsky
         - Other
       default: 0

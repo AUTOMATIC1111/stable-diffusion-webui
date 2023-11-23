@@ -91,6 +91,8 @@ def refresh_vae_list():
         candidates += glob.iglob(path, recursive=True)
     for filepath in candidates:
         name = get_filename(filepath)
+        if name == 'VAE':
+            continue
         if shared.backend == shared.Backend.ORIGINAL:
             vae_dict[name] = filepath
         else:
@@ -201,10 +203,16 @@ def load_vae_diffusers(model_file, vae_file=None, vae_source="unknown-source"):
         if os.path.isfile(vae_file):
             _pipeline, model_type = sd_models.detect_pipeline(model_file, 'vae')
             diffusers_load_config = { "config_file":  paths.sd_default_config if model_type != 'Stable Diffusion XL' else os.path.join(paths.sd_configs_path, 'sd_xl_base.yaml')}
-            vae = diffusers.AutoencoderKL.from_single_file(vae_file, **diffusers_load_config)
+            if os.path.getsize(vae_file) > 1310944880:
+                vae = diffusers.ConsistencyDecoderVAE.from_pretrained('openai/consistency-decoder', **diffusers_load_config) # consistency decoder does not have from single file, so we'll just download it once more
+            else:
+                vae = diffusers.AutoencoderKL.from_single_file(vae_file, **diffusers_load_config)
             vae = vae.to(devices.dtype_vae)
         else:
-            vae = diffusers.AutoencoderKL.from_pretrained(vae_file, **diffusers_load_config)
+            if 'consistency-decoder' in vae_file:
+                vae = diffusers.ConsistencyDecoderVAE.from_pretrained(vae_file, **diffusers_load_config)
+            else:
+                vae = diffusers.AutoencoderKL.from_pretrained(vae_file, **diffusers_load_config)
         global loaded_vae_file # pylint: disable=global-statement
         loaded_vae_file = os.path.basename(vae_file)
         # shared.log.debug(f'Diffusers VAE config: {vae.config}')

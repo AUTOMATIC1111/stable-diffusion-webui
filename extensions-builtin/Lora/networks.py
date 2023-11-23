@@ -14,7 +14,7 @@ import network_norm
 import lora_convert
 import torch
 import diffusers.models.lora
-from modules import shared, devices, sd_models, errors, scripts, sd_hijack
+from modules import shared, devices, sd_models, sd_models_compile, errors, scripts, sd_hijack
 
 
 debug = os.environ.get('SD_LORA_DEBUG', None)
@@ -74,6 +74,26 @@ def assign_network_names_to_compvis_modules(sd_model):
     sd_model.network_layer_mapping = network_layer_mapping
 
 
+def load_diffusers(name, network_on_disk, lora_scale=1.0):
+    t0 = time.time()
+    cached = lora_cache.get(name, None)
+    # if debug:
+    shared.log.debug(f'LoRA load: name={name} file={network_on_disk.filename} type=diffusers {"cached" if cached else ""}')
+    if cached is not None:
+        return cached
+    if shared.backend != shared.Backend.DIFFUSERS:
+        return None
+    shared.sd_model.load_lora_weights(network_on_disk.filename)
+    if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx":
+        shared.sd_model.fuse_lora(lora_scale=lora_scale)
+    net = network.Network(name, network_on_disk)
+    net.mtime = os.path.getmtime(network_on_disk.filename)
+    lora_cache[name] = net
+    t1 = time.time()
+    timer['load'] += t1 - t0
+    return net
+
+
 def load_network(name, network_on_disk):
     t0 = time.time()
     cached = lora_cache.get(name, None)
@@ -128,11 +148,13 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
             for i, name in enumerate(names):
                 if shared.compiled_model_state.lora_model[i] != f"{name}:{te_multipliers[i] if te_multipliers else 1.0}":
                     recompile_model = True
+                    shared.compiled_model_state.lora_model = []
                     break
         else:
             recompile_model = True
-        shared.compiled_model_state.lora_model = []
+            shared.compiled_model_state.lora_model = []
     if recompile_model:
+        shared.compiled_model_state.lora_compile = True
         sd_models.unload_model_weights(op='model')
         shared.opts.cuda_compile = False
         sd_models.reload_model_weights(op='model')
@@ -142,9 +164,18 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
         net = None
         if network_on_disk is not None:
             try:
-                net = load_network(name, network_on_disk)
+                if recompile_model:
+                    shared.compiled_model_state.lora_model.append(f"{name}:{te_multipliers[i] if te_multipliers else 1.0}")
+                if shared.backend == shared.Backend.DIFFUSERS and (os.environ.get('SD_LORA_DIFFUSERS', None)
+                                                                   or getattr(network_on_disk, 'shorthash', None) == 'aaebf6360f7d' # lcm sd15
+                                                                   or getattr(network_on_disk, 'shorthash', None) == '3d18b05e4f56' # lcm sdxl
+                                                                   or (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx")):
+                    # OpenVINO only works with Diffusers LoRa loading.
+                    net = load_diffusers(name, network_on_disk, lora_scale=te_multipliers[i] if te_multipliers else 1.0)
+                else:
+                    net = load_network(name, network_on_disk)
             except Exception as e:
-                shared.log.error(f"LoRA load failed: file={network_on_disk.filename}")
+                shared.log.error(f"LoRA load failed: file={network_on_disk.filename} {e}")
                 if debug:
                     errors.display(e, f"LoRA load failed file={network_on_disk.filename}")
                 continue
@@ -170,7 +201,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
 
     if recompile_model:
         shared.log.info("LoRA recompiling model")
-        sd_models.compile_diffusers(shared.sd_model)
+        sd_models_compile.compile_diffusers(shared.sd_model)
 
 
 def network_restore_weights_from_backup(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.GroupNorm, torch.nn.LayerNorm, torch.nn.MultiheadAttention, diffusers.models.lora.LoRACompatibleLinear, diffusers.models.lora.LoRACompatibleConv]):

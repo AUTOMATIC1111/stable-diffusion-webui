@@ -6,7 +6,7 @@ import platform
 import subprocess
 import gradio as gr
 from modules import call_queue, shared
-from modules.generation_parameters_copypaste import image_from_url_text
+from modules.generation_parameters_copypaste import image_from_url_text, parse_generation_parameters
 import modules.ui_symbols as symbols
 import modules.images
 import modules.script_callbacks
@@ -34,12 +34,19 @@ def plaintext_to_html(text):
 
 
 def infotext_to_html(text):
-    res = '<p class="html_info">Prompt: ' + html.escape(text or '').replace('\n', '<br>') + '</p>'
-    sections = res.split('Steps:') # before and after prompt+negprompt'
-    if len(sections) > 1:
-        res = sections[0] + '<br>Steps: ' + sections[1].strip().replace(', ', ' | ')
-    res = res.replace('<br><br>', '<br>')
-    return res
+    res = parse_generation_parameters(text)
+    prompt = res.get('Prompt', None)
+    negative = res.get('Negative prompt', None)
+    res.pop('Prompt', None)
+    res.pop('Negative prompt', None)
+    params = [f'{k}: {v}' for k, v in res.items() if v is not None]
+    params = '| '.join(params)
+    code = f'''
+        <p><b>Prompt:</b> {prompt}</p>
+        <p><b>Negative:</b> {negative}</p>
+        <p><b>Parameters:</b> {params}</p>
+        '''
+    return code
 
 
 def delete_files(js_data, images, _html_info, index):
@@ -232,7 +239,7 @@ def create_output_panel(tabname):
             return result_gallery, generation_info, html_info, html_info_formatted, html_log
 
 
-def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
+def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id, visible: bool = True):
 
     def refresh():
         refresh_method()
@@ -242,7 +249,7 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
         return gr.update(**(args or {}))
 
     from modules.ui_components import ToolButton
-    refresh_button = ToolButton(value=symbols.refresh, elem_id=elem_id)
+    refresh_button = ToolButton(value=symbols.refresh, elem_id=elem_id, visible=visible)
     refresh_button.click(fn=refresh, inputs=[], outputs=[refresh_component])
     return refresh_button
 

@@ -1,18 +1,17 @@
 import os
-import re
 import html
 import json
+import time
 import shutil
 
 import torch
 import tqdm
 import gradio as gr
 import safetensors.torch
+from modules.merging.merge import merge_models
+from modules.merging.merge_utils import TRIPLE_METHODS
 
-from modules import shared, images, sd_models, sd_vae, sd_models_config
-
-
-checkpoint_dict_skip_on_merge = ["cond_stage_model.transformer.text_model.embeddings.position_ids"]
+from modules import shared, images, sd_models, sd_vae, sd_models_config, devices
 
 
 def run_pnginfo(image):
@@ -31,6 +30,7 @@ def create_config(ckpt_result, config_source, a, b, c):
     def config(x):
         res = sd_models_config.find_checkpoint_config_near_filename(x) if x else None
         return res if res != shared.sd_default_config else None
+
     if config_source == 0:
         cfg = config(a) or config(b) or config(c)
     elif config_source == 1:
@@ -53,158 +53,119 @@ def to_half(tensor, enable):
     return tensor
 
 
-def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_model_name, interp_method, multiplier, save_as_half, custom_name, checkpoint_format, config_source, bake_in_vae, discard_weights, save_metadata): # pylint: disable=unused-argument
+def run_modelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
     shared.state.begin('merge')
-    save_as_half = save_as_half == 0
+    t0 = time.time()
 
     def fail(message):
         shared.state.textinfo = message
         shared.state.end()
         return [*[gr.update() for _ in range(4)], message]
 
-    def weighted_sum(theta0, theta1, alpha):
-        return ((1 - alpha) * theta0) + (alpha * theta1)
-
-    def get_difference(theta1, theta2):
-        return theta1 - theta2
-
-    def add_difference(theta0, theta1_2_diff, alpha):
-        return theta0 + (alpha * theta1_2_diff)
-
-    def filename_weighted_sum():
-        a = primary_model_info.model_name
-        b = secondary_model_info.model_name
-        Ma = round(1 - multiplier, 2)
-        Mb = round(multiplier, 2)
-        return f"{Ma}({a}) + {Mb}({b})"
-
-    def filename_add_difference():
-        a = primary_model_info.model_name
-        b = secondary_model_info.model_name
-        c = tertiary_model_info.model_name
-        M = round(multiplier, 2)
-        return f"{a} + {M}({b} - {c})"
-
-    def filename_nothing():
-        return primary_model_info.model_name
-
-    theta_funcs = {
-        "Weighted sum": (filename_weighted_sum, None, weighted_sum),
-        "Add difference": (filename_add_difference, get_difference, add_difference),
-        "No interpolation": (filename_nothing, None, None),
+    kwargs["models"] = {
+        "model_a": sd_models.get_closet_checkpoint_match(kwargs.get("primary_model_name", None)).filename,
+        "model_b": sd_models.get_closet_checkpoint_match(kwargs.get("secondary_model_name", None)).filename,
     }
-    filename_generator, theta_func1, theta_func2 = theta_funcs[interp_method]
-    shared.state.job_count = (1 if theta_func1 else 0) + (1 if theta_func2 else 0)
-    if not primary_model_name or primary_model_name == 'None':
+
+    if kwargs.get("primary_model_name", None) in [None, 'None']:
         return fail("Failed: Merging requires a primary model.")
-    primary_model_info = sd_models.checkpoints_list[primary_model_name]
-    if theta_func2 and (not secondary_model_name or secondary_model_name == 'None'):
+    primary_model_info = sd_models.get_closet_checkpoint_match(kwargs.get("primary_model_name", None))
+    if kwargs.get("secondary_model_name", None) in [None, 'None']:
         return fail("Failed: Merging requires a secondary model.")
-    secondary_model_info = sd_models.checkpoints_list[secondary_model_name] if theta_func2 else None
-    if theta_func1 and (not tertiary_model_name or tertiary_model_name == 'None'):
-        return fail(f"Failed: Interpolation method ({interp_method}) requires a tertiary model.")
-    tertiary_model_info = sd_models.checkpoints_list[tertiary_model_name] if theta_func1 else None
-    result_is_inpainting_model = False
-    result_is_instruct_pix2pix_model = False
-    if theta_func2:
-        shared.state.textinfo = "Loading B"
-        shared.log.info(f"Model merge loading secondary model: {secondary_model_info.filename}")
-        theta_1 = sd_models.read_state_dict(secondary_model_info.filename)
+    secondary_model_info = sd_models.get_closet_checkpoint_match(kwargs.get("secondary_model_name", None))
+    if kwargs.get("tertiary_model_name", None) in [None, 'None'] and kwargs.get("merge_mode", None) in TRIPLE_METHODS:
+        return fail(f"Failed: Interpolation method ({kwargs.get('merge_mode', None)}) requires a tertiary model.")
+    tertiary_model_info = sd_models.get_closet_checkpoint_match(kwargs.get("tertiary_model_name", None)) if kwargs.get("merge_mode", None) in TRIPLE_METHODS else None
+
+    del kwargs["primary_model_name"]
+    del kwargs["secondary_model_name"]
+    if kwargs.get("tertiary_model_name", None) is not None:
+        kwargs["models"] |= {"model_c": sd_models.get_closet_checkpoint_match(kwargs.get("tertiary_model_name", None)).filename}
+        del kwargs["tertiary_model_name"]
+
+    if hasattr(kwargs, "alpha_base") and hasattr(kwargs, "alpha_in_blocks") and hasattr(kwargs, "alpha_mid_block") and hasattr(kwargs, "alpha_out_blocks"):
+        try:
+            alpha = [float(x) for x in
+                    [kwargs["alpha_base"]] + kwargs["alpha_in_blocks"].split(",") + [kwargs["alpha_mid_block"]] + kwargs["alpha_out_blocks"].split(",")]
+            assert len(alpha) == 26 or len(alpha) == 20, "Alpha Block Weights are wrong length (26 or 20 for SDXL) falling back"
+            kwargs["alpha"] = alpha
+        except KeyError as ke:
+            shared.log.warning(f"Merge: Malformed manual block weight: {ke}")
+    elif hasattr(kwargs, "alpha_preset") or hasattr(kwargs, "alpha"):
+        kwargs["alpha"] = kwargs.get("alpha_preset", kwargs["alpha"])
+
+    kwargs.pop("alpha_base", None)
+    kwargs.pop("alpha_in_blocks", None)
+    kwargs.pop("alpha_mid_block", None)
+    kwargs.pop("alpha_out_blocks", None)
+    kwargs.pop("alpha_preset", None)
+
+    if hasattr(kwargs, "beta_base") and hasattr(kwargs, "beta_in_blocks") and hasattr(kwargs, "beta_mid_block") and hasattr(kwargs, "beta_out_blocks"):
+        try:
+            beta = [float(x) for x in
+                    [kwargs["beta_base"]] + kwargs["beta_in_blocks"].split(",") + [kwargs["beta_mid_block"]] + kwargs["beta_out_blocks"].split(",")]
+            assert len(beta) == 26 or len(beta) == 20, "Beta Block Weights are wrong length (26 or 20 for SDXL) falling back"
+            kwargs["beta"] = beta
+        except KeyError as ke:
+            shared.log.warning(f"Merge: Malformed manual block weight: {ke}")
+    elif hasattr(kwargs, "beta_preset") or hasattr(kwargs, "beta"):
+        kwargs["beta"] = kwargs.get("beta_preset", kwargs["beta"])
+
+    kwargs.pop("beta_base", None)
+    kwargs.pop("beta_in_blocks", None)
+    kwargs.pop("beta_mid_block", None)
+    kwargs.pop("beta_out_blocks", None)
+    kwargs.pop("beta_preset", None)
+
+    if kwargs["device"] == "gpu":
+        kwargs["device"] = devices.device
+    elif kwargs["device"] == "shuffle":
+        kwargs["device"] = torch.device("cpu")
+        kwargs["work_device"] = devices.device
     else:
-        theta_1 = None
-    if theta_func1:
-        shared.state.textinfo = "Loading C"
-        shared.log.info(f"Model merge loading tertiary model: {tertiary_model_info.filename}")
-        theta_2 = sd_models.read_state_dict(tertiary_model_info.filename)
-        shared.state.textinfo = 'Merging B and C'
-        shared.state.sampling_steps = len(theta_1.keys())
-        for key in tqdm.tqdm(theta_1.keys()):
-            if key in checkpoint_dict_skip_on_merge:
-                continue
-            if 'model' in key:
-                if key in theta_2:
-                    t2 = theta_2.get(key, torch.zeros_like(theta_1[key]))
-                    theta_1[key] = theta_func1(theta_1[key], t2)
-                else:
-                    theta_1[key] = torch.zeros_like(theta_1[key])
-            shared.state.sampling_step += 1
-        del theta_2
-        shared.state.nextjob()
-    shared.state.textinfo = f"Loading {primary_model_info.filename}..."
-    shared.log.info(f"Model merge loading primary model: {primary_model_info.filename}")
-    theta_0 = sd_models.read_state_dict(primary_model_info.filename)
-    shared.log.info("Model merge: running")
-    shared.state.textinfo = 'Merging A and B'
-    shared.state.sampling_steps = len(theta_0.keys())
-    for key in tqdm.tqdm(theta_0.keys()):
-        if theta_1 and 'model' in key and key in theta_1:
-            if key in checkpoint_dict_skip_on_merge:
-                continue
-            a = theta_0[key]
-            b = theta_1[key]
-            # this enables merging an inpainting model (A) with another one (B);
-            # where normal model would have 4 channels, for latenst space, inpainting model would
-            # have another 4 channels for unmasked picture's latent space, plus one channel for mask, for a total of 9
-            if a.shape != b.shape and a.shape[0:1] + a.shape[2:] == b.shape[0:1] + b.shape[2:]:
-                if a.shape[1] == 4 and b.shape[1] == 9:
-                    raise RuntimeError("When merging inpainting model with a normal one, A must be the inpainting model.")
-                if a.shape[1] == 4 and b.shape[1] == 8:
-                    raise RuntimeError("When merging instruct-pix2pix model with a normal one, A must be the instruct-pix2pix model.")
-                if a.shape[1] == 8 and b.shape[1] == 4:#If we have an Instruct-Pix2Pix model...
-                    theta_0[key][:, 0:4, :, :] = theta_func2(a[:, 0:4, :, :], b, multiplier)#Merge only the vectors the models have in common.  Otherwise we get an error due to dimension mismatch.
-                    result_is_instruct_pix2pix_model = True
-                else:
-                    assert a.shape[1] == 9 and b.shape[1] == 4, f"Bad dimensions for merged layer {key}: A={a.shape}, B={b.shape}"
-                    theta_0[key][:, 0:4, :, :] = theta_func2(a[:, 0:4, :, :], b, multiplier)
-                    result_is_inpainting_model = True
-            else:
-                theta_0[key] = theta_func2(a, b, multiplier)
-            theta_0[key] = to_half(theta_0[key], save_as_half)
-        shared.state.sampling_step += 1
-    del theta_1
-    bake_in_vae_filename = sd_vae.vae_dict.get(bake_in_vae, None)
+        kwargs["device"] = torch.device("cpu")
+    if kwargs.pop("unload", False):
+        sd_models.unload_model_weights()
+
+    try:
+        theta_0 = merge_models(**kwargs)
+    except Exception as e:
+        return fail(f"{e}")
+
+    try:
+        theta_0 = theta_0.to_dict() #TensorDict -> Dict if necessary
+    except:
+        pass
+
+    bake_in_vae_filename = sd_vae.vae_dict.get(kwargs.get("bake_in_vae", None), None)
     if bake_in_vae_filename is not None:
-        shared.log.info(f"Model merge: baking in VAE: {bake_in_vae_filename}")
-        shared.state.textinfo = 'Baking in VAE'
+        shared.log.info(f"Merge VAE='{bake_in_vae_filename}'")
+        shared.state.textinfo = 'Merge VAE'
         vae_dict = sd_vae.load_vae_dict(bake_in_vae_filename)
         for key in vae_dict.keys():
             theta_0_key = 'first_stage_model.' + key
             if theta_0_key in theta_0:
-                theta_0[theta_0_key] = to_half(vae_dict[key], save_as_half)
+                theta_0[theta_0_key] = to_half(vae_dict[key], kwargs.get("precision", "fp16") == "fp16")
         del vae_dict
-    if save_as_half and not theta_func2:
-        for key in theta_0.keys():
-            theta_0[key] = to_half(theta_0[key], save_as_half)
-    if discard_weights:
-        regex = re.compile(discard_weights)
-        for key in list(theta_0):
-            if re.search(regex, key):
-                theta_0.pop(key, None)
+
     ckpt_dir = shared.opts.ckpt_dir or sd_models.model_path
-    filename = filename_generator() if custom_name == '' else custom_name
-    filename += ".inpainting" if result_is_inpainting_model else ""
-    filename += ".instruct-pix2pix" if result_is_instruct_pix2pix_model else ""
-    filename += "." + checkpoint_format
+    filename = kwargs.get("custom_name", "Unnamed_Merge")
+    filename += "." + kwargs.get("checkpoint_format", None)
     output_modelname = os.path.join(ckpt_dir, filename)
-    shared.state.nextjob()
-    shared.state.textinfo = "Saving"
+    shared.state.textinfo = "merge saving"
     metadata = None
-    if save_metadata:
+    if kwargs.get("save_metadata", False):
         metadata = {"format": "pt", "sd_merge_models": {}}
         merge_recipe = {
-            "type": "webui", # indicate this model was merged with webui's built-in merger
+            "type": "SDNext",  # indicate this model was merged with webui's built-in merger
             "primary_model_hash": primary_model_info.sha256,
             "secondary_model_hash": secondary_model_info.sha256 if secondary_model_info else None,
             "tertiary_model_hash": tertiary_model_info.sha256 if tertiary_model_info else None,
-            "interp_method": interp_method,
-            "multiplier": multiplier,
-            "save_as_half": save_as_half,
-            "custom_name": custom_name,
-            "config_source": config_source,
-            "bake_in_vae": bake_in_vae,
-            "discard_weights": discard_weights,
-            "is_inpainting": result_is_inpainting_model,
-            "is_instruct_pix2pix": result_is_instruct_pix2pix_model
+            "merge_mode": kwargs.get('merge_mode', None),
+            "alpha": kwargs.get('alpha', None),
+            "beta": kwargs.get('beta', None),
+            "precision": kwargs.get('precision', None),
+            "custom_name": kwargs.get("custom_name", "Unamed_Merge"),
         }
         metadata["sd_merge_recipe"] = json.dumps(merge_recipe)
 
@@ -225,22 +186,27 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         metadata["sd_merge_models"] = json.dumps(metadata["sd_merge_models"])
 
     _, extension = os.path.splitext(output_modelname)
+
+    if os.path.exists(output_modelname) and not kwargs.get("overwrite", False):
+        return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)], f"Model alredy exists: {output_modelname}"]
     if extension.lower() == ".safetensors":
         safetensors.torch.save_file(theta_0, output_modelname, metadata=metadata)
     else:
         torch.save(theta_0, output_modelname)
+
+    t1 = time.time()
+    shared.log.info(f"Merge complete: saved='{output_modelname}' time={t1-t0:.2f}")
     sd_models.list_models()
     created_model = next((ckpt for ckpt in sd_models.checkpoints_list.values() if ckpt.name == filename), None)
     if created_model:
         created_model.calculate_shorthash()
-    create_config(output_modelname, config_source, primary_model_info, secondary_model_info, tertiary_model_info)
-    shared.log.info(f"Model merge saved: {output_modelname}.")
-    shared.state.textinfo = "Checkpoint saved"
+    devices.torch_gc(force=True)
     shared.state.end()
-    return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)], "Checkpoint saved to " + output_modelname]
+    return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)], f"Model saved to {output_modelname}"]
 
-def run_modelconvert(model, checkpoint_formats, precision, conv_type, custom_name, unet_conv, text_encoder_conv, vae_conv, others_conv, fix_clip):
 
+def run_modelconvert(model, checkpoint_formats, precision, conv_type, custom_name, unet_conv, text_encoder_conv,
+                     vae_conv, others_conv, fix_clip):
     # position_ids in clip is int64. model_ema.num_updates is int32
     dtypes_to_fp16 = {torch.float32, torch.float64, torch.bfloat16}
     dtypes_to_bf16 = {torch.float32, torch.float64, torch.float16}
@@ -277,7 +243,6 @@ def run_modelconvert(model, checkpoint_formats, precision, conv_type, custom_nam
             m = torch.load(path, map_location="cpu")
         state_dict = m["state_dict"] if "state_dict" in m else m
         return state_dict
-
 
     def fix_model(model, fix_clip=False):
         # code from model-toolkit
@@ -340,6 +305,7 @@ def run_modelconvert(model, checkpoint_formats, precision, conv_type, custom_nam
             ok[wk] = t
         elif conv_t == "delete":
             return
+
     shared.log.info("Model convert: running")
     if conv_type == "ema-only":
         for k in tqdm.tqdm(state_dict):

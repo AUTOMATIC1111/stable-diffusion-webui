@@ -64,7 +64,7 @@ def reload_gradio_theme(theme_name=None):
             'font_mono':['IBM Plex Mono', 'ui-monospace', 'Consolas', 'monospace']
         }
     is_builtin = theme_name in list_builtin_themes()
-    modules.shared.log.info(f'Load UI theme: name="{theme_name}" style={modules.shared.opts.theme_style} base={"style.css" if is_builtin else "base.css"}')
+    modules.shared.log.info(f'Load UI theme: name="{theme_name}" style={modules.shared.opts.theme_style} base={"sdnext.css" if is_builtin else "base.css"}')
     if is_builtin:
         gradio_theme = gr.themes.Base(**default_font_params)
     elif theme_name.startswith("gradio/"):

@@ -64,6 +64,8 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
             self.active = False
 
     def deactivate(self, p):
+        if shared.backend == shared.Backend.DIFFUSERS and hasattr(shared.sd_model, "unload_lora_weights"):
+            shared.sd_model.unload_lora_weights()
         if not self.active and getattr(networks, "originals", None ) is not None:
             networks.originals.undo() # remove patches
             if networks.debug:

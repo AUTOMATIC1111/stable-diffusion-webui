@@ -14,6 +14,7 @@
   {"id":"","label":"⊗","localized":"","hint":"Clear prompt"},
   {"id":"","label":"🗁","localized":"","hint":"Show/hide extra networks"},
   {"id":"","label":"⇰","localized":"","hint":"Apply selected styles to current prompt"},
+  {"id":"","label":"⇨","localized":"","hint":"Apply preset to Manual Block Merge tab"},
   {"id":"","label":"⇩","localized":"","hint":"Save parameters from last generated image as style template"},
   {"id":"","label":"🕮","localized":"","hint":"Save parameters from last generated image as style template"},
   {"id":"","label":"⇕","localized":"","hint":"Sort by: Name asc/desc, Size largest/smallest, Time newest/oldest"},
@@ -255,7 +256,18 @@
   {"id":"","label":"specify model variant","localized":"","hint":""},
   {"id":"","label":"specify model revision","localized":"","hint":""},
   {"id":"","label":"huggingface token","localized":"","hint":""},
-  {"id":"","label":"huggingface mirror","localized":"","hint":""}
+  {"id":"","label":"huggingface mirror","localized":"","hint":""},
+  {"id":"","label":"Weights Clip","localized":"","hint":"Forced merged weights to be no heavier than the original model, preventing burn in and overly saturated models"},
+  {"id":"","label":"ReBasin","localized":"","hint":"Performs multiple merges with permutations in order to keep more features from both models"},
+  {"id":"","label":"Number of ReBasin Iterations","localized":"","hint":"Number of times to merge and permute the model before saving"},
+  {"id":"","label":"cpu","localized":"","hint":"Uses cpu and RAM only: slowest but least likely to OOM"},
+  {"id":"","label":"shuffle","localized":"","hint":"Loads full model in RAM and calculates on VRAM: Less speedup, suggested for SDXL merges"},
+  {"id":"","label":"cuda","localized":"","hint":"Loads models into VRAM automatically unloading current model: fastest option but unlikely to handle SDXL Models without OOM"},
+  {"id":"","label":"Base","localized":"","hint":"Text Encoder and a few unaligned keys (1 value)"},
+  {"id":"","label":"In Blocks","localized":"","hint":"Downsampling Blocks of the UNet (12 values for SD1.5, 9 values for SDXL)"},
+  {"id":"","label":"Mid Block","localized":"","hint":"Central Block of the UNet (1 value)"},
+  {"id":"","label":"Out Block","localized":"","hint":"Upsampling Blocks of the UNet (12 values for SD1.5, 9 values for SDXL)"},
+  {"id":"","label":"Preset Interpolation Ratio","localized":"","hint":"If two presets are selected, interpolate between them"}
 ],
 "train tabs": [
   {"id":"","label":"Preprocess","localized":"","hint":""},

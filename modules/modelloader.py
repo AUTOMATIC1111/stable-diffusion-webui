@@ -58,13 +58,11 @@ def walk(top, onerror:callable=None):
 
 def download_civit_meta(model_path: str, model_id):
     fn = os.path.splitext(model_path)[0] + '.json'
-    if os.path.exists(fn):
-        return ''
     url = f'https://civitai.com/api/v1/models/{model_id}'
     r = shared.req(url)
     if r.status_code == 200:
         try:
-            shared.writefile(r.json(), fn, silent=True)
+            shared.writefile(r.json(), filename=fn, mode='w', silent=True)
             msg = f'CivitAI download: id={model_id} url={url} file={fn}'
             shared.log.info(msg)
             return msg
@@ -72,7 +70,8 @@ def download_civit_meta(model_path: str, model_id):
             msg = f'CivitAI download error: id={model_id} url={url} file={fn} {e}'
             shared.log.error(msg)
             return msg
-    return ''
+    return f'CivitAI download error: id={model_id} url={url} code={r.status_code}'
+
 
 def download_civit_preview(model_path: str, preview_url: str):
     ext = os.path.splitext(preview_url)[1]
@@ -273,6 +272,8 @@ def load_diffusers_models(model_path: str, command_path: str = None, clear=True)
             for folder in os.listdir(place):
                 try:
                     if "--" not in folder:
+                        continue
+                    if folder.endswith("-prior"):
                         continue
                     _, name = folder.split("--", maxsplit=1)
                     name = name.replace("--", "/")

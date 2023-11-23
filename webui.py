@@ -247,6 +247,8 @@ def start_ui():
             with open(cmd_opts.auth_file, 'r', encoding="utf8") as file:
                 for line in file.readlines():
                     gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
+    if len(gradio_auth_creds) > 0:
+        log.info(f'Authentication enabled: users={len(list(gradio_auth_creds))}')
 
     global local_url # pylint: disable=global-statement
     stdout = io.StringIO()

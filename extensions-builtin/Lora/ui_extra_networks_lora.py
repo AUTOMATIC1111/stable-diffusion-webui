@@ -56,7 +56,8 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 words = [str(w).replace('.json', '') for w in words]
                 if words[0] == '{}':
                     words[0] = 0
-                tags[' '.join(words[1:])] = words[0]
+                tag = ' '.join(words[1:])
+                tags[tag] = words[0]
             versions = info.get('modelVersions', []) # trigger words from info json
             for v in versions:
                 possible_tags = v.get('trainedWords', [])
@@ -73,9 +74,15 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
             if len(list(tags)) == 0:
                 tags = search
 
+            bad_chars = [';', ':', '<', ">", "*", '?', '\'', '\"']
+            clean_tags = {}
+            for k, v in tags.items():
+                tag = ''.join(i for i in k if not i in bad_chars)
+                clean_tags[tag] = v
+
             item["info"] = info
             item["description"] = self.find_description(l.filename, info) # use existing info instead of double-read
-            item["tags"] = tags
+            item["tags"] = clean_tags
             item["search_term"] = f'{self.search_terms_from_path(l.filename)} {" ".join(tags.keys())} {" ".join(search.keys())}'
 
             return item

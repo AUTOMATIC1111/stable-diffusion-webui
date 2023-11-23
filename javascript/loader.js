@@ -39,7 +39,10 @@ async function createSplash() {
   document.getElementById('splash').insertAdjacentHTML('afterbegin', imgEl);
   fetch('/sdapi/v1/motd')
     .then((res) => res.text())
-    .then((text) => document.getElementById('motd').innerHTML = text.replace(/["]+/g, ''))
+    .then((text) => {
+      const motdEl = document.getElementById('motd');
+      if (motdEl) motdEl.innerHTML = text.replace(/["]+/g, '');
+    })
     .catch((err) => console.error('getMOTD:', err));
 }
 

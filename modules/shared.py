@@ -181,51 +181,69 @@ def temp_disable_extensions():
     return disabled
 
 
-def readfile(filename, silent=False):
+def readfile(filename, silent=False, lock=False):
     data = {}
+    lock_file = None
+    locked = False
     try:
         if not os.path.exists(filename):
             return {}
-        with fasteners.InterProcessLock(f"{filename}.lock"):
-            with open(filename, "r", encoding="utf8") as file:
-                data = json.load(file)
-                if type(data) is str:
-                    data = json.loads(data)
-            if not silent:
-                log.debug(f'Read: file="{filename}" len={len(data)}')
+        if lock:
+            lock_file = fasteners.InterProcessReaderWriterLock(f"{filename}.lock", logger=log)
+            locked = lock_file.acquire_read_lock(blocking=True, timeout=3)
+        with open(filename, "r", encoding="utf8") as file:
+            data = json.load(file)
+        if type(data) is str:
+            data = json.loads(data)
+        if not silent:
+            log.debug(f'Read: file="{filename}" json={len(data)} bytes={os.path.getsize(filename)}')
     except Exception as e:
         if not silent:
             log.error(f'Reading failed: {filename} {e}')
         return {}
+    finally:
+        if lock_file is not None:
+            lock_file.release_read_lock()
+        if locked and os.path.exists(f"{filename}.lock"):
+            os.remove(f"{filename}.lock")
     return data
 
 
 def writefile(data, filename, mode='w', silent=False):
+    lock = None
+    locked = False
+
     def default(obj):
         log.error(f"Saving: {filename} not a valid object: {obj}")
         return str(obj)
 
     try:
-        with fasteners.InterProcessLock(f"{filename}.lock"):
-            # skipkeys=True, ensure_ascii=True, check_circular=True, allow_nan=True
-            if type(data) == dict:
-                output = json.dumps(data, indent=2, default=default)
-            elif type(data) == list:
-                output = json.dumps(data, indent=2, default=default)
-            elif isinstance(data, object):
-                simple = {}
-                for k in data.__dict__:
-                    if data.__dict__[k] is not None:
-                        simple[k] = data.__dict__[k]
-                output = json.dumps(simple, indent=2, default=default)
-            else:
-                raise ValueError('not a valid object')
-            if not silent:
-                log.debug(f'Save: file="{filename}" len={len(output)}')
-            with open(filename, mode, encoding="utf8") as file:
-                file.write(output)
+        # skipkeys=True, ensure_ascii=True, check_circular=True, allow_nan=True
+        if type(data) == dict:
+            output = json.dumps(data, indent=2, default=default)
+        elif type(data) == list:
+            output = json.dumps(data, indent=2, default=default)
+        elif isinstance(data, object):
+            simple = {}
+            for k in data.__dict__:
+                if data.__dict__[k] is not None:
+                    simple[k] = data.__dict__[k]
+            output = json.dumps(simple, indent=2, default=default)
+        else:
+            raise ValueError('not a valid object')
+        lock = fasteners.InterProcessReaderWriterLock(f"{filename}.lock", logger=log)
+        locked = lock.acquire_write_lock(blocking=True, timeout=3)
+        with open(filename, mode, encoding="utf8") as file:
+            file.write(output)
+        if not silent:
+            log.debug(f'Save: file="{filename}" json={len(data)} bytes={len(output)}')
     except Exception as e:
         log.error(f'Saving failed: {filename} {e}')
+    finally:
+        if lock is not None:
+            lock.release_read_lock()
+        if locked and os.path.exists(f"{filename}.lock"):
+            os.remove(f"{filename}.lock")
 
 
 if devices.backend == "cpu":
@@ -282,16 +300,16 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "other_sep": OptionInfo("<h2>Execution precision</h2>", "", gr.HTML),
     "opt_channelslast": OptionInfo(False, "Use channels last as torch memory format "),
     "cudnn_benchmark": OptionInfo(False, "Enable full-depth cuDNN benchmark feature"),
-    "torch_gc_threshold": OptionInfo(90, "VRAM usage threshold before running Torch GC to clear up VRAM", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
+    "torch_gc_threshold": OptionInfo(80 if devices.backend == "ipex" else 90, "VRAM usage threshold before running Torch GC to clear up VRAM", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
 
     "cuda_compile_sep": OptionInfo("<h2>Model Compile</h2>", "", gr.HTML),
     "cuda_compile": OptionInfo(True if cmd_opts.use_openvino else False, "Compile UNet"),
     "cuda_compile_vae": OptionInfo(True if cmd_opts.use_openvino else False, "Compile VAE"),
     "cuda_compile_upscaler": OptionInfo(True if cmd_opts.use_openvino else False, "Compile upscaler"),
-    "cuda_compile_backend": OptionInfo("openvino_fx" if cmd_opts.use_openvino else "none", "Model compile backend", gr.Radio, {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx']}),
-    "cuda_compile_mode": OptionInfo("default", "Model compile mode", gr.Radio, {"choices": ['default', 'reduce-overhead', 'max-autotune']}),
+    "cuda_compile_backend": OptionInfo("openvino_fx" if cmd_opts.use_openvino else "none", "Model compile backend", gr.Radio, {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx', 'stable-fast']}),
+    "cuda_compile_mode": OptionInfo("default", "Model compile mode", gr.Radio, {"choices": ['default', 'reduce-overhead', 'max-autotune', 'max-autotune-no-cudagraphs']}),
     "cuda_compile_fullgraph": OptionInfo(False, "Model compile fullgraph"),
-    "cuda_compile_precompile": OptionInfo(False, "Model compile precompile"),
+    "cuda_compile_precompile": OptionInfo(False if cmd_opts.use_openvino else True, "Model compile precompile"),
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
     "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
 
@@ -347,10 +365,9 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_model_load_variant": OptionInfo("default", "Diffusers model loading variant", gr.Radio, {"choices": ['default', 'fp32', 'fp16']}),
     "diffusers_vae_load_variant": OptionInfo("default", "Diffusers VAE loading variant", gr.Radio, {"choices": ['default', 'fp32', 'fp16']}),
     "custom_diffusers_pipeline": OptionInfo('', 'Load custom Diffusers pipeline'),
-    "diffusers_lora_loader": OptionInfo("diffusers" if cmd_opts.use_openvino else "sequential apply", "Diffusers LoRA loading variant", gr.Radio, {"choices": ['diffusers', 'sequential apply', 'merge and apply']}),
+    "diffusers_eval": OptionInfo(True, "Force model eval"),
     "diffusers_force_zeros": OptionInfo(True, "Force zeros for prompts when empty"),
     "diffusers_aesthetics_score": OptionInfo(False, "Require aesthetics score"),
-    "diffusers_force_inpaint": OptionInfo(False, 'Diffusers force inpaint pipeline'),
     "diffusers_pooled": OptionInfo("default", "Diffusers SDXL pooled embeds (experimental)", gr.Radio, {"choices": ['default', 'weighted']}),
 }))
 
@@ -359,6 +376,7 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "models_dir": OptionInfo('models', "Base path where all models are stored", folder=True),
     "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Folder with stable diffusion models", folder=True),
     "diffusers_dir": OptionInfo(os.path.join(paths.models_path, 'Diffusers'), "Folder with Hugggingface models", folder=True),
+    "hfcache_dir": OptionInfo(os.path.join(os.path.expanduser('~'), '.cache', 'huggingface', 'hub'), "Folder for Hugggingface cache", folder=True),
     "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Folder with VAE files", folder=True),
     "sd_lora": OptionInfo("", "Add LoRA to prompt", gr.Textbox, {"visible": False}),
     "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Folder with LoRA network(s)", folder=True),
@@ -401,6 +419,9 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
     "grid_save": OptionInfo(True, "Always save all generated image grids"),
     "grid_format": OptionInfo('jpg', 'File format for grids', gr.Dropdown, {"choices": ["jpg", "png", "webp", "tiff", "jp2"]}),
     "n_rows": OptionInfo(-1, "Grid row count", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
+    "grid_background": OptionInfo("#000000", "Grid background color", ui_components.FormColorPicker, {}),
+    "font": OptionInfo("", "Font file"),
+    "font_color": OptionInfo("#FFFFFF", "Font color", ui_components.FormColorPicker, {}),
 
     "save_sep_options": OptionInfo("<h2>Intermediate Image Saving</h2>", "", gr.HTML),
     "save_init_img": OptionInfo(False, "Save copy of img2img init images"),
@@ -452,7 +473,6 @@ options_templates.update(options_section(('ui', "User Interface"), {
     "disable_weights_auto_swap": OptionInfo(True, "Do not change selected model when reading generation parameters"),
     "send_seed": OptionInfo(True, "Send seed when sending prompt or image to other interface"),
     "send_size": OptionInfo(True, "Send size when sending prompt or image to another interface"),
-    "font": OptionInfo("", "Font for image grids that have text"),
     "keyedit_precision_attention": OptionInfo(0.1, "Ctrl+up/down precision when editing (attention:1.1)", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001, "visible": False}),
     "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001, "visible": False}),
     "keyedit_delimiters": OptionInfo(".,\/!?%^*;:{}=`~()", "Ctrl+up/down word delimiters", gr.Textbox, { "visible": False }), # pylint: disable=anomalous-backslash-in-string
@@ -510,9 +530,9 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
     'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "bh2", "vary_coeff"]}),
     'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}),
     "ddim_discretize": OptionInfo('uniform', "DDIM discretize img2img", gr.Radio, {"choices": ['uniform', 'quad']}),
-    # TODO pad_cond_uncond implementation missing
+    # TODO pad_cond_uncond implementation missing for original backend
     "pad_cond_uncond": OptionInfo(True, "Pad prompt and negative prompt to be same length", gr.Checkbox, {"visible": False}),
-    # TODO batch_cond-uncond implementation missing
+    # TODO batch_cond-uncond implementation missing for original backend
     "batch_cond_uncond": OptionInfo(True, "Do conditional and unconditional denoising in one batch", gr.Checkbox, {"visible": False}),
 }))
 
@@ -699,7 +719,7 @@ class Options:
             log.debug(f'Created default config: {filename}')
             self.save(filename)
             return
-        self.data = readfile(filename)
+        self.data = readfile(filename, lock=True)
         if self.data.get('quicksettings') is not None and self.data.get('quicksettings_list') is None:
             self.data['quicksettings_list'] = [i.strip() for i in self.data.get('quicksettings').split(',')]
         unknown_settings = []
