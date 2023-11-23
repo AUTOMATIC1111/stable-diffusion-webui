@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-11-22
+## Update for 2023-11-23
 
 - **Diffusers**  
   - **LCM** support for any *SD 1.5* or *SD-XL* model!  

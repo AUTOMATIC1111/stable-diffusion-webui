@@ -69,7 +69,7 @@ def encode_prompts(pipeline, prompts: list, negative_prompts: list, clip_skip: t
         negative_embeds = []
         negative_pooleds = []
         for i in range(len(prompts)):
-            prompt_embed, positive_pooled, negative_embed, negative_pooled = get_weighted_text_embeddings(pipeline,prompts[i], negative_prompts[i], clip_skip)
+            prompt_embed, positive_pooled, negative_embed, negative_pooled = get_weighted_text_embeddings(pipeline, prompts[i], negative_prompts[i], clip_skip)
             prompt_embeds.append(prompt_embed)
             positive_pooleds.append(positive_pooled)
             negative_embeds.append(negative_embed)
@@ -119,8 +119,7 @@ def pad_to_same_length(embeds):
         empty_embed = shared.sd_model.encode_prompt("")
     except Exception: #SD1.5
         empty_embed = shared.sd_model.encode_prompt("",shared.sd_model.device, 1, False)
-
-    empty_batched = torch.cat([empty_embed[0]] * embeds[0].shape[0])
+    empty_batched = torch.cat([empty_embed[0].to(embeds[0].device)] * embeds[0].shape[0])
     max_token_count = max([embed.shape[1] for embed in embeds])
     for i, embed in enumerate(embeds):
         while embed.shape[1] < max_token_count:
@@ -152,7 +151,6 @@ def get_weighted_text_embeddings(pipe, prompt: str = "", neg_prompt: str = "", c
     negative_prompt_embeds = []
     pooled_prompt_embeds = None
     negative_pooled_prompt_embeds =  None
-
     for i in range(len(embedding_providers)):
         # add BREAK keyword that splits the prompt into multiple fragments
         text = positives[i]
@@ -168,7 +166,7 @@ def get_weighted_text_embeddings(pipe, prompt: str = "", neg_prompt: str = "", c
             weights = weights[pos+1:]
         prompt_embeds.append(torch.cat(provider_embed, dim=1))
         # negative prompt has no keywords
-        embed, ntokens = embedding_providers[i].get_embeddings_for_weighted_prompt_fragments(text_batch=[negatives[i]], fragment_weights_batch=[negative_weights[i]],device=pipe.device, should_return_tokens=True)
+        embed, ntokens = embedding_providers[i].get_embeddings_for_weighted_prompt_fragments(text_batch=[negatives[i]], fragment_weights_batch=[negative_weights[i]], device=pipe.device, should_return_tokens=True)
         negative_prompt_embeds.append(embed)
 
     if prompt_embeds[-1].shape[-1] > 768:

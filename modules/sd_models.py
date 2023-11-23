@@ -1106,7 +1106,6 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
     shared.log.debug(f"Model created from config: {checkpoint_config}")
     sd_model.used_config = checkpoint_config
     sd_model.has_accelerate = False
-    sd_model.is_sdxl = False # a1111 compatibility item
     timer.record("create")
     ok = load_model_weights(sd_model, checkpoint_info, state_dict, timer)
     if not ok:
