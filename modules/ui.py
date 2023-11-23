@@ -4,6 +4,7 @@ import os
 import sys
 from functools import reduce
 import warnings
+from contextlib import ExitStack
 
 import gradio as gr
 import gradio.utils
@@ -270,7 +271,11 @@ def create_ui():
         extra_tabs.__enter__()
 
         with gr.Tab("Generation", id="txt2img_generation") as txt2img_generation_tab, ResizeHandleRow(equal_height=False):
-            with gr.Column(variant='compact', elem_id="txt2img_settings"):
+            with ExitStack() as stack:
+                if shared.opts.txt2img_settings_accordion:
+                    stack.enter_context(gr.Accordion("Open for Settings", open=False))
+                stack.enter_context(gr.Column(variant='compact', elem_id="txt2img_settings"))
+
                 scripts.scripts_txt2img.prepare_ui()
 
                 for category in ordered_ui_categories():
@@ -489,7 +494,11 @@ def create_ui():
         extra_tabs.__enter__()
 
         with gr.Tab("Generation", id="img2img_generation") as img2img_generation_tab, ResizeHandleRow(equal_height=False):
-            with gr.Column(variant='compact', elem_id="img2img_settings"):
+            with ExitStack() as stack:
+                if shared.opts.img2img_settings_accordion:
+                    stack.enter_context(gr.Accordion("Open for Settings", open=False))
+                stack.enter_context(gr.Column(variant='compact', elem_id="img2img_settings"))
+
                 copy_image_buttons = []
                 copy_image_destinations = {}
 
@@ -626,12 +635,6 @@ def create_ui():
                                     scale_by.release(**on_change_args)
                                     button_update_resize_to.click(**on_change_args)
 
-                                    # the code below is meant to update the resolution label after the image in the image selection UI has changed.
-                                    # as it is now the event keeps firing continuously for inpaint edits, which ruins the page with constant requests.
-                                    # I assume this must be a gradio bug and for now we'll just do it for non-inpaint inputs.
-                                    for component in [init_img, sketch]:
-                                        component.change(fn=lambda: None, _js="updateImg2imgResizeToTextAfterChangingImage", inputs=[], outputs=[], show_progress=False)
-
                             tab_scale_to.select(fn=lambda: 0, inputs=[], outputs=[selected_scale_tab])
                             tab_scale_by.select(fn=lambda: 1, inputs=[], outputs=[selected_scale_tab])
 
@@ -691,6 +694,12 @@ def create_ui():
 
                     if category not in {"accordions"}:
                         scripts.scripts_img2img.setup_ui_for_section(category)
+
+            # the code below is meant to update the resolution label after the image in the image selection UI has changed.
+            # as it is now the event keeps firing continuously for inpaint edits, which ruins the page with constant requests.
+            # I assume this must be a gradio bug and for now we'll just do it for non-inpaint inputs.
+            for component in [init_img, sketch]:
+                component.change(fn=lambda: None, _js="updateImg2imgResizeToTextAfterChangingImage", inputs=[], outputs=[], show_progress=False)
 
             def select_img2img_tab(tab):
                 return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
@@ -1299,7 +1308,7 @@ def setup_ui_api(app):
         from fastapi.responses import PlainTextResponse
 
         text = sysinfo.get()
-        filename = f"sysinfo-{datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M')}.txt"
+        filename = f"sysinfo-{datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M')}.json"
 
         return PlainTextResponse(text, headers={'Content-Disposition': f'{"attachment" if attachment else "inline"}; filename="{filename}"'})
 

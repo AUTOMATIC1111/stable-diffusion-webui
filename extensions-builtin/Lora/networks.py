@@ -11,6 +11,7 @@ import network_ia3
 import network_lokr
 import network_full
 import network_norm
+import network_oft
 
 import torch
 from typing import Union
@@ -28,6 +29,7 @@ module_types = [
     network_full.ModuleTypeFull(),
     network_norm.ModuleTypeNorm(),
     network_glora.ModuleTypeGLora(),
+    network_oft.ModuleTypeOFT(),
 ]
 
 
@@ -188,6 +190,17 @@ def load_network(name, network_on_disk):
             if sd_module is None:
                 key = key_network_without_network_parts.replace("lora_te1_text_model", "transformer_text_model")
                 sd_module = shared.sd_model.network_layer_mapping.get(key, None)
+
+        # kohya_ss OFT module
+        elif sd_module is None and "oft_unet" in key_network_without_network_parts:
+            key = key_network_without_network_parts.replace("oft_unet", "diffusion_model")
+            sd_module = shared.sd_model.network_layer_mapping.get(key, None)
+
+        # KohakuBlueLeaf OFT module
+        if sd_module is None and "oft_diag" in key:
+            key = key_network_without_network_parts.replace("lora_unet", "diffusion_model")
+            key = key_network_without_network_parts.replace("lora_te1_text_model", "0_transformer_text_model")
+            sd_module = shared.sd_model.network_layer_mapping.get(key, None)
 
         if sd_module is None:
             keys_failed_to_match[key_network] = key
