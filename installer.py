@@ -190,7 +190,7 @@ def installed(package, friendly: str = None, reload = False, quiet = False):
                         if args.experimental:
                             log.warning(f"Package allowing experimental: {p[0]} {package_version} required {p[1]}")
                         else:
-                            log.warning(f"Package wrong version: {p[0]} {package_version} required {p[1]}")
+                            log.warning(f"Package version mismatch: {p[0]} {package_version} required {p[1]}")
             else:
                 if not quiet:
                     log.debug(f"Package not found: {p[0]}")

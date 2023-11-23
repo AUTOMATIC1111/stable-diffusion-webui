@@ -19,6 +19,7 @@
     *Hint*: **70+ it/s** is possible on *RTX4090* with no special tweaks  
   - Add additional pipeline types for manual model loads when loading from `safetensors`  
   - Updated logic for calculating **steps** when using base/hires/refiner workflows  
+  - Improve **model offloading** for both model and sequential cpu offload when dealing with meta tensors
   - Safe model offloading for non-standard models  
   - Fix **DPM SDE** scheduler  
   - Better support for SD 1.5 **inpainting** models  
@@ -26,7 +27,6 @@
   - Enhance prompt parsing with long prompts and support for *BREAK* keyword  
     Change-in-behavior: new line in prompt now means *BREAK*  
   - Add alternative Lora loading algorithm, triggered if `SD_LORA_DIFFUSERS` is set  
-  - Update to `diffusers==0.23.0`  
 - **Models**
   - **Model merge**
     - completely redesigned, now based on best-of-class `meh` by @s1dlx  
