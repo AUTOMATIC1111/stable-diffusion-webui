@@ -1,11 +1,12 @@
 __pycache__
-*.local.*
 *.ckpt
 *.safetensors
 *.pth
 /ESRGAN/*
 /SwinIR/*
 /repositories
+/venv
+/test-venv
 /tmp
 /model.ckpt
 /models/**/*
@@ -41,12 +42,5 @@ notification.mp3
 # ignore files root of repo which are version numbers
 /*.*.*
 
-# Environments
-.env
-.venv
-*venv/
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+# ignore files which are "local" edits of webui-*.bat, etc.
+*.local.bat
