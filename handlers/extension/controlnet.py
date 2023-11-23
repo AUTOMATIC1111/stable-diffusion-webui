@@ -5,6 +5,7 @@
 # @Site    :
 # @File    : controlnet.py
 # @Software: Hifive
+import json
 import os.path
 import time
 import traceback
@@ -74,6 +75,14 @@ annotato_args_thr_b_dict = {
 
 reverse_preprocessor_aliases = {
     preprocessor_aliases[k]: k for k in preprocessor_aliases.keys()}
+
+
+class JsonAcceptor:
+    def __init__(self) -> None:
+        self.value = ""
+
+    def accept(self, json_dict: dict) -> None:
+        self.value = json.dumps(json_dict)
 
 
 def HWC3(x):
@@ -207,6 +216,16 @@ def pixel_perfect_resolution(
     return int(np.round(estimation))
 
 
+def visualize_inpaint_mask(img):
+    if img.ndim == 3 and img.shape[2] == 4:
+        result = img.copy()
+        mask = result[:, :, 3]
+        mask = 255 - mask // 2
+        result[:, :, 3] = mask
+        return np.ascontiguousarray(result.copy())
+    return img
+
+
 def exec_control_net_annotator(task: Task) -> typing.Iterable[TaskProgress]:
     progress = TaskProgress.new_ready(task, 'at the ready')
     yield progress
@@ -235,14 +254,14 @@ def exec_control_net_annotator(task: Task) -> typing.Iterable[TaskProgress]:
 
             module = args.module
             img = HWC3(args.image)
-            if not ((args.mask[:, :, 0] == 0).all() or (args.mask[:, :, 0] == 255).all()):
-                img = HWC3(args.mask[:, :, 0])
+            has_mask = not ((args.mask[:, :, 0] <= 5).all() or (args.mask[:, :, 0] >= 250).all())
 
             if 'inpaint' in module:
                 color = HWC3(args.image)
                 alpha = args.mask[:, :, 0:1]
                 img = np.concatenate([color, alpha], axis=2)
-
+            elif has_mask:
+                img = HWC3(args.mask[:, :, 0])
             # def get_module_basename(self, module):
             #     if module is None:
             #         module = 'none'
@@ -257,20 +276,37 @@ def exec_control_net_annotator(task: Task) -> typing.Iterable[TaskProgress]:
                     target_W=args.t2i_w,
                     resize_mode=args.rm,
                 )
+
+            def is_openpose(module: str):
+                return "openpose" in module
+
+            json_acceptor = JsonAcceptor()
             if args.pres > 64:
                 # 参数校验：超过范围就取最小值
                 args.pthr_a, args.pthr_b = run_annotato_args_check(
                     args.module, args.pthr_a, args.pthr_b)
-
+                # result, is_image = preprocessor(
+                #     img, res=args.pres, thr_a=args.pthr_a, thr_b=args.pthr_b)
                 result, is_image = preprocessor(
-                    img, res=args.pres, thr_a=args.pthr_a, thr_b=args.pthr_b)
+                    img,
+                    res=args.pres,
+                    thr_a=args.pthr_a,
+                    thr_b=args.pthr_b,
+                    json_pose_callback=json_acceptor.accept
+                    if is_openpose(module)
+                    else None,
+                )
             else:
                 result, is_image = preprocessor(img)
 
-            if "clip" in module:
-                result = clip_vision_visualization(result)
+            if not is_image:
+                # 返回原图
+                result = img
                 is_image = True
 
+            # if "clip" in module:
+            #     result = clip_vision_visualization(result)
+            #     is_image = True
             r, pli_img = None, None
             if is_image:
                 if result.ndim == 3 and result.shape[2] == 4:
