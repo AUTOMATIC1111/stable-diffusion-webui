@@ -227,7 +227,7 @@ def simple_merge(
 
 
 def rebasin_merge(
-    thetas: Dict[str, os.PathLike | str],
+    thetas: Dict[str, os.PathLike],
     weight_matcher: WeightClass,
     merge_mode: str,
     precision: str = "fp16",
