@@ -1,3 +1,4 @@
+__pycache__
 *.local.*
 *.ckpt
 *.safetensors
@@ -37,13 +38,8 @@ notification.mp3
 /package-lock.json
 /.coverage*
 
-# ignore files only in root of repo which are version numbers
+# ignore files root of repo which are version numbers
 /*.*.*
-
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
 
 # Environments
 .env
