@@ -410,7 +410,7 @@ class TaskReceiver:
                     time_array = time.localtime(awake_ts)
                     date_time = time.strftime("%Y-%m-%d %H:%M:%S", time_array)
                     logger.info(f"[Maintain] task receiver sleeping till: {date_time}...")
-                    time.sleep(5)
+                    time.sleep(60)
                 else:
                     break
             except:
