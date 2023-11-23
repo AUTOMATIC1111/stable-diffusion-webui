@@ -70,10 +70,8 @@ def unwrap_style_text_from_prompt(style_text, prompt):
         # return True and the prompt text up to where the style text starts.
         if stripped_prompt.endswith(stripped_style_text):
             prompt = stripped_prompt[: len(stripped_prompt) - len(stripped_style_text)]
-
             if prompt.endswith(", "):
                 prompt = prompt[:-2]
-
             return True, prompt
 
     return False, prompt
@@ -205,10 +203,23 @@ class StyleDatabase:
         )
 
     def save_styles(self, path: str = None) -> None:
-        # The path argument is deprecated, but kept for compatibility
+        # The path argument is deprecated, but kept for backwards compatibility
         _ = path
 
-        style_paths = self.get_style_paths()
+        # Update any styles without a path to the default path
+        for style in list(self.styles.values()):
+            if not style.path:
+                self.styles[style.name] = style._replace(path=self.default_path)
+
+        # Create a list of all distinct paths, including the default path
+        style_paths = set()
+        style_paths.add(self.default_path)
+        for _, style in self.styles.items():
+            if style.path:
+                style_paths.add(style.path)
+
+        # Remove any paths for styles that are just list dividers
+        style_paths.remove("do_not_save")
 
         csv_names = [os.path.split(path)[1].lower() for path in style_paths]
 
