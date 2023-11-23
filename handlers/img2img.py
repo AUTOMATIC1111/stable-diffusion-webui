@@ -163,7 +163,6 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             blur = ImageFilter.GaussianBlur(mask_blur)
             image = Image.composite(image.filter(blur), orig, mask.filter(blur))
             image = image.convert("RGB")
-
         elif mode == 2:
             if not init_img_with_mask:
                 raise Exception('init_img_with_mask not found')
@@ -199,7 +198,6 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             mask = None
         else:
             raise ValueError(f'mode value error, except 0~5 got {mode}')
-
         if image is not None:
             image = ImageOps.exif_transpose(image)
 

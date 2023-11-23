@@ -68,7 +68,7 @@ def process_health():
         memory = process.memory_info().rss / 1024 / 1024 / 1024
         uptime = time.time() - create_time
         # 子进程补偿：超过时间12h，状态不为running且不是主程1 的子进程触发进程结束信号
-        if uptime > 3600 * 12 and status != 'running' and pid != os.getpid():
+        if uptime > 3600 * 12 and status != 'running' and pid != os.getppid():
             logger.info(
                 f"process:pid={pid},status={status},create_time={create_time},uptime={uptime}s,memory={memory} is time out ,then kill it {pid}")
             process.terminate()
