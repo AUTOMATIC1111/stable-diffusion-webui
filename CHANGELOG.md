@@ -3,9 +3,10 @@
 ## Update for 2023-11-24
 
 - **General**
+  - log level defaults to info for console and debug for log file
+  - better prompt display in process tab
   - increase maximum lora cache values
-  - fixes for python 3.9 compatibility
-  - fix prompt display in process tab
+  - fix for python 3.9 compatibility
 
 ## Update for 2023-11-23
 

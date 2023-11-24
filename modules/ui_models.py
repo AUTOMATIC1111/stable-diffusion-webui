@@ -81,7 +81,7 @@ def create_ui():
                             custom_name = gr.Textbox(label="New model name")
                         with FormRow():
                             merge_mode = gr.Dropdown(choices=merge_methods.__all__, value="weighted_sum", label="Interpolation Method")
-                            merge_mode_docs = gr.HTML(value=getattr(merge_methods, "weighted_sum").__doc__.replace("\n", "<br>"))
+                            merge_mode_docs = gr.HTML(value=getattr(merge_methods, "weighted_sum", "").__doc__.replace("\n", "<br>"))
                         with FormRow():
                             primary_model_name = gr.Dropdown(sd_model_choices(), label="Primary model", value="None")
                             create_refresh_button(primary_model_name, sd_models.list_models, lambda: {"choices": sd_model_choices()}, "refresh_checkpoint_A")
@@ -641,7 +641,7 @@ def create_ui():
                     civit_update_download_btn = gr.Button(value="Download", variant='primary', visible=False)
 
                 class CivitModel:
-                    def __init__(self, name, fn, sha = None, meta = {}):
+                    def __init__(self, name, fn, sha = None, meta = {}): # noqa: B006
                         self.name = name
                         self.id = meta.get('id', 0)
                         self.fn = fn
@@ -701,7 +701,7 @@ def create_ui():
                                         model.latest_name = f.get('name', '')
                                         if model.vername == model.latest:
                                             model.status = 'Latest'
-                                        elif any(map(lambda v: v in model.latest_hashes, all_hashes)):
+                                        elif any(map(lambda v: v in model.latest_hashes, all_hashes)): # pylint: disable=cell-var-from-loop # noqa: C417
                                             model.status = 'Downloaded'
                                         else:
                                             model.status = 'Available'
@@ -716,7 +716,7 @@ def create_ui():
                     nonlocal selected_model, update_data
                     try:
                         selected_model = [m for m in update_data if m.fn == in_data[evt.index[0]][1]][0]
-                    except:
+                    except Exception:
                         selected_model = None
                     if selected_model is None or selected_model.url is None or selected_model.status != 'Available':
                         return [gr.update(value='Model update not available'), gr.update(visible=False)]

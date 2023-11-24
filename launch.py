@@ -4,7 +4,6 @@ import os
 import sys
 import time
 import shlex
-import logging
 import subprocess
 from functools import lru_cache
 import installer
