@@ -47,8 +47,6 @@ state = shared.state
 backend = shared.backend
 if not modules.loader.initialized:
     timer.startup.record("libraries")
-    log.setLevel(logging.DEBUG if cmd_opts.debug else logging.INFO)
-    logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
 if cmd_opts.server_name:
     server_name = cmd_opts.server_name
 else:
@@ -212,7 +210,6 @@ def async_policy():
 
 def start_common():
     log.debug('Entering start sequence')
-    logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
     if shared.cmd_opts.data_dir is not None and len(shared.cmd_opts.data_dir) > 0:
         log.info(f'Using data path: {shared.cmd_opts.data_dir}')
     if shared.cmd_opts.models_dir is not None and len(shared.cmd_opts.models_dir) > 0 and shared.cmd_opts.models_dir != 'models':

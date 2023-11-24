@@ -103,12 +103,6 @@ def setup_logging():
         fh.doRollover()
         log_rolled = True
 
-    global first_call # pylint: disable=global-statement
-    if first_call:
-        log_size = os.path.getsize(log_file) if os.path.exists(log_file) else 0
-        log.debug(f'Logger: file={log_file} level={level} size={log_size} mode={"append" if not log_rolled else "create"}')
-        first_call = False
-
     fh.formatter = logging.Formatter('%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s')
     fh.setLevel(logging.DEBUG)
     log.addHandler(fh)
@@ -121,9 +115,16 @@ def setup_logging():
     # overrides
     logging.getLogger("urllib3").setLevel(logging.ERROR)
     logging.getLogger("httpx").setLevel(logging.ERROR)
+    logging.getLogger("diffusers").setLevel(logging.ERROR)
+    logging.getLogger("torch").setLevel(logging.ERROR)
     logging.getLogger("ControlNet").handlers = log.handlers
     logging.getLogger("lycoris").handlers = log.handlers
     # logging.getLogger("DeepSpeed").handlers = log.handlers
+
+def get_logfile():
+    log_size = os.path.getsize(log_file) if os.path.exists(log_file) else 0
+    log.info(f'Logger: file="{log_file}" level={logging.getLevelName(logging.DEBUG if args.debug else logging.INFO)} size={log_size} mode={"append" if not log_rolled else "create"}')
+    return log_file
 
 
 def custom_excepthook(exc_type, exc_value, exc_traceback):
