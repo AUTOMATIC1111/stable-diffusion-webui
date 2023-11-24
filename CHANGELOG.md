@@ -2,6 +2,16 @@
 
 ## Update for 2023-11-24
 
+Note: Release pending `diffusers==0.24`
+
+- **Diffusers**
+  - **IP adapter**
+    - Lightweight implementation of T2I adapters which can guide generation towards specific image style
+    - Supports most T2I models, not limited to SD
+  - **HDR latent control**, based on [article](https://huggingface.co/blog/TimothyAlexisVass/explaining-the-sdxl-latent-space#long-prompts-at-high-guidance-scales-becoming-possible)  
+    - In *Advanced* params
+    - Allows control of *latent clamping*, *color centering* and *range maximimization*
+    - Supported by *XYZ grid*
 - **General**
   - log level defaults to info for console and debug for log file
   - better prompt display in process tab

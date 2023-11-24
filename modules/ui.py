@@ -427,6 +427,17 @@ def create_ui(startup_timer = None):
                             full_quality = gr.Checkbox(label='Full quality', value=True, elem_id="txt2img_full_quality")
                             restore_faces = gr.Checkbox(label='Face restore', value=False, visible=len(modules.shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
                             tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
+                        with FormRow():
+                            hdr_clamp = gr.Checkbox(label='HDR clamp', value=False, elem_id="txt2img_hdr_clamp")
+                            hdr_boundary = gr.Slider(minimum=0.0, maximum=10.0, step=0.1, value=4.0,  label='Range', elem_id="txt2img_hdr_boundary")
+                            hdr_threshold = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, value=0.95,  label='Threshold', elem_id="txt2img_hdr_threshold")
+                        with FormRow():
+                            hdr_center = gr.Checkbox(label='HDR center', value=False, elem_id="txt2img_hdr_center")
+                            hdr_channel_shift = gr.Slider(minimum=0.0, maximum=2.0, step=0.1, value=1.0,  label='Channel shift', elem_id="txt2img_hdr_channel_shift")
+                            hdr_full_shift = gr.Slider(minimum=0.0, maximum=2.0, step=0.1, value=1,  label='Full shift', elem_id="txt2img_hdr_full_shift")
+                        with FormRow():
+                            hdr_maximize = gr.Checkbox(label='HDR maximize', value=False, elem_id="txt2img_hdr_maximize")
+                            hdr_max_boundry = gr.Slider(minimum=0.0, maximum=10.0, step=0.1, value=4.0,  label='range', elem_id="txt2img_hdr_max_boundry")
 
                     with gr.Accordion(open=False, label="Second pass", elem_id="txt2img_second_pass", elem_classes=["small-accordion"]):
                         with FormGroup():
@@ -493,6 +504,7 @@ def create_ui(startup_timer = None):
                     enable_hr, denoising_strength,
                     hr_scale, hr_upscaler, hr_force, hr_second_pass_steps, hr_resize_x, hr_resize_y,
                     refiner_steps, refiner_start, refiner_prompt, refiner_negative,
+                    hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_boundry,
                     override_settings,
                 ] + custom_inputs,
                 outputs=[
