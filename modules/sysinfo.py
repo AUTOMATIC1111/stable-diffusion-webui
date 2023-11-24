@@ -1,7 +1,6 @@
 import json
 import os
 import sys
-import traceback
 
 import platform
 import hashlib
