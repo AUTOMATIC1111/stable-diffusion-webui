@@ -1,5 +1,12 @@
 # Change Log for SD.Next
 
+## Update for 2023-11-24
+
+- **General**
+  - increase maximum lora cache values
+  - fixes for python 3.9 compatibility
+  - fix prompt display in process tab
+
 ## Update for 2023-11-23
 
 New release, primarily focused around three major new features: full **LCM** support, completely new **Model Merge** functionality and **Stable-fast** compile support  

@@ -421,7 +421,6 @@ def check_torch():
             log.debug(f'ROCm hipconfig failed: {e}')
             rocm_ver = None
         if rocm_ver in {"5.7"}:
-            # install torch nightly via torchvision to avoid wasting bandwidth when torchvision depends on torch from yesterday
             torch_command = os.environ.get('TORCH_COMMAND', f'torch torchvision --pre --index-url https://download.pytorch.org/whl/nightly/rocm{rocm_ver}')
         elif rocm_ver in {"5.5", "5.6"}:
             torch_command = os.environ.get('TORCH_COMMAND', f'torch torchvision --index-url https://download.pytorch.org/whl/nightly/rocm{rocm_ver}')
@@ -443,7 +442,7 @@ def check_torch():
             ipex_pip = 'https://github.com/Nuullll/intel-extension-for-pytorch/releases/download/v2.0.110%2Bxpu-master%2Bdll-bundle/intel_extension_for_pytorch-2.0.110+gitc6ea20b-cp310-cp310-win_amd64.whl'
             torch_command = os.environ.get('TORCH_COMMAND', f'{pytorch_pip} {torchvision_pip} {ipex_pip}')
         install('openvino', 'openvino', ignore=True)
-        install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True) # TODO numpy version conflicts with tensorflow and doesn't support Python 3.11
+        install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True)
     elif allow_openvino and args.use_openvino:
         log.info('Using OpenVINO')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.1.1 torchvision==0.16.1 --index-url https://download.pytorch.org/whl/cpu')
@@ -514,9 +513,9 @@ def check_torch():
     if opts.get('cuda_compile_backend', '') == 'hidet':
         install('hidet', 'hidet')
     if args.use_openvino or opts.get('cuda_compile_backend', '') == 'openvino_fx':
-        uninstall('openvino-nightly') # TODO remove after people had enough time upgrading
+        uninstall('openvino-nightly') # TODO openvino: remove after people had enough time upgrading
         install('openvino==2023.2.0', 'openvino')
-        install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True) # TODO numpy version conflicts with tensorflow and doesn't support Python 3.11
+        install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True) # TODO openvino: numpy version conflicts with tensorflow and doesn't support Python 3.11
         os.environ.setdefault('PYTORCH_TRACING_MODE', 'TORCHFX')
         os.environ.setdefault('NEOReadDebugKeys', '1')
         os.environ.setdefault('ClDeviceGlobalMemSizeAvailablePercent', '100')

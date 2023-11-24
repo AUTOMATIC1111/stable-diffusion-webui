@@ -35,16 +35,16 @@ def plaintext_to_html(text):
 
 def infotext_to_html(text):
     res = parse_generation_parameters(text)
-    prompt = res.get('Prompt', None)
-    negative = res.get('Negative prompt', None)
+    prompt = res.get('Prompt', '').replace('\n', '<br>\n')
+    negative = res.get('Negative prompt', '')
     res.pop('Prompt', None)
     res.pop('Negative prompt', None)
     params = [f'{k}: {v}' for k, v in res.items() if v is not None]
-    params = '| '.join(params)
+    params = '| '.join(params) if len(params) > 0 else ''
     code = f'''
-        <p><b>Prompt:</b> {prompt}</p>
-        <p><b>Negative:</b> {negative}</p>
-        <p><b>Parameters:</b> {params}</p>
+        <p><b>Prompt:</b> {html.escape(prompt)}</p>
+        <p><b>Negative:</b> {html.escape(negative)}</p>
+        <p><b>Parameters:</b> {html.escape(params)}</p>
         '''
     return code
 
