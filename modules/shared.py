@@ -609,7 +609,7 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_styles": OptionInfo(True, "Show built-in styles"),
     "lora_preferred_name": OptionInfo("filename", "LoRA preffered name", gr.Radio, {"choices": ["filename", "alias"]}),
     "lora_add_hashes_to_infotext": OptionInfo(True, "LoRA add hash info"),
-    "lora_in_memory_limit": OptionInfo(0, "LoRA memory cache", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
+    "lora_in_memory_limit": OptionInfo(0, "LoRA memory cache", gr.Slider, {"minimum": 0, "maximum": 24, "step": 1}),
     "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple LoRA", gr.Checkbox, { "visible": False }),
 
     "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, { "choices": ["None"], "visible": False }),

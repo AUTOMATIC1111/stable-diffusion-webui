@@ -311,8 +311,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 args[arg] = task_kwargs[arg]
             else:
                 pass
-                # shared.log.debug(f'Diffuser not supported: pipeline={pipeline.__class__.__name__} task={sd_models.get_diffusers_task(model)} arg={arg}')
-        # shared.log.debug(f'Diffuser pipeline: {model.__class__.__name__} possible={possible}')
+        for k, v in getattr(p, 'task_args', {}).items():
+            args[k] = v
         hypertile_set(p, hr=len(getattr(p, 'init_images', [])))
         clean = args.copy()
         clean.pop('callback', None)
@@ -327,6 +327,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             clean['mask_image'] = type(clean['mask_image'])
         if 'masked_image_latents' in clean:
             clean['masked_image_latents'] = type(clean['masked_image_latents'])
+        if 'ip_adapter_image' in clean:
+            clean['ip_adapter_image'] = type(clean['ip_adapter_image'])
         if 'prompt' in clean:
             clean['prompt'] = len(clean['prompt'])
         if 'negative_prompt' in clean:
