@@ -94,6 +94,7 @@ Additional models will be added as they become available and there is public int
 - [Advanced install notes](https://github.com/vladmandic/automatic/wiki/Advanced-Install)
 - [Common installation errors](https://github.com/vladmandic/automatic/discussions/1627)  
 - [FAQ](https://github.com/vladmandic/automatic/discussions/1011)
+- [If you can't run us locally, try our friends at RunDuffusion!](https://rundiffusion.com?utm_source=github&utm_medium=referral&utm_campaign=SDNext)
 
 > [!TIP]
 > - Server can run without virtual environment,  
