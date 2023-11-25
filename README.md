@@ -62,11 +62,11 @@ Additional models will be added as they become available and there is public int
 - [StabilityAI Stable Diffusion XL](https://github.com/Stability-AI/generative-models)
 - [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)
 - [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)
-- [Kandinsky](https://github.com/ai-forever/Kandinsky-2) 2.1 and 2.2
-- [PixArt-α XL 2](https://github.com/PixArt-alpha/PixArt-alpha) Medium and Large
+- [Kandinsky](https://github.com/ai-forever/Kandinsky-2) *2.1 and 2.2 and latest 3.0*
+- [PixArt-α XL 2](https://github.com/PixArt-alpha/PixArt-alpha) *Medium and Large*
 - [Warp Wuerstchen](https://huggingface.co/blog/wuertschen)  
 - [Tsinghua UniDiffusion](https://github.com/thu-ml/unidiffuser)
-- [DeepFloyd IF](https://github.com/deep-floyd/IF) Medium and Large
+- [DeepFloyd IF](https://github.com/deep-floyd/IF) *Medium and Large*
 - [Segmind SD Distilled](https://huggingface.co/blog/sd_distillation) *(all variants)*
 
 > [!IMPORTANT]
@@ -94,6 +94,7 @@ Additional models will be added as they become available and there is public int
 - [Advanced install notes](https://github.com/vladmandic/automatic/wiki/Advanced-Install)
 - [Common installation errors](https://github.com/vladmandic/automatic/discussions/1627)  
 - [FAQ](https://github.com/vladmandic/automatic/discussions/1011)
+- If you can't run us locally, try our friends at [RunDuffusion!](https://rundiffusion.com?utm_source=github&utm_medium=referral&utm_campaign=SDNext)
 
 > [!TIP]
 > - Server can run without virtual environment,  
