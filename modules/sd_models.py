@@ -473,6 +473,9 @@ def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, 
     model.sd_model_hash = checkpoint_info.calculate_shorthash()
     model.sd_model_checkpoint = checkpoint_info.filename
     model.sd_checkpoint_info = checkpoint_info
+    model.is_sdxl = False # a1111 compatibility item
+    model.is_sd2 = False # a1111 compatibility item
+    model.is_sd1 = True # a1111 compatibility item
     shared.opts.data["sd_checkpoint_hash"] = checkpoint_info.sha256
     model.logvar = model.logvar.to(devices.device)  # fix for training
     sd_vae.delete_base_vae()
@@ -549,10 +552,6 @@ class ModelData:
             with self.lock:
                 try:
                     self.sd_model = reload_model_weights(op='model')
-                    if self.sd_model is not None:
-                        self.sd_model.is_sdxl = False # a1111 compatibility item
-                        self.sd_model.is_sd2 = False # a1111 compatibility item
-                        self.sd_model.is_sd1 = True # a1111 compatibility item
                     self.initial = False
                 except Exception as e:
                     shared.log.error("Failed to load stable diffusion model")
