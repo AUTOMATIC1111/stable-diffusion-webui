@@ -12,6 +12,8 @@ Note: Release pending `diffusers==0.24`
     - In *Advanced* params
     - Allows control of *latent clamping*, *color centering* and *range maximimization*
     - Supported by *XYZ grid*
+  - better autodetection of *inpaint* and *instruct* pipelines
+  - support long seconary prompt for refiner
 - **General**
   - log level defaults to info for console and debug for log file
   - better prompt display in process tab

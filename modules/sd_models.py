@@ -742,13 +742,13 @@ def set_diffuser_options(sd_model, vae, op: str):
         sd_model.enable_xformers_memory_efficient_attention()
 
     if shared.opts.diffusers_eval:
-        if hasattr(sd_model, "unet"):
+        if hasattr(sd_model, "unet") and hasattr(sd_model.unet, "requires_grad_"):
             sd_model.unet.requires_grad_(False)
             sd_model.unet.eval()
-        if hasattr(sd_model, "vae"):
+        if hasattr(sd_model, "vae") and hasattr(sd_model.vae, "requires_grad_"):
             sd_model.vae.requires_grad_(False)
             sd_model.vae.eval()
-        if hasattr(sd_model, "text_encoder"):
+        if hasattr(sd_model, "text_encoder") and hasattr(sd_model.text_encoder, "requires_grad_"):
             sd_model.text_encoder.requires_grad_(False)
             sd_model.text_encoder.eval()
 
