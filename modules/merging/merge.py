@@ -13,10 +13,11 @@ from modules.merging import merge_methods
 from modules.merging.merge_utils import WeightClass
 from modules.merging.merge_rebasin import (
     apply_permutation,
-    sdunet_permutation_spec,
     update_model_a,
     weight_matching,
 )
+from modules.merging.merge_PermSpec import sdunet_permutation_spec
+from modules.merging.merge_PermSpec_SDXL import sdxl_permutation_spec
 ##########################################################
 # Files in modules.merging are heavily modified
 # versions of sd-meh by @s1dxl used with his blessing
@@ -239,7 +240,10 @@ def rebasin_merge(
 ):
     # not sure how this does when 3 models are involved...
     model_a = thetas["model_a"].clone()
-    perm_spec = sdunet_permutation_spec()
+    if weight_matcher.SDXL:
+        perm_spec = sdxl_permutation_spec()
+    else:
+        perm_spec = sdunet_permutation_spec()
 
     for it in range(iterations):
         log_vram(f"rebasin: iteration={it}")
@@ -319,7 +323,7 @@ def merge_key(  # pylint: disable=inconsistent-return-statements
 
     for theta in thetas.values():
         if key not in theta.keys():
-            return
+            return thetas["model_a"][key]
 
         current_bases = weight_matcher(key)
         try:
