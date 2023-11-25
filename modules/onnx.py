@@ -969,7 +969,7 @@ class OnnxStableDiffusionInpaintPipeline(diffusers.OnnxStableDiffusionInpaintPip
             # call the callback, if provided
             if callback is not None and i % callback_steps == 0:
                 step_idx = i // getattr(self.scheduler, "order", 1)
-                callback(step_idx, t, latents)
+                callback(step_idx, t, torch.from_numpy(latents))
 
         latents = 1 / 0.18215 * latents
 

@@ -35,8 +35,8 @@ class RandomDataLoader:
 # -----------------------------------------------------------------------------
 
 
-def text_encoder_inputs(batchsize, torch_dtype):
-    input_ids = torch.zeros((batchsize, 77), dtype=torch_dtype)
+def text_encoder_inputs(_, torch_dtype):
+    input_ids = torch.zeros((batch_size, 77), dtype=torch_dtype)
     return {
         "input_ids": input_ids,
         "output_hidden_states": True,
@@ -52,8 +52,8 @@ def text_encoder_conversion_inputs(model):
     return text_encoder_inputs(1, torch.int32)
 
 
-def text_encoder_data_loader(data_dir, batchsize, *args, **kwargs):
-    return RandomDataLoader(text_encoder_inputs, batchsize, torch.int32)
+def text_encoder_data_loader(data_dir, _, *args, **kwargs):
+    return RandomDataLoader(text_encoder_inputs, batch_size, torch.int32)
 
 
 # -----------------------------------------------------------------------------
@@ -61,9 +61,9 @@ def text_encoder_data_loader(data_dir, batchsize, *args, **kwargs):
 # -----------------------------------------------------------------------------
 
 
-def text_encoder_2_inputs(batchsize, torch_dtype):
+def text_encoder_2_inputs(_, torch_dtype):
     return {
-        "input_ids": torch.zeros((batchsize, 77), dtype=torch_dtype),
+        "input_ids": torch.zeros((batch_size, 77), dtype=torch_dtype),
         "output_hidden_states": True,
     }
 
@@ -77,8 +77,8 @@ def text_encoder_2_conversion_inputs(model):
     return text_encoder_2_inputs(1, torch.int64)
 
 
-def text_encoder_2_data_loader(data_dir, batchsize, *args, **kwargs):
-    return RandomDataLoader(text_encoder_2_inputs, batchsize, torch.int64)
+def text_encoder_2_data_loader(data_dir, _, *args, **kwargs):
+    return RandomDataLoader(text_encoder_2_inputs, batch_size, torch.int64)
 
 
 # -----------------------------------------------------------------------------
@@ -86,32 +86,32 @@ def text_encoder_2_data_loader(data_dir, batchsize, *args, **kwargs):
 # -----------------------------------------------------------------------------
 
 
-def unet_inputs(batchsize, torch_dtype, is_conversion_inputs=False):
+def unet_inputs(_, torch_dtype, is_conversion_inputs=False):
     # TODO (pavignol): All the multiplications by 2 here are bacause the XL base has 2 text encoders
     # For refiner, it should be multiplied by 1 (single text encoder)
 
     if is_sdxl:
         inputs = {
-            "sample": torch.rand((2 * batchsize, 4, height // 8, width // 8), dtype=torch_dtype),
+            "sample": torch.rand((2 * batch_size, 4, height // 8, width // 8), dtype=torch_dtype),
             "timestep": torch.rand((1,), dtype=torch_dtype),
-            "encoder_hidden_states": torch.rand((2 * batchsize, 77, hidden_state_size), dtype=torch_dtype),
+            "encoder_hidden_states": torch.rand((2 * batch_size, 77, hidden_state_size), dtype=torch_dtype),
         }
 
         if is_conversion_inputs:
             inputs["additional_inputs"] = {
                 "added_cond_kwargs": {
-                    "text_embeds": torch.rand((2 * batchsize, 1280), dtype=torch_dtype),
-                    "time_ids": torch.rand((2 * batchsize, time_ids_size), dtype=torch_dtype),
+                    "text_embeds": torch.rand((2 * batch_size, 1280), dtype=torch_dtype),
+                    "time_ids": torch.rand((2 * batch_size, time_ids_size), dtype=torch_dtype),
                 }
             }
         else:
-            inputs["text_embeds"] = torch.rand((2 * batchsize, 1280), dtype=torch_dtype)
-            inputs["time_ids"] = torch.rand((2 * batchsize, time_ids_size), dtype=torch_dtype)
+            inputs["text_embeds"] = torch.rand((2 * batch_size, 1280), dtype=torch_dtype)
+            inputs["time_ids"] = torch.rand((2 * batch_size, time_ids_size), dtype=torch_dtype)
     else:
         inputs = {
-            "sample": torch.rand((batchsize, 4, height // 8, width // 8), dtype=torch_dtype),
-            "timestep": torch.rand((batchsize,), dtype=torch_dtype),
-            "encoder_hidden_states": torch.rand((batchsize, 77, hidden_state_size), dtype=torch_dtype),
+            "sample": torch.rand((batch_size, 4, height // 8, width // 8), dtype=torch_dtype),
+            "timestep": torch.rand((batch_size,), dtype=torch_dtype),
+            "encoder_hidden_states": torch.rand((batch_size, 77, hidden_state_size), dtype=torch_dtype),
             "return_dict": False,
         }
 
@@ -138,8 +138,8 @@ def unet_conversion_inputs(model):
     return tuple(unet_inputs(1, torch.float32, True).values())
 
 
-def unet_data_loader(data_dir, batchsize, *args, **kwargs):
-    return RandomDataLoader(unet_inputs, batchsize, torch.float16)
+def unet_data_loader(data_dir, _, *args, **kwargs):
+    return RandomDataLoader(unet_inputs, batch_size, torch.float16)
 
 
 # -----------------------------------------------------------------------------
@@ -147,9 +147,9 @@ def unet_data_loader(data_dir, batchsize, *args, **kwargs):
 # -----------------------------------------------------------------------------
 
 
-def vae_encoder_inputs(batchsize, torch_dtype):
+def vae_encoder_inputs(_, torch_dtype):
     return {
-        "sample": torch.rand((batchsize, 3, height, width), dtype=torch_dtype),
+        "sample": torch.rand((batch_size, 3, height, width), dtype=torch_dtype),
         "return_dict": False,
     }
 
@@ -167,8 +167,8 @@ def vae_encoder_conversion_inputs(model):
     return tuple(vae_encoder_inputs(1, torch.float32).values())
 
 
-def vae_encoder_data_loader(data_dir, batchsize, *args, **kwargs):
-    return RandomDataLoader(vae_encoder_inputs, batchsize, torch.float16)
+def vae_encoder_data_loader(data_dir, _, *args, **kwargs):
+    return RandomDataLoader(vae_encoder_inputs, batch_size, torch.float16)
 
 
 # -----------------------------------------------------------------------------
@@ -176,9 +176,9 @@ def vae_encoder_data_loader(data_dir, batchsize, *args, **kwargs):
 # -----------------------------------------------------------------------------
 
 
-def vae_decoder_inputs(batchsize, torch_dtype):
+def vae_decoder_inputs(_, torch_dtype):
     return {
-        "latent_sample": torch.rand((batchsize, 4, height // 8, width // 8), dtype=torch_dtype),
+        "latent_sample": torch.rand((batch_size, 4, height // 8, width // 8), dtype=torch_dtype),
         "return_dict": False,
     }
 
@@ -196,5 +196,5 @@ def vae_decoder_conversion_inputs(model):
     return tuple(vae_decoder_inputs(1, torch.float32).values())
 
 
-def vae_decoder_data_loader(data_dir, batchsize, *args, **kwargs):
-    return RandomDataLoader(vae_decoder_inputs, batchsize, torch.float16)
+def vae_decoder_data_loader(data_dir, _, *args, **kwargs):
+    return RandomDataLoader(vae_decoder_inputs, batch_size, torch.float16)
