@@ -12,13 +12,19 @@ Note: Release pending `diffusers==0.24`
     - In *Advanced* params
     - Allows control of *latent clamping*, *color centering* and *range maximimization*
     - Supported by *XYZ grid*
+  - **Kandinsky 3** support  
+    - download using built-in model downloader or simply select from networks -> reference  
+    - this model is absolutely massive at 27.5GB at fp16, so be patient
+    - model params count is at 11.9B (compared to SD-XL at 3.3B) and its trained on mixed resolutions from 256px to 1024px  
+    - use either model offload or sequential cpu offload to be able to use it
   - better autodetection of *inpaint* and *instruct* pipelines
   - support long seconary prompt for refiner
 - **General**
   - log level defaults to info for console and debug for log file
   - better prompt display in process tab
   - increase maximum lora cache values
-  - fix for python 3.9 compatibility
+  - fix controlnet compatibility issues in original backend
+  - fix python 3.9 compatibility issues
   - fix img2img/inpaint paste params
 
 ## Update for 2023-11-23

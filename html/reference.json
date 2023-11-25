@@ -54,6 +54,11 @@
     "desc": "Kandinsky 2.2 is a text-conditional diffusion model (+0.1!) based on unCLIP and latent diffusion, composed of a transformer-based image prior model, a unet diffusion model, and a decoder. Kandinsky 2.1 inherits best practices from Dall-E 2 and Latent diffusion while introducing some new ideas. It uses the CLIP model as a text and image encoder, and diffusion image prior (mapping) between latent spaces of CLIP modalities. This approach increases the visual performance of the model and unveils new horizons in blending images and text-guided image manipulation.",
     "preview": "kandinsky-community--kandinsky-2-2-decoder.jpg"
   },
+  "Kandinsky 3": {
+    "path": "kandinsky-community/kandinsky-3",
+    "desc": "Kandinsky 3.0 is an open-source text-to-image diffusion model built upon the Kandinsky2-x model family. In comparison to its predecessors, Kandinsky 3.0 incorporates more data and specifically related to Russian culture, which allows to generate pictures related to Russin culture. Furthermore, enhancements have been made to the text understanding and visual quality of the model, achieved by increasing the size of the text encoder and Diffusion U-Net models, respectively.",
+    "preview": "kandinsky-community--kandinsky-3.jpg"
+  },
   "DeepFloyd IF Medium": {
     "path": "DeepFloyd/IF-I-M-v1.0",
     "desc": "DeepFloyd-IF is a pixel-based text-to-image triple-cascaded diffusion model, that can generate pictures with new state-of-the-art for photorealism and language understanding. The result is a highly efficient model that outperforms current state-of-the-art models, achieving a zero-shot FID-30K score of 6.66 on the COCO dataset. It is modular and composed of frozen text mode and three pixel cascaded diffusion modules, each designed to generate images of increasing resolution: 64x64, 256x256, and 1024x1024.",

@@ -58,12 +58,6 @@ class Script(scripts.Script):
         if shared.backend != shared.Backend.DIFFUSERS:
             shared.log.warning('IP adapter: not in diffusers mode')
             return
-        if not hasattr(shared.sd_model, 'load_ip_adapter'):
-            shared.log.error(f'IP adapter: pipeline not supported: {shared.sd_model.__class__.__name__}')
-            return
-        if image is None:
-            shared.log.error('IP adapter: no image')
-            return
         if adapter == 'none':
             if hasattr(shared.sd_model, 'set_ip_adapter_scale'):
                 shared.sd_model.set_ip_adapter_scale(0)
@@ -72,6 +66,12 @@ class Script(scripts.Script):
                 shared.sd_model.unet.set_default_attn_processor()
                 shared.sd_model.unet.config.encoder_hid_dim_type = None
                 loaded = None
+            return
+        if image is None:
+            shared.log.error('IP adapter: no image')
+            return
+        if not hasattr(shared.sd_model, 'load_ip_adapter'):
+            shared.log.error(f'IP adapter: pipeline not supported: {shared.sd_model.__class__.__name__}')
             return
         if getattr(shared.sd_model, 'image_encoder', None) is None:
             if shared.sd_model_type == 'sd':
