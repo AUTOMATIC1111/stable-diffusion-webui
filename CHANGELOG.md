@@ -19,6 +19,7 @@ Note: Release pending `diffusers==0.24`
   - better prompt display in process tab
   - increase maximum lora cache values
   - fix for python 3.9 compatibility
+  - fix img2img/inpaint paste params
 
 ## Update for 2023-11-23
 

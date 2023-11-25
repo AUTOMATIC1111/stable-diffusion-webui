@@ -473,6 +473,9 @@ def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, 
     model.sd_model_hash = checkpoint_info.calculate_shorthash()
     model.sd_model_checkpoint = checkpoint_info.filename
     model.sd_checkpoint_info = checkpoint_info
+    model.is_sdxl = False # a1111 compatibility item
+    model.is_sd2 = False # a1111 compatibility item
+    model.is_sd1 = True # a1111 compatibility item
     shared.opts.data["sd_checkpoint_hash"] = checkpoint_info.sha256
     model.logvar = model.logvar.to(devices.device)  # fix for training
     sd_vae.delete_base_vae()
@@ -549,10 +552,6 @@ class ModelData:
             with self.lock:
                 try:
                     self.sd_model = reload_model_weights(op='model')
-                    if self.sd_model is not None:
-                        self.sd_model.is_sdxl = False # a1111 compatibility item
-                        self.sd_model.is_sd2 = False # a1111 compatibility item
-                        self.sd_model.is_sd1 = True # a1111 compatibility item
                     self.initial = False
                 except Exception as e:
                     shared.log.error("Failed to load stable diffusion model")
@@ -1107,12 +1106,16 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
     sd_model = None
     stdout = io.StringIO()
     with contextlib.redirect_stdout(stdout):
+        """
         try:
             clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
             with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
                 sd_model = instantiate_from_config(sd_config.model)
-        except Exception:
+        except Exception as e:
+            shared.log.error(f'LDM: instantiate from config: {e}')
             sd_model = instantiate_from_config(sd_config.model)
+        """
+        sd_model = instantiate_from_config(sd_config.model)
     for line in stdout.getvalue().splitlines():
         if len(line) > 0:
             shared.log.info(f'LDM: {line.strip()}')

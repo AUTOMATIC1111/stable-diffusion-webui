@@ -606,10 +606,14 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
         args["Init image size"] = f"{getattr(p, 'init_img_width', 0)}x{getattr(p, 'init_img_height', 0)}"
         args["Init image hash"] = getattr(p, 'init_img_hash', None)
         args["Mask weight"] = getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None
-        args['Resize mode'] = getattr(p, 'resize_mode', None)
         args['Resize scale'] = getattr(p, 'scale_by', None)
         args["Mask blur"] = p.mask_blur if getattr(p, 'mask', None) is not None and getattr(p, 'mask_blur', 0) > 0 else None
         args["Denoising strength"] = getattr(p, 'denoising_strength', None)
+        # lookup by index
+        if getattr(p, 'resize_mode', None) is not None:
+            RESIZE_MODES = ["None", "Resize fixed", "Crop and resize", "Resize and fill", "Latent upscale"]
+            args['Resize mode'] = RESIZE_MODES[p.resize_mode]
+        # TODO missing-by-index: inpainting_fill, inpaint_full_res, inpainting_mask_invert
     if 'face' in p.ops:
         args["Face restoration"] = shared.opts.face_restoration_model
     if 'color' in p.ops:
