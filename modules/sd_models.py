@@ -357,7 +357,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     sd_model_hash = checkpoint_info.calculate_shorthash()
     timer.record("calculate hash")
 
-    if not check_fp8(model) and devices.fp8:
+    if devices.fp8:
         # prevent model to load state dict in fp8
         model.half()
 
