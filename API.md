@@ -1,7 +1,13 @@
-> ℹ️ **Note:**
-> As of 2023-09-09, this guide is currently not maintained, and information is likely out of date. Note that the internal docs can always be accessed via the `/docs` endpoint (i.e. http://127.0.0.1:7860/docs)
+## Example script
+[txt2img and img2img example python script](https://gist.github.com/w-e-w/0f37c04c18e14e4ee1482df5c4eb9f53)
+## Useful utility
+[API payload display](https://github.com/huchenlei/sd-webui-api-payload-display) a extension that 
+converts webui image generation call to json for API
+###
 
 ## API guide by [@Kilvoctu](https://github.com/Kilvoctu)
+> ℹ️ **Note:**
+> As of 2023-09-09, this guide is currently not maintained, and information is likely out of date. Note that the internal docs can always be accessed via the `/docs` endpoint (i.e. http://127.0.0.1:7860/docs)
 
 - First, of course, is to run web ui with `--api` commandline argument
   - example in your "webui-user.bat": `set COMMANDLINE_ARGS=--api`
