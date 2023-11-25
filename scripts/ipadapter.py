@@ -10,6 +10,7 @@ from modules import scripts, processing
 
 
 image_encoder = None
+loaded = None
 ADAPTERS = [
     'none',
     'models/ip-adapter_sd15',
@@ -25,52 +26,6 @@ ADAPTERS = [
 ]
 
 
-# main processing used in both modes
-def before_process(p: processing.StableDiffusionProcessing, adapter, scale, image):
-    import torch
-    import transformers
-    from modules import shared, devices
-
-    # init code
-    if shared.sd_model is None:
-        return
-    if adapter == 'none' or image is None:
-        if hasattr(shared.sd_model, 'set_ip_adapter_scale'):
-            shared.sd_model.set_ip_adapter_scale(0)
-        return
-    if shared.backend != shared.Backend.DIFFUSERS:
-        shared.log.warning('IP adapter: not in diffusers mode')
-        return
-    if not hasattr(shared.sd_model, 'load_ip_adapter'):
-        shared.log.error(f'IP adapter: pipeline not supported: {shared.sd_model.__class__.__name__}')
-        return
-    if getattr(shared.sd_model, 'image_encoder', None) is None:
-        if shared.sd_model_type == 'sd':
-            subfolder = 'models/image_encoder'
-        elif shared.sd_model_type == 'sdxl':
-            subfolder = 'sdxl_models/image_encoder'
-        else:
-            shared.log.error(f'IP adapter: unsupported model type: {shared.sd_model_type}')
-            return
-        global image_encoder # pylint: disable=global-statement
-        if image_encoder is None:
-            try:
-                image_encoder = transformers.CLIPVisionModelWithProjection.from_pretrained("h94/IP-Adapter", subfolder=subfolder, torch_dtype=torch.float16, cache_dir=shared.opts.diffusers_dir, use_safetensors=True).to(devices.device)
-            except Exception as e:
-                shared.log.error(f'IP adapter: failed to load image encoder: {e}')
-                return
-
-    # main code
-    subfolder, model = adapter.split('/')
-    shared.log.info(f'IP adapter: scale={scale} adapter="{model}" image={image}')
-    shared.sd_model.image_encoder = image_encoder
-    shared.sd_model.load_ip_adapter("h94/IP-Adapter", subfolder=subfolder, weight_name=f'{model}.safetensors')
-    shared.sd_model.set_ip_adapter_scale(scale)
-    p.task_args = { 'ip_adapter_image': image }
-    p.extra_generation_params["IP Adapter"] = f'{adapter}:{scale}'
-
-
-# defines script for dual-mode usage
 class Script(scripts.Script):
     # see below for all available options and callbacks
     # <https://github.com/vladmandic/automatic/blob/master/modules/scripts.py#L26>
@@ -91,6 +46,64 @@ class Script(scripts.Script):
                 image = gr.Image(image_mode='RGB', label='Image', source='upload', type='pil', width=512)
         return [adapter, scale, image]
 
-    # triggered by callback
-    def before_process(self, p: processing.StableDiffusionProcessing, *args): # pylint: disable=arguments-differ
-        before_process(p, *args)
+    def before_process(self, p: processing.StableDiffusionProcessing, adapter, scale, image): # pylint: disable=arguments-differ
+        import torch
+        from transformers import CLIPVisionModelWithProjection
+        from modules import shared, devices
+
+        # init code
+        global loaded # pylint: disable=global-statement
+        if shared.sd_model is None:
+            return
+        if shared.backend != shared.Backend.DIFFUSERS:
+            shared.log.warning('IP adapter: not in diffusers mode')
+            return
+        if not hasattr(shared.sd_model, 'load_ip_adapter'):
+            shared.log.error(f'IP adapter: pipeline not supported: {shared.sd_model.__class__.__name__}')
+            return
+        if image is None:
+            shared.log.error('IP adapter: no image')
+            return
+        if adapter == 'none':
+            if hasattr(shared.sd_model, 'set_ip_adapter_scale'):
+                shared.sd_model.set_ip_adapter_scale(0)
+            if loaded is not None:
+                shared.log.debug('IP adapter: unload attention processor')
+                shared.sd_model.unet.set_default_attn_processor()
+                shared.sd_model.unet.config.encoder_hid_dim_type = None
+                loaded = None
+            return
+        if getattr(shared.sd_model, 'image_encoder', None) is None:
+            if shared.sd_model_type == 'sd':
+                subfolder = 'models/image_encoder'
+            elif shared.sd_model_type == 'sdxl':
+                subfolder = 'sdxl_models/image_encoder'
+            else:
+                shared.log.error(f'IP adapter: unsupported model type: {shared.sd_model_type}')
+                return
+            global image_encoder # pylint: disable=global-statement
+            if image_encoder is None:
+                try:
+                    image_encoder = CLIPVisionModelWithProjection.from_pretrained("h94/IP-Adapter", subfolder=subfolder, torch_dtype=torch.float16, cache_dir=shared.opts.diffusers_dir, use_safetensors=True).to(devices.device)
+                except Exception as e:
+                    shared.log.error(f'IP adapter: failed to load image encoder: {e}')
+                    return
+
+        # main code
+        subfolder, model = adapter.split('/')
+        if model != loaded:
+            if loaded is not None:
+                shared.log.debug('IP adapter: reset attention processor')
+                shared.sd_model.unet.set_default_attn_processor()
+            shared.log.info(f'IP adapter load: adapter="{model}" scale={scale} image={image}')
+            shared.sd_model.image_encoder = image_encoder
+            shared.sd_model.load_ip_adapter("h94/IP-Adapter", subfolder=subfolder, weight_name=f'{model}.safetensors')
+            loaded = model
+        else:
+            shared.log.debug(f'IP adapter cache: adapter="{model}" scale={scale} image={image}')
+        shared.sd_model.set_ip_adapter_scale(scale)
+        p.task_args = { 'ip_adapter_image': p.batch_size * [image] }
+        p.extra_generation_params["IP Adapter"] = f'{adapter}:{scale}'
+
+    def after_process(self, _p: processing.StableDiffusionProcessing): # pylint: disable=arguments-differ
+        pass
