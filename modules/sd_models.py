@@ -604,6 +604,7 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
     warn = shared.log.warning if warning else lambda *args, **kwargs: None
     if guess == 'Autodetect':
         try:
+            # guess by size
             size = round(os.path.getsize(f) / 1024 / 1024)
             if size < 128:
                 warn(f'Model size smaller than expected: {f} size={size} MB')
@@ -636,6 +637,7 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
                 guess = 'Stable Diffusion XL Instruct'
             else:
                 guess = 'Stable Diffusion'
+            # guess by name
             if 'LCM_' in f or 'LCM-' in f:
                 if shared.backend == shared.Backend.ORIGINAL:
                     warn(f'Model detected as LCM model, but attempting to load using backend=original: {op}={f} size={size} MB')
@@ -644,6 +646,16 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
                 if shared.backend == shared.Backend.ORIGINAL:
                     warn(f'Model detected as PixArt Alpha model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'PixArt Alpha'
+            # switch for specific variant
+            if guess == 'Stable Diffusion' and 'inpaint' in f.lower():
+                guess = 'Stable Diffusion Inpaint'
+            elif guess == 'Stable Diffusion' and 'instruct' in f.lower():
+                guess = 'Stable Diffusion Instruct'
+            if guess == 'Stable Diffusion XL' and 'inpaint' in f.lower():
+                guess = 'Stable Diffusion XL Inpaint'
+            elif guess == 'Stable Diffusion XL' and 'instruct' in f.lower():
+                guess = 'Stable Diffusion XL Instruct'
+            # get actual pipeline
             pipeline = shared_items.get_pipelines().get(guess, None)
             shared.log.info(f'Autodetect: {op}="{guess}" class={pipeline.__name__} file="{f}" size={size}MB')
         except Exception as e:
@@ -889,6 +901,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     shared.log.debug(f'Setting {op}: pipeline={sd_model.__class__.__name__} config={diffusers_load_config}') # pylint: disable=protected-access
             except Exception as e:
                 shared.log.error(f'Diffusers failed loading: {op}={checkpoint_info.path} pipeline={shared.opts.diffusers_pipeline}/{sd_model.__class__.__name__} {e}')
+                errors.display(e, f'loading {op}={checkpoint_info.path} pipeline={shared.opts.diffusers_pipeline}/{sd_model.__class__.__name__}')
                 return
         else:
             shared.log.error(f'Diffusers cannot load: {op}={checkpoint_info.path}')
