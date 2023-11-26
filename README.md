@@ -121,7 +121,9 @@ Alternatively, use online services (like Google Colab):
 # Debian-based:
 sudo apt install wget git python3 python3-venv libgl1 libglib2.0-0
 # Red Hat-based:
-sudo dnf install wget git python3
+sudo dnf install wget git python3 gperftools-libs libglvnd-glx 
+# openSUSE-based:
+sudo zypper install wget git python3 libtcmalloc4 libglvnd
 # Arch-based:
 sudo pacman -S wget git python3
 ```
@@ -174,5 +176,6 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - TAESD - Ollin Boer Bohan - https://github.com/madebyollin/taesd
 - LyCORIS - KohakuBlueleaf
 - Restart sampling - lambertae - https://github.com/Newbeeer/diffusion_restart_sampling
+- Hypertile - tfernd - https://github.com/tfernd/HyperTile
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)

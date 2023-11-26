@@ -76,7 +76,7 @@ class Options:
 
     def __init__(self, data_labels: dict[str, OptionInfo], restricted_opts):
         self.data_labels = data_labels
-        self.data = {k: v.default for k, v in self.data_labels.items()}
+        self.data = {k: v.default for k, v in self.data_labels.items() if not v.do_not_save}
         self.restricted_opts = restricted_opts
 
     def __setattr__(self, key, value):
@@ -210,7 +210,7 @@ class Options:
 
     def add_option(self, key, info):
         self.data_labels[key] = info
-        if key not in self.data:
+        if key not in self.data and not info.do_not_save:
             self.data[key] = info.default
 
     def reorder(self):
