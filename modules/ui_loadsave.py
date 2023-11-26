@@ -141,7 +141,7 @@ class UiLoadsave:
 
     def write_to_file(self, current_ui_settings):
         with open(self.filename, "w", encoding="utf8") as file:
-            json.dump(current_ui_settings, file, indent=4)
+            json.dump(current_ui_settings, file, indent=4, ensure_ascii=False)
 
     def dump_defaults(self):
         """saves default values to a file unless tjhe file is present and there was an error loading default values at start"""
