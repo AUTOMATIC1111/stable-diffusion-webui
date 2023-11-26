@@ -462,6 +462,15 @@ div.toprow-compact-tools{
     padding: 4px;
 }
 
+#settings > div.tab-nav .settings-category{
+    display: block;
+    margin: 1em 0 0.25em 0;
+    font-weight: bold;
+    text-decoration: underline;
+    cursor: default;
+    user-select: none;
+}
+
 #settings_result{
     height: 1.4em;
     margin: 0 1.2em;
