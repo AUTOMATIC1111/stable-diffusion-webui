@@ -49,7 +49,7 @@ def sample_lcm(model, x, sigmas, extra_args=None, callback=None, disable=None, n
     extra_args = {} if extra_args is None else extra_args
     noise_sampler = k_diffusion.sampling.default_noise_sampler(x) if noise_sampler is None else noise_sampler
     s_in = x.new_ones([x.shape[0]])
-    for i in trange(len(sigmas) - 1, disable=disable):
+    for i in k_diffusion.sampling.trange(len(sigmas) - 1, disable=disable):
         denoised = model(x, sigmas[i] * s_in, **extra_args)
         if callback is not None:
             callback({'x': x, 'i': i, 'sigma': sigmas[i], 'sigma_hat': sigmas[i], 'denoised': denoised})
@@ -59,7 +59,6 @@ def sample_lcm(model, x, sigmas, extra_args=None, callback=None, disable=None, n
             x += sigmas[i + 1] * noise_sampler(sigmas[i], sigmas[i + 1])
     return x
 
-from tqdm.auto import trange
 
 @torch.no_grad()
 def sample_dpmpp_2m_alt(model, x, sigmas, extra_args=None, callback=None, disable=None):
@@ -72,7 +71,7 @@ def sample_dpmpp_2m_alt(model, x, sigmas, extra_args=None, callback=None, disabl
     t_fn = lambda sigma: sigma.log().neg()
     old_denoised = None
 
-    for i in trange(len(sigmas) - 1, disable=disable):
+    for i in k_diffusion.sampling.trange(len(sigmas) - 1, disable=disable):
         denoised = model(x, sigmas[i] * s_in, **extra_args)
         if callback is not None:
             callback({'x': x, 'i': i, 'sigma': sigmas[i], 'sigma_hat': sigmas[i], 'denoised': denoised})
