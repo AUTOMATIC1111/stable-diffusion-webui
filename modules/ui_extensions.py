@@ -452,6 +452,7 @@ def get_date(info: dict, key):
 def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text=""):
     extlist = available_extensions["extensions"]
     installed_extensions = {extension.name for extension in extensions.extensions}
+    installed_extension_urls = {normalize_git_url(extension.remote) for extension in extensions.extensions if extension.remote is not None}
 
     tags = available_extensions.get("tags", {})
     tags_to_hide = set(hide_tags)
@@ -484,7 +485,7 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
         if url is None:
             continue
 
-        existing = get_extension_dirname_from_url(url) in installed_extensions
+        existing = get_extension_dirname_from_url(url) in installed_extensions or normalize_git_url(url) in installed_extension_urls
         extension_tags = extension_tags + ["installed"] if existing else extension_tags
 
         if any(x for x in extension_tags if x in tags_to_hide):
