@@ -89,7 +89,7 @@ delimiter="################################################################"
 
 printf "\n%s\n" "${delimiter}"
 printf "\e[1m\e[32mInstall script for stable-diffusion + Web UI\n"
-printf "\e[1m\e[34mTested on Debian 11 (Bullseye)\e[0m"
+printf "\e[1m\e[34mTested on Debian 11 (Bullseye), Fedora 34+ and openSUSE Leap 15.4 or newer.\e[0m"
 printf "\n%s\n" "${delimiter}"
 
 # Do not run as root
@@ -223,7 +223,7 @@ fi
 # Try using TCMalloc on Linux
 prepare_tcmalloc() {
     if [[ "${OSTYPE}" == "linux"* ]] && [[ -z "${NO_TCMALLOC}" ]] && [[ -z "${LD_PRELOAD}" ]]; then
-        TCMALLOC="$(PATH=/usr/sbin:$PATH ldconfig -p | grep -Po "libtcmalloc(_minimal|)\.so\.\d" | head -n 1)"
+        TCMALLOC="$(PATH=/sbin:$PATH ldconfig -p | grep -Po "libtcmalloc(_minimal|)\.so\.\d" | head -n 1)"
         if [[ ! -z "${TCMALLOC}" ]]; then
             echo "Using TCMalloc: ${TCMALLOC}"
             export LD_PRELOAD="${TCMALLOC}"
