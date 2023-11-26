@@ -840,8 +840,16 @@ footer {
 
 /* extra networks UI */
 
-.extra-page .prompt{
-    margin: 0 0 0.5em 0;
+.extra-page > div.gap{
+    gap: 0;
+}
+
+.extra-page-prompts{
+    margin-bottom: 0;
+}
+
+.extra-page-prompts.extra-page-prompts-active{
+    margin-bottom: 1em;
 }
 
 .extra-network-cards{
