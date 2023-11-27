@@ -46,8 +46,8 @@ def add_axis_options():
         xyz_grid.AxisOption("[Hypertile] VAE Max Tile Size", int, int_applier("hypertile_max_tile_vae", 0, 512)),
         xyz_grid.AxisOption("[Hypertile] VAE Swap Size", int, int_applier("hypertile_swap_size_vae", 0, 64)),
     ]
-    set_a = set([opt.label for opt in xyz_grid.axis_options])
-    set_b = set([opt.label for opt in extra_axis_options])
+    set_a = set(opt.label for opt in xyz_grid.axis_options)
+    set_b = set(opt.label for opt in extra_axis_options)
     if set_a.intersection(set_b):
         return
 
