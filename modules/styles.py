@@ -66,7 +66,7 @@ def unwrap_style_text_from_prompt(style_text, prompt):
         except ValueError as e:
             # If the style text has multple "{prompt}"s, we can't split it into
             # two parts. This is an error, but we can't do anything about it.
-            print("Unable to compare style text to prompt:`n{style_text}")
+            print(f"Unable to compare style text to prompt:`n{style_text}")
             print(f"Error: {e}")
             return False, prompt
         if stripped_prompt.startswith(left) and stripped_prompt.endswith(right):
