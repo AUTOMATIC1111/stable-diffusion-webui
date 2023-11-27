@@ -49,6 +49,7 @@ SDWorkerZset = 'sd-workers'
 ElasticResWorkerFlag = "[ElasticRes]"
 TrainOnlyWorkerFlag = "[TrainOnly]"
 MaintainKey = "maintain"
+MaintainReadyKey = "maintain-ready"
 
 
 def find_files_from_dir(directory, *args):
@@ -401,6 +402,9 @@ class TaskReceiver:
         '''
         检测集群服务状态，如果是维护状态就陷入睡眠
         '''
+        # 维护就绪时间
+        current_timestamp = int(time.time())
+        isFirst = True
         while 1:
             rds = self.redis_pool.get_connection()
             flag = rds.get(MaintainKey) or "0"
@@ -409,9 +413,16 @@ class TaskReceiver:
                 if time.time() < awake_ts:
                     time_array = time.localtime(awake_ts)
                     date_time = time.strftime("%Y-%m-%d %H:%M:%S", time_array)
+                    # 维护就绪状态写入reids
+                    if isFirst:
+                        rds.zadd(MaintainReadyKey, {self.worker_id, current_timestamp})
+                        isFirst = False
                     logger.info(f"[Maintain] task receiver sleeping till: {date_time}...")
                     time.sleep(60)
                 else:
+                    # 如果是维护状态，并且维护结束，删除维护就绪
+                    if not isFirst:
+                        rds.zrem(MaintainReadyKey, self.worker_id)
                     break
             except:
                 break
