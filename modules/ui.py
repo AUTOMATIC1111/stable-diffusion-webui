@@ -32,8 +32,8 @@ from modules.generation_parameters_copypaste import image_from_url_text
 
 create_setting_component = ui_settings.create_setting_component
 
-warnings.filterwarnings("default" if opts.show_warnings else "ignore", category=UserWarning)
-warnings.filterwarnings("default" if opts.show_gradio_deprecation_warnings else "ignore", category=gr.deprecation.GradioDeprecationWarning)
+# warnings.filterwarnings("default" if opts.show_warnings else "ignore", category=UserWarning)
+# warnings.filterwarnings("default" if opts.show_gradio_deprecation_warnings else "ignore", category=gr.deprecation.GradioDeprecationWarning)
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
