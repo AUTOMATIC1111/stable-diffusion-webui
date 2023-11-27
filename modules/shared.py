@@ -411,7 +411,7 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
 
     "image_sep_metadata": OptionInfo("<h2>Metadata/Logging</h2>", "", gr.HTML),
     "image_metadata": OptionInfo(True, "Include metadata in saved images"),
-    "save_txt": OptionInfo(False, "Create text file next to every image with generation parameters"),
+    "save_txt": OptionInfo(False, "Create info file for each every image"),
     "save_log_fn": OptionInfo("", "Create JSON log file for each saved image", component_args=hide_dirs),
     "image_watermark_enabled": OptionInfo(False, "Include watermark in saved images"),
     "image_watermark": OptionInfo('', "Image watermark string"),

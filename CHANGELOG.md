@@ -1,31 +1,34 @@
 # Change Log for SD.Next
 
-## Update for 2023-11-24
+## Update for 2023-11-26
 
 Note: Release pending `diffusers==0.24`
 
 - **Diffusers**
   - **IP adapter**
-    - Lightweight implementation of T2I adapters which can guide generation towards specific image style
-    - Supports most T2I models, not limited to SD
+    - Lightweight implementation of T2I adapters which can guide generation towards specific image style  
+    - Supports most T2I models, not limited to SD  
   - **HDR latent control**, based on [article](https://huggingface.co/blog/TimothyAlexisVass/explaining-the-sdxl-latent-space#long-prompts-at-high-guidance-scales-becoming-possible)  
     - In *Advanced* params
-    - Allows control of *latent clamping*, *color centering* and *range maximimization*
-    - Supported by *XYZ grid*
+    - Allows control of *latent clamping*, *color centering* and *range maximimization*  
+    - Supported by *XYZ grid*  
   - **Kandinsky 3** support  
     - download using built-in model downloader or simply select from networks -> reference  
-    - this model is absolutely massive at 27.5GB at fp16, so be patient
+    - this model is absolutely massive at 27.5GB at fp16, so be patient  
     - model params count is at 11.9B (compared to SD-XL at 3.3B) and its trained on mixed resolutions from 256px to 1024px  
-    - use either model offload or sequential cpu offload to be able to use it
-  - better autodetection of *inpaint* and *instruct* pipelines
-  - support long seconary prompt for refiner
+    - use either model offload or sequential cpu offload to be able to use it  
+  - better autodetection of *inpaint* and *instruct* pipelines  
+  - support long seconary prompt for refiner  
+- **Model merge**
+  - add sd-xl rebasin support, thanks @AI-Casanova  
 - **General**
-  - log level defaults to info for console and debug for log file
-  - better prompt display in process tab
-  - increase maximum lora cache values
-  - fix controlnet compatibility issues in original backend
-  - fix python 3.9 compatibility issues
-  - fix img2img/inpaint paste params
+  - log level defaults to info for console and debug for log file  
+  - better prompt display in process tab  
+  - increase maximum lora cache values  
+  - fix controlnet compatibility issues in original backend  
+  - fix img2img/inpaint paste params  
+  - fix save text file for manually saved images  
+  - fix python 3.9 compatibility issues  
 
 ## Update for 2023-11-23
 
