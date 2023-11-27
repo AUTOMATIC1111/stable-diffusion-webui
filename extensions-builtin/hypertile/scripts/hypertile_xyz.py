@@ -1,6 +1,7 @@
 from modules import scripts
-xyz_grid = [x for x in scripts.scripts_data if x.script_class.__module__ == "xyz_grid.py"][0].module
 from modules.shared import opts
+
+xyz_grid = [x for x in scripts.scripts_data if x.script_class.__module__ == "xyz_grid.py"][0].module
 
 def int_applier(value_name:str, min_range:int = -1, max_range:int = -1):
     """
@@ -8,10 +9,9 @@ def int_applier(value_name:str, min_range:int = -1, max_range:int = -1):
     """
     # convert to int
     def validate(value_name:str, value:str):
-        try:
-            value = int(value)
-        except:
-            raise ValueError(f"Value {value} for {value_name} is not an integer")
+        if not value.isnumeric():
+            raise ValueError(f"Value {value} for {value_name} must be an integer")
+        value = int(value)
         # validate value
         if not min_range == -1:
             assert value >= min_range, f"Value {value} for {value_name} must be greater than or equal to {min_range}"
@@ -46,7 +46,9 @@ def add_axis_options():
         xyz_grid.AxisOption("[Hypertile] VAE Max Tile Size", int, int_applier("hypertile_max_tile_vae", 0, 512)),
         xyz_grid.AxisOption("[Hypertile] VAE Swap Size", int, int_applier("hypertile_swap_size_vae", 0, 64)),
     ]
-    # check if the axis options have already been added
-    if any(set(opt.label for opt in extra_axis_options).intersection(set(opt.label for opt in xyz_grid.axis_options))):
+    set_a = set([opt.label for opt in xyz_grid.axis_options])
+    set_b = set([opt.label for opt in extra_axis_options])
+    if set_a.intersection(set_b):
         return
+
     xyz_grid.axis_options.extend(extra_axis_options)
