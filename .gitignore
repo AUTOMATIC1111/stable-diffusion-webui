@@ -6,7 +6,6 @@ __pycache__
 /SwinIR/*
 /repositories
 /venv
-/test-venv
 /tmp
 /model.ckpt
 /models/**/*
@@ -38,9 +37,3 @@ notification.mp3
 /node_modules
 /package-lock.json
 /.coverage*
-
-# ignore files root of repo which are version numbers
-/*.*.*
-
-# ignore files which are "local" edits of webui-*.bat, etc.
-*.local.bat
