@@ -799,7 +799,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     infotexts = []
     output_images = []
-
     with torch.no_grad(), p.sd_model.ema_scope():
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
@@ -873,7 +872,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             else:
                 if opts.sd_vae_decode_method != 'Full':
                     p.extra_generation_params['VAE Decoder'] = opts.sd_vae_decode_method
-
                 x_samples_ddim = decode_latent_batch(p.sd_model, samples_ddim, target_device=devices.cpu, check_for_nans=True)
 
             x_samples_ddim = torch.stack(x_samples_ddim).float()
@@ -1147,6 +1145,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         if not self.enable_hr:
             return samples
+        devices.torch_gc()
 
         if self.latent_scale_mode is None:
             decoded_samples = torch.stack(decode_latent_batch(self.sd_model, samples, target_device=devices.cpu, check_for_nans=True)).to(dtype=torch.float32)
@@ -1156,8 +1155,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         with sd_models.SkipWritingToConfig():
             sd_models.reload_model_weights(info=self.hr_checkpoint_info)
 
-        devices.torch_gc()
-
         return self.sample_hr_pass(samples, decoded_samples, seeds, subseeds, subseed_strength, prompts)
 
     def sample_hr_pass(self, samples, decoded_samples, seeds, subseeds, subseed_strength, prompts):
@@ -1165,7 +1162,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             return samples
 
         self.is_hr_pass = True
-
         target_width = self.hr_upscale_to_x
         target_height = self.hr_upscale_to_y
 
@@ -1254,7 +1250,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         decoded_samples = decode_latent_batch(self.sd_model, samples, target_device=devices.cpu, check_for_nans=True)
 
         self.is_hr_pass = False
-
         return decoded_samples
 
     def close(self):

@@ -130,6 +130,10 @@ function extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePromp
     } else {
         promptContainer.insertBefore(prompt, promptContainer.firstChild);
     }
+
+    if (elem) {
+        elem.classList.toggle('extra-page-prompts-active', showNegativePrompt || showPrompt);
+    }
 }
 
 

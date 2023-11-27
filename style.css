@@ -462,6 +462,15 @@ div.toprow-compact-tools{
     padding: 4px;
 }
 
+#settings > div.tab-nav .settings-category{
+    display: block;
+    margin: 1em 0 0.25em 0;
+    font-weight: bold;
+    text-decoration: underline;
+    cursor: default;
+    user-select: none;
+}
+
 #settings_result{
     height: 1.4em;
     margin: 0 1.2em;
@@ -840,8 +849,16 @@ footer {
 
 /* extra networks UI */
 
-.extra-page .prompt{
-    margin: 0 0 0.5em 0;
+.extra-page > div.gap{
+    gap: 0;
+}
+
+.extra-page-prompts{
+    margin-bottom: 0;
+}
+
+.extra-page-prompts.extra-page-prompts-active{
+    margin-bottom: 1em;
 }
 
 .extra-network-cards{

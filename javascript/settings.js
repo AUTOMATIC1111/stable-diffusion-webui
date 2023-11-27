@@ -44,3 +44,28 @@ onUiLoaded(function() {
 
     buttonShowAllPages.addEventListener("click", settingsShowAllTabs);
 });
+
+
+onOptionsChanged(function() {
+    if (gradioApp().querySelector('#settings .settings-category')) return;
+
+    var sectionMap = {};
+    gradioApp().querySelectorAll('#settings > div > button').forEach(function(x) {
+        sectionMap[x.textContent.trim()] = x;
+    });
+
+    opts._categories.forEach(function(x) {
+        var section = x[0];
+        var category = x[1];
+
+        var span = document.createElement('SPAN');
+        span.textContent = category;
+        span.className = 'settings-category';
+
+        var sectionElem = sectionMap[section];
+        if (!sectionElem) return;
+
+        sectionElem.parentElement.insertBefore(span, sectionElem);
+    });
+});
+
