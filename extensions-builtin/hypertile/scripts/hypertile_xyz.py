@@ -7,10 +7,7 @@ def int_applier(value_name:str, min_range:int = -1, max_range:int = -1):
     """
     Returns a function that applies the given value to the given value_name in opts.data.
     """
-    # convert to int
     def validate(value_name:str, value:str):
-        if not value.isnumeric():
-            raise ValueError(f"Value {value} for {value_name} must be an integer")
         value = int(value)
         # validate value
         if not min_range == -1:
