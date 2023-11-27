@@ -3,6 +3,8 @@ import requests
 import os
 import numpy as np
 from PIL import ImageDraw
+from modules import paths_internal
+from pkg_resources import parse_version
 
 GREEN = "#0F0"
 BLUE = "#00F"
@@ -294,22 +296,23 @@ def is_square(w, h):
     return w == h
 
 
-def download_and_cache_models(dirname):
-    download_url = 'https://github.com/opencv/opencv_zoo/blob/91fb0290f50896f38a0ab1e558b74b16bc009428/models/face_detection_yunet/face_detection_yunet_2022mar.onnx?raw=true'
-    model_file_name = 'face_detection_yunet.onnx'
+model_dir_opencv = os.path.join(paths_internal.models_path, 'opencv')
+if parse_version(cv2.__version__) >= parse_version('4.8'):
+    model_file_path = os.path.join(model_dir_opencv, 'face_detection_yunet_2023mar.onnx')
+    model_url = 'https://github.com/opencv/opencv_zoo/blob/b6e370b10f641879a87890d44e42173077154a05/models/face_detection_yunet/face_detection_yunet_2023mar.onnx?raw=true'
+else:
+    model_file_path = os.path.join(model_dir_opencv, 'face_detection_yunet.onnx')
+    model_url = 'https://github.com/opencv/opencv_zoo/blob/91fb0290f50896f38a0ab1e558b74b16bc009428/models/face_detection_yunet/face_detection_yunet_2022mar.onnx?raw=true'
 
-    os.makedirs(dirname, exist_ok=True)
 
-    cache_file = os.path.join(dirname, model_file_name)
-    if not os.path.exists(cache_file):
-        print(f"downloading face detection model from '{download_url}' to '{cache_file}'")
-        response = requests.get(download_url)
-        with open(cache_file, "wb") as f:
+def download_and_cache_models():
+    if not os.path.exists(model_file_path):
+        os.makedirs(model_dir_opencv, exist_ok=True)
+        print(f"downloading face detection model from '{model_url}' to '{model_file_path}'")
+        response = requests.get(model_url)
+        with open(model_file_path, "wb") as f:
             f.write(response.content)
-
-    if os.path.exists(cache_file):
-        return cache_file
-    return None
+    return model_file_path
 
 
 class PointOfInterest:
