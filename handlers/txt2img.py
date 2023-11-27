@@ -80,12 +80,16 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
 
         t2i_script_runner = modules.scripts.scripts_txt2img
         selectable_scripts, selectable_script_idx = get_selectable_script(t2i_script_runner, select_script_name)
+        # script_args = init_script_args(default_script_arg_txt2img, alwayson_scripts, selectable_scripts,
+        #                                selectable_script_idx, select_script_args, t2i_script_runner,
+        #                                not disable_ad_face, enable_refiner, refiner_switch_at, refiner_checkpoint,
+        #                                seed, seed_enable_extras, subseed, subseed_strength, seed_resize_from_h,
+        #                                seed_resize_from_w)
         script_args = init_script_args(default_script_arg_txt2img, alwayson_scripts, selectable_scripts,
                                        selectable_script_idx, select_script_args, t2i_script_runner,
-                                       not disable_ad_face, enable_refiner, refiner_switch_at, refiner_checkpoint,
+                                       True, enable_refiner, refiner_switch_at, refiner_checkpoint,
                                        seed, seed_enable_extras, subseed, subseed_strength, seed_resize_from_h,
                                        seed_resize_from_w)
-
         self.sd_model = shared.sd_model
         self.prompt = prompt
         self.negative_prompt = negative_prompt
