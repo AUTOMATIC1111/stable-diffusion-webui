@@ -75,21 +75,19 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  **kwargs):
         # "upcast_attn": false # 将交叉关注层向上转型到float32
         #
+        # fast模式下关闭默认的AD插件
+        disable_ad_face = disable_ad_face or kwargs.get('is_fast', False)
         override_settings_texts = format_override_settings(override_settings_texts)
         override_settings = create_override_settings_dict(override_settings_texts)
 
         t2i_script_runner = modules.scripts.scripts_txt2img
         selectable_scripts, selectable_script_idx = get_selectable_script(t2i_script_runner, select_script_name)
-        # script_args = init_script_args(default_script_arg_txt2img, alwayson_scripts, selectable_scripts,
-        #                                selectable_script_idx, select_script_args, t2i_script_runner,
-        #                                not disable_ad_face, enable_refiner, refiner_switch_at, refiner_checkpoint,
-        #                                seed, seed_enable_extras, subseed, subseed_strength, seed_resize_from_h,
-        #                                seed_resize_from_w)
         script_args = init_script_args(default_script_arg_txt2img, alwayson_scripts, selectable_scripts,
                                        selectable_script_idx, select_script_args, t2i_script_runner,
-                                       False, enable_refiner, refiner_switch_at, refiner_checkpoint,
+                                       not disable_ad_face, enable_refiner, refiner_switch_at, refiner_checkpoint,
                                        seed, seed_enable_extras, subseed, subseed_strength, seed_resize_from_h,
                                        seed_resize_from_w)
+
         self.sd_model = shared.sd_model
         self.prompt = prompt
         self.negative_prompt = negative_prompt

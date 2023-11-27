@@ -118,6 +118,8 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  refiner_switch_at: float = 0.2,  # XL 精描切换时机
                  refiner_checkpoint: str = None,  # XL refiner模型文件
                  **kwargs):
+        # fast模式下关闭默认的AD插件
+        disable_ad_face = disable_ad_face or kwargs.get('is_fast', False)
         override_settings_texts = format_override_settings(override_settings_texts)
         override_settings = create_override_settings_dict(override_settings_texts)
         image = None
@@ -214,16 +216,12 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
 
         i2i_script_runner = modules.scripts.scripts_img2img
         selectable_scripts, selectable_script_idx = get_selectable_script(i2i_script_runner, select_script_name)
-        # script_args = init_script_args(default_script_arg_img2img, alwayson_scripts, selectable_scripts,
-        #                                selectable_script_idx, select_script_args, i2i_script_runner,
-        #                                not disable_ad_face, enable_refiner, refiner_switch_at, refiner_checkpoint,
-        #                                seed, seed_enable_extras, subseed, subseed_strength, seed_resize_from_h,
-        #                                seed_resize_from_w)
         script_args = init_script_args(default_script_arg_img2img, alwayson_scripts, selectable_scripts,
                                        selectable_script_idx, select_script_args, i2i_script_runner,
-                                       False, enable_refiner, refiner_switch_at, refiner_checkpoint,
+                                       not disable_ad_face, enable_refiner, refiner_switch_at, refiner_checkpoint,
                                        seed, seed_enable_extras, subseed, subseed_strength, seed_resize_from_h,
                                        seed_resize_from_w)
+
         self.sd_model = shared.sd_model
         self.outpath_samples = f"output/{user_id}/img2img/samples/"
         self.outpath_grids = f"output/{user_id}/img2img/grids/"

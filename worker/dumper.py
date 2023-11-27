@@ -255,6 +255,7 @@ class MongoTaskDumper(TaskDumper):
                          'task_type': task_progress.task.task_type, 'minor_type': task_progress.task.minor_type,
                          'group_id': "", 'index': index, 'low_image': sample, 'image_type': 'grid',
                          'update_at': datetime.now(),
+                         'is_fast': task_progress.task.get('is_fast', False),
                          'high_image': r['grids']['high'][i]}
                     flatten_images.append(t)
                     index += 1
@@ -268,6 +269,7 @@ class MongoTaskDumper(TaskDumper):
                          'seed': task_progress.task['all_seed'][i],
                          'sub_seed': task_progress.task['all_sub_seed'][i],
                          'update_at': datetime.now(),
+                         'is_fast': task_progress.task.get('is_fast', False),
                          }
                     flatten_images.append(t)
                     index += 1
