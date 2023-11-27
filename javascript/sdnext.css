@@ -72,7 +72,7 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 .performance .time { margin-right: 0; }
 #txt2img_prompt_container, #img2img_prompt_container { margin-right: var(--layout-gap) }
 #txt2img_footer, #img2img_footer, #extras_footer { height: fit-content; }
-#txt2img_footer, #img2img_footer { height: fit-content; display: none; }
+#txt2img_footer, #img2img_footer {height: fit-content;display: none;}
 #txt2img_generate_box, #img2img_generate_box { gap: 0.5em; flex-wrap: wrap-reverse; height: fit-content; }
 #txt2img_actions_column, #img2img_actions_column { gap: 0.5em; height: fit-content; }
 #txt2img_generate_box > button, #img2img_generate_box > button, #txt2img_enqueue, #img2img_enqueue { min-height: 42px; max-height: 42px; line-height: 1em; }
@@ -286,25 +286,25 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
   /* Do not affect displays larger than 1024px wide.  */
   @media (max-width: 1024px) {
   
-    /* Screens smaller than 424px wide */
+    /* Screens smaller than 400px wide */
     @media (max-width: 399px) {
       :root, .light, .dark { --left-column: 100%; }
       
       /* maintain single column for from image operations on larger mobile devices */
       #txt2img_results, #img2img_results, #extras_results { min-width: calc(min(320px, 100%)) !important;}
+      #txt2img_footer p { text-wrap: wrap; }
+
     }
     
-    /* Screens larger than 425px wide */
-    @media (min-width: 425px) {
-      :root, .light, .dark {--left-column: 50% ;}
-      
-      /* adjust extension panel to fit within resized sidebar */
-      #scripts_alwayson_txt2img div { max-width: 99%; }
+    /* Screens larger than 400px wide */
+    @media (min-width: 400px) {
+      :root, .light, .dark {--left-column: 50%;}
       
       /* maintain side by side split on larger mobile displays for from text */
-      #txt2img_results, #extras_results { min-width: 50% !important;}
+      #txt2img_results, #extras_results, #txt2img_footer p {text-wrap: wrap; max-width: 100% !important; }
     }
     
+    #scripts_alwayson_txt2img div, #scripts_alwayson_img2img div { max-width: 100%; }
     #txt2img_prompt_container, #img2img_prompt_container { resize:vertical !important; }
 
     /* make generate and enqueue buttons take up the entire width of their rows. */
@@ -316,10 +316,10 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
     #txt2img_generate_box, #img2img_generate_box, #txt2img_enqueue_wrapper,#img2img_enqueue_wrapper {display: flex;flex-direction: column;height: 4em !important;align-items: stretch;justify-content: space-evenly;}
 
     /* maintain single column for from image operations on larger mobile devices */
-    #img2img_settings, #img2img_results { min-width: 100% !important; max-width: 100% !important;}
+    #img2img_interface, #img2img_results, #img2img_footer p {text-wrap: wrap; min-width: 100% !important; max-width: 100% !important;}
     /* fix inpaint image display being too large for mobile displays */
-    #img2img_sketch, #img2maskimg, #inpaint_sketch {display: flex;alignment-baseline:after-edge !important;overflow: auto !important;resize: none !important;}
-    #img2maskimg canvas { width: 100% !important; max-height: 100% !important; height: auto !important; }
+    #img2img_sketch, #img2maskimg, #inpaint_sketch {display: flex; alignment-baseline:after-edge !important;overflow: auto !important;resize: none !important;}
+    #img2maskimg canvas { width: auto !important; max-height: 100% !important; height: auto !important; }
 
     /* fix from text/image UI elements to prevent them from moving around within the UI */
     #txt2img_sampler, #txt2img_batch, #txt2img_seed_group, #txt2img_advanced, #txt2img_second_pass, #img2img_sampling_group, #img2img_resize_group, #img2img_batch_group, #img2img_seed_group, #img2img_denoise_group, #img2img_advanced_group { width: 100% !important; }
@@ -353,3 +353,4 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
   }  
     
 }
+
