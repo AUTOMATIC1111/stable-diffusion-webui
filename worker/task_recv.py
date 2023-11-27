@@ -406,25 +406,26 @@ class TaskReceiver:
         current_timestamp = int(time.time())
         isFirst = True
         while 1:
-            rds = self.redis_pool.get_connection()
-            flag = rds.get(MaintainKey) or "0"
             try:
+                rds = self.redis_pool.get_connection()
+                flag = rds.get(MaintainKey) or "0"
                 awake_ts = int(flag)
                 if time.time() < awake_ts:
                     time_array = time.localtime(awake_ts)
                     date_time = time.strftime("%Y-%m-%d %H:%M:%S", time_array)
                     # 维护就绪状态写入reids
                     if isFirst:
-                        rds.zadd(MaintainReadyKey, {self.worker_id, current_timestamp})
+                        rds.zadd(MaintainReadyKey, {self.worker_id: current_timestamp})
                         isFirst = False
                     logger.info(f"[Maintain] task receiver sleeping till: {date_time}...")
-                    time.sleep(60)
+                    time.sleep(10)
                 else:
                     # 如果是维护状态，并且维护结束，删除维护就绪
                     if not isFirst:
                         rds.zrem(MaintainReadyKey, self.worker_id)
                     break
-            except:
+            except Exception as err:
+                logger.warning(f"cannot got cluster status:{err}")
                 break
 
     def _extract_queue_task(self, queue_name: str, retry: int = 1):
