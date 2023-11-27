@@ -61,7 +61,14 @@ def unwrap_style_text_from_prompt(style_text, prompt):
     if "{prompt}" in stripped_style_text:
         # Work out whether the prompt is wrapped in the style text. If so, we
         # return True and the "inner" prompt text that isn't part of the style.
-        left, right = stripped_style_text.split("{prompt}", 2)
+        try:
+            left, right = stripped_style_text.split("{prompt}", 2)
+        except ValueError as e:
+            # If the style text has multple "{prompt}"s, we can't split it into
+            # two parts. This is an error, but we can't do anything about it.
+            print("Unable to compare style text to prompt:`n{style_text}")
+            print(f"Error: {e}")
+            return False, prompt
         if stripped_prompt.startswith(left) and stripped_prompt.endswith(right):
             prompt = stripped_prompt[len(left) : len(stripped_prompt) - len(right)]
             return True, prompt
