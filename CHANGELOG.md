@@ -22,6 +22,7 @@ Note: Release pending `diffusers==0.24`
 - **Model merge**
   - add sd-xl rebasin support, thanks @AI-Casanova  
 - **General**
+  - further UI optimizations for **mobile devices**, thanks @iDeNoh
   - log level defaults to info for console and debug for log file  
   - better prompt display in process tab  
   - increase maximum lora cache values  

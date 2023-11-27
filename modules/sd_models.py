@@ -20,7 +20,7 @@ import tomesd
 from transformers import logging as transformers_logging
 import ldm.modules.midas as midas
 from ldm.util import instantiate_from_config
-from modules import paths, shared, shared_items, shared_state, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config, sd_models_compile, sd_hijack_inpainting
+from modules import paths, shared, shared_items, shared_state, modelloader, devices, script_callbacks, sd_vae, errors, hashes, sd_models_config, sd_models_compile, sd_hijack_inpainting
 from modules.timer import Timer
 from modules.memstats import memory_stats
 from modules.paths import models_path, script_path
@@ -637,7 +637,7 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
             else:
                 guess = 'Stable Diffusion'
             # guess by name
-            if 'LCM_' in f or 'LCM-' in f:
+            if 'LCM_' in f or 'LCM-' or '_LCM' or '-LCM' in f.upper():
                 if shared.backend == shared.Backend.ORIGINAL:
                     warn(f'Model detected as LCM model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Latent Consistency Model'
