@@ -543,12 +543,20 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
         index = position_in_batch + iteration * p.batch_size
     if all_prompts is None:
         all_prompts = p.all_prompts
+    if all_negative_prompts is None:
+        all_negative_prompts = p.all_negative_prompts
     if all_seeds is None:
         all_seeds = p.all_seeds
     if all_subseeds is None:
         all_subseeds = p.all_subseeds
-    if all_negative_prompts is None:
-        all_negative_prompts = p.all_negative_prompts
+    while len(all_prompts) <= index:
+        all_prompts.append(all_prompts[-1])
+    while len(all_seeds) <= index:
+        all_seeds.append(all_seeds[-1])
+    while len(all_subseeds) <= index:
+        all_subseeds.append(all_subseeds[-1])
+    while len(all_negative_prompts) <= index:
+        all_negative_prompts.append(all_negative_prompts[-1])
     comment = ', '.join(comments) if comments is not None and type(comments) is list else None
     ops = list(set(p.ops))
     ops.reverse()
@@ -768,6 +776,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
 
 def validate_sample(tensor):
+    if not isinstance(tensor, np.ndarray) and not isinstance(tensor, torch.Tensor):
+        return tensor
     if tensor.dtype == torch.bfloat16: # numpy does not support bf16
         tensor = tensor.to(torch.float16)
     if shared.backend == shared.Backend.ORIGINAL:

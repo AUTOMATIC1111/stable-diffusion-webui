@@ -637,10 +637,12 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
             else:
                 guess = 'Stable Diffusion'
             # guess by name
-            if 'LCM_' in f or 'LCM-' or '_LCM' or '-LCM' in f.upper():
+            """
+            if 'LCM_' in f.upper() or 'LCM-' in f.upper() or '_LCM' in f.upper() or '-LCM' in f.upper():
                 if shared.backend == shared.Backend.ORIGINAL:
                     warn(f'Model detected as LCM model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Latent Consistency Model'
+            """
             if 'PixArt' in f:
                 if shared.backend == shared.Backend.ORIGINAL:
                     warn(f'Model detected as PixArt Alpha model, but attempting to load using backend=original: {op}={f} size={size} MB')

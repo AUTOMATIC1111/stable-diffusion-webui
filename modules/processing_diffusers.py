@@ -478,6 +478,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     p.extra_generation_params["Sampler Eta"] = shared.opts.scheduler_eta if shared.opts.scheduler_eta is not None and shared.opts.scheduler_eta > 0 and shared.opts.scheduler_eta < 1 else None
     try:
         output = shared.sd_model(**base_args) # pylint: disable=not-callable
+        if not hasattr(output, 'images') and hasattr(output, 'frames'):
+            shared.log.debug(f'Generated: frames={len(output.frames[0])}')
+            output.images = output.frames[0]
     except AssertionError as e:
         shared.log.info(e)
     except ValueError as e:
