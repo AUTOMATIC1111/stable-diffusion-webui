@@ -8,6 +8,33 @@
     - Example: `set PYTHON=B:\soft\Python310\python.exe`
 - Installer requirements from `requirements_versions.txt`, which lists versions for modules specifically compatible with Python 3.10.6. If this doesn't work with other versions of Python, setting the custom parameter `set REQS_FILE=requirements.txt` may help.
 
+# Run `webui-user.bat` but the window immediately closes
+Some error has occurred but the window closed too fast we can't see the issue, we need to prevent `webui-user.bat` form closeing instantly.
+1. Right click to edit `webui-user.bat`.
+2. Add a command `pause` at the end of the file.
+3. Save the modification and run `webui-user.bat` again.
+
+`webui-user.bat` should now pause allowing you to see the issue.
+
+<details><summary>The modified file should look similar to this. (Click to expand)</summary>
+<p>
+
+```bat
+@echo off
+set PYTHON=
+set GIT=
+set VENV_DIR=
+set COMMANDLINE_ARGS=
+
+call webui.bat
+pause
+```
+
+</p>
+</details> 
+
+
+
 # Low VRAM Video-cards
 When running on video cards with a low amount of VRAM (<=4GB), out of memory errors may arise.
 Various optimizations may be enabled through command line arguments, sacrificing some/a lot of speed in favor of using less VRAM:
