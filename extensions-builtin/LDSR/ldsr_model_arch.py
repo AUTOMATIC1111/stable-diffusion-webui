@@ -12,7 +12,7 @@ import safetensors.torch
 
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.util import instantiate_from_config, ismap
-from modules import shared, sd_hijack
+from modules import shared, sd_hijack, devices
 
 cached_ldsr_model: torch.nn.Module = None
 
@@ -112,8 +112,7 @@ class LDSR:
 
 
         gc.collect()
-        if torch.cuda.is_available:
-            torch.cuda.empty_cache()
+        devices.torch_gc()
 
         im_og = image
         width_og, height_og = im_og.size
@@ -150,8 +149,7 @@ class LDSR:
 
         del model
         gc.collect()
-        if torch.cuda.is_available:
-            torch.cuda.empty_cache()
+        devices.torch_gc()
 
         return a
 

@@ -1,8 +1,11 @@
 import base64
 import io
+import os
 import time
 import datetime
 import uvicorn
+import ipaddress
+import requests
 import gradio as gr
 from threading import Lock
 from io import BytesIO
@@ -14,7 +17,7 @@ from fastapi.encoders import jsonable_encoder
 from secrets import compare_digest
 
 import modules.shared as shared
-from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors
+from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors, restart, shared_items
 from modules.api import models
 from modules.shared import opts
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
@@ -22,21 +25,14 @@ from modules.textual_inversion.textual_inversion import create_embedding, train_
 from modules.textual_inversion.preprocess import preprocess
 from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
 from PIL import PngImagePlugin,Image
-from modules.sd_models import checkpoints_list, unload_model_weights, reload_model_weights
-from modules.sd_vae import vae_dict
+from modules.sd_models import unload_model_weights, reload_model_weights, checkpoint_aliases
 from modules.sd_models_config import find_checkpoint_config_near_filename
 from modules.realesrgan_model import get_realesrgan_models
 from modules import devices
 from typing import Dict, List, Any
 import piexif
 import piexif.helper
-
-
-def upscaler_to_index(name: str):
-    try:
-        return [x.name.lower() for x in shared.sd_upscalers].index(name.lower())
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid upscaler, needs to be one of these: {' , '.join([x.name for x in shared.sd_upscalers])}") from e
+from contextlib import closing
 
 
 def script_name_to_index(name, scripts):
@@ -61,7 +57,41 @@ def setUpscalers(req: dict):
     return reqDict
 
 
+def verify_url(url):
+    """Returns True if the url refers to a global resource."""
+
+    import socket
+    from urllib.parse import urlparse
+    try:
+        parsed_url = urlparse(url)
+        domain_name = parsed_url.netloc
+        host = socket.gethostbyname_ex(domain_name)
+        for ip in host[2]:
+            ip_addr = ipaddress.ip_address(ip)
+            if not ip_addr.is_global:
+                return False
+    except Exception:
+        return False
+
+    return True
+
+
 def decode_base64_to_image(encoding):
+    if encoding.startswith("http://") or encoding.startswith("https://"):
+        if not opts.api_enable_requests:
+            raise HTTPException(status_code=500, detail="Requests not allowed")
+
+        if opts.api_forbid_local_requests and not verify_url(encoding):
+            raise HTTPException(status_code=500, detail="Request to local resource not allowed")
+
+        headers = {'user-agent': opts.api_useragent} if opts.api_useragent else {}
+        response = requests.get(encoding, timeout=30, headers=headers)
+        try:
+            image = Image.open(BytesIO(response.content))
+            return image
+        except Exception as e:
+            raise HTTPException(status_code=500, detail="Invalid image url") from e
+
     if encoding.startswith("data:image/"):
         encoding = encoding.split(";")[1].split(",")[1]
     try:
@@ -84,6 +114,8 @@ def encode_pil_to_base64(image):
             image.save(output_bytes, format="PNG", pnginfo=(metadata if use_metadata else None), quality=opts.jpeg_quality)
 
         elif opts.samples_format.lower() in ("jpg", "jpeg", "webp"):
+            if image.mode == "RGBA":
+                image = image.convert("RGB")
             parameters = image.info.get('parameters', None)
             exif_bytes = piexif.dump({
                 "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(parameters or "", encoding="unicode") }
@@ -102,14 +134,16 @@ def encode_pil_to_base64(image):
 
 
 def api_middleware(app: FastAPI):
-    rich_available = True
+    rich_available = False
     try:
-        import anyio # importing just so it can be placed on silent list
-        import starlette # importing just so it can be placed on silent list
-        from rich.console import Console
-        console = Console()
+        if os.environ.get('WEBUI_RICH_EXCEPTIONS', None) is not None:
+            import anyio  # importing just so it can be placed on silent list
+            import starlette  # importing just so it can be placed on silent list
+            from rich.console import Console
+            console = Console()
+            rich_available = True
     except Exception:
-        rich_available = False
+        pass
 
     @app.middleware("http")
     async def log_and_time(req: Request, call_next):
@@ -120,14 +154,14 @@ def api_middleware(app: FastAPI):
         endpoint = req.scope.get('path', 'err')
         if shared.cmd_opts.api_log and endpoint.startswith('/sdapi'):
             print('API {t} {code} {prot}/{ver} {method} {endpoint} {cli} {duration}'.format(
-                t = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-                code = res.status_code,
-                ver = req.scope.get('http_version', '0.0'),
-                cli = req.scope.get('client', ('0:0.0.0', 0))[0],
-                prot = req.scope.get('scheme', 'err'),
-                method = req.scope.get('method', 'err'),
-                endpoint = endpoint,
-                duration = duration,
+                t=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                code=res.status_code,
+                ver=req.scope.get('http_version', '0.0'),
+                cli=req.scope.get('client', ('0:0.0.0', 0))[0],
+                prot=req.scope.get('scheme', 'err'),
+                method=req.scope.get('method', 'err'),
+                endpoint=endpoint,
+                duration=duration,
             ))
         return res
 
@@ -138,7 +172,7 @@ def api_middleware(app: FastAPI):
             "body": vars(e).get('body', ''),
             "errors": str(e),
         }
-        if not isinstance(e, HTTPException): # do not print backtrace on known httpexceptions
+        if not isinstance(e, HTTPException):  # do not print backtrace on known httpexceptions
             message = f"API error: {request.method}: {request.url} {err}"
             if rich_available:
                 print(message)
@@ -198,6 +232,7 @@ class Api:
         self.add_api_route("/sdapi/v1/prompt-styles", self.get_prompt_styles, methods=["GET"], response_model=List[models.PromptStyleItem])
         self.add_api_route("/sdapi/v1/embeddings", self.get_embeddings, methods=["GET"], response_model=models.EmbeddingsResponse)
         self.add_api_route("/sdapi/v1/refresh-checkpoints", self.refresh_checkpoints, methods=["POST"])
+        self.add_api_route("/sdapi/v1/refresh-vae", self.refresh_vae, methods=["POST"])
         self.add_api_route("/sdapi/v1/create/embedding", self.create_embedding, methods=["POST"], response_model=models.CreateResponse)
         self.add_api_route("/sdapi/v1/create/hypernetwork", self.create_hypernetwork, methods=["POST"], response_model=models.CreateResponse)
         self.add_api_route("/sdapi/v1/preprocess", self.preprocess, methods=["POST"], response_model=models.PreprocessResponse)
@@ -208,6 +243,11 @@ class Api:
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
+
+        if shared.cmd_opts.api_server_stop:
+            self.add_api_route("/sdapi/v1/server-kill", self.kill_webui, methods=["POST"])
+            self.add_api_route("/sdapi/v1/server-restart", self.restart_webui, methods=["POST"])
+            self.add_api_route("/sdapi/v1/server-stop", self.stop_webui, methods=["POST"])
 
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
@@ -324,19 +364,23 @@ class Api:
         args.pop('save_images', None)
 
         with self.queue_lock:
-            p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
-            p.scripts = script_runner
-            p.outpath_grids = opts.outdir_txt2img_grids
-            p.outpath_samples = opts.outdir_txt2img_samples
+            with closing(StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)) as p:
+                p.is_api = True
+                p.scripts = script_runner
+                p.outpath_grids = opts.outdir_txt2img_grids
+                p.outpath_samples = opts.outdir_txt2img_samples
 
-            shared.state.begin()
-            if selectable_scripts is not None:
-                p.script_args = script_args
-                processed = scripts.scripts_txt2img.run(p, *p.script_args) # Need to pass args as list here
-            else:
-                p.script_args = tuple(script_args) # Need to pass args as tuple here
-                processed = process_images(p)
-            shared.state.end()
+                try:
+                    shared.state.begin(job="scripts_txt2img")
+                    if selectable_scripts is not None:
+                        p.script_args = script_args
+                        processed = scripts.scripts_txt2img.run(p, *p.script_args) # Need to pass args as list here
+                    else:
+                        p.script_args = tuple(script_args) # Need to pass args as tuple here
+                        processed = process_images(p)
+                finally:
+                    shared.state.end()
+                    shared.total_tqdm.clear()
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
@@ -380,20 +424,24 @@ class Api:
         args.pop('save_images', None)
 
         with self.queue_lock:
-            p = StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)
-            p.init_images = [decode_base64_to_image(x) for x in init_images]
-            p.scripts = script_runner
-            p.outpath_grids = opts.outdir_img2img_grids
-            p.outpath_samples = opts.outdir_img2img_samples
+            with closing(StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)) as p:
+                p.init_images = [decode_base64_to_image(x) for x in init_images]
+                p.is_api = True
+                p.scripts = script_runner
+                p.outpath_grids = opts.outdir_img2img_grids
+                p.outpath_samples = opts.outdir_img2img_samples
 
-            shared.state.begin()
-            if selectable_scripts is not None:
-                p.script_args = script_args
-                processed = scripts.scripts_img2img.run(p, *p.script_args) # Need to pass args as list here
-            else:
-                p.script_args = tuple(script_args) # Need to pass args as tuple here
-                processed = process_images(p)
-            shared.state.end()
+                try:
+                    shared.state.begin(job="scripts_img2img")
+                    if selectable_scripts is not None:
+                        p.script_args = script_args
+                        processed = scripts.scripts_img2img.run(p, *p.script_args) # Need to pass args as list here
+                    else:
+                        p.script_args = tuple(script_args) # Need to pass args as tuple here
+                        processed = process_images(p)
+                finally:
+                    shared.state.end()
+                    shared.total_tqdm.clear()
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
@@ -517,8 +565,12 @@ class Api:
         return options
 
     def set_config(self, req: Dict[str, Any]):
+        checkpoint_name = req.get("sd_model_checkpoint", None)
+        if checkpoint_name is not None and checkpoint_name not in checkpoint_aliases:
+            raise RuntimeError(f"model {checkpoint_name!r} not found")
+
         for k, v in req.items():
-            shared.opts.set(k, v)
+            shared.opts.set(k, v, is_api=True)
 
         shared.opts.save(shared.config_filename)
         return
@@ -550,10 +602,12 @@ class Api:
         ]
 
     def get_sd_models(self):
-        return [{"title": x.title, "model_name": x.model_name, "hash": x.shorthash, "sha256": x.sha256, "filename": x.filename, "config": find_checkpoint_config_near_filename(x)} for x in checkpoints_list.values()]
+        import modules.sd_models as sd_models
+        return [{"title": x.title, "model_name": x.model_name, "hash": x.shorthash, "sha256": x.sha256, "filename": x.filename, "config": find_checkpoint_config_near_filename(x)} for x in sd_models.checkpoints_list.values()]
 
     def get_sd_vaes(self):
-        return [{"model_name": x, "filename": vae_dict[x]} for x in vae_dict.keys()]
+        import modules.sd_vae as sd_vae
+        return [{"model_name": x, "filename": sd_vae.vae_dict[x]} for x in sd_vae.vae_dict.keys()]
 
     def get_hypernetworks(self):
         return [{"name": name, "path": shared.hypernetworks[name]} for name in shared.hypernetworks]
@@ -593,48 +647,51 @@ class Api:
         }
 
     def refresh_checkpoints(self):
-        shared.refresh_checkpoints()
+        with self.queue_lock:
+            shared.refresh_checkpoints()
+
+    def refresh_vae(self):
+        with self.queue_lock:
+            shared_items.refresh_vae_list()
 
     def create_embedding(self, args: dict):
         try:
-            shared.state.begin()
+            shared.state.begin(job="create_embedding")
             filename = create_embedding(**args) # create empty embedding
             sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings() # reload embeddings so new one can be immediately used
-            shared.state.end()
             return models.CreateResponse(info=f"create embedding filename: {filename}")
         except AssertionError as e:
-            shared.state.end()
             return models.TrainResponse(info=f"create embedding error: {e}")
+        finally:
+            shared.state.end()
+
 
     def create_hypernetwork(self, args: dict):
         try:
-            shared.state.begin()
+            shared.state.begin(job="create_hypernetwork")
             filename = create_hypernetwork(**args) # create empty embedding
-            shared.state.end()
             return models.CreateResponse(info=f"create hypernetwork filename: {filename}")
         except AssertionError as e:
-            shared.state.end()
             return models.TrainResponse(info=f"create hypernetwork error: {e}")
+        finally:
+            shared.state.end()
 
     def preprocess(self, args: dict):
         try:
-            shared.state.begin()
+            shared.state.begin(job="preprocess")
             preprocess(**args) # quick operation unless blip/booru interrogation is enabled
             shared.state.end()
-            return models.PreprocessResponse(info = 'preprocess complete')
+            return models.PreprocessResponse(info='preprocess complete')
         except KeyError as e:
-            shared.state.end()
             return models.PreprocessResponse(info=f"preprocess error: invalid token: {e}")
-        except AssertionError as e:
-            shared.state.end()
+        except Exception as e:
             return models.PreprocessResponse(info=f"preprocess error: {e}")
-        except FileNotFoundError as e:
+        finally:
             shared.state.end()
-            return models.PreprocessResponse(info=f'preprocess error: {e}')
 
     def train_embedding(self, args: dict):
         try:
-            shared.state.begin()
+            shared.state.begin(job="train_embedding")
             apply_optimizations = shared.opts.training_xattention_optimizations
             error = None
             filename = ''
@@ -647,15 +704,15 @@ class Api:
             finally:
                 if not apply_optimizations:
                     sd_hijack.apply_optimizations()
-                shared.state.end()
             return models.TrainResponse(info=f"train embedding complete: filename: {filename} error: {error}")
-        except AssertionError as msg:
-            shared.state.end()
+        except Exception as msg:
             return models.TrainResponse(info=f"train embedding error: {msg}")
+        finally:
+            shared.state.end()
 
     def train_hypernetwork(self, args: dict):
         try:
-            shared.state.begin()
+            shared.state.begin(job="train_hypernetwork")
             shared.loaded_hypernetworks = []
             apply_optimizations = shared.opts.training_xattention_optimizations
             error = None
@@ -673,9 +730,10 @@ class Api:
                     sd_hijack.apply_optimizations()
                 shared.state.end()
             return models.TrainResponse(info=f"train embedding complete: filename: {filename} error: {error}")
-        except AssertionError:
+        except Exception as exc:
+            return models.TrainResponse(info=f"train embedding error: {exc}")
+        finally:
             shared.state.end()
-            return models.TrainResponse(info=f"train embedding error: {error}")
 
     def get_memory(self):
         try:
@@ -712,6 +770,19 @@ class Api:
             cuda = {'error': f'{err}'}
         return models.MemoryResponse(ram=ram, cuda=cuda)
 
-    def launch(self, server_name, port):
+    def launch(self, server_name, port, root_path):
         self.app.include_router(self.router)
-        uvicorn.run(self.app, host=server_name, port=port, timeout_keep_alive=0)
+        uvicorn.run(self.app, host=server_name, port=port, timeout_keep_alive=shared.cmd_opts.timeout_keep_alive, root_path=root_path)
+
+    def kill_webui(self):
+        restart.stop_program()
+
+    def restart_webui(self):
+        if restart.is_restartable():
+            restart.restart_program()
+        return Response(status_code=501)
+
+    def stop_webui(request):
+        shared.state.server_command = "stop"
+        return Response("Stopping.")
+

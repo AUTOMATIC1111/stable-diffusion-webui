@@ -11,7 +11,7 @@ from modules import call_queue, shared
 from modules.generation_parameters_copypaste import image_from_url_text
 import modules.images
 from modules.ui_components import ToolButton
-
+import modules.generation_parameters_copypaste as parameters_copypaste
 
 folder_symbol = '\U0001f4c2'  # 📂
 refresh_symbol = '\U0001f504'  # 🔄
@@ -29,9 +29,10 @@ def update_generation_info(generation_info, html_info, img_index):
     return html_info, gr.update()
 
 
-def plaintext_to_html(text):
-    text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
-    return text
+def plaintext_to_html(text, classname=None):
+    content = "<br>\n".join(html.escape(x) for x in text.split('\n'))
+
+    return f"<p class='{classname}'>{content}</p>" if classname else f"<p>{content}</p>"
 
 
 def save_files(js_data, images, do_make_zip, index):
@@ -104,8 +105,6 @@ def save_files(js_data, images, do_make_zip, index):
 
 
 def create_output_panel(tabname, outdir):
-    from modules import shared
-    import modules.generation_parameters_copypaste as parameters_copypaste
 
     def open_folder(f):
         if not os.path.exists(f):
@@ -133,18 +132,22 @@ Requested path was: {f}
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
-            result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(columns=4)
+            result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery", columns=4, preview=True, height=shared.opts.gallery_height or None)
 
         generation_info = None
         with gr.Column():
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
-                open_folder_button = gr.Button(folder_symbol, visible=not shared.cmd_opts.hide_ui_dir_config)
+                open_folder_button = ToolButton(folder_symbol, elem_id=f'{tabname}_open_folder', visible=not shared.cmd_opts.hide_ui_dir_config, tooltip="Open images output directory.")
 
                 if tabname != "extras":
-                    save = gr.Button('Save', elem_id=f'save_{tabname}')
-                    save_zip = gr.Button('Zip', elem_id=f'save_zip_{tabname}')
+                    save = ToolButton('💾', elem_id=f'save_{tabname}', tooltip=f"Save the image to a dedicated directory ({shared.opts.outdir_save}).")
+                    save_zip = ToolButton('🗃️', elem_id=f'save_zip_{tabname}', tooltip=f"Save zip archive with images to a dedicated directory ({shared.opts.outdir_save})")
 
-                buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras"])
+                buttons = {
+                    'img2img': ToolButton('🖼️', elem_id=f'{tabname}_send_to_img2img', tooltip="Send image and generation parameters to img2img tab."),
+                    'inpaint': ToolButton('🎨️', elem_id=f'{tabname}_send_to_inpaint', tooltip="Send image and generation parameters to img2img inpaint tab."),
+                    'extras': ToolButton('📐', elem_id=f'{tabname}_send_to_extras', tooltip="Send image and generation parameters to extras tab.")
+                }
 
             open_folder_button.click(
                 fn=lambda: open_folder(shared.opts.outdir_samples or outdir),
@@ -157,7 +160,7 @@ Requested path was: {f}
 
                 with gr.Group():
                     html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
-                    html_log = gr.HTML(elem_id=f'html_log_{tabname}')
+                    html_log = gr.HTML(elem_id=f'html_log_{tabname}', elem_classes="html-log")
 
                     generation_info = gr.Textbox(visible=False, elem_id=f'generation_info_{tabname}')
                     if tabname == 'txt2img' or tabname == 'img2img':
@@ -222,20 +225,44 @@ Requested path was: {f}
 
 
 def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
+    refresh_components = refresh_component if isinstance(refresh_component, list) else [refresh_component]
+
+    label = None
+    for comp in refresh_components:
+        label = getattr(comp, 'label', None)
+        if label is not None:
+            break
+
     def refresh():
         refresh_method()
         args = refreshed_args() if callable(refreshed_args) else refreshed_args
 
         for k, v in args.items():
-            setattr(refresh_component, k, v)
+            for comp in refresh_components:
+                setattr(comp, k, v)
 
-        return gr.update(**(args or {}))
+        return [gr.update(**(args or {})) for _ in refresh_components] if len(refresh_components) > 1 else gr.update(**(args or {}))
 
-    refresh_button = ToolButton(value=refresh_symbol, elem_id=elem_id)
+    refresh_button = ToolButton(value=refresh_symbol, elem_id=elem_id, tooltip=f"{label}: refresh" if label else "Refresh")
     refresh_button.click(
         fn=refresh,
         inputs=[],
-        outputs=[refresh_component]
+        outputs=refresh_components
     )
     return refresh_button
+
+
+def setup_dialog(button_show, dialog, *, button_close=None):
+    """Sets up the UI so that the dialog (gr.Box) is invisible, and is only shown when buttons_show is clicked, in a fullscreen modal window."""
+
+    dialog.visible = False
+
+    button_show.click(
+        fn=lambda: gr.update(visible=True),
+        inputs=[],
+        outputs=[dialog],
+    ).then(fn=None, _js="function(){ popupId('" + dialog.elem_id + "'); }")
+
+    if button_close:
+        button_close.click(fn=None, _js="closePopup")
 

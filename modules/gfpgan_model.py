@@ -25,7 +25,7 @@ def gfpgann():
         return None
 
     models = modelloader.load_models(model_path, model_url, user_path, ext_filter="GFPGAN")
-    if len(models) == 1 and "http" in models[0]:
+    if len(models) == 1 and models[0].startswith("http"):
         model_file = models[0]
     elif len(models) != 0:
         latest_file = max(models, key=os.path.getctime)

@@ -42,6 +42,10 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
         self.hijack: sd_hijack.StableDiffusionModelHijack = hijack
         self.chunk_length = 75
 
+        self.is_trainable = getattr(wrapped, 'is_trainable', False)
+        self.input_key = getattr(wrapped, 'input_key', 'txt')
+        self.legacy_ucg_val = None
+
     def empty_chunk(self):
         """creates an empty PromptChunk and returns it"""
 
@@ -157,7 +161,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
                     position += 1
                     continue
 
-                emb_len = int(embedding.vec.shape[0])
+                emb_len = int(embedding.vectors)
                 if len(chunk.tokens) + emb_len > self.chunk_length:
                     next_chunk()
 
@@ -199,8 +203,9 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
         """
         Accepts an array of texts; Passes texts through transformers network to create a tensor with numerical representation of those texts.
         Returns a tensor with shape of (B, T, C), where B is length of the array; T is length, in tokens, of texts (including padding) - T will
-        be a multiple of 77; and C is dimensionality of each token - for SD1 it's 768, and for SD2 it's 1024.
+        be a multiple of 77; and C is dimensionality of each token - for SD1 it's 768, for SD2 it's 1024, and for SDXL it's 1280.
         An example shape returned by this function can be: (2, 77, 768).
+        For SDXL, instead of returning one tensor avobe, it returns a tuple with two: the other one with shape (B, 1280) with pooled values.
         Webui usually sends just one text at a time through this function - the only time when texts is an array with more than one elemenet
         is when you do prompt editing: "a picture of a [cat:dog:0.4] eating ice cream"
         """
@@ -229,11 +234,25 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
             z = self.process_tokens(tokens, multipliers)
             zs.append(z)
 
-        if len(used_embeddings) > 0:
-            embeddings_list = ", ".join([f'{name} [{embedding.checksum()}]' for name, embedding in used_embeddings.items()])
-            self.hijack.comments.append(f"Used embeddings: {embeddings_list}")
+        if opts.textual_inversion_add_hashes_to_infotext and used_embeddings:
+            hashes = []
+            for name, embedding in used_embeddings.items():
+                shorthash = embedding.shorthash
+                if not shorthash:
+                    continue
 
-        return torch.hstack(zs)
+                name = name.replace(":", "").replace(",", "")
+                hashes.append(f"{name}: {shorthash}")
+
+            if hashes:
+                if self.hijack.extra_generation_params.get("TI hashes"):
+                    hashes.append(self.hijack.extra_generation_params.get("TI hashes"))
+                self.hijack.extra_generation_params["TI hashes"] = ", ".join(hashes)
+
+        if getattr(self.wrapped, 'return_pooled', False):
+            return torch.hstack(zs), zs[0].pooled
+        else:
+            return torch.hstack(zs)
 
     def process_tokens(self, remade_batch_tokens, batch_multipliers):
         """
@@ -253,12 +272,17 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
 
         z = self.encode_with_transformers(tokens)
 
+        pooled = getattr(z, 'pooled', None)
+
         # restoring original mean is likely not correct, but it seems to work well to prevent artifacts that happen otherwise
         batch_multipliers = torch.asarray(batch_multipliers).to(devices.device)
         original_mean = z.mean()
         z = z * batch_multipliers.reshape(batch_multipliers.shape + (1,)).expand(z.shape)
         new_mean = z.mean()
         z = z * (original_mean / new_mean)
+
+        if pooled is not None:
+            z.pooled = pooled
 
         return z
 
@@ -315,3 +339,18 @@ class FrozenCLIPEmbedderWithCustomWords(FrozenCLIPEmbedderWithCustomWordsBase):
         embedded = embedding_layer.token_embedding.wrapped(ids.to(embedding_layer.token_embedding.wrapped.weight.device)).squeeze(0)
 
         return embedded
+
+
+class FrozenCLIPEmbedderForSDXLWithCustomWords(FrozenCLIPEmbedderWithCustomWords):
+    def __init__(self, wrapped, hijack):
+        super().__init__(wrapped, hijack)
+
+    def encode_with_transformers(self, tokens):
+        outputs = self.wrapped.transformer(input_ids=tokens, output_hidden_states=self.wrapped.layer == "hidden")
+
+        if self.wrapped.layer == "last":
+            z = outputs.last_hidden_state
+        else:
+            z = outputs.hidden_states[self.wrapped.layer_idx]
+
+        return z

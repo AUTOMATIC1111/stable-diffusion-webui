@@ -6,14 +6,16 @@ basicsr
 blendmodes
 clean-fid
 einops
+fastapi>=0.90.1
 gfpgan
-gradio==3.32.0
+gradio==3.41.2
 inflection
 jsonmerge
 kornia
 lark
 numpy
 omegaconf
+open-clip-torch
 
 piexif
 psutil
@@ -29,4 +31,4 @@ tomesd
 torch
 torchdiffeq
 torchsde
-transformers==4.25.1
+transformers==4.30.2

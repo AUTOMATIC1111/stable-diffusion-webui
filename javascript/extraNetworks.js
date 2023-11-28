@@ -1,20 +1,38 @@
+function toggleCss(key, css, enable) {
+    var style = document.getElementById(key);
+    if (enable && !style) {
+        style = document.createElement('style');
+        style.id = key;
+        style.type = 'text/css';
+        document.head.appendChild(style);
+    }
+    if (style && !enable) {
+        document.head.removeChild(style);
+    }
+    if (style) {
+        style.innerHTML == '';
+        style.appendChild(document.createTextNode(css));
+    }
+}
+
 function setupExtraNetworksForTab(tabname) {
     gradioApp().querySelector('#' + tabname + '_extra_tabs').classList.add('extra-networks');
 
     var tabs = gradioApp().querySelector('#' + tabname + '_extra_tabs > div');
-    var search = gradioApp().querySelector('#' + tabname + '_extra_search textarea');
+    var searchDiv = gradioApp().getElementById(tabname + '_extra_search');
+    var search = searchDiv.querySelector('textarea');
     var sort = gradioApp().getElementById(tabname + '_extra_sort');
     var sortOrder = gradioApp().getElementById(tabname + '_extra_sortorder');
     var refresh = gradioApp().getElementById(tabname + '_extra_refresh');
+    var showDirsDiv = gradioApp().getElementById(tabname + '_extra_show_dirs');
+    var showDirs = gradioApp().querySelector('#' + tabname + '_extra_show_dirs input');
 
-    search.classList.add('search');
-    sort.classList.add('sort');
-    sortOrder.classList.add('sortorder');
     sort.dataset.sortkey = 'sortDefault';
-    tabs.appendChild(search);
+    tabs.appendChild(searchDiv);
     tabs.appendChild(sort);
     tabs.appendChild(sortOrder);
     tabs.appendChild(refresh);
+    tabs.appendChild(showDirsDiv);
 
     var applyFilter = function() {
         var searchTerm = search.value.toLowerCase();
@@ -80,6 +98,15 @@ function setupExtraNetworksForTab(tabname) {
     });
 
     extraNetworksApplyFilter[tabname] = applyFilter;
+
+    var showDirsUpdate = function() {
+        var css = '#' + tabname + '_extra_tabs .extra-network-subdirs { display: none; }';
+        toggleCss(tabname + '_extra_show_dirs_style', css, !showDirs.checked);
+        localSet('extra-networks-show-dirs', showDirs.checked ? 1 : 0);
+    };
+    showDirs.checked = localGet('extra-networks-show-dirs', 1) == 1;
+    showDirs.addEventListener("change", showDirsUpdate);
+    showDirsUpdate();
 }
 
 function applyExtraNetworkFilter(tabname) {
@@ -113,7 +140,7 @@ function setupExtraNetworks() {
 
 onUiLoaded(setupExtraNetworks);
 
-var re_extranet = /<([^:]+:[^:]+):[\d.]+>/;
+var re_extranet = /<([^:]+:[^:]+):[\d.]+>(.*)/;
 var re_extranet_g = /\s+<([^:]+:[^:]+):[\d.]+>/g;
 
 function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
@@ -121,15 +148,22 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
     var replaced = false;
     var newTextareaText;
     if (m) {
+        var extraTextAfterNet = m[2];
         var partToSearch = m[1];
-        newTextareaText = textarea.value.replaceAll(re_extranet_g, function(found) {
+        var foundAtPosition = -1;
+        newTextareaText = textarea.value.replaceAll(re_extranet_g, function(found, net, pos) {
             m = found.match(re_extranet);
             if (m[1] == partToSearch) {
                 replaced = true;
+                foundAtPosition = pos;
                 return "";
             }
             return found;
         });
+
+        if (foundAtPosition >= 0 && newTextareaText.substr(foundAtPosition, extraTextAfterNet.length) == extraTextAfterNet) {
+            newTextareaText = newTextareaText.substr(0, foundAtPosition) + newTextareaText.substr(foundAtPosition + extraTextAfterNet.length);
+        }
     } else {
         newTextareaText = textarea.value.replaceAll(new RegExp(text, "g"), function(found) {
             if (found == text) {
@@ -172,7 +206,7 @@ function saveCardPreview(event, tabname, filename) {
 }
 
 function extraNetworksSearchButton(tabs_id, event) {
-    var searchTextarea = gradioApp().querySelector("#" + tabs_id + ' > div > textarea');
+    var searchTextarea = gradioApp().querySelector("#" + tabs_id + ' > label > textarea');
     var button = event.target;
     var text = button.classList.contains("search-all") ? "" : button.textContent.trim();
 
@@ -182,19 +216,20 @@ function extraNetworksSearchButton(tabs_id, event) {
 
 var globalPopup = null;
 var globalPopupInner = null;
+function closePopup() {
+    if (!globalPopup) return;
+
+    globalPopup.style.display = "none";
+}
 function popup(contents) {
     if (!globalPopup) {
         globalPopup = document.createElement('div');
-        globalPopup.onclick = function() {
-            globalPopup.style.display = "none";
-        };
+        globalPopup.onclick = closePopup;
         globalPopup.classList.add('global-popup');
 
         var close = document.createElement('div');
         close.classList.add('global-popup-close');
-        close.onclick = function() {
-            globalPopup.style.display = "none";
-        };
+        close.onclick = closePopup;
         close.title = "Close";
         globalPopup.appendChild(close);
 
@@ -205,13 +240,22 @@ function popup(contents) {
         globalPopupInner.classList.add('global-popup-inner');
         globalPopup.appendChild(globalPopupInner);
 
-        gradioApp().appendChild(globalPopup);
+        gradioApp().querySelector('.main').appendChild(globalPopup);
     }
 
     globalPopupInner.innerHTML = '';
     globalPopupInner.appendChild(contents);
 
     globalPopup.style.display = "flex";
+}
+
+var storedPopupIds = {};
+function popupId(id) {
+    if (!storedPopupIds[id]) {
+        storedPopupIds[id] = gradioApp().getElementById(id);
+    }
+
+    popup(storedPopupIds[id]);
 }
 
 function extraNetworksShowMetadata(text) {
@@ -262,4 +306,44 @@ function extraNetworksRequestMetadata(event, extraPage, cardName) {
     }, showError);
 
     event.stopPropagation();
+}
+
+var extraPageUserMetadataEditors = {};
+
+function extraNetworksEditUserMetadata(event, tabname, extraPage, cardName) {
+    var id = tabname + '_' + extraPage + '_edit_user_metadata';
+
+    var editor = extraPageUserMetadataEditors[id];
+    if (!editor) {
+        editor = {};
+        editor.page = gradioApp().getElementById(id);
+        editor.nameTextarea = gradioApp().querySelector("#" + id + "_name" + ' textarea');
+        editor.button = gradioApp().querySelector("#" + id + "_button");
+        extraPageUserMetadataEditors[id] = editor;
+    }
+
+    editor.nameTextarea.value = cardName;
+    updateInput(editor.nameTextarea);
+
+    editor.button.click();
+
+    popup(editor.page);
+
+    event.stopPropagation();
+}
+
+function extraNetworksRefreshSingleCard(page, tabname, name) {
+    requestGet("./sd_extra_networks/get-single-card", {page: page, tabname: tabname, name: name}, function(data) {
+        if (data && data.html) {
+            var card = gradioApp().querySelector('.card[data-name=' + JSON.stringify(name) + ']'); // likely using the wrong stringify function
+
+            var newDiv = document.createElement('DIV');
+            newDiv.innerHTML = data.html;
+            var newCard = newDiv.firstElementChild;
+
+            newCard.style.display = '';
+            card.parentElement.insertBefore(newCard, card);
+            card.parentElement.removeChild(card);
+        }
+    });
 }

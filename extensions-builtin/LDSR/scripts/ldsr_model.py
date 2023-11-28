@@ -1,7 +1,6 @@
 import os
 
-from basicsr.utils.download_util import load_file_from_url
-
+from modules.modelloader import load_file_from_url
 from modules.upscaler import Upscaler, UpscalerData
 from ldsr_model_arch import LDSR
 from modules import shared, script_callbacks, errors
@@ -43,20 +42,17 @@ class UpscalerLDSR(Upscaler):
         if local_safetensors_path is not None and os.path.exists(local_safetensors_path):
             model = local_safetensors_path
         else:
-            model = local_ckpt_path if local_ckpt_path is not None else load_file_from_url(url=self.model_url, model_dir=self.model_download_path, file_name="model.ckpt", progress=True)
+            model = local_ckpt_path or load_file_from_url(self.model_url, model_dir=self.model_download_path, file_name="model.ckpt")
 
-        yaml = local_yaml_path if local_yaml_path is not None else load_file_from_url(url=self.yaml_url, model_dir=self.model_download_path, file_name="project.yaml", progress=True)
+        yaml = local_yaml_path or load_file_from_url(self.yaml_url, model_dir=self.model_download_path, file_name="project.yaml")
 
-        try:
-            return LDSR(model, yaml)
-        except Exception:
-            errors.report("Error importing LDSR", exc_info=True)
-        return None
+        return LDSR(model, yaml)
 
     def do_upscale(self, img, path):
-        ldsr = self.load_model(path)
-        if ldsr is None:
-            print("NO LDSR!")
+        try:
+            ldsr = self.load_model(path)
+        except Exception:
+            errors.report(f"Failed loading LDSR model {path}", exc_info=True)
             return img
         ddim_steps = shared.opts.ldsr_steps
         return ldsr.super_resolution(img, ddim_steps, self.scale)

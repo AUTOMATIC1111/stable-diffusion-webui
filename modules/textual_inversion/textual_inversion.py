@@ -1,5 +1,6 @@
 import os
 from collections import namedtuple
+from contextlib import closing
 
 import torch
 import tqdm
@@ -12,7 +13,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 from torch.utils.tensorboard import SummaryWriter
 
-from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers, sd_hijack_checkpoint, errors
+from modules import shared, devices, sd_hijack, sd_models, images, sd_samplers, sd_hijack_checkpoint, errors, hashes
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
@@ -48,6 +49,8 @@ class Embedding:
         self.sd_checkpoint_name = None
         self.optimizer_state_dict = None
         self.filename = None
+        self.hash = None
+        self.shorthash = None
 
     def save(self, filename):
         embedding_data = {
@@ -80,6 +83,10 @@ class Embedding:
 
         self.cached_checksum = f'{const_hash(self.vec.reshape(-1) * 100) & 0xffff:04x}'
         return self.cached_checksum
+
+    def set_hash(self, v):
+        self.hash = v
+        self.shorthash = self.hash[0:12]
 
 
 class DirWithTextualInversionEmbeddings:
@@ -174,30 +181,40 @@ class EmbeddingDatabase:
         else:
             return
 
+
         # textual inversion embeddings
         if 'string_to_param' in data:
             param_dict = data['string_to_param']
             param_dict = getattr(param_dict, '_parameters', param_dict)  # fix for torch 1.12.1 loading saved file from torch 1.11
             assert len(param_dict) == 1, 'embedding file has multiple terms in it'
             emb = next(iter(param_dict.items()))[1]
-        # diffuser concepts
-        elif type(data) == dict and type(next(iter(data.values()))) == torch.Tensor:
+            vec = emb.detach().to(devices.device, dtype=torch.float32)
+            shape = vec.shape[-1]
+            vectors = vec.shape[0]
+        elif type(data) == dict and 'clip_g' in data and 'clip_l' in data:  # SDXL embedding
+            vec = {k: v.detach().to(devices.device, dtype=torch.float32) for k, v in data.items()}
+            shape = data['clip_g'].shape[-1] + data['clip_l'].shape[-1]
+            vectors = data['clip_g'].shape[0]
+        elif type(data) == dict and type(next(iter(data.values()))) == torch.Tensor: # diffuser concepts
             assert len(data.keys()) == 1, 'embedding file has multiple terms in it'
 
             emb = next(iter(data.values()))
             if len(emb.shape) == 1:
                 emb = emb.unsqueeze(0)
+            vec = emb.detach().to(devices.device, dtype=torch.float32)
+            shape = vec.shape[-1]
+            vectors = vec.shape[0]
         else:
             raise Exception(f"Couldn't identify {filename} as neither textual inversion embedding nor diffuser concept.")
 
-        vec = emb.detach().to(devices.device, dtype=torch.float32)
         embedding = Embedding(vec, name)
         embedding.step = data.get('step', None)
         embedding.sd_checkpoint = data.get('sd_checkpoint', None)
         embedding.sd_checkpoint_name = data.get('sd_checkpoint_name', None)
-        embedding.vectors = vec.shape[0]
-        embedding.shape = vec.shape[-1]
+        embedding.vectors = vectors
+        embedding.shape = shape
         embedding.filename = path
+        embedding.set_hash(hashes.sha256(embedding.filename, "textual_inversion/" + name) or '')
 
         if self.expected_shape == -1 or self.expected_shape == embedding.shape:
             self.register_embedding(embedding, shared.sd_model)
@@ -248,7 +265,7 @@ class EmbeddingDatabase:
         self.word_embeddings.update(sorted_word_embeddings)
 
         displayed_embeddings = (tuple(self.word_embeddings.keys()), tuple(self.skipped_embeddings.keys()))
-        if self.previously_displayed_embeddings != displayed_embeddings:
+        if shared.opts.textual_inversion_print_at_load and self.previously_displayed_embeddings != displayed_embeddings:
             self.previously_displayed_embeddings = displayed_embeddings
             print(f"Textual inversion embeddings loaded({len(self.word_embeddings)}): {', '.join(self.word_embeddings.keys())}")
             if self.skipped_embeddings:
@@ -370,6 +387,8 @@ def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, dat
 
 
 def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_step, data_root, log_directory, training_width, training_height, varsize, steps, clip_grad_mode, clip_grad_value, shuffle_tags, tag_drop_out, latent_sampling_method, use_weight, create_image_every, save_embedding_every, template_filename, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+    from modules import processing
+
     save_embedding_every = save_embedding_every or 0
     create_image_every = create_image_every or 0
     template_file = textual_inversion_templates.get(template_filename, None)
@@ -584,8 +603,9 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
 
                     preview_text = p.prompt
 
-                    processed = processing.process_images(p)
-                    image = processed.images[0] if len(processed.images) > 0 else None
+                    with closing(p):
+                        processed = processing.process_images(p)
+                        image = processed.images[0] if len(processed.images) > 0 else None
 
                     if unload:
                         shared.sd_model.first_stage_model.to(devices.cpu)

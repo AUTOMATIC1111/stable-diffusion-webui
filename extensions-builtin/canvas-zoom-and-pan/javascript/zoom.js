@@ -12,8 +12,22 @@ onUiLoaded(async() => {
         "Sketch": elementIDs.sketch
     };
 
+
     // Helper functions
     // Get active tab
+
+    /**
+     * Waits for an element to be present in the DOM.
+     */
+    const waitForElement = (id) => new Promise(resolve => {
+        const checkForElement = () => {
+            const element = document.querySelector(id);
+            if (element) return resolve(element);
+            setTimeout(checkForElement, 100);
+        };
+        checkForElement();
+    });
+
     function getActiveTab(elements, all = false) {
         const tabs = elements.img2imgTabs.querySelectorAll("button");
 
@@ -34,12 +48,17 @@ onUiLoaded(async() => {
 
     // Wait until opts loaded
     async function waitForOpts() {
-        for (;;) {
+        for (; ;) {
             if (window.opts && Object.keys(window.opts).length) {
                 return window.opts;
             }
             await new Promise(resolve => setTimeout(resolve, 100));
         }
+    }
+
+    // Detect whether the element has a horizontal scroll bar
+    function hasHorizontalScrollbar(element) {
+        return element.scrollWidth > element.clientWidth;
     }
 
     // Function for defining the "Ctrl", "Shift" and "Alt" keys
@@ -200,7 +219,9 @@ onUiLoaded(async() => {
         canvas_hotkey_move: "KeyF",
         canvas_hotkey_overlap: "KeyO",
         canvas_disabled_functions: [],
-        canvas_show_tooltip: true
+        canvas_show_tooltip: true,
+        canvas_auto_expand: true,
+        canvas_blur_prompt: false,
     };
 
     const functionMap = {
@@ -248,7 +269,7 @@ onUiLoaded(async() => {
         input?.addEventListener("input", () => restoreImgRedMask(elements));
     }
 
-    function applyZoomAndPan(elemId) {
+    function applyZoomAndPan(elemId, isExtension = true) {
         const targetElement = gradioApp().querySelector(elemId);
 
         if (!targetElement) {
@@ -360,6 +381,12 @@ onUiLoaded(async() => {
                 panY: 0
             };
 
+            if (isExtension) {
+                targetElement.style.overflow = "hidden";
+            }
+
+            targetElement.isZoomed = false;
+
             fixCanvas();
             targetElement.style.transform = `scale(${elemData[elemId].zoomLevel}) translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px)`;
 
@@ -370,8 +397,27 @@ onUiLoaded(async() => {
             toggleOverlap("off");
             fullScreenMode = false;
 
+            const closeBtn = targetElement.querySelector("button[aria-label='Remove Image']");
+            if (closeBtn) {
+                closeBtn.addEventListener("click", resetZoom);
+            }
+
+            if (canvas && isExtension) {
+                const parentElement = targetElement.closest('[id^="component-"]');
+                if (
+                    canvas &&
+                    parseFloat(canvas.style.width) > parentElement.offsetWidth &&
+                    parseFloat(targetElement.style.width) > parentElement.offsetWidth
+                ) {
+                    fitToElement();
+                    return;
+                }
+
+            }
+
             if (
                 canvas &&
+                !isExtension &&
                 parseFloat(canvas.style.width) > 865 &&
                 parseFloat(targetElement.style.width) > 865
             ) {
@@ -380,9 +426,6 @@ onUiLoaded(async() => {
             }
 
             targetElement.style.width = "";
-            if (canvas) {
-                targetElement.style.height = canvas.style.height;
-            }
         }
 
         // Toggle the zIndex of the target element between two values, allowing it to overlap or be overlapped by other elements
@@ -438,7 +481,7 @@ onUiLoaded(async() => {
 
         // Update the zoom level and pan position of the target element based on the values of the zoomLevel, panX and panY variables
         function updateZoom(newZoomLevel, mouseX, mouseY) {
-            newZoomLevel = Math.max(0.5, Math.min(newZoomLevel, 15));
+            newZoomLevel = Math.max(0.1, Math.min(newZoomLevel, 15));
 
             elemData[elemId].panX +=
                 mouseX - (mouseX * newZoomLevel) / elemData[elemId].zoomLevel;
@@ -449,6 +492,10 @@ onUiLoaded(async() => {
             targetElement.style.transform = `translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px) scale(${newZoomLevel})`;
 
             toggleOverlap("on");
+            if (isExtension) {
+                targetElement.style.overflow = "visible";
+            }
+
             return newZoomLevel;
         }
 
@@ -471,10 +518,12 @@ onUiLoaded(async() => {
                 fullScreenMode = false;
                 elemData[elemId].zoomLevel = updateZoom(
                     elemData[elemId].zoomLevel +
-                        (operation === "+" ? delta : -delta),
+                    (operation === "+" ? delta : -delta),
                     zoomPosX - targetElement.getBoundingClientRect().left,
                     zoomPosY - targetElement.getBoundingClientRect().top
                 );
+
+                targetElement.isZoomed = true;
             }
         }
 
@@ -488,10 +537,19 @@ onUiLoaded(async() => {
             //Reset Zoom
             targetElement.style.transform = `translate(${0}px, ${0}px) scale(${1})`;
 
+            let parentElement;
+
+            if (isExtension) {
+                parentElement = targetElement.closest('[id^="component-"]');
+            } else {
+                parentElement = targetElement.parentElement;
+            }
+
+
             // Get element and screen dimensions
             const elementWidth = targetElement.offsetWidth;
             const elementHeight = targetElement.offsetHeight;
-            const parentElement = targetElement.parentElement;
+
             const screenWidth = parentElement.clientWidth;
             const screenHeight = parentElement.clientHeight;
 
@@ -544,8 +602,12 @@ onUiLoaded(async() => {
 
             if (!canvas) return;
 
-            if (canvas.offsetWidth > 862) {
-                targetElement.style.width = canvas.offsetWidth + "px";
+            if (canvas.offsetWidth > 862 || isExtension) {
+                targetElement.style.width = (canvas.offsetWidth + 2) + "px";
+            }
+
+            if (isExtension) {
+                targetElement.style.overflow = "visible";
             }
 
             if (fullScreenMode) {
@@ -608,6 +670,19 @@ onUiLoaded(async() => {
 
         // Handle keydown events
         function handleKeyDown(event) {
+            // Disable key locks to make pasting from the buffer work correctly
+            if ((event.ctrlKey && event.code === 'KeyV') || (event.ctrlKey && event.code === 'KeyC') || event.code === "F5") {
+                return;
+            }
+
+            // before activating shortcut, ensure user is not actively typing in an input field
+            if (!hotkeysConfig.canvas_blur_prompt) {
+                if (event.target.nodeName === 'TEXTAREA' || event.target.nodeName === 'INPUT') {
+                    return;
+                }
+            }
+
+
             const hotkeyActions = {
                 [hotkeysConfig.canvas_hotkey_reset]: resetZoom,
                 [hotkeysConfig.canvas_hotkey_overlap]: toggleOverlap,
@@ -634,7 +709,47 @@ onUiLoaded(async() => {
             mouseY = e.offsetY;
         }
 
+        // Simulation of the function to put a long image into the screen.
+        // We detect if an image has a scroll bar or not, make a fullscreen to reveal the image, then reduce it to fit into the element.
+        // We hide the image and show it to the user when it is ready.
+
+        targetElement.isExpanded = false;
+        function autoExpand() {
+            const canvas = document.querySelector(`${elemId} canvas[key="interface"]`);
+            if (canvas) {
+                if (hasHorizontalScrollbar(targetElement) && targetElement.isExpanded === false) {
+                    targetElement.style.visibility = "hidden";
+                    setTimeout(() => {
+                        fitToScreen();
+                        resetZoom();
+                        targetElement.style.visibility = "visible";
+                        targetElement.isExpanded = true;
+                    }, 10);
+                }
+            }
+        }
+
         targetElement.addEventListener("mousemove", getMousePosition);
+
+        //observers
+        // Creating an observer with a callback function to handle DOM changes
+        const observer = new MutationObserver((mutationsList, observer) => {
+            for (let mutation of mutationsList) {
+                // If the style attribute of the canvas has changed, by observation it happens only when the picture changes
+                if (mutation.type === 'attributes' && mutation.attributeName === 'style' &&
+                    mutation.target.tagName.toLowerCase() === 'canvas') {
+                    targetElement.isExpanded = false;
+                    setTimeout(resetZoom, 10);
+                }
+            }
+        });
+
+        // Apply auto expand if enabled
+        if (hotkeysConfig.canvas_auto_expand) {
+            targetElement.addEventListener("mousemove", autoExpand);
+            // Set up an observer to track attribute changes
+            observer.observe(targetElement, {attributes: true, childList: true, subtree: true});
+        }
 
         // Handle events only inside the targetElement
         let isKeyDownHandlerAttached = false;
@@ -686,6 +801,20 @@ onUiLoaded(async() => {
 
         // Handle the move event for pan functionality. Updates the panX and panY variables and applies the new transform to the target element.
         function handleMoveKeyDown(e) {
+
+            // Disable key locks to make pasting from the buffer work correctly
+            if ((e.ctrlKey && e.code === 'KeyV') || (e.ctrlKey && event.code === 'KeyC') || e.code === "F5") {
+                return;
+            }
+
+            // before activating shortcut, ensure user is not actively typing in an input field
+            if (!hotkeysConfig.canvas_blur_prompt) {
+                if (e.target.nodeName === 'TEXTAREA' || e.target.nodeName === 'INPUT') {
+                    return;
+                }
+            }
+
+
             if (e.code === hotkeysConfig.canvas_hotkey_move) {
                 if (!e.ctrlKey && !e.metaKey && isKeyDownHandlerAttached) {
                     e.preventDefault();
@@ -726,6 +855,11 @@ onUiLoaded(async() => {
             if (isMoving && elemId === activeElement) {
                 updatePanPosition(e.movementX, e.movementY);
                 targetElement.style.pointerEvents = "none";
+
+                if (isExtension) {
+                    targetElement.style.overflow = "visible";
+                }
+
             } else {
                 targetElement.style.pointerEvents = "auto";
             }
@@ -736,13 +870,93 @@ onUiLoaded(async() => {
             isMoving = false;
         };
 
+        // Checks for extension
+        function checkForOutBox() {
+            const parentElement = targetElement.closest('[id^="component-"]');
+            if (parentElement.offsetWidth < targetElement.offsetWidth && !targetElement.isExpanded) {
+                resetZoom();
+                targetElement.isExpanded = true;
+            }
+
+            if (parentElement.offsetWidth < targetElement.offsetWidth && elemData[elemId].zoomLevel == 1) {
+                resetZoom();
+            }
+
+            if (parentElement.offsetWidth < targetElement.offsetWidth && targetElement.offsetWidth * elemData[elemId].zoomLevel > parentElement.offsetWidth && elemData[elemId].zoomLevel < 1 && !targetElement.isZoomed) {
+                resetZoom();
+            }
+        }
+
+        if (isExtension) {
+            targetElement.addEventListener("mousemove", checkForOutBox);
+        }
+
+
+        window.addEventListener('resize', (e) => {
+            resetZoom();
+
+            if (isExtension) {
+                targetElement.isExpanded = false;
+                targetElement.isZoomed = false;
+            }
+        });
+
         gradioApp().addEventListener("mousemove", handleMoveByKey);
+
+
     }
 
-    applyZoomAndPan(elementIDs.sketch);
-    applyZoomAndPan(elementIDs.inpaint);
-    applyZoomAndPan(elementIDs.inpaintSketch);
+    applyZoomAndPan(elementIDs.sketch, false);
+    applyZoomAndPan(elementIDs.inpaint, false);
+    applyZoomAndPan(elementIDs.inpaintSketch, false);
 
     // Make the function global so that other extensions can take advantage of this solution
-    window.applyZoomAndPan = applyZoomAndPan;
+    const applyZoomAndPanIntegration = async(id, elementIDs) => {
+        const mainEl = document.querySelector(id);
+        if (id.toLocaleLowerCase() === "none") {
+            for (const elementID of elementIDs) {
+                const el = await waitForElement(elementID);
+                if (!el) break;
+                applyZoomAndPan(elementID);
+            }
+            return;
+        }
+
+        if (!mainEl) return;
+        mainEl.addEventListener("click", async() => {
+            for (const elementID of elementIDs) {
+                const el = await waitForElement(elementID);
+                if (!el) break;
+                applyZoomAndPan(elementID);
+            }
+        }, {once: true});
+    };
+
+    window.applyZoomAndPan = applyZoomAndPan; // Only 1 elements, argument elementID, for example applyZoomAndPan("#txt2img_controlnet_ControlNet_input_image")
+
+    window.applyZoomAndPanIntegration = applyZoomAndPanIntegration; // for any extension
+
+    /*
+        The function `applyZoomAndPanIntegration` takes two arguments:
+
+        1. `id`: A string identifier for the element to which zoom and pan functionality will be applied on click.
+        If the `id` value is "none", the functionality will be applied to all elements specified in the second argument without a click event.
+
+        2. `elementIDs`: An array of string identifiers for elements. Zoom and pan functionality will be applied to each of these elements on click of the element specified by the first argument.
+        If "none" is specified in the first argument, the functionality will be applied to each of these elements without a click event.
+
+        Example usage:
+        applyZoomAndPanIntegration("#txt2img_controlnet", ["#txt2img_controlnet_ControlNet_input_image"]);
+        In this example, zoom and pan functionality will be applied to the element with the identifier "txt2img_controlnet_ControlNet_input_image" upon clicking the element with the identifier "txt2img_controlnet".
+    */
+
+    // More examples
+    // Add integration with ControlNet txt2img One TAB
+    // applyZoomAndPanIntegration("#txt2img_controlnet", ["#txt2img_controlnet_ControlNet_input_image"]);
+
+    // Add integration with ControlNet txt2img Tabs
+    // applyZoomAndPanIntegration("#txt2img_controlnet",Array.from({ length: 10 }, (_, i) => `#txt2img_controlnet_ControlNet-${i}_input_image`));
+
+    // Add integration with Inpaint Anything
+    // applyZoomAndPanIntegration("None", ["#ia_sam_image", "#ia_sel_mask"]);
 });

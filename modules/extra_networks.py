@@ -1,17 +1,26 @@
+import json
+import os
 import re
+import logging
 from collections import defaultdict
 
 from modules import errors
 
 extra_network_registry = {}
+extra_network_aliases = {}
 
 
 def initialize():
     extra_network_registry.clear()
+    extra_network_aliases.clear()
 
 
 def register_extra_network(extra_network):
     extra_network_registry[extra_network.name] = extra_network
+
+
+def register_extra_network_alias(extra_network, alias):
+    extra_network_aliases[alias] = extra_network
 
 
 def register_default_extra_networks():
@@ -78,24 +87,58 @@ class ExtraNetwork:
         raise NotImplementedError
 
 
+def lookup_extra_networks(extra_network_data):
+    """returns a dict mapping ExtraNetwork objects to lists of arguments for those extra networks.
+
+    Example input:
+    {
+        'lora': [<modules.extra_networks.ExtraNetworkParams object at 0x0000020690D58310>],
+        'lyco': [<modules.extra_networks.ExtraNetworkParams object at 0x0000020690D58F70>],
+        'hypernet': [<modules.extra_networks.ExtraNetworkParams object at 0x0000020690D5A800>]
+    }
+
+    Example output:
+
+    {
+        <extra_networks_lora.ExtraNetworkLora object at 0x0000020581BEECE0>: [<modules.extra_networks.ExtraNetworkParams object at 0x0000020690D58310>, <modules.extra_networks.ExtraNetworkParams object at 0x0000020690D58F70>],
+        <modules.extra_networks_hypernet.ExtraNetworkHypernet object at 0x0000020581BEEE60>: [<modules.extra_networks.ExtraNetworkParams object at 0x0000020690D5A800>]
+    }
+    """
+
+    res = {}
+
+    for extra_network_name, extra_network_args in list(extra_network_data.items()):
+        extra_network = extra_network_registry.get(extra_network_name, None)
+        alias = extra_network_aliases.get(extra_network_name, None)
+
+        if alias is not None and extra_network is None:
+            extra_network = alias
+
+        if extra_network is None:
+            logging.info(f"Skipping unknown extra network: {extra_network_name}")
+            continue
+
+        res.setdefault(extra_network, []).extend(extra_network_args)
+
+    return res
+
+
 def activate(p, extra_network_data):
     """call activate for extra networks in extra_network_data in specified order, then call
     activate for all remaining registered networks with an empty argument list"""
 
-    for extra_network_name, extra_network_args in extra_network_data.items():
-        extra_network = extra_network_registry.get(extra_network_name, None)
-        if extra_network is None:
-            print(f"Skipping unknown extra network: {extra_network_name}")
-            continue
+    activated = []
+
+    for extra_network, extra_network_args in lookup_extra_networks(extra_network_data).items():
 
         try:
             extra_network.activate(p, extra_network_args)
+            activated.append(extra_network)
         except Exception as e:
-            errors.display(e, f"activating extra network {extra_network_name} with arguments {extra_network_args}")
+            errors.display(e, f"activating extra network {extra_network.name} with arguments {extra_network_args}")
 
     for extra_network_name, extra_network in extra_network_registry.items():
-        args = extra_network_data.get(extra_network_name, None)
-        if args is not None:
+        if extra_network in activated:
             continue
 
         try:
@@ -103,24 +146,24 @@ def activate(p, extra_network_data):
         except Exception as e:
             errors.display(e, f"activating extra network {extra_network_name}")
 
+    if p.scripts is not None:
+        p.scripts.after_extra_networks_activate(p, batch_number=p.iteration, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds, extra_network_data=extra_network_data)
+
 
 def deactivate(p, extra_network_data):
     """call deactivate for extra networks in extra_network_data in specified order, then call
     deactivate for all remaining registered networks"""
 
-    for extra_network_name in extra_network_data:
-        extra_network = extra_network_registry.get(extra_network_name, None)
-        if extra_network is None:
-            continue
+    data = lookup_extra_networks(extra_network_data)
 
+    for extra_network in data:
         try:
             extra_network.deactivate(p)
         except Exception as e:
-            errors.display(e, f"deactivating extra network {extra_network_name}")
+            errors.display(e, f"deactivating extra network {extra_network.name}")
 
     for extra_network_name, extra_network in extra_network_registry.items():
-        args = extra_network_data.get(extra_network_name, None)
-        if args is not None:
+        if extra_network in data:
             continue
 
         try:
@@ -162,3 +205,20 @@ def parse_prompts(prompts):
 
     return res, extra_data
 
+
+def get_user_metadata(filename):
+    if filename is None:
+        return {}
+
+    basename, ext = os.path.splitext(filename)
+    metadata_filename = basename + '.json'
+
+    metadata = {}
+    try:
+        if os.path.isfile(metadata_filename):
+            with open(metadata_filename, "r", encoding="utf8") as file:
+                metadata = json.load(file)
+    except Exception as e:
+        errors.display(e, f"reading extra network user metadata from {metadata_filename}")
+
+    return metadata

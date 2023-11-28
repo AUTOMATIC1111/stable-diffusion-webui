@@ -2,7 +2,6 @@ import os
 
 import numpy as np
 from PIL import Image
-from basicsr.utils.download_util import load_file_from_url
 from realesrgan import RealESRGANer
 
 from modules.upscaler import Upscaler, UpscalerData
@@ -43,9 +42,10 @@ class UpscalerRealESRGAN(Upscaler):
         if not self.enable:
             return img
 
-        info = self.load_model(path)
-        if not os.path.exists(info.local_data_path):
-            print(f"Unable to load RealESRGAN model: {info.name}")
+        try:
+            info = self.load_model(path)
+        except Exception:
+            errors.report(f"Unable to load RealESRGAN model {path}", exc_info=True)
             return img
 
         upsampler = RealESRGANer(
@@ -55,6 +55,7 @@ class UpscalerRealESRGAN(Upscaler):
             half=not cmd_opts.no_half and not cmd_opts.upcast_sampling,
             tile=opts.ESRGAN_tile,
             tile_pad=opts.ESRGAN_tile_overlap,
+            device=self.device,
         )
 
         upsampled = upsampler.enhance(np.array(img), outscale=info.scale)[0]
@@ -63,20 +64,17 @@ class UpscalerRealESRGAN(Upscaler):
         return image
 
     def load_model(self, path):
-        try:
-            info = next(iter([scaler for scaler in self.scalers if scaler.data_path == path]), None)
-
-            if info is None:
-                print(f"Unable to find model info: {path}")
-                return None
-
-            if info.local_data_path.startswith("http"):
-                info.local_data_path = load_file_from_url(url=info.data_path, model_dir=self.model_download_path, progress=True)
-
-            return info
-        except Exception:
-            errors.report("Error making Real-ESRGAN models list", exc_info=True)
-        return None
+        for scaler in self.scalers:
+            if scaler.data_path == path:
+                if scaler.local_data_path.startswith("http"):
+                    scaler.local_data_path = modelloader.load_file_from_url(
+                        scaler.data_path,
+                        model_dir=self.model_download_path,
+                    )
+                if not os.path.exists(scaler.local_data_path):
+                    raise FileNotFoundError(f"RealESRGAN data missing: {scaler.local_data_path}")
+                return scaler
+        raise ValueError(f"Unable to find model info: {path}")
 
     def load_models(self, _):
         return get_realesrgan_models(self)

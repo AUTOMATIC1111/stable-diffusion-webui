@@ -1,4 +1,5 @@
 import inspect
+
 from pydantic import BaseModel, Field, create_model
 from typing import Any, Optional
 from typing_extensions import Literal
@@ -49,9 +50,11 @@ class PydanticModelGenerator:
         additional_fields = None,
     ):
         def field_type_generator(k, v):
-            # field_type = str if not overrides.get(k) else overrides[k]["type"]
-            # print(k, v.annotation, v.default)
             field_type = v.annotation
+
+            if field_type == 'Image':
+                # images are sent as base64 strings via API
+                field_type = 'str'
 
             return Optional[field_type]
 
@@ -62,7 +65,6 @@ class PydanticModelGenerator:
                 parameters = {**parameters, **inspect.signature(classes.__init__).parameters}
             return parameters
 
-
         self._model_name = model_name
         self._class_data = merge_class_params(class_instance)
 
@@ -71,7 +73,7 @@ class PydanticModelGenerator:
                 field=underscore(k),
                 field_alias=k,
                 field_type=field_type_generator(k, v),
-                field_value=v.default
+                field_value=None if isinstance(v.default, property) else v.default
             )
             for (k,v) in self._class_data.items() if k not in API_NOT_ALLOWED
         ]
@@ -207,11 +209,10 @@ class PreprocessResponse(BaseModel):
 fields = {}
 for key, metadata in opts.data_labels.items():
     value = opts.data.get(key)
-    optType = opts.typemap.get(type(metadata.default), type(value))
+    optType = opts.typemap.get(type(metadata.default), type(metadata.default)) if metadata.default else Any
 
-    if (metadata is not None):
-        fields.update({key: (Optional[optType], Field(
-            default=metadata.default ,description=metadata.label))})
+    if metadata is not None:
+        fields.update({key: (Optional[optType], Field(default=metadata.default, description=metadata.label))})
     else:
         fields.update({key: (Optional[optType], Field())})
 
@@ -274,10 +275,6 @@ class PromptStyleItem(BaseModel):
     prompt: Optional[str] = Field(title="Prompt")
     negative_prompt: Optional[str] = Field(title="Negative Prompt")
 
-class ArtistItem(BaseModel):
-    name: str = Field(title="Name")
-    score: float = Field(title="Score")
-    category: str = Field(title="Category")
 
 class EmbeddingItem(BaseModel):
     step: Optional[int] = Field(title="Step", description="The number of steps that were used to train this embedding, if available")
