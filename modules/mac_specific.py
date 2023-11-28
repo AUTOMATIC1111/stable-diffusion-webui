@@ -1,7 +1,6 @@
 import logging
 
 import torch
-from typing import Optional, List
 from torch import Tensor
 import platform
 from modules.sd_hijack_utils import CondFunc
