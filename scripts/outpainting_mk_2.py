@@ -133,13 +133,16 @@ class Script(scripts.Script):
 
         pixels = gr.Slider(label="Pixels to expand", minimum=8, maximum=256, step=8, value=128, elem_id=self.elem_id("pixels"))
         mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=8, elem_id=self.elem_id("mask_blur"))
+        mask_blend_power = gr.Slider(label='Mask blend power', minimum=0, maximum=8, step=0.1, value=1, elem_id=self.elem_id("mask_blend_power"))
+        mask_blend_scale = gr.Slider(label='Mask blend scale', minimum=0, maximum=8, step=0.1, value=1, elem_id=self.elem_id("mask_blend_scale"))
+        mask_blend_offset = gr.Slider(label='Mask blend scale', minimum=-4, maximum=4, step=0.1, value=1, elem_id=self.elem_id("mask_blend_offset"))
         direction = gr.CheckboxGroup(label="Outpainting direction", choices=['left', 'right', 'up', 'down'], value=['left', 'right', 'up', 'down'], elem_id=self.elem_id("direction"))
         noise_q = gr.Slider(label="Fall-off exponent (lower=higher detail)", minimum=0.0, maximum=4.0, step=0.01, value=1.0, elem_id=self.elem_id("noise_q"))
         color_variation = gr.Slider(label="Color variation", minimum=0.0, maximum=1.0, step=0.01, value=0.05, elem_id=self.elem_id("color_variation"))
 
-        return [info, pixels, mask_blur, direction, noise_q, color_variation]
+        return [info, pixels, mask_blur, mask_blend_power, mask_blend_scale, mask_blend_offset, direction, noise_q, color_variation]
 
-    def run(self, p, _, pixels, mask_blur, direction, noise_q, color_variation):
+    def run(self, p, _, pixels, mask_blur, mask_blend_power, mask_blend_scale, mask_blend_offset, direction, noise_q, color_variation):
         initial_seed_and_info = [None, None]
 
         process_width = p.width
@@ -167,6 +170,9 @@ class Script(scripts.Script):
 
         p.mask_blur_x = mask_blur_x*4
         p.mask_blur_y = mask_blur_y*4
+        p.mask_blend_power = mask_blend_power
+        p.mask_blend_scale = mask_blend_scale
+        p.mask_blend_offset = mask_blend_offset
 
         init_img = p.init_images[0]
         target_w = math.ceil((init_img.width + left + right) / 64) * 64
