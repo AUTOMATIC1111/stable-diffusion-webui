@@ -10,7 +10,8 @@ import os
 import typing
 import uuid
 import hashlib
-
+import cv2
+import dlib
 from PIL import Image
 from loguru import logger
 from datetime import datetime
@@ -27,6 +28,20 @@ from handlers.typex import ModelLocation, ModelType, ImageOutput, OutImageType, 
 from modules.sd_models import reload_model_weights, CheckpointInfo, get_closet_checkpoint_match, list_models
 
 StrMapMap = typing.Dict[str, typing.Mapping[str, typing.Any]]
+
+
+def is_multi_faces(image):
+    # 加载图像
+    image = cv2.imread(image)
+
+    # 将图像转换为灰度图
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # 使用人脸检测器检测人脸
+    detector = dlib.get_frontal_face_detector()
+    faces = detector(gray, 1)
+    logger.debug(f"image face detector:{len(faces)},{os.path.basename(image)}")
+    return len(faces) >= 1
 
 
 def clean_models():
@@ -345,8 +360,14 @@ def format_override_settings(override_settings):
     return new_settings
 
 
-def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, script_dir: str,
-                          task_id: str, clean_upload_files: bool = True, inspect: bool = False,
+def save_processed_images(proc: Processed,
+                          output_dir: str,
+                          grid_dir: str,
+                          script_dir: str,
+                          task_id: str,
+                          clean_upload_files: bool = True,
+                          inspect: bool = False,
+                          filter_multi_face: bool = False,
                           forbidden_review: bool = False):
     if not output_dir:
         raise ValueError('output is empty')
@@ -363,6 +384,7 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, scrip
     size = ''
     for n, processed_image in enumerate(proc.images):
         ex = '.png'
+
         if isinstance(processed_image, Image.Image) and hasattr(processed_image, 'already_saved_as'):
             saved_as = getattr(processed_image, 'already_saved_as')
             if saved_as:
@@ -397,6 +419,10 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, scrip
         pnginfo_data.add_text('parameters', infotexts)
 
         processed_image.save(full_path, pnginfo=pnginfo_data)
+        if filter_multi_face and is_multi_faces(full_path):
+            # 忽略此图
+            continue
+
         out_obj.add_image(full_path)
 
     grid_keys = out_grid_image.multi_upload_keys(clean_upload_files)

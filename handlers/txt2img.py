@@ -286,6 +286,7 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
                                        process_args.outpath_scripts,
                                        task.id,
                                        inspect=process_args.kwargs.get("need_audit", False),
+                                       filter_multi_face=process_args.kwargs.get("filter_multi_face", False),
                                        forbidden_review=process_args.kwargs.get("forbidden_review", False))
         images.update({'inference_time': inference_time})
         progress = TaskProgress.new_finish(task, images)
