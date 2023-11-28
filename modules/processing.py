@@ -83,7 +83,7 @@ def apply_overlay(image, paste_loc, index, overlays):
 
 def create_binary_mask(image):
     if image.mode == 'RGBA' and image.getextrema()[-1] != (255, 255):
-        image = image.split()[-1].convert("L").point(lambda x: 255 if x > 128 else 0)
+        image = image.split()[-1].convert("L")
     else:
         image = image.convert('L')
     return image
@@ -319,9 +319,6 @@ class StableDiffusionProcessing:
                 conditioning_mask = np.array(image_mask.convert("L"))
                 conditioning_mask = conditioning_mask.astype(np.float32) / 255.0
                 conditioning_mask = torch.from_numpy(conditioning_mask[None, None])
-
-                # Inpainting model uses a discretized mask as input, so we round to either 1.0 or 0.0
-                conditioning_mask = torch.round(conditioning_mask)
         else:
             conditioning_mask = source_image.new_ones(1, 1, *source_image.shape[-2:])
 
@@ -1504,7 +1501,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             latmask = init_mask.convert('RGB').resize((self.init_latent.shape[3], self.init_latent.shape[2]))
             latmask = np.moveaxis(np.array(latmask, dtype=np.float32), 2, 0) / 255
             latmask = latmask[0]
-            latmask = np.around(latmask)
             latmask = np.tile(latmask[None], (4, 1, 1))
 
             self.mask = torch.asarray(1.0 - latmask).to(shared.device).type(self.sd_model.dtype)
