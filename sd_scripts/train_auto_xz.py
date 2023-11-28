@@ -585,6 +585,54 @@ def prepare_accelerator(logging_dir="./logs", log_prefix=None, gradient_accumula
 
     return accelerator, unwrap_model
 
+import dlib
+
+def seg_face(input_path,output_path,model_path):
+    # 加载人脸关键点检测器
+    predictor = dlib.shape_predictor(os.path.join(model_path,r"face_detect/shape_predictor_68_face_landmarks.dat"))
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+
+    for f in os.listdir(input_path):
+        fi = os.path.join(input_path,f)
+
+        # 加载图像
+        image = cv2.imread(fi)
+
+        if not isinstance(image, (Image.Image, np.ndarray)):continue
+
+        # 将图像转换为灰度图
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # 使用人脸检测器检测人脸
+        detector = dlib.get_frontal_face_detector()
+        faces = detector(gray)
+
+        # 创建一个与原始图像相同大小的掩膜
+        mask = np.zeros_like(image)
+
+        # 遍历检测到的人脸
+        # print(len(faces))
+        if len(faces)!=1:continue
+        for face in faces:
+            # 检测人脸关键点
+            landmarks = predictor(gray, face)
+            
+            # 提取人脸轮廓
+            points = []
+            for n in range(68):
+                x = landmarks.part(n).x
+                y = landmarks.part(n).y
+                points.append((x, y))
+            
+            # 创建人脸蒙版
+            hull = cv2.convexHull(np.array(points))
+            cv2.fillConvexPoly(mask, hull, (255, 255, 255))
+
+        # 将蒙版应用到原始图像上
+        result = cv2.bitwise_and(image, mask)
+        cv2.imwrite(os.path.join(output_path,f), result)
+
 
 def train_callback(percentage):
     print(percentage)
@@ -622,8 +670,20 @@ def train_auto(
 
     # 图片处理后的路径
     dirname = os.path.dirname(train_data_dir)
-    image_list, head_list = custom_configurable_image_processing(train_data_dir, options, width, height,
+
+    #抠出脸部
+    tmp_face_dir = os.path.join(dirname, f"{task_id}-tmp_face_dir")
+    seg_face(input_path=train_data_dir,output_path=tmp_face_dir,model_path=general_model_path)
+
+    #原图不再抠头
+    options = ["放大", "磨皮"] 
+    image_list, _ = custom_configurable_image_processing(train_data_dir, options, width, height,
                                                                  if_res_oribody=True, model_p=general_model_path)
+    #脸部图，抠头
+    options = ["抠出头部", "放大", "磨皮"] 
+    _, head_list = custom_configurable_image_processing(tmp_face_dir, options, head_width, head_height,
+                                                                 if_res_oribody=True, model_p=general_model_path)
+    
     train_dir = os.path.join(dirname, f"{task_id}-preprocess")
     os.makedirs(train_dir, exist_ok=True)
     process_dir = train_dir
