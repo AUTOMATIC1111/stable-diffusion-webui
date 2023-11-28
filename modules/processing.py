@@ -1412,7 +1412,12 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 image_mask = Image.fromarray(np_mask)
 
             if self.inpaint_full_res:
-                self.mask_for_overlay = image_mask
+                np_mask = np.array(image_mask).astype(np.float32)
+                np_mask /= 255
+                np_mask = 1-pow(1-np_mask, 100)
+                np_mask *= 255
+                np_mask = np.clip(np_mask, 0, 255).astype(np.uint8)
+                self.mask_for_overlay = Image.fromarray(np_mask)
                 mask = image_mask.convert('L')
                 crop_region = masking.get_crop_region(np.array(mask), self.inpaint_full_res_padding)
                 crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
@@ -1423,8 +1428,11 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 self.paste_to = (x1, y1, x2-x1, y2-y1)
             else:
                 image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height)
-                np_mask = np.array(image_mask)
-                np_mask = np.clip((np_mask.astype(np.float32)) * 2, 0, 255).astype(np.uint8)
+                np_mask = np.array(image_mask).astype(np.float32)
+                np_mask /= 255
+                np_mask = 1-pow(1-np_mask, 100)
+                np_mask *= 255
+                np_mask = np.clip(np_mask, 0, 255).astype(np.uint8)
                 self.mask_for_overlay = Image.fromarray(np_mask)
 
             self.overlay_images = []
