@@ -30,7 +30,7 @@ from modules.sd_models import reload_model_weights, CheckpointInfo, get_closet_c
 StrMapMap = typing.Dict[str, typing.Mapping[str, typing.Any]]
 
 
-def is_multi_faces(image_path):
+def detect_faces(image_path) -> int:
     # 加载图像
     image = cv2.imread(image_path)
 
@@ -41,7 +41,7 @@ def is_multi_faces(image_path):
     detector = dlib.get_frontal_face_detector()
     faces = detector(gray, 1)
     logger.debug(f"image face detector:{len(faces)},{os.path.basename(image_path)}")
-    return len(faces) >= 1
+    return len(faces)
 
 
 def clean_models():
@@ -380,6 +380,7 @@ def save_processed_images(proc: Processed,
     out_grid_image = ImageOutput(OutImageType.Grid, grid_dir)
     out_image = ImageOutput(OutImageType.Image, output_dir)
     out_script_image = ImageOutput(OutImageType.Script, script_dir)
+    faces = {}
 
     size = ''
     for n, processed_image in enumerate(proc.images):
@@ -419,9 +420,11 @@ def save_processed_images(proc: Processed,
         pnginfo_data.add_text('parameters', infotexts)
 
         processed_image.save(full_path, pnginfo=pnginfo_data)
-        if filter_multi_face and is_multi_faces(full_path):
+        if filter_multi_face:
             # 忽略此图
-            continue
+            faces.update({
+                os.path.basename(full_path): detect_faces(full_path)
+            })
 
         out_obj.add_image(full_path)
 
@@ -449,7 +452,8 @@ def save_processed_images(proc: Processed,
     output.update({
         'has_grid': has_grid,
         'all': all_keys.to_dict(forbidden_keys, has_grid),
-        'size': size
+        'size': size,
+        'face': faces
     })
 
     return output
