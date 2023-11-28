@@ -30,9 +30,9 @@ from modules.sd_models import reload_model_weights, CheckpointInfo, get_closet_c
 StrMapMap = typing.Dict[str, typing.Mapping[str, typing.Any]]
 
 
-def is_multi_faces(image):
+def is_multi_faces(image_path):
     # 加载图像
-    image = cv2.imread(image)
+    image = cv2.imread(image_path)
 
     # 将图像转换为灰度图
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -40,7 +40,7 @@ def is_multi_faces(image):
     # 使用人脸检测器检测人脸
     detector = dlib.get_frontal_face_detector()
     faces = detector(gray, 1)
-    logger.debug(f"image face detector:{len(faces)},{os.path.basename(image)}")
+    logger.debug(f"image face detector:{len(faces)},{os.path.basename(image_path)}")
     return len(faces) >= 1
 
 
