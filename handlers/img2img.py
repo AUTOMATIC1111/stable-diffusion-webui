@@ -235,8 +235,8 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         self.seed_resize_from_w = seed_resize_from_w
         self.seed_enable_extras = seed_enable_extras
         self.sampler_name = sampler_name or 'Euler a'
-        self.batch_size = batch_size
-        self.n_iter = n_iter
+        self.batch_size = batch_size if batch_size > 0 else 1
+        self.n_iter = n_iter if n_iter > 0 else 1
         self.steps = steps
         self.cfg_scale = cfg_scale  # 7
         self.width = width
@@ -657,13 +657,15 @@ class Img2ImgTaskHandler(TaskHandler):
         #         progress += job_no / job_count
         #     if sampling_steps > 0 and job_count > 0:
         #         progress += 1 / job_count * sampling_step / sampling_steps
+        image_numbers = progress.task['n_iter'] * progress.task['batch_size']
+        if image_numbers <= 0:
+            image_numbers = 1
         if shared.state.job_count > 0:
             job_no = shared.state.job_no - 1 if shared.state.job_no > 0 else 0
-            p += job_no / (progress.task['n_iter'] * progress.task['batch_size'])
+            p += job_no / (image_numbers)
             # p += (shared.state.job_no) / shared.state.job_count
         if shared.state.sampling_steps > 0:
-            p += 1 / (progress.task['n_iter'] * progress.task[
-                'batch_size']) * shared.state.sampling_step / shared.state.sampling_steps
+            p += 1 / (image_numbers) * shared.state.sampling_step / shared.state.sampling_steps
 
         current_progress = min(p * 100, 99)
         if current_progress < progress.task_progress:

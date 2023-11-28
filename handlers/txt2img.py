@@ -98,8 +98,8 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
         self.seed_resize_from_w = seed_resize_from_w
         self.seed_enable_extras = seed_enable_extras
         self.sampler_name = sampler_name
-        self.batch_size = batch_size
-        self.n_iter = n_iter
+        self.batch_size = batch_size if batch_size > 0 else 1
+        self.n_iter = n_iter if n_iter > 0 else 1
         self.steps = steps
         self.cfg_scale = cfg_scale
         self.width = width
