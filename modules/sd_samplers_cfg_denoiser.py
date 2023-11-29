@@ -44,8 +44,8 @@ class CFGDenoiser(torch.nn.Module):
         self.mask = None
         self.nmask = None
         self.mask_blend_power = 1
-        self.mask_blend_scale = 1
-        self.inpaint_detail_preservation = 16
+        self.mask_blend_scale = 0.5
+        self.inpaint_detail_preservation = 4
         self.init_latent = None
         self.steps = None
         """number of steps as specified by user in UI"""
