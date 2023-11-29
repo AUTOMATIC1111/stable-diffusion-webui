@@ -26,7 +26,7 @@ def simple_img2img_request(img2img_basic_image_base64):
         "mask_blur": 4,
         "mask_blend_power": 1,
         "mask_blend_scale": 1,
-        "mask_blend_offset": 0,
+        "inpaint_detail_preservation": 16,
         "n_iter": 1,
         "negative_prompt": "",
         "override_settings": {},

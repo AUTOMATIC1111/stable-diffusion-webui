@@ -45,7 +45,7 @@ class CFGDenoiser(torch.nn.Module):
         self.nmask = None
         self.mask_blend_power = 1
         self.mask_blend_scale = 1
-        self.mask_blend_offset = 0
+        self.inpaint_detail_preservation = 16
         self.init_latent = None
         self.steps = None
         """number of steps as specified by user in UI"""
@@ -105,14 +105,13 @@ class CFGDenoiser(torch.nn.Module):
             # Record the original latent vector magnitudes.
             # We bring them to a power so that larger magnitudes are favored over smaller ones.
             # 64-bit operations are used here to allow large exponents.
-            detail_preservation = 32
-            a_magnitude = torch.norm(a, p=2, dim=1).to(torch.float64) ** detail_preservation
-            b_magnitude = torch.norm(b, p=2, dim=1).to(torch.float64) ** detail_preservation
+            a_magnitude = torch.norm(a, p=2, dim=1).to(torch.float64) ** self.inpaint_detail_preservation
+            b_magnitude = torch.norm(b, p=2, dim=1).to(torch.float64) ** self.inpaint_detail_preservation
 
             one_minus_t = 1 - t
 
             # Interpolate the powered magnitudes, then un-power them (bring them back to a power of 1).
-            interp_magnitude = (a_magnitude * one_minus_t + b_magnitude * t) ** (1 / detail_preservation)
+            interp_magnitude = (a_magnitude * one_minus_t + b_magnitude * t) ** (1 / self.inpaint_detail_preservation)
 
             # Linearly interpolate the image vectors.
             image_interp = a * one_minus_t + b * t
@@ -142,7 +141,7 @@ class CFGDenoiser(torch.nn.Module):
 
             NOTE: "mask" is not used
             """
-            return torch.pow(nmask, (_sigma ** self.mask_blend_power) * self.mask_blend_scale + self.mask_blend_offset)
+            return torch.pow(nmask, (_sigma ** self.mask_blend_power) * self.mask_blend_scale)
 
         if state.interrupted or state.skipped:
             raise sd_samplers_common.InterruptedException

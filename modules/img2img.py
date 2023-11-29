@@ -134,7 +134,7 @@ def img2img(id_task: str,
             mask_alpha: float,
             mask_blend_power: float,
             mask_blend_scale: float,
-            mask_blend_offset: float,
+            inpaint_detail_preservation: float,
             inpainting_fill: int,
             n_iter: int,
             batch_size: int,
@@ -216,7 +216,7 @@ def img2img(id_task: str,
         mask_blur=mask_blur,
         mask_blend_power=mask_blend_power,
         mask_blend_scale=mask_blend_scale,
-        mask_blend_offset=mask_blend_offset,
+        inpaint_detail_preservation=inpaint_detail_preservation,
         inpainting_fill=inpainting_fill,
         resize_mode=resize_mode,
         denoising_strength=denoising_strength,
@@ -237,9 +237,9 @@ def img2img(id_task: str,
 
     if mask:
         p.extra_generation_params["Mask blur"] = mask_blur
-        p.extra_generation_params["Mask blend power"] = mask_blend_power
-        p.extra_generation_params["Mask blend scale"] = mask_blend_scale
-        p.extra_generation_params["Mask blend offset"] = mask_blend_offset
+        p.extra_generation_params["Mask blending bias"] = mask_blend_power
+        p.extra_generation_params["Mask blending preservation"] = mask_blend_scale
+        p.extra_generation_params["Mask blending detail boost"] = inpaint_detail_preservation
 
     with closing(p):
         if is_batch:

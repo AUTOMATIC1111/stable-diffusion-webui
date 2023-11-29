@@ -1351,7 +1351,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     mask_blur: int = None
     mask_blend_power: float = 1
     mask_blend_scale: float = 1
-    mask_blend_offset: float = 0
+    inpaint_detail_preservation: float = 16
     inpainting_fill: int = 0
     inpaint_full_res: bool = True
     inpaint_full_res_padding: int = 0

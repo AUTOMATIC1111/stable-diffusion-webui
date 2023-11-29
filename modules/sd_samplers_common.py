@@ -279,7 +279,7 @@ class Sampler:
         self.model_wrap_cfg.nmask = p.nmask if hasattr(p, 'nmask') else None
         self.model_wrap_cfg.mask_blend_power = p.mask_blend_power if hasattr(p, 'mask_blend_power') else None
         self.model_wrap_cfg.mask_blend_scale = p.mask_blend_scale if hasattr(p, 'mask_blend_scale') else None
-        self.model_wrap_cfg.mask_blend_offset = p.mask_blend_offset if hasattr(p, 'mask_blend_offset') else None
+        self.model_wrap_cfg.inpaint_detail_preservation = p.inpaint_detail_preservation if hasattr(p, 'inpaint_detail_preservation') else None
         self.model_wrap_cfg.step = 0
         self.model_wrap_cfg.image_cfg_scale = getattr(p, 'image_cfg_scale', None)
         self.eta = p.eta if p.eta is not None else getattr(opts, self.eta_option_field, 0.0)
