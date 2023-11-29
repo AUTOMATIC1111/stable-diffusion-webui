@@ -35,7 +35,7 @@ def plaintext_to_html(text):
 
 def infotext_to_html(text):
     res = parse_generation_parameters(text)
-    prompt = res.get('Prompt', '').replace('\n', '<br>\n')
+    prompt = res.get('Prompt', '')
     negative = res.get('Negative prompt', '')
     res.pop('Prompt', None)
     res.pop('Negative prompt', None)

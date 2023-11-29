@@ -385,8 +385,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     def update_sampler(sd_model, second_pass=False):
         sampler_selection = p.latent_sampler if second_pass else p.sampler_name
-        is_karras_compatible = sd_model.__class__.__init__.__annotations__.get("scheduler", None) == diffusers.schedulers.scheduling_utils.KarrasDiffusionSchedulers
-        if hasattr(sd_model, 'scheduler') and sampler_selection != 'Default' and is_karras_compatible:
+        # is_karras_compatible = sd_model.__class__.__init__.__annotations__.get("scheduler", None) == diffusers.schedulers.scheduling_utils.KarrasDiffusionSchedulers
+        if hasattr(sd_model, 'scheduler') and sampler_selection != 'Default':
             sampler = sd_samplers.all_samplers_map.get(sampler_selection, None)
             if sampler is None:
                 sampler = sd_samplers.all_samplers_map.get("UniPC")

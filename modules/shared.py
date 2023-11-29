@@ -159,7 +159,7 @@ def list_samplers():
 
 def temp_disable_extensions():
     disable_safe = ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris', 'sd-webui-agent-scheduler', 'clip-interrogator-ext', 'stable-diffusion-webui-rembg', 'sd-extension-chainner', 'stable-diffusion-webui-images-browser']
-    disable_diffusers = ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris']
+    disable_diffusers = ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris', 'sd-webui-animatediff']
     disable_original = []
     disabled = []
     if cmd_opts.safe:
@@ -958,6 +958,8 @@ class Shared(sys.modules[__name__].__class__): # this class is here to provide s
                 model_type = 'sd'
             elif "LatentConsistencyModel" in self.sd_model.__class__.__name__:
                 model_type = 'sd' # lcm is compatible with sd
+            elif "AnimateDiffPipeline" in self.sd_model.__class__.__name__:
+                model_type = 'sd' # ad is compatible with sd
             elif "Kandinsky" in self.sd_model.__class__.__name__:
                 model_type = 'kandinsky'
             else:

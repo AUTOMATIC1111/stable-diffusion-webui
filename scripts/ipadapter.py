@@ -1,12 +1,16 @@
 """
-lightweight ip-adapter applied to existing pipeline
-- downloads image_encoder or first usage (2.5GB)
-- introduced via: https://github.com/huggingface/diffusers/pull/5713
-- ip adapters: https://huggingface.co/h94/IP-Adapter
+Lightweight IP-Adapter applied to existing pipeline in Diffusers
+- Downloads image_encoder or first usage (2.5GB)
+- Introduced via: https://github.com/huggingface/diffusers/pull/5713
+- IP adapters: https://huggingface.co/h94/IP-Adapter
+TODO:
+- Additional IP addapters
+- SD/SDXL autodetect
+- Support for AnimateDiff
 """
 
 import gradio as gr
-from modules import scripts, processing
+from modules import scripts, processing, shared, devices
 
 
 image_encoder = None
@@ -34,7 +38,8 @@ class Script(scripts.Script):
         return 'IP Adapter'
 
     def show(self, is_img2img):
-        return scripts.AlwaysVisible
+
+        return scripts.AlwaysVisible if shared.backend == shared.Backend.DIFFUSERS else False
 
     # return signature is array of gradio components
     def ui(self, _is_img2img):
@@ -46,10 +51,9 @@ class Script(scripts.Script):
                 image = gr.Image(image_mode='RGB', label='Image', source='upload', type='pil', width=512)
         return [adapter, scale, image]
 
-    def before_process(self, p: processing.StableDiffusionProcessing, adapter, scale, image): # pylint: disable=arguments-differ
+    def process(self, p: processing.StableDiffusionProcessing, adapter, scale, image): # pylint: disable=arguments-differ
         import torch
         from transformers import CLIPVisionModelWithProjection
-        from modules import shared, devices
 
         # init code
         global loaded # pylint: disable=global-statement
@@ -104,6 +108,3 @@ class Script(scripts.Script):
         shared.sd_model.set_ip_adapter_scale(scale)
         p.task_args = { 'ip_adapter_image': p.batch_size * [image] }
         p.extra_generation_params["IP Adapter"] = f'{adapter}:{scale}'
-
-    def after_process(self, _p: processing.StableDiffusionProcessing): # pylint: disable=arguments-differ
-        pass

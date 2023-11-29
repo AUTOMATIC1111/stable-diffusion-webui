@@ -1,17 +1,24 @@
 # Change Log for SD.Next
 
-## Update for 2023-11-26
+## Update for 2023-11-28
 
 Note: Release pending `diffusers==0.24`
 
 - **Diffusers**
-  - **IP adapter**
-    - Lightweight implementation of T2I adapters which can guide generation towards specific image style  
-    - Supports most T2I models, not limited to SD  
   - **HDR latent control**, based on [article](https://huggingface.co/blog/TimothyAlexisVass/explaining-the-sdxl-latent-space#long-prompts-at-high-guidance-scales-becoming-possible)  
     - In *Advanced* params
     - Allows control of *latent clamping*, *color centering* and *range maximimization*  
     - Supported by *XYZ grid*  
+  - **IP adapter**
+    - Lightweight implementation of T2I adapters which can guide generation towards specific image style  
+    - Supports most T2I models, not limited to SD 1.5  
+    - Models are auto-downloaded on first use
+    - For IP adapter support in Original backend, use standard *ControlNet* extension  
+  - **AnimateDiff**
+    - Lightweight implementation of AnimateDiff basic models *(1.4, 1.5, 1.5.2)*
+    - Supports SD 1.5 only  
+    - Models are auto-downloaded on first use
+    - For AnimateDiff support in Original backend, use standard *AnimateDiff* extension  
   - **Kandinsky 3** support  
     - download using built-in model downloader or simply select from networks -> reference  
     - this model is absolutely massive at 27.5GB at fp16, so be patient  

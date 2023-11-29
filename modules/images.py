@@ -425,6 +425,20 @@ class FilenameGenerator:
         debug(f'Filename sanitize: input="{filename}" parts={parts} output="{fn}" ext={ext} max={max_length} len={len(fn)}')
         return fn
 
+    def sequence(self, x, dirname, basename):
+        if shared.opts.save_images_add_number or '[seq]' in x:
+            if '[seq]' not in x:
+                x = os.path.join(os.path.dirname(x), f"[seq]-{os.path.basename(x)}")
+            basecount = get_next_sequence_number(dirname, basename)
+            for i in range(9999):
+                seq = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
+                filename = x.replace('[seq]', seq)
+                if not os.path.exists(filename):
+                    debug(f'Prompt sequence: input="{x}" seq={seq} output="{filename}"')
+                    x = filename
+                    break
+        return x
+
     def apply(self, x):
         res = ''
         for m in re_pattern.finditer(x):
@@ -591,18 +605,7 @@ def save_image(image, path, basename='', seed=None, prompt=None, extension=share
     dirname = os.path.dirname(params.filename)
     if dirname is not None and len(dirname) > 0:
         os.makedirs(dirname, exist_ok=True)
-    # sequence
-    if shared.opts.save_images_add_number or '[seq]' in params.filename:
-        if '[seq]' not in params.filename:
-            params.filename = os.path.join(os.path.dirname(params.filename), f"[seq]-{os.path.basename(params.filename)}")
-        basecount = get_next_sequence_number(dirname, basename)
-        for i in range(9999):
-            seq = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
-            filename = params.filename.replace('[seq]', seq)
-            if not os.path.exists(filename):
-                debug(f'Prompt sequence: input="{params.filename}" seq={seq} output="{filename}"')
-                params.filename = filename
-                break
+    params.filename = namegen.sequence(params.filename, dirname, basename)
     # callbacks
     script_callbacks.before_image_saved_callback(params)
     exifinfo = params.pnginfo.get('UserComment', '')
