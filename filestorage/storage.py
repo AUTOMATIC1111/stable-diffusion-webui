@@ -165,6 +165,8 @@ class FileStorage:
                     ok = lock(f, LOCK_EX)
                     if ok:
                         break
+                    if os.path.isfile(filename):
+                        break
         except:
             f.close()
             return None

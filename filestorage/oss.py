@@ -62,7 +62,7 @@ class OssFileStorage(FileStorage):
                 tmp_file = os.path.join(self.tmp_dir, os.path.basename(local_path))
                 # bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
                 print("acquire file locker")
-                f = self.acquire_flock(local_path)
+                # f = self.acquire_flock(local_path)
                 # acquire file locker
                 if os.path.isfile(local_path):
                     return local_path
