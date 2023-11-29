@@ -252,7 +252,7 @@ class MongoTaskDumper(TaskDumper):
             all_keys = {}
             if 'all' not in r:
                 return
-            if 'samples' not in r or 'upscaler' not in r:
+            if 'samples' not in r['all'] or 'upscaler' not in r['all']:
                 return
 
             keys = r['all'].get('low') or r['all'].get('high') or []
