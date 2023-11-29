@@ -239,7 +239,7 @@ def img2img(id_task: str,
         p.extra_generation_params["Mask blur"] = mask_blur
         p.extra_generation_params["Mask blending bias"] = mask_blend_power
         p.extra_generation_params["Mask blending preservation"] = mask_blend_scale
-        p.extra_generation_params["Mask blending detail boost"] = inpaint_detail_preservation
+        p.extra_generation_params["Mask blending contrast boost"] = inpaint_detail_preservation
 
     with closing(p):
         if is_batch:

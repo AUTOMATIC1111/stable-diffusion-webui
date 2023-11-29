@@ -23,8 +23,8 @@ class Script(scripts.Script):
         pixels = gr.Slider(label="Pixels to expand", minimum=8, maximum=256, step=8, value=128, elem_id=self.elem_id("pixels"))
         mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id=self.elem_id("mask_blur"))
         mask_blend_power = gr.Slider(label='Blending bias', minimum=0, maximum=8, step=0.1, value=1, elem_id=self.elem_id("mask_blend_power"))
-        mask_blend_scale = gr.Slider(label='Blending preservation', minimum=0, maximum=8, step=0.1, value=1, elem_id=self.elem_id("mask_blend_scale"))
-        inpaint_detail_preservation = gr.Slider(label='Blending detail boost', minimum=1, maximum=32, step=0.5, value=16, elem_id=self.elem_id("inpaint_detail_preservation"))
+        mask_blend_scale = gr.Slider(label='Blending preservation', minimum=0, maximum=8, step=0.05, value=0.5, elem_id=self.elem_id("mask_blend_scale"))
+        inpaint_detail_preservation = gr.Slider(label='Blending contrast boost', minimum=1, maximum=32, step=0.5, value=4, elem_id=self.elem_id("inpaint_detail_preservation"))
         inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", elem_id=self.elem_id("inpainting_fill"))
         direction = gr.CheckboxGroup(label="Outpainting direction", choices=['left', 'right', 'up', 'down'], value=['left', 'right', 'up', 'down'], elem_id=self.elem_id("direction"))
 

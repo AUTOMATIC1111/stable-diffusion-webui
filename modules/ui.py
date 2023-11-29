@@ -733,8 +733,8 @@ def create_ui():
                                 mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
                                 mask_alpha = gr.Slider(label="Mask transparency", visible=False, elem_id="img2img_mask_alpha")
                                 mask_blend_power = gr.Slider(label='Blending bias', minimum=0, maximum=8, step=0.1, value=1, elem_id="img2img_mask_blend_power")
-                                mask_blend_scale = gr.Slider(label='Blending preservation', minimum=0, maximum=8, step=0.05, value=1, elem_id="img2img_mask_blend_scale")
-                                inpaint_detail_preservation = gr.Slider(label='Blending detail boost', minimum=1, maximum=32, step=0.5, value=16, elem_id="img2img_mask_blend_offset")
+                                mask_blend_scale = gr.Slider(label='Blending preservation', minimum=0, maximum=8, step=0.05, value=0.5, elem_id="img2img_mask_blend_scale")
+                                inpaint_detail_preservation = gr.Slider(label='Blending contrast boost', minimum=1, maximum=32, step=0.5, value=4, elem_id="img2img_mask_blend_offset")
 
                             with FormRow():
                                 inpainting_mask_invert = gr.Radio(label='Mask mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
@@ -887,7 +887,7 @@ def create_ui():
                 (mask_blur, "Mask blur"),
                 (mask_blend_power, "Mask blending bias"),
                 (mask_blend_scale, "Mask blending preservation"),
-                (inpaint_detail_preservation, "Mask blending detail boost"),
+                (inpaint_detail_preservation, "Mask blending contrast boost"),
                 *scripts.scripts_img2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields, override_settings)
