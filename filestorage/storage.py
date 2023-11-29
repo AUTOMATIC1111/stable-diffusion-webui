@@ -180,7 +180,9 @@ class FileStorage:
 
         if filename:
             lock_path = self._get_lock_filename(filename)
-            os.remove(lock_path)
+            if os.path.isfile(lock_path):
+                print(f"remove lock file:{lock_path}")
+                os.remove(lock_path)
 
     def multi_upload(self, local_remoting_pars: typing.Sequence[typing.Tuple[str, str]]):
         if local_remoting_pars:
