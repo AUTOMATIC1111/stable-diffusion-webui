@@ -50,7 +50,7 @@ def system_exit(free, total, threshold=0.2, coercive=False):
         mem = psutil.virtual_memory()
         total = int(mem.total / 1024 / 1024 / 1024)
         used = int(mem.used / 1024 / 1024 / 1024)
-        if used > total * 0.8:
+        if used > total * 0.8 and total - used < 16:
             logger.info(f"out of memory:{used}/{total}(GB), kill current process...")
             _exit()
 
