@@ -863,7 +863,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
-                
+
             def rescale_zero_terminal_snr_abar(alphas_cumprod):
                 alphas_bar_sqrt = alphas_cumprod.sqrt()
 
@@ -881,7 +881,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 alphas_bar = alphas_bar_sqrt**2  # Revert sqrt
                 alphas_bar[-1] = 4.8973451890853435e-08
                 return alphas_bar
-            
+
             p.sd_model.alphas_cumprod = p.sd_model.alphas_cumprod_original.to(shared.device)
 
             if opts.use_downcasted_alpha_bar:
