@@ -7,6 +7,7 @@
 # @Software: Hifive
 import abc
 import json
+import os.path
 import queue
 import time
 import typing
@@ -240,7 +241,6 @@ class MongoTaskDumper(TaskDumper):
                     multi=False
                 )
 
-
             self.clean_time = now
 
     def write_images(self, task_progress: TaskProgress):
@@ -248,8 +248,19 @@ class MongoTaskDumper(TaskDumper):
             r = task_progress.result
             flatten_images = []
             index = 0
+
+            all_keys = {}
+            for key in r['all']['low']:
+                basename = os.path.basename(key)
+                if "403" in basename:
+                    continue
+                all_keys.update({basename: 1})
+
             if 'grids' in r:
                 for i, sample in enumerate(r['grids']['low']):
+                    basename = os.path.basename(sample)
+                    if basename not in all_keys:
+                        continue
                     t = {'task_id': task_progress.task.id, 'model_hash': task_progress.task['model_hash'],
                          'user_id': task_progress.task.user_id, 'create_at': task_progress.task['create_at'],
                          'task_type': task_progress.task.task_type, 'minor_type': task_progress.task.minor_type,
@@ -261,6 +272,9 @@ class MongoTaskDumper(TaskDumper):
                     index += 1
             if 'samples' in r:
                 for i, sample in enumerate(r['samples']['low']):
+                    basename = os.path.basename(sample)
+                    if basename not in all_keys:
+                        continue
                     t = {'task_id': task_progress.task.id, 'model_hash': task_progress.task['model_hash'],
                          'user_id': task_progress.task.user_id, 'create_at': task_progress.task['create_at'],
                          'task_type': task_progress.task.task_type, 'minor_type': task_progress.task.minor_type,
@@ -275,6 +289,9 @@ class MongoTaskDumper(TaskDumper):
                     index += 1
             if 'upscaler' in r:
                 for i, sample in enumerate(r['all']['low']):
+                    basename = os.path.basename(sample)
+                    if basename not in all_keys:
+                        continue
                     t = {'task_id': task_progress.task.id, 'model_hash': task_progress.task['model_hash'],
                          'user_id': task_progress.task.user_id, 'create_at': task_progress.task['create_at'],
                          'task_type': task_progress.task.task_type, 'minor_type': task_progress.task.minor_type,
