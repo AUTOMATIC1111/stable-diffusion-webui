@@ -251,8 +251,12 @@ class MongoTaskDumper(TaskDumper):
 
             all_keys = {}
             if 'all' not in r:
-                return 
-            for key in r['all']['low']:
+                return
+            if 'samples' not in r or 'upscaler' not in r:
+                return
+
+            keys = r['all'].get('low') or r['all'].get('high') or []
+            for key in keys:
                 basename = os.path.basename(key)
                 if "403" in basename:
                     continue
