@@ -300,7 +300,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
     @classmethod
     def from_task(cls, task: Task, default_script_arg_img2img: typing.Sequence, refiner_checkpoint: str = None):
         base_model_path = task['base_model_path']
-        alwayson_scripts = task['alwayson_scripts']
+        alwayson_scripts = task['alwayson_scripts'] if 'alwayson_scripts' in task else None
         user_id = task['user_id']
         select_script = task.get('select_script')
         select_script_name, select_script_args = None, None
@@ -318,10 +318,12 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
 
         kwargs = task.data.copy()
         kwargs.pop('base_model_path')
-        kwargs.pop('alwayson_scripts')
         kwargs.pop('prompt')
         kwargs.pop('negative_prompt')
         kwargs.pop('user_id')
+
+        if 'alwayson_scripts' in kwargs:
+            kwargs.pop('alwayson_scripts')
         if 'select_script' in kwargs:
             kwargs.pop('select_script')
         if 'select_script_name' in kwargs:
