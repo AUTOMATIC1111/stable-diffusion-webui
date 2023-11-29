@@ -250,6 +250,8 @@ class MongoTaskDumper(TaskDumper):
             index = 0
 
             all_keys = {}
+            if 'all' not in r:
+                return 
             for key in r['all']['low']:
                 basename = os.path.basename(key)
                 if "403" in basename:
