@@ -79,8 +79,8 @@ class OssFileStorage(FileStorage):
 
                     raise OSError(f'cannot download file from oss, {remoting_path}')
             except Exception:
-                if os.path.isfile(local_path):
-                    os.remove(local_path)
+                # if os.path.isfile(local_path):
+                #     os.remove(local_path)
                 raise
             finally:
                 print("release flock")
