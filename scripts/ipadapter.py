@@ -106,5 +106,5 @@ class Script(scripts.Script):
         else:
             shared.log.debug(f'IP adapter cache: adapter="{model}" scale={scale} image={image}')
         shared.sd_model.set_ip_adapter_scale(scale)
-        p.task_args = { 'ip_adapter_image': p.batch_size * [image] }
+        p.task_args['ip_adapter_image'] = p.batch_size * [image]
         p.extra_generation_params["IP Adapter"] = f'{adapter}:{scale}'

@@ -52,9 +52,6 @@ def set_adapter(name: str = None):
     if shared.backend != shared.Backend.DIFFUSERS:
         shared.log.warning('AnimateDiff: not in diffusers mode')
         return
-    if shared.sd_model_type != 'sd':
-        shared.log.warning(f'AnimateDiff: unsupported model type: {shared.sd_model.__class__.__name__}')
-        return
     global motion_adapter, loaded_adapter, orig_pipe # pylint: disable=global-statement
     adapter_name = name if name is not None and isinstance(name, str) else loaded_adapter
     if adapter_name is None or adapter_name == 'None' or shared.sd_model is None:
@@ -64,6 +61,9 @@ def set_adapter(name: str = None):
             shared.log.debug(f'AnimateDiff restore pipeline: adapter="{loaded_adapter}"')
             shared.sd_model = orig_pipe
             orig_pipe = None
+        return
+    if shared.sd_model_type != 'sd':
+        shared.log.warning(f'AnimateDiff: unsupported model type: {shared.sd_model.__class__.__name__}')
         return
     if motion_adapter is not None and loaded_adapter == adapter_name:
         shared.log.info(f'AnimateDiff cache: adapter="{adapter_name}"')
@@ -139,11 +139,9 @@ class Script(scripts.Script):
             shared.sd_model.set_adapters([lora], adapter_weights=[strength])
             p.extra_generation_params['AnimateDiff Lora'] = f'{lora}:{strength}'
         p.do_not_save_grid = True
-        p.task_args = {
-            'num_frames': frames,
-            'output_type': 'np', # TODO: AnimateDiff use latents and update vae_decode
-            'num_inference_steps': p.steps,
-        }
+        p.task_args['num_frames'] = frames
+        p.task_args['output_type'] = 'np' # TODO: AnimateDiff use latents and update vae_decode
+        p.task_args['num_inference_steps'] = p.steps
 
     def postprocess(self, p: processing.StableDiffusionProcessing, processed: processing.Processed, adapter_index, frames, lora_index, strength, override, create_gif, duration, loop): # pylint: disable=arguments-differ, unused-argument
         if not create_gif or len(processed.images) < 2:

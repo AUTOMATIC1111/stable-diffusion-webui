@@ -332,7 +332,7 @@ def create_sampler_and_steps_selection(choices, tabname):
 
     with FormRow(elem_classes=['flex-break']):
         sampler_index = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling", choices=[x.name for x in choices], value='Default', type="index")
-        steps = gr.Slider(minimum=0, maximum=99, step=1, label="Sampling steps", elem_id=f"{tabname}_steps", value=20)
+        steps = gr.Slider(minimum=1, maximum=99, step=1, label="Sampling steps", elem_id=f"{tabname}_steps", value=20)
     if modules.shared.backend == modules.shared.Backend.ORIGINAL:
         with FormRow(elem_classes=['flex-break']):
             choices = ['brownian noise', 'discard penultimate sigma']
@@ -354,7 +354,6 @@ def create_sampler_and_steps_selection(choices, tabname):
             values += ['low order'] if opts.data.get('schedulers_use_loworder', True) else []
             sampler_options = gr.CheckboxGroup(label='Sampler options', choices=choices, value=values, type='value')
         sampler_options.change(fn=set_sampler_diffuser_options, inputs=[sampler_options], outputs=[])
-
     return steps, sampler_index
 
 
@@ -419,7 +418,7 @@ def create_ui(startup_timer = None):
                     with gr.Accordion(open=False, label="Advanced", elem_id="txt2img_advanced", elem_classes=["small-accordion"]):
                         with gr.Group():
                             with FormRow():
-                                cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='CFG scale', value=6.0, elem_id="txt2img_cfg_scale")
+                                cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.1, label='CFG scale', value=6.0, elem_id="txt2img_cfg_scale")
                                 clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=14, step=1, elem_id='txt2img_clip_skip', interactive=True)
                             with FormRow():
                                 image_cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='Secondary CFG scale', value=6.0, elem_id="txt2img_image_cfg_scale")

@@ -467,6 +467,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
         num_inference_steps=calculate_base_steps(),
         eta=shared.opts.scheduler_eta,
+        guidance_scale=p.cfg_scale,
         guidance_rescale=p.diffusers_guidance_rescale,
         denoising_start=0 if use_refiner_start else p.refiner_start if use_denoise_start else None,
         denoising_end=p.refiner_start if use_refiner_start else 1 if use_denoise_start else None,

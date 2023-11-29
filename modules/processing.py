@@ -192,6 +192,7 @@ class StableDiffusionProcessing:
         self.s_tmin = shared.opts.s_tmin
         self.s_tmax = float('inf')  # not representable as a standard ui option
         shared.opts.data['clip_skip'] = clip_skip
+        self.task_args = {}
         # TODO a1111 compatibility items
         self.refiner_switch_at = 0
         self.hr_prompt = ''

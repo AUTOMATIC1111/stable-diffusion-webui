@@ -51,7 +51,7 @@ requests==2.31.0
 tqdm==4.66.1
 accelerate==0.24.1
 opencv-python-headless==4.7.0.72
-diffusers==0.23.1
+diffusers==0.24.0
 einops==0.4.1
 gradio==3.43.2
 huggingface_hub==0.19.4
