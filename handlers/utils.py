@@ -367,7 +367,7 @@ def save_processed_images(proc: Processed,
                           task_id: str,
                           clean_upload_files: bool = True,
                           inspect: bool = False,
-                          filter_multi_face: bool = False,
+                          detect_multi_face: bool = False,
                           forbidden_review: bool = False):
     if not output_dir:
         raise ValueError('output is empty')
@@ -420,7 +420,7 @@ def save_processed_images(proc: Processed,
         pnginfo_data.add_text('parameters', infotexts)
 
         processed_image.save(full_path, pnginfo=pnginfo_data)
-        if filter_multi_face:
+        if detect_multi_face:
             # 忽略此图
             faces.update({
                 os.path.basename(full_path): detect_faces(full_path)
