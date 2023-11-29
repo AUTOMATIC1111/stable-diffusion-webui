@@ -126,10 +126,14 @@ def detect_image_face(*images):
     app = FaceAnalysis(providers=['CUDAExecutionProvider', 'CPUExecutionProvider'], root='.')
     app.prepare(ctx_id=0, det_size=(640, 640))
     for img_path in images:
-        img = cv2.imread(img_path)
-        faces = app.get(img)
-        basename = os.path.basename(img_path)
-        if not faces:
-            yield (basename, None)
-        else:
-            yield (basename, faces[0])
+        if img_path and os.path.isfile(img_path):
+            try:
+                img = cv2.imread(img_path)
+                faces = app.get(img)
+                basename = os.path.basename(img_path)
+                if not faces:
+                    yield (basename, None)
+                else:
+                    yield (basename, faces[0])
+            except:
+                continue

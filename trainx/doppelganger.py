@@ -102,7 +102,7 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
                 'material': None,
                 'models': [],
                 'gender': gender,
-                'age': int(age) if age else 20
+                'age': int(age) if age and not math.isnan(age) else 20
             }
 
             cover = task.get_model_cover_key()

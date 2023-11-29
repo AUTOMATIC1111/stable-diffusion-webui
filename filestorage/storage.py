@@ -9,6 +9,7 @@ import abc
 import os
 import json
 import shutil
+import time
 import typing
 
 import s3fs
@@ -19,6 +20,7 @@ from loguru import logger
 from tools.processor import MultiThreadWorker
 from multiprocessing import cpu_count
 from urllib.parse import urlparse, urlsplit
+from tools.locks import LOCK_EX, LOCK_NB, lock, unlock
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/22.0.1207.1 Safari/537.1"
@@ -95,6 +97,21 @@ def http_request(url, method='GET', headers=None, cookies=None, data=None, timeo
     return res
 
 
+class FileLocker:
+
+    def __init__(self, file, mode='r', buffering=None, encoding=None, errors=None, newline=None, closefd=True,
+                 lock_flag=LOCK_EX):
+        self.f = open(file, mode, buffering, encoding, errors, newline, closefd)
+        self.flag = lock_flag
+
+    def __enter__(self):
+        lock(self.f, self.flag)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        unlock(self.f)
+        self.f.close()
+
+
 class FileStorage:
 
     def __init__(self):
@@ -122,6 +139,46 @@ class FileStorage:
 
     def preview_url(self, remoting_path: str) -> str:
         raise NotImplementedError
+
+    def _get_lock_filename(self, filename):
+        dirname = os.path.dirname(filename)
+        arr = os.path.splitext(os.path.basename(filename))
+        filename_without_ex = ".".join(arr[:-1])
+        lock_file = f"{filename_without_ex}.lock"
+
+        return os.path.join(dirname, lock_file)
+
+    def acquire_flock(self, filename, block=True, timeout=-1):
+        lock_path = self._get_lock_filename(filename)
+
+        f = open(lock_path, "wb+")
+        try:
+            ok = lock(f, LOCK_EX)
+            if not ok:
+                if not block:
+                    raise OSError("cannot get file lock")
+                start = time.time()
+                while 1:
+                    time.sleep(5)
+                    if timeout > 0 and time.time() - start > timeout:
+                        raise OSError("get file lock timeout")
+                    ok = lock(f, LOCK_EX)
+                    if ok:
+                        break
+        except:
+            f.close()
+            return None
+        return f
+
+    def release_flock(self, f, filename=None):
+        if not f:
+            return
+        unlock(f)
+        f.close()
+
+        if filename:
+            lock_path = self._get_lock_filename(filename)
+            os.remove(lock_path)
 
     def multi_upload(self, local_remoting_pars: typing.Sequence[typing.Tuple[str, str]]):
         if local_remoting_pars:
@@ -207,7 +264,8 @@ class PrivatizationFileStorage(FileStorage):
 
                 if 'Content-Disposition' in resp.headers:
                     cd = resp.headers.get('Content-Disposition')
-                    map = dict((item.strip().split('=')[:2] for item in (item for item in cd.split(';') if '=' in item)))
+                    map = dict(
+                        (item.strip().split('=')[:2] for item in (item for item in cd.split(';') if '=' in item)))
                     if 'filename' in map:
                         filename = map['filename'].strip('"')
 
@@ -237,5 +295,3 @@ class PrivatizationFileStorage(FileStorage):
 
     def preview_url(self, remoting_path: str) -> str:
         return remoting_path
-
-

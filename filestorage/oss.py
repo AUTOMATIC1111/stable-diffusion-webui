@@ -54,13 +54,24 @@ class OssFileStorage(FileStorage):
                 return local_path
             if os.path.isfile(remoting_path):
                 return remoting_path
+            f = None
             try:
                 key = self.get_keyname(remoting_path, self.bucket_name)
                 # bucket, key = self.extract_buack_key_from_path(remoting_path)
                 self.logger.info(f"download {key} from oss to {local_path}")
                 tmp_file = os.path.join(self.tmp_dir, os.path.basename(local_path))
                 # bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
+                print("acquire file locker")
+                f = self.acquire_flock(local_path)
+                # acquire file locker
+                if os.path.isfile(local_path):
+                    return local_path
+
                 oss2.resumable_download(self.bucket, key, tmp_file, progress_callback=progress_callback)
+                if os.path.isfile(local_path):
+                    os.remove(tmp_file)
+                    return local_path
+
                 if os.path.isfile(tmp_file):
                     shutil.move(tmp_file, local_path)
                     return local_path
@@ -71,6 +82,9 @@ class OssFileStorage(FileStorage):
                 if os.path.isfile(local_path):
                     os.remove(local_path)
                 raise
+            finally:
+                print("release flock")
+                self.release_flock(f, local_path)
         else:
             raise OSError('cannot init oss or file not found')
 
