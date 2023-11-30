@@ -16,7 +16,7 @@ from loguru import logger
 from worker.task import Task, TaskStatus, TaskProgress, TrainEpoch
 from sd_scripts.train_network_all_auto import train_with_params
 from .typex import TrainLoraTask
-from .utils import upload_files
+from .utils import upload_files, kill_child_processes
 from worker.task_send import RedisSender
 from multiprocessing import Process
 from trainx.utils import calculate_sha256
@@ -145,6 +145,8 @@ def do_train_with_process(task: Task,  dump_progress_cb: typing.Callable):
             dump_progress_cb(p)
 
     ok = train_with_params(callback=progress_callback, **kwargs)
+    kill_child_processes()
+    torch_gc()
     if ok:
         logger.info("=============>>>> end of train <<<<=============")
         material = train_lora_task.compress_train_material(p.train.format_epoch_log())

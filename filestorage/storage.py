@@ -162,10 +162,13 @@ class FileStorage:
                     time.sleep(5)
                     if timeout > 0 and time.time() - start > timeout:
                         raise OSError("get file lock timeout")
+
+                    if os.path.isfile(filename):
+                        break
+
+                    f = open(lock_path, "wb+")
                     ok = lock(f, LOCK_EX)
                     if ok:
-                        break
-                    if os.path.isfile(filename):
                         break
         except:
             f.close()

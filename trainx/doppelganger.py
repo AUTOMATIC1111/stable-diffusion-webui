@@ -5,33 +5,31 @@
 # @Site    : 
 # @File    : doppelganger.py
 # @Software: Hifive
-import copy
+import math
+import typing
+import shutil
 import os.path
 import random
-import shutil
-import time
-import typing
-
 import numpy as np
-
+from loguru import logger
 from modules.shared import mem_mon as vram_mon
-from trainx.utils import get_tmp_local_path, Tmp, upload_files, detect_image_face
-from tools.file import zip_compress, zip_uncompress, find_files_from_dir
+from trainx.utils import Tmp, detect_image_face, kill_child_processes, upload_files
 from trainx.typex import DigitalDoppelgangerTask, Task, TrainLoraTask, PreprocessTask
 from sd_scripts.train_auto_xz import train_auto
-from trainx.lora import *
-
-
+from worker.task import Task, TaskStatus, TaskProgress, TrainEpoch
+from trainx.utils import calculate_sha256
+from modules.devices import torch_gc
 # class DigitalDoppelganger:
 
 
 def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
     p = TaskProgress.new_prepare(job, 'prepare')
-    p.eta_relative = 41 * 60
+    p.eta_relative = len(job)
     yield p
 
     task = DigitalDoppelgangerTask(job)
-    p = TaskProgress.new_ready(job, 'ready preprocess', 40 * 60)
+    eta = int(len(task.image_keys) * 0.89 + 1416)
+    p = TaskProgress.new_ready(job, 'ready preprocess', eta)
     yield p
 
     logger.debug(">> download images...")
@@ -53,7 +51,6 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
         gender = '1girl' if np.sum([x[0] == 0 for x in face_info]) > len(face_info) / 2 else '1boy'
 
         p = TaskProgress.new_running(job, 'train running.')
-        p.eta_relative = 35 * 60
         yield p
 
         def train_progress_callback(epoch, loss, num_train_epochs, progress):
@@ -73,8 +70,8 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
                 logger.debug(f"previous eta:{previous_eta}, calculate eta:{p.eta_relative}")
                 if previous_eta < p.eta_relative:
                     epoch = progress // 10  # 控制的是10epoch
-                    eta_relative = 2100 - epoch * 60
-                    p.eta_relative = min(eta_relative, previous_eta-60)
+                    eta_relative = eta - epoch * 60
+                    p.eta_relative = min(eta_relative, previous_eta - 60)
                     logger.debug(f"===>>> new eta:{eta_relative}")
 
                 #  time_since_start = time.time() - shared.state.time_start
@@ -96,6 +93,8 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
         )
 
         torch_gc()
+        kill_child_processes()
+
         logger.debug(f">> train complete: {out_path}")
         if out_path and os.path.isfile(out_path):
             result = {

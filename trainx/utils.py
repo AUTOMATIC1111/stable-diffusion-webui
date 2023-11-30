@@ -8,6 +8,7 @@
 import hashlib
 import os
 import cv2
+import psutil
 import numpy as np
 from PIL import Image
 from enum import IntEnum
@@ -137,3 +138,13 @@ def detect_image_face(*images):
                     yield (basename, faces[0])
             except:
                 continue
+
+
+def kill_child_processes():
+    init_process = psutil.Process()
+    children = init_process.children()
+
+    # 处理子进程
+    for child in children:
+        logger.debug(f"sub process kill:{child.pid}, name:{child.name()}(test only)")
+        # child.kill()

@@ -68,6 +68,7 @@ class OssFileStorage(FileStorage):
                     return local_path
 
                 oss2.resumable_download(self.bucket, key, tmp_file, progress_callback=progress_callback)
+
                 if os.path.isfile(local_path):
                     return local_path
 

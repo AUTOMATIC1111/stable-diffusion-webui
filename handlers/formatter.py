@@ -38,7 +38,7 @@ def init_formatters():
 def format_alwayson_script_args(name, is_img2img, args):
     if not formatters:
         init_formatters()
-
+    name = name.replace('-', '_') if name not in formatters else name
     format = formatters.get(name)
     if not format:
         return args

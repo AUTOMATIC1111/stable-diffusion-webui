@@ -233,7 +233,7 @@ def esrgan_upscale(model, img):
 def load_model(path: str):
     filename = path
     if not os.path.exists(filename) or filename is None:
-        print("模型不存在")
+        print(f"{filename}模型不存在")
         return None
     state_dict = torch.load(filename, map_location=None)
     if "params_ema" in state_dict:
