@@ -421,7 +421,7 @@ def create_ui(startup_timer = None):
                                 cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.1, label='CFG scale', value=6.0, elem_id="txt2img_cfg_scale")
                                 clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=14, step=1, elem_id='txt2img_clip_skip', interactive=True)
                             with FormRow():
-                                image_cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='Secondary CFG scale', value=6.0, elem_id="txt2img_image_cfg_scale")
+                                image_cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.1, label='Secondary CFG scale', value=6.0, elem_id="txt2img_image_cfg_scale")
                                 diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
                         with gr.Group():
                             with FormRow():
@@ -726,8 +726,8 @@ def create_ui(startup_timer = None):
 
                     with gr.Accordion(open=False, label="Advanced", elem_classes=["small-accordion"], elem_id="img2img_advanced_group"):
                         with FormRow():
-                            cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='CFG scale', value=6.0, elem_id="img2img_cfg_scale")
-                            image_cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.15, label='Image CFG scale', value=1.5, elem_id="img2img_image_cfg_scale")
+                            cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.1, label='CFG scale', value=6.0, elem_id="img2img_cfg_scale")
+                            image_cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.15, label='Image CFG scale', value=1.5, elem_id="img2img_image_cfg_scale")
                         with FormRow():
                             clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=4, step=1, elem_id='img2img_clip_skip', interactive=True)
                             diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")

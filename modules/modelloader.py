@@ -205,7 +205,7 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         download_config["mirror"] = mirror
     if custom_pipeline is not None and len(custom_pipeline) > 0:
         download_config["custom_pipeline"] = custom_pipeline
-    shared.log.debug(f"Diffusers downloading: {hub_id} {download_config}")
+    shared.log.debug(f"Diffusers downloading: {hub_id} args={download_config}")
     if token is not None and len(token) > 2:
         shared.log.debug(f"Diffusers authentication: {token}")
         hf.login(token)

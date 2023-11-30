@@ -3,10 +3,6 @@
 ## Update for 2023-11-29
 
 - **Diffusers**
-  - [SDXL Turbo](https://huggingface.co/stabilityai/sdxl-turbo) support  
-    - just set CFG scale (0.0-1.0) and steps (1-3) to a very low value  
-    - compatible with original StabilityAI SDXL-Turbo or any of the newer merges
-    - download safetensors or select from networks -> reference
   - **HDR latent control**, based on [article](https://huggingface.co/blog/TimothyAlexisVass/explaining-the-sdxl-latent-space#long-prompts-at-high-guidance-scales-becoming-possible)  
     - in *Advanced* params
     - allows control of *latent clamping*, *color centering* and *range maximimization*  
@@ -15,20 +11,33 @@
     - lightweight implementation of T2I adapters which can guide generation towards specific image style  
     - supports most T2I models, not limited to SD 1.5  
     - models are auto-downloaded on first use
-    - for IP adapter support in Original backend, use standard *ControlNet* extension  
+    - for IP adapter support in *Original* backend, use standard *ControlNet* extension  
   - **AnimateDiff**
     - lightweight implementation of AnimateDiff basic models *(1.4, 1.5, 1.5.2)*
     - supports SD 1.5 only  
     - models are auto-downloaded on first use  
-    - *note*: AnimateDiff can be combined with IP-Adapter for even better results!  
-    - for AnimateDiff support in Original backend, use standard *AnimateDiff* extension  
+    - can create animated GIF and MP4 video files  
+    - can be combined with IP-Adapter for even better results!  
+    - for AnimateDiff support in *Original* backend, use standard *AnimateDiff* extension  
+  - [SDXL Turbo](https://huggingface.co/stabilityai/sdxl-turbo) support  
+    - just set CFG scale (0.0-1.0) and steps (1-3) to a very low value  
+    - compatible with original StabilityAI SDXL-Turbo or any of the newer merges
+    - download safetensors or select from networks -> reference
+  - [Stable Video Diffusion](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid) and [Stable Video Diffusion XT](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt) support  
+    - download using built-in model downloader or simply select from *networks -> reference*  
+      support for manually downloaded safetensors models will be added later  
+    - go to *image* tab, enter input image and select *script* -> *stable video diffusion*
   - [Kandinsky 3](https://huggingface.co/kandinsky-community/kandinsky-3) support  
-    - download using built-in model downloader or simply select from networks -> reference  
+    - download using built-in model downloader or simply select from *networks -> reference*  
     - this model is absolutely massive at 27.5GB at fp16, so be patient  
     - model params count is at 11.9B (compared to SD-XL at 3.3B) and its trained on mixed resolutions from 256px to 1024px  
     - use either model offload or sequential cpu offload to be able to use it  
   - better autodetection of *inpaint* and *instruct* pipelines  
   - support long seconary prompt for refiner  
+- **Video support**
+  - applies to any model that supports video generation, e.g. AnimateDiff and StableVideoDiffusion  
+  - support for GIF and MP4  
+  - output folder for videos is in *settings -> image paths -> video*  
 - **Model merge**
   - add **SD-XL ReBasin** support, thanks @AI-Casanova  
 - **General**

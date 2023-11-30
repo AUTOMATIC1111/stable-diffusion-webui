@@ -621,6 +621,51 @@ def save_image(image, path, basename='', seed=None, prompt=None, extension=share
     return params.filename, filename_txt
 
 
+def save_video_atomic(images, video_type, filename, duration, loop):
+    try:
+        import cv2
+    except Exception as e:
+        shared.log.error(f'Save video: cv2: {e}')
+        return
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    if video_type == 'mp4':
+        video_frames = [np.array(frame) for frame in images]
+        fourcc = "mp4v"
+        h, w, _c = video_frames[0].shape
+        video_writer = cv2.VideoWriter(filename, fourcc=cv2.VideoWriter_fourcc(*fourcc), fps=len(images)/duration, frameSize=(w, h))
+        for i in range(len(video_frames)):
+            img = cv2.cvtColor(video_frames[i], cv2.COLOR_RGB2BGR)
+            video_writer.write(img)
+        shared.log.info(f'Save video: file="{filename}" frames={len(images)} duration={duration} fourcc={fourcc}')
+    if video_type == 'gif':
+        append = images.copy()
+        image = append.pop(0)
+        if loop:
+            append += append[::-1]
+        frames=len(append) + 1
+        image.save(
+            filename,
+            save_all = True,
+            append_images = append,
+            optimize = False,
+            duration = 1000.0 * duration / frames,
+            loop = 0 if loop else 1,
+        )
+        shared.log.info(f'Save video: file="{filename}" frames={len(append) + 1} duration={duration} loop={loop}')
+
+
+def save_video(p, images, video_type, filename = None, duration = 2, loop = True):
+    if images is None or len(images) < 2:
+        return
+    image = images[0]
+    namegen = FilenameGenerator(p, seed=p.all_seeds[0], prompt=p.all_prompts[0], image=image)
+    if filename is None:
+        filename = namegen.apply(shared.opts.samples_filename_pattern if shared.opts.samples_filename_pattern and len(shared.opts.samples_filename_pattern) > 0 else "[seq]-[prompt_words]")
+        filename = namegen.sanitize(os.path.join(shared.opts.outdir_video, filename))
+        filename = namegen.sequence(filename, shared.opts.outdir_video, '')
+    threading.Thread(target=save_video_atomic, args=(images, video_type, f'{filename}.{video_type}', duration, loop)).start()
+
+
 def safe_decode_string(s: bytes):
     remove_prefix = lambda text, prefix: text[len(prefix):] if text.startswith(prefix) else text # pylint: disable=unnecessary-lambda-assignment
     for encoding in ['utf-8', 'utf-16', 'ascii', 'latin_1', 'cp1252', 'cp437']: # try different encodings

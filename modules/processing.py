@@ -784,7 +784,7 @@ def validate_sample(tensor):
     if shared.backend == shared.Backend.ORIGINAL:
         sample = 255.0 * np.moveaxis(tensor.cpu().numpy(), 0, 2)
     else:
-        sample = 255. * tensor
+        sample = 255.0 * tensor
     with warnings.catch_warnings(record=True) as w:
         cast = sample.astype(np.uint8)
     if len(w) > 0:

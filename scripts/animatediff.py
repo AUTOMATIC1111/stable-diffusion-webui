@@ -13,7 +13,6 @@ TODO:
 - AnimateFace: https://huggingface.co/nlper2022/animatediff_face_512/tree/main
 """
 
-import os
 import gradio as gr
 import diffusers
 from modules import scripts, processing, shared, devices, sd_models
@@ -66,7 +65,7 @@ def set_adapter(name: str = None):
         shared.log.warning(f'AnimateDiff: unsupported model type: {shared.sd_model.__class__.__name__}')
         return
     if motion_adapter is not None and loaded_adapter == adapter_name:
-        shared.log.info(f'AnimateDiff cache: adapter="{adapter_name}"')
+        shared.log.debug(f'AnimateDiff cache: adapter="{adapter_name}"')
         return
     try:
         shared.log.info(f'AnimateDiff load: adapter="{adapter_name}"')
@@ -117,50 +116,35 @@ class Script(scripts.Script):
                 lora_index = gr.Dropdown(label='Lora', choices=list(LORAS), value='None')
                 strength = gr.Slider(label='Strength', minimum=0.0, maximum=2.0, step=0.05, value=1.0)
             with gr.Row():
-                override = gr.Checkbox(label='Override sampler', value=False)
+                latent_mode = gr.Checkbox(label='Latent mode', value=False)
             with gr.Row():
-                create_gif = gr.Checkbox(label='Create GIF', value=False)
+                create_gif = gr.Checkbox(label='GIF', value=False)
+                create_mp4 = gr.Checkbox(label='MP4', value=False)
                 loop = gr.Checkbox(label='Loop', value=True)
                 duration = gr.Slider(label='Duration', minimum=0.25, maximum=10, step=0.25, value=2)
-        return [adapter_index, frames, lora_index, strength, override, create_gif, duration, loop]
+        return [adapter_index, frames, lora_index, strength, latent_mode, create_gif, create_mp4, duration, loop]
 
-    def process(self, p: processing.StableDiffusionProcessing, adapter_index, frames, lora_index, strength, override, create_gif, duration, loop): # pylint: disable=arguments-differ, unused-argument
+    def process(self, p: processing.StableDiffusionProcessing, adapter_index, frames, lora_index, strength, latent_mode, create_gif, create_mp4, duration, loop): # pylint: disable=arguments-differ, unused-argument
         adapter = ADAPTERS[adapter_index]
         lora = LORAS[lora_index]
         set_adapter(adapter)
         if motion_adapter is None:
             return
-        shared.log.debug(f'AnimateDiff: adapter="{adapter}" lora="{lora}" strength={strength} sampler={override} gif={create_gif}')
-        p.extra_generation_params['AnimateDiff'] = loaded_adapter
-        if override:
-            shared.sd_model.scheduler = diffusers.DDIMScheduler.from_pretrained('SG161222/Realistic_Vision_V5.1_noVAE', subfolder="scheduler", clip_sample=False, timestep_spacing="linspace", steps_offset=1)
+        shared.log.debug(f'AnimateDiff: adapter="{adapter}" lora="{lora}" strength={strength} gif={create_gif} mp4={create_mp4}')
         if lora is not None and lora != 'None':
             shared.sd_model.load_lora_weights(lora, adapter_name=lora)
             shared.sd_model.set_adapters([lora], adapter_weights=[strength])
             p.extra_generation_params['AnimateDiff Lora'] = f'{lora}:{strength}'
+        p.extra_generation_params['AnimateDiff'] = loaded_adapter
         p.do_not_save_grid = True
         p.task_args['num_frames'] = frames
-        p.task_args['output_type'] = 'np' # TODO: AnimateDiff use latents and update vae_decode
         p.task_args['num_inference_steps'] = p.steps
+        if not latent_mode:
+            p.task_args['output_type'] = 'np'
 
-    def postprocess(self, p: processing.StableDiffusionProcessing, processed: processing.Processed, adapter_index, frames, lora_index, strength, override, create_gif, duration, loop): # pylint: disable=arguments-differ, unused-argument
-        if not create_gif or len(processed.images) < 2:
-            return
-        from modules.images import FilenameGenerator
-        image = processed.images[0]
-        namegen = FilenameGenerator(p, seed=p.all_seeds[0], prompt=p.all_prompts[0], image=image)
-        fn = namegen.apply(shared.opts.samples_filename_pattern if shared.opts.samples_filename_pattern and len(shared.opts.samples_filename_pattern) > 0 else "[seq]-[prompt_words]")
-        fn = namegen.sanitize(os.path.join(shared.opts.outdir_save, fn))
-        fn = namegen.sequence(fn, shared.opts.outdir_save, '')
-        images = processed.images[1:]
-        if loop:
-            images += processed.images[::-1]
-        image.save(
-            f'{fn}.gif',
-            save_all = True,
-            append_images = images,
-            optimize = False,
-            duration = 1000.0 * duration / frames,
-            loop = 0 if loop else 1,
-        )
-        shared.log.info(f'AnimateDiff saved: file="{fn}" frames={len(images) + 1} duration={duration} loop={loop}')
+    def postprocess(self, p: processing.StableDiffusionProcessing, processed: processing.Processed, adapter_index, frames, lora_index, strength, latent_mode, create_gif, create_mp4, duration, loop): # pylint: disable=arguments-differ, unused-argument
+        from modules.images import save_video
+        if create_gif:
+            save_video(p, images=processed.images, video_type='gif', duration=duration, loop=loop)
+        if create_mp4:
+            save_video(p, images=processed.images, video_type='mp4', duration=duration, loop=loop)
