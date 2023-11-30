@@ -646,6 +646,8 @@ table.popup-table .link{
     margin: auto;
     padding: 2em;
     z-index: 1001;
+    max-height: 90%;
+    max-width: 90%;
 }
 
 /* fullpage image viewer */
