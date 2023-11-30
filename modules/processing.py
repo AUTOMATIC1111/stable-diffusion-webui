@@ -890,7 +890,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     p.sd_model.alphas_cumprod = p.sd_model.alphas_cumprod.half().to(shared.device)
                 if opts.sd_noise_schedule == "Zero Terminal SNR":
                     p.extra_generation_params['Noise Schedule'] = opts.sd_noise_schedule
-                    print("rescaling noise schedule for zero snr")
                     p.sd_model.alphas_cumprod = rescale_zero_terminal_snr_abar(p.sd_model.alphas_cumprod).to(shared.device)
 
             with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
