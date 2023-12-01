@@ -1,8 +1,8 @@
 import torch
 from torch.optim import AdamW
 from torch.nn.parallel import DistributedDataParallel as DDP
-from model_ifnet import IFNet
-from loss import EPE, SOBEL
+from modules.rife.model_ifnet import IFNet
+from modules.rife.loss import EPE, SOBEL
 from modules import devices
 
 
@@ -31,11 +31,7 @@ class Model:
     def load_model(self, model_file, rank=0):
         def convert(param):
             if rank == -1:
-                return {
-                    k.replace("module.", ""): v
-                    for k, v in param.items()
-                    if "module." in k
-                }
+                return { k.replace("module.", ""): v for k, v in param.items() if "module." in k }
             else:
                 return param
         if rank <= 0:

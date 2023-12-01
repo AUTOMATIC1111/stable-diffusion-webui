@@ -621,23 +621,31 @@ def save_image(image, path, basename='', seed=None, prompt=None, extension=share
     return params.filename, filename_txt
 
 
-def save_video_atomic(images, video_type, filename, duration, loop):
+def save_video_atomic(images, filename, video_type: str = 'none', duration: float = 2.0, loop: bool = False, interpolate: int = 0, scale: float = 1.0, pad: int = 1, change: float = 0.3):
     try:
         import cv2
     except Exception as e:
         shared.log.error(f'Save video: cv2: {e}')
         return
     os.makedirs(os.path.dirname(filename), exist_ok=True)
-    if video_type == 'mp4':
-        video_frames = [np.array(frame) for frame in images]
+    if video_type.lower() == 'mp4':
+        frames = images
+        if interpolate > 0:
+            try:
+                import modules.rife
+                frames = modules.rife.interpolate(images, count=interpolate, scale=scale, pad=pad, change=change)
+            except Exception as e:
+                shared.log.error(f'RIFE interpolation: {e}')
+                errors.display(e, 'RIFE interpolation')
+        video_frames = [np.array(frame) for frame in frames]
         fourcc = "mp4v"
         h, w, _c = video_frames[0].shape
-        video_writer = cv2.VideoWriter(filename, fourcc=cv2.VideoWriter_fourcc(*fourcc), fps=len(images)/duration, frameSize=(w, h))
+        video_writer = cv2.VideoWriter(filename, fourcc=cv2.VideoWriter_fourcc(*fourcc), fps=len(frames)/duration, frameSize=(w, h))
         for i in range(len(video_frames)):
             img = cv2.cvtColor(video_frames[i], cv2.COLOR_RGB2BGR)
             video_writer.write(img)
-        shared.log.info(f'Save video: file="{filename}" frames={len(images)} duration={duration} fourcc={fourcc}')
-    if video_type == 'gif':
+        shared.log.info(f'Save video: file="{filename}" frames={len(frames)} duration={duration} fourcc={fourcc}')
+    if video_type.lower() == 'gif' or video_type.lower() == 'png':
         append = images.copy()
         image = append.pop(0)
         if loop:
@@ -654,8 +662,8 @@ def save_video_atomic(images, video_type, filename, duration, loop):
         shared.log.info(f'Save video: file="{filename}" frames={len(append) + 1} duration={duration} loop={loop}')
 
 
-def save_video(p, images, video_type, filename = None, duration = 2, loop = True):
-    if images is None or len(images) < 2:
+def save_video(p, images, filename = None, video_type: str = 'none', duration: float = 2.0, loop: bool = False, interpolate: int = 0, scale: float = 1.0, pad: int = 1, change: float = 0.3):
+    if images is None or len(images) < 2 or video_type is None or video_type.lower() == 'none':
         return
     image = images[0]
     namegen = FilenameGenerator(p, seed=p.all_seeds[0], prompt=p.all_prompts[0], image=image)
@@ -663,7 +671,8 @@ def save_video(p, images, video_type, filename = None, duration = 2, loop = True
         filename = namegen.apply(shared.opts.samples_filename_pattern if shared.opts.samples_filename_pattern and len(shared.opts.samples_filename_pattern) > 0 else "[seq]-[prompt_words]")
         filename = namegen.sanitize(os.path.join(shared.opts.outdir_video, filename))
         filename = namegen.sequence(filename, shared.opts.outdir_video, '')
-    threading.Thread(target=save_video_atomic, args=(images, video_type, f'{filename}.{video_type}', duration, loop)).start()
+        filename = f'{filename}.{video_type.lower()}'
+    threading.Thread(target=save_video_atomic, args=(images, filename, video_type, duration, loop, interpolate, scale, pad, change)).start()
 
 
 def safe_decode_string(s: bytes):

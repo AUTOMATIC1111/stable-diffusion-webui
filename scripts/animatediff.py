@@ -106,8 +106,16 @@ class Script(scripts.Script):
     def show(self, _is_img2img):
         return scripts.AlwaysVisible if shared.backend == shared.Backend.DIFFUSERS else False
 
-    # return signature is array of gradio components
+
     def ui(self, _is_img2img):
+        def video_type_change(video_type):
+            return [
+                gr.update(visible=video_type != 'None'),
+                gr.update(visible=video_type == 'GIF' or video_type == 'PNG'),
+                gr.update(visible=video_type == 'MP4'),
+                gr.update(visible=video_type == 'MP4'),
+            ]
+
         with gr.Accordion('AnimateDiff', open=False, elem_id='animatediff'):
             with gr.Row():
                 adapter_index = gr.Dropdown(label='Adapter', choices=list(ADAPTERS), value='None')
@@ -118,19 +126,22 @@ class Script(scripts.Script):
             with gr.Row():
                 latent_mode = gr.Checkbox(label='Latent mode', value=False)
             with gr.Row():
-                create_gif = gr.Checkbox(label='GIF', value=False)
-                create_mp4 = gr.Checkbox(label='MP4', value=False)
-                loop = gr.Checkbox(label='Loop', value=True)
-                duration = gr.Slider(label='Duration', minimum=0.25, maximum=10, step=0.25, value=2)
-        return [adapter_index, frames, lora_index, strength, latent_mode, create_gif, create_mp4, duration, loop]
+                video_type = gr.Dropdown(label='Video file', choices=['None', 'GIF', 'PNG', 'MP4'], value='None')
+                duration = gr.Slider(label='Duration', minimum=0.25, maximum=10, step=0.25, value=2, visible=False)
+            with gr.Row():
+                gif_loop = gr.Checkbox(label='Loop', value=True, visible=False)
+                mp4_pad = gr.Slider(label='Pad frames', minimum=0, maximum=24, step=1, value=1, visible=False)
+                mp4_interpolate = gr.Slider(label='Interpolate frames', minimum=0, maximum=24, step=1, value=0, visible=False)
+            video_type.change(fn=video_type_change, inputs=[video_type], outputs=[duration, gif_loop, mp4_pad, mp4_interpolate])
+        return [adapter_index, frames, lora_index, strength, latent_mode, video_type, duration, gif_loop, mp4_pad, mp4_interpolate]
 
-    def process(self, p: processing.StableDiffusionProcessing, adapter_index, frames, lora_index, strength, latent_mode, create_gif, create_mp4, duration, loop): # pylint: disable=arguments-differ, unused-argument
+    def process(self, p: processing.StableDiffusionProcessing, adapter_index, frames, lora_index, strength, latent_mode, video_type, duration, gif_loop, mp4_pad, mp4_interpolate): # pylint: disable=arguments-differ, unused-argument
         adapter = ADAPTERS[adapter_index]
         lora = LORAS[lora_index]
         set_adapter(adapter)
         if motion_adapter is None:
             return
-        shared.log.debug(f'AnimateDiff: adapter="{adapter}" lora="{lora}" strength={strength} gif={create_gif} mp4={create_mp4}')
+        shared.log.debug(f'AnimateDiff: adapter="{adapter}" lora="{lora}" strength={strength} video={video_type}')
         if lora is not None and lora != 'None':
             shared.sd_model.load_lora_weights(lora, adapter_name=lora)
             shared.sd_model.set_adapters([lora], adapter_weights=[strength])
@@ -142,9 +153,7 @@ class Script(scripts.Script):
         if not latent_mode:
             p.task_args['output_type'] = 'np'
 
-    def postprocess(self, p: processing.StableDiffusionProcessing, processed: processing.Processed, adapter_index, frames, lora_index, strength, latent_mode, create_gif, create_mp4, duration, loop): # pylint: disable=arguments-differ, unused-argument
+    def postprocess(self, p: processing.StableDiffusionProcessing, processed: processing.Processed, adapter_index, frames, lora_index, strength, latent_mode, video_type, duration, gif_loop, mp4_pad, mp4_interpolate): # pylint: disable=arguments-differ, unused-argument
         from modules.images import save_video
-        if create_gif:
-            save_video(p, images=processed.images, video_type='gif', duration=duration, loop=loop)
-        if create_mp4:
-            save_video(p, images=processed.images, video_type='mp4', duration=duration, loop=loop)
+        if video_type != 'None':
+            save_video(p, filename=None, images=processed.images, video_type=video_type, duration=duration, loop=gif_loop, pad=mp4_pad, interpolate=mp4_interpolate)

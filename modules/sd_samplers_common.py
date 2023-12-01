@@ -31,12 +31,15 @@ def setup_img2img_steps(p, steps=None):
 
 
 def single_sample_to_image(sample, approximation=None):
+    # sample should be [4,64,64]
     if approximation is None:
         approximation = approximation_indexes.get(shared.opts.show_progress_type, None)
         if approximation is None:
             warn_once('Unknown decode type, please reset preview method')
             approximation = 0
 
+    if len(sample.shape) == 4 and sample.shape[0]: # likely animatediff latent
+        sample = sample.permute(1, 0, 2, 3)[0]
     if approximation == 0: # Simple
         x_sample = sd_vae_approx.cheap_approximation(sample) * 0.5 + 0.5
     elif approximation == 1: # Approximate

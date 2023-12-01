@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from warplayer import warp
+from modules.rife.warplayer import warp
 
 
 c = 16
