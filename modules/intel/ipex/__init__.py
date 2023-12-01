@@ -31,6 +31,7 @@ def ipex_init(): # pylint: disable=too-many-statements
         torch.cuda.FloatTensor = torch.xpu.FloatTensor
         torch.Tensor.cuda = torch.Tensor.xpu
         torch.Tensor.is_cuda = torch.Tensor.is_xpu
+        torch.UntypedStorage.cuda = torch.UntypedStorage.xpu
         torch.cuda._initialization_lock = torch.xpu.lazy_init._initialization_lock
         torch.cuda._initialized = torch.xpu.lazy_init._initialized
         torch.cuda._lazy_seed_tracker = torch.xpu.lazy_init._lazy_seed_tracker

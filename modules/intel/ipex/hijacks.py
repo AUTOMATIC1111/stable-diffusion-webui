@@ -93,11 +93,23 @@ def linalg_solve(A, B, *args, **kwargs): # pylint: disable=invalid-name
     else:
         return original_linalg_solve(A, B, *args, **kwargs)
 
+def is_cuda(self):
+    return self.device.type == 'xpu'
+
 def ipex_hijacks():
+    CondFunc('torch.tensor',
+        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
+        lambda orig_func, *args, device=None, **kwargs: check_device(device))
     CondFunc('torch.Tensor.to',
         lambda orig_func, self, device=None, *args, **kwargs: orig_func(self, return_xpu(device), *args, **kwargs),
         lambda orig_func, self, device=None, *args, **kwargs: check_device(device))
     CondFunc('torch.Tensor.cuda',
+        lambda orig_func, self, device=None, *args, **kwargs: orig_func(self, return_xpu(device), *args, **kwargs),
+        lambda orig_func, self, device=None, *args, **kwargs: check_device(device))
+    CondFunc('torch.UntypedStorage.__init__',
+        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
+        lambda orig_func, *args, device=None, **kwargs: check_device(device))
+    CondFunc('torch.UntypedStorage.cuda',
         lambda orig_func, self, device=None, *args, **kwargs: orig_func(self, return_xpu(device), *args, **kwargs),
         lambda orig_func, self, device=None, *args, **kwargs: check_device(device))
     CondFunc('torch.empty',
@@ -112,9 +124,6 @@ def ipex_hijacks():
     CondFunc('torch.zeros',
         lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
         lambda orig_func, *args, device=None, **kwargs: check_device(device))
-    CondFunc('torch.tensor',
-        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
-        lambda orig_func, *args, device=None, **kwargs: check_device(device))
     CondFunc('torch.linspace',
         lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
         lambda orig_func, *args, device=None, **kwargs: check_device(device))
@@ -124,7 +133,7 @@ def ipex_hijacks():
         lambda orig_func, f, map_location=None, pickle_module=None, *, weights_only=False, mmap=None, **kwargs: check_device(map_location))
 
     CondFunc('torch.Generator',
-        lambda orig_func, device=None: torch.xpu.Generator(device),
+        lambda orig_func, device=None: torch.xpu.Generator(return_xpu(device)),
         lambda orig_func, device=None: device is not None and device != torch.device("cpu") and device != "cpu")
 
     #TiledVAE and ControlNet:
@@ -180,5 +189,6 @@ def ipex_hijacks():
     torch.autocast = ipex_autocast
     torch.cat = torch_cat
     torch.linalg.solve = linalg_solve
+    torch.UntypedStorage.is_cuda = is_cuda
     torch.nn.functional.interpolate = interpolate
     torch.backends.cuda.sdp_kernel = return_null_context
