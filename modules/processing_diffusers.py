@@ -82,7 +82,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     raise AssertionError('Interrupted...')
                 time.sleep(0.1)
         if kwargs.get('latents', None) is None:
-            print('HERE NO')
             return kwargs
         kwargs = correction_callback(p, timestep, kwargs)
         shared.state.current_latent = kwargs['latents']

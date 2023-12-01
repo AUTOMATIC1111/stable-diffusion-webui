@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-11-29
+## Update for 2023-11-30
 
 - **Diffusers**
   - **HDR latent control**, based on [article](https://huggingface.co/blog/TimothyAlexisVass/explaining-the-sdxl-latent-space#long-prompts-at-high-guidance-scales-becoming-possible)  
@@ -38,13 +38,13 @@
   - applies to any model that supports video generation, e.g. AnimateDiff and StableVideoDiffusion  
   - support for GIF and MP4  
   - output folder for videos is in *settings -> image paths -> video*  
-- **Model merge**
-  - add **SD-XL ReBasin** support, thanks @AI-Casanova  
 - **General**
-  - further UI optimizations for **mobile devices**, thanks @iDeNoh
+  - **model merge** add **SD-XL ReBasin** support, thanks @AI-Casanova  
+  - further UI optimizations for **mobile devices**, thanks @iDeNoh  
   - log level defaults to info for console and debug for log file  
   - better prompt display in process tab  
   - increase maximum lora cache values  
+  - fix extra networks sorting
   - fix controlnet compatibility issues in original backend  
   - fix img2img/inpaint paste params  
   - fix save text file for manually saved images  
