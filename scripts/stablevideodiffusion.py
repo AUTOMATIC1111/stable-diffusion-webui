@@ -15,6 +15,14 @@ class Script(scripts.Script):
 
     # return signature is array of gradio components
     def ui(self, _is_img2img):
+        def video_type_change(video_type):
+            return [
+                gr.update(visible=video_type != 'None'),
+                gr.update(visible=video_type == 'GIF' or video_type == 'PNG'),
+                gr.update(visible=video_type == 'MP4'),
+                gr.update(visible=video_type == 'MP4'),
+            ]
+
         with gr.Row():
             num_frames = gr.Slider(label='Frames', minimum=1, maximum=50, step=1, value=14)
             min_guidance_scale = gr.Slider(label='Min guidance', minimum=0.0, maximum=10.0, step=0.1, value=1.0)
@@ -25,13 +33,17 @@ class Script(scripts.Script):
             noise_aug_strength = gr.Slider(label='Noise strength', minimum=0.0, maximum=1.0, step=0.01, value=0.1)
         with gr.Row():
             override_resolution = gr.Checkbox(label='Override resolution', value=True)
-            create_gif = gr.Checkbox(label='GIF', value=False)
-            create_mp4 = gr.Checkbox(label='MP4', value=False)
-            loop = gr.Checkbox(label='Loop', value=True)
-            duration = gr.Slider(label='Duration', minimum=0.25, maximum=10, step=0.25, value=2)
-        return [num_frames, override_resolution, min_guidance_scale, max_guidance_scale, decode_chunk_size, motion_bucket_id, noise_aug_strength, create_gif, create_mp4, duration, loop]
+        with gr.Row():
+            video_type = gr.Dropdown(label='Video file', choices=['None', 'GIF', 'PNG', 'MP4'], value='None')
+            duration = gr.Slider(label='Duration', minimum=0.25, maximum=10, step=0.25, value=2, visible=False)
+        with gr.Row():
+            gif_loop = gr.Checkbox(label='Loop', value=True, visible=False)
+            mp4_pad = gr.Slider(label='Pad frames', minimum=0, maximum=24, step=1, value=1, visible=False)
+            mp4_interpolate = gr.Slider(label='Interpolate frames', minimum=0, maximum=24, step=1, value=0, visible=False)
+        video_type.change(fn=video_type_change, inputs=[video_type], outputs=[duration, gif_loop, mp4_pad, mp4_interpolate])
+        return [num_frames, override_resolution, min_guidance_scale, max_guidance_scale, decode_chunk_size, motion_bucket_id, noise_aug_strength, video_type, duration, gif_loop, mp4_pad, mp4_interpolate]
 
-    def run(self, p: processing.StableDiffusionProcessing, num_frames, override_resolution, min_guidance_scale, max_guidance_scale, decode_chunk_size, motion_bucket_id, noise_aug_strength, create_gif, create_mp4, duration, loop): # pylint: disable=arguments-differ, unused-argument
+    def run(self, p: processing.StableDiffusionProcessing, num_frames, override_resolution, min_guidance_scale, max_guidance_scale, decode_chunk_size, motion_bucket_id, noise_aug_strength, video_type, duration, gif_loop, mp4_pad, mp4_interpolate): # pylint: disable=arguments-differ, unused-argument
         if shared.sd_model is None or shared.sd_model.__class__.__name__ != 'StableVideoDiffusionPipeline':
             return None
         if hasattr(p, 'init_images') and len(p.init_images) > 0:
@@ -58,10 +70,8 @@ class Script(scripts.Script):
             shared.log.debug(f'StableVideo: args={p.task_args}')
             shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
             processed = processing.process_images(p)
-            if create_gif:
-                images.save_video(p, images=processed.images, video_type='gif', duration=duration, loop=loop)
-            if create_mp4:
-                images.save_video(p, images=processed.images, video_type='mp4', duration=duration, loop=loop)
+            if video_type != 'None':
+                images.save_video(p, filename=None, images=processed.images, video_type=video_type, duration=duration, loop=gif_loop, pad=mp4_pad, interpolate=mp4_interpolate)
             return processed
         else:
             shared.log.error('StableVideo: no init_images')
