@@ -7,6 +7,7 @@
 # @Software: Hifive
 import json
 import os.path
+import random
 import shutil
 import time
 import typing
@@ -120,7 +121,7 @@ class PreprocessTask(UserDict):
         }
         return Task(**t)
 
-    def download_images_with_keys(self):
+    def download_images_with_keys(self, retry_times=3):
         local_files = []
         for i, image in enumerate(self.image_keys):
             if len(local_files) > 60:
@@ -131,9 +132,17 @@ class PreprocessTask(UserDict):
             else:
                 image_key = image
                 target_dir = os.path.join(Tmp, self.id)
-            file = get_tmp_local_path(image_key, dir=target_dir)
-            if os.path.isfile(file):
-                local_files.append(file)
+            retry_times = retry_times if retry_times > 0 else 3
+            for i in range(retry_times):
+                try:
+                    file = get_tmp_local_path(image_key, dir=target_dir)
+                    if os.path.isfile(file):
+                        local_files.append(file)
+                except Exception as err:
+                    if i == retry_times - 1:
+                        raise err
+                    time.sleep(random.randint(3, 7))
+
         return local_files
 
 
