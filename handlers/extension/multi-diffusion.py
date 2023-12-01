@@ -21,6 +21,13 @@ class MultiDiffusionFormatter(AlwaysonScriptArgsFormatter):
             -> typing.Sequence[typing.Any]:
         def obj_to_array(obj: typing.Mapping) -> typing.Sequence:
             # 如果是[OBJ1, OBJ2]形式的，需要转换为ARRAY
+            #  enabled, method,
+            #             overwrite_size, keep_input_size, image_width, image_height,
+            #             tile_width, tile_height, overlap, batch_size,
+            #             upscaler_name, scale_factor,
+            #             noise_inverse, noise_inverse_steps, noise_inverse_retouch, noise_inverse_renoise_strength, noise_inverse_renoise_kernel,
+            #             control_tensor_cpu,
+            #             enable_bbox_control, draw_background, causal_layers,
             if isinstance(obj, dict):
                 array = [
                     obj.get('enabled', False),
@@ -48,6 +55,7 @@ class MultiDiffusionFormatter(AlwaysonScriptArgsFormatter):
                 controls = obj['controls']
                 if len(controls) > 8:
                     raise ValueError('region length err')
+                # e, x, y, w, h, prompt, neg_prompt, blend_mode, feather_ratio, seed
                 for ctl in controls:
                     array.extend([
                         ctl['enable'],
