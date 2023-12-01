@@ -138,6 +138,7 @@ class PreprocessTask(UserDict):
                     file = get_tmp_local_path(image_key, dir=target_dir)
                     if os.path.isfile(file):
                         local_files.append(file)
+                        break
                 except Exception as err:
                     if i == retry_times - 1:
                         raise err
