@@ -459,9 +459,10 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
 
         # if shared.state.interrupted:
         #     break
-        if img.width<512 and img.height<512:  # 对于尺寸不够的图片进行upscale
-            ratio=2
-            img = deepbooru.resize_image(1, img, int(img.width*ratio), int(img.height*ratio),upscaler_name="xyx",models_path=model_path)
+        if img.width < 512 and img.height < 512:  # 对于尺寸不够的图片进行upscale
+            ratio = 2
+            img = deepbooru.resize_image(1, img, int(img.width * ratio), int(img.height * ratio), upscaler_name="xyx",
+                                         models_path=model_path)
 
         if img.height > img.width:
             ratio = (img.width * height) / (img.height * width)
@@ -553,9 +554,6 @@ def train_tagger(train_data_dir, model_dir, trigger_word=None, undesired_tags=No
     return
 
 
-
-
-
 def prepare_accelerator(logging_dir="./logs", log_prefix=None, gradient_accumulation_steps=1, mixed_precision="no"):
     if logging_dir is None:
         logging_dir = None
@@ -585,21 +583,23 @@ def prepare_accelerator(logging_dir="./logs", log_prefix=None, gradient_accumula
 
     return accelerator, unwrap_model
 
+
 import dlib
 
-def seg_face(input_path,output_path,model_path):
+
+def seg_face(input_path, output_path, model_path):
     # 加载人脸关键点检测器
-    predictor = dlib.shape_predictor(os.path.join(model_path,r"face_detect/shape_predictor_68_face_landmarks.dat"))
+    predictor = dlib.shape_predictor(os.path.join(model_path, r"face_detect/shape_predictor_68_face_landmarks.dat"))
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
     for f in os.listdir(input_path):
-        fi = os.path.join(input_path,f)
+        fi = os.path.join(input_path, f)
 
         # 加载图像
         image = cv2.imread(fi)
 
-        if not isinstance(image, (Image.Image, np.ndarray)):continue
+        if not isinstance(image, (Image.Image, np.ndarray)): continue
 
         # 将图像转换为灰度图
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -613,25 +613,25 @@ def seg_face(input_path,output_path,model_path):
 
         # 遍历检测到的人脸
         # print(len(faces))
-        if len(faces)!=1:continue
+        if len(faces) != 1: continue
         for face in faces:
             # 检测人脸关键点
             landmarks = predictor(gray, face)
-            
+
             # 提取人脸轮廓
             points = []
             for n in range(68):
                 x = landmarks.part(n).x
                 y = landmarks.part(n).y
                 points.append((x, y))
-            
+
             # 创建人脸蒙版
             hull = cv2.convexHull(np.array(points))
             cv2.fillConvexPoly(mask, hull, (255, 255, 255))
 
         # 将蒙版应用到原始图像上
         result = cv2.bitwise_and(image, mask)
-        cv2.imwrite(os.path.join(output_path,f), result)
+        cv2.imwrite(os.path.join(output_path, f), result)
 
 
 def train_callback(percentage):
@@ -654,7 +654,7 @@ def train_auto(
     height_train = 768
     width = 512
     height = 768
-    options = ["抠出头部", "放大", "磨皮"]  # 数据预处理方法 "抠出全身","抠出头部", "放大", "镜像", "旋转", "改变尺寸","磨皮"
+    options = ["抠出头部", "磨皮"]  # 数据预处理方法 "抠出全身","抠出头部", "放大", "镜像", "旋转", "改变尺寸","磨皮"
     head_width = 512
     head_height = 512
     trigger_word = ""
@@ -671,19 +671,18 @@ def train_auto(
     # 图片处理后的路径
     dirname = os.path.dirname(train_data_dir)
 
-    #抠出脸部
+    # 抠出脸部
     tmp_face_dir = os.path.join(dirname, f"{task_id}-tmp_face_dir")
-    seg_face(input_path=train_data_dir,output_path=tmp_face_dir,model_path=general_model_path)
+    seg_face(input_path=train_data_dir, output_path=tmp_face_dir, model_path=general_model_path)
 
-    #原图不再抠头
-    options = ["放大", "磨皮"] 
+    # 原图不再抠头
     image_list, _ = custom_configurable_image_processing(train_data_dir, options, width, height,
-                                                                 if_res_oribody=True, model_p=general_model_path)
-    #脸部图，抠头
-    options = ["抠出头部", "放大", "磨皮"] 
+                                                         if_res_oribody=True, model_p=general_model_path)
+    # 脸部图，抠头
+    options = ["抠出头部", "放大", "磨皮"]
     _, head_list = custom_configurable_image_processing(tmp_face_dir, options, head_width, head_height,
-                                                                 if_res_oribody=True, model_p=general_model_path)
-    
+                                                        if_res_oribody=True, model_p=general_model_path)
+
     train_dir = os.path.join(dirname, f"{task_id}-preprocess")
     os.makedirs(train_dir, exist_ok=True)
     process_dir = train_dir
@@ -729,7 +728,7 @@ def train_auto(
     else:
         pic_nums = len(contents) / 2
 
-    max_repeats = 40
+    max_repeats = 30
     repeats_n = min(int(20 * max_repeats / pic_nums), max_repeats)
 
     # 2.tagger反推
@@ -893,6 +892,8 @@ def train_auto(
     )
 
     return os.path.join(lora_path, lora_name + ".safetensors"), gender
+
+
 if __name__ == "__main__":
     MODEL_PATH = "/data/qll/stable-diffusion-webui/models/Stable-diffusion/Realistic_Vision_V2.0.safetensors"
     PIC_SAVE_PATH = "/data/qll/pics/yijian_sanciyuan_train"
@@ -903,13 +904,12 @@ if __name__ == "__main__":
     train_data_dir = "/root/qll/pics/shuqi"
     for i in range(1):
         train_auto(
-        train_data_dir=train_data_dir,  # 训练的图片路径
-        train_type=0,  # 训练的类别
-        task_id="test_new",   # 任务id,作为Lora名称
-        sd_model_path=MODEL_PATH, # 底模路径
-        lora_path=LORA_PATH, # 文件夹名字
-        general_model_path=model_p, # 通用路径,
-        train_callback=train_callback, # callback函数
-        other_args=None # 预留一个，以备用
-    )
-
+            train_data_dir=train_data_dir,  # 训练的图片路径
+            train_type=0,  # 训练的类别
+            task_id="test_new",  # 任务id,作为Lora名称
+            sd_model_path=MODEL_PATH,  # 底模路径
+            lora_path=LORA_PATH,  # 文件夹名字
+            general_model_path=model_p,  # 通用路径,
+            train_callback=train_callback,  # callback函数
+            other_args=None  # 预留一个，以备用
+        )
