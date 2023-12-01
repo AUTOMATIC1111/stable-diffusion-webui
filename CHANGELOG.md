@@ -1,6 +1,9 @@
 # Change Log for SD.Next
 
-## Update for 2023-11-30
+## Update for 2023-12-01
+
+What's new? Native video in SD.Next via both **AnimateDiff** and **Stable-Video-Diffusion** - and including native MP4 encoding and smooth video outputs out-of-the-box, not just animated-GIFs.  
+Also new is support for **SDXL-Turbo** as well as new **Kandinsky 3** models and cool latent correction via **HDR controls** for any *txt2img* workflows, best-of-class **SDXL model merge** using full ReBasin methods and further mobile UI optimizations.  
 
 - **Diffusers**
   - **HDR latent control**, based on [article](https://huggingface.co/blog/TimothyAlexisVass/explaining-the-sdxl-latent-space#long-prompts-at-high-guidance-scales-becoming-possible)  
@@ -16,7 +19,7 @@
     - lightweight implementation of AnimateDiff basic models *(1.4, 1.5, 1.5.2)*
     - supports SD 1.5 only  
     - models are auto-downloaded on first use  
-    - can create animated GIF and MP4 video files  
+    - for video saving support, see video support section
     - can be combined with IP-Adapter for even better results!  
     - for AnimateDiff support in *Original* backend, use standard *AnimateDiff* extension  
   - [SDXL Turbo](https://huggingface.co/stabilityai/sdxl-turbo) support  
@@ -26,6 +29,7 @@
   - [Stable Video Diffusion](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid) and [Stable Video Diffusion XT](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt) support  
     - download using built-in model downloader or simply select from *networks -> reference*  
       support for manually downloaded safetensors models will be added later  
+    - for video saving support, see video support section
     - go to *image* tab, enter input image and select *script* -> *stable video diffusion*
   - [Kandinsky 3](https://huggingface.co/kandinsky-community/kandinsky-3) support  
     - download using built-in model downloader or simply select from *networks -> reference*  
@@ -36,7 +40,11 @@
   - support long seconary prompt for refiner  
 - **Video support**
   - applies to any model that supports video generation, e.g. AnimateDiff and StableVideoDiffusion  
-  - support for GIF and MP4  
+  - support for **animated-GIF**, **animated-PNG** and **MP4**  
+  - GIF and PNG can be looped  
+  - MP4 can have additional padding at the start/end as well as motion-aware interpolated frames for smooth playback  
+    interpolation is done using [RIFE](https://arxiv.org/abs/2011.06294) with native implementation in SD.Next  
+    And its fast - interpolation from 16 frames with 10x frames to target 160 frames results takes 2-3sec
   - output folder for videos is in *settings -> image paths -> video*  
 - **General**
   - **model merge** add **SD-XL ReBasin** support, thanks @AI-Casanova  
