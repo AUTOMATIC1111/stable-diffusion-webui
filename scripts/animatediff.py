@@ -2,10 +2,7 @@
 Lightweight AnimateDiff implementation in Diffusers
 Docs: <https://huggingface.co/docs/diffusers/api/pipelines/animatediff>
 TODO:
-- Use latents and update VAE decode
 - SDXL
-- MP4 with RIFE
-- IP Adapter
 - Custom models
 - Custom LORAs
 - Enable second pass
@@ -22,8 +19,8 @@ from modules import scripts, processing, shared, devices, sd_models
 ADAPTERS = {
     'None': None,
     'Motion 1.4': 'guoyww/animatediff-motion-adapter-v1-4',
-    'Motion 1.5': 'guoyww/animatediff-motion-adapter-v1-5',
-    'Motion 1.5.2' :'guoyww/animatediff-motion-adapter-v1-5-2',
+    'Motion 1.5 v1': 'guoyww/animatediff-motion-adapter-v1-5',
+    'Motion 1.5 v2' :'guoyww/animatediff-motion-adapter-v1-5-2',
     'TemporalDiff': 'vladmandic/temporaldiff',
     'AnimateFace': 'vladmandic/animateface',
 }
@@ -40,19 +37,19 @@ LORAS = {
 }
 
 # state
-motion_adapter = None
-loaded_adapter = None
-orig_pipe = None
+motion_adapter = None # instance of diffusers.MotionAdapter
+loaded_adapter = None # name of loaded adapter
+orig_pipe = None # original sd_model pipeline
 
 
-def set_adapter(name: str = None):
+def set_adapter(adapter_name: str = 'None'):
     if shared.sd_model is None:
         return
     if shared.backend != shared.Backend.DIFFUSERS:
         shared.log.warning('AnimateDiff: not in diffusers mode')
         return
     global motion_adapter, loaded_adapter, orig_pipe # pylint: disable=global-statement
-    adapter_name = name if name is not None and isinstance(name, str) else loaded_adapter
+    # adapter_name = name if name is not None and isinstance(name, str) else loaded_adapter
     if adapter_name is None or adapter_name == 'None' or shared.sd_model is None:
         motion_adapter = None
         loaded_adapter = None
@@ -64,11 +61,17 @@ def set_adapter(name: str = None):
     if shared.sd_model_type != 'sd':
         shared.log.warning(f'AnimateDiff: unsupported model type: {shared.sd_model.__class__.__name__}')
         return
-    if motion_adapter is not None and loaded_adapter == adapter_name:
+    if motion_adapter is not None and loaded_adapter == adapter_name and shared.sd_model.__class__.__name__ == 'AnimateDiffPipeline':
         shared.log.debug(f'AnimateDiff cache: adapter="{adapter_name}"')
         return
+    if getattr(shared.sd_model, 'image_encoder', None) is not None:
+        shared.log.debug('AnimateDiff: unloading IP adapter')
+        # shared.sd_model.image_encoder = None
+        shared.sd_model.unet.set_default_attn_processor()
+        shared.sd_model.unet.config.encoder_hid_dim_type = None
     try:
         shared.log.info(f'AnimateDiff load: adapter="{adapter_name}"')
+        motion_adapter = None
         motion_adapter = diffusers.MotionAdapter.from_pretrained(adapter_name, cache_dir=shared.opts.diffusers_dir, torch_dtype=devices.dtype, low_cpu_mem_usage=False, device_map=None)
         motion_adapter.to(shared.device)
         sd_models.set_diffuser_options(motion_adapter, vae=None, op='adapter')

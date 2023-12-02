@@ -6,7 +6,6 @@ Lightweight IP-Adapter applied to existing pipeline in Diffusers
 TODO:
 - Additional IP addapters
 - SD/SDXL autodetect
-- Support for AnimateDiff
 """
 
 import gradio as gr
@@ -31,17 +30,12 @@ ADAPTERS = [
 
 
 class Script(scripts.Script):
-    # see below for all available options and callbacks
-    # <https://github.com/vladmandic/automatic/blob/master/modules/scripts.py#L26>
-
     def title(self):
         return 'IP Adapter'
 
     def show(self, is_img2img):
-
         return scripts.AlwaysVisible if shared.backend == shared.Backend.DIFFUSERS else False
 
-    # return signature is array of gradio components
     def ui(self, _is_img2img):
         with gr.Accordion('IP Adapter', open=False, elem_id='ipadapter'):
             with gr.Row():
@@ -56,7 +50,7 @@ class Script(scripts.Script):
         from transformers import CLIPVisionModelWithProjection
 
         # init code
-        global loaded # pylint: disable=global-statement
+        global loaded, image_encoder # pylint: disable=global-statement
         if shared.sd_model is None:
             return
         if shared.backend != shared.Backend.DIFFUSERS:
@@ -85,7 +79,6 @@ class Script(scripts.Script):
             else:
                 shared.log.error(f'IP adapter: unsupported model type: {shared.sd_model_type}')
                 return
-            global image_encoder # pylint: disable=global-statement
             if image_encoder is None:
                 try:
                     image_encoder = CLIPVisionModelWithProjection.from_pretrained("h94/IP-Adapter", subfolder=subfolder, torch_dtype=torch.float16, cache_dir=shared.opts.diffusers_dir, use_safetensors=True).to(devices.device)
@@ -95,10 +88,11 @@ class Script(scripts.Script):
 
         # main code
         subfolder, model = adapter.split('/')
-        if model != loaded:
+        if model != loaded or getattr(shared.sd_model.unet.config, 'encoder_hid_dim_type', None) is None:
             if loaded is not None:
                 shared.log.debug('IP adapter: reset attention processor')
                 shared.sd_model.unet.set_default_attn_processor()
+                loaded = None
             shared.log.info(f'IP adapter load: adapter="{model}" scale={scale} image={image}')
             shared.sd_model.image_encoder = image_encoder
             shared.sd_model.load_ip_adapter("h94/IP-Adapter", subfolder=subfolder, weight_name=f'{model}.safetensors')
