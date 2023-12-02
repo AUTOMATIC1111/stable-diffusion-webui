@@ -1,7 +1,7 @@
 Making your own inpainting model is very simple:
 
 
-![screenshot](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/40751091/4bdbab38-9237-48ea-9698-a036a5c96585)
+![screenshot](images/making-your-own-inpainting-model.png)
 
 1. Go to Checkpoint Merger
 2. Select "Add Difference"

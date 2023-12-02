@@ -609,7 +609,7 @@ This implementation of optimization does not require any modification to the ori
 With this lightweight VAE enabled via settings, it typically allows for very large, fast generations with a small quality loss.
 This gain can be very large, maximum generations with --lowvram can increase from `1152x1152` to `2560x2560`
 
-![image](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/98228077/016fa4be-155d-433b-88b9-00cf7b452a8a)
+![image](images/taesd-vae.png)
 
 
 # Face restoration
@@ -637,7 +637,7 @@ Gradio's loading graphic has a very negative effect on the processing speed of t
 My RTX 3090 makes images about 10% faster when the tab with gradio is not active. By default, the UI now hides loading progress animation and replaces it with static "Loading..." text, which achieves the same effect. Use the `--no-progressbar-hiding` commandline option to revert this and show loading animations.
 
 # Caching Models
-![image](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/98228077/aaee8ca8-eb9e-4f22-8b7b-dfce51211e63)
+![image](images/caching-modles.png)
 
 If you want faster swapping between models, increase the counter in settings. Webui will keep models you've swapped from in ram. 
 

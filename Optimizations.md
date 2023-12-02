@@ -18,7 +18,7 @@ A number of optimization can be enabled by [commandline arguments](Command-Line-
 | `--upcast-sampling`           | For Nvidia and AMD cards normally forced to run with `--no-half`, [should improve generation speed](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/8782).    
                                                                                                                                                                                                                                                                                                                                       
 As of [version 1.3.0](https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases/tag/v1.3.0), `Cross attention optimization` can be selected under settings. xFormers still needs to enabled via `COMMANDLINE_ARGS`.
-![2023-06-21 22_53_54_877 chrome](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/40751091/c72576e1-0f51-4643-ad91-e9aaec4fc125)
+![change-cross-attention-optimization](images/change-cross-attention-optimization.png)
 
 
 Extra tips (Windows): 
