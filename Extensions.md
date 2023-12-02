@@ -976,7 +976,7 @@ https://github.com/AIrjen/OneButtonPrompt
 One Button Prompt is a tool/script for automatic1111 for beginners who have problems writing a good prompt, or advanced users who want to get inspired.
 
 It generates an entire prompt from scratch. It is random, but controlled. You simply load up the script and press generate, and let it surprise you.
-![One Button Prompt](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/40751091/9491d781-c0ad-4f22-93c4-b361635fc265)
+![One Button Prompt](images/extensions-one-button-prompt.jpg)
 
 
 
@@ -1003,4 +1003,4 @@ Able to "compose" prompts, take them from [lexica](https://lexica.art/), there i
 https://github.com/missionfloyd/webui-qrcode-generator
 
 Instantly generate QR Codes for ControlNet.
-![QR Code Generator](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/4073789/0ef6ff8a-276f-4386-9f24-021923c7dca0)
+![QR Code Generator](images/extensions-qr-code-generator.png)
