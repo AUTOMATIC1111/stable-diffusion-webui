@@ -46,8 +46,6 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "grid_text_inactive_color": OptionInfo("#999999", "Inactive text color for image grids", ui_components.FormColorPicker, {}),
     "grid_background_color": OptionInfo("#ffffff", "Background color for image grids", ui_components.FormColorPicker, {}),
 
-    "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
-    "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
     "save_images_before_face_restoration": OptionInfo(False, "Save a copy of image before doing face restoration."),
     "save_images_before_highres_fix": OptionInfo(False, "Save a copy of image before applying highres fix."),
     "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),
@@ -288,11 +286,21 @@ options_templates.update(options_section(('ui', "User interface", "ui"), {
 
 
 options_templates.update(options_section(('infotext', "Infotext", "ui"), {
-    "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
-    "add_model_name_to_info": OptionInfo(True, "Add model name to generation information"),
-    "add_user_name_to_info": OptionInfo(False, "Add user name to generation information when authenticated"),
-    "add_version_to_infotext": OptionInfo(True, "Add program version to generation information"),
+    "infotext_explanation": OptionHTML("""
+Infotext is what this software calls the text that contains generation parameters and can be used to generate the same picture again.
+It is displayed in UI below the image. To use infotext, paste it into the prompt and click the ↙️ paste button.
+"""),
+    "enable_pnginfo": OptionInfo(True, "Write infotext to metadata of the generated image"),
+    "save_txt": OptionInfo(False, "Create a text file with infotext next to every generated image"),
+
+    "add_model_name_to_info": OptionInfo(True, "Add model name to infotext"),
+    "add_model_hash_to_info": OptionInfo(True, "Add model hash to infotext"),
+    "add_vae_name_to_info": OptionInfo(True, "Add VAE name to infotext"),
+    "add_vae_hash_to_info": OptionInfo(True, "Add VAE hash to infotext"),
+    "add_user_name_to_info": OptionInfo(False, "Add user name to infotext when authenticated"),
+    "add_version_to_infotext": OptionInfo(True, "Add program version to infotext"),
     "disable_weights_auto_swap": OptionInfo(True, "Disregard checkpoint information from pasted infotext").info("when reading generation parameters from text into UI"),
+    "infotext_skip_pasting": OptionInfo([], "Disregard fields from pasted infotext", ui_components.DropdownMulti, lambda: {"choices": shared_items.get_infotext_names()}),
     "infotext_styles": OptionInfo("Apply if any", "Infer styles from prompts of pasted infotext", gr.Radio, {"choices": ["Ignore", "Apply", "Discard", "Apply if any"]}).info("when reading generation parameters from text into UI)").html("""<ul style='margin-left: 1.5em'>
 <li>Ignore: keep prompt and styles dropdown as it is.</li>
 <li>Apply: remove style text from prompt, always replace styles dropdown value with found styles (even if none are found).</li>
