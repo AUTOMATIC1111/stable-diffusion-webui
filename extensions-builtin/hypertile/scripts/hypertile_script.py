@@ -1,5 +1,6 @@
 import hypertile
 from modules import scripts, script_callbacks, shared
+from scripts.hypertile_xyz import add_axis_options
 
 
 class ScriptHypertile(scripts.Script):
@@ -17,7 +18,10 @@ class ScriptHypertile(scripts.Script):
         configure_hypertile(p.width, p.height, enable_unet=shared.opts.hypertile_enable_unet)
 
     def before_hr(self, p, *args):
-        configure_hypertile(p.hr_upscale_to_x, p.hr_upscale_to_y, enable_unet=shared.opts.hypertile_enable_unet_secondpass or shared.opts.hypertile_enable_unet)
+        # exclusive hypertile seed for the second pass
+        if not shared.opts.hypertile_enable_unet:
+            hypertile.set_hypertile_seed(p.all_seeds[0])
+        configure_hypertile(p.hr_upscale_to_x, p.hr_upscale_to_y, enable_unet=shared.opts.hypertile_enable_unet_secondpass)
 
 
 def configure_hypertile(width, height, enable_unet=True):
@@ -57,12 +61,12 @@ def on_ui_settings():
         "hypertile_enable_unet_secondpass": shared.OptionInfo(False, "Enable Hypertile U-Net for hires fix second pass"),
         "hypertile_max_depth_unet": shared.OptionInfo(3, "Hypertile U-Net max depth", gr.Slider, {"minimum": 0, "maximum": 3, "step": 1}),
         "hypertile_max_tile_unet": shared.OptionInfo(256, "Hypertile U-net max tile size", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
-        "hypertile_swap_size_unet": shared.OptionInfo(3, "Hypertile U-net swap size", gr.Slider, {"minimum": 0, "maximum": 6, "step": 1}),
+        "hypertile_swap_size_unet": shared.OptionInfo(3, "Hypertile U-net swap size", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),
 
         "hypertile_enable_vae": shared.OptionInfo(False, "Enable Hypertile VAE").info("minimal change in the generated picture"),
         "hypertile_max_depth_vae": shared.OptionInfo(3, "Hypertile VAE max depth", gr.Slider, {"minimum": 0, "maximum": 3, "step": 1}),
         "hypertile_max_tile_vae": shared.OptionInfo(128, "Hypertile VAE max tile size", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
-        "hypertile_swap_size_vae": shared.OptionInfo(3, "Hypertile VAE swap size ", gr.Slider, {"minimum": 0, "maximum": 6, "step": 1}),
+        "hypertile_swap_size_vae": shared.OptionInfo(3, "Hypertile VAE swap size ", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),
     }
 
     for name, opt in options.items():
@@ -71,3 +75,4 @@ def on_ui_settings():
 
 
 script_callbacks.on_ui_settings(on_ui_settings)
+script_callbacks.on_before_ui(add_axis_options)

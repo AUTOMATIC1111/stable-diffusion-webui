@@ -55,7 +55,7 @@ def get_optimal_device():
 
 
 def get_device_for(task):
-    if task in shared.cmd_opts.use_cpu:
+    if task in shared.cmd_opts.use_cpu or "all" in shared.cmd_opts.use_cpu:
         return cpu
 
     return get_optimal_device()
