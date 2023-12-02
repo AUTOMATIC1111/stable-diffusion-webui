@@ -151,8 +151,13 @@ class ExtraNetworksPage:
                         continue
 
                     subdir = os.path.abspath(x)[len(parentdir):].replace("\\", "/")
-                    while subdir.startswith("/"):
-                        subdir = subdir[1:]
+
+                    if shared.opts.extra_networks_dir_button_function:
+                        if not subdir.startswith("/"):
+                            subdir = "/" + subdir
+                    else:
+                        while subdir.startswith("/"):
+                            subdir = subdir[1:]
 
                     is_empty = len(os.listdir(x)) == 0
                     if not is_empty and not subdir.endswith("/"):
