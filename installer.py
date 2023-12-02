@@ -518,6 +518,7 @@ def check_torch():
         install('openvino==2023.2.0', 'openvino')
         install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True) # TODO openvino: numpy version conflicts with tensorflow and doesn't support Python 3.11
         os.environ.setdefault('PYTORCH_TRACING_MODE', 'TORCHFX')
+        os.environ.setdefault('SD_LORA_DIFFUSERS', '1')
         os.environ.setdefault('NEOReadDebugKeys', '1')
         os.environ.setdefault('ClDeviceGlobalMemSizeAvailablePercent', '100')
     if args.profile:
