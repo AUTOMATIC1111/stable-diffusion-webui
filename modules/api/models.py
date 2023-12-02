@@ -1,6 +1,6 @@
 import inspect
 
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, Field, create_model, ConfigDict
 from typing import Any, Optional, Literal
 from inflection import underscore
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img
@@ -92,9 +92,7 @@ class PydanticModelGenerator:
         fields = {
             d.field: (d.field_type, Field(default=d.field_value, alias=d.field_alias, exclude=d.field_exclude)) for d in self._model_def
         }
-        DynamicModel = create_model(self._model_name, **fields)
-        DynamicModel.__config__.allow_population_by_field_name = True
-        DynamicModel.__config__.allow_mutation = True
+        DynamicModel = create_model(self._model_name, __config__=ConfigDict(populate_by_name=True, frozen=True), **fields)
         return DynamicModel
 
 StableDiffusionTxt2ImgProcessingAPI = PydanticModelGenerator(
@@ -232,6 +230,9 @@ class SamplerItem(BaseModel):
     options: dict[str, str] = Field(title="Options")
 
 class UpscalerItem(BaseModel):
+    class Config:
+        protected_namespaces = ()
+
     name: str = Field(title="Name")
     model_name: Optional[str] = Field(title="Model Name")
     model_path: Optional[str] = Field(title="Path")
@@ -242,6 +243,9 @@ class LatentUpscalerModeItem(BaseModel):
     name: str = Field(title="Name")
 
 class SDModelItem(BaseModel):
+    class Config:
+        protected_namespaces = ()
+
     title: str = Field(title="Title")
     model_name: str = Field(title="Model Name")
     hash: Optional[str] = Field(title="Short hash")
@@ -250,6 +254,9 @@ class SDModelItem(BaseModel):
     config: Optional[str] = Field(title="Config file")
 
 class SDVaeItem(BaseModel):
+    class Config:
+        protected_namespaces = ()
+
     model_name: str = Field(title="Model Name")
     filename: str = Field(title="Filename")
 

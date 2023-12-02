@@ -8,7 +8,7 @@ clean-fid
 einops
 fastapi>=0.90.1
 gfpgan
-gradio==3.41.2
+gradio==4.7.1
 inflection
 jsonmerge
 kornia
