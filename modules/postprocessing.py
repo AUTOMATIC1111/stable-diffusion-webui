@@ -60,8 +60,10 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
 
         if opts.use_original_name_batch and name is not None:
             basename = os.path.splitext(os.path.basename(name))[0]
+            forced_filename = basename
         else:
             basename = ''
+            forced_filename = None
 
         infotext = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in pp.info.items() if v is not None])
 
@@ -70,7 +72,7 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
             pp.image.info["postprocessing"] = infotext
 
         if save_output:
-            images.save_image(pp.image, path=outpath, basename=basename, seed=None, prompt=None, extension=opts.samples_format, info=infotext, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=None)
+            images.save_image(pp.image, path=outpath, basename=basename, extension=opts.samples_format, info=infotext, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=forced_filename)
 
         if extras_mode != 2 or show_extras_results:
             outputs.append(pp.image)
