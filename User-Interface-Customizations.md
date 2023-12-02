@@ -4,8 +4,8 @@
 `Setting User` -> `interface` -> `Quick settings list`
 Any settings can be placed in the `Quick Settings`, changes to the settings hear will be immediately saved and applied and save to config.
 
-![image](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/40751091/5362c4f0-9205-4e4e-a553-135864b6c762)
-![image](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/40751091/e0a55f69-269d-492f-ac0a-8bffc03f2962)
+![quick-settings-list-1](images/quick-settings-list-1.png)
+![quick-settings-list-2](images/quick-settings-list-2.png)
 
 By default we placed `Stable Diffusion checkpoint` in `Quick Settings`
 
@@ -25,8 +25,8 @@ most if not all settings can be added here if needed
 
 Previously `Face Restoration` and `Tiling` are built into the interface and cannot be modified, for users that finds them useful you can add them back manually
 
-![image](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/40751091/cddff6ad-7901-4f8b-bc25-61c90818add0)
-![image](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/40751091/16872063-4fba-4924-8129-b8ec9fa0e7eb)
+![additional-options-1](images/additional-options-1.png)
+![additional-options-2](images/additional-options-2.png)
 
 We also support additional option to change the look of how the options is displayed
 
@@ -39,7 +39,7 @@ It is possible to customize the look of webui without using extensions suche as 
 
 this can be done via gradio themes
 
-![image](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/40751091/bafc7c41-ae19-4514-8060-9782b90d1f50)
+![gradio-themes](images/gradio-themes.png)
 
 We provide a small list of options choose from but you can manually input other themes from [gradio/theme-gallery](https://huggingface.co/spaces/gradio/theme-gallery)
 if you find one you like you can inpot the corresponding `XXX/YYY` from the url `https://huggingface.co/spaces/XXX/YYY` in to ther dropdown menu
