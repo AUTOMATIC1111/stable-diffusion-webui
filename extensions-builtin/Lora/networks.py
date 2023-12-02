@@ -152,7 +152,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
                     break
             if not recompile_model:
                 if len(loaded_networks) > 0 and debug:
-                    shared.log.debug(f'OpenVINO: Skipping LoRa loading')
+                    shared.log.debug('OpenVINO: Skipping LoRa loading')
                 return
         else:
             recompile_model = True
