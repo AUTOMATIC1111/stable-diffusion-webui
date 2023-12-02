@@ -150,6 +150,10 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
                     recompile_model = True
                     shared.compiled_model_state.lora_model = []
                     break
+            if not recompile_model:
+                if len(loaded_networks) > 0 and debug:
+                    shared.log.debug(f'OpenVINO: Skipping LoRa loading')
+                return
         else:
             recompile_model = True
             shared.compiled_model_state.lora_model = []
