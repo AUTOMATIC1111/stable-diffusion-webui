@@ -11,12 +11,13 @@ Also new is support for **SDXL-Turbo** as well as new **Kandinsky 3** models and
     - allows control of *latent clamping*, *color centering* and *range maximimization*  
     - supported by *XYZ grid*  
   - **IP adapter**
-    - lightweight implementation of T2I adapters which can guide generation towards specific image style  
+    - lightweight native implementation of T2I adapters which can guide generation towards specific image style  
     - supports most T2I models, not limited to SD 1.5  
     - models are auto-downloaded on first use
     - for IP adapter support in *Original* backend, use standard *ControlNet* extension  
   - **AnimateDiff**
-    - lightweight implementation of AnimateDiff basic models *(1.4, 1.5, 1.5.2)*
+    - lightweight native implementation of AnimateDiff models:  
+      *AnimateDiff 1.4, 1.5 v1, 1.5 v2, AnimateFace*
     - supports SD 1.5 only  
     - models are auto-downloaded on first use  
     - for video saving support, see video support section

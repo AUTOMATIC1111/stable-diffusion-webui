@@ -21,6 +21,7 @@ ADAPTERS = {
     'Motion 1.4': 'guoyww/animatediff-motion-adapter-v1-4',
     'Motion 1.5 v1': 'guoyww/animatediff-motion-adapter-v1-5',
     'Motion 1.5 v2' :'guoyww/animatediff-motion-adapter-v1-5-2',
+    # 'Motion SD-XL Beta v1' :'vladmandic/animatediff-sdxl',
     'TemporalDiff': 'vladmandic/temporaldiff',
     'AnimateFace': 'vladmandic/animateface',
 }
@@ -58,7 +59,7 @@ def set_adapter(adapter_name: str = 'None'):
             shared.sd_model = orig_pipe
             orig_pipe = None
         return
-    if shared.sd_model_type != 'sd':
+    if shared.sd_model_type != 'sd' and shared.sd_model_type != 'sdxl':
         shared.log.warning(f'AnimateDiff: unsupported model type: {shared.sd_model.__class__.__name__}')
         return
     if motion_adapter is not None and loaded_adapter == adapter_name and shared.sd_model.__class__.__name__ == 'AnimateDiffPipeline':
