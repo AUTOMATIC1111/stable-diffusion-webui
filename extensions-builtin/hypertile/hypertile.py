@@ -6,7 +6,6 @@ Original author: @tfernd Github: https://github.com/tfernd/HyperTile
 
 from __future__ import annotations
 
-import functools
 from dataclasses import dataclass
 from typing import Callable
 
@@ -189,6 +188,19 @@ DEPTH_LAYERS_XL = {
 
 RNG_INSTANCE = random.Random()
 
+@cache
+def get_divisors(value: int, min_value: int, /, max_options: int = 1) -> list[int]:
+    """
+    Returns divisors of value that
+        x * min_value <= value
+    in big -> small order, amount of divisors is limited by max_options
+    """
+    max_options = max(1, max_options) # at least 1 option should be returned
+    min_value = min(min_value, value)
+    divisors = [i for i in range(min_value, value + 1) if value % i == 0] # divisors in small -> big order
+    ns = [value // i for i in divisors[:max_options]]  # has at least 1 element # big -> small order
+    return ns
+
 
 def random_divisor(value: int, min_value: int, /, max_options: int = 1) -> int:
     """
@@ -196,13 +208,7 @@ def random_divisor(value: int, min_value: int, /, max_options: int = 1) -> int:
         x * min_value <= value
     if max_options is 1, the behavior is deterministic
     """
-    min_value = min(min_value, value)
-
-    # All big divisors of value (inclusive)
-    divisors = [i for i in range(min_value, value + 1) if value % i == 0] # divisors in small -> big order
-
-    ns = [value // i for i in divisors[:max_options]]  # has at least 1 element # big -> small order
-
+    ns = get_divisors(value, min_value, max_options=max_options) # get cached divisors
     idx = RNG_INSTANCE.randint(0, len(ns) - 1)
 
     return ns[idx]
@@ -212,7 +218,7 @@ def set_hypertile_seed(seed: int) -> None:
     RNG_INSTANCE.seed(seed)
 
 
-@functools.cache
+@cache
 def largest_tile_size_available(width: int, height: int) -> int:
     """
     Calculates the largest tile size available for a given width and height
