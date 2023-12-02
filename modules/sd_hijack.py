@@ -38,6 +38,10 @@ ldm.models.diffusion.ddpm.print = shared.ldm_print
 optimizers = []
 current_optimizer: sd_hijack_optimizations.SdOptimization = None
 
+sgm_original_forward = None
+ldm_original_forward = None
+
+
 def list_optimizers():
     new_optimizers = script_callbacks.list_optimizers_callback()
 
@@ -255,8 +259,13 @@ class StableDiffusionModelHijack:
 
         import modules.models.diffusion.ddpm_edit
 
-        ldm_original_forward = patches.patch(__file__, ldm.modules.diffusionmodules.openaimodel.UNetModel, "forward", sd_unet.UNetModel_forward)
-        sgm_original_forward = patches.patch(__file__, sgm.modules.diffusionmodules.openaimodel.UNetModel, "forward", sd_unet.UNetModel_forward)
+        global sgm_original_forward
+        global ldm_original_forward
+        try:
+            ldm_original_forward = patches.patch(__file__, ldm.modules.diffusionmodules.openaimodel.UNetModel, "forward", sd_unet.UNetModel_forward)
+            sgm_original_forward = patches.patch(__file__, sgm.modules.diffusionmodules.openaimodel.UNetModel, "forward", sd_unet.UNetModel_forward)
+        except RuntimeError:
+            pass
 
         if isinstance(m, ldm.models.diffusion.ddpm.LatentDiffusion):
             sd_unet.original_forward = ldm_original_forward
@@ -266,7 +275,6 @@ class StableDiffusionModelHijack:
             sd_unet.original_forward = sgm_original_forward
         else:
             sd_unet.original_forward = None
-
 
     def undo_hijack(self, m):
         conditioner = getattr(m, 'conditioner', None)
