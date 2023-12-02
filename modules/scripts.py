@@ -560,54 +560,58 @@ class ScriptRunner:
             on_after.clear()
 
     def create_script_ui(self, script):
-        import modules.api.models as api_models
 
         script.args_from = len(self.inputs)
         script.args_to = len(self.inputs)
+
+        try:
+            self.create_script_ui_inner(script)
+        except Exception:
+            errors.report(f"Error creating UI for {script.name}: ", exc_info=True)
+
+    def create_script_ui_inner(self, script):
+        import modules.api.models as api_models
 
         controls = wrap_call(script.ui, script.filename, "ui", script.is_img2img)
 
         if controls is None:
             return
 
-        try:
-            script.name = wrap_call(script.title, script.filename, "title", default=script.filename).lower()
-            api_args = []
+        script.name = wrap_call(script.title, script.filename, "title", default=script.filename).lower()
 
-            for control in controls:
-                control.custom_script_source = os.path.basename(script.filename)
+        api_args = []
 
-                arg_info = api_models.ScriptArg(label=control.label or "")
+        for control in controls:
+            control.custom_script_source = os.path.basename(script.filename)
 
-                for field in ("value", "minimum", "maximum", "step"):
-                    v = getattr(control, field, None)
-                    if v is not None:
-                        setattr(arg_info, field, v)
+            arg_info = api_models.ScriptArg(label=control.label or "")
 
-                choices = getattr(control, 'choices', None)  # as of gradio 3.41, some items in choices are strings, and some are tuples where the first elem is the string
-                if choices is not None:
-                    arg_info.choices = [x[0] if isinstance(x, tuple) else x for x in choices]
+            for field in ("value", "minimum", "maximum", "step"):
+                v = getattr(control, field, None)
+                if v is not None:
+                    setattr(arg_info, field, v)
 
-                api_args.append(arg_info)
+            choices = getattr(control, 'choices', None)  # as of gradio 3.41, some items in choices are strings, and some are tuples where the first elem is the string
+            if choices is not None:
+                arg_info.choices = [x[0] if isinstance(x, tuple) else x for x in choices]
 
-            script.api_info = api_models.ScriptInfo(
-                name=script.name,
-                is_img2img=script.is_img2img,
-                is_alwayson=script.alwayson,
-                args=api_args,
-            )
+            api_args.append(arg_info)
 
-            if script.infotext_fields is not None:
-                self.infotext_fields += script.infotext_fields
+        script.api_info = api_models.ScriptInfo(
+            name=script.name,
+            is_img2img=script.is_img2img,
+            is_alwayson=script.alwayson,
+            args=api_args,
+        )
 
-            if script.paste_field_names is not None:
-                self.paste_field_names += script.paste_field_names
+        if script.infotext_fields is not None:
+            self.infotext_fields += script.infotext_fields
 
-            self.inputs += controls
-            script.args_to = len(self.inputs)
+        if script.paste_field_names is not None:
+            self.paste_field_names += script.paste_field_names
 
-        except Exception:
-            errors.report(f"Error creating UI for {script.name}: ", exc_info=True)
+        self.inputs += controls
+        script.args_to = len(self.inputs)
 
     def setup_ui_for_section(self, section, scriptlist=None):
         if scriptlist is None:
