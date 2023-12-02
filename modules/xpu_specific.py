@@ -4,7 +4,7 @@ from modules.sd_hijack_utils import CondFunc
 has_ipex = False
 try:
     import torch
-    import intel_extension_for_pytorch as ipex
+    import intel_extension_for_pytorch as ipex # noqa: F401
     has_ipex = True
 except Exception:
     pass
