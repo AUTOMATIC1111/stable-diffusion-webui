@@ -170,6 +170,23 @@ function submit_img2img() {
     return res;
 }
 
+function submit_extras() {
+    showSubmitButtons('extras', false);
+
+    var id = randomId();
+
+    requestProgress(id, gradioApp().getElementById('extras_gallery_container'), gradioApp().getElementById('extras_gallery'), function() {
+        showSubmitButtons('extras', true);
+    });
+
+    var res = create_submit_args(arguments);
+
+    res[0] = id;
+
+    console.log(res);
+    return res;
+}
+
 function restoreProgressTxt2img() {
     showRestoreProgressButton("txt2img", false);
     var id = localGet("txt2img_task_id");
