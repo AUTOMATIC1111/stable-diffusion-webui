@@ -374,6 +374,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
 
     if shared.cmd_opts.no_half:
         model.float()
+        model.alphas_cumprod_original = alphas_cumprod
         devices.dtype_unet = torch.float32
         timer.record("apply float()")
     else:
