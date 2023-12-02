@@ -884,7 +884,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             if hasattr(p.sd_model, 'alphas_cumprod') and not hasattr(p.sd_model, 'alphas_cumprod_original'):
                 p.sd_model.alphas_cumprod_original = p.sd_model.alphas_cumprod
-                
+
             p.sd_model.alphas_cumprod = p.sd_model.alphas_cumprod_original.to(shared.device)
 
             if opts.use_downcasted_alpha_bar:
