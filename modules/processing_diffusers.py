@@ -85,6 +85,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             return kwargs
         kwargs = correction_callback(p, timestep, kwargs)
         shared.state.current_latent = kwargs['latents']
+        if shared.cmd_opts.profile and shared.profiler is not None:
+            shared.profiler.step()
         return kwargs
 
     def full_vae_decode(latents, model):
@@ -139,6 +141,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         return encoded
 
     def vae_decode(latents, model, output_type='np', full_quality=True):
+        t0 = time.time()
         prev_job = shared.state.job
         shared.state.job = 'vae'
         if not torch.is_tensor(latents): # already decoded
@@ -163,6 +166,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         # decoded = validate_sample(decoded)
         imgs = model.image_processor.postprocess(decoded, output_type=output_type)
         shared.state.job = prev_job
+        if shared.cmd_opts.profile:
+            t1 = time.time()
+            shared.log.debug(f'Profile: VAE decode: {t1-t0:.2f}')
         return imgs
 
     def vae_encode(image, model, full_quality=True): # pylint: disable=unused-variable
@@ -269,6 +275,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         return task_args
 
     def set_pipeline_args(model, prompts: list, negative_prompts: list, prompts_2: typing.Optional[list]=None, negative_prompts_2: typing.Optional[list]=None, desc:str='', **kwargs):
+        t0 = time.time()
         if hasattr(model, "set_progress_bar_config"):
             model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining} ' + '\x1b[38;5;71m' + desc, ncols=80, colour='#327fba')
         args = {}
@@ -379,6 +386,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             shared.log.debug(txt)
         # components = [{ k: getattr(v, 'device', None) } for k, v in model.components.items()]
         # shared.log.debug(f'Diffuser pipeline components: {components}')
+        if shared.cmd_opts.profile:
+            t1 = time.time()
+            shared.log.debug(f'Profile: pipeline args: {t1-t0:.2f}')
         return args
 
     def recompile_model(hires=False):
@@ -502,7 +512,11 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     p.extra_generation_params['Pipeline'] = shared.sd_model.__class__.__name__
     p.extra_generation_params["Sampler Eta"] = shared.opts.scheduler_eta if shared.opts.scheduler_eta is not None and shared.opts.scheduler_eta > 0 and shared.opts.scheduler_eta < 1 else None
     try:
+        t0 = time.time()
         output = shared.sd_model(**base_args) # pylint: disable=not-callable
+        if shared.cmd_opts.profile:
+            t1 = time.time()
+            shared.log.debug(f'Profile: pipeline call: {t1-t0:.2f}')
         if not hasattr(output, 'images') and hasattr(output, 'frames'):
             shared.log.debug(f'Generated: frames={len(output.frames[0])}')
             output.images = output.frames[0]

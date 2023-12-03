@@ -311,6 +311,9 @@ def webui(restart=False):
     modules.sd_models.write_metadata()
     load_model()
     shared.opts.save(shared.config_filename)
+    if cmd_opts.profile:
+        for k, v in modules.script_callbacks.callback_map.items():
+            shared.log.debug(f'Registered callbacks: {k}={len(v)} {[c.script for c in v]}')
     log.info(f"Startup time: {timer.startup.summary()}")
     debug = log.info if os.environ.get('SD_SCRIPT_DEBUG', None) is not None else lambda *args, **kwargs: None
     debug('Loaded scripts:')

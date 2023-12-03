@@ -6,8 +6,6 @@ import shutil
 import logging
 import platform
 import subprocess
-import io
-import pstats
 import cProfile
 import pkg_resources
 
@@ -29,6 +27,7 @@ opts = {}
 args = Dot({
     'debug': False,
     'reset': False,
+    'profile': False,
     'upgrade': False,
     'skip_extensions': False,
     'skip_requirements': False,
@@ -143,19 +142,9 @@ def print_dict(d):
     return ' '.join([f'{k}={v}' for k, v in d.items()])
 
 
-def print_profile(profile: cProfile.Profile, msg: str):
-    try:
-        from rich import print # pylint: disable=redefined-builtin
-    except Exception:
-        pass
-    profile.disable()
-    stream = io.StringIO()
-    ps = pstats.Stats(profile, stream=stream)
-    ps.sort_stats(pstats.SortKey.CUMULATIVE).print_stats(15)
-    profile = None
-    lines = stream.getvalue().split('\n')
-    lines = [line for line in lines if '<frozen' not in line and '{built-in' not in line and '/logging' not in line and '/rich' not in line]
-    print(f'Profile {msg}:', '\n'.join(lines))
+def print_profile(profiler: cProfile.Profile, msg: str):
+    from modules.errors import profile
+    profile(profiler, msg)
 
 
 # check if package is installed
@@ -768,6 +757,7 @@ def set_environment():
     os.environ.setdefault('TF_ENABLE_ONEDNN_OPTS', '0')
     os.environ.setdefault('USE_TORCH', '1')
     os.environ.setdefault('UVICORN_TIMEOUT_KEEP_ALIVE', '60')
+    os.environ.setdefault('KINETO_LOG_LEVEL', '3')
     os.environ.setdefault('HF_HUB_CACHE', opts.get('hfcache_dir', os.path.join(os.path.expanduser('~'), '.cache', 'huggingface', 'hub')))
     log.debug(f'Cache folder: {os.environ.get("HF_HUB_CACHE")}')
     if sys.platform == 'darwin':

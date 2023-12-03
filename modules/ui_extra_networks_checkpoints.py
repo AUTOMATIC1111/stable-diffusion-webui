@@ -64,7 +64,7 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
         return record
 
     def list_items(self):
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=shared.max_workers) as executor:
             future_items = {executor.submit(self.create_item, cp): cp for cp in list(sd_models.checkpoints_list.copy())}
             for future in concurrent.futures.as_completed(future_items):
                 item = future.result()

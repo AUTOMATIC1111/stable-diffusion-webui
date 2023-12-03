@@ -150,6 +150,25 @@ def torch_gc(force=False):
     log.debug(f'gc: collected={collected} device={torch.device(get_optimal_device_name())} {memstats.memory_stats()}')
 
 
+def set_cuda_sync_mode(mode):
+    """
+    Set the CUDA device synchronization mode: auto, spin, yield or block.
+    auto: Chooses spin or yield depending on the number of available CPU cores.
+    spin: Runs one CPU core per GPU at 100% to poll for completed operations.
+    yield: Gives control to other threads between polling, if any are waiting.
+    block: Lets the thread sleep until the GPU driver signals completion.
+    """
+    if mode == -1 or mode == 'none' or not cuda_ok:
+        return
+    try:
+        import ctypes
+        log.info(f'Set cuda synch: mode={mode}')
+        torch.cuda.set_device(torch.device(get_optimal_device_name()))
+        ctypes.CDLL('libcudart.so').cudaSetDeviceFlags({'auto': 0, 'spin': 1, 'yield': 2, 'block': 4}[mode])
+    except Exception:
+        pass
+
+
 def test_fp16():
     if shared.cmd_opts.experimental:
         return True
@@ -272,6 +291,9 @@ dtype = torch.float16
 dtype_vae = torch.float16
 dtype_unet = torch.float16
 unet_needs_upcast = False
+if args.profile:
+    log.info(f'Torch build config: {torch.__config__.show()}')
+# set_cuda_sync_mode('block') # none/auto/spin/yield/block
 
 
 def cond_cast_unet(tensor):

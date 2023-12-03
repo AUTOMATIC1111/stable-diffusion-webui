@@ -18,7 +18,7 @@ from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
 from installer import git_commit
-from modules import shared, devices
+from modules import shared, devices, errors
 import modules.memstats
 import modules.lowvram
 import modules.masking
@@ -666,36 +666,6 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
     return infotext
 
 
-"""
-def print_profile(profile, msg: str):
-    try:
-        from rich import print # pylint: disable=redefined-builtin
-    except Exception:
-        pass
-    lines = profile.key_averages().table(sort_by="cuda_time_total", row_limit=20)
-    lines = lines.split('\n')
-    lines = [l for l in lines if '/profiler' not in l]
-    print(f'Profile {msg}:', '\n'.join(lines))
-"""
-
-
-def print_profile(profile, msg: str):
-    import io
-    import pstats
-    try:
-        from rich import print # pylint: disable=redefined-builtin
-    except Exception:
-        pass
-    profile.disable()
-    stream = io.StringIO() # pylint: disable=abstract-class-instantiated
-    ps = pstats.Stats(profile, stream=stream)
-    ps.sort_stats(pstats.SortKey.CUMULATIVE).print_stats(15)
-    profile = None
-    lines = stream.getvalue().split('\n')
-    lines = [line for line in lines if '<frozen' not in line and '{built-in' not in line and '/logging' not in line and '/rich' not in line]
-    print(f'Profile {msg}:', '\n'.join(lines))
-
-
 def process_images(p: StableDiffusionProcessing) -> Processed:
     if not hasattr(p.sd_model, 'sd_checkpoint_info'):
         return None
@@ -743,22 +713,26 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         modules.script_callbacks.before_process_callback(p)
 
         if shared.cmd_opts.profile:
-            """
-            import torch.profiler # pylint: disable=redefined-outer-name
-            with torch.profiler.profile(profile_memory=True, with_modules=True) as prof:
-                with torch.profiler.record_function("process_images"):
-                    res = process_images_inner(p)
-            print_profile(prof, 'process_images')
-            """
             import cProfile
-            pr = cProfile.Profile()
-            pr.enable()
+            profile_python = cProfile.Profile()
+            profile_python.enable()
             with context_hypertile_vae(p), context_hypertile_unet(p):
+                import torch.profiler # pylint: disable=redefined-outer-name
+                activities=[torch.profiler.ProfilerActivity.CPU]
+                if torch.cuda.is_available():
+                    activities.append(torch.profiler.ProfilerActivity.CUDA)
+                shared.log.debug(f'Torch profile: activities={activities}')
+                if shared.profiler is None:
+                    shared.profiler = torch.profiler.profile(activities=activities, profile_memory=True, with_modules=True)
+                shared.profiler.start()
+                shared.profiler.step()
                 res = process_images_inner(p)
-            print_profile(pr, 'Torch')
+                errors.profile_torch(shared.profiler, 'Process')
+            errors.profile(profile_python, 'Process')
         else:
             with context_hypertile_vae(p), context_hypertile_unet(p):
                 res = process_images_inner(p)
+
     finally:
         if not shared.opts.cuda_compile:
             modules.sd_models.apply_token_merging(p.sd_model, 0)

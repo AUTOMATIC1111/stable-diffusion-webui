@@ -2,9 +2,6 @@ import html
 import threading
 import time
 import cProfile
-import pstats
-import io
-from rich import print # pylint: disable=redefined-builtin
 from modules import shared, progress, errors
 
 queue_lock = threading.Lock()
@@ -62,10 +59,7 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False, name=None):
             else:
                 res = list(res)
             if shared.cmd_opts.profile:
-                pr.disable()
-                s = io.StringIO()
-                pstats.Stats(pr, stream=s).sort_stats(pstats.SortKey.CUMULATIVE).print_stats(15)
-                print('Profile Exec:', s.getvalue())
+                errors.profile(pr, 'Wrap')
         except Exception as e:
             errors.display(e, 'gradio call')
             if extra_outputs_array is None:

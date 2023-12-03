@@ -15,7 +15,7 @@ from collections import OrderedDict
 import gradio as gr
 from PIL import Image
 from starlette.responses import FileResponse, JSONResponse
-from modules import paths, shared, scripts, modelloader
+from modules import paths, shared, scripts, modelloader, errors
 from modules.ui_components import ToolButton
 import modules.ui_symbols as symbols
 
@@ -270,7 +270,7 @@ class ExtraNetworksPage:
             self.html = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
         else:
             return ''
-        shared.log.debug(f"Extra networks: page='{self.name}' items={len(self.items)} subfolders={len(subdirs)} tab={tabname} folders={self.allowed_directories_for_previews()} list={self.list_time:.2f} desc={self.desc_time:.2f} info={self.info_time:.2f}")
+        shared.log.debug(f"Extra networks: page='{self.name}' items={len(self.items)} subfolders={len(subdirs)} tab={tabname} folders={self.allowed_directories_for_previews()} list={self.list_time:.2f} desc={self.desc_time:.2f} info={self.info_time:.2f} workers={shared.max_workers}")
         if len(self.missing_thumbs) > 0:
             threading.Thread(target=self.create_thumb).start()
         return self.html
@@ -463,6 +463,10 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
     ui.tabs = gr.Tabs(elem_id=tabname+"_extra_tabs")
     ui.button_details = gr.Button('Details', elem_id=tabname+"_extra_details_btn", visible=False)
     state = {}
+    if shared.cmd_opts.profile:
+        import cProfile
+        pr = cProfile.Profile()
+        pr.enable()
 
     def get_item(state, params = None):
         if params is not None and type(params) == dict:
@@ -567,6 +571,10 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
                 page_html = gr.HTML(page.html, elem_id=f'{tabname}{page.name}_extra_page', elem_classes="extra-networks-page")
                 ui.pages.append(page_html)
                 tab.select(ui_tab_change, _js="getENActivePage", inputs=[ui.button_details], outputs=[ui.button_scan, ui.button_save, ui.button_model])
+    if shared.cmd_opts.profile:
+        errors.profile(pr, 'ExtraNetworks')
+        pr.disable()
+
         # ui.tabs.change(fn=ui_tab_change, inputs=[], outputs=[ui.button_scan, ui.button_save])
 
     def fn_save_img(image):

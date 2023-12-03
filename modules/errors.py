@@ -55,3 +55,34 @@ def run(code, task):
 
 def exception(suppress=[]): # noqa: B006
     console.print_exception(show_locals=False, max_frames=10, extra_lines=2, suppress=suppress, theme="ansi_dark", word_wrap=False, width=min([console.width, 200]))
+
+
+def profile(profiler, msg: str):
+    profiler.disable()
+    import io
+    import pstats
+    stream = io.StringIO() # pylint: disable=abstract-class-instantiated
+    p = pstats.Stats(profiler, stream=stream)
+    p.sort_stats(pstats.SortKey.CUMULATIVE)
+    p.print_stats(100)
+    # p.print_title()
+    # p.print_call_heading(10, 'time')
+    # p.print_callees(10)
+    # p.print_callers(10)
+    profiler = None
+    lines = stream.getvalue().split('\n')
+    lines = [l for l in lines if '<frozen' not in l and '{built-in' not in l and '/logging' not in l and 'Ordered by' not in l and 'List reduced' not in l and '_lsprof' not in l and '/profiler' not in l and 'rich' not in l and l.strip() != '']
+    txt = '\n'.join(lines[:min(5, len(lines))])
+    log.debug(f'Profile {msg}: {txt}')
+
+
+def profile_torch(profiler, msg: str):
+    profiler.stop()
+    from rich import print # pylint: disable=redefined-builtin
+    # lines = profiler.key_averages().table(sort_by="self_cuda_time_total", row_limit=6)
+    lines = profiler.key_averages().table(sort_by="self_cpu_time_total", row_limit=12)
+    lines = lines.split('\n')
+    lines = [l for l in lines if '/profiler' not in l and '---' not in l]
+    txt = '\n'.join(lines)
+    # print(f'Torch {msg}:', txt)
+    log.debug(f'Torch profile {msg}: \n{txt}')

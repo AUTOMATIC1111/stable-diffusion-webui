@@ -760,6 +760,10 @@ def set_diffuser_options(sd_model, vae, op: str):
 
 def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'): # pylint: disable=unused-argument
     import torch # pylint: disable=reimported,redefined-outer-name
+    if shared.cmd_opts.profile:
+        import cProfile
+        pr = cProfile.Profile()
+        pr.enable()
     if timer is None:
         timer = Timer()
     logging.getLogger("diffusers").setLevel(logging.ERROR)
@@ -976,6 +980,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
 
     timer.record("load")
     devices.torch_gc(force=True)
+    if shared.cmd_opts.profile:
+        errors.profile(pr, 'Load')
     script_callbacks.model_loaded_callback(sd_model)
     shared.log.info(f"Load {op}: time={timer.summary()} native={get_native(sd_model)} {memory_stats()}")
 
