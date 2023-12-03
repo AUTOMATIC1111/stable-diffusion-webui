@@ -112,11 +112,11 @@ class NetworkModule:
     def multiplier(self):
         if 'transformer' in self.sd_key[:20]:
             return self.network.te_multiplier
-        if "input_blocks" in self.sd_key:
+        if "down_blocks" in self.sd_key:
             return self.network.unet_multiplier[0]
-        if "middle_block" in self.sd_key:
+        if "mid_block" in self.sd_key:
             return self.network.unet_multiplier[1]
-        if "output_blocks" in self.sd_key:
+        if "up_blocks" in self.sd_key:
             return self.network.unet_multiplier[2]
         else:
             return self.network.unet_multiplier[0]

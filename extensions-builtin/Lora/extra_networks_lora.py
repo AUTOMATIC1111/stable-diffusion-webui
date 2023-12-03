@@ -36,7 +36,7 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
             te_multiplier = float(params.positional[1]) if len(params.positional) > 1 else 1.0
             te_multiplier = float(params.named.get("te", te_multiplier))
             unet_multiplier = [float(params.positional[2]) if len(params.positional) > 2 else te_multiplier] * 3
-            unet_multiplier = [float(params.named.get("unet", unet_multiplier))] * 3
+            unet_multiplier = [float(params.named.get("unet", unet_multiplier[0]))] * 3
             unet_multiplier[0] = float(params.named.get("in", unet_multiplier[0]))
             unet_multiplier[1] = float(params.named.get("mid", unet_multiplier[1]))
             unet_multiplier[2] = float(params.named.get("out", unet_multiplier[2]))
