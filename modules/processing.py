@@ -994,6 +994,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 # we need to keep the original image around
                 # and use it in the composite step.
                 original_denoised_image = image.copy()
+
+                if p.paste_to is not None:
+                    original_denoised_image = uncrop(original_denoised_image, (p.overlay_images[i].width, p.overlay_images[i].height), p.paste_to)
+
                 image = apply_overlay(image, p.paste_to, i, p.overlay_images)
 
                 if save_samples:
