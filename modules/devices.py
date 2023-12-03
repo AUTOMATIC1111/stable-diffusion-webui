@@ -8,6 +8,13 @@ from modules import errors, shared
 if sys.platform == "darwin":
     from modules import mac_specific
 
+if shared.cmd_opts.use_ipex:
+    from modules import xpu_specific
+
+
+def has_xpu() -> bool:
+    return shared.cmd_opts.use_ipex and xpu_specific.has_xpu
+
 
 def has_mps() -> bool:
     if sys.platform != "darwin":
@@ -47,6 +54,9 @@ def get_optimal_device_name():
     if has_mps():
         return "mps"
 
+    if has_xpu():
+        return xpu_specific.get_xpu_device_string()
+
     return "cpu"
 
 
@@ -70,6 +80,9 @@ def torch_gc():
 
     if has_mps():
         mac_specific.torch_mps_gc()
+
+    if has_xpu():
+        xpu_specific.torch_xpu_gc()
 
 
 def enable_tf32():
