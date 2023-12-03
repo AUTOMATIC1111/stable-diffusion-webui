@@ -426,7 +426,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
         return ui.pages_contents
 
-    interface.load(fn=pages_html, inputs=[], outputs=[*ui.pages])
+    interface.load(fn=pages_html, inputs=[], outputs=[*ui.pages]).then(fn=None, js='function(){applyExtraNetworkFilter(' + quote_js(tabname) + '); return []}')
     button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
 
     return ui
