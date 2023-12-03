@@ -47,7 +47,10 @@ Also new is support for **SDXL-Turbo** as well as new **Kandinsky 3** models and
     interpolation is done using [RIFE](https://arxiv.org/abs/2011.06294) with native implementation in SD.Next  
     And its fast - interpolation from 16 frames with 10x frames to target 160 frames results takes 2-3sec
   - output folder for videos is in *settings -> image paths -> video*  
-- **General**
+- **General**  
+  - redesigned built-in profiler  
+    - now includes both `python` and `torch` and traces individual functions  
+    - use with `--debug --profile`  
   - **model merge** add **SD-XL ReBasin** support, thanks @AI-Casanova  
   - further UI optimizations for **mobile devices**, thanks @iDeNoh  
   - log level defaults to info for console and debug for log file  
