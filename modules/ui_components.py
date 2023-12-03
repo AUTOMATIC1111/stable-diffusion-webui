@@ -1,7 +1,7 @@
 from functools import wraps
 
 import gradio as gr
-from modules import gradio_extensions
+from modules import gradio_extensions  # noqa: F401
 
 
 class FormComponent:
@@ -20,7 +20,7 @@ class ToolButton(gr.Button, FormComponent):
     @wraps(gr.Button.__init__)
     def __init__(self, value="", *args, elem_classes=None, **kwargs):
         elem_classes = elem_classes or []
-        super().__init__(value=value, *args, elem_classes=["tool", *elem_classes], **kwargs)
+        super().__init__(*args, elem_classes=["tool", *elem_classes], value=value, **kwargs)
 
     def get_block_name(self):
         return "button"
