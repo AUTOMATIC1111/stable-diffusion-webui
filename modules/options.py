@@ -1,5 +1,6 @@
 import json
 import sys
+from dataclasses import dataclass
 
 import gradio as gr
 
@@ -8,13 +9,14 @@ from modules.shared_cmd_options import cmd_opts
 
 
 class OptionInfo:
-    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None, comment_before='', comment_after='', infotext=None, restrict_api=False):
+    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None, comment_before='', comment_after='', infotext=None, restrict_api=False, category_id=None):
         self.default = default
         self.label = label
         self.component = component
         self.component_args = component_args
         self.onchange = onchange
         self.section = section
+        self.category_id = category_id
         self.refresh = refresh
         self.do_not_save = False
 
@@ -63,7 +65,11 @@ class OptionHTML(OptionInfo):
 
 def options_section(section_identifier, options_dict):
     for v in options_dict.values():
-        v.section = section_identifier
+        if len(section_identifier) == 2:
+            v.section = section_identifier
+        elif len(section_identifier) == 3:
+            v.section = section_identifier[0:2]
+            v.category_id = section_identifier[2]
 
     return options_dict
 
@@ -76,7 +82,7 @@ class Options:
 
     def __init__(self, data_labels: dict[str, OptionInfo], restricted_opts):
         self.data_labels = data_labels
-        self.data = {k: v.default for k, v in self.data_labels.items()}
+        self.data = {k: v.default for k, v in self.data_labels.items() if not v.do_not_save}
         self.restricted_opts = restricted_opts
 
     def __setattr__(self, key, value):
@@ -158,7 +164,7 @@ class Options:
         assert not cmd_opts.freeze_settings, "saving settings is disabled"
 
         with open(filename, "w", encoding="utf8") as file:
-            json.dump(self.data, file, indent=4)
+            json.dump(self.data, file, indent=4, ensure_ascii=False)
 
     def same_type(self, x, y):
         if x is None or y is None:
@@ -206,21 +212,59 @@ class Options:
         d = {k: self.data.get(k, v.default) for k, v in self.data_labels.items()}
         d["_comments_before"] = {k: v.comment_before for k, v in self.data_labels.items() if v.comment_before is not None}
         d["_comments_after"] = {k: v.comment_after for k, v in self.data_labels.items() if v.comment_after is not None}
+
+        item_categories = {}
+        for item in self.data_labels.values():
+            category = categories.mapping.get(item.category_id)
+            category = "Uncategorized" if category is None else category.label
+            if category not in item_categories:
+                item_categories[category] = item.section[1]
+
+        # _categories is a list of pairs: [section, category]. Each section (a setting page) will get a special heading above it with the category as text.
+        d["_categories"] = [[v, k] for k, v in item_categories.items()] + [["Defaults", "Other"]]
+
         return json.dumps(d)
 
     def add_option(self, key, info):
         self.data_labels[key] = info
+        if key not in self.data and not info.do_not_save:
+            self.data[key] = info.default
 
     def reorder(self):
-        """reorder settings so that all items related to section always go together"""
+        """Reorder settings so that:
+            - all items related to section always go together
+            - all sections belonging to a category go together
+            - sections inside a category are ordered alphabetically
+            - categories are ordered by creation order
 
-        section_ids = {}
+        Category is a superset of sections: for category "postprocessing" there could be multiple sections: "face restoration", "upscaling".
+
+        This function also changes items' category_id so that all items belonging to a section have the same category_id.
+        """
+
+        category_ids = {}
+        section_categories = {}
+
         settings_items = self.data_labels.items()
         for _, item in settings_items:
-            if item.section not in section_ids:
-                section_ids[item.section] = len(section_ids)
+            if item.section not in section_categories:
+                section_categories[item.section] = item.category_id
 
-        self.data_labels = dict(sorted(settings_items, key=lambda x: section_ids[x[1].section]))
+        for _, item in settings_items:
+            item.category_id = section_categories.get(item.section)
+
+        for category_id in categories.mapping:
+            if category_id not in category_ids:
+                category_ids[category_id] = len(category_ids)
+
+        def sort_key(x):
+            item: OptionInfo = x[1]
+            category_order = category_ids.get(item.category_id, len(category_ids))
+            section_order = item.section[1]
+
+            return category_order, section_order
+
+        self.data_labels = dict(sorted(settings_items, key=sort_key))
 
     def cast_value(self, key, value):
         """casts an arbitrary to the same type as this setting's value with key
@@ -243,3 +287,22 @@ class Options:
             value = expected_type(value)
 
         return value
+
+
+@dataclass
+class OptionsCategory:
+    id: str
+    label: str
+
+class OptionsCategories:
+    def __init__(self):
+        self.mapping = {}
+
+    def register_category(self, category_id, label):
+        if category_id in self.mapping:
+            return category_id
+
+        self.mapping[category_id] = OptionsCategory(category_id, label)
+
+
+categories = OptionsCategories()

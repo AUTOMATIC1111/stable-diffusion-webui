@@ -561,6 +561,8 @@ def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_p
             })
 
             piexif.insert(exif_bytes, filename)
+    elif extension.lower() == ".gif":
+        image.save(filename, format=image_format, comment=geninfo)
     else:
         image.save(filename, format=image_format, quality=opts.jpeg_quality)
 
@@ -661,7 +663,13 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
         save_image_with_geninfo(image_to_save, info, temp_file_path, extension, existing_pnginfo=params.pnginfo, pnginfo_section_name=pnginfo_section_name)
 
-        os.replace(temp_file_path, filename_without_extension + extension)
+        filename = filename_without_extension + extension
+        if shared.opts.save_images_replace_action != "Replace":
+            n = 0
+            while os.path.exists(filename):
+                n += 1
+                filename = f"{filename_without_extension}-{n}{extension}"
+        os.replace(temp_file_path, filename)
 
     fullfn_without_extension, extension = os.path.splitext(params.filename)
     if hasattr(os, 'statvfs'):
@@ -718,7 +726,12 @@ def read_info_from_image(image: Image.Image) -> tuple[str | None, dict]:
     geninfo = items.pop('parameters', None)
 
     if "exif" in items:
-        exif = piexif.load(items["exif"])
+        exif_data = items["exif"]
+        try:
+            exif = piexif.load(exif_data)
+        except OSError:
+            # memory / exif was not valid so piexif tried to read from a file
+            exif = None
         exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
         try:
             exif_comment = piexif.helper.UserComment.load(exif_comment)
@@ -728,6 +741,8 @@ def read_info_from_image(image: Image.Image) -> tuple[str | None, dict]:
         if exif_comment:
             items['exif comment'] = exif_comment
             geninfo = exif_comment
+    elif "comment" in items: # for gif
+        geninfo = items["comment"].decode('utf8', errors="ignore")
 
     for field in IGNORED_INFO_KEYS:
         items.pop(field, None)

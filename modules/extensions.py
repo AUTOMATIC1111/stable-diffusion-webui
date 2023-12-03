@@ -1,11 +1,14 @@
+from __future__ import annotations
+
+import configparser
 import os
 import threading
+import re
 
 from modules import shared, errors, cache, scripts
 from modules.gitpython_hack import Repo
 from modules.paths_internal import extensions_dir, extensions_builtin_dir, script_path  # noqa: F401
 
-extensions = []
 
 os.makedirs(extensions_dir, exist_ok=True)
 
@@ -19,11 +22,55 @@ def active():
         return [x for x in extensions if x.enabled]
 
 
+class ExtensionMetadata:
+    filename = "metadata.ini"
+    config: configparser.ConfigParser
+    canonical_name: str
+    requires: list
+
+    def __init__(self, path, canonical_name):
+        self.config = configparser.ConfigParser()
+
+        filepath = os.path.join(path, self.filename)
+        if os.path.isfile(filepath):
+            try:
+                self.config.read(filepath)
+            except Exception:
+                errors.report(f"Error reading {self.filename} for extension {canonical_name}.", exc_info=True)
+
+        self.canonical_name = self.config.get("Extension", "Name", fallback=canonical_name)
+        self.canonical_name = canonical_name.lower().strip()
+
+        self.requires = self.get_script_requirements("Requires", "Extension")
+
+    def get_script_requirements(self, field, section, extra_section=None):
+        """reads a list of requirements from the config; field is the name of the field in the ini file,
+        like Requires or Before, and section is the name of the [section] in the ini file; additionally,
+        reads more requirements from [extra_section] if specified."""
+
+        x = self.config.get(section, field, fallback='')
+
+        if extra_section:
+            x = x + ', ' + self.config.get(extra_section, field, fallback='')
+
+        return self.parse_list(x.lower())
+
+    def parse_list(self, text):
+        """converts a line from config ("ext1 ext2, ext3  ") into a python list (["ext1", "ext2", "ext3"])"""
+
+        if not text:
+            return []
+
+        # both "," and " " are accepted as separator
+        return [x for x in re.split(r"[,\s]+", text.strip()) if x]
+
+
 class Extension:
     lock = threading.Lock()
     cached_fields = ['remote', 'commit_date', 'branch', 'commit_hash', 'version']
+    metadata: ExtensionMetadata
 
-    def __init__(self, name, path, enabled=True, is_builtin=False):
+    def __init__(self, name, path, enabled=True, is_builtin=False, metadata=None):
         self.name = name
         self.path = path
         self.enabled = enabled
@@ -36,6 +83,8 @@ class Extension:
         self.branch = None
         self.remote = None
         self.have_info_from_repo = False
+        self.metadata = metadata if metadata else ExtensionMetadata(self.path, name.lower())
+        self.canonical_name = metadata.canonical_name
 
     def to_dict(self):
         return {x: getattr(self, x) for x in self.cached_fields}
@@ -56,6 +105,7 @@ class Extension:
                 self.do_read_info_from_repo()
 
                 return self.to_dict()
+
         try:
             d = cache.cached_data_for_file('extensions-git', self.name, os.path.join(self.path, ".git"), read_from_repo)
             self.from_dict(d)
@@ -136,9 +186,6 @@ class Extension:
 def list_extensions():
     extensions.clear()
 
-    if not os.path.isdir(extensions_dir):
-        return
-
     if shared.cmd_opts.disable_all_extensions:
         print("*** \"--disable-all-extensions\" arg was used, will not load any extensions ***")
     elif shared.opts.disable_all_extensions == "all":
@@ -148,18 +195,43 @@ def list_extensions():
     elif shared.opts.disable_all_extensions == "extra":
         print("*** \"Disable all extensions\" option was set, will only load built-in extensions ***")
 
-    extension_paths = []
-    for dirname in [extensions_dir, extensions_builtin_dir]:
+    loaded_extensions = {}
+
+    # scan through extensions directory and load metadata
+    for dirname in [extensions_builtin_dir, extensions_dir]:
         if not os.path.isdir(dirname):
-            return
+            continue
 
         for extension_dirname in sorted(os.listdir(dirname)):
             path = os.path.join(dirname, extension_dirname)
             if not os.path.isdir(path):
                 continue
 
-            extension_paths.append((extension_dirname, path, dirname == extensions_builtin_dir))
+            canonical_name = extension_dirname
+            metadata = ExtensionMetadata(path, canonical_name)
 
-    for dirname, path, is_builtin in extension_paths:
-        extension = Extension(name=dirname, path=path, enabled=dirname not in shared.opts.disabled_extensions, is_builtin=is_builtin)
-        extensions.append(extension)
+            # check for duplicated canonical names
+            already_loaded_extension = loaded_extensions.get(metadata.canonical_name)
+            if already_loaded_extension is not None:
+                errors.report(f'Duplicate canonical name "{canonical_name}" found in extensions "{extension_dirname}" and "{already_loaded_extension.name}". Former will be discarded.', exc_info=False)
+                continue
+
+            is_builtin = dirname == extensions_builtin_dir
+            extension = Extension(name=extension_dirname, path=path, enabled=extension_dirname not in shared.opts.disabled_extensions, is_builtin=is_builtin, metadata=metadata)
+            extensions.append(extension)
+            loaded_extensions[canonical_name] = extension
+
+    # check for requirements
+    for extension in extensions:
+        for req in extension.metadata.requires:
+            required_extension = loaded_extensions.get(req)
+            if required_extension is None:
+                errors.report(f'Extension "{extension.name}" requires "{req}" which is not installed.', exc_info=False)
+                continue
+
+            if not extension.enabled:
+                errors.report(f'Extension "{extension.name}" requires "{required_extension.name}" which is disabled.', exc_info=False)
+                continue
+
+
+extensions: list[Extension] = []

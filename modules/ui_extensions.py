@@ -65,7 +65,7 @@ def save_config_state(name):
     filename = os.path.join(config_states_dir, f"{timestamp}_{name}.json")
     print(f"Saving backup of webui/extension state to {filename}.")
     with open(filename, "w", encoding="utf-8") as f:
-        json.dump(current_config_state, f, indent=4)
+        json.dump(current_config_state, f, indent=4, ensure_ascii=False)
     config_states.list_config_states()
     new_value = next(iter(config_states.all_config_states.keys()), "Current")
     new_choices = ["Current"] + list(config_states.all_config_states.keys())
@@ -197,7 +197,7 @@ def update_config_states_table(state_name):
         config_state = config_states.all_config_states[state_name]
 
     config_name = config_state.get("name", "Config")
-    created_date = time.asctime(time.gmtime(config_state["created_at"]))
+    created_date = datetime.fromtimestamp(config_state["created_at"]).strftime('%Y-%m-%d %H:%M:%S')
     filepath = config_state.get("filepath", "<unknown>")
 
     try:

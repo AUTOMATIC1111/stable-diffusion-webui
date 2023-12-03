@@ -74,6 +74,7 @@ module.exports = {
         create_submit_args: "readonly",
         restart_reload: "readonly",
         updateInput: "readonly",
+        onEdit: "readonly",
         //extraNetworks.js
         requestGet: "readonly",
         popup: "readonly",
