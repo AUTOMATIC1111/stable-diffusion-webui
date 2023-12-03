@@ -969,7 +969,7 @@ def get_gaussian_kernel(stddev_radius=1.0, max_radius=2):
         x = coordinate[0] ** 2.0 + coordinate[1] ** 2.0
         x = gaussian(x)
         x -= gauss_zero
-        x /= gauss_kernel_scale
+        x *= gauss_kernel_scale
         x = max(0.0, x)
         return x
 
