@@ -382,8 +382,6 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             page_elem = gr.HTML('Loading...', elem_id=elem_id)
             ui.pages.append(page_elem)
 
-            page_elem.change(fn=None, _js='function(){applyExtraNetworkFilter(' + quote_js(tabname) + '); return []}')
-
             editor = page.create_user_metadata_editor(ui, tabname)
             editor.create_ui()
             ui.user_metadata_editors.append(editor)
