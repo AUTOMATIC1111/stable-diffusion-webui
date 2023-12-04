@@ -2,7 +2,6 @@ import csv
 import fnmatch
 import os
 import os.path
-import re
 import typing
 import shutil
 
@@ -12,22 +11,6 @@ class PromptStyle(typing.NamedTuple):
     prompt: str
     negative_prompt: str
     path: str = None
-
-
-def clean_text(text: str) -> str:
-    """
-    Iterating through a list of regular expressions and replacement strings, we
-    clean up the prompt and style text to make it easier to match against each
-    other.
-    """
-    re_list = [
-        ("multiple commas", re.compile("(,+\s+)+,?"), ", "),
-        ("multiple spaces", re.compile("\s{2,}"), " "),
-    ]
-    for _, regex, replace in re_list:
-        text = regex.sub(replace, text)
-
-    return text.strip(", ")
 
 
 def merge_prompts(style_prompt: str, prompt: str) -> str:
@@ -44,7 +27,7 @@ def apply_styles_to_prompt(prompt, styles):
     for style in styles:
         prompt = merge_prompts(style, prompt)
 
-    return clean_text(prompt)
+    return prompt
 
 
 def unwrap_style_text_from_prompt(style_text, prompt):
@@ -56,8 +39,8 @@ def unwrap_style_text_from_prompt(style_text, prompt):
     Note that the "cleaned" version of the style text is only used for matching
     purposes here. It isn't returned; the original style text is not modified.
     """
-    stripped_prompt = clean_text(prompt)
-    stripped_style_text = clean_text(style_text)
+    stripped_prompt = prompt
+    stripped_style_text = style_text
     if "{prompt}" in stripped_style_text:
         # Work out whether the prompt is wrapped in the style text. If so, we
         # return True and the "inner" prompt text that isn't part of the style.
