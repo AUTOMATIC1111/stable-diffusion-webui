@@ -60,14 +60,21 @@ Additional models will be added as they become available and there is public int
 
 - [RunwayML Stable Diffusion](https://github.com/Stability-AI/stablediffusion/) 1.x and 2.x *(all variants)*
 - [StabilityAI Stable Diffusion XL](https://github.com/Stability-AI/generative-models)
+- [StabilityAI Stable Video Diffusion Base and XT](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid)
 - [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)
 - [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)
-- [Kandinsky](https://github.com/ai-forever/Kandinsky-2) 2.1 and 2.2
-- [PixArt-α XL 2](https://github.com/PixArt-alpha/PixArt-alpha) Medium and Large
+- [Kandinsky](https://github.com/ai-forever/Kandinsky-2) *2.1 and 2.2 and latest 3.0*
+- [PixArt-α XL 2](https://github.com/PixArt-alpha/PixArt-alpha) *Medium and Large*
 - [Warp Wuerstchen](https://huggingface.co/blog/wuertschen)  
 - [Tsinghua UniDiffusion](https://github.com/thu-ml/unidiffuser)
-- [DeepFloyd IF](https://github.com/deep-floyd/IF) Medium and Large
+- [DeepFloyd IF](https://github.com/deep-floyd/IF) *Medium and Large*
 - [Segmind SD Distilled](https://huggingface.co/blog/sd_distillation) *(all variants)*
+
+Also supported are modifiers such as:
+- **LCM** and **Turbo** (Adversarial Diffusion Distillation) networks
+- All **LoRA** types such as LoCon, LyCORIS, HADA, IA3, Lokr, OFT
+- **AnimateDiff** for SD 1.5
+- **IP-Adapters** for SD 1.5 and SD-XL
 
 > [!IMPORTANT]
 > - Loading any model other than standard SD 1.x / SD 2.x requires use of backend **Diffusers**  
@@ -94,7 +101,7 @@ Additional models will be added as they become available and there is public int
 - [Advanced install notes](https://github.com/vladmandic/automatic/wiki/Advanced-Install)
 - [Common installation errors](https://github.com/vladmandic/automatic/discussions/1627)  
 - [FAQ](https://github.com/vladmandic/automatic/discussions/1011)
-- [If you can't run us locally, try our friends at RunDuffusion!](https://rundiffusion.com?utm_source=github&utm_medium=referral&utm_campaign=SDNext)
+- If you can't run us locally, try our friends at [RunDuffusion!](https://rundiffusion.com?utm_source=github&utm_medium=referral&utm_campaign=SDNext)
 
 > [!TIP]
 > - Server can run without virtual environment,  
