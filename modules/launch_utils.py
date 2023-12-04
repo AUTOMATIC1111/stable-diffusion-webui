@@ -6,6 +6,7 @@ import os
 import shutil
 import sys
 import importlib.util
+import importlib.metadata
 import platform
 import json
 from functools import lru_cache
@@ -119,11 +120,16 @@ def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_
 
 def is_installed(package):
     try:
-        spec = importlib.util.find_spec(package)
-    except ModuleNotFoundError:
-        return False
+        dist = importlib.metadata.distribution(package)
+    except importlib.metadata.PackageNotFoundError:
+        try:
+            spec = importlib.util.find_spec(package)
+        except ModuleNotFoundError:
+            return False
 
-    return spec is not None
+        return spec is not None
+
+    return dist is not None
 
 
 def repo_dir(name):
