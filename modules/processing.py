@@ -892,55 +892,13 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
                 # Generate the mask(s) based on similarity between the original and denoised latent vectors
                 if getattr(p, "image_mask", None) is not None and getattr(p, "soft_inpainting", None) is not None:
-                    # latent_mask = p.nmask[0].float().cpu()
-
-                    # convert the original mask into a form we use to scale distances for thresholding
-                    # mask_scalar = 1-(torch.clamp(latent_mask, min=0, max=1) ** (p.mask_blend_scale / 2))
-                    # mask_scalar = mask_scalar / (1.00001-mask_scalar)
-                    # mask_scalar = mask_scalar.numpy()
-
-                    latent_orig = p.init_latent
-                    latent_proc = samples_ddim
-                    latent_distance = torch.norm(latent_proc - latent_orig, p=2, dim=1)
-
-                    kernel, kernel_center = images.get_gaussian_kernel(stddev_radius=1.5, max_radius=2)
-
-                    for i, (distance_map, overlay_image) in enumerate(zip(latent_distance, p.overlay_images)):
-                        converted_mask = distance_map.float().cpu().numpy()
-                        converted_mask = images.weighted_histogram_filter(converted_mask, kernel, kernel_center,
-                                                       percentile_min=0.9, percentile_max=1, min_width=1)
-                        converted_mask = images.weighted_histogram_filter(converted_mask,  kernel, kernel_center,
-                                                       percentile_min=0.25, percentile_max=0.75, min_width=1)
-
-                        # The distance at which opacity of original decreases to 50%
-                        # half_weighted_distance = 1  # * mask_scalar
-                        # converted_mask = converted_mask / half_weighted_distance
-
-                        converted_mask = 1 / (1 + converted_mask ** 2)
-                        converted_mask = images.smootherstep(converted_mask)
-                        converted_mask = 1 - converted_mask
-                        converted_mask = 255. * converted_mask
-                        converted_mask = converted_mask.astype(np.uint8)
-                        converted_mask = Image.fromarray(converted_mask)
-                        converted_mask = images.resize_image(2, converted_mask, p.width, p.height)
-                        converted_mask = create_binary_mask(converted_mask, round=False)
-
-                        # Remove aliasing artifacts using a gaussian blur.
-                        converted_mask = converted_mask.filter(ImageFilter.GaussianBlur(radius=4))
-
-                        # Expand the mask to fit the whole image if needed.
-                        if p.paste_to is not None:
-                            converted_mask = uncrop(converted_mask,
-                                                    (overlay_image.width, overlay_image.height),
-                                                    p.paste_to)
-
-                        p.masks_for_overlay[i] = converted_mask
-
-                        image_masked = Image.new('RGBa', (overlay_image.width, overlay_image.height))
-                        image_masked.paste(overlay_image.convert("RGBA").convert("RGBa"),
-                                           mask=ImageOps.invert(converted_mask.convert('L')))
-
-                        p.overlay_images[i] = image_masked.convert('RGBA')
+                    si.generate_adaptive_masks(latent_orig=p.init_latent,
+                                               latent_processed=samples_ddim,
+                                               overlay_images=p.overlay_images,
+                                               masks_for_overlay=p.masks_for_overlay,
+                                               width=p.width,
+                                               height=p.height,
+                                               paste_to=p.paste_to)
 
                 x_samples_ddim = decode_latent_batch(p.sd_model, samples_ddim,
                                                      target_device=devices.cpu,

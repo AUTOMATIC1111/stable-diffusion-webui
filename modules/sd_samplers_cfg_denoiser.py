@@ -94,76 +94,6 @@ class CFGDenoiser(torch.nn.Module):
         self.sampler.sampler_extra_args['uncond'] = uc
 
     def forward(self, x, sigma, uncond, cond, cond_scale, s_min_uncond, image_cond):
-        def latent_blend(a, b, t, one_minus_t=None):
-
-            """
-            Interpolates two latent image representations according to the parameter t,
-            where the interpolated vectors' magnitudes are also interpolated separately.
-            The "detail_preservation" factor biases the magnitude interpolation towards
-            the larger of the two magnitudes.
-            """
-            # NOTE: We use inplace operations wherever possible.
-
-            if one_minus_t is None:
-                one_minus_t = 1 - t
-
-            if self.soft_inpainting is None:
-                return a * one_minus_t + b * t
-
-            # Linearly interpolate the image vectors.
-            a_scaled = a * one_minus_t
-            b_scaled = b * t
-            image_interp = a_scaled
-            image_interp.add_(b_scaled)
-            result_type = image_interp.dtype
-            del a_scaled, b_scaled
-
-            # Calculate the magnitude of the interpolated vectors. (We will remove this magnitude.)
-            # 64-bit operations are used here to allow large exponents.
-            current_magnitude = torch.norm(image_interp, p=2, dim=1).to(torch.float64).add_(0.00001)
-
-            # Interpolate the powered magnitudes, then un-power them (bring them back to a power of 1).
-            a_magnitude = torch.norm(a, p=2, dim=1).to(torch.float64).pow_(self.soft_inpainting.inpaint_detail_preservation) * one_minus_t
-            b_magnitude = torch.norm(b, p=2, dim=1).to(torch.float64).pow_(self.soft_inpainting.inpaint_detail_preservation) * t
-            desired_magnitude = a_magnitude
-            desired_magnitude.add_(b_magnitude).pow_(1 / self.soft_inpainting.inpaint_detail_preservation)
-            del a_magnitude, b_magnitude, one_minus_t
-
-            # Change the linearly interpolated image vectors' magnitudes to the value we want.
-            # This is the last 64-bit operation.
-            image_interp_scaling_factor = desired_magnitude
-            image_interp_scaling_factor.div_(current_magnitude)
-            image_interp_scaled = image_interp
-            image_interp_scaled.mul_(image_interp_scaling_factor)
-            del current_magnitude
-            del desired_magnitude
-            del image_interp
-            del image_interp_scaling_factor
-
-            image_interp_scaled = image_interp_scaled.to(result_type)
-            del result_type
-
-            return image_interp_scaled
-
-        def get_modified_nmask(nmask, _sigma):
-            """
-            Converts a negative mask representing the transparency of the original latent vectors being overlayed
-            to a mask that is scaled according to the denoising strength for this step.
-
-            Where:
-                0 = fully opaque, infinite density, fully masked
-                1 = fully transparent, zero density, fully unmasked
-
-            We bring this transparency to a power, as this allows one to simulate N number of blending operations
-            where N can be any positive real value. Using this one can control the balance of influence between
-            the denoiser and the original latents according to the sigma value.
-
-            NOTE: "mask" is not used
-            """
-            if self.soft_inpainting is None:
-                return nmask
-
-            return torch.pow(nmask, (_sigma ** self.soft_inpainting.mask_blend_power) * self.soft_inpainting.mask_blend_scale)
 
         if state.interrupted or state.skipped:
             raise sd_samplers_common.InterruptedException
@@ -184,9 +114,12 @@ class CFGDenoiser(torch.nn.Module):
         # Blend in the original latents (before)
         if self.mask_before_denoising and self.mask is not None:
             if self.soft_inpainting is None:
-                x = latent_blend(self.init_latent, x, self.nmask, self.mask)
+                x = self.init_latent * self.mask + self.nmask * x
             else:
-                x = latent_blend(self.init_latent, x, get_modified_nmask(self.nmask, sigma))
+                x = si.latent_blend(self.soft_inpainting,
+                                    self.init_latent,
+                                    x,
+                                    si.get_modified_nmask(self.soft_inpainting, self.nmask, sigma))
 
         batch_size = len(conds_list)
         repeats = [len(conds_list[i]) for i in range(batch_size)]
@@ -290,9 +223,12 @@ class CFGDenoiser(torch.nn.Module):
         # Blend in the original latents (after)
         if not self.mask_before_denoising and self.mask is not None:
             if self.soft_inpainting is None:
-                denoised = latent_blend(self.init_latent, denoised, self.nmask, self.mask)
+                denoised = self.init_latent * self.mask + self.nmask * denoised
             else:
-                denoised = latent_blend(self.init_latent, denoised, get_modified_nmask(self.nmask, sigma))
+                denoised = si.latent_blend(self.soft_inpainting,
+                                           self.init_latent,
+                                           denoised,
+                                           si.get_modified_nmask(self.soft_inpainting, self.nmask, sigma))
 
         self.sampler.last_latent = self.get_pred_x0(torch.cat([x_in[i:i + 1] for i in denoised_image_indexes]), torch.cat([x_out[i:i + 1] for i in denoised_image_indexes]), sigma)
 
