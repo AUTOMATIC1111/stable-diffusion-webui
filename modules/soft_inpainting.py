@@ -179,15 +179,7 @@ el_ids = SoftInpaintingSettings(
 def gradio_ui():
     import gradio as gr
     from modules.ui_components import InputAccordion
-    """
-            with InputAccordion(False, label="Refiner", elem_id=self.elem_id("enable")) as enable_refiner:
-            with gr.Row():
-                refiner_checkpoint = gr.Dropdown(label='Checkpoint', elem_id=self.elem_id("checkpoint"), choices=sd_models.checkpoint_tiles(), value='', tooltip="switch to another model in the middle of generation")
-                create_refresh_button(refiner_checkpoint, sd_models.list_models, lambda: {"choices": sd_models.checkpoint_tiles()}, self.elem_id("checkpoint_refresh"))
 
-                refiner_switch_at = gr.Slider(value=0.8, label="Switch at", minimum=0.01, maximum=1.0, step=0.01, elem_id=self.elem_id("switch_at"), tooltip="fraction of sampling steps when the switch to refiner model should happen; 1=never, 0.5=switch in the middle of generation")
-
-    """
     with InputAccordion(False, label=enabled_ui_label, elem_id=enabled_el_id) as soft_inpainting_enabled:
         with gr.Group():
             gr.Markdown(
@@ -223,11 +215,11 @@ def gradio_ui():
                 gr.Markdown(
                     f"""
                     ### {ui_labels.mask_blend_power}
-                    
+
                     The blending strength of original content is scaled proportionally with the decreasing noise level values at each step (sigmas).
                     This ensures that the influence of the denoiser and original content preservation is roughly balanced at each step.
                     This balance can be shifted using this parameter, controlling whether earlier or later steps have stronger preservation.
-                    
+
                     - **Below 1**: Stronger preservation near the end (with low sigma)
                     - **1**: Balanced (proportional to sigma)
                     - **Above 1**: Stronger preservation in the beginning (with high sigma)
@@ -235,21 +227,21 @@ def gradio_ui():
                 gr.Markdown(
                     f"""
                     ### {ui_labels.mask_blend_scale}
-                    
+
                     Skews whether partially masked image regions should be more likely to preserve the original content or favor inpainted content.
                     This may need to be adjusted depending on the {ui_labels.mask_blend_power}, CFG Scale, prompt and Denoising strength.
-                    
+
                     - **Low values**: Favors generated content.
                     - **High values**: Favors original content.
                     """)
                 gr.Markdown(
                     f"""
                     ### {ui_labels.inpaint_detail_preservation}
-                    
+
                     This parameter controls how the original latent vectors and denoised latent vectors are interpolated.
                     With higher values, the magnitude of the resulting blended vector will be closer to the maximum of the two interpolated vectors.
                     This can prevent the loss of contrast that occurs with linear interpolation.
-                    
+
                     - **Low values**: Softer blending, details may fade.
                     - **High values**: Stronger contrast, may over-saturate colors.
                     """)
