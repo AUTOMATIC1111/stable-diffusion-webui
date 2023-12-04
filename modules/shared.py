@@ -166,17 +166,14 @@ def temp_disable_extensions():
         for ext in disable_safe:
             if ext not in opts.disabled_extensions:
                 disabled.append(ext)
-        log.info(f'Safe mode disabling extensions: {disabled}')
     if backend == Backend.DIFFUSERS:
         for ext in disable_diffusers:
             if ext not in opts.disabled_extensions:
                 disabled.append(ext)
-        log.info(f'Disabling uncompatible extensions: backend={backend} {disabled}')
     if backend == Backend.ORIGINAL:
         for ext in disable_original:
             if ext not in opts.disabled_extensions:
                 disabled.append(ext)
-        log.info(f'Disabling uncompatible extensions: backend={backend} {disabled}')
     cmd_opts.controlnet_loglevel = 'WARNING'
     return disabled
 
@@ -469,8 +466,8 @@ options_templates.update(options_section(('ui', "User Interface"), {
     "gallery_height": OptionInfo("", "Gallery height", gr.Textbox),
     "compact_view": OptionInfo(False, "Compact view"),
     "return_grid": OptionInfo(True, "Show grid in results"),
-    "return_mask": OptionInfo(False, "For inpainting, include the greyscale mask in results"),
-    "return_mask_composite": OptionInfo(False, "For inpainting, include masked composite in results"),
+    "return_mask": OptionInfo(False, "Inpainting include greyscale mask in results"),
+    "return_mask_composite": OptionInfo(False, "Inpainting include masked composite in results"),
     "disable_weights_auto_swap": OptionInfo(True, "Do not change selected model when reading generation parameters"),
     "send_seed": OptionInfo(True, "Send seed when sending prompt or image to other interface"),
     "send_size": OptionInfo(True, "Send size when sending prompt or image to another interface"),
@@ -601,18 +598,15 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_card_size": OptionInfo(160, "UI card size (px)", gr.Slider, {"minimum": 20, "maximum": 2000, "step": 1}),
     "extra_networks_card_square": OptionInfo(True, "UI disable variable aspect ratio"),
     "extra_networks_card_fit": OptionInfo("cover", "UI image contain method", gr.Radio, {"choices": ["contain", "cover", "fill"], "visible": False}),
-
     "extra_networks_sep2": OptionInfo("<h2>Extra networks general</h2>", "", gr.HTML),
-    "extra_network_skip_indexing": OptionInfo(False, "Do not automatically build extra network pages", gr.Checkbox),
+    "extra_network_skip_indexing": OptionInfo(False, "Build info on first access", gr.Checkbox),
     "extra_networks_default_multiplier": OptionInfo(1.0, "Default multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-
     "extra_networks_sep3": OptionInfo("<h2>Extra networks settings</h2>", "", gr.HTML),
     "extra_networks_styles": OptionInfo(True, "Show built-in styles"),
     "lora_preferred_name": OptionInfo("filename", "LoRA preffered name", gr.Radio, {"choices": ["filename", "alias"]}),
     "lora_add_hashes_to_infotext": OptionInfo(True, "LoRA add hash info"),
     "lora_in_memory_limit": OptionInfo(0, "LoRA memory cache", gr.Slider, {"minimum": 0, "maximum": 24, "step": 1}),
     "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple LoRA", gr.Checkbox, { "visible": False }),
-
     "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, { "choices": ["None"], "visible": False }),
 }))
 

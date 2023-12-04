@@ -1,5 +1,6 @@
 from __future__ import annotations
 import re
+import sys
 import logging
 import warnings
 import urllib3
@@ -55,3 +56,12 @@ try:
         errors.log.debug(f'Detected: cores={cores} affinity={affinity} set threads={threads}')
 except Exception:
     pass
+
+try: # fix changed import in torchvision 0.17+, which breaks basicsr
+    import torchvision.transforms.functional_tensor # pylint: disable=unused-import, ungrouped-imports
+except ImportError:
+    try:
+        import torchvision.transforms.functional as functional
+        sys.modules["torchvision.transforms.functional_tensor"] = functional
+    except ImportError:
+        pass  # shrug...

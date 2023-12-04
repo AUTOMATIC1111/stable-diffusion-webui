@@ -1,5 +1,13 @@
 # Change Log for SD.Next
 
+## Update for 2023-12-05
+
+- **General**
+  - **Extra networks** new settting -> extra networks -> build info on first access  
+    indexes all networks on first access instead of server startup  
+  - disable google fonts check on server startup  
+  - fix torchvision/basicsr compatibility  
+
 ## Update for 2023-12-04
 
 What's new? Native video in SD.Next via both **AnimateDiff** and **Stable-Video-Diffusion** - and including native MP4 encoding and smooth video outputs out-of-the-box, not just animated-GIFs.  

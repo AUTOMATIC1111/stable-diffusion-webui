@@ -90,14 +90,23 @@ function readCardDescription(page, item) {
   });
 }
 
-async function filterExtraNetworksForTab(tabname, searchTerm) {
+function getCardsForActivePage() {
+  const pagename = getENActivePage();
+  if (!pagename) return [];
+  const allCards = Array.from(gradioApp().querySelectorAll('.extra-network-cards > .card'));
+  const cards = allCards.filter((el) => el.dataset.page.toLowerCase().includes(pagename.toLowerCase()));
+  log('getCardsForActivePage', pagename, cards.length);
+  return allCards;
+}
+
+async function filterExtraNetworksForTab(searchTerm) {
   let found = 0;
   let items = 0;
   const t0 = performance.now();
   const pagename = getENActivePage();
   if (!pagename) return;
   const allPages = Array.from(gradioApp().querySelectorAll('.extra-network-cards'));
-  const pages = allPages.filter((el) => el.id.includes(pagename.toLowerCase()));
+  const pages = allPages.filter((el) => el.id.toLowerCase().includes(pagename.toLowerCase()));
   for (const pg of pages) {
     const cards = Array.from(pg.querySelectorAll('.card') || []);
     cards.forEach((elem) => {
@@ -158,7 +167,7 @@ function sortExtraNetworks() {
   const pagename = getENActivePage();
   if (!pagename) return 'sort error: unknown page';
   const allPages = Array.from(gradioApp().querySelectorAll('.extra-network-cards'));
-  const pages = allPages.filter((el) => el.id.includes(pagename.toLowerCase()));
+  const pages = allPages.filter((el) => el.id.toLowerCase().includes(pagename.toLowerCase()));
   let num = 0;
   for (const pg of pages) {
     const cards = Array.from(pg.querySelectorAll('.card') || []);
@@ -255,8 +264,17 @@ function refeshDetailsEN(args) {
   return args;
 }
 
-// init
+// refresh on en show
+function refreshENpage() {
+  if (getCardsForActivePage().length === 0) {
+    log('refreshENpage');
+    const tabname = getENActiveTab();
+    const btnRefresh = gradioApp().getElementById(`${tabname}_extra_refresh`);
+    if (btnRefresh) btnRefresh.click();
+  }
+}
 
+// init
 function setupExtraNetworksForTab(tabname) {
   gradioApp().querySelector(`#${tabname}_extra_tabs`).classList.add('extra-networks');
   const en = gradioApp().getElementById(`${tabname}_extra_networks`);
@@ -307,7 +325,7 @@ function setupExtraNetworksForTab(tabname) {
   txtSearchValue.addEventListener('input', (evt) => {
     if (searchTimer) clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
-      filterExtraNetworksForTab(tabname, txtSearchValue.value.toLowerCase());
+      filterExtraNetworksForTab(txtSearchValue.value.toLowerCase());
       searchTimer = null;
     }, 150);
   });
@@ -339,6 +357,7 @@ function setupExtraNetworksForTab(tabname) {
       el.parentElement.style.width = '-webkit-fill-available';
     }
     if (entries[0].intersectionRatio > 0) {
+      refreshENpage();
       if (window.opts.extra_networks_card_cover === 'cover') {
         en.style.transition = '';
         en.style.zIndex = 100;

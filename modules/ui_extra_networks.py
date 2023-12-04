@@ -343,7 +343,6 @@ class ExtraNetworksPage:
                     self.text += '\n'
 
         fn = os.path.splitext(path)[0] + '.txt'
-        # if os.path.exists(fn):
         if fn in listdir(os.path.dirname(path)):
             try:
                 with open(fn, "r", encoding="utf-8", errors="replace") as f:
@@ -364,7 +363,6 @@ class ExtraNetworksPage:
     def find_info(self, path):
         t0 = time.time()
         fn = os.path.splitext(path)[0] + '.json'
-        # if os.path.exists(fn):
         data = {}
         if fn in listdir(os.path.dirname(path)):
             data = shared.readfile(fn, silent=True)
@@ -382,12 +380,15 @@ def initialize():
 def register_page(page: ExtraNetworksPage):
     # registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions
     debug(f'EN register-page: {page}')
+    if page in shared.extra_networks:
+        debug(f'EN register-page: {page} already registered')
+        return
     shared.extra_networks.append(page)
-    allowed_dirs.clear()
-    for pg in shared.extra_networks:
-        for folder in pg.allowed_directories_for_previews():
-            if folder not in allowed_dirs:
-                allowed_dirs.append(os.path.abspath(folder))
+    # allowed_dirs.clear()
+    # for pg in shared.extra_networks:
+    for folder in page.allowed_directories_for_previews():
+        if folder not in allowed_dirs:
+            allowed_dirs.append(os.path.abspath(folder))
 
 
 def register_pages():
@@ -396,6 +397,7 @@ def register_pages():
     from modules.ui_extra_networks_checkpoints import ExtraNetworksPageCheckpoints
     from modules.ui_extra_networks_styles import ExtraNetworksPageStyles
     from modules.ui_extra_networks_vae import ExtraNetworksPageVAEs
+    debug('EN register-pages')
     register_page(ExtraNetworksPageCheckpoints())
     register_page(ExtraNetworksPageStyles())
     register_page(ExtraNetworksPageTextualInversion())
@@ -556,15 +558,16 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         if ui.tabname == 'txt2img': # refresh only once
             global refresh_time # pylint: disable=global-statement
             refresh_time = time.time()
-        threads = []
-        for page in get_pages():
-            if os.environ.get('SD_EN_DEBUG', None) is not None:
-                threads.append(threading.Thread(target=page.create_items, args=[ui.tabname]))
-                threads[-1].start()
-            else:
-                page.create_items(ui.tabname)
-        for thread in threads:
-            thread.join()
+        if not skip_indexing:
+            threads = []
+            for page in get_pages():
+                if os.environ.get('SD_EN_DEBUG', None) is not None:
+                    threads.append(threading.Thread(target=page.create_items, args=[ui.tabname]))
+                    threads[-1].start()
+                else:
+                    page.create_items(ui.tabname)
+            for thread in threads:
+                thread.join()
         for page in get_pages():
             page.create_page(ui.tabname, skip_indexing)
             with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab") as tab:
@@ -574,7 +577,6 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
     if shared.cmd_opts.profile:
         errors.profile(pr, 'ExtraNetworks')
         pr.disable()
-
         # ui.tabs.change(fn=ui_tab_change, inputs=[], outputs=[ui.button_scan, ui.button_save])
 
     def fn_save_img(image):
