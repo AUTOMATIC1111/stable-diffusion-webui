@@ -7,9 +7,13 @@ Any settings can be placed in the `Quick Settings`, changes to the settings hear
 ![quick-settings-list-1](images/quick-settings-list-1.png)
 ![quick-settings-list-2](images/quick-settings-list-2.png)
 
-By default we placed `Stable Diffusion checkpoint` in `Quick Settings`
+In the example screenshots `Stable Diffusion checkpoint` `SD VAE` `Show live preview for the created images` are placed in `Quick Settings`.
 
-Even though technically all settings can be relocated here, it doesn't make sense place settings that reloading or restarting to take effect in `Quick Settings`
+By default only `Stable Diffusion checkpoint` are in `Quick Settings`.
+
+> Even though technically all settings can be relocated to `Quick Settings`, it doesn't make sense place settings that requires reloading or restarting to take effect in `Quick Settings`
+
+
 
 </details>
 
