@@ -18,7 +18,7 @@ from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
 from installer import git_commit
-from modules import shared, devices
+from modules import shared, devices, errors
 import modules.memstats
 import modules.lowvram
 import modules.masking
@@ -121,8 +121,7 @@ class StableDiffusionProcessing:
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
     """
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, latent_sampler: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, image_cfg_scale: float = None, clip_skip: int = 1, width: int = 512, height: int = 512, full_quality: bool = True, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, diffusers_guidance_rescale: float = 0.7, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None): # pylint: disable=unused-argument
-
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, latent_sampler: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, image_cfg_scale: float = None, clip_skip: int = 1, width: int = 512, height: int = 512, full_quality: bool = True, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, diffusers_guidance_rescale: float = 0.7, hdr_clamp: bool = False, hdr_boundary: float = 4.0, hdr_threshold: float = 3.5, hdr_center: bool = False, hdr_channel_shift: float = 0.8, hdr_full_shift: float = 0.8, hdr_maximize: bool = False, hdr_max_center: float = 0.6, hdr_max_boundry: float = 1.0, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None): # pylint: disable=unused-argument
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
         self.prompt: str = prompt
@@ -166,8 +165,8 @@ class StableDiffusionProcessing:
         self.disable_extra_networks = False
         self.token_merging_ratio = 0
         self.token_merging_ratio_hr = 0
-        self.scripts = None
-        self.script_args = script_args or []
+        # self.scripts = modules.scripts.ScriptRunner() # set via property
+        # self.script_args = script_args or [] # set via property
         self.per_script_args = {}
         self.all_prompts = None
         self.all_negative_prompts = None
@@ -192,6 +191,7 @@ class StableDiffusionProcessing:
         self.s_tmin = shared.opts.s_tmin
         self.s_tmax = float('inf')  # not representable as a standard ui option
         shared.opts.data['clip_skip'] = clip_skip
+        self.task_args = {}
         # TODO a1111 compatibility items
         self.refiner_switch_at = 0
         self.hr_prompt = ''
@@ -203,6 +203,16 @@ class StableDiffusionProcessing:
         self.scripts_value: modules.scripts.ScriptRunner = field(default=None, init=False)
         self.script_args_value: list = field(default=None, init=False)
         self.scripts_setup_complete: bool = field(default=False, init=False)
+        # hdr
+        self.hdr_clamp = hdr_clamp
+        self.hdr_boundary = hdr_boundary
+        self.hdr_threshold = hdr_threshold
+        self.hdr_center = hdr_center
+        self.hdr_channel_shift = hdr_channel_shift
+        self.hdr_full_shift = hdr_full_shift
+        self.hdr_maximize = hdr_maximize
+        self.hdr_max_center = hdr_max_center
+        self.hdr_max_boundry = hdr_max_boundry
 
 
     @property
@@ -533,12 +543,20 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
         index = position_in_batch + iteration * p.batch_size
     if all_prompts is None:
         all_prompts = p.all_prompts
+    if all_negative_prompts is None:
+        all_negative_prompts = p.all_negative_prompts
     if all_seeds is None:
         all_seeds = p.all_seeds
     if all_subseeds is None:
         all_subseeds = p.all_subseeds
-    if all_negative_prompts is None:
-        all_negative_prompts = p.all_negative_prompts
+    while len(all_prompts) <= index:
+        all_prompts.append(all_prompts[-1])
+    while len(all_seeds) <= index:
+        all_seeds.append(all_seeds[-1])
+    while len(all_subseeds) <= index:
+        all_subseeds.append(all_subseeds[-1])
+    while len(all_negative_prompts) <= index:
+        all_negative_prompts.append(all_negative_prompts[-1])
     comment = ', '.join(comments) if comments is not None and type(comments) is list else None
     ops = list(set(p.ops))
     ops.reverse()
@@ -597,10 +615,14 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
         args["Init image size"] = f"{getattr(p, 'init_img_width', 0)}x{getattr(p, 'init_img_height', 0)}"
         args["Init image hash"] = getattr(p, 'init_img_hash', None)
         args["Mask weight"] = getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None
-        args['Resize mode'] = getattr(p, 'resize_mode', None)
         args['Resize scale'] = getattr(p, 'scale_by', None)
         args["Mask blur"] = p.mask_blur if getattr(p, 'mask', None) is not None and getattr(p, 'mask_blur', 0) > 0 else None
         args["Denoising strength"] = getattr(p, 'denoising_strength', None)
+        # lookup by index
+        if getattr(p, 'resize_mode', None) is not None:
+            RESIZE_MODES = ["None", "Resize fixed", "Crop and resize", "Resize and fill", "Latent upscale"]
+            args['Resize mode'] = RESIZE_MODES[p.resize_mode]
+        # TODO missing-by-index: inpainting_fill, inpaint_full_res, inpainting_mask_invert
     if 'face' in p.ops:
         args["Face restoration"] = shared.opts.face_restoration_model
     if 'color' in p.ops:
@@ -642,36 +664,6 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
     negative_prompt_text = f"\nNegative prompt: {all_negative_prompts[index]}" if all_negative_prompts[index] else ""
     infotext = f"{all_prompts[index]}{negative_prompt_text}\n{params_text}".strip()
     return infotext
-
-
-"""
-def print_profile(profile, msg: str):
-    try:
-        from rich import print # pylint: disable=redefined-builtin
-    except Exception:
-        pass
-    lines = profile.key_averages().table(sort_by="cuda_time_total", row_limit=20)
-    lines = lines.split('\n')
-    lines = [l for l in lines if '/profiler' not in l]
-    print(f'Profile {msg}:', '\n'.join(lines))
-"""
-
-
-def print_profile(profile, msg: str):
-    import io
-    import pstats
-    try:
-        from rich import print # pylint: disable=redefined-builtin
-    except Exception:
-        pass
-    profile.disable()
-    stream = io.StringIO() # pylint: disable=abstract-class-instantiated
-    ps = pstats.Stats(profile, stream=stream)
-    ps.sort_stats(pstats.SortKey.CUMULATIVE).print_stats(15)
-    profile = None
-    lines = stream.getvalue().split('\n')
-    lines = [line for line in lines if '<frozen' not in line and '{built-in' not in line and '/logging' not in line and '/rich' not in line]
-    print(f'Profile {msg}:', '\n'.join(lines))
 
 
 def process_images(p: StableDiffusionProcessing) -> Processed:
@@ -721,22 +713,26 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         modules.script_callbacks.before_process_callback(p)
 
         if shared.cmd_opts.profile:
-            """
-            import torch.profiler # pylint: disable=redefined-outer-name
-            with torch.profiler.profile(profile_memory=True, with_modules=True) as prof:
-                with torch.profiler.record_function("process_images"):
-                    res = process_images_inner(p)
-            print_profile(prof, 'process_images')
-            """
             import cProfile
-            pr = cProfile.Profile()
-            pr.enable()
+            profile_python = cProfile.Profile()
+            profile_python.enable()
             with context_hypertile_vae(p), context_hypertile_unet(p):
+                import torch.profiler # pylint: disable=redefined-outer-name
+                activities=[torch.profiler.ProfilerActivity.CPU]
+                if torch.cuda.is_available():
+                    activities.append(torch.profiler.ProfilerActivity.CUDA)
+                shared.log.debug(f'Torch profile: activities={activities}')
+                if shared.profiler is None:
+                    shared.profiler = torch.profiler.profile(activities=activities, profile_memory=True, with_modules=True)
+                shared.profiler.start()
+                shared.profiler.step()
                 res = process_images_inner(p)
-            print_profile(pr, 'Torch')
+                errors.profile_torch(shared.profiler, 'Process')
+            errors.profile(profile_python, 'Process')
         else:
             with context_hypertile_vae(p), context_hypertile_unet(p):
                 res = process_images_inner(p)
+
     finally:
         if not shared.opts.cuda_compile:
             modules.sd_models.apply_token_merging(p.sd_model, 0)
@@ -754,12 +750,14 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
 
 def validate_sample(tensor):
+    if not isinstance(tensor, np.ndarray) and not isinstance(tensor, torch.Tensor):
+        return tensor
     if tensor.dtype == torch.bfloat16: # numpy does not support bf16
         tensor = tensor.to(torch.float16)
     if shared.backend == shared.Backend.ORIGINAL:
         sample = 255.0 * np.moveaxis(tensor.cpu().numpy(), 0, 2)
     else:
-        sample = 255. * tensor
+        sample = 255.0 * tensor
     with warnings.catch_warnings(record=True) as w:
         cast = sample.astype(np.uint8)
     if len(w) > 0:
@@ -1045,6 +1043,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.refiner_prompt = refiner_prompt
         self.refiner_negative = refiner_negative
         self.sampler = None
+        self.scripts = None
+        self.script_args = []
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if shared.backend == shared.Backend.DIFFUSERS:
@@ -1207,6 +1207,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.is_batch = False
         self.scale_by = 1.0
         self.sampler = None
+        self.scripts = None
+        self.script_args = []
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if shared.backend == shared.Backend.DIFFUSERS and self.image_mask is not None:

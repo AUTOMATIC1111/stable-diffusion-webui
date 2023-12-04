@@ -3,7 +3,7 @@ import os
 import contextlib
 import importlib.util
 import modules.errors as errors
-from installer import setup_logging
+from installer import setup_logging, args
 
 
 preloaded = []
@@ -12,6 +12,10 @@ preloaded = []
 def load_module(path):
     module_spec = importlib.util.spec_from_file_location(os.path.basename(path), path)
     module = importlib.util.module_from_spec(module_spec)
+    if args.profile:
+        import cProfile
+        pr = cProfile.Profile()
+        pr.enable()
     try:
         if '/sd-extension-' in path: # safe extensions without stdout intercept
             module_spec.loader.exec_module(module)
@@ -25,6 +29,8 @@ def load_module(path):
                     errors.log.info(f"Extension: script='{os.path.relpath(path)}' {line.strip()}")
     except Exception as e:
         errors.display(e, f'Module load: {path}')
+    if args.profile:
+        errors.profile(pr, f'Scripts: {path}')
     return module
 
 

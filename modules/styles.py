@@ -4,6 +4,7 @@ import re
 import os
 import csv
 import json
+import time
 from installer import log
 
 
@@ -60,7 +61,7 @@ def apply_styles_to_extra(p, style: Style):
                 v = type(orig)(v)
             setattr(p, k, v)
             fields.append(f'{k}={v}')
-    log.info(f'Applying style: name={style.name} extra={fields}')
+    log.info(f'Applying style: name="{style.name}" extra={fields}')
 
 
 class StyleDatabase:
@@ -87,6 +88,7 @@ class StyleDatabase:
 
     def load_style(self, fn, prefix=None):
         with open(fn, 'r', encoding='utf-8') as f:
+            new_style = None
             try:
                 all_styles = json.load(f)
                 if type(all_styles) is dict:
@@ -100,7 +102,7 @@ class StyleDatabase:
                         name = os.path.join(prefix, name)
                     else:
                         name = os.path.join(os.path.dirname(os.path.relpath(fn, self.path)), name)
-                    self.styles[style["name"]] = Style(
+                    new_style = Style(
                         name=name,
                         desc=style.get('description', name),
                         prompt=style.get("prompt", ""),
@@ -110,26 +112,37 @@ class StyleDatabase:
                         filename=fn,
                         mtime=os.path.getmtime(fn),
                     )
+                    self.styles[style["name"]] = new_style
             except Exception as e:
                 log.error(f'Failed to load style: file={fn} error={e}')
+            return new_style
 
 
     def reload(self):
+        t0 = time.time()
         self.styles.clear()
+
         def list_folder(folder):
-            for filename in os.listdir(folder):
-                fn = os.path.abspath(os.path.join(folder, filename))
-                if os.path.isfile(fn) and fn.lower().endswith(".json"):
-                    self.load_style(fn)
-                elif os.path.isdir(fn) and not fn.startswith('.'):
-                    list_folder(fn)
+            import concurrent
+            future_items = {}
+            with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+                for filename in os.listdir(folder):
+                    fn = os.path.abspath(os.path.join(folder, filename))
+                    if os.path.isfile(fn) and fn.lower().endswith(".json"):
+                        future_items[executor.submit(self.load_style, fn, None)] = fn
+                        # self.load_style(fn)
+                    elif os.path.isdir(fn) and not fn.startswith('.'):
+                        list_folder(fn)
+                self.styles = dict(sorted(self.styles.items(), key=lambda style: style[1].filename))
+                if self.built_in:
+                    fn = os.path.join('html', 'art-styles.json')
+                    future_items[executor.submit(self.load_style, fn, 'built-in')] = fn
+                for future in concurrent.futures.as_completed(future_items):
+                    future.result()
 
         list_folder(self.path)
-        self.styles = dict(sorted(self.styles.items(), key=lambda style: style[1].filename))
-        if self.built_in:
-            self.load_style(os.path.join('html', 'art-styles.json'), 'built-in')
-
-        log.debug(f'Load styles: folder="{self.path}" items={len(self.styles.keys())}')
+        t1 = time.time()
+        log.debug(f'Load styles: folder="{self.path}" items={len(self.styles.keys())} time={t1-t0:.2f}')
 
     def find_style(self, name):
         found = [style for style in self.styles.values() if style.name == name]

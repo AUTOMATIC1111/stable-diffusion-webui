@@ -47,8 +47,6 @@ state = shared.state
 backend = shared.backend
 if not modules.loader.initialized:
     timer.startup.record("libraries")
-    log.setLevel(logging.DEBUG if cmd_opts.debug else logging.INFO)
-    logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
 if cmd_opts.server_name:
     server_name = cmd_opts.server_name
 else:
@@ -212,7 +210,6 @@ def async_policy():
 
 def start_common():
     log.debug('Entering start sequence')
-    logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
     if shared.cmd_opts.data_dir is not None and len(shared.cmd_opts.data_dir) > 0:
         log.info(f'Using data path: {shared.cmd_opts.data_dir}')
     if shared.cmd_opts.models_dir is not None and len(shared.cmd_opts.models_dir) > 0 and shared.cmd_opts.models_dir != 'models':
@@ -314,6 +311,9 @@ def webui(restart=False):
     modules.sd_models.write_metadata()
     load_model()
     shared.opts.save(shared.config_filename)
+    if cmd_opts.profile:
+        for k, v in modules.script_callbacks.callback_map.items():
+            shared.log.debug(f'Registered callbacks: {k}={len(v)} {[c.script for c in v]}')
     log.info(f"Startup time: {timer.startup.summary()}")
     debug = log.info if os.environ.get('SD_SCRIPT_DEBUG', None) is not None else lambda *args, **kwargs: None
     debug('Loaded scripts:')

@@ -1,22 +1,16 @@
 import re
-import gradio as gr
 from fastapi import FastAPI
-import network
 import networks
-import lora  # noqa:F401 # pylint: disable=unused-import
-# import lora_patches
-import extra_networks_lora
-import ui_extra_networks_lora
+from network import NetworkOnDisk
+from ui_extra_networks_lora import ExtraNetworksPageLora
+from extra_networks_lora import ExtraNetworkLora
+# import lora  # noqa:F401 # pylint: disable=unused-import
 from modules import script_callbacks, ui_extra_networks, extra_networks, shared
 
 
-# def unload():
-#     networks.originals.undo()
-
-
 def before_ui():
-    ui_extra_networks.register_page(ui_extra_networks_lora.ExtraNetworksPageLora())
-    networks.extra_network_lora = extra_networks_lora.ExtraNetworkLora()
+    ui_extra_networks.register_page(ExtraNetworksPageLora())
+    networks.extra_network_lora = ExtraNetworkLora()
     extra_networks.register_extra_network(networks.extra_network_lora)
     # extra_networks.register_extra_network_alias(networks.extra_network_lora, "lyco")
 
@@ -28,15 +22,7 @@ script_callbacks.on_before_ui(before_ui)
 script_callbacks.on_infotext_pasted(networks.infotext_pasted)
 
 
-shared.options_templates.update(shared.options_section(('extra_networks', "Extra Networks"), {
-    # "sd_lora": shared.OptionInfo("None", "Add network to prompt", gr.Dropdown, lambda: {"choices": ["None", *networks.available_networks], "visible": False}, refresh=networks.list_available_networks),
-    "sd_lora": shared.OptionInfo("None", "Add network to prompt", gr.Dropdown, {"choices": ["None"], "visible": False}),
-    # "lora_show_all": shared.OptionInfo(False, "Always show all networks on the Lora page").info("otherwise, those detected as for incompatible version of Stable Diffusion will be hidden"),
-    # "lora_hide_unknown_for_versions": shared.OptionInfo([], "Hide networks of unknown versions for model versions", gr.CheckboxGroup, {"choices": ["SD1", "SD2", "SDXL"]}),
-}))
-
-
-def create_lora_json(obj: network.NetworkOnDisk):
+def create_lora_json(obj: NetworkOnDisk):
     return {
         "name": obj.name,
         "alias": obj.alias,
@@ -45,7 +31,7 @@ def create_lora_json(obj: network.NetworkOnDisk):
     }
 
 
-def api_networks(_: gr.Blocks, app: FastAPI):
+def api_networks(_, app: FastAPI):
     @app.get("/sdapi/v1/loras")
     async def get_loras():
         return [create_lora_json(obj) for obj in networks.available_networks.values()]

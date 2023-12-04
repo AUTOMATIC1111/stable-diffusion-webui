@@ -205,7 +205,7 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         download_config["mirror"] = mirror
     if custom_pipeline is not None and len(custom_pipeline) > 0:
         download_config["custom_pipeline"] = custom_pipeline
-    shared.log.debug(f"Diffusers downloading: {hub_id} {download_config}")
+    shared.log.debug(f"Diffusers downloading: {hub_id} args={download_config}")
     if token is not None and len(token) > 2:
         shared.log.debug(f"Diffusers authentication: {token}")
         hf.login(token)
@@ -574,6 +574,7 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
 
 def load_upscalers():
     # We can only do this 'magic' method to dynamically load upscalers if they are referenced, so we'll try to import any _model.py files before looking in __subclasses__
+    t0 = time.time()
     modules_dir = os.path.join(shared.script_path, "modules", "postprocess")
     for file in os.listdir(modules_dir):
         if "_model.py" in file:
@@ -602,4 +603,5 @@ def load_upscalers():
         datas += scaler.scalers
         names.append(name[8:])
     shared.sd_upscalers = sorted(datas, key=lambda x: x.name.lower() if not isinstance(x.scaler, (UpscalerNone, UpscalerLanczos, UpscalerNearest)) else "") # Special case for UpscalerNone keeps it at the beginning of the list.
-    shared.log.debug(f"Load upscalers: total={len(shared.sd_upscalers)} downloaded={len([x for x in shared.sd_upscalers if x.data_path is not None and os.path.isfile(x.data_path)])} user={len([x for x in shared.sd_upscalers if x.custom])} {names}")
+    t1 = time.time()
+    shared.log.debug(f"Load upscalers: total={len(shared.sd_upscalers)} downloaded={len([x for x in shared.sd_upscalers if x.data_path is not None and os.path.isfile(x.data_path)])} user={len([x for x in shared.sd_upscalers if x.custom])} time={t1-t0:.2f} {names}")

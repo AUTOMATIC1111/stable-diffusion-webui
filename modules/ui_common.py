@@ -35,16 +35,16 @@ def plaintext_to_html(text):
 
 def infotext_to_html(text):
     res = parse_generation_parameters(text)
-    prompt = res.get('Prompt', None)
-    negative = res.get('Negative prompt', None)
+    prompt = res.get('Prompt', '')
+    negative = res.get('Negative prompt', '')
     res.pop('Prompt', None)
     res.pop('Negative prompt', None)
     params = [f'{k}: {v}' for k, v in res.items() if v is not None]
-    params = '| '.join(params)
+    params = '| '.join(params) if len(params) > 0 else ''
     code = f'''
-        <p><b>Prompt:</b> {prompt}</p>
-        <p><b>Negative:</b> {negative}</p>
-        <p><b>Parameters:</b> {params}</p>
+        <p><b>Prompt:</b> {html.escape(prompt)}</p>
+        <p><b>Negative:</b> {html.escape(negative)}</p>
+        <p><b>Parameters:</b> {html.escape(params)}</p>
         '''
     return code
 
@@ -134,6 +134,17 @@ def save_files(js_data, images, html_info, index):
             shutil.copy(fullfn, destination)
             shared.log.info(f'Copying image: file="{fullfn}" folder="{destination}"')
             tgt_filename = os.path.join(destination, os.path.basename(fullfn))
+            if shared.opts.save_txt:
+                try:
+                    from PIL import Image
+                    image = Image.open(fullfn)
+                    info, _ = images.read_info_from_image(image)
+                    filename_txt = f"{os.path.splitext(tgt_filename)[0]}.txt"
+                    with open(filename_txt, "w", encoding="utf8") as file:
+                        file.write(f"{info}\n")
+                    shared.log.debug(f'Saving: text="{filename_txt}"')
+                except Exception as e:
+                    shared.log.warning(f'Image description save failed: {filename_txt} {e}')
             modules.script_callbacks.image_save_btn_callback(tgt_filename)
         else:
             image = image_from_url_text(filedata)

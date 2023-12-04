@@ -4,7 +4,6 @@ import os
 import sys
 import time
 import shlex
-import logging
 import subprocess
 from functools import lru_cache
 import installer
@@ -171,6 +170,7 @@ if __name__ == "__main__":
     installer.args = args
     installer.setup_logging()
     installer.log.info('Starting SD.Next')
+    installer.get_logfile()
     try:
         sys.excepthook = installer.custom_excepthook
     except Exception:
@@ -218,9 +218,6 @@ if __name__ == "__main__":
             installer.log.warning(f'See log file for more details: {installer.log_file}')
     installer.extensions_preload(parser) # adds additional args from extensions
     args = installer.parse_args(parser)
-    # installer.run_setup()
-    # installer.log.debug(f"Args: {vars(args)}")
-    logging.disable(logging.NOTSET if args.debug else logging.DEBUG)
 
     uv, instance = start_server(immediate=True, server=None)
     while True:

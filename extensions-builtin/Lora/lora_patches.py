@@ -1,7 +1,10 @@
+import os
 import torch
 import networks
 from modules import patches, shared
 
+# OpenVINO only works with Diffusers LoRa loading
+force_lora_diffusers = os.environ.get('SD_LORA_DIFFUSERS', None) is not None
 
 class LoraPatches:
     def __init__(self):
@@ -18,7 +21,7 @@ class LoraPatches:
         self.MultiheadAttention_load_state_dict = None
 
     def apply(self):
-        if self.active or (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx"): # OpenVINO only works with Diffusers LoRa loading
+        if self.active or force_lora_diffusers:
             return
         self.Linear_forward = patches.patch(__name__, torch.nn.Linear, 'forward', networks.network_Linear_forward)
         self.Linear_load_state_dict = patches.patch(__name__, torch.nn.Linear, '_load_from_state_dict', networks.network_Linear_load_state_dict)
@@ -36,7 +39,7 @@ class LoraPatches:
         self.active = True
 
     def undo(self):
-        if not self.active or (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx"): # OpenVINO only works with Diffusers LoRa loading
+        if not self.active or force_lora_diffusers:
             return
         self.Linear_forward = patches.undo(__name__, torch.nn.Linear, 'forward') # pylint: disable=E1128
         self.Linear_load_state_dict = patches.undo(__name__, torch.nn.Linear, '_load_from_state_dict') # pylint: disable=E1128

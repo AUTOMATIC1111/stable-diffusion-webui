@@ -59,9 +59,9 @@ class DiffusersTextualInversionManager(BaseTextualInversionManager):
         return self.pipe.tokenizer.encode(prompt, add_special_tokens=False)
 
 
-def encode_prompts(pipeline, prompts: list, negative_prompts: list, clip_skip: typing.Optional[int] = None):
-    if 'StableDiffusion' not in pipeline.__class__.__name__:
-        shared.log.warning(f"Prompt parser not supported: {pipeline.__class__.__name__}")
+def encode_prompts(pipe, prompts: list, negative_prompts: list, clip_skip: typing.Optional[int] = None):
+    if 'StableDiffusion' not in pipe.__class__.__name__:
+        shared.log.warning(f"Prompt parser not supported: {pipe.__class__.__name__}")
         return None, None, None, None
     else:
         prompt_embeds = []
@@ -69,7 +69,7 @@ def encode_prompts(pipeline, prompts: list, negative_prompts: list, clip_skip: t
         negative_embeds = []
         negative_pooleds = []
         for i in range(len(prompts)):
-            prompt_embed, positive_pooled, negative_embed, negative_pooled = get_weighted_text_embeddings(pipeline, prompts[i], negative_prompts[i], clip_skip)
+            prompt_embed, positive_pooled, negative_embed, negative_pooled = get_weighted_text_embeddings(pipe, prompts[i], negative_prompts[i], clip_skip)
             prompt_embeds.append(prompt_embed)
             positive_pooleds.append(positive_pooled)
             negative_embeds.append(negative_embed)
@@ -118,9 +118,9 @@ def prepare_embedding_providers(pipe, clip_skip):
 def pad_to_same_length(pipe, embeds):
     device = pipe.device if str(pipe.device) != 'meta' else devices.device
     try: #SDXL
-        empty_embed = shared.sd_model.encode_prompt("")
+        empty_embed = pipe.encode_prompt("")
     except Exception: #SD1.5
-        empty_embed = shared.sd_model.encode_prompt("", device, 1, False)
+        empty_embed = pipe.encode_prompt("", device, 1, False)
     empty_batched = torch.cat([empty_embed[0].to(embeds[0].device)] * embeds[0].shape[0])
     max_token_count = max([embed.shape[1] for embed in embeds])
     for i, embed in enumerate(embeds):

@@ -134,7 +134,7 @@ def run_modelmerger(id_task, **kwargs):  # pylint: disable=unused-argument
 
     try:
         theta_0 = theta_0.to_dict() #TensorDict -> Dict if necessary
-    except:
+    except Exception:
         pass
 
     bake_in_vae_filename = sd_vae.vae_dict.get(kwargs.get("bake_in_vae", None), None)

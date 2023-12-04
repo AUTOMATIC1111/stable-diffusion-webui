@@ -95,7 +95,7 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 #img2img_sketch, #img2maskimg, #inpaint_sketch { overflow: overlay !important; resize: auto; background: var(--panel-background-fill); z-index: 5; }
 .image-buttons button{ min-width: auto; }
 .infotext { overflow-wrap: break-word; line-height: 1.5em; }
-.infotext > p { padding-left: 1em; text-indent: -1em; }
+.infotext > p { padding-left: 1em; text-indent: -1em; white-space: pre-wrap; }
 .tooltip { display: block; position: fixed; top: 1em; right: 1em; padding: 0.5em; background: var(--input-background-fill); color: var(--body-text-color); border: 1pt solid var(--button-primary-border-color);
   width: 22em; min-height: 1.3em; font-size: 0.8em; transition: opacity 0.2s ease-in; pointer-events: none; opacity: 0; z-index: 999; }
 .tooltip-show { opacity: 0.9; }
@@ -184,7 +184,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-networks .description { flex: 3; }
 .extra-networks .tab-nav > button { margin-right: 0; height: 24px; padding: 2px 4px 2px 4px; }
 .extra-networks .buttons { position: absolute; right: 0; margin: -4px; background: var(--background-color); }
-.extra-networks .buttons > button { margin-left: -0.4em; height: 1.4em; color: var(--primary-300) !important; }
+.extra-networks .buttons > button { margin-left: -0.2em; height: 1.4em; color: var(--primary-300) !important; }
 .extra-networks .custom-button { width: 120px; width: 100%; background: none; justify-content: left; text-align: left; padding: 3px 3px 3px 12px; text-indent: -6px; box-shadow: none; line-break: auto; }
 .extra-networks .custom-button:hover { background: var(--button-primary-background-fill) }
 .extra-networks-tab { padding: 0 !important; }
@@ -286,25 +286,25 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
   /* Do not affect displays larger than 1024px wide.  */
   @media (max-width: 1024px) {
   
-    /* Screens smaller than 424px wide */
+    /* Screens smaller than 400px wide */
     @media (max-width: 399px) {
       :root, .light, .dark { --left-column: 100%; }
       
       /* maintain single column for from image operations on larger mobile devices */
       #txt2img_results, #img2img_results, #extras_results { min-width: calc(min(320px, 100%)) !important;}
+      #txt2img_footer p { text-wrap: wrap; }
+
     }
     
-    /* Screens larger than 425px wide */
-    @media (min-width: 425px) {
-      :root, .light, .dark {--left-column: 50% ;}
-      
-      /* adjust extension panel to fit within resized sidebar */
-      #scripts_alwayson_txt2img div { max-width: 99%; }
+    /* Screens larger than 400px wide */
+    @media (min-width: 400px) {
+      :root, .light, .dark {--left-column: 50%;}
       
       /* maintain side by side split on larger mobile displays for from text */
-      #txt2img_results, #extras_results { min-width: 50% !important;}
+      #txt2img_results, #extras_results, #txt2img_footer p {text-wrap: wrap; max-width: 100% !important; }
     }
     
+    #scripts_alwayson_txt2img div, #scripts_alwayson_img2img div { max-width: 100%; }
     #txt2img_prompt_container, #img2img_prompt_container { resize:vertical !important; }
 
     /* make generate and enqueue buttons take up the entire width of their rows. */
@@ -316,10 +316,10 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
     #txt2img_generate_box, #img2img_generate_box, #txt2img_enqueue_wrapper,#img2img_enqueue_wrapper {display: flex;flex-direction: column;height: 4em !important;align-items: stretch;justify-content: space-evenly;}
 
     /* maintain single column for from image operations on larger mobile devices */
-    #img2img_settings, #img2img_results { min-width: 100% !important; max-width: 100% !important;}
+    #img2img_interface, #img2img_results, #img2img_footer p {text-wrap: wrap; min-width: 100% !important; max-width: 100% !important;}
     /* fix inpaint image display being too large for mobile displays */
-    #img2img_sketch, #img2maskimg, #inpaint_sketch {display: flex;alignment-baseline:after-edge !important;overflow: auto !important;resize: none !important;}
-    #img2maskimg canvas { width: 100% !important; max-height: 100% !important; height: auto !important; }
+    #img2img_sketch, #img2maskimg, #inpaint_sketch {display: flex; alignment-baseline:after-edge !important; overflow: auto !important; resize: none !important; }
+    #img2maskimg canvas { width: auto !important; max-height: 100% !important; height: auto !important; }
 
     /* fix from text/image UI elements to prevent them from moving around within the UI */
     #txt2img_sampler, #txt2img_batch, #txt2img_seed_group, #txt2img_advanced, #txt2img_second_pass, #img2img_sampling_group, #img2img_resize_group, #img2img_batch_group, #img2img_seed_group, #img2img_denoise_group, #img2img_advanced_group { width: 100% !important; }

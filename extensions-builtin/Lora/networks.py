@@ -150,6 +150,10 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
                     recompile_model = True
                     shared.compiled_model_state.lora_model = []
                     break
+            if not recompile_model:
+                if len(loaded_networks) > 0 and debug:
+                    shared.log.debug('OpenVINO: Skipping LoRa loading')
+                return
         else:
             recompile_model = True
             shared.compiled_model_state.lora_model = []
@@ -166,11 +170,10 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
             try:
                 if recompile_model:
                     shared.compiled_model_state.lora_model.append(f"{name}:{te_multipliers[i] if te_multipliers else 1.0}")
-                if shared.backend == shared.Backend.DIFFUSERS and (os.environ.get('SD_LORA_DIFFUSERS', None)
-                                                                   or getattr(network_on_disk, 'shorthash', None) == 'aaebf6360f7d' # lcm sd15
-                                                                   or getattr(network_on_disk, 'shorthash', None) == '3d18b05e4f56' # lcm sdxl
-                                                                   or (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx")):
-                    # OpenVINO only works with Diffusers LoRa loading.
+                if shared.backend == shared.Backend.DIFFUSERS and (os.environ.get('SD_LORA_DIFFUSERS', None) is not None): # OpenVINO only works with Diffusers LoRa loading.
+                    # or getattr(network_on_disk, 'shorthash', '').lower() == 'aaebf6360f7d' # sd15-lcm
+                    # or getattr(network_on_disk, 'shorthash', '').lower() == '3d18b05e4f56' # sdxl-lcm
+                    # or getattr(network_on_disk, 'shorthash', '').lower() == '813ea5fb1c67' # turbo sdxl-turbo
                     net = load_diffusers(name, network_on_disk, lora_scale=te_multipliers[i] if te_multipliers else 1.0)
                 else:
                     net = load_network(name, network_on_disk)

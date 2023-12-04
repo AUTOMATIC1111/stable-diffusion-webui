@@ -20,7 +20,7 @@ import tomesd
 from transformers import logging as transformers_logging
 import ldm.modules.midas as midas
 from ldm.util import instantiate_from_config
-from modules import paths, shared, shared_items, shared_state, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config, sd_models_compile, sd_hijack_inpainting
+from modules import paths, shared, shared_items, shared_state, modelloader, devices, script_callbacks, sd_vae, errors, hashes, sd_models_config, sd_models_compile, sd_hijack_inpainting
 from modules.timer import Timer
 from modules.memstats import memory_stats
 from modules.paths import models_path, script_path
@@ -603,6 +603,7 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
     warn = shared.log.warning if warning else lambda *args, **kwargs: None
     if guess == 'Autodetect':
         try:
+            # guess by size
             size = round(os.path.getsize(f) / 1024 / 1024)
             if size < 128:
                 warn(f'Model size smaller than expected: {f} size={size} MB')
@@ -635,14 +636,27 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
                 guess = 'Stable Diffusion XL Instruct'
             else:
                 guess = 'Stable Diffusion'
-            if 'LCM_' in f or 'LCM-' in f:
+            # guess by name
+            """
+            if 'LCM_' in f.upper() or 'LCM-' in f.upper() or '_LCM' in f.upper() or '-LCM' in f.upper():
                 if shared.backend == shared.Backend.ORIGINAL:
                     warn(f'Model detected as LCM model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Latent Consistency Model'
+            """
             if 'PixArt' in f:
                 if shared.backend == shared.Backend.ORIGINAL:
                     warn(f'Model detected as PixArt Alpha model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'PixArt Alpha'
+            # switch for specific variant
+            if guess == 'Stable Diffusion' and 'inpaint' in f.lower():
+                guess = 'Stable Diffusion Inpaint'
+            elif guess == 'Stable Diffusion' and 'instruct' in f.lower():
+                guess = 'Stable Diffusion Instruct'
+            if guess == 'Stable Diffusion XL' and 'inpaint' in f.lower():
+                guess = 'Stable Diffusion XL Inpaint'
+            elif guess == 'Stable Diffusion XL' and 'instruct' in f.lower():
+                guess = 'Stable Diffusion XL Instruct'
+            # get actual pipeline
             pipeline = shared_items.get_pipelines().get(guess, None)
             shared.log.info(f'Autodetect: {op}="{guess}" class={pipeline.__name__} file="{f}" size={size}MB')
         except Exception as e:
@@ -729,13 +743,13 @@ def set_diffuser_options(sd_model, vae, op: str):
         sd_model.enable_xformers_memory_efficient_attention()
 
     if shared.opts.diffusers_eval:
-        if hasattr(sd_model, "unet"):
+        if hasattr(sd_model, "unet") and hasattr(sd_model.unet, "requires_grad_"):
             sd_model.unet.requires_grad_(False)
             sd_model.unet.eval()
-        if hasattr(sd_model, "vae"):
+        if hasattr(sd_model, "vae") and hasattr(sd_model.vae, "requires_grad_"):
             sd_model.vae.requires_grad_(False)
             sd_model.vae.eval()
-        if hasattr(sd_model, "text_encoder"):
+        if hasattr(sd_model, "text_encoder") and hasattr(sd_model.text_encoder, "requires_grad_"):
             sd_model.text_encoder.requires_grad_(False)
             sd_model.text_encoder.eval()
 
@@ -746,6 +760,10 @@ def set_diffuser_options(sd_model, vae, op: str):
 
 def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'): # pylint: disable=unused-argument
     import torch # pylint: disable=reimported,redefined-outer-name
+    if shared.cmd_opts.profile:
+        import cProfile
+        pr = cProfile.Profile()
+        pr.enable()
     if timer is None:
         timer = Timer()
     logging.getLogger("diffusers").setLevel(logging.ERROR)
@@ -888,6 +906,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     shared.log.debug(f'Setting {op}: pipeline={sd_model.__class__.__name__} config={diffusers_load_config}') # pylint: disable=protected-access
             except Exception as e:
                 shared.log.error(f'Diffusers failed loading: {op}={checkpoint_info.path} pipeline={shared.opts.diffusers_pipeline}/{sd_model.__class__.__name__} {e}')
+                errors.display(e, f'loading {op}={checkpoint_info.path} pipeline={shared.opts.diffusers_pipeline}/{sd_model.__class__.__name__}')
                 return
         else:
             shared.log.error(f'Diffusers cannot load: {op}={checkpoint_info.path}')
@@ -961,6 +980,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
 
     timer.record("load")
     devices.torch_gc(force=True)
+    if shared.cmd_opts.profile:
+        errors.profile(pr, 'Load')
     script_callbacks.model_loaded_callback(sd_model)
     shared.log.info(f"Load {op}: time={timer.summary()} native={get_native(sd_model)} {memory_stats()}")
 
@@ -1093,12 +1114,16 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
     sd_model = None
     stdout = io.StringIO()
     with contextlib.redirect_stdout(stdout):
+        """
         try:
             clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
             with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
                 sd_model = instantiate_from_config(sd_config.model)
-        except Exception:
+        except Exception as e:
+            shared.log.error(f'LDM: instantiate from config: {e}')
             sd_model = instantiate_from_config(sd_config.model)
+        """
+        sd_model = instantiate_from_config(sd_config.model)
     for line in stdout.getvalue().splitlines():
         if len(line) > 0:
             shared.log.info(f'LDM: {line.strip()}')

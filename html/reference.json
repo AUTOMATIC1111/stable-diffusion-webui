@@ -14,6 +14,26 @@
     "desc": "Stable Diffusion XL (SDXL) is the latest AI image generation model that is tailored towards more photorealistic outputs with more detailed imagery and composition compared to previous SD models, including SD 2.1. It can make realistic faces, legible text within the images, and better image composition, all while using shorter and simpler prompts at a greatly increased base resolution of 1024x1024. Just like its predecessors, SDXL has the ability to generate image variations using image-to-image prompting, inpainting (reimagining of the selected parts of an image), and outpainting (creating new parts that lie outside the image borders).",
     "preview": "stabilityai--stable-diffusion-xl-base-1.0.jpg"
   },
+  "StabilityAI SD 2.1 Turbo": {
+    "path": "stabilityai/sd-turbo",
+    "desc": "SD-Turbo is a distilled version of Stable Diffusion 2.1, trained for real-time synthesis. SD-Turbo is based on a novel training method called Adversarial Diffusion Distillation (ADD) (see the technical report), which allows sampling large-scale foundational image diffusion models in 1 to 4 steps at high image quality. This approach uses score distillation to leverage large-scale off-the-shelf image diffusion models as a teacher signal and combines this with an adversarial loss to ensure high image fidelity even in the low-step regime of one or two sampling steps.",
+    "preview": "stabilityai--sd-turbo.jpg"
+  },
+  "StabilityAI SD-XL Turbo": {
+    "path": "stabilityai/sdxl-turbo",
+    "desc": "SDXL-Turbo is a distilled version of SDXL 1.0, trained for real-time synthesis. SDXL-Turbo is based on a novel training method called Adversarial Diffusion Distillation (ADD) (see the technical report), which allows sampling large-scale foundational image diffusion models in 1 to 4 steps at high image quality. This approach uses score distillation to leverage large-scale off-the-shelf image diffusion models as a teacher signal and combines this with an adversarial loss to ensure high image fidelity even in the low-step regime of one or two sampling steps.",
+    "preview": "stabilityai--sdxl-turbo.jpg"
+  },
+  "StabilityAI Stable Video Diffusion": {
+    "path": "stabilityai/stable-video-diffusion-img2vid",
+    "desc": "(SVD) Image-to-Video is a latent diffusion model trained to generate short video clips from an image conditioning. This model was trained to generate 14 frames at resolution 576x1024 given a context frame of the same size. We also finetune the widely used f8-decoder for temporal consistency.",
+    "preview": "stabilityai--stable-video-diffusion-img2vid.jpg"
+  },
+  "StabilityAI Stable Video Diffusion XT": {
+    "path": "stabilityai/stable-video-diffusion-img2vid-xt",
+    "desc": "(SVD) Image-to-Video is a latent diffusion model trained to generate short video clips from an image conditioning. This model was trained to generate 25 frames at resolution 576x1024 given a context frame of the same size, finetuned from SVD Image-to-Video [14 frames]. We also finetune the widely used f8-decoder for temporal consistency.",
+    "preview": "stabilityai--stable-video-diffusion-img2vid-xt.jpg"
+  },
   "Segmind SSD-1B": {
     "path": "segmind/SSD-1B",
     "desc": "The Segmind Stable Diffusion Model (SSD-1B) offers a compact, efficient, and distilled version of the SDXL model. At 50% smaller and 60% faster than Stable Diffusion XL (SDXL), it provides quick and seamless performance without sacrificing image quality.",
@@ -53,6 +73,11 @@
     "path": "kandinsky-community/kandinsky-2-2-decoder",
     "desc": "Kandinsky 2.2 is a text-conditional diffusion model (+0.1!) based on unCLIP and latent diffusion, composed of a transformer-based image prior model, a unet diffusion model, and a decoder. Kandinsky 2.1 inherits best practices from Dall-E 2 and Latent diffusion while introducing some new ideas. It uses the CLIP model as a text and image encoder, and diffusion image prior (mapping) between latent spaces of CLIP modalities. This approach increases the visual performance of the model and unveils new horizons in blending images and text-guided image manipulation.",
     "preview": "kandinsky-community--kandinsky-2-2-decoder.jpg"
+  },
+  "Kandinsky 3": {
+    "path": "kandinsky-community/kandinsky-3",
+    "desc": "Kandinsky 3.0 is an open-source text-to-image diffusion model built upon the Kandinsky2-x model family. In comparison to its predecessors, Kandinsky 3.0 incorporates more data and specifically related to Russian culture, which allows to generate pictures related to Russin culture. Furthermore, enhancements have been made to the text understanding and visual quality of the model, achieved by increasing the size of the text encoder and Diffusion U-Net models, respectively.",
+    "preview": "kandinsky-community--kandinsky-3.jpg"
   },
   "DeepFloyd IF Medium": {
     "path": "DeepFloyd/IF-I-M-v1.0",

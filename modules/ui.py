@@ -332,7 +332,7 @@ def create_sampler_and_steps_selection(choices, tabname):
 
     with FormRow(elem_classes=['flex-break']):
         sampler_index = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling", choices=[x.name for x in choices], value='Default', type="index")
-        steps = gr.Slider(minimum=0, maximum=99, step=1, label="Sampling steps", elem_id=f"{tabname}_steps", value=20)
+        steps = gr.Slider(minimum=1, maximum=99, step=1, label="Sampling steps", elem_id=f"{tabname}_steps", value=20)
     if modules.shared.backend == modules.shared.Backend.ORIGINAL:
         with FormRow(elem_classes=['flex-break']):
             choices = ['brownian noise', 'discard penultimate sigma']
@@ -354,7 +354,6 @@ def create_sampler_and_steps_selection(choices, tabname):
             values += ['low order'] if opts.data.get('schedulers_use_loworder', True) else []
             sampler_options = gr.CheckboxGroup(label='Sampler options', choices=choices, value=values, type='value')
         sampler_options.change(fn=set_sampler_diffuser_options, inputs=[sampler_options], outputs=[])
-
     return steps, sampler_index
 
 
@@ -417,16 +416,31 @@ def create_ui(startup_timer = None):
                     seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = create_seed_inputs('txt2img')
 
                     with gr.Accordion(open=False, label="Advanced", elem_id="txt2img_advanced", elem_classes=["small-accordion"]):
-                        with FormRow():
-                            cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='CFG scale', value=6.0, elem_id="txt2img_cfg_scale")
-                            clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=14, step=1, elem_id='txt2img_clip_skip', interactive=True)
-                        with FormRow():
-                            image_cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='Secondary CFG scale', value=6.0, elem_id="txt2img_image_cfg_scale")
-                            diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
-                        with FormRow():
-                            full_quality = gr.Checkbox(label='Full quality', value=True, elem_id="txt2img_full_quality")
-                            restore_faces = gr.Checkbox(label='Face restore', value=False, visible=len(modules.shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
-                            tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
+                        with gr.Group():
+                            with FormRow():
+                                cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.1, label='CFG scale', value=6.0, elem_id="txt2img_cfg_scale")
+                                clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=14, step=1, elem_id='txt2img_clip_skip', interactive=True)
+                            with FormRow():
+                                image_cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.1, label='Secondary CFG scale', value=6.0, elem_id="txt2img_image_cfg_scale")
+                                diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
+                        with gr.Group():
+                            with FormRow():
+                                full_quality = gr.Checkbox(label='Full quality', value=True, elem_id="txt2img_full_quality")
+                                restore_faces = gr.Checkbox(label='Face restore', value=False, visible=len(modules.shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
+                                tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
+                        with gr.Group():
+                            with FormRow():
+                                hdr_clamp = gr.Checkbox(label='HDR clamp', value=False, elem_id="txt2img_hdr_clamp")
+                                hdr_boundary = gr.Slider(minimum=0.0, maximum=10.0, step=0.1, value=4.0,  label='Range', elem_id="txt2img_hdr_boundary")
+                                hdr_threshold = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, value=0.95,  label='Threshold', elem_id="txt2img_hdr_threshold")
+                            with FormRow():
+                                hdr_center = gr.Checkbox(label='HDR center', value=False, elem_id="txt2img_hdr_center")
+                                hdr_channel_shift = gr.Slider(minimum=0.0, maximum=2.0, step=0.1, value=1.0,  label='Channel shift', elem_id="txt2img_hdr_channel_shift")
+                                hdr_full_shift = gr.Slider(minimum=0.0, maximum=2.0, step=0.1, value=1,  label='Full shift', elem_id="txt2img_hdr_full_shift")
+                            with FormRow():
+                                hdr_maximize = gr.Checkbox(label='HDR maximize', value=False, elem_id="txt2img_hdr_maximize")
+                                hdr_max_center = gr.Slider(minimum=0.0, maximum=2.0, step=0.1, value=0.6,  label='Center', elem_id="txt2img_hdr_max_center")
+                                hdr_max_boundry = gr.Slider(minimum=0.5, maximum=2.0, step=0.1, value=1.0,  label='Range', elem_id="txt2img_hdr_max_boundry")
 
                     with gr.Accordion(open=False, label="Second pass", elem_id="txt2img_second_pass", elem_classes=["small-accordion"]):
                         with FormGroup():
@@ -493,6 +507,7 @@ def create_ui(startup_timer = None):
                     enable_hr, denoising_strength,
                     hr_scale, hr_upscaler, hr_force, hr_second_pass_steps, hr_resize_x, hr_resize_y,
                     refiner_steps, refiner_start, refiner_prompt, refiner_negative,
+                    hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry,
                     override_settings,
                 ] + custom_inputs,
                 outputs=[
@@ -711,8 +726,8 @@ def create_ui(startup_timer = None):
 
                     with gr.Accordion(open=False, label="Advanced", elem_classes=["small-accordion"], elem_id="img2img_advanced_group"):
                         with FormRow():
-                            cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='CFG scale', value=6.0, elem_id="img2img_cfg_scale")
-                            image_cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.15, label='Image CFG scale', value=1.5, elem_id="img2img_image_cfg_scale")
+                            cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.1, label='CFG scale', value=6.0, elem_id="img2img_cfg_scale")
+                            image_cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.15, label='Image CFG scale', value=1.5, elem_id="img2img_image_cfg_scale")
                         with FormRow():
                             clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=4, step=1, elem_id='img2img_clip_skip', interactive=True)
                             diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")

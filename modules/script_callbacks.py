@@ -329,7 +329,7 @@ def before_ui_callback():
 
 
 def add_callback(callbacks, fun):
-    stack = [x for x in inspect.stack() if x.filename != __file__]
+    stack = [x for x in inspect.stack(0) if x.filename != __file__]
     filename = stack[0].filename if len(stack) > 0 else 'unknown file'
     callbacks.append(ScriptCallback(filename, fun))
 

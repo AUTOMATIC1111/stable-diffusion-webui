@@ -159,7 +159,7 @@ def list_samplers():
 
 def temp_disable_extensions():
     disable_safe = ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris', 'sd-webui-agent-scheduler', 'clip-interrogator-ext', 'stable-diffusion-webui-rembg', 'sd-extension-chainner', 'stable-diffusion-webui-images-browser']
-    disable_diffusers = ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris']
+    disable_diffusers = ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris', 'sd-webui-animatediff']
     disable_original = []
     disabled = []
     if cmd_opts.safe:
@@ -411,7 +411,7 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
 
     "image_sep_metadata": OptionInfo("<h2>Metadata/Logging</h2>", "", gr.HTML),
     "image_metadata": OptionInfo(True, "Include metadata in saved images"),
-    "save_txt": OptionInfo(False, "Create text file next to every image with generation parameters"),
+    "save_txt": OptionInfo(False, "Create info file for each every image"),
     "save_log_fn": OptionInfo("", "Create JSON log file for each saved image", component_args=hide_dirs),
     "image_watermark_enabled": OptionInfo(False, "Include watermark in saved images"),
     "image_watermark": OptionInfo('', "Image watermark string"),
@@ -446,11 +446,12 @@ options_templates.update(options_section(('saving-paths', "Image Naming & Paths"
 
     "outdir_sep_dirs": OptionInfo("<h2>Directories</h2>", "", gr.HTML),
     "outdir_samples": OptionInfo("", "Output directory for images", component_args=hide_dirs, folder=True),
-    "outdir_txt2img_samples": OptionInfo("outputs/text", 'Output directory for txt2img images', component_args=hide_dirs, folder=True),
-    "outdir_img2img_samples": OptionInfo("outputs/image", 'Output directory for img2img images', component_args=hide_dirs, folder=True),
-    "outdir_extras_samples": OptionInfo("outputs/extras", 'Output directory for images from extras tab', component_args=hide_dirs, folder=True),
-    "outdir_save": OptionInfo("outputs/save", "Directory for saving images using the Save button", component_args=hide_dirs, folder=True),
-    "outdir_init_images": OptionInfo("outputs/init-images", "Directory for saving init images when using img2img", component_args=hide_dirs, folder=True),
+    "outdir_txt2img_samples": OptionInfo("outputs/text", 'Directory for text generate', component_args=hide_dirs, folder=True),
+    "outdir_img2img_samples": OptionInfo("outputs/image", 'Directory for image generate', component_args=hide_dirs, folder=True),
+    "outdir_extras_samples": OptionInfo("outputs/extras", 'Directory for processed images', component_args=hide_dirs, folder=True),
+    "outdir_save": OptionInfo("outputs/save", "Directory for manually saved images", component_args=hide_dirs, folder=True),
+    "outdir_video": OptionInfo("outputs/video", "Directory for videos", component_args=hide_dirs, folder=True),
+    "outdir_init_images": OptionInfo("outputs/init-images", "Directory for init images", component_args=hide_dirs, folder=True),
 
     "outdir_sep_grids": OptionInfo("<h2>Grids</h2>", "", gr.HTML),
     "grid_extended_filename": OptionInfo(True, "Add extended info (seed, prompt) to filename when saving grid", gr.Checkbox, {"visible": False}),
@@ -609,7 +610,7 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_styles": OptionInfo(True, "Show built-in styles"),
     "lora_preferred_name": OptionInfo("filename", "LoRA preffered name", gr.Radio, {"choices": ["filename", "alias"]}),
     "lora_add_hashes_to_infotext": OptionInfo(True, "LoRA add hash info"),
-    "lora_in_memory_limit": OptionInfo(0, "LoRA memory cache", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
+    "lora_in_memory_limit": OptionInfo(0, "LoRA memory cache", gr.Slider, {"minimum": 0, "maximum": 24, "step": 1}),
     "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple LoRA", gr.Checkbox, { "visible": False }),
 
     "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, { "choices": ["None"], "visible": False }),
@@ -780,6 +781,7 @@ class Options:
             value = expected_type(value)
         return value
 
+profiler = None
 opts = Options()
 config_filename = cmd_opts.config
 opts.load(config_filename)
@@ -803,6 +805,7 @@ device = devices.device
 batch_cond_uncond = opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram
 mem_mon = modules.memmon.MemUsageMonitor("MemMon", devices.device)
+max_workers = 2
 if devices.backend == "directml":
     directml_do_hijack()
 
@@ -958,6 +961,8 @@ class Shared(sys.modules[__name__].__class__): # this class is here to provide s
                 model_type = 'sd'
             elif "LatentConsistencyModel" in self.sd_model.__class__.__name__:
                 model_type = 'sd' # lcm is compatible with sd
+            elif "AnimateDiffPipeline" in self.sd_model.__class__.__name__:
+                model_type = 'sd' # ad is compatible with sd
             elif "Kandinsky" in self.sd_model.__class__.__name__:
                 model_type = 'kandinsky'
             else:

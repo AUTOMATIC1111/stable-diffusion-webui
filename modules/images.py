@@ -244,6 +244,8 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None, output_type
 
     if resize_mode == 0:
         res = im.copy()
+    if width == 0 or height == 0:
+        res = im.copy()
     elif resize_mode == 1:
         res = resize(im, width, height)
     elif resize_mode == 2:
@@ -425,6 +427,20 @@ class FilenameGenerator:
         debug(f'Filename sanitize: input="{filename}" parts={parts} output="{fn}" ext={ext} max={max_length} len={len(fn)}')
         return fn
 
+    def sequence(self, x, dirname, basename):
+        if shared.opts.save_images_add_number or '[seq]' in x:
+            if '[seq]' not in x:
+                x = os.path.join(os.path.dirname(x), f"[seq]-{os.path.basename(x)}")
+            basecount = get_next_sequence_number(dirname, basename)
+            for i in range(9999):
+                seq = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
+                filename = x.replace('[seq]', seq)
+                if not os.path.exists(filename):
+                    debug(f'Prompt sequence: input="{x}" seq={seq} output="{filename}"')
+                    x = filename
+                    break
+        return x
+
     def apply(self, x):
         res = ''
         for m in re_pattern.finditer(x):
@@ -591,18 +607,7 @@ def save_image(image, path, basename='', seed=None, prompt=None, extension=share
     dirname = os.path.dirname(params.filename)
     if dirname is not None and len(dirname) > 0:
         os.makedirs(dirname, exist_ok=True)
-    # sequence
-    if shared.opts.save_images_add_number or '[seq]' in params.filename:
-        if '[seq]' not in params.filename:
-            params.filename = os.path.join(os.path.dirname(params.filename), f"[seq]-{os.path.basename(params.filename)}")
-        basecount = get_next_sequence_number(dirname, basename)
-        for i in range(9999):
-            seq = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
-            filename = params.filename.replace('[seq]', seq)
-            if not os.path.exists(filename):
-                debug(f'Prompt sequence: input="{params.filename}" seq={seq} output="{filename}"')
-                params.filename = filename
-                break
+    params.filename = namegen.sequence(params.filename, dirname, basename)
     # callbacks
     script_callbacks.before_image_saved_callback(params)
     exifinfo = params.pnginfo.get('UserComment', '')
@@ -616,6 +621,60 @@ def save_image(image, path, basename='', seed=None, prompt=None, extension=share
         params.image.already_saved_as = params.filename
     script_callbacks.image_saved_callback(params)
     return params.filename, filename_txt
+
+
+def save_video_atomic(images, filename, video_type: str = 'none', duration: float = 2.0, loop: bool = False, interpolate: int = 0, scale: float = 1.0, pad: int = 1, change: float = 0.3):
+    try:
+        import cv2
+    except Exception as e:
+        shared.log.error(f'Save video: cv2: {e}')
+        return
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    if video_type.lower() == 'mp4':
+        frames = images
+        if interpolate > 0:
+            try:
+                import modules.rife
+                frames = modules.rife.interpolate(images, count=interpolate, scale=scale, pad=pad, change=change)
+            except Exception as e:
+                shared.log.error(f'RIFE interpolation: {e}')
+                errors.display(e, 'RIFE interpolation')
+        video_frames = [np.array(frame) for frame in frames]
+        fourcc = "mp4v"
+        h, w, _c = video_frames[0].shape
+        video_writer = cv2.VideoWriter(filename, fourcc=cv2.VideoWriter_fourcc(*fourcc), fps=len(frames)/duration, frameSize=(w, h))
+        for i in range(len(video_frames)):
+            img = cv2.cvtColor(video_frames[i], cv2.COLOR_RGB2BGR)
+            video_writer.write(img)
+        shared.log.info(f'Save video: file="{filename}" frames={len(frames)} duration={duration} fourcc={fourcc}')
+    if video_type.lower() == 'gif' or video_type.lower() == 'png':
+        append = images.copy()
+        image = append.pop(0)
+        if loop:
+            append += append[::-1]
+        frames=len(append) + 1
+        image.save(
+            filename,
+            save_all = True,
+            append_images = append,
+            optimize = False,
+            duration = 1000.0 * duration / frames,
+            loop = 0 if loop else 1,
+        )
+        shared.log.info(f'Save video: file="{filename}" frames={len(append) + 1} duration={duration} loop={loop}')
+
+
+def save_video(p, images, filename = None, video_type: str = 'none', duration: float = 2.0, loop: bool = False, interpolate: int = 0, scale: float = 1.0, pad: int = 1, change: float = 0.3):
+    if images is None or len(images) < 2 or video_type is None or video_type.lower() == 'none':
+        return
+    image = images[0]
+    namegen = FilenameGenerator(p, seed=p.all_seeds[0], prompt=p.all_prompts[0], image=image)
+    if filename is None:
+        filename = namegen.apply(shared.opts.samples_filename_pattern if shared.opts.samples_filename_pattern and len(shared.opts.samples_filename_pattern) > 0 else "[seq]-[prompt_words]")
+        filename = namegen.sanitize(os.path.join(shared.opts.outdir_video, filename))
+        filename = namegen.sequence(filename, shared.opts.outdir_video, '')
+        filename = f'{filename}.{video_type.lower()}'
+    threading.Thread(target=save_video_atomic, args=(images, filename, video_type, duration, loop, interpolate, scale, pad, change)).start()
 
 
 def safe_decode_string(s: bytes):

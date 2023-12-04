@@ -1,5 +1,67 @@
 # Change Log for SD.Next
 
+## Update for 2023-12-04
+
+What's new? Native video in SD.Next via both **AnimateDiff** and **Stable-Video-Diffusion** - and including native MP4 encoding and smooth video outputs out-of-the-box, not just animated-GIFs.  
+Also new is support for **SDXL-Turbo** as well as new **Kandinsky 3** models and cool latent correction via **HDR controls** for any *txt2img* workflows, best-of-class **SDXL model merge** using full ReBasin methods and further mobile UI optimizations.  
+
+- **Diffusers**
+  - **IP adapter**
+    - lightweight native implementation of T2I adapters which can guide generation towards specific image style  
+    - supports most T2I models, not limited to SD 1.5  
+    - models are auto-downloaded on first use
+    - for IP adapter support in *Original* backend, use standard *ControlNet* extension  
+  - **AnimateDiff**
+    - lightweight native implementation of AnimateDiff models:  
+      *AnimateDiff 1.4, 1.5 v1, 1.5 v2, AnimateFace*
+    - supports SD 1.5 only  
+    - models are auto-downloaded on first use  
+    - for video saving support, see video support section
+    - can be combined with IP-Adapter for even better results!  
+    - for AnimateDiff support in *Original* backend, use standard *AnimateDiff* extension  
+  - **HDR latent control**, based on [article](https://huggingface.co/blog/TimothyAlexisVass/explaining-the-sdxl-latent-space#long-prompts-at-high-guidance-scales-becoming-possible)  
+    - in *Advanced* params
+    - allows control of *latent clamping*, *color centering* and *range maximimization*  
+    - supported by *XYZ grid*  
+  - [SD21 Turbo](https://huggingface.co/stabilityai/sd-turbo) and [SDXL Turbo](<https://huggingface.co/stabilityai/sdxl-turbo>) support  
+    - just set CFG scale (0.0-1.0) and steps (1-3) to a very low value  
+    - compatible with original StabilityAI SDXL-Turbo or any of the newer merges
+    - download safetensors or select from networks -> reference
+  - [Stable Video Diffusion](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid) and [Stable Video Diffusion XT](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt) support  
+    - download using built-in model downloader or simply select from *networks -> reference*  
+      support for manually downloaded safetensors models will be added later  
+    - for video saving support, see video support section
+    - go to *image* tab, enter input image and select *script* -> *stable video diffusion*
+  - [Kandinsky 3](https://huggingface.co/kandinsky-community/kandinsky-3) support  
+    - download using built-in model downloader or simply select from *networks -> reference*  
+    - this model is absolutely massive at 27.5GB at fp16, so be patient  
+    - model params count is at 11.9B (compared to SD-XL at 3.3B) and its trained on mixed resolutions from 256px to 1024px  
+    - use either model offload or sequential cpu offload to be able to use it  
+  - better autodetection of *inpaint* and *instruct* pipelines  
+  - support long seconary prompt for refiner  
+- **Video support**
+  - applies to any model that supports video generation, e.g. AnimateDiff and StableVideoDiffusion  
+  - support for **animated-GIF**, **animated-PNG** and **MP4**  
+  - GIF and PNG can be looped  
+  - MP4 can have additional padding at the start/end as well as motion-aware interpolated frames for smooth playback  
+    interpolation is done using [RIFE](https://arxiv.org/abs/2011.06294) with native implementation in SD.Next  
+    And its fast - interpolation from 16 frames with 10x frames to target 160 frames results takes 2-3sec
+  - output folder for videos is in *settings -> image paths -> video*  
+- **General**  
+  - redesigned built-in profiler  
+    - now includes both `python` and `torch` and traces individual functions  
+    - use with `--debug --profile`  
+  - **model merge** add **SD-XL ReBasin** support, thanks @AI-Casanova  
+  - further UI optimizations for **mobile devices**, thanks @iDeNoh  
+  - log level defaults to info for console and debug for log file  
+  - better prompt display in process tab  
+  - increase maximum lora cache values  
+  - fix extra networks sorting
+  - fix controlnet compatibility issues in original backend  
+  - fix img2img/inpaint paste params  
+  - fix save text file for manually saved images  
+  - fix python 3.9 compatibility issues  
+
 ## Update for 2023-11-23
 
 New release, primarily focused around three major new features: full **LCM** support, completely new **Model Merge** functionality and **Stable-fast** compile support  

@@ -51,7 +51,7 @@ requests==2.31.0
 tqdm==4.66.1
 accelerate==0.24.1
 opencv-python-headless==4.7.0.72
-diffusers==0.23.1
+diffusers==0.24.0
 einops==0.4.1
 gradio==3.43.2
 huggingface_hub==0.19.4
@@ -61,6 +61,7 @@ numba==0.57.1
 pandas==1.5.3
 protobuf==3.20.3
 pytorch_lightning==1.9.4
+tokenizers==0.15.0
 transformers==4.35.2
 tomesd==0.1.3
 urllib3==1.26.15
@@ -68,3 +69,4 @@ Pillow==10.1.0
 timm==0.9.7
 pydantic==1.10.13
 typing-extensions==4.8.0
+peft

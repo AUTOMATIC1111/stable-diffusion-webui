@@ -95,7 +95,7 @@ class ExtraNetworksPageStyles(ui_extra_networks.ExtraNetworksPage):
         return item
 
     def list_items(self):
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=shared.max_workers) as executor:
             future_items = {executor.submit(self.create_item, style): style for style in list(shared.prompt_styles.styles)}
             for future in concurrent.futures.as_completed(future_items):
                 item = future.result()

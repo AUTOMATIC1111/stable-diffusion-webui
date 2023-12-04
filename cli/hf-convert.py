@@ -8,7 +8,7 @@ import diffusers
 import safetensors
 import safetensors.torch as sf
 
-log = logging.getLogger("sdnext")
+log = logging.getLogger("sd")
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s | %(message)s')
 
 

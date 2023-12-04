@@ -6,8 +6,6 @@ import shutil
 import logging
 import platform
 import subprocess
-import io
-import pstats
 import cProfile
 import pkg_resources
 
@@ -29,6 +27,7 @@ opts = {}
 args = Dot({
     'debug': False,
     'reset': False,
+    'profile': False,
     'upgrade': False,
     'skip_extensions': False,
     'skip_requirements': False,
@@ -103,12 +102,6 @@ def setup_logging():
         fh.doRollover()
         log_rolled = True
 
-    global first_call # pylint: disable=global-statement
-    if first_call:
-        log_size = os.path.getsize(log_file) if os.path.exists(log_file) else 0
-        log.debug(f'Logger: file={log_file} level={level} size={log_size} mode={"append" if not log_rolled else "create"}')
-        first_call = False
-
     fh.formatter = logging.Formatter('%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s')
     fh.setLevel(logging.DEBUG)
     log.addHandler(fh)
@@ -121,9 +114,16 @@ def setup_logging():
     # overrides
     logging.getLogger("urllib3").setLevel(logging.ERROR)
     logging.getLogger("httpx").setLevel(logging.ERROR)
+    logging.getLogger("diffusers").setLevel(logging.ERROR)
+    logging.getLogger("torch").setLevel(logging.ERROR)
     logging.getLogger("ControlNet").handlers = log.handlers
     logging.getLogger("lycoris").handlers = log.handlers
     # logging.getLogger("DeepSpeed").handlers = log.handlers
+
+def get_logfile():
+    log_size = os.path.getsize(log_file) if os.path.exists(log_file) else 0
+    log.info(f'Logger: file="{log_file}" level={logging.getLevelName(logging.DEBUG if args.debug else logging.INFO)} size={log_size} mode={"append" if not log_rolled else "create"}')
+    return log_file
 
 
 def custom_excepthook(exc_type, exc_value, exc_traceback):
@@ -142,19 +142,9 @@ def print_dict(d):
     return ' '.join([f'{k}={v}' for k, v in d.items()])
 
 
-def print_profile(profile: cProfile.Profile, msg: str):
-    try:
-        from rich import print # pylint: disable=redefined-builtin
-    except Exception:
-        pass
-    profile.disable()
-    stream = io.StringIO()
-    ps = pstats.Stats(profile, stream=stream)
-    ps.sort_stats(pstats.SortKey.CUMULATIVE).print_stats(15)
-    profile = None
-    lines = stream.getvalue().split('\n')
-    lines = [line for line in lines if '<frozen' not in line and '{built-in' not in line and '/logging' not in line and '/rich' not in line]
-    print(f'Profile {msg}:', '\n'.join(lines))
+def print_profile(profiler: cProfile.Profile, msg: str):
+    from modules.errors import profile
+    profile(profiler, msg)
 
 
 # check if package is installed
@@ -421,7 +411,6 @@ def check_torch():
             log.debug(f'ROCm hipconfig failed: {e}')
             rocm_ver = None
         if rocm_ver in {"5.7"}:
-            # install torch nightly via torchvision to avoid wasting bandwidth when torchvision depends on torch from yesterday
             torch_command = os.environ.get('TORCH_COMMAND', f'torch torchvision --pre --index-url https://download.pytorch.org/whl/nightly/rocm{rocm_ver}')
         elif rocm_ver in {"5.5", "5.6"}:
             torch_command = os.environ.get('TORCH_COMMAND', f'torch torchvision --index-url https://download.pytorch.org/whl/nightly/rocm{rocm_ver}')
@@ -443,7 +432,7 @@ def check_torch():
             ipex_pip = 'https://github.com/Nuullll/intel-extension-for-pytorch/releases/download/v2.0.110%2Bxpu-master%2Bdll-bundle/intel_extension_for_pytorch-2.0.110+gitc6ea20b-cp310-cp310-win_amd64.whl'
             torch_command = os.environ.get('TORCH_COMMAND', f'{pytorch_pip} {torchvision_pip} {ipex_pip}')
         install('openvino', 'openvino', ignore=True)
-        install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True) # TODO numpy version conflicts with tensorflow and doesn't support Python 3.11
+        install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True)
     elif allow_openvino and args.use_openvino:
         log.info('Using OpenVINO')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.1.1 torchvision==0.16.1 --index-url https://download.pytorch.org/whl/cpu')
@@ -514,10 +503,11 @@ def check_torch():
     if opts.get('cuda_compile_backend', '') == 'hidet':
         install('hidet', 'hidet')
     if args.use_openvino or opts.get('cuda_compile_backend', '') == 'openvino_fx':
-        uninstall('openvino-nightly') # TODO remove after people had enough time upgrading
+        uninstall('openvino-nightly') # TODO openvino: remove after people had enough time upgrading
         install('openvino==2023.2.0', 'openvino')
-        install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True) # TODO numpy version conflicts with tensorflow and doesn't support Python 3.11
+        install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True) # TODO openvino: numpy version conflicts with tensorflow and doesn't support Python 3.11
         os.environ.setdefault('PYTORCH_TRACING_MODE', 'TORCHFX')
+        os.environ.setdefault('SD_LORA_DIFFUSERS', '1')
         os.environ.setdefault('NEOReadDebugKeys', '1')
         os.environ.setdefault('ClDeviceGlobalMemSizeAvailablePercent', '100')
     if args.profile:
@@ -767,6 +757,7 @@ def set_environment():
     os.environ.setdefault('TF_ENABLE_ONEDNN_OPTS', '0')
     os.environ.setdefault('USE_TORCH', '1')
     os.environ.setdefault('UVICORN_TIMEOUT_KEEP_ALIVE', '60')
+    os.environ.setdefault('KINETO_LOG_LEVEL', '3')
     os.environ.setdefault('HF_HUB_CACHE', opts.get('hfcache_dir', os.path.join(os.path.expanduser('~'), '.cache', 'huggingface', 'hub')))
     log.debug(f'Cache folder: {os.environ.get("HF_HUB_CACHE")}')
     if sys.platform == 'darwin':

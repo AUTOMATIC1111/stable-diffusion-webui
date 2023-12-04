@@ -64,8 +64,9 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
             self.active = False
 
     def deactivate(self, p):
-        if shared.backend == shared.Backend.DIFFUSERS and hasattr(shared.sd_model, "unload_lora_weights"):
-            shared.sd_model.unload_lora_weights()
+        if shared.backend == shared.Backend.DIFFUSERS and hasattr(shared.sd_model, "unload_lora_weights") and hasattr(shared.sd_model, "text_encoder"):
+            if 'CLIP' in shared.sd_model.text_encoder.__class__.__name__ and not (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx"):
+                shared.sd_model.unload_lora_weights()
         if not self.active and getattr(networks, "originals", None ) is not None:
             networks.originals.undo() # remove patches
             if networks.debug:

@@ -71,7 +71,7 @@
 "extra networks": [
   {"id":"","label":"UI position","localized":"","hint":"Location of extra networks"},
   {"id":"","label":"cover","localized":"","hint":"cover full area"},
-  {"id":"","label":"inline","localized":"","hint":"inline with all additional elelemtns (scrollable)"},
+  {"id":"","label":"inline","localized":"","hint":"inline with all additional elements (scrollable)"},
   {"id":"","label":"sidebar","localized":"","hint":"sidebar on the right side of the screen"},
   {"id":"","label":"UI height (%)","localized":"","hint":""},
   {"id":"","label":"UI sidebar width (%)","localized":"","hint":""},
@@ -445,7 +445,7 @@
   {"id":"","label":"File format for grids","localized":"","hint":""},
   {"id":"","label":"Add extended info (seed, prompt) to filename when saving grid","localized":"","hint":""},
   {"id":"","label":"Grid row count","localized":"","hint":"Use -1 for autodetect and 0 for it to be same as batch size"},
-  {"id":"","label":"Create text file next to every image with generation parameters","localized":"","hint":""},
+  {"id":"","label":"Create info file for each every image","localized":"","hint":""},
   {"id":"","label":"Create JSON log file for each saved image","localized":"","hint":"Save image information to a JSON file"},
   {"id":"","label":"Save copy of image before doing face restoration","localized":"","hint":""},
   {"id":"","label":"Save copy of image before applying hires","localized":"","hint":""},
