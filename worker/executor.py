@@ -115,9 +115,11 @@ class TaskExecutor(Thread):
         write_healthy(False)
         self._close()
 
-    def before_receive_task(self, task_ids):
+    def before_receive_task(self, *task_ids):
         def has_train_task():
             for id in task_ids:
+                if isinstance(id, bytes):
+                    id = id.decode()
                 if 'train' in id:
                     return True
 
