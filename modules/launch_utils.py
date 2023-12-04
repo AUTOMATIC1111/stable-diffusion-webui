@@ -120,12 +120,12 @@ def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_
 
 def is_installed(package):
     try:
-    	dist = importlib.metadata.distribution(package)
+        dist = importlib.metadata.distribution(package)
     except importlib.metadata.PackageNotFoundError:
-        try: 
+        try:
             spec = importlib.util.find_spec(package)
         except ModuleNotFoundError:
-    	    return False
+            return False
 
         return spec is not None
 
