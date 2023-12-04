@@ -23,4 +23,4 @@ opencv-python==4.7.0.68
 opencv-python-headless==4.7.0.72
 diffusers[torch]==0.10.2
 ftfy==6.1.1
-accelerate==0.15.0
+accelerate>=0.16.0

@@ -7,6 +7,7 @@ import time
 import tqdm
 from enum import Enum
 import math
+import dlib
 import tempfile
 # import diffusers
 # from diffusers.optimization import SchedulerType, TYPE_TO_SCHEDULER_FUNCTION
@@ -584,12 +585,15 @@ def prepare_accelerator(logging_dir="./logs", log_prefix=None, gradient_accumula
     return accelerator, unwrap_model
 
 
-import dlib
 
 
 def seg_face(input_path, output_path, model_path):
     # 加载人脸关键点检测器
-    predictor = dlib.shape_predictor(os.path.join(model_path, r"face_detect/shape_predictor_68_face_landmarks.dat"))
+    face_model = os.path.join(model_path, r"face_detect/shape_predictor_68_face_landmarks.dat")
+    if not os.path.isfile(face_model):
+        raise OSError(f'cannot found model:{face_model}')
+
+    predictor = dlib.shape_predictor(face_model)
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 

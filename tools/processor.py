@@ -52,7 +52,7 @@ class MultiWorker(object):
 
         # 创建指定数量的worker， 设置为守护模式
         for i in range(self.max_worker_count):
-            worker = self.worker_type(target=self.process)
+            worker = self.worker_type(target=self.process, name="worker")
             worker.daemon = True
             workers.append(worker)
             worker.start()

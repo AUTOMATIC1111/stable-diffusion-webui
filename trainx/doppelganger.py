@@ -38,7 +38,7 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
 
     image_dir = task.download_move_input_images()
     logger.debug(f">> input images dir:{image_dir}")
-
+    kill_child_processes()
     if image_dir:
         # 检测年龄
         images = [os.path.join(image_dir, os.path.basename(i)) for i in random.choices(task.image_keys, k=5)]
@@ -50,7 +50,7 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
         age = np.average([x[-1] for x in face_info])
         gender = '1girl' if np.sum([x[0] == 0 for x in face_info]) > len(face_info) / 2 else '1boy'
 
-        p = TaskProgress.new_running(job, 'train running.')
+        p = TaskProgress.new_running(job, 'train running.', eta - 60)
         yield p
 
         def train_progress_callback(epoch, loss, num_train_epochs, progress):

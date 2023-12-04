@@ -256,6 +256,7 @@ def run_worker():
         return
 
     logger.debug("[WORKER] worker模式下需要保证config.json中配置controlnet unit限定5个")
+
     exec = run_executor(shared.sd_model_recorder, train_only=cmd_opts.train_only)
     exec.stop()
     dumper.stop()

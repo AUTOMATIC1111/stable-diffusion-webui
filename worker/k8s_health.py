@@ -26,9 +26,12 @@ def write_healthy(status: bool):
 
 
 def _exit():
+    logger.info(f"process exit after 20 seconds...")
+    # wait task dumper
+    time.sleep(10)
     # for restart k8s pod
     write_healthy(False)
-    time.sleep(1)
+    time.sleep(10)
 
     # kill process
     libc = CDLL(find_library("libc"))

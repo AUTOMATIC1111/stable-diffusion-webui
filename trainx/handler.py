@@ -13,6 +13,7 @@ from .lora import exec_train_lora_task, start_train_process
 from trainx.doppelganger import digital_doppelganger
 from trainx.typex import TrainMinorTaskType
 from modules.devices import torch_gc
+from worker.dumper import MongoTaskDumper
 
 
 class TrainTaskHandler(DumpTaskHandler):
@@ -28,3 +29,7 @@ class TrainTaskHandler(DumpTaskHandler):
             yield from exec_train_lora_task(task, self._set_task_status)
         elif task.minor_type == TrainMinorTaskType.DigitalDoppelganger:
             yield from digital_doppelganger(task, self._set_task_status)
+
+    def _set_task_status(self, p):
+        with MongoTaskDumper() as dumper:
+            dumper.dump_task_progress(p)
