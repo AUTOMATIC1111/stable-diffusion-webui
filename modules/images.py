@@ -244,6 +244,8 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None, output_type
 
     if resize_mode == 0:
         res = im.copy()
+    if width == 0 or height == 0:
+        res = im.copy()
     elif resize_mode == 1:
         res = resize(im, width, height)
     elif resize_mode == 2:
