@@ -37,7 +37,7 @@ def sdunet_permutation_spec() -> PermutationSpec:
     }
 
     # VAE blocks - Unused
-    easyblock2 = lambda name, p: {  # pylint: disable=unnecessary-lambda-assignment
+    easyblock2 = lambda name, p: {  # pylint: disable=unnecessary-lambda-assignment, unused-variable # noqa: F841
         **norm(f"{name}.norm1", p),
         **conv(f"{name}.conv1", p, f"P_{name}_inner"),
         **norm(f"{name}.norm2", f"P_{name}_inner"),
@@ -45,7 +45,7 @@ def sdunet_permutation_spec() -> PermutationSpec:
     }
 
     # This is for blocks that use a residual connection, but change the number of channels via a Conv.
-    shortcutblock = lambda name, p_in, p_out: {  # pylint: disable=unnecessary-lambda-assignment
+    shortcutblock = lambda name, p_in, p_out: {  # pylint: disable=unnecessary-lambda-assignment, , unused-variable # noqa: F841
         **norm(f"{name}.norm1", p_in),
         **conv(f"{name}.conv1", p_in, f"P_{name}_inner"),
         **norm(f"{name}.norm2", f"P_{name}_inner"),

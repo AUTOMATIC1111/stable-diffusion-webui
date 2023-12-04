@@ -71,18 +71,25 @@ def profile(profiler, msg: str):
     # p.print_callers(10)
     profiler = None
     lines = stream.getvalue().split('\n')
-    lines = [l for l in lines if '<frozen' not in l and '{built-in' not in l and '/logging' not in l and 'Ordered by' not in l and 'List reduced' not in l and '_lsprof' not in l and '/profiler' not in l and 'rich' not in l and l.strip() != '']
+    lines = [x for x in lines if '<frozen' not in x
+             and '{built-in' not in x
+             and '/logging' not in x
+             and 'Ordered by' not in x
+             and 'List reduced' not in x
+             and '_lsprof' not in x
+             and '/profiler' not in x
+             and 'rich' not in x
+             and x.strip() != ''
+            ]
     txt = '\n'.join(lines[:min(5, len(lines))])
     log.debug(f'Profile {msg}: {txt}')
 
 
 def profile_torch(profiler, msg: str):
     profiler.stop()
-    from rich import print # pylint: disable=redefined-builtin
-    # lines = profiler.key_averages().table(sort_by="self_cuda_time_total", row_limit=6)
     lines = profiler.key_averages().table(sort_by="self_cpu_time_total", row_limit=12)
     lines = lines.split('\n')
-    lines = [l for l in lines if '/profiler' not in l and '---' not in l]
+    lines = [x for x in lines if '/profiler' not in x and '---' not in x]
     txt = '\n'.join(lines)
     # print(f'Torch {msg}:', txt)
     log.debug(f'Torch profile {msg}: \n{txt}')

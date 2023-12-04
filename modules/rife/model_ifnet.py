@@ -82,7 +82,7 @@ class IFNet(nn.Module):
         # self.contextnet = Contextnet()
         # self.unet = Unet()
 
-    def forward( self, x, timestep=0.5, scale_list=[8, 4, 2, 1], training=False, fastmode=True, ensemble=False):
+    def forward( self, x, timestep=0.5, scale_list=[8, 4, 2, 1], training=False, fastmode=True, ensemble=False): # pylint: disable=dangerous-default-value # noqa: B006
         if training is False:
             channel = x.shape[1] // 2
             img0 = x[:, :channel]

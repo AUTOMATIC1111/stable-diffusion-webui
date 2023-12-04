@@ -53,5 +53,5 @@ try:
         torch.set_num_threads(math.floor(affinity / 2))
         threads = torch.get_num_threads()
         errors.log.debug(f'Detected: cores={cores} affinity={affinity} set threads={threads}')
-except Exception as e:
+except Exception:
     pass

@@ -28,7 +28,7 @@ def soft_clamp_tensor(input_tensor, threshold=0.8, boundary=4):
     return input_tensor
 
 
-def center_tensor(input_tensor, channel_shift=1.0, full_shift=1.0, channels=[0, 1, 2, 3]):
+def center_tensor(input_tensor, channel_shift=1.0, full_shift=1.0, channels=[0, 1, 2, 3]): # pylint: disable=dangerous-default-value # noqa: B006
     if channel_shift == 0 and full_shift == 0:
         return input_tensor
     means = []
@@ -40,7 +40,7 @@ def center_tensor(input_tensor, channel_shift=1.0, full_shift=1.0, channels=[0, 
     return input_tensor
 
 
-def maximize_tensor(input_tensor, boundary=1.0, channels=[0, 1, 2]):
+def maximize_tensor(input_tensor, boundary=1.0, channels=[0, 1, 2]): # pylint: disable=dangerous-default-value # noqa: B006
     if boundary == 1.0:
         return input_tensor
     boundary *= 4
