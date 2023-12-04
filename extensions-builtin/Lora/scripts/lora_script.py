@@ -1,6 +1,7 @@
 import re
 from fastapi import FastAPI
 import networks
+import lora # noqa:F401 # pylint: disable=unused-import
 from network import NetworkOnDisk
 from ui_extra_networks_lora import ExtraNetworksPageLora
 from extra_networks_lora import ExtraNetworkLora
