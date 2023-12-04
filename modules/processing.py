@@ -30,6 +30,7 @@ import modules.sd_models as sd_models
 import modules.sd_vae as sd_vae
 from ldm.data.util import AddMiDaS
 from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
+import modules.soft_inpainting as si
 
 from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
@@ -1425,9 +1426,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     mask_blur_x: int = 4
     mask_blur_y: int = 4
     mask_blur: int = None
-    mask_blend_power: float = 1
-    mask_blend_scale: float = 0.5
-    inpaint_detail_preservation: float = 4
+    soft_inpainting: si.SoftInpaintingParameters = si.default
     inpainting_fill: int = 0
     inpaint_full_res: bool = True
     inpaint_full_res_padding: int = 0

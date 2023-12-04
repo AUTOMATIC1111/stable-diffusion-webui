@@ -29,6 +29,7 @@ import modules.shared as shared
 from modules import prompt_parser
 from modules.sd_hijack import model_hijack
 from modules.generation_parameters_copypaste import image_from_url_text
+import modules.soft_inpainting as si
 
 create_setting_component = ui_settings.create_setting_component
 
@@ -678,9 +679,16 @@ def create_ui():
                             with FormRow():
                                 mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
                                 mask_alpha = gr.Slider(label="Mask transparency", visible=False, elem_id="img2img_mask_alpha")
+
+                            with FormRow():
+                                soft_inpainting = si.gradio_ui()
+
+
+                            """
                                 mask_blend_power = gr.Slider(label='Blending bias', minimum=0, maximum=8, step=0.1, value=1, elem_id="img2img_mask_blend_power")
                                 mask_blend_scale = gr.Slider(label='Blending preservation', minimum=0, maximum=8, step=0.05, value=0.5, elem_id="img2img_mask_blend_scale")
                                 inpaint_detail_preservation = gr.Slider(label='Blending contrast boost', minimum=1, maximum=32, step=0.5, value=4, elem_id="img2img_mask_blend_offset")
+                            """
 
                             with FormRow():
                                 inpainting_mask_invert = gr.Radio(label='Mask mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
@@ -736,9 +744,7 @@ def create_ui():
                     sampler_name,
                     mask_blur,
                     mask_alpha,
-                    mask_blend_power,
-                    mask_blend_scale,
-                    inpaint_detail_preservation,
+                    *(soft_inpainting[0]),
                     inpainting_fill,
                     batch_count,
                     batch_size,
@@ -837,11 +843,10 @@ def create_ui():
                 (toprow.ui_styles.dropdown, lambda d: d["Styles array"] if isinstance(d.get("Styles array"), list) else gr.update()),
                 (denoising_strength, "Denoising strength"),
                 (mask_blur, "Mask blur"),
-                (mask_blend_power, "Mask blending bias"),
-                (mask_blend_scale, "Mask blending preservation"),
-                (inpaint_detail_preservation, "Mask blending contrast boost"),
+                *(soft_inpainting[1]),
                 *scripts.scripts_img2img.infotext_fields
             ]
+
             parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields, override_settings)
             parameters_copypaste.add_paste_fields("inpaint", init_img_with_mask, img2img_paste_fields, override_settings)
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(

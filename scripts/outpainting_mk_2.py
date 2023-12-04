@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw
 from modules import images
 from modules.processing import Processed, process_images
 from modules.shared import opts, state
+import modules.soft_inpainting as si
 
 
 # this function is taken from https://github.com/parlance-zz/g-diffuser-bot
@@ -133,16 +134,14 @@ class Script(scripts.Script):
 
         pixels = gr.Slider(label="Pixels to expand", minimum=8, maximum=256, step=8, value=128, elem_id=self.elem_id("pixels"))
         mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=8, elem_id=self.elem_id("mask_blur"))
-        mask_blend_power = gr.Slider(label='Blending bias', minimum=0, maximum=8, step=0.1, value=1, elem_id=self.elem_id("mask_blend_power"))
-        mask_blend_scale = gr.Slider(label='Blending preservation', minimum=0, maximum=8, step=0.05, value=0.5, elem_id=self.elem_id("mask_blend_scale"))
-        inpaint_detail_preservation = gr.Slider(label='Blending contrast boost', minimum=1, maximum=32, step=0.5, value=4, elem_id=self.elem_id("inpaint_detail_preservation"))
+        soft_inpainting = si.gradio_ui()[0]
         direction = gr.CheckboxGroup(label="Outpainting direction", choices=['left', 'right', 'up', 'down'], value=['left', 'right', 'up', 'down'], elem_id=self.elem_id("direction"))
         noise_q = gr.Slider(label="Fall-off exponent (lower=higher detail)", minimum=0.0, maximum=4.0, step=0.01, value=1.0, elem_id=self.elem_id("noise_q"))
         color_variation = gr.Slider(label="Color variation", minimum=0.0, maximum=1.0, step=0.01, value=0.05, elem_id=self.elem_id("color_variation"))
 
-        return [info, pixels, mask_blur, mask_blend_power, mask_blend_scale, inpaint_detail_preservation, direction, noise_q, color_variation]
+        return [info, pixels, mask_blur, *soft_inpainting, direction, noise_q, color_variation]
 
-    def run(self, p, _, pixels, mask_blur, mask_blend_power, mask_blend_scale, inpaint_detail_preservation, direction, noise_q, color_variation):
+    def run(self, p, _, pixels, mask_blur, mask_blend_enabled, mask_blend_power, mask_blend_scale, inpaint_detail_preservation, direction, noise_q, color_variation):
         initial_seed_and_info = [None, None]
 
         process_width = p.width
@@ -170,9 +169,9 @@ class Script(scripts.Script):
 
         p.mask_blur_x = mask_blur_x*4
         p.mask_blur_y = mask_blur_y*4
-        p.mask_blend_power = mask_blend_power
-        p.mask_blend_scale = mask_blend_scale
-        p.inpaint_detail_preservation = inpaint_detail_preservation
+
+        p.soft_inpainting = si.SoftInpaintingSettings(mask_blend_power, mask_blend_scale, inpaint_detail_preservation) \
+            if mask_blend_enabled else None
 
         init_img = p.init_images[0]
         target_w = math.ceil((init_img.width + left + right) / 64) * 64

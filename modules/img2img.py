@@ -15,6 +15,7 @@ import modules.shared as shared
 import modules.processing as processing
 from modules.ui import plaintext_to_html
 import modules.scripts
+import modules.soft_inpainting as si
 
 
 def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=False, scale_by=1.0, use_png_info=False, png_info_props=None, png_info_dir=None):
@@ -162,6 +163,7 @@ def img2img(id_task: str,
             sampler_name: str,
             mask_blur: int,
             mask_alpha: float,
+            mask_blend_enabled: bool,
             mask_blend_power: float,
             mask_blend_scale: float,
             inpaint_detail_preservation: float,
@@ -227,6 +229,9 @@ def img2img(id_task: str,
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
 
+    soft_inpainting = si.SoftInpaintingSettings(mask_blend_power, mask_blend_scale, inpaint_detail_preservation) \
+        if mask_blend_enabled else None
+
     p = StableDiffusionProcessingImg2Img(
         sd_model=shared.sd_model,
         outpath_samples=opts.outdir_samples or opts.outdir_img2img_samples,
@@ -244,9 +249,7 @@ def img2img(id_task: str,
         init_images=[image],
         mask=mask,
         mask_blur=mask_blur,
-        mask_blend_power=mask_blend_power,
-        mask_blend_scale=mask_blend_scale,
-        inpaint_detail_preservation=inpaint_detail_preservation,
+        soft_inpainting=soft_inpainting,
         inpainting_fill=inpainting_fill,
         resize_mode=resize_mode,
         denoising_strength=denoising_strength,
@@ -267,9 +270,8 @@ def img2img(id_task: str,
 
     if mask:
         p.extra_generation_params["Mask blur"] = mask_blur
-        p.extra_generation_params["Mask blending bias"] = mask_blend_power
-        p.extra_generation_params["Mask blending preservation"] = mask_blend_scale
-        p.extra_generation_params["Mask blending contrast boost"] = inpaint_detail_preservation
+        if soft_inpainting is not None:
+            soft_inpainting.add_generation_params(p.extra_generation_params)
 
     with closing(p):
         if is_batch:
