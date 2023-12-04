@@ -153,4 +153,4 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         },
     })
 
-    return run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, show_extras_results, *args, save_output=save_output)
+    return run_postprocessing("", extras_mode, image, image_folder, input_dir, output_dir, show_extras_results, *args, save_output=save_output)
