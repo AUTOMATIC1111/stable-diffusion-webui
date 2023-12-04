@@ -1,15 +1,11 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-01
+## Update for 2023-12-04
 
 What's new? Native video in SD.Next via both **AnimateDiff** and **Stable-Video-Diffusion** - and including native MP4 encoding and smooth video outputs out-of-the-box, not just animated-GIFs.  
 Also new is support for **SDXL-Turbo** as well as new **Kandinsky 3** models and cool latent correction via **HDR controls** for any *txt2img* workflows, best-of-class **SDXL model merge** using full ReBasin methods and further mobile UI optimizations.  
 
 - **Diffusers**
-  - **HDR latent control**, based on [article](https://huggingface.co/blog/TimothyAlexisVass/explaining-the-sdxl-latent-space#long-prompts-at-high-guidance-scales-becoming-possible)  
-    - in *Advanced* params
-    - allows control of *latent clamping*, *color centering* and *range maximimization*  
-    - supported by *XYZ grid*  
   - **IP adapter**
     - lightweight native implementation of T2I adapters which can guide generation towards specific image style  
     - supports most T2I models, not limited to SD 1.5  
@@ -23,6 +19,10 @@ Also new is support for **SDXL-Turbo** as well as new **Kandinsky 3** models and
     - for video saving support, see video support section
     - can be combined with IP-Adapter for even better results!  
     - for AnimateDiff support in *Original* backend, use standard *AnimateDiff* extension  
+  - **HDR latent control**, based on [article](https://huggingface.co/blog/TimothyAlexisVass/explaining-the-sdxl-latent-space#long-prompts-at-high-guidance-scales-becoming-possible)  
+    - in *Advanced* params
+    - allows control of *latent clamping*, *color centering* and *range maximimization*  
+    - supported by *XYZ grid*  
   - [SD21 Turbo](https://huggingface.co/stabilityai/sd-turbo) and [SDXL Turbo](<https://huggingface.co/stabilityai/sdxl-turbo>) support  
     - just set CFG scale (0.0-1.0) and steps (1-3) to a very low value  
     - compatible with original StabilityAI SDXL-Turbo or any of the newer merges
