@@ -1,5 +1,5 @@
 # Release candidate
-Release candidate is a version that will soon be released as a new major version. For example, before 1.7.0 is released, there is 1.7.0-RC version, which is a release candidate - it has all new features and is available for testing.
+Release candidate is a version that will soon be released as a new stable version. For example, before 1.7.0 is released, there is 1.7.0-RC version, which is a release candidate - it has all new features and is available for testing.
 
 ### How to switch existing installation to release candidate
 Run those commands in webui directory:
