@@ -390,7 +390,7 @@ div#extras_scale_to_tab div.form{
     z-index: 5;
 }
 
-.image-buttons > .form{
+.image-buttons{
     justify-content: center;
 }
 
@@ -1044,9 +1044,9 @@ footer {
     height:100%;
 }
 
-div.block.gradio-box.edit-user-metadata {
+.edit-user-metadata {
     width: 56em;
-    background: var(--body-background-fill);
+    background: var(--body-background-fill) !important;
     padding: 2em !important;
 }
 
@@ -1080,17 +1080,10 @@ div.block.gradio-box.edit-user-metadata {
     margin-top: 1.5em;
 }
 
-
-
-
-div.block.gradio-box.popup-dialog, .popup-dialog {
+.popup-dialog {
     width: 56em;
-    background: var(--body-background-fill);
+    background: var(--body-background-fill) !important;
     padding: 2em !important;
-}
-
-div.block.gradio-box.popup-dialog > div:last-child, .popup-dialog > div:last-child{
-    margin-top: 1em;
 }
 
 div.block.input-accordion{
