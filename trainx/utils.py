@@ -147,4 +147,4 @@ def kill_child_processes():
     # 处理子进程
     for child in children:
         logger.debug(f"sub process kill:{child.pid}, name:{child.name()}(test only)")
-        # child.kill()
+        child.kill()

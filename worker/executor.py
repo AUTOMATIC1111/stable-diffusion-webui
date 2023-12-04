@@ -116,7 +116,19 @@ class TaskExecutor(Thread):
         self._close()
 
     def before_receive_task(self, task_ids):
-        if random.randint(1, 10) < 3:
+        def has_train_task():
+            for id in task_ids:
+                if 'train' in id:
+                    return True
+
+        train_task = has_train_task()
+
+        if train_task:
+            logger.info("before receive train task, check memory info...")
+            torch_gc()
+            free, total = vram_mon.cuda_mem_get_info()
+            system_exit(free, total, threshold_b=12)
+        elif random.randint(1, 10) < 3:
             logger.info("before receive task, check memory info...")
             torch_gc()
             free, total = vram_mon.cuda_mem_get_info()

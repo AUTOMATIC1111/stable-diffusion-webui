@@ -35,8 +35,8 @@ def _exit():
     libc.exit(1)
 
 
-def system_exit(free, total, threshold=0.2, coercive=False):
-    gpu_oom = free < threshold * total and free / 2 ** 30 < 3
+def system_exit(free, total, threshold=0.2, coercive=False, threshold_b=4, threshold_c=24):
+    gpu_oom = free < threshold * total and free / 2 ** 30 < threshold_b
 
     if gpu_oom or coercive:
         if gpu_oom:
@@ -50,7 +50,7 @@ def system_exit(free, total, threshold=0.2, coercive=False):
         mem = psutil.virtual_memory()
         total = int(mem.total / 1024 / 1024 / 1024)
         used = int(mem.used / 1024 / 1024 / 1024)
-        if used > total * 0.8 and total - used < 16:
+        if used > total * (1 - threshold) and total - used < threshold_c:
             logger.info(f"out of memory:{used}/{total}(GB), kill current process...")
             _exit()
 
