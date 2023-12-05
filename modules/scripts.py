@@ -560,10 +560,17 @@ class ScriptRunner:
             on_after.clear()
 
     def create_script_ui(self, script):
-        import modules.api.models as api_models
 
         script.args_from = len(self.inputs)
         script.args_to = len(self.inputs)
+
+        try:
+            self.create_script_ui_inner(script)
+        except Exception:
+            errors.report(f"Error creating UI for {script.name}: ", exc_info=True)
+
+    def create_script_ui_inner(self, script):
+        import modules.api.models as api_models
 
         controls = wrap_call(script.ui, script.filename, "ui", script.is_img2img)
 
@@ -571,6 +578,7 @@ class ScriptRunner:
             return
 
         script.name = wrap_call(script.title, script.filename, "title", default=script.filename).lower()
+
         api_args = []
 
         for control in controls:

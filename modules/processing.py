@@ -692,8 +692,8 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Size": f"{p.width}x{p.height}",
         "Model hash": p.sd_model_hash if opts.add_model_hash_to_info else None,
         "Model": p.sd_model_name if opts.add_model_name_to_info else None,
-        "VAE hash": p.sd_vae_hash if opts.add_model_hash_to_info else None,
-        "VAE": p.sd_vae_name if opts.add_model_name_to_info else None,
+        "VAE hash": p.sd_vae_hash if opts.add_vae_hash_to_info else None,
+        "VAE": p.sd_vae_name if opts.add_vae_name_to_info else None,
         "Variation seed": (None if p.subseed_strength == 0 else (p.all_subseeds[0] if use_main_prompt else all_subseeds[index])),
         "Variation seed strength": (None if p.subseed_strength == 0 else p.subseed_strength),
         "Seed resize from": (None if p.seed_resize_from_w <= 0 or p.seed_resize_from_h <= 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}"),
@@ -980,27 +980,26 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 if opts.enable_pnginfo:
                     image.info["parameters"] = text
                 output_images.append(image)
-                if save_samples and any([opts.save_mask, opts.save_mask_composite, opts.return_mask, opts.return_mask_composite]):
-                    if hasattr(p, 'masks_for_overlay') and p.masks_for_overlay:
-                        image_mask = p.masks_for_overlay[i].convert('RGB')
-                        image_mask_composite = Image.composite(original_denoised_image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size), images.resize_image(2, p.masks_for_overlay[i], image.width, image.height).convert('L')).convert('RGBA')
-                    elif hasattr(p, 'mask_for_overlay') and p.mask_for_overlay:
-                        image_mask = p.mask_for_overlay.convert('RGB')
-                        image_mask_composite = Image.composite(original_denoised_image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size), images.resize_image(2, p.mask_for_overlay, image.width, image.height).convert('L')).convert('RGBA')
-                    else:
-                        image_mask = None
-                        image_mask_composite = None
 
-                    if image_mask is not None and image_mask_composite is not None:
-                        if opts.save_mask:
+                if hasattr(p, 'mask_for_overlay') and p.mask_for_overlay:
+                    mask_for_overlay = p.mask_for_overlay
+                elif hasattr(p, 'masks_for_overlay') and p.masks_for_overlay and p.masks_for_overlay[i]:
+                    mask_for_overlay = p.masks_for_overlay[i]
+                else:
+                    mask_for_overlay = None
+
+                if mask_for_overlay is not None:
+                    if opts.return_mask or opts.save_mask:
+                        image_mask = mask_for_overlay.convert('RGB')
+                        if save_samples and opts.save_mask:
                             images.save_image(image_mask, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p, suffix="-mask")
-
-                        if opts.save_mask_composite:
-                            images.save_image(image_mask_composite, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p, suffix="-mask-composite")
-
                         if opts.return_mask:
                             output_images.append(image_mask)
 
+                    if opts.return_mask_composite or opts.save_mask_composite:
+                        image_mask_composite = Image.composite(original_denoised_image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size), images.resize_image(2, mask_for_overlay, image.width, image.height).convert('L')).convert('RGBA')
+                        if save_samples and opts.save_mask_composite:
+                            images.save_image(image_mask_composite, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p, suffix="-mask-composite")
                         if opts.return_mask_composite:
                             output_images.append(image_mask_composite)
 

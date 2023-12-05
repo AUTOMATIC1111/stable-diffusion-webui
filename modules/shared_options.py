@@ -46,8 +46,6 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "grid_text_inactive_color": OptionInfo("#999999", "Inactive text color for image grids", ui_components.FormColorPicker, {}),
     "grid_background_color": OptionInfo("#ffffff", "Background color for image grids", ui_components.FormColorPicker, {}),
 
-    "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
-    "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
     "save_images_before_face_restoration": OptionInfo(False, "Save a copy of image before doing face restoration."),
     "save_images_before_highres_fix": OptionInfo(False, "Save a copy of image before applying highres fix."),
     "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),
@@ -237,6 +235,7 @@ options_templates.update(options_section(('interrogate', "Interrogate"), {
 
 options_templates.update(options_section(('extra_networks', "Extra Networks", "sd"), {
     "extra_networks_show_hidden_directories": OptionInfo(True, "Show hidden directories").info("directory is hidden if its name starts with \".\"."),
+    "extra_networks_dir_button_function": OptionInfo(False, "Add a '/' to the beginning of directory buttons").info("Buttons will display the contents of the selected directory without acting as a search filter."),
     "extra_networks_hidden_models": OptionInfo("When searched", "Show cards for models in hidden directories", gr.Radio, {"choices": ["Always", "When searched", "Never"]}).info('"When searched" option will only show the item when the search string has 4 characters or more'),
     "extra_networks_default_multiplier": OptionInfo(1.0, "Default multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 2.0, "step": 0.01}),
     "extra_networks_card_width": OptionInfo(0, "Card width for Extra Networks").info("in pixels"),
@@ -252,47 +251,65 @@ options_templates.update(options_section(('extra_networks', "Extra Networks", "s
     "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: {"choices": ["None", *shared.hypernetworks]}, refresh=shared_items.reload_hypernetworks),
 }))
 
-options_templates.update(options_section(('ui', "User interface", "ui"), {
-    "localization": OptionInfo("None", "Localization", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)).needs_reload_ui(),
-    "gradio_theme": OptionInfo("Default", "Gradio theme", ui_components.DropdownEditable, lambda: {"choices": ["Default"] + shared_gradio_themes.gradio_hf_hub_themes}).info("you can also manually enter any of themes from the <a href='https://huggingface.co/spaces/gradio/theme-gallery'>gallery</a>.").needs_reload_ui(),
-    "gradio_themes_cache": OptionInfo(True, "Cache gradio themes locally").info("disable to update the selected Gradio theme"),
-    "gallery_height": OptionInfo("", "Gallery height", gr.Textbox).info("an be any valid CSS value").needs_reload_ui(),
-    "return_grid": OptionInfo(True, "Show grid in results for web"),
-    "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
-    "send_seed": OptionInfo(True, "Send seed when sending prompt or image to other interface"),
-    "send_size": OptionInfo(True, "Send size when sending prompt or image to another interface"),
-    "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
-    "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
-    "js_modal_lightbox_gamepad": OptionInfo(False, "Navigate image viewer with gamepad"),
-    "js_modal_lightbox_gamepad_repeat": OptionInfo(250, "Gamepad repeat period, in milliseconds"),
-    "show_progress_in_title": OptionInfo(True, "Show generation progress in window title."),
+options_templates.update(options_section(('ui_prompt_editing', "Prompt editing", "ui"), {
+    "keyedit_precision_attention": OptionInfo(0.1, "Precision for (attention:1.1) when editing the prompt with Ctrl+up/down", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
+    "keyedit_precision_extra": OptionInfo(0.05, "Precision for <extra networks:0.9> when editing the prompt with Ctrl+up/down", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
+    "keyedit_delimiters": OptionInfo(r".,\/!?%^*;:{}=`~() ", "Word delimiters when editing the prompt with Ctrl+up/down"),
+    "keyedit_delimiters_whitespace": OptionInfo(["Tab", "Carriage Return", "Line Feed"], "Ctrl+up/down whitespace delimiters", gr.CheckboxGroup, lambda: {"choices": ["Tab", "Carriage Return", "Line Feed"]}),
+    "disable_token_counters": OptionInfo(False, "Disable prompt token counters").needs_reload_ui(),
+}))
+
+options_templates.update(options_section(('ui_gallery', "Gallery", "ui"), {
+    "return_grid": OptionInfo(True, "Show grid in gallery"),
+    "do_not_show_images": OptionInfo(False, "Do not show any images in gallery"),
+    "js_modal_lightbox": OptionInfo(True, "Full page image viewer: enable"),
+    "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Full page image viewer: show images zoomed in by default"),
+    "js_modal_lightbox_gamepad": OptionInfo(False, "Full page image viewer: navigate with gamepad"),
+    "js_modal_lightbox_gamepad_repeat": OptionInfo(250, "Full page image viewer: gamepad repeat period").info("in milliseconds"),
+    "gallery_height": OptionInfo("", "Gallery height", gr.Textbox).info("can be any valid CSS value, for example 768px or 20em").needs_reload_ui(),
+}))
+
+options_templates.update(options_section(('ui_alternatives', "UI alternatives", "ui"), {
+    "compact_prompt_box": OptionInfo(False, "Compact prompt layout").info("puts prompt and negative prompt inside the Generate tab, leaving more vertical space for the image on the right").needs_reload_ui(),
     "samplers_in_dropdown": OptionInfo(True, "Use dropdown for sampler selection instead of radio group").needs_reload_ui(),
     "dimensions_and_batch_together": OptionInfo(True, "Show Width/Height and Batch sliders in same row").needs_reload_ui(),
-    "keyedit_precision_attention": OptionInfo(0.1, "Ctrl+up/down precision when editing (attention:1.1)", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
-    "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
-    "keyedit_delimiters": OptionInfo(r".,\/!?%^*;:{}=`~() ", "Ctrl+up/down word delimiters"),
-    "keyedit_delimiters_whitespace": OptionInfo(["Tab", "Carriage Return", "Line Feed"], "Ctrl+up/down whitespace delimiters", gr.CheckboxGroup, lambda: {"choices": ["Tab", "Carriage Return", "Line Feed"]}),
-    "keyedit_move": OptionInfo(True, "Alt+left/right moves prompt elements"),
-    "quicksettings_list": OptionInfo(["sd_model_checkpoint"], "Quicksettings list", ui_components.DropdownMulti, lambda: {"choices": list(shared.opts.data_labels.keys())}).js("info", "settingsHintsShowQuicksettings").info("setting entries that appear at the top of page rather than in settings tab").needs_reload_ui(),
-    "ui_tab_order": OptionInfo([], "UI tab order", ui_components.DropdownMulti, lambda: {"choices": list(shared.tab_names)}).needs_reload_ui(),
-    "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": list(shared.tab_names)}).needs_reload_ui(),
-    "ui_reorder_list": OptionInfo([], "txt2img/img2img UI item order", ui_components.DropdownMulti, lambda: {"choices": list(shared_items.ui_reorder_categories())}).info("selected items appear first").needs_reload_ui(),
     "sd_checkpoint_dropdown_use_short": OptionInfo(False, "Checkpoint dropdown: use filenames without paths").info("models in subdirectories like photo/sd15.ckpt will be listed as just sd15.ckpt"),
     "hires_fix_show_sampler": OptionInfo(False, "Hires fix: show hires checkpoint and sampler selection").needs_reload_ui(),
     "hires_fix_show_prompts": OptionInfo(False, "Hires fix: show hires prompt and negative prompt").needs_reload_ui(),
-    "disable_token_counters": OptionInfo(False, "Disable prompt token counters").needs_reload_ui(),
     "txt2img_settings_accordion": OptionInfo(False, "Settings in txt2img hidden under Accordion").needs_reload_ui(),
     "img2img_settings_accordion": OptionInfo(False, "Settings in img2img hidden under Accordion").needs_reload_ui(),
-    "compact_prompt_box": OptionInfo(False, "Compact prompt layout").info("puts prompt and negative prompt inside the Generate tab, leaving more vertical space for the image on the right").needs_reload_ui(),
+}))
+
+options_templates.update(options_section(('ui', "User interface", "ui"), {
+    "localization": OptionInfo("None", "Localization", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)).needs_reload_ui(),
+    "quicksettings_list": OptionInfo(["sd_model_checkpoint"], "Quicksettings list", ui_components.DropdownMulti, lambda: {"choices": list(shared.opts.data_labels.keys())}).js("info", "settingsHintsShowQuicksettings").info("setting entries that appear at the top of page rather than in settings tab").needs_reload_ui(),
+    "ui_tab_order": OptionInfo([], "UI tab order", ui_components.DropdownMulti, lambda: {"choices": list(shared.tab_names)}).needs_reload_ui(),
+    "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": list(shared.tab_names)}).needs_reload_ui(),
+    "ui_reorder_list": OptionInfo([], "UI item order for txt2img/img2img tabs", ui_components.DropdownMulti, lambda: {"choices": list(shared_items.ui_reorder_categories())}).info("selected items appear first").needs_reload_ui(),
+    "gradio_theme": OptionInfo("Default", "Gradio theme", ui_components.DropdownEditable, lambda: {"choices": ["Default"] + shared_gradio_themes.gradio_hf_hub_themes}).info("you can also manually enter any of themes from the <a href='https://huggingface.co/spaces/gradio/theme-gallery'>gallery</a>.").needs_reload_ui(),
+    "gradio_themes_cache": OptionInfo(True, "Cache gradio themes locally").info("disable to update the selected Gradio theme"),
+    "show_progress_in_title": OptionInfo(True, "Show generation progress in window title."),
+    "send_seed": OptionInfo(True, "Send seed when sending prompt or image to other interface"),
+    "send_size": OptionInfo(True, "Send size when sending prompt or image to another interface"),
 }))
 
 
 options_templates.update(options_section(('infotext', "Infotext", "ui"), {
-    "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
-    "add_model_name_to_info": OptionInfo(True, "Add model name to generation information"),
-    "add_user_name_to_info": OptionInfo(False, "Add user name to generation information when authenticated"),
-    "add_version_to_infotext": OptionInfo(True, "Add program version to generation information"),
+    "infotext_explanation": OptionHTML("""
+Infotext is what this software calls the text that contains generation parameters and can be used to generate the same picture again.
+It is displayed in UI below the image. To use infotext, paste it into the prompt and click the ↙️ paste button.
+"""),
+    "enable_pnginfo": OptionInfo(True, "Write infotext to metadata of the generated image"),
+    "save_txt": OptionInfo(False, "Create a text file with infotext next to every generated image"),
+
+    "add_model_name_to_info": OptionInfo(True, "Add model name to infotext"),
+    "add_model_hash_to_info": OptionInfo(True, "Add model hash to infotext"),
+    "add_vae_name_to_info": OptionInfo(True, "Add VAE name to infotext"),
+    "add_vae_hash_to_info": OptionInfo(True, "Add VAE hash to infotext"),
+    "add_user_name_to_info": OptionInfo(False, "Add user name to infotext when authenticated"),
+    "add_version_to_infotext": OptionInfo(True, "Add program version to infotext"),
     "disable_weights_auto_swap": OptionInfo(True, "Disregard checkpoint information from pasted infotext").info("when reading generation parameters from text into UI"),
+    "infotext_skip_pasting": OptionInfo([], "Disregard fields from pasted infotext", ui_components.DropdownMulti, lambda: {"choices": shared_items.get_infotext_names()}),
     "infotext_styles": OptionInfo("Apply if any", "Infer styles from prompts of pasted infotext", gr.Radio, {"choices": ["Ignore", "Apply", "Discard", "Apply if any"]}).info("when reading generation parameters from text into UI)").html("""<ul style='margin-left: 1.5em'>
 <li>Ignore: keep prompt and styles dropdown as it is.</li>
 <li>Apply: remove style text from prompt, always replace styles dropdown value with found styles (even if none are found).</li>
@@ -341,6 +358,7 @@ options_templates.update(options_section(('postprocessing', "Postprocessing", "p
     'postprocessing_enable_in_main_ui': OptionInfo([], "Enable postprocessing operations in txt2img and img2img tabs", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
     'postprocessing_operation_order': OptionInfo([], "Postprocessing operation order", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
     'upscaling_max_images_in_cache': OptionInfo(5, "Maximum number of images in upscaling cache", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
+    'postprocessing_existing_caption_action': OptionInfo("Ignore", "Action for existing captions", gr.Radio, {"choices": ["Ignore", "Keep", "Prepend", "Append"]}).info("when generating captions using postprocessing; Ignore = use generated; Keep = use original; Prepend/Append = combine both"),
 }))
 
 options_templates.update(options_section((None, "Hidden options"), {

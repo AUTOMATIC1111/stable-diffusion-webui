@@ -392,3 +392,9 @@ function extraNetworksRefreshSingleCard(page, tabname, name) {
         }
     });
 }
+
+window.addEventListener("keydown", function(event) {
+    if (event.key == "Escape") {
+        closePopup();
+    }
+});
