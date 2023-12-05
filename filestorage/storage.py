@@ -24,6 +24,7 @@ from multiprocessing import cpu_count
 from urllib.parse import urlparse, urlsplit
 from tools.locks import LOCK_EX, LOCK_NB, lock, unlock
 from tools.host import get_host_name, get_host_ip
+from functools import partial
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/22.0.1207.1 Safari/537.1"
@@ -187,6 +188,8 @@ class FileStorage:
         lock_path = self.get_lock_filename(keyname)
 
         f = open(lock_path, "wb+")
+        timeout = -1 if timeout is None else timeout
+
         try:
             ok = lock(f, LOCK_EX)
             if not ok:
@@ -235,11 +238,13 @@ class FileStorage:
             w = MultiThreadWorker(local_remoting_pars, self.upload, worker_count)
             w.run()
 
-    def multi_download(self, remoting_loc_pairs: typing.Sequence[typing.Tuple[str, str]], with_locker=False):
+    def multi_download(self, remoting_loc_pairs: typing.Sequence[typing.Tuple[str, str]],
+                       with_locker=False, locker_exp=1800, flocker=True):
         if remoting_loc_pairs:
             worker_count = cpu_count()
             worker_count = worker_count if worker_count <= 4 else 4
-            executor = self.download if not with_locker else self.lock_download
+            executor = self.download if not with_locker else partial(
+                self.lock_download, flocker=flocker, expire=locker_exp)
             w = MultiThreadWorker(remoting_loc_pairs, executor, worker_count)
             w.run()
 

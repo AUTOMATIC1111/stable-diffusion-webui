@@ -42,7 +42,8 @@ def get_domain_from_endpoint(endpoint):
     return domain.lower()
 
 
-def get_local_path(remoting, local, storage_cls=None, progress_callback=None, with_locker=False, locker_exp=None):
+def get_local_path(remoting, local, storage_cls=None, progress_callback=None, with_locker=False,
+                   locker_exp=None, flocker=True):
     if os.path.isfile(local):
         return local
     storage_cls = storage_cls or find_storage_classes_with_env()
@@ -50,13 +51,14 @@ def get_local_path(remoting, local, storage_cls=None, progress_callback=None, wi
         if not with_locker:
             return s.download(remoting, local, progress_callback)
         else:
-            return s.lock_download(remoting, local, progress_callback, locker_exp)
+            return s.lock_download(remoting, local, progress_callback, locker_exp, flocker)
 
 
-def batch_download(remoting_loc_pairs: typing.Sequence[typing.Tuple[str, str]], storage_cls=None, with_locker=False):
+def batch_download(remoting_loc_pairs: typing.Sequence[typing.Tuple[str, str]], storage_cls=None,
+                   with_locker=False, locker_exp=None, flocker=True):
     storage_cls = storage_cls or find_storage_classes_with_env()
     with storage_cls() as s:
-        return s.multi_download(remoting_loc_pairs, with_locker)
+        return s.multi_download(remoting_loc_pairs, with_locker, flocker=flocker, locker_exp=locker_exp)
 
 
 def push_local_path(remoting, local, storage_cls=None):
