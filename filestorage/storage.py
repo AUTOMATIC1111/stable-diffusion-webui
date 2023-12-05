@@ -130,16 +130,29 @@ class FileStorage:
     def download(self, remoting_path, local_path, progress_callback=None) -> str:
         raise NotImplementedError
 
-    def lock_download(self, remoting_path, local_path, progress_callback=None, expire=1800) -> str:
+    def lock_download(self, remoting_path, local_path, progress_callback=None, expire=1800, flocker=True) -> str:
         if os.path.isfile(local_path):
             return local_path
         if os.path.isfile(remoting_path):
             return remoting_path
-        key = self.get_lock_key(remoting_path)
-        res = dist_locker(key, self.download, expire, args=[local_path], kwargs={
-            'progress_callback': progress_callback
-        })
-        return res
+        if flocker:
+            key = self.get_lock_key(remoting_path)
+            res = dist_locker(key, self.download, expire, args=[local_path], kwargs={
+                'progress_callback': progress_callback
+            })
+            return res
+        else:
+            f = None
+            try:
+                f = self.acquire_flock(remoting_path, local_path, timeout=expire)
+                if os.path.isfile(local_path):
+                    return local_path
+                res = self.download(remoting_path, local_path, progress_callback)
+                return res
+            except:
+                raise
+            finally:
+                self.release_flock(f, remoting_path)
 
     @abc.abstractmethod
     def name(self):
@@ -162,6 +175,58 @@ class FileStorage:
         hash_str = md5.hexdigest()[:8]
         # 设备（机器）ID:文件名[远程路径HASH]
         return f"{self.device_id}:{basename}[{hash_str}]"
+
+    def get_lock_filename(self, keyname):
+        basename = os.path.basename(keyname)
+        md5 = hashlib.md5()
+        md5.update(keyname.encode())
+        hash_str = md5.hexdigest()[:8]
+        return os.path.join("models", "Stable-diffusion", f"{basename}[{hash_str}].lock")
+
+    def acquire_flock(self, keyname, local_path, block=True, timeout=-1):
+        lock_path = self.get_lock_filename(keyname)
+
+        f = open(lock_path, "wb+")
+        try:
+            ok = lock(f, LOCK_EX)
+            if not ok:
+                if not block:
+                    raise OSError("cannot get file lock")
+                start = time.time()
+                while 1:
+                    time.sleep(1)
+                    waite_time = int(time.time() - start)
+                    if waite_time % 10 == 0:
+                        logger.debug(
+                            f"acquire file locker:{lock_path}, timeout:{timeout} sec, wait time:{waite_time} sec")
+                    if timeout > 0 and waite_time > timeout:
+                        raise OSError("get file lock timeout")
+
+                    if os.path.isfile(local_path):
+                        logger.debug(f"acquire file locker:{lock_path}, local file existed!")
+                        break
+
+                    f = open(lock_path, "wb+")
+                    ok = lock(f, LOCK_EX)
+                    if ok:
+                        logger.debug(f"get file locker:{lock_path}, waite time:{waite_time} sec!")
+                        break
+        except:
+            f.close()
+            return None
+        return f
+
+    def release_flock(self, f, keyname=None):
+        if not f:
+            return
+        unlock(f)
+        f.close()
+
+        if keyname:
+            lock_path = self.get_lock_filename(keyname)
+            if os.path.isfile(lock_path):
+                print(f"remove lock file:{lock_path}")
+                os.remove(lock_path)
 
     def multi_upload(self, local_remoting_pars: typing.Sequence[typing.Tuple[str, str]]):
         if local_remoting_pars:
