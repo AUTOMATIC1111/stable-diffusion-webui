@@ -6,6 +6,7 @@
 # @File    : storage.py
 # @Software: Hifive
 import abc
+import hashlib
 import os
 import json
 import shutil
@@ -17,10 +18,12 @@ import requests
 import random
 import importlib.util
 from loguru import logger
+from tools.redis import dist_locker
 from tools.processor import MultiThreadWorker
 from multiprocessing import cpu_count
 from urllib.parse import urlparse, urlsplit
 from tools.locks import LOCK_EX, LOCK_NB, lock, unlock
+from tools.host import get_host_name, get_host_ip
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/22.0.1207.1 Safari/537.1"
@@ -117,6 +120,7 @@ class FileStorage:
     def __init__(self):
         self.tmp_dir = os.path.join('tmp')
         os.makedirs(self.tmp_dir, exist_ok=True)
+        self.device_id = get_host_name() or get_host_ip()
 
     @property
     def logger(self):
@@ -125,6 +129,17 @@ class FileStorage:
     @abc.abstractmethod
     def download(self, remoting_path, local_path, progress_callback=None) -> str:
         raise NotImplementedError
+
+    def lock_download(self, remoting_path, local_path, progress_callback=None, expire=1800) -> str:
+        if os.path.isfile(local_path):
+            return local_path
+        if os.path.isfile(remoting_path):
+            return remoting_path
+        key = self.get_lock_key(remoting_path)
+        res = dist_locker(key, self.download, expire, args=[local_path], kwargs={
+            'progress_callback': progress_callback
+        })
+        return res
 
     @abc.abstractmethod
     def name(self):
@@ -140,52 +155,13 @@ class FileStorage:
     def preview_url(self, remoting_path: str) -> str:
         raise NotImplementedError
 
-    def _get_lock_filename(self, filename):
-        dirname = os.path.dirname(filename)
-        arr = os.path.splitext(os.path.basename(filename))
-        filename_without_ex = ".".join(arr[:-1])
-        lock_file = f"{filename_without_ex}.lock"
-
-        return os.path.join(dirname, lock_file)
-
-    def acquire_flock(self, filename, block=True, timeout=-1):
-        lock_path = self._get_lock_filename(filename)
-
-        f = open(lock_path, "wb+")
-        try:
-            ok = lock(f, LOCK_EX)
-            if not ok:
-                if not block:
-                    raise OSError("cannot get file lock")
-                start = time.time()
-                while 1:
-                    time.sleep(5)
-                    if timeout > 0 and time.time() - start > timeout:
-                        raise OSError("get file lock timeout")
-
-                    if os.path.isfile(filename):
-                        break
-
-                    f = open(lock_path, "wb+")
-                    ok = lock(f, LOCK_EX)
-                    if ok:
-                        break
-        except:
-            f.close()
-            return None
-        return f
-
-    def release_flock(self, f, filename=None):
-        if not f:
-            return
-        unlock(f)
-        f.close()
-
-        if filename:
-            lock_path = self._get_lock_filename(filename)
-            if os.path.isfile(lock_path):
-                print(f"remove lock file:{lock_path}")
-                os.remove(lock_path)
+    def get_lock_key(self, keyname):
+        basename = os.path.basename(keyname)
+        md5 = hashlib.md5()
+        md5.update(keyname.encode())
+        hash_str = md5.hexdigest()[:8]
+        # 设备（机器）ID:文件名[远程路径HASH]
+        return f"{self.device_id}:{basename}[{hash_str}]"
 
     def multi_upload(self, local_remoting_pars: typing.Sequence[typing.Tuple[str, str]]):
         if local_remoting_pars:
@@ -194,11 +170,12 @@ class FileStorage:
             w = MultiThreadWorker(local_remoting_pars, self.upload, worker_count)
             w.run()
 
-    def multi_download(self, remoting_loc_pairs: typing.Sequence[typing.Tuple[str, str]]):
+    def multi_download(self, remoting_loc_pairs: typing.Sequence[typing.Tuple[str, str]], with_locker=False):
         if remoting_loc_pairs:
             worker_count = cpu_count()
             worker_count = worker_count if worker_count <= 4 else 4
-            w = MultiThreadWorker(remoting_loc_pairs, self.download, worker_count)
+            executor = self.download if not with_locker else self.lock_download
+            w = MultiThreadWorker(remoting_loc_pairs, executor, worker_count)
             w.run()
 
     def download_dir(self, remoting_dir: str, local_dir: str) -> bool:

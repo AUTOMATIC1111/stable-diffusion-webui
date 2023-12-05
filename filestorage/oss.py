@@ -8,9 +8,8 @@
 import os
 import shutil
 import uuid
-
 import oss2
-
+from tools.redis import RedisLocker
 from filestorage.storage import FileStorage
 from tools.processor import MultiThreadWorker
 from tools.environment import get_file_storage_system_env, Env_EndponitKey, \
@@ -21,7 +20,7 @@ def download(obj, bucket, local_path, tmp):
     if not os.path.isfile(local_path):
         tmp_file = os.path.join(tmp, os.path.basename(obj.key))
         oss2.resumable_download(bucket, obj.key, tmp_file)
-        if os.path.isfile(tmp_file):
+        if os.path.isfile(tmp_file) and not os.path.isfile(local_path):
             shutil.move(tmp_file, local_path)
 
 
@@ -151,3 +150,32 @@ class OssFileStorage(FileStorage):
                 return False
 
         return True
+
+    def lock_download(self, remoting_path, local_path, progress_callback=None, expire=1800) -> str:
+        if os.path.isfile(local_path):
+            return local_path
+        if os.path.isfile(remoting_path):
+            return remoting_path
+        locker_key = self.get_lock_key(remoting_path)
+        key = self.get_keyname(remoting_path, self.bucket_name)
+        tmp_file = os.path.join(self.tmp_dir, "tmp-" + os.path.basename(local_path))
+
+        if os.path.isfile(local_path):
+            return local_path
+
+        with RedisLocker(locker_key, expire=expire):
+            if os.path.isfile(local_path):
+                return local_path
+            self.logger.info(f"download (with locker) {key} from oss to {local_path}")
+            oss2.resumable_download(self.bucket, key, tmp_file, progress_callback=progress_callback)
+
+            if os.path.isfile(local_path):
+                return local_path
+
+            if os.path.isfile(tmp_file):
+                shutil.move(tmp_file, local_path)
+                return local_path
+            else:
+
+                raise OSError(f'cannot download file from oss, {remoting_path}')
+

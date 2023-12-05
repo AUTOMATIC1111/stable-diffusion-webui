@@ -44,10 +44,6 @@ def detect_faces(image_path) -> int:
     return len(faces)
 
 
-def clean_models():
-    pass
-
-
 def get_model_local_path(remoting_path: str, model_type: ModelType, progress_callback=None):
     if not remoting_path:
         raise OSError(f'remoting path is empty')
@@ -72,7 +68,7 @@ def get_model_local_path(remoting_path: str, model_type: ModelType, progress_cal
         ckpt_register(dst)
         return dst
 
-    dst = get_local_path(remoting_path, dst, progress_callback=progress_callback)
+    dst = get_local_path(remoting_path, dst, progress_callback=progress_callback, with_locker=True, locker_exp=1800)
     if os.path.isfile(dst):
         ckpt_register(dst)
         return dst
@@ -93,7 +89,7 @@ def batch_model_local_paths(model_type: ModelType, *remoting_paths: str) \
         loc.append(dst)
         if not os.path.isfile(dst):
             remoting_key_dst_pairs.append((p, dst))
-    batch_download(remoting_key_dst_pairs)
+    batch_download(remoting_key_dst_pairs, with_locker=True)
     return loc
 
 
