@@ -210,7 +210,7 @@ class FileStorage:
                         logger.debug(f"acquire file locker:{lock_path}, local file existed!")
                         break
 
-                    f = open(lock_path, "wb+")
+                    f = open(lock_path, "wb+") if f is None else f 
                     ok = lock(f, LOCK_EX | LOCK_NB)
                     if ok:
                         logger.debug(f"get file locker:{lock_path}, waite time:{waite_time} sec!")
