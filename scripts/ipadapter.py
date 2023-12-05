@@ -8,6 +8,7 @@ TODO:
 - SD/SDXL autodetect
 """
 
+import time
 import gradio as gr
 from modules import scripts, processing, shared, devices
 
@@ -18,11 +19,11 @@ ADAPTERS = [
     'none',
     'models/ip-adapter_sd15',
     'models/ip-adapter_sd15_light',
-    # 'models/ip-adapter_sd15_vit-G', # RuntimeError: mat1 and mat2 shapes cannot be multiplied (2x1024 and 1280x3072)
-    # 'models/ip-adapter-plus_sd15', # KeyError: 'proj.weight'
-    # 'models/ip-adapter-plus-face_sd15', # KeyError: 'proj.weight'
+    'models/ip-adapter-plus_sd15',
+    'models/ip-adapter-plus-face_sd15',
     # 'models/ip-adapter-full-face_sd15', # KeyError: 'proj.weight'
     'sdxl_models/ip-adapter_sdxl',
+    # 'models/ip-adapter_sd15_vit-G', # RuntimeError: mat1 and mat2 shapes cannot be multiplied (2x1024 and 1280x3072)
     # 'sdxl_models/ip-adapter_sdxl_vit-h',
     # 'sdxl_models/ip-adapter-plus_sdxl_vit-h',
     # 'sdxl_models/ip-adapter-plus-face_sdxl_vit-h',
@@ -89,13 +90,17 @@ class Script(scripts.Script):
         # main code
         subfolder, model = adapter.split('/')
         if model != loaded or getattr(shared.sd_model.unet.config, 'encoder_hid_dim_type', None) is None:
+            t0 = time.time()
             if loaded is not None:
                 shared.log.debug('IP adapter: reset attention processor')
                 shared.sd_model.unet.set_default_attn_processor()
                 loaded = None
-            shared.log.info(f'IP adapter load: adapter="{model}" scale={scale} image={image}')
+            else:
+                shared.log.debug('IP adapter: load attention processor')
             shared.sd_model.image_encoder = image_encoder
             shared.sd_model.load_ip_adapter("h94/IP-Adapter", subfolder=subfolder, weight_name=f'{model}.safetensors')
+            t1 = time.time()
+            shared.log.info(f'IP adapter load: adapter="{model}" scale={scale} image={image} time={t1-t0:.2f}')
             loaded = model
         else:
             shared.log.debug(f'IP adapter cache: adapter="{model}" scale={scale} image={image}')

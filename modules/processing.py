@@ -705,13 +705,15 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 modules.sd_vae.reload_vae_weights()
 
         shared.prompt_styles.apply_styles_to_extra(p)
-
+        print('HERE1')
         if not shared.opts.cuda_compile:
             modules.sd_models.apply_token_merging(p.sd_model, p.get_token_merging_ratio())
             modules.sd_hijack_freeu.apply_freeu(p, shared.backend == shared.Backend.ORIGINAL)
 
+        print('HERE2')
         modules.script_callbacks.before_process_callback(p)
 
+        print('HERE3')
         if shared.cmd_opts.profile:
             import cProfile
             profile_python = cProfile.Profile()
@@ -732,6 +734,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         else:
             with context_hypertile_vae(p), context_hypertile_unet(p):
                 res = process_images_inner(p)
+        print('HERE4')
 
     finally:
         if not shared.opts.cuda_compile:

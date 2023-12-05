@@ -2,8 +2,14 @@
 
 ## Update for 2023-12-05
 
+*Note*: based on `diffusers==0.25.0.dev0`
+
+- **Diffusers**
+  - **IP Adapter** add support for `ip-adapter-plus_sd15` and `ip-adapter-plus-face_sd15`  
 - **General**
-  - **Extra networks** new settting -> extra networks -> build info on first access  
+  - **LoRA** add support for block weights, thanks @AI-Casanova  
+    example `<lora:SDXL_LCM_LoRA:1.0:in=0:mid=1:out=0>`  
+  - **Extra networks** new *settting -> extra networks -> build info on first access*  
     indexes all networks on first access instead of server startup  
   - disable google fonts check on server startup  
   - fix torchvision/basicsr compatibility  
