@@ -13,6 +13,7 @@
     indexes all networks on first access instead of server startup  
   - disable google fonts check on server startup  
   - fix torchvision/basicsr compatibility  
+  - add hdr settings to metadata  
 
 ## Update for 2023-12-04
 

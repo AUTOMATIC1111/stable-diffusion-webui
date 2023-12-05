@@ -54,10 +54,13 @@ def maximize_tensor(input_tensor, boundary=1.0, channels=[0, 1, 2]): # pylint: d
 
 def correction_callback(p, timestep, kwags):
     if timestep > 950 and p.hdr_clamp:
+        p.extra_generation_params["HDR clamp"] = f'{p.hdr_threshold}/{p.hdr_boundary}'
         kwags["latents"] = soft_clamp_tensor(kwags["latents"], threshold=p.hdr_threshold, boundary=p.hdr_boundary)
     if timestep > 700 and p.hdr_center:
+        p.extra_generation_params["HDR center"] = f'{p.hdr_channel_shift}/{p.hdr_full_shift}'
         kwags["latents"] = center_tensor(kwags["latents"], channel_shift=p.hdr_channel_shift, full_shift=p.hdr_full_shift)
     if timestep > 1 and timestep < 100 and p.hdr_maximize:
+        p.extra_generation_params["HDR max"] = f'{p.hdr_max_center}/p.hdr_max_boundry'
         kwags["latents"] = center_tensor(kwags["latents"], channel_shift=p.hdr_max_center, full_shift=1.0)
         kwags["latents"] = maximize_tensor(kwags["latents"], boundary=p.hdr_max_boundry)
     return kwags
