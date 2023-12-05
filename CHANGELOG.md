@@ -6,6 +6,8 @@
 
 - **Diffusers**
   - **IP Adapter** add support for `ip-adapter-plus_sd15` and `ip-adapter-plus-face_sd15`  
+  - **AnimateDiff** can now be used with *second pass* and *hdr controls* - enhance, upscale and hires your videos!  
+  - **HDE controls** are now batch-aware for enhancement of multiple images  
   - added support for basic [ModelScope T2V](https://huggingface.co/damo-vilab/text-to-video-ms-1.7b) model  
     - simply select from *networks -> reference* and use from *txt2img* tab
 - **General**

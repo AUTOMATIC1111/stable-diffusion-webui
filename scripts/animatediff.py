@@ -128,7 +128,7 @@ class Script(scripts.Script):
                 lora_index = gr.Dropdown(label='Lora', choices=list(LORAS), value='None')
                 strength = gr.Slider(label='Strength', minimum=0.0, maximum=2.0, step=0.05, value=1.0)
             with gr.Row():
-                latent_mode = gr.Checkbox(label='Latent mode', value=False)
+                latent_mode = gr.Checkbox(label='Latent mode', value=True, visible=False)
             with gr.Row():
                 video_type = gr.Dropdown(label='Video file', choices=['None', 'GIF', 'PNG', 'MP4'], value='None')
                 duration = gr.Slider(label='Duration', minimum=0.25, maximum=10, step=0.25, value=2, visible=False)

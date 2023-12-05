@@ -37,6 +37,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             p.mask_for_overlay = images.resize_image(1, p.mask_for_overlay, tgt_width, tgt_height, upscaler_name=None)
 
     def hires_resize(latents): # input=latents output=pil
+        if not torch.is_tensor(latents):
+            shared.log.warning('Hires: input is not tensor')
+            first_pass_images = vae_decode(latents=latents, model=shared.sd_model, full_quality=p.full_quality, output_type='pil')
+            return first_pass_images
         latent_upscaler = shared.latent_upscale_modes.get(p.hr_upscaler, None)
         shared.log.info(f'Hires: upscaler={p.hr_upscaler} width={p.hr_upscale_to_x} height={p.hr_upscale_to_y} images={latents.shape[0]}')
         if latent_upscaler is not None:
@@ -59,9 +63,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             for j in range(len(decoded)):
                 images.save_image(decoded[j], path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix=suffix)
 
-    def diffusers_callback_legacy(step: int, _timestep: int, latents: torch.FloatTensor):
+    def diffusers_callback_legacy(step: int, timestep: int, latents: torch.FloatTensor):
         shared.state.sampling_step = step
         shared.state.current_latent = latents
+        latents = correction_callback(p, timestep, {'latents': latents})
         if shared.state.interrupted or shared.state.skipped:
             raise AssertionError('Interrupted...')
         if shared.state.paused:
@@ -386,9 +391,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         shared.log.debug(f'Diffuser pipeline: {model.__class__.__name__} task={sd_models.get_diffusers_task(model)} set={clean}')
         if p.hdr_clamp or p.hdr_center or p.hdr_maximize:
             txt = 'HDR:'
-            txt += f' Clamp threshold={p.hdr_threshold} boundary={p.hdr_boundary}' if p.hdr_clamp else 'Clamp off'
-            txt += f' Center channel-shift={p.hdr_channel_shift} full-shift={p.hdr_full_shift}' if p.hdr_center else 'Center off'
-            txt += f' Maximize boundary={p.hdr_max_boundry} center={p.hdr_max_center}' if p.hdr_maximize else 'Maximize off'
+            txt += f' Clamp threshold={p.hdr_threshold} boundary={p.hdr_boundary}' if p.hdr_clamp else ' Clamp off'
+            txt += f' Center channel-shift={p.hdr_channel_shift} full-shift={p.hdr_full_shift}' if p.hdr_center else ' Center off'
+            txt += f' Maximize boundary={p.hdr_max_boundry} center={p.hdr_max_center}' if p.hdr_maximize else ' Maximize off'
             shared.log.debug(txt)
         # components = [{ k: getattr(v, 'device', None) } for k, v in model.components.items()]
         # shared.log.debug(f'Diffuser pipeline components: {components}')
@@ -659,8 +664,15 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     # final decode since there is no refiner
     if not is_refiner_enabled:
-        if output is not None and output.images is not None and len(output.images) > 0:
-            results = vae_decode(latents=output.images, model=shared.sd_model, full_quality=p.full_quality)
+        if output is not None:
+            if not hasattr(output, 'images') and hasattr(output, 'frames'):
+                shared.log.debug(f'Generated: frames={len(output.frames[0])}')
+                output.images = output.frames[0]
+            if output.images is not None and len(output.images) > 0:
+                results = vae_decode(latents=output.images, model=shared.sd_model, full_quality=p.full_quality)
+            else:
+                shared.log.warning('Processing returned no results')
+                results = []
         else:
             shared.log.warning('Processing returned no results')
             results = []

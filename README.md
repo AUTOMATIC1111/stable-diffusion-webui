@@ -60,7 +60,7 @@ Additional models will be added as they become available and there is public int
 
 - [RunwayML Stable Diffusion](https://github.com/Stability-AI/stablediffusion/) 1.x and 2.x *(all variants)*
 - [StabilityAI Stable Diffusion XL](https://github.com/Stability-AI/generative-models)
-- [StabilityAI Stable Video Diffusion Base and XT](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid)
+- [StabilityAI Stable Video Diffusion](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid) Base and XT
 - [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)
 - [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)
 - [Kandinsky](https://github.com/ai-forever/Kandinsky-2) *2.1 and 2.2 and latest 3.0*
@@ -68,6 +68,7 @@ Additional models will be added as they become available and there is public int
 - [Warp Wuerstchen](https://huggingface.co/blog/wuertschen)  
 - [Tsinghua UniDiffusion](https://github.com/thu-ml/unidiffuser)
 - [DeepFloyd IF](https://github.com/deep-floyd/IF) *Medium and Large*
+- [ModelScope T2V](https://huggingface.co/damo-vilab/text-to-video-ms-1.7b)
 - [Segmind SD Distilled](https://huggingface.co/blog/sd_distillation) *(all variants)*
 
 Also supported are modifiers such as:
