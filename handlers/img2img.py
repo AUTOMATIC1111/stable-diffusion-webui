@@ -113,13 +113,13 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  lora_models: typing.Sequence[str] = None,  # 使用LORA，用户和系统全部LORA列表
                  embeddings: typing.Sequence[str] = None,  # embeddings，用户和系统全部embedding列表
                  lycoris_models: typing.Sequence[str] = None,  # lycoris，用户和系统全部lycoris列表
-                 disable_ad_face: bool = False,  # 关闭默认的ADetailer face
+                 disable_ad_face: bool = True,  # 关闭默认的ADetailer face
                  enable_refiner: bool = False,  # 是否启用XLRefiner
                  refiner_switch_at: float = 0.2,  # XL 精描切换时机
                  refiner_checkpoint: str = None,  # XL refiner模型文件
                  **kwargs):
         # fast模式下关闭默认的AD插件
-        disable_ad_face = disable_ad_face or kwargs.get('is_fast', False)
+        disable_ad_face = disable_ad_face or kwargs.get('is_fast', True)
         override_settings_texts = format_override_settings(override_settings_texts)
         override_settings = create_override_settings_dict(override_settings_texts)
         image = None

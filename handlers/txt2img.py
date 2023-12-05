@@ -68,7 +68,7 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  hr_sampler_name: str = None,  # hr sampler
                  hr_prompt: str = None,  # hr prompt
                  hr_negative_prompt: str = None,  # hr negative prompt
-                 disable_ad_face: bool = False,  # 关闭默认的ADetailer face
+                 disable_ad_face: bool = True,  # 关闭默认的ADetailer face
                  enable_refiner: bool = False,  # 是否启用XLRefiner
                  refiner_switch_at: float = 0.2,  # XL 精描切换时机
                  refiner_checkpoint: str = None,  # XL refiner模型文件
@@ -76,7 +76,7 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
         # "upcast_attn": false # 将交叉关注层向上转型到float32
         #
         # fast模式下关闭默认的AD插件
-        disable_ad_face = disable_ad_face or kwargs.get('is_fast', False)
+        disable_ad_face = disable_ad_face or kwargs.get('is_fast', True)
         override_settings_texts = format_override_settings(override_settings_texts)
         override_settings = create_override_settings_dict(override_settings_texts)
 

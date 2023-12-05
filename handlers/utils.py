@@ -288,7 +288,7 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
     if not getattr(cmd_opts, 'disable_tss_def_alwayson', False):
         for k, v in default_alwayson_scripts.items():
             if not enable_def_adetailer and ADetailer == k:
-                logger.debug('====> adetailer plugin disable!')
+                logger.debug('====> default adetailer plugin disable!')
                 continue
             alwayson_scripts[k] = v
     else:
