@@ -1500,7 +1500,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if image_mask is not None:
                 if self.soft_inpainting is not None:
                     # We apply the masks AFTER to adjust mask based on changed content.
-                    self.overlay_images.append(image)
+                    self.overlay_images.append(image.convert('RGBA'))
                     self.masks_for_overlay.append(image_mask)
                 else:
                     image_masked = Image.new('RGBa', (image.width, image.height))
