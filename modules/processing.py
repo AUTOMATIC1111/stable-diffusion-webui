@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 
 import torch
 import numpy as np
-from PIL import Image, ImageOps, ImageFilter
+from PIL import Image, ImageOps
 import random
 import cv2
 from skimage import exposure
