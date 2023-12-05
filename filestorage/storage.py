@@ -178,7 +178,8 @@ class FileStorage:
         return f"{self.device_id}:{basename}[{hash_str}]"
 
     def get_lock_filename(self, keyname):
-        basename = os.path.basename(keyname)
+        arr = os.path.splitext(os.path.basename(keyname))
+        basename = arr[0]
         md5 = hashlib.md5()
         md5.update(keyname.encode())
         hash_str = md5.hexdigest()[:8]
@@ -191,15 +192,15 @@ class FileStorage:
         timeout = -1 if timeout is None else timeout
 
         try:
-            ok = lock(f, LOCK_EX)
+            ok = lock(f, LOCK_EX | LOCK_NB)
             if not ok:
                 if not block:
                     raise OSError("cannot get file lock")
                 start = time.time()
                 while 1:
-                    time.sleep(1)
+                    time.sleep(random.randint(1, 5))
                     waite_time = int(time.time() - start)
-                    if waite_time % 10 == 0:
+                    if waite_time % 4 == 0:
                         logger.debug(
                             f"acquire file locker:{lock_path}, timeout:{timeout} sec, wait time:{waite_time} sec")
                     if timeout > 0 and waite_time > timeout:
@@ -210,7 +211,7 @@ class FileStorage:
                         break
 
                     f = open(lock_path, "wb+")
-                    ok = lock(f, LOCK_EX)
+                    ok = lock(f, LOCK_EX | LOCK_NB)
                     if ok:
                         logger.debug(f"get file locker:{lock_path}, waite time:{waite_time} sec!")
                         break

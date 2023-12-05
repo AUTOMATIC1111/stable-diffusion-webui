@@ -73,6 +73,7 @@ if os.name == 'nt':
     UnlockFileEx.restype = BOOL
     UnlockFileEx.argtypes = [HANDLE, DWORD, DWORD, DWORD, LPOVERLAPPED]
 
+
     def lock(f, flags):
         hfile = msvcrt.get_osfhandle(_fd(f))
         overlapped = OVERLAPPED()
@@ -88,6 +89,7 @@ if os.name == 'nt':
 else:
     try:
         import fcntl
+
         LOCK_SH = fcntl.LOCK_SH  # shared lock
         LOCK_NB = fcntl.LOCK_NB  # non-blocking
         LOCK_EX = fcntl.LOCK_EX
@@ -95,18 +97,24 @@ else:
         # File locking is not supported.
         LOCK_EX = LOCK_SH = LOCK_NB = 0
 
+
         # Dummy functions that don't do anything.
         def lock(f, flags):
             # File is not locked
             return False
+
 
         def unlock(f):
             # File is unlocked
             return True
     else:
         def lock(f, flags):
-            ret = fcntl.flock(_fd(f), flags)
-            return ret == 0
+            try:
+                ret = fcntl.flock(_fd(f), flags)
+                return True
+            except OSError:
+                return False
+
 
         def unlock(f):
             ret = fcntl.flock(_fd(f), fcntl.LOCK_UN)
