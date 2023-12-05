@@ -8,6 +8,7 @@ from contextlib import ExitStack
 
 import gradio as gr
 import gradio.utils
+from gradio.components.image_editor import Brush
 import numpy as np
 from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
@@ -534,7 +535,7 @@ def create_ui():
                                 add_copy_image_controls('sketch', sketch)
 
                             with gr.TabItem('Inpaint', id='inpaint', elem_id="img2img_inpaint_tab") as tab_inpaint:
-                                init_img_with_mask = gr.Image(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA", height=opts.img2img_editor_height, brush_color=opts.img2img_inpaint_mask_brush_color)
+                                init_img_with_mask = gr.ImageEditor(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", sources=("upload", "clipboard"), brush=Brush(colors=["#000000"], color_mode="fixed"), interactive=True, type="pil", image_mode="RGBA", height=opts.img2img_editor_height, brush_color=opts.img2img_inpaint_mask_brush_color)
                                 add_copy_image_controls('inpaint', init_img_with_mask)
 
                             with gr.TabItem('Inpaint sketch', id='inpaint_sketch', elem_id="img2img_inpaint_sketch_tab") as tab_inpaint_color:

@@ -158,7 +158,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         image = sketch
         mask = None
     elif mode == 2:  # inpaint
-        image, mask = init_img_with_mask["image"], init_img_with_mask["mask"]
+        image, mask = init_img_with_mask["background"], init_img_with_mask["layers"][0]
         mask = processing.create_binary_mask(mask)
     elif mode == 3:  # inpaint sketch
         image = inpaint_color_sketch
