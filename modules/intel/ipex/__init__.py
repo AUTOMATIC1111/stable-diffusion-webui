@@ -166,8 +166,9 @@ def ipex_init(): # pylint: disable=too-many-statements
             torch.cuda.get_device_id_list_per_card = torch.xpu.get_device_id_list_per_card
 
         ipex_hijacks()
-        attention_init()
-        ipex_diffusers()
+        if not torch.xpu.has_fp64_dtype():
+            attention_init()
+            ipex_diffusers()
     except Exception as e:
         return False, e
     return True, None
