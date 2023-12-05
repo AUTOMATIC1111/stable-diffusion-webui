@@ -883,20 +883,27 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if getattr(samples_ddim, 'already_decoded', False):
                 x_samples_ddim = samples_ddim
                 # todo: generate adaptive masks based on pixel differences.
-                # if p.masks_for_overlay is used, it will already be populated with masks
+                if getattr(p, "image_mask", None) is not None and getattr(p, "soft_inpainting", None) is not None:
+                    si.apply_masks(soft_inpainting=p.soft_inpainting,
+                                   nmask=p.nmask,
+                                   overlay_images=p.overlay_images,
+                                   masks_for_overlay=p.masks_for_overlay,
+                                   width=p.width,
+                                   height=p.height,
+                                   paste_to=p.paste_to)
             else:
                 if opts.sd_vae_decode_method != 'Full':
                     p.extra_generation_params['VAE Decoder'] = opts.sd_vae_decode_method
 
                 # Generate the mask(s) based on similarity between the original and denoised latent vectors
                 if getattr(p, "image_mask", None) is not None and getattr(p, "soft_inpainting", None) is not None:
-                    si.generate_adaptive_masks(latent_orig=p.init_latent,
-                                               latent_processed=samples_ddim,
-                                               overlay_images=p.overlay_images,
-                                               masks_for_overlay=p.masks_for_overlay,
-                                               width=p.width,
-                                               height=p.height,
-                                               paste_to=p.paste_to)
+                    si.apply_adaptive_masks(latent_orig=p.init_latent,
+                                            latent_processed=samples_ddim,
+                                            overlay_images=p.overlay_images,
+                                            masks_for_overlay=p.masks_for_overlay,
+                                            width=p.width,
+                                            height=p.height,
+                                            paste_to=p.paste_to)
 
                 x_samples_ddim = decode_latent_batch(p.sd_model, samples_ddim, target_device=devices.cpu, check_for_nans=True)
 
