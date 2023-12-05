@@ -93,6 +93,7 @@ def linalg_solve(A, B, *args, **kwargs): # pylint: disable=invalid-name
     else:
         return original_linalg_solve(A, B, *args, **kwargs)
 
+@property
 def is_cuda(self):
     return self.device.type == 'xpu'
 
