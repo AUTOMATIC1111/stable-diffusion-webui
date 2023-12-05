@@ -524,7 +524,7 @@ def create_ui():
 
                     if category == "image":
                         with gr.Tabs(elem_id="mode_img2img"):
-                            img2img_selected_tab = gr.Number(value=0, visible=False)
+                            img2img_selected_tab = gr.State(0)
 
                             with gr.TabItem('img2img', id='img2img', elem_id="img2img_img2img_tab") as tab_img2img:
                                 init_img = gr.ImageEditor(label="Image for img2img", elem_id="img2img_image", show_label=False, sources=("upload", "clipboard"), interactive=True, type="pil", image_mode="RGBA", height=opts.img2img_editor_height)
