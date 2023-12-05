@@ -370,10 +370,7 @@ class StableDiffusionProcessing:
             return self.edit_image_conditioning(source_image)
 
         if self.sampler.conditioning_key in {'hybrid', 'concat'}:
-            return self.inpainting_image_conditioning(source_image,
-                                                      latent_image,
-                                                      image_mask=image_mask,
-                                                      round_image_mask=round_image_mask)
+            return self.inpainting_image_conditioning(source_image, latent_image, image_mask=image_mask, round_image_mask=round_image_mask)
 
         if self.sampler.conditioning_key == "crossattn-adm":
             return self.unclip_image_conditioning(source_image)
@@ -885,7 +882,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             if getattr(samples_ddim, 'already_decoded', False):
                 x_samples_ddim = samples_ddim
-                # todo: generate masks the old fashioned way
+                # todo: generate adaptive masks based on pixel differences.
+                # if p.masks_for_overlay is used, it will already be populated with masks
             else:
                 if opts.sd_vae_decode_method != 'Full':
                     p.extra_generation_params['VAE Decoder'] = opts.sd_vae_decode_method
@@ -900,9 +898,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                                                height=p.height,
                                                paste_to=p.paste_to)
 
-                x_samples_ddim = decode_latent_batch(p.sd_model, samples_ddim,
-                                                     target_device=devices.cpu,
-                                                     check_for_nans=True)
+                x_samples_ddim = decode_latent_batch(p.sd_model, samples_ddim, target_device=devices.cpu, check_for_nans=True)
 
             x_samples_ddim = torch.stack(x_samples_ddim).float()
             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
@@ -927,9 +923,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 x_samples_ddim = batch_params.images
 
             def infotext(index=0, use_main_prompt=False):
-                return create_infotext(p, p.prompts, p.seeds, p.subseeds,
-                                       use_main_prompt=use_main_prompt, index=index,
-                                       all_negative_prompts=p.negative_prompts)
+                return create_infotext(p, p.prompts, p.seeds, p.subseeds, use_main_prompt=use_main_prompt, index=index, all_negative_prompts=p.negative_prompts)
 
             save_samples = p.save_samples()
 
@@ -972,8 +966,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 image = apply_overlay(image, p.paste_to, i, p.overlay_images)
 
                 if save_samples:
-                    images.save_image(image, p.outpath_samples, "", p.seeds[i],
-                                      p.prompts[i], opts.samples_format, info=infotext(i), p=p)
+                    images.save_image(image, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p)
 
                 text = infotext(i)
                 infotexts.append(text)
@@ -983,14 +976,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 if save_samples and any([opts.save_mask, opts.save_mask_composite, opts.return_mask, opts.return_mask_composite]):
                     if hasattr(p, 'masks_for_overlay') and p.masks_for_overlay:
                         image_mask = p.masks_for_overlay[i].convert('RGB')
-                        image_mask_composite = Image.composite(
-                            original_denoised_image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size),
-                            images.resize_image(2, p.masks_for_overlay[i], image.width, image.height).convert('L')).convert('RGBA')
+                        image_mask_composite = Image.composite(original_denoised_image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size), images.resize_image(2, p.masks_for_overlay[i], image.width, image.height).convert('L')).convert('RGBA')
                     elif hasattr(p, 'mask_for_overlay') and p.mask_for_overlay:
                         image_mask = p.mask_for_overlay.convert('RGB')
-                        image_mask_composite = Image.composite(
-                            original_denoised_image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size),
-                            images.resize_image(2, p.mask_for_overlay, image.width, image.height).convert('L')).convert('RGBA')
+                        image_mask_composite = Image.composite(original_denoised_image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size), images.resize_image(2, p.mask_for_overlay, image.width, image.height).convert('L')).convert('RGBA')
                     else:
                         image_mask = None
                         image_mask_composite = None
@@ -1515,8 +1504,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                     self.masks_for_overlay.append(image_mask)
                 else:
                     image_masked = Image.new('RGBa', (image.width, image.height))
-                    image_masked.paste(image.convert("RGBA").convert("RGBa"),
-                                       mask=ImageOps.invert(self.mask_for_overlay.convert('L')))
+                    image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')))
+
                     self.overlay_images.append(image_masked.convert('RGBA'))
 
             # crop_region is not None if we are doing inpaint full res
@@ -1583,10 +1572,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             elif self.inpainting_fill == 3:
                 self.init_latent = self.init_latent * self.mask
 
-        self.image_conditioning = self.img2img_image_conditioning(image * 2 - 1,
-                                                                  self.init_latent,
-                                                                  image_mask,
-                                                                  self.soft_inpainting is None)
+        self.image_conditioning = self.img2img_image_conditioning(image * 2 - 1, self.init_latent, image_mask, self.soft_inpainting is None)
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
         x = self.rng.next()
