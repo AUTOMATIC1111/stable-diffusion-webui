@@ -508,6 +508,14 @@ def atomically_save_image():
         if shared.opts.image_watermark_enabled:
             image = set_watermark(image, shared.opts.image_watermark)
         shared.log.debug(f'Saving: image="{fn}" type={image_format} size={image.width}x{image.height}')
+        # additional metadata saved in files
+        if shared.opts.save_txt and len(exifinfo) > 0:
+            try:
+                with open(filename_txt, "w", encoding="utf8") as file:
+                    file.write(f"{exifinfo}\n")
+                shared.log.debug(f'Saving: text="{filename_txt}" len={len(exifinfo)}')
+            except Exception as e:
+                shared.log.warning(f'Image description save failed: {filename_txt} {e}')
         # actual save
         exifinfo = (exifinfo or "") if shared.opts.image_metadata else ""
         if image_format == 'PNG':
@@ -543,14 +551,6 @@ def atomically_save_image():
                 image.save(fn, format=image_format, quality=shared.opts.jpeg_quality)
             except Exception as e:
                 shared.log.warning(f'Image save failed: {fn} {e}')
-        # additional metadata saved in files
-        if shared.opts.save_txt and len(exifinfo) > 0:
-            try:
-                with open(filename_txt, "w", encoding="utf8") as file:
-                    file.write(f"{exifinfo}\n")
-                shared.log.debug(f'Saving: text="{filename_txt}"')
-            except Exception as e:
-                shared.log.warning(f'Image description save failed: {filename_txt} {e}')
         with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
             file.write(exifinfo)
         if shared.opts.save_log_fn != '' and len(exifinfo) > 0:

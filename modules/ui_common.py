@@ -157,15 +157,16 @@ def save_files(js_data, images, html_info, index):
             fullfns.append(fullfn)
             if txt_fullfn:
                 filenames.append(os.path.basename(txt_fullfn))
-                fullfns.append(txt_fullfn)
+                # fullfns.append(txt_fullfn)
             modules.script_callbacks.image_save_btn_callback(filename)
     if shared.opts.samples_save_zip and len(fullfns) > 1:
         zip_filepath = os.path.join(shared.opts.outdir_save, "images.zip")
         from zipfile import ZipFile
         with ZipFile(zip_filepath, "w") as zip_file:
             for i in range(len(fullfns)):
-                with open(fullfns[i], mode="rb") as f:
-                    zip_file.writestr(filenames[i], f.read())
+                if os.path.isfile(fullfns[i]):
+                    with open(fullfns[i], mode="rb") as f:
+                        zip_file.writestr(filenames[i], f.read())
         fullfns.insert(0, zip_filepath)
     return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0] if len(filenames) > 0 else 'none'}")
 
