@@ -6,6 +6,8 @@
 
 - **Diffusers**
   - **IP Adapter** add support for `ip-adapter-plus_sd15` and `ip-adapter-plus-face_sd15`  
+  - added support for basic [ModelScope T2V](https://huggingface.co/damo-vilab/text-to-video-ms-1.7b) model  
+    - simply select from *networks -> reference* and use from *txt2img* tab
 - **General**
   - **LoRA** add support for block weights, thanks @AI-Casanova  
     example `<lora:SDXL_LCM_LoRA:1.0:in=0:mid=1:out=0>`  

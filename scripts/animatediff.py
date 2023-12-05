@@ -152,6 +152,8 @@ class Script(scripts.Script):
             p.extra_generation_params['AnimateDiff Lora'] = f'{lora}:{strength}'
         p.extra_generation_params['AnimateDiff'] = loaded_adapter
         p.do_not_save_grid = True
+        if 'animatediff' not in p.ops:
+            p.ops.append('animatediff')
         p.task_args['num_frames'] = frames
         p.task_args['num_inference_steps'] = p.steps
         if not latent_mode:

@@ -164,7 +164,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             decoded = taesd_vae_decode(latents=latents)
         # TODO validate decoded sample diffusers
         # decoded = validate_sample(decoded)
-        imgs = model.image_processor.postprocess(decoded, output_type=output_type)
+        if hasattr(model, 'image_processor'):
+            imgs = model.image_processor.postprocess(decoded, output_type=output_type)
+        else:
+            import diffusers
+            image_processor = diffusers.image_processor.VaeImageProcessor()
+            imgs = image_processor.postprocess(decoded, output_type=output_type)
         shared.state.job = prev_job
         if shared.cmd_opts.profile:
             t1 = time.time()
@@ -345,7 +350,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 args[arg] = task_kwargs[arg]
         task_args = getattr(p, 'task_args', {})
         for k, v in task_args.items():
-            args[k] = v
+            if k in possible:
+                args[k] = v
 
         hypertile_set(p, hr=len(getattr(p, 'init_images', [])))
         clean = args.copy()
