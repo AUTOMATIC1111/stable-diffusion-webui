@@ -157,7 +157,6 @@ function submit_img2img() {
     var res = create_submit_args(arguments);
 
     res[0] = id;
-    res[1] = get_tab_index('mode_img2img');
 
     return res;
 }

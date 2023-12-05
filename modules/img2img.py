@@ -152,7 +152,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     is_batch = mode == 5
 
     if mode == 0:  # img2img
-        image = init_img
+        image = init_img["composite"]
         mask = None
     elif mode == 1:  # img2img sketch
         image = sketch

@@ -523,10 +523,10 @@ def create_ui():
 
                     if category == "image":
                         with gr.Tabs(elem_id="mode_img2img"):
-                            img2img_selected_tab = gr.State(0)
+                            img2img_selected_tab = gr.Number(value=0, visible=False)
 
                             with gr.TabItem('img2img', id='img2img', elem_id="img2img_img2img_tab") as tab_img2img:
-                                init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA", height=opts.img2img_editor_height)
+                                init_img = gr.ImageEditor(label="Image for img2img", elem_id="img2img_image", show_label=False, sources=("upload", "clipboard"), interactive=True, type="pil", image_mode="RGBA", height=opts.img2img_editor_height)
                                 add_copy_image_controls('img2img', init_img)
 
                             with gr.TabItem('Sketch', id='img2img_sketch', elem_id="img2img_img2img_sketch_tab") as tab_sketch:
@@ -718,7 +718,7 @@ def create_ui():
                 _js="submit_img2img",
                 inputs=[
                     dummy_component,
-                    dummy_component,
+                    img2img_selected_tab,
                     toprow.prompt,
                     toprow.negative_prompt,
                     toprow.ui_styles.dropdown,
