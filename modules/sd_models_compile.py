@@ -20,12 +20,15 @@ class CompiledModelState:
         self.partitioned_modules = {}
 
 
-def optimize_ipex(sd_model):
+def ipex_optimize(sd_model):
     try:
         t0 = time.time()
         import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-        sd_model.unet.training = False
-        sd_model.unet = ipex.optimize(sd_model.unet, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+        if hasattr(sd_model, 'unet'):
+            sd_model.unet.training = False
+            sd_model.unet = ipex.optimize(sd_model.unet, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+        else:
+            shared.log.warning('IPEX Optimize enabled but model has no Unet')
         if hasattr(sd_model, 'vae'):
             sd_model.vae.training = False
             sd_model.vae = ipex.optimize(sd_model.vae, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
@@ -33,9 +36,10 @@ def optimize_ipex(sd_model):
             sd_model.movq.training = False
             sd_model.movq = ipex.optimize(sd_model.movq, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
         t1 = time.time()
-        shared.log.info(f"Model compile: mode=IPEX-optimize time={t1-t0:.2f}")
+        shared.log.info(f"IPEX Optimize: time={t1-t0:.2f}")
+        return sd_model
     except Exception as e:
-        shared.log.warning(f"Model compile: task=IPEX-optimize error: {e}")
+        shared.log.warning(f"IPEX Optimize: error: {e}")
 
 
 def optimize_openvino():
@@ -98,8 +102,6 @@ def compile_torch(sd_model):
         import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
         torch._dynamo.reset() # pylint: disable=protected-access
         shared.log.debug(f"Model compile available backends: {torch._dynamo.list_backends()}") # pylint: disable=protected-access
-        if shared.opts.ipex_optimize:
-            optimize_ipex(sd_model)
         if shared.opts.cuda_compile_backend == "openvino_fx":
             optimize_openvino()
         log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
@@ -131,6 +133,8 @@ def compile_torch(sd_model):
 
 
 def compile_diffusers(sd_model):
+    if shared.opts.ipex_optimize:
+        sd_model = ipex_optimize(sd_model)
     if not (shared.opts.cuda_compile or shared.opts.cuda_compile_vae or shared.opts.cuda_compile_upscaler):
         return sd_model
     if shared.opts.cuda_compile_backend == 'none':
