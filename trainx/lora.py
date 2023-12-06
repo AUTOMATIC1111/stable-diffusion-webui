@@ -144,11 +144,10 @@ def do_train_with_process(task: Task,  dump_progress_cb: typing.Callable):
         if callable(dump_progress_cb):
             dump_progress_cb(p)
 
-    pk = SubProcessKiller()
     ok = train_with_params(callback=progress_callback, **kwargs)
-    pk.kill_sub_process()
+
     torch_gc()
-    
+
     if ok:
         logger.info("=============>>>> end of train <<<<=============")
         material = train_lora_task.compress_train_material(p.train.format_epoch_log())

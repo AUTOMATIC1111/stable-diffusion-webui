@@ -67,8 +67,8 @@ class SubProcessKiller:
         if not kill_all:
             sub_processes = [p for p in sub_processes if p.pid not in self.protected_pids]
         for p in sub_processes:
-            print(f'kill sub process:{p.pid}')
-            p.kill()
+            print(f'kill sub process:{p.pid} ( test only)')
+            # p.kill()
 
     def kill_records(self):
         if not hasattr(self, 'record_pids'):
@@ -947,6 +947,7 @@ class NetworkTrainer:
                     lr = lr_scheduler.optimizers[-1].param_groups[0]["d"] * lr_scheduler.optimizers[-1].param_groups[0][
                         "lr"]
                     print(f"auto lr:{lr}")
+                    del train_dataloader
                     return lr
             if args.logging_dir is not None:
                 logs = {"loss/epoch": loss_total / len(loss_list)}
@@ -985,6 +986,7 @@ class NetworkTrainer:
                     print("stop training because loss nan")
                     accelerator.end_training()
                     del accelerator
+                    del train_dataloader
                     if args.auto_lr:
                         return 0.0001
                     else:
@@ -1002,7 +1004,7 @@ class NetworkTrainer:
             train_util.save_state_on_train_end(args, accelerator)
 
         del accelerator  # この後メモリを使うのでこれは消す
-
+        del train_dataloader
         if is_main_process:
             ckpt_name = train_util.get_last_ckpt_name(args, "." + args.save_model_as)
             save_model(ckpt_name, network, global_step, num_train_epochs, force_sync_upload=True)
@@ -1434,7 +1436,7 @@ def train_with_params(
         print("auto_lr step1")
         lr = trainer.train(args)
         lr = lr / auto_lr_param if isinstance(lr, float) else 0.0001
-        print("auto_lr step2", lr)
+        print(f">>> auto lr: {lr}")
 
         args.auto_lr = False
         args.learning_rate = lr
@@ -1444,7 +1446,7 @@ def train_with_params(
         args.lr_scheduler_num_cycles = lr_scheduler_num_cycles if lr_scheduler_num_cycles != "" and lr_scheduler_num_cycles != -1 else None
         args.lr_scheduler = lr_scheduler if lr_scheduler != "" and lr_scheduler != -1 else None
         args.resolution = resolution
-
+    print(">>> begin train...")
     return trainer.train(args, callback)
 
 
