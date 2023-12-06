@@ -801,7 +801,7 @@ def reload_model_weights(sd_model=None, info=None, forced_reload=False):
         if check_fp8(sd_model) != devices.fp8:
             # load from state dict again to prevent extra numerical errors
             forced_reload = True
-        elif sd_model.sd_model_checkpoint == checkpoint_info.filename:
+        elif sd_model.sd_model_checkpoint == checkpoint_info.filename and not forced_reload:
             return sd_model
 
     sd_model = reuse_model_from_already_loaded(sd_model, checkpoint_info, timer)
