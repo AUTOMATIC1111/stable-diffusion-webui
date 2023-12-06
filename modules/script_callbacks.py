@@ -265,7 +265,7 @@ def infotext_pasted_callback(infotext: str, params: dict[str, Any]):
 
 
 def script_unloaded_callback():
-    for c in reversed(sorted(callback_map['callbacks_script_unloaded'], reverse=True)):
+    for c in sorted(callback_map['callbacks_script_unloaded']):
         try:
             c.callback()
         except Exception:
@@ -273,7 +273,7 @@ def script_unloaded_callback():
 
 
 def before_ui_callback():
-    for c in reversed(sorted(callback_map['callbacks_before_ui'], reverse=True)):
+    for c in sorted(callback_map['callbacks_before_ui']):
         try:
             c.callback()
         except Exception:
