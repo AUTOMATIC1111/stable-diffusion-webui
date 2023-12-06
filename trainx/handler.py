@@ -5,6 +5,7 @@
 # @Site    : 
 # @File    : handler.py
 # @Software: Hifive
+import os
 from enum import IntEnum
 from worker.handler import DumpTaskHandler
 from worker.task import Task, TaskType
@@ -23,13 +24,15 @@ class TrainTaskHandler(DumpTaskHandler):
 
     def _exec(self, task: Task):
         torch_gc()
+        print(f"current pid:{os.getpid()}")
         if task.minor_type == TrainMinorTaskType.Preprocess:
             yield from exec_preprocess_task(task)
         elif task.minor_type == TrainMinorTaskType.Lora:
-            yield from exec_train_lora_task(task, self._set_task_status)
+            yield from exec_train_lora_task(task, self.dump_task)
         elif task.minor_type == TrainMinorTaskType.DigitalDoppelganger:
-            yield from digital_doppelganger(task, self._set_task_status)
+            yield from digital_doppelganger(task, self.dump_task)
 
-    def _set_task_status(self, p):
+    def dump_task(self, p):
+        print(f"current pid:{os.getpid()}")
         with MongoTaskDumper() as dumper:
             dumper.dump_task_progress(p)

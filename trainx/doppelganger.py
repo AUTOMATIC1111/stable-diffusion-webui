@@ -13,7 +13,7 @@ import random
 import numpy as np
 from loguru import logger
 from modules.shared import mem_mon as vram_mon
-from trainx.utils import Tmp, detect_image_face, kill_child_processes, upload_files
+from trainx.utils import Tmp, detect_image_face, upload_files
 from trainx.typex import DigitalDoppelgangerTask, Task, TrainLoraTask, PreprocessTask
 from sd_scripts.train_auto_xz import train_auto
 from worker.task import Task, TaskStatus, TaskProgress, TrainEpoch
@@ -29,7 +29,8 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
 
     task = DigitalDoppelgangerTask(job)
     eta = int(len(task.image_keys) * 0.89 + 1416)
-    p = TaskProgress.new_ready(job, 'ready preprocess', eta)
+    p = TaskProgress.new_ready(job, 'ready preprocess', 0)
+    p.eta_relative = eta
     yield p
 
     logger.debug(">> download images...")
@@ -38,7 +39,7 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
 
     image_dir = task.download_move_input_images()
     logger.debug(f">> input images dir:{image_dir}")
-    kill_child_processes()
+
     if image_dir:
         # 检测年龄
         images = [os.path.join(image_dir, os.path.basename(i)) for i in random.choices(task.image_keys, k=5)]
@@ -50,12 +51,13 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
         age = np.average([x[-1] for x in face_info])
         gender = '1girl' if np.sum([x[0] == 0 for x in face_info]) > len(face_info) / 2 else '1boy'
 
-        p = TaskProgress.new_running(job, 'train running.', eta - 60)
+        p = TaskProgress.new_running(job, 'train running.', 1)
+        p.eta_relative = eta
         yield p
 
         def train_progress_callback(epoch, loss, num_train_epochs, progress):
             progress = progress if progress > 1 else progress * 100
-            if progress - p.task_progress >= 2:
+            if progress - p.task_progress >= 5:
 
                 free, total = vram_mon.cuda_mem_get_info()
                 logger.info(f'[VRAM] free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
@@ -93,8 +95,6 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
         )
 
         torch_gc()
-        kill_child_processes()
-
         logger.debug(f">> train complete: {out_path}")
         if out_path and os.path.isfile(out_path):
             result = {

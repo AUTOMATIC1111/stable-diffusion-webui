@@ -61,6 +61,8 @@ class SubProcessKiller:
         ]
 
     def kill_sub_process(self, kill_all=False):
+        print("kill sub processor after 3 sec...")
+        time.sleep(3)
         sub_processes = self.init_process.children()
         if not kill_all:
             sub_processes = [p for p in sub_processes if p.pid not in self.protected_pids]
@@ -391,8 +393,6 @@ class NetworkTrainer:
 
         optimizer_name, optimizer_args, optimizer = train_util.get_optimizer(args, trainable_params)
 
-        # for kill data loaders
-        pk = SubProcessKiller()
         # dataloaderを準備する
         # DataLoaderのプロセス数：0はメインプロセスになる
         n_workers = min(args.max_data_loader_n_workers, os.cpu_count() - 1)  # cpu_count-1 ただし最大で指定された数まで
@@ -971,17 +971,24 @@ class NetworkTrainer:
                         train_util.save_and_remove_state_on_epoch_end(args, accelerator, epoch + 1)
 
             # self.sample_images(accelerator, args, epoch + 1, global_step, accelerator.device, vae, tokenizer,text_encoder, unet)
-            if callable(train_epoch_callback):
-                # train_epoch_callback(epoch + 1, loss_total / len(loss_list), num_train_epochs)
-                train_epoch_callback(
-                    epoch + 1, loss_total / len(loss_list), num_train_epochs,
-                    (epoch * 1.0 + 1.0) * 100.0 / num_train_epochs)
-            # end of epoch
-            if math.isnan(loss_total / len(loss_list)):
-                # nan(task failed)
-                accelerator.end_training()
-                del accelerator
-                return False
+            if is_main_process:
+                if callable(train_epoch_callback) and not args.auto_lr:
+                    print("callback start")
+                    # train_epoch_callback(epoch + 1, loss_total / len(loss_list), num_train_epochs)
+                    train_epoch_callback(
+                        epoch + 1, loss_total / len(loss_list), num_train_epochs,
+                        (epoch * 1.0 + 1.0) * 100.0 / num_train_epochs)
+                    print("callback end")
+                # end of epoch
+                if math.isnan(loss_total / len(loss_list)):
+                    # nan(task failed)
+                    print("stop training because loss nan")
+                    accelerator.end_training()
+                    del accelerator
+                    if args.auto_lr:
+                        return 0.0001
+                    else:
+                        return False
 
         # metadata["ss_epoch"] = str(num_train_epochs)
         metadata["ss_training_finished_at"] = str(time.time())
@@ -993,7 +1000,6 @@ class NetworkTrainer:
 
         if is_main_process and args.save_state:
             train_util.save_state_on_train_end(args, accelerator)
-            pk.kill_sub_process()
 
         del accelerator  # この後メモリを使うのでこれは消す
 
@@ -1002,6 +1008,7 @@ class NetworkTrainer:
             save_model(ckpt_name, network, global_step, num_train_epochs, force_sync_upload=True)
 
             print("model saved.")
+
             return True
 
 
@@ -1425,11 +1432,12 @@ def train_with_params(
         # args.optimizer_args.append(f"betas={0.9}")
 
         print("auto_lr step1")
-        lr = trainer.train(args, callback)
+        lr = trainer.train(args)
+        lr = lr / auto_lr_param if isinstance(lr, float) else 0.0001
         print("auto_lr step2", lr)
 
         args.auto_lr = False
-        args.learning_rate = lr / auto_lr_param
+        args.learning_rate = lr
         args.unet_lr = args.learning_rate  # unet_lr if unet_lr!="" and unet_lr!=-1 else None
         args.text_encoder_lr = args.learning_rate / 5.0  # text_encoder_lr if text_encoder_lr!="" and text_encoder_lr!=-1 else None
         args.optimizer_type = optimizer_type if optimizer_type != "" and optimizer_type != -1 else None

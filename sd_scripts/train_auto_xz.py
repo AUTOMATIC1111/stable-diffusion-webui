@@ -7,7 +7,7 @@ import math
 import dlib
 import tempfile
 from accelerate import Accelerator
-from train_network_all_auto import train_with_params, train_callback
+from train_network_all_auto import train_with_params, SubProcessKiller
 
 # from prompts_generate import txt2img_prompts
 from sd_scripts.finetune.tag_images_by_wd14_tagger import get_wd_tagger
@@ -726,7 +726,7 @@ def train_auto(
     else:
         pic_nums = len(contents) / 2
 
-    max_repeats = 30
+    max_repeats = 28
     repeats_n = min(int(20 * max_repeats / pic_nums), max_repeats)
 
     # 2.tagger反推
@@ -764,7 +764,7 @@ def train_auto(
 
     gender = '1girl' if girl_count > man_count else '1boy'
     print(f">>>>>> gender:{gender}")
-
+    pk = SubProcessKiller()
     # 3.自动训练出图
     train_with_params(
         pretrained_model_name_or_path=sd_model_path,
@@ -889,6 +889,7 @@ def train_auto(
         callback=train_callback,
     )
 
+    pk.kill_sub_process()
     return os.path.join(lora_path, lora_name + ".safetensors"), gender
 
 
