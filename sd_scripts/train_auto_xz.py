@@ -572,6 +572,8 @@ def seg_face(input_path, output_path, model_path):
         print("download shape_predictor_68_face_landmarks.dat from xingzheassert.obs.cn-north-4.myhuaweicloud.com")
         resp = requests.get('https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/resource/face/shape_predictor_68_face_landmarks.dat')
         if resp:
+            dirname = os.path.dirname(face_model)
+            os.makedirs(dirname, exist_ok=True)
             filepath = os.path.join("tmp", 'shape_predictor_68_face_landmarks.dat')
             os.makedirs('tmp', exist_ok=True)
             chunk_size = 512
