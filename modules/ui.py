@@ -9,7 +9,6 @@ from contextlib import ExitStack
 import gradio as gr
 import gradio.utils
 from gradio.components.image_editor import Brush
-import numpy as np
 from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
