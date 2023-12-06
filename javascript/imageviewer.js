@@ -34,7 +34,7 @@ function updateOnBackgroundChange() {
     if (modalImage && modalImage.offsetParent) {
         let currentButton = selected_gallery_button();
         let preview = gradioApp().querySelectorAll('.livePreview > img');
-        if (preview.length > 0) {
+        if (opts.js_live_preview_in_modal_lightbox && preview.length > 0) {
             // show preview image if available
             modalImage.src = preview[preview.length - 1].src;
         } else if (currentButton?.children?.length > 0 && modalImage.src != currentButton.children[0].src) {
