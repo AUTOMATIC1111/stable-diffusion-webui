@@ -1,20 +1,23 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-05
+## Update for 2023-12-06
 
 *Note*: based on `diffusers==0.25.0.dev0`
 
 - **Diffusers**
-  - **IP Adapter** add support for `ip-adapter-plus_sd15` and `ip-adapter-plus-face_sd15`  
   - **AnimateDiff** can now be used with *second pass* - enhance, upscale and hires your videos!  
-  - **HDE controls** are now batch-aware for enhancement of multiple images or video frames  
-  - added support for basic [ModelScope T2V](https://huggingface.co/damo-vilab/text-to-video-ms-1.7b) model  
+  - **IP Adapter** add support for `ip-adapter-plus_sd15` and `ip-adapter-plus-face_sd15`  
+  - **HDR controls** are now batch-aware for enhancement of multiple images or video frames  
+  - [Playground v1](https://huggingface.co/playgroundai/playground-v1), [Playground v2 256](https://huggingface.co/playgroundai/playground-v2-256px-base), [Playground v2 512](https://huggingface.co/playgroundai/playground-v2-512px-base), [Playground v2 1024](https://huggingface.co/playgroundai/playground-v2-1024px-aesthetic) model support  
+    - simply select from *networks -> reference* and use as usual  
+  - [ModelScope T2V](https://huggingface.co/damo-vilab/text-to-video-ms-1.7b) model support  
     - simply select from *networks -> reference* and use from *txt2img* tab
 - **General**
   - **LoRA** add support for block weights, thanks @AI-Casanova  
     example `<lora:SDXL_LCM_LoRA:1.0:in=0:mid=1:out=0>`  
   - **Extra networks** new *settting -> extra networks -> build info on first access*  
     indexes all networks on first access instead of server startup  
+  - **Ipex** improvements, thanks @disty0
   - disable google fonts check on server startup  
   - fix torchvision/basicsr compatibility  
   - add hdr settings to metadata  
