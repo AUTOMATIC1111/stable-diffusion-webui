@@ -48,3 +48,6 @@ if has_xpu:
     CondFunc('torch.nn.modules.conv.Conv2d.forward',
         lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
         lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
+    CondFunc('torch.bmm',
+        lambda orig_func, input, mat2, out=None: orig_func(input.to(mat2.dtype), mat2, out=out),
+        lambda orig_func, input, mat2, out=None: input.dtype != mat2.dtype)
