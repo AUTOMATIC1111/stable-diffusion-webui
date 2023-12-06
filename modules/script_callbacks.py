@@ -132,7 +132,7 @@ def clear_callbacks():
 
 
 def app_started_callback(demo: Optional[Blocks], app: FastAPI):
-    for c in callback_map['callbacks_app_started']:
+    for c in sorted(callback_map['callbacks_app_started'], reverse=True):
         try:
             c.callback(demo, app)
             timer.startup_timer.record(os.path.basename(c.script))
@@ -141,7 +141,7 @@ def app_started_callback(demo: Optional[Blocks], app: FastAPI):
 
 
 def app_reload_callback():
-    for c in callback_map['callbacks_on_reload']:
+    for c in sorted(callback_map['callbacks_on_reload'], reverse=True):
         try:
             c.callback()
         except Exception:
@@ -149,7 +149,7 @@ def app_reload_callback():
 
 
 def model_loaded_callback(sd_model):
-    for c in callback_map['callbacks_model_loaded']:
+    for c in sorted(callback_map['callbacks_model_loaded'], reverse=True):
         try:
             c.callback(sd_model)
         except Exception:
@@ -159,7 +159,7 @@ def model_loaded_callback(sd_model):
 def ui_tabs_callback():
     res = []
 
-    for c in callback_map['callbacks_ui_tabs']:
+    for c in sorted(callback_map['callbacks_ui_tabs'], reverse=True):
         try:
             res += c.callback() or []
         except Exception:
@@ -169,7 +169,7 @@ def ui_tabs_callback():
 
 
 def ui_train_tabs_callback(params: UiTrainTabParams):
-    for c in callback_map['callbacks_ui_train_tabs']:
+    for c in sorted(callback_map['callbacks_ui_train_tabs'], reverse=True):
         try:
             c.callback(params)
         except Exception:
@@ -177,7 +177,7 @@ def ui_train_tabs_callback(params: UiTrainTabParams):
 
 
 def ui_settings_callback():
-    for c in callback_map['callbacks_ui_settings']:
+    for c in sorted(callback_map['callbacks_ui_settings'], reverse=True):
         try:
             c.callback()
         except Exception:
@@ -185,7 +185,7 @@ def ui_settings_callback():
 
 
 def before_image_saved_callback(params: ImageSaveParams):
-    for c in callback_map['callbacks_before_image_saved']:
+    for c in sorted(callback_map['callbacks_before_image_saved'], reverse=True):
         try:
             c.callback(params)
         except Exception:
@@ -193,7 +193,7 @@ def before_image_saved_callback(params: ImageSaveParams):
 
 
 def image_saved_callback(params: ImageSaveParams):
-    for c in callback_map['callbacks_image_saved']:
+    for c in sorted(callback_map['callbacks_image_saved'], reverse=True):
         try:
             c.callback(params)
         except Exception:
@@ -201,7 +201,7 @@ def image_saved_callback(params: ImageSaveParams):
 
 
 def extra_noise_callback(params: ExtraNoiseParams):
-    for c in callback_map['callbacks_extra_noise']:
+    for c in sorted(callback_map['callbacks_extra_noise'], reverse=True):
         try:
             c.callback(params)
         except Exception:
@@ -209,7 +209,7 @@ def extra_noise_callback(params: ExtraNoiseParams):
 
 
 def cfg_denoiser_callback(params: CFGDenoiserParams):
-    for c in callback_map['callbacks_cfg_denoiser']:
+    for c in sorted(callback_map['callbacks_cfg_denoiser'], reverse=True):
         try:
             c.callback(params)
         except Exception:
@@ -217,7 +217,7 @@ def cfg_denoiser_callback(params: CFGDenoiserParams):
 
 
 def cfg_denoised_callback(params: CFGDenoisedParams):
-    for c in callback_map['callbacks_cfg_denoised']:
+    for c in sorted(callback_map['callbacks_cfg_denoised'], reverse=True):
         try:
             c.callback(params)
         except Exception:
@@ -225,7 +225,7 @@ def cfg_denoised_callback(params: CFGDenoisedParams):
 
 
 def cfg_after_cfg_callback(params: AfterCFGCallbackParams):
-    for c in callback_map['callbacks_cfg_after_cfg']:
+    for c in sorted(callback_map['callbacks_cfg_after_cfg'], reverse=True):
         try:
             c.callback(params)
         except Exception:
@@ -233,7 +233,7 @@ def cfg_after_cfg_callback(params: AfterCFGCallbackParams):
 
 
 def before_component_callback(component, **kwargs):
-    for c in callback_map['callbacks_before_component']:
+    for c in sorted(callback_map['callbacks_before_component'], reverse=True):
         try:
             c.callback(component, **kwargs)
         except Exception:
@@ -241,7 +241,7 @@ def before_component_callback(component, **kwargs):
 
 
 def after_component_callback(component, **kwargs):
-    for c in callback_map['callbacks_after_component']:
+    for c in sorted(callback_map['callbacks_after_component'], reverse=True):
         try:
             c.callback(component, **kwargs)
         except Exception:
@@ -249,7 +249,7 @@ def after_component_callback(component, **kwargs):
 
 
 def image_grid_callback(params: ImageGridLoopParams):
-    for c in callback_map['callbacks_image_grid']:
+    for c in sorted(callback_map['callbacks_image_grid'], reverse=True):
         try:
             c.callback(params)
         except Exception:
@@ -257,7 +257,7 @@ def image_grid_callback(params: ImageGridLoopParams):
 
 
 def infotext_pasted_callback(infotext: str, params: dict[str, Any]):
-    for c in callback_map['callbacks_infotext_pasted']:
+    for c in sorted(callback_map['callbacks_infotext_pasted'], reverse=True):
         try:
             c.callback(infotext, params)
         except Exception:
@@ -265,7 +265,7 @@ def infotext_pasted_callback(infotext: str, params: dict[str, Any]):
 
 
 def script_unloaded_callback():
-    for c in reversed(callback_map['callbacks_script_unloaded']):
+    for c in reversed(sorted(callback_map['callbacks_script_unloaded'], reverse=True)):
         try:
             c.callback()
         except Exception:
@@ -273,7 +273,7 @@ def script_unloaded_callback():
 
 
 def before_ui_callback():
-    for c in reversed(callback_map['callbacks_before_ui']):
+    for c in reversed(sorted(callback_map['callbacks_before_ui'], reverse=True)):
         try:
             c.callback()
         except Exception:
@@ -283,7 +283,7 @@ def before_ui_callback():
 def list_optimizers_callback():
     res = []
 
-    for c in callback_map['callbacks_list_optimizers']:
+    for c in sorted(callback_map['callbacks_list_optimizers'], reverse=True):
         try:
             c.callback(res)
         except Exception:
@@ -295,7 +295,7 @@ def list_optimizers_callback():
 def list_unets_callback():
     res = []
 
-    for c in callback_map['callbacks_list_unets']:
+    for c in sorted(callback_map['callbacks_list_unets'], reverse=True):
         try:
             c.callback(res)
         except Exception:
