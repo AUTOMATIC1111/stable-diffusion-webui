@@ -576,15 +576,15 @@ def seg_face(input_path, output_path, model_path):
             os.makedirs(dirname, exist_ok=True)
             filepath = os.path.join("tmp", 'shape_predictor_68_face_landmarks.dat')
             os.makedirs('tmp', exist_ok=True)
-            chunk_size = 512
-            current = 0
+            chunk_size = 1024
+
             with open(filepath, 'wb') as f:
                 for chunk in resp.iter_content(chunk_size=chunk_size):
                     if chunk:
                         f.write(chunk)
-                        current += chunk_size
-                if os.path.isfile(filepath):
-                    shutil.move(filepath, face_model)
+
+            if os.path.isfile(filepath):
+                shutil.move(filepath, face_model)
 
     if not os.path.isfile(face_model):
         raise OSError(f'cannot found model:{face_model}')
