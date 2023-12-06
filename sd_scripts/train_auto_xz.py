@@ -1,36 +1,15 @@
 import os  # ,sys,re,torch
 import shutil
-
-from PIL import Image, ImageOps
-# import random
 import time
 import tqdm
 from enum import Enum
 import math
 import dlib
 import tempfile
-# import diffusers
-# from diffusers.optimization import SchedulerType, TYPE_TO_SCHEDULER_FUNCTION
-# from diffusers import (
-#     StableDiffusionPipeline,
-#     DDPMScheduler,
-#     EulerAncestralDiscreteScheduler,
-#     DPMSolverMultistepScheduler,
-#     DPMSolverSinglestepScheduler,
-#     LMSDiscreteScheduler,
-#     PNDMScheduler,
-#     DDIMScheduler,
-#     EulerDiscreteScheduler,
-#     HeunDiscreteScheduler,
-#     KDPM2DiscreteScheduler,
-#     KDPM2AncestralDiscreteScheduler,
-# )
 from accelerate import Accelerator
-# from library.lpw_stable_diffusion import StableDiffusionLongPromptWeightingPipeline
 from train_network_all_auto import train_with_params, train_callback
 
 # from prompts_generate import txt2img_prompts
-
 from sd_scripts.finetune.tag_images_by_wd14_tagger import get_wd_tagger
 from sd_scripts.finetune.deepbooru import deepbooru
 from sd_scripts.library import autocrop
@@ -585,17 +564,30 @@ def prepare_accelerator(logging_dir="./logs", log_prefix=None, gradient_accumula
     return accelerator, unwrap_model
 
 
-
-
 def seg_face(input_path, output_path, model_path):
     # 加载人脸关键点检测器
     face_model = os.path.join(model_path, r"face_detect/shape_predictor_68_face_landmarks.dat")
     if not os.path.isfile(face_model):
-        raise OSError(f'cannot found model:{face_model}')
+        import requests
+        print("download shape_predictor_68_face_landmarks.dat from xingzheassert.obs.cn-north-4.myhuaweicloud.com")
+        resp = requests.get('https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/resource/face/shape_predictor_68_face_landmarks.dat')
+        if resp:
+            filepath = os.path.join("tmp", 'shape_predictor_68_face_landmarks.dat')
+            os.makedirs('tmp', exist_ok=True)
+            chunk_size = 512
+            current = 0
+            with open(filepath, 'wb') as f:
+                for chunk in resp.iter_content(chunk_size=chunk_size):
+                    if chunk:
+                        f.write(chunk)
+                        current += chunk_size
+                if os.path.isfile(filepath):
+                    shutil.move(filepath, face_model)
 
+    if not os.path.isfile(face_model):
+        raise OSError(f'cannot found model:{face_model}')
     predictor = dlib.shape_predictor(face_model)
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
+    os.makedirs(output_path, exist_ok=True)
 
     for f in os.listdir(input_path):
         fi = os.path.join(input_path, f)

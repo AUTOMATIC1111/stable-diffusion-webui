@@ -1,5 +1,5 @@
 import os
-from PIL import Image,ImageOps
+from PIL import Image, ImageOps
 import cv2
 import numpy as np
 import io
