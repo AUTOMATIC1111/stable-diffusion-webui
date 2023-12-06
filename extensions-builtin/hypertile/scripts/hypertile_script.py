@@ -5,7 +5,9 @@ from scripts.hypertile_xyz import add_axis_options
 
 class ScriptHypertile(scripts.Script):
     name = "Hypertile"
-
+    process_priority = -1000
+    before_hr_priority = -1000
+    
     def title(self):
         return self.name
 
