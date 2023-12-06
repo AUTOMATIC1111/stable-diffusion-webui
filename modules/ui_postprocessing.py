@@ -1,9 +1,10 @@
 import gradio as gr
-from modules import scripts, shared, ui_common, postprocessing, call_queue
+from modules import scripts, shared, ui_common, postprocessing, call_queue, ui_toprow
 import modules.generation_parameters_copypaste as parameters_copypaste
 
 
 def create_ui():
+    dummy_component = gr.Label(visible=False)
     tab_index = gr.State(value=0)
 
     with gr.Row(equal_height=False, variant='compact'):
@@ -20,11 +21,13 @@ def create_ui():
                     extras_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, placeholder="Leave blank to save images to the default path.", elem_id="extras_batch_output_dir")
                     show_extras_results = gr.Checkbox(label='Show result images', value=True, elem_id="extras_show_extras_results")
 
-            submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
-
             script_inputs = scripts.scripts_postproc.setup_ui()
 
         with gr.Column():
+            toprow = ui_toprow.Toprow(is_compact=True, is_img2img=False, id_part="extras")
+            toprow.create_inline_toprow_image()
+            submit = toprow.submit
+
             result_images, html_info_x, html_info, html_log = ui_common.create_output_panel("extras", shared.opts.outdir_extras_samples)
 
     tab_single.select(fn=lambda: 0, inputs=[], outputs=[tab_index])
@@ -32,8 +35,10 @@ def create_ui():
     tab_batch_dir.select(fn=lambda: 2, inputs=[], outputs=[tab_index])
 
     submit.click(
-        fn=call_queue.wrap_gradio_gpu_call(postprocessing.run_postprocessing, extra_outputs=[None, '']),
+        fn=call_queue.wrap_gradio_gpu_call(postprocessing.run_postprocessing_webui, extra_outputs=[None, '']),
+        _js="submit_extras",
         inputs=[
+            dummy_component,
             tab_index,
             extras_image,
             image_batch,
@@ -45,8 +50,9 @@ def create_ui():
         outputs=[
             result_images,
             html_info_x,
-            html_info,
-        ]
+            html_log,
+        ],
+        show_progress=False,
     )
 
     parameters_copypaste.add_paste_fields("extras", extras_image, None)

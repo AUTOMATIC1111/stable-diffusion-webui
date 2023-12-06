@@ -170,6 +170,23 @@ function submit_img2img() {
     return res;
 }
 
+function submit_extras() {
+    showSubmitButtons('extras', false);
+
+    var id = randomId();
+
+    requestProgress(id, gradioApp().getElementById('extras_gallery_container'), gradioApp().getElementById('extras_gallery'), function() {
+        showSubmitButtons('extras', true);
+    });
+
+    var res = create_submit_args(arguments);
+
+    res[0] = id;
+
+    console.log(res);
+    return res;
+}
+
 function restoreProgressTxt2img() {
     showRestoreProgressButton("txt2img", false);
     var id = localGet("txt2img_task_id");
@@ -263,21 +280,6 @@ onAfterUiUpdate(function() {
     json_elem.parentElement.style.display = "none";
 
     setupTokenCounters();
-
-    var show_all_pages = gradioApp().getElementById('settings_show_all_pages');
-    var settings_tabs = gradioApp().querySelector('#settings div');
-    if (show_all_pages && settings_tabs) {
-        settings_tabs.appendChild(show_all_pages);
-        show_all_pages.onclick = function() {
-            gradioApp().querySelectorAll('#settings > div').forEach(function(elem) {
-                if (elem.id == "settings_tab_licenses") {
-                    return;
-                }
-
-                elem.style.display = "block";
-            });
-        };
-    }
 });
 
 onOptionsChanged(function() {
@@ -365,4 +367,21 @@ function switchWidthHeight(tabname) {
     updateInput(width);
     updateInput(height);
     return [];
+}
+
+
+var onEditTimers = {};
+
+// calls func after afterMs milliseconds has passed since the input elem has beed enited by user
+function onEdit(editId, elem, afterMs, func) {
+    var edited = function() {
+        var existingTimer = onEditTimers[editId];
+        if (existingTimer) clearTimeout(existingTimer);
+
+        onEditTimers[editId] = setTimeout(func, afterMs);
+    };
+
+    elem.addEventListener("input", edited);
+
+    return edited;
 }
