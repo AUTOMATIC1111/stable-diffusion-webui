@@ -82,7 +82,7 @@ class Script(scripts.Script):
                 return
             if image_encoder is None:
                 try:
-                    image_encoder = CLIPVisionModelWithProjection.from_pretrained("h94/IP-Adapter", subfolder=subfolder, torch_dtype=torch.float16, cache_dir=shared.opts.diffusers_dir, use_safetensors=True).to(devices.device)
+                    image_encoder = CLIPVisionModelWithProjection.from_pretrained("h94/IP-Adapter", subfolder=subfolder, torch_dtype=devices.dtype, cache_dir=shared.opts.diffusers_dir, use_safetensors=True).to(devices.device)
                 except Exception as e:
                     shared.log.error(f'IP adapter: failed to load image encoder: {e}')
                     return
