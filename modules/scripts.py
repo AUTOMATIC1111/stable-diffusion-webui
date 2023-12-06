@@ -71,6 +71,27 @@ class Script:
     setup_for_ui_only = False
     """If true, the script setup will only be run in Gradio UI, not in API"""
 
+    before_process_priority = 0
+    """priority of before_process callback, higher priority will be called first"""
+    process_priority = 0
+    """priority of process callback, higher priority will be called first"""
+    before_process_batch_priority = 0
+    """priority of before_process_batch callback, higher priority will be called first"""
+    after_extra_networks_activate_priority = 0
+    """priority of after_extra_networks_activate callback, higher priority will be called first"""
+    process_batch_priority = 0
+    """priority of process_batch callback, higher priority will be called first"""
+    postprocess_priority = 0
+    """priority of postprocess callback, higher priority will be called first"""
+    postprocess_batch_priority = 0
+    """priority of postprocess_batch callback, higher priority will be called first"""
+    postprocess_image_priority = 0
+    """priority of postprocess_image callback, higher priority will be called first"""
+    before_hr_priority = 0
+    """priority of before_hr callback, higher priority will be called first"""
+    setup_priority = 0
+    """priority of setup callback, higher priority will be called first"""
+
     def title(self):
         """this function should return the title of the script. This is what will be displayed in the dropdown menu."""
 
@@ -251,6 +272,8 @@ class Script:
             self.on_before_component_elem_id = []
 
         self.on_before_component_elem_id.append((elem_id, callback))
+        # sort by priority
+        self.on_before_component_elem_id.sort(key=lambda x: getattr(x[1], 'priority', 0), reverse=True)
 
     def on_after_component(self, callback, *, elem_id):
         """
@@ -260,6 +283,8 @@ class Script:
             self.on_after_component_elem_id = []
 
         self.on_after_component_elem_id.append((elem_id, callback))
+        # sort by priority
+        self.on_after_component_elem_id.sort(key=lambda x: getattr(x[1], 'priority', 0), reverse=True)
 
     def describe(self):
         """unused"""
@@ -704,7 +729,7 @@ class ScriptRunner:
         return processed
 
     def before_process(self, p):
-        for script in self.alwayson_scripts:
+        for script in sorted(self.alwayson_scripts, key=lambda x: getattr(x, 'before_process_priority', 0)):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.before_process(p, *script_args)
@@ -712,7 +737,7 @@ class ScriptRunner:
                 errors.report(f"Error running before_process: {script.filename}", exc_info=True)
 
     def process(self, p):
-        for script in self.alwayson_scripts:
+        for script in sorted(self.alwayson_scripts, key=lambda x: getattr(x, 'process_priority', 0)):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.process(p, *script_args)
@@ -720,7 +745,7 @@ class ScriptRunner:
                 errors.report(f"Error running process: {script.filename}", exc_info=True)
 
     def before_process_batch(self, p, **kwargs):
-        for script in self.alwayson_scripts:
+        for script in sorted(self.alwayson_scripts, key=lambda x: getattr(x, 'before_process_batch_priority', 0)):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.before_process_batch(p, *script_args, **kwargs)
@@ -728,7 +753,7 @@ class ScriptRunner:
                 errors.report(f"Error running before_process_batch: {script.filename}", exc_info=True)
 
     def after_extra_networks_activate(self, p, **kwargs):
-        for script in self.alwayson_scripts:
+        for script in sorted(self.alwayson_scripts, key=lambda x: getattr(x, 'after_extra_networks_activate_priority', 0)):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.after_extra_networks_activate(p, *script_args, **kwargs)
@@ -736,7 +761,7 @@ class ScriptRunner:
                 errors.report(f"Error running after_extra_networks_activate: {script.filename}", exc_info=True)
 
     def process_batch(self, p, **kwargs):
-        for script in self.alwayson_scripts:
+        for script in sorted(self.alwayson_scripts, key=lambda x: getattr(x, 'process_batch_priority', 0)):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.process_batch(p, *script_args, **kwargs)
@@ -744,7 +769,7 @@ class ScriptRunner:
                 errors.report(f"Error running process_batch: {script.filename}", exc_info=True)
 
     def postprocess(self, p, processed):
-        for script in self.alwayson_scripts:
+        for script in sorted(self.alwayson_scripts, key=lambda x: getattr(x, 'postprocess_priority', 0)):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess(p, processed, *script_args)
@@ -752,7 +777,7 @@ class ScriptRunner:
                 errors.report(f"Error running postprocess: {script.filename}", exc_info=True)
 
     def postprocess_batch(self, p, images, **kwargs):
-        for script in self.alwayson_scripts:
+        for script in sorted(self.alwayson_scripts, key=lambda x: getattr(x, 'postprocess_batch_priority', 0)):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess_batch(p, *script_args, images=images, **kwargs)
@@ -760,7 +785,7 @@ class ScriptRunner:
                 errors.report(f"Error running postprocess_batch: {script.filename}", exc_info=True)
 
     def postprocess_batch_list(self, p, pp: PostprocessBatchListArgs, **kwargs):
-        for script in self.alwayson_scripts:
+        for script in sorted(self.alwayson_scripts, key=lambda x: getattr(x, 'postprocess_batch_priority', 0)):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess_batch_list(p, pp, *script_args, **kwargs)
@@ -768,7 +793,7 @@ class ScriptRunner:
                 errors.report(f"Error running postprocess_batch_list: {script.filename}", exc_info=True)
 
     def postprocess_image(self, p, pp: PostprocessImageArgs):
-        for script in self.alwayson_scripts:
+        for script in sorted(self.alwayson_scripts, key=lambda x: getattr(x, 'postprocess_image_priority', 0)):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess_image(p, pp, *script_args)
@@ -823,7 +848,7 @@ class ScriptRunner:
                     self.scripts[si].args_to = args_to
 
     def before_hr(self, p):
-        for script in self.alwayson_scripts:
+        for script in sorted(self.alwayson_scripts, key=lambda x: getattr(x, 'before_hr_priority', 0)):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.before_hr(p, *script_args)
@@ -831,7 +856,7 @@ class ScriptRunner:
                 errors.report(f"Error running before_hr: {script.filename}", exc_info=True)
 
     def setup_scrips(self, p, *, is_ui=True):
-        for script in self.alwayson_scripts:
+        for script in sorted(self.alwayson_scripts, key=lambda x: getattr(x, 'setup_priority', 0)):
             if not is_ui and script.setup_for_ui_only:
                 continue
 
