@@ -12,12 +12,12 @@ from modules import shared, paths, script_callbacks, extensions, script_loading,
 AlwaysVisible = object()
 
 class MaskBlendArgs:
-    def __init__(self, current_latent, nmask, init_latent, mask, blended_samples, denoiser=None, sigma=None):
+    def __init__(self, current_latent, nmask, init_latent, mask, blended_latent, denoiser=None, sigma=None):
         self.current_latent = current_latent
         self.nmask = nmask
         self.init_latent = init_latent
         self.mask = mask
-        self.blended_samples = blended_samples
+        self.blended_latent = blended_latent
 
         self.denoiser = denoiser
         self.is_final_blend = denoiser is None
