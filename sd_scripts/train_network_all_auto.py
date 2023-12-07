@@ -1009,9 +1009,10 @@ class NetworkTrainer:
             train_util.save_state_on_train_end(args, accelerator)
 
         del accelerator  # この後メモリを使うのでこれは消す
-        del train_dataloader
 
         if is_main_process:
+            print(f"del dataloader:{type(train_dataloader)}, {type(getattr(train_dataloader, 'dataloader_iter'))}")
+            del train_dataloader
             ckpt_name = train_util.get_last_ckpt_name(args, "." + args.save_model_as)
             save_model(ckpt_name, network, global_step, num_train_epochs, force_sync_upload=True)
 
