@@ -102,7 +102,11 @@ class DataLoaderShard(DataLoader, DataLoaderStateMixin):
         return getattr(self.dataset, "total_length", len(self.dataset))
 
     def __del__(self):
-        if self.dataloader_iter:
+        self.shutdown()
+
+    def shutdown(self):
+        print("dataloader shutdown...")
+        if getattr(self, 'dataloader_iter', None):
             print(f"del {type(self.dataloader_iter)}")
             del self.dataloader_iter
         else:

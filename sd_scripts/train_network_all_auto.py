@@ -952,7 +952,10 @@ class NetworkTrainer:
                     lr = lr_scheduler.optimizers[-1].param_groups[0]["d"] * lr_scheduler.optimizers[-1].param_groups[0][
                         "lr"]
                     print(f"auto lr:{lr}")
-                    del train_dataloader
+                    if hasattr(train_dataloader, 'shutdown'):
+                        train_dataloader.shutdown()
+                    else:
+                        del train_dataloader
                     return lr
             if args.logging_dir is not None:
                 logs = {"loss/epoch": loss_total / len(loss_list)}
@@ -991,7 +994,10 @@ class NetworkTrainer:
                     print("stop training because loss nan")
                     accelerator.end_training()
                     del accelerator
-                    del train_dataloader
+                    if hasattr(train_dataloader, 'shutdown'):
+                        train_dataloader.shutdown()
+                    else:
+                        del train_dataloader
                     if args.auto_lr:
                         return 0.0001
                     else:
@@ -1012,7 +1018,11 @@ class NetworkTrainer:
 
         if is_main_process:
             print(f"del dataloader:{type(train_dataloader)}, {type(getattr(train_dataloader, 'dataloader_iter'))}")
-            del train_dataloader
+            print(f"has shutdown:{hasattr(train_dataloader, 'shutdown')}")
+            if hasattr(train_dataloader, 'shutdown'):
+                train_dataloader.shutdown()
+            else:
+                del train_dataloader
             ckpt_name = train_util.get_last_ckpt_name(args, "." + args.save_model_as)
             save_model(ckpt_name, network, global_step, num_train_epochs, force_sync_upload=True)
 
