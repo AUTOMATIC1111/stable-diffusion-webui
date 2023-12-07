@@ -367,7 +367,7 @@ onUiLoaded(async() => {
                 const img = targetElement.querySelector(`${elemId} img`);
 
                 if (img && img.style.display !== "none") {
-                    img.style.display = "none";
+                    //img.style.display = "none";
                     img.style.visibility = "hidden";
                 }
             }

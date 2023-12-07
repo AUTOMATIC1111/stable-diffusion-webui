@@ -3337,6 +3337,9 @@ input[type="checkbox"] {
 .default-mobile .template > .full-height {
     padding: var(--ae-panel-padding);
 }
+#img2img_params_tabitem .tabitem > .gap{
+    overflow:hidden;
+}
 
 @media (max-width: 768px) {
     .xtabs-tab span {
