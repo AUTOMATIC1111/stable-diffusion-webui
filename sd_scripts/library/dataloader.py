@@ -62,10 +62,10 @@ class DataLoaderShard(DataLoader, DataLoaderStateMixin):
 
     def __iter__(self):
         self.begin()
-        dataloader_iter = super().__iter__()
+        self.dataloader_iter = super().__iter__()
         # We iterate one batch ahead to check when we are at the end
         try:
-            current_batch = next(dataloader_iter)
+            current_batch = next(self.dataloader_iter)
         except StopIteration:
             yield
 
@@ -75,7 +75,7 @@ class DataLoaderShard(DataLoader, DataLoaderStateMixin):
                 # But we still move it to the device so it is done before `StopIteration` is reached
                 if self.device is not None:
                     current_batch = send_to_device(current_batch, self.device)
-                next_batch = next(dataloader_iter)
+                next_batch = next(self.dataloader_iter)
                 if batch_index >= self.skip_batches:
                     yield current_batch
                 batch_index += 1
@@ -104,6 +104,8 @@ class DataLoaderShard(DataLoader, DataLoaderStateMixin):
         if self.dataloader_iter:
             logger.debug(f"del {type(self.dataloader_iter)}")
             del self.dataloader_iter
+        else:
+            logger.warning("self.dataloader_iter is none")
 
 
 def _convert_dataloadershard(accelerator_dataloader: AccelerateDataLoaderShard):
@@ -144,7 +146,7 @@ def _convert_dataloadershard(accelerator_dataloader: AccelerateDataLoaderShard):
             kwargs.update({
                 k: getattr(accelerator_dataloader, k)
             })
-            
+
     logger.debug("convert dataloader...")
     return DataLoaderShard(
         dataset, device, rng_types, synchronized_generator, skip_batches, **kwargs)
