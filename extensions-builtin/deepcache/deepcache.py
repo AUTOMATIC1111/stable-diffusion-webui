@@ -8,6 +8,7 @@ import torch
 from ldm.modules.diffusionmodules.openaimodel import timestep_embedding
 from scripts.forward_timestep_embed_patch import forward_timestep_embed
 
+from logging import getLogger
 @dataclass
 class DeepCacheParams:
     cache_in_level: int = 0
@@ -39,11 +40,12 @@ class DeepCacheSession:
         total = self.cache_success_count + self.cache_fail_count
         if total == 0:
             return
-        print(f"DeepCache success rate: {self.cache_success_count / total * 100}% ({self.cache_success_count}/{total})")
+        logger = getLogger()
+        logger.log("DeepCache Information :")
         for fail_reasons, count in self.fail_reasons.items():
-            print(f"  {fail_reasons}: {count}")
+            logger.log(f"  {fail_reasons}: {count}")
         for success_reasons, count in self.success_reasons.items():
-            print(f"  {success_reasons}: {count}")
+            logger.log(f"  {success_reasons}: {count}")
 
     def deepcache_hook_model(self, unet, params:DeepCacheParams):
         """
@@ -94,8 +96,6 @@ class DeepCacheSession:
                     self.success_reasons['cached_exact'] += 1
                     CACHE_LAST["last"] = CACHE_LAST[f"timestep_{current_timestep}"] # update last
                     return CACHE_LAST[f"timestep_{current_timestep}"]
-                else:
-                    print(f"Cache not found for timestep {current_timestep}\n available: {list(CACHE_LAST.keys())}")
                 self.fail_reasons['full_run_step_rate_division'] += 1
                 self.cache_fail_count += 1
                 return None
