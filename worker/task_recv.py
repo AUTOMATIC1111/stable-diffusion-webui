@@ -239,7 +239,7 @@ class TaskReceiver:
             'video_id': nvidia_video_card_id,
             'group': group_id,
             'max_task_score': self.task_score_limit,
-            'resource': f'{group_id}:{gpu_names}',
+            'resource': gpu_names.replace(' ', "-"),
             'exec_train_task': exec_train,
             'model_hash_list': model_hash_list,
         }

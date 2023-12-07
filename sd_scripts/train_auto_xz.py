@@ -726,7 +726,7 @@ def train_auto(
     else:
         pic_nums = len(contents) / 2
 
-    max_repeats = 25
+    max_repeats = 4
     repeats_n = min(int(20 * max_repeats / pic_nums), max_repeats)
 
     # 2.tagger反推

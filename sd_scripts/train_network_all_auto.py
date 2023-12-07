@@ -516,6 +516,10 @@ class NetworkTrainer:
         # resumeする
         train_util.resume_from_local_or_hf_if_specified(accelerator, args)
 
+        # convert data loader
+        from sd_scripts.library.dataloader import convert_dataloader
+        train_dataloader = convert_dataloader(train_dataloader)
+
         # epoch数を計算する
         num_update_steps_per_epoch = math.ceil(len(train_dataloader) / args.gradient_accumulation_steps)
         num_train_epochs = math.ceil(args.max_train_steps / num_update_steps_per_epoch)
@@ -1005,6 +1009,7 @@ class NetworkTrainer:
 
         del accelerator  # この後メモリを使うのでこれは消す
         del train_dataloader
+
         if is_main_process:
             ckpt_name = train_util.get_last_ckpt_name(args, "." + args.save_model_as)
             save_model(ckpt_name, network, global_step, num_train_epochs, force_sync_upload=True)
