@@ -1017,7 +1017,7 @@ class NetworkTrainer:
         del accelerator  # この後メモリを使うのでこれは消す
 
         if is_main_process:
-            print(f"del dataloader:{type(train_dataloader)}, {type(getattr(train_dataloader, 'dataloader_iter'))}")
+            print(f"del dataloader:{type(train_dataloader)}, {type(getattr(train_dataloader, 'dataloader_iters'))}")
             print(f"has shutdown:{hasattr(train_dataloader, 'shutdown')}")
             if hasattr(train_dataloader, 'shutdown'):
                 train_dataloader.shutdown()
