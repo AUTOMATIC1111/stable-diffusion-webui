@@ -211,6 +211,9 @@ General goals:
 
 ### **Docs**
 
+If you're unsure how to use a feature, best place to start is [Wiki](https://github.com/vladmandic/automatic/wiki) and if its not there,  
+check [ChangeLog](CHANGELOG.md) for when feature was first introduced as it will always have a short note on how to use it  
+
 - [Wiki](https://github.com/vladmandic/automatic/wiki)
 - [ReadMe](README.md)
 - [ToDo](TODO.md)  

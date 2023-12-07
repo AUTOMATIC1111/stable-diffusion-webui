@@ -1,17 +1,21 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-06
+## Update for 2023-12-07
 
 *Note*: based on `diffusers==0.25.0.dev0`
 
 - **Diffusers**
   - **AnimateDiff** can now be used with *second pass* - enhance, upscale and hires your videos!  
-  - **IP Adapter** add support for `ip-adapter-plus_sd15` and `ip-adapter-plus-face_sd15`  
+  - **IP Adapter** add support for `ip-adapter-plus_sd15`, `ip-adapter-plus-face_sd15` and `ip-adapter-full-face_sd15`  
+    additionally, ip-adapter can now be used in xyz-grid  
   - **HDR controls** are now batch-aware for enhancement of multiple images or video frames  
   - [Playground v1](https://huggingface.co/playgroundai/playground-v1), [Playground v2 256](https://huggingface.co/playgroundai/playground-v2-256px-base), [Playground v2 512](https://huggingface.co/playgroundai/playground-v2-512px-base), [Playground v2 1024](https://huggingface.co/playgroundai/playground-v2-1024px-aesthetic) model support  
     - simply select from *networks -> reference* and use as usual  
   - [ModelScope T2V](https://huggingface.co/damo-vilab/text-to-video-ms-1.7b) model support  
     - simply select from *networks -> reference* and use from *txt2img* tab
+  - **Schedulers**
+    - add timesteps range, changing it will make scheduler to be over-complete or under-complete  
+    - add rescale betas with zero SNR option (applicable to Euler and DDIM, allows for higher dynamic range)  
 - **General**
   - **LoRA** add support for block weights, thanks @AI-Casanova  
     example `<lora:SDXL_LCM_LoRA:1.0:in=0:mid=1:out=0>`  

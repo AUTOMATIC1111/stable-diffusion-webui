@@ -17,13 +17,13 @@ image_encoder = None
 loaded = None
 ADAPTERS = [
     'none',
-    'models/ip-adapter_sd15',
-    'models/ip-adapter_sd15_light',
-    'models/ip-adapter-plus_sd15',
-    'models/ip-adapter-plus-face_sd15',
-    # 'models/ip-adapter-full-face_sd15', # KeyError: 'proj.weight'
-    'sdxl_models/ip-adapter_sdxl',
+    'ip-adapter_sd15',
+    'ip-adapter_sd15_light',
+    'ip-adapter-plus_sd15',
+    'ip-adapter-plus-face_sd15',
+    'ip-adapter-full-face_sd15',
     # 'models/ip-adapter_sd15_vit-G', # RuntimeError: mat1 and mat2 shapes cannot be multiplied (2x1024 and 1280x3072)
+    'ip-adapter_sdxl',
     # 'sdxl_models/ip-adapter_sdxl_vit-h',
     # 'sdxl_models/ip-adapter-plus_sdxl_vit-h',
     # 'sdxl_models/ip-adapter-plus-face_sdxl_vit-h',
@@ -47,9 +47,14 @@ class Script(scripts.Script):
         return [adapter, scale, image]
 
     def process(self, p: processing.StableDiffusionProcessing, adapter, scale, image): # pylint: disable=arguments-differ
-        import torch
         from transformers import CLIPVisionModelWithProjection
-
+        # overrides
+        if hasattr(p, 'ip_adapter_name'):
+            adapter = p.ip_adapter_name
+        if hasattr(p, 'ip_adapter_scale'):
+            scale = p.ip_adapter_scale
+        if hasattr(p, 'ip_adapter_image'):
+            image = p.ip_adapter_image
         # init code
         global loaded, image_encoder # pylint: disable=global-statement
         if shared.sd_model is None:
@@ -88,8 +93,8 @@ class Script(scripts.Script):
                     return
 
         # main code
-        subfolder, model = adapter.split('/')
-        if model != loaded or getattr(shared.sd_model.unet.config, 'encoder_hid_dim_type', None) is None:
+        subfolder = 'models' if 'sd15' in adapter else 'sdxl_models'
+        if adapter != loaded or getattr(shared.sd_model.unet.config, 'encoder_hid_dim_type', None) is None:
             t0 = time.time()
             if loaded is not None:
                 shared.log.debug('IP adapter: reset attention processor')
@@ -98,12 +103,12 @@ class Script(scripts.Script):
             else:
                 shared.log.debug('IP adapter: load attention processor')
             shared.sd_model.image_encoder = image_encoder
-            shared.sd_model.load_ip_adapter("h94/IP-Adapter", subfolder=subfolder, weight_name=f'{model}.safetensors')
+            shared.sd_model.load_ip_adapter("h94/IP-Adapter", subfolder=subfolder, weight_name=f'{adapter}.safetensors')
             t1 = time.time()
-            shared.log.info(f'IP adapter load: adapter="{model}" scale={scale} image={image} time={t1-t0:.2f}')
-            loaded = model
+            shared.log.info(f'IP adapter load: adapter="{adapter}" scale={scale} image={image} time={t1-t0:.2f}')
+            loaded = adapter
         else:
-            shared.log.debug(f'IP adapter cache: adapter="{model}" scale={scale} image={image}')
+            shared.log.debug(f'IP adapter cache: adapter="{adapter}" scale={scale} image={image}')
         shared.sd_model.set_ip_adapter_scale(scale)
         p.task_args['ip_adapter_image'] = p.batch_size * [image]
         p.extra_generation_params["IP Adapter"] = f'{adapter}:{scale}'
