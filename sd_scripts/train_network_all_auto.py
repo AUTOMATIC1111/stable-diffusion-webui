@@ -61,8 +61,7 @@ class SubProcessKiller:
         ]
 
     def kill_sub_process(self, kill_all=False):
-        print("kill sub processor after 3 sec...")
-        time.sleep(3)
+        print("kill sub processor ...")
         sub_processes = self.init_process.children()
         if not kill_all:
             sub_processes = [p for p in sub_processes if p.pid not in self.protected_pids]
