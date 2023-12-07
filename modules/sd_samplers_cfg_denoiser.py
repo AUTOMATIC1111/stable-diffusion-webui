@@ -109,19 +109,16 @@ class CFGDenoiser(torch.nn.Module):
         assert not is_edit_model or all(len(conds) == 1 for conds in conds_list), "AND is not supported for InstructPix2Pix checkpoint (unless using Image CFG scale = 1.0)"
 
         # If we use masks, blending between the denoised and original latent images occurs here.
-        def apply_blend(latent):
-            if hasattr(self.p, "denoiser_masked_blend_function") and callable(self.p.denoiser_masked_blend_function):
-                return self.p.denoiser_masked_blend_function(
-                    self,
-                    # Using an argument dictionary so that arguments can be added without breaking extensions.
-                    args=
-                    {
-                        "denoiser": self,
-                        "current_latent": latent,
-                        "sigma": sigma
-                    })
-            else:
-                return self.init_latent * self.mask + self.nmask * latent
+        def apply_blend(current_latent):
+            blended_latent = current_latent * self.nmask + self.init_latent * self.mask
+
+            if self.p.scripts is not None:
+                from modules import scripts
+                mba = scripts.MaskBlendArgs(current_latent, self.nmask, self.init_latent, self.mask, blended_latent, denoiser=self, sigma=sigma)
+                self.p.scripts.on_mask_blend(self.p, mba)
+                blended_latent = mba.blended_latent
+
+            return blended_latent
 
         # Blend in the original latents (before)
         if self.mask_before_denoising and self.mask is not None:
