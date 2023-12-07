@@ -3337,8 +3337,14 @@ input[type="checkbox"] {
 .default-mobile .template > .full-height {
     padding: var(--ae-panel-padding);
 }
-#img2img_params_tabitem .tabitem > .gap{
+.tabitem > .gap{
     overflow:hidden;
+}
+.pointer-events-none{
+    pointer-events: none;
+}
+.pointer-events-none button{
+    pointer-events: all;
 }
 
 @media (max-width: 768px) {
