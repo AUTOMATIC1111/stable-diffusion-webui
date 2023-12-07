@@ -7,7 +7,6 @@
 # @Software: xingzhe.ai
 import typing
 import torch
-from loguru import logger
 from torch.utils.data import BatchSampler, DataLoader
 from accelerate.data_loader import DataLoaderDispatcher as AccelerateDataLoaderDispatcher
 from accelerate.data_loader import DataLoaderShard as AccelerateDataLoaderShard, DataLoaderStateMixin
@@ -63,6 +62,8 @@ class DataLoaderShard(DataLoader, DataLoaderStateMixin):
     def __iter__(self):
         self.begin()
         self.dataloader_iter = super().__iter__()
+        print(f"set dataloader iter:{type(self.dataloader_iter)}")
+
         # We iterate one batch ahead to check when we are at the end
         try:
             current_batch = next(self.dataloader_iter)
@@ -102,10 +103,10 @@ class DataLoaderShard(DataLoader, DataLoaderStateMixin):
 
     def __del__(self):
         if self.dataloader_iter:
-            logger.debug(f"del {type(self.dataloader_iter)}")
+            print(f"del {type(self.dataloader_iter)}")
             del self.dataloader_iter
         else:
-            logger.warning("self.dataloader_iter is none")
+            print("self.dataloader_iter is none")
 
 
 def _convert_dataloadershard(accelerator_dataloader: AccelerateDataLoaderShard):

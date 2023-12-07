@@ -519,6 +519,7 @@ class NetworkTrainer:
         # convert data loader
         from sd_scripts.library.dataloader import convert_dataloader
         train_dataloader = convert_dataloader(train_dataloader)
+        print(f"convert data loader:{type(train_dataloader)}")
 
         # epoch数を計算する
         num_update_steps_per_epoch = math.ceil(len(train_dataloader) / args.gradient_accumulation_steps)
