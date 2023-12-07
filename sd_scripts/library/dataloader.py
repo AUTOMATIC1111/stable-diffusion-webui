@@ -57,16 +57,18 @@ class DataLoaderShard(DataLoader, DataLoaderStateMixin):
         self.synchronized_generator = synchronized_generator
         self.skip_batches = skip_batches
         self.gradient_state = GradientState()
-        self.dataloader_iter = None
+        self.dataloader_iters = []
 
     def __iter__(self):
         self.begin()
-        self.dataloader_iter = super().__iter__()
-        print(f"set dataloader iter:{type(self.dataloader_iter)}")
-
+        dataloader_iter = super().__iter__()
+        print(f"set dataloader iter:{type(dataloader_iter)}")
+        if dataloader_iter not in self.dataloader_iters:
+            self.dataloader_iters.append(dataloader_iter)
+            print("append dataloader iter")
         # We iterate one batch ahead to check when we are at the end
         try:
-            current_batch = next(self.dataloader_iter)
+            current_batch = next(dataloader_iter)
         except StopIteration:
             yield
 
@@ -76,7 +78,7 @@ class DataLoaderShard(DataLoader, DataLoaderStateMixin):
                 # But we still move it to the device so it is done before `StopIteration` is reached
                 if self.device is not None:
                     current_batch = send_to_device(current_batch, self.device)
-                next_batch = next(self.dataloader_iter)
+                next_batch = next(dataloader_iter)
                 if batch_index >= self.skip_batches:
                     yield current_batch
                 batch_index += 1
@@ -106,11 +108,12 @@ class DataLoaderShard(DataLoader, DataLoaderStateMixin):
 
     def shutdown(self):
         print("dataloader shutdown...")
-        if getattr(self, 'dataloader_iter', None):
-            print(f"del {type(self.dataloader_iter)}")
-            del self.dataloader_iter
+        if self.dataloader_iters:
+            for data_loader in self.dataloader_iters:
+                print(f"del {type(data_loader)}")
+                data_loader.__del__()
         else:
-            print("self.dataloader_iter is none")
+            print("self.dataloader_iter is empty")
 
 
 def _convert_dataloadershard(accelerator_dataloader: AccelerateDataLoaderShard):
