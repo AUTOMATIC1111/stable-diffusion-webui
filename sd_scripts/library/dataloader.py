@@ -6,15 +6,11 @@
 # @File    : dataloader.py
 # @Software: xingzhe.ai
 import typing
-
-import math
-from contextlib import suppress
-from typing import List, Optional, Union
-
 import torch
+from loguru import logger
 from torch.utils.data import BatchSampler, DataLoader
 from accelerate.data_loader import DataLoaderDispatcher as AccelerateDataLoaderDispatcher
-from accelerate.data_loader import DataLoaderShard as AccelerateDataLoaderShard
+from accelerate.data_loader import DataLoaderShard as AccelerateDataLoaderShard, DataLoaderStateMixin
 from accelerate.state import GradientState
 from accelerate.utils import (
     send_to_device,
@@ -22,7 +18,7 @@ from accelerate.utils import (
 )
 
 
-class DataLoaderShard(DataLoader):
+class DataLoaderShard(DataLoader, DataLoaderStateMixin):
     """
     Subclass of a PyTorch `DataLoader` that will deal with device placement and current distributed setup.
 
@@ -65,18 +61,11 @@ class DataLoaderShard(DataLoader):
         self.dataloader_iter = None
 
     def __iter__(self):
-        if self.rng_types is not None:
-            synchronize_rng_states(self.rng_types, self.synchronized_generator)
-        self.gradient_state._set_end_of_dataloader(False)
-        # We can safely pass because the default is -1
-        with suppress(Exception):
-            length = getattr(self.dataset, "total_dataset_length", len(self.dataset))
-            self.gradient_state._set_remainder(length % self.total_batch_size)
-        self.dataloader_iter = super().__iter__()
-
+        self.begin()
+        dataloader_iter = super().__iter__()
         # We iterate one batch ahead to check when we are at the end
         try:
-            current_batch = next(self.dataloader_iter)
+            current_batch = next(dataloader_iter)
         except StopIteration:
             yield
 
@@ -86,24 +75,25 @@ class DataLoaderShard(DataLoader):
                 # But we still move it to the device so it is done before `StopIteration` is reached
                 if self.device is not None:
                     current_batch = send_to_device(current_batch, self.device)
-                next_batch = next(self.dataloader_iter)
+                next_batch = next(dataloader_iter)
                 if batch_index >= self.skip_batches:
                     yield current_batch
                 batch_index += 1
                 current_batch = next_batch
             except StopIteration:
-                self.gradient_state._set_end_of_dataloader(True)
+                self.end_of_dataloader = True
                 if batch_index >= self.skip_batches:
                     yield current_batch
                 break
+        self.end()
 
     @property
     def total_batch_size(self):
         batch_sampler = self.sampler if isinstance(self.sampler, BatchSampler) else self.batch_sampler
         return (
             batch_sampler.batch_size
-            if batch_sampler.split_batches
-            else (batch_sampler.batch_size * batch_sampler.num_processes)
+            if getattr(batch_sampler, "split_batches", False)
+            else (batch_sampler.batch_size * getattr(batch_sampler, "num_processes", 1))
         )
 
     @property
@@ -112,7 +102,7 @@ class DataLoaderShard(DataLoader):
 
     def __del__(self):
         if self.dataloader_iter:
-            print(f"del {type(self.dataloader_iter)}")
+            logger.debug(f"del {type(self.dataloader_iter)}")
             del self.dataloader_iter
 
 
@@ -154,7 +144,8 @@ def _convert_dataloadershard(accelerator_dataloader: AccelerateDataLoaderShard):
             kwargs.update({
                 k: getattr(accelerator_dataloader, k)
             })
-
+            
+    logger.debug("convert dataloader...")
     return DataLoaderShard(
         dataset, device, rng_types, synchronized_generator, skip_batches, **kwargs)
 

@@ -86,7 +86,7 @@ def get_tmp_local_path(remoting_path: str, dir=None):
     return get_local_path(remoting_path, dst)
 
 
-def upload_files(is_tmp, *files, dirname=None):
+def upload_files(is_tmp, *files, dirname=None, task_id=None):
     keys = []
     if files:
         date = datetime.today().strftime('%Y/%m/%d')
@@ -98,6 +98,8 @@ def upload_files(is_tmp, *files, dirname=None):
 
         for f in files:
             name = os.path.basename(f)
+            if task_id:
+                name = os.path.join(task_id, name)
             key = os.path.join(relative, date, name)
             file_storage_system.upload(f, key)
             keys.append(key)

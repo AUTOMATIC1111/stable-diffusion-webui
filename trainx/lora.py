@@ -100,7 +100,7 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
             hash_file_path = os.path.join(dirname, sha256+ex)
 
             shutil.move(m, hash_file_path)
-            key = upload_files(False, hash_file_path, dirname=f'models/{task.user_id}/Lora')
+            key = upload_files(False, hash_file_path, dirname=f'models/{task.user_id}/Lora', task_id=task.id)
             result['models'].append({
                 'key': key[0] if key else '',
                 'thumbnail_path': cover,
@@ -169,7 +169,7 @@ def do_train_with_process(task: Task,  dump_progress_cb: typing.Callable):
             hash_file_path = os.path.join(dirname, sha256 + ex)
 
             shutil.move(m, hash_file_path)
-            key = upload_files(False, hash_file_path, dirname=f'models/{task.user_id}/Lora')
+            key = upload_files(False, hash_file_path, dirname=f'models/{task.user_id}/Lora', task_id=task.id)
             result['models'].append({
                 'key': key[0] if key else '',
                 'hash': sha256,
