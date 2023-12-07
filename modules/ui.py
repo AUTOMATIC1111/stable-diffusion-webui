@@ -29,7 +29,6 @@ import modules.shared as shared
 from modules import prompt_parser
 from modules.sd_hijack import model_hijack
 from modules.generation_parameters_copypaste import image_from_url_text
-import modules.soft_inpainting as si
 
 create_setting_component = ui_settings.create_setting_component
 
@@ -681,9 +680,6 @@ def create_ui():
                                 mask_alpha = gr.Slider(label="Mask transparency", visible=False, elem_id="img2img_mask_alpha")
 
                             with FormRow():
-                                soft_inpainting = si.gradio_ui()
-
-                            with FormRow():
                                 inpainting_mask_invert = gr.Radio(label='Mask mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
 
                             with FormRow():
@@ -737,7 +733,6 @@ def create_ui():
                     sampler_name,
                     mask_blur,
                     mask_alpha,
-                    *(soft_inpainting[0]),
                     inpainting_fill,
                     batch_count,
                     batch_size,
@@ -836,10 +831,8 @@ def create_ui():
                 (toprow.ui_styles.dropdown, lambda d: d["Styles array"] if isinstance(d.get("Styles array"), list) else gr.update()),
                 (denoising_strength, "Denoising strength"),
                 (mask_blur, "Mask blur"),
-                *(soft_inpainting[1]),
                 *scripts.scripts_img2img.infotext_fields
             ]
-
             parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields, override_settings)
             parameters_copypaste.add_paste_fields("inpaint", init_img_with_mask, img2img_paste_fields, override_settings)
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(

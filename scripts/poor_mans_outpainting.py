@@ -7,7 +7,6 @@ from PIL import Image, ImageDraw
 from modules import images, devices
 from modules.processing import Processed, process_images
 from modules.shared import opts, state
-import modules.soft_inpainting as si
 
 
 class Script(scripts.Script):
@@ -23,19 +22,16 @@ class Script(scripts.Script):
 
         pixels = gr.Slider(label="Pixels to expand", minimum=8, maximum=256, step=8, value=128, elem_id=self.elem_id("pixels"))
         mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id=self.elem_id("mask_blur"))
-        soft_inpainting = si.gradio_ui()[0]
         inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", elem_id=self.elem_id("inpainting_fill"))
         direction = gr.CheckboxGroup(label="Outpainting direction", choices=['left', 'right', 'up', 'down'], value=['left', 'right', 'up', 'down'], elem_id=self.elem_id("direction"))
 
-        return [pixels, mask_blur, *soft_inpainting, inpainting_fill, direction]
+        return [pixels, mask_blur, inpainting_fill, direction]
 
-    def run(self, p, pixels, mask_blur, mask_blend_enabled, mask_blend_power, mask_blend_scale, inpaint_detail_preservation, inpainting_fill, direction):
+    def run(self, p, pixels, mask_blur, inpainting_fill, direction):
         initial_seed = None
         initial_info = None
 
         p.mask_blur = mask_blur * 2
-        p.soft_inpainting = si.SoftInpaintingSettings(mask_blend_power, mask_blend_scale, inpaint_detail_preservation) \
-            if mask_blend_enabled else None
         p.inpainting_fill = inpainting_fill
         p.inpaint_full_res = False
 

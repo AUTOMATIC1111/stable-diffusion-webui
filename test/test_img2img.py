@@ -1,7 +1,6 @@
 
 import pytest
 import requests
-import modules.soft_inpainting as si
 
 
 @pytest.fixture()
@@ -25,10 +24,6 @@ def simple_img2img_request(img2img_basic_image_base64):
         "inpainting_mask_invert": False,
         "mask": None,
         "mask_blur": 4,
-        "mask_blend_enabled": True,
-        "mask_blend_power": si.default.mask_blend_power,
-        "mask_blend_scale": si.default.mask_blend_scale,
-        "inpaint_detail_preservation": si.default.inpaint_detail_preservation,
         "n_iter": 1,
         "negative_prompt": "",
         "override_settings": {},
