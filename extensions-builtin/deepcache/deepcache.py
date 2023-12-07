@@ -71,7 +71,7 @@ class DeepCacheSession:
             Registers cache
             """
             CACHE_LAST["timestep"].add(timestep)
-            assert h is not None, f"Cannot cache None"
+            assert h is not None, "Cannot cache None"
             # maybe move to cpu and load later for low vram?
             CACHE_LAST["last"] = h
             CACHE_LAST[f"timestep_{timestep}"] = h
