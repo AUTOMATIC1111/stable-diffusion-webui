@@ -148,7 +148,7 @@ def _convert_dataloadershard(accelerator_dataloader: AccelerateDataLoaderShard):
                 k: getattr(accelerator_dataloader, k)
             })
 
-    logger.debug("convert dataloader...")
+    print("convert dataloader...")
     return DataLoaderShard(
         dataset, device, rng_types, synchronized_generator, skip_batches, **kwargs)
 
