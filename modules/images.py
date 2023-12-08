@@ -322,6 +322,8 @@ class FilenameGenerator:
     default_time_format = '%Y%m%d%H%M%S'
 
     def __init__(self, p, seed, prompt, image, grid=False):
+        if getattr(self, 'p', None) is None:
+            return
         self.p = p
         self.seed = seed
         self.prompt = prompt
@@ -335,7 +337,7 @@ class FilenameGenerator:
 
     def hasprompt(self, *args):
         lower = self.prompt.lower()
-        if self.p is None or self.prompt is None:
+        if getattr(self, 'p', None) is None or getattr(self, 'prompt', None) is None:
             return None
         outres = ""
         for arg in args:
@@ -350,7 +352,7 @@ class FilenameGenerator:
         return outres
 
     def image_hash(self):
-        if self.image is None:
+        if getattr(self, 'image', None) is None:
             return None
         import base64
         from io import BytesIO
@@ -364,7 +366,7 @@ class FilenameGenerator:
         return self.prompt_sanitize(self.prompt)
 
     def prompt_words(self):
-        if self.prompt is None:
+        if getattr(self, 'prompt', None) is None:
             return ''
         no_attention = re_attention.sub(r'\1', self.prompt)
         no_network = re_network.sub(r'\1', no_attention)
@@ -374,7 +376,7 @@ class FilenameGenerator:
         return self.prompt_sanitize(prompt)
 
     def prompt_no_style(self):
-        if self.p is None or self.prompt is None:
+        if getattr(self, 'p', None) is None or getattr(self, 'prompt', None) is None:
             return None
         prompt_no_style = self.prompt
         for style in shared.prompt_styles.get_style_prompts(self.p.styles):
@@ -455,7 +457,7 @@ class FilenameGenerator:
                     break
                 pattern, arg = m.groups()
                 pattern_args.insert(0, arg)
-            fun = self.replacements.get(pattern.lower())
+            fun = self.replacements.get(pattern.lower(), None)
             if fun is not None:
                 try:
                     replacement = fun(self, *pattern_args)
@@ -525,7 +527,7 @@ def atomically_save_image():
             try:
                 image.save(fn, format=image_format, compress_level=6, pnginfo=pnginfo_data if shared.opts.image_metadata else None)
             except Exception as e:
-                shared.log.warning(f'Image save failed: {fn} {e}')
+                shared.log.error(f'Image save failed: file="{fn}" {e}')
         elif image_format == 'JPEG':
             if image.mode == 'RGBA':
                 shared.log.warning('Saving RGBA image as JPEG: Alpha channel will be lost')
@@ -536,7 +538,7 @@ def atomically_save_image():
             try:
                 image.save(fn, format=image_format, optimize=True, quality=shared.opts.jpeg_quality, exif=exif_bytes)
             except Exception as e:
-                shared.log.warning(f'Image save failed: {fn} {e}')
+                shared.log.error(f'Image save failed: file="{fn}" {e}')
         elif image_format == 'WEBP':
             if image.mode == 'I;16':
                 image = image.point(lambda p: p * 0.0038910505836576).convert("RGB")
@@ -544,13 +546,13 @@ def atomically_save_image():
             try:
                 image.save(fn, format=image_format, quality=shared.opts.jpeg_quality, lossless=shared.opts.webp_lossless, exif=exif_bytes)
             except Exception as e:
-                shared.log.warning(f'Image save failed: {fn} {e}')
+                shared.log.error(f'Image save failed: file="{fn}" {e}')
         else:
             # shared.log.warning(f'Unrecognized image format: {extension} attempting save as {image_format}')
             try:
                 image.save(fn, format=image_format, quality=shared.opts.jpeg_quality)
             except Exception as e:
-                shared.log.warning(f'Image save failed: {fn} {e}')
+                shared.log.error(f'Image save failed: file="{fn}" {e}')
         with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
             file.write(exifinfo)
         if shared.opts.save_log_fn != '' and len(exifinfo) > 0:
@@ -668,12 +670,20 @@ def save_video(p, images, filename = None, video_type: str = 'none', duration: f
     if images is None or len(images) < 2 or video_type is None or video_type.lower() == 'none':
         return
     image = images[0]
-    namegen = FilenameGenerator(p, seed=p.all_seeds[0], prompt=p.all_prompts[0], image=image)
-    if filename is None:
+    if p is not None:
+        namegen = FilenameGenerator(p, seed=p.all_seeds[0], prompt=p.all_prompts[0], image=image)
+    else:
+        namegen = FilenameGenerator(None, seed=0, prompt='', image=image)
+    if filename is None and p is not None:
         filename = namegen.apply(shared.opts.samples_filename_pattern if shared.opts.samples_filename_pattern and len(shared.opts.samples_filename_pattern) > 0 else "[seq]-[prompt_words]")
-        filename = namegen.sanitize(os.path.join(shared.opts.outdir_video, filename))
+        filename = os.path.join(shared.opts.outdir_video, filename)
         filename = namegen.sequence(filename, shared.opts.outdir_video, '')
-        filename = f'{filename}.{video_type.lower()}'
+    else:
+        if not os.pathsep in filename:
+            filename = os.path.join(shared.opts.outdir_video, filename)
+    if not filename.lower().endswith(video_type.lower()):
+        filename += f'.{video_type.lower()}'
+    filename = namegen.sanitize(filename)
     threading.Thread(target=save_video_atomic, args=(images, filename, video_type, duration, loop, interpolate, scale, pad, change)).start()
 
 

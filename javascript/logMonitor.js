@@ -11,14 +11,13 @@ async function logMonitor() {
     logMonitorStatus = true;
     if (!logMonitorEl) {
       logMonitorEl = document.getElementById('logMonitorData');
-      logMonitorEl.onscrollend = function() {
-        const at_bottom = logMonitorEl.scrollHeight <= (logMonitorEl.scrollTop + logMonitorEl.clientHeight)
-        if (at_bottom)
-          logMonitorEl.parentElement.style = '';
-      }
+      logMonitorEl.onscrollend = () => {
+        const at_bottom = logMonitorEl.scrollHeight <= (logMonitorEl.scrollTop + logMonitorEl.clientHeight);
+        if (at_bottom) logMonitorEl.parentElement.style = '';
+      };
     }
     if (!logMonitorEl) return;
-    const at_bottom = logMonitorEl.scrollHeight <= (logMonitorEl.scrollTop + logMonitorEl.clientHeight)
+    const at_bottom = logMonitorEl.scrollHeight <= (logMonitorEl.scrollTop + logMonitorEl.clientHeight);
     const lines = await res.json();
     if (logMonitorEl && lines?.length > 0) logMonitorEl.parentElement.parentElement.style.display = opts.logmonitor_show ? 'block' : 'none';
     for (const line of lines) {
@@ -31,11 +30,8 @@ async function logMonitor() {
       } catch {}
     }
     while (logMonitorEl.childElementCount > 100) logMonitorEl.removeChild(logMonitorEl.firstChild);
-    if (at_bottom) {
-      logMonitorEl.scrollTop = logMonitorEl.scrollHeight;
-    } else if (lines?.length > 0) {
-      logMonitorEl.parentElement.style = 'border-bottom: 2px solid yellow';
-    }
+    if (at_bottom) logMonitorEl.scrollTop = logMonitorEl.scrollHeight;
+    else if (lines?.length > 0) logMonitorEl.parentElement.style = 'border-bottom: 2px solid var(--highlight-color);';
   }
 }
 

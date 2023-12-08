@@ -13,24 +13,29 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
     shared.state.begin('extras')
     image_data = []
     image_names = []
+    image_fullnames = []
     image_ext = []
     outputs = []
     params = {}
     if extras_mode == 1:
-        shared.log.debug(f'process: mode=batch folder={image_folder}')
         for img in image_folder:
             if isinstance(img, Image.Image):
                 image = img
                 fn = ''
                 ext = None
             else:
-                image = Image.open(os.path.abspath(img.name))
+                try:
+                    image = Image.open(os.path.abspath(img.name))
+                except Exception as e:
+                    shared.log.error(f'Failed to open image: file="{img.name}" {e}')
+                    continue
                 fn, ext = os.path.splitext(img.orig_name)
+                image_fullnames.append(img.name)
             image_data.append(image)
             image_names.append(fn)
             image_ext.append(ext)
+        shared.log.debug(f'Process: mode=batch inputs={len(image_folder)} images={len(image_data)}')
     elif extras_mode == 2:
-        shared.log.debug(f'process: mode=folder folder={input_dir}')
         assert not shared.cmd_opts.hide_ui_dir_config, '--hide-ui-dir-config option must be disabled'
         assert input_dir, 'input directory not selected'
         image_list = shared.listfiles(input_dir)
@@ -38,11 +43,13 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
             try:
                 image = Image.open(filename)
             except Exception as e:
-                shared.log.error(f'Failed to open image: {filename} {e}')
+                shared.log.error(f'Failed to open image: file="{filename}" {e}')
                 continue
+            image_fullnames.append(filename)
             image_data.append(image)
             image_names.append(filename)
             image_ext.append(None)
+        shared.log.debug(f'Process: mode=folder inputs={input_dir} files={len(image_list)} images={len(image_data)}')
     else:
         image_data.append(image)
         image_names.append(None)
@@ -51,8 +58,9 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
         outpath = output_dir
     else:
         outpath = opts.outdir_samples or opts.outdir_extras_samples
+    processed_images = []
     for image, name, ext in zip(image_data, image_names, image_ext): # pylint: disable=redefined-argument-from-local
-        shared.log.debug(f'process: image={image} {args}')
+        shared.log.debug(f'Process: image={image} {args}')
         infotext = ''
         if shared.state.interrupted:
             shared.log.debug('Postprocess interrupted')
@@ -74,11 +82,13 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
             infotext = items['parameters'] + ', '
         infotext = infotext + ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in pp.info.items() if v is not None])
         pp.image.info["postprocessing"] = infotext
+        processed_images.append(pp.image)
         if save_output:
             images.save_image(pp.image, path=outpath, basename=basename, seed=None, prompt=None, extension=ext or opts.samples_format, info=infotext, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=pp.image.info, forced_filename=None)
         if extras_mode != 2 or show_extras_results:
             outputs.append(pp.image)
         image.close()
+    scripts.scripts_postproc.postprocess(processed_images, args)
 
     devices.torch_gc()
     return outputs, infotext, params

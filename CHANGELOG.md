@@ -16,6 +16,9 @@
   - **Schedulers**
     - add timesteps range, changing it will make scheduler to be over-complete or under-complete  
     - add rescale betas with zero SNR option (applicable to Euler and DDIM, allows for higher dynamic range)  
+- **Process**
+  - create videos from batch or folder processing  
+    supports GIF, PNG and MP4 with full interpolation, scene change detection, etc.  
 - **General**
   - **LoRA** add support for block weights, thanks @AI-Casanova  
     example `<lora:SDXL_LCM_LoRA:1.0:in=0:mid=1:out=0>`  
@@ -25,6 +28,7 @@
   - disable google fonts check on server startup  
   - fix torchvision/basicsr compatibility  
   - add hdr settings to metadata  
+  - update built-in log monitor in ui, thanks @midcoastal  
 
 ## Update for 2023-12-04
 

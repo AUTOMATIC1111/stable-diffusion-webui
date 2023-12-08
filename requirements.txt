@@ -42,6 +42,7 @@ scikit-image
 basicsr
 fasteners
 dctorch
+pymatting
 httpx==0.24.1
 compel==2.0.2
 torchsde==0.2.6
