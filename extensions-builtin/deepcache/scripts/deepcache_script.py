@@ -35,7 +35,7 @@ class ScriptDeepCache(scripts.Script):
         if shared.opts.deepcache_enable:
             hr_steps = getattr(p, 'hr_second_pass_steps', 0) or p.steps
             enable_step = int(shared.opts.deepcache_cache_enable_step_percentage_hr * hr_steps)
-            self.configure_deepcache(self.get_deepcache_params(getattr(p, 'hr_second_pass_steps', 0) or p.steps), enable_step_at = enable_step) # use second pass steps if available
+            self.configure_deepcache(self.get_deepcache_params(getattr(p, 'hr_second_pass_steps', 0) or p.steps, enable_step_at = enable_step)) # use second pass steps if available
 
     def postprocess_batch(self, p:processing.StableDiffusionProcessing, *args, **kwargs):
         print("DeepCache postprocess")

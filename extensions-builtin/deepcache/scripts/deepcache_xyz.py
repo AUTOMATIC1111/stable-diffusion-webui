@@ -54,6 +54,7 @@ def add_axis_options():
         xyz_grid.AxisOption("[DeepCache] Cache Disable initial step percentage", float, float_applier("deepcache_cache_enable_step_percentage", 0, 1)),
         xyz_grid.AxisOption("[DeepCache] Cache Refresh Rate", int, int_applier("deepcache_full_run_step_rate", 0, 1000)),
         xyz_grid.AxisOption("[DeepCache] HR Reuse", str, bool_applier("deepcache_hr_reuse"), choices=xyz_grid.boolean_choice(reverse=True)),
+        xyz_grid.AxisOption("[DeepCache] HR Cache Disable initial step percentage", float, float_applier("deepcache_cache_enable_step_percentage_hr", 0, 1)),
     ]
     set_a = {opt.label for opt in xyz_grid.axis_options}
     set_b = {opt.label for opt in extra_axis_options}
