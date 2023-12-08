@@ -280,7 +280,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_dtype": OptionInfo("FP32" if sys.platform == "darwin" or cmd_opts.use_openvino else "BF16" if devices.backend == "ipex" else "FP16", "Device precision type", gr.Radio, {"choices": ["FP32", "FP16", "BF16"]}),
     "no_half": OptionInfo(False if not cmd_opts.use_openvino else True, "Use full precision for model (--no-half)", None, None, None),
     "no_half_vae": OptionInfo(False if not cmd_opts.use_openvino else True, "Use full precision for VAE (--no-half-vae)"),
-    "upcast_sampling": OptionInfo(False if not sys.platform == "darwin" else True, "Enable upcast sampling"),
+    "upcast_sampling": OptionInfo(False if sys.platform != "darwin" else True, "Enable upcast sampling"),
     "upcast_attn": OptionInfo(False, "Enable upcast cross attention layer"),
     "cuda_cast_unet": OptionInfo(False, "Use fixed UNet precision"),
     "disable_nan_check": OptionInfo(True, "Disable NaN check in produced images/latent spaces", gr.Checkbox, {"visible": False}),

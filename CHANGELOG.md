@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-07
+## Update for 2023-12-08
 
 *Note*: based on `diffusers==0.25.0.dev0`
 
@@ -16,17 +16,16 @@
   - **Schedulers**
     - add timesteps range, changing it will make scheduler to be over-complete or under-complete  
     - add rescale betas with zero SNR option (applicable to Euler and DDIM, allows for higher dynamic range)  
-- **Process**
-  - create videos from batch or folder processing  
-    supports GIF, PNG and MP4 with full interpolation, scene change detection, etc.  
-  - **LoRA**
+- **General**  
+  - **Process** create videos from batch or folder processing  
+      supports GIF, PNG and MP4 with full interpolation, scene change detection, etc.  
+  - **LoRA**  
     - add support for block weights, thanks @AI-Casanova  
       example `<lora:SDXL_LCM_LoRA:1.0:in=0:mid=1:out=0>`  
-    - reintroduce alternative loading method in settings: `lora_force_diffusers`
+    - reintroduce alternative loading method in settings: `lora_force_diffusers`  
     - add support for `lora_fuse_diffusers` if using alternative method  
       use if you have multiple complex loras that may be causing performance degradation  
       as it fuses lora with model during load instead of interpreting lora on-the-fly  
-- **General**
   - **CivitAI downloader** allow usage of access tokens for gated or private models  
   - **Extra networks** new *settting -> extra networks -> build info on first access*  
     indexes all networks on first access instead of server startup  

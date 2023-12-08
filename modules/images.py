@@ -579,7 +579,6 @@ save_thread.start()
 
 
 def save_image(image, path, basename='', seed=None, prompt=None, extension=shared.opts.samples_format, info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix='', save_to_dirs=None): # pylint: disable=unused-argument
-    import sys
     if image is None:
         shared.log.warning('Image is none')
         return None, None
@@ -683,7 +682,7 @@ def save_video(p, images, filename = None, video_type: str = 'none', duration: f
         filename = os.path.join(shared.opts.outdir_video, filename)
         filename = namegen.sequence(filename, shared.opts.outdir_video, '')
     else:
-        if not os.pathsep in filename:
+        if os.pathsep not in filename:
             filename = os.path.join(shared.opts.outdir_video, filename)
     if not filename.lower().endswith(video_type.lower()):
         filename += f'.{video_type.lower()}'
