@@ -33,6 +33,7 @@
   - disable google fonts check on server startup  
   - fix torchvision/basicsr compatibility  
   - add hdr settings to metadata  
+  - improve handling of long filenames and filenames during batch processing  
   - update built-in log monitor in ui, thanks @midcoastal  
 
 ## Update for 2023-12-04

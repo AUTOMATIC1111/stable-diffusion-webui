@@ -423,9 +423,11 @@ class FilenameGenerator:
             if part in invalid_files: # reserved names
                 [part := part.replace(word, '_') for word in invalid_files] # pylint: disable=expression-not-assigned
             newparts.append(part)
-        fn = Path(*newparts)
-        max_length = max(230, os.statvfs(__file__).f_namemax - 32 if hasattr(os, 'statvfs') else 230)
-        fn = str(fn)[:max_length-max(4, len(ext))].rstrip(invalid_suffix) + ext
+        fn = str(Path(*newparts))
+        max_length = max(256 - len(ext), os.statvfs(__file__).f_namemax - 32 if hasattr(os, 'statvfs') else 256 - len(ext))
+        while len(os.path.abspath(fn)) > max_length:
+            fn = fn[:-1]
+        fn += ext
         debug(f'Filename sanitize: input="{filename}" parts={parts} output="{fn}" ext={ext} max={max_length} len={len(fn)}')
         return fn
 
@@ -577,6 +579,7 @@ save_thread.start()
 
 
 def save_image(image, path, basename='', seed=None, prompt=None, extension=shared.opts.samples_format, info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix='', save_to_dirs=None): # pylint: disable=unused-argument
+    import sys
     if image is None:
         shared.log.warning('Image is none')
         return None, None
@@ -610,6 +613,7 @@ def save_image(image, path, basename='', seed=None, prompt=None, extension=share
     if dirname is not None and len(dirname) > 0:
         os.makedirs(dirname, exist_ok=True)
     params.filename = namegen.sequence(params.filename, dirname, basename)
+    params.filename = namegen.sanitize(filename)
     # callbacks
     script_callbacks.before_image_saved_callback(params)
     exifinfo = params.pnginfo.get('UserComment', '')

@@ -79,16 +79,16 @@ def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args)
         if proc is None:
             proc = processing.process_images(p)
         for n, (image, image_file) in enumerate(itertools.zip_longest(proc.images,batch_image_files)):
-            basename, ext = os.path.splitext(os.path.basename(image_file))
-            ext = ext[1:]
-            if len(proc.images) > 1:
-                if shared.opts.batch_frame_mode: # SBM Frames are numbered globally.
-                    basename = f'{basename}-{n + i}'
-                else: # Images are numbered per rept.
-                    basename = f'{basename}-{n}'
-            if not shared.opts.use_original_name_batch:
-                basename = ''
+            basename = ''
+            if shared.opts.use_original_name_batch:
+                forced_filename, ext = os.path.splitext(os.path.basename(image_file))
+            else:
+                forced_filename = None
                 ext = shared.opts.samples_format
+            if len(proc.images) > 1:
+                basename = f'{n + i}' if shared.opts.batch_frame_mode else f'{n}'
+            else:
+                basename = ''
             if output_dir == '':
                 output_dir = shared.opts.outdir_img2img_samples
             if not save_normally:
@@ -96,7 +96,7 @@ def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args)
             geninfo, items = images.read_info_from_image(image)
             for k, v in items.items():
                 image.info[k] = v
-            images.save_image(image, path=output_dir, basename=basename, seed=None, prompt=None, extension=ext, info=geninfo, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=image.info, forced_filename=None)
+            images.save_image(image, path=output_dir, basename=basename, seed=None, prompt=None, extension=ext, info=geninfo, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=image.info, forced_filename=forced_filename)
         shared.log.debug(f'Processed: images={len(batch_image_files)} memory={memory_stats()} batch')
 
 
