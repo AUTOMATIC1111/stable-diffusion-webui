@@ -6,6 +6,7 @@
 # @File    : digital.py
 # @Software: Hifive
 import random
+import re
 import time
 import typing
 import modules
@@ -16,7 +17,7 @@ from handlers.img2img import Img2ImgTask, Img2ImgTaskHandler
 from worker.task import TaskType, TaskProgress, Task, TaskStatus
 from modules.processing import StableDiffusionProcessingImg2Img, process_images, Processed, fix_seed
 from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, \
-    load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path
+    load_sd_model_weights, save_processed_images, ADetailer
 
 
 class DigitalTaskType(IntEnum):
@@ -29,12 +30,58 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
         super(DigitalTaskHandler, self).__init__()
         self.task_type = TaskType.Digital
 
+    def _denoising_strengths(self, t: Task):
+
+        def is_like_me():
+            prompt = t['prompt']
+            tokens = re.split("|".join(map(re.escape, ",")), prompt.replace(">", ">,").replace("<", ",<"))
+            try:
+                def parse_addition_networks(token: str):
+                    if '<lora:' in token:
+                        frags = token[1:-1].split(":")
+                        entity = ':'.join(frags[:-1])
+                        try:
+                            weights = float(frags[-1])
+                        except ValueError:
+                            return None
+
+                        # 查找对应LORA的instance id
+                        lora_name = entity[len('lora:'):]
+                        return lora_name, weights
+
+                for token in tokens:
+                    #  prompt相邻词之间有多个逗号
+                    if not token.strip():
+                        continue
+                    r = parse_addition_networks(token.replace("\n", " ").strip())
+                    if not r:
+                        continue
+                    return r[-1] > 0.8
+            except:
+                pass
+            return False
+        if is_like_me():
+            return [0.6, 0.6, 0.65, 0.7]
+        return [0.55, 0.6, 0.6, 0.65]
+
     def _build_i2i_tasks(self, t: Task):
         tasks = []
-        for denoising_strength in [0.15, 0.2, 0.25, 0.3]:
-            t['denoising_strength'] = denoising_strength
+
+        denoising_strengths = self._denoising_strengths(t)
+        for i, denoising_strength in enumerate(denoising_strengths):
+            t['denoising_strength'] = 0.1 + 0.05*i
             t['n_iter'] = 1
             t['batch_size'] = 1
+            t['alwayson_scripts'] = {
+                ADetailer: {
+                    'args': [{
+                        'ad_model': 'face_yolov8n_v2.pt',
+                        'ad_mask_blur': 4,
+                        'ad_denoising_strength': denoising_strength,
+                        'ad_inpaint_only_masked': True
+                    }]
+                }
+            }
             tasks.append(Img2ImgTask.from_task(t, self.default_script_args))
 
         return tasks

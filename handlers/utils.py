@@ -290,6 +290,9 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
             if not enable_def_adetailer and ADetailer == k:
                 logger.debug('====> default adetailer plugin disable!')
                 continue
+            if k in alwayson_scripts:
+                continue
+
             alwayson_scripts[k] = v
     else:
         logger.debug('====> disable tss default plugin!')
