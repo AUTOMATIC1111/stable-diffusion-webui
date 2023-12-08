@@ -2,6 +2,7 @@ import datetime
 import io
 import re
 import os
+import sys
 import math
 import json
 import uuid
@@ -314,7 +315,7 @@ class FilenameGenerator:
         'prompt_hash': lambda self: hashlib.sha256(self.prompt.encode()).hexdigest()[0:8],
 
         'sampler': lambda self: self.p and self.p.sampler_name,
-        'seed': lambda self: str(self.seed) if self.seed is not None else '',
+        'seed': lambda self: self.seed and str(self.seed) or '',
         'steps': lambda self: self.p and self.p.steps,
         'styles': lambda self: self.p and ", ".join([style for style in self.p.styles if not style == "None"]) or "None",
         'uuid': lambda self: str(uuid.uuid4()),
@@ -322,10 +323,13 @@ class FilenameGenerator:
     default_time_format = '%Y%m%d%H%M%S'
 
     def __init__(self, p, seed, prompt, image, grid=False):
-        if getattr(self, 'p', None) is None:
+        if p is None:
+            debug('Filename generator init skip')
             return
+        else:
+            debug(f'Filename generator init: {seed} {prompt}')
         self.p = p
-        self.seed = seed
+        self.seed = seed if seed is not None and seed > 0 else p.all_seeds[0]
         self.prompt = prompt
         self.image = image
         if not grid:
@@ -462,6 +466,7 @@ class FilenameGenerator:
             fun = self.replacements.get(pattern.lower(), None)
             if fun is not None:
                 try:
+                    debug(f'Filename apply: pattern={pattern.lower()} args={pattern_args}')
                     replacement = fun(self, *pattern_args)
                 except Exception as e:
                     replacement = None
@@ -579,6 +584,7 @@ save_thread.start()
 
 
 def save_image(image, path, basename='', seed=None, prompt=None, extension=shared.opts.samples_format, info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix='', save_to_dirs=None): # pylint: disable=unused-argument
+    debug(f'Save from function={sys._getframe(1).f_code.co_name}') # pylint: disable=protected-access
     if image is None:
         shared.log.warning('Image is none')
         return None, None
@@ -612,7 +618,7 @@ def save_image(image, path, basename='', seed=None, prompt=None, extension=share
     if dirname is not None and len(dirname) > 0:
         os.makedirs(dirname, exist_ok=True)
     params.filename = namegen.sequence(params.filename, dirname, basename)
-    params.filename = namegen.sanitize(filename)
+    params.filename = namegen.sanitize(params.filename)
     # callbacks
     script_callbacks.before_image_saved_callback(params)
     exifinfo = params.pnginfo.get('UserComment', '')
