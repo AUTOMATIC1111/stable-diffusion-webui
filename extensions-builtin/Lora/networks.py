@@ -84,7 +84,7 @@ def load_diffusers(name, network_on_disk, lora_scale=1.0):
     if shared.backend != shared.Backend.DIFFUSERS:
         return None
     shared.sd_model.load_lora_weights(network_on_disk.filename)
-    if (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx") or shared.opts.lora_fuse_diffusers:
+    if shared.opts.lora_fuse_diffusers:
         shared.sd_model.fuse_lora(lora_scale=lora_scale)
     net = network.Network(name, network_on_disk)
     net.mtime = os.path.getmtime(network_on_disk.filename)
