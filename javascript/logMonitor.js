@@ -9,8 +9,16 @@ async function logMonitor() {
   try { res = await fetch('/sdapi/v1/log?clear=True'); } catch {}
   if (res?.ok) {
     logMonitorStatus = true;
-    if (!logMonitorEl) logMonitorEl = document.getElementById('logMonitorData');
+    if (!logMonitorEl) {
+      logMonitorEl = document.getElementById('logMonitorData');
+      logMonitorEl.onscrollend = function() {
+        const at_bottom = logMonitorEl.scrollHeight <= (logMonitorEl.scrollTop + logMonitorEl.clientHeight)
+        if (at_bottom)
+          logMonitorEl.parentElement.style = '';
+      }
+    }
     if (!logMonitorEl) return;
+    const at_bottom = logMonitorEl.scrollHeight <= (logMonitorEl.scrollTop + logMonitorEl.clientHeight)
     const lines = await res.json();
     if (logMonitorEl && lines?.length > 0) logMonitorEl.parentElement.parentElement.style.display = opts.logmonitor_show ? 'block' : 'none';
     for (const line of lines) {
@@ -23,7 +31,11 @@ async function logMonitor() {
       } catch {}
     }
     while (logMonitorEl.childElementCount > 100) logMonitorEl.removeChild(logMonitorEl.firstChild);
-    logMonitorEl.scrollTop = logMonitorEl.scrollHeight;
+    if (at_bottom) {
+      logMonitorEl.scrollTop = logMonitorEl.scrollHeight;
+    } else if (lines?.length > 0) {
+      logMonitorEl.parentElement.style = 'border-bottom: 2px solid yellow';
+    }
   }
 }
 
