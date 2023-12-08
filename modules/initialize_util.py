@@ -13,7 +13,7 @@ def gradio_server_name():
     if cmd_opts.server_name:
         return cmd_opts.server_name
     else:
-        return "0.0.0.0" if cmd_opts.listen else None
+        return "::" if cmd_opts.listen else None
 
 
 def fix_torch_version():
