@@ -572,7 +572,7 @@ class Script(scripts.Script):
                     gr.Markdown(
                         """
                         ## Pixel Composite Settings
-                        
+
                         Masks are generated based on how much a part of the image changed after denoising.
                         These masks are used to blend the original and final images together.
                         If the difference is low, the original pixels are used instead of the pixels returned by the inpainting process.
@@ -602,10 +602,10 @@ class Script(scripts.Script):
                         f"""
                         ### {ui_labels.composite_difference_contrast}
 
-                        This value represents the difference at which the opacity of the original pixels will have less than 50% opacity.
+                        This value represents the contrast between the opacity of the original and inpainted content.
 
-                        - **Low values**: Two images patches must be almost the same in order to retain original pixels.
-                        - **High values**: Two images patches can be very different and still retain original pixels.
+                        - **Low values**: The blend will be more gradual and have longer transitions, but may cause ghosting.
+                        - **High values**: Ghosting will be less common, but transitions may be very sudden.
                         """)
 
         self.infotext_fields = [(soft_inpainting_enabled, enabled_gen_param_label),
