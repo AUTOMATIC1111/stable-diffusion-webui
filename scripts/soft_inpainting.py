@@ -592,7 +592,7 @@ class Script(scripts.Script):
                         f"""
                         ### {ui_labels.composite_difference_threshold}
 
-                        This value represents the difference at which the opacity of the original pixels will have less than 50% opacity.
+                        This value represents the difference at which the original pixels will have less than 50% opacity.
 
                         - **Low values**: Two images patches must be almost the same in order to retain original pixels.
                         - **High values**: Two images patches can be very different and still retain original pixels.
