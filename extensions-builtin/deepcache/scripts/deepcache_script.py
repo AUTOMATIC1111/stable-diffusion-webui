@@ -13,10 +13,10 @@ class ScriptDeepCache(scripts.Script):
     def show(self, is_img2img):
         return scripts.AlwaysVisible
 
-    def get_deepcache_params(self, steps: int) -> DeepCacheParams:
+    def get_deepcache_params(self, steps: int, enable_step_at:int = None) -> DeepCacheParams:
         return DeepCacheParams(
             cache_in_level=shared.opts.deepcache_cache_resnet_level,
-            cache_enable_step=int(shared.opts.deepcache_cache_enable_step_percentage * steps),
+            cache_enable_step=int(shared.opts.deepcache_cache_enable_step_percentage * steps) if enable_step_at is None else enable_step_at,
             full_run_step_rate=shared.opts.deepcache_full_run_step_rate,
         )
 
@@ -33,7 +33,9 @@ class ScriptDeepCache(scripts.Script):
         if not shared.opts.deepcache_hr_reuse:
             self.detach_deepcache()
         if shared.opts.deepcache_enable:
-            self.configure_deepcache(self.get_deepcache_params(getattr(p, 'hr_second_pass_steps', 0) or p.steps)) # use second pass steps if available
+            hr_steps = getattr(p, 'hr_second_pass_steps', 0) or p.steps
+            enable_step = int(shared.opts.deepcache_cache_enable_step_percentage_hr * hr_steps)
+            self.configure_deepcache(self.get_deepcache_params(getattr(p, 'hr_second_pass_steps', 0) or p.steps), enable_step_at = enable_step) # use second pass steps if available
 
     def postprocess_batch(self, p:processing.StableDiffusionProcessing, *args, **kwargs):
         print("DeepCache postprocess")
@@ -66,6 +68,7 @@ def on_ui_settings():
         "deepcache_cache_enable_step_percentage": shared.OptionInfo(0.4, "Deepcaches is enabled after the step percentage", gr.Slider, {"minimum": 0, "maximum": 1}).info("Percentage of initial steps to disable deepcache"),
         "deepcache_full_run_step_rate": shared.OptionInfo(5, "Refreshes caches when step is divisible by number", gr.Slider, {"minimum": 0, "maximum": 1000, "step": 1}).info("5 = refresh caches every 5 steps"),
         "deepcache_hr_reuse" : shared.OptionInfo(False, "Reuse for HR").info("Reuses cache information for HR generation"),
+        "deepcache_cache_enable_step_percentage_hr" : shared.OptionInfo(0.0, "Deepcaches is enabled after the step percentage for HR", gr.Slider, {"minimum": 0, "maximum": 1}).info("Percentage of initial steps to disable deepcache for HR generation"),
     }
     for name, opt in options.items():
         opt.section = ('deepcache', "DeepCache")

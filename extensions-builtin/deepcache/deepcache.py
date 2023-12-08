@@ -41,11 +41,12 @@ class DeepCacheSession:
         if total == 0:
             return
         logger = getLogger()
-        logger.log("DeepCache Information :")
+        level = logger.getEffectiveLevel()
+        logger.log(level, "DeepCache Information :")
         for fail_reasons, count in self.fail_reasons.items():
-            logger.log(f"  {fail_reasons}: {count}")
+            logger.log(level, f"  {fail_reasons}: {count}")
         for success_reasons, count in self.success_reasons.items():
-            logger.log(f"  {success_reasons}: {count}")
+            logger.log(level, f"  {success_reasons}: {count}")
 
     def deepcache_hook_model(self, unet, params:DeepCacheParams):
         """
