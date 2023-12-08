@@ -19,9 +19,14 @@
 - **Process**
   - create videos from batch or folder processing  
     supports GIF, PNG and MP4 with full interpolation, scene change detection, etc.  
+  - **LoRA**
+    - add support for block weights, thanks @AI-Casanova  
+      example `<lora:SDXL_LCM_LoRA:1.0:in=0:mid=1:out=0>`  
+    - reintroduce alternative loading method in settings: `lora_force_diffusers`
+    - add support for `lora_fuse_diffusers` if using alternative method  
+      use if you have multiple complex loras that may be causing performance degradation  
+      as it fuses lora with model during load instead of interpreting lora on-the-fly  
 - **General**
-  - **LoRA** add support for block weights, thanks @AI-Casanova  
-    example `<lora:SDXL_LCM_LoRA:1.0:in=0:mid=1:out=0>`  
   - **Extra networks** new *settting -> extra networks -> build info on first access*  
     indexes all networks on first access instead of server startup  
   - **Ipex** improvements, thanks @disty0
