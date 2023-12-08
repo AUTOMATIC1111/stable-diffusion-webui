@@ -27,6 +27,7 @@
       use if you have multiple complex loras that may be causing performance degradation  
       as it fuses lora with model during load instead of interpreting lora on-the-fly  
 - **General**
+  - **CivitAI downloader** allow usage of access tokens for gated or private models  
   - **Extra networks** new *settting -> extra networks -> build info on first access*  
     indexes all networks on first access instead of server startup  
   - **Ipex** improvements, thanks @disty0

@@ -111,7 +111,7 @@ def download_civit_preview(model_path: str, preview_url: str):
 
 download_pbar = None
 
-def download_civit_model_thread(model_name, model_url, model_path, model_type, preview):
+def download_civit_model_thread(model_name, model_url, model_path, model_type, preview, token):
     import hashlib
     sha256 = hashlib.sha256()
     sha256.update(model_name.encode('utf-8'))
@@ -135,7 +135,9 @@ def download_civit_model_thread(model_name, model_url, model_path, model_type, p
     if os.path.isfile(temp_file):
         starting_pos = os.path.getsize(temp_file)
         res += f' resume={round(starting_pos/1024/1024)}Mb'
-        headers = {'Range': f'bytes={starting_pos}-'}
+        headers['Range'] = f'bytes={starting_pos}-'
+    if token is not None and len(token) > 0:
+        headers['Authorization'] = f'Bearer {token}'
 
     r = shared.req(model_url, headers=headers, stream=True)
     total_size = int(r.headers.get('content-length', 0))
@@ -175,9 +177,9 @@ def download_civit_model_thread(model_name, model_url, model_path, model_type, p
     return res
 
 
-def download_civit_model(model_url: str, model_name: str, model_path: str, model_type: str, preview):
+def download_civit_model(model_url: str, model_name: str, model_path: str, model_type: str, preview, token: str = None):
     import threading
-    thread = threading.Thread(target=download_civit_model_thread, args=(model_name, model_url, model_path, model_type, preview))
+    thread = threading.Thread(target=download_civit_model_thread, args=(model_name, model_url, model_path, model_type, preview, token))
     thread.start()
     return f'CivitAI download: name={model_name} url={model_url} path={model_path}'
 
