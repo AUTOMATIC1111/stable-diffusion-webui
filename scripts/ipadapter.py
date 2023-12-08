@@ -14,6 +14,7 @@ from modules import scripts, processing, shared, devices
 
 
 image_encoder = None
+image_encoder_type = None
 loaded = None
 ADAPTERS = [
     'none',
@@ -56,7 +57,7 @@ class Script(scripts.Script):
         if hasattr(p, 'ip_adapter_image'):
             image = p.ip_adapter_image
         # init code
-        global loaded, image_encoder # pylint: disable=global-statement
+        global loaded, image_encoder, image_encoder_type # pylint: disable=global-statement
         if shared.sd_model is None:
             return
         if shared.backend != shared.Backend.DIFFUSERS:
@@ -85,9 +86,10 @@ class Script(scripts.Script):
             else:
                 shared.log.error(f'IP adapter: unsupported model type: {shared.sd_model_type}')
                 return
-            if image_encoder is None:
+            if image_encoder is None or image_encoder_type != shared.sd_model_type:
                 try:
                     image_encoder = CLIPVisionModelWithProjection.from_pretrained("h94/IP-Adapter", subfolder=subfolder, torch_dtype=devices.dtype, cache_dir=shared.opts.diffusers_dir, use_safetensors=True).to(devices.device)
+                    image_encoder_type = shared.sd_model_type
                 except Exception as e:
                     shared.log.error(f'IP adapter: failed to load image encoder: {e}')
                     return
