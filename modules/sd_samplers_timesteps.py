@@ -36,7 +36,7 @@ class CompVisTimestepsVDenoiser(torch.nn.Module):
         self.inner_model = model
 
     def predict_eps_from_z_and_v(self, x_t, t, v):
-        return self.inner_model.sqrt_alphas_cumprod[t.to(torch.int), None, None, None] * v + self.inner_model.sqrt_one_minus_alphas_cumprod[t.to(torch.int), None, None, None] * x_t
+        return torch.sqrt(self.inner_model.alphas_cumprod)[t.to(torch.int), None, None, None] * v + torch.sqrt(1 - self.inner_model.alphas_cumprod)[t.to(torch.int), None, None, None] * x_t
 
     def forward(self, input, timesteps, **kwargs):
         model_output = self.inner_model.apply_model(input, timesteps, **kwargs)
