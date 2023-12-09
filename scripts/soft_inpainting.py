@@ -32,6 +32,19 @@ class SoftInpaintingSettings:
 
 # ------------------- Methods -------------------
 
+def processing_uses_inpainting(p):
+    # TODO: Figure out a better way to determine if inpainting is being used by p
+    if getattr(p, "image_mask", None) is not None:
+        return True
+
+    if getattr(p, "mask", None) is not None:
+        return True
+
+    if getattr(p, "nmask", None) is not None:
+        return True
+
+    return False
+
 
 def latent_blend(settings, a, b, t):
     """
@@ -454,8 +467,8 @@ el_ids = SoftInpaintingSettings(
 
 
 class Script(scripts.Script):
-
     def __init__(self):
+        self.section = "inpaint"
         self.masks_for_overlay = None
         self.overlay_images = None
 
@@ -632,6 +645,9 @@ class Script(scripts.Script):
         if not enabled:
             return
 
+        if not processing_uses_inpainting(p):
+            return
+
         # Shut off the rounding it normally does.
         p.mask_round = False
 
@@ -642,6 +658,9 @@ class Script(scripts.Script):
 
     def on_mask_blend(self, p, mba: scripts.MaskBlendArgs, enabled, power, scale, detail_preservation, mask_inf, dif_thresh, dif_contr):
         if not enabled:
+            return
+
+        if not processing_uses_inpainting(p):
             return
 
         if mba.is_final_blend:
@@ -660,10 +679,17 @@ class Script(scripts.Script):
         if not enabled:
             return
 
-        settings = SoftInpaintingSettings(power, scale, detail_preservation, mask_inf, dif_thresh, dif_contr)
+        if not processing_uses_inpainting(p):
+            return
+
+        nmask = getattr(p, "nmask", None)
+        if nmask is None:
+            return
 
         from modules import images
         from modules.shared import opts
+
+        settings = SoftInpaintingSettings(power, scale, detail_preservation, mask_inf, dif_thresh, dif_contr)
 
         # since the original code puts holes in the existing overlay images,
         # we have to rebuild them.
@@ -682,14 +708,14 @@ class Script(scripts.Script):
 
         if getattr(ps.samples, 'already_decoded', False):
             self.masks_for_overlay = apply_masks(settings=settings,
-                                                 nmask=p.nmask,
+                                                 nmask=nmask,
                                                  overlay_images=self.overlay_images,
                                                  width=p.width,
                                                  height=p.height,
                                                  paste_to=p.paste_to)
         else:
             self.masks_for_overlay = apply_adaptive_masks(settings=settings,
-                                                          nmask=p.nmask,
+                                                          nmask=nmask,
                                                           latent_orig=p.init_latent,
                                                           latent_processed=ps.samples,
                                                           overlay_images=self.overlay_images,
@@ -700,6 +726,15 @@ class Script(scripts.Script):
 
     def postprocess_maskoverlay(self, p, ppmo: scripts.PostProcessMaskOverlayArgs, enabled, power, scale, detail_preservation, mask_inf, dif_thresh, dif_contr):
         if not enabled:
+            return
+
+        if not processing_uses_inpainting(p):
+            return
+
+        if self.masks_for_overlay is None:
+            return
+
+        if self.overlay_images is None:
             return
 
         ppmo.mask_for_overlay = self.masks_for_overlay[ppmo.index]
