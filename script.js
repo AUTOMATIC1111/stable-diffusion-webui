@@ -121,16 +121,21 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 /**
- * Add a ctrl+enter as a shortcut to start a generation
+ * Add keyboard shortcuts:
+ * Ctrl+Enter to start/restart a generation
+ * Alt/Option+Enter to skip a generation
+ * Alt/Option+Ctrl+Enter to interrupt a generation
  */
 document.addEventListener('keydown', function(e) {
     const isEnter = e.key === 'Enter' || e.keyCode === 13;
-    const isModifierKey = e.metaKey || e.ctrlKey || e.altKey;
+    const isCtrlKey = e.metaKey || e.ctrlKey;
+    const isAltKey = e.altKey;
 
-    const interruptButton = get_uiCurrentTabContent().querySelector('button[id$=_interrupt]');
     const generateButton = get_uiCurrentTabContent().querySelector('button[id$=_generate]');
+    const interruptButton = get_uiCurrentTabContent().querySelector('button[id$=_interrupt]');
+    const skipButton = get_uiCurrentTabContent().querySelector('button[id$=_skip]');
 
-    if (isEnter && isModifierKey) {
+    if (isCtrlKey && isEnter && !isAltKey) {
         if (interruptButton.style.display === 'block') {
             interruptButton.click();
             const callback = (mutationList) => {
@@ -148,6 +153,16 @@ document.addEventListener('keydown', function(e) {
         } else {
             generateButton.click();
         }
+        e.preventDefault();
+    }
+
+    if (isAltKey && isEnter && !isCtrlKey) {
+        skipButton.click();
+        e.preventDefault();
+    }
+
+    if (isAltKey && isCtrlKey && isEnter) {
+        interruptButton.click();
         e.preventDefault();
     }
 });
