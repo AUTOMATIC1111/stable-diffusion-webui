@@ -163,8 +163,10 @@ def get_weighted_text_embeddings(pipe, prompt: str = "", neg_prompt: str = "", c
         provider_embed = []
         while 'BREAK' in text:
             pos = text.index('BREAK')
-            embed, ptokens = embedding_providers[i].get_embeddings_for_weighted_prompt_fragments(text_batch=[text[:pos]], fragment_weights_batch=[weights[:pos]], device=device, should_return_tokens=True)
-            provider_embed.append(embed)
+            debug(f'Prompt: section="{text[:pos]}" len={len(text[:pos])} weights={weights[:pos]}')
+            if len(text[:pos]) > 0:
+                embed, ptokens = embedding_providers[i].get_embeddings_for_weighted_prompt_fragments(text_batch=[text[:pos]], fragment_weights_batch=[weights[:pos]], device=device, should_return_tokens=True)
+                provider_embed.append(embed)
             text = text[pos+1:]
             weights = weights[pos+1:]
         prompt_embeds.append(torch.cat(provider_embed, dim=1))
@@ -192,6 +194,7 @@ def get_weighted_text_embeddings(pipe, prompt: str = "", neg_prompt: str = "", c
 
     prompt_embeds = torch.cat(prompt_embeds, dim=-1) if len(prompt_embeds) > 1 else prompt_embeds[0]
     negative_prompt_embeds = torch.cat(negative_prompt_embeds, dim=-1) if len(negative_prompt_embeds) > 1 else negative_prompt_embeds[0]
+    debug(f'Prompt: shape={prompt_embeds.shape} negative={negative_prompt_embeds.shape}')
     if prompt_embeds.shape[1] != negative_prompt_embeds.shape[1]:
         [prompt_embeds, negative_prompt_embeds] = pad_to_same_length(pipe, [prompt_embeds, negative_prompt_embeds])
     return prompt_embeds, pooled_prompt_embeds, negative_prompt_embeds, negative_pooled_prompt_embeds
