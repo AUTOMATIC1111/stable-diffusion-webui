@@ -78,7 +78,7 @@ def load_diffusers(name, network_on_disk, lora_scale=1.0):
     t0 = time.time()
     cached = lora_cache.get(name, None)
     # if debug:
-    shared.log.debug(f'LoRA load: name={name} file={network_on_disk.filename} type=diffusers {"cached" if cached else ""} fuse={shared.opts.lora_fuse_diffusers}')
+    shared.log.debug(f'LoRA load: name="{name}" file="{network_on_disk.filename}" type=diffusers {"cached" if cached else ""} fuse={shared.opts.lora_fuse_diffusers}')
     if cached is not None:
         return cached
     if shared.backend != shared.Backend.DIFFUSERS:
@@ -98,7 +98,7 @@ def load_network(name, network_on_disk):
     t0 = time.time()
     cached = lora_cache.get(name, None)
     if debug:
-        shared.log.debug(f'LoRA load: name={name} file={network_on_disk.filename} {"cached" if cached else ""}')
+        shared.log.debug(f'LoRA load: name="{name}" file="{network_on_disk.filename}" {"cached" if cached else ""}')
     if cached is not None:
         return cached
     net = network.Network(name, network_on_disk)

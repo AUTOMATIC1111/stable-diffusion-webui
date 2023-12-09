@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-08
+## Update for 2023-12-09
 
 *Note*: based on `diffusers==0.25.0.dev0`
 
@@ -11,6 +11,11 @@
   - **HDR controls** are now batch-aware for enhancement of multiple images or video frames  
   - [Playground v1](https://huggingface.co/playgroundai/playground-v1), [Playground v2 256](https://huggingface.co/playgroundai/playground-v2-256px-base), [Playground v2 512](https://huggingface.co/playgroundai/playground-v2-512px-base), [Playground v2 1024](https://huggingface.co/playgroundai/playground-v2-1024px-aesthetic) model support  
     - simply select from *networks -> reference* and use as usual  
+  - [DemoFusion](https://github.com/PRIS-CV/DemoFusion) run your SDXL generations at any resolution!  
+    - in **Text** tab select *script* -> *demofusion*
+    - *note*: GPU VRAM limits do not automatically go away so be careful when using it with large resolutions  
+      in the future, expect more optimizations, especially related to offloading/slicing/tiling,  
+      but at the moment this is pretty much experimental-only
   - [ModelScope T2V](https://huggingface.co/damo-vilab/text-to-video-ms-1.7b) model support  
     - simply select from *networks -> reference* and use from *txt2img* tab
   - **Schedulers**
@@ -18,7 +23,7 @@
     - add rescale betas with zero SNR option (applicable to Euler and DDIM, allows for higher dynamic range)  
 - **General**  
   - **Process** create videos from batch or folder processing  
-      supports GIF, PNG and MP4 with full interpolation, scene change detection, etc.  
+      supports *GIF*, *PNG* and *MP4* with full interpolation, scene change detection, etc.  
   - **LoRA**  
     - add support for block weights, thanks @AI-Casanova  
       example `<lora:SDXL_LCM_LoRA:1.0:in=0:mid=1:out=0>`  
@@ -26,7 +31,7 @@
     - add support for `lora_fuse_diffusers` if using alternative method  
       use if you have multiple complex loras that may be causing performance degradation  
       as it fuses lora with model during load instead of interpreting lora on-the-fly  
-  - **CivitAI downloader** allow usage of access tokens for gated or private models  
+  - **CivitAI downloader** allow usage of access tokens for download of gated or private models  
   - **Extra networks** new *settting -> extra networks -> build info on first access*  
     indexes all networks on first access instead of server startup  
   - **Ipex** improvements, thanks @disty0

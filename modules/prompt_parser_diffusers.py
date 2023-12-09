@@ -60,7 +60,7 @@ class DiffusersTextualInversionManager(BaseTextualInversionManager):
 
 
 def encode_prompts(pipe, prompts: list, negative_prompts: list, clip_skip: typing.Optional[int] = None):
-    if 'StableDiffusion' not in pipe.__class__.__name__:
+    if 'StableDiffusion' not in pipe.__class__.__name__ and 'DemoFusion':
         shared.log.warning(f"Prompt parser not supported: {pipe.__class__.__name__}")
         return None, None, None, None
     else:
