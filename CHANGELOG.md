@@ -32,6 +32,7 @@
   - **Ipex** improvements, thanks @disty0
   - disable google fonts check on server startup  
   - fix torchvision/basicsr compatibility  
+  - fix extra networks sort
   - add hdr settings to metadata  
   - improve handling of long filenames and filenames during batch processing  
   - update built-in log monitor in ui, thanks @midcoastal  
