@@ -774,9 +774,9 @@ def create_ui():
             res_switch_btn.click(fn=None, _js="function(){switchWidthHeight('img2img')}", inputs=None, outputs=None, show_progress=False)
 
             detect_image_size_btn.click(
-                fn=lambda w, h, _: (w or gr.update(), h or gr.update()),
+                fn=lambda w, h: (w or gr.update(), h or gr.update()),
                 _js="currentImg2imgSourceResolution",
-                inputs=[dummy_component, dummy_component, dummy_component],
+                inputs=[dummy_component, dummy_component],
                 outputs=[width, height],
                 show_progress=False,
             )
