@@ -757,7 +757,7 @@ def validate_sample(tensor):
         sample = 255.0 * np.moveaxis(tensor.cpu().numpy(), 0, 2)
     else:
         sample = 255.0 * tensor
-    if isinstance(tensor, torch.Tensor):
+    if isinstance(tensor, torch.Tensor) and hasattr(tensor, 'detach'):
         sample = sample.detach().cpu().numpy()
     with warnings.catch_warnings(record=True) as w:
         cast = sample.astype(np.uint8)
