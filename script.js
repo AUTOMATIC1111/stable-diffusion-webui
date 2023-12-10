@@ -163,11 +163,13 @@ document.addEventListener('keydown', function(e) {
     }
 
     if (isEsc) {
+        const globalPopup = document.querySelector('.global-popup');
         if (!globalPopup || globalPopup.style.display === "none") {
             interruptButton.click();
             e.preventDefault();
         } else {
-            closePopup();
+            if (!globalPopup) return;
+            globalPopup.style.display = "none";
         }
     }
 });
