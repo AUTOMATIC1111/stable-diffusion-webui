@@ -6,7 +6,7 @@ Web ui interacts with installed extensions in the following way:
 
 - extension's `install.py` script, if it exists, is executed.
 - extension's scripts in the `scripts` directory are executed as if they were just usual user scripts, except:
-  - `sys.path` is extended to include the extension directory, so you can import anything in it without worrying
+  - `sys.path` is extended to include the extension directory, so you can import anything in it without worrying. **HOWEVER, please either use a unique file name, or put your files in a uniquely-named folder, as the module will be cached to the global Python module tree by the name you used to import, and create surprises for other components that happen to use the same name.**
   - you can use `scripts.basedir()` to get the current extension's directory (since user can name it anything he wants)
 - extension's javascript files in the `javascript` directory are added to the page
 - extension's localization files in the `localizations` directory are added to settings; if there are two localizations with same name, they are not merged, one replaces another.
@@ -45,6 +45,93 @@ import launch
 if not launch.is_installed("aitextgen"):
     launch.run_pip("install aitextgen==0.6.0", "requirements for MagicPrompt")
 ```
+
+## metadata.ini
+`metadata.ini` contains metadata about the extension. It is optional, but if it exists, it must be located in the root directory of the extension. It is a [configparser](https://docs.python.org/3.10/library/configparser.html) ini file with the following contents:
+
+```ini
+# This section contains information about the extension itself.
+# This section is optional.
+[Extension]
+
+# A canonical name of the extension. 
+# Only lowercase letters, numbers, dashes and underscores are allowed. 
+# This is a unique identifier of the extension, and the loader will refuse to 
+# load two extensions with the same name. If the name is not supplied, the 
+# name of the extension directory is used. Other extensions can use this 
+# name to refer to this extension in the file.
+Name = demo-extension
+
+# A comma-or-space-separated list of extensions that this extension requires 
+# to be installed and enabled.
+# The loader will generate a warning if any of the extensions in this list is
+# not installed or disabled.
+Requires = another-extension, yet-another-extension
+
+# Declaring relationships of folders
+# 
+# This section declares relations of all files in `scripts` directory.
+# By changing the section name, it can also be used on other directories 
+# walked by `load_scripts` function (for example `javascript` and `localization`).
+# This section is optional.
+[scripts]
+
+# A comma-or-space-separated list of extensions that files in this folder requires
+# to be present.
+# It is only allowed to specify an extension here.
+# The loader will generate a warning if any of the extensions in this list is
+# not installed or disabled.
+Requires = another-extension, yet-another-extension
+
+# A comma-or-space-separated list of extensions that files in this folder wants
+# to be loaded before. 
+# It is only allowed to specify an extension here.
+# The loading order of all files in the specified folder will be moved so that 
+# the files in the current extension are loaded before the files in the same 
+# folder in the listed extension.
+Before = another-extension, yet-another-extension
+
+# A comma-or-space-separated list of extensions that files in this folder wants
+# to be loaded after.
+# Other details are the same as `Before` key.
+After = another-extension, yet-another-extension
+
+# Declaring relationships of a specific file
+# 
+# This section declares relations of a specific file to files in the same 
+# folder of other extensions.
+# By changing the section name, it can also be used on other directories
+# walked by `load_scripts` function (for example `javascript` and `localization`).
+# This section is optional.
+[scripts/another-script.py]
+
+# A comma-or-space-separated list of extensions/files that this file requires
+# to be present.
+# The `Requires` key in the folder section will be prepended to this list.
+# The loader will generate a warning if any of the extensions/files in this list is
+# not installed or disabled.
+# It is allowed to specify either an extension or a specific file.
+# When referencing a file, the folder name must be omitted.
+# 
+# For example, the `yet-another-extension/another-script.py` item refers to 
+# `scripts/another-script.py` in `yet-another-extension`.
+Requires = another-extension, yet-another-extension/another-script.py, xyz_grid.py
+
+# A comma-or-space-separated list of extensions that this file wants
+# to be loaded before.
+# The `Before` key in the folder section will be prepended to this list.
+# The loading order of this file will be moved so that this file is 
+# loaded before the referenced file in the list.
+Before = another-extension, yet-another-extension/another-script.py, xyz_grid.py
+
+# A comma-or-space-separated list of extensions that this file wants
+# to be loaded after.
+# Other details are the same as `Before` key.
+After = another-extension, yet-another-extension/another-script.py, xyz_grid.py
+
+```
+
+When authoring a metadata file, please note that while the section names are case-insensitive, the keys are not.
 
 ## Minor tips
 ### Adding extra textual inversion dirs
