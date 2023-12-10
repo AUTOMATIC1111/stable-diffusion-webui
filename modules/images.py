@@ -325,11 +325,15 @@ class FilenameGenerator:
     def __init__(self, p, seed, prompt, image, grid=False):
         if p is None:
             debug('Filename generator init skip')
-            return
         else:
             debug(f'Filename generator init: {seed} {prompt}')
         self.p = p
-        self.seed = seed if seed is not None and seed > 0 else p.all_seeds[0]
+        if seed is not None and seed > 0:
+            self.seed = seed
+        elif hasattr(p, 'all_seeds'):
+            self.seed = p.all_seeds[0]
+        else:
+            self.seed = 0
         self.prompt = prompt
         self.image = image
         if not grid:

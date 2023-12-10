@@ -185,6 +185,7 @@ def readfile(filename, silent=False, lock=False):
     try:
         if not os.path.exists(filename):
             return {}
+        t0 = time.time()
         if lock:
             lock_file = fasteners.InterProcessReaderWriterLock(f"{filename}.lock", logger=log)
             locked = lock_file.acquire_read_lock(blocking=True, timeout=3)
@@ -192,8 +193,9 @@ def readfile(filename, silent=False, lock=False):
             data = json.load(file)
         if type(data) is str:
             data = json.loads(data)
+        t1 = time.time()
         if not silent:
-            log.debug(f'Read: file="{filename}" json={len(data)} bytes={os.path.getsize(filename)}')
+            log.debug(f'Read: file="{filename}" json={len(data)} bytes={os.path.getsize(filename)} time={t1-t0:.3f}')
     except Exception as e:
         if not silent:
             log.error(f'Reading failed: {filename} {e}')
@@ -215,6 +217,7 @@ def writefile(data, filename, mode='w', silent=False):
         return str(obj)
 
     try:
+        t0 = time.time()
         # skipkeys=True, ensure_ascii=True, check_circular=True, allow_nan=True
         if type(data) == dict:
             output = json.dumps(data, indent=2, default=default)
@@ -232,8 +235,9 @@ def writefile(data, filename, mode='w', silent=False):
         locked = lock.acquire_write_lock(blocking=True, timeout=3)
         with open(filename, mode, encoding="utf8") as file:
             file.write(output)
+        t1 = time.time()
         if not silent:
-            log.debug(f'Save: file="{filename}" json={len(data)} bytes={len(output)}')
+            log.debug(f'Save: file="{filename}" json={len(data)} bytes={len(output)} time={t1-t0:.3f}')
     except Exception as e:
         log.error(f'Saving failed: {filename} {e}')
     finally:
@@ -921,8 +925,9 @@ def req(url_addr, headers = None, **kwargs):
 class Shared(sys.modules[__name__].__class__): # this class is here to provide sd_model field as a property, so that it can be created and loaded on demand rather than at program startup.
     @property
     def sd_model(self):
-        # log.debug(f'Access shared.sd_model: {sys._getframe().f_back.f_code.co_name}') # pylint: disable=protected-access
         import modules.sd_models # pylint: disable=W0621
+        if modules.sd_models.model_data.sd_model is None:
+            log.debug(f'Model requested: fn={sys._getframe().f_back.f_code.co_name}') # pylint: disable=protected-access
         return modules.sd_models.model_data.get_sd_model()
 
     @sd_model.setter
