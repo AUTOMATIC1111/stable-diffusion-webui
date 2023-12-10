@@ -98,10 +98,8 @@ class StyleDatabase:
         self.path = path
 
         folder, file = os.path.split(self.path)
-        self.default_file = file.split("*")[0] + ".csv"
-        if self.default_file == ".csv":
-            self.default_file = "styles.csv"
-        self.default_path = os.path.join(folder, self.default_file)
+        filename, _, ext = file.partition('*')
+        self.default_path = os.path.join(folder, filename + ext)
 
         self.prompt_fields = [field for field in PromptStyle._fields if field != "path"]
 
