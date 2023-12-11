@@ -88,7 +88,7 @@ class DisableInitialization(ReplaceHelper):
                     HUGGINGFACE_HUB_CACHE, 'models--openai--clip-vit-large-patch14'
                 )
                 snapshots_dir = os.path.join(repo_cache, 'snapshots')
-                print(f"search {filename} in {snapshots_dir}")
+                print(f"search snapshots_dir:{snapshots_dir}")
                 refs_dir = os.path.join(repo_cache, "refs")
                 revision = "main"
                 # Resolve refs (for instance to convert main to the associated commit sha)
@@ -122,6 +122,9 @@ class DisableInitialization(ReplaceHelper):
                     res = original(url, *args, local_files_only=False, **kwargs)
                 return res
             except Exception:
+                cache_file = search_cache_snapshots(*args)
+                if cache_file:
+                    return cache_file
                 return original(url, *args, local_files_only=False, **kwargs)
 
         def transformers_utils_hub_get_from_cache(url, *args, local_files_only=False, **kwargs):
