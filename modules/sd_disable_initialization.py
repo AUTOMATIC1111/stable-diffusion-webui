@@ -1,3 +1,5 @@
+import os.path
+
 import ldm.modules.encoders.modules
 import open_clip
 import torch
@@ -79,9 +81,44 @@ class DisableInitialization(ReplaceHelper):
             if url == 'https://huggingface.co/openai/clip-vit-large-patch14/resolve/main/added_tokens.json' or url == 'openai/clip-vit-large-patch14' and args[0] == 'added_tokens.json':
                 return None
 
+            def search_cache_snapshots(*args):
+                from huggingface_hub.constants import HUGGINGFACE_HUB_CACHE
+                filename = args[0] if args else 'unknown'
+                repo_cache = os.path.join(
+                    HUGGINGFACE_HUB_CACHE, 'models--openai--clip-vit-large-patch14'
+                )
+                snapshots_dir = os.path.join(repo_cache, 'snapshots')
+                print(f"search {filename} in {snapshots_dir}")
+                refs_dir = os.path.join(repo_cache, "refs")
+                revision = "main"
+                # Resolve refs (for instance to convert main to the associated commit sha)
+                if os.path.isdir(refs_dir):
+                    revision_file = os.path.join(refs_dir, revision)
+                    if os.path.isfile(revision_file):
+                        with open(revision_file) as f:
+                            revision = f.read()
+                # 排除 refs中记录的snapshots，因为已经在上一个步骤查找了。
+                other_revision_snapshots_dirs = [
+                    f for f in os.listdir(snapshots_dir)
+                    if f != revision and os.path.isdir(os.path.join(snapshots_dir, f))
+                ]
+                if other_revision_snapshots_dirs:
+                    for other_revision_snapshots_dir in other_revision_snapshots_dirs:
+                        print(f"search {filename} in {other_revision_snapshots_dir}")
+                        cached_file = os.path.join(other_revision_snapshots_dir, filename)
+                        if os.path.isfile(cached_file):
+                            return cached_file
+
             try:
                 res = original(url, *args, local_files_only=True, **kwargs)
                 if res is None:
+                    # 搜索其他快照，因为同步问题可能导致HUGGING FACE中记录的快照ID并非同步的，
+                    # 记录快照的位置在(main分支):~/.cache/huggingface/hub/models--openai--clip-vit-large-patch14/refs/main
+                    # 默认同步快照ID为：8d052a0f05efbaefbc9e8786ba291cfdf93e5bff/
+                    cache_file = search_cache_snapshots(*args)
+                    if cache_file:
+                        return cache_file
+
                     res = original(url, *args, local_files_only=False, **kwargs)
                 return res
             except Exception:
