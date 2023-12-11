@@ -34,7 +34,13 @@
   - **CivitAI downloader** allow usage of access tokens for download of gated or private models  
   - **Extra networks** new *settting -> extra networks -> build info on first access*  
     indexes all networks on first access instead of server startup  
-  - **Ipex** improvements, thanks @disty0
+  - **IPEX** 
+    - Fix IPEX Optimize not applying with Diffusers backend, thanks @disty0    
+    - Disable 32 bit workarounds if the GPU supports 64 bit, thanks @disty0    
+    - More compatibility improvements, thanks @disty0    
+  - **OpenVINO**
+    - Add *Directory for OpenVINO cache* option to *System Paths*, thanks @disty0
+    - Remove Intel ARC specific 1024x1024 workaround, thanks @disty0
   - disable google fonts check on server startup  
   - fix torchvision/basicsr compatibility  
   - fix extra networks sort
