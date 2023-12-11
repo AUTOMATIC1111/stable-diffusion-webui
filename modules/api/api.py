@@ -287,14 +287,14 @@ class Api:
             p.scripts = script_runner
             p.outpath_grids = shared.opts.outdir_grids or shared.opts.outdir_txt2img_grids
             p.outpath_samples = shared.opts.outdir_samples or shared.opts.outdir_txt2img_samples
-            shared.state.begin('api-txt2img')
+            shared.state.begin('api-txt2img', api=True)
             script_args = self.init_script_args(p, txt2imgreq, self.default_script_arg_txt2img, selectable_scripts, selectable_script_idx, script_runner)
             if selectable_scripts is not None:
                 processed = scripts.scripts_txt2img.run(p, *script_args) # Need to pass args as list here
             else:
                 p.script_args = tuple(script_args) # Need to pass args as tuple here
                 processed = process_images(p)
-            shared.state.end()
+            shared.state.end(api=False)
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
         return models.TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
@@ -335,14 +335,14 @@ class Api:
             p.scripts = script_runner
             p.outpath_grids = shared.opts.outdir_img2img_grids
             p.outpath_samples = shared.opts.outdir_img2img_samples
-            shared.state.begin('api-img2img')
+            shared.state.begin('api-img2img', api=True)
             script_args = self.init_script_args(p, img2imgreq, self.default_script_arg_img2img, selectable_scripts, selectable_script_idx, script_runner)
             if selectable_scripts is not None:
                 processed = scripts.scripts_img2img.run(p, *script_args) # Need to pass args as list here
             else:
                 p.script_args = tuple(script_args) # Need to pass args as tuple here
                 processed = process_images(p)
-            shared.state.end()
+            shared.state.end(api=False)
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
         if not img2imgreq.include_init_images:

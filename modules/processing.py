@@ -44,6 +44,8 @@ from modules.sd_hijack_hypertile import context_hypertile_vae, context_hypertile
 
 opt_C = 4
 opt_f = 8
+debug = shared.log.debug if os.environ.get('SD_PROCESS_DEBUG', None) is not None else lambda *args, **kwargs: None
+
 
 def setup_color_correction(image):
     shared.log.debug("Calibrating color correction.")
@@ -64,10 +66,11 @@ def apply_overlay(image: Image, paste_loc, index, overlays):
     overlay = overlays[index]
     if paste_loc is not None:
         x, y, w, h = paste_loc
-        base_image = Image.new('RGBA', (overlay.width, overlay.height))
-        image = images.resize_image(2, image, w, h)
-        base_image.paste(image, (x, y))
-        image = base_image
+        if image.width != w or image.height != h or x != 0 or y != 0:
+            base_image = Image.new('RGBA', (overlay.width, overlay.height))
+            image = images.resize_image(2, image, w, h)
+            base_image.paste(image, (x, y))
+            image = base_image
     image = image.convert('RGBA')
     image.alpha_composite(overlay)
     image = image.convert('RGB')
@@ -667,6 +670,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
 
 
 def process_images(p: StableDiffusionProcessing) -> Processed:
+    debug(f'Process images: {vars(p)}')
     if not hasattr(p.sd_model, 'sd_checkpoint_info'):
         return None
     if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
@@ -1241,10 +1245,12 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 crop_region = modules.masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
                 x1, y1, x2, y2 = crop_region
                 mask = mask.crop(crop_region)
-                image_mask = images.resize_image(3, mask, self.width, self.height)
+                if mask.width != self.width or mask.height != self.height:
+                    image_mask = images.resize_image(3, mask, self.width, self.height)
                 self.paste_to = (x1, y1, x2-x1, y2-y1)
             else:
-                image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height)
+                if image_mask.width != self.width or image_mask.height != self.height:
+                    image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height)
                 np_mask = np.array(image_mask)
                 np_mask = np.clip((np_mask.astype(np.float32)) * 2, 0, 255).astype(np.uint8)
                 self.mask_for_overlay = Image.fromarray(np_mask)
@@ -1264,7 +1270,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 images.save_image(img, path=shared.opts.outdir_init_images, basename=None, forced_filename=self.init_img_hash, suffix="-init-image")
             image = images.flatten(img, shared.opts.img2img_background_color)
             if crop_region is None and self.resize_mode != 4:
-                image = images.resize_image(self.resize_mode, image, self.width, self.height)
+                if image.width != self.width or image.height != self.height:
+                    image = images.resize_image(self.resize_mode, image, self.width, self.height)
                 self.width = image.width
                 self.height = image.height
             if image_mask is not None:
@@ -1280,7 +1287,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             # crop_region is not None if we are doing inpaint full res
             if crop_region is not None:
                 image = image.crop(crop_region)
-                image = images.resize_image(3, image, self.width, self.height)
+                if image.width != self.width or image.height != self.height:
+                    image = images.resize_image(3, image, self.width, self.height)
             if image_mask is not None and self.inpainting_fill != 1:
                 image = modules.masking.fill(image, latent_mask)
             if add_color_corrections:

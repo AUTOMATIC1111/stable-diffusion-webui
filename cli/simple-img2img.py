@@ -58,6 +58,13 @@ def generate(args): # pylint: disable=redefined-outer-name
     options['steps'] = int(args.steps)
     options['seed'] = int(args.seed)
     options['sampler_name'] = args.sampler
+    options['init_images'] = [encode(args.init)]
+    image = Image.open(args.init)
+    options['width'] = image.width
+    options['height'] = image.height
+    image.close()
+    if args.mask is not None:
+        options['mask'] = encode(args.mask)
     data = post('/sdapi/v1/img2img', options)
     t1 = time.time()
     if 'images' in data:

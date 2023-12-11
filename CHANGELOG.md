@@ -40,6 +40,8 @@
   - fix extra networks sort
   - add hdr settings to metadata  
   - improve handling of long filenames and filenames during batch processing  
+  - do not set preview samples when using via api  
+  - avoid unnecessary resizes in img2img and inpaint  
   - update built-in log monitor in ui, thanks @midcoastal  
 
 ## Update for 2023-12-04

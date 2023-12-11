@@ -211,7 +211,7 @@ def draw_prompt_matrix(im, width, height, all_prompts, margin=0):
 
 
 def resize_image(resize_mode, im, width, height, upscaler_name=None, output_type='image'):
-    # shared.log.debug(f'Image resize: mode={resize_mode} resolution={width}x{height} upscaler={upscaler_name}')
+    shared.log.debug(f'Image resize: mode={resize_mode} resolution={width}x{height} upscaler={upscaler_name} function={sys._getframe(1).f_code.co_name}') # pylint: disable=protected-access
     """
     Resizes an image with the specified resize_mode, width, and height.
     Args:
@@ -243,9 +243,7 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None, output_type
             im = im.resize((w, h), resample=Image.Resampling.LANCZOS)
         return im
 
-    if resize_mode == 0:
-        res = im.copy()
-    if width == 0 or height == 0:
+    if resize_mode == 0 or (im.width == width and im.height == height):
         res = im.copy()
     elif resize_mode == 1:
         res = resize(im, width, height)
