@@ -164,12 +164,11 @@ document.addEventListener('keydown', function(e) {
 
     if (isEsc) {
         const globalPopup = document.querySelector('.global-popup');
-        if (!globalPopup || globalPopup.style.display === "none") {
+        const lightboxModal = document.querySelector('#lightboxModal');
+        if (!globalPopup || globalPopup.style.display === 'none') {
+            if (document.activeElement === lightboxModal) return;
             interruptButton.click();
             e.preventDefault();
-        } else {
-            if (!globalPopup) return;
-            globalPopup.style.display = "none";
         }
     }
 });
