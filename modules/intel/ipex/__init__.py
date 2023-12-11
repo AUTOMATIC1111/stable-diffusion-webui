@@ -166,11 +166,6 @@ def ipex_init(): # pylint: disable=too-many-statements
         ipex_hijacks()
         if not torch.xpu.has_fp64_dtype():
             try:
-                from .attention import attention_init
-                attention_init()
-            except Exception: # pylint: disable=broad-exception-caught
-                pass
-            try:
                 from .diffusers import ipex_diffusers
                 ipex_diffusers()
             except Exception: # pylint: disable=broad-exception-caught

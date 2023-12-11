@@ -93,6 +93,31 @@ def linalg_solve(A, B, *args, **kwargs): # pylint: disable=invalid-name
     else:
         return original_linalg_solve(A, B, *args, **kwargs)
 
+if torch.xpu.has_fp64_dtype():
+    original_torch_bmm = torch.bmm
+    original_scaled_dot_product_attention = torch.nn.functional.scaled_dot_product_attention
+else:
+    # 64 bit attention workarounds for Alchemist:
+    try:
+        from .attention import torch_bmm_32_bit as original_torch_bmm
+        from .attention import scaled_dot_product_attention_32_bit as original_scaled_dot_product_attention
+    except Exception: # pylint: disable=broad-exception-caught
+        original_torch_bmm = torch.bmm
+        original_scaled_dot_product_attention = torch.nn.functional.scaled_dot_product_attention
+
+# dtype errors:
+def torch_bmm(input, mat2, *, out=None):
+    if input.dtype != mat2.dtype:
+        mat2 = mat2.to(input.dtype)
+    return original_torch_bmm(input, mat2, out=out)
+
+def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.0, is_causal=False):
+    if query.dtype != key.dtype:
+        key = key.to(dtype=query.dtype)
+    if query.dtype != value.dtype:
+        value = value.to(dtype=query.dtype)
+    return original_scaled_dot_product_attention(query, key, value, attn_mask=attn_mask, dropout_p=dropout_p, is_causal=is_causal)
+
 @property
 def is_cuda(self):
     return self.device.type == 'xpu'
@@ -184,11 +209,16 @@ def ipex_hijacks():
         lambda orig_func, *args, **kwargs: True)
 
     # Functions that make compile mad with CondFunc:
-    torch.utils.data.dataloader._MultiProcessingDataLoaderIter._shutdown_workers = _shutdown_workers
     torch.nn.DataParallel = DummyDataParallel
+    torch.utils.data.dataloader._MultiProcessingDataLoaderIter._shutdown_workers = _shutdown_workers
+
     torch.autocast = ipex_autocast
-    torch.cat = torch_cat
-    torch.linalg.solve = linalg_solve
-    torch.UntypedStorage.is_cuda = is_cuda
-    torch.nn.functional.interpolate = interpolate
     torch.backends.cuda.sdp_kernel = return_null_context
+    torch.UntypedStorage.is_cuda = is_cuda
+
+    torch.nn.functional.interpolate = interpolate
+    torch.linalg.solve = linalg_solve
+
+    torch.bmm = torch_bmm
+    torch.cat = torch_cat
+    torch.nn.functional.scaled_dot_product_attention = scaled_dot_product_attention
