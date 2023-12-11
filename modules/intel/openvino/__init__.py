@@ -102,12 +102,6 @@ def get_openvino_device():
     except Exception:
         return f"OpenVINO {get_device()}"
 
-def cache_root_path():
-    cache_root = "./cache/"
-    if os.getenv("OPENVINO_TORCH_CACHE_DIR") is not None:
-        cache_root = os.getenv("OPENVINO_TORCH_CACHE_DIR")
-    return cache_root
-
 def cached_model_name(model_hash_str, device, args, cache_root, reversed = False):
     if model_hash_str is None:
         return None
@@ -181,7 +175,7 @@ def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_na
     core = Core()
 
     device = get_device()
-    cache_root = cache_root_path()
+    cache_root = shared.opts.openvino_cache_path
 
     if file_name is not None and os.path.isfile(file_name + ".xml") and os.path.isfile(file_name + ".bin"):
         om = core.read_model(file_name + ".xml")
@@ -256,7 +250,7 @@ def openvino_compile_cached_model(cached_model_path, *example_inputs):
         om.inputs[idx].get_node().set_partial_shape(PartialShape(list(input_data.shape)))
     om.validate_nodes_and_infer_types()
 
-    core.set_property({'CACHE_DIR': cache_root_path() + '/blob'})
+    core.set_property({'CACHE_DIR': shared.opts.openvino_cache_path + '/blob'})
 
     compiled_model = core.compile_model(om, get_device())
 
@@ -351,7 +345,7 @@ def openvino_fx(subgraph, example_inputs):
         # Check if the model was fully supported and already cached
         example_inputs.reverse()
         inputs_reversed = True
-        maybe_fs_cached_name = cached_model_name(model_hash_str + "_fs", get_device(), example_inputs, cache_root_path())
+        maybe_fs_cached_name = cached_model_name(model_hash_str + "_fs", get_device(), example_inputs, shared.opts.openvino_cache_path)
 
         if os.path.isfile(maybe_fs_cached_name + ".xml") and os.path.isfile(maybe_fs_cached_name + ".bin"):
             if (shared.compiled_model_state.cn_model != [] and str(shared.compiled_model_state.cn_model) in maybe_fs_cached_name):

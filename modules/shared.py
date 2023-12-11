@@ -396,6 +396,7 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "clip_models_path": OptionInfo(os.path.join(paths.models_path, 'CLIP'), "Folder with CLIP models", folder=True),
 
     "other_paths_sep_options": OptionInfo("<h2>Other paths</h2>", "", gr.HTML),
+    "openvino_cache_path": OptionInfo('cache', "Directory for OpenVINO cache", folder=True),
     "temp_dir": OptionInfo("", "Directory for temporary images; leave empty for default", folder=True),
     "clean_temp_dir_at_start": OptionInfo(True, "Cleanup non-default temporary directory when starting webui"),
 }))
