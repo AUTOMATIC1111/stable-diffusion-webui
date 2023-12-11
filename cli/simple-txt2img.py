@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 import io
 import os
-import sys
+import time
 import base64
 import logging
+import argparse
 import requests
 import urllib3
 from PIL import Image
@@ -17,18 +18,7 @@ log = logging.getLogger(__name__)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 filename='/tmp/simple-txt2img.jpg'
-model = None # desired model name, will be set if not none
 options = {
-    "prompt": "city at night",
-    "negative_prompt": "foggy, blurry",
-    "steps": 20,
-    "batch_size": 1,
-    "n_iter": 1,
-    "seed": -1,
-    "sampler_name": "UniPC",
-    "cfg_scale": 6,
-    "width": 512,
-    "height": 512,
     "save_images": False,
     "send_images": True,
 }
@@ -48,25 +38,41 @@ def post(endpoint: str, dct: dict = None):
         return req.json()
 
 
-def generate(num: int = 0):
-    log.info(f'sending generate request: {num+1} {options}')
-    if model is not None:
-        post('/sdapi/v1/options', { 'sd_model_checkpoint': model })
+def generate(args): # pylint: disable=redefined-outer-name
+    t0 = time.time()
+    if args.model is not None:
+        post('/sdapi/v1/options', { 'sd_model_checkpoint': args.model })
         post('/sdapi/v1/reload-checkpoint') # needed if running in api-only to trigger new model load
+    options['prompt'] = args.prompt
+    options['negative_prompt'] = args.negative
+    options['steps'] = int(args.steps)
+    options['seed'] = int(args.seed)
+    options['sampler_name'] = args.sampler
+    options['width'] = int(args.width)
+    options['height'] = int(args.height)
     data = post('/sdapi/v1/txt2img', options)
+    t1 = time.time()
     if 'images' in data:
         for i in range(len(data['images'])):
             b64 = data['images'][i].split(',',1)[0]
             image = Image.open(io.BytesIO(base64.b64decode(b64)))
+            info = data['info']
             image.save(filename)
-            log.info(f'received image: size={image.size} file={filename}')
+            log.info(f'received image: size={image.size} file={filename} time={t1-t0:.2f} info="{info}"')
     else:
         log.warning(f'no images received: {data}')
 
 
 if __name__ == "__main__":
-    sys.argv.pop(0)
-    repeats = int(''.join(sys.argv) or '1')
-    log.info(f'repeats: {repeats}')
-    for n in range(repeats):
-        generate(n)
+    parser = argparse.ArgumentParser(description = 'simple-txt2img')
+    parser.add_argument('--prompt', required=False, default='', help='prompt text')
+    parser.add_argument('--negative', required=False, default='', help='negative prompt text')
+    parser.add_argument('--width', required=False, default=512, help='image width')
+    parser.add_argument('--height', required=False, default=512, help='image height')
+    parser.add_argument('--steps', required=False, default=20, help='number of steps')
+    parser.add_argument('--seed', required=False, default=-1, help='initial seed')
+    parser.add_argument('--sampler', required=False, default='Euler a', help='sampler name')
+    parser.add_argument('--model', required=False, help='model name')
+    args = parser.parse_args()
+    log.info(f'txt2img: {args}')
+    generate(args)

@@ -423,7 +423,7 @@ class Processed:
             "styles": self.styles,
             "job_timestamp": self.job_timestamp,
             "clip_skip": self.clip_skip,
-            "is_using_inpainting_conditioning": self.is_using_inpainting_conditioning,
+            # "is_using_inpainting_conditioning": self.is_using_inpainting_conditioning,
         }
         return json.dumps(obj)
 
@@ -753,12 +753,8 @@ def validate_sample(tensor):
         return tensor
     if tensor.dtype == torch.bfloat16: # numpy does not support bf16
         tensor = tensor.to(torch.float16)
-    if shared.backend == shared.Backend.ORIGINAL:
-        sample = 255.0 * np.moveaxis(tensor.cpu().numpy(), 0, 2)
-    else:
-        sample = 255.0 * tensor
-    if isinstance(tensor, torch.Tensor) and hasattr(tensor, 'detach'):
-        sample = sample.detach().cpu().numpy()
+    sample = tensor.detach().cpu().numpy() if isinstance(tensor, torch.Tensor) and hasattr(tensor, 'detach') else tensor.cpu().numpy()
+    sample = 255.0 * np.moveaxis(sample, 0, 2) if shared.backend == shared.Backend.ORIGINAL else 255.0 * sample
     with warnings.catch_warnings(record=True) as w:
         cast = sample.astype(np.uint8)
     if len(w) > 0:
