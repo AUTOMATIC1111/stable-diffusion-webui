@@ -42,6 +42,7 @@
   - improve handling of long filenames and filenames during batch processing  
   - do not set preview samples when using via api  
   - avoid unnecessary resizes in img2img and inpaint  
+  - updated `cli/simple-txt2img.py` and `cli/simple-img2img.py` scripts  
   - update built-in log monitor in ui, thanks @midcoastal  
 
 ## Update for 2023-12-04

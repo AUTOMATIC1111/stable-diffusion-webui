@@ -757,7 +757,13 @@ def validate_sample(tensor):
         return tensor
     if tensor.dtype == torch.bfloat16: # numpy does not support bf16
         tensor = tensor.to(torch.float16)
-    sample = tensor.detach().cpu().numpy() if isinstance(tensor, torch.Tensor) and hasattr(tensor, 'detach') else tensor.cpu().numpy()
+    print('HERE', isinstance(tensor, np.ndarray), isinstance(tensor, torch.Tensor))
+    if isinstance(tensor, torch.Tensor) and hasattr(tensor, 'detach'):
+        sample = tensor.detach().cpu().numpy()
+    elif isinstance(tensor, np.ndarray):
+        sample = tensor
+    else:
+        shared.log.warning(f'Unknown sample type: {type(tensor)}')   
     sample = 255.0 * np.moveaxis(sample, 0, 2) if shared.backend == shared.Backend.ORIGINAL else 255.0 * sample
     with warnings.catch_warnings(record=True) as w:
         cast = sample.astype(np.uint8)
