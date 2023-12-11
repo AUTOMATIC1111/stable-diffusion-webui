@@ -93,6 +93,7 @@ class ADetailerFormatter(AlwaysonScriptArgsFormatter):
                     'ad_prompt': obj.get('ad_prompt') or "",
                     'ad_model': obj.get('ad_model') or 'None',  # 'mediapipe_face_full'
                 }
+                d['ad_confidence'] = max(0.1, d['ad_confidence'])
 
                 return [d]
             return [obj]
