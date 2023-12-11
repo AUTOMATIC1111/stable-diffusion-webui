@@ -9,11 +9,9 @@ import hashlib
 import os
 import cv2
 import psutil
-import numpy as np
-from PIL import Image
 from enum import IntEnum
 from loguru import logger
-from worker.task_recv import Tmp
+from tools import TempDir as Tmp
 from datetime import datetime
 from insightface.app import FaceAnalysis
 from tools.environment import S3Tmp, S3SDWEB

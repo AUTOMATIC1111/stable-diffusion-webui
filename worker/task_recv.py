@@ -44,7 +44,6 @@ TrainTaskQueueToken = 'train'
 UpscaleCoeff = 100 * 1000
 TaskScoreRange = (0, 100 * UpscaleCoeff)
 TaskTimeout = 20 * 3600 if not cmd_opts.train_only else 48 * 3600
-Tmp = 'tmp'
 SDWorkerZset = 'sd-workers'
 ElasticResWorkerFlag = "[ElasticRes]"
 TrainOnlyWorkerFlag = "[TrainOnly]"
@@ -68,23 +67,6 @@ def find_files_from_dir(directory, *args):
                 yield f
             yield full_path
 
-
-def clean_tmp(expired_days=1):
-    if os.path.isdir(Tmp):
-        now = time.time()
-        files = [x for x in os.listdir(Tmp)]
-        for fn in files:
-            if not os.path.isfile(fn):
-                continue
-            mtime = os.path.getmtime(fn)
-            if now > mtime + expired_days * 24 * 3600:
-                try:
-                    if os.path.isdir(fn):
-                        shutil.rmtree(fn)
-                    else:
-                        os.remove(fn)
-                except Exception:
-                    logger.exception('cannot remove file!!')
 
 
 class TaskReceiverState(enum.Enum):
@@ -243,12 +225,6 @@ class TaskReceiver:
             'exec_train_task': exec_train,
             'model_hash_list': model_hash_list,
         }
-
-    def _clean_tmp_files(self):
-        now = time.time()
-        if now - self.clean_tmp_time > 3600:
-            self.clean_tmp_time = now
-            clean_tmp()
 
     def _loaded_models(self):
         if self.model_recoder:
@@ -585,7 +561,6 @@ class TaskReceiver:
 
                 wait = sleep_time - time.time() + st
                 if wait > 0:
-                    self._clean_tmp_files()
                     time.sleep(wait)
                 self.register_worker()
                 self.write_worker_state()

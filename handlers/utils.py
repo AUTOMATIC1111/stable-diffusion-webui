@@ -15,7 +15,7 @@ import dlib
 from PIL import Image
 from loguru import logger
 from datetime import datetime
-from worker.task_recv import Tmp
+from tools import TempDir as Tmp
 from PIL.PngImagePlugin import PngInfo
 from tools.wrapper import FuncExecTimeWrapper
 from modules.shared import cmd_opts

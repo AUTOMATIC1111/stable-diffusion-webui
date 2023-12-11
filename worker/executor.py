@@ -12,6 +12,7 @@ import time
 import typing
 from queue import Queue
 from loguru import logger
+from tools import safety_clean_tmp
 from worker.task import Task, TaskProgress
 from modules.shared import mem_mon as vram_mon
 from worker.handler import TaskHandler
@@ -147,6 +148,7 @@ class TaskExecutor(Thread):
                         for task in self.receiver.task_iter():
                             if random.randint(1, 10) < 3:
                                 # 释放磁盘空间
+                                safety_clean_tmp()
                                 self._clean_disk()
                             logger.info(f"====>>> preload task:{task.id}")
                             self.queue.put(task)
@@ -186,7 +188,7 @@ class TaskExecutor(Thread):
 
         return now - task.create_at > self.timeout
 
-    def _clean_disk(self, expire_days=14):
+    def _clean_disk(self, expire_days=7):
         # 根据mtime
         if os.getenv(Env_DontCleanModels, "0") == "1":
             logger.info("dont clean models...")
