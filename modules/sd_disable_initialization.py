@@ -105,7 +105,7 @@ class DisableInitialization(ReplaceHelper):
                 if other_revision_snapshots_dirs:
                     for other_revision_snapshots_dir in other_revision_snapshots_dirs:
                         print(f"search {filename} in {other_revision_snapshots_dir}")
-                        cached_file = os.path.join(other_revision_snapshots_dir, filename)
+                        cached_file = os.path.join(snapshots_dir, other_revision_snapshots_dir, filename)
                         if os.path.isfile(cached_file):
                             return cached_file
 
