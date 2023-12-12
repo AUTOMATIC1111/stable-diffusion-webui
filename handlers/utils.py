@@ -7,6 +7,7 @@
 # @Software: Hifive
 import io
 import os
+import time
 import typing
 import uuid
 import hashlib
@@ -344,7 +345,18 @@ def load_sd_model_weights(filename, sha256=None):
     if filename:
         os.popen(f'touch {filename}')
         checkpoint = CheckpointInfo(filename, sha256)
-        return reload_model_weights(info=checkpoint)
+        for i in range(3):
+            try:
+                res = reload_model_weights(info=checkpoint)
+            except RuntimeError:
+                if (i < 2):
+                    delay = 5 * (i + 1)
+                    time.sleep(delay)
+                    logger.warning(f"cannot reload model, retry after {delay} sec...")
+                else:
+                    raise
+            else:
+                return res
 
 
 def close_pil(image: Image):
@@ -381,8 +393,8 @@ def save_processed_images(proc: Processed,
     out_image = ImageOutput(OutImageType.Image, output_dir)
     out_script_image = ImageOutput(OutImageType.Script, script_dir)
     faces = {}
-
     size = ''
+
     for n, processed_image in enumerate(proc.images):
         ex = '.png'
 
@@ -390,6 +402,11 @@ def save_processed_images(proc: Processed,
             saved_as = getattr(processed_image, 'already_saved_as')
             if saved_as:
                 _, ex = os.path.splitext(saved_as)
+        elif isinstance(processed_image, str):
+            if not os.path.isfile(processed_image):
+                raise OSError(f'cannot found processed image:{processed_image}')
+            out_image.add_image(processed_image)
+            continue
 
         if n < proc.index_of_first_image:
             filename = f"{task_id}{ex}"

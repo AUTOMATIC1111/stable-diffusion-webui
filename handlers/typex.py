@@ -122,17 +122,21 @@ class ImageOutput:
         local_low_images, compress_images = [], []
         for image_path in self.local_files:
             filename = os.path.basename(image_path)
+            _, ex = os.path.splitext(filename)
+            # 不转GIF
+            if ex.lower() == ".gif":
+                continue
             low_file = os.path.join(self.output_dir, 'low-' + filename)
             if not os.path.isfile(low_file):
                 compress_images.append((image_path, low_file))
                 # compress_image(image_path, low_file)
             local_low_images.append(low_file)
-
-        worker = MultiThreadWorker(compress_images, compress_image, 4)
-        worker.run()
-        for image_path in local_low_images:
-            if not image_path:
-                raise OSError(f'cannot found low image:{image_path}')
+        if compress_images:
+            worker = MultiThreadWorker(compress_images, compress_image, 4)
+            worker.run()
+            for image_path in local_low_images:
+                if not image_path:
+                    raise OSError(f'cannot found low image:{image_path}')
 
         return local_low_images
 

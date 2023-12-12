@@ -1,5 +1,4 @@
 import os.path
-import time
 
 import ldm.modules.encoders.modules
 import open_clip
@@ -258,19 +257,8 @@ class LoadStateDictOnMeta(ReplaceHelper):
 
             if state_dict == sd:
                 state_dict = {k: v.to(device="meta", dtype=v.dtype) for k, v in state_dict.items()}
-            # 这里首次启动可能会报错
-            for i in range(3):
-                try:
-                    original(module, state_dict, strict=strict)
-                except RuntimeError:
-                    if i >= 2:
-                        raise
 
-                    time.sleep(5)
-                    print("cannot load state_dict, retry...")
-                    continue
-                else:
-                    break
+            original(module, state_dict, strict=strict)
 
         module_load_state_dict = self.replace(torch.nn.Module, 'load_state_dict', lambda *args, **kwargs: load_state_dict(module_load_state_dict, *args, **kwargs))
         module_load_from_state_dict = self.replace(torch.nn.Module, '_load_from_state_dict', lambda *args, **kwargs: load_from_state_dict(module_load_from_state_dict, *args, **kwargs))
