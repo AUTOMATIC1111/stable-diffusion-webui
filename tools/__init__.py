@@ -30,8 +30,8 @@ def safety_clean_tmp(exp=3600):
         now = time.time()
         for f in files:
             full_path = os.path.join(TempDir, f)
-            mtime = os.path.getmtime(full_path)
-            if exp > 0 and mtime + exp > now:
+            ctime = os.path.getctime(full_path)
+            if exp > 0 and ctime + exp > now:
                 continue
 
             try:

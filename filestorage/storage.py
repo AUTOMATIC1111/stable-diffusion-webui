@@ -207,8 +207,8 @@ class FileStorage:
                         raise OSError(f"cannot download {keyname}: get file lock timeout")
 
                     if os.path.isfile(local_path):
-                        mtime = os.path.getmtime(local_path)
-                        delay = int(time.time() - mtime + 6)
+                        atime = os.path.getatime(local_path)
+                        delay = int(time.time() - atime + 6)
                         if delay > 0:
                             time.sleep(delay)
                             logger.debug(f"acquire file locker:{lock_path}, local file existed, sleep {delay} sec")
@@ -245,8 +245,8 @@ class FileStorage:
                     if ex != ".lock":
                         continue
                     try:
-                        mtime = os.path.getmtime(full_path)
-                        if time.time() - mtime > 3600*8:
+                        ctime = os.path.getctime(full_path)
+                        if time.time() - ctime > 3600*8:
                             os.remove(full_path)
                     except:
                         continue

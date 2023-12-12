@@ -42,7 +42,7 @@ def find_files_from_dir(directory, *args):
 
 def release_disk_with_free_mb(folder: str, expect: float):
     files = find_files_from_dir(folder)
-    sorted_files = sorted(files, key=lambda x: os.path.getmtime(x))
+    sorted_files = sorted(files, key=lambda x: os.path.getctime(x))
     free = get_free_space_mb('/')
     for i, f in enumerate(sorted_files):
         if free > expect:

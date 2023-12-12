@@ -203,10 +203,10 @@ class TaskExecutor(Thread):
                 full = os.path.join(dir, f)
                 if os.path.isfile(full):
                     try:
-                        mtime = os.path.getmtime(full)
-                        if now - mtime < interval:
+                        atime = os.path.getatime(full)
+                        if now - atime < interval:
                             continue
-                        logger.warning(f'[WARN] file:{full}, mtime expired!!!!')
+                        logger.warning(f'[WARN] file:{full}, atime expired!!!!')
                         os.remove(full)
                     except:
                         logger.exception(f'cannot remove file:{full}')
