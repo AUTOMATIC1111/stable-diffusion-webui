@@ -18,6 +18,9 @@ folder = '📂'
 random = '🎲️'
 reuse = '♻️'
 info = 'ℹ' # noqa
+reset = '🔄'
+upload = '⬆️'
+preview = '🔍'
 """
 refresh = '🔄'
 close = '🛗'

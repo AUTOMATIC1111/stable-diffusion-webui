@@ -51,7 +51,7 @@ input[type=range]::-moz-range-thumb { box-shadow: 2px 2px 3px #111111 !important
 ::-webkit-scrollbar { width: 12px; }
 ::-webkit-scrollbar-track { background: #333333; }
 ::-webkit-scrollbar-thumb { background-color: var(--highlight-color); border-radius: var(--radius-lg); border-width: 0; box-shadow: 2px 2px 3px #111111; }
-div.form { border-width: 0; box-shadow: none; background: transparent; overflow: visible; margin-bottom: 6px; }
+div.form { border-width: 0; box-shadow: none; background: transparent; overflow: visible; }
 
 /* gradio style classes */
 fieldset .gr-block.gr-box, label.block span { padding: 0; margin-top: -4px; }
@@ -78,7 +78,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .px-4 { padding-lefT: 1rem; padding-right: 1rem; }
 .py-6 { padding-bottom: 0; }
 .tabs { background-color: var(--background-color); }
-.block.token-counter span { background-color: var(--input-background-fill) !important; box-shadow: 2px 2px 2px #111; border: none !important; font-size: 0.8rem; }
+.block.token-counter span { background-color: var(--input-background-fill) !important; box-shadow: 2px 2px 2px #111; border: none !important; font-size: 0.7rem; }
 .tab-nav { zoom: 120%; margin-top: 10px; margin-bottom: 10px; border-bottom: 2px solid var(--highlight-color) !important; padding-bottom: 2px; }
 .label-wrap { margin: 8px 0px 4px 0px; }
 .gradio-button.tool { border: none; background: none; box-shadow: none; filter: hue-rotate(340deg) saturate(0.5); }

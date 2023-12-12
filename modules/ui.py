@@ -44,6 +44,8 @@ folder_symbol = symbols.folder
 extra_networks_symbol = symbols.networks
 apply_style_symbol = symbols.apply
 save_style_symbol = symbols.save
+txt2img_paste_fields = []
+img2img_paste_fields = []
 
 
 if not cmd_opts.share and not cmd_opts.listen:
@@ -234,8 +236,9 @@ def update_token_counter(text, steps):
     return f"<span class='gr-box gr-text-input'>{token_count}/{max_length}</span>"
 
 
-def create_toprow(is_img2img):
-    id_part = "img2img" if is_img2img else "txt2img"
+def create_toprow(is_img2img: bool = False, id_part: str = None):
+    if id_part is None:
+        id_part = "img2img" if is_img2img else "txt2img"
     with gr.Row(elem_id=f"{id_part}_toprow", variant="compact"):
         with gr.Column(elem_id=f"{id_part}_prompt_container", scale=6):
             with gr.Row():
@@ -525,6 +528,7 @@ def create_ui(startup_timer = None):
             batch_switch_btn.click(lambda w, h: (h, w), inputs=[batch_count, batch_size], outputs=[batch_count, batch_size], show_progress=False)
             txt_prompt_img.change(fn=modules.images.image_data, inputs=[txt_prompt_img], outputs=[txt2img_prompt, txt_prompt_img])
 
+            global txt2img_paste_fields # pylint: disable=global-statement
             txt2img_paste_fields = [
                 # prompt
                 (txt2img_prompt, "Prompt"),
@@ -857,6 +861,7 @@ def create_ui(startup_timer = None):
             negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[img2img_negative_prompt, steps], outputs=[negative_token_counter])
 
             ui_extra_networks.setup_ui(extra_networks_ui_img2img, img2img_gallery)
+            global img2img_paste_fields # pylint: disable=global-statement
             img2img_paste_fields = [
                 # prompt
                 (img2img_prompt, "Prompt"),

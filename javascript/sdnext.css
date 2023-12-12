@@ -62,7 +62,7 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 .theme-preview { display: none; position: fixed; border: var(--spacing-sm) solid var(--neutral-600); box-shadow: 2px 2px 2px 2px var(--neutral-700); top: 0; bottom: 0; left: 0; right: 0; margin: auto; max-width: 75vw; z-index: 999; }
 
 /* txt2img/img2img specific */
-.block.token-counter{ position: absolute; display: inline-block; right: 0; min-width: 0 !important; width: auto; z-index: 100; top: -0.75em; }
+.block.token-counter{ position: absolute; display: inline-block; right: 1em; min-width: 0 !important; width: auto; z-index: 100; top: -0.5em; }
 .block.token-counter span{ background: var(--input-background-fill) !important; box-shadow: 0 0 0.0 0.3em rgba(192,192,192,0.15), inset 0 0 0.6em rgba(192,192,192,0.075); border: 2px solid rgba(192,192,192,0.4) !important; }
 .block.token-counter.error span{ box-shadow: 0 0 0.0 0.3em rgba(255,0,0,0.15), inset 0 0 0.6em rgba(255,0,0,0.075); border: 2px solid rgba(255,0,0,0.4) !important; }
 .block.token-counter div{ display: inline; }
@@ -74,7 +74,7 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 #txt2img_footer, #img2img_footer, #extras_footer { height: fit-content; }
 #txt2img_footer, #img2img_footer { height: fit-content; display: none; }
 #txt2img_generate_box, #img2img_generate_box { gap: 0.5em; flex-wrap: wrap-reverse; height: fit-content; }
-#txt2img_actions_column, #img2img_actions_column { gap: 0.5em; height: fit-content; }
+#txt2img_actions_column, #img2img_actions_column { gap: 0.3em; height: fit-content; }
 #txt2img_generate_box > button, #img2img_generate_box > button, #txt2img_enqueue, #img2img_enqueue { min-height: 42px; max-height: 42px; line-height: 1em; }
 #txt2img_generate_line2, #img2img_generate_line2, #txt2img_tools, #img2img_tools { display: flex; }
 #txt2img_generate_line2 > button, #img2img_generate_line2 > button, #extras_generate_box > button, #txt2img_tools > button, #img2img_tools > button { height: 2em; line-height: 0; font-size: var(--input-text-size);
@@ -251,6 +251,12 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .nvml { position: fixed; bottom: 10px; right: 10px; background: var(--background-fill-primary); border: 1px solid var(--button-primary-border-color); padding: 6px; color: var(--button-primary-text-color);
   font-size: 0.7em; z-index: 50; font-family: monospace; display: none; }
 
+/* control */
+.control-button { min-height: 42px; max-height: 42px; line-height: 1em; }
+.control-tabs > .tab-nav { margin-bottom: 0; margin-top: 0; }
+.processor-settings { padding: 0 !important; max-width: 300px; }
+.processor-group > div { flex-flow: wrap;gap: 1em; }
+
 /* loader */
 .splash { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1000; display: block; text-align: center; }
 .motd { margin-top: 2em; color: var(--body-text-color-subdued); font-family: monospace; font-variant: all-petite-caps; }
@@ -280,76 +286,40 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
   --spacing-xxl: 6px; 
 }
 
-/* Apply different styles for devices with coarse pointers dependant on screen resolution */
-@media (hover: none) and (pointer: coarse) {
-  
-  /* Do not affect displays larger than 1024px wide.  */
-  @media (max-width: 1024px) {
-  
-    /* Screens smaller than 400px wide */
-    @media (max-width: 399px) {
+@media (hover: none) and (pointer: coarse) { /* Apply different styles for devices with coarse pointers dependant on screen resolution */
+  @media (max-width: 1024px) { /* Do not affect displays larger than 1024px wide.  */
+    @media (max-width: 399px) { /* Screens smaller than 400px wide */
       :root, .light, .dark { --left-column: 100%; }
-      
-      /* maintain single column for from image operations on larger mobile devices */
-      #txt2img_results, #img2img_results, #extras_results { min-width: calc(min(320px, 100%)) !important;}
+      #txt2img_results, #img2img_results, #extras_results { min-width: calc(min(320px, 100%)) !important;} /* maintain single column for from image operations on larger mobile devices */
       #txt2img_footer p { text-wrap: wrap; }
-
-    }
-    
-    /* Screens larger than 400px wide */
-    @media (min-width: 400px) {
+    }  
+    @media (min-width: 400px) { /* Screens larger than 400px wide */
       :root, .light, .dark {--left-column: 50%;}
-      
-      /* maintain side by side split on larger mobile displays for from text */
-      #txt2img_results, #extras_results, #txt2img_footer p {text-wrap: wrap; max-width: 100% !important; }
+      #txt2img_results, #extras_results, #txt2im g_footer p {text-wrap: wrap; max-width: 100% !important; } /* maintain side by side split on larger mobile displays for from text */
     }
-    
     #scripts_alwayson_txt2img div, #scripts_alwayson_img2img div { max-width: 100%; }
     #txt2img_prompt_container, #img2img_prompt_container { resize:vertical !important; }
-
-    /* make generate and enqueue buttons take up the entire width of their rows. */
-    #txt2img_generate_box, #txt2img_enqueue_wrapper { min-width: 100% !important;}
-
-    /*make interrogate buttons take up appropriate space. */
-    #img2img_toprow > div.gradio-column {flex-grow: 1 !important;}
+    #txt2img_generate_box, #txt2img_enqueue_wrapper { min-width: 100% !important;} /* make generate and enqueue buttons take up the entire width of their rows. */
+    #img2img_toprow > div.gradio-column {flex-grow: 1 !important;} /*make interrogate buttons take up appropriate space. */
     #img2img_actions_column {display: flex; min-width: fit-content !important; flex-direction: row;justify-content: space-evenly; align-items: center;}
     #txt2img_generate_box, #img2img_generate_box, #txt2img_enqueue_wrapper,#img2img_enqueue_wrapper {display: flex;flex-direction: column;height: 4em !important;align-items: stretch;justify-content: space-evenly;}
-
-    /* maintain single column for from image operations on larger mobile devices */
-    #img2img_interface, #img2img_results, #img2img_footer p {text-wrap: wrap; min-width: 100% !important; max-width: 100% !important;}
-    /* fix inpaint image display being too large for mobile displays */
-    #img2img_sketch, #img2maskimg, #inpaint_sketch {display: flex; alignment-baseline:after-edge !important; overflow: auto !important; resize: none !important; }
+    #img2img_interface, #img2img_results, #img2img_footer p {text-wrap: wrap; min-width: 100% !important; max-width: 100% !important;} /* maintain single column for from image operations on larger mobile devices */
+    #img2img_sketch, #img2maskimg, #inpaint_sketch {display: flex; alignment-baseline:after-edge !important; overflow: auto !important; resize: none !important; } /* fix inpaint image display being too large for mobile displays */
     #img2maskimg canvas { width: auto !important; max-height: 100% !important; height: auto !important; }
-
-    /* fix from text/image UI elements to prevent them from moving around within the UI */
-    #txt2img_sampler, #txt2img_batch, #txt2img_seed_group, #txt2img_advanced, #txt2img_second_pass, #img2img_sampling_group, #img2img_resize_group, #img2img_batch_group, #img2img_seed_group, #img2img_denoise_group, #img2img_advanced_group { width: 100% !important; }
+    #txt2img_sampler, #txt2img_batch, #txt2img_seed_group, #txt2img_advanced, #txt2img_second_pass, #img2img_sampling_group, #img2img_resize_group, #img2img_batch_group, #img2img_seed_group, #img2img_denoise_group, #img2img_advanced_group { width: 100% !important; } /* fix from text/image UI elements to prevent them from moving around within the UI */
     #img2img_resize_group .gradio-radio > div { display: flex; flex-direction: column; width: unset !important; }
     #inpaint_controls div {display:flex;flex-direction: row;}
     #inpaint_controls .gradio-radio > div { display: flex; flex-direction: column !important; }
-
-    /* move image preview/output on models page to bottom of page */
-    #models_tab { flex-direction: column-reverse !important; }
-    /* fix settings for agent scheduler */
-    #enqueue_keyboard_shortcut_modifiers, #enqueue_keyboard_shortcut_key div { max-width: 40% !important;}
-    
-    /* adjust width of certain settings item to allow aligning as row, but not have it go off the screen */
-    #settings { display: flex; flex-direction: row; flex-wrap: wrap; max-width: 100% !important; }
+    #models_tab { flex-direction: column-reverse !important; } /* move image preview/output on models page to bottom of page */
+    #enqueue_keyboard_shortcut_modifiers, #enqueue_keyboard_shortcut_key div { max-width: 40% !important;} /* fix settings for agent scheduler */
+    #settings { display: flex; flex-direction: row; flex-wrap: wrap; max-width: 100% !important; } /* adjust width of certain settings item to allow aligning as row, but not have it go off the screen */
     #settings div.tab-content > div > div > div { max-width: 80% !important;}
     #settings div .gradio-radio { width: unset !important; }
-    
-    /* enable scrolling on extensions tab */
-    #tab_extensions table { border-collapse: collapse; display: block; overflow-x:auto !important;}
-    
-    /* increase scrollbar size to make it finger friendly */
-    ::-webkit-scrollbar { width: 25px !important; height:25px; }
-    
-    /* adjust dropdown size to make them easier to select individual items on mobile. */
-    .gradio-dropdown ul.options {max-height: 41vh !important; }
+    #tab_extensions table { border-collapse: collapse; display: block; overflow-x:auto !important;} /* enable scrolling on extensions tab */
+    ::-webkit-scrollbar { width: 25px !important; height:25px; } /* increase scrollbar size to make it finger friendly */
+    .gradio-dropdown ul.options {max-height: 41vh !important; } /* adjust dropdown size to make them easier to select individual items on mobile. */
     .gradio-dropdown ul.options li.item {height: 40px !important; display: flex; align-items: center;}
-
-    /* adjust slider input fields as they were too large for mobile devices. */
-    .gradio-slider input[type="number"] { width: 4em; font-size: 0.8rem; height: 16px; text-align: center; }
+    .gradio-slider input[type="number"] { width: 4em; font-size: 0.8rem; height: 16px; text-align: center; } /* adjust slider input fields as they were too large for mobile devices. */
     #txt2img_settings .block .padded:not(.gradio-accordion) {padding: 0 !important;margin-right: 0; min-width: 100% !important; width:100% !important;}
-  }  
-    
+  }    
 }
