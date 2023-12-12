@@ -34,7 +34,7 @@ img2img = False
 # some pipelines may not support this, in which case set to false and pipeline will implicitly do things like vae encode/decode on its own
 latent = True
 
-# class from which this pipeline is derived, most commonly 'StableDiffusionPipeline' or 'StableDiffusionXLPipeline'
+# base pipeline class from which this pipeline is derived, most commonly 'StableDiffusionPipeline' or 'StableDiffusionXLPipeline'
 pipeline_base = 'StableDiffusionPipeline'
 
 # class definition for this pipeline

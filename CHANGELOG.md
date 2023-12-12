@@ -21,6 +21,8 @@
   - **Schedulers**
     - add timesteps range, changing it will make scheduler to be over-complete or under-complete  
     - add rescale betas with zero SNR option (applicable to Euler and DDIM, allows for higher dynamic range)  
+  - **Custom Pipelines** contribute by adding your own custom pipelines!
+    - for details, see fully documented example: <https://github.com/vladmandic/automatic/blob/dev/scripts/example.py>
 - **General**  
   - **Process** create videos from batch or folder processing  
       supports *GIF*, *PNG* and *MP4* with full interpolation, scene change detection, etc.  
