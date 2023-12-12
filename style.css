@@ -749,6 +749,22 @@ table.popup-table .link{
     display: none;
 }
 
+@media (pointer: fine) {
+    .modalPrev:hover,
+    .modalNext:hover,
+    .modalControls:hover ~ .modalPrev,
+    .modalControls:hover ~ .modalNext,
+    .modalControls:hover .cursor {
+        opacity: 1;
+    }
+
+    .modalPrev,
+    .modalNext,
+    .modalControls .cursor {
+        opacity: 0;
+    }
+}
+
 /* context menu (ie for the generate button) */
 
 #context-menu{
