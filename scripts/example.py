@@ -3,6 +3,14 @@ from diffusers.pipelines import StableDiffusionPipeline, StableDiffusionXLPipeli
 from modules import shared, scripts, processing, sd_models
 
 """
+This is a simpler template for script for SD.Next that implements a custom pipeline
+Items that can be added:
+- Any pipeline already in diffusers
+  List of pipelines that can be directly used: <https://github.com/huggingface/diffusers/tree/main/src/diffusers/pipelines>
+- Any pipeline for which diffusers definiotion exists and can be copied
+  List of pipelines with community definitions: <https://github.com/huggingface/diffusers/tree/main/examples/community>
+- Any custom pipeline that you create
+
 Author::
 - Your details
 
