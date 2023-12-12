@@ -1267,12 +1267,6 @@ class Script(scripts.Script):
             scheduler=shared.sd_model.scheduler,
             force_zeros_for_empty_prompt=shared.opts.diffusers_force_zeros,
         )
-        new_pipe.sd_checkpoint_info = shared.sd_model.sd_checkpoint_info # pylint: disable=attribute-defined-outside-init
-        new_pipe.sd_model_hash = shared.sd_model.sd_model_hash # pylint: disable=attribute-defined-outside-init
-        new_pipe.sd_model_checkpoint = shared.sd_model.sd_checkpoint_info.filename # pylint: disable=attribute-defined-outside-init
-        new_pipe.is_sdxl = True # pylint: disable=attribute-defined-outside-init
-        new_pipe.is_sd2 = False # pylint: disable=attribute-defined-outside-init
-        new_pipe.is_sd1 = False # pylint: disable=attribute-defined-outside-init
         shared.sd_model = new_pipe
         if not ((shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) or (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram)):
             shared.sd_model.to(shared.device)

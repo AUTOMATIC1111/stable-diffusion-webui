@@ -676,7 +676,7 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
     return pipeline, guess
 
 
-def set_diffuser_options(sd_model, vae, op: str):
+def set_diffuser_options(sd_model, vae = None, op: str = 'model'):
     if sd_model is None:
         shared.log.warning(f'{op} is not loaded')
         return
@@ -1049,6 +1049,9 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     new_pipe.sd_model_hash = sd_model_hash
     new_pipe.has_accelerate = has_accelerate
     new_pipe.embedding_db = embedding_db
+    new_pipe.is_sdxl = True # pylint: disable=attribute-defined-outside-init # a1111 compatibility item
+    new_pipe.is_sd2 = False # pylint: disable=attribute-defined-outside-init
+    new_pipe.is_sd1 = False # pylint: disable=attribute-defined-outside-init
     shared.log.debug(f"Pipeline class change: original={pipe.__class__.__name__} target={new_pipe.__class__.__name__}")
     pipe = new_pipe
     return pipe
