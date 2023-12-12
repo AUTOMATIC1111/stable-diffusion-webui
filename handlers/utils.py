@@ -345,18 +345,8 @@ def load_sd_model_weights(filename, sha256=None):
     if filename:
         os.popen(f'touch {filename}')
         checkpoint = CheckpointInfo(filename, sha256)
-        for i in range(3):
-            try:
-                res = reload_model_weights(info=checkpoint)
-            except RuntimeError:
-                if (i < 2):
-                    delay = 5 * (i + 1)
-                    time.sleep(delay)
-                    logger.warning(f"cannot reload model, retry after {delay} sec...")
-                else:
-                    raise
-            else:
-                return res
+        res = reload_model_weights(info=checkpoint)
+        return res
 
 
 def close_pil(image: Image):

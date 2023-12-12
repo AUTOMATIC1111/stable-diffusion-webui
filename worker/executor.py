@@ -196,6 +196,7 @@ class TaskExecutor(Thread):
         dirnames = ['models/Stable-diffusion', 'models/Lora', 'models/LyCORIS']
         now = time.time()
         interval = expire_days*24*3600
+        logger.debug("start clean disk...")
         for dir in dirnames:
             if not os.path.isdir(dir):
                 continue

@@ -14,7 +14,7 @@ from tools.environment import get_redis_env, Env_RedisHost,\
 
 
 class RedisPool:
-    def __init__(self, host=None, port=None, db=0, password=None, max_connections=10, user=None):
+    def __init__(self, host=None, port=None, db=0, password=None, max_connections=5, user=None):
         env_vars = get_redis_env()
         if not host:
             host = env_vars.get(Env_RedisHost)
