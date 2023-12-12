@@ -7,7 +7,7 @@
 # @Software: Hifive
 import os
 import typing
-from tools.wrapper import FuncResultLogWrapper
+from tools.wrapper import timed_lru_cache
 
 S3ImageBucket = "xingzhe-sdplus"
 S3ImagePath = "output/{uid}/{dir}/{name}"
@@ -54,8 +54,16 @@ Env_WorkerRunTrainRatio = "RUN_TRAIN_RATIO"
 Env_DontCleanModels = "DONT_CLEAN_MODELS"
 # 谛听审核APP KEY
 Env_DtAppKey = "DT_APPKEY"
+# 下载启用文件锁
+Env_DownloadLocker = "DOWNLOAD_LOCKER"
 
 cache = {}
+
+
+def enable_download_locker():
+    v = cache.get(Env_DownloadLocker, os.getenv(Env_DownloadLocker, '1'))
+    cache[Env_DownloadLocker] = v
+    return v == "1"
 
 
 def is_flexible_worker():
@@ -177,4 +185,3 @@ def get_mongo_env() -> typing.Mapping[str, str]:
 
 def get_ticket():
     return os.getenv(Env_Ticket, -1)
-

@@ -271,7 +271,7 @@ class AsyncMongoTaskDumper(AsyncTaskDumper):
                          'user_id': task_progress.task.user_id, 'create_at': task_progress.task['create_at'],
                          'task_type': task_progress.task.task_type, 'minor_type': task_progress.task.minor_type,
                          'group_id': "", 'index': index, 'low_image': sample, 'image_type': 'grid',
-                         'update_at': datetime.now(),
+                         'update_at': datetime.now(), 'user_role': task_progress.task.get('user_role', 0),
                          'is_fast': task_progress.task.get('is_fast', False),
                          'high_image': r['grids']['high'][i]}
                     flatten_images.append(t)
@@ -290,6 +290,7 @@ class AsyncMongoTaskDumper(AsyncTaskDumper):
                          'sub_seed': task_progress.task['all_sub_seed'][i],
                          'update_at': datetime.now(),
                          'is_fast': task_progress.task.get('is_fast', False),
+                         'user_role': task_progress.task.get('user_role', 0),
                          }
                     flatten_images.append(t)
                     index += 1
@@ -304,6 +305,7 @@ class AsyncMongoTaskDumper(AsyncTaskDumper):
                          'group_id': "", 'index': index, 'low_image': sample, 'image_type': 'sample',
                          'high_image': r['all']['high'][i],
                          'update_at': datetime.now(),
+                         'user_role': task_progress.task.get('user_role', 0),
                          }
                     flatten_images.append(t)
                     index += 1

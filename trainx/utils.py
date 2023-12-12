@@ -14,7 +14,7 @@ from loguru import logger
 from tools import TempDir as Tmp
 from datetime import datetime
 from insightface.app import FaceAnalysis
-from tools.environment import S3Tmp, S3SDWEB
+from tools.environment import S3Tmp, S3SDWEB, enable_download_locker
 from filestorage import FileStorageCls, get_local_path, batch_download, http_down
 
 
@@ -63,8 +63,8 @@ def get_model_local_path(remoting_path: str, model_type: ModelType):
     dst = os.path.join(ModelLocation[model_type], os.path.basename(remoting_path))
     if os.path.isfile(dst):
         return dst
-
-    dst = get_local_path(remoting_path, dst)
+    with_locker = enable_download_locker()
+    dst = get_local_path(remoting_path, dst, with_locker=with_locker)
     if os.path.isfile(dst):
         # if model_type == ModelType.CheckPoint:
         #     checkpoint = CheckpointInfo(dst)
@@ -81,7 +81,7 @@ def get_tmp_local_path(remoting_path: str, dir=None):
     dirname = Tmp if not dir else dir
     os.makedirs(dirname, exist_ok=True)
     dst = os.path.join(dirname, os.path.basename(remoting_path))
-    return get_local_path(remoting_path, dst)
+    return get_local_path(remoting_path, dst, with_locker=False)
 
 
 def upload_files(is_tmp, *files, dirname=None, task_id=None):

@@ -22,7 +22,7 @@ from modules.shared import cmd_opts
 from modules.processing import Processed
 from modules.scripts import Script, ScriptRunner
 from handlers.formatter import format_alwayson_script_args
-from tools.environment import S3ImageBucket, S3Tmp, S3SDWEB
+from tools.environment import S3Tmp, S3SDWEB, enable_download_locker
 from filestorage import FileStorageCls, get_local_path, batch_download
 from handlers.typex import ModelLocation, ModelType, ImageOutput, OutImageType, UserModelLocation
 from modules.sd_models import reload_model_weights, CheckpointInfo, get_closet_checkpoint_match, list_models
@@ -67,8 +67,9 @@ def get_model_local_path(remoting_path: str, model_type: ModelType, progress_cal
     if os.path.isfile(dst):
         ckpt_register(dst)
         return dst
-
-    dst = get_local_path(remoting_path, dst, progress_callback=progress_callback, with_locker=True, locker_exp=1800)
+    with_locker = enable_download_locker()
+    dst = get_local_path(
+        remoting_path, dst, progress_callback=progress_callback, locker_exp=1800, with_locker=with_locker)
     if os.path.isfile(dst):
         ckpt_register(dst)
         return dst
@@ -113,7 +114,7 @@ def get_tmp_local_path(remoting_path: str):
     hash_str = md5.hexdigest()[:16]
 
     dst = os.path.join(Tmp, hash_str + ex)
-    return get_local_path(remoting_path, dst)
+    return get_local_path(remoting_path, dst, with_locker=False)
 
 
 def upload_files(is_tmp, *files, dirname=None):

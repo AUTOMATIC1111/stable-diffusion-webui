@@ -198,15 +198,21 @@ class FileStorage:
                     raise OSError("cannot get file lock")
                 start = time.time()
                 while 1:
-                    time.sleep(random.randint(1, 5))
+                    time.sleep(random.randint(2, 5))
                     waite_time = int(time.time() - start)
                     if waite_time % 4 == 0:
                         logger.debug(
                             f"acquire file locker:{lock_path}, timeout:{timeout} sec, wait time:{waite_time} sec")
                     if timeout > 0 and waite_time > timeout:
-                        raise OSError("get file lock timeout")
+                        raise OSError(f"cannot download {keyname}: get file lock timeout")
 
                     if os.path.isfile(local_path):
+                        mtime = os.path.getmtime(local_path)
+                        delay = int(time.time() - mtime + 6)
+                        if delay > 0:
+                            time.sleep(delay)
+                            logger.debug(f"acquire file locker:{lock_path}, local file existed, sleep {delay} sec")
+                        os.popen(f'touch {local_path}')
                         logger.debug(f"acquire file locker:{lock_path}, local file existed!")
                         break
 
@@ -216,8 +222,10 @@ class FileStorage:
                         logger.debug(f"get file locker:{lock_path}, waite time:{waite_time} sec!")
                         break
         except:
-            f.close()
-            return None
+            if f:
+                f.close()
+
+            raise
         return f
 
     def release_flock(self, f, keyname=None):
@@ -226,11 +234,22 @@ class FileStorage:
         unlock(f)
         f.close()
 
-        if keyname:
+        if keyname and random.randint(0, 10) < 3:
             lock_path = self.get_lock_filename(keyname)
-            if os.path.isfile(lock_path):
-                print(f"remove lock file:{lock_path}")
-                os.remove(lock_path)
+            dirname = os.path.dirname(lock_path)
+
+            for item in os.listdir(dirname):
+                full_path = os.path.join(dirname, item)
+                if os.path.isfile(full_path):
+                    _, ex = os.path.splitext(full_path)
+                    if ex != ".lock":
+                        continue
+                    try:
+                        mtime = os.path.getmtime(full_path)
+                        if time.time() - mtime > 3600*8:
+                            os.remove(full_path)
+                    except:
+                        continue
 
     def multi_upload(self, local_remoting_pars: typing.Sequence[typing.Tuple[str, str]]):
         if local_remoting_pars:
