@@ -188,16 +188,20 @@ class TaskExecutor(Thread):
 
         return now - task.create_at > self.timeout
 
-    def _clean_disk(self, expire_days=7):
+    def _clean_disk(self, expire_days=1):
         # 根据mtime
         if os.getenv(Env_DontCleanModels, "0") == "1":
             logger.info("dont clean models...")
             return
-        dirnames = ['models/Stable-diffusion', 'models/Lora', 'models/LyCORIS']
+        dirnames = [
+            ('models/Stable-diffusion', 5),
+            ('models/Lora', 0.5),
+            ('models/LyCORIS', 0.5)
+        ]
         now = time.time()
         interval = expire_days*24*3600
         logger.debug("start clean disk...")
-        for dir in dirnames:
+        for dir, bias in dirnames:
             if not os.path.isdir(dir):
                 continue
             for f in os.listdir(dir):
@@ -205,7 +209,7 @@ class TaskExecutor(Thread):
                 if os.path.isfile(full):
                     try:
                         atime = os.path.getatime(full)
-                        if now - atime < interval:
+                        if now - atime < interval*bias:
                             continue
                         logger.warning(f'[WARN] file:{full}, atime expired!!!!')
                         os.remove(full)
