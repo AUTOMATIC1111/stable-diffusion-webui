@@ -128,14 +128,14 @@ class TaskExecutor(Thread):
 
         if train_task:
             logger.info("before receive train task, check memory info...")
-            torch_gc()
+            ok = torch_gc()
             free, total = vram_mon.cuda_mem_get_info()
-            system_exit(free, total, threshold_b=12)
+            system_exit(free, total, threshold_b=12, coercive=not ok)
         elif random.randint(1, 10) < 3:
             logger.info("before receive task, check memory info...")
-            torch_gc()
+            ok = torch_gc()
             free, total = vram_mon.cuda_mem_get_info()
-            system_exit(free, total)
+            system_exit(free, total, coercive=not ok)
             process_health()
 
         return True
@@ -202,10 +202,10 @@ class TaskExecutor(Thread):
             for f in os.listdir(dir):
                 full = os.path.join(dir, f)
                 if os.path.isfile(full):
-                    mtime = os.path.getmtime(full)
-                    if now - mtime < interval:
-                        continue
                     try:
+                        mtime = os.path.getmtime(full)
+                        if now - mtime < interval:
+                            continue
                         logger.warning(f'[WARN] file:{full}, mtime expired!!!!')
                         os.remove(full)
                     except:

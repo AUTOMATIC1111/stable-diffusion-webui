@@ -45,14 +45,18 @@ def get_device_for(task):
 
 
 def torch_gc():
+    try:
+        if torch.cuda.is_available():
+            with torch.cuda.device(get_cuda_device_string()):
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
 
-    if torch.cuda.is_available():
-        with torch.cuda.device(get_cuda_device_string()):
-            torch.cuda.empty_cache()
-            torch.cuda.ipc_collect()
-
-    if has_mps():
-        mac_specific.torch_mps_gc()
+        if has_mps():
+            mac_specific.torch_mps_gc()
+        return True
+    except Exception as e:
+        print(f"###CUDA ERROR### cannot dispose cuda memory:{e}")
+        return False
 
 
 def enable_tf32():

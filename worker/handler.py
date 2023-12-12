@@ -49,7 +49,7 @@ class TaskHandler:
                         progress_callback(progress)
 
             except torch.cuda.OutOfMemoryError:
-                torch_gc()
+                ok = torch_gc()
                 time.sleep(15)
                 logger.exception('CUDA out of memory')
                 free, total = vram_mon.cuda_mem_get_info()
@@ -61,7 +61,18 @@ class TaskHandler:
 
                 self._set_task_status(p)
                 progress_callback(p)
-                system_exit(free, total)
+                system_exit(free, total, coercive=not ok)
+            except RuntimeError as runtimeErr:
+                trace = traceback.format_exc()
+                msg = str(runtimeErr)
+                logger.exception('unhandle err')
+                p = TaskProgress.new_failed(task, msg, trace)
+                self._set_task_status(p)
+                progress_callback(p)
+                if not torch_gc():
+                    free, total = vram_mon.cuda_mem_get_info()
+                    system_exit(free, total, coercive=True)
+
             except Exception as ex:
                 trace = traceback.format_exc()
                 msg = str(ex)
@@ -70,7 +81,9 @@ class TaskHandler:
 
                 self._set_task_status(p)
                 progress_callback(p)
-                torch_gc()
+                if not torch_gc():
+                    free, total = vram_mon.cuda_mem_get_info()
+                    system_exit(free, total, coercive=True)
                 if 'BrokenPipeError' in str(ex):
                     pass
 
