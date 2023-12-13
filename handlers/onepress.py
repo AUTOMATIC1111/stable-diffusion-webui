@@ -187,6 +187,7 @@ def get_img2img_args(prompt, width, height, init_img):
 class OnePressTaskType(Txt2ImgTask):
     Conversion = 1  # 图片上色：
     Rendition = 2  # 风格转换
+    ImgToGif = 3  # 静态图片转动图
 
 
 class ConversionTask(Txt2ImgTask):
@@ -324,12 +325,12 @@ class RenditionTask(Txt2ImgTask):
         # 图生图模式
         is_img2img = extra_args['rendition_is_img2img']
         if is_img2img:
-            full_task['init_img']=t.image
-        #更新 controlnet的图片
+            full_task['init_img'] = t.image
+        # 更新 controlnet的图片
         if 'ControlNet' in full_task['alwayson_scripts']:
-            length=len(full_task['alwayson_scripts']['ControlNet']['args'])
-            for i in range(0,length):
-                full_task['alwayson_scripts']['ControlNet']['args'][i]['image']['image']=t.image
+            length = len(full_task['alwayson_scripts']['ControlNet']['args'])
+            for i in range(0, length):
+                full_task['alwayson_scripts']['ControlNet']['args'][i]['image']['image'] = t.image
         # Lora
         if full_task['lora_models'] == ['']:
             full_task['lora_models'] = None
@@ -403,6 +404,65 @@ class RenditionTask(Txt2ImgTask):
         return result_image
 
 
+class ImgtoGifTask(Txt2ImgTask):
+    def __init__(self,
+                 base_model_path: str,  # 模型路径
+                 model_hash: str,  # 模型hash值
+                 width: int,  # 宽
+                 height: int,  # 高
+                 prompt: str,  # 图片的正向提示词
+                 image: str,  # 原图路径
+                 lora_models: typing.Sequence[str] = None,  # lora
+                 batch_size: int = 1  # 结果数量
+                 ):
+        self.base_model_path = base_model_path
+        self.model_hash = model_hash
+        self.loras = lora_models
+        self.prompt = prompt
+        self.width = width if width != 0 else 512
+        self.height = height if height != 0 else 512
+        self.image = image
+        self.batch_size = batch_size if batch_size != 0 else 1
+
+    @classmethod
+    def exec_task(cls, task: Task):
+
+        t = ImgtoGifTask(
+            task['base_model_path'],
+            task['model_hash'],
+            task['width'],
+            task['height'],
+            task.get('prompt', ""),
+            task.get('image', None),  # 图生图：极简水彩 炫彩 油画
+            task.get('lora_models', None),
+            task.get('batch_size', 1))
+        extra_args = deepcopy(task['extra_args'])
+        task.pop("extra_args")
+        full_task = deepcopy(task)
+        full_task.update(extra_args)
+        # 图生图模式
+        is_img2img = True
+        if is_img2img:
+            full_task['init_img'] = t.image
+        # 更新 controlnet的图片
+        if 'ControlNet' in full_task['alwayson_scripts']:
+            length = len(full_task['alwayson_scripts']['ControlNet']['args'])
+            for i in range(0, length):
+                full_task['alwayson_scripts']['ControlNet']['args'][i]['image']['image'] = t.image
+        # animatediff = {"args": [
+        #     {'model': 'mm_sd_v15_v2.ckpt', 'enable': True, 'video_length': 8, 'fps': 8, 'loop_number': 0, 'closed_loop': 'R+P', 'batch_size': 16, 'stride': 1, 'overlap': -1, 'format': [
+        #         'PNG'], 'interp': 'Off', 'interp_x': 10, 'video_source': None, 'video_path': '', 'latent_power': 1, 'latent_scale': 32, 'last_frame': None, 'latent_power_last': 1, 'latent_scale_last': 32, 'request_id': ''}
+        # ]
+        # }
+        # full_task['alwayson_scripts']['animatediff'] = animatediff
+        # Lora
+        if full_task['lora_models'] == ['']:
+            full_task['lora_models'] = None
+        if full_task['embeddings'] == ['']:
+            full_task['embeddings'] = None
+        return full_task, is_img2img
+
+
 class OnePressTaskHandler(Txt2ImgTaskHandler):
     def __init__(self):
         super(OnePressTaskHandler, self).__init__()
@@ -415,6 +475,8 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
             yield from self._exec_conversion(task)
         if task.minor_type == OnePressTaskType.Rendition:
             yield from self._exec_rendition(task)
+        if task.minor_type == OnePressTaskType.ImgToGif:
+            yield from self._exec_img2gif(task)
 
     def _build_gen_canny_i2i_args(self, t, processed: Processed):
         denoising_strength = 0.5
@@ -607,6 +669,64 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         shared.state.end()
         process_args.close()
         logger.info("step 3, upload images...")
+        progress.status = TaskStatus.Uploading
+        yield progress
+        images = save_processed_images(processed,
+                                       process_args.outpath_samples,
+                                       process_args.outpath_grids,
+                                       process_args.outpath_scripts,
+                                       task.id,
+                                       inspect=process_args.kwargs.get("need_audit", False))
+        logger.info("step 3 > ok")
+        progress = TaskProgress.new_finish(task, images)
+        progress.update_seed(processed.all_seeds, processed.all_subseeds)
+        yield progress
+
+    def _exec_img2gif(self, task: Task) -> typing.Iterable[TaskProgress]:
+        # 整体流程：1.拿到原图+抠图+贴白背景+生成序列帧：图生图+animatediff+controlnet（refenrence——only，softedge）
+        # （万能提示词+tagger反推提示词+表情标签提示词，负向提示词）
+        # TODO 测试xl的使用，更新task参数
+
+        logger.info("one press img2gif func starting...")
+        full_task, is_img2img = ImgtoGifTask.exec_task(task)
+
+        # 适配xl    ``
+        logger.info("download model...")
+        local_model_paths = self._get_local_checkpoint(full_task)
+        base_model_path = local_model_paths if not isinstance(
+            local_model_paths, tuple) else local_model_paths[0]
+        refiner_checkpoint = None if not isinstance(
+            local_model_paths, tuple) else local_model_paths[1]
+
+        load_sd_model_weights(base_model_path, full_task.model_hash)
+        progress = TaskProgress.new_ready(
+            full_task, f'model loaded, run speed...')
+        yield progress
+
+        # 图生图模式
+        process_args = self._build_img2img_arg(progress, refiner_checkpoint)
+
+        self._set_little_models(process_args)
+        progress.status = TaskStatus.Running
+        progress.task_desc = f'onepress task({task.id}) running'
+        yield progress
+        shared.state.begin()
+
+        if process_args.selectable_scripts:
+            processed = process_args.scripts.run(
+                process_args, *process_args.script_args)
+        else:
+            processed = process_images(process_args)
+
+        logger.info("step 1, img2gif...")
+        shared.state.begin()
+        processed = process_images(process_args)
+        # processed.images = processed.images[1:task['batch_size']+1]
+        logger.info("step 1 > ok")
+
+        shared.state.end()
+        process_args.close()
+        logger.info("step 2, upload images...")
         progress.status = TaskStatus.Uploading
         yield progress
         images = save_processed_images(processed,
