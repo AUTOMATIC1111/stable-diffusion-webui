@@ -90,7 +90,7 @@ class TaskExecutor(Thread):
                 if not task:
                     continue
 
-                logger.info(f"====>>> receive task:{task.desc()}")
+                logger.info(f"====>>> receive task:{task. desc()}")
                 logger.info(f"====>>> model history:{self.recorder.history()}")
 
                 handler = self.get_handler(task)
@@ -108,6 +108,10 @@ class TaskExecutor(Thread):
             except queue.Empty:
                 if random.randint(1, 10) < 3:
                     logger.info('task queue is empty...')
+                if not self.is_alive():
+                    logger.info('task receiver dead')
+                    free, total = vram_mon.cuda_mem_get_info()
+                    system_exit(free, total, coercive=True)
                 continue
             except Exception:
                 logger.exception("executor err")
