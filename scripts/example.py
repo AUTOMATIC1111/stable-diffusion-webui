@@ -92,7 +92,7 @@ class Script(scripts.Script):
         if c != pipeline_base:
             shared.log.warning(f'{title}: pipeline={c} required={pipeline_base}')
             return None
-        orig_pipepeline = shared.sd_model # backup current pipeline definition
+        orig_pipeline = shared.sd_model # backup current pipeline definition
         shared.sd_model = pipeline_class( # create new pipeline using currently loaded model which is always in `shared.sd_model`
             # different pipelines may need different init params, so you may need to change this
             # to see init params, see pipeline_class.__init__ method
@@ -107,9 +107,10 @@ class Script(scripts.Script):
             safety_checker=shared.sd_model.safety_checker,
             feature_extractor=shared.sd_model.feature_extractor,
         )
+        sd_models.copy_diffuser_options(shared.sd_model, orig_pipeline) # copy options from original pipeline
+        sd_models.set_diffuser_options(shared.sd_model) # set all model options such as fp16, offload, etc.
         if not ((shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) or (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram)):
             shared.sd_model.to(shared.device) # move pipeline if needed, but don't touch if its under automatic managment
-        sd_models.set_diffuser_options(shared.sd_model) # set all model options such as fp16, offload, etc.
 
         # if pipeline also needs a specific type, you can set it here, but not commonly needed
         # shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
@@ -136,5 +137,5 @@ class Script(scripts.Script):
         # you dont need to handle saving, metadata, etc - sdnext will do it for you
 
         # restore original pipeline
-        shared.sd_model = orig_pipepeline
+        shared.sd_model = orig_pipeline
         return processed

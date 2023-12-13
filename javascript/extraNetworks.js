@@ -16,7 +16,12 @@ const requestGet = (url, data, handler) => {
   xhr.send(JSON.stringify(data));
 };
 
-const getENActiveTab = () => gradioApp().getElementById('tab_txt2img').style.display === 'block' ? 'txt2img' : 'img2img';
+const getENActiveTab = () => {
+  if (gradioApp().getElementById('tab_txt2img').style.display === 'block') return 'txt2img';
+  if (gradioApp().getElementById('tab_img2img').style.display === 'block') return 'img2img';
+  if (gradioApp().getElementById('tab_control').style.display === 'block') return 'control';
+  return '';
+};
 
 const getENActivePage = () => {
   const tabname = getENActiveTab();
@@ -276,9 +281,11 @@ function refreshENpage() {
 
 // init
 function setupExtraNetworksForTab(tabname) {
-  gradioApp().querySelector(`#${tabname}_extra_tabs`).classList.add('extra-networks');
+  let tabs = gradioApp().querySelector(`#${tabname}_extra_tabs`);
+  if (tabs) tabs.classList.add('extra-networks');
   const en = gradioApp().getElementById(`${tabname}_extra_networks`);
-  const tabs = gradioApp().querySelector(`#${tabname}_extra_tabs > div`);
+  tabs = gradioApp().querySelector(`#${tabname}_extra_tabs > div`);
+  if (!tabs) return;
 
   // buttons
   const btnRefresh = gradioApp().getElementById(`${tabname}_extra_refresh`);
@@ -394,9 +401,11 @@ function setupExtraNetworksForTab(tabname) {
 function setupExtraNetworks() {
   setupExtraNetworksForTab('txt2img');
   setupExtraNetworksForTab('img2img');
+  setupExtraNetworksForTab('control');
 
   function registerPrompt(tabname, id) {
     const textarea = gradioApp().querySelector(`#${id} > label > textarea`);
+    if (!textarea) return;
     if (!activePromptTextarea[tabname]) activePromptTextarea[tabname] = textarea;
     textarea.addEventListener('focus', () => { activePromptTextarea[tabname] = textarea; });
   }
@@ -405,6 +414,8 @@ function setupExtraNetworks() {
   registerPrompt('txt2img', 'txt2img_neg_prompt');
   registerPrompt('img2img', 'img2img_prompt');
   registerPrompt('img2img', 'img2img_neg_prompt');
+  registerPrompt('control', 'control_prompt');
+  registerPrompt('control', 'control_neg_prompt');
   log('initExtraNetworks');
 }
 

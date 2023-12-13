@@ -279,6 +279,8 @@ onAfterUiUpdate(async () => {
   registerTextarea('txt2img_neg_prompt', 'txt2img_negative_token_counter', 'txt2img_negative_token_button');
   registerTextarea('img2img_prompt', 'img2img_token_counter', 'img2img_token_button');
   registerTextarea('img2img_neg_prompt', 'img2img_negative_token_counter', 'img2img_negative_token_button');
+  registerTextarea('control_prompt', 'control_token_counter', 'control_token_button');
+  registerTextarea('control_neg_prompt', 'control_negative_token_counter', 'control_negative_token_button');
 });
 
 function update_txt2img_tokens(...args) {

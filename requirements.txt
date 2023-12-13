@@ -63,7 +63,7 @@ pandas==1.5.3
 protobuf==3.20.3
 pytorch_lightning==1.9.4
 tokenizers==0.15.0
-transformers==4.35.2
+transformers==4.36.0
 tomesd==0.1.3
 urllib3==1.26.15
 Pillow==10.1.0

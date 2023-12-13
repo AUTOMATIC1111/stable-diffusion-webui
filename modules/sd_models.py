@@ -676,6 +676,18 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
     return pipeline, guess
 
 
+def copy_diffuser_options(new_pipe, orig_pipe):
+    new_pipe.sd_checkpoint_info = orig_pipe.sd_checkpoint_info
+    new_pipe.sd_model_checkpoint = orig_pipe.sd_model_checkpoint
+    new_pipe.sd_model_hash = orig_pipe.sd_model_hash
+    new_pipe.has_accelerate = orig_pipe.has_accelerate
+    new_pipe.embedding_db = orig_pipe.embedding_db
+    new_pipe.is_sdxl = True # pylint: disable=attribute-defined-outside-init # a1111 compatibility item
+    new_pipe.is_sd2 = False # pylint: disable=attribute-defined-outside-init
+    new_pipe.is_sd1 = False # pylint: disable=attribute-defined-outside-init
+
+
+
 def set_diffuser_options(sd_model, vae = None, op: str = 'model'):
     if sd_model is None:
         shared.log.warning(f'{op} is not loaded')

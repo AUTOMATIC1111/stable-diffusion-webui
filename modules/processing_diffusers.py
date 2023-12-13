@@ -458,8 +458,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if is_img2img:
             if use_denoise_start and shared.sd_model_type == 'sdxl':
                 steps = p.steps // (1 - p.refiner_start)
-            else:
+            elif p.denoising_strength > 0:
                 steps = (p.steps // p.denoising_strength) + 1
+            else:
+                steps = p.steps
         elif use_refiner_start and shared.sd_model_type == 'sdxl':
             steps = (p.steps // p.refiner_start) + 1
         else:
@@ -472,8 +474,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     def calculate_hires_steps():
         if p.hr_second_pass_steps > 0:
             steps = (p.hr_second_pass_steps // p.denoising_strength) + 1
-        else:
+        elif p.denoising_strength > 0:
             steps = (p.steps // p.denoising_strength) + 1
+        else:
+            steps = 0
 
         if os.environ.get('SD_STEPS_DEBUG', None) is not None:
             shared.log.debug(f'Steps: type=hires input={p.hr_second_pass_steps} output={steps} denoise={p.denoising_strength}')
@@ -484,8 +488,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             if p.refiner_start > 0 and p.refiner_start < 1:
                 #steps = p.refiner_steps // (1 - p.refiner_start) # SDXL with denoise strenght
                 steps = (p.refiner_steps // (1 - p.refiner_start) // 2) + 1
-            else:
+            elif p.denoising_strength > 0:
                 steps = (p.refiner_steps // p.denoising_strength) + 1
+            else:
+                steps = 0
         else:
             #steps = p.refiner_steps # SD 1.5 with denoise strenght
             steps = (p.refiner_steps * 1.25) + 1

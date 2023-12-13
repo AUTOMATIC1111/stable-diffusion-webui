@@ -46,6 +46,8 @@ apply_style_symbol = symbols.apply
 save_style_symbol = symbols.save
 txt2img_paste_fields = []
 img2img_paste_fields = []
+txt2img_args = []
+img2img_args = []
 
 
 if not cmd_opts.share and not cmd_opts.listen:
@@ -491,28 +493,30 @@ def create_ui(startup_timer = None):
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
-            txt2img_args = dict(
+            global txt2img_args # pylint: disable=global-statement
+            txt2img_args = [
+                dummy_component,
+                txt2img_prompt, txt2img_negative_prompt,
+                txt2img_prompt_styles,
+                steps,
+                sampler_index, latent_index,
+                full_quality, restore_faces, tiling,
+                batch_count, batch_size,
+                cfg_scale, image_cfg_scale,
+                diffusers_guidance_rescale,
+                clip_skip,
+                seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
+                height, width,
+                enable_hr, denoising_strength,
+                hr_scale, hr_upscaler, hr_force, hr_second_pass_steps, hr_resize_x, hr_resize_y,
+                refiner_steps, refiner_start, refiner_prompt, refiner_negative,
+                hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry,
+                override_settings,
+            ]
+            txt2img_dict = dict(
                 fn=wrap_gradio_gpu_call(modules.txt2img.txt2img, extra_outputs=[None, '', '']),
                 _js="submit_txt2img",
-                inputs=[
-                    dummy_component,
-                    txt2img_prompt, txt2img_negative_prompt,
-                    txt2img_prompt_styles,
-                    steps,
-                    sampler_index, latent_index,
-                    full_quality, restore_faces, tiling,
-                    batch_count, batch_size,
-                    cfg_scale, image_cfg_scale,
-                    diffusers_guidance_rescale,
-                    clip_skip,
-                    seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
-                    height, width,
-                    enable_hr, denoising_strength,
-                    hr_scale, hr_upscaler, hr_force, hr_second_pass_steps, hr_resize_x, hr_resize_y,
-                    refiner_steps, refiner_start, refiner_prompt, refiner_negative,
-                    hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry,
-                    override_settings,
-                ] + custom_inputs,
+                inputs=txt2img_args + custom_inputs,
                 outputs=[
                     txt2img_gallery,
                     generation_info,
@@ -521,8 +525,8 @@ def create_ui(startup_timer = None):
                 ],
                 show_progress=False,
             )
-            txt2img_prompt.submit(**txt2img_args)
-            submit.click(**txt2img_args)
+            txt2img_prompt.submit(**txt2img_dict)
+            submit.click(**txt2img_dict)
 
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
             batch_switch_btn.click(lambda w, h: (h, w), inputs=[batch_count, batch_size], outputs=[batch_count, batch_size], show_progress=False)
@@ -782,42 +786,43 @@ def create_ui(startup_timer = None):
                     img2img_prompt_img
                 ]
             )
-
-            img2img_args = dict(
+            global img2img_args # pylint: disable=global-statement
+            img2img_args = [
+                dummy_component, dummy_component,
+                img2img_prompt, img2img_negative_prompt,
+                img2img_prompt_styles,
+                init_img,
+                sketch,
+                init_img_with_mask,
+                inpaint_color_sketch,
+                inpaint_color_sketch_orig,
+                init_img_inpaint,
+                init_mask_inpaint,
+                steps,
+                sampler_index, latent_index,
+                mask_blur, mask_alpha,
+                inpainting_fill,
+                full_quality, restore_faces, tiling,
+                batch_count, batch_size,
+                cfg_scale, image_cfg_scale,
+                diffusers_guidance_rescale,
+                refiner_steps,
+                refiner_start,
+                clip_skip,
+                denoising_strength,
+                seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
+                selected_scale_tab,
+                height, width,
+                scale_by,
+                resize_mode,
+                inpaint_full_res, inpaint_full_res_padding, inpainting_mask_invert,
+                img2img_batch_files, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir,
+                override_settings,
+            ]
+            img2img_dict = dict(
                 fn=wrap_gradio_gpu_call(modules.img2img.img2img, extra_outputs=[None, '', '']),
                 _js="submit_img2img",
-                inputs=[
-                    dummy_component, dummy_component,
-                    img2img_prompt, img2img_negative_prompt,
-                    img2img_prompt_styles,
-                    init_img,
-                    sketch,
-                    init_img_with_mask,
-                    inpaint_color_sketch,
-                    inpaint_color_sketch_orig,
-                    init_img_inpaint,
-                    init_mask_inpaint,
-                    steps,
-                    sampler_index, latent_index,
-                    mask_blur, mask_alpha,
-                    inpainting_fill,
-                    full_quality, restore_faces, tiling,
-                    batch_count, batch_size,
-                    cfg_scale, image_cfg_scale,
-                    diffusers_guidance_rescale,
-                    refiner_steps,
-                    refiner_start,
-                    clip_skip,
-                    denoising_strength,
-                    seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
-                    selected_scale_tab,
-                    height, width,
-                    scale_by,
-                    resize_mode,
-                    inpaint_full_res, inpaint_full_res_padding, inpainting_mask_invert,
-                    img2img_batch_files, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir,
-                    override_settings,
-                ] + custom_inputs,
+                inputs= img2img_args + custom_inputs,
                 outputs=[
                     img2img_gallery,
                     generation_info,
@@ -826,8 +831,8 @@ def create_ui(startup_timer = None):
                 ],
                 show_progress=False,
             )
-            img2img_prompt.submit(**img2img_args)
-            submit.click(**img2img_args)
+            img2img_prompt.submit(**img2img_dict)
+            submit.click(**img2img_dict)
 
             interrogate_args = dict(
                 _js="get_img2img_tab_index",
