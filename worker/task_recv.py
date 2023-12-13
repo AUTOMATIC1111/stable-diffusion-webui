@@ -30,7 +30,7 @@ from modules.shared import mem_mon as vram_mon
 from apscheduler.schedulers.background import BackgroundScheduler
 from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api, run_train_ratio, \
     Env_Run_Train_Time_Start, Env_Run_Train_Time_End, is_flexible_worker, get_worker_state_dump_path, \
-    is_task_group_queue_only
+    is_task_group_queue_only, get_maintain_env
 
 try:
     from collections.abc import Iterable  # >=py3.10
@@ -47,8 +47,8 @@ TaskTimeout = 20 * 3600 if not cmd_opts.train_only else 48 * 3600
 SDWorkerZset = 'sd-workers'
 ElasticResWorkerFlag = "[ElasticRes]"
 TrainOnlyWorkerFlag = "[TrainOnly]"
-MaintainKey = "maintain"
-MaintainReadyKey = "maintain-ready"
+MaintainKey = get_maintain_env()
+MaintainReadyKey = MaintainKey + "-ready"
 
 
 def find_files_from_dir(directory, *args):
@@ -66,7 +66,6 @@ def find_files_from_dir(directory, *args):
             for f in find_files_from_dir(full_path, *extensions_):
                 yield f
             yield full_path
-
 
 
 class TaskReceiverState(enum.Enum):
