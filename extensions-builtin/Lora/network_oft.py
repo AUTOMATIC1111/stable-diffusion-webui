@@ -53,12 +53,17 @@ class NetworkModuleOFT(network.NetworkModule):
             self.constraint = None
             self.block_size, self.num_blocks = factorization(self.out_dim, self.dim)
 
-    def calc_updown_kb(self, orig_weight, multiplier):
+    def calc_updown(self, orig_weight):
+        I = torch.eye(self.block_size, device=self.oft_blocks.device)
         oft_blocks = self.oft_blocks.to(orig_weight.device, dtype=orig_weight.dtype)
-        oft_blocks = oft_blocks - oft_blocks.transpose(1, 2) # ensure skew-symmetric orthogonal matrix
+        if self.is_kohya:
+            block_Q = oft_blocks - oft_blocks.transpose(1, 2) # ensure skew-symmetric orthogonal matrix
+            norm_Q = torch.norm(block_Q.flatten())
+            new_norm_Q = torch.clamp(norm_Q, max=self.constraint)
+            block_Q = block_Q * ((new_norm_Q + 1e-8) / (norm_Q + 1e-8))
+            oft_blocks = torch.matmul(I + block_Q, (I - block_Q).float().inverse())
 
         R = oft_blocks.to(orig_weight.device, dtype=orig_weight.dtype)
-        R = R * multiplier + torch.eye(self.block_size, device=orig_weight.device)
 
         # This errors out for MultiheadAttention, might need to be handled up-stream
         merged_weight = rearrange(orig_weight, '(k n) ... -> k n ...', k=self.num_blocks, n=self.block_size)
@@ -70,15 +75,10 @@ class NetworkModuleOFT(network.NetworkModule):
         merged_weight = rearrange(merged_weight, 'k m ... -> (k m) ...')
 
         updown = merged_weight.to(orig_weight.device, dtype=orig_weight.dtype) - orig_weight
+        print(torch.norm(updown))
         output_shape = orig_weight.shape
         return self.finalize_updown(updown, orig_weight, output_shape)
 
-    def calc_updown(self, orig_weight):
-        # if alpha is a very small number as in coft, calc_scale() will return a almost zero number so we ignore it
-        multiplier = self.multiplier()
-        return self.calc_updown_kb(orig_weight, multiplier)
-
-    # override to remove the multiplier/scale factor; it's already multiplied in get_weight
     def finalize_updown(self, updown, orig_weight, output_shape, ex_bias=None):
         if self.bias is not None:
             updown = updown.reshape(self.bias.shape)
@@ -94,4 +94,5 @@ class NetworkModuleOFT(network.NetworkModule):
         if ex_bias is not None:
             ex_bias = ex_bias * self.multiplier()
 
-        return updown, ex_bias
+        # Ignore calc_scale, which is not used in OFT.
+        return updown * self.multiplier(), ex_bias
