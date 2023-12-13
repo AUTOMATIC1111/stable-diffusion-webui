@@ -797,21 +797,25 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             prompt = ''
         params = generation_parameters_copypaste.parse_generation_parameters(prompt)
         fn = os.path.join(shared.opts.styles_dir, os.path.splitext(name)[0] + '.json')
+        prompt = params.get('Prompt', '')
         item = {
-            "type": 'Style',
             "name": name,
-            "title": name,
-            "filename": fn,
-            "search_term": None,
-            "preview": None,
             "description": '',
-            "prompt": params.get('Prompt', ''),
+            "prompt": prompt,
             "negative": params.get('Negative prompt', ''),
             "extra": '',
-            "local_preview": None,
+            # "type": 'Style',
+            # "title": name,
+            # "filename": fn,
+            # "search_term": None,
+            # "preview": None,
+            # "local_preview": None,
         }
         shared.writefile(item, fn, silent=True)
-        shared.log.debug(f"Extra network quick save style: item={item['name']} filename='{fn}'")
+        if len(prompt) > 0:
+            shared.log.debug(f"Extra network quick save style: item={name} filename='{fn}'")
+        else:
+            shared.log.warning(f"Extra network quick save model: item={name} filename='{fn}' prompt is empty")
 
     def ui_sort_cards(msg):
         shared.log.debug(f'Extra networks: {msg}')

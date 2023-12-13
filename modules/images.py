@@ -1,4 +1,3 @@
-import datetime
 import io
 import re
 import os
@@ -6,13 +5,13 @@ import sys
 import math
 import json
 import uuid
+import queue
 import string
 import hashlib
-import queue
+import datetime
 import threading
 from pathlib import Path
 from collections import namedtuple
-import pytz
 import numpy as np
 import piexif
 import piexif.helper
@@ -393,6 +392,7 @@ class FilenameGenerator:
         return self.prompt_sanitize(prompt_no_style)
 
     def datetime(self, *args):
+        import pytz
         time_datetime = datetime.datetime.now()
         time_format = args[0] if len(args) > 0 and args[0] != "" else self.default_time_format
         try:
@@ -507,6 +507,8 @@ def atomically_save_image():
     Image.MAX_IMAGE_PIXELS = None # disable check in Pillow and rely on check below to allow large custom image sizes
     while True:
         image, filename, extension, params, exifinfo, filename_txt = save_queue.get()
+        with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
+            file.write(exifinfo)
         fn = filename + extension
         filename = filename.strip()
         if extension[0] != '.': # add dot if missing
@@ -562,8 +564,6 @@ def atomically_save_image():
                 image.save(fn, format=image_format, quality=shared.opts.jpeg_quality)
             except Exception as e:
                 shared.log.error(f'Image save failed: file="{fn}" {e}')
-        with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
-            file.write(exifinfo)
         if shared.opts.save_log_fn != '' and len(exifinfo) > 0:
             fn = os.path.join(paths.data_path, shared.opts.save_log_fn)
             if not fn.endswith('.json'):
@@ -575,8 +575,6 @@ def atomically_save_image():
             entry = { 'id': idx, 'filename': filename, 'time': datetime.datetime.now().isoformat(), 'info': exifinfo }
             entries.append(entry)
             shared.writefile(entries, fn, mode='w')
-        with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
-            file.write(exifinfo)
         save_queue.task_done()
 
 
