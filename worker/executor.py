@@ -13,8 +13,9 @@ import typing
 from queue import Queue
 from loguru import logger
 from tools import safety_clean_tmp
+from tools.disk import tidy_model_caches
 from worker.task import Task, TaskProgress
-from modules.shared import mem_mon as vram_mon
+from modules.shared import mem_mon as vram_mon, models_path
 from worker.handler import TaskHandler
 from modules.devices import torch_gc
 from worker.task_recv import TaskReceiver, TaskTimeout
@@ -149,7 +150,7 @@ class TaskExecutor(Thread):
                             if random.randint(1, 10) < 3:
                                 # 释放磁盘空间
                                 safety_clean_tmp()
-                                self._clean_disk()
+                                tidy_model_caches(models_path)
                             logger.info(f"====>>> preload task:{task.id}")
                             self.queue.put(task)
                             logger.info(f"====>>> push task:{task.id}")
