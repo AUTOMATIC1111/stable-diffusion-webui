@@ -157,10 +157,10 @@ def ipex_hijacks():
         lambda orig_func, f, map_location=None, pickle_module=None, *, weights_only=False, mmap=None, **kwargs:
         orig_func(orig_func, f, map_location=return_xpu(map_location), pickle_module=pickle_module, weights_only=weights_only, mmap=mmap, **kwargs),
         lambda orig_func, f, map_location=None, pickle_module=None, *, weights_only=False, mmap=None, **kwargs: check_device(map_location))
-
-    CondFunc('torch.Generator',
-        lambda orig_func, device=None: torch.xpu.Generator(return_xpu(device)),
-        lambda orig_func, device=None: device is not None and device != torch.device("cpu") and device != "cpu")
+    if hasattr(torch.xpu, "Generator"):
+        CondFunc('torch.Generator',
+            lambda orig_func, device=None: torch.xpu.Generator(return_xpu(device)),
+            lambda orig_func, device=None: device is not None and device != torch.device("cpu") and device != "cpu")
 
     # TiledVAE and ControlNet:
     CondFunc('torch.batch_norm',

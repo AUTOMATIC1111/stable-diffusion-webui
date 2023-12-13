@@ -156,12 +156,6 @@ def ipex_init(): # pylint: disable=too-many-statements
         torch.cuda.get_device_properties.minor = 7
         torch.cuda.ipc_collect = lambda *args, **kwargs: None
         torch.cuda.utilization = lambda *args, **kwargs: 0
-        if hasattr(torch.xpu, 'getDeviceIdListForCard'):
-            torch.cuda.getDeviceIdListForCard = torch.xpu.getDeviceIdListForCard
-            torch.cuda.get_device_id_list_per_card = torch.xpu.getDeviceIdListForCard
-        else:
-            torch.cuda.getDeviceIdListForCard = torch.xpu.get_device_id_list_per_card
-            torch.cuda.get_device_id_list_per_card = torch.xpu.get_device_id_list_per_card
 
         ipex_hijacks()
         if not torch.xpu.has_fp64_dtype():
