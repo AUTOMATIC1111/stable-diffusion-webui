@@ -56,6 +56,8 @@ Env_DontCleanModels = "DONT_CLEAN_MODELS"
 Env_DtAppKey = "DT_APPKEY"
 # 下载启用文件锁
 Env_DownloadLocker = "DOWNLOAD_LOCKER"
+# 维护模式key
+Env_Maintain = "MAINTAIN"
 
 cache = {}
 
@@ -181,6 +183,10 @@ def get_mongo_env() -> typing.Mapping[str, str]:
         d[key] = cache.get(key) or os.getenv(key)
         cache[key] = d[key]
     return d
+
+
+def get_maintain_env():
+    return os.getenv(Env_Maintain, "default")
 
 
 def get_ticket():
