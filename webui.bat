@@ -1,5 +1,5 @@
 :: --------------------------------------------------------------------------------------------------------------
-:: Do not make any changes to this file, change the variables in webui-user.bat instead and call this file
+:: Do not make any changes to this file. Instead, create a shortcut to this file and add needed arguments there.
 :: --------------------------------------------------------------------------------------------------------------
 
 @echo off
