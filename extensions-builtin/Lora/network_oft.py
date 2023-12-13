@@ -77,6 +77,5 @@ class NetworkModuleOFT(network.NetworkModule):
         merged_weight = rearrange(merged_weight, 'k m ... -> (k m) ...')
 
         updown = merged_weight.to(orig_weight.device, dtype=orig_weight.dtype) - orig_weight
-        print(torch.norm(updown))
         output_shape = orig_weight.shape
         return self.finalize_updown(updown, orig_weight, output_shape)
