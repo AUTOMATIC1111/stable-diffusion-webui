@@ -56,14 +56,15 @@ class NetworkModuleOFT(network.NetworkModule):
             self.block_size, self.num_blocks = factorization(self.out_dim, self.dim)
 
     def calc_updown(self, orig_weight):
-        I = torch.eye(self.block_size, device=self.oft_blocks.device)
         oft_blocks = self.oft_blocks.to(orig_weight.device, dtype=orig_weight.dtype)
+        eye = torch.eye(self.block_size, device=self.oft_blocks.device)
+
         if self.is_kohya:
             block_Q = oft_blocks - oft_blocks.transpose(1, 2) # ensure skew-symmetric orthogonal matrix
             norm_Q = torch.norm(block_Q.flatten())
             new_norm_Q = torch.clamp(norm_Q, max=self.constraint)
             block_Q = block_Q * ((new_norm_Q + 1e-8) / (norm_Q + 1e-8))
-            oft_blocks = torch.matmul(I + block_Q, (I - block_Q).float().inverse())
+            oft_blocks = torch.matmul(eye + block_Q, (eye - block_Q).float().inverse())
 
         R = oft_blocks.to(orig_weight.device, dtype=orig_weight.dtype)
 
