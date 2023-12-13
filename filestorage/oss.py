@@ -7,6 +7,7 @@
 # @Software: Hifive
 import os
 import shutil
+import time
 import uuid
 import oss2
 from tools.redis import RedisLocker
@@ -176,7 +177,13 @@ class OssFileStorage(FileStorage):
                 if os.path.isfile(local_path):
                     return local_path
                 self.logger.info(f"download (with file locker) {key} from oss to {local_path}")
-                oss2.resumable_download(self.bucket, key, tmp_file, progress_callback=progress_callback)
+                for i in range(3):
+                    try:
+                        oss2.resumable_download(self.bucket, key, tmp_file, progress_callback=progress_callback)
+                        break
+                    except:
+                        time.sleep(1)
+                        continue
 
                 if os.path.isfile(local_path):
                     return local_path
