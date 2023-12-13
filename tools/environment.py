@@ -186,7 +186,7 @@ def get_mongo_env() -> typing.Mapping[str, str]:
 
 
 def get_maintain_env():
-    return os.getenv(Env_Maintain, "default")
+    return os.getenv(Env_Maintain, "maintain-default")
 
 
 def get_ticket():
