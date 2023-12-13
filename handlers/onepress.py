@@ -638,14 +638,6 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         progress.status = TaskStatus.Running
         progress.task_desc = f'onepress task({task.id}) running'
         yield progress
-        shared.state.begin()
-
-        if process_args.selectable_scripts:
-            processed = process_args.scripts.run(
-                process_args, *process_args.script_args)
-        else:
-            processed = process_images(process_args)
-
         logger.info("step 1, rendition...")
         shared.state.begin()
         processed = process_images(process_args)
@@ -710,14 +702,6 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         progress.status = TaskStatus.Running
         progress.task_desc = f'onepress task({task.id}) running'
         yield progress
-        shared.state.begin()
-
-        if process_args.selectable_scripts:
-            processed = process_args.scripts.run(
-                process_args, *process_args.script_args)
-        else:
-            processed = process_images(process_args)
-
         logger.info("step 1, img2gif...")
         shared.state.begin()
         processed = process_images(process_args)
