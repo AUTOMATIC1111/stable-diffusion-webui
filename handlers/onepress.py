@@ -474,10 +474,9 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
             # yield from self._exec_rendition(task)
             yield from self._exec_conversion(task)
         if task.minor_type == OnePressTaskType.Rendition:
-            # yield from self._exec_rendition(task)
+            yield from self._exec_rendition(task)
+        if task.minor_type == OnePressTaskType.ImgToGif:
             yield from self._exec_img2gif(task)
-        # if task.minor_type == OnePressTaskType.ImgToGif:
-        #     yield from self._exec_img2gif(task)
 
     def _build_gen_canny_i2i_args(self, t, processed: Processed):
         denoising_strength = 0.5
