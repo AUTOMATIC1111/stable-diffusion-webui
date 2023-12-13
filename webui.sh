@@ -80,22 +80,16 @@ else
     exit 1
 fi
 
-#Set OneAPI environmet if it's not set by the user
-if ([[ "$@" == *"--use-ipex"* ]] || [[ -d "/opt/intel/oneapi" ]] || [[ ! -z "$ONEAPI_ROOT" ]]) && [ ! -x "$(command -v sycl-ls)" ]
+if [ -d "$(realpath "$venv_dir")/lib/" ]
 then
-    echo "Setting OneAPI environment"
-    if [[ -z "$ONEAPI_ROOT" ]]
-    then
-        ONEAPI_ROOT=/opt/intel/oneapi
-    fi
-    source $ONEAPI_ROOT/setvars.sh
+    export LD_LIBRARY_PATH=$(realpath "$venv_dir")/lib/:$LD_LIBRARY_PATH
 fi
 
 if [[ ! -z "${ACCELERATE}" ]] && [ ${ACCELERATE}="True" ] && [ -x "$(command -v accelerate)" ]
 then
     echo "Launching accelerate launch.py..."
     exec accelerate launch --num_cpu_threads_per_process=6 launch.py "$@"
-elif [[ "$@" == *"--use-ipex"* ]] && [[ -z "${first_launch}" ]] && [ -x "$(command -v ipexrun)" ] && [ -x "$(command -v sycl-ls)" ]
+elif [[ "$@" == *"--use-ipex"* ]] && [[ -z "${first_launch}" ]] && [ -x "$(command -v ipexrun)" ]
 then
     echo "Launching ipexrun launch.py..."
     exec ipexrun --multi-task-manager 'taskset' --memory-allocator 'jemalloc' launch.py "$@"

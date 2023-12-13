@@ -37,7 +37,9 @@
   - **Extra networks** new *settting -> extra networks -> build info on first access*  
     indexes all networks on first access instead of server startup  
   - **IPEX** 
-    - Update to **Torch 2.1 - This Update Requires Intel OneApi 2024.0**, thanks @disty0
+    - Update to **Torch 2.1**, thanks @disty0    
+    - Built-in *MKL* and *DPCPP* for IPEX, thanks @disty0    
+      No need to install OneAPI anymore    
     - Fix IPEX Optimize not applying with Diffusers backend, thanks @disty0    
     - Disable 32 bit workarounds if the GPU supports 64 bit, thanks @disty0    
     - More compatibility improvements, thanks @disty0    
