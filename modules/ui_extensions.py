@@ -65,7 +65,7 @@ def save_config_state(name):
     filename = os.path.join(config_states_dir, f"{timestamp}_{name}.json")
     print(f"Saving backup of webui/extension state to {filename}.")
     with open(filename, "w", encoding="utf-8") as f:
-        json.dump(current_config_state, f, indent=4)
+        json.dump(current_config_state, f, indent=4, ensure_ascii=False)
     config_states.list_config_states()
     new_value = next(iter(config_states.all_config_states.keys()), "Current")
     new_choices = ["Current"] + list(config_states.all_config_states.keys())
@@ -197,7 +197,7 @@ def update_config_states_table(state_name):
         config_state = config_states.all_config_states[state_name]
 
     config_name = config_state.get("name", "Config")
-    created_date = time.asctime(time.gmtime(config_state["created_at"]))
+    created_date = datetime.fromtimestamp(config_state["created_at"]).strftime('%Y-%m-%d %H:%M:%S')
     filepath = config_state.get("filepath", "<unknown>")
 
     try:
@@ -335,6 +335,11 @@ def normalize_git_url(url):
     return url
 
 
+def get_extension_dirname_from_url(url):
+    *parts, last_part = url.split('/')
+    return normalize_git_url(last_part)
+
+
 def install_extension_from_url(dirname, url, branch_name=None):
     check_access()
 
@@ -346,10 +351,7 @@ def install_extension_from_url(dirname, url, branch_name=None):
     assert url, 'No URL specified'
 
     if dirname is None or dirname == "":
-        *parts, last_part = url.split('/')
-        last_part = normalize_git_url(last_part)
-
-        dirname = last_part
+        dirname = get_extension_dirname_from_url(url)
 
     target_dir = os.path.join(extensions.extensions_dir, dirname)
     assert not os.path.exists(target_dir), f'Extension directory already exists: {target_dir}'
@@ -449,7 +451,8 @@ def get_date(info: dict, key):
 
 def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text=""):
     extlist = available_extensions["extensions"]
-    installed_extension_urls = {normalize_git_url(extension.remote): extension.name for extension in extensions.extensions}
+    installed_extensions = {extension.name for extension in extensions.extensions}
+    installed_extension_urls = {normalize_git_url(extension.remote) for extension in extensions.extensions if extension.remote is not None}
 
     tags = available_extensions.get("tags", {})
     tags_to_hide = set(hide_tags)
@@ -482,7 +485,7 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
         if url is None:
             continue
 
-        existing = installed_extension_urls.get(normalize_git_url(url), None)
+        existing = get_extension_dirname_from_url(url) in installed_extensions or normalize_git_url(url) in installed_extension_urls
         extension_tags = extension_tags + ["installed"] if existing else extension_tags
 
         if any(x for x in extension_tags if x in tags_to_hide):

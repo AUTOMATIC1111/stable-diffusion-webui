@@ -4,12 +4,6 @@
 # change the variables in webui-user.sh instead #
 #################################################
 
-
-use_venv=1
-if [[ $venv_dir == "-" ]]; then
-  use_venv=0
-fi
-
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 
@@ -26,6 +20,12 @@ fi
 if [[ -f "$SCRIPT_DIR"/webui-user.sh ]]
 then
     source "$SCRIPT_DIR"/webui-user.sh
+fi
+
+# If $venv_dir is "-", then disable venv support
+use_venv=1
+if [[ $venv_dir == "-" ]]; then
+  use_venv=0
 fi
 
 # Set defaults
@@ -51,6 +51,8 @@ fi
 if [[ -z "${GIT}" ]]
 then
     export GIT="git"
+else
+    export GIT_PYTHON_GIT_EXECUTABLE="${GIT}"
 fi
 
 # python3 venv without trailing slash (defaults to ${install_dir}/${clone_dir}/venv)
@@ -87,7 +89,7 @@ delimiter="################################################################"
 
 printf "\n%s\n" "${delimiter}"
 printf "\e[1m\e[32mInstall script for stable-diffusion + Web UI\n"
-printf "\e[1m\e[34mTested on Debian 11 (Bullseye)\e[0m"
+printf "\e[1m\e[34mTested on Debian 11 (Bullseye), Fedora 34+ and openSUSE Leap 15.4 or newer.\e[0m"
 printf "\n%s\n" "${delimiter}"
 
 # Do not run as root
@@ -142,7 +144,6 @@ case "$gpu_info" in
     ;;
     *"Navi 3"*) [[ -z "${TORCH_COMMAND}" ]] && \
          export TORCH_COMMAND="pip install --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/rocm5.7"
-         
     ;;
     *"Renoir"*) export HSA_OVERRIDE_GFX_VERSION=9.0.0
         printf "\n%s\n" "${delimiter}"
@@ -221,7 +222,7 @@ fi
 # Try using TCMalloc on Linux
 prepare_tcmalloc() {
     if [[ "${OSTYPE}" == "linux"* ]] && [[ -z "${NO_TCMALLOC}" ]] && [[ -z "${LD_PRELOAD}" ]]; then
-        TCMALLOC="$(PATH=/usr/sbin:$PATH ldconfig -p | grep -Po "libtcmalloc(_minimal|)\.so\.\d" | head -n 1)"
+        TCMALLOC="$(PATH=/sbin:$PATH ldconfig -p | grep -Po "libtcmalloc(_minimal|)\.so\.\d" | head -n 1)"
         if [[ ! -z "${TCMALLOC}" ]]; then
             echo "Using TCMalloc: ${TCMALLOC}"
             export LD_PRELOAD="${TCMALLOC}"
