@@ -159,7 +159,8 @@ def load_network(name, network_on_disk):
     bundle_embeddings = {}
 
     for key_network, weight in sd.items():
-        key_network_without_network_parts, network_part = key_network.split(".", 1)
+        key_network_without_network_parts, _, network_part = key_network.partition(".")
+
         if key_network_without_network_parts == "bundle_emb":
             emb_name, vec_name = network_part.split(".", 1)
             emb_dict = bundle_embeddings.get(emb_name, {})
