@@ -215,7 +215,7 @@ class LoadStateDictOnMeta(ReplaceHelper):
             would be on the meta device.
             """
 
-            if state_dict == sd:
+            if state_dict is sd:
                 state_dict = {k: v.to(device="meta", dtype=v.dtype) for k, v in state_dict.items()}
 
             original(module, state_dict, strict=strict)
