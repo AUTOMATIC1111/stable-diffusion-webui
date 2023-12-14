@@ -64,7 +64,7 @@ def release_disk_with_free_mb(folder: str, expect_free: float, on_removing: typi
             continue
 
 
-def tidy_model_caches(models_dir, expire_days: int = 7):
+def tidy_model_caches(models_dir, expire_days: int = 30):
     ckpt_dir = os.path.join(models_dir, 'Stable-diffusion')
     lora_dir = os.path.join(models_dir, 'Lora')
     lycor_dir = os.path.join(models_dir, 'LyCORIS')
@@ -100,7 +100,7 @@ def tidy_model_caches(models_dir, expire_days: int = 7):
         vfs = os.statvfs(models_dir)  # models可能是一个挂载点
         used = vfs.f_bsize * (vfs.f_blocks - vfs.f_bfree) / 1024
         avail = vfs.f_bsize * vfs.f_bavail / 1024
-        used_percent = round(float(used) / float(used + avail) * 100, 2)
+        used_percent = float(used) / float(used + avail)
         if used_percent > 0.85:
             # models可能是一个挂载点
             free = ((used + avail) * 0.2) // 1024
