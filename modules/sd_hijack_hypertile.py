@@ -48,6 +48,7 @@ def split_attention(layer: nn.Module, tile_size: int=256, min_tile_size: int=256
     reset_needed = True
     nhs = possible_tile_sizes(height, tile_size, min_tile_size, swap_size) # possible sub-grids that fit into the image
     nws = possible_tile_sizes(width, tile_size, min_tile_size, swap_size)
+
     def reset_nhs():
         nonlocal nhs, ar
         ar = height / width # Aspect ratio
@@ -135,18 +136,17 @@ def split_attention(layer: nn.Module, tile_size: int=256, min_tile_size: int=256
 
 
 def context_hypertile_vae(p):
-    global height, width, max_h, max_w, error_reported # pylint: disable=global-statement
-    error_reported = False
-    height=p.height
-    width=p.width
-    max_h = 0
-    max_w = 0
     from modules import shared
     if p.sd_model is None or not shared.opts.hypertile_vae_enabled:
         return nullcontext()
     if shared.opts.cross_attention_optimization == 'Sub-quadratic':
         shared.log.warning('Hypertile UNet is not compatible with Sub-quadratic cross-attention optimization')
         return nullcontext()
+    global height, width, max_h, max_w, error_reported # pylint: disable=global-statement
+    error_reported = False
+    error_reported = False
+    height, width = p.height, p.width
+    max_h, max_w = 0, 0
     vae = getattr(p.sd_model, "vae", None) if shared.backend == shared.Backend.DIFFUSERS else getattr(p.sd_model, "first_stage_model", None)
     if height % 8 != 0 or width % 8 != 0:
         log.warning(f'Hypertile VAE disabled: width={width} height={height} are not divisible by 8')
@@ -161,18 +161,16 @@ def context_hypertile_vae(p):
 
 
 def context_hypertile_unet(p):
-    global height, width, max_h, max_w, error_reported # pylint: disable=global-statement
-    error_reported = False
-    height=p.height
-    width=p.width
-    max_h = 0
-    max_w = 0
     from modules import shared
     if p.sd_model is None or not shared.opts.hypertile_unet_enabled:
         return nullcontext()
     if shared.opts.cross_attention_optimization == 'Sub-quadratic' and not shared.cmd_opts.experimental:
         shared.log.warning('Hypertile UNet is not compatible with Sub-quadratic cross-attention optimization')
         return nullcontext()
+    global height, width, max_h, max_w, error_reported # pylint: disable=global-statement
+    error_reported = False
+    height, width = p.height, p.width
+    max_h, max_w = 0, 0
     unet = getattr(p.sd_model, "unet", None) if shared.backend == shared.Backend.DIFFUSERS else getattr(p.sd_model.model, "diffusion_model", None)
     if height % 8 != 0 or width % 8 != 0:
         log.warning(f'Hypertile UNet disabled: width={width} height={height} are not divisible by 8')
@@ -192,6 +190,10 @@ def hypertile_set(p, hr=False):
     if not shared.opts.hypertile_unet_enabled:
         return
     error_reported = False
-    height=p.height if not hr else getattr(p, 'hr_upscale_to_y', p.height)
-    width=p.width if not hr else getattr(p, 'hr_upscale_to_x', p.width)
+    if not hr:
+        height=p.height if not hr else getattr(p, 'hr_upscale_to_y', p.height)
+        width=p.width if not hr else getattr(p, 'hr_upscale_to_x', p.width)
+    else:
+        height=max(p.height, getattr(p, 'hr_upscale_to_y', p.height))
+        width=max(p.width, getattr(p, 'hr_upscale_to_x', p.width))
     reset_needed = True
