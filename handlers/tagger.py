@@ -17,56 +17,56 @@ from tools.image import compress_image
 from worker.handler import DumpTaskHandler
 from handlers.utils import get_tmp_local_path, Tmp, upload_files
 from worker.task import Task, TaskType, TaskProgress, TaskStatus
-from handlers.Tagger.interrogator import Interrogator, WaifuDiffusionInterrogator
+from handlers.Tagger.interrogator import Interrogator, HttpWfInterrogator
 from typing import List, Dict
 
 
 # interrogators: Dict[str, Interrogator] = {}
 
 interrogators = {
-    'wd14-convnextv2-v2': WaifuDiffusionInterrogator(
-        'wd14-convnextv2-v2',
-        repo_id='SmilingWolf/wd-v1-4-convnextv2-tagger-v2',
-        revision='v2.0'
-    ),
-    'wd14-vit-v2': WaifuDiffusionInterrogator(
+    # 'wd14-convnextv2-v2': WaifuDiffusionInterrogator(
+    #     'wd14-convnextv2-v2',
+    #     repo_id='SmilingWolf/wd-v1-4-convnextv2-tagger-v2',
+    #     revision='v2.0'
+    # ),
+    'wd14-vit-v2': HttpWfInterrogator(
         'wd14-vit-v2',
         repo_id='SmilingWolf/wd-v1-4-vit-tagger-v2',
         revision='v2.0'
     ),
-    'wd14-convnext-v2': WaifuDiffusionInterrogator(
-        'wd14-convnext-v2',
-        repo_id='SmilingWolf/wd-v1-4-convnext-tagger-v2',
-        revision='v2.0'
-    ),
-    'wd14-swinv2-v2': WaifuDiffusionInterrogator(
-        'wd14-swinv2-v2',
-        repo_id='SmilingWolf/wd-v1-4-swinv2-tagger-v2',
-        revision='v2.0'
-    ),
-    'wd14-convnextv2-v2-git': WaifuDiffusionInterrogator(
-        'wd14-convnextv2-v2',
-        repo_id='SmilingWolf/wd-v1-4-convnextv2-tagger-v2',
-    ),
-    'wd14-vit-v2-git': WaifuDiffusionInterrogator(
-        'wd14-vit-v2-git',
-        repo_id='SmilingWolf/wd-v1-4-vit-tagger-v2'
-    ),
-    'wd14-convnext-v2-git': WaifuDiffusionInterrogator(
-        'wd14-convnext-v2-git',
-        repo_id='SmilingWolf/wd-v1-4-convnext-tagger-v2'
-    ),
-    'wd14-swinv2-v2-git': WaifuDiffusionInterrogator(
-        'wd14-swinv2-v2-git',
-        repo_id='SmilingWolf/wd-v1-4-swinv2-tagger-v2'
-    ),
-    'wd14-vit': WaifuDiffusionInterrogator(
-        'wd14-vit',
-        repo_id='SmilingWolf/wd-v1-4-vit-tagger'),
-    'wd14-convnext': WaifuDiffusionInterrogator(
-        'wd14-convnext',
-        repo_id='SmilingWolf/wd-v1-4-convnext-tagger'
-    ),
+    # 'wd14-convnext-v2': WaifuDiffusionInterrogator(
+    #     'wd14-convnext-v2',
+    #     repo_id='SmilingWolf/wd-v1-4-convnext-tagger-v2',
+    #     revision='v2.0'
+    # ),
+    # 'wd14-swinv2-v2': WaifuDiffusionInterrogator(
+    #     'wd14-swinv2-v2',
+    #     repo_id='SmilingWolf/wd-v1-4-swinv2-tagger-v2',
+    #     revision='v2.0'
+    # ),
+    # 'wd14-convnextv2-v2-git': WaifuDiffusionInterrogator(
+    #     'wd14-convnextv2-v2',
+    #     repo_id='SmilingWolf/wd-v1-4-convnextv2-tagger-v2',
+    # ),
+    # 'wd14-vit-v2-git': WaifuDiffusionInterrogator(
+    #     'wd14-vit-v2-git',
+    #     repo_id='SmilingWolf/wd-v1-4-vit-tagger-v2'
+    # ),
+    # 'wd14-convnext-v2-git': WaifuDiffusionInterrogator(
+    #     'wd14-convnext-v2-git',
+    #     repo_id='SmilingWolf/wd-v1-4-convnext-tagger-v2'
+    # ),
+    # 'wd14-swinv2-v2-git': WaifuDiffusionInterrogator(
+    #     'wd14-swinv2-v2-git',
+    #     repo_id='SmilingWolf/wd-v1-4-swinv2-tagger-v2'
+    # ),
+    # 'wd14-vit': WaifuDiffusionInterrogator(
+    #     'wd14-vit',
+    #     repo_id='SmilingWolf/wd-v1-4-vit-tagger'),
+    # 'wd14-convnext': WaifuDiffusionInterrogator(
+    #     'wd14-convnext',
+    #     repo_id='SmilingWolf/wd-v1-4-convnext-tagger'
+    # ),
 }
 
 
