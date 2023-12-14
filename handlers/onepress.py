@@ -288,7 +288,8 @@ class RenditionTask(Txt2ImgTask):
                  init_img: str,  # 油画垫图
                  lora_models: typing.Sequence[str] = None,  # lora
                  roop: bool = False,  # 换脸
-                 batch_size: int = 1  # 结果数量
+                 batch_size: int = 1,  # 结果数量
+                 is_fast: bool = False  # 极速模式
                  ):
         self.base_model_path = base_model_path
         self.model_hash = model_hash
@@ -301,6 +302,7 @@ class RenditionTask(Txt2ImgTask):
         self.init_img = init_img
         self.roop = roop
         self.batch_size = batch_size if batch_size != 0 else 1
+        self.is_fast = is_fast
 
     @classmethod
     def exec_task(cls, task: Task):
@@ -316,12 +318,15 @@ class RenditionTask(Txt2ImgTask):
             task.get('init_img', None),  # 风格垫图 油画判断
             task.get('lora_models', None),
             task.get('roop', False),
-            task.get('batch_size', 1))
+            task.get('batch_size', 1),
+            task.get('is_fast', False))  # 极速模式
 
         extra_args = deepcopy(task['extra_args'])
         task.pop("extra_args")
         full_task = deepcopy(task)
         full_task.update(extra_args)
+        full_task['batch_size'] = t.batch_size
+        full_task['is_fast'] = t.is_fast
         # 图生图模式
         is_img2img = extra_args['rendition_is_img2img']
         if is_img2img:
@@ -331,11 +336,27 @@ class RenditionTask(Txt2ImgTask):
             length = len(full_task['alwayson_scripts']['ControlNet']['args'])
             for i in range(0, length):
                 full_task['alwayson_scripts']['ControlNet']['args'][i]['image']['image'] = t.image
+
+        # NOTE 如果是极速模式，就改动相应的采样器 提示词后面添加lora，采样步数 cfg ，lcm的lora加上(要判断是否是xl模型)
+        if t.is_fast:
+            if extra_args['is_xl']:
+                full_task['lora_models'].append(
+                    'sd-web/resources/LCM/lcm-lora-xl.safetensors')
+                full_task['prompt'] += ',<lora:lcm-lora-xl:1.0>'
+            else:
+                full_task['lora_models'].append(
+                    'sd-web/resources/LCM/lcm-lora-sd15.safetensors')
+                full_task['prompt'] += ',<lora:lcm-lora-sd15:1.0>'
+            full_task['steps'] = 8
+            full_task['cfg_scale'] = 1.3
+            full_task['sampler_name'] = 'LCM-Alpha'
+
         # Lora
         if full_task['lora_models'] == ['']:
             full_task['lora_models'] = None
         if full_task['embeddings'] == ['']:
             full_task['embeddings'] = None
+
         return full_task, is_img2img
 
     @classmethod
