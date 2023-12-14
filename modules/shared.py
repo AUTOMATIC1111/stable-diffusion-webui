@@ -545,9 +545,11 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
 options_templates.update(options_section(('postprocessing', "Postprocessing"), {
     'postprocessing_enable_in_main_ui': OptionInfo([], "Enable additional postprocessing operations", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
     'postprocessing_operation_order': OptionInfo([], "Postprocessing operation order", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
+
     "postprocessing_sep_img2img": OptionInfo("<h2>Img2Img & Inpainting</h2>", "", gr.HTML),
-    "img2img_color_correction": OptionInfo(False, "Apply color correction to match original colors"),
-    "img2img_fix_steps": OptionInfo(False, "For image processing do exact number of steps as specified"),
+    "img2img_color_correction": OptionInfo(False, "Apply color correction"),
+    "img2img_apply_overlay": OptionInfo(False, "Apply result as overlay"),
+    "img2img_fix_steps": OptionInfo(False, "For image processing do exact number of steps as specified", gr.Checkbox, { "visible": False }),
     "img2img_background_color": OptionInfo("#ffffff", "Image transparent color fill", ui_components.FormColorPicker, {}),
     "inpainting_mask_weight": OptionInfo(1.0, "Inpainting conditioning mask strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "initial_noise_multiplier": OptionInfo(1.0, "Noise multiplier for image processing", gr.Slider, {"minimum": 0.1, "maximum": 1.5, "step": 0.01}),

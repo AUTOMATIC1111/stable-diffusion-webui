@@ -61,6 +61,8 @@ def apply_color_correction(correction, original_image):
 
 
 def apply_overlay(image: Image, paste_loc, index, overlays):
+    if not shared.opts.img2img_apply_overlay:
+        return image
     if overlays is None or index >= len(overlays):
         return image
     overlay = overlays[index]

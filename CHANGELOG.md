@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-09
+## Update for 2023-12-14
 
 *Note*: based on `diffusers==0.25.0.dev0`
 
@@ -36,16 +36,18 @@
   - **CivitAI downloader** allow usage of access tokens for download of gated or private models  
   - **Extra networks** new *settting -> extra networks -> build info on first access*  
     indexes all networks on first access instead of server startup  
-  - **IPEX** 
-    - Update to **Torch 2.1**, thanks @disty0    
-    - Built-in *MKL* and *DPCPP* for IPEX, thanks @disty0    
-      No need to install OneAPI anymore    
-    - Fix IPEX Optimize not applying with Diffusers backend, thanks @disty0    
-    - Disable 32 bit workarounds if the GPU supports 64 bit, thanks @disty0    
-    - More compatibility improvements, thanks @disty0    
+  - **IPEX**, thanks @disty0  
+    - update to **Torch 2.1**
+    - built-in *MKL* and *DPCPP* for IPEX  
+      no need to install OneAPI anymore  
+    - fix IPEX Optimize not applying with Diffusers backend  
+    - disable 32 bit workarounds if the GPU supports 64 bit  
+    - compatibility improvements  
   - **OpenVINO**
     - Add *Directory for OpenVINO cache* option to *System Paths*, thanks @disty0
     - Remove Intel ARC specific 1024x1024 workaround, thanks @disty0
+  - **Inpaint** add option `apply_overlay` to control if inpaint result should be applied as overlay or as-is  
+    can remove artifacts and hard edges of inpaint area but also remove some details from original  
   - disable google fonts check on server startup  
   - fix torchvision/basicsr compatibility  
   - fix extra networks sort
