@@ -11,11 +11,31 @@ from modules import shared, paths, script_callbacks, extensions, script_loading,
 
 AlwaysVisible = object()
 
+class MaskBlendArgs:
+    def __init__(self, current_latent, nmask, init_latent, mask, blended_latent, denoiser=None, sigma=None):
+        self.current_latent = current_latent
+        self.nmask = nmask
+        self.init_latent = init_latent
+        self.mask = mask
+        self.blended_latent = blended_latent
+
+        self.denoiser = denoiser
+        self.is_final_blend = denoiser is None
+        self.sigma = sigma
+
+class PostSampleArgs:
+    def __init__(self, samples):
+        self.samples = samples
 
 class PostprocessImageArgs:
     def __init__(self, image):
         self.image = image
 
+class PostProcessMaskOverlayArgs:
+    def __init__(self, index, mask_for_overlay, overlay_image):
+        self.index = index
+        self.mask_for_overlay = mask_for_overlay
+        self.overlay_image = overlay_image
 
 class PostprocessBatchListArgs:
     def __init__(self, images):
@@ -206,7 +226,33 @@ class Script:
 
         pass
 
+    def on_mask_blend(self, p, mba: MaskBlendArgs, *args):
+        """
+        Called in inpainting mode when the original content is blended with the inpainted content.
+        This is called at every step in the denoising process and once at the end.
+        If is_final_blend is true, this is called for the final blending stage.
+        Otherwise, denoiser and sigma are defined and may be used to inform the procedure.
+        """
+
+        pass
+
+    def post_sample(self, p, ps: PostSampleArgs, *args):
+        """
+        Called after the samples have been generated,
+        but before they have been decoded by the VAE, if applicable.
+        Check getattr(samples, 'already_decoded', False) to test if the images are decoded.
+        """
+
+        pass
+
     def postprocess_image(self, p, pp: PostprocessImageArgs, *args):
+        """
+        Called for every image after it has been generated.
+        """
+
+        pass
+
+    def postprocess_maskoverlay(self, p, ppmo: PostProcessMaskOverlayArgs, *args):
         """
         Called for every image after it has been generated.
         """
@@ -767,11 +813,35 @@ class ScriptRunner:
             except Exception:
                 errors.report(f"Error running postprocess_batch_list: {script.filename}", exc_info=True)
 
+    def post_sample(self, p, ps: PostSampleArgs):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.post_sample(p, ps, *script_args)
+            except Exception:
+                errors.report(f"Error running post_sample: {script.filename}", exc_info=True)
+
+    def on_mask_blend(self, p, mba: MaskBlendArgs):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.on_mask_blend(p, mba, *script_args)
+            except Exception:
+                errors.report(f"Error running post_sample: {script.filename}", exc_info=True)
+
     def postprocess_image(self, p, pp: PostprocessImageArgs):
         for script in self.alwayson_scripts:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess_image(p, pp, *script_args)
+            except Exception:
+                errors.report(f"Error running postprocess_image: {script.filename}", exc_info=True)
+
+    def postprocess_maskoverlay(self, p, ppmo: PostProcessMaskOverlayArgs):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.postprocess_maskoverlay(p, ppmo, *script_args)
             except Exception:
                 errors.report(f"Error running postprocess_image: {script.filename}", exc_info=True)
 

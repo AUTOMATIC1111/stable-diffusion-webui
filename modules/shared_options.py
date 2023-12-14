@@ -258,6 +258,7 @@ options_templates.update(options_section(('ui_prompt_editing', "Prompt editing",
     "keyedit_precision_extra": OptionInfo(0.05, "Precision for <extra networks:0.9> when editing the prompt with Ctrl+up/down", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_delimiters": OptionInfo(r".,\/!?%^*;:{}=`~() ", "Word delimiters when editing the prompt with Ctrl+up/down"),
     "keyedit_delimiters_whitespace": OptionInfo(["Tab", "Carriage Return", "Line Feed"], "Ctrl+up/down whitespace delimiters", gr.CheckboxGroup, lambda: {"choices": ["Tab", "Carriage Return", "Line Feed"]}),
+    "keyedit_move": OptionInfo(True, "Alt+left/right moves prompt elements"),
     "disable_token_counters": OptionInfo(False, "Disable prompt token counters").needs_reload_ui(),
 }))
 
@@ -332,6 +333,7 @@ options_templates.update(options_section(('ui', "Live previews", "ui"), {
     "live_preview_content": OptionInfo("Prompt", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
     "live_preview_refresh_period": OptionInfo(1000, "Progressbar and preview update period").info("in milliseconds"),
     "live_preview_fast_interrupt": OptionInfo(False, "Return image with chosen live preview method on interrupt").info("makes interrupts faster"),
+    "js_live_preview_in_modal_lightbox": OptionInfo(True, "Show Live preview in full page image viewer"),
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler parameters", "sd"), {

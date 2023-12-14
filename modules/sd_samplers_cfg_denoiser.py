@@ -56,6 +56,9 @@ class CFGDenoiser(torch.nn.Module):
         self.sampler = sampler
         self.model_wrap = None
         self.p = None
+
+        # NOTE: masking before denoising can cause the original latents to be oversmoothed
+        # as the original latents do not have noise
         self.mask_before_denoising = False
 
     @property
@@ -105,8 +108,21 @@ class CFGDenoiser(torch.nn.Module):
 
         assert not is_edit_model or all(len(conds) == 1 for conds in conds_list), "AND is not supported for InstructPix2Pix checkpoint (unless using Image CFG scale = 1.0)"
 
+        # If we use masks, blending between the denoised and original latent images occurs here.
+        def apply_blend(current_latent):
+            blended_latent = current_latent * self.nmask + self.init_latent * self.mask
+
+            if self.p.scripts is not None:
+                from modules import scripts
+                mba = scripts.MaskBlendArgs(current_latent, self.nmask, self.init_latent, self.mask, blended_latent, denoiser=self, sigma=sigma)
+                self.p.scripts.on_mask_blend(self.p, mba)
+                blended_latent = mba.blended_latent
+
+            return blended_latent
+
+        # Blend in the original latents (before)
         if self.mask_before_denoising and self.mask is not None:
-            x = self.init_latent * self.mask + self.nmask * x
+            x = apply_blend(x)
 
         batch_size = len(conds_list)
         repeats = [len(conds_list[i]) for i in range(batch_size)]
@@ -207,8 +223,9 @@ class CFGDenoiser(torch.nn.Module):
         else:
             denoised = self.combine_denoised(x_out, conds_list, uncond, cond_scale)
 
+        # Blend in the original latents (after)
         if not self.mask_before_denoising and self.mask is not None:
-            denoised = self.init_latent * self.mask + self.nmask * denoised
+            denoised = apply_blend(denoised)
 
         self.sampler.last_latent = self.get_pred_x0(torch.cat([x_in[i:i + 1] for i in denoised_image_indexes]), torch.cat([x_out[i:i + 1] for i in denoised_image_indexes]), sigma)
 
