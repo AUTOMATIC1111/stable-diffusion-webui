@@ -14,6 +14,7 @@ from .lora import exec_train_lora_task, start_train_process
 from trainx.doppelganger import digital_doppelganger
 from trainx.typex import TrainMinorTaskType
 from modules.devices import torch_gc
+from tools import safety_clean_tmp
 from worker.dumper import MongoTaskDumper
 
 
@@ -24,6 +25,7 @@ class TrainTaskHandler(DumpTaskHandler):
 
     def _exec(self, task: Task):
         torch_gc()
+        safety_clean_tmp(3600)
         print(f"current pid:{os.getpid()}")
         if task.minor_type == TrainMinorTaskType.Preprocess:
             yield from exec_preprocess_task(task)

@@ -45,11 +45,14 @@ class DumpInfo:
             if isinstance(set_value, dict) and 'task_progress' in set_value:
                 logger.info(f"dumper task:{self.id} and progress {set_value['task_progress']}.")
 
-        db.update(
-            self.query,
-            self.set,
-            **self.kwargs
-        )
+        try:
+            db.update(
+                self.query,
+                self.set,
+                **self.kwargs
+            )
+        except:
+            logger.exception("cannot update data.")
 
 
 class AsyncTaskDumper(Thread):

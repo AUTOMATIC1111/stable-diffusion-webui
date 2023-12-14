@@ -24,7 +24,7 @@ TempDir = "tmp"
 os.makedirs(TempDir, exist_ok=True)
 
 
-def safety_clean_tmp(exp=129600):
+def safety_clean_tmp(exp=3600*36):
     if os.path.isdir(TempDir):
         files = [x for x in os.listdir(TempDir)]
         now = time.time()

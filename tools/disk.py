@@ -64,7 +64,7 @@ def release_disk_with_free_mb(folder: str, expect_free: float, on_removing: typi
             continue
 
 
-def tidy_model_caches(models_dir, expire_days: int = 30):
+def tidy_model_caches(models_dir, expire_days: int = 14):
     ckpt_dir = os.path.join(models_dir, 'Stable-diffusion')
     lora_dir = os.path.join(models_dir, 'Lora')
     lycor_dir = os.path.join(models_dir, 'LyCORIS')
