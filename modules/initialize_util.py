@@ -9,8 +9,10 @@ from modules.timer import startup_timer
 
 def gradio_server_name():
     from modules.shared_cmd_options import cmd_opts
-
-    if cmd_opts.server_name:
+    
+    if cmd_opts.ipv6:
+        return "::"
+    elif cmd_opts.server_name:
         return cmd_opts.server_name
     else:
         return "0.0.0.0" if cmd_opts.listen else None
