@@ -679,7 +679,7 @@ table.popup-table .link{
     transition: 0.2s ease background-color;
 }
 .modalControls:hover {
-    background-color:rgba(0,0,0,0.9);
+    background-color:rgba(0,0,0, var(--sd-webui-modal-lightbox-toolbar-opacity));
 }
 .modalClose {
     margin-left: auto;
@@ -761,7 +761,7 @@ table.popup-table .link{
     .modalPrev,
     .modalNext,
     .modalControls .cursor {
-        opacity: 0;
+        opacity: var(--sd-webui-modal-lightbox-icon-opacity);
     }
 }
 
