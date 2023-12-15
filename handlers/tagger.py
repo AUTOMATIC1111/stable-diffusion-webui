@@ -21,6 +21,7 @@ from handlers.Tagger.interrogator import Interrogator, HttpWfInterrogator
 from typing import List, Dict
 from modules import deepbooru, shared
 import json
+from copy import deepcopy
 # interrogators: Dict[str, Interrogator] = {}
 
 interrogators = {
@@ -29,7 +30,7 @@ interrogators = {
     #     repo_id='SmilingWolf/wd-v1-4-convnextv2-tagger-v2',
     #     revision='v2.0'
     # ),
-    
+
     'wd14-vit-v2': HttpWfInterrogator(
         'wd14-vit-v2',
         repo_id='SmilingWolf/wd-v1-4-vit-tagger-v2',
@@ -234,19 +235,24 @@ class TaggerTaskHandler(DumpTaskHandler):
 
     def __exec_tagger_task(self, task: Task):
         #
+        tmp_task = deepcopy(task)
         imgs = task['image']
         imgs = list(imgs.split(","))
-        task['image']=imgs
+        tmp_task['image'] = imgs
+
         p = TaskProgress.new_running(task, "tagger image ...")
         yield p
-        result = TaggerTask.exec_task(task)
+        result = TaggerTask.exec_task(tmp_task)
         result = json.dumps(result)
 
         p.task_progress = random.randint(30, 70)
         yield p
         if result:
             # 返回一个字典。{image_path:tag}
-            p = TaskProgress.new_finish(task, result)
+            p = TaskProgress.new_finish(task, {
+                'interrogate': result
+            })
+
             p.task_desc = f'tagger task:{task.id} finished.'
         else:
             p.status = TaskStatus.Failed
