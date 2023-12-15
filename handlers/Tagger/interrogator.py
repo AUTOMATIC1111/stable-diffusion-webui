@@ -3,7 +3,7 @@ import gc
 import pandas as pd
 import numpy as np
 import requests
-
+from loguru import logger
 from typing import Tuple, List, Dict
 from io import BytesIO
 from PIL import Image
@@ -247,10 +247,12 @@ class HttpWfInterrogator(WaifuDiffusionInterrogator):
         # wd-tagger/wd14-vit-v2/v2.0/model.onnx
         if not revision:
             revision = 'main'
-        model_path = os.path.join(dir_path, self.model_path, revision)
-        tags_path = os.path.join(dir_path, self.tags_path, revision)
+        
+        model_path = os.path.join(dir_path, revision,self.model_path)
+        tags_path = os.path.join(dir_path, revision,self.tags_path)
         relative_path = os.path.join(self.name, revision)
 
+        dir_path = os.path.join(dir_path, revision)
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path, exist_ok=True)
         if not os.path.isfile(model_path):
