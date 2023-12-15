@@ -106,6 +106,7 @@ def tidy_model_caches(models_dir, expire_days: int = 14):
             free = ((used + avail) * 0.2) // 1024
             release_disk_with_free_mb(
                 ckpt_dir, free, lambda x: os.path.basename(x) != "v1-5-pruned-emaonly.safetensors")
+            free = ((used + avail) * 0.1) // 1024
             release_disk_with_free_mb(lora_dir, free)
             release_disk_with_free_mb(lycor_dir, free)
         elif used_percent > 0.5:

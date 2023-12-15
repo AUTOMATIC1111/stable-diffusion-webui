@@ -9,6 +9,7 @@ from worker.task import TaskType, TaskProgress, Task, TaskStatus, SerializationO
 from loguru import logger
 from enum import IntEnum
 from modules.sd_models import CheckpointInfo
+from modules.hashes import calculate_sha256
 from handlers.typex import ModelType
 
 
@@ -171,7 +172,13 @@ class ModelCheckTaskHandler(Txt2ImgTaskHandler):
                 progress = TaskProgress.new_failed(task, "未能识别")
                 yield progress
             else:
+                model_hash = calculate_sha256(base_model)
+                # 添加模型计算HASH
                 result = r.to_dict() if r else {}
+                result.update({
+                    'sha256': model_hash,
+                    'short_hash': model_hash[:10]
+                })
                 progress.set_finish_result(result)
                 yield progress
 

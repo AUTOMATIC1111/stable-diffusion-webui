@@ -19,7 +19,7 @@ from handlers.utils import get_tmp_local_path, Tmp, upload_files
 from worker.task import Task, TaskType, TaskProgress, TaskStatus
 from handlers.Tagger.interrogator import Interrogator, HttpWfInterrogator
 from typing import List, Dict
-
+from modules import deepbooru, shared
 
 # interrogators: Dict[str, Interrogator] = {}
 
@@ -70,6 +70,29 @@ interrogators = {
 }
 
 
+def base_tagger(interrogator_name: str,
+                images: List[str]   # 图片路径
+                ):
+    res = {}
+    for path in images:
+        image, local_image = None, None
+        try:
+            local_image = get_tmp_local_path(path)
+            if not (local_image and os.path.isfile(local_image)):
+                raise OSError(f'cannot found image:{path}')
+            image = Image.open(local_image)
+        except UnidentifiedImageError:
+            logger.exception(f'${image} is not supported image type, image path:{path}')
+            continue
+        pil_img = image.convert('RGB')
+        if interrogator_name == "clip":
+            processed = shared.interrogator.interrogate(pil_img)
+        else:
+            processed = deepbooru.model.tag(pil_img)
+        res[os.path.basename(local_image)] = processed
+    return res
+
+
 def get_tagger(
         images: List[str],  # 图片路径
         interrogator_name: str,  # 反推模型
@@ -117,6 +140,7 @@ def get_tagger(
         except UnidentifiedImageError:
             logger.exception(f'${image} is not supported image type, image path:{path}')
             continue
+
         ratings, tags = interrogator.interrogate(image)
         processed_tags = Interrogator.postprocess_tags(
             tags,
@@ -186,6 +210,11 @@ class TaggerTask:
             task.get('unload_model_after_running', True),
         )
         # 改成Tageer反推
+
+        interrogator_name = t.interrogator.lower()
+        if interrogator_name in ['clip', 'deepbooru']:
+            return base_tagger(interrogator_name, t.images)
+
         return get_tagger(t.images, t.interrogator, t.threshold, t.additional_tags, t.exclude_tags,
                           t.sort_by_alphabetical_order,
                           t.add_confident_as_weight, t.replace_underscore, t.replace_underscore_excludes,
