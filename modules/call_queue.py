@@ -1,11 +1,10 @@
 from functools import wraps
 import html
-import threading
 import time
 
-from modules import shared, progress, errors, devices
+from modules import shared, progress, errors, devices, fifo_lock
 
-queue_lock = threading.Lock()
+queue_lock = fifo_lock.FIFOLock()
 
 
 def wrap_queued_call(func):

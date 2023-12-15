@@ -161,7 +161,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
                     position += 1
                     continue
 
-                emb_len = int(embedding.vec.shape[0])
+                emb_len = int(embedding.vectors)
                 if len(chunk.tokens) + emb_len > self.chunk_length:
                     next_chunk()
 
@@ -245,6 +245,8 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
                 hashes.append(f"{name}: {shorthash}")
 
             if hashes:
+                if self.hijack.extra_generation_params.get("TI hashes"):
+                    hashes.append(self.hijack.extra_generation_params.get("TI hashes"))
                 self.hijack.extra_generation_params["TI hashes"] = ", ".join(hashes)
 
         if getattr(self.wrapped, 'return_pooled', False):
