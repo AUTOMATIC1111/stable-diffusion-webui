@@ -37,15 +37,16 @@
   - **Extra networks** new *settting -> extra networks -> build info on first access*  
     indexes all networks on first access instead of server startup  
   - **IPEX**, thanks @disty0  
-    - update to **Torch 2.1**
-    - built-in *MKL* and *DPCPP* for IPEX  
-      no need to install OneAPI anymore  
+    - update to **Torch 2.1**    
+      if you get file not found errors, set DISABLE_IPEXRUN=1 and run the webui with --reinstall    
+    - built-in *MKL* and *DPCPP* for IPEX, no need to install OneAPI anymore  
     - fix IPEX Optimize not applying with Diffusers backend  
     - disable 32 bit workarounds if the GPU supports 64 bit  
+    - add DISABLE_IPEXRUN environment variable
     - compatibility improvements  
-  - **OpenVINO**
-    - Add *Directory for OpenVINO cache* option to *System Paths*, thanks @disty0
-    - Remove Intel ARC specific 1024x1024 workaround, thanks @disty0
+  - **OpenVINO**, thanks @disty0
+    - Add *Directory for OpenVINO cache* option to *System Paths*
+    - Remove Intel ARC specific 1024x1024 workaround
   - **Inpaint** add option `apply_overlay` to control if inpaint result should be applied as overlay or as-is  
     can remove artifacts and hard edges of inpaint area but also remove some details from original  
   - disable google fonts check on server startup  

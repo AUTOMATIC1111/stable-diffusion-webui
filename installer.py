@@ -426,9 +426,9 @@ def check_torch():
         torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.1.0a0 torchvision==0.16.0a0 intel-extension-for-pytorch==2.1.10+xpu --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/')
         if "linux" in sys.platform:
             os.environ.setdefault('TENSORFLOW_PACKAGE', 'tensorflow==2.14.0 intel-extension-for-tensorflow[xpu]==2.14.0.1')
-        install('mkl==2024.0.0', 'mkl')
-        install('mkl-dpcpp==2024.0.0', 'mkl-dpcpp')
-        install('openvino', 'openvino', ignore=True)
+        install(os.environ.get('MKL_PACKAGE', 'mkl==2024.0.0'), 'mkl')
+        install(os.environ.get('DPCPP_PACKAGE', 'mkl-dpcpp==2024.0.0'), 'mkl-dpcpp')
+        install(os.environ.get('OPENVINO_PACKAGE', 'openvino==2023.2.0'), 'openvino', ignore=True)
         install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True)
     elif allow_openvino and args.use_openvino:
         log.info('Using OpenVINO')
@@ -500,7 +500,7 @@ def check_torch():
     if opts.get('cuda_compile_backend', '') == 'hidet':
         install('hidet', 'hidet')
     if args.use_openvino or opts.get('cuda_compile_backend', '') == 'openvino_fx':
-        install('openvino==2023.2.0', 'openvino')
+        install(os.environ.get('OPENVINO_PACKAGE', 'openvino==2023.2.0'), 'openvino')
         install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True) # TODO openvino: numpy version conflicts with tensorflow and doesn't support Python 3.11
         os.environ.setdefault('PYTORCH_TRACING_MODE', 'TORCHFX')
         os.environ.setdefault('NEOReadDebugKeys', '1')
