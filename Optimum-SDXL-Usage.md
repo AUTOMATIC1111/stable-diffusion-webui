@@ -9,13 +9,8 @@ Here's a quick listing of things to tune for your setup:
 Both rocm and directml will generate at least 1024x1024 pictures at fp16. If your AMD card needs --no-half, try enabling --upcast-sampling instead, as full precision sdxl is too large to fit on 4gb. </details>
 
 ## System:
-- (Windows) Downgrade [Nvidia drivers](https://www.nvidia.com/en-us/geforce/drivers/) to 531 or lower.  New drivers cause extreme slowdowns on Windows when generating large images towards your card's maximum vram. \
-This important issue is discussed [here](https://github.com/vladmandic/automatic/discussions/1285) and in ([#11063](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/11063)). \
-**Symptoms:**
+* (Windows) Not all nvidia drivers work well with stable diffusion. All drivers above version 531 can cause extreme slowdowns on Windows when generating large images towards, or above your card's maximum vram. To mitigate this potential speed degradation, follow the steps outlined by nvidia on their website. https://nvidia.custhelp.com/app/answers/detail/a_id/5490 <details>**Related issues:** ([vladmandic/automatic/discussions/1285](https://github.com/vladmandic/automatic/discussions/1285)), ([#11063](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/11063)).</details>
 
-    * You see Shared GPU memory usage filling up in Task Manager
-    * Your generations that usually take 1-2 min, take 7+ min
-    * low vram cards are generating very slowly
  
 - (Linux) install `tcmalloc`, greatly reducing RAM usage: `sudo apt install --no-install-recommends google-perftools` ([#10117](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/10117)).
 - Add a pagefile/swapfile to prevent failure loading weights due to low RAM.
