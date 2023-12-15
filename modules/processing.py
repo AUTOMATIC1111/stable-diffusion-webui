@@ -126,7 +126,7 @@ class StableDiffusionProcessing:
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
     """
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, latent_sampler: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, image_cfg_scale: float = None, clip_skip: int = 1, width: int = 512, height: int = 512, full_quality: bool = True, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, diffusers_guidance_rescale: float = 0.7, hdr_clamp: bool = False, hdr_boundary: float = 4.0, hdr_threshold: float = 3.5, hdr_center: bool = False, hdr_channel_shift: float = 0.8, hdr_full_shift: float = 0.8, hdr_maximize: bool = False, hdr_max_center: float = 0.6, hdr_max_boundry: float = 1.0, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None): # pylint: disable=unused-argument
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, latent_sampler: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, image_cfg_scale: float = None, clip_skip: int = 1, width: int = 512, height: int = 512, full_quality: bool = True, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, diffusers_guidance_rescale: float = 0.7, resize_mode: int = 0, resize_name: str = 'None', scale_by: float = 0, selected_scale_tab: int = 0, hdr_clamp: bool = False, hdr_boundary: float = 4.0, hdr_threshold: float = 3.5, hdr_center: bool = False, hdr_channel_shift: float = 0.8, hdr_full_shift: float = 0.8, hdr_maximize: bool = False, hdr_max_center: float = 0.6, hdr_max_boundry: float = 1.0, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None): # pylint: disable=unused-argument
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
         self.prompt: str = prompt
@@ -145,6 +145,7 @@ class StableDiffusionProcessing:
         self.steps: int = steps
         self.hr_second_pass_steps = 0
         self.cfg_scale: float = cfg_scale
+        self.scale_by: float = scale_by
         self.image_cfg_scale = image_cfg_scale
         self.diffusers_guidance_rescale = diffusers_guidance_rescale
         if devices.backend == "ipex" and width == 1024 and height == 1024:
@@ -197,7 +198,8 @@ class StableDiffusionProcessing:
         self.refiner_prompt = ''
         self.refiner_negative = ''
         self.ops = []
-        self.resize_mode: int = 0
+        self.resize_mode: int = resize_mode
+        self.resize_name: str = resize_name
         self.ddim_discretize = shared.opts.ddim_discretize
         self.s_min_uncond = shared.opts.s_min_uncond
         self.s_churn = shared.opts.s_churn
@@ -636,9 +638,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
         args["Denoising strength"] = getattr(p, 'denoising_strength', None)
         # lookup by index
         if getattr(p, 'resize_mode', None) is not None:
-            RESIZE_MODES = ["None", "Resize fixed", "Crop and resize", "Resize and fill", "Latent upscale"]
-            args['Resize mode'] = RESIZE_MODES[p.resize_mode]
-        # TODO missing-by-index: inpainting_fill, inpaint_full_res, inpainting_mask_invert
+            args['Resize mode'] = shared.resize_modes[p.resize_mode]
     if 'face' in p.ops:
         args["Face restoration"] = shared.opts.face_restoration_model
     if 'color' in p.ops:
@@ -846,6 +846,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
         extra_network_data = None
+        debug(f'Processing inner: args={vars(p)}')
         for n in range(p.n_iter):
             p.iteration = n
             if shared.state.skipped:
@@ -1199,10 +1200,11 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
-    def __init__(self, init_images: list = None, resize_mode: int = 0, denoising_strength: float = 0.3, image_cfg_scale: float = None, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, refiner_steps: int = 5, refiner_start: float = 0, refiner_prompt: str = '', refiner_negative: str = '', **kwargs):
+    def __init__(self, init_images: list = None, resize_mode: int = 0, resize_name: str = 'None', denoising_strength: float = 0.3, image_cfg_scale: float = None, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, refiner_steps: int = 5, refiner_start: float = 0, refiner_prompt: str = '', refiner_negative: str = '', **kwargs):
         super().__init__(**kwargs)
         self.init_images = init_images
         self.resize_mode: int = resize_mode
+        self.resize_name: str = resize_name
         self.denoising_strength: float = denoising_strength
         self.image_cfg_scale: float = image_cfg_scale
         self.init_latent = None
@@ -1264,11 +1266,11 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 x1, y1, x2, y2 = crop_region
                 mask = mask.crop(crop_region)
                 if mask.width != self.width or mask.height != self.height:
-                    image_mask = images.resize_image(3, mask, self.width, self.height)
+                    image_mask = images.resize_image(3, mask, self.width, self.height, self.resize_name)
                 self.paste_to = (x1, y1, x2-x1, y2-y1)
             else:
                 if image_mask.width != self.width or image_mask.height != self.height:
-                    image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height)
+                    image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height, self.resize_name)
                 np_mask = np.array(image_mask)
                 np_mask = np.clip((np_mask.astype(np.float32)) * 2, 0, 255).astype(np.uint8)
                 self.mask_for_overlay = Image.fromarray(np_mask)
@@ -1280,7 +1282,13 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.color_corrections = []
         imgs = []
         unprocessed = []
+        if getattr(self, 'init_images', None) is None:
+            return
+            # raise RuntimeError("No images provided")
         for img in self.init_images:
+            if img is None:
+                shared.log.warning(f"Skipping empty image: images={self.init_images}")
+                continue
             self.init_img_hash = hashlib.sha256(img.tobytes()).hexdigest()[0:8] # pylint: disable=attribute-defined-outside-init
             self.init_img_width = img.width # pylint: disable=attribute-defined-outside-init
             self.init_img_height = img.height # pylint: disable=attribute-defined-outside-init
@@ -1289,7 +1297,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             image = images.flatten(img, shared.opts.img2img_background_color)
             if crop_region is None and self.resize_mode != 4:
                 if image.width != self.width or image.height != self.height:
-                    image = images.resize_image(self.resize_mode, image, self.width, self.height)
+                    image = images.resize_image(self.resize_mode, image, self.width, self.height, self.resize_name)
                 self.width = image.width
                 self.height = image.height
             if image_mask is not None:
@@ -1297,6 +1305,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                     image_masked = Image.new('RGBa', (image.width, image.height))
                     image_to_paste = image.convert("RGBA").convert("RGBa")
                     image_to_mask = ImageOps.invert(self.mask_for_overlay.convert('L')) if self.mask_for_overlay is not None else None
+                    image_to_mask = image_to_mask.resize((image.width, image.height), Image.Resampling.BILINEAR) if image_to_mask is not None else None
                     image_masked.paste(image_to_paste, mask=image_to_mask)
                     self.overlay_images.append(image_masked.convert('RGBA'))
                 except Exception as e:
@@ -1306,7 +1315,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if crop_region is not None:
                 image = image.crop(crop_region)
                 if image.width != self.width or image.height != self.height:
-                    image = images.resize_image(3, image, self.width, self.height)
+                    image = images.resize_image(3, image, self.width, self.height, self.resize_name)
             if image_mask is not None and self.inpainting_fill != 1:
                 image = modules.masking.fill(image, latent_mask)
             if add_color_corrections:
@@ -1327,7 +1336,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.batch_size = len(imgs)
             batch_images = np.array(imgs)
         else:
-            raise RuntimeError(f"bad number of images passed: {len(imgs)}; expecting {self.batch_size} or less")
+            raise RuntimeError(f"Incorrect number of of images={len(imgs)} expected={self.batch_size} or less")
         if shared.backend == shared.Backend.DIFFUSERS:
             return # we've already set self.init_images and self.mask and we dont need any more processing
 

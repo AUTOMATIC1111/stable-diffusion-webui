@@ -52,7 +52,7 @@ textarea { overflow-y: auto !important; }
 .small-accordion .form { min-width: var(--left-column) !important; max-width: max-content; }
 .small-accordion .label-wrap .icon { margin-right: 1.6em; margin-left: 0.6em; color: var(--button-primary-border-color); }
 .small-accordion .label-wrap { padding: 16px 0px 8px 0px; margin: 0; border-top: 2px solid var(--button-secondary-border-color); }
-.small-accordion { width: fit-content !important; padding-left: 0 !important; }
+.small-accordion { width: fit-content !important; min-width: fit-content !important; padding-left: 0 !important; }
 .extension-script { max-width: 48vw; }
 button.custom-button{ border-radius: var(--button-large-radius); padding: var(--button-large-padding); font-weight: var(--button-large-text-weight); border: var(--button-border-width) solid var(--button-secondary-border-color);
     background: var(--button-secondary-background-fill); color: var(--button-secondary-text-color); font-size: var(--button-large-text-size);

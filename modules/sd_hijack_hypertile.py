@@ -74,7 +74,7 @@ def split_attention(layer: nn.Module, tile_size: int=256, min_tile_size: int=256
                 out = forward(x, *args[1:], **kwargs)
                 return out
             if x.ndim == 4: # VAE
-                # TODO hyperlink vae breaks for diffusers when using non-standard sizes
+                # TODO hypertile vae breaks for diffusers when using non-standard sizes
                 if nh * nw > 1:
                     x = rearrange(x, "b c (nh h) (nw w) -> (b nh nw) c h w", nh=nh, nw=nw)
                 out = forward(x, *args[1:], **kwargs)
@@ -190,10 +190,12 @@ def hypertile_set(p, hr=False):
     if not shared.opts.hypertile_unet_enabled:
         return
     error_reported = False
-    if not hr:
-        height=p.height if not hr else getattr(p, 'hr_upscale_to_y', p.height)
-        width=p.width if not hr else getattr(p, 'hr_upscale_to_x', p.width)
+    if hr:
+        x = getattr(p, 'hr_upscale_to_x', 0)
+        y = getattr(p, 'hr_upscale_to_y', 0)
+        width = y if y > 0 else p.width
+        height = x if x > 0 else p.height
     else:
-        height=max(p.height, getattr(p, 'hr_upscale_to_y', p.height))
-        width=max(p.width, getattr(p, 'hr_upscale_to_x', p.width))
+        width=p.width
+        height=p.height
     reset_needed = True

@@ -8,7 +8,6 @@
   - **AnimateDiff** can now be used with *second pass* - enhance, upscale and hires your videos!  
   - **IP Adapter** add support for `ip-adapter-plus_sd15`, `ip-adapter-plus-face_sd15` and `ip-adapter-full-face_sd15`  
     additionally, ip-adapter can now be used in xyz-grid  
-  - **HDR controls** are now batch-aware for enhancement of multiple images or video frames  
   - [Playground v1](https://huggingface.co/playgroundai/playground-v1), [Playground v2 256](https://huggingface.co/playgroundai/playground-v2-256px-base), [Playground v2 512](https://huggingface.co/playgroundai/playground-v2-512px-base), [Playground v2 1024](https://huggingface.co/playgroundai/playground-v2-1024px-aesthetic) model support  
     - simply select from *networks -> reference* and use as usual  
   - [DemoFusion](https://github.com/PRIS-CV/DemoFusion) run your SDXL generations at any resolution!  
@@ -37,28 +36,38 @@
   - **Extra networks** new *settting -> extra networks -> build info on first access*  
     indexes all networks on first access instead of server startup  
   - **IPEX**, thanks @disty0  
-    - update to **Torch 2.1**    
-      if you get file not found errors, set DISABLE_IPEXRUN=1 and run the webui with --reinstall    
+    - update to **Torch 2.1**  
+      if you get file not found errors, set DISABLE_IPEXRUN=1 and run the webui with --reinstall  
     - built-in *MKL* and *DPCPP* for IPEX, no need to install OneAPI anymore  
     - fix IPEX Optimize not applying with Diffusers backend  
     - disable 32 bit workarounds if the GPU supports 64 bit  
     - add DISABLE_IPEXRUN environment variable
     - compatibility improvements  
-  - **OpenVINO**, thanks @disty0
-    - Add *Directory for OpenVINO cache* option to *System Paths*
-    - Remove Intel ARC specific 1024x1024 workaround
-  - **Inpaint** add option `apply_overlay` to control if inpaint result should be applied as overlay or as-is  
-    can remove artifacts and hard edges of inpaint area but also remove some details from original  
-  - disable google fonts check on server startup  
-  - fix torchvision/basicsr compatibility  
-  - fix extra networks sort
-  - add hdr settings to metadata  
-  - improve handling of long filenames and filenames during batch processing  
-  - do not set preview samples when using via api  
-  - avoid unnecessary resizes in img2img and inpaint  
-  - updated `cli/simple-txt2img.py` and `cli/simple-img2img.py` scripts  
-  - save `params.txt` regardless of image save status
-  - update built-in log monitor in ui, thanks @midcoastal  
+  - **OpenVINO**, thanks @disty0  
+    - add *Directory for OpenVINO cache* option to *System Paths*  
+    - remove Intel ARC specific 1024x1024 workaround  
+  - **UI**
+    - more dynamic controls depending on the backend (original or diffusers)  
+      controls that are not applicable in current mode are now hidden  
+    - allow setting of resize method directly in image tab  
+      (previously via settings -> upscaler_for_img2img)
+  - **HDR controls**
+    - batch-aware for enhancement of multiple images or video frames  
+    - available in image tab  
+  - **Other**
+    - **Inpaint** add option `apply_overlay` to control if inpaint result should be applied as overlay or as-is  
+      can remove artifacts and hard edges of inpaint area but also remove some details from original  
+    - **chaiNNer** fix NaN issues due to autocast  
+    - **Extra Networks** fix sort
+    - disable google fonts check on server startup  
+    - fix torchvision/basicsr compatibility  
+    - add hdr settings to metadata  
+    - improve handling of long filenames and filenames during batch processing  
+    - do not set preview samples when using via api  
+    - avoid unnecessary resizes in img2img and inpaint  
+    - updated `cli/simple-txt2img.py` and `cli/simple-img2img.py` scripts  
+    - save `params.txt` regardless of image save status
+    - update built-in log monitor in ui, thanks @midcoastal  
 
 ## Update for 2023-12-04
 
