@@ -340,7 +340,7 @@ class Api:
         task_id = create_task_id("text2img")
         if txt2imgreq.force_task_id is None:
             task_id = txt2imgreq.force_task_id
-            
+        
         script_runner = scripts.scripts_txt2img
         if not script_runner.scripts:
             script_runner.initialize_scripts(False)
