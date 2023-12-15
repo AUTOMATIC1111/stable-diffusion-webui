@@ -1,0 +1,3 @@
+Requirement already satisfied: imageio in d:\ai\stable-diffusion-webui\venv\lib\site-packages (2.27.0)
+Requirement already satisfied: numpy in d:\ai\stable-diffusion-webui\venv\lib\site-packages (from imageio) (1.23.5)
+Requirement already satisfied: pillow>=8.3.2 in d:\ai\stable-diffusion-webui\venv\lib\site-packages (from imageio) (9.5.0)

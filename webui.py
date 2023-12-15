@@ -369,7 +369,8 @@ def api_only():
     api = create_api(app)
 
     modules.script_callbacks.app_started_callback(None, app)
-
+    
+    modules.script_callbacks.before_ui_callback() # 新增加的代码 
     print(f"Startup time: {startup_timer.summary()}.")
     api.launch(
         server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1",
