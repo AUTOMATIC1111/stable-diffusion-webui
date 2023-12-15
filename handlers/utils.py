@@ -22,9 +22,9 @@ from tools.wrapper import FuncExecTimeWrapper
 from modules.shared import cmd_opts
 from modules.processing import Processed
 from modules.scripts import Script, ScriptRunner
-from handlers.formatter import format_alwayson_script_args
 from tools.environment import S3Tmp, S3SDWEB, enable_download_locker
 from filestorage import FileStorageCls, get_local_path, batch_download
+from handlers.formatter import format_alwayson_script_args, format_select_script_args
 from handlers.typex import ModelLocation, ModelType, ImageOutput, OutImageType, UserModelLocation
 from modules.sd_models import reload_model_weights, CheckpointInfo, get_closet_checkpoint_match, list_models
 
@@ -226,8 +226,12 @@ default_alwayson_scripts = {
 }
 
 
-def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: StrMapMap, selectable_scripts: Script,
-                     selectable_idx: int, request_script_args: typing.Sequence, script_runner: ScriptRunner,
+def init_script_args(default_script_args: typing.Sequence,
+                     alwayson_scripts: StrMapMap,
+                     selectable_scripts: Script,
+                     selectable_idx: int,
+                     request_script_args: typing.Union[typing.Sequence, typing.Mapping],
+                     script_runner: ScriptRunner,
                      enable_def_adetailer: bool = True,
                      enable_refiner: bool = False,  # 是否启用XLRefiner
                      refiner_switch_at: float = 0.8,  # XL 精描切换时机
@@ -242,7 +246,13 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
     script_args = [x for x in default_script_args]
 
     if selectable_scripts:
-        script_args[selectable_scripts.args_from:selectable_scripts.args_to] = request_script_args
+        formatted_select_script_args = format_select_script_args(
+            script_runner.is_img2img,
+            selectable_scripts,
+            request_script_args
+        )
+
+        script_args[selectable_scripts.args_from:selectable_scripts.args_to] = formatted_select_script_args
         script_args[0] = selectable_idx + 1
 
     alwayson_scripts = alwayson_scripts or {}
