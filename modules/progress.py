@@ -78,7 +78,7 @@ def setup_progress_api(app):
     return app.add_api_route("/internal/progress", progressapi, methods=["POST"], response_model=ProgressResponse)
 
 def get_pending_tasks():
-    pending_tasks_ids = [x for x in pending_tasks]
+    pending_tasks_ids = list(pending_tasks)
     pending_len = len(pending_tasks_ids)
     return PendingTasksResponse(size=pending_len, tasks=pending_tasks_ids)
 

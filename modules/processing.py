@@ -1359,7 +1359,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     inpainting_mask_invert: int = 0
     initial_noise_multiplier: float = None
     latent_mask: Image = None
-    force_task_id: string = None
+    force_task_id: str = None
 
     image_mask: Any = field(default=None, init=False)
 
