@@ -152,6 +152,11 @@ def refresh_vaes():
     modules.sd_vae.refresh_vae_list()
 
 
+def refresh_upscalers():
+    import modules.modelloader
+    modules.modelloader.load_upscalers()
+
+
 def list_samplers():
     import modules.sd_samplers # pylint: disable=W0621
     modules.sd_samplers.set_samplers()
@@ -564,7 +569,7 @@ options_templates.update(options_section(('postprocessing', "Postprocessing"), {
     "postprocessing_sep_upscalers": OptionInfo("<h2>Upscaling</h2>", "", gr.HTML),
     "upscaler_unload": OptionInfo(False, "Unload upscaler after processing"),
     # 'upscaling_max_images_in_cache': OptionInfo(5, "Maximum number of images in upscaling cache", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1, "visible": False}),
-    "upscaler_for_img2img": OptionInfo("None", "Default upscaler for image resize operations", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers], "visible": False}),
+    "upscaler_for_img2img": OptionInfo("None", "Default upscaler for image resize operations", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers], "visible": False}, refresh=refresh_upscalers),
     "upscaler_tile_size": OptionInfo(192, "Upscaler tile size", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
     "upscaler_tile_overlap": OptionInfo(8, "Upscaler tile overlap", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),
 }))

@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, ui_loadsave, ui_train, ui_models, ui_interrogate
+from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, ui_loadsave, ui_train, ui_models, ui_interrogate, modelloader
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path, data_path
 from modules.shared import opts, cmd_opts
@@ -223,6 +223,7 @@ def create_resize_inputs(tab, images, time_selector=False, scale_visible=True):
             resize_time = gr.Radio(label="Resize order", elem_id=f"{tab}_resize_order", choices=['Before', 'After'], value="Before", visible=time_selector)
         with gr.Row():
             resize_name = gr.Dropdown(label="Resize method", elem_id=f"{tab}_resize_name", choices=[x.name for x in modules.shared.sd_upscalers], value=opts.upscaler_for_img2img)
+            create_refresh_button(resize_name, modelloader.load_upscalers, lambda: {"choices": modelloader.load_upscalers()}, 'refresh_upscalers')
 
         with FormRow(visible=True) as _resize_group:
             with gr.Column(elem_id=f"{tab}_column_size"):
@@ -1206,7 +1207,6 @@ def create_ui(startup_timer = None):
         )
 
         def reference_submit(model):
-            from modules import modelloader
             loaded = modelloader.load_reference(model)
             if loaded:
                 return model if loaded else opts.sd_model_checkpoint

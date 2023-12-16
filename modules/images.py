@@ -520,7 +520,8 @@ def atomically_save_image():
             image_format = 'JPEG'
         if shared.opts.image_watermark_enabled:
             image = set_watermark(image, shared.opts.image_watermark)
-        shared.log.debug(f'Saving: image="{fn}" type={image_format} size={image.width}x{image.height}')
+        size = os.path.getsize(fn) if os.path.exists(fn) else 0
+        shared.log.debug(f'Saving: image="{fn}" type={image_format} resolution={image.width}x{image.height} size={size}')
         # additional metadata saved in files
         if shared.opts.save_txt and len(exifinfo) > 0:
             try:

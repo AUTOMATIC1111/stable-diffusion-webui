@@ -607,3 +607,4 @@ def load_upscalers():
     shared.sd_upscalers = sorted(datas, key=lambda x: x.name.lower() if not isinstance(x.scaler, (UpscalerNone, UpscalerLanczos, UpscalerNearest)) else "") # Special case for UpscalerNone keeps it at the beginning of the list.
     t1 = time.time()
     shared.log.debug(f"Load upscalers: total={len(shared.sd_upscalers)} downloaded={len([x for x in shared.sd_upscalers if x.data_path is not None and os.path.isfile(x.data_path)])} user={len([x for x in shared.sd_upscalers if x.custom])} time={t1-t0:.2f} {names}")
+    return [x.name for x in shared.sd_upscalers]

@@ -68,6 +68,7 @@
     - add hdr settings to metadata  
     - improve handling of long filenames and filenames during batch processing  
     - do not set preview samples when using via api  
+    - log output file sizes  
     - avoid unnecessary resizes in img2img and inpaint  
     - updated `cli/simple-txt2img.py` and `cli/simple-img2img.py` scripts  
     - save `params.txt` regardless of image save status
