@@ -275,7 +275,7 @@ def run_extensions_installers(settings_file):
                 startup_timer.record(dirname_extension)
 
 
-re_requirement = re.compile(r"\s*([-_a-zA-Z0-9]+)\s*(?:==\s*([-+_.a-zA-Z0-9]+))?\s*")
+re_requirement = re.compile(r"\s*([\w-]+)\s*(?:==\s*([\w-+.]+))?\s*")
 
 
 def requirements_met(requirements_file):
