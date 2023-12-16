@@ -1,3 +1,4 @@
+from __future__ import annotations
 import base64
 import io
 import json
@@ -9,14 +10,11 @@ from modules.paths import data_path
 from modules import shared, ui_tempdir, script_callbacks, processing
 from PIL import Image
 
-re_param_code = r'\s*([\w ]+):\s*("(?:\\.|[^\\"])+"|[^,]*)(?:,|$)'
+re_param_code = r'\s*(\w[\w \-/]+):\s*("(?:\\.|[^\\"])+"|[^,]*)(?:,|$)'
 re_param = re.compile(re_param_code)
 re_imagesize = re.compile(r"^(\d+)x(\d+)$")
 re_hypernet_hash = re.compile("\(([0-9a-f]+)\)$")
 type_of_gr_update = type(gr.update())
-
-paste_fields = {}
-registered_param_bindings = []
 
 
 class ParamBinding:
@@ -28,6 +26,10 @@ class ParamBinding:
         self.source_tabname = source_tabname
         self.override_settings_component = override_settings_component
         self.paste_field_names = paste_field_names or []
+
+
+paste_fields: dict[str, dict] = {}
+registered_param_bindings: list[ParamBinding] = []
 
 
 def reset():
@@ -113,7 +115,6 @@ def register_paste_params_button(binding: ParamBinding):
 
 
 def connect_paste_params_buttons():
-    binding: ParamBinding
     for binding in registered_param_bindings:
         destination_image_component = paste_fields[binding.tabname]["init_img"]
         fields = paste_fields[binding.tabname]["fields"]
@@ -313,6 +314,9 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "VAE Decoder" not in res:
         res["VAE Decoder"] = "Full"
 
+    skip = set(shared.opts.infotext_skip_pasting)
+    res = {k: v for k, v in res.items() if k not in skip}
+
     return res
 
 
@@ -443,3 +447,4 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
         outputs=[],
         show_progress=False,
     )
+
