@@ -348,9 +348,27 @@ class SkipWritingToConfig:
         SkipWritingToConfig.skip = self.previous
 
 
+def check_fp8(model):
+    if model is None:
+        return None
+    if devices.get_optimal_device_name() == "mps":
+        enable_fp8 = False
+    elif shared.opts.fp8_storage == "Enable":
+        enable_fp8 = True
+    elif getattr(model, "is_sdxl", False) and shared.opts.fp8_storage == "Enable for SDXL":
+        enable_fp8 = True
+    else:
+        enable_fp8 = False
+    return enable_fp8
+
+
 def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer):
     sd_model_hash = checkpoint_info.calculate_shorthash()
     timer.record("calculate hash")
+
+    if devices.fp8:
+        # prevent model to load state dict in fp8
+        model.half()
 
     if not SkipWritingToConfig.skip:
         shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title
@@ -403,6 +421,28 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
 
         devices.dtype_unet = torch.float16
         timer.record("apply half()")
+
+    for module in model.modules():
+        if hasattr(module, 'fp16_weight'):
+            del module.fp16_weight
+        if hasattr(module, 'fp16_bias'):
+            del module.fp16_bias
+
+    if check_fp8(model):
+        devices.fp8 = True
+        first_stage = model.first_stage_model
+        model.first_stage_model = None
+        for module in model.modules():
+            if isinstance(module, (torch.nn.Conv2d, torch.nn.Linear)):
+                if shared.opts.cache_fp16_weight:
+                    module.fp16_weight = module.weight.data.clone().cpu().half()
+                    if module.bias is not None:
+                        module.fp16_bias = module.bias.data.clone().cpu().half()
+                module.to(torch.float8_e4m3fn)
+        model.first_stage_model = first_stage
+        timer.record("apply fp8")
+    else:
+        devices.fp8 = False
 
     devices.unet_needs_upcast = shared.cmd_opts.upcast_sampling and devices.dtype == torch.float16 and devices.dtype_unet == torch.float16
 
@@ -746,7 +786,7 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
         return None
 
 
-def reload_model_weights(sd_model=None, info=None):
+def reload_model_weights(sd_model=None, info=None, forced_reload=False):
     checkpoint_info = info or select_checkpoint()
 
     timer = Timer()
@@ -758,11 +798,14 @@ def reload_model_weights(sd_model=None, info=None):
         current_checkpoint_info = None
     else:
         current_checkpoint_info = sd_model.sd_checkpoint_info
-        if sd_model.sd_model_checkpoint == checkpoint_info.filename:
+        if check_fp8(sd_model) != devices.fp8:
+            # load from state dict again to prevent extra numerical errors
+            forced_reload = True
+        elif sd_model.sd_model_checkpoint == checkpoint_info.filename and not forced_reload:
             return sd_model
 
     sd_model = reuse_model_from_already_loaded(sd_model, checkpoint_info, timer)
-    if sd_model is not None and sd_model.sd_checkpoint_info.filename == checkpoint_info.filename:
+    if not forced_reload and sd_model is not None and sd_model.sd_checkpoint_info.filename == checkpoint_info.filename:
         return sd_model
 
     if sd_model is not None:

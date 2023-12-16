@@ -137,7 +137,7 @@ class NetworkModule:
     def finalize_updown(self, updown, orig_weight, output_shape, ex_bias=None):
         if self.bias is not None:
             updown = updown.reshape(self.bias.shape)
-            updown += self.bias.to(orig_weight.device, dtype=orig_weight.dtype)
+            updown += self.bias.to(orig_weight.device, dtype=updown.dtype)
             updown = updown.reshape(output_shape)
 
         if len(output_shape) == 4:

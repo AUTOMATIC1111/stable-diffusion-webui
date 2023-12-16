@@ -314,6 +314,12 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "VAE Decoder" not in res:
         res["VAE Decoder"] = "Full"
 
+    if "FP8 weight" not in res:
+        res["FP8 weight"] = "Disable"
+
+    if "Cache FP16 weight for LoRA" not in res and res["FP8 weight"] != "Disable":
+        res["Cache FP16 weight for LoRA"] = False
+
     skip = set(shared.opts.infotext_skip_pasting)
     res = {k: v for k, v in res.items() if k not in skip}
 

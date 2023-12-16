@@ -93,7 +93,7 @@ def extend_sdxl(model):
     model.parameterization = "v" if isinstance(model.denoiser.scaling, sgm.modules.diffusionmodules.denoiser_scaling.VScaling) else "eps"
 
     discretization = sgm.modules.diffusionmodules.discretizer.LegacyDDPMDiscretization()
-    model.alphas_cumprod = torch.asarray(discretization.alphas_cumprod, device=devices.device, dtype=dtype)
+    model.alphas_cumprod = torch.asarray(discretization.alphas_cumprod, device=devices.device, dtype=torch.float32)
 
     model.conditioner.wrapped = torch.nn.Module()
 
