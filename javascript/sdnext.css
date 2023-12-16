@@ -70,9 +70,10 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 .performance { font-size: 0.85em; color: #444; }
 .performance p { display: inline-block; color: var(--body-text-color-subdued) !important }
 .performance .time { margin-right: 0; }
+#control_gallery { height: 564px; }
+#control-inputs { margin-top: 1em; }
 #txt2img_prompt_container, #img2img_prompt_container, #control_prompt_container { margin-right: var(--layout-gap) }
-#txt2img_footer, #img2img_footer, #extras_footer { height: fit-content; }
-#txt2img_footer, #img2img_footer { height: fit-content; display: none; }
+#txt2img_footer, #img2img_footer, #extras_footer, #control_footer { height: fit-content; display: none; }
 #txt2img_generate_box, #img2img_generate_box, #control_general_box { gap: 0.5em; flex-wrap: wrap-reverse; height: fit-content; }
 #txt2img_actions_column, #img2img_actions_column, #control_actions_column { gap: 0.3em; height: fit-content; }
 #txt2img_generate_box>button, #img2img_generate_box>button, #control_generate_box>button, #txt2img_enqueue, #img2img_enqueue { min-height: 42px; max-height: 42px; line-height: 1em; }
@@ -92,7 +93,6 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 div#extras_scale_to_tab div.form{ flex-direction: row; }
 #img2img_unused_scale_by_slider { visibility: hidden; width: 0.5em; max-width: 0.5em; min-width: 0.5em; }
 .inactive{ opacity: 0.5; }
-div.dimensions-tools { min-width: 0 !important; max-width: fit-content; flex-direction: row; align-content: center; }
 div#extras_scale_to_tab div.form{ flex-direction: row; }
 #mode_img2img .gradio-image>div.fixed-height, #mode_img2img .gradio-image>div.fixed-height img{ height: 480px !important; max-height: 480px !important; min-height: 480px !important; }
 #img2img_sketch, #img2maskimg, #inpaint_sketch { overflow: overlay !important; resize: auto; background: var(--panel-background-fill); z-index: 5; }
@@ -307,7 +307,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
     #img2img_actions_column {display: flex; min-width: fit-content !important; flex-direction: row;justify-content: space-evenly; align-items: center;}
     #txt2img_generate_box, #img2img_generate_box, #txt2img_enqueue_wrapper,#img2img_enqueue_wrapper {display: flex;flex-direction: column;height: 4em !important;align-items: stretch;justify-content: space-evenly;}
     #img2img_interface, #img2img_results, #img2img_footer p {text-wrap: wrap; min-width: 100% !important; max-width: 100% !important;} /* maintain single column for from image operations on larger mobile devices */
-    #img2img_sketch, #img2maskimg, #inpaint_sketch {display: flex; alignment-baseline:after-edge !important; overflow: auto !important; resize: none !important; } /* fix inpaint image display being too large for mobile displays */
+    #img2img_sketch, #img2maskimg, #inpaint_sketch {display: flex; overflow: auto !important; resize: none !important; } /* fix inpaint image display being too large for mobile displays */
     #img2maskimg canvas { width: auto !important; max-height: 100% !important; height: auto !important; }
     #txt2img_sampler, #txt2img_batch, #txt2img_seed_group, #txt2img_advanced, #txt2img_second_pass, #img2img_sampling_group, #img2img_resize_group, #img2img_batch_group, #img2img_seed_group, #img2img_denoise_group, #img2img_advanced_group { width: 100% !important; } /* fix from text/image UI elements to prevent them from moving around within the UI */
     #img2img_resize_group .gradio-radio>div { display: flex; flex-direction: column; width: unset !important; }

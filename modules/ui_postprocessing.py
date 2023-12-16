@@ -31,7 +31,7 @@ def create_ui():
                     extras_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, placeholder="Leave blank to save images to the default path.", elem_id="extras_batch_output_dir")
                     show_extras_results = gr.Checkbox(label='Show result images', value=True, elem_id="extras_show_extras_results")
             with gr.Row():
-                buttons = parameters_copypaste.create_buttons(["txt2img", "img2img", "inpaint"])
+                buttons = parameters_copypaste.create_buttons(["txt2img", "img2img", "inpaint", "control"])
             with gr.Row():
                 save_output = gr.Checkbox(label='Save output', value=True, elem_id="extras_save_output")
             script_inputs = scripts.scripts_postproc.setup_ui()

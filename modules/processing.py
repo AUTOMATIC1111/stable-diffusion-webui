@@ -1200,7 +1200,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
-    def __init__(self, init_images: list = None, resize_mode: int = 0, resize_name: str = 'None', denoising_strength: float = 0.3, image_cfg_scale: float = None, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, refiner_steps: int = 5, refiner_start: float = 0, refiner_prompt: str = '', refiner_negative: str = '', **kwargs):
+    def __init__(self, init_images: list = None, resize_mode: int = 0, resize_name: str = 'None', denoising_strength: float = 0.3, image_cfg_scale: float = None, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, scale_by: float = 1, refiner_steps: int = 5, refiner_start: float = 0, refiner_prompt: str = '', refiner_negative: str = '', **kwargs):
         super().__init__(**kwargs)
         self.init_images = init_images
         self.resize_mode: int = resize_mode
@@ -1226,7 +1226,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.refiner_negative = refiner_negative
         self.enable_hr = None
         self.is_batch = False
-        self.scale_by = 1.0
+        self.scale_by = scale_by
         self.sampler = None
         self.scripts = None
         self.script_args = []

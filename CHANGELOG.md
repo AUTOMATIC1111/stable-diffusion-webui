@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-14
+## Update for 2023-12-16
 
 *Note*: based on `diffusers==0.25.0.dev0`
 
@@ -57,7 +57,8 @@
   - **Other**
     - **Inpaint** add option `apply_overlay` to control if inpaint result should be applied as overlay or as-is  
       can remove artifacts and hard edges of inpaint area but also remove some details from original  
-    - **chaiNNer** fix NaN issues due to autocast  
+    - **chaiNNer** fix `NaN` issues due to autocast  
+    - **Upscale** increase limit from 4x to 8x given the quality of some upscalers  
     - **Extra Networks** fix sort
     - disable google fonts check on server startup  
     - fix torchvision/basicsr compatibility  

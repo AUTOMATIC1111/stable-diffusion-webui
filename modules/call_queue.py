@@ -77,6 +77,7 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False, name=None):
             vram = {k: -(v//-(1024*1024)) for k, v in shared.mem_mon.read().items()}
             if vram.get('active_peak', 0) > 0:
                 vram_html = f" | <p class='vram'>GPU active {max(vram['active_peak'], vram['reserved_peak'])} MB reserved {vram['reserved']} | used {vram['used']} MB free {vram['free']} MB total {vram['total']} MB | retries {vram['retries']} oom {vram['oom']}</p>"
-        res[-1] += f"<div class='performance'><p class='time'>Time: {elapsed_text}</p>{vram_html}</div>"
+        if isinstance(res, list):
+            res[-1] += f"<div class='performance'><p class='time'>Time: {elapsed_text}</p>{vram_html}</div>"
         return tuple(res)
     return f

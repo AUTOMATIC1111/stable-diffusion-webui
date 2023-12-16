@@ -195,13 +195,13 @@ def open_folder(result_gallery, gallery_index = 0):
             subprocess.Popen(["xdg-open", path]) # pylint: disable=consider-using-with
 
 
-def create_output_panel(tabname):
+def create_output_panel(tabname, preview=True):
     import modules.generation_parameters_copypaste as parameters_copypaste
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
             # columns are for <576px, <768px, <992px, <1200px, <1400px, >1400px
-            result_gallery = gr.Gallery(value=[], label='Output', show_label=False, show_download_button=True, allow_preview=True, elem_id=f"{tabname}_gallery", container=False, preview=True, columns=5, object_fit='scale-down', height=shared.opts.gallery_height or None)
+            result_gallery = gr.Gallery(value=[], label='Output', show_label=False, show_download_button=True, allow_preview=True, elem_id=f"{tabname}_gallery", container=False, preview=preview, columns=5, object_fit='scale-down', height=shared.opts.gallery_height or None)
 
         with gr.Column(elem_id=f"{tabname}_footer", elem_classes="gallery_footer"):
             dummy_component = gr.Label(visible=False)
@@ -214,7 +214,7 @@ def create_output_panel(tabname):
                     clip_files.click(fn=None, _js='clip_gallery_urls', inputs=[result_gallery], outputs=[])
                 save = gr.Button('Save', elem_id=f'save_{tabname}')
                 delete = gr.Button('Delete', elem_id=f'delete_{tabname}')
-                buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras"])
+                buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras", "control"])
 
             download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
             with gr.Group():

@@ -28,6 +28,7 @@ class ParamBinding:
         self.source_tabname = source_tabname
         self.override_settings_component = override_settings_component
         self.paste_field_names = paste_field_names or []
+        debug(f'ParamBinding: {vars(self)}')
 
 
 def reset():
@@ -112,6 +113,8 @@ def create_buttons(tabs_list):
             name = 'Inpaint'
         elif name == 'extras':
             name = 'Process'
+        elif name == 'control':
+            name = 'Control'
         buttons[tab] = gr.Button(f"➠ {name}", elem_id=f"{tab}_tab")
     return buttons
 
@@ -131,6 +134,9 @@ def register_paste_params_button(binding: ParamBinding):
 def connect_paste_params_buttons():
     binding: ParamBinding
     for binding in registered_param_bindings:
+        if binding.tabname not in paste_fields:
+            debug(f"Not not registered: tab={binding.tabname}")
+            continue
         destination_image_component = paste_fields[binding.tabname]["init_img"]
         fields = paste_fields[binding.tabname]["fields"]
         override_settings_component = binding.override_settings_component or paste_fields[binding.tabname]["override_settings_component"]

@@ -101,6 +101,13 @@ function switch_to_extras(...args) {
   return Array.from(arguments);
 }
 
+function switch_to_control(...args) {
+  const tabs = Array.from(gradioApp().querySelector('#tabs').querySelectorAll('button'));
+  const btn = tabs.find((el) => el.innerText.toLowerCase() === 'control');
+  btn.click();
+  return Array.from(arguments);
+}
+
 function get_tab_index(tabId) {
   let res = 0;
   gradioApp().getElementById(tabId).querySelector('div').querySelectorAll('button')
@@ -164,6 +171,17 @@ function submit_img2img(...args) {
   return res;
 }
 
+function submit_control(...args) {
+  log('submitControl');
+  clearGallery('control');
+  const id = randomId();
+  requestProgress(id, null, gradioApp().getElementById('control_gallery'));
+  const res = create_submit_args(args);
+  res[0] = id;
+  res[1] = gradioApp().querySelector('#control-tabs > .tab-nav > .selected')?.innerText.toLowerCase() || ''; // selected tab name
+  return res;
+}
+
 function submit_postprocessing(...args) {
   log('SubmitExtras');
   clearGallery('extras');
@@ -208,6 +226,12 @@ function recalculate_prompts_img2img(...args) {
 function recalculate_prompts_inpaint(...args) {
   recalculatePromptTokens('img2img_prompt');
   recalculatePromptTokens('img2img_neg_prompt');
+  return Array.from(arguments);
+}
+
+function recalculate_prompts_control(...args) {
+  recalculatePromptTokens('control_prompt');
+  recalculatePromptTokens('control_neg_prompt');
   return Array.from(arguments);
 }
 
