@@ -51,7 +51,7 @@
     }
   },
   "passes": {
-    "optimize": {
+    "optimize_DmlExecutionProvider": {
       "type": "OrtTransformersOptimization",
       "disable_search": true,
       "config": {
