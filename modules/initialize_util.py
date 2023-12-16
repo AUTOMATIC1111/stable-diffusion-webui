@@ -150,10 +150,14 @@ def dumpstacks():
 
 def configure_sigint_handler():
     # make the program just exit at ctrl+c without waiting for anything
+
+    from modules import shared
+
     def sigint_handler(sig, frame):
         print(f'Interrupted with signal {sig} in {frame}')
 
-        dumpstacks()
+        if shared.opts.dump_stacks_on_signal:
+            dumpstacks()
 
         os._exit(0)
 

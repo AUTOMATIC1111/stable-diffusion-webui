@@ -60,7 +60,7 @@ def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=No
                 sigma_restart = get_sigmas_karras(restart_steps, sigmas[min_idx].item(), sigmas[max_idx].item(), device=sigmas.device)[:-1]
                 while restart_times > 0:
                     restart_times -= 1
-                    step_list.extend([(old_sigma, new_sigma) for (old_sigma, new_sigma) in zip(sigma_restart[:-1], sigma_restart[1:])])
+                    step_list.extend(zip(sigma_restart[:-1], sigma_restart[1:]))
 
     last_sigma = None
     for old_sigma, new_sigma in tqdm.tqdm(step_list, disable=disable):
