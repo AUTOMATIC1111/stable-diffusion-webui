@@ -657,7 +657,8 @@ def save_video_atomic(images, filename, video_type: str = 'none', duration: floa
         for i in range(len(video_frames)):
             img = cv2.cvtColor(video_frames[i], cv2.COLOR_RGB2BGR)
             video_writer.write(img)
-        shared.log.info(f'Save video: file="{filename}" frames={len(frames)} duration={duration} fourcc={fourcc}')
+        size = os.path.getsize(filename)
+        shared.log.info(f'Save video: file="{filename}" frames={len(frames)} duration={duration} fourcc={fourcc} size={size}')
     if video_type.lower() == 'gif' or video_type.lower() == 'png':
         append = images.copy()
         image = append.pop(0)
@@ -672,7 +673,8 @@ def save_video_atomic(images, filename, video_type: str = 'none', duration: floa
             duration = 1000.0 * duration / frames,
             loop = 0 if loop else 1,
         )
-        shared.log.info(f'Save video: file="{filename}" frames={len(append) + 1} duration={duration} loop={loop}')
+        size = os.path.getsize(filename)
+        shared.log.info(f'Save video: file="{filename}" frames={len(append) + 1} duration={duration} loop={loop} size={size}')
 
 
 def save_video(p, images, filename = None, video_type: str = 'none', duration: float = 2.0, loop: bool = False, interpolate: int = 0, scale: float = 1.0, pad: int = 1, change: float = 0.3):

@@ -634,6 +634,10 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
                 if shared.backend == shared.Backend.ORIGINAL:
                     warn(f'Model detected as SD XL instruct pix2pix model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion XL Instruct'
+            elif size > 3138 and size < 3142: #3140
+                if shared.backend == shared.Backend.ORIGINAL:
+                    warn(f'Model detected as Segmind Vega model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                guess = 'Stable Diffusion XL'
             else:
                 guess = 'Stable Diffusion'
             # guess by name

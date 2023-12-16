@@ -34,6 +34,11 @@
     "desc": "(SVD) Image-to-Video is a latent diffusion model trained to generate short video clips from an image conditioning. This model was trained to generate 25 frames at resolution 576x1024 given a context frame of the same size, finetuned from SVD Image-to-Video [14 frames]. We also finetune the widely used f8-decoder for temporal consistency.",
     "preview": "stabilityai--stable-video-diffusion-img2vid-xt.jpg"
   },
+  "Segmind Vega": {
+    "path": "segmind/Segmind-Vega",
+    "desc": "The Segmind-Vega Model is a distilled version of the Stable Diffusion XL (SDXL), offering a remarkable 70% reduction in size and an impressive 100% speedup while retaining high-quality text-to-image generation capabilities. Trained on diverse datasets, including Grit and Midjourney scrape data, it excels at creating a wide range of visual content based on textual prompts. Employing a knowledge distillation strategy, Segmind-Vega leverages the teachings of several expert models, including SDXL, ZavyChromaXL, and JuggernautXL, to combine their strengths and produce compelling visual outputs.",
+    "preview": "segmind--Segmind-Vega.jpg"
+  },
   "Segmind SSD-1B": {
     "path": "segmind/SSD-1B",
     "desc": "The Segmind Stable Diffusion Model (SSD-1B) offers a compact, efficient, and distilled version of the SDXL model. At 50% smaller and 60% faster than Stable Diffusion XL (SDXL), it provides quick and seamless performance without sacrificing image quality.",
