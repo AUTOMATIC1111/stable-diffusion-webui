@@ -16,6 +16,7 @@ exclude = [
 
 ignore = [
 	"E501", # Line too long
+	"E721", # Do not compare types, use `isinstance`
 	"E731", # Do not assign a `lambda` expression, use a `def`
 	
 	"I001", # Import block is un-sorted or un-formatted
