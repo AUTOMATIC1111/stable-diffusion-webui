@@ -74,8 +74,9 @@ class ProgressResponse(BaseModel):
 
 
 def setup_progress_api(app):
-    app.add_api_route("/internal/pendingTasks", get_pending_tasks, methods=["GET"])
+    app.add_api_route("/internal/pending-tasks", get_pending_tasks, methods=["GET"])
     return app.add_api_route("/internal/progress", progressapi, methods=["POST"], response_model=ProgressResponse)
+
 
 def get_pending_tasks():
     pending_tasks_ids = list(pending_tasks)
