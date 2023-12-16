@@ -333,7 +333,7 @@ options_templates.update(options_section(('ui', "Live previews", "ui"), {
     "live_preview_content": OptionInfo("Prompt", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
     "live_preview_refresh_period": OptionInfo(1000, "Progressbar and preview update period").info("in milliseconds"),
     "live_preview_fast_interrupt": OptionInfo(False, "Return image with chosen live preview method on interrupt").info("makes interrupts faster"),
-    "js_live_preview_in_modal_lightbox": OptionInfo(True, "Show Live preview in full page image viewer"),
+    "js_live_preview_in_modal_lightbox": OptionInfo(False, "Show Live preview in full page image viewer"),
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler parameters", "sd"), {
