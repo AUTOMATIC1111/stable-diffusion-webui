@@ -107,8 +107,8 @@ def check_versions():
     import torch
     import gradio
 
-    expected_torch_version = "2.1.0"
-    expected_xformers_version = "0.0.22.post7"
+    expected_torch_version = "2.1.2"
+    expected_xformers_version = "0.0.23.post1"
     expected_gradio_version = "3.41.2"
 
     if version.parse(torch.__version__) < version.parse(expected_torch_version):
