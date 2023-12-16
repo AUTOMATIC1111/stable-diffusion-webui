@@ -222,13 +222,30 @@ fi
 # Try using TCMalloc on Linux
 prepare_tcmalloc() {
     if [[ "${OSTYPE}" == "linux"* ]] && [[ -z "${NO_TCMALLOC}" ]] && [[ -z "${LD_PRELOAD}" ]]; then
-        TCMALLOC="$(PATH=/sbin:$PATH ldconfig -p | grep -Po "libtcmalloc(_minimal|)\.so\.\d" | head -n 1)"
-        if [[ ! -z "${TCMALLOC}" ]]; then
-            echo "Using TCMalloc: ${TCMALLOC}"
-            export LD_PRELOAD="${TCMALLOC}"
-        else
-            printf "\e[1m\e[31mCannot locate TCMalloc (improves CPU memory usage)\e[0m\n"
-        fi
+        # Define Tcmalloc Libs arrays
+        TCMALLOC_LIBS=("libtcmalloc(_minimal|)\.so\.\d" "libtcmalloc\.so\.\d")
+
+        # Traversal array
+        for lib in "${TCMALLOC_LIBS[@]}"
+        do
+          #Determine which type of tcmalloc library the library supports
+          TCMALLOC="$(PATH=/usr/sbin:$PATH ldconfig -p | grep -P $lib | head -n 1)"
+          TC_INFO=(${TCMALLOC//=>/})
+          if [[ ! -z "${TC_INFO}" ]]; then
+              echo "Using TCMalloc: ${TC_INFO}"
+              #Determine if the library is linked to libptthread and resolve undefined symbol: ptthread_Key_Create
+              if ldd ${TC_INFO[2]} | grep -q 'libpthread'; then
+                echo "$TC_INFO is linked with libpthread,execute LD_PRELOAD=${TC_INFO}"
+                export LD_PRELOAD="${TC_INFO}"
+                break
+              else
+                echo "$TC_INFO is not linked with libpthreadand will trigger undefined symbol: ptthread_Key_Create error"
+              fi
+          else
+              printf "\e[1m\e[31mCannot locate TCMalloc (improves CPU memory usage)\e[0m\n"
+          fi
+        done
+
     fi
 }
 
