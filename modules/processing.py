@@ -431,6 +431,8 @@ class StableDiffusionProcessing:
             opts.sdxl_crop_top,
             self.width,
             self.height,
+            opts.fp8_storage,
+            opts.cache_fp16_weight,
         )
 
     def get_conds_with_caching(self, function, required_prompts, steps, caches, extra_network_data, hires_steps=None):
