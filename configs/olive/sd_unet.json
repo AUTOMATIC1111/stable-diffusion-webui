@@ -55,7 +55,7 @@
     }
   },
   "passes": {
-    "optimize": {
+    "optimize_DmlExecutionProvider": {
       "type": "OrtTransformersOptimization",
       "disable_search": true,
       "config": {
@@ -90,8 +90,31 @@
           "GroupNorm": [0, 1, 2]
         }
       }
+    },
+    "optimize_CUDAExecutionProvider": {
+      "type": "OrtTransformersOptimization",
+      "disable_search": true,
+      "config": {
+        "model_type": "unet",
+        "opt_level": 0,
+        "float16": true,
+        "use_gpu": true,
+        "keep_io_types": false
+      }
+    },
+    "optimize_ROCMExecutionProvider": {
+      "type": "OrtTransformersOptimization",
+      "disable_search": true,
+      "config": {
+        "model_type": "unet",
+        "opt_level": 0,
+        "float16": true,
+        "use_gpu": true,
+        "keep_io_types": false
+      }
     }
   },
+  "pass_flows": [[]],
   "engine": {
     "search_strategy": {
       "execution_order": "joint",

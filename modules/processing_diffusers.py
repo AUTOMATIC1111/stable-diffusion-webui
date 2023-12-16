@@ -7,7 +7,6 @@ import torch
 import torchvision.transforms.functional as TF
 import diffusers
 from modules import shared, devices, processing, sd_samplers, sd_models, images, errors, masking, prompt_parser_diffusers, sd_hijack_hypertile, processing_correction, processing_vae
-from modules.olive import OlivePipeline
 
 
 debug = shared.log.trace if os.environ.get('SD_DIFFUSERS_DEBUG', None) is not None else lambda *args, **kwargs: None
@@ -223,7 +222,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             generator = [torch.Generator(generator_device).manual_seed(s) for s in p.seeds]
         prompts, negative_prompts, prompts_2, negative_prompts_2 = fix_prompts(prompts, negative_prompts, prompts_2, negative_prompts_2)
         parser = 'Fixed attention'
-        if shared.opts.prompt_attention != 'Fixed attention' and 'StableDiffusion' in model.__class__.__name__ and not isinstance(model, diffusers.OnnxStableDiffusionPipeline):
+        if shared.opts.prompt_attention != 'Fixed attention' and 'StableDiffusion' in model.__class__.__name__ and not isinstance(model, OnnxStableDiffusionPipeline):
             try:
                 prompt_parser_diffusers.encode_prompts(model, p, prompts, negative_prompts, kwargs.get("num_inference_steps", 1), kwargs.pop("clip_skip", None))
                 parser = shared.opts.prompt_attention

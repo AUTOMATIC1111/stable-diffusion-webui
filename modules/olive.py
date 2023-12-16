@@ -9,7 +9,7 @@ is_sdxl = False
 width = 512
 height = 512
 batch_size = 1
-hidden_state_size = 768
+cross_attention_dim = 768
 time_ids_size = 5
 
 
@@ -87,14 +87,11 @@ def text_encoder_2_data_loader(data_dir, _, *args, **kwargs):
 
 
 def unet_inputs(_, torch_dtype, is_conversion_inputs=False):
-    # TODO (pavignol): All the multiplications by 2 here are bacause the XL base has 2 text encoders
-    # For refiner, it should be multiplied by 1 (single text encoder)
-
     if is_sdxl:
         inputs = {
             "sample": torch.rand((2 * batch_size, 4, height // 8, width // 8), dtype=torch_dtype),
             "timestep": torch.rand((1,), dtype=torch_dtype),
-            "encoder_hidden_states": torch.rand((2 * batch_size, 77, hidden_state_size), dtype=torch_dtype),
+            "encoder_hidden_states": torch.rand((2 * batch_size, 77, cross_attention_dim), dtype=torch_dtype),
         }
 
         if is_conversion_inputs:
@@ -111,20 +108,25 @@ def unet_inputs(_, torch_dtype, is_conversion_inputs=False):
         inputs = {
             "sample": torch.rand((batch_size, 4, height // 8, width // 8), dtype=torch_dtype),
             "timestep": torch.rand((batch_size,), dtype=torch_dtype),
-            "encoder_hidden_states": torch.rand((batch_size, 77, hidden_state_size), dtype=torch_dtype),
-            "return_dict": False,
+            "encoder_hidden_states": torch.rand((batch_size, 77, cross_attention_dim), dtype=torch_dtype),
         }
 
+        # use as kwargs since they won't be in the correct position if passed along with the tuple of inputs
+        kwargs = {
+            "return_dict": False,
+        }
         if is_conversion_inputs:
             inputs["additional_inputs"] = {
+                **kwargs,
                 "added_cond_kwargs": {
                     "text_embeds": torch.rand((1, 1280), dtype=torch_dtype),
-                    "time_ids": torch.rand((1, time_ids_size), dtype=torch_dtype),
-                }
+                    "time_ids": torch.rand((1, 5), dtype=torch_dtype),
+                },
             }
         else:
+            inputs.update(kwargs)
             inputs["onnx::Concat_4"] = torch.rand((1, 1280), dtype=torch_dtype)
-            inputs["onnx::Shape_5"] = torch.rand((1, time_ids_size), dtype=torch_dtype)
+            inputs["onnx::Shape_5"] = torch.rand((1, 5), dtype=torch_dtype)
 
     return inputs
 

@@ -4,6 +4,7 @@ import torch
 import shutil
 import inspect
 import importlib
+from packaging import version
 import numpy as np
 import onnxruntime as ort
 import diffusers
@@ -109,6 +110,9 @@ def load_init_dict(cls: Type[diffusers.DiffusionPipeline], path: os.PathLike):
     R: Dict[str, Tuple[str]] = {}
     for k, v in merged:
         if isinstance(v, list):
+            if v[0] is None or v[1] is None:
+                log.debug(f"Skipping {k} while loading init dict of '{path}': {v}")
+                continue
             R[k] = v
     return R
 
@@ -142,9 +146,17 @@ def load_submodels(path: os.PathLike, init_dict: Dict[str, Type], **kwargs):
     return loaded
 
 
+def patch_kwargs(cls: Type[diffusers.DiffusionPipeline], kwargs: Dict) -> Dict:
+    if cls == OnnxStableDiffusionPipeline or cls == OnnxStableDiffusionImg2ImgPipeline or cls == OnnxStableDiffusionInpaintPipeline:
+        kwargs["safety_checker"] = None
+        kwargs["requires_safety_checker"] = False
+
+    return kwargs
+
+
 def load_pipeline(cls: Type[diffusers.DiffusionPipeline], path: os.PathLike):
     if os.path.isdir(path):
-        return cls(**load_submodels(path, load_init_dict(cls, path)))
+        return cls(**patch_kwargs(cls, load_submodels(path, load_init_dict(cls, path))))
     else:
         return cls.from_single_file(path)
 
@@ -284,8 +296,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
                 if submodel in init_dict:
                     del init_dict[submodel] # already loaded as OnnxRuntimeModel.
             kwargs.update(load_submodels(in_dir, init_dict)) # load others.
-            kwargs["safety_checker"] = None
-            kwargs["requires_safety_checker"] = False
+            kwargs = patch_kwargs(self.constructor, kwargs)
 
             pipeline = self.constructor(**kwargs)
             pipeline.to_json_file(os.path.join(out_dir, "model_index.json"))
@@ -353,11 +364,13 @@ class OnnxRawPipeline(OnnxPipelineBase):
 
                 with open(os.path.join(sd_configs_path, "olive", f"{'sdxl' if self._is_sdxl else 'sd'}_{submodel}.json"), "r") as config_file:
                     olive_config = json.load(config_file)
+                pass_key = f"optimize_{shared.opts.onnx_execution_provider}"
+                olive_config["pass_flows"] = [[pass_key]]
                 olive_config["input_model"]["config"]["model_path"] = os.path.abspath(os.path.join(in_dir, submodel, "model.onnx"))
-                olive_config["passes"]["optimize"]["config"]["float16"] = shared.opts.onnx_olive_float16
-                if (submodel == "unet" or "vae" in submodel) and (shared.opts.onnx_execution_provider == ExecutionProvider.CUDA or shared.opts.onnx_execution_provider == ExecutionProvider.ROCm):
-                    olive_config["passes"]["optimize"]["config"]["optimization_options"]["group_norm_channels_last"] = True
+                olive_config["passes"][pass_key]["config"]["float16"] = shared.opts.onnx_olive_float16
                 olive_config["engine"]["execution_providers"] = [shared.opts.onnx_execution_provider]
+                if (shared.opts.onnx_execution_provider == ExecutionProvider.CUDA or shared.opts.onnx_execution_provider == ExecutionProvider.ROCm) and version.parse(ort.__version__) < version.parse("1.17.0"):
+                    olive_config["passes"][pass_key]["config"]["optimization_options"] = {"enable_skip_group_norm": False}
 
                 run(olive_config)
 
@@ -388,8 +401,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
                 if submodel in init_dict:
                     del init_dict[submodel] # already loaded as OnnxRuntimeModel.
             kwargs.update(load_submodels(in_dir, init_dict)) # load others.
-            kwargs["safety_checker"] = None
-            kwargs["requires_safety_checker"] = False
+            kwargs = patch_kwargs(self.constructor, kwargs)
 
             pipeline = self.constructor(**kwargs)
             pipeline.to_json_file(os.path.join(out_dir, "model_index.json"))
@@ -416,16 +428,18 @@ class OnnxRawPipeline(OnnxPipelineBase):
             return None
 
     def preprocess(self, width: int, height: int, batch_size: int):
+        if not shared.cmd_opts.debug:
+            ort.set_default_logger_severity(3)
         olive.width = width
         olive.height = height
         olive.batch_size = batch_size
 
         olive.is_sdxl = self._is_sdxl
         if olive.is_sdxl:
-            olive.hidden_state_size = 2048
+            olive.cross_attention_dim = 2048
             olive.time_ids_size = 6
         else:
-            olive.hidden_state_size = height + 256
+            olive.cross_attention_dim = height + 256
             olive.time_ids_size = 5
 
         converted_dir = self.convert(self.path if os.path.isdir(self.path) else shared.opts.onnx_temp_dir)

@@ -52,6 +52,7 @@
       }
     }
   },
+  "pass_flows": [["convert"]],
   "engine": {
     "search_strategy": {
       "execution_order": "joint",
