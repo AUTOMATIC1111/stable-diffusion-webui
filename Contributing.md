@@ -5,6 +5,9 @@ To contribute, clone the repository, make your changes, commit and push to your 
 If you're not a contributor to this repository, you need to fork and clone the repository before pushing your changes. For more information, check out [Contributing to Projects](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) in the GitHub documentation.
 
 * If you are adding a lot of code, **consider making it an [extension](Extensions) instead**.
+  * this way, you will be able to make changes in the future without needing my approval
+  * I also won't have to study your code
+  * if your would-be extension needs some changes to the repo (like adding an API or callback), this change is welcome to be added, and it will also profit other developers
 * Do not add multiple unrelated things in same PR.
 * PRs should target the `dev` branch.
 * Make sure that your changes do not break anything by running [tests](Tests).
