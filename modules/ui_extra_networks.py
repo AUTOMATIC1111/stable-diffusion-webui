@@ -459,11 +459,11 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
     ui = ExtraNetworksUi()
     ui.tabname = tabname
     ui.pages = []
-    ui.state = gr.Textbox('{}', elem_id=tabname+"_extra_state", visible=False)
+    ui.state = gr.Textbox('{}', elem_id=f"{tabname}_extra_state", visible=False)
     ui.visible = gr.State(value=False) # pylint: disable=abstract-class-instantiated
-    ui.details = gr.Group(elem_id=tabname+"_extra_details", visible=False)
-    ui.tabs = gr.Tabs(elem_id=tabname+"_extra_tabs")
-    ui.button_details = gr.Button('Details', elem_id=tabname+"_extra_details_btn", visible=False)
+    ui.details = gr.Group(elem_id=f"{tabname}_extra_details", visible=False)
+    ui.tabs = gr.Tabs(elem_id=f"{tabname}_extra_tabs")
+    ui.button_details = gr.Button('Details', elem_id=f"{tabname}_extra_details_btn", visible=False)
     state = {}
     if shared.cmd_opts.profile:
         import cProfile
@@ -504,14 +504,14 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
         return is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary"))
 
     with ui.details:
-        details_close = ToolButton(symbols.close, elem_id=tabname+"_extra_details_close", elem_classes=['extra-details-close'])
+        details_close = ToolButton(symbols.close, elem_id=f"{tabname}_extra_details_close", elem_classes=['extra-details-close'])
         details_close.click(fn=lambda: gr.update(visible=False), inputs=[], outputs=[ui.details])
         with gr.Row():
             with gr.Column(scale=1):
                 text = gr.HTML('<div>title</div>')
                 ui.details_components.append(text)
             with gr.Column(scale=1):
-                img = gr.Image(value=None, show_label=False, interactive=False, container=False, show_download_button=False, show_info=False, elem_id=tabname+"_extra_details_img", elem_classes=['extra-details-img'])
+                img = gr.Image(value=None, show_label=False, interactive=False, container=False, show_download_button=False, show_info=False, elem_id=f"{tabname}_extra_details_img", elem_classes=['extra-details-img'])
                 ui.details_components.append(img)
                 with gr.Row():
                     btn_save_img = gr.Button('Replace', elem_classes=['small-button'])
@@ -544,16 +544,16 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             model_visible = page in ['Model']
             return [gr.update(visible=scan_visible), gr.update(visible=save_visible), gr.update(visible=model_visible)]
 
-        ui.button_refresh = ToolButton(symbols.refresh, elem_id=tabname+"_extra_refresh")
-        ui.button_scan = ToolButton(symbols.scan, elem_id=tabname+"_extra_scan", visible=True)
-        ui.button_quicksave = ToolButton(symbols.book, elem_id=tabname+"_extra_quicksave", visible=False)
-        ui.button_save = ToolButton(symbols.book, elem_id=tabname+"_extra_save", visible=False)
-        ui.button_sort = ToolButton(symbols.sort, elem_id=tabname+"_extra_sort", visible=True)
-        ui.button_view = ToolButton(symbols.view, elem_id=tabname+"_extra_view", visible=True)
-        ui.button_close = ToolButton(symbols.close, elem_id=tabname+"_extra_close", visible=True)
-        ui.button_model = ToolButton(symbols.refine, elem_id=tabname+"_extra_model", visible=True)
-        ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", elem_classes="textbox", lines=2, container=False)
-        ui.description = gr.Textbox('', show_label=False, elem_id=tabname+"_description", elem_classes="textbox", lines=2, interactive=False, container=False)
+        ui.button_refresh = ToolButton(symbols.refresh, elem_id=f"{tabname}_extra_refresh")
+        ui.button_scan = ToolButton(symbols.scan, elem_id=f"{tabname}_extra_scan", visible=True)
+        ui.button_quicksave = ToolButton(symbols.book, elem_id=f"{tabname}_extra_quicksave", visible=False)
+        ui.button_save = ToolButton(symbols.book, elem_id=f"{tabname}_extra_save", visible=False)
+        ui.button_sort = ToolButton(symbols.sort, elem_id=f"{tabname}_extra_sort", visible=True)
+        ui.button_view = ToolButton(symbols.view, elem_id=f"{tabname}_extra_view", visible=True)
+        ui.button_close = ToolButton(symbols.close, elem_id=f"{tabname}_extra_close", visible=True)
+        ui.button_model = ToolButton(symbols.refine, elem_id=f"{tabname}_extra_model", visible=True)
+        ui.search = gr.Textbox('', show_label=False, elem_id=f"{tabname}_extra_search", placeholder="Search...", elem_classes="textbox", lines=2, container=False)
+        ui.description = gr.Textbox('', show_label=False, elem_id=f"{tabname}_description", elem_classes="textbox", lines=2, interactive=False, container=False)
 
         if ui.tabname == 'txt2img': # refresh only once
             global refresh_time # pylint: disable=global-statement

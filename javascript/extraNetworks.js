@@ -357,8 +357,8 @@ function setupExtraNetworksForTab(tabname) {
   };
 
   // en style
+  if (!en) return;
   const intersectionObserver = new IntersectionObserver((entries) => {
-    if (!en) return;
     for (const el of Array.from(gradioApp().querySelectorAll('.extra-networks-page'))) {
       el.style.height = `${window.opts.extra_networks_height}vh`;
       el.parentElement.style.width = '-webkit-fill-available';
