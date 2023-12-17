@@ -12,7 +12,7 @@ def run_postprocessing(id_task, extras_mode, image, image_folder, input_dir, out
     shared.state.begin(job="extras")
 
     outputs = []
-    
+
     if isinstance(image, dict):
         image = image["composite"]
 
