@@ -336,9 +336,8 @@ class Api:
         return script_args
 
     def text2imgapi(self, txt2imgreq: models.StableDiffusionTxt2ImgProcessingAPI):
-        task_id = create_task_id("text2img")
-        if txt2imgreq.force_task_id is None:
-            task_id = txt2imgreq.force_task_id
+        task_id = txt2imgreq.force_task_id or create_task_id("txt2img")
+
         script_runner = scripts.scripts_txt2img
         if not script_runner.scripts:
             script_runner.initialize_scripts(False)
@@ -393,9 +392,7 @@ class Api:
         return models.TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
     def img2imgapi(self, img2imgreq: models.StableDiffusionImg2ImgProcessingAPI):
-        task_id = create_task_id("img2img")
-        if img2imgreq.force_task_id is None:
-            task_id = img2imgreq.force_task_id
+        task_id = img2imgreq.force_task_id or create_task_id("img2img")
 
         init_images = img2imgreq.init_images
         if init_images is None:
