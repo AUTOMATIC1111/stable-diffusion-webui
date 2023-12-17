@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-16
+## Update for 2023-12-17
 
 *Note*: based on `diffusers==0.25.0.dev0`
 
@@ -65,6 +65,7 @@
     - **Extra Networks** fix sort
     - disable google fonts check on server startup  
     - fix torchvision/basicsr compatibility  
+    - fix styles quick save  
     - add hdr settings to metadata  
     - improve handling of long filenames and filenames during batch processing  
     - do not set preview samples when using via api  
