@@ -269,11 +269,13 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
     """ Connects a 'reuse (sub)seed' button's click event so that it copies last used
         (sub)seed value from generation info the to the seed field. If copying subseed and subseed strength
         was 0, i.e. no variation seed was used, it copies the normal seed value instead."""
-    def copy_seed(gen_info_string: str, index):
+    def copy_seed(gen_info_string: str, index: int):
         res = -1
         try:
             gen_info = json.loads(gen_info_string)
+            log.debug(f'Reuse: info={gen_info}')
             index -= gen_info.get('index_of_first_image', 0)
+            index = int(index)
 
             if is_subseed and gen_info.get('subseed_strength', 0) > 0:
                 all_subseeds = gen_info.get('all_subseeds', [-1])

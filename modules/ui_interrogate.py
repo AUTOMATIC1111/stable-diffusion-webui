@@ -195,7 +195,7 @@ def create_ui():
                     analyze_btn = gr.Button("Analyze", variant='primary')
                     unload_btn = gr.Button("Unload")
                 with gr.Row():
-                    buttons = parameters_copypaste.create_buttons(["txt2img", "img2img", "extras"])
+                    buttons = parameters_copypaste.create_buttons(["txt2img", "img2img", "extras", "control"])
                 for tabname, button in buttons.items():
                     parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(paste_button=button, tabname=tabname, source_text_component=prompt, source_image_component=image,))
             with gr.Tab("Batch"):
