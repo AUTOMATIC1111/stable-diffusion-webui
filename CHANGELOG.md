@@ -62,7 +62,8 @@
       can remove artifacts and hard edges of inpaint area but also remove some details from original  
     - **chaiNNer** fix `NaN` issues due to autocast  
     - **Upscale** increase limit from 4x to 8x given the quality of some upscalers  
-    - **Extra Networks** fix sort
+    - **Extra Networks** fix sort  
+    - **LoRA** add support for LyCORIS GLora networks
     - disable google fonts check on server startup  
     - fix torchvision/basicsr compatibility  
     - fix styles quick save  

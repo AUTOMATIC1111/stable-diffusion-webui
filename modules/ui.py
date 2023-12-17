@@ -366,7 +366,7 @@ def create_toprow(is_img2img: bool = False, id_part: str = None):
                 negative_token_button = gr.Button(visible=False, elem_id=f"{id_part}_negative_token_button")
             with gr.Row(elem_id=f"{id_part}_styles_row"):
                 styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[style.name for style in modules.shared.prompt_styles.styles.values()], value=[], multiselect=True)
-                styles_btn_refresh = create_refresh_button(styles, modules.shared.prompt_styles.reload, lambda: {"choices": list(modules.shared.prompt_styles.styles)}, f"{id_part}_styles_refresh")
+                _styles_btn_refresh = create_refresh_button(styles, modules.shared.prompt_styles.reload, lambda: {"choices": list(modules.shared.prompt_styles.styles)}, f"{id_part}_styles_refresh")
                 # styles_btn_refresh = ToolButton(symbols.refresh, elem_id=f"{id_part}_styles_refresh", visible=True)
                 # styles_btn_refresh.click(fn=lambda: gr.update(choices=[style.name for style in modules.shared.prompt_styles.styles.values()]), inputs=[], outputs=[styles])
                 styles_btn_select = gr.Button('Select', elem_id=f"{id_part}_styles_select", visible=False)

@@ -500,7 +500,7 @@
   {"id":"","label":"Show previews of all images generated in a batch as a grid","localized":"","hint":""},
   {"id":"","label":"Play a sound when images are finished generating","localized":"","hint":""},
   {"id":"","label":"Path to notification sound","localized":"","hint":""},
-  {"id":"","label":"Live preview display period","localized":"","hint":""},
+  {"id":"","label":"Live preview display period","localized":"","hint":"Request preview image every n steps, set to 0 to disable"},
   {"id":"","label":"Full VAE","localized":"","hint":""},
   {"id":"","label":"Approximate","localized":"","hint":"Cheap neural network approximation. Very fast compared to VAE, but produces pictures with 4 times smaller horizontal/vertical resolution and lower quality"},
   {"id":"","label":"Simple","localized":"","hint":"Very cheap approximation. Very fast compared to VAE, but produces pictures with 8 times smaller horizontal/vertical resolution and extremely low quality"},

@@ -11,6 +11,7 @@ import network_oft
 import network_lokr
 import network_full
 import network_norm
+import network_glora
 import lora_convert
 import torch
 import diffusers.models.lora
@@ -37,6 +38,7 @@ module_types = [
     network_lokr.ModuleTypeLokr(),
     network_full.ModuleTypeFull(),
     network_norm.ModuleTypeNorm(),
+    network_glora.ModuleTypeGLora(),
 ]
 convert_diffusers_name_to_compvis = lora_convert.convert_diffusers_name_to_compvis # supermerger compatibility item
 
