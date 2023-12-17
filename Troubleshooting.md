@@ -38,10 +38,11 @@ pause
 # Low VRAM Video-cards
 When running on video cards with a low amount of VRAM (<=4GB), out of memory errors may arise.
 Various optimizations may be enabled through command line arguments, sacrificing some/a lot of speed in favor of using less VRAM:
-- Use `--opt-sdp-attention` OR the optional dependency `--xformers` to cut the gpu memory usage down by half on many cards.
-- If you have 4GB VRAM and want to make 512x512 (or maybe up to 640x640) images, use `--medvram`.
-- If you have 4GB VRAM and want to make 512x512 images, but you get an out of memory error with `--medvram`, use `--lowvram --always-batch-cond-uncond` instead.
+- Use `--opt-sdp-no-mem-attention` OR the optional dependency `--xformers` to cut the gpu memory usage down by half on many cards.
+- If you have 4GB VRAM and want to make ~1.3x larger images, use `--medvram`.
+- If you have 4GB VRAM but you get an out of memory error with `--medvram`, use `--lowvram --always-batch-cond-uncond` instead.
 - If you have 4GB VRAM and want to make images larger than you can with `--medvram`, use  `--lowvram`.
+- If you have 4GB VRAM and get an out of memory error when loading a full weight model, use `--disable-model-loading-ram-optimization` (added in v1.6.0)
 
 # Torch is not able to use GPU
 This is one of the most frequently mentioned problems, but it's usually not a WebUI fault, there are many reasons for it.
