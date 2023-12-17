@@ -4,14 +4,14 @@ import modules.generation_parameters_copypaste as parameters_copypaste
 
 
 def create_ui():
-    dummy_component = gr.Label(visible=False)
+    dummy_component = gr.Textbox(visible=False)
     tab_index = gr.State(value=0)
 
     with gr.Row(equal_height=False, variant='compact'):
         with gr.Column(variant='compact'):
             with gr.Tabs(elem_id="mode_extras"):
                 with gr.TabItem('Single Image', id="single_image", elem_id="extras_single_tab") as tab_single:
-                    extras_image = gr.Image(label="Source", source="upload", interactive=True, type="pil", elem_id="extras_image")
+                    extras_image = gr.ImageEditor(label="Source", interactive=True, type="pil", elem_id="extras_image")
 
                 with gr.TabItem('Batch Process', id="batch_process", elem_id="extras_batch_process_tab") as tab_batch:
                     image_batch = gr.Files(label="Batch Process", interactive=True, elem_id="extras_image_batch")
