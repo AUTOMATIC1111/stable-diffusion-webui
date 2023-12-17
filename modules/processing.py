@@ -231,6 +231,10 @@ class StableDiffusionProcessing:
         self.hdr_maximize = hdr_maximize
         self.hdr_max_center = hdr_max_center
         self.hdr_max_boundry = hdr_max_boundry
+        self.prompt_embeds = []
+        self.positive_pooleds = []
+        self.negative_embeds = []
+        self.negative_pooleds = []
 
 
     @property

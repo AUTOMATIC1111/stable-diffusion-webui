@@ -58,22 +58,22 @@ class DiffusersTextualInversionManager(BaseTextualInversionManager):
         debug(f'Prompt: expand={prompt}')
         return self.pipe.tokenizer.encode(prompt, add_special_tokens=False)
 
-def get_prompt_schedule(prompt, steps, step):
+def get_prompt_schedule(prompt, steps):
     temp = []
     schedule = prompt_parser.get_learned_conditioning_prompt_schedules([prompt], steps)[0]
     for chunk in schedule:
         for s in range(steps):
-            if s + 1 <= chunk[0]:
+            if len(temp) < s + 1 <= chunk[0]:
                 temp.append(chunk[1])
-    return temp[step-1]
+    return temp
 
 def encode_prompts(pipe, p,  prompts: list, negative_prompts: list, steps: int, step: int = 1, clip_skip: typing.Optional[int] = None):
     if 'StableDiffusion' not in pipe.__class__.__name__ and 'DemoFusion':
         shared.log.warning(f"Prompt parser not supported: {pipe.__class__.__name__}")
         return None, None, None, None
     else:
-        positive_schedule = get_prompt_schedule(prompts[0])
-        negative_schedule = get_prompt_schedule(negative_prompts[0])
+        positive_schedule = get_prompt_schedule(prompts[0], steps)
+        negative_schedule = get_prompt_schedule(negative_prompts[0], steps)
 
         p.prompt_embeds = []
         p.positive_pooleds = []
@@ -85,7 +85,6 @@ def encode_prompts(pipe, p,  prompts: list, negative_prompts: list, steps: int, 
                                                                                                           positive_schedule[i],
                                                                                                           negative_schedule[i],
                                                                                                           clip_skip)
-
             if prompt_embed is not None:
                 p.prompt_embeds.append(torch.cat([prompt_embed]*len(prompts), dim=0))
             if negative_embed is not None:

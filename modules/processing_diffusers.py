@@ -89,8 +89,13 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if kwargs.get('latents', None) is None:
             return kwargs
         kwargs = correction_callback(p, timestep, kwargs)
-        kwargs["prompt_embeds"] = p.prompt_embeds[step-1]
-        kwargs["negative_prompt_embeds"] = p.negative_embeds[step-1]
+        try:
+            kwargs["prompt_embeds"] = p.prompt_embeds[step + 1].repeat(1, kwargs["prompt_embeds"].shape[0], 1).view(
+                kwargs["prompt_embeds"].shape[0], kwargs["prompt_embeds"].shape[1], -1)
+            kwargs["negative_prompt_embeds"] = p.negative_embeds[step + 1].repeat(1, kwargs["negative_prompt_embeds"].shape[0], 1).view(
+                kwargs["negative_prompt_embeds"].shape[0], kwargs["negative_prompt_embeds"].shape[1], -1)
+        except:
+            pass
         shared.state.current_latent = kwargs['latents']
         if shared.cmd_opts.profile and shared.profiler is not None:
             shared.profiler.step()
@@ -295,10 +300,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         possible = signature.parameters.keys()
         generator_device = devices.cpu if shared.opts.diffusers_generator_device == "cpu" else shared.device
         generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
-        # prompt_embed = None
-        # pooled = None
-        # negative_embed = None
-        # negative_pooled = None
         prompts, negative_prompts, prompts_2, negative_prompts_2 = fix_prompts(prompts, negative_prompts, prompts_2, negative_prompts_2)
         parser = 'Fixed attention'
         if shared.opts.prompt_attention != 'Fixed attention' and 'StableDiffusion' in model.__class__.__name__:
@@ -312,20 +313,16 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     errors.display(e, 'Prompt parser encode')
         if 'prompt' in possible:
             if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and p.prompt_embeds[0] is not None:
-                # if type(pooled) == list:
-                    # pooled = pooled[0]
-                # if type(negative_pooled) == list:
-                #     negative_pooled = p.negative_pooleds[0][0]
                 args['prompt_embeds'] = p.prompt_embeds[0]
                 if 'XL' in model.__class__.__name__:
-                    args['pooled_prompt_embeds'] = p.positive_pooleds[0][0]
+                    args['pooled_prompt_embeds'] = p.positive_pooleds[0]
             else:
                 args['prompt'] = prompts
         if 'negative_prompt' in possible:
             if hasattr(model, 'text_encoder') and 'negative_prompt_embeds' in possible and p.negative_embeds[0] is not None:
                 args['negative_prompt_embeds'] = p.negative_embeds[0]
                 if 'XL' in model.__class__.__name__:
-                    args['negative_pooled_prompt_embeds'] = p.negative_pooleds[0][0]
+                    args['negative_pooled_prompt_embeds'] = p.negative_pooleds[0]
             else:
                 args['negative_prompt'] = negative_prompts
         if hasattr(model, 'scheduler') and hasattr(model.scheduler, 'noise_sampler_seed') and hasattr(model.scheduler, 'noise_sampler'):
@@ -345,7 +342,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             args['callback'] = diffusers_callback_legacy
         elif 'callback_on_step_end_tensor_inputs' in possible:
             args['callback_on_step_end'] = diffusers_callback
-            args['callback_on_step_end_tensor_inputs'] = ['latents']
+            args['callback_on_step_end_tensor_inputs'] = ['latents', 'prompt_embeds', 'negative_prompt_embeds']
         for arg in kwargs:
             if arg in possible: # add kwargs
                 args[arg] = kwargs[arg]
