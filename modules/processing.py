@@ -1135,7 +1135,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
-            if self.hr_checkpoint_name:
+            if self.hr_checkpoint_name and self.hr_checkpoint_name != 'Use same checkpoint':
                 self.hr_checkpoint_info = sd_models.get_closet_checkpoint_match(self.hr_checkpoint_name)
 
                 if self.hr_checkpoint_info is None:

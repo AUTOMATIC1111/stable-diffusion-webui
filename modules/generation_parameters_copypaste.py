@@ -28,6 +28,19 @@ class ParamBinding:
         self.paste_field_names = paste_field_names or []
 
 
+class PasteField(tuple):
+    def __new__(cls, component, target, *, api=None):
+        return super().__new__(cls, (component, target))
+
+    def __init__(self, component, target, *, api=None):
+        super().__init__()
+
+        self.api = api
+        self.component = component
+        self.label = target if isinstance(target, str) else None
+        self.function = target if callable(target) else None
+
+
 paste_fields: dict[str, dict] = {}
 registered_param_bindings: list[ParamBinding] = []
 
@@ -84,6 +97,12 @@ def image_from_url_text(filedata):
 
 
 def add_paste_fields(tabname, init_img, fields, override_settings_component=None):
+
+    if fields:
+        for i in range(len(fields)):
+            if not isinstance(fields[i], PasteField):
+                fields[i] = PasteField(*fields[i])
+
     paste_fields[tabname] = {"init_img": init_img, "fields": fields, "override_settings_component": override_settings_component}
 
     # backwards compatibility for existing extensions

@@ -335,6 +335,29 @@ class Api:
                         script_args[alwayson_script.args_from + idx] = request.alwayson_scripts[alwayson_script_name]["args"][idx]
         return script_args
 
+    def apply_infotext(self, request, tabname):
+        if not request.infotext:
+            return {}
+
+        params = generation_parameters_copypaste.parse_generation_parameters(request.infotext)
+
+        for field in generation_parameters_copypaste.paste_fields[tabname]["fields"]:
+            if not field.api:
+                continue
+
+            value = field.function(params) if field.function else params.get(field.label)
+            target_type = request.__fields__[field.api].type_
+
+            if value is None:
+                continue
+
+            if not isinstance(value, target_type):
+                value = target_type(value)
+
+            setattr(request, field.api, value)
+
+        return params
+
     def text2imgapi(self, txt2imgreq: models.StableDiffusionTxt2ImgProcessingAPI):
         task_id = txt2imgreq.force_task_id or create_task_id("txt2img")
 
@@ -342,6 +365,9 @@ class Api:
         if not script_runner.scripts:
             script_runner.initialize_scripts(False)
             ui.create_ui()
+
+        infotext_params = self.apply_infotext(txt2imgreq, "txt2img")
+
         if not self.default_script_arg_txt2img:
             self.default_script_arg_txt2img = self.init_default_script_args(script_runner)
         selectable_scripts, selectable_script_idx = self.get_selectable_script(txt2imgreq.script_name, script_runner)
@@ -358,6 +384,7 @@ class Api:
         args.pop('script_name', None)
         args.pop('script_args', None) # will refeed them to the pipeline directly after initializing them
         args.pop('alwayson_scripts', None)
+        args.pop('infotext', None)
 
         script_args = self.init_script_args(txt2imgreq, self.default_script_arg_txt2img, selectable_scripts, selectable_script_idx, script_runner)
 

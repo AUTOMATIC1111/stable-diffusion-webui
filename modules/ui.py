@@ -28,7 +28,7 @@ import modules.textual_inversion.textual_inversion as textual_inversion
 import modules.shared as shared
 from modules import prompt_parser
 from modules.sd_hijack import model_hijack
-from modules.generation_parameters_copypaste import image_from_url_text
+from modules.generation_parameters_copypaste import image_from_url_text, PasteField
 
 create_setting_component = ui_settings.create_setting_component
 
@@ -436,28 +436,28 @@ def create_ui():
             )
 
             txt2img_paste_fields = [
-                (toprow.prompt, "Prompt"),
-                (toprow.negative_prompt, "Negative prompt"),
-                (steps, "Steps"),
-                (sampler_name, "Sampler"),
-                (cfg_scale, "CFG scale"),
-                (width, "Size-1"),
-                (height, "Size-2"),
-                (batch_size, "Batch size"),
-                (toprow.ui_styles.dropdown, lambda d: d["Styles array"] if isinstance(d.get("Styles array"), list) else gr.update()),
-                (denoising_strength, "Denoising strength"),
-                (enable_hr, lambda d: "Denoising strength" in d and ("Hires upscale" in d or "Hires upscaler" in d or "Hires resize-1" in d)),
-                (hr_scale, "Hires upscale"),
-                (hr_upscaler, "Hires upscaler"),
-                (hr_second_pass_steps, "Hires steps"),
-                (hr_resize_x, "Hires resize-1"),
-                (hr_resize_y, "Hires resize-2"),
-                (hr_checkpoint_name, "Hires checkpoint"),
-                (hr_sampler_name, "Hires sampler"),
-                (hr_sampler_container, lambda d: gr.update(visible=True) if d.get("Hires sampler", "Use same sampler") != "Use same sampler" or d.get("Hires checkpoint", "Use same checkpoint") != "Use same checkpoint" else gr.update()),
-                (hr_prompt, "Hires prompt"),
-                (hr_negative_prompt, "Hires negative prompt"),
-                (hr_prompts_container, lambda d: gr.update(visible=True) if d.get("Hires prompt", "") != "" or d.get("Hires negative prompt", "") != "" else gr.update()),
+                PasteField(toprow.prompt, "Prompt", api="prompt"),
+                PasteField(toprow.negative_prompt, "Negative prompt", api="negative_prompt"),
+                PasteField(steps, "Steps", api="steps"),
+                PasteField(sampler_name, "Sampler", api="sampler_name"),
+                PasteField(cfg_scale, "CFG scale", api="cfg_scale"),
+                PasteField(width, "Size-1", api="width"),
+                PasteField(height, "Size-2", api="height"),
+                PasteField(batch_size, "Batch size", api="batch_size"),
+                PasteField(toprow.ui_styles.dropdown, lambda d: d["Styles array"] if isinstance(d.get("Styles array"), list) else gr.update(), api="styles"),
+                PasteField(denoising_strength, "Denoising strength", api="denoising_strength"),
+                PasteField(enable_hr, lambda d: "Denoising strength" in d and ("Hires upscale" in d or "Hires upscaler" in d or "Hires resize-1" in d), api="enable_hr"),
+                PasteField(hr_scale, "Hires upscale", api="hr_scale"),
+                PasteField(hr_upscaler, "Hires upscaler", api="hr_upscaler"),
+                PasteField(hr_second_pass_steps, "Hires steps", api="hr_second_pass_steps"),
+                PasteField(hr_resize_x, "Hires resize-1", api="hr_resize_x"),
+                PasteField(hr_resize_y, "Hires resize-2", api="hr_resize_y"),
+                PasteField(hr_checkpoint_name, "Hires checkpoint", api="hr_checkpoint_name"),
+                PasteField(hr_sampler_name, "Hires sampler", api="hr_sampler_name"),
+                PasteField(hr_sampler_container, lambda d: gr.update(visible=True) if d.get("Hires sampler", "Use same sampler") != "Use same sampler" or d.get("Hires checkpoint", "Use same checkpoint") != "Use same checkpoint" else gr.update()),
+                PasteField(hr_prompt, "Hires prompt", api="hr_prompt"),
+                PasteField(hr_negative_prompt, "Hires negative prompt", api="hr_negative_prompt"),
+                PasteField(hr_prompts_container, lambda d: gr.update(visible=True) if d.get("Hires prompt", "") != "" or d.get("Hires negative prompt", "") != "" else gr.update()),
                 *scripts.scripts_txt2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields, override_settings)
