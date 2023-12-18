@@ -13,7 +13,7 @@ import requests
 import piexif
 import piexif.helper
 import gradio as gr
-from modules import errors, shared, sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing
+from modules import errors, shared, sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, script_callbacks, generation_parameters_copypaste
 from modules.sd_vae import vae_dict
 from modules.api import models
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
@@ -145,6 +145,7 @@ class Api:
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
+        self.add_api_route("/sdapi/v1/extensions", self.get_extensions_list, methods=["GET"], response_model=List[models.ExtensionItem])
         self.add_api_route("/sdapi/v1/log", self.get_log_buffer, methods=["GET"], response_model=List)
         self.add_api_route("/sdapi/v1/start", self.session_start, methods=["GET"])
         self.add_api_route("/sdapi/v1/motd", self.get_motd, methods=["GET"], response_model=str)
@@ -368,14 +369,19 @@ class Api:
     def pnginfoapi(self, req: models.PNGInfoRequest):
         if not req.image.strip():
             return models.PNGInfoResponse(info="")
+
         image = decode_base64_to_image(req.image.strip())
         if image is None:
             return models.PNGInfoResponse(info="")
+
         geninfo, items = images.read_info_from_image(image)
         if geninfo is None:
             geninfo = ""
-        items = {**{'parameters': geninfo}, **items}
-        return models.PNGInfoResponse(info=geninfo, items=items)
+
+        params = generation_parameters_copypaste.parse_generation_parameters(geninfo)
+        script_callbacks.infotext_pasted_callback(geninfo, params)
+
+        return models.PNGInfoResponse(info=geninfo, items=items, parameters=params)
 
     def progressapi(self, req: models.ProgressRequest = Depends()):
         if shared.state.job_count == 0:
@@ -640,6 +646,25 @@ class Api:
             cuda = { 'error': f'{err}' }
         return models.MemoryResponse(ram = ram, cuda = cuda)
 
+    def get_extensions_list(self):
+        from modules import extensions
+        extensions.list_extensions()
+        ext_list = []
+        for ext in extensions.extensions:
+            ext: extensions.Extension
+            ext.read_info_from_repo()
+            if ext.remote is not None:
+                ext_list.append({
+                    "name": ext.name,
+                    "remote": ext.remote,
+                    "branch": ext.branch,
+                    "commit_hash":ext.commit_hash,
+                    "commit_date":ext.commit_date,
+                    "version":ext.version,
+                    "enabled":ext.enabled
+                })
+        return ext_list
+    
     def launch(self):
         config = {
             "listen": shared.cmd_opts.listen,
