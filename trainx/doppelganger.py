@@ -95,6 +95,7 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
         )
 
         torch_gc()
+        shutil.rmtree(image_dir)
         logger.debug(f">> train complete: {out_path}")
         if out_path and os.path.isfile(out_path):
             result = {

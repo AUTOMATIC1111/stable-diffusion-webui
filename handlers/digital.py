@@ -78,7 +78,8 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
                         'ad_model': 'face_yolov8n_v2.pt',
                         'ad_mask_blur': 4,
                         'ad_denoising_strength': denoising_strength,
-                        'ad_inpaint_only_masked': True
+                        'ad_inpaint_only_masked': True,
+                        'ad_inpaint_only_masked_padding': 64
                     }]
                 }
             }

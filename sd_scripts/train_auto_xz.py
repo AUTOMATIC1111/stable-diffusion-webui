@@ -1,3 +1,4 @@
+import enum
 import os  # ,sys,re,torch
 import shutil
 import time
@@ -221,8 +222,14 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
     params.subindex += 1
 
 
+class ImageProcessMode(enum.Enum):
+    OnlyBody = 1,
+    OnlyHead = 2,
+    All = 3
+
+
 def image_process(proc_image_input_batch, options, resize_weight=512, resize_height=512, if_res_oribody=False,
-                  model_p=""):
+                  model_p="", mode=ImageProcessMode.All):
     op1, op2, op3, op4, op5, op6, op7 = "抠出头部", "抠出全身", "放大", "镜像", "旋转", "改变尺寸", "磨皮"
 
     if op1 or op2 in options:
@@ -240,23 +247,25 @@ def image_process(proc_image_input_batch, options, resize_weight=512, resize_hei
         image_process_list.append(image)
         if op1 in options:
             result_list = []
-            for i in image_process_list:
-                seg_head_img = seg_hed(i, myseg)
-                # for j in range(len(seg_head_img)):
-                #     # result_list.append(RGBA_image_BGrepair(seg_head_img[j], 255))
-                #     result_list.append(seg_head_img)
-                result_list += seg_head_img
+            if mode != ImageProcessMode.OnlyBody:
+                for i in image_process_list:
+                    seg_head_img = seg_hed(i, myseg)
+                    # for j in range(len(seg_head_img)):
+                    #     # result_list.append(RGBA_image_BGrepair(seg_head_img[j], 255))
+                    #     result_list.append(seg_head_img)
+                    result_list += seg_head_img
 
             head_image_list += result_list
 
         if op2 in options:
             result_list = []
-            for i in image_process_list:
-                seg_body_img = seg_body(i, myseg)
-                # for j in range(len(seg_body_img)):
-                #     result_list.append(RGBA_image_BGrepair(seg_body_img[j], 255))
+            if mode != ImageProcessMode.OnlyHead:
+                for i in image_process_list:
+                    seg_body_img = seg_body(i, myseg)
+                    # for j in range(len(seg_body_img)):
+                    #     result_list.append(RGBA_image_BGrepair(seg_body_img[j], 255))
 
-                result_list += seg_body_img
+                    result_list += seg_body_img
             # for img_tmp in result_list:
             #     path = add_suffix(os.path.abspath(img.name), '_body')
             #     img_tmp.save(path)
@@ -272,7 +281,8 @@ def image_process(proc_image_input_batch, options, resize_weight=512, resize_hei
                 if i.width * i.height >= 1024 * 1024:
                     result_list.append(i)
                 else:
-                    result_list.append(upscale_process(img=i, model_p=model_p))
+                    h = upscale_process(img=i, model_p=model_p) if mode != ImageProcessMode.OnlyHead else i
+                    result_list.append(h)
             image_process_list = result_list
 
             result_list = []
@@ -280,52 +290,59 @@ def image_process(proc_image_input_batch, options, resize_weight=512, resize_hei
                 if i.width * i.height >= 512 * 512:
                     result_list.append(i)
                 else:
-                    result_list.append(upscale_process(img=i, model_p=model_p))
+                    h = upscale_process(img=i, model_p=model_p) if mode != ImageProcessMode.OnlyBody else i
+                    result_list.append(h)
             head_image_list = result_list
 
         if op4 in options:
             result_list = []
             print('mirror iamges....')
-            for i in image_process_list:
-                result_list.append(mirror_images(i))
-            image_process_list += result_list
-
-            result_list = []
-            for i in head_image_list:
-                result_list.append(mirror_images(i))
-            head_image_list += result_list
+            if mode != ImageProcessMode.OnlyHead:
+                for i in image_process_list:
+                    h = mirror_images(i)
+                    result_list.append(h)
+                image_process_list += result_list
+            if mode != ImageProcessMode.OnlyBody:
+                result_list = []
+                for i in head_image_list:
+                    h = mirror_images(i)
+                    result_list.append(h)
+                head_image_list += result_list
 
         if op5 in options:
-            result_list = []
-            for i in image_process_list:
-                result_list += rotate_pil_image(i)
-            image_process_list += result_list
-
-            result_list = []
-            for i in head_image_list:
-                result_list += rotate_pil_image(i)
-            head_image_list += result_list
+            if mode != ImageProcessMode.OnlyHead:
+                result_list = []
+                for i in image_process_list:
+                    result_list += rotate_pil_image(i)
+                image_process_list += result_list
+            if mode != ImageProcessMode.OnlyBody:
+                result_list = []
+                for i in head_image_list:
+                    result_list += rotate_pil_image(i)
+                head_image_list += result_list
 
         if op6 in options:
-            result_list = []
-            for i in image_process_list:
-                result_list.append(oversize(i, resize_weight, resize_height))
-            image_process_list = result_list
-
-            result_list = []
-            for i in head_image_list:
-                result_list.append(oversize(i, resize_weight, resize_height))
-            head_image_list = result_list
+            if mode != ImageProcessMode.OnlyHead:
+                result_list = []
+                for i in image_process_list:
+                    result_list.append(oversize(i, resize_weight, resize_height))
+                image_process_list = result_list
+            if mode != ImageProcessMode.OnlyBody:
+                result_list = []
+                for i in head_image_list:
+                    result_list.append(oversize(i, resize_weight, resize_height))
+                head_image_list = result_list
         if op7 in options:
-            result_list = []
-            for i in image_process_list:
-                result_list.append(Image.fromarray(np.uint8(mopi(np.array(i)))))
-            image_process_list = result_list
-
-            result_list = []
-            for i in head_image_list:
-                result_list.append(Image.fromarray(np.uint8(mopi(np.array(i)))))
-            head_image_list = result_list
+            if mode != ImageProcessMode.OnlyHead:
+                result_list = []
+                for i in image_process_list:
+                    result_list.append(Image.fromarray(np.uint8(mopi(np.array(i)))))
+                image_process_list = result_list
+            if mode != ImageProcessMode.OnlyBody:
+                result_list = []
+                for i in head_image_list:
+                    result_list.append(Image.fromarray(np.uint8(mopi(np.array(i)))))
+                head_image_list = result_list
 
         sum_list += image_process_list
         sum_head_image_list += head_image_list
@@ -351,7 +368,13 @@ def get_image_list(directory):
     return image_list
 
 
-def custom_configurable_image_processing(directory, options, resize_weight, resize_height, if_res_oribody, model_p):
+def custom_configurable_image_processing(directory, options, resize_weight, resize_height, if_res_oribody, model_p,
+                                         mode=ImageProcessMode.All):
+    '''
+    mode=1: 只处理身体
+    mode=2: 只处理头部
+    mode=3: 都处理
+    '''
     image_list = get_image_list(directory)
     images = get_image(image_list)
     # proc_image_input_batch = []
@@ -359,18 +382,26 @@ def custom_configurable_image_processing(directory, options, resize_weight, resi
     #         image = RGBA_image_BGrepair(img, 255)
     #         proc_image_input_batch.append(image)
 
-    res_list, head_list = image_process(images, options, resize_weight, resize_height, if_res_oribody, model_p)
+    res_list, head_list = image_process(
+        images, options, resize_weight, resize_height, if_res_oribody, model_p, mode)
 
     return res_list, head_list
 
 
-def save_images_to_temp(images):
-    temp_dir = tempfile.mkdtemp()  # 创建临时目录
+def save_images_to_temp(images, temp_dir=None):
+    temp_dir = tempfile.mkdtemp() if not temp_dir else temp_dir  # 创建临时目录
     temp_image_paths = []
 
     for image in images:
+        if isinstance(image, str) and os.path.isfile(image):
+            basename = os.path.basename(image)
+            dst = os.path.join(temp_dir, basename)
+            shutil.copy(image, dst)
+            temp_image_paths.append(dst)
+
+            continue
         temp_image_filename = f"temp_image_{uuid.uuid4().hex}.png"  # 使用uuid生成随机文件名
-        temp_image_path = f"{temp_dir}/{temp_image_filename}"  # 构造完整的临时文件路径
+        temp_image_path = os.path.join(temp_dir, temp_image_filename)  # 构造完整的临时文件路径
         image.save(temp_image_path)  # 保存图像到临时路径
         temp_image_paths.append(temp_image_path)
 
@@ -570,7 +601,8 @@ def seg_face(input_path, output_path, model_path):
     if not os.path.isfile(face_model):
         import requests
         print("download shape_predictor_68_face_landmarks.dat from xingzheassert.obs.cn-north-4.myhuaweicloud.com")
-        resp = requests.get('https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/resource/face/shape_predictor_68_face_landmarks.dat')
+        resp = requests.get(
+            'https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/resource/face/shape_predictor_68_face_landmarks.dat')
         if resp:
             dirname = os.path.dirname(face_model)
             os.makedirs(dirname, exist_ok=True)
@@ -591,9 +623,13 @@ def seg_face(input_path, output_path, model_path):
     predictor = dlib.shape_predictor(face_model)
     os.makedirs(output_path, exist_ok=True)
 
+    face_files = []
+    i = 0
     for f in os.listdir(input_path):
         fi = os.path.join(input_path, f)
-
+        if not os.path.isfile(fi):
+            continue
+        i += 1
         # 加载图像
         image = cv2.imread(fi)
 
@@ -611,7 +647,9 @@ def seg_face(input_path, output_path, model_path):
 
         # 遍历检测到的人脸
         # print(len(faces))
-        if len(faces) != 1: continue
+        if len(faces) != 1:
+            print(f"cannot detect face:{f}, result:{len(faces)}")
+            continue
         for face in faces:
             # 检测人脸关键点
             landmarks = predictor(gray, face)
@@ -629,11 +667,33 @@ def seg_face(input_path, output_path, model_path):
 
         # 将蒙版应用到原始图像上
         result = cv2.bitwise_and(image, mask)
-        cv2.imwrite(os.path.join(output_path, f), result)
+        full = os.path.join(output_path, f)
+        cv2.imwrite(full, result)
+        face_files.append(full)
+        print(f"detect face {f}({i}) ==> ok")
+    return face_files
 
 
 def train_callback(percentage):
     print(percentage)
+
+
+def clean_dir(dirname):
+    if not os.path.isdir(dirname):
+        return
+    print(f"clean dir path:{dirname}")
+    files = [x for x in os.listdir(dirname)]
+
+    for f in files:
+        full_path = os.path.join(dirname, f)
+        try:
+
+            if os.path.isdir(full_path):
+                shutil.rmtree(full_path)
+            else:
+                os.remove(full_path)
+        except Exception as e:
+            print(f'cannot remove file:{e}, path:{full_path}')
 
 
 # 一键训练入口函数
@@ -645,14 +705,15 @@ def train_auto(
         lora_path="",  # 文件夹名字
         general_model_path="",  # 通用路径,
         train_callback=None,  # callback函数
+        only_face=True,  # 只需要脸
         other_args=None  # 预留一个，以备用
 ):
     # 预设参数
     width_train = 512
     height_train = 768
-    width = 512
-    height = 768
-    options = ["抠出头部", "磨皮"]  # 数据预处理方法 "抠出全身","抠出头部", "放大", "镜像", "旋转", "改变尺寸","磨皮"
+    # width = 512
+    # height = 768
+    # options = ["抠出头部", "磨皮"]  # 数据预处理方法 "抠出全身","抠出头部", "放大", "镜像", "旋转", "改变尺寸","磨皮"
     head_width = 512
     head_height = 512
     trigger_word = ""
@@ -660,8 +721,6 @@ def train_auto(
     use_wd = os.getenv('WD', '1') == '1'
     # 对于小于15的数据样本，进行数据增强
     images = [x for x in os.listdir(train_data_dir) if os.path.splitext(x)[-1].lower() != ".txt"]
-    if len(images) < 15:
-        options.append("镜像")
 
     # 反推tag默认排除的提示词
     undesired_tags = "blur,blurry,motion blur"  # 待测试五官
@@ -671,17 +730,26 @@ def train_auto(
 
     # 抠出脸部
     tmp_face_dir = os.path.join(dirname, f"{task_id}-tmp_face_dir")
-    seg_face(input_path=train_data_dir, output_path=tmp_face_dir, model_path=general_model_path)
+    # seg_face(input_path=train_data_dir, output_path=tmp_face_dir, model_path=general_model_path)
 
     # # 原图不再抠头
     # image_list, _ = custom_configurable_image_processing(train_data_dir, options, width, height,
     #                                                      if_res_oribody=True, model_p=general_model_path)
     # 脸部图，抠头
-    options = ["抠出头部", "放大", "磨皮"]
-    _, head_list = custom_configurable_image_processing(tmp_face_dir, options, head_width, head_height,
-                                                        if_res_oribody=True, model_p=general_model_path)
+    options = ["放大", "抠出头部", "磨皮"]
+    if len(images) < 15:
+        options.append("镜像")
 
-    train_dir = os.path.join(dirname, f"{task_id}-preprocess")
+    body_list, head_list = custom_configurable_image_processing(
+        train_data_dir, options, head_width, head_height, if_res_oribody=True, model_p=general_model_path)
+    # 抠出脸部
+    if only_face:
+        clean_dir(train_data_dir)
+        save_images_to_temp(head_list, train_data_dir)
+        save_images_to_temp(body_list, train_data_dir)
+        head_list = seg_face(input_path=train_data_dir, output_path=tmp_face_dir, model_path=general_model_path)
+
+    train_dir = os.path.join(dirname, f"{task_id}-preprocess") if not only_face else tmp_face_dir
     os.makedirs(train_dir, exist_ok=True)
     process_dir = train_dir
     # print("1111:::", image_list, head_list)
@@ -890,6 +958,11 @@ def train_auto(
     )
 
     pk.kill_sub_process()
+    try:
+        shutil.rmtree(tmp_face_dir)
+    except:
+        pass
+
     return os.path.join(lora_path, lora_name + ".safetensors"), gender
 
 

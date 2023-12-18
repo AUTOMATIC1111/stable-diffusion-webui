@@ -7,12 +7,15 @@
 # @Software: xingzhe.ai
 import sys
 import typing
-from scripts.xyz_grid import axis_options
+from scripts.xyz_grid import axis_options, AxisOption, format_value
+from modules.shared import cmd_opts
 
 if sys.version.startswith('3.10'):
     from strenum import StrEnum
 else:
     from enum import StrEnum
+
+PromptSRFlag = 'SR-'
 
 
 class SelectScriptNames(StrEnum):
@@ -29,8 +32,9 @@ class SupportedXYZAxis(StrEnum):
     VAE = 'VAE'
     Nothing = 'Nothing'
     # 以下为自定义
-    Lora = 'Lora'  # 如何确定LORA的权重
-    LoraWeight = 'LoraWeight'  # 如何判断对应LORA
+    SingleLora = 'SingleLora'  # 一维LORA，values中含有每个Lora权重
+    PlaneLora = 'PlaneLora'    # 二维LORA，需要与LoraWeight配合使用
+    LoraWeight = 'LoraWeight'  # 需要与PlaneLora配合
 
 
 DropdownAxisTypes = [
@@ -40,11 +44,52 @@ DropdownAxisTypes = [
 ]
 
 
+class AxisValue:
+
+    def __init__(self, ):
+        pass
+
+
+class AxisValues:
+
+    def __init__(self, axis_type: SupportedXYZAxis, axis_values: typing.Union[typing.Sequence, str]):
+        self.values = axis_values
+        if axis_type == SupportedXYZAxis.SingleLora:
+            if not isinstance(axis_values, list):
+                raise ValueError(f'single lora values type error, expect list but get {type(axis_values)}')
+            values = [PromptSRFlag + SupportedXYZAxis.SingleLora]
+            for item in axis_values:
+                if isinstance(item, dict):  # 传入 [{"name": "xxx", "value": 0.8}, {"name": "yyy", "value": 0.8}]格式
+                    values.append(f"<lora:{item['name']}:{item['value']}>")
+                elif isinstance(item, tuple):  # 传入[("xxx", w), ("yyy", w2)] 格式
+                    values.append(f"<lora:{item[0]}:{item[1]}>")
+                elif isinstance(item, str):  # 传入["<lora:xxx:w>","<lora:yyy:w2>"]格式
+                    values.append(item)
+            self.values = ','.join(values)
+        elif axis_type == SupportedXYZAxis.PlaneLora:
+            if not isinstance(axis_values, list):
+                raise ValueError(f'plane lora values type error, expect list but get {type(axis_values)}')
+            values = [PromptSRFlag + SupportedXYZAxis.PlaneLora]
+            for item in axis_values:
+                if isinstance(item, dict):  # 传入 [{"name": "lora1"}, {"name": "lora2"}]格式
+                    values.append(item['name'])
+                elif isinstance(item, str):  # 传入["lora1", "lora2"...]格式
+                    values.append(item)
+            self.values = ','.join(values)
+        elif axis_type == SupportedXYZAxis.LoraWeight:
+            if not isinstance(axis_values, list):
+                raise ValueError(f'plane lora values type error, expect list but get {type(axis_values)}')
+            values = [PromptSRFlag + SupportedXYZAxis.LoraWeight]
+            for item in axis_values:
+                values.append(str(item))
+            self.values = ','.join(values)
+
+
 class AxisData:
 
     def __init__(self, axis_type, values):
         self.axis_type = SupportedXYZAxis(axis_type)
-        self.values = values
+        self.data = AxisValues(self.axis_type, values)
         self.axis_type_idx = 0
         for i, opt in axis_options:
             if opt.label == axis_type:
@@ -57,16 +102,16 @@ class AxisData:
             index = -1
         else:
             index = 1
-        values[index] = values
+        values[index] = self.data.values
         return values
 
 
 class XYZScriptArgs:
 
     def __init__(self,
-                 axis_type_x: str,
-                 axis_type_y: str,
-                 axis_type_z: str,
+                 axis_type_x: typing.Union[SupportedXYZAxis, str],
+                 axis_type_y: typing.Union[SupportedXYZAxis, str],
+                 axis_type_z: typing.Union[SupportedXYZAxis, str],
                  axis_values_x: str,
                  axis_values_y: str,
                  axis_values_z: str,
@@ -95,16 +140,17 @@ class XYZScriptArgs:
             self.margin_size,
             False,  # Use text inputs instead of dropdowns值固定设置为false
         ]
+
         return args
 
     @classmethod
     def from_dict(cls, args: typing.Dict):
-        axis_type_x = args['axis_type_x']
-        axis_values_x = args['axis_values_x']
-        axis_type_y = args['axis_type_y']
-        axis_values_y = args['axis_values_y']
-        axis_type_z = args['axis_type_z']
-        axis_values_z = args['axis_values_z']
+        axis_type_x = args.get('axis_type_x', 'Nothing')
+        axis_values_x = args.get('axis_values_x', '')
+        axis_type_y = args.get('axis_type_y', 'Nothing')  # Nothing
+        axis_values_y = args.get('axis_values_y', '')  # ""
+        axis_type_z = args.get('axis_type_z', 'Nothing')
+        axis_values_z = args.get('axis_values_z', '')
 
         keys = [
             'axis_type_x',
@@ -130,4 +176,43 @@ class XYZScriptArgs:
         )
 
 
+def apply_prompt(p, x, xs):
+    p.prompt = p.prompt.replace(xs[0], x)
+    p.negative_prompt = p.negative_prompt.replace(xs[0], x)
+
+
+def apply_single_lora(p, x, xs):
+    flag = xs[0]
+    if flag not in p.prompt:
+        p.prompt += flag
+    if x == flag:
+        x = ''  # none
+    apply_prompt(p, x, xs)
+
+
+def apply_plane_lora(p, x, xs):
+    flag = xs[0]
+    if flag not in p.prompt:
+        p.prompt += f"<lora:{flag}:{PromptSRFlag + SupportedXYZAxis.LoraWeight}>"
+    if x == flag:
+        x = 'none'  # none
+    apply_prompt(p, x, xs)
+
+
+def apply_lora_weights(p, x, xs):
+    flag = xs[0]
+    if flag not in p.prompt:
+        p.prompt += f"<lora:{flag}:{PromptSRFlag + SupportedXYZAxis.LoraWeight}>"
+    if x == flag:
+        x = "0"  # none
+    apply_prompt(p, x, xs)
+
+
+if cmd_opts.worker:
+    axis_options.extend([
+        AxisOption(SupportedXYZAxis.SingleLora, str, apply_single_lora, format_value=format_value),
+        AxisOption(SupportedXYZAxis.PlaneLora, str, apply_plane_lora, format_value=format_value),
+        AxisOption(SupportedXYZAxis.LoraWeight, str, apply_lora_weights, format_value=format_value),
+
+    ])
 
