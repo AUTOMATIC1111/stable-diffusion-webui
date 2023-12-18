@@ -95,7 +95,6 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
         )
 
         torch_gc()
-        shutil.rmtree(image_dir)
         logger.debug(f">> train complete: {out_path}")
         if out_path and os.path.isfile(out_path):
             result = {
@@ -125,10 +124,13 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
                 'train': result
             }, False)
             fp.train = p.train
+
             yield fp
         else:
             p = TaskProgress.new_failed(job, 'train failed(unknown errors)')
             yield p
+        print(f"remove image dir:{image_dir}")
+        shutil.rmtree(image_dir)
     else:
         p = TaskProgress.new_failed(job, 'train failed(cannot download images)')
         yield p
