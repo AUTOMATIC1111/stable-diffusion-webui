@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2023/4/14 9:55 AM
 # @Author  : wangdongming
-# @Site    : 
+# @Site    :
 # @File    : tagger.py
 # @Software: Hifive
 import os.path
@@ -20,7 +20,8 @@ from worker.task import Task, TaskType, TaskProgress, TaskStatus
 from handlers.Tagger.interrogator import Interrogator, HttpWfInterrogator
 from typing import List, Dict
 from modules import deepbooru, shared
-
+import json
+from copy import deepcopy
 # interrogators: Dict[str, Interrogator] = {}
 
 interrogators = {
@@ -29,6 +30,7 @@ interrogators = {
     #     repo_id='SmilingWolf/wd-v1-4-convnextv2-tagger-v2',
     #     revision='v2.0'
     # ),
+
     'wd14-vit-v2': HttpWfInterrogator(
         'wd14-vit-v2',
         repo_id='SmilingWolf/wd-v1-4-vit-tagger-v2',
@@ -82,14 +84,15 @@ def base_tagger(interrogator_name: str,
                 raise OSError(f'cannot found image:{path}')
             image = Image.open(local_image)
         except UnidentifiedImageError:
-            logger.exception(f'${image} is not supported image type, image path:{path}')
+            logger.exception(
+                f'${image} is not supported image type, image path:{path}')
             continue
         pil_img = image.convert('RGB')
         if interrogator_name == "clip":
             processed = shared.interrogator.interrogate(pil_img)
         else:
             processed = deepbooru.model.tag(pil_img)
-        res[os.path.basename(local_image)] = processed
+        res[path] = processed
     return res
 
 
@@ -138,7 +141,8 @@ def get_tagger(
                 raise OSError(f'cannot found image:{path}')
             image = Image.open(local_image)
         except UnidentifiedImageError:
-            logger.exception(f'${image} is not supported image type, image path:{path}')
+            logger.exception(
+                f'${image} is not supported image type, image path:{path}')
             continue
 
         ratings, tags = interrogator.interrogate(image)
@@ -149,8 +153,7 @@ def get_tagger(
 
         tags = ', '.join(processed_tags)
         if path not in tags_res.keys():
-            basename = os.path.basename(local_image)
-            tags_res[basename] = tags
+            tags_res[path] = tags
         if image:
             image.close()
 
@@ -197,8 +200,8 @@ class TaggerTask:
     @classmethod
     def exec_task(cls, task: Task):
         t = TaggerTask(
-            task['images'],  # task['images']
-            task.get('interrogator'),
+            task['image'],  # task['image']
+            task.get('interrogate_model'),
             task.get('threshold', 0.35),
             task.get('additional_tags', ""),
             task.get('exclude_tags', ""),
@@ -210,7 +213,6 @@ class TaggerTask:
             task.get('unload_model_after_running', True),
         )
         # 改成Tageer反推
-
         interrogator_name = t.interrogator.lower()
         if interrogator_name in ['clip', 'deepbooru']:
             return base_tagger(interrogator_name, t.images)
@@ -232,19 +234,27 @@ class TaggerTaskHandler(DumpTaskHandler):
             yield from self.__exec_tagger_task(task)
 
     def __exec_tagger_task(self, task: Task):
+        #
+        tmp_task = deepcopy(task)
+        imgs = task['image']
+        imgs = list(imgs.split(","))
+        tmp_task['image'] = imgs
+
         p = TaskProgress.new_running(task, "tagger image ...")
         yield p
-        result = TaggerTask.exec_task(task)
+        result = TaggerTask.exec_task(tmp_task)
+        result = json.dumps(result)
 
         p.task_progress = random.randint(30, 70)
         yield p
         if result:
             # 返回一个字典。{image_path:tag}
-            p = TaskProgress.new_finish(task, result)
+            p = TaskProgress.new_finish(task, {
+                'interrogate': result
+            })
+
             p.task_desc = f'tagger task:{task.id} finished.'
         else:
             p.status = TaskStatus.Failed
             p.task_desc = f'tagger task:{task.id} failed.'
         yield p
-
-
