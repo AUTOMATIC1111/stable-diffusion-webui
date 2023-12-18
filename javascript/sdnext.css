@@ -71,6 +71,7 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 .performance p { display: inline-block; color: var(--body-text-color-subdued) !important }
 .performance .time { margin-right: 0; }
 #control_gallery { height: 564px; }
+#control-result { padding: 0.5em; }
 #control-inputs { margin-top: 1em; }
 #txt2img_prompt_container, #img2img_prompt_container, #control_prompt_container { margin-right: var(--layout-gap) }
 #txt2img_footer, #img2img_footer, #extras_footer, #control_footer { height: fit-content; display: none; }

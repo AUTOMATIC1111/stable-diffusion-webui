@@ -374,8 +374,8 @@ class Processed:
         self.subseed_strength = p.subseed_strength
         self.info = info
         self.comments = comments
-        self.width = p.width
-        self.height = p.height
+        self.width = p.width if hasattr(p, 'width') else self.images[0].width
+        self.height = p.height if hasattr(p, 'height') else self.images[0].height
         self.sampler_name = p.sampler_name
         self.cfg_scale = p.cfg_scale
         self.image_cfg_scale = p.image_cfg_scale
@@ -584,7 +584,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
         "Seed": all_seeds[index],
         "Sampler": p.sampler_name,
         "CFG scale": p.cfg_scale,
-        "Size": f"{p.width}x{p.height}",
+        "Size": f"{p.width}x{p.height}" if hasattr(p, 'width') and hasattr(p, 'height') else None,
         "Batch": f'{p.n_iter}x{p.batch_size}' if p.n_iter > 1 or p.batch_size > 1 else None,
         "Index": f'{p.iteration + 1}x{index + 1}' if (p.n_iter > 1 or p.batch_size > 1) and index >= 0 else None,
         "Parser": shared.opts.prompt_attention,
@@ -636,6 +636,8 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
         args['Resize scale'] = getattr(p, 'scale_by', None)
         args["Mask blur"] = p.mask_blur if getattr(p, 'mask', None) is not None and getattr(p, 'mask_blur', 0) > 0 else None
         args["Denoising strength"] = getattr(p, 'denoising_strength', None)
+        if args["Size"] is None:
+            args["Size"] = args["Init image size"]
         # lookup by index
         if getattr(p, 'resize_mode', None) is not None:
             args['Resize mode'] = shared.resize_modes[p.resize_mode]
@@ -1284,7 +1286,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         unprocessed = []
         if getattr(self, 'init_images', None) is None:
             return
-            # raise RuntimeError("No images provided")
+        if not isinstance(self.init_images, list):
+            self.init_images = [self.init_images]
         for img in self.init_images:
             if img is None:
                 shared.log.warning(f"Skipping empty image: images={self.init_images}")
@@ -1295,7 +1298,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if shared.opts.save_init_img:
                 images.save_image(img, path=shared.opts.outdir_init_images, basename=None, forced_filename=self.init_img_hash, suffix="-init-image")
             image = images.flatten(img, shared.opts.img2img_background_color)
-            if crop_region is None and self.resize_mode != 4:
+            if crop_region is None and self.resize_mode != 4 and self.resize_mode > 0:
                 if image.width != self.width or image.height != self.height:
                     image = images.resize_image(self.resize_mode, image, self.width, self.height, self.resize_name)
                 self.width = image.width

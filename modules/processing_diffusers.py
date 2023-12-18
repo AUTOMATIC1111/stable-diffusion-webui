@@ -527,7 +527,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     update_sampler(shared.sd_model)
     shared.state.sampling_steps = base_args['num_inference_steps']
     p.extra_generation_params['Pipeline'] = shared.sd_model.__class__.__name__
-    p.extra_generation_params["Sampler Eta"] = shared.opts.scheduler_eta if shared.opts.scheduler_eta is not None and shared.opts.scheduler_eta > 0 and shared.opts.scheduler_eta < 1 else None
+    if shared.opts.scheduler_eta is not None and shared.opts.scheduler_eta > 0 and shared.opts.scheduler_eta < 1:
+        p.extra_generation_params["Sampler Eta"] = shared.opts.scheduler_eta
     try:
         t0 = time.time()
         output = shared.sd_model(**base_args) # pylint: disable=not-callable
@@ -652,7 +653,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             shared.state.sampling_steps = refiner_args['num_inference_steps']
             try:
                 shared.sd_refiner.register_to_config(requires_aesthetics_score=shared.opts.diffusers_aesthetics_score)
-                print('HERE req', shared.sd_refiner.config.requires_aesthetics_score)
                 refiner_output = shared.sd_refiner(**refiner_args) # pylint: disable=not-callable
             except AssertionError as e:
                 shared.log.info(e)
