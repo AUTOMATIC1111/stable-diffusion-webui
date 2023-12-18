@@ -26,7 +26,8 @@
     - *note*: GPU VRAM limits do not automatically go away so be careful when using it with large resolutions  
       in the future, expect more optimizations, especially related to offloading/slicing/tiling,  
       but at the moment this is pretty much experimental-only  
-  - **Custom Pipelines** contribute by adding your own custom pipelines!  
+  - **Prompt scheduling** now implemented for Diffusers backend, thanks @AI-Casanova
+  - **Custom pipelines** contribute by adding your own custom pipelines!  
     - for details, see fully documented example: <https://github.com/vladmandic/automatic/blob/dev/scripts/example.py>  
   - **Schedulers**  
     - add timesteps range, changing it will make scheduler to be over-complete or under-complete  
@@ -65,6 +66,7 @@
     - batch-aware for enhancement of multiple images or video frames  
     - available in image tab  
   - **Other**  
+    - **API** several minor but breaking changes to API behavior to better align response fields, thanks @Trojaner
     - **Inpaint** add option `apply_overlay` to control if inpaint result should be applied as overlay or as-is  
       can remove artifacts and hard edges of inpaint area but also remove some details from original  
     - **chaiNNer** fix `NaN` issues due to autocast  
