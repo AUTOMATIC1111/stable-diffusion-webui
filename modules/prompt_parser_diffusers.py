@@ -58,32 +58,48 @@ class DiffusersTextualInversionManager(BaseTextualInversionManager):
         debug(f'Prompt: expand={prompt}')
         return self.pipe.tokenizer.encode(prompt, add_special_tokens=False)
 
+def get_prompt_schedule(p, prompt, steps):
+    temp = []
+    schedule = prompt_parser.get_learned_conditioning_prompt_schedules([prompt], steps)[0]
+    for chunk in schedule:
+        for s in range(steps):
+            if len(temp) < s + 1 <= chunk[0]:
+                temp.append(chunk[1])
+    return temp, len(schedule) > 1
 
-def encode_prompts(pipe, prompts: list, negative_prompts: list, clip_skip: typing.Optional[int] = None):
+def encode_prompts(pipe, p,  prompts: list, negative_prompts: list, steps: int, step: int = 1, clip_skip: typing.Optional[int] = None):
     if 'StableDiffusion' not in pipe.__class__.__name__ and 'DemoFusion':
         shared.log.warning(f"Prompt parser not supported: {pipe.__class__.__name__}")
         return None, None, None, None
     else:
-        prompt_embeds = []
-        positive_pooleds = []
-        negative_embeds = []
-        negative_pooleds = []
-        for i in range(len(prompts)):
-            prompt_embed, positive_pooled, negative_embed, negative_pooled = get_weighted_text_embeddings(pipe, prompts[i], negative_prompts[i], clip_skip)
-            prompt_embeds.append(prompt_embed)
-            positive_pooleds.append(positive_pooled)
-            negative_embeds.append(negative_embed)
-            negative_pooleds.append(negative_pooled)
+        positive_schedule, scheduled = get_prompt_schedule(p, prompts[0], steps)
+        negative_schedule, neg_scheduled = get_prompt_schedule(p, negative_prompts[0], steps)
+        p.scheduled_prompt = scheduled or neg_scheduled
 
-    if prompt_embeds is not None:
-        prompt_embeds = torch.cat(prompt_embeds, dim=0)
-    if negative_embeds is not None:
-        negative_embeds = torch.cat(negative_embeds, dim=0)
-    if positive_pooleds is not None and shared.sd_model_type == "sdxl":
-        positive_pooleds = torch.cat(positive_pooleds, dim=0)
-    if negative_pooleds is not None and shared.sd_model_type == "sdxl":
-        negative_pooleds = torch.cat(negative_pooleds, dim=0)
-    return prompt_embeds, positive_pooleds, negative_embeds, negative_pooleds
+        p.prompt_embeds = []
+        p.positive_pooleds = []
+        p.negative_embeds = []
+        p.negative_pooleds = []
+
+        cache = {}
+        for i in range(len(positive_schedule)):
+            cached = cache.get(positive_schedule[i]+negative_schedule[i], None)
+            if cached is not None:
+              prompt_embed, positive_pooled, negative_embed, negative_pooled = cached
+            else:
+              prompt_embed, positive_pooled, negative_embed, negative_pooled = get_weighted_text_embeddings(pipe,
+                                                                                                            positive_schedule[i],
+                                                                                                            negative_schedule[i],
+                                                                                                            clip_skip)
+            if prompt_embed is not None:
+                p.prompt_embeds.append(torch.cat([prompt_embed]*len(prompts), dim=0))
+            if negative_embed is not None:
+                p.negative_embeds.append(torch.cat([negative_embed]*len(negative_prompts), dim=0))
+            if positive_pooled is not None and shared.sd_model_type == "sdxl":
+                p.positive_pooleds.append(torch.cat([positive_pooled]*len(prompts), dim=0))
+            if negative_pooled is not None and shared.sd_model_type == "sdxl":
+                p.negative_pooleds.append(torch.cat([negative_pooled]*len(negative_prompts), dim=0))
+        return
 
 
 def get_prompts_with_weights(prompt: str):
