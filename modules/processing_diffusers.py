@@ -89,13 +89,15 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if kwargs.get('latents', None) is None:
             return kwargs
         kwargs = correction_callback(p, timestep, kwargs)
-        try:
-            kwargs["prompt_embeds"] = p.prompt_embeds[step + 1].repeat(1, kwargs["prompt_embeds"].shape[0], 1).view(
-                kwargs["prompt_embeds"].shape[0], kwargs["prompt_embeds"].shape[1], -1)
-            kwargs["negative_prompt_embeds"] = p.negative_embeds[step + 1].repeat(1, kwargs["negative_prompt_embeds"].shape[0], 1).view(
-                kwargs["negative_prompt_embeds"].shape[0], kwargs["negative_prompt_embeds"].shape[1], -1)
-        except:
-            pass
+        if p.scheduled_prompt:
+            try:
+                i = (step + 1) % len(p.prompt_embeds)
+                kwargs["prompt_embeds"] = p.prompt_embeds[i][0:1].repeat(1, kwargs["prompt_embeds"].shape[0], 1).view(
+                      kwargs["prompt_embeds"].shape[0], kwargs["prompt_embeds"].shape[1], -1)
+                kwargs["negative_prompt_embeds"] = p.negative_embeds[i][0:1].repeat(1, kwargs["negative_prompt_embeds"].shape[0], 1).view(
+                      kwargs["negative_prompt_embeds"].shape[0], kwargs["negative_prompt_embeds"].shape[1], -1)
+            except Exception as e:
+              shared.log.debug(f"Callback: {e}")
         shared.state.current_latent = kwargs['latents']
         if shared.cmd_opts.profile and shared.profiler is not None:
             shared.profiler.step()
