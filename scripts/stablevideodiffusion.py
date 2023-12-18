@@ -1,6 +1,7 @@
 """
 Additional params for StableVideoDiffusion
 """
+
 import torch
 import gradio as gr
 from modules import scripts, processing, shared, sd_models, images

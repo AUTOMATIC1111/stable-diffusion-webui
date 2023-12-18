@@ -5,32 +5,39 @@
 *Note*: based on `diffusers==0.25.0.dev0`
 
 - **Diffusers**
-  - **AnimateDiff** can now be used with *second pass* - enhance, upscale and hires your videos!  
-  - **IP Adapter** add support for `ip-adapter-plus_sd15`, `ip-adapter-plus-face_sd15` and `ip-adapter-full-face_sd15`  
-    additionally, ip-adapter can now be used in xyz-grid  
+  - **AnimateDiff**  
+    - can now be used with *second pass* - enhance, upscale and hires your videos!  
+  - **IP Adapter**  
+    - add support for `ip-adapter-plus_sd15`, `ip-adapter-plus-face_sd15` and `ip-adapter-full-face_sd15`  
+    - can now be used in *xyz-grid*  
+  - **Text-to-Video**  
+    - in text tab, select `text-to-video` script  
+    - supported models: ModelScope v1.7b, ZeroScope v1, ZeroScope v1.1, ZeroScope v2, ZeroScope v2 Dark, Potat v1  
+      *if you know of any other t2v models you'd like to see supported, let me know!*  
+    - models are auto-downloaded on first use  
+    - *note*: current base model will be unloaded to free up resources  
   - [Segmind Vega](https://huggingface.co/segmind/Segmind-Vega) support  
-    - small and fast version of SDXL, only 3.1GB in size!  
-    - select from networks -> reference  
+    - small and fast version of **SDXL**, only 3.1GB in size!  
+    - select from *networks -> reference*  
   - [Playground v1](https://huggingface.co/playgroundai/playground-v1), [Playground v2 256](https://huggingface.co/playgroundai/playground-v2-256px-base), [Playground v2 512](https://huggingface.co/playgroundai/playground-v2-512px-base), [Playground v2 1024](https://huggingface.co/playgroundai/playground-v2-1024px-aesthetic) model support  
     - simply select from *networks -> reference* and use as usual  
   - [DemoFusion](https://github.com/PRIS-CV/DemoFusion) run your SDXL generations at any resolution!  
-    - in **Text** tab select *script* -> *demofusion*
+    - in **Text** tab select *script* -> *demofusion*  
     - *note*: GPU VRAM limits do not automatically go away so be careful when using it with large resolutions  
       in the future, expect more optimizations, especially related to offloading/slicing/tiling,  
-      but at the moment this is pretty much experimental-only
-  - [ModelScope T2V](https://huggingface.co/damo-vilab/text-to-video-ms-1.7b) model support  
-    - simply select from *networks -> reference* and use from *txt2img* tab
-  - **Schedulers**
+      but at the moment this is pretty much experimental-only  
+  - **Custom Pipelines** contribute by adding your own custom pipelines!  
+    - for details, see fully documented example: <https://github.com/vladmandic/automatic/blob/dev/scripts/example.py>  
+  - **Schedulers**  
     - add timesteps range, changing it will make scheduler to be over-complete or under-complete  
     - add rescale betas with zero SNR option (applicable to Euler and DDIM, allows for higher dynamic range)  
-  - **Custom Pipelines** contribute by adding your own custom pipelines!
-    - for details, see fully documented example: <https://github.com/vladmandic/automatic/blob/dev/scripts/example.py>
 - **General**  
   - **Process** create videos from batch or folder processing  
       supports *GIF*, *PNG* and *MP4* with full interpolation, scene change detection, etc.  
   - **LoRA**  
     - add support for block weights, thanks @AI-Casanova  
       example `<lora:SDXL_LCM_LoRA:1.0:in=0:mid=1:out=0>`  
+    - add support for LyCORIS GLora networks  
     - reintroduce alternative loading method in settings: `lora_force_diffusers`  
     - add support for `lora_fuse_diffusers` if using alternative method  
       use if you have multiple complex loras that may be causing performance degradation  
@@ -44,26 +51,25 @@
     - built-in *MKL* and *DPCPP* for IPEX, no need to install OneAPI anymore  
     - fix IPEX Optimize not applying with Diffusers backend  
     - disable 32 bit workarounds if the GPU supports 64 bit  
-    - add DISABLE_IPEXRUN environment variable
+    - add `DISABLE_IPEXRUN` environment variable  
     - compatibility improvements  
   - **OpenVINO**, thanks @disty0  
     - add *Directory for OpenVINO cache* option to *System Paths*  
     - remove Intel ARC specific 1024x1024 workaround  
-  - **UI**
+  - **UI**  
     - more dynamic controls depending on the backend (original or diffusers)  
       controls that are not applicable in current mode are now hidden  
     - allow setting of resize method directly in image tab  
-      (previously via settings -> upscaler_for_img2img)
-  - **HDR controls**
+      (previously via settings -> upscaler_for_img2img)  
+  - **HDR controls**  
     - batch-aware for enhancement of multiple images or video frames  
     - available in image tab  
-  - **Other**
+  - **Other**  
     - **Inpaint** add option `apply_overlay` to control if inpaint result should be applied as overlay or as-is  
       can remove artifacts and hard edges of inpaint area but also remove some details from original  
     - **chaiNNer** fix `NaN` issues due to autocast  
     - **Upscale** increase limit from 4x to 8x given the quality of some upscalers  
     - **Extra Networks** fix sort  
-    - **LoRA** add support for LyCORIS GLora networks
     - disable google fonts check on server startup  
     - fix torchvision/basicsr compatibility  
     - fix styles quick save  
@@ -73,7 +79,7 @@
     - log output file sizes  
     - avoid unnecessary resizes in img2img and inpaint  
     - updated `cli/simple-txt2img.py` and `cli/simple-img2img.py` scripts  
-    - save `params.txt` regardless of image save status
+    - save `params.txt` regardless of image save status  
     - update built-in log monitor in ui, thanks @midcoastal  
 
 ## Update for 2023-12-04
