@@ -26,8 +26,11 @@ def list_crossattention():
 
 def get_pipelines():
     import diffusers
-    import modules.onnx # pylint: disable=unused-import
     from installer import log
+    from modules.onnx import initialize as initialize_onnx_pipelines
+
+    initialize_onnx_pipelines()
+
     pipelines = { # note: not all pipelines can be used manually as they require prior pipeline next to decoder pipeline
         'Autodetect': None,
         'Stable Diffusion': getattr(diffusers, 'StableDiffusionPipeline', None),

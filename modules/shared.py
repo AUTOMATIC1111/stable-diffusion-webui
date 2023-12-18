@@ -16,7 +16,7 @@ from rich.console import Console
 from modules import errors, shared_items, shared_state, cmd_args, theme
 from modules.paths import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 from modules.dml import memory_providers, default_memory_provider, directml_do_hijack
-from modules.onnx import available_execution_providers, get_default_execution_provider
+from modules.onnx_ep import available_execution_providers, get_default_execution_provider
 import modules.interrogate
 import modules.memmon
 import modules.styles
