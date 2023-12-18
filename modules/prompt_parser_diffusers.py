@@ -1,4 +1,5 @@
 import os
+import time
 import typing
 import torch
 from compel import ReturnedEmbeddingsType
@@ -59,12 +60,16 @@ class DiffusersTextualInversionManager(BaseTextualInversionManager):
         return self.pipe.tokenizer.encode(prompt, add_special_tokens=False)
 
 def get_prompt_schedule(p, prompt, steps):
+    t0 = time.time()
     temp = []
     schedule = prompt_parser.get_learned_conditioning_prompt_schedules([prompt], steps)[0]
+    if all(x == schedule[0] for x in schedule):
+        return [prompt], False
     for chunk in schedule:
         for s in range(steps):
             if len(temp) < s + 1 <= chunk[0]:
                 temp.append(chunk[1])
+    debug(f'Prompt: schedule={temp} time={time.time()-t0}')
     return temp, len(schedule) > 1
 
 def encode_prompts(pipe, p,  prompts: list, negative_prompts: list, steps: int, step: int = 1, clip_skip: typing.Optional[int] = None):

@@ -314,14 +314,14 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 if os.environ.get('SD_PROMPT_DEBUG', None) is not None:
                     errors.display(e, 'Prompt parser encode')
         if 'prompt' in possible:
-            if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and p.prompt_embeds[0] is not None:
+            if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and len(p.prompt_embeds) > 0 and p.prompt_embeds[0] is not None:
                 args['prompt_embeds'] = p.prompt_embeds[0]
                 if 'XL' in model.__class__.__name__:
                     args['pooled_prompt_embeds'] = p.positive_pooleds[0]
             else:
                 args['prompt'] = prompts
         if 'negative_prompt' in possible:
-            if hasattr(model, 'text_encoder') and 'negative_prompt_embeds' in possible and p.negative_embeds[0] is not None:
+            if hasattr(model, 'text_encoder') and 'negative_prompt_embeds' in possible and len(p.negative_embeds) > 0 and p.negative_embeds[0] is not None:
                 args['negative_prompt_embeds'] = p.negative_embeds[0]
                 if 'XL' in model.__class__.__name__:
                     args['negative_pooled_prompt_embeds'] = p.negative_pooleds[0]

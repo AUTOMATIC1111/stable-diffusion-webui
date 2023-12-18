@@ -667,7 +667,7 @@ class Api:
                     "enabled":ext.enabled
                 })
         return ext_list
-    
+
     def launch(self):
         config = {
             "listen": shared.cmd_opts.listen,

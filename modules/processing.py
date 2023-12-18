@@ -697,6 +697,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         p.scripts.before_process(p)
     stored_opts = {}
     for k, v in p.override_settings.copy().items():
+        if shared.opts.data.get(k, None) is None and shared.opts.data_labels.get(k, None) is None:
+            continue
         orig = shared.opts.data.get(k, None) or shared.opts.data_labels[k].default
         if orig == v or (type(orig) == str and os.path.splitext(orig)[0] == v):
             p.override_settings.pop(k, None)
