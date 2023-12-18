@@ -1086,6 +1086,7 @@ def create_ui():
         )
 
     loadsave = ui_loadsave.UiLoadsave(cmd_opts.ui_config_file)
+    ui_settings_from_file = loadsave.ui_settings.copy()
 
     settings = ui_settings.UiSettings()
     settings.create_ui(loadsave, dummy_component)
@@ -1146,7 +1147,8 @@ def create_ui():
 
         modelmerger_ui.setup_ui(dummy_component=dummy_component, sd_model_checkpoint_component=settings.component_dict['sd_model_checkpoint'])
 
-    loadsave.dump_defaults()
+    if ui_settings_from_file != loadsave.ui_settings:
+        loadsave.dump_defaults()
     demo.ui_loadsave = loadsave
 
     return demo
