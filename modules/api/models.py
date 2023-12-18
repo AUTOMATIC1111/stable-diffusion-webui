@@ -170,7 +170,7 @@ class PNGInfoRequest(BaseModel):
 
 class PNGInfoResponse(BaseModel):
     info: str = Field(title="Image info", description="A string with the parameters used to generate the image")
-    items: dict = Field(title="Items", description="An object containing all the info the image had")
+    items: dict = Field(title="Items", description="A dictionary containing all the other fields the image had")
     parameters: dict = Field(title="Parameters", description="A dictionary with parsed generation info fields")
 
 class LogRequest(BaseModel):

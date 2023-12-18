@@ -378,6 +378,9 @@ class Api:
         if geninfo is None:
             geninfo = ""
 
+        if items and items['parameters']:
+            del items['parameters']
+
         params = generation_parameters_copypaste.parse_generation_parameters(geninfo)
         script_callbacks.infotext_pasted_callback(geninfo, params)
 
@@ -652,7 +655,7 @@ class Api:
         ext_list = []
         for ext in extensions.extensions:
             ext: extensions.Extension
-            ext.read_info_from_repo()
+            ext.read_info()
             if ext.remote is not None:
                 ext_list.append({
                     "name": ext.name,
