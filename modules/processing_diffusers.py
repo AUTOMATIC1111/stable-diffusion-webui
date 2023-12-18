@@ -94,10 +94,11 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 i = (step + 1) % len(p.prompt_embeds)
                 kwargs["prompt_embeds"] = p.prompt_embeds[i][0:1].repeat(1, kwargs["prompt_embeds"].shape[0], 1).view(
                       kwargs["prompt_embeds"].shape[0], kwargs["prompt_embeds"].shape[1], -1)
-                kwargs["negative_prompt_embeds"] = p.negative_embeds[i][0:1].repeat(1, kwargs["negative_prompt_embeds"].shape[0], 1).view(
+                j = (step + 1) % len(p.negative_embeds)
+                kwargs["negative_prompt_embeds"] = p.negative_embeds[j][0:1].repeat(1, kwargs["negative_prompt_embeds"].shape[0], 1).view(
                       kwargs["negative_prompt_embeds"].shape[0], kwargs["negative_prompt_embeds"].shape[1], -1)
             except Exception as e:
-              shared.log.debug(f"Callback: {e}")
+                shared.log.debug(f"Callback: {e}")
         shared.state.current_latent = kwargs['latents']
         if shared.cmd_opts.profile and shared.profiler is not None:
             shared.profiler.step()
@@ -244,8 +245,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         elif sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INSTRUCT and len(getattr(p, 'init_images' ,[])) > 0:
             p.ops.append('instruct')
             task_args = {
-                'width': 8 * math.ceil(p.width / 8),
-                'height': 8 * math.ceil(p.height / 8),
+                'width': 8 * math.ceil(p.width / 8) if hasattr(p, 'width') else None,
+                'height': 8 * math.ceil(p.height / 8) if hasattr(p, 'height') else None,
                 'image': p.init_images,
                 'strength': p.denoising_strength,
             }
@@ -289,8 +290,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             init_latent = (1 - p.denoising_strength) * init_latent + init_noise
             task_args = {
                 'latents': init_latent.to(model.dtype),
-                'width': p.width,
-                'height': p.height,
+                'width': p.width if hasattr(p, 'width') else None,
+                'height': p.height if hasattr(p, 'height') else None,
             }
         return task_args
 
@@ -408,8 +409,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     def recompile_model(hires=False):
         if shared.opts.cuda_compile and shared.opts.cuda_compile_backend != 'none':
             if shared.opts.cuda_compile_backend == "openvino_fx":
-                compile_height = p.height if not hires else p.hr_upscale_to_y
-                compile_width = p.width if not hires else p.hr_upscale_to_x
+                compile_height = p.height if not hires and hasattr(p, 'height') else p.hr_upscale_to_y
+                compile_width = p.width if not hires and hasattr(p, 'width') else p.hr_upscale_to_x
                 if (shared.compiled_model_state is None or
                 (not shared.compiled_model_state.first_pass
                 and (shared.compiled_model_state.height != compile_height
@@ -509,7 +510,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if hasattr(shared.sd_model, 'unet') and hasattr(shared.sd_model.unet, 'config') and hasattr(shared.sd_model.unet.config, 'in_channels') and shared.sd_model.unet.config.in_channels == 9:
         shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING) # force pipeline
         if len(getattr(p, 'init_images' ,[])) == 0:
-            p.init_images = [TF.to_pil_image(torch.rand((3, p.height, p.width)))]
+            p.init_images = [TF.to_pil_image(torch.rand((3, getattr(p, 'height', 512), getattr(p, 'width', 512))))]
     base_args = set_pipeline_args(
         model=shared.sd_model,
         prompts=prompts,
@@ -567,7 +568,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if p.is_hr_pass:
         p.init_hr()
         prev_job = shared.state.job
-        if p.width != p.hr_upscale_to_x or p.height != p.hr_upscale_to_y:
+        if hasattr(p, 'height') and hasattr(p, 'width') and (p.width != p.hr_upscale_to_x or p.height != p.hr_upscale_to_y):
             p.ops.append('upscale')
             if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_highres_fix and hasattr(shared.sd_model, 'vae'):
                 save_intermediate(latents=output.images, suffix="-before-hires")
