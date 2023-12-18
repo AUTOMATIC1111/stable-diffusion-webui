@@ -6,6 +6,7 @@ import sys
 
 import gradio as gr
 import subprocess as sp
+from PIL import Image
 
 from modules import call_queue, shared
 from modules.generation_parameters_copypaste import image_from_url_text
@@ -55,6 +56,7 @@ def save_files(js_data, images, do_make_zip, index):
     extension: str = shared.opts.samples_format
     start_index = 0
     only_one = False
+    images = [x.image.path for x in images.root]
 
     if index > -1 and shared.opts.save_selected_only and (index >= data["index_of_first_image"]):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only
         only_one = True
@@ -70,7 +72,7 @@ def save_files(js_data, images, do_make_zip, index):
             writer.writerow(["prompt", "seed", "width", "height", "sampler", "cfgs", "steps", "filename", "negative_prompt"])
 
         for image_index, filedata in enumerate(images, start_index):
-            image = image_from_url_text(filedata)
+            image = Image.open(filedata)
 
             is_grid = image_index < p.index_of_first_image
             i = 0 if is_grid else (image_index - p.index_of_first_image)
