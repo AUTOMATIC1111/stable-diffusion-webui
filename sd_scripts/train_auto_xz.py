@@ -388,8 +388,8 @@ def custom_configurable_image_processing(directory, options, resize_weight, resi
     return res_list, head_list
 
 
-def save_images_to_temp(images, temp_dir=None):
-    temp_dir = tempfile.mkdtemp() if not temp_dir else temp_dir  # 创建临时目录
+def save_images(images, dirname=None):
+    temp_dir = tempfile.mkdtemp() if not dirname else dirname  # 创建临时目录
     temp_image_paths = []
 
     for image in images:
@@ -422,7 +422,7 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
     if process_caption_deepbooru:
         deepbooru.model.start()
 
-    temp_dir, temp_image_paths = save_images_to_temp(process_src)
+    temp_dir, temp_image_paths = save_images(process_src)
     width = process_width
     height = process_height
     src = os.path.abspath(temp_dir)
@@ -745,8 +745,8 @@ def train_auto(
     # 抠出脸部
     if only_face:
         clean_dir(train_data_dir)
-        save_images_to_temp(head_list, train_data_dir)
-        save_images_to_temp(body_list, train_data_dir)
+        save_images(head_list, train_data_dir)
+        save_images(body_list, train_data_dir)
         head_list = seg_face(input_path=train_data_dir, output_path=tmp_face_dir, model_path=general_model_path)
 
     train_dir = os.path.join(dirname, f"{task_id}-preprocess") if not only_face else tmp_face_dir
