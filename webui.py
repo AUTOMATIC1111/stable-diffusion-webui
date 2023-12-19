@@ -39,7 +39,7 @@ def api_only():
 
     print(f"Startup time: {startup_timer.summary()}.")
     api.launch(
-        server_name = cmd_opts.server_name if cmd_opts.server_name else ("0.0.0.0" if cmd_opts.listen else "127.0.0.1"),
+        server_name=cmd_opts.server_name or ("0.0.0.0" if cmd_opts.listen else "127.0.0.1"),
         port=cmd_opts.port if cmd_opts.port else 7861,
         root_path=f"/{cmd_opts.subpath}" if cmd_opts.subpath else ""
     )
