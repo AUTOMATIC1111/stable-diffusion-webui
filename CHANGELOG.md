@@ -48,12 +48,11 @@
     indexes all networks on first access instead of server startup  
   - **IPEX**, thanks @disty0  
     - update to **Torch 2.1**  
-      if you get file not found errors, set DISABLE_IPEXRUN=1 and run the webui with --reinstall  
+      if you get file not found errors, set `DISABLE_IPEXRUN=1` and run the webui with `--reinstall`  
     - built-in *MKL* and *DPCPP* for IPEX, no need to install OneAPI anymore  
     - **StableVideoDiffusion** is now supported with IPEX  
     - fix IPEX Optimize not applying with Diffusers backend  
-    - fix garbled outputs with Stable Video Diffusion  
-    - disable 32 bit workarounds if the GPU supports 64 bit  
+    - disable 32bit workarounds if the GPU supports 64bit  
     - add `DISABLE_IPEXRUN` environment variable  
     - compatibility improvements  
   - **OpenVINO**, thanks @disty0  
