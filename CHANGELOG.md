@@ -2,7 +2,7 @@
 
 ## Update for 2023-12-04
 
-What's new? Native video in SD.Next via both **AnimateDiff** and **Stable-Video-Diffusion** - and including native MP4 encoding and smooth video outputs out-of-the-box, not just animated-GIFs.  
+Whats new? Native video in SD.Next via both **AnimateDiff** and **Stable-Video-Diffusion** - and including native MP4 encoding and smooth video outputs out-of-the-box, not just animated-GIFs.  
 Also new is support for **SDXL-Turbo** as well as new **Kandinsky 3** models and cool latent correction via **HDR controls** for any *txt2img* workflows, best-of-class **SDXL model merge** using full ReBasin methods and further mobile UI optimizations.  
 
 - **Diffusers**
@@ -21,7 +21,7 @@ Also new is support for **SDXL-Turbo** as well as new **Kandinsky 3** models and
     - for AnimateDiff support in *Original* backend, use standard *AnimateDiff* extension  
   - **HDR latent control**, based on [article](https://huggingface.co/blog/TimothyAlexisVass/explaining-the-sdxl-latent-space#long-prompts-at-high-guidance-scales-becoming-possible)  
     - in *Advanced* params
-    - allows control of *latent clamping*, *color centering* and *range maximimization*  
+    - allows control of *latent clamping*, *color centering* and *range maximization*  
     - supported by *XYZ grid*  
   - [SD21 Turbo](https://huggingface.co/stabilityai/sd-turbo) and [SDXL Turbo](<https://huggingface.co/stabilityai/sdxl-turbo>) support  
     - just set CFG scale (0.0-1.0) and steps (1-3) to a very low value  
@@ -79,7 +79,7 @@ Also included are several other improvements and large number of hotfixes - see 
   - Add `cli/lcm-convert.py` script to convert any SD 1.5 or SD-XL model to LCM model  
     by baking in LORA and uploading to Huggingface, thanks @Disty0  
   - Support for [Stable Fast](https://github.com/chengzeyi/stable-fast) model compile on *Windows/Linux/WSL2* with *CUDA*  
-    See [Wiki:Benchmark](https://github.com/vladmandic/automatic/wiki/Benchmark) for details and comparisment  
+    See [Wiki:Benchmark](https://github.com/vladmandic/automatic/wiki/Benchmark) for details and comparison  
     of different backends, precision modes, advanced settings and compile modes  
     *Hint*: **70+ it/s** is possible on *RTX4090* with no special tweaks  
   - Add additional pipeline types for manual model loads when loading from `safetensors`  
@@ -98,7 +98,7 @@ Also included are several other improvements and large number of hotfixes - see 
       and heavily modified for additional functionality and fully integrated by @AI-Casanova (thanks!)  
     - merge SD or SD-XL models using *simple merge* (12 methods),  
       using one of *presets* (20 built-in presets) or custom block merge values  
-    - merge with ReBasin permuatations and/or clipping protection  
+    - merge with ReBasin permutations and/or clipping protection  
     - fully multithreaded for fastest merge possible  
   - **Model update**  
     - under UI -> Models - Update  
@@ -147,7 +147,7 @@ Also, [Wiki](https://github.com/vladmandic/automatic/wiki) has been updated with
 Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVINO), [IntelArc](https://github.com/vladmandic/automatic/wiki/Intel-ARC), [DirectML](https://github.com/vladmandic/automatic/wiki/DirectML), [ONNX/Olive](https://github.com/vladmandic/automatic/wiki/ONNX-Olive)
 
 - **Diffusers**
-  - since now **SD.Next** supports **12** different model types, we've added reference model for each type in  
+  - since now **SD.Next** supports **12** different model types, weve added reference model for each type in  
     *Extra networks -> Reference* for easier select & auto-download  
     Models can still be downloaded manually, this is just a convenience feature & a showcase for supported models  
   - new model type: [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)  
@@ -160,7 +160,7 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
   - new model type: [Pixart-α XL 2](https://github.com/PixArt-alpha/PixArt-alpha)  
     in medium/512px and large/1024px variations  
     comparable in quality to SD 1.5 and SD-XL, but with better text encoder and highly optimized training pipeline  
-    so finetunes can be done in as little as 10% compared to SD/SD-XL (note that due to much larger text encodeder, it is a large model)  
+    so finetunes can be done in as little as 10% compared to SD/SD-XL (note that due to much larger text encoder, it is a large model)  
     select from extra networks -> reference or download using built-in **Huggingface** downloader: `PixArt-alpha/PixArt-XL-2-1024-MS`  
   - new model type: [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)  
     trained at 512px, but with near-instant generate in a as little as 3 steps!  
@@ -181,7 +181,7 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
   - extend support for [Free-U](https://github.com/ChenyangSi/FreeU)  
     improve generations quality at no cost (other than finding params that work for you)  
 - **General**  
-  - attempt to auto-fix invalid samples which occure due to math errors in lower precision  
+  - attempt to auto-fix invalid samples which occur due to math errors in lower precision  
     example: `RuntimeWarning: invalid value encountered in cast: sample = sample.astype(np.uint8)`  
     begone **black images** *(note: if it proves as working, this solution will need to be expanded to cover all scenarios)*  
   - add **Lora OFT** support, thanks @antis0007 and @ai-casanova  
@@ -241,8 +241,8 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
   - fix diffusers switch from invalid model  
   - force second requirements check on startup  
   - remove **lyco**, multiple_tqdm  
-  - enhance extension compatibility for exensions directly importing codeformers  
-  - enhance extension compatibility for exensions directly accessing processing params  
+  - enhance extension compatibility for extensions directly importing codeformers  
+  - enhance extension compatibility for extensions directly accessing processing params  
   - **css** fixes  
   - clearly mark external themes in ui  
   - update `typing-extensions`  
@@ -251,8 +251,8 @@ Some highlights: [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVIN
 
 This is a major release, with many changes and new functionality...  
 
-Changelog is massive, but do read through or you'll be missing on some very cool new functionality  
-or even free speedups and quality improvements (regardless of which workflows you're using)!  
+Changelog is massive, but do read through or youll be missing on some very cool new functionality  
+or even free speedups and quality improvements (regardless of which workflows youre using)!  
 
 Note that for this release its recommended to perform a clean install (e.g. fresh `git clone`)  
 Upgrades are still possible and supported, but clean install is recommended for best experience  
@@ -306,7 +306,7 @@ Upgrades are still possible and supported, but clean install is recommended for 
   - **General**  
     - faster search, ability to show/hide/sort networks  
     - refactored subfolder handling  
-      *note*: this will trigger model hash recaclulation on first model use  
+      *note*: this will trigger model hash recalculation on first model use  
 - **Diffusers**:  
   - better pipeline **auto-detect** when loading from safetensors  
   - **SDXL Inpaint**  
@@ -468,14 +468,14 @@ Upgrades are still possible and supported, but clean install is recommended for 
     - add end-to-end example how to use API: `cli/simple-txt2img.js`  
       covers txt2img, upscale, hires, refiner  
   - **train.py**
-    - wrapper script around built-in **kohya's lora** training script  
+    - wrapper script around built-in **kohyas lora** training script  
       see `cli/train.py --help`  
       new support for sd and sdxl, thanks @evshiron  
       new support for full offline mode (without sdnext server running)  
 - **Themes**
   - all built-in themes are fully supported:  
     - *black-teal (default), light-teal, black-orange, invoked, amethyst-nightfall, midnight-barbie*  
-  - if you're using any **gradio default** themes or a **3rd party** theme or  that are not optimized for SD.Next, you may experience issues  
+  - if youre using any **gradio default** themes or a **3rd party** theme or  that are not optimized for SD.Next, you may experience issues  
     default minimal style has been updated for compatibility, but actual styling is completely outside of SD.Next control  
 
 ## Update for 2023-09-13
@@ -496,7 +496,7 @@ Major changes how **hires** works as well as support for a very interesting new 
     but operations are really resource intensive as it includes: *base->decode->upscale->encode->hires->refine*
   - all combinations of: decode full/quick + upscale none/latent/non-latent + hires on/off + refiner on/off  
     should be supported, but given the number of combinations, issues are possible  
-  - all operations are captured in image medata
+  - all operations are captured in image metadata
 - diffusers:
   - allow loading of sd/sdxl models from safetensors without online connectivity
   - support for new model: [wuerstchen](https://huggingface.co/warp-ai/wuerstchen)  
@@ -531,7 +531,7 @@ One week later, another large update!
 - system:  
   - full **python 3.11** support  
     note that changing python version does require reinstall  
-    and if you're already on python 3.10, really no need to upgrade  
+    and if youre already on python 3.10, really no need to upgrade  
 - themes:  
   - new default theme: **black-teal**  
   - new light theme: **light-teal**  
@@ -555,9 +555,9 @@ One week later, another large update!
     thanks @ai-casanova for porting compel/sdxl code  
   - mix&match **base** and **refiner** models (*experimental*):  
     most of those are "because why not" and can result in corrupt images, but some are actually useful  
-    also note that if you're not using actual refiner model, you need to bump refiner steps  
+    also note that if youre not using actual refiner model, you need to bump refiner steps  
     as normal models are not designed to work with low step count  
-    and if you're having issues, try setting prompt parser to "fixed attention" as majority of problems  
+    and if youre having issues, try setting prompt parser to "fixed attention" as majority of problems  
     are due to token mismatches when using prompt attention  
     - any sd15 + any sd15  
     - any sd15 + sdxl-refiner  
@@ -658,18 +658,18 @@ Smaller update, but with some breaking changes (to prepare for future larger fun
     thanks @evshiron  
   - fix **img2img** resizing (applies to *original, diffusers, hires*)  
   - config change: main `config.json` no longer contains entire configuration  
-    but only differences from defaults (simmilar to recent change performed to `ui-config.json`)  
+    but only differences from defaults (similar to recent change performed to `ui-config.json`)  
 - diffusers:
   - enable **batch img2img** workflows  
 - original:  
   - new samplers: **dpm++ 3M sde** (standard and karras variations)  
     enable in *settings -> samplers -> show samplers*
-  - expose always/never discard penultimage sigma  
+  - expose always/never discard penultimate sigma  
     enable in *settings -> samplers*  
 
 ## Update for 2023-08-11
 
-This is a big one that's been cooking in `dev` for a while now, but finally ready for release...
+This is a big one thats been cooking in `dev` for a while now, but finally ready for release...
 
 - diffusers:
   - **pipeline autodetect**
@@ -715,7 +715,7 @@ Another minor update, but it unlocks some cool new items...
 Smaller release, but IMO worth a post...
 
 - diffusers:
-  - sd-xl lora's are now supported!
+  - sd-xl loras are now supported!
   - memory optimizations: Enhanced sequential CPU offloading, model CPU offload, FP16 VAE
     - significant impact if running SD-XL (for example, but applies to any model) with only 8GB VRAM
   - update packages
@@ -750,7 +750,7 @@ Actual changelog is:
   - add backend and operation info to metadata
 
 - diffusers:
-  - we're out of experimental phase and diffusers backend is considered stable  
+  - were out of experimental phase and diffusers backend is considered stable  
   - sd-xl: support for **sd-xl 1.0** official model
   - sd-xl: loading vae now applies to both base and refiner and saves a bit of vram  
   - sd-xl: denoising_start/denoising_end
@@ -765,7 +765,7 @@ Actual changelog is:
   - vae: enable loading of pure-safetensors vae files without config  
     also enable *automatic* selection to work with diffusers  
   - sd-xl: initial lora support  
-    right now this applies to official lora released by **stability-ai**, support for **kohya's** lora is expected soon  
+    right now this applies to official lora released by **stability-ai**, support for **kohyas** lora is expected soon  
   - implement img2img and inpainting (experimental)  
     actual support and quality depends on model  
     it works as expected for sd 1.5, but not so much for sd-xl for now  
@@ -783,7 +783,7 @@ Actual changelog is:
 
 ## Update for 2023-07-18
 
-While we're waiting for official SD-XL release, here's another update with some fixes and enhancements...
+While were waiting for official SD-XL release, heres another update with some fixes and enhancements...
 
 - **global**
   - image save: option to add invisible image watermark to all your generated images  
@@ -922,7 +922,7 @@ A bit bigger update this time, but contained to specific areas...
 - **live server log monitoring** in ui  
   configurable via settings -> live preview  
 - new **extra networks interface**  
-  *note: if you're using a 3rd party ui extension for extra networks, it will likely need to be updated to work with new interface*
+  *note: if youre using a 3rd party ui extension for extra networks, it will likely need to be updated to work with new interface*
   - display in front of main ui, inline with main ui or as a sidebar  
   - lazy load thumbnails  
     drastically reduces load times for large number of extra networks  
@@ -945,7 +945,7 @@ A bit bigger update this time, but contained to specific areas...
 
 ## Update for 2023-06-20
 
-This one is less relevant for standard users, but pretty major if you're running an actual server  
+This one is less relevant for standard users, but pretty major if youre running an actual server  
 But even if not, it still includes bunch of cumulative fixes since last release - and going by number of new issues, this is probably the most stable release so far...
 (next one is not going to be as stable, but it will be fun :) )
 
@@ -965,11 +965,11 @@ Second stage of a jumbo merge from upstream plus few minor changes...
 - simplify token merging  
 - reorganize some settings  
 - all updates from upstream: **A1111** v1.3.2 [df004be] *(latest release)*  
-  pretty much nothing major that i haven't released in previous versions, but its still a long list of tiny changes  
+  pretty much nothing major that i havent released in previous versions, but its still a long list of tiny changes  
   - skipped/did-not-port:  
     add separate hires prompt: unnecessarily complicated and spread over large number of commits due to many regressions  
-    allow external scripts to add cross-optimization methods: dangerous and i don't see a use case for it so far  
-    load extension info in threads: unnecessary as other optimizations i've already put place perform equally good  
+    allow external scripts to add cross-optimization methods: dangerous and i dont see a use case for it so far  
+    load extension info in threads: unnecessary as other optimizations ive already put place perform equally good  
   - broken/reverted:  
     sub-quadratic optimization changes  
 
@@ -1004,7 +1004,7 @@ Both some **new functionality** as well as **massive merges** from upstream
 - updated **settings** tab functionality, thanks @gegell  
   with real-time monitor for all new and/or updated settings  
 - **launcher** will now warn if application owned files are modified  
-  you are free to add any user files, but do not modify app files unless you're sure in what you're doing  
+  you are free to add any user files, but do not modify app files unless youre sure in what youre doing  
 - add more profiling for scripts/extensions so you can see what takes time  
   this applies both to initial load as well as execution  
 - experimental `sd_model_dict` setting which allows you to load model dictionary  
@@ -1022,9 +1022,9 @@ that caused my phone to go crazy with notifications over the weekend...
 - new **vae decode** method to help with larger batch sizes, thanks @bigdog  
 - new setting -> lora -> **use lycoris to handle all lora types**  
   this is still experimental, but the goal is to obsolete old built-in lora module  
-  as it doesn't understand many new loras and built-in lyco module can handle it all  
+  as it doesnt understand many new loras and built-in lyco module can handle it all  
 - somewhat optimize browser page loading  
-  still slower than i'd want, but gradio is pretty bad at this  
+  still slower than id want, but gradio is pretty bad at this  
 - profiling of scripts/extensions callbacks  
   you can now see how much or pre/post processing is done, not just how long generate takes  
 - additional exception handling so bad exception does not crash main app  
@@ -1080,17 +1080,17 @@ Some quality-of-life improvements...
   - `cuda` => Scaled-Dot-Product
   - `rocm` => Sub-quadratic
   - `directml` => Sub-quadratic
-  - `ipex` => InvokeAI's
-  - `mps` => Doggettx's
-  - `cpu` => Doggettx's
+  - `ipex` => invokeais
+  - `mps` => Doggettxs
+  - `cpu` => Doggettxs
 - optimize logging  
 - optimize profiling  
   now includes startup profiling as well as `cuda` profiling during generate  
 - minor lightbox improvements  
-- bugfixes...i don't recall when was a release with at least several of those  
+- bugfixes...i dont recall when was a release with at least several of those  
 
 other than that - first stage of [Diffusers](https://github.com/huggingface/diffusers) integration is now in master branch  
-i don't recommend anyone to try it (and dont even think reporting issues for it)  
+i dont recommend anyone to try it (and dont even think reporting issues for it)  
 but if anyone wants to contribute, take a look at [project page](https://github.com/users/vladmandic/projects/1/views/1)
 
 ## Update for 2023-05-23
@@ -1143,11 +1143,11 @@ but hopefully it will go ok...
 ## Update for 2023-05-15
 
 - major work on **prompt parsing**
-  this can cause some differences in results compared to what you're used to, but its all about fixes & improvements
+  this can cause some differences in results compared to what youre used to, but its all about fixes & improvements
   - prompt parser was adding commas and spaces as separate words and tokens and/or prefixes
   - negative prompt weight using `[word:weight]` was ignored, it was always `0.909`
   - bracket matching was anything but correct. complex nested attention brackets are now working.
-  - btw, if you run with `--debug` flag, you'll now actually see parsed prompt & schedule
+  - btw, if you run with `--debug` flag, youll now actually see parsed prompt & schedule
 - updated all scripts in `/cli`  
 - add option in settings to force different **latent sampler** instead of using primary only
 - add **interrupt/skip** capabilities to process images
@@ -1198,7 +1198,7 @@ Again, few days later...
 - reviewed/ported **all** commits from **A1111** upstream  
   some a few are not applicable as i already have alternative implementations  
   and very few i choose not to implement (save/restore last-known-good-config is a bad hack)  
-  otherwise, we're fully up to date (its doesn't show on fork status as code merges were mostly manual due to conflicts)  
+  otherwise, were fully up to date (it doesnt show on fork status as code merges were mostly manual due to conflicts)  
   but...due to sheer size of the updates, this may introduce some temporary issues  
 - redesigned server restart function  
   now available and working in ui  
@@ -1225,19 +1225,19 @@ Been a bit quieter for last few days as changes were quite significant, but fina
   Maintained by <https://github.com/Linaqruf/sd-notebook-collection>
 - Fixes, fixes, fixes...
 
-To take advantage of new out-of-the-box tunings, its recommended to delete your `config.json` so new defaults are applied. Its not necessary, but otherwise you may need to play with UI Settings to get the best of Intel ARC, TorchML, ROCm or Apple M1/M2.
+To take advantage of new out-of-the-box tunings, its recommended to delete your `config.json` so new defaults are applied. its not necessary, but otherwise you may need to play with UI Settings to get the best of Intel ARC, TorchML, ROCm or Apple M1/M2.
 
 ## Update for 2023-04-27
 
 a bit shorter list as:
 
-- i've been busy with bugfixing  
+- ive been busy with bugfixing  
   there are a lot of them, not going to list each here.  
   but seems like critical issues backlog is quieting down and soon i can focus on new features development.  
-- i've started collaboration with couple of major projects,
+- ive started collaboration with couple of major projects,
   hopefully this will accelerate future development.
 
-what's new:
+whats new:
 
 - ability to view/add/edit model description shown in extra networks cards  
 - add option to specify fallback sampler if primary sampler is not compatible with desired operation  
@@ -1298,7 +1298,7 @@ what's new:
 - merge tomesd token merging  
 - merge 23 PRs pending from a1111 backlog (!!)
 
-*expect shorter updates for the next few days as i'll be partially ooo*
+*expect shorter updates for the next few days as ill be partially ooo*
 
 ## Update for 2023-04-20
 
@@ -1372,7 +1372,7 @@ note: if you previously had command line optimizations such as --no-half, those 
 ## Update for 2023-04-15
 
 - update default values
-- remove `ui-config.json` from repo, its not fully under user control
+- remove `ui-config.json` from repo, its now fully under user control
 - updated extensions manager
 - updated locon/lycoris plugin
 - enable quick launch by default
@@ -1405,7 +1405,7 @@ This has been pending for a while, but finally uploaded some massive changes
     Platform specific wrapper scripts that starts `launch.py` in Python virtual environment  
     *Note*: Server can run without virtual environment, but it is recommended to use it  
     This is carry-over from original repo  
-    **If you're unsure which launcher to use, this is the one you want**  
+    **If youre unsure which launcher to use, this is the one you want**  
   - `launch.py`:  
     Main startup script  
     Can be used directly to start server in manually activated `venv` or to run it without `venv`  
