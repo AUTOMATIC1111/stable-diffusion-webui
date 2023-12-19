@@ -118,7 +118,8 @@ class MySQLClient(object):
 
     def close(self, conn=None):
         conn = conn or self.connect
-        conn.close()
+        if conn:
+            conn.close()
         self._closed = True
 
     def __enter__(self):

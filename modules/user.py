@@ -51,27 +51,29 @@ def find_users_from_db(username, password, ip: str = None) -> int:
     host = os.getenv('MysqlHost')
     if host:
         cli = get_mysql_cli()
-        try:
-            res = cli.query("SELECT * FROM user WHERE username=%s AND password=%s", (username, password))
-            if res:
-                expire = res.get('expire', -1)
-                ip_expr = res.get('ip', "")
-                if ip_expr:
-                    # expr: 192.168*, 192.168.1.1
-                    m = re.match(str(ip_expr).replace("*", ".*"), str(ip))
-                    if not m:
-                        return -1
-                if 0 == expire or expire > time.time():
-                    endpoint = os.getenv("Endpoint")
-                    if endpoint and res.get('endpoint'):
-                        if endpoint != res['endpoint']:
+        if cli:
+            try:
+                res = cli.query("SELECT * FROM user WHERE username=%s AND password=%s", (username, password))
+                if res:
+                    expire = res.get('expire', -1)
+                    ip_expr = res.get('ip', "")
+                    if ip_expr:
+                        # expr: 192.168*, 192.168.1.1
+                        m = re.match(str(ip_expr).replace("*", ".*"), str(ip))
+                        if not m:
                             return -1
-                    return expire
-        except Exception as ex:
-            print(ex)
-            return -1
-        finally:
-            cli.close()
+                    if 0 == expire or expire > time.time():
+                        endpoint = os.getenv("Endpoint")
+                        if endpoint and res.get('endpoint'):
+                            if endpoint != res['endpoint']:
+                                return -1
+                        return expire
+            except Exception as ex:
+                print(ex)
+                return -1
+            finally:
+                if cli:
+                    cli.close()
     return -1
 
 
