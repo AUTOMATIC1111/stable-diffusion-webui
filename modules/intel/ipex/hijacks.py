@@ -161,6 +161,10 @@ def ipex_hijacks():
         CondFunc('torch.Generator',
             lambda orig_func, device=None: torch.xpu.Generator(return_xpu(device)),
             lambda orig_func, device=None: device is not None and device != torch.device("cpu") and device != "cpu")
+    else:
+        CondFunc('torch.Generator',
+            lambda orig_func, device=None: orig_func(return_xpu(device)),
+            lambda orig_func, device=None: check_device(device))
 
     # TiledVAE and ControlNet:
     CondFunc('torch.batch_norm',

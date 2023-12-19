@@ -53,7 +53,7 @@
     - **StableVideoDiffusion** is now supported with IPEX  
     - fix IPEX Optimize not applying with Diffusers backend  
     - disable 32bit workarounds if the GPU supports 64bit  
-    - add `DISABLE_IPEXRUN` environment variable  
+    - add `DISABLE_IPEXRUN` and `DISABLE_IPEX_1024_WA` environment variables  
     - compatibility improvements  
   - **OpenVINO**, thanks @disty0  
     - add *Directory for OpenVINO cache* option to *System Paths*  
