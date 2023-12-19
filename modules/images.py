@@ -678,7 +678,7 @@ def save_video_atomic(images, filename, video_type: str = 'none', duration: floa
         shared.log.info(f'Save video: file="{filename}" frames={len(append) + 1} duration={duration} loop={loop} size={size}')
 
 
-def save_video(p, images, filename = None, video_type: str = 'none', duration: float = 2.0, loop: bool = False, interpolate: int = 0, scale: float = 1.0, pad: int = 1, change: float = 0.3):
+def save_video(p, images, filename = None, video_type: str = 'none', duration: float = 2.0, loop: bool = False, interpolate: int = 0, scale: float = 1.0, pad: int = 1, change: float = 0.3, sync: bool = False):
     if images is None or len(images) < 2 or video_type is None or video_type.lower() == 'none':
         return
     image = images[0]
@@ -696,7 +696,11 @@ def save_video(p, images, filename = None, video_type: str = 'none', duration: f
     if not filename.lower().endswith(video_type.lower()):
         filename += f'.{video_type.lower()}'
     filename = namegen.sanitize(filename)
-    threading.Thread(target=save_video_atomic, args=(images, filename, video_type, duration, loop, interpolate, scale, pad, change)).start()
+    if not sync:
+        threading.Thread(target=save_video_atomic, args=(images, filename, video_type, duration, loop, interpolate, scale, pad, change)).start()
+    else:
+        save_video_atomic(images, filename, video_type, duration, loop, interpolate, scale, pad, change)
+    return filename
 
 
 def safe_decode_string(s: bytes):

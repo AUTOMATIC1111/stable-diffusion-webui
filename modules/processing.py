@@ -379,8 +379,8 @@ class Processed:
         self.subseed_strength = p.subseed_strength
         self.info = info
         self.comments = comments
-        self.width = p.width if hasattr(p, 'width') else self.images[0].width
-        self.height = p.height if hasattr(p, 'height') else self.images[0].height
+        self.width = p.width if hasattr(p, 'width') else (self.images[0].width if len(self.images) > 0 else 0)
+        self.height = p.height if hasattr(p, 'height') else (self.images[0].height if len(self.images) > 0 else 0)
         self.sampler_name = p.sampler_name
         self.cfg_scale = p.cfg_scale
         self.image_cfg_scale = p.image_cfg_scale
