@@ -796,7 +796,7 @@ def train_auto(
 
     max_repeats = 27
     # repeats_n = min(int(20 * max_repeats / pic_nums), max_repeats)
-
+    repeats_n = 30
     # 2.tagger反推
     if use_wd:
         onnx = os.path.join(general_model_path, "tag_models/wd_onnx")
