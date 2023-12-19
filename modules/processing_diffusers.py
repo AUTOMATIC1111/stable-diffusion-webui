@@ -89,7 +89,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if kwargs.get('latents', None) is None:
             return kwargs
         kwargs = correction_callback(p, timestep, kwargs)
-        if p.scheduled_prompt:
+        if p.scheduled_prompt and hasattr(kwargs, 'prompt_embeds') and hasattr(kwargs, 'negative_prompt_embeds'):
             try:
                 i = (step + 1) % len(p.prompt_embeds)
                 kwargs["prompt_embeds"] = p.prompt_embeds[i][0:1].repeat(1, kwargs["prompt_embeds"].shape[0], 1).view(
@@ -346,7 +346,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             args['callback'] = diffusers_callback_legacy
         elif 'callback_on_step_end_tensor_inputs' in possible:
             args['callback_on_step_end'] = diffusers_callback
-            args['callback_on_step_end_tensor_inputs'] = ['latents', 'prompt_embeds', 'negative_prompt_embeds']
+            if 'prompt_embeds' in possible and 'negative_prompt_embeds' in possible:
+                args['callback_on_step_end_tensor_inputs'] = ['latents', 'prompt_embeds', 'negative_prompt_embeds']
+            else:
+                args['callback_on_step_end_tensor_inputs'] = ['latents']
         for arg in kwargs:
             if arg in possible: # add kwargs
                 args[arg] = kwargs[arg]

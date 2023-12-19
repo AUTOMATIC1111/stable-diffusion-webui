@@ -153,7 +153,7 @@ def refresh_vaes():
 
 
 def refresh_upscalers():
-    import modules.modelloader
+    import modules.modelloader # pylint: disable=W0621
     modules.modelloader.load_upscalers()
 
 

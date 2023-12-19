@@ -50,6 +50,7 @@
     - update to **Torch 2.1**  
       if you get file not found errors, set DISABLE_IPEXRUN=1 and run the webui with --reinstall  
     - built-in *MKL* and *DPCPP* for IPEX, no need to install OneAPI anymore  
+    - **StableVideoDiffusion** is now supported with IPEX  
     - fix IPEX Optimize not applying with Diffusers backend  
     - fix garbled outputs with Stable Video Diffusion  
     - disable 32 bit workarounds if the GPU supports 64 bit  
