@@ -78,7 +78,7 @@ Also supported are modifiers such as:
 
 > [!IMPORTANT]
 > - Loading any model other than standard SD 1.x / SD 2.x requires use of backend **Diffusers**  
-> - Loading any other models using **Original** backend is not supproted  
+> - Loading any other models using **Original** backend is not supported  
 > - Loading manually download model `.safetensors` files is supported for SD 1.x / SD 2.x / SD-XL models only  
 > - For all other model types, use backend **Diffusers** and use built in Model downloader or  
   select model from Networks -> Models -> Reference list in which case it will be auto-downloaded and loaded  
