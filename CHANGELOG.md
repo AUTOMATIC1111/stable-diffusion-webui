@@ -1372,7 +1372,7 @@ note: if you previously had command line optimizations such as --no-half, those 
 ## Update for 2023-04-15
 
 - update default values
-- remove `ui-config.json` from repo, it's not fully under user control
+- remove `ui-config.json` from repo, it's now fully under user control
 - updated extensions manager
 - updated locon/lycoris plugin
 - enable quick launch by default
