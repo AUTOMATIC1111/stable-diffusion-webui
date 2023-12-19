@@ -1,9 +1,15 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-17
+## Update for 2023-12-19
 
 *Note*: based on `diffusers==0.25.0.dev0`
 
+- **Control**
+  - native implementation of **ControlNet**, **ControlNet XS** and **T2I Adapters**  
+  - supports all variations of **SD15** and **SD-XL** models
+  - supports *text*, *image*, *batch* and *video* processing  
+  - for details see Wiki documentation:  
+    <https://github.com/vladmandic/automatic/wiki/Control>
 - **Diffusers**
   - **AnimateDiff**  
     - can now be used with *second pass* - enhance, upscale and hires your videos!  
@@ -28,7 +34,8 @@
       but at the moment this is pretty much experimental-only  
   - **Prompt scheduling** now implemented for Diffusers backend, thanks @AI-Casanova
   - **Custom pipelines** contribute by adding your own custom pipelines!  
-    - for details, see fully documented example: <https://github.com/vladmandic/automatic/blob/dev/scripts/example.py>  
+    - for details, see fully documented example:  
+      <https://github.com/vladmandic/automatic/blob/dev/scripts/example.py>  
   - **Schedulers**  
     - add timesteps range, changing it will make scheduler to be over-complete or under-complete  
     - add rescale betas with zero SNR option (applicable to Euler and DDIM, allows for higher dynamic range)  
@@ -84,6 +91,7 @@
     - updated `cli/simple-txt2img.py` and `cli/simple-img2img.py` scripts  
     - save `params.txt` regardless of image save status  
     - update built-in log monitor in ui, thanks @midcoastal  
+    - major CHANGELOG cleanup, thanks @JetVarimax
 
 ## Update for 2023-12-04
 
