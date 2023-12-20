@@ -39,6 +39,7 @@ exclude = [
   "repositories/taming",
   "repositories/blip",
   "repositories/codeformer",
+  "modules/control/proc/normalbae/nets/submodules/efficientnet_repo/geffnet",
 ]
 ignore = [
 	"A003", # Class attirbute shadowing builtin
@@ -47,17 +48,19 @@ ignore = [
 	"E731", # Do not assign a `lambda` expression, use a `def`
 	"I001", # Import block is un-sorted or un-formatted
 	"W605", # Invalid escape sequence, messes with some docstrings
+  "B028", # No explicit stacklevel
   "B905", # Without explicit scrict
   "C408", # Rewrite as a literal
   "E402", # Module level import not at top of file
   "E721", # Do not compare types, use `isinstance()`
-  "F401", # Imported but unused
   "EXE001", # Shebang present
+  "F401", # Imported but unused
   "ISC003", # Implicit string concatenation
   "RUF005", # Consider concatenation
   "RUF012", # Mutable class attributes
   "RUF013", # Implict optional
   "RUF015", # Prefer `next`
+  "TID252", # Relative imports from parent modules
 ]
 
 [tool.ruff.flake8-bugbear]

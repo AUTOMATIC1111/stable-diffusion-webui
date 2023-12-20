@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, ui_loadsave, ui_train, ui_models, ui_interrogate, modelloader
+from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, ui_loadsave, ui_train, ui_models, ui_control, ui_interrogate, modelloader
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path, data_path
 from modules.shared import opts, cmd_opts
@@ -906,6 +906,10 @@ def create_ui(startup_timer = None):
 
     modules.scripts.scripts_current = None
 
+    with gr.Blocks(analytics_enabled=False) as control_interface:
+        ui_control.create_ui()
+        timer.startup.record("ui-control")
+
     with gr.Blocks(analytics_enabled=False) as extras_interface:
         ui_postprocessing.create_ui()
         timer.startup.record("ui-extras")
@@ -1125,6 +1129,7 @@ def create_ui(startup_timer = None):
     interfaces = [
         (txt2img_interface, "Text", "txt2img"),
         (img2img_interface, "Image", "img2img"),
+        (control_interface, "Control", "control"),
         (extras_interface, "Process", "process"),
         (train_interface, "Train", "train"),
         (models_interface, "Models", "models"),

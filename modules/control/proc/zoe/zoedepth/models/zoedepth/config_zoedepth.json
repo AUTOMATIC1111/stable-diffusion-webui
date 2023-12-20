@@ -1,0 +1,58 @@
+{
+    "model": {
+        "name": "ZoeDepth",
+        "version_name": "v1",
+        "n_bins": 64,
+        "bin_embedding_dim": 128,
+        "bin_centers_type": "softplus",
+        "n_attractors":[16, 8, 4, 1],
+        "attractor_alpha": 1000,
+        "attractor_gamma": 2,
+        "attractor_kind" : "mean",
+        "attractor_type" : "inv",
+        "midas_model_type" : "DPT_BEiT_L_384",
+        "min_temp": 0.0212,
+        "max_temp": 50.0,
+        "output_distribution": "logbinomial",
+        "memory_efficient": true,
+        "inverse_midas": false,
+        "img_size": [384, 512]
+    },
+    
+    "train": {
+        "train_midas": true,
+        "use_pretrained_midas": true,
+        "trainer": "zoedepth",
+        "epochs": 5,
+        "bs": 16,
+        "optim_kwargs": {"lr": 0.000161, "wd": 0.01},
+        "sched_kwargs": {"div_factor": 1, "final_div_factor": 10000, "pct_start": 0.7, "three_phase":false, "cycle_momentum": true},
+        "same_lr": false,
+        "w_si": 1,
+        "w_domain": 0.2,
+        "w_reg": 0,
+        "w_grad": 0,
+        "avoid_boundary": false,
+        "random_crop": false,
+        "input_width": 640,
+        "input_height": 480,
+        "midas_lr_factor": 1,
+        "encoder_lr_factor":10,
+        "pos_enc_lr_factor":10,
+        "freeze_midas_bn": true
+
+    },
+
+    "infer":{
+        "train_midas": false,
+        "use_pretrained_midas": false,
+        "pretrained_resource" : null,
+        "force_keep_ar": true
+    },
+
+    "eval":{
+        "train_midas": false,
+        "use_pretrained_midas": false,
+        "pretrained_resource" : null
+    }
+}

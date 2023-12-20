@@ -6,6 +6,7 @@
 
 - **Control**
   - native implementation of **ControlNet**, **ControlNet XS** and **T2I Adapters**  
+  - top-level control next to **text** and **image** generate
   - supports all variations of **SD15** and **SD-XL** models
   - supports *text*, *image*, *batch* and *video* processing  
   - for details see Wiki documentation:  
@@ -44,6 +45,7 @@
     - add timesteps range, changing it will make scheduler to be over-complete or under-complete  
     - add rescale betas with zero SNR option (applicable to Euler, Euler a and DDIM, allows for higher dynamic range)  
 - **General**  
+  - support for **Torch 2.1.2**
   - **Process** create videos from batch or folder processing  
       supports *GIF*, *PNG* and *MP4* with full interpolation, scene change detection, etc.  
   - **LoRA**  
