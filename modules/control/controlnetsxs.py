@@ -1,10 +1,17 @@
 import os
 import time
-from diffusers import StableDiffusionPipeline
-from diffusers import StableDiffusionXLPipeline
-from diffusers import ControlNetXSModel, StableDiffusionControlNetXSPipeline, StableDiffusionXLControlNetXSPipeline
 from modules.shared import log, opts
 from modules import errors
+
+ok = True
+try:
+    from diffusers import StableDiffusionPipeline
+    from diffusers import StableDiffusionXLPipeline
+    from diffusers import ControlNetXSModel, StableDiffusionControlNetXSPipeline, StableDiffusionXLControlNetXSPipeline
+except Exception:
+    from diffusers import ControlNetModel
+    ControlNetXSModel = ControlNetModel # dummy
+    ok = False
 
 
 what = 'ControlNet-XS'
@@ -35,8 +42,10 @@ def find_models():
 
 
 def list_models(refresh=False):
-    import modules.shared
     global models # pylint: disable=global-statement
+    if not ok:
+        return models
+    import modules.shared
     if not refresh and len(models) > 0:
         return models
     models = {}

@@ -6,9 +6,9 @@
 
 - **Control**
   - native implementation of **ControlNet**, **ControlNet XS** and **T2I Adapters**  
-  - top-level control next to **text** and **image** generate
+  - top-level **Control** next to **Text** and **Image** generate
   - supports all variations of **SD15** and **SD-XL** models
-  - supports *text*, *image*, *batch* and *video* processing  
+  - supports *Text*, *Image*, *Batch* and *Video* processing  
   - for details see Wiki documentation:  
     <https://github.com/vladmandic/automatic/wiki/Control>
 - **Diffusers**
@@ -44,6 +44,12 @@
   - **Schedulers**  
     - add timesteps range, changing it will make scheduler to be over-complete or under-complete  
     - add rescale betas with zero SNR option (applicable to Euler, Euler a and DDIM, allows for higher dynamic range)  
+  - **UI**  
+    - 3 new native UI themes: **orchid-dreams**, **emerald-paradise** and **timeless-beige**, thanks @illu_Zn
+    - more dynamic controls depending on the backend (original or diffusers)  
+      controls that are not applicable in current mode are now hidden  
+    - allow setting of resize method directly in image tab  
+      (previously via settings -> upscaler_for_img2img)  
 - **General**  
   - support for **Torch 2.1.2**
   - **Process** create videos from batch or folder processing  
@@ -71,11 +77,6 @@
   - **OpenVINO**, thanks @disty0  
     - add *Directory for OpenVINO cache* option to *System Paths*  
     - remove Intel ARC specific 1024x1024 workaround  
-  - **UI**  
-    - more dynamic controls depending on the backend (original or diffusers)  
-      controls that are not applicable in current mode are now hidden  
-    - allow setting of resize method directly in image tab  
-      (previously via settings -> upscaler_for_img2img)  
   - **HDR controls**  
     - batch-aware for enhancement of multiple images or video frames  
     - available in image tab  

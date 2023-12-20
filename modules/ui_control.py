@@ -151,6 +151,11 @@ def video_type_change(video_type):
 
 def create_ui(_blocks: gr.Blocks=None):
     initialize()
+    if shared.backend == shared.Backend.ORIGINAL:
+        with gr.Blocks(analytics_enabled = False) as control_ui:
+            pass
+        return [(control_ui, 'Control', 'control')]
+
     with gr.Blocks(analytics_enabled = False) as control_ui:
         prompt, styles, negative, btn_generate, _btn_interrogate, _btn_deepbooru, btn_paste, btn_extra, prompt_counter, btn_prompt_counter, negative_counter, btn_negative_counter  = ui.create_toprow(is_img2img=False, id_part='control')
         with FormGroup(elem_id="control_interface", equal_height=False):
