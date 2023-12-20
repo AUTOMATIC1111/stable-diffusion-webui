@@ -8,7 +8,7 @@ from modules import shared, errors, paths
 
 
 Savedfile = namedtuple("Savedfile", ["name"])
-debug = errors.log.info if os.environ.get('SD_PATH_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug = errors.log.trace if os.environ.get('SD_PATH_DEBUG', None) is not None else lambda *args, **kwargs: None
 
 
 def register_tmp_file(gradio, filename):

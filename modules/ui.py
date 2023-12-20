@@ -421,6 +421,7 @@ def create_sampler_and_steps_selection(choices, tabname):
         opts.data['schedulers_use_karras'] = 'karras' in sampler_options
         opts.data['schedulers_use_thresholding'] = 'dynamic thresholding' in sampler_options
         opts.data['schedulers_use_loworder'] = 'low order' in sampler_options
+        opts.data['schedulers_rescale_betas'] = 'rescale beta' in sampler_options
         opts.save(modules.shared.config_filename, silent=True)
 
     with FormRow(elem_classes=['flex-break']):
@@ -440,11 +441,12 @@ def create_sampler_and_steps_selection(choices, tabname):
         sampler_algo.change(fn=set_sampler_original_options, inputs=[sampler_options, sampler_algo], outputs=[])
     else:
         with FormRow(elem_classes=['flex-break']):
-            choices = ['karras', 'dynamic thresholding', 'low order']
+            choices = ['karras', 'dynamic threshold', 'low order', 'rescale beta']
             values = []
             values += ['karras'] if opts.data.get('schedulers_use_karras', True) else []
-            values += ['dynamic thresholding'] if opts.data.get('schedulers_use_thresholding', False) else []
+            values += ['dynamic threshold'] if opts.data.get('schedulers_use_thresholding', False) else []
             values += ['low order'] if opts.data.get('schedulers_use_loworder', True) else []
+            values += ['rescale beta'] if opts.data.get('schedulers_rescale_betas', False) else []
             sampler_options = gr.CheckboxGroup(label='Sampler options', choices=choices, value=values, type='value')
         sampler_options.change(fn=set_sampler_diffuser_options, inputs=[sampler_options], outputs=[])
     return steps, sampler_index

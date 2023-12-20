@@ -9,7 +9,7 @@ from modules.ui import plaintext_to_html
 from modules.memstats import memory_stats
 
 
-debug = shared.log.debug if os.environ.get('SD_PROCESS_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug = shared.log.trace if os.environ.get('SD_PROCESS_DEBUG', None) is not None else lambda *args, **kwargs: None
 
 
 def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args):

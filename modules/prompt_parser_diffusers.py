@@ -6,7 +6,7 @@ from compel import ReturnedEmbeddingsType
 from compel.embeddings_provider import BaseTextualInversionManager, EmbeddingsProvider
 from modules import shared, prompt_parser, devices
 
-debug = shared.log.info if os.environ.get('SD_PROMPT_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug = shared.log.trace if os.environ.get('SD_PROMPT_DEBUG', None) is not None else lambda *args, **kwargs: None
 
 CLIP_SKIP_MAPPING = {
     None: ReturnedEmbeddingsType.LAST_HIDDEN_STATES_NORMALIZED,
@@ -58,7 +58,7 @@ class DiffusersTextualInversionManager(BaseTextualInversionManager):
         return self.pipe.tokenizer.encode(prompt, add_special_tokens=False)
 
 
-def get_prompt_schedule(p, prompt, steps):
+def get_prompt_schedule(p, prompt, steps): # pylint: disable=unused-argument
     t0 = time.time()
     temp = []
     schedule = prompt_parser.get_learned_conditioning_prompt_schedules([prompt], steps)[0]
@@ -72,7 +72,7 @@ def get_prompt_schedule(p, prompt, steps):
     return temp, len(schedule) > 1
 
 
-def encode_prompts(pipe, p, prompts: list, negative_prompts: list, steps: int, step: int = 1, clip_skip: typing.Optional[int] = None):
+def encode_prompts(pipe, p, prompts: list, negative_prompts: list, steps: int, step: int = 1, clip_skip: typing.Optional[int] = None): # pylint: disable=unused-argument
     if 'StableDiffusion' not in pipe.__class__.__name__ and 'DemoFusion':
         shared.log.warning(f"Prompt parser not supported: {pipe.__class__.__name__}")
         return None, None, None, None

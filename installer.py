@@ -67,6 +67,7 @@ def setup_logging():
         def get(self):
             return self.buffer
 
+    from functools import partial, partialmethod
     from logging.handlers import RotatingFileHandler
     from rich.theme import Theme
     from rich.logging import RichHandler
@@ -77,6 +78,11 @@ def setup_logging():
     if args.log:
         global log_file # pylint: disable=global-statement
         log_file = args.log
+
+    logging.TRACE = 25
+    logging.addLevelName(logging.TRACE, 'TRACE')
+    logging.Logger.trace = partialmethod(logging.Logger.log, logging.TRACE)
+    logging.trace = partial(logging.log, logging.TRACE)
 
     level = logging.DEBUG if args.debug else logging.INFO
     log.setLevel(logging.DEBUG) # log to file is always at level debug for facility `sd`

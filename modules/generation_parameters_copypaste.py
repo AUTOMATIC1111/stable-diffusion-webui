@@ -16,7 +16,7 @@ re_hypernet_hash = re.compile("\(([0-9a-f]+)\)$") # pylint: disable=anomalous-ba
 type_of_gr_update = type(gr.update())
 paste_fields = {}
 registered_param_bindings = []
-debug = shared.log.info if os.environ.get('SD_PASTE_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug = shared.log.trace if os.environ.get('SD_PASTE_DEBUG', None) is not None else lambda *args, **kwargs: None
 
 
 class ParamBinding:

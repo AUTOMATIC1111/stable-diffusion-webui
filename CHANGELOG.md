@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-19
+## Update for 2023-12-20
 
 *Note*: based on `diffusers==0.25.0.dev0`
 
@@ -38,7 +38,7 @@
       <https://github.com/vladmandic/automatic/blob/dev/scripts/example.py>  
   - **Schedulers**  
     - add timesteps range, changing it will make scheduler to be over-complete or under-complete  
-    - add rescale betas with zero SNR option (applicable to Euler and DDIM, allows for higher dynamic range)  
+    - add rescale betas with zero SNR option (applicable to Euler, Euler a and DDIM, allows for higher dynamic range)  
 - **General**  
   - **Process** create videos from batch or folder processing  
       supports *GIF*, *PNG* and *MP4* with full interpolation, scene change detection, etc.  
@@ -73,6 +73,12 @@
   - **HDR controls**  
     - batch-aware for enhancement of multiple images or video frames  
     - available in image tab  
+  - **Logging**
+    - additional *TRACE* logging enabled via specific env variables  
+      see <https://github.com/vladmandic/automatic/wiki/Debug> for details  
+    - improved profiling  
+      use with `--debug --profile`  
+    - log output file sizes  
   - **Other**  
     - **API** several minor but breaking changes to API behavior to better align response fields, thanks @Trojaner
     - **Inpaint** add option `apply_overlay` to control if inpaint result should be applied as overlay or as-is  
@@ -86,7 +92,6 @@
     - add hdr settings to metadata  
     - improve handling of long filenames and filenames during batch processing  
     - do not set preview samples when using via api  
-    - log output file sizes  
     - avoid unnecessary resizes in img2img and inpaint  
     - updated `cli/simple-txt2img.py` and `cli/simple-img2img.py` scripts  
     - save `params.txt` regardless of image save status  

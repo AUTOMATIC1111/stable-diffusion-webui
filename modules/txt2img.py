@@ -5,7 +5,7 @@ from modules.generation_parameters_copypaste import create_override_settings_dic
 from modules.ui import plaintext_to_html
 
 
-debug = shared.log.debug if os.environ.get('SD_PROCESS_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug = shared.log.trace if os.environ.get('SD_PROCESS_DEBUG', None) is not None else lambda *args, **kwargs: None
 
 
 def txt2img(id_task,

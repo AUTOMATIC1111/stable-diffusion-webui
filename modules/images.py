@@ -19,7 +19,7 @@ from PIL import Image, ImageFont, ImageDraw, PngImagePlugin, ExifTags
 from modules import sd_samplers, shared, script_callbacks, errors, paths
 
 
-debug = errors.log.info if os.environ.get('SD_PATH_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug = errors.log.trace if os.environ.get('SD_PATH_DEBUG', None) is not None else lambda *args, **kwargs: None
 try:
     from pi_heif import register_heif_opener
     register_heif_opener()

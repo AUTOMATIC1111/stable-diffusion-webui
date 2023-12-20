@@ -1,5 +1,10 @@
+import os
+import inspect
 from modules import shared
 from modules import sd_samplers_common
+
+
+debug = shared.log.trace if os.environ.get('SD_SAMPLER_DEBUG', None) is not None else lambda *args, **kwargs: None
 
 try:
     from diffusers import (
@@ -33,7 +38,7 @@ config = {
     'DPM++ 1S': { 'solver_order': 2, 'thresholding': False, 'sample_max_value': 1.0, 'algorithm_type': "dpmsolver++", 'solver_type': "midpoint", 'lower_order_final': True, 'use_karras_sigmas': False },
     'DPM++ 2M': { 'thresholding': False, 'sample_max_value': 1.0, 'algorithm_type': "dpmsolver++", 'solver_type': "midpoint", 'lower_order_final': True, 'use_karras_sigmas': False },
     'DPM SDE': { 'use_karras_sigmas': False },
-    'Euler a': { },
+    'Euler a': { 'rescale_betas_zero_snr': False },
     'Euler': { 'interpolation_type': "linear", 'use_karras_sigmas': False, 'rescale_betas_zero_snr': False },
     'Heun': { 'use_karras_sigmas': False },
     'KDPM2': { 'steps_offset': 0 },
@@ -116,5 +121,13 @@ class DiffusionSampler:
             self.config['algorithm_type'] = shared.opts.schedulers_dpm_solver
         if name == 'DEIS':
             self.config['algorithm_type'] = 'deis'
+        # validate all config params
+        signature = inspect.signature(constructor, follow_wrapped=True)
+        possible = signature.parameters.keys()
+        debug(f'Sampler: sampler="{name}" config={self.config} signature={possible}')
+        for key in self.config.copy().keys():
+            if key not in possible:
+                shared.log.warning(f'Sampler: sampler="{name}" config={self.config} invalid={key}')
+                del self.config[key]
         self.sampler = constructor(**self.config)
         self.sampler.name = name
