@@ -47,6 +47,7 @@ class Script(scripts.Script):
     def run(self, p: processing.StableDiffusionProcessing, num_frames, override_resolution, min_guidance_scale, max_guidance_scale, decode_chunk_size, motion_bucket_id, noise_aug_strength, video_type, duration, gif_loop, mp4_pad, mp4_interpolate): # pylint: disable=arguments-differ, unused-argument
         c = shared.sd_model.__class__.__name__ if shared.sd_model is not None else ''
         if c != 'StableVideoDiffusionPipeline' and c != 'TextToVideoSDPipeline':
+            shared.log.error(f'StableVideo: model selected={c} required=StableVideoDiffusion')
             return None
         if hasattr(p, 'init_images') and len(p.init_images) > 0:
             if override_resolution:

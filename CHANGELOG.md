@@ -27,6 +27,10 @@
     - select from *networks -> reference*  
   - [Playground v1](https://huggingface.co/playgroundai/playground-v1), [Playground v2 256](https://huggingface.co/playgroundai/playground-v2-256px-base), [Playground v2 512](https://huggingface.co/playgroundai/playground-v2-512px-base), [Playground v2 1024](https://huggingface.co/playgroundai/playground-v2-1024px-aesthetic) model support  
     - simply select from *networks -> reference* and use as usual  
+  - [BLIP-Diffusion](https://dxli94.github.io/BLIP-Diffusion-website/)  
+    - img2img model that can replace subjects in images using prompt keywords  
+    - download and load by selecting from *networks -> reference -> blip diffusion*
+    - in image tab, select `blip diffusion` script
   - [DemoFusion](https://github.com/PRIS-CV/DemoFusion) run your SDXL generations at any resolution!  
     - in **Text** tab select *script* -> *demofusion*  
     - *note*: GPU VRAM limits do not automatically go away so be careful when using it with large resolutions  
