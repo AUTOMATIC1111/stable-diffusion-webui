@@ -33,6 +33,7 @@ sd_default_config = os.path.join(sd_configs_path, "v1-inference.yaml")
 sd_model_file = cli.ckpt or os.path.join(script_path, 'model.ckpt') # not used
 default_sd_model_file = sd_model_file # not used
 debug = log.trace if os.environ.get('SD_PATH_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug('Trace: PATH')
 paths = {}
 
 if os.environ.get('SD_PATH_DEBUG', None) is not None:

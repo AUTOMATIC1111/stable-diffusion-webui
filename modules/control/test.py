@@ -11,6 +11,8 @@ def test_processors(image):
     from PIL import ImageDraw, ImageFont
     images = []
     for processor_id in processors.list_models():
+        if shared.state.interrupted:
+            continue
         shared.log.info(f'Testing processor: {processor_id}')
         processor = processors.Processor(processor_id)
         if processor is None:

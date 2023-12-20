@@ -16,7 +16,8 @@ from modules.control import reference # ControlNet-Reference
 from modules import devices, shared, errors, processing, images, sd_models, sd_samplers
 
 
-debug = shared.log.debug if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug = shared.log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug('Trace: CONTROL')
 pipe = None
 original_pipeline = None
 
@@ -192,7 +193,7 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
         pass
     shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE) # reset current pipeline
 
-    if not has_models and (unit_type == 'reference' or unit_type == 'controlnet' or unit_type == 'xs'): # run in img2img mode
+    if not has_models and (unit_type == 'reference' or unit_type == 'adapter' or unit_type == 'controlnet' or unit_type == 'xs'): # run in img2img mode
         if len(active_strength) > 0:
             p.strength = active_strength[0]
         pipe = diffusers.AutoPipelineForImage2Image.from_pipe(shared.sd_model) # use set_diffuser_pipe
@@ -229,7 +230,7 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
         instance = reference.ReferencePipeline(shared.sd_model)
         pipe = instance.pipeline
     else:
-        shared.log.error('Control: unknown unit type')
+        shared.log.error(f'Control: unknown unit type: {unit_type}')
         pipe = None
     debug(f'Control pipeline: class={pipe.__class__} args={vars(p)}')
     t1, t2, t3 = time.time(), 0, 0
@@ -352,7 +353,7 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
                     # pipeline
                     output = None
                     if pipe is not None: # run new pipeline
-                        if not has_models and (unit_type == 'reference' or unit_type == 'controlnet'): # run in img2img mode
+                        if not has_models and (unit_type == 'reference' or unit_type == 'controlnet' or unit_type == 'adapter' or unit_type == 'xs'): # run in img2img mode
                             if p.image is None:
                                 if hasattr(p, 'init_images'):
                                     del p.init_images
@@ -365,6 +366,7 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
                             if hasattr(p, 'init_images'):
                                 del p.init_images
                             shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE) # reset current pipeline
+                        debug(f'Control exec pipeline: class={pipe.__class__} args={vars(p)}')
                         processed: processing.Processed = processing.process_images(p) # run actual pipeline
                         output = processed.images if processed is not None else None
                         # output = pipe(**vars(p)).images # alternative direct pipe exec call
@@ -375,22 +377,22 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
                     # outputs
                     if output is not None and len(output) > 0:
                         output_image = output[0]
+                        if output_image is not None:
+                            # resize
+                            if resize_mode != 0 and resize_time == 'After':
+                                debug(f'Control resize: image={input_image} width={width} height={height} mode={resize_mode} name={resize_name} sequence={resize_time}')
+                                output_image = images.resize_image(resize_mode, output_image, width, height, resize_name)
+                            elif hasattr(p, 'width') and hasattr(p, 'height'):
+                                output_image = output_image.resize((p.width, p.height), Image.Resampling.LANCZOS)
 
-                        # resize
-                        if resize_mode != 0 and resize_time == 'After':
-                            debug(f'Control resize: image={input_image} width={width} height={height} mode={resize_mode} name={resize_name} sequence={resize_time}')
-                            output_image = images.resize_image(resize_mode, output_image, width, height, resize_name)
-                        elif hasattr(p, 'width') and hasattr(p, 'height'):
-                            output_image = output_image.resize((p.width, p.height), Image.Resampling.LANCZOS)
-
-                        output_images.append(output_image)
-                        if is_generator:
-                            image_txt = f'{output_image.width}x{output_image.height}' if output_image is not None else 'None'
-                            if video is not None:
-                                msg = f'Control output | {index} of {frames} skip {video_skip_frames} | Frame {image_txt}'
-                            else:
-                                msg = f'Control output | {index} of {len(inputs)} | Image {image_txt}'
-                            yield (output_image, processed_image, msg) # result is control_output, proces_output
+                            output_images.append(output_image)
+                            if is_generator:
+                                image_txt = f'{output_image.width}x{output_image.height}' if output_image is not None else 'None'
+                                if video is not None:
+                                    msg = f'Control output | {index} of {frames} skip {video_skip_frames} | Frame {image_txt}'
+                                else:
+                                    msg = f'Control output | {index} of {len(inputs)} | Image {image_txt}'
+                                yield (output_image, processed_image, msg) # result is control_output, proces_output
 
                 if video is not None and frame is not None:
                     status, frame = video.read()

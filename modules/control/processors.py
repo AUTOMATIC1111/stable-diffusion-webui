@@ -26,7 +26,8 @@ from modules.control.proc.zoe import ZoeDetector
 
 models = {}
 cache_dir = 'models/control/processors'
-debug = log.debug if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug = log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug('Trace: CONTROL')
 config = {
     # pose models
     'OpenPose': {'class': OpenposeDetector, 'checkpoint': True, 'params': {'include_body': True, 'include_hand': False, 'include_face': False}},
@@ -115,9 +116,11 @@ class Processor():
         self.load_config = { 'cache_dir': cache_dir }
         from_config = config.get(processor_id, {}).get('load_config', None)
         if load_config is not None:
-            self.load_config.update(load_config)
+            for k, v in load_config.items():
+                self.load_config[k] = v
         if from_config is not None:
-            self.load_config.update(from_config)
+            for k, v in from_config.items():
+                self.load_config[k] = v
         if processor_id is not None:
             self.load()
 
@@ -137,9 +140,11 @@ class Processor():
                 return
             from_config = config.get(processor_id, {}).get('load_config', None)
             if from_config is not None:
-                self.load_config.update(from_config)
+                for k, v in from_config.items():
+                    self.load_config[k] = v
             cls = config[processor_id]['class']
             log.debug(f'Control processor loading: id="{processor_id}" class={cls.__name__}')
+            debug(f'Control processor config={self.load_config}')
             if 'DWPose' in processor_id:
                 det_ckpt = 'https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_l_8x8_300e_coco/yolox_l_8x8_300e_coco_20211126_140236-d3bd2b23.pth'
                 if 'Tiny' == config['DWPose']['model']:

@@ -17,6 +17,7 @@ type_of_gr_update = type(gr.update())
 paste_fields = {}
 registered_param_bindings = []
 debug = shared.log.trace if os.environ.get('SD_PASTE_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug('Trace: PASTE')
 
 
 class ParamBinding:

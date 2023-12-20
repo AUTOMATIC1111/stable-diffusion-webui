@@ -6,6 +6,7 @@ from modules.ui import plaintext_to_html
 
 
 debug = shared.log.trace if os.environ.get('SD_PROCESS_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug('Trace: PROCESS')
 
 
 def txt2img(id_task,

@@ -15,6 +15,8 @@ max_units = 10
 units: list[unit.Unit] = [] # main state variable
 input_source = None
 debug = os.environ.get('SD_CONTROL_DEBUG', None) is not None
+if debug:
+    shared.log.trace('Control debug enabled')
 
 
 def initialize():

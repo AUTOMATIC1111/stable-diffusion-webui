@@ -317,6 +317,7 @@ def webui(restart=False):
             shared.log.debug(f'Registered callbacks: {k}={len(v)} {[c.script for c in v]}')
     log.info(f"Startup time: {timer.startup.summary()}")
     debug = log.trace if os.environ.get('SD_SCRIPT_DEBUG', None) is not None else lambda *args, **kwargs: None
+    debug('Trace: SCRIPTS')
     debug('Loaded scripts:')
     for m in modules.scripts.scripts_data:
         debug(f'  {m}')

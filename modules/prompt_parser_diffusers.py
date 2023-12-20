@@ -7,7 +7,7 @@ from compel.embeddings_provider import BaseTextualInversionManager, EmbeddingsPr
 from modules import shared, prompt_parser, devices
 
 debug = shared.log.trace if os.environ.get('SD_PROMPT_DEBUG', None) is not None else lambda *args, **kwargs: None
-
+debug('Trace: PROMPT')
 CLIP_SKIP_MAPPING = {
     None: ReturnedEmbeddingsType.LAST_HIDDEN_STATES_NORMALIZED,
     1: ReturnedEmbeddingsType.LAST_HIDDEN_STATES_NORMALIZED,

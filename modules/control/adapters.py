@@ -1,12 +1,13 @@
 import os
 import time
-from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline, T2IAdapter, StableDiffusionAdapterPipeline, StableDiffusionXLAdapterPipeline
+from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline, T2IAdapter, MultiAdapter, StableDiffusionAdapterPipeline, StableDiffusionXLAdapterPipeline
 from modules.shared import log
 from modules import errors
 
 
 what = 'T2I-Adapter'
-debug = log.debug if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug = log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug('Trace: CONTROL')
 predefined_sd15 = {
     'Canny': 'TencentARC/t2iadapter_canny_sd15v2',
     'Depth': 'TencentARC/t2iadapter_depth_sd15v2',
@@ -37,11 +38,12 @@ def list_models(refresh=False):
     models = {}
     if modules.shared.sd_model_type == 'none':
         models = ['None']
-    if modules.shared.sd_model_type == 'sdxl':
+    elif modules.shared.sd_model_type == 'sdxl':
         models = ['None'] + sorted(predefined_sdxl)
-    if modules.shared.sd_model_type == 'sd':
+    elif modules.shared.sd_model_type == 'sd':
         models = ['None'] + sorted(predefined_sd15)
     else:
+        log.warning(f'Control {what} model list failed: unknown model type')
         models = ['None'] + sorted(list(predefined_sd15) + list(predefined_sdxl))
     debug(f'Control list {what}: path={cache_dir} models={models}')
     return models
@@ -102,6 +104,8 @@ class AdapterPipeline():
         if pipeline is None:
             log.error(f'Control {what} pipeline: model not loaded')
             return
+        # if isinstance(adapter, list) and len(adapter) > 1: # TODO use MultiAdapter
+        #    adapter = MultiAdapter(adapter)
         if isinstance(pipeline, StableDiffusionXLPipeline):
             self.pipeline = StableDiffusionXLAdapterPipeline(
                 vae=pipeline.vae,
@@ -111,7 +115,7 @@ class AdapterPipeline():
                 tokenizer_2=pipeline.tokenizer_2,
                 unet=pipeline.unet,
                 scheduler=pipeline.scheduler,
-                adapter=adapter, # can be a list
+                adapter=adapter,
             ).to(pipeline.device)
         elif isinstance(pipeline, StableDiffusionPipeline):
             self.pipeline = StableDiffusionAdapterPipeline(
@@ -123,7 +127,7 @@ class AdapterPipeline():
                 requires_safety_checker=False,
                 safety_checker=None,
                 feature_extractor=None,
-                adapter=adapter, # can be a list
+                adapter=adapter,
             ).to(pipeline.device)
         else:
             log.error(f'Control {what} pipeline: class={pipeline.__class__.__name__} unsupported model type')

@@ -9,6 +9,7 @@ from modules import shared
 
 
 debug = shared.log.trace if os.environ.get('SD_HDR_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug('Trace: HDR')
 
 
 def soft_clamp_tensor(tensor, threshold=0.8, boundary=4):

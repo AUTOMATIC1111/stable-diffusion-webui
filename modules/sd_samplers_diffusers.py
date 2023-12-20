@@ -5,6 +5,7 @@ from modules import sd_samplers_common
 
 
 debug = shared.log.trace if os.environ.get('SD_SAMPLER_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug('Trace: SAMPLER')
 
 try:
     from diffusers import (

@@ -45,6 +45,7 @@ from modules.sd_hijack_hypertile import context_hypertile_vae, context_hypertile
 opt_C = 4
 opt_f = 8
 debug = shared.log.trace if os.environ.get('SD_PROCESS_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug('Trace: PROCESS')
 
 
 def setup_color_correction(image):

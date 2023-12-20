@@ -15,7 +15,8 @@ except Exception:
 
 
 what = 'ControlNet-XS'
-debug = log.debug if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug = log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug('Trace: CONTROL')
 predefined_sd15 = {
 }
 predefined_sdxl = {

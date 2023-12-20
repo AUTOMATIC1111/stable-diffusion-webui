@@ -8,7 +8,8 @@ from modules import errors
 
 
 what = 'ControlNet'
-debug = log.debug if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug = log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug('Trace: CONTROL')
 predefined_sd15 = {
     'OpenPose': "lllyasviel/control_v11p_sd15_openpose",
     'Canny': "lllyasviel/control_v11p_sd15_canny",
@@ -65,7 +66,7 @@ def list_models(refresh=False):
     elif modules.shared.sd_model_type == 'sd':
         models = ['None'] + sorted(predefined_sd15) + sorted(find_models())
     else:
-        log.error('Control model list failed: unknown model type')
+        log.warning(f'Control {what} model list failed: unknown model type')
         models = ['None'] + sorted(predefined_sd15) + sorted(predefined_sdxl) + sorted(find_models())
     debug(f'Control list {what}: path={cache_dir} models={models}')
     return models
