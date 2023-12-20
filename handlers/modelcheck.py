@@ -172,12 +172,15 @@ class ModelCheckTaskHandler(Txt2ImgTaskHandler):
                 progress = TaskProgress.new_failed(task, "未能识别")
                 yield progress
             else:
-                model_hash = calculate_sha256(base_model)
+                # model
+                # model_hash = calculate_sha256(base_model)
+                model_hash = model_info.sha256
                 # 添加模型计算HASH
                 result = r.to_dict() if r else {}
                 result.update({
                     'sha256': model_hash,
-                    'short_hash': model_hash[:10]
+                    'short_hash': model_hash[:10],
+                    'meta': model_info.metadata
                 })
                 progress.set_finish_result(result)
                 yield progress
