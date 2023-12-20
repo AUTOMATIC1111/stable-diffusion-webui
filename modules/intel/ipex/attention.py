@@ -86,7 +86,7 @@ def scaled_dot_product_attention_32_bit(query, key, value, attn_mask=None, dropo
             slice_block_size_2 = split_slice_size * shape_three * shape_four / 1024 / 1024 * block_multiply
             do_split_2 = True
             # Find something divisible with the query_tokens
-            while (split_2_slice_size * slice_block_size_2) > 6:
+            while (split_2_slice_size * slice_block_size_2) > 4:
                 split_2_slice_size = split_2_slice_size // 2
                 if split_2_slice_size <= 1:
                     split_2_slice_size = 1
