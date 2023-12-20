@@ -364,11 +364,11 @@ class OnnxRawPipeline(OnnxPipelineBase):
 
 
 def prepare_latents(
-    scheduler,
+    init_noise_sigma: float,
     batch_size: int,
     height: int,
     width: int,
-    dtype: torch.dtype,
+    dtype: np.dtype,
     generator: Union[torch.Generator, List[torch.Generator]],
     latents: Union[np.ndarray, None]=None,
     num_channels_latents=4,
@@ -392,7 +392,7 @@ def prepare_latents(
         raise ValueError(f"Unexpected latents shape, got {latents.shape}, expected {shape}")
 
     # scale the initial noise by the standard deviation required by the scheduler
-    latents = latents * np.float64(scheduler.init_noise_sigma)
+    latents = latents * np.float64(init_noise_sigma)
 
     return latents
 
@@ -463,7 +463,7 @@ class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline, OnnxPip
 
         # get the initial random noise unless the user supplied it
         latents = prepare_latents(
-            self.scheduler,
+            self.scheduler.init_noise_sigma,
             batch_size * num_images_per_prompt,
             height,
             width,
@@ -819,23 +819,26 @@ class OnnxStableDiffusionInpaintPipeline(diffusers.OnnxStableDiffusionInpaintPip
         )
 
         num_channels_latents = diffusers.pipelines.stable_diffusion.pipeline_onnx_stable_diffusion_inpaint.NUM_LATENT_CHANNELS
-        latents_shape = (batch_size * num_images_per_prompt, num_channels_latents, height // 8, width // 8)
-        latents_dtype = prompt_embeds.dtype
-        if latents is None:
-            if isinstance(generator, list):
-                generator = [g.seed() for g in generator]
-                if len(generator) == 1:
-                    generator = generator[0]
-
-            latents = np.random.default_rng(generator).standard_normal(latents_shape).astype(latents_dtype)
-        else:
-            if latents.shape != latents_shape:
-                raise ValueError(f"Unexpected latents shape, got {latents.shape}, expected {latents_shape}")
+        latents = prepare_latents(
+            self.scheduler.init_noise_sigma,
+            batch_size * num_images_per_prompt,
+            height,
+            width,
+            prompt_embeds.dtype,
+            generator,
+            latents,
+            num_channels_latents,
+            8,
+        )
 
         scaling_factor = self.vae_decoder.config.get("scaling_factor", 0.18215)
 
         # prepare mask and masked_image
-        mask, masked_image = diffusers.pipelines.stable_diffusion.pipeline_onnx_stable_diffusion_inpaint.prepare_mask_and_masked_image(image[0], mask_image, latents_shape[-2:])
+        mask, masked_image = diffusers.pipelines.stable_diffusion.pipeline_onnx_stable_diffusion_inpaint.prepare_mask_and_masked_image(
+            image[0],
+            mask_image,
+            (height // 8, width // 8),
+        )
         mask = mask.astype(latents.dtype)
         masked_image = masked_image.astype(latents.dtype)
 
@@ -866,9 +869,6 @@ class OnnxStableDiffusionInpaintPipeline(diffusers.OnnxStableDiffusionInpaintPip
 
         # set timesteps
         self.scheduler.set_timesteps(num_inference_steps)
-
-        # scale the initial noise by the standard deviation required by the scheduler
-        latents = latents * np.float64(self.scheduler.init_noise_sigma)
 
         # prepare extra kwargs for the scheduler step, since not all schedulers have the same signature
         # eta (η) is only used with the DDIMScheduler, it will be ignored for other schedulers.
@@ -1058,7 +1058,7 @@ class OnnxStableDiffusionXLPipeline(OnnxPipelineBase, optimum.onnxruntime.ORTSta
 
         # 5. Prepare latent variables
         latents = prepare_latents(
-            self.scheduler,
+            self.scheduler.init_noise_sigma,
             batch_size * num_images_per_prompt,
             height,
             width,
