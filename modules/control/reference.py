@@ -5,7 +5,7 @@ from modules.control.proc.reference_sd15 import StableDiffusionReferencePipeline
 from modules.control.proc.reference_sdxl import StableDiffusionXLReferencePipeline
 
 
-what = 'ControlNet-XS'
+what = 'Reference'
 
 
 def list_models():

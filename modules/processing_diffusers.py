@@ -304,7 +304,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 'width': p.width if hasattr(p, 'width') else None,
                 'height': p.height if hasattr(p, 'height') else None,
             }
-        debug(f'Diffusers task args: {task_args}')
+        debug(f'Diffusers task specific args: {task_args}')
         return task_args
 
     def set_pipeline_args(model, prompts: list, negative_prompts: list, prompts_2: typing.Optional[list]=None, negative_prompts_2: typing.Optional[list]=None, desc:str='', **kwargs):
@@ -374,9 +374,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             if arg in possible:
                 args[arg] = task_kwargs[arg]
         task_args = getattr(p, 'task_args', {})
+        debug(f'Diffusers task args: {task_args}')
         for k, v in task_args.items():
             if k in possible:
                 args[k] = v
+            else:
+                debug(f'Diffusers unknown task args: {k}={v}')
 
         hypertile_set(p, hr=len(getattr(p, 'init_images', [])) > 0)
         clean = args.copy()

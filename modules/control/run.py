@@ -193,22 +193,20 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
         pass
     shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE) # reset current pipeline
 
-    if not has_models and (unit_type == 'reference' or unit_type == 'adapter' or unit_type == 'controlnet' or unit_type == 'xs'): # run in img2img mode
-        if len(active_strength) > 0:
-            p.strength = active_strength[0]
-        pipe = diffusers.AutoPipelineForImage2Image.from_pipe(shared.sd_model) # use set_diffuser_pipe
-    elif unit_type == 'adapter' and has_models:
+    debug(f'Control: run type={unit_type} models={has_models}')
+    if unit_type == 'adapter' and has_models:
         p.extra_generation_params["Control mode"] = 'Adapter'
         p.extra_generation_params["Control conditioning"] = use_conditioning
-        p.adapter_conditioning_scale = use_conditioning
+        p.task_args['adapter_conditioning_scale'] = use_conditioning
         instance = adapters.AdapterPipeline(selected_models, shared.sd_model)
         pipe = instance.pipeline
     elif unit_type == 'controlnet' and has_models:
         p.extra_generation_params["Control mode"] = 'ControlNet'
         p.extra_generation_params["Control conditioning"] = use_conditioning
-        p.controlnet_conditioning_scale = use_conditioning
-        p.control_guidance_start = active_start[0] if len(active_start) == 1 else list(active_start)
-        p.control_guidance_end = active_end[0] if len(active_end) == 1 else list(active_end)
+        p.task_args['controlnet_conditioning_scale'] = use_conditioning
+        p.task_args['control_guidance_start'] = active_start[0] if len(active_start) == 1 else list(active_start)
+        p.task_args['control_guidance_end'] = active_end[0] if len(active_end) == 1 else list(active_end)
+        p.task_args['guess_mode'] = p.guess_mode
         instance = controlnets.ControlNetPipeline(selected_models, shared.sd_model)
         pipe = instance.pipeline
     elif unit_type == 'xs' and has_models:
@@ -222,16 +220,17 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
     elif unit_type == 'reference':
         p.extra_generation_params["Control mode"] = 'Reference'
         p.extra_generation_params["Control attention"] = p.attention
-        p.reference_attn = 'Attention' in p.attention
-        p.reference_adain = 'Adain' in p.attention
-        p.attention_auto_machine_weight = p.query_weight
-        p.gn_auto_machine_weight = p.adain_weight
-        p.style_fidelity = p.fidelity
+        p.task_args['reference_attn'] = 'Attention' in p.attention
+        p.task_args['reference_adain'] = 'Adain' in p.attention
+        p.task_args['attention_auto_machine_weight'] = p.query_weight
+        p.task_args['gn_auto_machine_weight'] = p.adain_weight
+        p.task_args['style_fidelity'] = p.fidelity
         instance = reference.ReferencePipeline(shared.sd_model)
         pipe = instance.pipeline
-    else:
-        shared.log.error(f'Control: unknown unit type: {unit_type}')
-        pipe = None
+    else: # run in img2img mode
+        if len(active_strength) > 0:
+            p.strength = active_strength[0]
+        pipe = diffusers.AutoPipelineForImage2Image.from_pipe(shared.sd_model) # use set_diffuser_pipe
     debug(f'Control pipeline: class={pipe.__class__} args={vars(p)}')
     t1, t2, t3 = time.time(), 0, 0
     status = True
@@ -353,20 +352,20 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
                     # pipeline
                     output = None
                     if pipe is not None: # run new pipeline
-                        if not has_models and (unit_type == 'reference' or unit_type == 'controlnet' or unit_type == 'adapter' or unit_type == 'xs'): # run in img2img mode
+                        if not has_models and (unit_type == 'controlnet' or unit_type == 'adapter' or unit_type == 'xs'): # run in img2img mode
                             if p.image is None:
                                 if hasattr(p, 'init_images'):
                                     del p.init_images
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE) # reset current pipeline
                             else:
                                 p.init_images = [processed_image] # pylint: disable=attribute-defined-outside-init
-                                processed_image.save('/tmp/test.png')
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE) # reset current pipeline
                         else:
                             if hasattr(p, 'init_images'):
                                 del p.init_images
                             shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE) # reset current pipeline
-                        debug(f'Control exec pipeline: class={pipe.__class__} args={vars(p)}')
+                        debug(f'Control exec pipeline: class={pipe.__class__} p={vars(p)}')
+                        debug(f'Control exec pipeline: class={pipe.__class__} args={p.task_args}')
                         processed: processing.Processed = processing.process_images(p) # run actual pipeline
                         output = processed.images if processed is not None else None
                         # output = pipe(**vars(p)).images # alternative direct pipe exec call
