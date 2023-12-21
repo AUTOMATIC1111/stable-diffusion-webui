@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-20
+## Update for 2023-12-21
 
 *Note*: based on `diffusers==0.25.0.dev0`
 
@@ -9,7 +9,7 @@
   - top-level **Control** next to **Text** and **Image** generate
   - supports all variations of **SD15** and **SD-XL** models
   - supports *Text*, *Image*, *Batch* and *Video* processing  
-  - for details see Wiki documentation:  
+  - for details and list of supported models and workflows, see Wiki documentation:  
     <https://github.com/vladmandic/automatic/wiki/Control>
 - **Diffusers**
   - **AnimateDiff**  
