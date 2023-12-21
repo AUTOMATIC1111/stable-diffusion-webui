@@ -7,6 +7,7 @@ import urllib3
 from modules import timer, errors
 
 initialized = False
+errors.install()
 logging.getLogger("DeepSpeed").disabled = True
 # os.environ.setdefault('OMP_NUM_THREADS', 1)
 # os.environ.setdefault('MKL_NUM_THREADS', 1)
