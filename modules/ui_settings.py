@@ -1,10 +1,11 @@
 import gradio as gr
 
-from modules import ui_common, shared, script_callbacks, scripts, sd_models, sysinfo
+from modules import ui_common, shared, script_callbacks, scripts, sd_models, sysinfo, timer
 from modules.call_queue import wrap_gradio_call
 from modules.shared import opts
 from modules.ui_components import FormRow
 from modules.ui_gradio_extensions import reload_javascript
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def get_value_for_setting(key):
@@ -63,6 +64,9 @@ class UiSettings:
     quicksettings_list = None
     quicksettings_names = None
     text_settings = None
+    show_all_pages = None
+    show_one_page = None
+    search_input = None
 
     def run_settings(self, *args):
         changed = []
@@ -135,7 +139,7 @@ class UiSettings:
                         gr.Group()
                         current_tab = gr.TabItem(elem_id=f"settings_{elem_id}", label=text)
                         current_tab.__enter__()
-                        current_row = gr.Column(variant='compact')
+                        current_row = gr.Column(elem_id=f"column_settings_{elem_id}", variant='compact')
                         current_row.__enter__()
 
                         previous_section = item.section
@@ -173,26 +177,43 @@ class UiSettings:
                     download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
                     reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary', elem_id="settings_reload_script_bodies")
                     with gr.Row():
-                        unload_sd_model = gr.Button(value='Unload SD checkpoint to free VRAM', elem_id="sett_unload_sd_model")
-                        reload_sd_model = gr.Button(value='Reload the last SD checkpoint back into VRAM', elem_id="sett_reload_sd_model")
+                        unload_sd_model = gr.Button(value='Unload SD checkpoint to RAM', elem_id="sett_unload_sd_model")
+                        reload_sd_model = gr.Button(value='Load SD checkpoint to VRAM from RAM', elem_id="sett_reload_sd_model")
+                    with gr.Row():
+                        calculate_all_checkpoint_hash = gr.Button(value='Calculate hash for all checkpoint', elem_id="calculate_all_checkpoint_hash")
+                        calculate_all_checkpoint_hash_threads = gr.Number(value=1, label="Number of parallel calculations", elem_id="calculate_all_checkpoint_hash_threads", precision=0, minimum=1)
 
                 with gr.TabItem("Licenses", id="licenses", elem_id="settings_tab_licenses"):
                     gr.HTML(shared.html("licenses.html"), elem_id="licenses")
 
-                gr.Button(value="Show all pages", elem_id="settings_show_all_pages")
+                self.show_all_pages = gr.Button(value="Show all pages", elem_id="settings_show_all_pages")
+                self.show_one_page = gr.Button(value="Show only one page", elem_id="settings_show_one_page", visible=False)
+                self.show_one_page.click(lambda: None)
+
+                self.search_input = gr.Textbox(value="", elem_id="settings_search", max_lines=1, placeholder="Search...", show_label=False)
 
                 self.text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
 
+            def call_func_and_return_text(func, text):
+                def handler():
+                    t = timer.Timer()
+                    func()
+                    t.record(text)
+
+                    return f'{text} in {t.total:.1f}s'
+
+                return handler
+
             unload_sd_model.click(
-                fn=sd_models.unload_model_weights,
+                fn=call_func_and_return_text(sd_models.unload_model_weights, 'Unloaded the checkpoint'),
                 inputs=[],
-                outputs=[]
+                outputs=[self.result]
             )
 
             reload_sd_model.click(
-                fn=sd_models.reload_model_weights,
+                fn=call_func_and_return_text(lambda: sd_models.send_model_to_device(shared.sd_model), 'Loaded the checkpoint'),
                 inputs=[],
-                outputs=[]
+                outputs=[self.result]
             )
 
             request_notifications.click(
@@ -239,6 +260,21 @@ class UiSettings:
                 fn=check_file,
                 inputs=[sysinfo_check_file],
                 outputs=[sysinfo_check_output],
+            )
+
+            def calculate_all_checkpoint_hash_fn(max_thread):
+                checkpoints_list = sd_models.checkpoints_list.values()
+                with ThreadPoolExecutor(max_workers=max_thread) as executor:
+                    futures = [executor.submit(checkpoint.calculate_shorthash) for checkpoint in checkpoints_list]
+                    completed = 0
+                    for _ in as_completed(futures):
+                        completed += 1
+                        print(f"{completed} / {len(checkpoints_list)} ")
+                    print("Finish calculating hash for all checkpoints")
+
+            calculate_all_checkpoint_hash.click(
+                fn=calculate_all_checkpoint_hash_fn,
+                inputs=[calculate_all_checkpoint_hash_threads],
             )
 
         self.interface = settings_interface
@@ -294,3 +330,8 @@ class UiSettings:
             outputs=[self.component_dict[k] for k in component_keys],
             queue=False,
         )
+
+    def search(self, text):
+        print(text)
+
+        return [gr.update(visible=text in (comp.label or "")) for comp in self.components]

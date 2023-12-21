@@ -93,6 +93,7 @@ class Network:  # LoraModule
         self.unet_multiplier = 1.0
         self.dyn_dim = None
         self.modules = {}
+        self.bundle_embeddings = {}
         self.mtime = None
 
         self.mentioned_name = None

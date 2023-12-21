@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import re
 from collections import namedtuple
-from typing import List
 import lark
 
-# a prompt like this: "fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]"
+# a prompt like this: "fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][: in background:0.25] [shoddy:masterful:0.5]"
 # will be represented with prompt_schedule like this (assuming steps=100):
 # [25, 'fantasy landscape with a mountain and an oak in foreground shoddy']
 # [50, 'fantasy landscape with a lake and an oak in foreground in background shoddy']
@@ -240,14 +239,14 @@ def get_multicond_prompt_list(prompts: SdConditioning | list[str]):
 
 class ComposableScheduledPromptConditioning:
     def __init__(self, schedules, weight=1.0):
-        self.schedules: List[ScheduledPromptConditioning] = schedules
+        self.schedules: list[ScheduledPromptConditioning] = schedules
         self.weight: float = weight
 
 
 class MulticondLearnedConditioning:
     def __init__(self, shape, batch):
         self.shape: tuple = shape  # the shape field is needed to send this object to DDIM/PLMS
-        self.batch: List[List[ComposableScheduledPromptConditioning]] = batch
+        self.batch: list[list[ComposableScheduledPromptConditioning]] = batch
 
 
 def get_multicond_learned_conditioning(model, prompts, steps, hires_steps=None, use_old_scheduling=False) -> MulticondLearnedConditioning:
@@ -278,7 +277,7 @@ class DictWithShape(dict):
         return self["crossattn"].shape
 
 
-def reconstruct_cond_batch(c: List[List[ScheduledPromptConditioning]], current_step):
+def reconstruct_cond_batch(c: list[list[ScheduledPromptConditioning]], current_step):
     param = c[0][0].cond
     is_dict = isinstance(param, dict)
 

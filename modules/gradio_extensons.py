@@ -47,9 +47,19 @@ def Block_get_config(self):
 
 
 def BlockContext_init(self, *args, **kwargs):
+    if scripts.scripts_current is not None:
+        scripts.scripts_current.before_component(self, **kwargs)
+
+    scripts.script_callbacks.before_component_callback(self, **kwargs)
+
     res = original_BlockContext_init(self, *args, **kwargs)
 
     add_classes_to_gradio_component(self)
+
+    scripts.script_callbacks.after_component_callback(self, **kwargs)
+
+    if scripts.scripts_current is not None:
+        scripts.scripts_current.after_component(self, **kwargs)
 
     return res
 
