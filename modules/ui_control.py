@@ -477,10 +477,14 @@ def create_ui(_blocks: gr.Blocks=None):
                 generation_parameters_copypaste.register_paste_params_button(bindings)
 
                 if debug:
-                    from modules.control.test import test_processors
+                    from modules.control.test import test_processors, test_controlnets, test_adapters
                     gr.HTML('<br><h1>Debug</h1><br>')
                     with gr.Row():
-                        run_test_processors_btn = gr.Button(value="Test all processors", variant='primary', elem_classes=['control-button'])
+                        run_test_processors_btn = gr.Button(value="Test:Processors", variant='primary', elem_classes=['control-button'])
+                        run_test_controlnets_btn = gr.Button(value="Test:ControlNets", variant='primary', elem_classes=['control-button'])
+                        run_test_adapters_btn = gr.Button(value="Test:Adapters", variant='primary', elem_classes=['control-button'])
                         run_test_processors_btn.click(fn=test_processors, inputs=[input_image], outputs=[preview_process, output_image, output_video, output_gallery])
+                        run_test_controlnets_btn.click(fn=test_controlnets, inputs=[prompt, negative, input_image], outputs=[preview_process, output_image, output_video, output_gallery])
+                        run_test_adapters_btn.click(fn=test_adapters, inputs=[prompt, negative, input_image], outputs=[preview_process, output_image, output_video, output_gallery])
 
     return [(control_ui, 'Control', 'control')]
