@@ -112,7 +112,7 @@ class ControlNetXS():
             errors.display(e, f'Control {what} load')
 
 
-class ControlNetPipeline():
+class ControlNetXSPipeline():
     def __init__(self, controlnet: ControlNetXSModel | list[ControlNetXSModel], pipeline: StableDiffusionXLPipeline | StableDiffusionPipeline, dtype = None):
         t0 = time.time()
         self.orig_pipeline = pipeline

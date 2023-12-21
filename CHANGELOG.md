@@ -103,7 +103,8 @@
     - updated `cli/simple-txt2img.py` and `cli/simple-img2img.py` scripts  
     - save `params.txt` regardless of image save status  
     - update built-in log monitor in ui, thanks @midcoastal  
-    - major CHANGELOG cleanup, thanks @JetVarimax
+    - major CHANGELOG doc cleanup, thanks @JetVarimax  
+    - major INSTALL doc cleanup, thanks JetVarimax  
 
 ## Update for 2023-12-04
 

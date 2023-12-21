@@ -208,7 +208,7 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
         p.controlnet_conditioning_scale = use_conditioning
         p.control_guidance_start = active_start[0] if len(active_start) == 1 else list(active_start)
         p.control_guidance_end = active_end[0] if len(active_end) == 1 else list(active_end)
-        instance = controlnetsxs.ControlNetPipeline(selected_models, shared.sd_model)
+        instance = controlnetsxs.ControlNetXSPipeline(selected_models, shared.sd_model)
         pipe = instance.pipeline
     elif unit_type == 'reference':
         p.extra_generation_params["Control mode"] = 'Reference'
