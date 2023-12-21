@@ -166,13 +166,6 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
             active_process.append(u.process)
             # active_model.append(model)
             active_strength.append(u.strength)
-    """
-    if (len(active_process) == 0) and (unit_type != 'reference'):
-        msg = 'Control: no active units'
-        shared.log.warning(msg)
-        restore_pipeline()
-        return msg
-    """
     p.ops.append('control')
 
     has_models = False
@@ -426,8 +419,8 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
         image_txt = f'| Frames {len(output_images)} | Size {output_images[0].width}x{output_images[0].height}'
 
     image_txt += f' | {util.dict2str(p.extra_generation_params)}'
-    debug(f'Control ready: {image_txt}')
     restore_pipeline()
+    debug(f'Control ready: {image_txt}')
     if is_generator:
         yield (output_images, processed_image, f'Control ready {image_txt}', output_filename)
     else:

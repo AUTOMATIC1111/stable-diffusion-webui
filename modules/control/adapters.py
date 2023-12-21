@@ -9,19 +9,25 @@ what = 'T2I-Adapter'
 debug = log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
 debug('Trace: CONTROL')
 predefined_sd15 = {
-    'Canny': 'TencentARC/t2iadapter_canny_sd15v2',
-    'Depth': 'TencentARC/t2iadapter_depth_sd15v2',
-    'Depth Zoe': 'TencentARC/t2iadapter_zoedepth_sd15v1',
+    'Segment': 'TencentARC/t2iadapter_seg_sd14v1',
+    'Zoe Depth': 'TencentARC/t2iadapter_zoedepth_sd15v1',
     'OpenPose': 'TencentARC/t2iadapter_openpose_sd14v1',
-    'Sketch': 'TencentARC/t2iadapter_sketch_sd15v2',
+    'KeyPose': 'TencentARC/t2iadapter_keypose_sd14v1',
+    'Color': 'TencentARC/t2iadapter_color_sd14v1',
+    'Depth v1': 'TencentARC/t2iadapter_depth_sd14v1',
+    'Depth v2': 'TencentARC/t2iadapter_depth_sd15v2',
+    'Canny v1': 'TencentARC/t2iadapter_canny_sd14v1',
+    'Canny v2': 'TencentARC/t2iadapter_canny_sd15v2',
+    'Sketch v1': 'TencentARC/t2iadapter_sketch_sd14v1',
+    'Sketch v2': 'TencentARC/t2iadapter_sketch_sd15v2',
 }
 predefined_sdxl = {
     'Canny XL': 'TencentARC/t2i-adapter-canny-sdxl-1.0',
-    'Depth Zoe XL': 'TencentARC/t2i-adapter-depth-zoe-sdxl-1.0',
-    'Depth Midas XL': 'TencentARC/t2i-adapter-depth-midas-sdxl-1.0',
     'LineArt XL': 'TencentARC/t2i-adapter-lineart-sdxl-1.0',
-    'OpenPose XL': 'TencentARC/t2i-adapter-openpose-sdxl-1.0',
     'Sketch XL': 'TencentARC/t2i-adapter-sketch-sdxl-1.0',
+    'Zoe Depth XL': 'TencentARC/t2i-adapter-depth-zoe-sdxl-1.0',
+    'OpenPose XL': 'TencentARC/t2i-adapter-openpose-sdxl-1.0',
+    'Midas Depth XL': 'TencentARC/t2i-adapter-depth-midas-sdxl-1.0',
 }
 models = {}
 all_models = {}
@@ -104,8 +110,9 @@ class AdapterPipeline():
         if pipeline is None:
             log.error(f'Control {what} pipeline: model not loaded')
             return
-        # if isinstance(adapter, list) and len(adapter) > 1: # TODO use MultiAdapter
-        #    adapter = MultiAdapter(adapter)
+        if isinstance(adapter, list) and len(adapter) > 1: # TODO use MultiAdapter
+            adapter = MultiAdapter(adapter)
+        adapter.to(device=pipeline.device, dtype=pipeline.dtype)
         if isinstance(pipeline, StableDiffusionXLPipeline):
             self.pipeline = StableDiffusionXLAdapterPipeline(
                 vae=pipeline.vae,
