@@ -19,9 +19,20 @@ from modules.sd_hijack_hypertile import hypertile_set
 from modules.processing_correction import correction_callback
 
 
+debug = shared.log.trace if os.environ.get('SD_DIFFUSERS_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug('Trace: DIFFUSERS')
+debug_steps = shared.log.trace if os.environ.get('SD_STEPS_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug_steps('Trace: STEPS')
+
+
 def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_prompts):
     results = []
-    is_refiner_enabled = p.enable_hr and p.refiner_steps > 0 and p.refiner_start > 0 and p.refiner_start < 1 and shared.sd_refiner is not None
+
+    def is_txt2img():
+        return sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE
+
+    def is_refiner_enabled():
+        return p.enable_hr and p.refiner_steps > 0 and p.refiner_start > 0 and p.refiner_start < 1 and shared.sd_refiner is not None
 
     if getattr(p, 'init_images', None) is not None and len(p.init_images) > 0:
         tgt_width, tgt_height = 8 * math.ceil(p.init_images[0].width / 8), 8 * math.ceil(p.init_images[0].height / 8)
@@ -293,6 +304,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 'width': p.width if hasattr(p, 'width') else None,
                 'height': p.height if hasattr(p, 'height') else None,
             }
+        debug(f'Diffusers task args: {task_args}')
         return task_args
 
     def set_pipeline_args(model, prompts: list, negative_prompts: list, prompts_2: typing.Optional[list]=None, negative_prompts_2: typing.Optional[list]=None, desc:str='', **kwargs):
@@ -302,6 +314,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         args = {}
         signature = inspect.signature(type(model).__call__)
         possible = signature.parameters.keys()
+        debug(f'Diffusers pipeline possible: {possible}')
         generator_device = devices.cpu if shared.opts.diffusers_generator_device == "cpu" else shared.device
         generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
         prompts, negative_prompts, prompts_2, negative_prompts_2 = fix_prompts(prompts, negative_prompts, prompts_2, negative_prompts_2)
@@ -407,6 +420,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if shared.cmd_opts.profile:
             t1 = time.time()
             shared.log.debug(f'Profile: pipeline args: {t1-t0:.2f}')
+        debug(f'Diffusers pipeline args: {args}')
         return args
 
     def recompile_model(hires=False):
@@ -423,7 +437,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     shared.log.info("OpenVINO: Recompiling base model")
                     sd_models.unload_model_weights(op='model')
                     sd_models.reload_model_weights(op='model')
-                    if is_refiner_enabled:
+                    if is_refiner_enabled():
                         shared.log.info("OpenVINO: Recompiling refiner")
                         sd_models.unload_model_weights(op='refiner')
                         sd_models.reload_model_weights(op='refiner')
@@ -457,12 +471,19 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if shared.opts.diffusers_move_base and not getattr(shared.sd_model, 'has_accelerate', False):
         shared.sd_model.to(devices.device)
 
-    is_img2img = bool(sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE or sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING)
-    use_refiner_start = bool(is_refiner_enabled and not p.is_hr_pass and not is_img2img and p.refiner_start > 0 and p.refiner_start < 1)
-    use_denoise_start = bool(is_img2img and p.refiner_start > 0 and p.refiner_start < 1)
+    # pipeline type is set earlier in processing, but check for sanity
+    if sd_models.get_diffusers_task(shared.sd_model) != sd_models.DiffusersTaskType.TEXT_2_IMAGE and len(getattr(p, 'init_images' ,[])) == 0:
+        shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE) # reset pipeline
+    if hasattr(shared.sd_model, 'unet') and hasattr(shared.sd_model.unet, 'config') and hasattr(shared.sd_model.unet.config, 'in_channels') and shared.sd_model.unet.config.in_channels == 9:
+        shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING) # force pipeline
+        if len(getattr(p, 'init_images' ,[])) == 0:
+            p.init_images = [TF.to_pil_image(torch.rand((3, getattr(p, 'height', 512), getattr(p, 'width', 512))))]
+
+    use_refiner_start = is_txt2img() and is_refiner_enabled() and not p.is_hr_pass and p.refiner_start > 0 and p.refiner_start < 1
+    use_denoise_start = not is_txt2img() and p.refiner_start > 0 and p.refiner_start < 1
 
     def calculate_base_steps():
-        if is_img2img:
+        if not is_txt2img():
             if use_denoise_start and shared.sd_model_type == 'sdxl':
                 steps = p.steps // (1 - p.refiner_start)
             elif p.denoising_strength > 0:
@@ -473,9 +494,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             steps = (p.steps // p.refiner_start) + 1
         else:
             steps = p.steps
-
-        if os.environ.get('SD_STEPS_DEBUG', None) is not None:
-            shared.log.debug(f'Steps: type=base input={p.steps} output={steps} refiner={use_refiner_start}')
+        debug_steps(f'Steps: type=base input={p.steps} output={steps} task={sd_models.get_diffusers_task(shared.sd_model)} refiner={use_refiner_start} denoise={p.denoising_strength} model={shared.sd_model_type}')
         return max(2, int(steps))
 
     def calculate_hires_steps():
@@ -485,9 +504,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             steps = (p.steps // p.denoising_strength) + 1
         else:
             steps = 0
-
-        if os.environ.get('SD_STEPS_DEBUG', None) is not None:
-            shared.log.debug(f'Steps: type=hires input={p.hr_second_pass_steps} output={steps} denoise={p.denoising_strength}')
+        debug_steps(f'Steps: type=hires input={p.hr_second_pass_steps} output={steps} denoise={p.denoising_strength} model={shared.sd_model_type}')
         return max(2, int(steps))
 
     def calculate_refiner_steps():
@@ -502,18 +519,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         else:
             #steps = p.refiner_steps # SD 1.5 with denoise strenght
             steps = (p.refiner_steps * 1.25) + 1
-
-        if os.environ.get('SD_STEPS_DEBUG', None) is not None:
-            shared.log.debug(f'Steps: type=refiner input={p.refiner_steps} output={steps} start={p.refiner_start} denoise={p.denoising_strength}')
+        debug_steps(f'Steps: type=refiner input={p.refiner_steps} output={steps} start={p.refiner_start} denoise={p.denoising_strength}')
         return max(2, int(steps))
 
-    # pipeline type is set earlier in processing, but check for sanity
-    if sd_models.get_diffusers_task(shared.sd_model) != sd_models.DiffusersTaskType.TEXT_2_IMAGE and len(getattr(p, 'init_images' ,[])) == 0:
-        shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE) # reset pipeline
-    if hasattr(shared.sd_model, 'unet') and hasattr(shared.sd_model.unet, 'config') and hasattr(shared.sd_model.unet.config, 'in_channels') and shared.sd_model.unet.config.in_channels == 9:
-        shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING) # force pipeline
-        if len(getattr(p, 'init_images' ,[])) == 0:
-            p.init_images = [TF.to_pil_image(torch.rand((3, getattr(p, 'height', 512), getattr(p, 'width', 512))))]
     base_args = set_pipeline_args(
         model=shared.sd_model,
         prompts=prompts,
@@ -610,7 +618,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         p.is_hr_pass = False
 
     # optional refiner pass or decode
-    if is_refiner_enabled:
+    if is_refiner_enabled():
         prev_job = shared.state.job
         shared.state.job = 'refine'
         shared.state.job_count +=1
@@ -678,7 +686,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         p.is_refiner_pass = False
 
     # final decode since there is no refiner
-    if not is_refiner_enabled:
+    if not is_refiner_enabled():
         if output is not None:
             if not hasattr(output, 'images') and hasattr(output, 'frames'):
                 shared.log.debug(f'Generated: frames={len(output.frames[0])}')
