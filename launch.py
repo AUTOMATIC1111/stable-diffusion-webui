@@ -47,6 +47,16 @@ def get_custom_args():
         if current != default:
             custom[arg] = getattr(args, arg)
     installer.log.info(f'Command line args: {sys.argv[1:]} {installer.print_dict(custom)}')
+    if os.environ.get('SD_ENV_DEBUG', None) is not None:
+        env = os.environ.copy()
+        if 'PATH' in env:
+            del env['PATH']
+        if 'PS1' in env:
+            del env['PS1']
+        installer.log.trace(f'Environment: {installer.print_dict(env)}')
+    else:
+        env = [f'{k}={v}' for k, v in os.environ.items() if k.startswith('SD_')]
+        installer.log.debug(f'Env flags: {env}')
 
 
 @lru_cache()

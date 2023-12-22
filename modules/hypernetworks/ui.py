@@ -23,8 +23,8 @@ Training {'interrupted' if shared.state.interrupted else 'finished'} at {hyperne
 Hypernetwork saved to {html.escape(filename)}
 """
         return res, ""
-    except Exception:
-        raise
+    except Exception as e:
+        raise RuntimeError("Hypernetwork error") from e
     finally:
         shared.sd_model.cond_stage_model.to(devices.device)
         shared.sd_model.first_stage_model.to(devices.device)

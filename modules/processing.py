@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 import torch
 import numpy as np
 import cv2
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image, ImageOps
 from skimage import exposure
 from ldm.data.util import AddMiDaS
 from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
