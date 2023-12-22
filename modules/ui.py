@@ -109,10 +109,11 @@ def resize_from_to_html(width, height, scale_by):
 
 
 def process_interrogate(interrogation_function, mode, ii_input_dir, ii_output_dir, *ii_singles):
-    if mode in {0, 1, 3, 4}:
-        return [interrogation_function(ii_singles[mode]), None]
+    mode = int(mode)
+    if mode in (0, 1, 3, 4):
+        return [interrogation_function(ii_singles[mode]["composite"]), None]
     elif mode == 2:
-        return [interrogation_function(ii_singles[mode]["image"]), None]
+        return [interrogation_function(ii_singles[mode]["composite"]), None]
     elif mode == 5:
         assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
         images = shared.listfiles(ii_input_dir)
