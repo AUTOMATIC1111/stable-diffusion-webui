@@ -296,18 +296,18 @@ def init_script_args(default_script_args: typing.Sequence,
             ]
             },
         })
-
-    if not getattr(cmd_opts, 'disable_tss_def_alwayson', False):
-        for k, v in default_alwayson_scripts.items():
-            if not enable_def_adetailer and ADetailer == k:
-                logger.debug('====> default adetailer plugin disable!')
-                continue
-            if k in alwayson_scripts:
-                continue
-
-            alwayson_scripts[k] = v
-    else:
-        logger.debug('====> disable tss default plugin!')
+    # 取消默认的AD
+    # if not getattr(cmd_opts, 'disable_tss_def_alwayson', False):
+    #     for k, v in default_alwayson_scripts.items():
+    #         if not enable_def_adetailer and ADetailer == k:
+    #             logger.debug('====> default adetailer plugin disable!')
+    #             continue
+    #         if k in alwayson_scripts:
+    #             continue
+    #
+    #         alwayson_scripts[k] = v
+    # else:
+    #     logger.debug('====> disable tss default plugin!')
 
     # Now check for always on scripts
     if alwayson_scripts:
