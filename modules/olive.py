@@ -38,12 +38,14 @@ class ENVStore:
 
 class OliveOptimizerConfig(ENVStore):
     from_huggingface_cache: bool
+    use_fp16_fixed_vae: bool
 
     is_sdxl: bool
 
     width: int
     height: int
     batch_size: int
+
     cross_attention_dim: int
     time_ids_size: int
 
@@ -218,6 +220,8 @@ def vae_encoder_inputs(_, torch_dtype):
 
 
 def vae_encoder_load(model_name):
+    if config.use_fp16_fixed_vae:
+        model_name = "madebyollin/sdxl-vae-fp16-fix"
     model = diffusers.AutoencoderKL.from_pretrained(model_name, subfolder="vae_encoder" if os.path.isdir(os.path.join(model_name, "vae_encoder")) else "vae", **get_loader_arguments())
     model.forward = lambda sample, return_dict: model.encode(sample, return_dict)[0].sample()
     return model
@@ -244,6 +248,8 @@ def vae_decoder_inputs(_, torch_dtype):
 
 
 def vae_decoder_load(model_name):
+    if config.use_fp16_fixed_vae:
+        model_name = "madebyollin/sdxl-vae-fp16-fix"
     model = diffusers.AutoencoderKL.from_pretrained(model_name, subfolder="vae_decoder" if os.path.isdir(os.path.join(model_name, "vae_decoder")) else "vae", **get_loader_arguments())
     model.forward = model.decode
     return model

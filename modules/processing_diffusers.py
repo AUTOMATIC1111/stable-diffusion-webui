@@ -22,7 +22,10 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
     results = []
 
     if hasattr(shared.sd_model, 'preprocess'):
-        shared.sd_model = shared.sd_model.preprocess(p.batch_size, p.height, p.width)
+        shared.sd_model = shared.sd_model.preprocess(p)
+
+    if hasattr(shared.sd_model, 'override_processing'):
+        shared.sd_model.override_processing(p)
 
     def is_txt2img():
         return sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE

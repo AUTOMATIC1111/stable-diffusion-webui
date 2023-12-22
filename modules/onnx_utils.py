@@ -6,20 +6,20 @@ import onnxruntime as ort
 from installer import log
 
 
-def get_sess_options(batch_size: int, height: int, width: int, is_sdxl: bool) -> ort.SessionOptions:
+def get_sess_options(hidden_batch_size: int, height: int, width: int, is_sdxl: bool) -> ort.SessionOptions:
     sess_options = ort.SessionOptions()
     sess_options.enable_mem_pattern = False
-    sess_options.add_free_dimension_override_by_name("unet_sample_batch", batch_size * 2)
+    sess_options.add_free_dimension_override_by_name("unet_sample_batch", hidden_batch_size)
     sess_options.add_free_dimension_override_by_name("unet_sample_channels", 4)
     sess_options.add_free_dimension_override_by_name("unet_sample_height", height // 8)
     sess_options.add_free_dimension_override_by_name("unet_sample_width", width // 8)
     sess_options.add_free_dimension_override_by_name("unet_time_batch", 1)
-    sess_options.add_free_dimension_override_by_name("unet_hidden_batch", batch_size * 2)
+    sess_options.add_free_dimension_override_by_name("unet_hidden_batch", hidden_batch_size)
     sess_options.add_free_dimension_override_by_name("unet_hidden_sequence", 77)
     if is_sdxl:
-        sess_options.add_free_dimension_override_by_name("unet_text_embeds_batch", batch_size * 2)
+        sess_options.add_free_dimension_override_by_name("unet_text_embeds_batch", hidden_batch_size)
         sess_options.add_free_dimension_override_by_name("unet_text_embeds_size", 1280)
-        sess_options.add_free_dimension_override_by_name("unet_time_ids_batch", batch_size * 2)
+        sess_options.add_free_dimension_override_by_name("unet_time_ids_batch", hidden_batch_size)
         sess_options.add_free_dimension_override_by_name("unet_time_ids_size", 6)
     return sess_options
 
@@ -76,11 +76,10 @@ def load_submodels(path: os.PathLike, is_sdxl: bool, init_dict: Dict[str, Type],
 
 
 def patch_kwargs(cls: Type[diffusers.DiffusionPipeline], kwargs: Dict) -> Dict:
-    from modules import onnx_pipelines as pipelines
-    if cls == pipelines.OnnxStableDiffusionPipeline or cls == pipelines.OnnxStableDiffusionImg2ImgPipeline or cls == pipelines.OnnxStableDiffusionInpaintPipeline:
+    if cls == diffusers.OnnxStableDiffusionPipeline or cls == diffusers.OnnxStableDiffusionImg2ImgPipeline or cls == diffusers.OnnxStableDiffusionInpaintPipeline:
         kwargs["safety_checker"] = None
         kwargs["requires_safety_checker"] = False
-    if cls == pipelines.OnnxStableDiffusionXLPipeline or cls == pipelines.OnnxStableDiffusionXLImg2ImgPipeline:
+    if cls == diffusers.OnnxStableDiffusionXLPipeline or cls == diffusers.OnnxStableDiffusionXLImg2ImgPipeline:
         kwargs["config"] = {}
 
     return kwargs
@@ -91,3 +90,10 @@ def load_pipeline(cls: Type[diffusers.DiffusionPipeline], path: os.PathLike, **k
         return cls(**patch_kwargs(cls, load_submodels(path, check_pipeline_sdxl(cls), load_init_dict(cls, path), **kwargs_ort)))
     else:
         return cls.from_single_file(path)
+
+
+def construct_refiner_pipeline(**kwargs):
+    kwargs["text_encoder"] = kwargs["text_encoder_2"]
+    kwargs["tokenizer"] = kwargs["tokenizer_2"]
+    del kwargs["text_encoder_2"], kwargs["tokenizer_2"]
+    return diffusers.OnnxStableDiffusionXLImg2ImgPipeline(**patch_kwargs(diffusers.OnnxStableDiffusionXLImg2ImgPipeline, kwargs))

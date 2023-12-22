@@ -19,9 +19,10 @@ from installer import log
 from modules import shared
 from modules.paths import sd_configs_path
 from modules.sd_models import CheckpointInfo
+from modules.processing import StableDiffusionProcessing
 from modules.olive import config
-from modules.onnx import OnnxFakeModule, submodels_sd, submodels_sdxl
-from modules.onnx_utils import check_pipeline_sdxl, load_init_dict, load_submodel, load_submodels, load_pipeline, get_sess_options, patch_kwargs
+from modules.onnx import OnnxFakeModule, submodels_sd, submodels_sdxl, submodels_sdxl_refiner
+from modules.onnx_utils import check_pipeline_sdxl, load_init_dict, load_submodel, load_submodels, load_pipeline, get_sess_options, patch_kwargs, construct_refiner_pipeline
 from modules.onnx_ep import ExecutionProvider, EP_TO_NAME, get_provider
 
 
@@ -33,6 +34,11 @@ class OnnxPipelineBase(OnnxFakeModule, diffusers.DiffusionPipeline, metaclass=AB
 
     def __init__(self):
         self.model_type = self.__class__.__name__
+
+    def override_processing(self, p: StableDiffusionProcessing):
+        disable_classifier_free_guidance = p.cfg_scale < 0.01 or "turbo" in self.sd_checkpoint_info.model_name.lower()
+        if disable_classifier_free_guidance:
+            p.cfg_scale = 0.0
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path, **_):
@@ -56,6 +62,7 @@ class OnnxPipelineBase(OnnxFakeModule, diffusers.DiffusionPipeline, metaclass=AB
 class OnnxRawPipeline(OnnxPipelineBase):
     config = {}
     _is_sdxl: bool
+    is_refiner: bool
     from_huggingface_cache: bool
     path: os.PathLike
     original_filename: str
@@ -69,12 +76,13 @@ class OnnxRawPipeline(OnnxPipelineBase):
     def __init__(self, constructor: Type[OnnxPipelineBase], path: os.PathLike):
         self.model_type = constructor.__name__
         self._is_sdxl = check_pipeline_sdxl(constructor)
+        self.is_refiner = "refiner" in str(path).lower()
         self.from_huggingface_cache = shared.opts.diffusers_dir in os.path.abspath(path)
         self.path = path
         self.original_filename = os.path.basename(path)
 
-        self.constructor = constructor
-        self.submodels = submodels_sdxl if self._is_sdxl else submodels_sd
+        self.constructor = construct_refiner_pipeline if self.is_refiner else constructor
+        self.submodels = (submodels_sdxl_refiner if self.is_refiner else submodels_sdxl) if self._is_sdxl else submodels_sd
         if os.path.isdir(path):
             self.init_dict = load_init_dict(constructor, path)
             self.scheduler = load_submodel(self.path, None, "scheduler", self.init_dict["scheduler"])
@@ -242,8 +250,11 @@ class OnnxRawPipeline(OnnxPipelineBase):
                 olive_config["input_model"]["config"]["model_path"] = os.path.abspath(os.path.join(in_dir, submodel, "model.onnx"))
                 olive_config["passes"][pass_key]["config"]["float16"] = shared.opts.onnx_olive_float16
                 olive_config["engine"]["execution_providers"] = [shared.opts.onnx_execution_provider]
-                if (shared.opts.onnx_execution_provider == ExecutionProvider.CUDA or shared.opts.onnx_execution_provider == ExecutionProvider.ROCm) and version.parse(ort.__version__) < version.parse("1.17.0"):
-                    olive_config["passes"][pass_key]["config"]["optimization_options"] = {"enable_skip_group_norm": False}
+                if shared.opts.onnx_execution_provider == ExecutionProvider.CUDA or shared.opts.onnx_execution_provider == ExecutionProvider.ROCm:
+                    if version.parse(ort.__version__) < version.parse("1.17.0"):
+                        olive_config["passes"][pass_key]["config"]["optimization_options"] = {"enable_skip_group_norm": False}
+                    if shared.opts.onnx_olive_float16:
+                        olive_config["passes"][pass_key]["config"]["keep_io_types"] = False
 
                 run(olive_config)
 
@@ -317,28 +328,27 @@ class OnnxRawPipeline(OnnxPipelineBase):
             shutil.rmtree(out_dir, ignore_errors=True)
             return None
 
-    def preprocess(self, batch_size: int, height: int, width: int):
+    def preprocess(self, p: StableDiffusionProcessing):
+        in_dir = self.path if os.path.isdir(self.path) else shared.opts.onnx_temp_dir
+
         config.from_huggingface_cache = self.from_huggingface_cache
+        config.use_fp16_fixed_vae = self._is_sdxl and not shared.opts.diffusers_vae_upcast
 
         config.is_sdxl = self._is_sdxl
 
-        config.width = width
-        config.height = height
-        config.batch_size = batch_size
+        config.width = p.width
+        config.height = p.height
+        config.batch_size = p.batch_size
 
-        if self._is_sdxl:
-            config.cross_attention_dim = 2048
-            config.time_ids_size = 6
-        else:
-            config.cross_attention_dim = height + 256
-            config.time_ids_size = 5
+        config.cross_attention_dim = 2048 if self._is_sdxl else (256 + p.height)
+        config.time_ids_size = 6 if self._is_sdxl and not self.is_refiner else 5
 
         kwargs = {
             "provider": get_provider(),
-            "sess_options": get_sess_options(batch_size, height, width, self._is_sdxl),
+            "sess_options": get_sess_options(p.batch_size if p.cfg_scale < 0.01 or "turbo" in str(self.path).lower() else p.batch_size * 2, p.height, p.width, self._is_sdxl),
         }
 
-        converted_dir = self.convert(self.path if os.path.isdir(self.path) else shared.opts.onnx_temp_dir)
+        converted_dir = self.convert(in_dir)
         if converted_dir is None:
             log.error('Failed to convert model. The generation will fall back to unconverted one.')
             return self.derive_properties(load_pipeline(diffusers.StableDiffusionXLPipeline if self._is_sdxl else diffusers.StableDiffusionPipeline, self.path, **kwargs))
@@ -346,7 +356,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
 
         if shared.opts.onnx_enable_olive:
             log.warning("Olive implementation is experimental. It contains potentially an issue and is subject to change at any time.")
-            if width != height:
+            if p.width != p.height:
                 log.warning("Olive detected different width and height. The quality of the result is not guaranteed.")
             optimized_dir = self.optimize(converted_dir)
             if optimized_dir is None:

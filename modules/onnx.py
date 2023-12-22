@@ -5,6 +5,7 @@ import diffusers
 initialized = False
 submodels_sd = ("text_encoder", "unet", "vae_encoder", "vae_decoder",)
 submodels_sdxl = ("text_encoder", "text_encoder_2", "unet", "vae_encoder", "vae_decoder",)
+submodels_sdxl_refiner = ("text_encoder_2", "unet", "vae_encoder", "vae_decoder",)
 
 
 class OnnxFakeModule:
