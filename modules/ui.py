@@ -208,11 +208,14 @@ def create_advanced_inputs(tab):
     return cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry
 
 
-def create_resize_inputs(tab, images, time_selector=False, scale_visible=True):
+def create_resize_inputs(tab, images, time_selector=False, scale_visible=True, mode=None):
     dummy_component = gr.Number(visible=False, value=0)
     with gr.Accordion(open=False, label="Resize", elem_classes=["small-accordion"], elem_id=f"{tab}_resize_group"):
         with gr.Row():
-            resize_mode = gr.Radio(label="Resize mode", elem_id=f"{tab}_resize_mode", choices=shared.resize_modes, type="index", value="None")
+            if mode is not None:
+                resize_mode = gr.Radio(label="Resize mode", elem_id=f"{tab}_resize_mode", choices=shared.resize_modes, type="index", value=mode, visible=False)
+            else:
+                resize_mode = gr.Radio(label="Resize mode", elem_id=f"{tab}_resize_mode", choices=shared.resize_modes, type="index", value='None')
             resize_time = gr.Radio(label="Resize order", elem_id=f"{tab}_resize_order", choices=['Before', 'After'], value="Before", visible=time_selector)
         with gr.Row():
             resize_name = gr.Dropdown(label="Resize method", elem_id=f"{tab}_resize_name", choices=[x.name for x in shared.sd_upscalers], value=opts.upscaler_for_img2img)

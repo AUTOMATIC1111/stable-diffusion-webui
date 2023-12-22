@@ -131,13 +131,13 @@ class Processor():
         self.processor_id = None
         self.override = None
 
-    def load(self, processor_id: str = None):
+    def load(self, processor_id: str = None) -> str:
         try:
             t0 = time.time()
             processor_id = processor_id or self.processor_id
             if processor_id is None or processor_id == 'None':
                 self.reset()
-                return
+                return ''
             from_config = config.get(processor_id, {}).get('load_config', None)
             if from_config is not None:
                 for k, v in from_config.items():
@@ -158,7 +158,7 @@ class Processor():
                     pose_ckpt = 'https://huggingface.co/yzd-v/DWPose/resolve/main/dw-ll_ucoco_384.pth'
                 else:
                     log.error(f'Control processor load failed: id="{processor_id}" error=unknown model type')
-                    return
+                    return f'Processor failed to load: {processor_id}'
                 self.model = cls(det_ckpt=det_ckpt, pose_config=pose_config, pose_ckpt=pose_ckpt, device="cpu")
             elif 'SegmentAnything' in processor_id:
                 if 'Base' == config['SegmentAnything']['model']:
@@ -167,7 +167,7 @@ class Processor():
                     self.model = cls.from_pretrained(model_path = 'segments-arnaud/sam_vit_l', filename='sam_vit_l_0b3195.pth', model_type='vit_l', **self.load_config)
                 else:
                     log.error(f'Control processor load failed: id="{processor_id}" error=unknown model type')
-                    return
+                    return f'Processor failed to load: {processor_id}'
             elif config[processor_id].get('load_config', None) is not None:
                 self.model = cls.from_pretrained(**self.load_config)
             elif config[processor_id]['checkpoint']:
@@ -177,9 +177,11 @@ class Processor():
             t1 = time.time()
             self.processor_id = processor_id
             log.debug(f'Control processor loaded: id="{processor_id}" class={self.model.__class__.__name__} time={t1-t0:.2f}')
+            return f'Processor loaded: {processor_id}'
         except Exception as e:
             log.error(f'Control processor load failed: id="{processor_id}" error={e}')
             display(e, 'Control processor load')
+            return f'Processor load filed: {processor_id}'
 
     def __call__(self, image_input: Image):
         if self.override is not None:

@@ -81,7 +81,7 @@ class ControlNetXS():
         self.model = None
         self.model_id = None
 
-    def load(self, model_id: str = None, time_embedding_mix: float = 0.0):
+    def load(self, model_id: str = None, time_embedding_mix: float = 0.0) -> str:
         try:
             t0 = time.time()
             model_id = model_id or self.model_id
@@ -107,9 +107,11 @@ class ControlNetXS():
             t1 = time.time()
             self.model_id = model_id
             log.debug(f'Control {what} model loaded: id="{model_id}" path="{model_path}" time={t1-t0:.2f}')
+            return f'{what} loaded model: {model_id}'
         except Exception as e:
             log.error(f'Control {what} model load failed: id="{model_id}" error={e}')
             errors.display(e, f'Control {what} load')
+            return f'{what} failed to load model: {model_id}'
 
 
 class ControlNetXSPipeline():

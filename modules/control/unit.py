@@ -32,6 +32,7 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
                  image_upload = None,
                  control_start = None,
                  control_end = None,
+                 result_txt = None,
                  extra_controls: list = [], # noqa B006
         ):
         self.enabled = enabled or False
@@ -118,17 +119,17 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
         # bind ui controls to properties if present
         if self.type == 'adapter':
             if model_id is not None:
-                model_id.change(fn=self.adapter.load, inputs=[model_id], show_progress=True)
+                model_id.change(fn=self.adapter.load, inputs=[model_id], outputs=[result_txt], show_progress=True)
             if extra_controls is not None and len(extra_controls) > 0:
                 extra_controls[0].change(fn=adapter_extra, inputs=extra_controls)
         elif self.type == 'controlnet':
             if model_id is not None:
-                model_id.change(fn=self.controlnet.load, inputs=[model_id], show_progress=True)
+                model_id.change(fn=self.controlnet.load, inputs=[model_id], outputs=[result_txt], show_progress=True)
             if extra_controls is not None and len(extra_controls) > 0:
                 extra_controls[0].change(fn=controlnet_extra, inputs=extra_controls)
         elif self.type == 'xs':
             if model_id is not None:
-                model_id.change(fn=self.controlnet.load, inputs=[model_id, extra_controls[0]], show_progress=True)
+                model_id.change(fn=self.controlnet.load, inputs=[model_id, extra_controls[0]], outputs=[result_txt], show_progress=True)
             if extra_controls is not None and len(extra_controls) > 0:
                 extra_controls[0].change(fn=controlnetxs_extra, inputs=extra_controls)
         elif self.type == 'reference':
@@ -142,7 +143,7 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
         if model_strength is not None:
             model_strength.change(fn=strength_change, inputs=[model_strength])
         if process_id is not None:
-            process_id.change(fn=self.process.load, inputs=[process_id], show_progress=True)
+            process_id.change(fn=self.process.load, inputs=[process_id], outputs=[result_txt], show_progress=True)
         if reset_btn is not None:
             reset_btn.click(fn=reset, inputs=[], outputs=[enabled_cb, model_id, process_id, model_strength])
         if preview_btn is not None:

@@ -59,7 +59,7 @@ def restore_pipeline():
     devices.torch_gc()
 
 
-def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bool,
+def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_generator: bool, input_type: int,
                 prompt, negative, styles, steps, sampler_index,
                 seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
                 cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, full_quality, restore_faces, tiling,
@@ -69,7 +69,7 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
                 video_skip_frames, video_type, video_duration, video_loop, video_pad, video_interpolate,
         ):
     global pipe, original_pipeline # pylint: disable=global-statement
-    debug(f'Control {unit_type}: input={inputs}')
+    debug(f'Control {unit_type}: input={inputs} init={inits} type={input_type}')
     if inputs is None or (type(inputs) is list and len(inputs) == 0):
         inputs = [None]
     output_images: List[Image.Image] = [] # output images
@@ -110,7 +110,7 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
         hdr_maximize = hdr_maximize,
         hdr_max_center = hdr_max_center,
         hdr_max_boundry = hdr_max_boundry,
-        resize_mode = resize_mode,
+        resize_mode = resize_mode if resize_name != 'None' else 0,
         resize_name = resize_name,
         scale_by = scale_by,
         selected_scale_tab = selected_scale_tab,
@@ -136,36 +136,36 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
         if unit_type == 'adapter' and u.adapter.model is not None:
             active_process.append(u.process)
             active_model.append(u.adapter)
-            active_strength.append(u.strength)
+            active_strength.append(float(u.strength))
             p.adapter_conditioning_factor = u.factor
             shared.log.debug(f'Control T2I-Adapter unit: process={u.process.processor_id} model={u.adapter.model_id} strength={u.strength} factor={u.factor}')
         elif unit_type == 'controlnet' and u.controlnet.model is not None:
             active_process.append(u.process)
             active_model.append(u.controlnet)
-            active_strength.append(u.strength)
-            active_start.append(u.start)
-            active_end.append(u.end)
+            active_strength.append(float(u.strength))
+            active_start.append(float(u.start))
+            active_end.append(float(u.end))
             p.guess_mode = u.guess
             shared.log.debug(f'Control ControlNet unit: process={u.process.processor_id} model={u.controlnet.model_id} strength={u.strength} guess={u.guess} start={u.start} end={u.end}')
         elif unit_type == 'xs' and u.controlnet.model is not None:
             active_process.append(u.process)
             active_model.append(u.controlnet)
-            active_strength.append(u.strength)
-            active_start.append(u.start)
-            active_end.append(u.end)
+            active_strength.append(float(u.strength))
+            active_start.append(float(u.start))
+            active_end.append(float(u.end))
             p.guess_mode = u.guess
             shared.log.debug(f'Control ControlNet-XS unit: process={u.process.processor_id} model={u.controlnet.model_id} strength={u.strength} guess={u.guess} start={u.start} end={u.end}')
         elif unit_type == 'reference':
             p.override = u.override
             p.attention = u.attention
-            p.query_weight = u.query_weight
-            p.adain_weight = u.adain_weight
+            p.query_weight = float(u.query_weight)
+            p.adain_weight = float(u.adain_weight)
             p.fidelity = u.fidelity
             shared.log.debug('Control Reference unit')
         else:
             active_process.append(u.process)
             # active_model.append(model)
-            active_strength.append(u.strength)
+            active_strength.append(float(u.strength))
     p.ops.append('control')
 
     has_models = False
@@ -184,7 +184,6 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
         use_conditioning = active_strength[0] if len(active_strength) == 1 else list(active_strength) # strength or list[strength]
     else:
         pass
-    shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE) # reset current pipeline
 
     debug(f'Control: run type={unit_type} models={has_models}')
     if unit_type == 'adapter' and has_models:
@@ -193,6 +192,8 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
         p.task_args['adapter_conditioning_scale'] = use_conditioning
         instance = adapters.AdapterPipeline(selected_models, shared.sd_model)
         pipe = instance.pipeline
+        if inits is not None:
+            shared.log.warning('Control: T2I-Adapter does not support separate init image')
     elif unit_type == 'controlnet' and has_models:
         p.extra_generation_params["Control mode"] = 'ControlNet'
         p.extra_generation_params["Control conditioning"] = use_conditioning
@@ -210,6 +211,8 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
         p.control_guidance_end = active_end[0] if len(active_end) == 1 else list(active_end)
         instance = controlnetsxs.ControlNetXSPipeline(selected_models, shared.sd_model)
         pipe = instance.pipeline
+        if inits is not None:
+            shared.log.warning('Control: ControlNet-XS does not support separate init image')
     elif unit_type == 'reference':
         p.extra_generation_params["Control mode"] = 'Reference'
         p.extra_generation_params["Control attention"] = p.attention
@@ -220,6 +223,8 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
         p.task_args['style_fidelity'] = p.fidelity
         instance = reference.ReferencePipeline(shared.sd_model)
         pipe = instance.pipeline
+        if inits is not None:
+            shared.log.warning('Control: ControlNet-XS does not support separate init image')
     else: # run in img2img mode
         if len(active_strength) > 0:
             p.strength = active_strength[0]
@@ -244,6 +249,10 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
     try:
         with devices.inference_context():
             if isinstance(inputs, str): # only video, the rest is a list
+                if input_type == 2: # separate init image
+                    if isinstance(inits, str) and inits != inputs:
+                        shared.log.warning('Control: separate init video not support for video input')
+                        input_type = 1
                 try:
                     video = cv2.VideoCapture(inputs)
                     if not video.isOpened():
@@ -268,6 +277,7 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
                 if frame is not None:
                     inputs = [Image.fromarray(frame)] # cv2 to pil
                 for i, input_image in enumerate(inputs):
+                    debug(f'Control Control image: {i + 1} of {len(inputs)}')
                     if shared.state.skipped:
                         shared.state.skipped = False
                         continue
@@ -278,20 +288,37 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
                     # get input
                     if isinstance(input_image, str):
                         try:
-                            input_image = Image.open(input_image)
+                            input_image = Image.open(inputs[i])
                         except Exception as e:
-                            shared.log.error(f'Control: image open failed: path={input_image} error={e}')
+                            shared.log.error(f'Control: image open failed: path={inputs[i]} type=control error={e}')
                             continue
+                    # match init input
+                    if input_type == 1:
+                        debug('Control Init image: same as control')
+                        init_image = input_image
+                    elif inits is None:
+                        debug('Control Init image: none')
+                        init_image = None
+                    elif isinstance(inits[i], str):
+                        debug(f'Control: init image: {inits[i]}')
+                        try:
+                            init_image = Image.open(inits[i])
+                        except Exception as e:
+                            shared.log.error(f'Control: image open failed: path={inits[i]} type=init error={e}')
+                            continue
+                    else:
+                        debug(f'Control Init image: {i % len(inits) + 1} of {len(inits)}')
+                        init_image = inits[i % len(inits)]
                     index += 1
                     if video is not None and index % (video_skip_frames + 1) != 0:
                         continue
 
                     # resize
-                    if resize_mode != 0 and input_image is not None:
+                    if p.resize_mode != 0 and input_image is not None:
                         p.extra_generation_params["Control resize"] = f'{resize_time}: {resize_name}'
-                    if resize_mode != 0 and input_image is not None and resize_time == 'Before':
-                        debug(f'Control resize: image={input_image} width={width} height={height} mode={resize_mode} name={resize_name} sequence={resize_time}')
-                        input_image = images.resize_image(resize_mode, input_image, width, height, resize_name)
+                    if p.resize_mode != 0 and input_image is not None and resize_time == 'Before':
+                        debug(f'Control resize: image={input_image} width={width} height={height} mode={p.resize_mode} name={resize_name} sequence={resize_time}')
+                        input_image = images.resize_image(p.resize_mode, input_image, width, height, resize_name)
 
                     # process
                     if input_image is None:
@@ -335,6 +362,20 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
                         processed_image = [np.array(i) for i in p.image]
                         processed_image = util.blend(processed_image) # blend all processed images into one
                         processed_image = Image.fromarray(processed_image)
+
+                    if unit_type == 'controlnet' and input_type == 1: # Init image same as control
+                        p.task_args['control_image'] = p.image
+                        p.task_args['strength'] = p.denoising_strength
+                        p.task_args['image'] = input_image
+                    elif unit_type == 'controlnet' and input_type == 2: # Separate init image
+                        p.task_args['control_image'] = p.image
+                        p.task_args['strength'] = p.denoising_strength
+                        if init_image is None:
+                            shared.log.warning('Control: separate init image not provided')
+                            p.task_args['image'] = input_image
+                        else:
+                            p.task_args['image'] = init_image
+
                     if is_generator:
                         image_txt = f'{processed_image.width}x{processed_image.height}' if processed_image is not None else 'None'
                         msg = f'process | {index} of {frames if video is not None else len(inputs)} | {"Image" if video is None else "Frame"} {image_txt}'
@@ -342,23 +383,31 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
                         yield (None, processed_image, f'Control {msg}')
                     t2 += time.time() - t2
 
+                    # prepare pipeline
+                    if hasattr(p, 'init_images'):
+                        del p.init_images # control never uses init_image as-is
+                    if pipe is not None:
+                        if not has_models and (unit_type == 'controlnet' or unit_type == 'adapter' or unit_type == 'xs'): # run in txt2img or img2img mode
+                            if processed_image is not None:
+                                p.init_images = [processed_image]
+                                pipe = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
+                            else:
+                                pipe = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
+                        elif unit_type == 'reference':
+                            pipe = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
+                        else: # actual control
+                            if 'control_image' in p.task_args:
+                                pipe = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE) # only controlnet supports img2img
+                            else:
+                                pipe = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
+
                     # pipeline
                     output = None
                     if pipe is not None: # run new pipeline
-                        if not has_models and (unit_type == 'controlnet' or unit_type == 'adapter' or unit_type == 'xs'): # run in img2img mode
-                            if p.image is None:
-                                if hasattr(p, 'init_images'):
-                                    del p.init_images
-                                shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE) # reset current pipeline
-                            else:
-                                p.init_images = [processed_image] # pylint: disable=attribute-defined-outside-init
-                                shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE) # reset current pipeline
-                        else:
-                            if hasattr(p, 'init_images'):
-                                del p.init_images
-                            shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE) # reset current pipeline
-                        debug(f'Control exec pipeline: class={pipe.__class__} p={vars(p)}')
-                        debug(f'Control exec pipeline: class={pipe.__class__} args={p.task_args}')
+                        debug(f'Control exec pipeline: class={pipe.__class__}')
+                        debug(f'Control exec pipeline: task={sd_models.get_diffusers_task(pipe)}')
+                        debug(f'Control exec pipeline: p={vars(p)}')
+                        debug(f'Control exec pipeline: args={p.task_args}')
                         processed: processing.Processed = processing.process_images(p) # run actual pipeline
                         output = processed.images if processed is not None else None
                         # output = pipe(**vars(p)).images # alternative direct pipe exec call
@@ -371,9 +420,9 @@ def control_run(units: List[unit.Unit], inputs, unit_type: str, is_generator: bo
                         output_image = output[0]
                         if output_image is not None:
                             # resize
-                            if resize_mode != 0 and resize_time == 'After':
-                                debug(f'Control resize: image={input_image} width={width} height={height} mode={resize_mode} name={resize_name} sequence={resize_time}')
-                                output_image = images.resize_image(resize_mode, output_image, width, height, resize_name)
+                            if p.resize_mode != 0 and resize_time == 'After':
+                                debug(f'Control resize: image={input_image} width={width} height={height} mode={p.resize_mode} name={resize_name} sequence={resize_time}')
+                                output_image = images.resize_image(p.resize_mode, output_image, width, height, resize_name)
                             elif hasattr(p, 'width') and hasattr(p, 'height'):
                                 output_image = output_image.resize((p.width, p.height), Image.Resampling.LANCZOS)
 

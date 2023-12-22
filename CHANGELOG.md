@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-21
+## Update for 2023-12-22
 
 *Note*: based on `diffusers==0.25.0.dev0`
 
