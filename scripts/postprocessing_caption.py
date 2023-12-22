@@ -25,6 +25,6 @@ class ScriptPostprocessingCeption(scripts_postprocessing.ScriptPostprocessing):
             captions.append(deepbooru.model.tag(pp.image))
 
         if "BLIP" in option:
-            captions.append(shared.interrogator.interrogate(pp.image))
+            captions.append(shared.interrogator.interrogate(pp.image.convert("RGB")))
 
         pp.caption = ", ".join([x for x in captions if x])
