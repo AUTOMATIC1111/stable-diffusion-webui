@@ -62,8 +62,6 @@ def apply_color_correction(correction, original_image):
 
 
 def apply_overlay(image: Image, paste_loc, index, overlays):
-    if not shared.opts.img2img_apply_overlay:
-        return image
     if overlays is None or index >= len(overlays):
         return image
     overlay = overlays[index]
@@ -1222,6 +1220,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.latent_mask = None
         self.mask_for_overlay = None
         self.mask_blur = mask_blur
+        self.mask_blur_x: int = 4
+        self.mask_blur_y: int = 4
         self.inpainting_fill = inpainting_fill
         self.inpaint_full_res = inpaint_full_res
         self.inpaint_full_res_padding = inpaint_full_res_padding
@@ -1240,6 +1240,18 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.sampler = None
         self.scripts = None
         self.script_args = []
+
+    @property
+    def mask_blur(self):
+        if self.mask_blur_x == self.mask_blur_y:
+            return self.mask_blur_x
+        return None
+
+    @mask_blur.setter
+    def mask_blur(self, value):
+        if isinstance(value, int):
+            self.mask_blur_x = value
+            self.mask_blur_y = value
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if shared.backend == shared.Backend.DIFFUSERS and self.image_mask is not None:
@@ -1263,28 +1275,36 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         if image_mask is not None:
             if type(image_mask) == list:
                 image_mask = image_mask[0]
-            image_mask = image_mask.convert('L')
+            image_mask = create_binary_mask(image_mask)
             if self.inpainting_mask_invert:
                 image_mask = ImageOps.invert(image_mask)
-            if self.mask_blur > 0:
-                image_mask = image_mask.filter(ImageFilter.GaussianBlur(self.mask_blur))
+            if self.mask_blur_x > 0:
+                np_mask = np.array(image_mask)
+                kernel_size = 2 * int(2.5 * self.mask_blur_x + 0.5) + 1
+                np_mask = cv2.GaussianBlur(np_mask, (kernel_size, 1), self.mask_blur_x)
+                image_mask = Image.fromarray(np_mask)
+            if self.mask_blur_y > 0:
+                np_mask = np.array(image_mask)
+                kernel_size = 2 * int(2.5 * self.mask_blur_y + 0.5) + 1
+                np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), self.mask_blur_y)
+                image_mask = Image.fromarray(np_mask)
             if self.inpaint_full_res:
                 self.mask_for_overlay = image_mask
                 mask = image_mask.convert('L')
                 crop_region = modules.masking.get_crop_region(np.array(mask), self.inpaint_full_res_padding)
                 crop_region = modules.masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
                 x1, y1, x2, y2 = crop_region
+
                 mask = mask.crop(crop_region)
-                if mask.width != self.width or mask.height != self.height:
-                    image_mask = images.resize_image(3, mask, self.width, self.height, self.resize_name)
+                image_mask = images.resize_image(2, mask, self.width, self.height)
                 self.paste_to = (x1, y1, x2-x1, y2-y1)
             else:
-                if image_mask.width != self.width or image_mask.height != self.height:
-                    image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height, self.resize_name)
+                image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height)
                 np_mask = np.array(image_mask)
                 np_mask = np.clip((np_mask.astype(np.float32)) * 2, 0, 255).astype(np.uint8)
                 self.mask_for_overlay = Image.fromarray(np_mask)
             self.overlay_images = []
+
         latent_mask = self.latent_mask if self.latent_mask is not None else image_mask
 
         add_color_corrections = shared.opts.img2img_color_correction and self.color_corrections is None
@@ -1321,9 +1341,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                     self.overlay_images.append(image_masked.convert('RGBA'))
                 except Exception as e:
                     shared.log.error(f"Failed to apply mask to image: {e}")
-                self.mask = image_mask # assign early for diffusers
-            # crop_region is not None if we are doing inpaint full res
-            if crop_region is not None:
+            if crop_region is not None: # crop_region is not None if we are doing inpaint full res
                 image = image.crop(crop_region)
                 if image.width != self.width or image.height != self.height:
                     image = images.resize_image(3, image, self.width, self.height, self.resize_name)
