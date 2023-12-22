@@ -715,7 +715,7 @@ def train_auto(
     # height = 768
     # options = ["抠出头部", "磨皮"]  # 数据预处理方法 "抠出全身","抠出头部", "放大", "镜像", "旋转", "改变尺寸","磨皮"
     head_width = 512
-    head_height = 512
+    head_height = 768
     trigger_word = ""
     # 是否采用wd14作为反推tag，否则采用deepbooru
     use_wd = os.getenv('WD', '1') == '1'
@@ -736,7 +736,7 @@ def train_auto(
     # image_list, _ = custom_configurable_image_processing(train_data_dir, options, width, height,
     #                                                      if_res_oribody=True, model_p=general_model_path)
     # 脸部图，抠头
-    options = ["放大", "抠出头部", "磨皮"]
+    options = ["磨皮"]
     if len(images) < 15:
         options.append("镜像")
 
@@ -749,8 +749,10 @@ def train_auto(
         save_images(body_list, train_data_dir)
         head_list = seg_face(input_path=train_data_dir, output_path=tmp_face_dir, model_path=general_model_path)
 
-    train_dir = os.path.join(dirname, f"{task_id}-preprocess") if not only_face else tmp_face_dir
-    os.makedirs(train_dir, exist_ok=True)
+    tmp_dir = os.path.join(dirname, f"{task_id}-preprocess") if not only_face else tmp_face_dir
+    os.makedirs(tmp_dir, exist_ok=True)
+
+    train_dir = tmp_dir + "_train"
     process_dir = train_dir
     # print("1111:::", image_list, head_list)
 
@@ -771,7 +773,7 @@ def train_auto(
                      preprocess_txt_action='ignore', process_keep_original_size=False,
                      process_split=False, process_flip=False, process_caption=True,
                      process_caption_deepbooru=not use_wd, split_threshold=0.5,
-                     overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
+                     overlap_ratio=0.2, process_focal_crop=True, process_focal_crop_face_weight=0.9,
                      process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
                      process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
                      process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
@@ -796,7 +798,7 @@ def train_auto(
 
     max_repeats = 27
     # repeats_n = min(int(20 * max_repeats / pic_nums), max_repeats)
-    repeats_n = 30
+    repeats_n = 50
     # 2.tagger反推
     if use_wd:
         onnx = os.path.join(general_model_path, "tag_models/wd_onnx")
