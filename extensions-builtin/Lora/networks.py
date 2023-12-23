@@ -129,9 +129,9 @@ def load_network(name, network_on_disk):
             raise AssertionError(f"Could not find a module type (out of {', '.join([x.__class__.__name__ for x in module_types])}) that would accept those keys: {', '.join(weights.w)}")
         net.modules[key] = net_module
     if keys_failed_to_match:
-        shared.log.warning(f"LoRA unmatched keys: file={network_on_disk.filename} keys={len(keys_failed_to_match)}")
+        shared.log.warning(f"LoRA file={network_on_disk.filename} unmatched={len(keys_failed_to_match)} matched={len(matched_networks)}")
         if debug:
-            shared.log.debug(f"LoRA unmatched keys: file={network_on_disk.filename} keys={keys_failed_to_match}")
+            shared.log.debug(f"LoRA file={network_on_disk.filename} unmatched={keys_failed_to_match}")
     lora_cache[name] = net
     t1 = time.time()
     timer['load'] += t1 - t0

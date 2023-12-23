@@ -147,21 +147,25 @@ def load_vae(model, vae_file=None, vae_source="unknown-source"):
     global loaded_vae_file # pylint: disable=global-statement
     cache_enabled = shared.opts.sd_vae_checkpoint_cache > 0
     if vae_file:
-        if cache_enabled and vae_file in checkpoints_loaded:
-            # use vae checkpoint cache
-            shared.log.info(f"Loading VAE: model={get_filename(vae_file)} source={vae_source} cached=True")
-            store_base_vae(model)
-            _load_vae_dict(model, checkpoints_loaded[vae_file])
-        else:
-            if not os.path.isfile(vae_file):
-                shared.log.error(f"VAE not found: model={vae_file} source={vae_source}")
-                return
-            store_base_vae(model)
-            vae_dict_1 = load_vae_dict(vae_file)
-            _load_vae_dict(model, vae_dict_1)
-            if cache_enabled:
-                # cache newly loaded vae
-                checkpoints_loaded[vae_file] = vae_dict_1.copy()
+        try:
+            if cache_enabled and vae_file in checkpoints_loaded:
+                # use vae checkpoint cache
+                shared.log.info(f"Loading VAE: model={get_filename(vae_file)} source={vae_source} cached=True")
+                store_base_vae(model)
+                _load_vae_dict(model, checkpoints_loaded[vae_file])
+            else:
+                if not os.path.isfile(vae_file):
+                    shared.log.error(f"VAE not found: model={vae_file} source={vae_source}")
+                    return
+                store_base_vae(model)
+                vae_dict_1 = load_vae_dict(vae_file)
+                _load_vae_dict(model, vae_dict_1)
+                if cache_enabled:
+                    # cache newly loaded vae
+                    checkpoints_loaded[vae_file] = vae_dict_1.copy()
+        except Exception as e:
+            shared.log.error(f"Loading VAE failed: model={vae_file} source={vae_source} {e}")
+            restore_base_vae(model)
         # clean up cache if limit is reached
         if cache_enabled:
             while len(checkpoints_loaded) > shared.opts.sd_vae_checkpoint_cache + 1: # we need to count the current model
