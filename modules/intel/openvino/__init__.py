@@ -370,6 +370,9 @@ def openvino_fx(subgraph, example_inputs):
                                     example_inputs_reordered.append(example_inputs[idx1])
                     example_inputs = example_inputs_reordered
 
+                # Deleting unused subgraphs doesn't do anything, so we cast it down to fp8
+                subgraph = subgraph.to(dtype=torch.float8_e4m3fn)
+
                 # Model is fully supported and already cached. Run the cached OV model directly.
                 compiled_model = openvino_compile_cached_model(maybe_fs_cached_name, *example_inputs)
 
@@ -397,8 +400,6 @@ def openvino_fx(subgraph, example_inputs):
     if inputs_reversed:
         example_inputs.reverse()
     model = make_fx(subgraph)(*example_inputs)
-    # Deleting unused subgraphs doesn't do anything, so we cast it down to fp8
-    subgraph = subgraph.to(dtype=torch.float8_e4m3fn)
     for node in model.graph.nodes:
         if node.target == torch.ops.aten.mul_.Tensor:
             node.target = torch.ops.aten.mul.Tensor

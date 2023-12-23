@@ -132,6 +132,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             latents = latents.to(next(iter(model.vae.post_quant_conv.parameters())).dtype)
 
         decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
+        # Downcast VAE after OpenVINO compile
+        if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx" and shared.compiled_model_state.first_pass_vae:
+            shared.compiled_model_state.first_pass_vae = False
+            if hasattr(shared.sd_model, "vae"):
+                shared.sd_model.vae.to(dtype=torch.float8_e4m3fn)
+                devices.torch_gc(force=True)
         if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False) and hasattr(model, 'unet'):
             model.unet.to(unet_device)
         t1 = time.time()
@@ -447,7 +453,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 shared.compiled_model_state.height = compile_height
                 shared.compiled_model_state.width = compile_width
                 shared.compiled_model_state.batch_size = p.batch_size
-                shared.compiled_model_state.first_pass = False
             else:
                 pass #Can be implemented for TensorRT or Olive
         else:
@@ -550,6 +555,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     try:
         t0 = time.time()
         output = shared.sd_model(**base_args) # pylint: disable=not-callable
+        # Downcast UNET after OpenVINO compile
+        if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx" and shared.compiled_model_state.first_pass:
+            shared.compiled_model_state.first_pass = False
+            if hasattr(shared.sd_model, "unet"):
+                shared.sd_model.unet.to(dtype=torch.float8_e4m3fn)
+                devices.torch_gc(force=True)
         if shared.cmd_opts.profile:
             t1 = time.time()
             shared.log.debug(f'Profile: pipeline call: {t1-t0:.2f}')
@@ -613,6 +624,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 shared.state.sampling_steps = hires_args['num_inference_steps']
                 try:
                     output = shared.sd_model(**hires_args) # pylint: disable=not-callable
+                    # Downcast UNET after OpenVINO compile
+                    if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx" and shared.compiled_model_state.first_pass:
+                        shared.compiled_model_state.first_pass = False
+                        if hasattr(shared.sd_model, "unet"):
+                            shared.sd_model.unet.to(dtype=torch.float8_e4m3fn)
+                            devices.torch_gc(force=True)
                 except AssertionError as e:
                     shared.log.info(e)
                 p.init_images = []
@@ -672,6 +689,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             try:
                 shared.sd_refiner.register_to_config(requires_aesthetics_score=shared.opts.diffusers_aesthetics_score)
                 refiner_output = shared.sd_refiner(**refiner_args) # pylint: disable=not-callable
+                # Downcast UNET after OpenVINO compile
+                if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx" and shared.compiled_model_state.first_pass_refiner:
+                    shared.compiled_model_state.first_pass_refiner = False
+                    if hasattr(shared.sd_refiner, "unet"):
+                        shared.sd_refiner.unet.to(dtype=torch.float8_e4m3fn)
+                        devices.torch_gc(force=True)
             except AssertionError as e:
                 shared.log.info(e)
 

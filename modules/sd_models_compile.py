@@ -9,6 +9,8 @@ from installer import setup_logging
 class CompiledModelState:
     def __init__(self):
         self.first_pass = True
+        self.first_pass_refiner = True
+        self.first_pass_vae = True
         self.height = 512
         self.width = 512
         self.batch_size = 1
