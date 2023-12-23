@@ -54,7 +54,7 @@ def full_vae_decode(latents, model):
     if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx" and shared.compiled_model_state.first_pass_vae:
         shared.compiled_model_state.first_pass_vae = False
         if hasattr(shared.sd_model, "vae"):
-            shared.sd_model.vae.to(dtype=torch.float8_e4m3fn)
+            model.vae.to(dtype=torch.float8_e4m3fn)
             devices.torch_gc(force=True)
 
     if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False) and hasattr(model, 'unet'):

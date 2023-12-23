@@ -358,41 +358,41 @@ def openvino_fx(subgraph, example_inputs):
         maybe_fs_cached_name = cached_model_name(model_hash_str + "_fs", get_device(), example_inputs, shared.opts.openvino_cache_path)
 
         if os.path.isfile(maybe_fs_cached_name + ".xml") and os.path.isfile(maybe_fs_cached_name + ".bin"):
-            if (shared.compiled_model_state.cn_model != [] and str(shared.compiled_model_state.cn_model) in maybe_fs_cached_name):
-                example_inputs_reordered = []
-                if (os.path.isfile(maybe_fs_cached_name + ".txt")):
-                    f = open(maybe_fs_cached_name + ".txt", "r")
-                    for input_data in example_inputs:
-                        shape = f.readline()
-                        if (str(input_data.size()) != shape):
-                            for idx1, input_data1 in enumerate(example_inputs):
-                                if (str(input_data1.size()).strip() == str(shape).strip()):
-                                    example_inputs_reordered.append(example_inputs[idx1])
-                    example_inputs = example_inputs_reordered
+            example_inputs_reordered = []
+            if (os.path.isfile(maybe_fs_cached_name + ".txt")):
+                f = open(maybe_fs_cached_name + ".txt", "r")
+                for input_data in example_inputs:
+                    shape = f.readline()
+                    if (str(input_data.size()) != shape):
+                        for idx1, input_data1 in enumerate(example_inputs):
+                            if (str(input_data1.size()).strip() == str(shape).strip()):
+                                example_inputs_reordered.append(example_inputs[idx1])
+                example_inputs = example_inputs_reordered
 
-                # Deleting unused subgraphs doesn't do anything, so we cast it down to fp8
-                subgraph = subgraph.to(dtype=torch.float8_e4m3fn)
+            # Deleting unused subgraphs doesn't do anything, so we cast it down to fp8
+            subgraph = subgraph.to(dtype=torch.float8_e4m3fn)
+            devices.torch_gc(force=True)
 
-                # Model is fully supported and already cached. Run the cached OV model directly.
-                compiled_model = openvino_compile_cached_model(maybe_fs_cached_name, *example_inputs)
+            # Model is fully supported and already cached. Run the cached OV model directly.
+            compiled_model = openvino_compile_cached_model(maybe_fs_cached_name, *example_inputs)
 
-                def _call(*args):
-                    if (shared.compiled_model_state.cn_model != [] and str(shared.compiled_model_state.cn_model) in maybe_fs_cached_name):
-                        args_reordered = []
-                        if (os.path.isfile(maybe_fs_cached_name + ".txt")):
-                            f = open(maybe_fs_cached_name + ".txt", "r")
-                            for input_data in args:
-                                shape = f.readline()
-                                if (str(input_data.size()) != shape):
-                                    for idx1, input_data1 in enumerate(args):
-                                        if (str(input_data1.size()).strip() == str(shape).strip()):
-                                            args_reordered.append(args[idx1])
-                        args = args_reordered
+            def _call(*args):
+                if (shared.compiled_model_state.cn_model != [] and str(shared.compiled_model_state.cn_model) in maybe_fs_cached_name):
+                    args_reordered = []
+                    if (os.path.isfile(maybe_fs_cached_name + ".txt")):
+                        f = open(maybe_fs_cached_name + ".txt", "r")
+                        for input_data in args:
+                            shape = f.readline()
+                            if (str(input_data.size()) != shape):
+                                for idx1, input_data1 in enumerate(args):
+                                    if (str(input_data1.size()).strip() == str(shape).strip()):
+                                        args_reordered.append(args[idx1])
+                    args = args_reordered
 
-                    res = execute_cached(compiled_model, *args)
-                    shared.compiled_model_state.partition_id = shared.compiled_model_state.partition_id + 1
-                    return res
-                return _call
+                res = execute_cached(compiled_model, *args)
+                shared.compiled_model_state.partition_id = shared.compiled_model_state.partition_id + 1
+                return res
+            return _call
     else:
         os.environ.setdefault('OPENVINO_TORCH_MODEL_CACHING', "0")
         maybe_fs_cached_name = None

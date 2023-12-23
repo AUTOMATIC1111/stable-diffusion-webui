@@ -345,10 +345,20 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 shared.compiled_model_state.height = compile_height
                 shared.compiled_model_state.width = compile_width
                 shared.compiled_model_state.batch_size = p.batch_size
-            else:
-                pass #Can be implemented for TensorRT or Olive
-        else:
-            pass #Do nothing if compile is disabled
+
+    # Downcast UNET after OpenVINO compile
+    def downcast_openvino(op="base"):
+        if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx":
+            if shared.compiled_model_state.first_pass and op == "base":
+                shared.compiled_model_state.first_pass = False
+                if hasattr(shared.sd_model, "unet"):
+                    shared.sd_model.unet.to(dtype=torch.float8_e4m3fn)
+                    devices.torch_gc(force=True)
+            if shared.compiled_model_state.first_pass_refiner and op == "refiner":
+                shared.compiled_model_state.first_pass_refiner = False
+                if hasattr(shared.sd_refiner, "unet"):
+                    shared.sd_refiner.unet.to(dtype=torch.float8_e4m3fn)
+                    devices.torch_gc(force=True)
 
     def update_sampler(sd_model, second_pass=False):
         sampler_selection = p.latent_sampler if second_pass else p.sampler_name
@@ -448,12 +458,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     try:
         t0 = time.time()
         output = shared.sd_model(**base_args) # pylint: disable=not-callable
-        # Downcast UNET after OpenVINO compile
-        if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx" and shared.compiled_model_state.first_pass:
-            shared.compiled_model_state.first_pass = False
-            if hasattr(shared.sd_model, "unet"):
-                shared.sd_model.unet.to(dtype=torch.float8_e4m3fn)
-                devices.torch_gc(force=True)
+        downcast_openvino(op="base")
         if shared.cmd_opts.profile:
             t1 = time.time()
             shared.log.debug(f'Profile: pipeline call: {t1-t0:.2f}')
@@ -517,12 +522,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 shared.state.sampling_steps = hires_args['num_inference_steps']
                 try:
                     output = shared.sd_model(**hires_args) # pylint: disable=not-callable
-                    # Downcast UNET after OpenVINO compile
-                    if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx" and shared.compiled_model_state.first_pass:
-                        shared.compiled_model_state.first_pass = False
-                        if hasattr(shared.sd_model, "unet"):
-                            shared.sd_model.unet.to(dtype=torch.float8_e4m3fn)
-                            devices.torch_gc(force=True)
+                    downcast_openvino(op="base")
                 except AssertionError as e:
                     shared.log.info(e)
                 p.init_images = []
@@ -582,12 +582,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             try:
                 shared.sd_refiner.register_to_config(requires_aesthetics_score=shared.opts.diffusers_aesthetics_score)
                 refiner_output = shared.sd_refiner(**refiner_args) # pylint: disable=not-callable
-                # Downcast UNET after OpenVINO compile
-                if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx" and shared.compiled_model_state.first_pass_refiner:
-                    shared.compiled_model_state.first_pass_refiner = False
-                    if hasattr(shared.sd_refiner, "unet"):
-                        shared.sd_refiner.unet.to(dtype=torch.float8_e4m3fn)
-                        devices.torch_gc(force=True)
+                downcast_openvino(op="refiner")
             except AssertionError as e:
                 shared.log.info(e)
 
