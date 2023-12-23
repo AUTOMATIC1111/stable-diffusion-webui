@@ -1261,9 +1261,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.mask_blur_y = value
 
     def init(self, all_prompts, all_seeds, all_subseeds):
-        if shared.backend == shared.Backend.DIFFUSERS and self.image_mask is not None:
+        if shared.backend == shared.Backend.DIFFUSERS and self.image_mask is not None and not self.is_control:
             shared.sd_model = modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.INPAINTING)
-        elif shared.backend == shared.Backend.DIFFUSERS and self.image_mask is None:
+        elif shared.backend == shared.Backend.DIFFUSERS and self.image_mask is None and not self.is_control:
             shared.sd_model = modules.sd_models.set_diffuser_pipe(self.sd_model, modules.sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
 
         if self.sampler_name == "PLMS":

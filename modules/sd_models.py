@@ -1027,6 +1027,8 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     sd_model_hash = getattr(pipe, "sd_model_hash", None)
     has_accelerate = getattr(pipe, "has_accelerate", None)
     embedding_db = getattr(pipe, "embedding_db", None)
+    image_encoder = getattr(pipe, "image_encoder", None)
+    feature_extractor = getattr(pipe, "feature_extractor", None)
 
     # TODO implement alternative diffusion pipelines
     """
@@ -1065,6 +1067,8 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     new_pipe.sd_model_hash = sd_model_hash
     new_pipe.has_accelerate = has_accelerate
     new_pipe.embedding_db = embedding_db
+    new_pipe.image_encoder = image_encoder
+    new_pipe.feature_extractor = feature_extractor
     new_pipe.is_sdxl = True # pylint: disable=attribute-defined-outside-init # a1111 compatibility item
     new_pipe.is_sd2 = False # pylint: disable=attribute-defined-outside-init
     new_pipe.is_sd1 = False # pylint: disable=attribute-defined-outside-init

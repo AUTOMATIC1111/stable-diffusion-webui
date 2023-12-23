@@ -131,6 +131,8 @@ class ControlNetXSPipeline():
                 tokenizer_2=pipeline.tokenizer_2,
                 unet=pipeline.unet,
                 scheduler=pipeline.scheduler,
+                image_encoder=getattr(pipeline, 'image_encoder', None),
+                feature_extractor=getattr(pipeline, 'feature_extractor', None),
                 controlnet=controlnet, # can be a list
             ).to(pipeline.device)
         elif isinstance(pipeline, StableDiffusionPipeline):
@@ -140,9 +142,10 @@ class ControlNetXSPipeline():
                 tokenizer=pipeline.tokenizer,
                 unet=pipeline.unet,
                 scheduler=pipeline.scheduler,
+                image_encoder=getattr(pipeline, 'image_encoder', None),
+                feature_extractor=getattr(pipeline, 'feature_extractor', None),
                 requires_safety_checker=False,
                 safety_checker=None,
-                feature_extractor=None,
                 controlnet=controlnet, # can be a list
             ).to(pipeline.device)
         else:

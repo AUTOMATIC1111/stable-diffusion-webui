@@ -13,6 +13,7 @@ from modules.control import controlnets # lllyasviel ControlNet
 from modules.control import controlnetsxs # VisLearn ControlNet-XS
 from modules.control import adapters # TencentARC T2I-Adapter
 from modules.control import reference # ControlNet-Reference
+from modules.control import ipadapter # IP-Adapter
 from modules import devices, shared, errors, processing, images, sd_models, sd_samplers
 
 
@@ -67,6 +68,7 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
                 resize_mode, resize_name, width, height, scale_by, selected_scale_tab, resize_time,
                 denoising_strength, batch_count, batch_size,
                 video_skip_frames, video_type, video_duration, video_loop, video_pad, video_interpolate,
+                ip_adapter, ip_scale, ip_image, ip_type,
         ):
     global pipe, original_pipeline # pylint: disable=global-statement
     debug(f'Control {unit_type}: input={inputs} init={inits} type={input_type}')
@@ -246,6 +248,9 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
             shared.sd_model.to(shared.device)
         sd_models.copy_diffuser_options(shared.sd_model, original_pipeline) # copy options from original pipeline
         sd_models.set_diffuser_options(shared.sd_model)
+        if ipadapter.apply_ip_adapter(shared.sd_model, p, ip_adapter, ip_scale, ip_image, reset=True):
+            original_pipeline.feature_extractor = shared.sd_model.feature_extractor
+            original_pipeline.image_encoder = shared.sd_model.image_encoder
 
     try:
         with devices.inference_context():
@@ -377,6 +382,9 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
                         else:
                             p.task_args['image'] = init_image
 
+                    if ip_type == 1 and ip_adapter != 'none':
+                        p.task_args['ip_adapter_image'] = input_image
+
                     if is_generator:
                         image_txt = f'{processed_image.width}x{processed_image.height}' if processed_image is not None else 'None'
                         msg = f'process | {index} of {frames if video is not None else len(inputs)} | {"Image" if video is None else "Frame"} {image_txt}'
@@ -391,18 +399,18 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
                         if not has_models and (unit_type == 'controlnet' or unit_type == 'adapter' or unit_type == 'xs'): # run in txt2img or img2img mode
                             if processed_image is not None:
                                 p.init_images = [processed_image]
-                                pipe = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
+                                shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                             else:
-                                pipe = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
+                                shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
                         elif unit_type == 'reference':
                             p.is_control = True
-                            pipe = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
+                            shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
                         else: # actual control
                             p.is_control = True
                             if 'control_image' in p.task_args:
-                                pipe = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE) # only controlnet supports img2img
+                                shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE) # only controlnet supports img2img
                             else:
-                                pipe = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
+                                shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
 
                     # pipeline
                     output = None
