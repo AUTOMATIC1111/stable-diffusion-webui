@@ -1,11 +1,11 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-22
+## Update for 2023-12-23
 
 *Note*: based on `diffusers==0.25.0.dev0`
 
 - **Control**
-  - native implementation of **ControlNet**, **ControlNet XS** and **T2I Adapters**  
+  - native implementation of **ControlNet**, **ControlNet XS**, **T2I Adapters** and **IP Adapters**  
   - top-level **Control** next to **Text** and **Image** generate
   - supports all variations of **SD15** and **SD-XL** models
   - supports *Text*, *Image*, *Batch* and *Video* processing  
