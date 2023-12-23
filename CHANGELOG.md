@@ -75,6 +75,7 @@
     - add `DISABLE_IPEXRUN` and `DISABLE_IPEX_1024_WA` environment variables  
     - compatibility improvements  
   - **OpenVINO**, thanks @disty0  
+    - **8 bit support for CPUs**  
     - add *Directory for OpenVINO cache* option to *System Paths*  
     - remove Intel ARC specific 1024x1024 workaround  
   - **HDR controls**  

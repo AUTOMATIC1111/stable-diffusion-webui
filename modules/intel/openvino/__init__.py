@@ -1,19 +1,34 @@
 import os
 import sys
 import torch
+import nncf
+
 from openvino.frontend import FrontEndManager
 from openvino.frontend.pytorch.fx_decoder import TorchFXPythonDecoder
 from openvino.frontend.pytorch.torchdynamo.partition import Partitioner
 from openvino.runtime import Core, Type, PartialShape, serialize
+
 from torch._dynamo.backends.common import fake_tensor_unsupported
 from torch._dynamo.backends.registry import register_backend
 from torch.fx.experimental.proxy_tensor import make_fx
 from torch.fx import GraphModule
 from torch.utils._pytree import tree_flatten
+
 from types import MappingProxyType
 from hashlib import sha256
 import functools
+
 from modules import shared, devices
+
+NNCFNodeName = str
+def get_node_by_name(self, name: NNCFNodeName) ->  nncf.common.graph.NNCFNode:
+    node_ids = self._node_name_to_node_id_map.get(name, None)
+    if node_ids is None:
+        raise RuntimeError("Could not find a node {} in NNCFGraph!".format(name))
+
+    node_key = f"{node_ids[0]} {name}"
+    return self._nodes[node_key]
+nncf.common.graph.NNCFGraph.get_node_by_name = get_node_by_name
 
 def BUILD_MAP_UNPACK(self, inst):
         items = self.popn(inst.argval)
@@ -50,18 +65,9 @@ class OpenVINOGraphModule(torch.nn.Module):
         self.executor_parameters = {"use_python_fusion_cache": use_python_fusion_cache,
                                     "model_hash_str": model_hash_str}
         self.file_name = file_name
-        self.perm_fallback = False
 
     def __call__(self, *args):
-        #if self.perm_fallback:
-        #    return self.gm(*args)
-
-        #try:
         result = openvino_execute(self.gm, *args, executor_parameters=self.executor_parameters, partition_id=self.partition_id, file_name=self.file_name)
-        #except Exception:
-        #    self.perm_fallback = True
-        #    return self.gm(*args)
-
         return result
 
 def get_device():
@@ -223,12 +229,14 @@ def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_na
         om.inputs[idx].get_node().set_element_type(dtype_mapping[input_data.dtype])
         om.inputs[idx].get_node().set_partial_shape(PartialShape(list(input_data.shape)))
     om.validate_nodes_and_infer_types()
+    if shared.opts.openvino_compress_weights:
+        om = nncf.compress_weights(om)
 
     if model_hash_str is not None:
         core.set_property({'CACHE_DIR': cache_root + '/blob'})
 
-    compiled = core.compile_model(om, device)
-    return compiled
+    compiled_model = core.compile_model(om, device)
+    return compiled_model
 
 def openvino_compile_cached_model(cached_model_path, *example_inputs):
     core = Core()
@@ -249,6 +257,8 @@ def openvino_compile_cached_model(cached_model_path, *example_inputs):
         om.inputs[idx].get_node().set_element_type(dtype_mapping[input_data.dtype])
         om.inputs[idx].get_node().set_partial_shape(PartialShape(list(input_data.shape)))
     om.validate_nodes_and_infer_types()
+    if shared.opts.openvino_compress_weights:
+        om = nncf.compress_weights(om)
 
     core.set_property({'CACHE_DIR': shared.opts.openvino_cache_path + '/blob'})
 
