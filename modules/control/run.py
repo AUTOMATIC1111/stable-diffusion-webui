@@ -118,6 +118,8 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
         n_iter = batch_count,
         batch_size = batch_size,
     )
+    processing.process_init(p)
+
     if resize_mode != 0 or inputs is None or inputs == [None]:
         p.width = width # pylint: disable=attribute-defined-outside-init
         p.height = height # pylint: disable=attribute-defined-outside-init
@@ -127,7 +129,6 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
     else:
         del p.width
         del p.height
-
 
     t0 = time.time()
     for u in units:
@@ -364,9 +365,9 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
                         processed_image = Image.fromarray(processed_image)
 
                     if unit_type == 'controlnet' and input_type == 1: # Init image same as control
+                        p.task_args['image'] = input_image
                         p.task_args['control_image'] = p.image
                         p.task_args['strength'] = p.denoising_strength
-                        p.task_args['image'] = input_image
                     elif unit_type == 'controlnet' and input_type == 2: # Separate init image
                         p.task_args['control_image'] = p.image
                         p.task_args['strength'] = p.denoising_strength
@@ -394,8 +395,10 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
                             else:
                                 pipe = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
                         elif unit_type == 'reference':
+                            p.is_control = True
                             pipe = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
                         else: # actual control
+                            p.is_control = True
                             if 'control_image' in p.task_args:
                                 pipe = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE) # only controlnet supports img2img
                             else:
