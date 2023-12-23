@@ -440,11 +440,6 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "onnx_sep": OptionInfo("<h2>ONNX Runtime</h2>", "", gr.HTML),
     "onnx_execution_provider": OptionInfo(get_default_execution_provider().value, 'Execution Provider', gr.Dropdown, lambda: {"choices": available_execution_providers }),
     "onnx_cache_converted": OptionInfo(True, 'Cache converted models'),
-
-    "onnx_olive_sep": OptionInfo("<h3>Olive</h3>", "", gr.HTML),
-    "onnx_enable_olive": OptionInfo(False, 'Optimize ONNX pipeline using Olive'),
-    "onnx_olive_float16": OptionInfo(True, 'Olive use FP16 on optimization (will use FP32 if unchecked)'),
-    "onnx_cache_optimized": OptionInfo(True, 'Olive cache optimized models'),
 }))
 
 options_templates.update(options_section(('system-paths', "System Paths"), {

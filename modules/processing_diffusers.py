@@ -7,7 +7,7 @@ import torch
 import torchvision.transforms.functional as TF
 import diffusers
 from modules import shared, devices, processing, sd_samplers, sd_models, images, errors, masking, prompt_parser_diffusers, sd_hijack_hypertile, processing_correction, processing_vae
-from modules.onnx_pipelines import OnnxStableDiffusionPipeline
+from modules.onnx import optimize_pipeline as onnx_optimize_pipeline
 
 
 debug = shared.log.trace if os.environ.get('SD_DIFFUSERS_DEBUG', None) is not None else lambda *args, **kwargs: None
@@ -21,37 +21,24 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
     orig_pipeline = shared.sd_model
     results = []
 
-    if hasattr(shared.sd_model, 'preprocess'):
-        shared.sd_model = shared.sd_model.preprocess(p)
-
-    if hasattr(shared.sd_model, 'override_processing'):
-        shared.sd_model.override_processing(p)
-
     def is_txt2img():
         return sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE
 
     def is_refiner_enabled():
         return p.enable_hr and p.refiner_steps > 0 and p.refiner_start > 0 and p.refiner_start < 1 and shared.sd_refiner is not None
 
-    def resize_images():
-        if getattr(p, 'image', None) is not None and getattr(p, 'init_images', None) is None:
-            p.init_images = [p.image]
-        if getattr(p, 'init_images', None) is not None and len(p.init_images) > 0:
-            tgt_width, tgt_height = 8 * math.ceil(p.init_images[0].width / 8), 8 * math.ceil(p.init_images[0].height / 8)
-            if p.init_images[0].size != (tgt_width, tgt_height):
-                shared.log.debug(f'Resizing init images: original={p.init_images[0].width}x{p.init_images[0].height} target={tgt_width}x{tgt_height}')
-                p.init_images = [images.resize_image(1, image, tgt_width, tgt_height, upscaler_name=None) for image in p.init_images]
-                p.height = tgt_height
-                p.width = tgt_width
-                sd_hijack_hypertile.hypertile_set(p)
-            if getattr(p, 'mask', None) is not None and p.mask.size != (tgt_width, tgt_height):
-                p.mask = images.resize_image(1, p.mask, tgt_width, tgt_height, upscaler_name=None)
-            if getattr(p, 'init_mask', None) is not None and p.init_mask.size != (tgt_width, tgt_height):
-                p.init_mask = images.resize_image(1, p.init_mask, tgt_width, tgt_height, upscaler_name=None)
-            if getattr(p, 'mask_for_overlay', None) is not None and p.mask_for_overlay.size != (tgt_width, tgt_height):
-                p.mask_for_overlay = images.resize_image(1, p.mask_for_overlay, tgt_width, tgt_height, upscaler_name=None)
-            return tgt_width, tgt_height
-        return p.width, p.height
+    if getattr(p, 'init_images', None) is not None and len(p.init_images) > 0:
+        tgt_width, tgt_height = 8 * math.ceil(p.init_images[0].width / 8), 8 * math.ceil(p.init_images[0].height / 8)
+        if p.init_images[0].width != tgt_width or p.init_images[0].height != tgt_height:
+            shared.log.debug(f'Resizing init images: original={p.init_images[0].width}x{p.init_images[0].height} target={tgt_width}x{tgt_height}')
+            p.init_images = [images.resize_image(1, image, tgt_width, tgt_height, upscaler_name=None) for image in p.init_images]
+            p.height = tgt_height
+            p.width = tgt_width
+            hypertile_set(p)
+        if getattr(p, 'mask', None) is not None and p.mask.size != (tgt_width, tgt_height):
+            p.mask = images.resize_image(1, p.mask, tgt_width, tgt_height, upscaler_name=None)
+        if getattr(p, 'mask_for_overlay', None) is not None and p.mask_for_overlay.size != (tgt_width, tgt_height):
+            p.mask_for_overlay = images.resize_image(1, p.mask_for_overlay, tgt_width, tgt_height, upscaler_name=None)
 
     def hires_resize(latents): # input=latents output=pil
         if not torch.is_tensor(latents):
@@ -226,7 +213,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             generator = [torch.Generator(generator_device).manual_seed(s) for s in p.seeds]
         prompts, negative_prompts, prompts_2, negative_prompts_2 = fix_prompts(prompts, negative_prompts, prompts_2, negative_prompts_2)
         parser = 'Fixed attention'
-        if shared.opts.prompt_attention != 'Fixed attention' and 'StableDiffusion' in model.__class__.__name__ and not isinstance(model, OnnxStableDiffusionPipeline):
+        if shared.opts.prompt_attention != 'Fixed attention' and 'StableDiffusion' in model.__class__.__name__ and 'Onnx' not in model.__class__.__name__:
             try:
                 prompt_parser_diffusers.encode_prompts(model, p, prompts, negative_prompts, kwargs.get("num_inference_steps", 1), kwargs.pop("clip_skip", None))
                 parser = shared.opts.prompt_attention
@@ -477,6 +464,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         return max(1, int(steps))
 
     shared.sd_model = update_pipeline(shared.sd_model, p)
+    onnx_optimize_pipeline(p, is_refiner_enabled())
     base_args = set_pipeline_args(
         model=shared.sd_model,
         prompts=p.prompts,
@@ -548,6 +536,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             if (latent_scale_mode is not None or p.hr_force) and p.denoising_strength > 0:
                 p.ops.append('hires')
                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
+                onnx_optimize_pipeline(p, is_refiner_enabled())
                 recompile_model(hires=True)
                 update_sampler(shared.sd_model, second_pass=True)
                 hires_args = set_pipeline_args(

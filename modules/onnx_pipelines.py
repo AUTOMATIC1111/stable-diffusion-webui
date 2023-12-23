@@ -19,6 +19,7 @@ from installer import log
 from modules import shared
 from modules.paths import sd_configs_path
 from modules.sd_models import CheckpointInfo
+from modules.sd_models_compile import CompiledModelState
 from modules.processing import StableDiffusionProcessing
 from modules.olive import config
 from modules.onnx import OnnxFakeModule, submodels_sd, submodels_sdxl, submodels_sdxl_refiner
@@ -34,11 +35,6 @@ class OnnxPipelineBase(OnnxFakeModule, diffusers.DiffusionPipeline, metaclass=AB
 
     def __init__(self):
         self.model_type = self.__class__.__name__
-
-    def override_processing(self, p: StableDiffusionProcessing):
-        disable_classifier_free_guidance = p.cfg_scale < 0.01 or "turbo" in self.sd_checkpoint_info.model_name.lower()
-        if disable_classifier_free_guidance:
-            p.cfg_scale = 0.0
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path, **_):
@@ -76,7 +72,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
     def __init__(self, constructor: Type[OnnxPipelineBase], path: os.PathLike):
         self.model_type = constructor.__name__
         self._is_sdxl = check_pipeline_sdxl(constructor)
-        self.is_refiner = "refiner" in str(path).lower()
+        self.is_refiner = self._is_sdxl and "Img2Img" in diffusers.DiffusionPipeline.load_config(path)["_class_name"]
         self.from_huggingface_cache = shared.opts.diffusers_dir in os.path.abspath(path)
         self.path = path
         self.original_filename = os.path.basename(path)
@@ -223,7 +219,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
         if os.path.isdir(out_dir): # already optimized (cached)
             return out_dir
 
-        if not shared.opts.onnx_cache_optimized:
+        if not shared.opts.olive_cache_optimized:
             out_dir = shared.opts.onnx_temp_dir
 
         try:
@@ -233,7 +229,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
             shutil.rmtree("cache", ignore_errors=True)
             shutil.rmtree("footprints", ignore_errors=True)
 
-            if shared.opts.onnx_cache_optimized:
+            if shared.opts.olive_cache_optimized:
                 shutil.copytree(
                     in_dir, out_dir, ignore=shutil.ignore_patterns("weights.pb", "*.onnx", "*.safetensors", "*.ckpt")
                 )
@@ -248,12 +244,12 @@ class OnnxRawPipeline(OnnxPipelineBase):
                 pass_key = f"optimize_{shared.opts.onnx_execution_provider}"
                 olive_config["pass_flows"] = [[pass_key]]
                 olive_config["input_model"]["config"]["model_path"] = os.path.abspath(os.path.join(in_dir, submodel, "model.onnx"))
-                olive_config["passes"][pass_key]["config"]["float16"] = shared.opts.onnx_olive_float16
+                olive_config["passes"][pass_key]["config"]["float16"] = shared.opts.olive_float16
                 olive_config["engine"]["execution_providers"] = [shared.opts.onnx_execution_provider]
                 if shared.opts.onnx_execution_provider == ExecutionProvider.CUDA or shared.opts.onnx_execution_provider == ExecutionProvider.ROCm:
                     if version.parse(ort.__version__) < version.parse("1.17.0"):
                         olive_config["passes"][pass_key]["config"]["optimization_options"] = {"enable_skip_group_norm": False}
-                    if shared.opts.onnx_olive_float16:
+                    if shared.opts.olive_float16:
                         olive_config["passes"][pass_key]["config"]["keep_io_types"] = False
 
                 run(olive_config)
@@ -330,6 +326,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
 
     def preprocess(self, p: StableDiffusionProcessing):
         in_dir = self.path if os.path.isdir(self.path) else shared.opts.onnx_temp_dir
+        disable_classifier_free_guidance = p.cfg_scale < 0.01
 
         config.from_huggingface_cache = self.from_huggingface_cache
         config.use_fp16_fixed_vae = self._is_sdxl and not shared.opts.diffusers_vae_upcast
@@ -343,9 +340,12 @@ class OnnxRawPipeline(OnnxPipelineBase):
         config.cross_attention_dim = 2048 if self._is_sdxl else (256 + p.height)
         config.time_ids_size = 6 if self._is_sdxl and not self.is_refiner else 5
 
+        if not disable_classifier_free_guidance and "turbo" in str(self.path).lower():
+            log.warning("It looks like you are trying to run a Turbo model with CFG Scale, which will lead to 'size mismatch' or 'unexpected parameter' error.")
+
         kwargs = {
             "provider": get_provider(),
-            "sess_options": get_sess_options(p.batch_size if p.cfg_scale < 0.01 or "turbo" in str(self.path).lower() else p.batch_size * 2, p.height, p.width, self._is_sdxl),
+            "sess_options": get_sess_options(p.batch_size if disable_classifier_free_guidance else p.batch_size * 2, p.height, p.width, self._is_sdxl),
         }
 
         converted_dir = self.convert(in_dir)
