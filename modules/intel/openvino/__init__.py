@@ -397,6 +397,8 @@ def openvino_fx(subgraph, example_inputs):
     if inputs_reversed:
         example_inputs.reverse()
     model = make_fx(subgraph)(*example_inputs)
+    # Deleting unused subgraphs doesn't do anything, so we cast it down to fp8
+    subgraph = subgraph.to(dtype=torch.float8_e4m3fn)
     for node in model.graph.nodes:
         if node.target == torch.ops.aten.mul_.Tensor:
             node.target = torch.ops.aten.mul.Tensor
