@@ -62,7 +62,7 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
             if network_hashes:
                 p.extra_generation_params["Lora hashes"] = ", ".join(network_hashes)
         if len(names) > 0:
-            shared.log.info(f'Applying LoRA: {names} patch={t1-t0:.2f} load={t2-t1:.2f}')
+            shared.log.info(f'LoRA apply: {names} patch={t1-t0:.2f} load={t2-t1:.2f}')
         elif self.active:
             self.active = False
 

@@ -22,15 +22,15 @@ class NetworkModuleHada(network.NetworkModule):
         self.t1 = weights.w.get("hada_t1")
         self.t2 = weights.w.get("hada_t2")
 
-    def calc_updown(self, orig_weight):
-        w1a = self.w1a.to(orig_weight.device, dtype=orig_weight.dtype)
-        w1b = self.w1b.to(orig_weight.device, dtype=orig_weight.dtype)
-        w2a = self.w2a.to(orig_weight.device, dtype=orig_weight.dtype)
-        w2b = self.w2b.to(orig_weight.device, dtype=orig_weight.dtype)
+    def calc_updown(self, target):
+        w1a = self.w1a.to(target.device, dtype=target.dtype)
+        w1b = self.w1b.to(target.device, dtype=target.dtype)
+        w2a = self.w2a.to(target.device, dtype=target.dtype)
+        w2b = self.w2b.to(target.device, dtype=target.dtype)
         output_shape = [w1a.size(0), w1b.size(1)]
         if self.t1 is not None:
             output_shape = [w1a.size(1), w1b.size(1)]
-            t1 = self.t1.to(orig_weight.device, dtype=orig_weight.dtype)
+            t1 = self.t1.to(target.device, dtype=target.dtype)
             updown1 = lyco_helpers.make_weight_cp(t1, w1a, w1b)
             output_shape += t1.shape[2:]
         else:
@@ -38,9 +38,9 @@ class NetworkModuleHada(network.NetworkModule):
                 output_shape += w1b.shape[2:]
             updown1 = lyco_helpers.rebuild_conventional(w1a, w1b, output_shape)
         if self.t2 is not None:
-            t2 = self.t2.to(orig_weight.device, dtype=orig_weight.dtype)
+            t2 = self.t2.to(target.device, dtype=target.dtype)
             updown2 = lyco_helpers.make_weight_cp(t2, w2a, w2b)
         else:
             updown2 = lyco_helpers.rebuild_conventional(w2a, w2b, output_shape)
         updown = updown1 * updown2
-        return self.finalize_updown(updown, orig_weight, output_shape)
+        return self.finalize_updown(updown, target, output_shape)

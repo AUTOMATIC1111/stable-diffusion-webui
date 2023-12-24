@@ -1,49 +1,85 @@
 import torch
-import diffusers.models.lora as diffusers_lora
 import network
-from modules import devices
+from lyco_helpers import factorization
+from einops import rearrange
+
 
 class ModuleTypeOFT(network.ModuleType):
     def create_module(self, net: network.Network, weights: network.NetworkWeights):
-        """
-        weights.w.items()
+        if all(x in weights.w for x in ["oft_blocks"]) or all(x in weights.w for x in ["oft_diag"]):
+            return NetworkModuleOFT(net, weights)
 
-        alpha  :  tensor(0.0010, dtype=torch.bfloat16)
-        oft_blocks  :  tensor([[[ 0.0000e+00,  1.4400e-04,  1.7319e-03,  ..., -8.8882e-04,
-           5.7373e-03, -4.4250e-03],
-         [-1.4400e-04,  0.0000e+00,  8.6594e-04,  ...,  1.5945e-03,
-          -8.5449e-04,  1.9684e-03], ...etc...
-         , dtype=torch.bfloat16)"""
+        return None
 
-        if "oft_blocks" in weights.w.keys():
-            module = NetworkModuleOFT(net, weights)
-            return module
-        else:
-            return None
-
-
+# Supports both kohya-ss' implementation of COFT  https://github.com/kohya-ss/sd-scripts/blob/main/networks/oft.py
+# and KohakuBlueleaf's implementation of OFT/COFT https://github.com/KohakuBlueleaf/LyCORIS/blob/dev/lycoris/modules/diag_oft.py
 class NetworkModuleOFT(network.NetworkModule):
-    def __init__(self, net: network.Network, weights: network.NetworkWeights):
+    def __init__(self,  net: network.Network, weights: network.NetworkWeights):
+
         super().__init__(net, weights)
 
-        self.weights = weights.w.get("oft_blocks").to(device=devices.device)
-        self.dim = self.weights.shape[0]  # num blocks
-        self.alpha = self.multiplier()
-        self.block_size = self.weights.shape[-1]
+        self.lin_module = None
+        self.org_module: list[torch.Module] = [self.sd_module]
 
-    def get_weight(self):
-        block_Q = self.weights - self.weights.transpose(1, 2)
-        I = torch.eye(self.block_size, device=devices.device).unsqueeze(0).repeat(self.dim, 1, 1)
-        block_R = torch.matmul(I + block_Q, (I - block_Q).inverse())
-        block_R_weighted = self.alpha * block_R + (1 - self.alpha) * I
-        R = torch.block_diag(*block_R_weighted)
-        return R
+        self.scale = 1.0
 
-    def calc_updown(self, orig_weight):
-        R = self.get_weight().to(device=devices.device, dtype=orig_weight.dtype)
-        if orig_weight.dim() == 4:
-            updown = torch.einsum("oihw, op -> pihw", orig_weight, R) * self.calc_scale()
+        # kohya-ss
+        if "oft_blocks" in weights.w.keys():
+            self.is_kohya = True
+            self.oft_blocks = weights.w["oft_blocks"] # (num_blocks, block_size, block_size)
+            self.alpha = weights.w["alpha"] # alpha is constraint
+            self.dim = self.oft_blocks.shape[0] # lora dim
+        # LyCORIS
+        elif "oft_diag" in weights.w.keys():
+            self.is_kohya = False
+            self.oft_blocks = weights.w["oft_diag"]
+            # self.alpha is unused
+            self.dim = self.oft_blocks.shape[1] # (num_blocks, block_size, block_size)
+
+        is_linear = type(self.sd_module) in [torch.nn.Linear, torch.nn.modules.linear.NonDynamicallyQuantizableLinear]
+        is_conv = type(self.sd_module) in [torch.nn.Conv2d]
+        is_other_linear = type(self.sd_module) in [torch.nn.MultiheadAttention] # unsupported
+
+        if is_linear:
+            self.out_dim = self.sd_module.out_features
+        elif is_conv:
+            self.out_dim = self.sd_module.out_channels
+        elif is_other_linear:
+            self.out_dim = self.sd_module.embed_dim
+
+        if self.is_kohya:
+            self.constraint = self.alpha * self.out_dim
+            self.num_blocks = self.dim
+            self.block_size = self.out_dim // self.dim
         else:
-            updown = torch.einsum("oi, op -> pi", orig_weight, R) * self.calc_scale()
+            self.constraint = None
+            self.block_size, self.num_blocks = factorization(self.out_dim, self.dim)
 
-        return self.finalize_updown(updown, orig_weight, orig_weight.shape)
+    def calc_updown(self, target):
+        oft_blocks = self.oft_blocks.to(target.device, dtype=target.dtype)
+        eye = torch.eye(self.block_size, device=target.device)
+        constraint = self.constraint.to(target.device)
+
+        if self.is_kohya:
+            block_Q = oft_blocks - oft_blocks.transpose(1, 2) # ensure skew-symmetric orthogonal matrix
+            norm_Q = torch.norm(block_Q.flatten()).to(target.device)
+            new_norm_Q = torch.clamp(norm_Q, max=constraint)
+            block_Q = block_Q * ((new_norm_Q + 1e-8) / (norm_Q + 1e-8))
+            mat1 = eye + block_Q
+            mat2 = (eye - block_Q).float().inverse()
+            oft_blocks = torch.matmul(mat1, mat2)
+
+        R = oft_blocks.to(target.device, dtype=target.dtype)
+
+        # This errors out for MultiheadAttention, might need to be handled up-stream
+        merged_weight = rearrange(target, '(k n) ... -> k n ...', k=self.num_blocks, n=self.block_size)
+        merged_weight = torch.einsum(
+            'k n m, k n ... -> k m ...',
+            R,
+            merged_weight
+        )
+        merged_weight = rearrange(merged_weight, 'k m ... -> (k m) ...')
+
+        updown = merged_weight.to(target.device, dtype=target.dtype) - target
+        output_shape = target.shape
+        return self.finalize_updown(updown, target, output_shape)

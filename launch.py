@@ -215,7 +215,6 @@ if __name__ == "__main__":
         installer.log.info('Startup: standard')
         installer.install_requirements()
         installer.install_packages()
-        installer.install_repositories()
         installer.install_submodules()
         init_paths()
         installer.install_extensions()

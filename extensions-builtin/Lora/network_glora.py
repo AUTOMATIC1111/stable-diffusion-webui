@@ -20,11 +20,11 @@ class NetworkModuleGLora(network.NetworkModule): # pylint: disable=abstract-meth
         self.w2a = weights.w["a2.weight"]
         self.w2b = weights.w["b2.weight"]
 
-    def calc_updown(self, orig_weight): # pylint: disable=arguments-differ
-        w1a = self.w1a.to(orig_weight.device, dtype=orig_weight.dtype)
-        w1b = self.w1b.to(orig_weight.device, dtype=orig_weight.dtype)
-        w2a = self.w2a.to(orig_weight.device, dtype=orig_weight.dtype)
-        w2b = self.w2b.to(orig_weight.device, dtype=orig_weight.dtype)
+    def calc_updown(self, target): # pylint: disable=arguments-differ
+        w1a = self.w1a.to(target.device, dtype=target.dtype)
+        w1b = self.w1b.to(target.device, dtype=target.dtype)
+        w2a = self.w2a.to(target.device, dtype=target.dtype)
+        w2b = self.w2b.to(target.device, dtype=target.dtype)
         output_shape = [w1a.size(0), w1b.size(1)]
-        updown = (w2b @ w1b) + ((orig_weight @ w2a) @ w1a)
-        return self.finalize_updown(updown, orig_weight, output_shape)
+        updown = (w2b @ w1b) + ((target @ w2a) @ w1a)
+        return self.finalize_updown(updown, target, output_shape)

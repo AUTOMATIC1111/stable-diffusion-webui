@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List
 import os
 import re
 import time
@@ -18,12 +18,12 @@ import diffusers.models.lora
 from modules import shared, devices, sd_models, sd_models_compile, errors, scripts, sd_hijack
 
 
-debug = os.environ.get('SD_LORA_DEBUG', None)
+debug = os.environ.get('SD_LORA_DEBUG', None) is not None
 originals: lora_patches.LoraPatches = None
 extra_network_lora = None
 available_networks = {}
 available_network_aliases = {}
-loaded_networks = []
+loaded_networks: List[network.Network] = []
 timer = { 'load': 0, 'apply': 0, 'restore': 0 }
 # networks_in_memory = {}
 lora_cache = {}
@@ -76,7 +76,7 @@ def assign_network_names_to_compvis_modules(sd_model):
     sd_model.network_layer_mapping = network_layer_mapping
 
 
-def load_diffusers(name, network_on_disk, lora_scale=1.0):
+def load_diffusers(name, network_on_disk, lora_scale=1.0) -> network.Network:
     t0 = time.time()
     cached = lora_cache.get(name, None)
     # if debug:
@@ -96,11 +96,11 @@ def load_diffusers(name, network_on_disk, lora_scale=1.0):
     return net
 
 
-def load_network(name, network_on_disk):
+def load_network(name, network_on_disk) -> network.Network:
     t0 = time.time()
     cached = lora_cache.get(name, None)
     if debug:
-        shared.log.debug(f'LoRA load: name="{name}" file="{network_on_disk.filename}" {"cached" if cached else ""}')
+        shared.log.debug(f'LoRA load: name="{name}" file="{network_on_disk.filename}" type=lora {"cached" if cached else ""}')
     if cached is not None:
         return cached
     net = network.Network(name, network_on_disk)
@@ -111,7 +111,16 @@ def load_network(name, network_on_disk):
     matched_networks = {}
     convert = lora_convert.KeyConvert()
     for key_network, weight in sd.items():
-        key_network_without_network_parts, network_part = key_network.split(".", 1)
+        parts = key_network.split('.')
+        if len(parts) > 5: # messy handler for diffusers peft lora
+            key_network_without_network_parts = '_'.join(parts[:-2])
+            if not key_network_without_network_parts.startswith('lora_'):
+                key_network_without_network_parts = 'lora_' + key_network_without_network_parts
+            network_part = '.'.join(parts[-2:]).replace('lora_A', 'lora_down').replace('lora_B', 'lora_up')
+        else:
+            key_network_without_network_parts, network_part = key_network.split(".", 1)
+        if debug:
+            shared.log.debug(f'LoRA load: name="{name}" full={key_network} network={network_part} key={key_network_without_network_parts}')
         key, sd_module = convert(key_network_without_network_parts)
         if sd_module is None:
             keys_failed_to_match[key_network] = key
@@ -126,12 +135,15 @@ def load_network(name, network_on_disk):
             if net_module is not None:
                 break
         if net_module is None:
-            raise AssertionError(f"Could not find a module type (out of {', '.join([x.__class__.__name__ for x in module_types])}) that would accept those keys: {', '.join(weights.w)}")
-        net.modules[key] = net_module
-    if keys_failed_to_match:
+            shared.log.error(f'LoRA unhandled: name={name} key={key} weights={weights.w.keys()}')
+        else:
+            net.modules[key] = net_module
+    if len(keys_failed_to_match) > 0:
         shared.log.warning(f"LoRA file={network_on_disk.filename} unmatched={len(keys_failed_to_match)} matched={len(matched_networks)}")
         if debug:
             shared.log.debug(f"LoRA file={network_on_disk.filename} unmatched={keys_failed_to_match}")
+    elif debug:
+        shared.log.debug(f"LoRA file={network_on_disk.filename} unmatched={len(keys_failed_to_match)} matched={len(matched_networks)}")
     lora_cache[name] = net
     t1 = time.time()
     timer['load'] += t1 - t0
@@ -169,6 +181,8 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
     for i, (network_on_disk, name) in enumerate(zip(networks_on_disk, names)):
         net = None
         if network_on_disk is not None:
+            if debug:
+                shared.log.debug(f'LoRA load start: name="{name}" file="{network_on_disk.filename}"')
             try:
                 if recompile_model:
                     shared.compiled_model_state.lora_model.append(f"{name}:{te_multipliers[i] if te_multipliers else 1.0}")
@@ -188,7 +202,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
             network_on_disk.read_hash()
         if net is None:
             failed_to_load_networks.append(name)
-            shared.log.error(f"LoRA unknown: network={name}")
+            shared.log.error(f"LoRA unknown type: network={name}")
             continue
         net.te_multiplier = te_multipliers[i] if te_multipliers else 1.0
         net.unet_multiplier = unet_multipliers[i] if unet_multipliers else 1.0
@@ -271,10 +285,11 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
     if current_names != wanted_names:
         network_restore_weights_from_backup(self)
         for net in loaded_networks:
+            # default workflow where module is known and has weights
             module = net.modules.get(network_layer_name, None)
             if module is not None and hasattr(self, 'weight'):
                 try:
-                    with torch.no_grad():
+                    with devices.inference_context():
                         updown, ex_bias = module.calc_updown(self.weight)
                         if len(self.weight.shape) == 4 and self.weight.shape[1] == 9:
                             # inpainting model. zero pad updown to make channel[1]  4 to 9
@@ -286,17 +301,21 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
                             else:
                                 self.bias += ex_bias
                 except RuntimeError as e:
-                    if debug:
-                        shared.log.debug(f"LoRA apply weight network={net.name} layer={network_layer_name} {e}")
                     extra_network_lora.errors[net.name] = extra_network_lora.errors.get(net.name, 0) + 1
+                    if debug:
+                        module_name = net.modules.get(network_layer_name, None)
+                        shared.log.error(f"LoRA apply weight name={net.name} module={module_name} layer={network_layer_name} {e}")
+                        errors.display(e, 'LoRA apply weight')
+                        raise RuntimeError('LoRA apply weight') from e
                 continue
+            # alternative workflow looking at _*_proj layers
             module_q = net.modules.get(network_layer_name + "_q_proj", None)
             module_k = net.modules.get(network_layer_name + "_k_proj", None)
             module_v = net.modules.get(network_layer_name + "_v_proj", None)
             module_out = net.modules.get(network_layer_name + "_out_proj", None)
             if isinstance(self, torch.nn.MultiheadAttention) and module_q and module_k and module_v and module_out:
                 try:
-                    with torch.no_grad():
+                    with devices.inference_context():
                         updown_q, _ = module_q.calc_updown(self.in_proj_weight)
                         updown_k, _ = module_k.calc_updown(self.in_proj_weight)
                         updown_v, _ = module_v.calc_updown(self.in_proj_weight)

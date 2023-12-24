@@ -574,36 +574,6 @@ def install_packages():
         print_profile(pr, 'Packages')
 
 
-# clone required repositories
-def install_repositories():
-    """
-    if args.profile:
-        pr = cProfile.Profile()
-        pr.enable()
-    def d(name):
-        return os.path.join(os.path.dirname(__file__), 'repositories', name)
-    log.info('Verifying repositories')
-    os.makedirs(os.path.join(os.path.dirname(__file__), 'repositories'), exist_ok=True)
-    stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://github.com/Stability-AI/stablediffusion.git")
-    stable_diffusion_commit = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', None)
-    clone(stable_diffusion_repo, d('stable-diffusion-stability-ai'), stable_diffusion_commit)
-    taming_transformers_repo = os.environ.get('TAMING_TRANSFORMERS_REPO', "https://github.com/CompVis/taming-transformers.git")
-    taming_transformers_commit = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', None)
-    clone(taming_transformers_repo, d('taming-transformers'), taming_transformers_commit)
-    k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/crowsonkb/k-diffusion.git')
-    k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', '0455157')
-    clone(k_diffusion_repo, d('k-diffusion'), k_diffusion_commit)
-    codeformer_repo = os.environ.get('CODEFORMER_REPO', 'https://github.com/sczhou/CodeFormer.git')
-    codeformer_commit = os.environ.get('CODEFORMER_COMMIT_HASH', "7a584fd")
-    clone(codeformer_repo, d('CodeFormer'), codeformer_commit)
-    blip_repo = os.environ.get('BLIP_REPO', 'https://github.com/salesforce/BLIP.git')
-    blip_commit = os.environ.get('BLIP_COMMIT_HASH', None)
-    clone(blip_repo, d('BLIP'), blip_commit)
-    if args.profile:
-        print_profile(pr, 'Repositories')
-    """
-
-
 # run extension installer
 def run_extension_installer(folder):
     path_installer = os.path.realpath(os.path.join(folder, "install.py"))
@@ -776,6 +746,7 @@ def set_environment():
     os.environ.setdefault('USE_TORCH', '1')
     os.environ.setdefault('UVICORN_TIMEOUT_KEEP_ALIVE', '60')
     os.environ.setdefault('KINETO_LOG_LEVEL', '3')
+    os.environ.setdefault('DO_NOT_TRACK', '1')
     os.environ.setdefault('HF_HUB_CACHE', opts.get('hfcache_dir', os.path.join(os.path.expanduser('~'), '.cache', 'huggingface', 'hub')))
     log.debug(f'Cache folder: {os.environ.get("HF_HUB_CACHE")}')
     if sys.platform == 'darwin':

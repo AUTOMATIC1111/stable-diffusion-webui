@@ -1,17 +1,17 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-23
+## Update for 2023-12-24
 
 *Note*: based on `diffusers==0.25.0.dev0`
 
-- **Control**
+- **Control**  
   - native implementation of **ControlNet**, **ControlNet XS**, **T2I Adapters** and **IP Adapters**  
-  - top-level **Control** next to **Text** and **Image** generate
-  - supports all variations of **SD15** and **SD-XL** models
+  - top-level **Control** next to **Text** and **Image** generate  
+  - supports all variations of **SD15** and **SD-XL** models  
   - supports *Text*, *Image*, *Batch* and *Video* processing  
   - for details and list of supported models and workflows, see Wiki documentation:  
-    <https://github.com/vladmandic/automatic/wiki/Control>
-- **Diffusers**
+    <https://github.com/vladmandic/automatic/wiki/Control>  
+- **Diffusers**  
   - **AnimateDiff**  
     - can now be used with *second pass* - enhance, upscale and hires your videos!  
   - **IP Adapter**  
@@ -58,6 +58,8 @@
     - add support for block weights, thanks @AI-Casanova  
       example `<lora:SDXL_LCM_LoRA:1.0:in=0:mid=1:out=0>`  
     - add support for LyCORIS GLora networks  
+    - add support for LoRA PEFT (*Diffusers*) networks  
+    - add support for Lora-OFT (*Kohya*) and Lyco-OFT (*Kohaku*) networks  
     - reintroduce alternative loading method in settings: `lora_force_diffusers`  
     - add support for `lora_fuse_diffusers` if using alternative method  
       use if you have multiple complex loras that may be causing performance degradation  
