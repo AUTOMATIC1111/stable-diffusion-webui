@@ -119,8 +119,8 @@ def load_network(name, network_on_disk) -> network.Network:
             network_part = '.'.join(parts[-2:]).replace('lora_A', 'lora_down').replace('lora_B', 'lora_up')
         else:
             key_network_without_network_parts, network_part = key_network.split(".", 1)
-        if debug:
-            shared.log.debug(f'LoRA load: name="{name}" full={key_network} network={network_part} key={key_network_without_network_parts}')
+        # if debug:
+        #     shared.log.debug(f'LoRA load: name="{name}" full={key_network} network={network_part} key={key_network_without_network_parts}')
         key, sd_module = convert(key_network_without_network_parts)
         if sd_module is None:
             keys_failed_to_match[key_network] = key
