@@ -87,15 +87,10 @@ def set_adapter(adapter_name: str = 'None'):
             motion_adapter=motion_adapter,
         )
         orig_pipe = shared.sd_model
-        new_pipe.sd_checkpoint_info = shared.sd_model.sd_checkpoint_info
-        new_pipe.sd_model_hash = shared.sd_model.sd_model_hash
-        new_pipe.sd_model_checkpoint = shared.sd_model.sd_checkpoint_info.filename
-        new_pipe.is_sdxl = False
-        new_pipe.is_sd2 = False
-        new_pipe.is_sd1 = True
         shared.sd_model = new_pipe
         if not ((shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) or (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram)):
             shared.sd_model.to(shared.device)
+        sd_models.copy_diffuser_options(new_pipe, orig_pipe)
         sd_models.set_diffuser_options(shared.sd_model, vae=None, op='model')
         shared.log.debug(f'AnimateDiff create pipeline: adapter="{loaded_adapter}"')
     except Exception as e:

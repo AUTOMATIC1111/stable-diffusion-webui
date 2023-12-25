@@ -474,10 +474,10 @@ def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, 
     model.sd_model_checkpoint = checkpoint_info.filename
     model.sd_checkpoint_info = checkpoint_info
     model.is_sdxl = False # a1111 compatibility item
-    model.is_sd2 = False # a1111 compatibility item
-    model.is_sd1 = True # a1111 compatibility item
-    shared.opts.data["sd_checkpoint_hash"] = checkpoint_info.sha256
+    model.is_sd2 = hasattr(model.cond_stage_model, 'model') # a1111 compatibility item
+    model.is_sd1 = not hasattr(model.cond_stage_model, 'model') # a1111 compatibility item
     model.logvar = model.logvar.to(devices.device)  # fix for training
+    shared.opts.data["sd_checkpoint_hash"] = checkpoint_info.sha256
     sd_vae.delete_base_vae()
     sd_vae.clear_loaded_vae()
     vae_file, vae_source = sd_vae.resolve_vae(checkpoint_info.filename)
@@ -686,9 +686,9 @@ def copy_diffuser_options(new_pipe, orig_pipe):
     new_pipe.sd_model_hash = orig_pipe.sd_model_hash
     new_pipe.has_accelerate = orig_pipe.has_accelerate
     new_pipe.embedding_db = orig_pipe.embedding_db
-    new_pipe.is_sdxl = True # pylint: disable=attribute-defined-outside-init # a1111 compatibility item
-    new_pipe.is_sd2 = False # pylint: disable=attribute-defined-outside-init
-    new_pipe.is_sd1 = False # pylint: disable=attribute-defined-outside-init
+    new_pipe.is_sdxl = orig_pipe.is_sdxl # pylint: disable=attribute-defined-outside-init # a1111 compatibility item
+    new_pipe.is_sd2 = orig_pipe.is_sd2 # pylint: disable=attribute-defined-outside-init
+    new_pipe.is_sd1 = orig_pipe.is_sdv1 # pylint: disable=attribute-defined-outside-init
 
 
 
@@ -1069,9 +1069,9 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     new_pipe.embedding_db = embedding_db
     new_pipe.image_encoder = image_encoder
     new_pipe.feature_extractor = feature_extractor
-    new_pipe.is_sdxl = True # pylint: disable=attribute-defined-outside-init # a1111 compatibility item
-    new_pipe.is_sd2 = False # pylint: disable=attribute-defined-outside-init
-    new_pipe.is_sd1 = False # pylint: disable=attribute-defined-outside-init
+    new_pipe.is_sdxl = pipe.is_sdxl
+    new_pipe.is_sd2 = pipe.is_sd2
+    new_pipe.is_sd1 = pipe.is_sd1
     shared.log.debug(f"Pipeline class change: original={pipe.__class__.__name__} target={new_pipe.__class__.__name__}")
     pipe = new_pipe
     return pipe
