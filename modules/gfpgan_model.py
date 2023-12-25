@@ -1,8 +1,5 @@
 import os
 
-import facexlib
-import gfpgan
-
 import modules.face_restoration
 from modules import paths, shared, devices, modelloader, errors
 
@@ -40,6 +37,8 @@ def gfpgann():
     else:
         print("Unable to load gfpgan model!")
         return None
+
+    import facexlib.detection.retinaface
 
     if hasattr(facexlib.detection.retinaface, 'device'):
         facexlib.detection.retinaface.device = devices.device_gfpgan
@@ -81,8 +80,10 @@ gfpgan_constructor = None
 def setup_model(dirname):
     try:
         os.makedirs(model_path, exist_ok=True)
-        from gfpgan import GFPGANer
-        from facexlib import detection, parsing  # noqa: F401
+        import gfpgan
+        import facexlib.detection
+        import facexlib.parsing
+
         global user_path
         global have_gfpgan
         global gfpgan_constructor
@@ -111,7 +112,7 @@ def setup_model(dirname):
         facexlib.parsing.load_file_from_url = facex_load_file_from_url2
         user_path = dirname
         have_gfpgan = True
-        gfpgan_constructor = GFPGANer
+        gfpgan_constructor = gfpgan.GFPGANer
 
         class FaceRestorerGFPGAN(modules.face_restoration.FaceRestoration):
             def name(self):
