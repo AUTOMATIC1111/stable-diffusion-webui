@@ -419,6 +419,7 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
                         debug(f'Control exec pipeline: task={sd_models.get_diffusers_task(pipe)}')
                         debug(f'Control exec pipeline: p={vars(p)}')
                         debug(f'Control exec pipeline: args={p.task_args}')
+                        debug(f'Control exec pipeline: image={p.task_args.get("image", None)}')
                         processed: processing.Processed = processing.process_images(p) # run actual pipeline
                         output = processed.images if processed is not None else None
                         # output = pipe(**vars(p)).images # alternative direct pipe exec call

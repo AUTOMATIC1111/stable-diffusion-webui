@@ -124,7 +124,6 @@ class AdapterPipeline():
                 tokenizer_2=pipeline.tokenizer_2,
                 unet=pipeline.unet,
                 scheduler=pipeline.scheduler,
-                image_encoder=getattr(pipeline, 'image_encoder', None),
                 feature_extractor=getattr(pipeline, 'feature_extractor', None),
                 adapter=adapter,
             ).to(pipeline.device)
@@ -135,7 +134,6 @@ class AdapterPipeline():
                 tokenizer=pipeline.tokenizer,
                 unet=pipeline.unet,
                 scheduler=pipeline.scheduler,
-                image_encoder=getattr(pipeline, 'image_encoder', None),
                 feature_extractor=getattr(pipeline, 'feature_extractor', None),
                 requires_safety_checker=False,
                 safety_checker=None,

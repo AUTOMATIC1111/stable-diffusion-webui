@@ -686,9 +686,9 @@ def copy_diffuser_options(new_pipe, orig_pipe):
     new_pipe.sd_model_hash = orig_pipe.sd_model_hash
     new_pipe.has_accelerate = orig_pipe.has_accelerate
     new_pipe.embedding_db = orig_pipe.embedding_db
-    new_pipe.is_sdxl = orig_pipe.is_sdxl # pylint: disable=attribute-defined-outside-init # a1111 compatibility item
-    new_pipe.is_sd2 = orig_pipe.is_sd2 # pylint: disable=attribute-defined-outside-init
-    new_pipe.is_sd1 = orig_pipe.is_sdv1 # pylint: disable=attribute-defined-outside-init
+    new_pipe.is_sdxl = getattr(orig_pipe, 'is_sdxl', False) # pylint: disable=attribute-defined-outside-init # a1111 compatibility item
+    new_pipe.is_sd2 = getattr(orig_pipe, 'is_sd2', False) # pylint: disable=attribute-defined-outside-init
+    new_pipe.is_sd1 = getattr(orig_pipe, 'is_sd1', True) # pylint: disable=attribute-defined-outside-init
 
 
 
