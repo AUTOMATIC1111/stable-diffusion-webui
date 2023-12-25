@@ -64,9 +64,8 @@ def image_grid(imgs, batch_size=1, rows=None):
 Grid = namedtuple("Grid", ["tiles", "tile_w", "tile_h", "image_w", "image_h", "overlap"])
 
 
-def split_grid(image, tile_w=512, tile_h=512, overlap=64):
-    w = image.width
-    h = image.height
+def split_grid(image: Image.Image, tile_w: int = 512, tile_h: int = 512, overlap: int = 64) -> Grid:
+    w, h = image.size
 
     non_overlap_width = tile_w - overlap
     non_overlap_height = tile_h - overlap
