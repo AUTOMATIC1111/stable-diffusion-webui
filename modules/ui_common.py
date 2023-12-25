@@ -13,6 +13,8 @@ import modules.script_callbacks
 
 
 folder_symbol = symbols.folder
+debug = shared.log.trace if os.environ.get('SD_PASTE_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug('Trace: PASTE')
 
 
 def update_generation_info(generation_info, html_info, img_index):
@@ -214,7 +216,10 @@ def create_output_panel(tabname, preview=True):
                     clip_files.click(fn=None, _js='clip_gallery_urls', inputs=[result_gallery], outputs=[])
                 save = gr.Button('Save', elem_id=f'save_{tabname}')
                 delete = gr.Button('Delete', elem_id=f'delete_{tabname}')
-                buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras", "control"])
+                if shared.backend == shared.Backend.ORIGINAL:
+                    buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras"])
+                else:
+                    buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "control", "extras"])
 
             download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
             with gr.Group():
@@ -245,9 +250,9 @@ def create_output_panel(tabname, preview=True):
             else:
                 paste_field_names = []
             for paste_tabname, paste_button in buttons.items():
-                parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
-                    paste_button=paste_button, tabname=paste_tabname, source_tabname=("txt2img" if tabname == "txt2img" else None), source_image_component=result_gallery, paste_field_names=paste_field_names
-                ))
+                debug(f'Create output panel: button={paste_button} tabname={paste_tabname}')
+                bindings = parameters_copypaste.ParamBinding(paste_button=paste_button, tabname=paste_tabname, source_tabname=("txt2img" if tabname == "txt2img" else None), source_image_component=result_gallery, paste_field_names=paste_field_names)
+                parameters_copypaste.register_paste_params_button(bindings)
             return result_gallery, generation_info, html_info, html_info_formatted, html_log
 
 

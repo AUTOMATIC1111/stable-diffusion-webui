@@ -1,8 +1,7 @@
 import os
 import time
-from diffusers import StableDiffusionPipeline
-from diffusers import StableDiffusionXLPipeline
-from diffusers import ControlNetModel, StableDiffusionControlNetPipeline, StableDiffusionXLControlNetPipeline
+from typing import Union
+from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline, ControlNetModel, StableDiffusionControlNetPipeline, StableDiffusionXLControlNetPipeline
 from modules.shared import log, opts
 from modules import errors
 
@@ -38,11 +37,11 @@ models = {}
 all_models = {}
 all_models.update(predefined_sd15)
 all_models.update(predefined_sdxl)
-cache_dir = 'models/control/controlnets'
+cache_dir = 'models/control/controlnet'
 
 
 def find_models():
-    path = os.path.join(opts.control_dir, 'controlnets')
+    path = os.path.join(opts.control_dir, 'controlnet')
     files = os.listdir(path)
     files = [f for f in files if f.endswith('.safetensors')]
     downloaded_models = {}
@@ -123,14 +122,14 @@ class ControlNet():
 
 
 class ControlNetPipeline():
-    def __init__(self, controlnet: ControlNetModel | list[ControlNetModel], pipeline: StableDiffusionXLPipeline | StableDiffusionPipeline, dtype = None):
+    def __init__(self, controlnet: Union[ControlNetModel, list[ControlNetModel]], pipeline: Union[StableDiffusionXLPipeline, StableDiffusionPipeline], dtype = None):
         t0 = time.time()
         self.orig_pipeline = pipeline
         self.pipeline = None
         if pipeline is None:
             log.error('Control model pipeline: model not loaded')
             return
-        if isinstance(pipeline, StableDiffusionXLPipeline):
+        elif isinstance(pipeline, StableDiffusionXLPipeline):
             self.pipeline = StableDiffusionXLControlNetPipeline(
                 vae=pipeline.vae,
                 text_encoder=pipeline.text_encoder,

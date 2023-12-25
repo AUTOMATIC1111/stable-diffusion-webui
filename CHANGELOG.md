@@ -1,11 +1,12 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-24
+## Update for 2023-12-25
 
 *Note*: based on `diffusers==0.25.0.dev0`
 
 - **Control**  
-  - native implementation of **ControlNet**, **ControlNet XS**, **T2I Adapters** and **IP Adapters**  
+  - native implementation of all image control methods:  
+    **ControlNet**, **ControlNet XS**, **Control LLLite**, **T2I Adapters** and **IP Adapters**  
   - top-level **Control** next to **Text** and **Image** generate  
   - supports all variations of **SD15** and **SD-XL** models  
   - supports *Text*, *Image*, *Batch* and *Video* processing  
@@ -104,6 +105,7 @@
     - improve handling of long filenames and filenames during batch processing  
     - do not set preview samples when using via api  
     - avoid unnecessary resizes in img2img and inpaint  
+    - safe handling of config updates avoid file corruption on I/O errors  
     - updated `cli/simple-txt2img.py` and `cli/simple-img2img.py` scripts  
     - save `params.txt` regardless of image save status  
     - update built-in log monitor in ui, thanks @midcoastal  

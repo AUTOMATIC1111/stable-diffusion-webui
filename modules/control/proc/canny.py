@@ -31,5 +31,6 @@ class CannyDetector:
 
         if output_type == "pil":
             detected_map = Image.fromarray(detected_map)
+            detected_map = detected_map.convert('L')
 
         return detected_map

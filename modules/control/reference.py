@@ -1,8 +1,8 @@
 import time
 from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline
-from modules.shared import log
 from modules.control.proc.reference_sd15 import StableDiffusionReferencePipeline
 from modules.control.proc.reference_sdxl import StableDiffusionXLReferencePipeline
+from modules.shared import log
 
 
 what = 'Reference'

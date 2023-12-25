@@ -6,7 +6,7 @@ from typing import Dict
 from urllib.parse import urlparse
 import PIL.Image as Image
 import rich.progress as p
-from modules import shared
+from modules import shared, errors
 from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone
 from modules.paths import script_path, models_path
 
@@ -68,6 +68,7 @@ def download_civit_meta(model_path: str, model_id):
             return msg
         except Exception as e:
             msg = f'CivitAI download error: id={model_id} url={url} file={fn} {e}'
+            errors.display(e, 'CivitAI download error')
             shared.log.error(msg)
             return msg
     return f'CivitAI download error: id={model_id} url={url} code={r.status_code}'
@@ -100,7 +101,8 @@ def download_civit_preview(model_path: str, preview_url: str):
     except Exception as e:
         os.remove(preview_file)
         res += f' error={e}'
-        shared.log.error(f'CivitAI download error: url={preview_url} file={preview_file} {e}')
+        shared.log.error(f'CivitAI download error: url={preview_url} file={preview_file} written={written} {e}')
+        errors.display(e, 'CivitAI download error')
     shared.state.end()
     if img is None:
         return res

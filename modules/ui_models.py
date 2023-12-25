@@ -515,7 +515,8 @@ def create_ui():
                             continue
                         for item in page.list_items():
                             meta = os.path.splitext(item['filename'])[0] + '.json'
-                            if ('card-no-preview.png' in item['preview'] or not os.path.isfile(meta)) and os.path.isfile(item['filename']):
+                            has_meta = os.path.isfile(meta) and os.stat(meta).st_size > 0
+                            if ('card-no-preview.png' in item['preview'] or not has_meta) and os.path.isfile(item['filename']):
                                 sha = item.get('hash', None)
                                 found = False
                                 if sha is not None and len(sha) > 0:

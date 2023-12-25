@@ -11,6 +11,7 @@ from modules.control import unit
 from modules.control import processors
 from modules.control import controlnets # lllyasviel ControlNet
 from modules.control import controlnetsxs # VisLearn ControlNet-XS
+from modules.control import controlnetslite # Kohya ControlLLLite
 from modules.control import adapters # TencentARC T2I-Adapter
 from modules.control import reference # ControlNet-Reference
 from modules.control import ipadapter # IP-Adapter
@@ -156,7 +157,11 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
             active_strength.append(float(u.strength))
             active_start.append(float(u.start))
             active_end.append(float(u.end))
-            p.guess_mode = u.guess
+            shared.log.debug(f'Control ControlNet-XS unit: process={u.process.processor_id} model={u.controlnet.model_id} strength={u.strength} guess={u.guess} start={u.start} end={u.end}')
+        elif unit_type == 'lite' and u.controlnet.model is not None:
+            active_process.append(u.process)
+            active_model.append(u.controlnet)
+            active_strength.append(float(u.strength))
             shared.log.debug(f'Control ControlNet-XS unit: process={u.process.processor_id} model={u.controlnet.model_id} strength={u.strength} guess={u.guess} start={u.start} end={u.end}')
         elif unit_type == 'reference':
             p.override = u.override
@@ -173,7 +178,7 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
 
     has_models = False
     selected_models: List[Union[controlnets.ControlNetModel, controlnetsxs.ControlNetXSModel, adapters.AdapterModel]] = None
-    if unit_type == 'adapter' or unit_type == 'controlnet' or unit_type == 'xs':
+    if unit_type == 'adapter' or unit_type == 'controlnet' or unit_type == 'xs' or unit_type == 'lite':
         if len(active_model) == 0:
             selected_models = None
         elif len(active_model) == 1:
@@ -216,6 +221,14 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
         pipe = instance.pipeline
         if inits is not None:
             shared.log.warning('Control: ControlNet-XS does not support separate init image')
+    elif unit_type == 'lite' and has_models:
+        p.extra_generation_params["Control mode"] = 'ControlLLLite'
+        p.extra_generation_params["Control conditioning"] = use_conditioning
+        p.controlnet_conditioning_scale = use_conditioning
+        instance = controlnetslite.ControlLLitePipeline(shared.sd_model)
+        pipe = instance.pipeline
+        if inits is not None:
+            shared.log.warning('Control: ControlLLLite does not support separate init image')
     elif unit_type == 'reference':
         p.extra_generation_params["Control mode"] = 'Reference'
         p.extra_generation_params["Control attention"] = p.attention
@@ -232,6 +245,8 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
         if len(active_strength) > 0:
             p.strength = active_strength[0]
         pipe = diffusers.AutoPipelineForImage2Image.from_pipe(shared.sd_model) # use set_diffuser_pipe
+        instance = None
+
     debug(f'Control pipeline: class={pipe.__class__} args={vars(p)}')
     t1, t2, t3 = time.time(), 0, 0
     status = True
@@ -396,7 +411,7 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
                     if hasattr(p, 'init_images'):
                         del p.init_images # control never uses init_image as-is
                     if pipe is not None:
-                        if not has_models and (unit_type == 'controlnet' or unit_type == 'adapter' or unit_type == 'xs'): # run in txt2img or img2img mode
+                        if not has_models and (unit_type == 'controlnet' or unit_type == 'adapter' or unit_type == 'xs' or unit_type == 'lite'): # run in txt2img or img2img mode
                             if processed_image is not None:
                                 p.init_images = [processed_image]
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
@@ -411,6 +426,8 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE) # only controlnet supports img2img
                             else:
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
+                            if unit_type == 'lite':
+                                instance.apply(selected_models, p.image, use_conditioning)
 
                     # pipeline
                     output = None
@@ -480,6 +497,8 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
         image_txt = f'| Frames {len(output_images)} | Size {output_images[0].width}x{output_images[0].height}'
 
     image_txt += f' | {util.dict2str(p.extra_generation_params)}'
+    if hasattr(instance, 'restore'):
+        instance.restore()
     restore_pipeline()
     debug(f'Control ready: {image_txt}')
     if is_generator:

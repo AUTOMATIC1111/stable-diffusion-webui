@@ -217,6 +217,8 @@ def readfile(filename, silent=False, lock=False):
 def writefile(data, filename, mode='w', silent=False):
     lock = None
     locked = False
+    import tempfile
+
 
     def default(obj):
         log.error(f"Saving: {filename} not a valid object: {obj}")
@@ -239,13 +241,19 @@ def writefile(data, filename, mode='w', silent=False):
             raise ValueError('not a valid object')
         lock = fasteners.InterProcessReaderWriterLock(f"{filename}.lock", logger=log)
         locked = lock.acquire_write_lock(blocking=True, timeout=3)
-        with open(filename, mode, encoding="utf8") as file:
-            file.write(output)
+        with tempfile.NamedTemporaryFile(mode=mode, encoding="utf8", delete=False, dir=os.path.dirname(filename)) as f:
+            f.write(output)
+            f.flush()
+            os.fsync(f.fileno())
+            os.replace(f.name, filename)
+        # with open(filename, mode=mode, encoding="utf8") as file:
+        #    file.write(output)
         t1 = time.time()
         if not silent:
             log.debug(f'Save: file="{filename}" json={len(data)} bytes={len(output)} time={t1-t0:.3f}')
     except Exception as e:
         log.error(f'Saving failed: {filename} {e}')
+        errors.display(e, 'Saving failed')
     finally:
         if lock is not None:
             lock.release_read_lock()

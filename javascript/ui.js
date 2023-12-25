@@ -66,45 +66,54 @@ function extract_image_from_gallery(gallery) {
 
 window.args_to_array = Array.from; // Compatibility with e.g. extensions that may expect this to be around
 
+function switchToTab(tab) {
+  const tabs = Array.from(gradioApp().querySelectorAll('#tabs > .tab-nav > button'));
+  const btn = tabs?.find((t) => t.innerText === tab);
+  log('switchToTab', tab);
+  if (btn) btn.click();
+}
+
 function switch_to_txt2img(...args) {
-  gradioApp().querySelector('#tabs').querySelectorAll('button')[0].click();
+  switchToTab('Text');
   return Array.from(arguments);
 }
 
 function switch_to_img2img_tab(no) {
-  gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
+  switchToTab('Image');
   gradioApp().getElementById('mode_img2img').querySelectorAll('button')[no].click();
 }
 
 function switch_to_img2img(...args) {
+  switchToTab('Image');
   switch_to_img2img_tab(0);
   return Array.from(arguments);
 }
 
 function switch_to_sketch(...args) {
+  switchToTab('Image');
   switch_to_img2img_tab(1);
   return Array.from(arguments);
 }
 
 function switch_to_inpaint(...args) {
+  switchToTab('Image');
   switch_to_img2img_tab(2);
   return Array.from(arguments);
 }
 
 function switch_to_inpaint_sketch(...args) {
+  switchToTab('Image');
   switch_to_img2img_tab(3);
   return Array.from(arguments);
 }
 
 function switch_to_extras(...args) {
-  gradioApp().querySelector('#tabs').querySelectorAll('button')[2].click();
+  switchToTab('Process');
   return Array.from(arguments);
 }
 
 function switch_to_control(...args) {
-  const tabs = Array.from(gradioApp().querySelector('#tabs').querySelectorAll('button'));
-  const btn = tabs.find((el) => el.innerText.toLowerCase() === 'control');
-  btn.click();
+  switchToTab('Control');
   return Array.from(arguments);
 }
 

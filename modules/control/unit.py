@@ -4,6 +4,7 @@ from modules.shared import log
 from modules.control import processors
 from modules.control import controlnets
 from modules.control import controlnetsxs
+from modules.control import controlnetslite
 from modules.control import adapters
 from modules.control import reference # pylint: disable=unused-import
 
@@ -110,6 +111,8 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
             self.controlnet = controlnets.ControlNet(device=default_device, dtype=default_dtype)
         elif self.type == 'xs':
             self.controlnet = controlnetsxs.ControlNetXS(device=default_device, dtype=default_dtype)
+        elif self.type == 'lite':
+            self.controlnet = controlnetslite.ControlLLLite(device=default_device, dtype=default_dtype)
         elif self.type == 'reference':
             pass
         else:
@@ -130,6 +133,11 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
         elif self.type == 'xs':
             if model_id is not None:
                 model_id.change(fn=self.controlnet.load, inputs=[model_id, extra_controls[0]], outputs=[result_txt], show_progress=True)
+            if extra_controls is not None and len(extra_controls) > 0:
+                extra_controls[0].change(fn=controlnetxs_extra, inputs=extra_controls)
+        elif self.type == 'lite':
+            if model_id is not None:
+                model_id.change(fn=self.controlnet.load, inputs=[model_id], outputs=[result_txt], show_progress=True)
             if extra_controls is not None and len(extra_controls) > 0:
                 extra_controls[0].change(fn=controlnetxs_extra, inputs=extra_controls)
         elif self.type == 'reference':

@@ -1,13 +1,12 @@
 import os
 import time
+from typing import Union
 from modules.shared import log, opts
 from modules import errors
 
 ok = True
 try:
-    from diffusers import StableDiffusionPipeline
-    from diffusers import StableDiffusionXLPipeline
-    from diffusers import ControlNetXSModel, StableDiffusionControlNetXSPipeline, StableDiffusionXLControlNetXSPipeline
+    from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline, ControlNetXSModel, StableDiffusionControlNetXSPipeline, StableDiffusionXLControlNetXSPipeline
 except Exception:
     from diffusers import ControlNetModel
     ControlNetXSModel = ControlNetModel # dummy
@@ -27,11 +26,11 @@ models = {}
 all_models = {}
 all_models.update(predefined_sd15)
 all_models.update(predefined_sdxl)
-cache_dir = 'models/control/controlnetsxs'
+cache_dir = 'models/control/xs'
 
 
 def find_models():
-    path = os.path.join(opts.control_dir, 'controlnetsxs')
+    path = os.path.join(opts.control_dir, 'xs')
     files = os.listdir(path)
     files = [f for f in files if f.endswith('.safetensors')]
     downloaded_models = {}
@@ -115,7 +114,7 @@ class ControlNetXS():
 
 
 class ControlNetXSPipeline():
-    def __init__(self, controlnet: ControlNetXSModel | list[ControlNetXSModel], pipeline: StableDiffusionXLPipeline | StableDiffusionPipeline, dtype = None):
+    def __init__(self, controlnet: Union[ControlNetXSModel, list[ControlNetXSModel]], pipeline: Union[StableDiffusionXLPipeline, StableDiffusionPipeline], dtype = None):
         t0 = time.time()
         self.orig_pipeline = pipeline
         self.pipeline = None
