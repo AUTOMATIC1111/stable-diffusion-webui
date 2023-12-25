@@ -7,7 +7,6 @@ clean-fid==0.1.35
 einops==0.4.1
 facexlib==0.3.0
 fastapi==0.94.0
-gfpgan==1.3.8
 gradio==3.41.2
 httpcore==0.15
 inflection==0.5.1

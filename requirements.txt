@@ -8,7 +8,6 @@ clean-fid
 einops
 facexlib
 fastapi>=0.90.1
-gfpgan
 gradio==3.41.2
 inflection
 jsonmerge
