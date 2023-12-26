@@ -476,7 +476,7 @@ def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, 
     model.is_sdxl = False # a1111 compatibility item
     model.is_sd2 = hasattr(model.cond_stage_model, 'model') # a1111 compatibility item
     model.is_sd1 = not hasattr(model.cond_stage_model, 'model') # a1111 compatibility item
-    model.logvar = model.logvar.to(devices.device)  # fix for training
+    model.logvar = model.logvar.to(devices.device) if hasattr(model, 'logvar') else None # fix for training
     shared.opts.data["sd_checkpoint_hash"] = checkpoint_info.sha256
     sd_vae.delete_base_vae()
     sd_vae.clear_loaded_vae()
@@ -683,12 +683,12 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
 def copy_diffuser_options(new_pipe, orig_pipe):
     new_pipe.sd_checkpoint_info = orig_pipe.sd_checkpoint_info
     new_pipe.sd_model_checkpoint = orig_pipe.sd_model_checkpoint
-    new_pipe.sd_model_hash = orig_pipe.sd_model_hash
-    new_pipe.has_accelerate = orig_pipe.has_accelerate
-    new_pipe.embedding_db = orig_pipe.embedding_db
-    new_pipe.is_sdxl = getattr(orig_pipe, 'is_sdxl', False) # pylint: disable=attribute-defined-outside-init # a1111 compatibility item
-    new_pipe.is_sd2 = getattr(orig_pipe, 'is_sd2', False) # pylint: disable=attribute-defined-outside-init
-    new_pipe.is_sd1 = getattr(orig_pipe, 'is_sd1', True) # pylint: disable=attribute-defined-outside-init
+    new_pipe.embedding_db = getattr(orig_pipe, 'embedding_db', None)
+    new_pipe.sd_model_hash = getattr(orig_pipe, 'sd_model_hash', None)
+    new_pipe.has_accelerate = getattr(orig_pipe, 'has_accelerate', False)
+    new_pipe.is_sdxl = getattr(orig_pipe, 'is_sdxl', False) # a1111 compatibility item
+    new_pipe.is_sd2 = getattr(orig_pipe, 'is_sd2', False)
+    new_pipe.is_sd1 = getattr(orig_pipe, 'is_sd1', True)
 
 
 
@@ -970,6 +970,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         sd_model.sd_model_hash = checkpoint_info.calculate_shorthash() # pylint: disable=attribute-defined-outside-init
         sd_model.sd_checkpoint_info = checkpoint_info # pylint: disable=attribute-defined-outside-init
         sd_model.sd_model_checkpoint = checkpoint_info.filename # pylint: disable=attribute-defined-outside-init
+        sd_model.is_sdxl = False # a1111 compatibility item
+        sd_model.is_sd2 = hasattr(sd_model, 'cond_stage_model') and hasattr(sd_model.cond_stage_model, 'model') # a1111 compatibility item
+        sd_model.is_sd1 = not sd_model.is_sd2 # a1111 compatibility item
+        sd_model.logvar = sd_model.logvar.to(devices.device) if hasattr(sd_model, 'logvar') else None # fix for training
         shared.opts.data["sd_checkpoint_hash"] = checkpoint_info.sha256
         if hasattr(sd_model, "set_progress_bar_config"):
             sd_model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining}', ncols=80, colour='#327fba')
@@ -1069,9 +1073,9 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     new_pipe.embedding_db = embedding_db
     new_pipe.image_encoder = image_encoder
     new_pipe.feature_extractor = feature_extractor
-    new_pipe.is_sdxl = pipe.is_sdxl
-    new_pipe.is_sd2 = pipe.is_sd2
-    new_pipe.is_sd1 = pipe.is_sd1
+    new_pipe.is_sdxl = getattr(pipe, 'is_sdxl', False) # a1111 compatibility item
+    new_pipe.is_sd2 = getattr(pipe, 'is_sd2', False)
+    new_pipe.is_sd1 = getattr(pipe, 'is_sd1', True)
     shared.log.debug(f"Pipeline class change: original={pipe.__class__.__name__} target={new_pipe.__class__.__name__}")
     pipe = new_pipe
     return pipe
