@@ -32,5 +32,5 @@ Any code commit is validated before merge
 - Download extensions and themes indexes from automatically updated indexes  
 - Download required packages and repositories from GitHub during installation/upgrade
 - Download installed/enabled extensions
-- Download default model from official repository
+- Download models from CivitAI and/or Huggingface when instructed by user
 - Submit benchmark info upon user interaction  

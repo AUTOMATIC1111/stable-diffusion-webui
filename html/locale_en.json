@@ -43,17 +43,18 @@
 "tabs": [
   {"id":"","label":"Text","localized":"","hint":"Create image from text"},
   {"id":"","label":"Image","localized":"","hint":"Create image from image"},
+  {"id":"","label":"Control","localized":"","hint":"Create image with additional control"},
   {"id":"","label":"Process","localized":"","hint":"Process existing image"},
-  {"id":"","label":"Train","localized":"","hint":"Run training or model merging"},
+  {"id":"","label":"Interrogate","localized":"","hint":"Run interrogate to get description of your image"},
+  {"id":"","label":"Train","localized":"","hint":"Run training"},
   {"id":"","label":"Models","localized":"","hint":"Convert or merge your models"},
-  {"id":"","label":"Interrogator","localized":"","hint":"Run interrogate to get description of your image"},
-  {"id":"","label":"System Info","localized":"","hint":"System information"},
   {"id":"","label":"Agent Scheduler","localized":"","hint":"Enqueue your generate requests and run them in the background"},
   {"id":"","label":"Image Browser","localized":"","hint":"Browse through your generated image database"},
   {"id":"","label":"System","localized":"","hint":"System settings and information"},
+  {"id":"","label":"System Info","localized":"","hint":"System information"},
   {"id":"","label":"Settings","localized":"","hint":"Application settings"},
-  {"id":"","label":"Extensions","localized":"","hint":"Application extensions"},
-  {"id":"","label":"Script","localized":"","hint":"Addtional scripts to be used"}
+  {"id":"","label":"Script","localized":"","hint":"Addtional scripts to be used"},
+  {"id":"","label":"Extensions","localized":"","hint":"Application extensions"}
 ],
 "action panel": [
   {"id":"","label":"Generate","localized":"","hint":"Start processing"},

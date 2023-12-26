@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-25
+## Update for 2023-12-26
 
 *Note*: based on `diffusers==0.25.0.dev0`
 
@@ -52,6 +52,9 @@
     - allow setting of resize method directly in image tab  
       (previously via settings -> upscaler_for_img2img)  
 - **General**  
+  - new **onboarding**  
+    if no models are found during startup, app will no longer ask to download default checkpoint  
+    instead, it will show message in UI with options to change model path or download any of the reference checkpoints  
   - support for **Torch 2.1.2**
   - **Process** create videos from batch or folder processing  
       supports *GIF*, *PNG* and *MP4* with full interpolation, scene change detection, etc.  
@@ -98,6 +101,7 @@
     - **chaiNNer** fix `NaN` issues due to autocast  
     - **Upscale** increase limit from 4x to 8x given the quality of some upscalers  
     - **Extra Networks** fix sort  
+    - reduced default **CFG scale** from 6 to 4 to be more out-of-the-box compatibile with LCM/Turbo models
     - disable google fonts check on server startup  
     - fix torchvision/basicsr compatibility  
     - fix styles quick save  

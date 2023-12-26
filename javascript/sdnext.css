@@ -263,6 +263,9 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .processor-settings { padding: 0 !important; max-width: 300px; }
 .processor-group>div { flex-flow: wrap;gap: 1em; }
 
+/* main info */
+.main-info { font-weight: var(--section-header-text-weight); color: var(--body-text-color-subdued); padding: 1em !important; margin-top: 2em !important; line-height: var(--line-lg) !important; }
+
 /* loader */
 .splash { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1000; display: block; text-align: center; }
 .motd { margin-top: 2em; color: var(--body-text-color-subdued); font-family: monospace; font-variant: all-petite-caps; }

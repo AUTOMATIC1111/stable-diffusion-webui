@@ -16,19 +16,19 @@ from modules import scripts, processing, shared, devices
 image_encoder = None
 image_encoder_type = None
 loaded = None
-ADAPTERS = [
-    'none',
-    'ip-adapter_sd15',
-    'ip-adapter_sd15_light',
-    'ip-adapter-plus_sd15',
-    'ip-adapter-plus-face_sd15',
-    'ip-adapter-full-face_sd15',
+ADAPTERS = {
+    'None': 'none',
+    'Base': 'ip-adapter_sd15',
+    'Light': 'ip-adapter_sd15_light',
+    'Plus': 'ip-adapter-plus_sd15',
+    'Plus Face': 'ip-adapter-plus-face_sd15',
+    'Full face': 'ip-adapter-full-face_sd15',
+    'Base SXDL': 'ip-adapter_sdxl',
     # 'models/ip-adapter_sd15_vit-G', # RuntimeError: mat1 and mat2 shapes cannot be multiplied (2x1024 and 1280x3072)
-    'ip-adapter_sdxl',
     # 'sdxl_models/ip-adapter_sdxl_vit-h',
     # 'sdxl_models/ip-adapter-plus_sdxl_vit-h',
     # 'sdxl_models/ip-adapter-plus-face_sdxl_vit-h',
-]
+}
 
 
 class Script(scripts.Script):
@@ -41,7 +41,7 @@ class Script(scripts.Script):
     def ui(self, _is_img2img):
         with gr.Accordion('IP Adapter', open=False, elem_id='ipadapter'):
             with gr.Row():
-                adapter = gr.Dropdown(label='Adapter', choices=ADAPTERS, value='none')
+                adapter = gr.Dropdown(label='Adapter', choices=list(ADAPTERS), value='none')
                 scale = gr.Slider(label='Scale', minimum=0.0, maximum=1.0, step=0.01, value=0.5)
             with gr.Row():
                 image = gr.Image(image_mode='RGB', label='Image', source='upload', type='pil', width=512)
@@ -50,6 +50,8 @@ class Script(scripts.Script):
     def process(self, p: processing.StableDiffusionProcessing, adapter, scale, image): # pylint: disable=arguments-differ
         from transformers import CLIPVisionModelWithProjection
         # overrides
+        adapter = ADAPTERS[adapter]
+        print('HERE', adapter)
         if hasattr(p, 'ip_adapter_name'):
             adapter = p.ip_adapter_name
         if hasattr(p, 'ip_adapter_scale'):
@@ -96,6 +98,7 @@ class Script(scripts.Script):
 
         # main code
         subfolder = 'models' if 'sd15' in adapter else 'sdxl_models'
+        print('HERE2', subfolder)
         if adapter != loaded or getattr(shared.sd_model.unet.config, 'encoder_hid_dim_type', None) is None:
             t0 = time.time()
             if loaded is not None:

@@ -6,7 +6,7 @@ from PIL import Image
 from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline
 from modules.shared import log, opts
 from modules import errors
-from modules.control.controlnetslite_model import ControlNetLLLite
+from modules.control.units.lite_model import ControlNetLLLite
 
 
 what = 'ControlLLLite'
@@ -130,6 +130,6 @@ class ControlLLitePipeline():
             cn.apply(pipe=self.pipeline, cond=np.asarray(images[i % len(images)]), weight=weight[i % len(weight)])
 
     def restore(self):
-        from modules.control.controlnetslite_model import clear_all_lllite
+        from modules.control.units.lite_model import clear_all_lllite
         clear_all_lllite()
         self.nets = []

@@ -294,8 +294,9 @@ def load_diffusers_models(model_path: str, command_path: str = None, clear=True)
                     if os.path.exists(os.path.join(folder, 'hidden')):
                         continue
                     output.append(name)
-                except Exception as e:
-                    shared.log.error(f"Error analyzing diffusers model: {folder} {e}")
+                except Exception:
+                    # shared.log.error(f"Error analyzing diffusers model: {folder} {e}")
+                    pass
         except Exception as e:
             shared.log.error(f"Error listing diffusers: {place} {e}")
     shared.log.debug(f'Scanning diffusers cache: {model_path} {command_path} items={len(output)} time={time.time()-t0:.2f}')
@@ -337,6 +338,29 @@ def load_reference(name: str):
         from modules import sd_models
         sd_models.list_models()
         return True
+
+
+def load_civitai(model: str, url: str):
+    from modules import sd_models
+    name, _ext = os.path.splitext(model)
+    info = sd_models.get_closet_checkpoint_match(name)
+    if info is not None:
+        shared.log.debug(f'Reference model: {name}')
+        return name # already downloaded
+    else:
+        shared.log.debug(f'Reference model: {name} download start')
+        download_civit_model_thread(model_name=model, model_url=url, model_path='', model_type='safetensors', preview=None, token=None)
+        shared.log.debug(f'Reference model: {name} download complete')
+        sd_models.list_models()
+        info = sd_models.get_closet_checkpoint_match(name)
+        print('HERE1', info)
+        print('HERE2', name)
+        if info is not None:
+            shared.log.debug(f'Reference model: {name}')
+            return name # already downloaded
+        else:
+            shared.log.debug(f'Reference model: {name} not found')
+            return None
 
 
 cache_folders = {}

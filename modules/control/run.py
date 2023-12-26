@@ -9,12 +9,12 @@ from PIL import Image
 from modules.control import util
 from modules.control import unit
 from modules.control import processors
-from modules.control import controlnets # lllyasviel ControlNet
-from modules.control import controlnetsxs # VisLearn ControlNet-XS
-from modules.control import controlnetslite # Kohya ControlLLLite
-from modules.control import adapters # TencentARC T2I-Adapter
-from modules.control import reference # ControlNet-Reference
-from modules.control import ipadapter # IP-Adapter
+from modules.control.units import controlnet # lllyasviel ControlNet
+from modules.control.units import xs # VisLearn ControlNet-XS
+from modules.control.units import lite # Kohya ControlLLLite
+from modules.control.units import t2iadapter # TencentARC T2I-Adapter
+from modules.control.units import reference # ControlNet-Reference
+from modules.control.units import ipadapter # IP-Adapter
 from modules import devices, shared, errors, processing, images, sd_models, sd_samplers
 
 
@@ -77,7 +77,7 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
         inputs = [None]
     output_images: List[Image.Image] = [] # output images
     active_process: List[processors.Processor] = [] # all active preprocessors
-    active_model: List[Union[controlnets.ControlNet, controlnetsxs.ControlNetXS, adapters.Adapter]] = [] # all active models
+    active_model: List[Union[controlnet.ControlNet, xs.ControlNetXS, t2iadapter.Adapter]] = [] # all active models
     active_strength: List[float] = [] # strength factors for all active models
     active_start: List[float] = [] # start step for all active models
     active_end: List[float] = [] # end step for all active models
@@ -177,7 +177,7 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
     p.ops.append('control')
 
     has_models = False
-    selected_models: List[Union[controlnets.ControlNetModel, controlnetsxs.ControlNetXSModel, adapters.AdapterModel]] = None
+    selected_models: List[Union[controlnet.ControlNetModel, xs.ControlNetXSModel, t2iadapter.AdapterModel]] = None
     if unit_type == 'adapter' or unit_type == 'controlnet' or unit_type == 'xs' or unit_type == 'lite':
         if len(active_model) == 0:
             selected_models = None
@@ -198,7 +198,7 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
         p.extra_generation_params["Control mode"] = 'Adapter'
         p.extra_generation_params["Control conditioning"] = use_conditioning
         p.task_args['adapter_conditioning_scale'] = use_conditioning
-        instance = adapters.AdapterPipeline(selected_models, shared.sd_model)
+        instance = t2iadapter.AdapterPipeline(selected_models, shared.sd_model)
         pipe = instance.pipeline
         if inits is not None:
             shared.log.warning('Control: T2I-Adapter does not support separate init image')
@@ -209,7 +209,7 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
         p.task_args['control_guidance_start'] = active_start[0] if len(active_start) == 1 else list(active_start)
         p.task_args['control_guidance_end'] = active_end[0] if len(active_end) == 1 else list(active_end)
         p.task_args['guess_mode'] = p.guess_mode
-        instance = controlnets.ControlNetPipeline(selected_models, shared.sd_model)
+        instance = controlnet.ControlNetPipeline(selected_models, shared.sd_model)
         pipe = instance.pipeline
     elif unit_type == 'xs' and has_models:
         p.extra_generation_params["Control mode"] = 'ControlNet-XS'
@@ -217,7 +217,7 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
         p.controlnet_conditioning_scale = use_conditioning
         p.control_guidance_start = active_start[0] if len(active_start) == 1 else list(active_start)
         p.control_guidance_end = active_end[0] if len(active_end) == 1 else list(active_end)
-        instance = controlnetsxs.ControlNetXSPipeline(selected_models, shared.sd_model)
+        instance = xs.ControlNetXSPipeline(selected_models, shared.sd_model)
         pipe = instance.pipeline
         if inits is not None:
             shared.log.warning('Control: ControlNet-XS does not support separate init image')
@@ -225,7 +225,7 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
         p.extra_generation_params["Control mode"] = 'ControlLLLite'
         p.extra_generation_params["Control conditioning"] = use_conditioning
         p.controlnet_conditioning_scale = use_conditioning
-        instance = controlnetslite.ControlLLitePipeline(shared.sd_model)
+        instance = lite.ControlLLitePipeline(shared.sd_model)
         pipe = instance.pipeline
         if inits is not None:
             shared.log.warning('Control: ControlLLLite does not support separate init image')

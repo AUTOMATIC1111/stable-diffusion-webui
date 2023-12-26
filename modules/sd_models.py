@@ -168,6 +168,7 @@ def list_models():
     shared.log.info(f'Available models: path="{shared.opts.ckpt_dir}" items={len(checkpoints_list)} time={time.time()-t0:.2f}')
 
     checkpoints_list = dict(sorted(checkpoints_list.items(), key=lambda cp: cp[1].filename))
+    """
     if len(checkpoints_list) == 0:
         if not shared.cmd_opts.no_download:
             key = input('Download the default model? (y/N) ')
@@ -185,7 +186,7 @@ def list_models():
                     checkpoint_info = CheckpointInfo(filename)
                     if checkpoint_info.name is not None:
                         checkpoint_info.register()
-
+    """
 
 def update_model_hashes():
     txt = []

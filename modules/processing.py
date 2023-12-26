@@ -565,13 +565,13 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
     if index is None:
         index = position_in_batch + iteration * p.batch_size
     if all_prompts is None:
-        all_prompts = p.all_prompts
+        all_prompts = p.all_prompts or [p.prompt]
     if all_negative_prompts is None:
-        all_negative_prompts = p.all_negative_prompts
+        all_negative_prompts = p.all_negative_prompts or [p.negative_prompt]
     if all_seeds is None:
-        all_seeds = p.all_seeds
+        all_seeds = p.all_seeds or [p.seed]
     if all_subseeds is None:
-        all_subseeds = p.all_subseeds
+        all_subseeds = p.all_subseeds or [p.subseed]
     while len(all_prompts) <= index:
         all_prompts.append(all_prompts[-1])
     while len(all_seeds) <= index:

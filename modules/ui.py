@@ -182,10 +182,10 @@ def create_advanced_inputs(tab):
     with gr.Accordion(open=False, label="Advanced", elem_id=f"{tab}_advanced", elem_classes=["small-accordion"]):
         with gr.Group():
             with FormRow():
-                cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.1, label='CFG scale', value=6.0, elem_id=f"{tab}_cfg_scale")
+                cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.1, label='CFG scale', value=4.0, elem_id=f"{tab}_cfg_scale")
                 clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=14, step=1, elem_id=f"{tab}_clip_skip", interactive=True)
             with FormRow():
-                image_cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.1, label='Secondary CFG scale', value=6.0, elem_id=f"{tab}_image_cfg_scale")
+                image_cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.1, label='Secondary CFG scale', value=4.0, elem_id=f"{tab}_image_cfg_scale")
                 diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id=f"{tab}_image_cfg_rescale", visible=shared.backend == shared.Backend.DIFFUSERS)
         with gr.Group():
             with FormRow():
@@ -647,6 +647,9 @@ def create_ui(startup_timer = None):
             txt2img_negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[txt2img_negative_prompt, steps], outputs=[txt2img_negative_token_counter])
 
             ui_extra_networks.setup_ui(extra_networks_ui, txt2img_gallery)
+
+            with FormRow():
+                gr.HTML(value="", elem_id="main_info", visible=False, elem_classes=["main-info"])
 
     timer.startup.record("ui-txt2img")
 
@@ -1136,9 +1139,9 @@ def create_ui(startup_timer = None):
     interfaces += [(img2img_interface, "Image", "img2img")]
     interfaces += [(control_interface, "Control", "control")] if control_interface is not None else []
     interfaces += [(extras_interface, "Process", "process")]
+    interfaces += [(interrogate_interface, "Interrogate", "interrogate")]
     interfaces += [(train_interface, "Train", "train")]
     interfaces += [(models_interface, "Models", "models")]
-    interfaces += [(interrogate_interface, "Interrogate", "interrogate")]
     interfaces += script_callbacks.ui_tabs_callback()
     interfaces += [(settings_interface, "System", "system")]
 
@@ -1224,10 +1227,13 @@ def create_ui(startup_timer = None):
         )
 
         def reference_submit(model):
-            loaded = modelloader.load_reference(model)
-            if loaded:
+            if '@' not in model: # diffusers
+                loaded = modelloader.load_reference(model)
                 return model if loaded else opts.sd_model_checkpoint
-            return loaded
+            else: # civitai
+                model, url = model.split('@')
+                loaded = modelloader.load_civitai(model, url)
+                return loaded if loaded is not None else opts.sd_model_checkpoint
 
         button_set_reference = gr.Button('Change reference', elem_id='change_reference', visible=False)
         button_set_reference.click(

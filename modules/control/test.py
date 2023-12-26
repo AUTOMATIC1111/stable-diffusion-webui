@@ -49,25 +49,25 @@ def test_processors(image):
 
 def test_controlnets(prompt, negative, image):
     from modules import devices, sd_models
-    from modules.control import controlnets
+    from modules.control.units import controlnet
     if image is None:
         shared.log.error('Image not loaded')
         return None, None, None
     from PIL import ImageDraw, ImageFont
     images = []
-    for model_id in controlnets.list_models():
+    for model_id in controlnet.list_models():
         if model_id is None:
             model_id = 'None'
         if shared.state.interrupted:
             continue
         output = image
         if model_id != 'None':
-            controlnet = controlnets.ControlNet(model_id=model_id, device=devices.device, dtype=devices.dtype)
+            controlnet = controlnet.ControlNet(model_id=model_id, device=devices.device, dtype=devices.dtype)
             if controlnet is None:
                 shared.log.error(f'ControlNet load failed: id="{model_id}"')
                 continue
             shared.log.info(f'Testing ControlNet: {model_id}')
-            pipe = controlnets.ControlNetPipeline(controlnet=controlnet.model, pipeline=shared.sd_model)
+            pipe = controlnet.ControlNetPipeline(controlnet=controlnet.model, pipeline=shared.sd_model)
             pipe.pipeline.to(device=devices.device, dtype=devices.dtype)
             sd_models.set_diffuser_options(pipe)
             try:
@@ -101,25 +101,25 @@ def test_controlnets(prompt, negative, image):
 
 def test_adapters(prompt, negative, image):
     from modules import devices, sd_models
-    from modules.control import adapters
+    from modules.control.units import t2iadapter
     if image is None:
         shared.log.error('Image not loaded')
         return None, None, None
     from PIL import ImageDraw, ImageFont
     images = []
-    for model_id in adapters.list_models():
+    for model_id in t2iadapter.list_models():
         if model_id is None:
             model_id = 'None'
         if shared.state.interrupted:
             continue
         output = image.copy()
         if model_id != 'None':
-            adapter = adapters.Adapter(model_id=model_id, device=devices.device, dtype=devices.dtype)
+            adapter = t2iadapter.Adapter(model_id=model_id, device=devices.device, dtype=devices.dtype)
             if adapter is None:
                 shared.log.error(f'Adapter load failed: id="{model_id}"')
                 continue
             shared.log.info(f'Testing Adapter: {model_id}')
-            pipe = adapters.AdapterPipeline(adapter=adapter.model, pipeline=shared.sd_model)
+            pipe = t2iadapter.AdapterPipeline(adapter=adapter.model, pipeline=shared.sd_model)
             pipe.pipeline.to(device=devices.device, dtype=devices.dtype)
             sd_models.set_diffuser_options(pipe)
             image = image.convert('L') if 'Canny' in model_id or 'Sketch' in model_id else image.convert('RGB')
@@ -154,25 +154,25 @@ def test_adapters(prompt, negative, image):
 
 def test_xs(prompt, negative, image):
     from modules import devices, sd_models
-    from modules.control import controlnetsxs
+    from modules.control.units import xs
     if image is None:
         shared.log.error('Image not loaded')
         return None, None, None
     from PIL import ImageDraw, ImageFont
     images = []
-    for model_id in controlnetsxs.list_models():
+    for model_id in xs.list_models():
         if model_id is None:
             model_id = 'None'
         if shared.state.interrupted:
             continue
         output = image
         if model_id != 'None':
-            xs = controlnetsxs.ControlNetXS(model_id=model_id, device=devices.device, dtype=devices.dtype)
+            xs = xs.ControlNetXS(model_id=model_id, device=devices.device, dtype=devices.dtype)
             if xs is None:
                 shared.log.error(f'ControlNet-XS load failed: id="{model_id}"')
                 continue
             shared.log.info(f'Testing ControlNet-XS: {model_id}')
-            pipe = controlnetsxs.ControlNetXSPipeline(controlnet=xs.model, pipeline=shared.sd_model)
+            pipe = xs.ControlNetXSPipeline(controlnet=xs.model, pipeline=shared.sd_model)
             pipe.pipeline.to(device=devices.device, dtype=devices.dtype)
             sd_models.set_diffuser_options(pipe)
             try:
@@ -206,25 +206,25 @@ def test_xs(prompt, negative, image):
 
 def test_lite(prompt, negative, image):
     from modules import devices, sd_models
-    from modules.control import controlnetslite
+    from modules.control.units import lite
     if image is None:
         shared.log.error('Image not loaded')
         return None, None, None
     from PIL import ImageDraw, ImageFont
     images = []
-    for model_id in controlnetslite.list_models():
+    for model_id in lite.list_models():
         if model_id is None:
             model_id = 'None'
         if shared.state.interrupted:
             continue
         output = image
         if model_id != 'None':
-            lite = controlnetslite.ControlLLLite(model_id=model_id, device=devices.device, dtype=devices.dtype)
+            lite = lite.ControlLLLite(model_id=model_id, device=devices.device, dtype=devices.dtype)
             if lite is None:
                 shared.log.error(f'Control-LLite load failed: id="{model_id}"')
                 continue
             shared.log.info(f'Testing ControlNet-XS: {model_id}')
-            pipe = controlnetslite.ControlLLitePipeline(pipeline=shared.sd_model)
+            pipe = lite.ControlLLitePipeline(pipeline=shared.sd_model)
             pipe.apply(controlnet=lite.model, image=image, conditioning=1.0)
             pipe.pipeline.to(device=devices.device, dtype=devices.dtype)
             sd_models.set_diffuser_options(pipe)

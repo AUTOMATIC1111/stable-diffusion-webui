@@ -38,6 +38,8 @@ def single_sample_to_image(sample, approximation=None):
             warn_once('Unknown decode type, please reset preview method')
             approximation = 0
 
+    if len(sample.shape) > 4: # likely unknown video latent (e.g. svd)
+        return Image.new(mode="RGB", size=(512, 512))
     if len(sample.shape) == 4 and sample.shape[0]: # likely animatediff latent
         sample = sample.permute(1, 0, 2, 3)[0]
     if approximation == 0: # Simple

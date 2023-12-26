@@ -2,11 +2,11 @@ from typing import Union
 from PIL import Image
 from modules.shared import log
 from modules.control import processors
-from modules.control import controlnets
-from modules.control import controlnetsxs
-from modules.control import controlnetslite
-from modules.control import adapters
-from modules.control import reference # pylint: disable=unused-import
+from modules.control.units import controlnet
+from modules.control.units import xs
+from modules.control.units import lite
+from modules.control.units import t2iadapter
+from modules.control.units import reference # pylint: disable=unused-import
 
 
 default_device = None
@@ -45,8 +45,8 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
         self.end = max(self.start, self.end)
         # processor always exists, adapter and controlnet are optional
         self.process: processors.Processor = processors.Processor()
-        self.adapter: adapters.Adapter = None
-        self.controlnet: Union[controlnets.ControlNet, controlnetsxs.ControlNetXS] = None
+        self.adapter: t2iadapter.Adapter = None
+        self.controlnet: Union[controlnet.ControlNet, xs.ControlNetXS] = None
         # map to input image
         self.input: Image = image_input
         self.override: Image = None
@@ -106,13 +106,13 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
 
         # actual init
         if self.type == 'adapter':
-            self.adapter = adapters.Adapter(device=default_device, dtype=default_dtype)
+            self.adapter = t2iadapter.Adapter(device=default_device, dtype=default_dtype)
         elif self.type == 'controlnet':
-            self.controlnet = controlnets.ControlNet(device=default_device, dtype=default_dtype)
+            self.controlnet = controlnet.ControlNet(device=default_device, dtype=default_dtype)
         elif self.type == 'xs':
-            self.controlnet = controlnetsxs.ControlNetXS(device=default_device, dtype=default_dtype)
+            self.controlnet = xs.ControlNetXS(device=default_device, dtype=default_dtype)
         elif self.type == 'lite':
-            self.controlnet = controlnetslite.ControlLLLite(device=default_device, dtype=default_dtype)
+            self.controlnet = lite.ControlLLLite(device=default_device, dtype=default_dtype)
         elif self.type == 'reference':
             pass
         else:

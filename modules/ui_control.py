@@ -1,13 +1,13 @@
 import os
 import gradio as gr
 from modules.control import unit
-from modules.control import controlnets # lllyasviel ControlNet
-from modules.control import controlnetsxs # vislearn ControlNet-XS
-from modules.control import controlnetslite # vislearn ControlNet-XS
-from modules.control import adapters # TencentARC T2I-Adapter
 from modules.control import processors # patrickvonplaten controlnet_aux
-from modules.control import reference # reference pipeline
-from modules.control import ipadapter # reference pipeline
+from modules.control.units import controlnet # lllyasviel ControlNet
+from modules.control.units import xs # vislearn ControlNet-XS
+from modules.control.units import lite # vislearn ControlNet-XS
+from modules.control.units import t2iadapter # TencentARC T2I-Adapter
+from modules.control.units import reference # reference pipeline
+from modules.control.units import ipadapter # reference pipeline
 from modules import errors, shared, progress, sd_samplers, ui, ui_components, ui_symbols, ui_common, generation_parameters_copypaste, call_queue
 from modules.ui_components import FormRow, FormGroup
 
@@ -24,18 +24,18 @@ debug('Trace: CONTROL')
 def initialize():
     from modules import devices
     shared.log.debug(f'Control initialize: models={shared.opts.control_dir}')
-    controlnets.cache_dir = os.path.join(shared.opts.control_dir, 'controlnet')
-    controlnetsxs.cache_dir = os.path.join(shared.opts.control_dir, 'xs')
-    controlnetslite.cache_dir = os.path.join(shared.opts.control_dir, 'lite')
-    adapters.cache_dir = os.path.join(shared.opts.control_dir, 'adapter')
+    controlnet.cache_dir = os.path.join(shared.opts.control_dir, 'controlnet')
+    xs.cache_dir = os.path.join(shared.opts.control_dir, 'xs')
+    lite.cache_dir = os.path.join(shared.opts.control_dir, 'lite')
+    t2iadapter.cache_dir = os.path.join(shared.opts.control_dir, 'adapter')
     processors.cache_dir = os.path.join(shared.opts.control_dir, 'processor')
     unit.default_device = devices.device
     unit.default_dtype = devices.dtype
     os.makedirs(shared.opts.control_dir, exist_ok=True)
-    os.makedirs(controlnets.cache_dir, exist_ok=True)
-    os.makedirs(controlnetsxs.cache_dir, exist_ok=True)
-    os.makedirs(controlnetslite.cache_dir, exist_ok=True)
-    os.makedirs(adapters.cache_dir, exist_ok=True)
+    os.makedirs(controlnet.cache_dir, exist_ok=True)
+    os.makedirs(xs.cache_dir, exist_ok=True)
+    os.makedirs(lite.cache_dir, exist_ok=True)
+    os.makedirs(t2iadapter.cache_dir, exist_ok=True)
     os.makedirs(processors.cache_dir, exist_ok=True)
 
 
@@ -324,8 +324,8 @@ def create_ui(_blocks: gr.Blocks=None):
                                     with gr.Row():
                                         enabled_cb = gr.Checkbox(value= i==0, label="")
                                         process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
-                                        model_id = gr.Dropdown(label="ControlNet", choices=controlnets.list_models(), value='None')
-                                        ui_common.create_refresh_button(model_id, controlnets.list_models, lambda: {"choices": controlnets.list_models(refresh=True)}, 'refresh_control_models')
+                                        model_id = gr.Dropdown(label="ControlNet", choices=controlnet.list_models(), value='None')
+                                        ui_common.create_refresh_button(model_id, controlnet.list_models, lambda: {"choices": controlnet.list_models(refresh=True)}, 'refresh_control_models')
                                         model_strength = gr.Slider(label="Strength", minimum=0.01, maximum=1.0, step=0.01, value=1.0-i/10)
                                         control_start = gr.Slider(label="Start", minimum=0.0, maximum=1.0, step=0.05, value=0)
                                         control_end = gr.Slider(label="End", minimum=0.0, maximum=1.0, step=0.05, value=1.0)
@@ -369,8 +369,8 @@ def create_ui(_blocks: gr.Blocks=None):
                                     with gr.Row():
                                         enabled_cb = gr.Checkbox(value= i==0, label="")
                                         process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
-                                        model_id = gr.Dropdown(label="ControlNet-XS", choices=controlnetsxs.list_models(), value='None')
-                                        ui_common.create_refresh_button(model_id, controlnetsxs.list_models, lambda: {"choices": controlnetsxs.list_models(refresh=True)}, 'refresh_control_models')
+                                        model_id = gr.Dropdown(label="ControlNet-XS", choices=xs.list_models(), value='None')
+                                        ui_common.create_refresh_button(model_id, xs.list_models, lambda: {"choices": xs.list_models(refresh=True)}, 'refresh_control_models')
                                         model_strength = gr.Slider(label="Strength", minimum=0.01, maximum=1.0, step=0.01, value=1.0-i/10)
                                         control_start = gr.Slider(label="Start", minimum=0.0, maximum=1.0, step=0.05, value=0)
                                         control_end = gr.Slider(label="End", minimum=0.0, maximum=1.0, step=0.05, value=1.0)
@@ -414,8 +414,8 @@ def create_ui(_blocks: gr.Blocks=None):
                                     with gr.Row():
                                         enabled_cb = gr.Checkbox(value= i == 0, label="Enabled")
                                         process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
-                                        model_id = gr.Dropdown(label="Adapter", choices=adapters.list_models(), value='None')
-                                        ui_common.create_refresh_button(model_id, adapters.list_models, lambda: {"choices": adapters.list_models(refresh=True)}, 'refresh_adapter_models')
+                                        model_id = gr.Dropdown(label="Adapter", choices=t2iadapter.list_models(), value='None')
+                                        ui_common.create_refresh_button(model_id, t2iadapter.list_models, lambda: {"choices": t2iadapter.list_models(refresh=True)}, 'refresh_adapter_models')
                                         model_strength = gr.Slider(label="Strength", minimum=0.01, maximum=1.0, step=0.01, value=1.0-i/10)
                                         reset_btn = ui_components.ToolButton(value=ui_symbols.reset)
                                         image_upload = gr.UploadButton(label=ui_symbols.upload, file_types=['image'], elem_classes=['form', 'gradio-button', 'tool'])
@@ -454,8 +454,8 @@ def create_ui(_blocks: gr.Blocks=None):
                                     with gr.Row():
                                         enabled_cb = gr.Checkbox(value= i == 0, label="Enabled")
                                         process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
-                                        model_id = gr.Dropdown(label="Model", choices=controlnetslite.list_models(), value='None')
-                                        ui_common.create_refresh_button(model_id, controlnetslite.list_models, lambda: {"choices": controlnetslite.list_models(refresh=True)}, 'refresh_lite_models')
+                                        model_id = gr.Dropdown(label="Model", choices=lite.list_models(), value='None')
+                                        ui_common.create_refresh_button(model_id, lite.list_models, lambda: {"choices": lite.list_models(refresh=True)}, 'refresh_lite_models')
                                         model_strength = gr.Slider(label="Strength", minimum=0.01, maximum=1.0, step=0.01, value=1.0-i/10)
                                         reset_btn = ui_components.ToolButton(value=ui_symbols.reset)
                                         image_upload = gr.UploadButton(label=ui_symbols.upload, file_types=['image'], elem_classes=['form', 'gradio-button', 'tool'])

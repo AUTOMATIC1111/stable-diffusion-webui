@@ -1,4 +1,24 @@
 {
+  "DreamShaper SD 1.5 v8": {
+    "path": "dreamshaper_8.safetensors@https://civitai.com/api/download/models/128713",
+    "desc": "Showcase finetuned model based on Stable diffusion 1.5",
+    "preview": "dreamshaper_8.jpg"
+  },
+  "DreamShaper SD XL Turbo": {
+    "path": "dreamshaperXL_turboDpmppSDE.safetensors@https://civitai.com/api/download/models/251662",
+    "desc": "Showcase finetuned model based on Stable diffusion XL",
+    "preview": "dreamshaperXL_turboDpmppSDE.jpg"
+  }, 
+  "Juggernaut Reborn": {
+    "path": "juggernaut_reborn.safetensors@https://civitai.com/api/download/models/274039",
+    "desc": "Showcase finetuned model based on Stable diffusion 1.5",
+    "preview": "juggernaut_reborn.jpg"
+  },
+  "Juggernaut XL v7 RunDiffusion": {
+    "path": "juggernautXL_v7Rundiffusion.safetensors@https://civitai.com/api/download/models/240840",
+    "desc": "Showcase finetuned model based on Stable diffusion XL",
+    "preview": "juggernautXL_v7Rundiffusion.jpg"
+  },
   "RunwayML SD 1.5": {
     "path": "runwayml/stable-diffusion-v1-5",
     "desc": "Stable Diffusion 1.5 is the base model all other 1.5 checkpoint were trained from. It's a latent text-to-image diffusion model capable of generating photo-realistic images given any text input. The Stable-Diffusion-v1-5 checkpoint was initialized with the weights of the Stable-Diffusion-v1-2 checkpoint and subsequently fine-tuned on 595k steps at resolution 512x512.",
