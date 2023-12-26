@@ -353,8 +353,6 @@ def load_civitai(model: str, url: str):
         shared.log.debug(f'Reference model: {name} download complete')
         sd_models.list_models()
         info = sd_models.get_closet_checkpoint_match(name)
-        print('HERE1', info)
-        print('HERE2', name)
         if info is not None:
             shared.log.debug(f'Reference model: {name}')
             return name # already downloaded

@@ -48,16 +48,16 @@ class Script(scripts.Script):
         return [adapter, scale, image]
 
     def process(self, p: processing.StableDiffusionProcessing, adapter, scale, image): # pylint: disable=arguments-differ
-        from transformers import CLIPVisionModelWithProjection
         # overrides
-        adapter = ADAPTERS[adapter]
-        print('HERE', adapter)
+        adapter = ADAPTERS.get(adapter, None)
         if hasattr(p, 'ip_adapter_name'):
             adapter = p.ip_adapter_name
         if hasattr(p, 'ip_adapter_scale'):
             scale = p.ip_adapter_scale
         if hasattr(p, 'ip_adapter_image'):
             image = p.ip_adapter_image
+        if adapter is None:
+            return
         # init code
         global loaded, image_encoder, image_encoder_type # pylint: disable=global-statement
         if shared.sd_model is None:
@@ -90,6 +90,7 @@ class Script(scripts.Script):
                 return
             if image_encoder is None or image_encoder_type != shared.sd_model_type:
                 try:
+                    from transformers import CLIPVisionModelWithProjection
                     image_encoder = CLIPVisionModelWithProjection.from_pretrained("h94/IP-Adapter", subfolder=subfolder, torch_dtype=devices.dtype, cache_dir=shared.opts.diffusers_dir, use_safetensors=True).to(devices.device)
                     image_encoder_type = shared.sd_model_type
                 except Exception as e:
@@ -98,7 +99,6 @@ class Script(scripts.Script):
 
         # main code
         subfolder = 'models' if 'sd15' in adapter else 'sdxl_models'
-        print('HERE2', subfolder)
         if adapter != loaded or getattr(shared.sd_model.unet.config, 'encoder_hid_dim_type', None) is None:
             t0 = time.time()
             if loaded is not None:
