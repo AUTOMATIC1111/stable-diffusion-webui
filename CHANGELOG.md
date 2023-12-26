@@ -88,7 +88,8 @@
     - compatibility improvements  
   - **OpenVINO**, thanks @disty0  
     - **8 bit support for CPUs**  
-    - Reduce System RAM usage when compiling  
+    - reduce System RAM usage  
+    - update to Torch 2.1.2  
     - add *Directory for OpenVINO cache* option to *System Paths*  
     - remove Intel ARC specific 1024x1024 workaround  
   - **HDR controls**  
