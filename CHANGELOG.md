@@ -61,7 +61,7 @@
   - new **onboarding**  
     if no models are found during startup, app will no longer ask to download default checkpoint  
     instead, it will show message in UI with options to change model path or download any of the reference checkpoints  
-  - support for **Torch 2.1.2**
+  - support for **Torch 2.1.2** (release) and **Torch 2.3** (dev)  
   - **Process** create videos from batch or folder processing  
       supports *GIF*, *PNG* and *MP4* with full interpolation, scene change detection, etc.  
   - **LoRA**  
