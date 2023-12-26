@@ -64,6 +64,7 @@ class Script(scripts.Script):
         ip_ckpt = "h94/IP-Adapter-FaceID/ip-adapter-faceid_sd15.bin"
         shared.log.debug(f'FaceID model load: {ip_ckpt}')
         folder, filename = os.path.split(ip_ckpt)
+        basename, _ext = os.path.splitext(filename)
         model_path = hf.hf_hub_download(repo_id=folder, filename=filename, cache_dir=shared.opts.diffusers_dir)
         if model_path is None:
             shared.log.error(f'FaceID: model download failed: {ip_ckpt}')
@@ -96,6 +97,12 @@ class Script(scripts.Script):
         ip_model_dict['faceid_embeds'] = embeds
         images = ip_model.generate(**ip_model_dict)
 
+        ip_model = None
+        p.extra_generation_params["IP Adapter"] = f'{basename}:{scale}'
+        for i, face in enumerate(faces):
+            p.extra_generation_params[f"FaceID {i} score"] = f'{face.det_score:.2f}'
+            p.extra_generation_params[f"FaceID {i} gender"] = "female" if face.gender==0 else "male"
+            p.extra_generation_params[f"FaceID {i} age"] = face.age
         processed = processing.Processed(
             p,
             images_list=images,
@@ -103,7 +110,7 @@ class Script(scripts.Script):
             subseed=p.subseed,
             index_of_first_image=0,
         )
-        processed.infotexts = processed.infotext(p, 0)
-        ip_model = None
+        processed.info = processed.infotext(p, 0)
+        processed.infotexts = [processed.info]
         devices.torch_gc()
         return processed
