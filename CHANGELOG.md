@@ -18,6 +18,12 @@
   - **IP Adapter**  
     - add support for `ip-adapter-plus_sd15`, `ip-adapter-plus-face_sd15` and `ip-adapter-full-face_sd15`  
     - can now be used in *xyz-grid*  
+  - **FaceID**
+    - also based on IP adapters, but with additional face detection and external embeddings calculation  
+    - calculates face embeds based on input image and uses it to guide generation  
+    - simply select from *scripts -> faceid*  
+    - *experimental module*: requirements must be installed manually:  
+      > pip install insightface ip_adapter  
   - **Text-to-Video**  
     - in text tab, select `text-to-video` script  
     - supported models: ModelScope v1.7b, ZeroScope v1, ZeroScope v1.1, ZeroScope v2, ZeroScope v2 Dark, Potat v1  
