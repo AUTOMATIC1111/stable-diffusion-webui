@@ -233,11 +233,10 @@ class ExtraNetworksPage:
         allowed_folders = [os.path.abspath(x) for x in self.allowed_directories_for_previews()]
         for parentdir, dirs in {d: modelloader.directory_list(d) for d in allowed_folders}.items():
             for tgt in dirs.keys():
-                if shared.backend == shared.Backend.DIFFUSERS:
-                    if os.path.join(paths.models_path, 'Reference') in tgt:
-                        subdirs['Reference'] = 1
-                    if shared.opts.diffusers_dir in tgt:
-                        subdirs[os.path.basename(shared.opts.diffusers_dir)] = 1
+                if os.path.join(paths.models_path, 'Reference') in tgt:
+                    subdirs['Reference'] = 1
+                if shared.backend == shared.Backend.DIFFUSERS and shared.opts.diffusers_dir in tgt:
+                    subdirs[os.path.basename(shared.opts.diffusers_dir)] = 1
                 if 'models--' in tgt:
                     continue
                 subdir = tgt[len(parentdir):].replace("\\", "/")
@@ -248,7 +247,7 @@ class ExtraNetworksPage:
                     subdirs[subdir] = 1
         debug(f"Extra networks: page='{self.name}' subfolders={list(subdirs)}")
         subdirs = OrderedDict(sorted(subdirs.items()))
-        if shared.backend == shared.Backend.DIFFUSERS and self.name == 'model':
+        if self.name == 'model':
             subdirs['Reference'] = 1
             subdirs[os.path.basename(shared.opts.diffusers_dir)] = 1
             subdirs.move_to_end(os.path.basename(shared.opts.diffusers_dir))

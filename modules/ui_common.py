@@ -202,6 +202,8 @@ def create_output_panel(tabname, preview=True):
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
+            if tabname == "txt2img":
+                gr.HTML(value="", elem_id="main_info", visible=False, elem_classes=["main-info"])
             # columns are for <576px, <768px, <992px, <1200px, <1400px, >1400px
             result_gallery = gr.Gallery(value=[], label='Output', show_label=False, show_download_button=True, allow_preview=True, elem_id=f"{tabname}_gallery", container=False, preview=preview, columns=5, object_fit='scale-down', height=shared.opts.gallery_height or None)
 

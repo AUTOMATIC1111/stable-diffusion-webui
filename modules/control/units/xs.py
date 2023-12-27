@@ -1,16 +1,11 @@
 import os
 import time
 from typing import Union
+from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline
 from modules.shared import log, opts
 from modules import errors
-
-ok = True
-try:
-    from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline, ControlNetXSModel, StableDiffusionControlNetXSPipeline, StableDiffusionXLControlNetXSPipeline
-except Exception:
-    from diffusers import ControlNetModel
-    ControlNetXSModel = ControlNetModel # dummy
-    ok = False
+from modules.control.units.xs_model import ControlNetXSModel
+from modules.control.units.xs_pipe import StableDiffusionControlNetXSPipeline, StableDiffusionXLControlNetXSPipeline
 
 
 what = 'ControlNet-XS'
@@ -43,8 +38,6 @@ def find_models():
 
 def list_models(refresh=False):
     global models # pylint: disable=global-statement
-    if not ok:
-        return models
     import modules.shared
     if not refresh and len(models) > 0:
         return models
@@ -130,7 +123,7 @@ class ControlNetXSPipeline():
                 tokenizer_2=pipeline.tokenizer_2,
                 unet=pipeline.unet,
                 scheduler=pipeline.scheduler,
-                feature_extractor=getattr(pipeline, 'feature_extractor', None),
+                # feature_extractor=getattr(pipeline, 'feature_extractor', None),
                 controlnet=controlnet, # can be a list
             ).to(pipeline.device)
         elif isinstance(pipeline, StableDiffusionPipeline):

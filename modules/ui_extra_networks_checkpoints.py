@@ -15,21 +15,25 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
         shared.refresh_checkpoints()
 
     def list_reference(self): # pylint: disable=inconsistent-return-statements
-        if shared.backend != shared.Backend.DIFFUSERS:
-            return []
         reference_models = shared.readfile(os.path.join('html', 'reference.json'))
         for k, v in reference_models.items():
+            if shared.backend != shared.Backend.DIFFUSERS:
+                if not v.get('original', False):
+                    continue
+                url = v.get('alt', None) or v['path']
+            else:
+                url = v['path']
             name = os.path.join(reference_dir, k)
             preview = v.get('preview', v['path'])
             yield {
                 "type": 'Model',
                 "name": name,
                 "title": name,
-                "filename": v['path'],
+                "filename": url,
                 "search_term": self.search_terms_from_path(name),
                 "preview": self.find_preview(os.path.join(reference_dir, preview)),
                 "local_preview": self.find_preview_file(os.path.join(reference_dir, preview)),
-                "onclick": '"' + html.escape(f"""return selectReference({json.dumps(v['path'])})""") + '"',
+                "onclick": '"' + html.escape(f"""return selectReference({json.dumps(url)})""") + '"',
                 "hash": None,
                 "mtime": 0,
                 "size": 0,
@@ -74,4 +78,7 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
             yield record
 
     def allowed_directories_for_previews(self):
-        return [v for v in [shared.opts.ckpt_dir, shared.opts.diffusers_dir, reference_dir, sd_models.model_path] if v is not None]
+        if shared.backend == shared.Backend.DIFFUSERS:
+            return [v for v in [shared.opts.ckpt_dir, shared.opts.diffusers_dir, reference_dir] if v is not None]
+        else:
+            return [v for v in [shared.opts.ckpt_dir, reference_dir, sd_models.model_path] if v is not None]

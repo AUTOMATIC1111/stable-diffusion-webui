@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-26
+## Update for 2023-12-27
 
 *Note*: based on `diffusers==0.25.0.dev0`
 
@@ -59,8 +59,9 @@
       (previously via settings -> upscaler_for_img2img)  
 - **General**  
   - new **onboarding**  
-    if no models are found during startup, app will no longer ask to download default checkpoint  
-    instead, it will show message in UI with options to change model path or download any of the reference checkpoints  
+    - if no models are found during startup, app will no longer ask to download default checkpoint  
+      instead, it will show message in UI with options to change model path or download any of the reference checkpoints  
+    - *extra networks -> models -> reference* section is now enabled for both original and diffusers backend  
   - support for **Torch 2.1.2** (release) and **Torch 2.3** (dev)  
   - **Process** create videos from batch or folder processing  
       supports *GIF*, *PNG* and *MP4* with full interpolation, scene change detection, etc.  

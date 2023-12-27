@@ -70,6 +70,7 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 .performance { font-size: 0.85em; color: #444; }
 .performance p { display: inline-block; color: var(--body-text-color-subdued) !important }
 .performance .time { margin-right: 0; }
+.thumbnails { background: var(--body-background-fill); }
 #control_gallery { height: 564px; }
 #control-result { padding: 0.5em; }
 #control-inputs { margin-top: 1em; }

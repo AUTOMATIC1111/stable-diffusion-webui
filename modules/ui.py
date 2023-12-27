@@ -648,9 +648,6 @@ def create_ui(startup_timer = None):
 
             ui_extra_networks.setup_ui(extra_networks_ui, txt2img_gallery)
 
-            with FormRow():
-                gr.HTML(value="", elem_id="main_info", visible=False, elem_classes=["main-info"])
-
     timer.startup.record("ui-txt2img")
 
     import modules.img2img # pylint: disable=redefined-outer-name

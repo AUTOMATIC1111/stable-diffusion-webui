@@ -2,6 +2,7 @@ function setupControlUI() {
   const tabs = ['input', 'output', 'preview'];
   for (const tab of tabs) {
     const btn = gradioApp().getElementById(`control-${tab}-button`);
+    if (!btn) continue; // eslint-disable-line no-continue
     btn.style.cursor = 'pointer';
     btn.onclick = () => {
       const t = gradioApp().getElementById(`control-tab-${tab}`);

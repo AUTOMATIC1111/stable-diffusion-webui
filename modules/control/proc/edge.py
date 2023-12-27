@@ -58,7 +58,7 @@ class EdgeDetector:
         edge_map = cv2.resize(edge_map, (W, H), interpolation=cv2.INTER_LINEAR)
 
         if output_type == "pil":
-            edge_map = edge_map.convert('L')
             edge_map = Image.fromarray(edge_map)
+            edge_map = edge_map.convert('L')
 
         return edge_map
