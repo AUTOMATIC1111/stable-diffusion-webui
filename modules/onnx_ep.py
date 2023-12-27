@@ -14,11 +14,11 @@ class ExecutionProvider(str, Enum):
 
 available_execution_providers: List[ExecutionProvider] = ort.get_available_providers()
 EP_TO_NAME = {
-    ExecutionProvider.CPU: "cpu",
+    ExecutionProvider.CPU: "cpu", # is this a valid option?
     ExecutionProvider.DirectML: "gpu-dml",
-    ExecutionProvider.CUDA: "gpu-?", # TODO
-    ExecutionProvider.ROCm: "gpu-rocm",
-    ExecutionProvider.OpenVINO: "gpu", # Other devices can use --use-openvino instead of olive
+    ExecutionProvider.CUDA: "gpu-cuda", # test required
+    ExecutionProvider.ROCm: "gpu-rocm", # test required
+    ExecutionProvider.OpenVINO: "gpu-openvino??", # test required
 }
 
 
