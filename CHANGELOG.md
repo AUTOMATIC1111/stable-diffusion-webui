@@ -2,8 +2,6 @@
 
 ## Update for 2023-12-27
 
-*Note*: based on `diffusers==0.25.0.dev0`
-
 - **Control**  
   - native implementation of all image control methods:  
     **ControlNet**, **ControlNet XS**, **Control LLLite**, **T2I Adapters** and **IP Adapters**  
@@ -13,6 +11,25 @@
   - for details and list of supported models and workflows, see Wiki documentation:  
     <https://github.com/vladmandic/automatic/wiki/Control>  
 - **Diffusers**  
+  - [Segmind Vega](https://huggingface.co/segmind/Segmind-Vega) model support  
+    - small and fast version of **SDXL**, only 3.1GB in size!  
+    - select from *networks -> reference*  
+  - [aMUSEd 256](https://huggingface.co/amused/amused-256) and [aMUSEd 512](https://huggingface.co/amused/amused-512) model support  
+    - lightweigt models that excel at fast image generation  
+    - *note*: must select: settings -> diffusers -> generator device: unset
+    - select from *networks -> reference*
+  - [Playground v1](https://huggingface.co/playgroundai/playground-v1), [Playground v2 256](https://huggingface.co/playgroundai/playground-v2-256px-base), [Playground v2 512](https://huggingface.co/playgroundai/playground-v2-512px-base), [Playground v2 1024](https://huggingface.co/playgroundai/playground-v2-1024px-aesthetic) model support  
+    - comparable to SD15 and SD-XL, trained from scratch for highly aesthetic images  
+    - simply select from *networks -> reference* and use as usual  
+  - [BLIP-Diffusion](https://dxli94.github.io/BLIP-Diffusion-website/)  
+    - img2img model that can replace subjects in images using prompt keywords  
+    - download and load by selecting from *networks -> reference -> blip diffusion*
+    - in image tab, select `blip diffusion` script
+  - [DemoFusion](https://github.com/PRIS-CV/DemoFusion) run your SDXL generations at any resolution!  
+    - in **Text** tab select *script* -> *demofusion*  
+    - *note*: GPU VRAM limits do not automatically go away so be careful when using it with large resolutions  
+      in the future, expect more optimizations, especially related to offloading/slicing/tiling,  
+      but at the moment this is pretty much experimental-only  
   - **AnimateDiff**  
     - can now be used with *second pass* - enhance, upscale and hires your videos!  
   - **IP Adapter**  
@@ -30,20 +47,6 @@
       *if you know of any other t2v models you'd like to see supported, let me know!*  
     - models are auto-downloaded on first use  
     - *note*: current base model will be unloaded to free up resources  
-  - [Segmind Vega](https://huggingface.co/segmind/Segmind-Vega) support  
-    - small and fast version of **SDXL**, only 3.1GB in size!  
-    - select from *networks -> reference*  
-  - [Playground v1](https://huggingface.co/playgroundai/playground-v1), [Playground v2 256](https://huggingface.co/playgroundai/playground-v2-256px-base), [Playground v2 512](https://huggingface.co/playgroundai/playground-v2-512px-base), [Playground v2 1024](https://huggingface.co/playgroundai/playground-v2-1024px-aesthetic) model support  
-    - simply select from *networks -> reference* and use as usual  
-  - [BLIP-Diffusion](https://dxli94.github.io/BLIP-Diffusion-website/)  
-    - img2img model that can replace subjects in images using prompt keywords  
-    - download and load by selecting from *networks -> reference -> blip diffusion*
-    - in image tab, select `blip diffusion` script
-  - [DemoFusion](https://github.com/PRIS-CV/DemoFusion) run your SDXL generations at any resolution!  
-    - in **Text** tab select *script* -> *demofusion*  
-    - *note*: GPU VRAM limits do not automatically go away so be careful when using it with large resolutions  
-      in the future, expect more optimizations, especially related to offloading/slicing/tiling,  
-      but at the moment this is pretty much experimental-only  
   - **Prompt scheduling** now implemented for Diffusers backend, thanks @AI-Casanova
   - **Custom pipelines** contribute by adding your own custom pipelines!  
     - for details, see fully documented example:  

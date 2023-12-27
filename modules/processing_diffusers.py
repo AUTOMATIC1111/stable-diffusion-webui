@@ -213,8 +213,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         signature = inspect.signature(type(model).__call__)
         possible = signature.parameters.keys()
         debug(f'Diffusers pipeline possible: {possible}')
-        generator_device = devices.cpu if shared.opts.diffusers_generator_device == "cpu" else shared.device
-        generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
+        if shared.opts.diffusers_generator_device == "Unset":
+            generator_device = None
+            generator = None
+        else:
+            generator_device = devices.cpu if shared.opts.diffusers_generator_device == "CPU" else shared.device
+            generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
         prompts, negative_prompts, prompts_2, negative_prompts_2 = fix_prompts(prompts, negative_prompts, prompts_2, negative_prompts_2)
         parser = 'Fixed attention'
         if shared.opts.prompt_attention != 'Fixed attention' and 'StableDiffusion' in model.__class__.__name__:
@@ -247,7 +251,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             args['noise_sampler_seed'] = seeds[0]
         if 'guidance_scale' in possible:
             args['guidance_scale'] = p.cfg_scale
-        if 'generator' in possible:
+        if 'generator' in possible and generator is not None:
             args['generator'] = generator
         if 'output_type' in possible:
             args['output_type'] = 'np'
@@ -363,6 +367,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     def update_sampler(sd_model, second_pass=False):
         sampler_selection = p.latent_sampler if second_pass else p.sampler_name
         # is_karras_compatible = sd_model.__class__.__init__.__annotations__.get("scheduler", None) == diffusers.schedulers.scheduling_utils.KarrasDiffusionSchedulers
+        if sd_model.__class__.__name__ in ['AmusedPipeline']:
+            return # models with their own schedulers
         if hasattr(sd_model, 'scheduler') and sampler_selection != 'Default':
             sampler = sd_samplers.all_samplers_map.get(sampler_selection, None)
             if sampler is None:

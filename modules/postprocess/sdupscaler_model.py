@@ -45,7 +45,7 @@ class UpscalerSD(Upscaler):
         if model is None:
             return img
         seeds = [torch.randint(0, 2 ** 32, (1,)).item() for _ in range(1)]
-        generator_device = devices.cpu if shared.opts.diffusers_generator_device == "cpu" else devices.device
+        generator_device = devices.cpu if shared.opts.diffusers_generator_device == "CPU" else devices.device
         generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
         args = {
             'prompt': '',

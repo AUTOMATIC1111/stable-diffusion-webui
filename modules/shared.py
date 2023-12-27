@@ -373,7 +373,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_move_unet": OptionInfo(True, "Move base model to CPU when using VAE"),
     "diffusers_move_refiner": OptionInfo(True, "Move refiner model to CPU when not in use"),
     "diffusers_extract_ema": OptionInfo(True, "Use model EMA weights when possible"),
-    "diffusers_generator_device": OptionInfo("default", "Generator device", gr.Radio, {"choices": ["default", "cpu"]}),
+    "diffusers_generator_device": OptionInfo("GPU", "Generator device", gr.Radio, {"choices": ["GPU", "CPU", "Unset"]}),
     "diffusers_model_cpu_offload": OptionInfo(False, "Enable model CPU offload (--medvram)"),
     "diffusers_seq_cpu_offload": OptionInfo(False, "Enable sequential CPU offload (--lowvram)"),
     "diffusers_vae_upcast": OptionInfo("default", "VAE upcasting", gr.Radio, {"choices": ['default', 'true', 'false']}),

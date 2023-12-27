@@ -756,6 +756,8 @@ def set_diffuser_options(sd_model, vae = None, op: str = 'model'):
                 devices.dtype_vae = torch.float32
                 sd_model.vae.to(devices.dtype_vae)
         shared.log.debug(f'Setting {op} VAE: name={sd_vae.loaded_vae_file} upcast={sd_model.vae.config.get("force_upcast", None)}')
+    if hasattr(sd_model, "vqvae"):
+        sd_model.vqvae.to(torch.float32) # vqvae is producing nans in fp16
     if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):
         sd_model.enable_xformers_memory_efficient_attention()
 
