@@ -35,12 +35,6 @@
   - **IP Adapter**  
     - add support for `ip-adapter-plus_sd15`, `ip-adapter-plus-face_sd15` and `ip-adapter-full-face_sd15`  
     - can now be used in *xyz-grid*  
-  - **FaceID**
-    - also based on IP adapters, but with additional face detection and external embeddings calculation  
-    - calculates face embeds based on input image and uses it to guide generation  
-    - simply select from *scripts -> faceid*  
-    - *experimental module*: requirements must be installed manually:  
-      > pip install insightface ip_adapter  
   - **Text-to-Video**  
     - in text tab, select `text-to-video` script  
     - supported models: ModelScope v1.7b, ZeroScope v1, ZeroScope v1.1, ZeroScope v2, ZeroScope v2 Dark, Potat v1  
@@ -60,6 +54,19 @@
       controls that are not applicable in current mode are now hidden  
     - allow setting of resize method directly in image tab  
       (previously via settings -> upscaler_for_img2img)  
+- **Optional**
+  - **FaceID** face guidance during generation  
+    - also based on IP adapters, but with additional face detection and external embeddings calculation  
+    - calculates face embeds based on input image and uses it to guide generation  
+    - simply select from *scripts -> faceid*  
+    - *experimental module*: requirements must be installed manually:  
+        > pip install insightface ip_adapter  
+  - **Depth 3D** image to 3D scene
+    - delivered as an extension, install from extensions tab  
+      <https://github.com/vladmandic/sd-extension-depth3d>  
+    - creates fully compatible 3D scene from any image by using depth estimation  
+      and creating a fully populated mesh  
+    - scene can be freely viewed in 3D in the UI itself or downloaded for use in other applications  
 - **General**  
   - new **onboarding**  
     - if no models are found during startup, app will no longer ask to download default checkpoint  

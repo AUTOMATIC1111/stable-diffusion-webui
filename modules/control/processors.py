@@ -43,7 +43,7 @@ config = {
     # depth models
     'Midas Depth Hybrid': {'class': MidasDetector, 'checkpoint': True, 'params': {'bg_th': 0.1, 'depth_and_normal': False}},
     'Leres Depth': {'class': LeresDetector, 'checkpoint': True, 'params': {'boost': False, 'thr_a':0, 'thr_b':0}},
-    'Zoe Depth': {'class': ZoeDetector, 'checkpoint': True, 'params': {}, 'load_config': {'pretrained_model_or_path': 'halffried/gyre_zoedepth', 'filename': 'ZoeD_M12_N.safetensors', 'model_type': "zoedepth"}},
+    'Zoe Depth': {'class': ZoeDetector, 'checkpoint': True, 'params': {'gamma_corrected': False}, 'load_config': {'pretrained_model_or_path': 'halffried/gyre_zoedepth', 'filename': 'ZoeD_M12_N.safetensors', 'model_type': "zoedepth"}},
     'Normal Bae': {'class': NormalBaeDetector, 'checkpoint': True, 'params': {}},
     # segmentation models
     'SegmentAnything': {'class': SamDetector, 'checkpoint': True, 'model': 'Base', 'params': {}},
@@ -105,6 +105,7 @@ def update_settings(*settings):
     update(['SegmentAnything', 'model'], settings[20])
     update(['Edge', 'params', 'pf'], settings[21])
     update(['Edge', 'params', 'mode'], settings[22])
+    update(['Zoe Depth', 'params', 'gamma_corrected'], settings[23])
 
 
 class Processor():

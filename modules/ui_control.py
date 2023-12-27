@@ -556,6 +556,8 @@ def create_ui(_blocks: gr.Blocks=None):
                         with gr.Accordion('Edge', open=True, elem_classes=['processor-settings']):
                             settings.append(gr.Checkbox(label="Parameter free", value=True))
                             settings.append(gr.Radio(label="Mode", choices=['edge', 'gradient'], value='edge'))
+                        with gr.Accordion('Zoe Depth', open=True, elem_classes=['processor-settings']):
+                            settings.append(gr.Checkbox(label="Gamma corrected", value=False))
                         for setting in settings:
                             setting.change(fn=processors.update_settings, inputs=settings, outputs=[])
 

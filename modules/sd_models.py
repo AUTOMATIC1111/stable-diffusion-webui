@@ -1144,20 +1144,23 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
     shared.log.debug(f'Model config loaded: {memory_stats()}')
     sd_model = None
     stdout = io.StringIO()
-    with contextlib.redirect_stdout(stdout):
-        """
-        try:
-            clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
-            with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
-                sd_model = instantiate_from_config(sd_config.model)
-        except Exception as e:
-            shared.log.error(f'LDM: instantiate from config: {e}')
-            sd_model = instantiate_from_config(sd_config.model)
-        """
+    if os.environ.get('SD_LDM_DEBUG', None) is not None:
         sd_model = instantiate_from_config(sd_config.model)
-    for line in stdout.getvalue().splitlines():
-        if len(line) > 0:
-            shared.log.info(f'LDM: {line.strip()}')
+    else:
+        with contextlib.redirect_stdout(stdout):
+            """
+            try:
+                clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
+                with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
+                    sd_model = instantiate_from_config(sd_config.model)
+            except Exception as e:
+                shared.log.error(f'LDM: instantiate from config: {e}')
+                sd_model = instantiate_from_config(sd_config.model)
+            """
+            sd_model = instantiate_from_config(sd_config.model)
+        for line in stdout.getvalue().splitlines():
+            if len(line) > 0:
+                shared.log.info(f'LDM: {line.strip()}')
     shared.log.debug(f"Model created from config: {checkpoint_config}")
     sd_model.used_config = checkpoint_config
     sd_model.has_accelerate = False
