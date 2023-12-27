@@ -67,6 +67,9 @@
     - creates fully compatible 3D scene from any image by using depth estimation  
       and creating a fully populated mesh  
     - scene can be freely viewed in 3D in the UI itself or downloaded for use in other applications  
+  - [ONNX/Olive](https://github.com/vladmandic/automatic/wiki/ONNX-Olive)  
+    - major work continues in olive branch, see wiki for details, thanks @lshqqytiger  
+      as a highlight, 4-5 it/s using DirectML on AMD GPU translates to 23-25 it/s using ONNX/Olive!  
 - **General**  
   - new **onboarding**  
     - if no models are found during startup, app will no longer ask to download default checkpoint  
