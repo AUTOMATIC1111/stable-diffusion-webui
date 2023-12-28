@@ -39,7 +39,7 @@
   - **Text-to-Video**  
     - in text tab, select `text-to-video` script  
     - supported models: **ModelScope v1.7b, ZeroScope v1, ZeroScope v1.1, ZeroScope v2, ZeroScope v2 Dark, Potat v1**  
-      *if you know of any other t2v models you'd like to see supported, let me know!*  
+      *if you know of any other t2v models youd like to see supported, let me know!*  
     - models are auto-downloaded on first use  
     - *note*: current base model will be unloaded to free up resources  
   - **Prompt scheduling** now implemented for Diffusers backend, thanks @AI-Casanova
