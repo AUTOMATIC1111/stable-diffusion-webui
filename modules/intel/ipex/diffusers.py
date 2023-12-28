@@ -1,9 +1,23 @@
+import os
 import torch
 import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
 import diffusers #0.24.0 # pylint: disable=import-error
 from diffusers.models.attention_processor import Attention
+from functools import cache
 
 # pylint: disable=protected-access, missing-function-docstring, line-too-long
+
+attention_slice_rate = float(os.environ.get('IPEX_ATTENTION_SLICE_RATE', 4))
+
+@cache
+def find_slice_size(slice_size, slice_block_size):
+    while (slice_size * slice_block_size) > attention_slice_rate:
+        slice_size = slice_size // 2
+        if slice_size <= 1:
+            slice_size = 1
+            break
+    return slice_size
+
 
 class SlicedAttnProcessor: # pylint: disable=too-few-public-methods
     r"""
@@ -61,12 +75,7 @@ class SlicedAttnProcessor: # pylint: disable=too-few-public-methods
         split_2_slice_size = query_tokens
         if block_size > 4:
             do_split_2 = True
-            #Find something divisible with the query_tokens
-            while (split_2_slice_size * slice_block_size) > 4:
-                split_2_slice_size = split_2_slice_size // 2
-                if split_2_slice_size <= 1:
-                    split_2_slice_size = 1
-                    break
+            split_2_slice_size = find_slice_size(split_2_slice_size, slice_block_size)
         else:
             do_split_2 = False
 
