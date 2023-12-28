@@ -603,7 +603,7 @@ def list_extensions_folder(folder, quiet=False):
     if disabled_extensions_all != 'none':
         return []
     disabled_extensions = opts.get('disabled_extensions', [])
-    enabled_extensions = [x for x in os.listdir(folder) if x not in disabled_extensions and not x.startswith('.')]
+    enabled_extensions = [x for x in os.listdir(folder) if os.path.isdir(os.path.join(folder, x)) and x not in disabled_extensions and not x.startswith('.')]
     if not quiet:
         log.info(f'Extensions: enabled={enabled_extensions} {name}')
     return enabled_extensions

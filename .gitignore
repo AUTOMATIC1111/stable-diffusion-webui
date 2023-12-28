@@ -32,6 +32,7 @@ cache
 *.lock
 *.zip
 *.rar
+*.7z
 *.pyc
 /*.bat
 /*.sh
