@@ -72,23 +72,17 @@ class OnnxRawPipeline(OnnxPipelineBase):
     def __init__(self, constructor: Type[OnnxPipelineBase], path: os.PathLike):
         self.model_type = constructor.__name__
         self._is_sdxl = check_pipeline_sdxl(constructor)
-        self.is_refiner = self._is_sdxl and "Img2Img" in diffusers.DiffusionPipeline.load_config(path)["_class_name"]
         self.from_huggingface_cache = shared.opts.diffusers_dir in os.path.abspath(path)
         self.path = path
         self.original_filename = os.path.basename(path)
 
-        self.constructor = construct_refiner_pipeline if self.is_refiner else constructor
-        self.submodels = (submodels_sdxl_refiner if self.is_refiner else submodels_sdxl) if self._is_sdxl else submodels_sd
         if os.path.isdir(path):
+            self.is_refiner = self._is_sdxl and "Img2Img" in diffusers.DiffusionPipeline.load_config(path)["_class_name"]
             self.init_dict = load_init_dict(constructor, path)
             self.scheduler = load_submodel(self.path, None, "scheduler", self.init_dict["scheduler"])
         else:
             try:
-                cls = None
-                if self._is_sdxl:
-                    cls = diffusers.StableDiffusionXLPipeline
-                else:
-                    cls = diffusers.StableDiffusionPipeline
+                cls = diffusers.StableDiffusionXLPipeline if self._is_sdxl else diffusers.StableDiffusionPipeline
                 pipeline = cls.from_single_file(path)
                 self.scheduler = pipeline.scheduler
                 if os.path.isdir(shared.opts.onnx_temp_dir):
@@ -96,11 +90,15 @@ class OnnxRawPipeline(OnnxPipelineBase):
                 os.mkdir(shared.opts.onnx_temp_dir)
                 pipeline.save_pretrained(shared.opts.onnx_temp_dir)
                 del pipeline
+                self.is_refiner = self._is_sdxl and "Img2Img" in diffusers.DiffusionPipeline.load_config(shared.opts.onnx_temp_dir)["_class_name"]
                 self.init_dict = load_init_dict(constructor, shared.opts.onnx_temp_dir)
             except Exception:
                 log.error('Failed to load pipeline to optimize.')
         if "vae" in self.init_dict:
             del self.init_dict["vae"]
+
+        self.constructor = construct_refiner_pipeline if self.is_refiner else constructor
+        self.submodels = (submodels_sdxl_refiner if self.is_refiner else submodels_sdxl) if self._is_sdxl else submodels_sd
 
     def derive_properties(self, pipeline: diffusers.DiffusionPipeline):
         pipeline.sd_model_hash = self.sd_model_hash
@@ -237,9 +235,9 @@ class OnnxRawPipeline(OnnxPipelineBase):
             optimized_model_paths = {}
 
             for submodel in self.submodels:
-                log.info(f"\nOptimizing {submodel}")
+                log.info(f"\nProcessing {submodel}")
 
-                with open(os.path.join(sd_configs_path, "olive", f"{'sdxl' if self._is_sdxl else 'sd'}_{submodel}.json"), "r") as config_file:
+                with open(os.path.join(sd_configs_path, "olive", 'sdxl' if self._is_sdxl else 'sd', f"{submodel}.json"), "r") as config_file:
                     olive_config = json.load(config_file)
                 pass_key = f"optimize_{shared.opts.onnx_execution_provider}"
                 olive_config["pass_flows"] = [[pass_key]]

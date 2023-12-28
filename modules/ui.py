@@ -376,6 +376,12 @@ def create_ui(startup_timer = None):
     interfaces += [(extensions_interface, "Extensions", "extensions")]
     timer.startup.record("ui-extensions")
 
+    if shared.opts.diffusers_pipeline.startswith("ONNX"):
+        from modules import ui_onnx
+
+        onnx_interface = ui_onnx.create_ui()
+        interfaces += [(onnx_interface, "ONNX", "onnx")]
+
     shared.tab_names = []
     for _interface, label, _ifid in interfaces:
         shared.tab_names.append(label)

@@ -1,3 +1,4 @@
+import sys
 from enum import Enum
 from typing import Tuple, List
 import onnxruntime as ort
@@ -69,3 +70,45 @@ def get_provider() -> Tuple:
     from modules.shared import opts
 
     return (opts.onnx_execution_provider, get_execution_provider_options(),)
+
+
+def install_execution_provider(ep: ExecutionProvider):
+    from installer import pip, uninstall, installed
+    from modules.shared import log
+
+    if installed("onnxruntime"):
+        uninstall("onnxruntime")
+    if installed("onnxruntime-directml"):
+        uninstall("onnxruntime-directml")
+    if installed("onnxruntime-gpu"):
+        uninstall("onnxruntime-gpu")
+    if installed("onnxruntime-training"):
+        uninstall("onnxruntime-training")
+    if installed("onnxruntime-openvino"):
+        uninstall("onnxruntime-openvino")
+
+    packages = ["onnxruntime"] # Failed to load olive: cannot import name '__version__' from 'onnxruntime'
+
+    if ep == ExecutionProvider.DirectML:
+        packages.append("onnxruntime-directml")
+    elif ep == ExecutionProvider.CUDA:
+        packages.append("onnxruntime-gpu")
+    elif ep == ExecutionProvider.ROCm:
+        if "linux" not in sys.platform:
+            log.warn("ROCMExecutionProvider is not supported on Windows.")
+            return
+
+        try:
+            major, minor = sys.version_info
+            cp_str = f"{major}{minor}"
+            packages.append(f"https://download.onnxruntime.ai/onnxruntime_training-1.16.3%2Brocm56-cp{cp_str}-cp{cp_str}-manylinux_2_17_x86_64.manylinux2014_x86_64.whl")
+        except Exception:
+            log.warn("Failed to install onnxruntime for ROCm.")
+    elif ep == ExecutionProvider.OpenVINO:
+        if installed("openvino"):
+            uninstall("openvino")
+        packages.append("openvino")
+        packages.append("onnxruntime-openvino")
+
+    pip(f"install --upgrade {' '.join(packages)}")
+    log.info("Please restart SD.Next.")
