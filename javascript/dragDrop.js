@@ -45,7 +45,6 @@ function dropReplaceImage(imgWrap, files) {
 }
 
 window.document.addEventListener('dragover', (e) => {
-  log('dragoverEvent', e);
   const target = e.composedPath()[0];
   const imgWrap = target.closest('[data-testid="image"]');
   if (!imgWrap && target.placeholder && target.placeholder.indexOf('Prompt') === -1) return;
@@ -57,7 +56,6 @@ window.document.addEventListener('dragover', (e) => {
 });
 
 window.document.addEventListener('drop', (e) => {
-  log('dropEvent', e);
   const target = e.composedPath()[0];
   if (!target.placeholder) return;
   if (target.placeholder.indexOf('Prompt') === -1) return;
@@ -71,7 +69,6 @@ window.document.addEventListener('drop', (e) => {
 });
 
 window.addEventListener('paste', (e) => {
-  log('pasteEvent', e.clipboardData);
   const { files } = e.clipboardData;
   if (!isValidImageList(files)) return;
   const visibleImageFields = [...gradioApp().querySelectorAll('[data-testid="image"]')]
