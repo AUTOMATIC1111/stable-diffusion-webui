@@ -45,27 +45,33 @@ function dropReplaceImage(imgWrap, files) {
 }
 
 window.document.addEventListener('dragover', (e) => {
+  log('dragoverEvent', e);
   const target = e.composedPath()[0];
   const imgWrap = target.closest('[data-testid="image"]');
   if (!imgWrap && target.placeholder && target.placeholder.indexOf('Prompt') === -1) return;
-  e.stopPropagation();
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'copy';
+  if ((e.dataTransfer?.files?.length || 0) > 0) {
+    e.stopPropagation();
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }
 });
 
 window.document.addEventListener('drop', (e) => {
+  log('dropEvent', e);
   const target = e.composedPath()[0];
   if (!target.placeholder) return;
   if (target.placeholder.indexOf('Prompt') === -1) return;
   const imgWrap = target.closest('[data-testid="image"]');
   if (!imgWrap) return;
-  e.stopPropagation();
-  e.preventDefault();
-  const { files } = e.dataTransfer;
-  dropReplaceImage(imgWrap, files);
+  if ((e.dataTransfer?.files?.length || 0) > 0) {
+    e.stopPropagation();
+    e.preventDefault();
+    dropReplaceImage(imgWrap, e.dataTransfer.files);
+  }
 });
 
 window.addEventListener('paste', (e) => {
+  log('pasteEvent', e.clipboardData);
   const { files } = e.clipboardData;
   if (!isValidImageList(files)) return;
   const visibleImageFields = [...gradioApp().querySelectorAll('[data-testid="image"]')]
