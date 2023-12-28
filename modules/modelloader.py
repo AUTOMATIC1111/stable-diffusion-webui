@@ -102,7 +102,6 @@ def download_civit_preview(model_path: str, preview_url: str):
         os.remove(preview_file)
         res += f' error={e}'
         shared.log.error(f'CivitAI download error: url={preview_url} file={preview_file} written={written} {e}')
-        errors.display(e, 'CivitAI download error')
     shared.state.end()
     if img is None:
         return res
@@ -236,8 +235,7 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         shared.log.error(f"Diffusers download error: {hub_id} {err}")
         return None
     try:
-        # TODO diffusers is this real error?
-        model_info_dict = hf.model_info(hub_id).cardData if pipeline_dir is not None else None # pylint: disable=no-member
+        model_info_dict = hf.model_info(hub_id).cardData if pipeline_dir is not None else None
     except Exception:
         model_info_dict = None
     if model_info_dict is not None and "prior" in model_info_dict: # some checkpoints need to be downloaded as "hidden" as they just serve as pre- or post-pipelines of other pipelines

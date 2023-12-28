@@ -240,7 +240,8 @@ def parse_generation_parameters(x: str):
                 res[k] = v
         except Exception:
             pass
-    res["Full quality"] = res.get('VAE', None) != 'TAESD'
+    if res.get('VAE', None) == 'TAESD':
+        res["Full quality"] = False
     debug(f"Parse prompt: {res}")
     return res
 

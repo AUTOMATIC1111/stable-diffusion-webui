@@ -569,13 +569,14 @@ def atomically_save_image():
             fn = os.path.join(paths.data_path, shared.opts.save_log_fn)
             if not fn.endswith('.json'):
                 fn += '.json'
-            entries = shared.readfile(fn)
+            entries = shared.readfile(fn, silent=True)
             idx = len(list(entries))
             if idx == 0:
                 entries = []
             entry = { 'id': idx, 'filename': filename, 'time': datetime.datetime.now().isoformat(), 'info': exifinfo }
             entries.append(entry)
-            shared.writefile(entries, fn, mode='w')
+            shared.writefile(entries, fn, mode='w', silent=True)
+            shared.log.debug(f'Saving: json="{fn}" records={len(entries)}')
         save_queue.task_done()
 
 
