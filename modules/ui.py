@@ -472,7 +472,7 @@ def create_hires_inputs(tab):
                 hr_force = gr.Checkbox(label='Force Hires', value=False, elem_id=f"{tab}_hr_force")
             with FormRow(elem_id=f"{tab}_hires_fix_row2", variant="compact"):
                 hr_second_pass_steps = gr.Slider(minimum=0, maximum=99, step=1, label='Hires steps', elem_id=f"{tab}_steps_alt", value=20)
-                hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=2.0, elem_id=f"{tab}_hr_scale")
+                hr_scale = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Upscale by", value=2.0, elem_id=f"{tab}_hr_scale")
             with FormRow(elem_id=f"{tab}_hires_fix_row3", variant="compact"):
                 hr_resize_x = gr.Slider(minimum=0, maximum=4096, step=8, label="Resize width to", value=0, elem_id=f"{tab}_hr_resize_x")
                 hr_resize_y = gr.Slider(minimum=0, maximum=4096, step=8, label="Resize height to", value=0, elem_id=f"{tab}_hr_resize_y")

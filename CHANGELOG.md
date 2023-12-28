@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-27
+## Update for 2023-12-28
 
 - **Control**  
   - native implementation of all image control methods:  
@@ -48,6 +48,8 @@
   - **Schedulers**  
     - add timesteps range, changing it will make scheduler to be over-complete or under-complete  
     - add rescale betas with zero SNR option (applicable to Euler, Euler a and DDIM, allows for higher dynamic range)  
+  - **Inpaint**  
+    - improved quality when using mask blur and padding  
   - **UI**  
     - 3 new native UI themes: **orchid-dreams**, **emerald-paradise** and **timeless-beige**, thanks @illu_Zn
     - more dynamic controls depending on the backend (original or diffusers)  

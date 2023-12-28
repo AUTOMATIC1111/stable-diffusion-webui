@@ -1227,9 +1227,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.image_mask = mask
         self.latent_mask = None
         self.mask_for_overlay = None
-        self.mask_blur = mask_blur
         self.mask_blur_x: int = 4
         self.mask_blur_y: int = 4
+        self.mask_blur = mask_blur
         self.inpainting_fill = inpainting_fill
         self.inpaint_full_res = inpaint_full_res
         self.inpaint_full_res_padding = inpaint_full_res_padding
@@ -1251,15 +1251,13 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
     @property
     def mask_blur(self):
-        if self.mask_blur_x == self.mask_blur_y:
-            return self.mask_blur_x
-        return None
+        mask_blur = max(self.mask_blur_x, self.mask_blur_y)
+        return mask_blur
 
     @mask_blur.setter
     def mask_blur(self, value):
-        if isinstance(value, int):
-            self.mask_blur_x = value
-            self.mask_blur_y = value
+        self.mask_blur_x = value
+        self.mask_blur_y = value
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if shared.backend == shared.Backend.DIFFUSERS and self.image_mask is not None and not self.is_control:
