@@ -24,7 +24,8 @@ debug_steps = shared.log.trace if os.environ.get('SD_STEPS_DEBUG', None) is not 
 debug_steps('Trace: STEPS')
 
 
-def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_prompts):
+def process_diffusers(p: StableDiffusionProcessing):
+    debug(f'Process diffusers args: {vars(p)}')
     results = []
 
     def is_txt2img():
@@ -71,7 +72,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             info=create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, [], iteration=p.iteration, position_in_batch=i)
             decoded = vae_decode(latents=latents, model=shared.sd_model, output_type='pil', full_quality=p.full_quality)
             for j in range(len(decoded)):
-                images.save_image(decoded[j], path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix=suffix)
+                images.save_image(decoded[j], path=p.outpath_samples, basename="", seed=p.seeds[i], prompt=p.prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix=suffix)
 
     def diffusers_callback_legacy(step: int, timestep: int, latents: torch.FloatTensor):
         shared.state.sampling_step = step
@@ -218,7 +219,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             generator = None
         else:
             generator_device = devices.cpu if shared.opts.diffusers_generator_device == "CPU" else shared.device
-            generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
+            generator = [torch.Generator(generator_device).manual_seed(s) for s in p.seeds]
         prompts, negative_prompts, prompts_2, negative_prompts_2 = fix_prompts(prompts, negative_prompts, prompts_2, negative_prompts_2)
         parser = 'Fixed attention'
         if shared.opts.prompt_attention != 'Fixed attention' and 'StableDiffusion' in model.__class__.__name__:
@@ -246,9 +247,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 args['negative_prompt'] = negative_prompts
         if hasattr(model, 'scheduler') and hasattr(model.scheduler, 'noise_sampler_seed') and hasattr(model.scheduler, 'noise_sampler'):
             model.scheduler.noise_sampler = None # noise needs to be reset instead of using cached values
-            model.scheduler.noise_sampler_seed = seeds[0] # some schedulers have internal noise generator and do not use pipeline generator
+            model.scheduler.noise_sampler_seed = p.seeds[0] # some schedulers have internal noise generator and do not use pipeline generator
         if 'noise_sampler_seed' in possible:
-            args['noise_sampler_seed'] = seeds[0]
+            args['noise_sampler_seed'] = p.seeds[0]
         if 'guidance_scale' in possible:
             args['guidance_scale'] = p.cfg_scale
         if 'generator' in possible and generator is not None:
@@ -378,7 +379,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             # p.extra_generation_params['Sampler options'] = ''
 
     if len(getattr(p, 'init_images', [])) > 0:
-        while len(p.init_images) < len(prompts):
+        while len(p.init_images) < len(p.prompts):
             p.init_images.append(p.init_images[-1])
 
     if shared.state.interrupted or shared.state.skipped:
@@ -441,10 +442,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     base_args = set_pipeline_args(
         model=shared.sd_model,
-        prompts=prompts,
-        negative_prompts=negative_prompts,
-        prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
-        negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
+        prompts=p.prompts,
+        negative_prompts=p.negative_prompts,
+        prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else p.prompts,
+        negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else p.negative_prompts,
         num_inference_steps=calculate_base_steps(),
         eta=shared.opts.scheduler_eta,
         guidance_scale=p.cfg_scale,
@@ -510,10 +511,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 update_sampler(shared.sd_model, second_pass=True)
                 hires_args = set_pipeline_args(
                     model=shared.sd_model,
-                    prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
-                    negative_prompts=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
-                    prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
-                    negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
+                    prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else p.prompts,
+                    negative_prompts=[p.refiner_negative] if len(p.refiner_negative) > 0 else p.negative_prompts,
+                    prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else p.prompts,
+                    negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else p.negative_prompts,
                     num_inference_steps=calculate_hires_steps(),
                     eta=shared.opts.scheduler_eta,
                     guidance_scale=p.image_cfg_scale if p.image_cfg_scale is not None else p.cfg_scale,
@@ -569,8 +570,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 output_type = 'np'
             refiner_args = set_pipeline_args(
                 model=shared.sd_refiner,
-                prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts[i],
-                negative_prompts=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts[i],
+                prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else p.prompts[i],
+                negative_prompts=[p.refiner_negative] if len(p.refiner_negative) > 0 else p.negative_prompts[i],
                 num_inference_steps=calculate_refiner_steps(),
                 eta=shared.opts.scheduler_eta,
                 # strength=p.denoising_strength,

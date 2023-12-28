@@ -919,7 +919,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             elif shared.backend == shared.Backend.DIFFUSERS:
                 from modules.processing_diffusers import process_diffusers
-                x_samples_ddim = process_diffusers(p, p.seeds, p.prompts, p.negative_prompts)
+                x_samples_ddim = process_diffusers(p)
             else:
                 raise ValueError(f"Unknown backend {shared.backend}")
 
