@@ -453,7 +453,10 @@ def process_diffusers(p: StableDiffusionProcessing):
             t1 = time.time()
             shared.log.debug(f'Profile: pipeline call: {t1-t0:.2f}')
         if not hasattr(output, 'images') and hasattr(output, 'frames'):
-            shared.log.debug(f'Generated: frames={len(output.frames[0])}')
+            if hasattr(output.frames[0], 'shape'):
+                shared.log.debug(f'Generated: frames={output.frames[0].shape[1]}')
+            else:
+                shared.log.debug(f'Generated: frames={len(output.frames[0])}')
             output.images = output.frames[0]
     except AssertionError as e:
         shared.log.info(e)
