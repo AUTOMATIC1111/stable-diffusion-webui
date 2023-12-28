@@ -706,6 +706,18 @@ def set_diffuser_options(sd_model, vae = None, op: str = 'model'):
     if hasattr(sd_model, "watermark"):
         sd_model.watermark = NoWatermark()
     sd_model.has_accelerate = False
+    if hasattr(sd_model, "vae"):
+        if vae is not None:
+            sd_model.vae = vae
+        if shared.opts.diffusers_vae_upcast != 'default':
+            if shared.opts.diffusers_vae_upcast == 'true':
+                sd_model.vae.config.force_upcast = True
+            else:
+                sd_model.vae.config.force_upcast = False
+            if shared.opts.no_half_vae:
+                devices.dtype_vae = torch.float32
+                sd_model.vae.to(devices.dtype_vae)
+        shared.log.debug(f'Setting {op} VAE: name={sd_vae.loaded_vae_file} upcast={sd_model.vae.config.get("force_upcast", None)}')
     if hasattr(sd_model, "enable_model_cpu_offload"):
         if (shared.cmd_opts.medvram and devices.backend != "directml") or shared.opts.diffusers_model_cpu_offload:
             shared.log.debug(f'Setting {op}: enable model CPU offload')
@@ -744,18 +756,6 @@ def set_diffuser_options(sd_model, vae = None, op: str = 'model'):
             sd_model.enable_attention_slicing()
         else:
             sd_model.disable_attention_slicing()
-    if hasattr(sd_model, "vae"):
-        if vae is not None:
-            sd_model.vae = vae
-        if shared.opts.diffusers_vae_upcast != 'default':
-            if shared.opts.diffusers_vae_upcast == 'true':
-                sd_model.vae.config.force_upcast = True
-            else:
-                sd_model.vae.config.force_upcast = False
-            if shared.opts.no_half_vae:
-                devices.dtype_vae = torch.float32
-                sd_model.vae.to(devices.dtype_vae)
-        shared.log.debug(f'Setting {op} VAE: name={sd_vae.loaded_vae_file} upcast={sd_model.vae.config.get("force_upcast", None)}')
     if hasattr(sd_model, "vqvae"):
         sd_model.vqvae.to(torch.float32) # vqvae is producing nans in fp16
     if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):

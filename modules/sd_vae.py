@@ -274,8 +274,7 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
         if hasattr(shared.sd_model, "vae") and hasattr(shared.sd_model, "sd_checkpoint_info"):
             vae = load_vae_diffusers(shared.sd_model.sd_checkpoint_info.filename, vae_file, vae_source)
             if vae is not None:
-                if vae is not None:
-                    sd_model.vae = vae
+                sd_models.set_diffuser_options(sd_model, vae=vae, op='vae')
 
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and not getattr(sd_model, 'has_accelerate', False):
         sd_model.to(devices.device)
