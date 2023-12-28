@@ -74,7 +74,6 @@ def get_provider() -> Tuple:
 
 def install_execution_provider(ep: ExecutionProvider):
     from installer import pip, uninstall, installed
-    from modules.shared import log
 
     if installed("onnxruntime"):
         uninstall("onnxruntime")

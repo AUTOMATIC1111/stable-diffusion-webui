@@ -170,7 +170,7 @@
       }
     }
   },
-  "pass_flows": [[]],
+  "pass_flows": [["optimize"]],
   "engine": {
     "search_strategy": {
       "execution_order": "joint",

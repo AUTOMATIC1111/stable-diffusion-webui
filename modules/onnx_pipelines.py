@@ -19,7 +19,6 @@ from installer import log
 from modules import shared
 from modules.paths import sd_configs_path
 from modules.sd_models import CheckpointInfo
-from modules.sd_models_compile import CompiledModelState
 from modules.processing import StableDiffusionProcessing
 from modules.olive import config
 from modules.onnx import OnnxFakeModule, submodels_sd, submodels_sdxl, submodels_sdxl_refiner
@@ -240,7 +239,10 @@ class OnnxRawPipeline(OnnxPipelineBase):
                 with open(os.path.join(sd_configs_path, "olive", 'sdxl' if self._is_sdxl else 'sd', f"{submodel}.json"), "r") as config_file:
                     olive_config = json.load(config_file)
                 pass_key = f"optimize_{shared.opts.onnx_execution_provider}"
-                olive_config["pass_flows"] = [[pass_key]]
+                for flow in olive_config["pass_flows"]:
+                    for i in range(len(flow)):
+                        if flow[i] == "optimize":
+                            flow[i] = pass_key
                 olive_config["input_model"]["config"]["model_path"] = os.path.abspath(os.path.join(in_dir, submodel, "model.onnx"))
                 olive_config["passes"][pass_key]["config"]["float16"] = shared.opts.olive_float16
                 olive_config["engine"]["execution_providers"] = [shared.opts.onnx_execution_provider]
@@ -327,7 +329,10 @@ class OnnxRawPipeline(OnnxPipelineBase):
         disable_classifier_free_guidance = p.cfg_scale < 0.01
 
         config.from_huggingface_cache = self.from_huggingface_cache
-        config.use_fp16_fixed_vae = self._is_sdxl and not shared.opts.diffusers_vae_upcast
+        if self._is_sdxl and not shared.opts.diffusers_vae_upcast:
+            log.info("ONNX: VAE override set: id=madebyollin/sdxl-vae-fp16-fix, subfolder=")
+            config.vae_id = "madebyollin/sdxl-vae-fp16-fix"
+            config.vae_subfolder = ""
 
         config.is_sdxl = self._is_sdxl
 

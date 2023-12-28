@@ -9,10 +9,12 @@ class ENVStore:
     __DESERIALIZER: Dict[Type, Callable[[str,], Any]] = {
         bool: lambda x: bool(int(x)),
         int: int,
+        str: lambda x: x,
     }
     __SERIALIZER: Dict[Type, Callable[[Any,], str]] = {
         bool: lambda x: str(int(x)),
         int: str,
+        str: lambda x: x,
     }
 
     def __getattr__(self, name: str):
@@ -38,9 +40,11 @@ class ENVStore:
 
 class OliveOptimizerConfig(ENVStore):
     from_huggingface_cache: bool
-    use_fp16_fixed_vae: bool
 
     is_sdxl: bool
+
+    vae_id: str
+    vae_subfolder: str
 
     width: int
     height: int
@@ -220,9 +224,11 @@ def vae_encoder_inputs(_, torch_dtype):
 
 
 def vae_encoder_load(model_name):
-    if config.use_fp16_fixed_vae:
-        model_name = "madebyollin/sdxl-vae-fp16-fix"
-    model = diffusers.AutoencoderKL.from_pretrained(model_name, subfolder="vae_encoder" if os.path.isdir(os.path.join(model_name, "vae_encoder")) else "vae", **get_loader_arguments())
+    subfolder = "vae_encoder" if os.path.isdir(os.path.join(model_name, "vae_encoder")) else "vae"
+    if config.vae_id is not None:
+        model_name = config.vae_id
+        subfolder = config.vae_subfolder
+    model = diffusers.AutoencoderKL.from_pretrained(model_name, subfolder=subfolder, **get_loader_arguments())
     model.forward = lambda sample, return_dict: model.encode(sample, return_dict)[0].sample()
     return model
 
@@ -248,9 +254,11 @@ def vae_decoder_inputs(_, torch_dtype):
 
 
 def vae_decoder_load(model_name):
-    if config.use_fp16_fixed_vae:
-        model_name = "madebyollin/sdxl-vae-fp16-fix"
-    model = diffusers.AutoencoderKL.from_pretrained(model_name, subfolder="vae_decoder" if os.path.isdir(os.path.join(model_name, "vae_decoder")) else "vae", **get_loader_arguments())
+    subfolder = "vae_decoder" if os.path.isdir(os.path.join(model_name, "vae_decoder")) else "vae"
+    if config.vae_id is not None:
+        model_name = config.vae_id
+        subfolder = config.vae_subfolder
+    model = diffusers.AutoencoderKL.from_pretrained(model_name, subfolder=subfolder, **get_loader_arguments())
     model.forward = model.decode
     return model
 

@@ -1,1 +1,111 @@
-{"input_model": {"type": "PyTorchModel", "config": {"model_path": "", "model_loader": "text_encoder_load", "model_script": "modules/olive.py", "io_config": {"input_names": ["input_ids"], "output_names": ["last_hidden_state", "pooler_output"], "dynamic_axes": {"input_ids": {"0": "batch", "1": "sequence"}}}, "dummy_inputs_func": "text_encoder_conversion_inputs"}}, "systems": {"local_system": {"type": "LocalSystem", "config": {"accelerators": ["gpu"]}}}, "evaluators": {"common_evaluator": {"metrics": [{"name": "latency", "type": "latency", "sub_types": [{"name": "avg"}], "user_config": {"user_script": "modules/olive.py", "dataloader_func": "text_encoder_data_loader", "batch_size": 1}}]}}, "passes": {"optimize_DmlExecutionProvider": {"type": "OrtTransformersOptimization", "disable_search": true, "config": {"model_type": "clip", "opt_level": 0, "float16": true, "use_gpu": true, "keep_io_types": false, "optimization_options": {"enable_gelu": true, "enable_layer_norm": true, "enable_attention": true, "use_multi_head_attention": true, "enable_skip_layer_norm": false, "enable_embed_layer_norm": true, "enable_bias_skip_layer_norm": false, "enable_bias_gelu": true, "enable_gelu_approximation": false, "enable_qordered_matmul": false, "enable_shape_inference": true, "enable_gemm_fast_gelu": false, "enable_nhwc_conv": false, "enable_group_norm": true, "enable_bias_splitgelu": false, "enable_packed_qkv": true, "enable_packed_kv": true, "enable_bias_add": false, "group_norm_channels_last": false}, "force_fp32_ops": ["RandomNormalLike"], "force_fp16_inputs": {"GroupNorm": [0, 1, 2]}}}, "optimize_CUDAExecutionProvider": {"type": "OrtTransformersOptimization", "disable_search": true, "config": {"model_type": "clip", "opt_level": 0, "float16": true, "use_gpu": true, "keep_io_types": false}}, "optimize_ROCMExecutionProvider": {"type": "OrtTransformersOptimization", "disable_search": true, "config": {"model_type": "clip", "opt_level": 0, "float16": true, "use_gpu": true, "keep_io_types": false}}}, "pass_flows": [[]], "engine": {"search_strategy": {"execution_order": "joint", "search_algorithm": "exhaustive"}, "evaluator": "common_evaluator", "evaluate_input_model": false, "host": "local_system", "target": "local_system", "cache_dir": "cache", "output_name": "text_encoder", "output_dir": "footprints", "execution_providers": ["DmlExecutionProvider"]}}
+{
+  "input_model": {
+    "type": "PyTorchModel",
+    "config": {
+      "model_path": "",
+      "model_loader": "text_encoder_load",
+      "model_script": "modules/olive.py",
+      "io_config": {
+        "input_names": ["input_ids"],
+        "output_names": ["last_hidden_state", "pooler_output"],
+        "dynamic_axes": { "input_ids": { "0": "batch", "1": "sequence" } }
+      },
+      "dummy_inputs_func": "text_encoder_conversion_inputs"
+    }
+  },
+  "systems": {
+    "local_system": {
+      "type": "LocalSystem",
+      "config": { "accelerators": ["gpu"] }
+    }
+  },
+  "evaluators": {
+    "common_evaluator": {
+      "metrics": [
+        {
+          "name": "latency",
+          "type": "latency",
+          "sub_types": [{ "name": "avg" }],
+          "user_config": {
+            "user_script": "modules/olive.py",
+            "dataloader_func": "text_encoder_data_loader",
+            "batch_size": 1
+          }
+        }
+      ]
+    }
+  },
+  "passes": {
+    "optimize_DmlExecutionProvider": {
+      "type": "OrtTransformersOptimization",
+      "disable_search": true,
+      "config": {
+        "model_type": "clip",
+        "opt_level": 0,
+        "float16": true,
+        "use_gpu": true,
+        "keep_io_types": false,
+        "optimization_options": {
+          "enable_gelu": true,
+          "enable_layer_norm": true,
+          "enable_attention": true,
+          "use_multi_head_attention": true,
+          "enable_skip_layer_norm": false,
+          "enable_embed_layer_norm": true,
+          "enable_bias_skip_layer_norm": false,
+          "enable_bias_gelu": true,
+          "enable_gelu_approximation": false,
+          "enable_qordered_matmul": false,
+          "enable_shape_inference": true,
+          "enable_gemm_fast_gelu": false,
+          "enable_nhwc_conv": false,
+          "enable_group_norm": true,
+          "enable_bias_splitgelu": false,
+          "enable_packed_qkv": true,
+          "enable_packed_kv": true,
+          "enable_bias_add": false,
+          "group_norm_channels_last": false
+        },
+        "force_fp32_ops": ["RandomNormalLike"],
+        "force_fp16_inputs": { "GroupNorm": [0, 1, 2] }
+      }
+    },
+    "optimize_CUDAExecutionProvider": {
+      "type": "OrtTransformersOptimization",
+      "disable_search": true,
+      "config": {
+        "model_type": "clip",
+        "opt_level": 0,
+        "float16": true,
+        "use_gpu": true,
+        "keep_io_types": false
+      }
+    },
+    "optimize_ROCMExecutionProvider": {
+      "type": "OrtTransformersOptimization",
+      "disable_search": true,
+      "config": {
+        "model_type": "clip",
+        "opt_level": 0,
+        "float16": true,
+        "use_gpu": true,
+        "keep_io_types": false
+      }
+    }
+  },
+  "pass_flows": [["optimize"]],
+  "engine": {
+    "search_strategy": {
+      "execution_order": "joint",
+      "search_algorithm": "exhaustive"
+    },
+    "evaluator": "common_evaluator",
+    "evaluate_input_model": false,
+    "host": "local_system",
+    "target": "local_system",
+    "cache_dir": "cache",
+    "output_name": "text_encoder",
+    "output_dir": "footprints",
+    "execution_providers": ["DmlExecutionProvider"]
+  }
+}
