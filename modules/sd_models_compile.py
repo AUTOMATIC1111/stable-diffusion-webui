@@ -43,6 +43,25 @@ def ipex_optimize(sd_model):
     except Exception as e:
         shared.log.warning(f"IPEX Optimize: error: {e}")
 
+def nncf_compress_weights(sd_model):
+    try:
+        t0 = time.time()
+        import nncf
+        if hasattr(sd_model, 'unet'):
+            sd_model.unet = nncf.compress_weights(sd_model.unet)
+        else:
+            shared.log.warning('Compress Weights enabled but model has no Unet')
+        if shared.opts.nncf_compress_vae_weights:
+            if hasattr(sd_model, 'vae'):
+                sd_model.vae = nncf.compress_weights(sd_model.vae)
+            if hasattr(sd_model, 'movq'):
+                sd_model.movq = nncf.compress_weights(sd_model.movq)
+        t1 = time.time()
+        shared.log.info(f"Compress Weights: time={t1-t0:.2f}")
+        return sd_model
+    except Exception as e:
+        shared.log.warning(f"Compress Weights: error: {e}")
+
 
 def optimize_openvino():
     try:
@@ -137,6 +156,8 @@ def compile_torch(sd_model):
 def compile_diffusers(sd_model):
     if shared.opts.ipex_optimize:
         sd_model = ipex_optimize(sd_model)
+    if shared.opts.nncf_compress_weights:
+        sd_model = nncf_compress_weights(sd_model)
     if not (shared.opts.cuda_compile or shared.opts.cuda_compile_vae or shared.opts.cuda_compile_upscaler):
         return sd_model
     if shared.opts.cuda_compile_backend == 'none':

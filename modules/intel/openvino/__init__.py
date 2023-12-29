@@ -229,7 +229,7 @@ def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_na
         om.inputs[idx].get_node().set_element_type(dtype_mapping[input_data.dtype])
         om.inputs[idx].get_node().set_partial_shape(PartialShape(list(input_data.shape)))
     om.validate_nodes_and_infer_types()
-    if shared.opts.openvino_compress_weights:
+    if shared.opts.nncf_compress_weights:
         om = nncf.compress_weights(om)
 
     if model_hash_str is not None:
@@ -257,7 +257,7 @@ def openvino_compile_cached_model(cached_model_path, *example_inputs):
         om.inputs[idx].get_node().set_element_type(dtype_mapping[input_data.dtype])
         om.inputs[idx].get_node().set_partial_shape(PartialShape(list(input_data.shape)))
     om.validate_nodes_and_infer_types()
-    if shared.opts.openvino_compress_weights:
+    if shared.opts.nncf_compress_weights:
         om = nncf.compress_weights(om)
 
     core.set_property({'CACHE_DIR': shared.opts.openvino_cache_path + '/blob'})

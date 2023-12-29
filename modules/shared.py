@@ -339,7 +339,8 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "openvino_hetero_gpu": OptionInfo(False, "OpenVINO use Hetero Device for single inference with multiple devices"),
     "openvino_remove_cpu_from_hetero": OptionInfo(False, "OpenVINO remove CPU from Hetero Device"),
     "openvino_remove_igpu_from_hetero": OptionInfo(False, "OpenVINO remove iGPU from Hetero Device"),
-    "openvino_compress_weights": OptionInfo(False, "OpenVINO compress weights to 8 bit (CPU Only)"),
+    "nncf_compress_weights": OptionInfo(False, "Compress Model weights to 8 bit with NNCF"),
+    "nncf_compress_vae_weights": OptionInfo(False, "Compress VAE weights to 8 bit with NNCF"),
 }))
 
 options_templates.update(options_section(('advanced', "Inference Settings"), {
