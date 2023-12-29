@@ -81,6 +81,9 @@ def base_model_version(keys, lora_modules_num, all_modules_num) -> typing.Option
     #     res = CheckResult(SdModelVer.SDXL, ModelType.VAE)
     #     logger.debug("该模型为sdxl的vae")
     # # todo: 是否缺失1.5版本VAE
+    elif cond_stage_count == 0 and conditioner_stage_count == 0 and diffusion_model_count != 0:
+        res = CheckResult(SdModelVer.SD15)
+        logger.debug("该模型为sd1.5的底膜")
     elif first_stage_count == 0:
         if lora_modules_num != 0:
             if lora_modules_num <= 1050:
