@@ -20,7 +20,9 @@ All individual features are not listed here, instead check [ChangeLog](CHANGELOG
 - Multiple backends!  
   ▹ **Original | Diffusers**
 - Multiple diffusion models!  
-  ▹ **Stable Diffusion | SD-XL | LCM | Segmind | Kandinsky | Pixart-α | Würstchen | DeepFloyd IF | UniDiffusion | SD-Distilled | etc.**
+  ▹ **Stable Diffusion 1.5/2.1 | SD-XL | LCM | Segmind | Kandinsky | Pixart-α | Würstchen | aMUSEd | DeepFloyd IF | UniDiffusion | SD-Distilled | BLiP Diffusion | etc.**
+- Built-in Control for Text, Image, Batch and video processing!  
+  ▹ **ControlNet | ControlNet XS | Control LLLite | T2I Adapters | IP Adapters**  
 - Multiplatform!  
  ▹ **Windows | Linux | MacOS with CPU | nVidia | AMD | IntelArc | DirectML | OpenVINO | ONNX+Olive**
 - Platform specific autodetection and tuning performed on install
@@ -28,7 +30,6 @@ All individual features are not listed here, instead check [ChangeLog](CHANGELOG
 - Improved prompt parser  
 - Enhanced *Lora*/*LoCon*/*Lyco* code supporting latest trends in training  
 - Built-in queue management  
-- Advanced metadata caching and handling to speed up operations  
 - Enterprise level logging and hardened API  
 - Modern localization and hints engine  
 - Broad compatibility with existing extensions ecosystem and new extensions manager  
@@ -37,7 +38,8 @@ All individual features are not listed here, instead check [ChangeLog](CHANGELOG
 
 <br>
 
-![Screenshot-Dark](html/black-teal.jpg)
+![Screenshot-Dark](html/xmas-default.jpg)
+![Screenshot-Control](html/xmas-control.jpg)
 ![Screenshot-Light](html/light-teal.jpg)
 
 <br>
@@ -62,6 +64,7 @@ Additional models will be added as they become available and there is public int
 - [StabilityAI Stable Diffusion XL](https://github.com/Stability-AI/generative-models)  
 - [StabilityAI Stable Video Diffusion](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid) Base and XT  
 - [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)  
+- [aMUSEd 256](https://huggingface.co/amused/amused-256) 256 and 512
 - [Segmind Vega](https://huggingface.co/segmind/Segmind-Vega)  
 - [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)  
 - [Kandinsky](https://github.com/ai-forever/Kandinsky-2) *2.1 and 2.2 and latest 3.0*  
@@ -72,6 +75,8 @@ Additional models will be added as they become available and there is public int
 - [DeepFloyd IF](https://github.com/deep-floyd/IF) *Medium and Large*
 - [ModelScope T2V](https://huggingface.co/damo-vilab/text-to-video-ms-1.7b)
 - [Segmind SD Distilled](https://huggingface.co/blog/sd_distillation) *(all variants)*
+- [BLIP-Diffusion](https://dxli94.github.io/BLIP-Diffusion-website/)  
+
 
 Also supported are modifiers such as:
 - **LCM** and **Turbo** (Adversarial Diffusion Distillation) networks

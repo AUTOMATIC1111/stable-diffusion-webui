@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-28
+## Update for 2023-12-29
 
 - **Control**  
   - native implementation of all image control methods:  

@@ -22,6 +22,11 @@ def test_processors(image):
         else:
             output = processor(image)
             processor.reset()
+        if output.size != image.size:
+            output = output.resize(image.size, Image.Resampling.LANCZOS)
+        if output.mode != image.mode:
+            output = output.convert(image.mode)
+        shared.log.debug(f'Testing processor: input={image} mode={image.mode} output={output} mode={output.mode}')
         diff = ImageChops.difference(image, output)
         if not diff.getbbox():
             processor_id = f'{processor_id} null'
