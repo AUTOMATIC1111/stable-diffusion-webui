@@ -385,6 +385,10 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "directml_sep": OptionInfo("<h2>IPEX and DirectML</h2>", "", gr.HTML, {"visible": devices.backend == "directml"}),
     "directml_memory_provider": OptionInfo(default_memory_provider, 'DirectML memory stats provider', gr.Radio, {"choices": memory_providers, "visible": devices.backend == "directml"}),
     "directml_catch_nan": OptionInfo(False, "DirectML retry ops for NaN", gr.Checkbox, {"visible": devices.backend == "directml"}),
+    "directml_olive_sep": OptionInfo("<h2>DirectML and Olive</h2>", "", gr.HTML),
+    "olive_float16": OptionInfo(True, 'Olive use FP16 on optimization (will use FP32 if unchecked)'),
+    "olive_static_dims": OptionInfo(True, 'Olive use static dimensions (make inference faster with OrtTransformersOptimization)'),
+    "olive_cache_optimized": OptionInfo(True, 'Olive cache optimized models'),
 }))
 
 options_templates.update(options_section(('advanced', "Inference Settings"), {

@@ -349,7 +349,6 @@ class OnnxRawPipeline(OnnxPipelineBase):
 
         kwargs = {
             "provider": get_provider(),
-            "sess_options": get_sess_options(p.batch_size if disable_classifier_free_guidance else p.batch_size * 2, p.height, p.width, self._is_sdxl),
         }
 
         converted_dir = self.convert(in_dir)
@@ -358,10 +357,12 @@ class OnnxRawPipeline(OnnxPipelineBase):
             return self.derive_properties(load_pipeline(diffusers.StableDiffusionXLPipeline if self._is_sdxl else diffusers.StableDiffusionPipeline, self.path, **kwargs))
         out_dir = converted_dir
 
-        if shared.opts.onnx_enable_olive:
+        if shared.opts.cuda_compile_backend == "olive-ai":
             log.warning("Olive implementation is experimental. It contains potentially an issue and is subject to change at any time.")
             if p.width != p.height:
                 log.warning("Olive detected different width and height. The quality of the result is not guaranteed.")
+            if shared.opts.olive_static_dims:
+                kwargs["sess_options"] = get_sess_options(p.batch_size if disable_classifier_free_guidance else p.batch_size * 2, p.height, p.width, self._is_sdxl)
             optimized_dir = self.optimize(converted_dir)
             if optimized_dir is None:
                 log.error('Failed to optimize pipeline. The generation will fall back to unoptimized one.')

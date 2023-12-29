@@ -26,7 +26,7 @@ class OnnxRuntimeModel(OnnxFakeModule, diffusers.OnnxRuntimeModel):
         return ()
 
 
-def optimize_pipeline(p, refiner_enabled: bool):
+def preprocess_pipeline(p, refiner_enabled: bool):
     from modules import shared, sd_models
 
     if "ONNX" not in shared.opts.diffusers_pipeline:

@@ -7,7 +7,7 @@ import torch
 import torchvision.transforms.functional as TF
 import diffusers
 from modules import shared, devices, processing, sd_samplers, sd_models, images, errors, masking, prompt_parser_diffusers, sd_hijack_hypertile, processing_correction, processing_vae
-from modules.onnx import optimize_pipeline as onnx_optimize_pipeline
+from modules.onnx import preprocess_pipeline as onnx_preprocess_pipeline
 
 
 debug = shared.log.trace if os.environ.get('SD_DIFFUSERS_DEBUG', None) is not None else lambda *args, **kwargs: None
@@ -464,7 +464,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         return max(1, int(steps))
 
     shared.sd_model = update_pipeline(shared.sd_model, p)
-    onnx_optimize_pipeline(p, is_refiner_enabled())
+    onnx_preprocess_pipeline(p, is_refiner_enabled())
     base_args = set_pipeline_args(
         model=shared.sd_model,
         prompts=p.prompts,
@@ -536,7 +536,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             if (latent_scale_mode is not None or p.hr_force) and p.denoising_strength > 0:
                 p.ops.append('hires')
                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
-                onnx_optimize_pipeline(p, is_refiner_enabled())
+                onnx_preprocess_pipeline(p, is_refiner_enabled())
                 recompile_model(hires=True)
                 update_sampler(shared.sd_model, second_pass=True)
                 hires_args = set_pipeline_args(
