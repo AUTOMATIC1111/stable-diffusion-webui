@@ -102,7 +102,7 @@
     - fix IPEX Optimize not applying with Diffusers backend  
     - disable 32bit workarounds if the GPU supports 64bit  
     - add `DISABLE_IPEXRUN` and `DISABLE_IPEX_1024_WA` environment variables  
-    - compatibility improvements  
+    - performance and compatibility improvements  
   - **OpenVINO**, thanks @disty0  
     - **8 bit support for CPUs**  
     - reduce System RAM usage  
