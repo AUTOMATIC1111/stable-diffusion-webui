@@ -221,7 +221,8 @@ def ipex_hijacks():
     torch.UntypedStorage.is_cuda = is_cuda
 
     torch.nn.functional.interpolate = interpolate
-    torch.linalg.solve = linalg_solve
+    if hasattr(torch.xpu, "Generator"):
+        torch.linalg.solve = linalg_solve
 
     torch.bmm = torch_bmm
     torch.cat = torch_cat
