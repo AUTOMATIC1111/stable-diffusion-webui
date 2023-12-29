@@ -31,7 +31,7 @@ def check_tmp_file(gradio, filename):
     return False
 
 
-def save_pil_to_file(pil_image, dir=None, format="png", cache_dir=None):
+def save_pil_to_file(pil_image, cache_dir=None, format="png"):
     already_saved_as = getattr(pil_image, 'already_saved_as', None)
     if already_saved_as and os.path.isfile(already_saved_as):
         register_tmp_file(shared.demo, already_saved_as)
@@ -42,9 +42,10 @@ def save_pil_to_file(pil_image, dir=None, format="png", cache_dir=None):
 
         return filename
 
-    if shared.opts.temp_dir != "":
+    if shared.opts.temp_dir:
         dir = shared.opts.temp_dir
     else:
+        dir = cache_dir
         os.makedirs(dir, exist_ok=True)
 
     use_metadata = False
