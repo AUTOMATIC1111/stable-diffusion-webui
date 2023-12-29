@@ -83,7 +83,7 @@ class Network:  # LoraModule
         self.name = name
         self.network_on_disk = network_on_disk
         self.te_multiplier = 1.0
-        self.unet_multiplier = 1.0
+        self.unet_multiplier = [1.0] * 3
         self.dyn_dim = None
         self.modules = {}
         self.mtime = None
@@ -112,8 +112,14 @@ class NetworkModule:
     def multiplier(self):
         if 'transformer' in self.sd_key[:20]:
             return self.network.te_multiplier
+        if "down_blocks" in self.sd_key:
+            return self.network.unet_multiplier[0]
+        if "mid_block" in self.sd_key:
+            return self.network.unet_multiplier[1]
+        if "up_blocks" in self.sd_key:
+            return self.network.unet_multiplier[2]
         else:
-            return self.network.unet_multiplier
+            return self.network.unet_multiplier[0]
 
     def calc_scale(self):
         if self.scale is not None:

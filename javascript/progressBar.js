@@ -40,7 +40,7 @@ function checkPaused(state) {
 }
 
 function setProgress(res) {
-  const elements = ['txt2img_generate', 'img2img_generate', 'extras_generate'];
+  const elements = ['txt2img_generate', 'img2img_generate', 'extras_generate', 'control_generate'];
   const progress = (res?.progress || 0);
   const job = res?.job || '';
   const perc = res && (progress > 0) ? `${Math.round(100.0 * progress)}%` : '';
@@ -57,10 +57,12 @@ function setProgress(res) {
   document.title = `SD.Next ${perc}`;
   for (const elId of elements) {
     const el = document.getElementById(elId);
-    el.innerText = (res ? `${job} ${perc} ${eta}` : 'Generate');
-    el.style.background = res && (progress > 0)
-      ? `linear-gradient(to right, var(--primary-500) 0%, var(--primary-800) ${perc}, var(--neutral-700) ${perc})`
-      : 'var(--button-primary-background-fill)';
+    if (el) {
+      el.innerText = (res ? `${job} ${perc} ${eta}` : 'Generate');
+      el.style.background = res && (progress > 0)
+        ? `linear-gradient(to right, var(--primary-500) 0%, var(--primary-800) ${perc}, var(--neutral-700) ${perc})`
+        : 'var(--button-primary-background-fill)';
+    }
   }
 }
 

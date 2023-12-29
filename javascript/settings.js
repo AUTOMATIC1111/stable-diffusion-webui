@@ -108,7 +108,7 @@ onAfterUiUpdate(async () => {
   const settingsSearch = gradioApp().querySelectorAll('#settings_search > label > textarea')[0];
   settingsSearch.oninput = (e) => {
     setTimeout(() => {
-      log('settingsSearch', e.target.value)
+      log('settingsSearch', e.target.value);
       showAllSettings();
       gradioApp().querySelectorAll('#tab_settings .tabitem').forEach((section) => {
         section.querySelectorAll('.dirtyable').forEach((setting) => {
@@ -129,6 +129,40 @@ onOptionsChanged(() => {
   });
 });
 
+async function initModels() {
+  const warn = () => `
+    <p style='color: white'>No models available</p>
+    - Select a model from reference list to download or<br>
+    - Set model path to a folder containing your models<br>
+    Current model path: ${opts.ckpt_dir}<br>
+  `;
+  const el = gradioApp().getElementById('main_info');
+  const en = gradioApp().getElementById('txt2img_extra_networks');
+  if (!el || !en) return;
+  const req = await fetch('/sdapi/v1/sd-models');
+  const res = req.ok ? await req.json() : [];
+  log('initModels', res.length);
+  const ready = () => `
+    <p style='color: white'>Ready</p>
+    ${res.length} models available<br>
+  `;
+  el.innerHTML = res.length > 0 ? ready() : warn();
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', res.length === 0 ? 30000 : 1500);
+  if (res.length === 0) {
+    if (en.classList.contains('hide')) gradioApp().getElementById('txt2img_extra_networks_btn').click();
+    const repeat = setInterval(() => {
+      const buttons = Array.from(gradioApp().querySelectorAll('#txt2img_model_subdirs > button')) || [];
+      const reference = buttons.find((b) => b.innerText === 'Reference');
+      if (reference) {
+        clearInterval(repeat);
+        reference.click();
+        log('enReferenceSelect');
+      }
+    }, 100);
+  }
+}
+
 function initSettings() {
   if (settingsInitialized) return;
   settingsInitialized = true;
@@ -138,7 +172,7 @@ function initSettings() {
   const observer = new MutationObserver((mutations) => {
     const showAllPages = gradioApp().getElementById('settings_show_all_pages');
     if (showAllPages.style.display === 'none') return;
-    const mutation = (mut) => mut.type === 'attributes' && mut.attributeName === 'style'
+    const mutation = (mut) => mut.type === 'attributes' && mut.attributeName === 'style';
     if (mutations.some(mutation)) showAllSettings();
   });
   const tabContentWrapper = document.createElement('div');
@@ -155,3 +189,4 @@ function initSettings() {
 }
 
 onUiLoaded(initSettings);
+onUiLoaded(initModels);

@@ -15,12 +15,12 @@ class NetworkModuleIa3(network.NetworkModule):
         self.w = weights.w["weight"]
         self.on_input = weights.w["on_input"].item()
 
-    def calc_updown(self, orig_weight):
-        w = self.w.to(orig_weight.device, dtype=orig_weight.dtype)
-        output_shape = [w.size(0), orig_weight.size(1)]
+    def calc_updown(self, target):
+        w = self.w.to(target.device, dtype=target.dtype)
+        output_shape = [w.size(0), target.size(1)]
         if self.on_input:
             output_shape.reverse()
         else:
             w = w.reshape(-1, 1)
-        updown = orig_weight * w
-        return self.finalize_updown(updown, orig_weight, output_shape)
+        updown = target * w
+        return self.finalize_updown(updown, target, output_shape)

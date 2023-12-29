@@ -101,7 +101,7 @@ class ScriptPostprocessingRunner:
             process_args = {}
             for (name, _component), value in zip(script.controls.items(), script_args):
                 process_args[name] = value
-            shared.log.debug(f'postprocess: script={script.name} args={process_args}')
+            shared.log.debug(f'Process: script={script.name} args={process_args}')
             script.process(pp, **process_args)
 
     def create_args_for_run(self, scripts_args):
@@ -110,15 +110,25 @@ class ScriptPostprocessingRunner:
                 self.setup_ui()
         scripts = self.scripts_in_preferred_order()
         args = [None] * max([x.args_to for x in scripts])
-
         for script in scripts:
             script_args_dict = scripts_args.get(script.name, None)
             if script_args_dict is not None:
                 for i, name in enumerate(script.controls):
                     args[script.args_from + i] = script_args_dict.get(name, None)
-
         return args
 
     def image_changed(self):
         for script in self.scripts_in_preferred_order():
             script.image_changed()
+
+    def postprocess(self, filenames, args):
+        for script in self.scripts_in_preferred_order():
+            if not hasattr(script, 'postprocess'):
+                continue
+            shared.state.job = script.name
+            script_args = args[script.args_from:script.args_to]
+            process_args = {}
+            for (name, _component), value in zip(script.controls.items(), script_args):
+                process_args[name] = value
+            shared.log.debug(f'Postprocess: script={script.name} args={process_args}')
+            script.postprocess(filenames, **process_args)

@@ -8,7 +8,7 @@ from modules import shared, errors, paths
 
 
 Savedfile = namedtuple("Savedfile", ["name"])
-debug = errors.log.info if os.environ.get('SD_PATH_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug = errors.log.trace if os.environ.get('SD_PATH_DEBUG', None) is not None else lambda *args, **kwargs: None
 
 
 def register_tmp_file(gradio, filename):
@@ -68,7 +68,8 @@ def pil_to_temp_file(self, img: Image, dir: str, format="png") -> str: # pylint:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".png", dir=dir) as tmp:
         name = tmp.name
         img.save(name, pnginfo=(metadata if use_metadata else None))
-        shared.log.debug(f'Saving temp: image="{name}"')
+        size = os.path.getsize(name)
+        shared.log.debug(f'Saving temp: image="{name}" resolution={img.width}x{img.height} size={size}')
     params = ', '.join([f'{k}: {v}' for k, v in img.info.items()])
     params = params[12:] if params.startswith('parameters: ') else params
     with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:

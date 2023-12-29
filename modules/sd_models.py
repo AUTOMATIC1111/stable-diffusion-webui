@@ -168,6 +168,7 @@ def list_models():
     shared.log.info(f'Available models: path="{shared.opts.ckpt_dir}" items={len(checkpoints_list)} time={time.time()-t0:.2f}')
 
     checkpoints_list = dict(sorted(checkpoints_list.items(), key=lambda cp: cp[1].filename))
+    """
     if len(checkpoints_list) == 0:
         if not shared.cmd_opts.no_download:
             key = input('Download the default model? (y/N) ')
@@ -185,7 +186,7 @@ def list_models():
                     checkpoint_info = CheckpointInfo(filename)
                     if checkpoint_info.name is not None:
                         checkpoint_info.register()
-
+    """
 
 def update_model_hashes():
     txt = []
@@ -474,10 +475,10 @@ def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, 
     model.sd_model_checkpoint = checkpoint_info.filename
     model.sd_checkpoint_info = checkpoint_info
     model.is_sdxl = False # a1111 compatibility item
-    model.is_sd2 = False # a1111 compatibility item
-    model.is_sd1 = True # a1111 compatibility item
+    model.is_sd2 = hasattr(model.cond_stage_model, 'model') # a1111 compatibility item
+    model.is_sd1 = not hasattr(model.cond_stage_model, 'model') # a1111 compatibility item
+    model.logvar = model.logvar.to(devices.device) if hasattr(model, 'logvar') else None # fix for training
     shared.opts.data["sd_checkpoint_hash"] = checkpoint_info.sha256
-    model.logvar = model.logvar.to(devices.device)  # fix for training
     sd_vae.delete_base_vae()
     sd_vae.clear_loaded_vae()
     vae_file, vae_source = sd_vae.resolve_vae(checkpoint_info.filename)
@@ -634,6 +635,10 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
                 if shared.backend == shared.Backend.ORIGINAL:
                     warn(f'Model detected as SD XL instruct pix2pix model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion XL Instruct'
+            elif size > 3138 and size < 3142: #3140
+                if shared.backend == shared.Backend.ORIGINAL:
+                    warn(f'Model detected as Segmind Vega model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                guess = 'Stable Diffusion XL'
             else:
                 guess = 'Stable Diffusion'
             # guess by name
@@ -676,7 +681,19 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
     return pipeline, guess
 
 
-def set_diffuser_options(sd_model, vae, op: str):
+def copy_diffuser_options(new_pipe, orig_pipe):
+    new_pipe.sd_checkpoint_info = orig_pipe.sd_checkpoint_info
+    new_pipe.sd_model_checkpoint = orig_pipe.sd_model_checkpoint
+    new_pipe.embedding_db = getattr(orig_pipe, 'embedding_db', None)
+    new_pipe.sd_model_hash = getattr(orig_pipe, 'sd_model_hash', None)
+    new_pipe.has_accelerate = getattr(orig_pipe, 'has_accelerate', False)
+    new_pipe.is_sdxl = getattr(orig_pipe, 'is_sdxl', False) # a1111 compatibility item
+    new_pipe.is_sd2 = getattr(orig_pipe, 'is_sd2', False)
+    new_pipe.is_sd1 = getattr(orig_pipe, 'is_sd1', True)
+
+
+
+def set_diffuser_options(sd_model, vae = None, op: str = 'model'):
     if sd_model is None:
         shared.log.warning(f'{op} is not loaded')
         return
@@ -689,6 +706,18 @@ def set_diffuser_options(sd_model, vae, op: str):
     if hasattr(sd_model, "watermark"):
         sd_model.watermark = NoWatermark()
     sd_model.has_accelerate = False
+    if hasattr(sd_model, "vae"):
+        if vae is not None:
+            sd_model.vae = vae
+        if shared.opts.diffusers_vae_upcast != 'default':
+            if shared.opts.diffusers_vae_upcast == 'true':
+                sd_model.vae.config.force_upcast = True
+            else:
+                sd_model.vae.config.force_upcast = False
+            if shared.opts.no_half_vae:
+                devices.dtype_vae = torch.float32
+                sd_model.vae.to(devices.dtype_vae)
+        shared.log.debug(f'Setting {op} VAE: name={sd_vae.loaded_vae_file} upcast={sd_model.vae.config.get("force_upcast", None)}')
     if hasattr(sd_model, "enable_model_cpu_offload"):
         if (shared.cmd_opts.medvram and devices.backend != "directml") or shared.opts.diffusers_model_cpu_offload:
             shared.log.debug(f'Setting {op}: enable model CPU offload')
@@ -727,18 +756,8 @@ def set_diffuser_options(sd_model, vae, op: str):
             sd_model.enable_attention_slicing()
         else:
             sd_model.disable_attention_slicing()
-    if hasattr(sd_model, "vae"):
-        if vae is not None:
-            sd_model.vae = vae
-        if shared.opts.diffusers_vae_upcast != 'default':
-            if shared.opts.diffusers_vae_upcast == 'true':
-                sd_model.vae.config.force_upcast = True
-            else:
-                sd_model.vae.config.force_upcast = False
-            if shared.opts.no_half_vae:
-                devices.dtype_vae = torch.float32
-                sd_model.vae.to(devices.dtype_vae)
-        shared.log.debug(f'Setting {op} VAE: name={sd_vae.loaded_vae_file} upcast={sd_model.vae.config.get("force_upcast", None)}')
+    if hasattr(sd_model, "vqvae"):
+        sd_model.vqvae.to(torch.float32) # vqvae is producing nans in fp16
     if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):
         sd_model.enable_xformers_memory_efficient_attention()
 
@@ -806,7 +825,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     sd_model = None
 
     try:
-        if shared.cmd_opts.ckpt is not None and model_data.initial: # initial load
+        if shared.cmd_opts.ckpt is not None and os.path.isdir(shared.cmd_opts.ckpt) and model_data.initial: # initial load
             ckpt_basename = os.path.basename(shared.cmd_opts.ckpt)
             model_name = modelloader.find_diffuser(ckpt_basename)
             if model_name is not None:
@@ -833,6 +852,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             if vae is not None:
                 diffusers_load_config["vae"] = vae
 
+        shared.log.debug(f'Diffusers loading: path="{checkpoint_info.path}"')
         if os.path.isdir(checkpoint_info.path):
             err1 = None
             err2 = None
@@ -953,6 +973,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         sd_model.sd_model_hash = checkpoint_info.calculate_shorthash() # pylint: disable=attribute-defined-outside-init
         sd_model.sd_checkpoint_info = checkpoint_info # pylint: disable=attribute-defined-outside-init
         sd_model.sd_model_checkpoint = checkpoint_info.filename # pylint: disable=attribute-defined-outside-init
+        sd_model.is_sdxl = False # a1111 compatibility item
+        sd_model.is_sd2 = hasattr(sd_model, 'cond_stage_model') and hasattr(sd_model.cond_stage_model, 'model') # a1111 compatibility item
+        sd_model.is_sd1 = not sd_model.is_sd2 # a1111 compatibility item
+        sd_model.logvar = sd_model.logvar.to(devices.device) if hasattr(sd_model, 'logvar') else None # fix for training
         shared.opts.data["sd_checkpoint_hash"] = checkpoint_info.sha256
         if hasattr(sd_model, "set_progress_bar_config"):
             sd_model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining}', ncols=80, colour='#327fba')
@@ -1010,6 +1034,8 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     sd_model_hash = getattr(pipe, "sd_model_hash", None)
     has_accelerate = getattr(pipe, "has_accelerate", None)
     embedding_db = getattr(pipe, "embedding_db", None)
+    image_encoder = getattr(pipe, "image_encoder", None)
+    feature_extractor = getattr(pipe, "feature_extractor", None)
 
     # TODO implement alternative diffusion pipelines
     """
@@ -1048,6 +1074,11 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     new_pipe.sd_model_hash = sd_model_hash
     new_pipe.has_accelerate = has_accelerate
     new_pipe.embedding_db = embedding_db
+    new_pipe.image_encoder = image_encoder
+    new_pipe.feature_extractor = feature_extractor
+    new_pipe.is_sdxl = getattr(pipe, 'is_sdxl', False) # a1111 compatibility item
+    new_pipe.is_sd2 = getattr(pipe, 'is_sd2', False)
+    new_pipe.is_sd1 = getattr(pipe, 'is_sd1', True)
     shared.log.debug(f"Pipeline class change: original={pipe.__class__.__name__} target={new_pipe.__class__.__name__}")
     pipe = new_pipe
     return pipe
@@ -1113,20 +1144,23 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
     shared.log.debug(f'Model config loaded: {memory_stats()}')
     sd_model = None
     stdout = io.StringIO()
-    with contextlib.redirect_stdout(stdout):
-        """
-        try:
-            clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
-            with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
-                sd_model = instantiate_from_config(sd_config.model)
-        except Exception as e:
-            shared.log.error(f'LDM: instantiate from config: {e}')
-            sd_model = instantiate_from_config(sd_config.model)
-        """
+    if os.environ.get('SD_LDM_DEBUG', None) is not None:
         sd_model = instantiate_from_config(sd_config.model)
-    for line in stdout.getvalue().splitlines():
-        if len(line) > 0:
-            shared.log.info(f'LDM: {line.strip()}')
+    else:
+        with contextlib.redirect_stdout(stdout):
+            """
+            try:
+                clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
+                with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
+                    sd_model = instantiate_from_config(sd_config.model)
+            except Exception as e:
+                shared.log.error(f'LDM: instantiate from config: {e}')
+                sd_model = instantiate_from_config(sd_config.model)
+            """
+            sd_model = instantiate_from_config(sd_config.model)
+        for line in stdout.getvalue().splitlines():
+            if len(line) > 0:
+                shared.log.info(f'LDM: {line.strip()}')
     shared.log.debug(f"Model created from config: {checkpoint_config}")
     sd_model.used_config = checkpoint_config
     sd_model.has_accelerate = False

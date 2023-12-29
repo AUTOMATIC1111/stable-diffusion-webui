@@ -1,5 +1,146 @@
 # Change Log for SD.Next
 
+## Update for 2023-12-29
+
+- **Control**  
+  - native implementation of all image control methods:  
+    **ControlNet**, **ControlNet XS**, **Control LLLite**, **T2I Adapters** and **IP Adapters**  
+  - top-level **Control** next to **Text** and **Image** generate  
+  - supports all variations of **SD15** and **SD-XL** models  
+  - supports *Text*, *Image*, *Batch* and *Video* processing  
+  - for details and list of supported models and workflows, see Wiki documentation:  
+    <https://github.com/vladmandic/automatic/wiki/Control>  
+- **Diffusers**  
+  - [Segmind Vega](https://huggingface.co/segmind/Segmind-Vega) model support  
+    - small and fast version of **SDXL**, only 3.1GB in size!  
+    - select from *networks -> reference*  
+  - [aMUSEd 256](https://huggingface.co/amused/amused-256) and [aMUSEd 512](https://huggingface.co/amused/amused-512) model support  
+    - lightweigt models that excel at fast image generation  
+    - *note*: must select: settings -> diffusers -> generator device: unset
+    - select from *networks -> reference*
+  - [Playground v1](https://huggingface.co/playgroundai/playground-v1), [Playground v2 256](https://huggingface.co/playgroundai/playground-v2-256px-base), [Playground v2 512](https://huggingface.co/playgroundai/playground-v2-512px-base), [Playground v2 1024](https://huggingface.co/playgroundai/playground-v2-1024px-aesthetic) model support  
+    - comparable to SD15 and SD-XL, trained from scratch for highly aesthetic images  
+    - simply select from *networks -> reference* and use as usual  
+  - [BLIP-Diffusion](https://dxli94.github.io/BLIP-Diffusion-website/)  
+    - img2img model that can replace subjects in images using prompt keywords  
+    - download and load by selecting from *networks -> reference -> blip diffusion*
+    - in image tab, select `blip diffusion` script
+  - [DemoFusion](https://github.com/PRIS-CV/DemoFusion) run your SDXL generations at any resolution!  
+    - in **Text** tab select *script* -> *demofusion*  
+    - *note*: GPU VRAM limits do not automatically go away so be careful when using it with large resolutions  
+      in the future, expect more optimizations, especially related to offloading/slicing/tiling,  
+      but at the moment this is pretty much experimental-only  
+  - [AnimateDiff](https://github.com/guoyww/animatediff/)  
+    - overall improved quality  
+    - can now be used with *second pass* - enhance, upscale and hires your videos!  
+  - [IP Adapter](https://github.com/tencent-ailab/IP-Adapter)  
+    - add support for **ip-adapter-plus_sd15, ip-adapter-plus-face_sd15 and ip-adapter-full-face_sd15**  
+    - can now be used in *xyz-grid*  
+  - **Text-to-Video**  
+    - in text tab, select `text-to-video` script  
+    - supported models: **ModelScope v1.7b, ZeroScope v1, ZeroScope v1.1, ZeroScope v2, ZeroScope v2 Dark, Potat v1**  
+      *if you know of any other t2v models youd like to see supported, let me know!*  
+    - models are auto-downloaded on first use  
+    - *note*: current base model will be unloaded to free up resources  
+  - **Prompt scheduling** now implemented for Diffusers backend, thanks @AI-Casanova
+  - **Custom pipelines** contribute by adding your own custom pipelines!  
+    - for details, see fully documented example:  
+      <https://github.com/vladmandic/automatic/blob/dev/scripts/example.py>  
+  - **Schedulers**  
+    - add timesteps range, changing it will make scheduler to be over-complete or under-complete  
+    - add rescale betas with zero SNR option (applicable to Euler, Euler a and DDIM, allows for higher dynamic range)  
+  - **Inpaint**  
+    - improved quality when using mask blur and padding  
+  - **UI**  
+    - 3 new native UI themes: **orchid-dreams**, **emerald-paradise** and **timeless-beige**, thanks @illu_Zn
+    - more dynamic controls depending on the backend (original or diffusers)  
+      controls that are not applicable in current mode are now hidden  
+    - allow setting of resize method directly in image tab  
+      (previously via settings -> upscaler_for_img2img)  
+- **Optional**
+  - **FaceID** face guidance during generation  
+    - also based on IP adapters, but with additional face detection and external embeddings calculation  
+    - calculates face embeds based on input image and uses it to guide generation  
+    - simply select from *scripts -> faceid*  
+    - *experimental module*: requirements must be installed manually:  
+        > pip install insightface ip_adapter  
+  - **Depth 3D** image to 3D scene
+    - delivered as an extension, install from extensions tab  
+      <https://github.com/vladmandic/sd-extension-depth3d>  
+    - creates fully compatible 3D scene from any image by using depth estimation  
+      and creating a fully populated mesh  
+    - scene can be freely viewed in 3D in the UI itself or downloaded for use in other applications  
+  - [ONNX/Olive](https://github.com/vladmandic/automatic/wiki/ONNX-Olive)  
+    - major work continues in olive branch, see wiki for details, thanks @lshqqytiger  
+      as a highlight, 4-5 it/s using DirectML on AMD GPU translates to 23-25 it/s using ONNX/Olive!  
+- **General**  
+  - new **onboarding**  
+    - if no models are found during startup, app will no longer ask to download default checkpoint  
+      instead, it will show message in UI with options to change model path or download any of the reference checkpoints  
+    - *extra networks -> models -> reference* section is now enabled for both original and diffusers backend  
+  - support for **Torch 2.1.2** (release) and **Torch 2.3** (dev)  
+  - **Process** create videos from batch or folder processing  
+      supports *GIF*, *PNG* and *MP4* with full interpolation, scene change detection, etc.  
+  - **LoRA**  
+    - add support for block weights, thanks @AI-Casanova  
+      example `<lora:SDXL_LCM_LoRA:1.0:in=0:mid=1:out=0>`  
+    - add support for LyCORIS GLora networks  
+    - add support for LoRA PEFT (*Diffusers*) networks  
+    - add support for Lora-OFT (*Kohya*) and Lyco-OFT (*Kohaku*) networks  
+    - reintroduce alternative loading method in settings: `lora_force_diffusers`  
+    - add support for `lora_fuse_diffusers` if using alternative method  
+      use if you have multiple complex loras that may be causing performance degradation  
+      as it fuses lora with model during load instead of interpreting lora on-the-fly  
+  - **CivitAI downloader** allow usage of access tokens for download of gated or private models  
+  - **Extra networks** new *settting -> extra networks -> build info on first access*  
+    indexes all networks on first access instead of server startup  
+  - **IPEX**, thanks @disty0  
+    - update to **Torch 2.1**  
+      if you get file not found errors, set `DISABLE_IPEXRUN=1` and run the webui with `--reinstall`  
+    - built-in *MKL* and *DPCPP* for IPEX, no need to install OneAPI anymore  
+    - **StableVideoDiffusion** is now supported with IPEX  
+    - **8 bit support with NNCF** on Diffusers backend  
+    - fix IPEX Optimize not applying with Diffusers backend  
+    - disable 32bit workarounds if the GPU supports 64bit  
+    - add `DISABLE_IPEXRUN` and `DISABLE_IPEX_1024_WA` environment variables  
+    - performance and compatibility improvements  
+  - **OpenVINO**, thanks @disty0  
+    - **8 bit support for CPUs**  
+    - reduce System RAM usage  
+    - update to Torch 2.1.2  
+    - add *Directory for OpenVINO cache* option to *System Paths*  
+    - remove Intel ARC specific 1024x1024 workaround  
+  - **HDR controls**  
+    - batch-aware for enhancement of multiple images or video frames  
+    - available in image tab  
+  - **Logging**
+    - additional *TRACE* logging enabled via specific env variables  
+      see <https://github.com/vladmandic/automatic/wiki/Debug> for details  
+    - improved profiling  
+      use with `--debug --profile`  
+    - log output file sizes  
+  - **Other**  
+    - **API** several minor but breaking changes to API behavior to better align response fields, thanks @Trojaner
+    - **Inpaint** add option `apply_overlay` to control if inpaint result should be applied as overlay or as-is  
+      can remove artifacts and hard edges of inpaint area but also remove some details from original  
+    - **chaiNNer** fix `NaN` issues due to autocast  
+    - **Upscale** increase limit from 4x to 8x given the quality of some upscalers  
+    - **Extra Networks** fix sort  
+    - reduced default **CFG scale** from 6 to 4 to be more out-of-the-box compatibile with LCM/Turbo models
+    - disable google fonts check on server startup  
+    - fix torchvision/basicsr compatibility  
+    - fix styles quick save  
+    - add hdr settings to metadata  
+    - improve handling of long filenames and filenames during batch processing  
+    - do not set preview samples when using via api  
+    - avoid unnecessary resizes in img2img and inpaint  
+    - safe handling of config updates avoid file corruption on I/O errors  
+    - updated `cli/simple-txt2img.py` and `cli/simple-img2img.py` scripts  
+    - save `params.txt` regardless of image save status  
+    - update built-in log monitor in ui, thanks @midcoastal  
+    - major CHANGELOG doc cleanup, thanks @JetVarimax  
+    - major INSTALL doc cleanup, thanks JetVarimax  
+
 ## Update for 2023-12-04
 
 Whats new? Native video in SD.Next via both **AnimateDiff** and **Stable-Video-Diffusion** - and including native MP4 encoding and smooth video outputs out-of-the-box, not just animated-GIFs.  

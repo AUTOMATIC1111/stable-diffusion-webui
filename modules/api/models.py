@@ -170,7 +170,8 @@ class PNGInfoRequest(BaseModel):
 
 class PNGInfoResponse(BaseModel):
     info: str = Field(title="Image info", description="A string with the parameters used to generate the image")
-    items: dict = Field(title="Items", description="An object containing all the info the image had")
+    items: dict = Field(title="Items", description="A dictionary containing all the other fields the image had")
+    parameters: dict = Field(title="Parameters", description="A dictionary with parsed generation info fields")
 
 class LogRequest(BaseModel):
     lines: int = Field(default=100, title="Lines", description="How many lines to return")
@@ -209,7 +210,7 @@ for key, metadata in shared.opts.data_labels.items():
 
     if metadata is not None:
         fields.update({key: (Optional[optType], Field(
-            default=metadata.default ,description=metadata.label))})
+            default=metadata.default, description=metadata.label))})
     else:
         fields.update({key: (Optional[optType], Field())})
 
@@ -245,7 +246,7 @@ class UpscalerItem(BaseModel):
 
 class SDModelItem(BaseModel):
     title: str = Field(title="Title")
-    name: str = Field(title="Model Name")
+    model_name: str = Field(title="Model Name")
     filename: str = Field(title="Filename")
     type: str = Field(title="Model type")
     sha256: Optional[str] = Field(title="SHA256 hash")
@@ -286,7 +287,6 @@ class ExtraNetworkItem(BaseModel):
     # metadata: Optional[Any] = Field(title="Metadata")
     # local: Optional[str] = Field(title="Local")
 
-
 class ArtistItem(BaseModel):
     name: str = Field(title="Name")
     score: float = Field(title="Score")
@@ -311,7 +311,6 @@ class ScriptsList(BaseModel):
     txt2img: list = Field(default=None, title="Txt2img", description="Titles of scripts (txt2img)")
     img2img: list = Field(default=None, title="Img2img", description="Titles of scripts (img2img)")
 
-
 class ScriptArg(BaseModel):
     label: str = Field(default=None, title="Label", description="Name of the argument in UI")
     value: Optional[Any] = Field(default=None, title="Value", description="Default value of the argument")
@@ -320,9 +319,17 @@ class ScriptArg(BaseModel):
     step: Optional[Any] = Field(default=None, title="Minimum", description="Step for changing value of the argumentin UI")
     choices: Optional[Any] = Field(default=None, title="Choices", description="Possible values for the argument")
 
-
 class ScriptInfo(BaseModel):
     name: str = Field(default=None, title="Name", description="Script name")
     is_alwayson: bool = Field(default=None, title="IsAlwayson", description="Flag specifying whether this script is an alwayson script")
     is_img2img: bool = Field(default=None, title="IsImg2img", description="Flag specifying whether this script is an img2img script")
     args: List[ScriptArg] = Field(title="Arguments", description="List of script's arguments")
+
+class ExtensionItem(BaseModel):
+    name: str = Field(title="Name", description="Extension name")
+    remote: str = Field(title="Remote", description="Extension Repository URL")
+    branch: str = Field(title="Branch", description="Extension Repository Branch")
+    commit_hash: str = Field(title="Commit Hash", description="Extension Repository Commit Hash")
+    version: str = Field(title="Version", description="Extension Version")
+    commit_date: str = Field(title="Commit Date", description="Extension Repository Commit Date")
+    enabled: bool = Field(title="Enabled", description="Flag specifying whether this extension is enabled")

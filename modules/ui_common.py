@@ -13,6 +13,8 @@ import modules.script_callbacks
 
 
 folder_symbol = symbols.folder
+debug = shared.log.trace if os.environ.get('SD_PASTE_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug('Trace: PASTE')
 
 
 def update_generation_info(generation_info, html_info, img_index):
@@ -157,15 +159,16 @@ def save_files(js_data, images, html_info, index):
             fullfns.append(fullfn)
             if txt_fullfn:
                 filenames.append(os.path.basename(txt_fullfn))
-                fullfns.append(txt_fullfn)
+                # fullfns.append(txt_fullfn)
             modules.script_callbacks.image_save_btn_callback(filename)
     if shared.opts.samples_save_zip and len(fullfns) > 1:
         zip_filepath = os.path.join(shared.opts.outdir_save, "images.zip")
         from zipfile import ZipFile
         with ZipFile(zip_filepath, "w") as zip_file:
             for i in range(len(fullfns)):
-                with open(fullfns[i], mode="rb") as f:
-                    zip_file.writestr(filenames[i], f.read())
+                if os.path.isfile(fullfns[i]):
+                    with open(fullfns[i], mode="rb") as f:
+                        zip_file.writestr(filenames[i], f.read())
         fullfns.insert(0, zip_filepath)
     return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0] if len(filenames) > 0 else 'none'}")
 
@@ -194,13 +197,15 @@ def open_folder(result_gallery, gallery_index = 0):
             subprocess.Popen(["xdg-open", path]) # pylint: disable=consider-using-with
 
 
-def create_output_panel(tabname):
+def create_output_panel(tabname, preview=True):
     import modules.generation_parameters_copypaste as parameters_copypaste
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
+            if tabname == "txt2img":
+                gr.HTML(value="", elem_id="main_info", visible=False, elem_classes=["main-info"])
             # columns are for <576px, <768px, <992px, <1200px, <1400px, >1400px
-            result_gallery = gr.Gallery(value=[], label='Output', show_label=False, show_download_button=True, allow_preview=True, elem_id=f"{tabname}_gallery", container=False, preview=True, columns=5, object_fit='scale-down', height=shared.opts.gallery_height or None)
+            result_gallery = gr.Gallery(value=[], label='Output', show_label=False, show_download_button=True, allow_preview=True, elem_id=f"{tabname}_gallery", container=False, preview=preview, columns=5, object_fit='scale-down', height=shared.opts.gallery_height or None)
 
         with gr.Column(elem_id=f"{tabname}_footer", elem_classes="gallery_footer"):
             dummy_component = gr.Label(visible=False)
@@ -213,7 +218,10 @@ def create_output_panel(tabname):
                     clip_files.click(fn=None, _js='clip_gallery_urls', inputs=[result_gallery], outputs=[])
                 save = gr.Button('Save', elem_id=f'save_{tabname}')
                 delete = gr.Button('Delete', elem_id=f'delete_{tabname}')
-                buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras"])
+                if shared.backend == shared.Backend.ORIGINAL:
+                    buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras"])
+                else:
+                    buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "control", "extras"])
 
             download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
             with gr.Group():
@@ -244,9 +252,9 @@ def create_output_panel(tabname):
             else:
                 paste_field_names = []
             for paste_tabname, paste_button in buttons.items():
-                parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
-                    paste_button=paste_button, tabname=paste_tabname, source_tabname=("txt2img" if tabname == "txt2img" else None), source_image_component=result_gallery, paste_field_names=paste_field_names
-                ))
+                debug(f'Create output panel: button={paste_button} tabname={paste_tabname}')
+                bindings = parameters_copypaste.ParamBinding(paste_button=paste_button, tabname=paste_tabname, source_tabname=("txt2img" if tabname == "txt2img" else None), source_image_component=result_gallery, paste_field_names=paste_field_names)
+                parameters_copypaste.register_paste_params_button(bindings)
             return result_gallery, generation_info, html_info, html_info_formatted, html_log
 
 

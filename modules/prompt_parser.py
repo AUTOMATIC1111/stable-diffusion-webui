@@ -70,7 +70,8 @@ re_attention_v1 = re.compile(r"""
 
 
 debug_output = os.environ.get('SD_PROMPT_DEBUG', None)
-debug = log.info if debug_output is not None else lambda *args, **kwargs: None
+debug = log.trace if debug_output is not None else lambda *args, **kwargs: None
+debug('Trace: PROMPT')
 
 
 def get_learned_conditioning_prompt_schedules(prompts, steps):

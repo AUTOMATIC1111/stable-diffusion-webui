@@ -4,9 +4,10 @@ from rich.console import Console
 from rich.theme import Theme
 from rich.pretty import install as pretty_install
 from rich.traceback import install as traceback_install
-from installer import log as installer_log
+from installer import log as installer_log, setup_logging
 
 
+setup_logging()
 log = installer_log
 console = Console(log_time=True, log_time_format='%H:%M:%S-%f', theme=Theme({
     "traceback.border": "black",

@@ -6,7 +6,7 @@ from typing import Dict
 from urllib.parse import urlparse
 import PIL.Image as Image
 import rich.progress as p
-from modules import shared
+from modules import shared, errors
 from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone
 from modules.paths import script_path, models_path
 
@@ -68,6 +68,7 @@ def download_civit_meta(model_path: str, model_id):
             return msg
         except Exception as e:
             msg = f'CivitAI download error: id={model_id} url={url} file={fn} {e}'
+            errors.display(e, 'CivitAI download error')
             shared.log.error(msg)
             return msg
     return f'CivitAI download error: id={model_id} url={url} code={r.status_code}'
@@ -100,7 +101,7 @@ def download_civit_preview(model_path: str, preview_url: str):
     except Exception as e:
         os.remove(preview_file)
         res += f' error={e}'
-        shared.log.error(f'CivitAI download error: url={preview_url} file={preview_file} {e}')
+        shared.log.error(f'CivitAI download error: url={preview_url} file={preview_file} written={written} {e}')
     shared.state.end()
     if img is None:
         return res
@@ -111,7 +112,7 @@ def download_civit_preview(model_path: str, preview_url: str):
 
 download_pbar = None
 
-def download_civit_model_thread(model_name, model_url, model_path, model_type, preview):
+def download_civit_model_thread(model_name, model_url, model_path, model_type, preview, token):
     import hashlib
     sha256 = hashlib.sha256()
     sha256.update(model_name.encode('utf-8'))
@@ -135,7 +136,9 @@ def download_civit_model_thread(model_name, model_url, model_path, model_type, p
     if os.path.isfile(temp_file):
         starting_pos = os.path.getsize(temp_file)
         res += f' resume={round(starting_pos/1024/1024)}Mb'
-        headers = {'Range': f'bytes={starting_pos}-'}
+        headers['Range'] = f'bytes={starting_pos}-'
+    if token is not None and len(token) > 0:
+        headers['Authorization'] = f'Bearer {token}'
 
     r = shared.req(model_url, headers=headers, stream=True)
     total_size = int(r.headers.get('content-length', 0))
@@ -175,9 +178,9 @@ def download_civit_model_thread(model_name, model_url, model_path, model_type, p
     return res
 
 
-def download_civit_model(model_url: str, model_name: str, model_path: str, model_type: str, preview):
+def download_civit_model(model_url: str, model_name: str, model_path: str, model_type: str, preview, token: str = None):
     import threading
-    thread = threading.Thread(target=download_civit_model_thread, args=(model_name, model_url, model_path, model_type, preview))
+    thread = threading.Thread(target=download_civit_model_thread, args=(model_name, model_url, model_path, model_type, preview, token))
     thread.start()
     return f'CivitAI download: name={model_name} url={model_url} path={model_path}'
 
@@ -232,8 +235,7 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         shared.log.error(f"Diffusers download error: {hub_id} {err}")
         return None
     try:
-        # TODO diffusers is this real error?
-        model_info_dict = hf.model_info(hub_id).cardData if pipeline_dir is not None else None # pylint: disable=no-member
+        model_info_dict = hf.model_info(hub_id).cardData if pipeline_dir is not None else None
     except Exception:
         model_info_dict = None
     if model_info_dict is not None and "prior" in model_info_dict: # some checkpoints need to be downloaded as "hidden" as they just serve as pre- or post-pipelines of other pipelines
@@ -290,8 +292,9 @@ def load_diffusers_models(model_path: str, command_path: str = None, clear=True)
                     if os.path.exists(os.path.join(folder, 'hidden')):
                         continue
                     output.append(name)
-                except Exception as e:
-                    shared.log.error(f"Error analyzing diffusers model: {folder} {e}")
+                except Exception:
+                    # shared.log.error(f"Error analyzing diffusers model: {folder} {e}")
+                    pass
         except Exception as e:
             shared.log.error(f"Error listing diffusers: {place} {e}")
     shared.log.debug(f'Scanning diffusers cache: {model_path} {command_path} items={len(output)} time={time.time()-t0:.2f}')
@@ -333,6 +336,27 @@ def load_reference(name: str):
         from modules import sd_models
         sd_models.list_models()
         return True
+
+
+def load_civitai(model: str, url: str):
+    from modules import sd_models
+    name, _ext = os.path.splitext(model)
+    info = sd_models.get_closet_checkpoint_match(name)
+    if info is not None:
+        shared.log.debug(f'Reference model: {name}')
+        return name # already downloaded
+    else:
+        shared.log.debug(f'Reference model: {name} download start')
+        download_civit_model_thread(model_name=model, model_url=url, model_path='', model_type='safetensors', preview=None, token=None)
+        shared.log.debug(f'Reference model: {name} download complete')
+        sd_models.list_models()
+        info = sd_models.get_closet_checkpoint_match(name)
+        if info is not None:
+            shared.log.debug(f'Reference model: {name}')
+            return name # already downloaded
+        else:
+            shared.log.debug(f'Reference model: {name} not found')
+            return None
 
 
 cache_folders = {}
@@ -605,3 +629,4 @@ def load_upscalers():
     shared.sd_upscalers = sorted(datas, key=lambda x: x.name.lower() if not isinstance(x.scaler, (UpscalerNone, UpscalerLanczos, UpscalerNearest)) else "") # Special case for UpscalerNone keeps it at the beginning of the list.
     t1 = time.time()
     shared.log.debug(f"Load upscalers: total={len(shared.sd_upscalers)} downloaded={len([x for x in shared.sd_upscalers if x.data_path is not None and os.path.isfile(x.data_path)])} user={len([x for x in shared.sd_upscalers if x.custom])} time={t1-t0:.2f} {names}")
+    return [x.name for x in shared.sd_upscalers]

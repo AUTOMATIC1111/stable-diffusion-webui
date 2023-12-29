@@ -250,13 +250,14 @@ def refresh_extensions_list(search_text, sort_column):
     global extensions_list # pylint: disable=global-statement
     import urllib.request
     try:
-        with urllib.request.urlopen(extensions_index) as response:
+        shared.log.debug(f'Updating extensions list: url={extensions_index}')
+        with urllib.request.urlopen(extensions_index, timeout=3.0) as response:
             text = response.read()
         extensions_list = json.loads(text)
         with open(os.path.join(paths.script_path, "html", "extensions.json"), "w", encoding="utf-8") as outfile:
             json_object = json.dumps(extensions_list, indent=2)
             outfile.write(json_object)
-            shared.log.debug(f'Updated extensions list: {len(extensions_list)} {extensions_index}')
+            shared.log.info(f'Updated extensions list: items={len(extensions_list)} url={extensions_index}')
     except Exception as e:
         shared.log.warning(f'Updated extensions list failed: {extensions_index} {e}')
     list_extensions()

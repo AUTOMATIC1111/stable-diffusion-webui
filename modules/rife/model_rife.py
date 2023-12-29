@@ -6,7 +6,7 @@ from modules.rife.loss import EPE, SOBEL
 from modules import devices
 
 
-class Model:
+class RifeModel:
     def __init__(self, local_rank=-1):
         self.flownet = IFNet()
         self.device()

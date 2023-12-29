@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+title: SD.Next
+url: 'https://github.com/vladmandic/automatic'
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file
+type: software
+authors:
+  - given-names: Vladimir
+    name-particle: Vlado
+    family-names: Mandic
+    orcid: 'https://orcid.org/0009-0003-4592-5074'
+identifiers:
+  - type: url
+    value: 'https://github.com/vladmandic'
+    description: GitHub
+  - type: url
+    value: 'https://www.linkedin.com/in/cyan051/'
+    description: LinkedIn
+repository-code: 'https://github.com/vladmandic/automatic'
+abstract: >-
+  SD.Next: Advanced Implementation of Stable Diffusion and
+  other diffusion models for text, image and video
+  generation
+keywords:
+  - stablediffusion diffusers sdnext
+license: AGPL-3.0
+date-released: 2022-12-24

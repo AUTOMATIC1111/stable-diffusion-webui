@@ -488,12 +488,12 @@ def create_ui():
                     log.debug(f'CivitAI select: variant={in_data[evt.index[0]]}')
                     return in_data[evt.index[0]][3], in_data[evt.index[0]][0], gr.update(interactive=True)
 
-                def civit_download_model(model_url: str, model_name: str, model_path: str, model_type: str, image_url: str):
+                def civit_download_model(model_url: str, model_name: str, model_path: str, model_type: str, image_url: str, token: str = None):
                     if model_url is None or len(model_url) == 0:
                         return 'No model selected'
                     try:
                         from modules.modelloader import download_civit_model
-                        res = download_civit_model(model_url, model_name, model_path, model_type, image_url)
+                        res = download_civit_model(model_url, model_name, model_path, model_type, image_url, token)
                     except Exception as e:
                         res = f"CivitAI model downloaded error: model={model_url} {e}"
                         log.error(res)
@@ -515,7 +515,8 @@ def create_ui():
                             continue
                         for item in page.list_items():
                             meta = os.path.splitext(item['filename'])[0] + '.json'
-                            if ('card-no-preview.png' in item['preview'] or not os.path.isfile(meta)) and os.path.isfile(item['filename']):
+                            has_meta = os.path.isfile(meta) and os.stat(meta).st_size > 0
+                            if ('card-no-preview.png' in item['preview'] or not has_meta) and os.path.isfile(item['filename']):
                                 sha = item.get('hash', None)
                                 found = False
                                 if sha is not None and len(sha) > 0:
@@ -578,6 +579,8 @@ def create_ui():
                     civit_download_model_btn = gr.Button(value="Download", variant='primary')
                     gr.HTML('<span style="line-height: 2em">Select a model, model version and and model variant from the search results to download or enter model URL manually</span><br>')
                 with gr.Row():
+                    civit_token = gr.Textbox('', label='CivitAI token', placeholder='optional access token for private or gated models')
+                with gr.Row():
                     civit_name = gr.Textbox('', label='Model name', placeholder='select model from search results', visible=True)
                     civit_selected = gr.Textbox('', label='Model URL', placeholder='select model from search results', visible=True)
                     civit_path = gr.Textbox('', label='Download path', placeholder='optional subfolder path where to save model', visible=True)
@@ -619,7 +622,7 @@ def create_ui():
                 civit_results1.change(fn=is_visible, inputs=[civit_results1], outputs=[civit_results1])
                 civit_results2.change(fn=is_visible, inputs=[civit_results2], outputs=[civit_results2])
                 civit_results3.change(fn=is_visible, inputs=[civit_results3], outputs=[civit_results3])
-                civit_download_model_btn.click(fn=civit_download_model, inputs=[civit_selected, civit_name, civit_path, civit_model_type, models_image], outputs=[models_outcome])
+                civit_download_model_btn.click(fn=civit_download_model, inputs=[civit_selected, civit_name, civit_path, civit_model_type, models_image, civit_token], outputs=[models_outcome])
                 civit_previews_btn.click(fn=civit_search_metadata, inputs=[civit_previews_rehash, civit_previews_rehash], outputs=[models_outcome])
 
             with gr.Tab(label="Update"):

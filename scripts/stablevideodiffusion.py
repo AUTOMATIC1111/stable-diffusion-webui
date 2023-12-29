@@ -1,6 +1,7 @@
 """
 Additional params for StableVideoDiffusion
 """
+
 import torch
 import gradio as gr
 from modules import scripts, processing, shared, sd_models, images
@@ -44,7 +45,9 @@ class Script(scripts.Script):
         return [num_frames, override_resolution, min_guidance_scale, max_guidance_scale, decode_chunk_size, motion_bucket_id, noise_aug_strength, video_type, duration, gif_loop, mp4_pad, mp4_interpolate]
 
     def run(self, p: processing.StableDiffusionProcessing, num_frames, override_resolution, min_guidance_scale, max_guidance_scale, decode_chunk_size, motion_bucket_id, noise_aug_strength, video_type, duration, gif_loop, mp4_pad, mp4_interpolate): # pylint: disable=arguments-differ, unused-argument
-        if shared.sd_model is None or shared.sd_model.__class__.__name__ != 'StableVideoDiffusionPipeline':
+        c = shared.sd_model.__class__.__name__ if shared.sd_model is not None else ''
+        if c != 'StableVideoDiffusionPipeline' and c != 'TextToVideoSDPipeline':
+            shared.log.error(f'StableVideo: model selected={c} required=StableVideoDiffusion')
             return None
         if hasattr(p, 'init_images') and len(p.init_images) > 0:
             if override_resolution:
@@ -53,9 +56,13 @@ class Script(scripts.Script):
                 p.task_args['image'] = images.resize_image(resize_mode=2, im=p.init_images[0], width=p.width, height=p.height, upscaler_name=None, output_type='pil')
             else:
                 p.task_args['image'] = p.init_images[0]
-            p.ops.append('svd')
+            p.ops.append('stablevideo')
             p.do_not_save_grid = True
-            p.sampler_name = 'Default' # svd does not support non-default sampler
+            if c == 'StableVideoDiffusionPipeline':
+                p.sampler_name = 'Default' # svd does not support non-default sampler
+                p.task_args['output_type'] = 'np'
+            else:
+                p.task_args['output_type'] = 'pil'
             p.task_args['generator'] = torch.manual_seed(p.seed) # svd does not support gpu based generator
             p.task_args['width'] = p.width
             p.task_args['height'] = p.height
@@ -66,7 +73,6 @@ class Script(scripts.Script):
             p.task_args['num_inference_steps'] = p.steps
             p.task_args['min_guidance_scale'] = min_guidance_scale
             p.task_args['max_guidance_scale'] = max_guidance_scale
-            p.task_args['output_type'] = 'np'
             shared.log.debug(f'StableVideo: args={p.task_args}')
             shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
             processed = processing.process_images(p)

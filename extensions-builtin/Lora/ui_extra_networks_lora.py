@@ -19,7 +19,6 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         try:
             path, _ext = os.path.splitext(l.filename)
             name = os.path.splitext(os.path.relpath(l.filename, shared.cmd_opts.lora_dir))[0]
-
             if shared.backend == shared.Backend.ORIGINAL:
                 if l.sd_version == network.SdVersion.SDXL:
                     return None

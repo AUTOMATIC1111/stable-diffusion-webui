@@ -66,38 +66,54 @@ function extract_image_from_gallery(gallery) {
 
 window.args_to_array = Array.from; // Compatibility with e.g. extensions that may expect this to be around
 
+function switchToTab(tab) {
+  const tabs = Array.from(gradioApp().querySelectorAll('#tabs > .tab-nav > button'));
+  const btn = tabs?.find((t) => t.innerText === tab);
+  log('switchToTab', tab);
+  if (btn) btn.click();
+}
+
 function switch_to_txt2img(...args) {
-  gradioApp().querySelector('#tabs').querySelectorAll('button')[0].click();
+  switchToTab('Text');
   return Array.from(arguments);
 }
 
 function switch_to_img2img_tab(no) {
-  gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
+  switchToTab('Image');
   gradioApp().getElementById('mode_img2img').querySelectorAll('button')[no].click();
 }
 
 function switch_to_img2img(...args) {
+  switchToTab('Image');
   switch_to_img2img_tab(0);
   return Array.from(arguments);
 }
 
 function switch_to_sketch(...args) {
+  switchToTab('Image');
   switch_to_img2img_tab(1);
   return Array.from(arguments);
 }
 
 function switch_to_inpaint(...args) {
+  switchToTab('Image');
   switch_to_img2img_tab(2);
   return Array.from(arguments);
 }
 
 function switch_to_inpaint_sketch(...args) {
+  switchToTab('Image');
   switch_to_img2img_tab(3);
   return Array.from(arguments);
 }
 
 function switch_to_extras(...args) {
-  gradioApp().querySelector('#tabs').querySelectorAll('button')[2].click();
+  switchToTab('Process');
+  return Array.from(arguments);
+}
+
+function switch_to_control(...args) {
+  switchToTab('Control');
   return Array.from(arguments);
 }
 
@@ -164,6 +180,17 @@ function submit_img2img(...args) {
   return res;
 }
 
+function submit_control(...args) {
+  log('submitControl');
+  clearGallery('control');
+  const id = randomId();
+  requestProgress(id, null, gradioApp().getElementById('control_gallery'));
+  const res = create_submit_args(args);
+  res[0] = id;
+  res[1] = gradioApp().querySelector('#control-tabs > .tab-nav > .selected')?.innerText.toLowerCase() || ''; // selected tab name
+  return res;
+}
+
 function submit_postprocessing(...args) {
   log('SubmitExtras');
   clearGallery('extras');
@@ -208,6 +235,12 @@ function recalculate_prompts_img2img(...args) {
 function recalculate_prompts_inpaint(...args) {
   recalculatePromptTokens('img2img_prompt');
   recalculatePromptTokens('img2img_neg_prompt');
+  return Array.from(arguments);
+}
+
+function recalculate_prompts_control(...args) {
+  recalculatePromptTokens('control_prompt');
+  recalculatePromptTokens('control_neg_prompt');
   return Array.from(arguments);
 }
 
@@ -279,6 +312,8 @@ onAfterUiUpdate(async () => {
   registerTextarea('txt2img_neg_prompt', 'txt2img_negative_token_counter', 'txt2img_negative_token_button');
   registerTextarea('img2img_prompt', 'img2img_token_counter', 'img2img_token_button');
   registerTextarea('img2img_neg_prompt', 'img2img_negative_token_counter', 'img2img_negative_token_button');
+  registerTextarea('control_prompt', 'control_token_counter', 'control_token_button');
+  registerTextarea('control_neg_prompt', 'control_negative_token_counter', 'control_negative_token_button');
 });
 
 function update_txt2img_tokens(...args) {

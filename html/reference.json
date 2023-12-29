@@ -1,13 +1,46 @@
 {
+  "DreamShaper SD 1.5 v8": {
+    "path": "dreamshaper_8.safetensors@https://civitai.com/api/download/models/128713",
+    "desc": "Showcase finetuned model based on Stable diffusion 1.5",
+    "preview": "dreamshaper_8.jpg",
+    "original": true
+  },
+  "DreamShaper SD XL Turbo": {
+    "path": "dreamshaperXL_turboDpmppSDE.safetensors@https://civitai.com/api/download/models/251662",
+    "desc": "Showcase finetuned model based on Stable diffusion XL",
+    "preview": "dreamshaperXL_turboDpmppSDE.jpg"
+  }, 
+  "Juggernaut Reborn": {
+    "path": "juggernaut_reborn.safetensors@https://civitai.com/api/download/models/274039",
+    "desc": "Showcase finetuned model based on Stable diffusion 1.5",
+    "preview": "juggernaut_reborn.jpg",
+    "original": true
+  },
+  "Juggernaut XL v7 RunDiffusion": {
+    "path": "juggernautXL_v7Rundiffusion.safetensors@https://civitai.com/api/download/models/240840",
+    "desc": "Showcase finetuned model based on Stable diffusion XL",
+    "preview": "juggernautXL_v7Rundiffusion.jpg"
+  },
   "RunwayML SD 1.5": {
     "path": "runwayml/stable-diffusion-v1-5",
+    "alt": "v1-5-pruned-emaonly.safetensors@https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors?download=true",
     "desc": "Stable Diffusion 1.5 is the base model all other 1.5 checkpoint were trained from. It's a latent text-to-image diffusion model capable of generating photo-realistic images given any text input. The Stable-Diffusion-v1-5 checkpoint was initialized with the weights of the Stable-Diffusion-v1-2 checkpoint and subsequently fine-tuned on 595k steps at resolution 512x512.",
-    "preview": "runwayml--stable-diffusion-v1-5.jpg"
+    "preview": "runwayml--stable-diffusion-v1-5.jpg",
+    "original": true
   },
-  "StabilityAI SD 2.1": {
+  "StabilityAI SD 2.1 EMA": {
     "path": "stabilityai/stable-diffusion-2-1-base",
-    "desc": "This stable-diffusion-2-1 model is fine-tuned from stable-diffusion-2 (768-v-ema.ckpt) with an additional 55k steps on the same dataset. Improvement over base 1.5 model, but never really took off.",
-    "preview": "stabilityai--stable-diffusion-2.1-base.jpg"
+    "alt": "v2-1_512-ema-pruned.safetensors@https://huggingface.co/stabilityai/stable-diffusion-2-1-base/resolve/main/v2-1_512-ema-pruned.safetensors?download=true",
+    "desc": "This stable-diffusion-2-1-base model fine-tunes stable-diffusion-2-base (512-base-ema.ckpt) with 220k extra steps taken",
+    "preview": "stabilityai--stable-diffusion-2.1-base.jpg",
+    "original": true
+  },
+  "StabilityAI SD 2.1 V": {
+    "path": "stabilityai/stable-diffusion-2-1-base",
+    "alt": "v2-1_768-ema-pruned.safetensors@https://huggingface.co/stabilityai/stable-diffusion-2-1/resolve/main/v2-1_768-ema-pruned.safetensors?download=true",
+    "desc": "This stable-diffusion-2 model is resumed from stable-diffusion-2-base (512-base-ema.ckpt) and trained for 150k steps using a v-objective on the same dataset. Resumed for another 140k steps on 768x768 images",
+    "preview": "stabilityai--stable-diffusion-2.1-base.jpg",
+    "original": true
   },
   "StabilityAI SD-XL 1.0 Base": {
     "path": "stabilityai/stable-diffusion-xl-base-1.0",
@@ -16,8 +49,10 @@
   },
   "StabilityAI SD 2.1 Turbo": {
     "path": "stabilityai/sd-turbo",
+    "alt": "sd_turbo.safetensors@https://huggingface.co/stabilityai/sd-turbo/resolve/main/sd_turbo.safetensors?download=true",
     "desc": "SD-Turbo is a distilled version of Stable Diffusion 2.1, trained for real-time synthesis. SD-Turbo is based on a novel training method called Adversarial Diffusion Distillation (ADD) (see the technical report), which allows sampling large-scale foundational image diffusion models in 1 to 4 steps at high image quality. This approach uses score distillation to leverage large-scale off-the-shelf image diffusion models as a teacher signal and combines this with an adversarial loss to ensure high image fidelity even in the low-step regime of one or two sampling steps.",
-    "preview": "stabilityai--sd-turbo.jpg"
+    "preview": "stabilityai--sd-turbo.jpg",
+    "original": true
   },
   "StabilityAI SD-XL Turbo": {
     "path": "stabilityai/sdxl-turbo",
@@ -33,6 +68,11 @@
     "path": "stabilityai/stable-video-diffusion-img2vid-xt",
     "desc": "(SVD) Image-to-Video is a latent diffusion model trained to generate short video clips from an image conditioning. This model was trained to generate 25 frames at resolution 576x1024 given a context frame of the same size, finetuned from SVD Image-to-Video [14 frames]. We also finetune the widely used f8-decoder for temporal consistency.",
     "preview": "stabilityai--stable-video-diffusion-img2vid-xt.jpg"
+  },
+  "Segmind Vega": {
+    "path": "segmind/Segmind-Vega",
+    "desc": "The Segmind-Vega Model is a distilled version of the Stable Diffusion XL (SDXL), offering a remarkable 70% reduction in size and an impressive 100% speedup while retaining high-quality text-to-image generation capabilities. Trained on diverse datasets, including Grit and Midjourney scrape data, it excels at creating a wide range of visual content based on textual prompts. Employing a knowledge distillation strategy, Segmind-Vega leverages the teachings of several expert models, including SDXL, ZavyChromaXL, and JuggernautXL, to combine their strengths and produce compelling visual outputs.",
+    "preview": "segmind--Segmind-Vega.jpg"
   },
   "Segmind SSD-1B": {
     "path": "segmind/SSD-1B",
@@ -79,14 +119,49 @@
     "desc": "Kandinsky 3.0 is an open-source text-to-image diffusion model built upon the Kandinsky2-x model family. In comparison to its predecessors, Kandinsky 3.0 incorporates more data and specifically related to Russian culture, which allows to generate pictures related to Russin culture. Furthermore, enhancements have been made to the text understanding and visual quality of the model, achieved by increasing the size of the text encoder and Diffusion U-Net models, respectively.",
     "preview": "kandinsky-community--kandinsky-3.jpg"
   },
+  "Playground v1": {
+    "path": "playgroundai/playground-v1",
+    "desc": "Playground v1 is a latent diffusion model that improves the overall HDR quality to get more stunning images.",
+    "preview": "playgroundai--playground-v1.jpg"
+  },
+  "Playground v2 256": {
+    "path": "playgroundai/playground-v2-256px-base",
+    "desc": "Playground v2 is a diffusion-based text-to-image generative model. The model was trained from scratch by the research team at Playground. Images generated by Playground v2 are favored 2.5 times more than those produced by Stable Diffusion XL, according to Playground’s user study.",
+    "preview": "playgroundai--playground-v2-256px-base.jpg"
+  },
+  "Playground v2 512": {
+    "path": "playgroundai/playground-v2-512px-base",
+    "desc": "Playground v2 is a diffusion-based text-to-image generative model. The model was trained from scratch by the research team at Playground. Images generated by Playground v2 are favored 2.5 times more than those produced by Stable Diffusion XL, according to Playground’s user study.",
+    "preview": "playgroundai--playground-v2-512px-base.jpg"
+  },
+  "Playground v2 1024": {
+    "path": "playgroundai/playground-v2-1024px-aesthetic",
+    "desc": "Playground v2 is a diffusion-based text-to-image generative model. The model was trained from scratch by the research team at Playground. Images generated by Playground v2 are favored 2.5 times more than those produced by Stable Diffusion XL, according to Playground’s user study.",
+    "preview": "playgroundai--playground-v2-1024px-aesthetic.jpg"
+  },
   "DeepFloyd IF Medium": {
     "path": "DeepFloyd/IF-I-M-v1.0",
     "desc": "DeepFloyd-IF is a pixel-based text-to-image triple-cascaded diffusion model, that can generate pictures with new state-of-the-art for photorealism and language understanding. The result is a highly efficient model that outperforms current state-of-the-art models, achieving a zero-shot FID-30K score of 6.66 on the COCO dataset. It is modular and composed of frozen text mode and three pixel cascaded diffusion modules, each designed to generate images of increasing resolution: 64x64, 256x256, and 1024x1024.",
     "preview": "DeepFloyd--IF-I-M-v1.0.jpg"
   },
+  "aMUSEd 256": {
+    "path": "amused/amused-256",
+    "desc": "Amused is a lightweight text to image model based off of the muse architecture. Amused is particularly useful in applications that require a lightweight and fast model such as generating many images quickly at once.",
+    "preview": "amused--amused-256.jpg"
+  },
+  "aMUSEd 512": {
+    "path": "amused/amused-512",
+    "desc": "Amused is a lightweight text to image model based off of the muse architecture. Amused is particularly useful in applications that require a lightweight and fast model such as generating many images quickly at once.",
+    "preview": "amused--amused-512.jpg"
+  },
   "Tsinghua UniDiffuser": {
     "path": "thu-ml/unidiffuser-v1",
     "desc": "UniDiffuser is a unified diffusion framework to fit all distributions relevant to a set of multi-modal data in one transformer. UniDiffuser is able to perform image, text, text-to-image, image-to-text, and image-text pair generation by setting proper timesteps without additional overhead.\nSpecifically, UniDiffuser employs a variation of transformer, called U-ViT, which parameterizes the joint noise prediction network. Other components perform as encoders and decoders of different modalities, including a pretrained image autoencoder from Stable Diffusion, a pretrained image ViT-B/32 CLIP encoder, a pretrained text ViT-L CLIP encoder, and a GPT-2 text decoder finetuned by ourselves.",
     "preview": "thu-ml--unidiffuser-v1.jpg"
+  },
+  "SalesForce BLIP-Diffusion": {
+    "path": "salesforce/blipdiffusion",
+    "desc": "BLIP-Diffusion, a new subject-driven image generation model that supports multimodal control which consumes inputs of subject images and text prompts. Unlike other subject-driven generation models, BLIP-Diffusion introduces a new multimodal encoder which is pre-trained to provide subject representation.",
+    "preview": "salesforce--blipdiffusion.jpg"
   }
 }

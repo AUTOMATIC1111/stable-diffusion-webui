@@ -1,0 +1,22 @@
+{
+    "model": {
+        "bin_centers_type": "normed",
+        "img_size": [384, 768]
+    },
+    
+    "train": {
+    },
+
+    "infer":{
+        "train_midas": false,
+        "use_pretrained_midas": false,
+        "pretrained_resource" : "url::https://github.com/isl-org/ZoeDepth/releases/download/v1.0/ZoeD_M12_K.pt",
+        "force_keep_ar": true
+    },
+
+    "eval":{
+        "train_midas": false,
+        "use_pretrained_midas": false,
+        "pretrained_resource" : "url::https://github.com/isl-org/ZoeDepth/releases/download/v1.0/ZoeD_M12_K.pt"
+    }
+}

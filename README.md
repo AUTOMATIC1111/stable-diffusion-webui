@@ -20,7 +20,9 @@ All individual features are not listed here, instead check [ChangeLog](CHANGELOG
 - Multiple backends!  
   ▹ **Original | Diffusers**
 - Multiple diffusion models!  
-  ▹ **Stable Diffusion | SD-XL | LCM | Segmind | Kandinsky | Pixart-α | Würstchen | DeepFloyd IF | UniDiffusion | SD-Distilled | etc.**
+  ▹ **Stable Diffusion 1.5/2.1 | SD-XL | LCM | Segmind | Kandinsky | Pixart-α | Würstchen | aMUSEd | DeepFloyd IF | UniDiffusion | SD-Distilled | BLiP Diffusion | etc.**
+- Built-in Control for Text, Image, Batch and video processing!  
+  ▹ **ControlNet | ControlNet XS | Control LLLite | T2I Adapters | IP Adapters**  
 - Multiplatform!  
  ▹ **Windows | Linux | MacOS with CPU | nVidia | AMD | IntelArc | DirectML | OpenVINO | ONNX+Olive**
 - Platform specific autodetection and tuning performed on install
@@ -28,7 +30,6 @@ All individual features are not listed here, instead check [ChangeLog](CHANGELOG
 - Improved prompt parser  
 - Enhanced *Lora*/*LoCon*/*Lyco* code supporting latest trends in training  
 - Built-in queue management  
-- Advanced metadata caching and handling to speed up operations  
 - Enterprise level logging and hardened API  
 - Modern localization and hints engine  
 - Broad compatibility with existing extensions ecosystem and new extensions manager  
@@ -37,7 +38,8 @@ All individual features are not listed here, instead check [ChangeLog](CHANGELOG
 
 <br>
 
-![Screenshot-Dark](html/black-teal.jpg)
+![Screenshot-Dark](html/xmas-default.jpg)
+![Screenshot-Control](html/xmas-control.jpg)
 ![Screenshot-Light](html/light-teal.jpg)
 
 <br>
@@ -58,17 +60,23 @@ All individual features are not listed here, instead check [ChangeLog](CHANGELOG
 
 Additional models will be added as they become available and there is public interest in them
 
-- [RunwayML Stable Diffusion](https://github.com/Stability-AI/stablediffusion/) 1.x and 2.x *(all variants)*
-- [StabilityAI Stable Diffusion XL](https://github.com/Stability-AI/generative-models)
-- [StabilityAI Stable Video Diffusion Base and XT](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid)
-- [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)
-- [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)
-- [Kandinsky](https://github.com/ai-forever/Kandinsky-2) *2.1 and 2.2 and latest 3.0*
-- [PixArt-α XL 2](https://github.com/PixArt-alpha/PixArt-alpha) *Medium and Large*
+- [RunwayML Stable Diffusion](https://github.com/Stability-AI/stablediffusion/) 1.x and 2.x *(all variants)*  
+- [StabilityAI Stable Diffusion XL](https://github.com/Stability-AI/generative-models)  
+- [StabilityAI Stable Video Diffusion](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid) Base and XT  
+- [LCM: Latent Consistency Models](https://github.com/openai/consistency_models)  
+- [aMUSEd 256](https://huggingface.co/amused/amused-256) 256 and 512
+- [Segmind Vega](https://huggingface.co/segmind/Segmind-Vega)  
+- [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)  
+- [Kandinsky](https://github.com/ai-forever/Kandinsky-2) *2.1 and 2.2 and latest 3.0*  
+- [PixArt-α XL 2](https://github.com/PixArt-alpha/PixArt-alpha) *Medium and Large*  
 - [Warp Wuerstchen](https://huggingface.co/blog/wuertschen)  
+- [Playground](https://huggingface.co/playgroundai/playground-v2-256px-base) *v1, v2 256, v2 512, v2 1024*  
 - [Tsinghua UniDiffusion](https://github.com/thu-ml/unidiffuser)
 - [DeepFloyd IF](https://github.com/deep-floyd/IF) *Medium and Large*
+- [ModelScope T2V](https://huggingface.co/damo-vilab/text-to-video-ms-1.7b)
 - [Segmind SD Distilled](https://huggingface.co/blog/sd_distillation) *(all variants)*
+- [BLIP-Diffusion](https://dxli94.github.io/BLIP-Diffusion-website/)  
+
 
 Also supported are modifiers such as:
 - **LCM** and **Turbo** (Adversarial Diffusion Distillation) networks
@@ -208,6 +216,9 @@ General goals:
 - Licenses for modules are listed in [Licenses](html/licenses.html)
 
 ### **Docs**
+
+If you're unsure how to use a feature, best place to start is [Wiki](https://github.com/vladmandic/automatic/wiki) and if its not there,  
+check [ChangeLog](CHANGELOG.md) for when feature was first introduced as it will always have a short note on how to use it  
 
 - [Wiki](https://github.com/vladmandic/automatic/wiki)
 - [ReadMe](README.md)

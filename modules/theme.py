@@ -1,6 +1,5 @@
 import os
 import json
-import urllib.request
 import gradio as gr
 import modules.shared
 # from modules.shared import log, opts, req, writefile
@@ -51,18 +50,21 @@ def reload_gradio_theme(theme_name=None):
     if not theme_name:
         theme_name = modules.shared.opts.gradio_theme
     default_font_params = {}
+    """
     res = 0
     try:
+        import urllib.request
         request = urllib.request.Request("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono", method="HEAD")
         res = urllib.request.urlopen(request, timeout=3.0).status # pylint: disable=consider-using-with
     except Exception:
         res = 0
     if res != 200:
         modules.shared.log.info('No internet access detected, using default fonts')
-        default_font_params = {
-            'font':['Helvetica', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-            'font_mono':['IBM Plex Mono', 'ui-monospace', 'Consolas', 'monospace']
-        }
+    """
+    default_font_params = {
+        'font':['Helvetica', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        'font_mono':['IBM Plex Mono', 'ui-monospace', 'Consolas', 'monospace']
+    }
     is_builtin = theme_name in list_builtin_themes()
     modules.shared.log.info(f'Load UI theme: name="{theme_name}" style={modules.shared.opts.theme_style} base={"sdnext.css" if is_builtin else "base.css"}')
     if is_builtin:

@@ -1,5 +1,11 @@
+import os
+import inspect
 from modules import shared
 from modules import sd_samplers_common
+
+
+debug = shared.log.trace if os.environ.get('SD_SAMPLER_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug('Trace: SAMPLER')
 
 try:
     from diffusers import (
@@ -26,22 +32,22 @@ except Exception as e:
 config = {
     # beta_start, beta_end are typically per-scheduler, but we don't want them as they should be taken from the model itself as those are values model was trained on
     # prediction_type is ideally set in model as well, but it maybe needed that we do auto-detect of model type in the future
-    'All': { 'num_train_timesteps': 1000, 'beta_start': 0.0001, 'beta_end': 0.02, 'beta_schedule': 'linear', 'prediction_type': 'epsilon' },
+    'All': { 'num_train_timesteps': 500, 'beta_start': 0.0001, 'beta_end': 0.02, 'beta_schedule': 'linear', 'prediction_type': 'epsilon' },
     'DDIM': { 'clip_sample': True, 'set_alpha_to_one': True, 'steps_offset': 0, 'clip_sample_range': 1.0, 'sample_max_value': 1.0, 'timestep_spacing': 'linspace', 'rescale_betas_zero_snr': False },
     'DDPM': { 'variance_type': "fixed_small", 'clip_sample': True, 'thresholding': False, 'clip_sample_range': 1.0, 'sample_max_value': 1.0, 'timestep_spacing': 'linspace'},
     'DEIS': { 'solver_order': 2, 'thresholding': False, 'sample_max_value': 1.0, 'algorithm_type': "deis", 'solver_type': "logrho", 'lower_order_final': True },
     'DPM++ 1S': { 'solver_order': 2, 'thresholding': False, 'sample_max_value': 1.0, 'algorithm_type': "dpmsolver++", 'solver_type': "midpoint", 'lower_order_final': True, 'use_karras_sigmas': False },
     'DPM++ 2M': { 'thresholding': False, 'sample_max_value': 1.0, 'algorithm_type': "dpmsolver++", 'solver_type': "midpoint", 'lower_order_final': True, 'use_karras_sigmas': False },
     'DPM SDE': { 'use_karras_sigmas': False },
-    'Euler a': { },
-    'Euler': { 'interpolation_type': "linear", 'use_karras_sigmas': False },
+    'Euler a': { 'rescale_betas_zero_snr': False },
+    'Euler': { 'interpolation_type': "linear", 'use_karras_sigmas': False, 'rescale_betas_zero_snr': False },
     'Heun': { 'use_karras_sigmas': False },
     'KDPM2': { 'steps_offset': 0 },
     'KDPM2 a': { 'steps_offset': 0 },
     'LMSD': { 'use_karras_sigmas': False, 'timestep_spacing': 'linspace', 'steps_offset': 0 },
     'PNDM': { 'skip_prk_steps': False, 'set_alpha_to_one': False, 'steps_offset': 0 },
     'UniPC': { 'solver_order': 2, 'thresholding': False, 'sample_max_value': 1.0, 'predict_x0': 'bh2', 'lower_order_final': True },
-    'LCM': { 'num_train_timesteps': 1000, 'beta_start': 0.00085, 'beta_end': 0.012, 'beta_schedule': "scaled_linear", 'set_alpha_to_one': True, 'rescale_betas_zero_snr': False },
+    'LCM': { 'beta_start': 0.00085, 'beta_end': 0.012, 'beta_schedule': "scaled_linear", 'set_alpha_to_one': True, 'rescale_betas_zero_snr': False },
 }
 
 samplers_data_diffusers = [
@@ -108,9 +114,21 @@ class DiffusionSampler:
             self.config['beta_start'] = shared.opts.schedulers_beta_start
         if 'beta_end' in self.config and shared.opts.schedulers_beta_end > 0:
             self.config['beta_end'] = shared.opts.schedulers_beta_end
+        if 'rescale_betas_zero_snr' in self.config:
+            self.config['rescale_betas_zero_snr'] = shared.opts.schedulers_rescale_betas
+        if 'num_train_timesteps' in self.config:
+            self.config['num_train_timesteps'] = shared.opts.schedulers_timesteps_range
         if name == 'DPM++ 2M':
             self.config['algorithm_type'] = shared.opts.schedulers_dpm_solver
         if name == 'DEIS':
             self.config['algorithm_type'] = 'deis'
+        # validate all config params
+        signature = inspect.signature(constructor, follow_wrapped=True)
+        possible = signature.parameters.keys()
+        debug(f'Sampler: sampler="{name}" config={self.config} signature={possible}')
+        for key in self.config.copy().keys():
+            if key not in possible:
+                shared.log.warning(f'Sampler: sampler="{name}" config={self.config} invalid={key}')
+                del self.config[key]
         self.sampler = constructor(**self.config)
         self.sampler.name = name

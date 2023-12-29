@@ -16,7 +16,8 @@ re_hypernet_hash = re.compile("\(([0-9a-f]+)\)$") # pylint: disable=anomalous-ba
 type_of_gr_update = type(gr.update())
 paste_fields = {}
 registered_param_bindings = []
-debug = shared.log.info if os.environ.get('SD_PASTE_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug = shared.log.trace if os.environ.get('SD_PASTE_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug('Trace: PASTE')
 
 
 class ParamBinding:
@@ -28,6 +29,7 @@ class ParamBinding:
         self.source_tabname = source_tabname
         self.override_settings_component = override_settings_component
         self.paste_field_names = paste_field_names or []
+        debug(f'ParamBinding: {vars(self)}')
 
 
 def reset():
@@ -112,6 +114,8 @@ def create_buttons(tabs_list):
             name = 'Inpaint'
         elif name == 'extras':
             name = 'Process'
+        elif name == 'control':
+            name = 'Control'
         buttons[tab] = gr.Button(f"➠ {name}", elem_id=f"{tab}_tab")
     return buttons
 
@@ -121,7 +125,8 @@ def bind_buttons(buttons, send_image, send_generate_info):
     for tabname, button in buttons.items():
         source_text_component = send_generate_info if isinstance(send_generate_info, gr.components.Component) else None
         source_tabname = send_generate_info if isinstance(send_generate_info, str) else None
-        register_paste_params_button(ParamBinding(paste_button=button, tabname=tabname, source_text_component=source_text_component, source_image_component=send_image, source_tabname=source_tabname))
+        bindings = ParamBinding(paste_button=button, tabname=tabname, source_text_component=source_text_component, source_image_component=send_image, source_tabname=source_tabname)
+        register_paste_params_button(bindings)
 
 
 def register_paste_params_button(binding: ParamBinding):
@@ -131,6 +136,9 @@ def register_paste_params_button(binding: ParamBinding):
 def connect_paste_params_buttons():
     binding: ParamBinding
     for binding in registered_param_bindings:
+        if binding.tabname not in paste_fields:
+            debug(f"Not not registered: tab={binding.tabname}")
+            continue
         destination_image_component = paste_fields[binding.tabname]["init_img"]
         fields = paste_fields[binding.tabname]["fields"]
         override_settings_component = binding.override_settings_component or paste_fields[binding.tabname]["override_settings_component"]
@@ -232,7 +240,8 @@ def parse_generation_parameters(x: str):
                 res[k] = v
         except Exception:
             pass
-    res["Full quality"] = res.get('VAE', None) != 'TAESD'
+    if res.get('VAE', None) == 'TAESD':
+        res["Full quality"] = False
     debug(f"Parse prompt: {res}")
     return res
 

@@ -56,7 +56,7 @@ def grid(images, labels = None, width = 0, height = 0, border = 0, square = Fals
     for i, img in enumerate(images): # pylint: disable=redefined-outer-name
         x = (i % cols * w) + (i % cols * border)
         y = (i // cols * h) + (i // cols * border)
-        img.thumbnail((w, h), Image.HAMMING)
+        img.thumbnail((w, h), Image.Resampling.HAMMING)
         image.paste(img, box=(x, y))
         if labels is not None and len(images) == len(labels):
             ctx = ImageDraw.Draw(image)

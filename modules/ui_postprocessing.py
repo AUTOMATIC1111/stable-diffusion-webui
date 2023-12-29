@@ -12,8 +12,8 @@ def wrap_pnginfo(image):
     return infotext_to_html(geninfo), info, geninfo
 
 
-def submit_click(tab_index, extras_image, image_batch, extras_batch_input_dir, extras_batch_output_dir, show_extras_results, *script_inputs):
-    result_images, geninfo, js_info = postprocessing.run_postprocessing(tab_index, extras_image, image_batch, extras_batch_input_dir, extras_batch_output_dir, show_extras_results, *script_inputs)
+def submit_click(tab_index, extras_image, image_batch, extras_batch_input_dir, extras_batch_output_dir, show_extras_results, save_output, *script_inputs):
+    result_images, geninfo, js_info = postprocessing.run_postprocessing(tab_index, extras_image, image_batch, extras_batch_input_dir, extras_batch_output_dir, show_extras_results, *script_inputs, save_output=save_output)
     return result_images, geninfo, json.dumps(js_info), ''
 
 
@@ -31,7 +31,9 @@ def create_ui():
                     extras_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, placeholder="Leave blank to save images to the default path.", elem_id="extras_batch_output_dir")
                     show_extras_results = gr.Checkbox(label='Show result images', value=True, elem_id="extras_show_extras_results")
             with gr.Row():
-                buttons = parameters_copypaste.create_buttons(["txt2img", "img2img", "inpaint"])
+                buttons = parameters_copypaste.create_buttons(["txt2img", "img2img", "inpaint", "control"])
+            with gr.Row():
+                save_output = gr.Checkbox(label='Save output', value=True, elem_id="extras_save_output")
             script_inputs = scripts.scripts_postproc.setup_ui()
         with gr.Column():
             id_part = 'extras'
@@ -66,6 +68,7 @@ def create_ui():
             extras_batch_input_dir,
             extras_batch_output_dir,
             show_extras_results,
+            save_output,
             *script_inputs,
         ],
         outputs=[

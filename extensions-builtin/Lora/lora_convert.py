@@ -1,9 +1,11 @@
-from typing import Dict
+import os
 import re
 import bisect
+from typing import Dict
 from modules import shared
 
 
+debug = os.environ.get('SD_LORA_DEBUG', None) is not None
 suffix_conversion = {
     "attentions": {},
     "resnets": {
@@ -144,12 +146,13 @@ class KeyConvert:
             map_keys = list(self.UNET_CONVERSION_MAP.keys())  # prefix of U-Net modules
             map_keys.sort()
             search_key = key.replace(self.LORA_PREFIX_UNET, "").replace(self.OFT_PREFIX_UNET, "").replace(self.LORA_PREFIX_TEXT_ENCODER1, "").replace(self.LORA_PREFIX_TEXT_ENCODER2, "")
-
             position = bisect.bisect_right(map_keys, search_key)
             map_key = map_keys[position - 1]
             if search_key.startswith(map_key):
-                key = key.replace(map_key, self.UNET_CONVERSION_MAP[map_key]).replace("oft","lora") # pylint: disable=unsubscriptable-object
+                key = key.replace(map_key, self.UNET_CONVERSION_MAP[map_key]).replace("oft", "lora") # pylint: disable=unsubscriptable-object
         sd_module = shared.sd_model.network_layer_mapping.get(key, None)
+        if debug and sd_module is None:
+            raise RuntimeError(f"LoRA key not found in network_layer_mapping: key={key} mapping={shared.sd_model.network_layer_mapping.keys()}")
         return key, sd_module
 
     def __call__(self, key):

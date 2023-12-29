@@ -85,7 +85,7 @@ class OverrideItem(NamedTuple):
     message: Optional[str]
 
 opts_override_table = {
-    "diffusers_generator_device": OverrideItem("cpu", None, "DirectML does not support torch Generator API"),
+    "diffusers_generator_device": OverrideItem("CPU", None, "DirectML does not support torch Generator API"),
     "diffusers_model_cpu_offload": OverrideItem(False, None, "Diffusers model CPU offloading does not support DirectML devices"),
     "diffusers_seq_cpu_offload": OverrideItem(False, lambda opts: opts.diffusers_pipeline != "Stable Diffusion XL", "Diffusers sequential CPU offloading is available only on StableDiffusionXLPipeline with DirectML devices"),
 }

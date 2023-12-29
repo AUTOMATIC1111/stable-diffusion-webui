@@ -147,21 +147,25 @@ def load_vae(model, vae_file=None, vae_source="unknown-source"):
     global loaded_vae_file # pylint: disable=global-statement
     cache_enabled = shared.opts.sd_vae_checkpoint_cache > 0
     if vae_file:
-        if cache_enabled and vae_file in checkpoints_loaded:
-            # use vae checkpoint cache
-            shared.log.info(f"Loading VAE: model={get_filename(vae_file)} source={vae_source} cached=True")
-            store_base_vae(model)
-            _load_vae_dict(model, checkpoints_loaded[vae_file])
-        else:
-            if not os.path.isfile(vae_file):
-                shared.log.error(f"VAE not found: model={vae_file} source={vae_source}")
-                return
-            store_base_vae(model)
-            vae_dict_1 = load_vae_dict(vae_file)
-            _load_vae_dict(model, vae_dict_1)
-            if cache_enabled:
-                # cache newly loaded vae
-                checkpoints_loaded[vae_file] = vae_dict_1.copy()
+        try:
+            if cache_enabled and vae_file in checkpoints_loaded:
+                # use vae checkpoint cache
+                shared.log.info(f"Loading VAE: model={get_filename(vae_file)} source={vae_source} cached=True")
+                store_base_vae(model)
+                _load_vae_dict(model, checkpoints_loaded[vae_file])
+            else:
+                if not os.path.isfile(vae_file):
+                    shared.log.error(f"VAE not found: model={vae_file} source={vae_source}")
+                    return
+                store_base_vae(model)
+                vae_dict_1 = load_vae_dict(vae_file)
+                _load_vae_dict(model, vae_dict_1)
+                if cache_enabled:
+                    # cache newly loaded vae
+                    checkpoints_loaded[vae_file] = vae_dict_1.copy()
+        except Exception as e:
+            shared.log.error(f"Loading VAE failed: model={vae_file} source={vae_source} {e}")
+            restore_base_vae(model)
         # clean up cache if limit is reached
         if cache_enabled:
             while len(checkpoints_loaded) > shared.opts.sd_vae_checkpoint_cache + 1: # we need to count the current model
@@ -270,8 +274,7 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
         if hasattr(shared.sd_model, "vae") and hasattr(shared.sd_model, "sd_checkpoint_info"):
             vae = load_vae_diffusers(shared.sd_model.sd_checkpoint_info.filename, vae_file, vae_source)
             if vae is not None:
-                if vae is not None:
-                    sd_model.vae = vae
+                sd_models.set_diffuser_options(sd_model, vae=vae, op='vae')
 
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and not getattr(sd_model, 'has_accelerate', False):
         sd_model.to(devices.device)

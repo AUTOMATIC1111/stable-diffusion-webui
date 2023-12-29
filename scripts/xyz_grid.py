@@ -269,6 +269,8 @@ axis_options = [
     AxisOption("[FreeU] 2nd stage backbone factor", float, apply_setting('freeu_b2')),
     AxisOption("[FreeU] 1st stage skip factor", float, apply_setting('freeu_s1')),
     AxisOption("[FreeU] 2nd stage skip factor", float, apply_setting('freeu_s2')),
+    AxisOption("[IP adapter] Name", str, apply_field('ip_adapter_name'), cost=1.0),
+    AxisOption("[IP adapter] Scale", float, apply_field('ip_adapter_scale')),
 ]
 
 

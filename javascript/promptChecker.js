@@ -36,4 +36,6 @@ onAfterUiUpdate(() => {
   setupBracketChecking('txt2img_neg_prompt', 'txt2img_negative_token_counter');
   setupBracketChecking('img2img_prompt', 'img2img_token_counter');
   setupBracketChecking('img2img_neg_prompt', 'img2img_negative_token_counter');
+  setupBracketChecking('control_prompt', 'control_token_counter');
+  setupBracketChecking('control_neg_prompt', 'control_negative_token_counter');
 });

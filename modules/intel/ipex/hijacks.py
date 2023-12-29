@@ -65,7 +65,7 @@ def ipex_autocast(*args, **kwargs):
     else:
         return original_autocast(*args, **kwargs)
 
-#Embedding BF16
+# Embedding BF16
 original_torch_cat = torch.cat
 def torch_cat(tensor, *args, **kwargs):
     if len(tensor) == 3 and (tensor[0].dtype != tensor[1].dtype or tensor[2].dtype != tensor[1].dtype):
@@ -73,7 +73,7 @@ def torch_cat(tensor, *args, **kwargs):
     else:
         return original_torch_cat(tensor, *args, **kwargs)
 
-#Latent antialias:
+# Latent antialias:
 original_interpolate = torch.nn.functional.interpolate
 def interpolate(tensor, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False): # pylint: disable=too-many-arguments
     if antialias or align_corners is not None:
@@ -93,6 +93,32 @@ def linalg_solve(A, B, *args, **kwargs): # pylint: disable=invalid-name
     else:
         return original_linalg_solve(A, B, *args, **kwargs)
 
+if torch.xpu.has_fp64_dtype():
+    original_torch_bmm = torch.bmm
+    original_scaled_dot_product_attention = torch.nn.functional.scaled_dot_product_attention
+else:
+    # 64 bit attention workarounds for Alchemist:
+    try:
+        from .attention import torch_bmm_32_bit as original_torch_bmm
+        from .attention import scaled_dot_product_attention_32_bit as original_scaled_dot_product_attention
+    except Exception: # pylint: disable=broad-exception-caught
+        original_torch_bmm = torch.bmm
+        original_scaled_dot_product_attention = torch.nn.functional.scaled_dot_product_attention
+
+# dtype errors:
+def torch_bmm(input, mat2, *, out=None):
+    if input.dtype != mat2.dtype:
+        mat2 = mat2.to(input.dtype)
+    return original_torch_bmm(input, mat2, out=out)
+
+def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.0, is_causal=False):
+    if query.dtype != key.dtype:
+        key = key.to(dtype=query.dtype)
+    if query.dtype != value.dtype:
+        value = value.to(dtype=query.dtype)
+    return original_scaled_dot_product_attention(query, key, value, attn_mask=attn_mask, dropout_p=dropout_p, is_causal=is_causal)
+
+@property
 def is_cuda(self):
     return self.device.type == 'xpu'
 
@@ -131,12 +157,16 @@ def ipex_hijacks():
         lambda orig_func, f, map_location=None, pickle_module=None, *, weights_only=False, mmap=None, **kwargs:
         orig_func(orig_func, f, map_location=return_xpu(map_location), pickle_module=pickle_module, weights_only=weights_only, mmap=mmap, **kwargs),
         lambda orig_func, f, map_location=None, pickle_module=None, *, weights_only=False, mmap=None, **kwargs: check_device(map_location))
+    if hasattr(torch.xpu, "Generator"):
+        CondFunc('torch.Generator',
+            lambda orig_func, device=None: torch.xpu.Generator(return_xpu(device)),
+            lambda orig_func, device=None: device is not None and device != torch.device("cpu") and device != "cpu")
+    else:
+        CondFunc('torch.Generator',
+            lambda orig_func, device=None: orig_func(return_xpu(device)),
+            lambda orig_func, device=None: check_device(device))
 
-    CondFunc('torch.Generator',
-        lambda orig_func, device=None: torch.xpu.Generator(return_xpu(device)),
-        lambda orig_func, device=None: device is not None and device != torch.device("cpu") and device != "cpu")
-
-    #TiledVAE and ControlNet:
+    # TiledVAE and ControlNet:
     CondFunc('torch.batch_norm',
         lambda orig_func, input, weight, bias, *args, **kwargs: orig_func(input,
         weight if weight is not None else torch.ones(input.size()[1], device=input.device),
@@ -148,47 +178,51 @@ def ipex_hijacks():
         bias if bias is not None else torch.zeros(input.size()[1], device=input.device), *args, **kwargs),
         lambda orig_func, input, *args, **kwargs: input.device != torch.device("cpu"))
 
-    #Functions with dtype errors:
-    #Original backend:
+    # Functions with dtype errors:
     CondFunc('torch.nn.modules.GroupNorm.forward',
         lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
         lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
-    #Hypernetwork training:
+    # Training:
     CondFunc('torch.nn.modules.linear.Linear.forward',
         lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
         lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
     CondFunc('torch.nn.modules.conv.Conv2d.forward',
         lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
         lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
-    #BF16:
+    # BF16:
     CondFunc('torch.nn.functional.layer_norm',
         lambda orig_func, input, normalized_shape=None, weight=None, *args, **kwargs:
         orig_func(input.to(weight.data.dtype), normalized_shape, weight, *args, **kwargs),
         lambda orig_func, input, normalized_shape=None, weight=None, *args, **kwargs:
         weight is not None and input.dtype != weight.data.dtype)
-    #SwinIR BF16:
+    # SwinIR BF16:
     CondFunc('torch.nn.functional.pad',
         lambda orig_func, input, pad, mode='constant', value=None: orig_func(input.to(torch.float32), pad, mode=mode, value=value).to(dtype=torch.bfloat16),
         lambda orig_func, input, pad, mode='constant', value=None: mode == 'reflect' and input.dtype == torch.bfloat16)
 
-    #Diffusers Float64 (ARC GPUs doesn't support double or Float64):
+    # Diffusers Float64 (Alchemist GPUs doesn't support 64 bit):
     if not torch.xpu.has_fp64_dtype():
         CondFunc('torch.from_numpy',
         lambda orig_func, ndarray: orig_func(ndarray.astype('float32')),
         lambda orig_func, ndarray: ndarray.dtype == float)
 
-    #Broken functions when torch.cuda.is_available is True:
-    #Pin Memory:
+    # Broken functions when torch.cuda.is_available is True:
+    # Pin Memory:
     CondFunc('torch.utils.data.dataloader._BaseDataLoaderIter.__init__',
         lambda orig_func, *args, **kwargs: ipex_no_cuda(orig_func, *args, **kwargs),
         lambda orig_func, *args, **kwargs: True)
 
-    #Functions that make compile mad with CondFunc:
-    torch.utils.data.dataloader._MultiProcessingDataLoaderIter._shutdown_workers = _shutdown_workers
+    # Functions that make compile mad with CondFunc:
     torch.nn.DataParallel = DummyDataParallel
+    torch.utils.data.dataloader._MultiProcessingDataLoaderIter._shutdown_workers = _shutdown_workers
+
     torch.autocast = ipex_autocast
-    torch.cat = torch_cat
-    torch.linalg.solve = linalg_solve
-    torch.UntypedStorage.is_cuda = is_cuda
-    torch.nn.functional.interpolate = interpolate
     torch.backends.cuda.sdp_kernel = return_null_context
+    torch.UntypedStorage.is_cuda = is_cuda
+
+    torch.nn.functional.interpolate = interpolate
+    torch.linalg.solve = linalg_solve
+
+    torch.bmm = torch_bmm
+    torch.cat = torch_cat
+    torch.nn.functional.scaled_dot_product_attention = scaled_dot_product_attention
