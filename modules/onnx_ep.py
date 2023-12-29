@@ -15,7 +15,7 @@ class ExecutionProvider(str, Enum):
 
 available_execution_providers: List[ExecutionProvider] = ort.get_available_providers()
 EP_TO_NAME = {
-    ExecutionProvider.CPU: "cpu", # is this a valid option?
+    ExecutionProvider.CPU: "gpu-cpu", # ???
     ExecutionProvider.DirectML: "gpu-dml",
     ExecutionProvider.CUDA: "gpu-cuda", # test required
     ExecutionProvider.ROCm: "gpu-rocm", # test required

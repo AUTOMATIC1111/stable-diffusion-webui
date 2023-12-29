@@ -43,6 +43,17 @@
     }
   },
   "passes": {
+    "optimize_CPUExecutionProvider": {
+      "type": "OrtTransformersOptimization",
+      "disable_search": true,
+      "config": {
+        "model_type": "clip",
+        "opt_level": 0,
+        "float16": false,
+        "use_gpu": false,
+        "keep_io_types": false
+      }
+    },
     "optimize_DmlExecutionProvider": {
       "type": "OrtTransformersOptimization",
       "disable_search": true,
@@ -97,6 +108,17 @@
         "float16": true,
         "use_gpu": true,
         "keep_io_types": false
+      }
+    },
+    "quantization": {
+      "type": "OnnxDynamicQuantization",
+      "disable_search": true,
+      "config": {
+        "save_as_external_data": false,
+        "all_tensors_to_one_file": true,
+        "per_channel": false,
+        "reduce_range": false,
+        "MatMulConstBOnly": true
       }
     }
   },

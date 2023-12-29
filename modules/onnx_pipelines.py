@@ -244,30 +244,31 @@ class OnnxRawPipeline(OnnxPipelineBase):
                         if flow[i] == "optimize":
                             flow[i] = pass_key
                 olive_config["input_model"]["config"]["model_path"] = os.path.abspath(os.path.join(in_dir, submodel, "model.onnx"))
-                olive_config["passes"][pass_key]["config"]["float16"] = shared.opts.olive_float16
                 olive_config["engine"]["execution_providers"] = [shared.opts.onnx_execution_provider]
-                if shared.opts.onnx_execution_provider == ExecutionProvider.CUDA or shared.opts.onnx_execution_provider == ExecutionProvider.ROCm:
-                    if version.parse(ort.__version__) < version.parse("1.17.0"):
-                        olive_config["passes"][pass_key]["config"]["optimization_options"] = {"enable_skip_group_norm": False}
-                    if shared.opts.olive_float16:
-                        olive_config["passes"][pass_key]["config"]["keep_io_types"] = False
+                if pass_key in olive_config["passes"]:
+                    olive_config["passes"][pass_key]["config"]["float16"] = shared.opts.olive_float16
+                    if shared.opts.onnx_execution_provider == ExecutionProvider.CUDA or shared.opts.onnx_execution_provider == ExecutionProvider.ROCm:
+                        if version.parse(ort.__version__) < version.parse("1.17.0"):
+                            olive_config["passes"][pass_key]["config"]["optimization_options"] = {"enable_skip_group_norm": False}
+                        if shared.opts.olive_float16:
+                            olive_config["passes"][pass_key]["config"]["keep_io_types"] = False
 
                 run(olive_config)
 
                 with open(os.path.join("footprints", f"{submodel}_{EP_TO_NAME[shared.opts.onnx_execution_provider]}_footprints.json"), "r") as footprint_file:
                     footprints = json.load(footprint_file)
-                optimizer_footprint = None
+                processor_final_pass_footprint = None
                 for _, footprint in footprints.items():
-                    if footprint["from_pass"] == "OrtTransformersOptimization":
-                        optimizer_footprint = footprint
+                    if footprint["from_pass"] == olive_config["passes"][olive_config["pass_flows"][-1][-1]]["type"]:
+                        processor_final_pass_footprint = footprint
 
-                assert optimizer_footprint, "Failed to optimize model"
+                assert processor_final_pass_footprint, "Failed to optimize model"
 
                 optimized_model_paths[submodel] = ONNXModel(
-                    **optimizer_footprint["model_config"]["config"]
+                    **processor_final_pass_footprint["model_config"]["config"]
                 ).model_path
 
-                log.info(f"Optimized {submodel}")
+                log.info(f"Processed {submodel}")
 
             for submodel in self.submodels:
                 src_path = optimized_model_paths[submodel]
