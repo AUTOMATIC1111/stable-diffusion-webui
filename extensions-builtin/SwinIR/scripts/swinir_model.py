@@ -4,11 +4,11 @@ import sys
 import numpy as np
 import torch
 from PIL import Image
-from tqdm import tqdm
 
 from modules import modelloader, devices, script_callbacks, shared
-from modules.shared import opts, state
+from modules.shared import opts
 from modules.upscaler import Upscaler, UpscalerData
+from modules.upscaler_utils import tiled_upscale_2
 
 SWINIR_MODEL_URL = "https://github.com/JingyunLiang/SwinIR/releases/download/v0.0/003_realSR_BSRGAN_DFOWMFC_s64w8_SwinIR-L_x4_GAN.pth"
 
@@ -110,14 +110,14 @@ def upscale(
         w_pad = (w_old // window_size + 1) * window_size - w_old
         img = torch.cat([img, torch.flip(img, [2])], 2)[:, :, : h_old + h_pad, :]
         img = torch.cat([img, torch.flip(img, [3])], 3)[:, :, :, : w_old + w_pad]
-        output = inference(
+        output = tiled_upscale_2(
             img,
             model,
-            tile=tile,
+            tile_size=tile,
             tile_overlap=tile_overlap,
-            window_size=window_size,
             scale=scale,
             device=device,
+            desc="SwinIR tiles",
         )
         output = output[..., : h_old * scale, : w_old * scale]
         output = output.data.squeeze().float().cpu().clamp_(0, 1).numpy()
@@ -127,53 +127,6 @@ def upscale(
             )  # CHW-RGB to HCW-BGR
         output = (output * 255.0).round().astype(np.uint8)  # float32 to uint8
         return Image.fromarray(output, "RGB")
-
-
-def inference(
-    img,
-    model,
-    *,
-    tile: int,
-    tile_overlap: int,
-    window_size: int,
-    scale: int,
-    device,
-):
-    # test the image tile by tile
-    b, c, h, w = img.size()
-    tile = min(tile, h, w)
-    assert tile % window_size == 0, "tile size should be a multiple of window_size"
-    sf = scale
-
-    stride = tile - tile_overlap
-    h_idx_list = list(range(0, h - tile, stride)) + [h - tile]
-    w_idx_list = list(range(0, w - tile, stride)) + [w - tile]
-    E = torch.zeros(b, c, h * sf, w * sf, dtype=devices.dtype, device=device).type_as(img)
-    W = torch.zeros_like(E, dtype=devices.dtype, device=device)
-
-    with tqdm(total=len(h_idx_list) * len(w_idx_list), desc="SwinIR tiles") as pbar:
-        for h_idx in h_idx_list:
-            if state.interrupted or state.skipped:
-                break
-
-            for w_idx in w_idx_list:
-                if state.interrupted or state.skipped:
-                    break
-
-                in_patch = img[..., h_idx: h_idx + tile, w_idx: w_idx + tile]
-                out_patch = model(in_patch)
-                out_patch_mask = torch.ones_like(out_patch)
-
-                E[
-                ..., h_idx * sf: (h_idx + tile) * sf, w_idx * sf: (w_idx + tile) * sf
-                ].add_(out_patch)
-                W[
-                ..., h_idx * sf: (h_idx + tile) * sf, w_idx * sf: (w_idx + tile) * sf
-                ].add_(out_patch_mask)
-                pbar.update(1)
-    output = E.div_(W)
-
-    return output
 
 
 def on_ui_settings():
