@@ -9,6 +9,7 @@ import importlib.util
 import importlib.metadata
 import platform
 import json
+import warnings
 from functools import lru_cache
 
 from modules import cmd_args, errors
@@ -137,11 +138,46 @@ def repo_dir(name):
 
 
 def run_pip(command, desc=None, live=default_command_live):
+    warnings.warn("run_pip is deprecated, use run_pip_install instead", DeprecationWarning, stacklevel=2)
     if args.skip_install:
         return
 
     index_url_line = f' --index-url {index_url}' if index_url != '' else ''
     return run(f'"{python}" -m pip {command} --prefer-binary{index_url_line}', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}", live=live)
+
+
+def run_pip_install(
+    package: str,
+    desc: str = "",
+    *,
+    live=default_command_live,
+    constraints=None,
+    no_deps=False,
+    force=False,
+):
+    if args.skip_install:
+        return
+    desc = desc or package
+
+    command = [
+        python,
+        "-m",
+        "pip",
+        "install",
+        *(("-r", package) if os.path.isfile(package) else (package,)),
+        "--prefer-binary",
+    ]
+    if index_url:
+        args.extend([f"--index-url={index_url}"])
+    if constraints:
+        command.extend([f"--constraint={constraints}"])
+    if no_deps:
+        command.append("--no-deps")
+    if force:
+        command.append("--ignore-installed")
+        command.append("--upgrade")
+
+    return run(command, desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}", live=live)
 
 
 def check_run_python(code: str) -> bool:
@@ -386,19 +422,19 @@ def prepare_environment():
     startup_timer.record("torch GPU test")
 
     if not is_installed("clip"):
-        run_pip(f"install {clip_package}", "clip")
+        run_pip_install(clip_package, desc="clip", constraints=requirements_file)
         startup_timer.record("install clip")
 
     if not is_installed("open_clip"):
-        run_pip(f"install {openclip_package}", "open_clip")
+        run_pip_install(openclip_package, desc="open_clip", constraints=requirements_file)
         startup_timer.record("install open_clip")
 
     if (not is_installed("xformers") or args.reinstall_xformers) and args.xformers:
-        run_pip(f"install -U -I --no-deps {xformers_package}", "xformers")
+        run_pip_install(xformers_package, desc="xformers", constraints=requirements_file, no_deps=True, force=True)
         startup_timer.record("install xformers")
 
     if not is_installed("ngrok") and args.ngrok:
-        run_pip("install ngrok", "ngrok")
+        run_pip_install("ngrok")
         startup_timer.record("install ngrok")
 
     os.makedirs(os.path.join(script_path, dir_repos), exist_ok=True)
@@ -414,7 +450,7 @@ def prepare_environment():
         requirements_file = os.path.join(script_path, requirements_file)
 
     if not requirements_met(requirements_file):
-        run_pip(f"install -r \"{requirements_file}\"", "requirements")
+        run_pip_install(requirements_file, "requirements")
         startup_timer.record("install requirements")
 
     if not args.skip_install:
