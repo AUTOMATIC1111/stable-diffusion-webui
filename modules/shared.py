@@ -357,10 +357,10 @@ options_templates.update(options_section(('advanced', "Inference Settings"), {
     "freeu_s2": OptionInfo(0.2, "2nd stage skip factor", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
 
     "hypertile_sep": OptionInfo("<h2>HyperTile</h2>", "", gr.HTML),
-    "hypertile_vae_enabled": OptionInfo(False, "HyperTile for VAE enabled", gr.Checkbox, {"visible": False}),
-    "hypertile_vae_tile": OptionInfo(128, "HyperTile for VAE tile size", gr.Slider, {"minimum": 128, "maximum": 512, "step": 8, "visible": False}),
     "hypertile_unet_enabled": OptionInfo(False, "HyperTile for UNet enabled"),
-    "hypertile_unet_tile": OptionInfo(256, "HyperTile for UNet tile size", gr.Slider, {"minimum": 256, "maximum": 1024, "step": 8}),
+    "hypertile_unet_tile": OptionInfo(256, "HyperTile for UNet tile size", gr.Slider, {"minimum": 0, "maximum": 1024, "step": 8}),
+    "hypertile_vae_enabled": OptionInfo(False, "HyperTile for VAE enabled", gr.Checkbox),
+    "hypertile_vae_tile": OptionInfo(128, "HyperTile for VAE tile size", gr.Slider, {"minimum": 0, "maximum": 1024, "step": 8}),
 
     "inference_other_sep": OptionInfo("<h2>Other</h2>", "", gr.HTML),
     "batch_frame_mode": OptionInfo(False, "Process multiple images in batch in parallel"),

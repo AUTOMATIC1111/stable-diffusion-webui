@@ -1,3 +1,4 @@
+from typing import Union
 import time
 from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline
 from modules.control.proc.reference_sd15 import StableDiffusionReferencePipeline
@@ -13,7 +14,7 @@ def list_models():
 
 
 class ReferencePipeline():
-    def __init__(self, pipeline: StableDiffusionXLPipeline | StableDiffusionPipeline, dtype = None):
+    def __init__(self, pipeline: Union[StableDiffusionXLPipeline, StableDiffusionPipeline], dtype = None):
         t0 = time.time()
         self.orig_pipeline = pipeline
         self.pipeline = None

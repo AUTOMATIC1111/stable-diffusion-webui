@@ -6,6 +6,9 @@
   - allow deployment without git clone  
     for example, zip of the sdnext folder can be used  
   - control: configurable output folder in settings
+  - hypertile: enable vae tiling
+  - hypertile: add autodetect optimial value  
+    set tile size to 0 to use autodetected value  
   - cli: sdapi.py allow manual api invoke  
     example: `python cli/sdapi.py /sdapi/v1/sd-models`  
 - **Fixes**:
