@@ -418,7 +418,6 @@ class Api:
         task_id = txt2imgreq.force_task_id or create_task_id("txt2img")
 
         script_runner = scripts.scripts_txt2img
-
         with self.txt2img_script_arg_init_lock:
             if not script_runner.scripts:
                 script_runner.initialize_scripts(False)
@@ -489,14 +488,13 @@ class Api:
             mask = decode_base64_to_image(mask)
 
         script_runner = scripts.scripts_img2img
-
         with self.img2img_script_arg_init_lock:
             if not script_runner.scripts:
                 script_runner.initialize_scripts(True)
                 ui.create_ui()
 
-          infotext_script_args = {}
-          self.apply_infotext(img2imgreq, "img2img", script_runner=script_runner, mentioned_script_args=infotext_script_args)
+            infotext_script_args = {}
+            self.apply_infotext(img2imgreq, "img2img", script_runner=script_runner, mentioned_script_args=infotext_script_args)
 
             if not self.default_script_arg_img2img:
                 self.default_script_arg_img2img = self.init_default_script_args(script_runner)
