@@ -9,6 +9,9 @@
   - guard against invalid sampler index  
   - reset default cfg scale to 6.0  
   - processing: correct display metadata  
+- **Improvements**:
+  - cli: sdapi.py allow manual api invoke  
+    example: `python cli/sdapi.py /sdapi/v1/sd-models`  
 
 ## Update for 2023-12-29
 
