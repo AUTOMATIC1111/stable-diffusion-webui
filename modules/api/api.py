@@ -341,6 +341,13 @@ class Api:
         return script_args
 
     def apply_infotext(self, request, tabname, *, script_runner=None, mentioned_script_args=None):
+        """Processes `infotext` field from the `request`, and sets other fields of the `request` accoring to what's in infotext.
+
+        If request already has a field set, and that field is encountered in infotext too, the value from infotext is ignored.
+
+        Additionally, fills `mentioned_script_args` dict with index: value pairs for script arguments read from infotext.
+        """
+
         if not request.infotext:
             return {}
 
@@ -361,7 +368,10 @@ class Api:
             if target_type == type(None):
                 return None
 
-            if not isinstance(value, target_type):
+            if isinstance(value, dict) and value.get('__type__') == 'generic_update':  # this is a gradio.update rather than a value
+                value = value.get('value')
+
+            if value is not None and not isinstance(value, target_type):
                 value = target_type(value)
 
             return value
@@ -390,7 +400,12 @@ class Api:
             script_fields = ((field, indexes[field.component]) for field in possible_fields if field.component in indexes)
 
             for field, index in script_fields:
-                mentioned_script_args[index] = get_field_value(field, params)
+                value = get_field_value(field, params)
+
+                if value is None:
+                    continue
+
+                mentioned_script_args[index] = value
 
         return params
 
