@@ -1,3 +1,4 @@
+import gradio as gr
 import logging
 import os
 import re
@@ -314,7 +315,12 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
                 emb_db.skipped_embeddings[name] = embedding
 
     if failed_to_load_networks:
-        sd_hijack.model_hijack.comments.append("Networks not found: " + ", ".join(failed_to_load_networks))
+        lora_not_found_message = f'Lora not found: {", ".join(failed_to_load_networks)}'
+        sd_hijack.model_hijack.comments.append(lora_not_found_message)
+        if shared.opts.lora_not_found_warning_console:
+            print(f'\n{lora_not_found_message}\n')
+        if shared.opts.lora_not_found_gradio_warning:
+            gr.Warning(lora_not_found_message)
 
     purge_networks_from_memory()
 
