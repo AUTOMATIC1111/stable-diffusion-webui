@@ -5,6 +5,8 @@
 - **Improvements**  
   - allow deployment without git clone  
     for example, zip of the sdnext folder can be used  
+  - control: add marigold depth maps processor  
+    this is state-of-the-art depth estimation model, but its quite heavy on resources  
   - control: configurable output folder in settings  
   - control: auto-refresh available models on tab activate  
   - hypertile: enable vae tiling  

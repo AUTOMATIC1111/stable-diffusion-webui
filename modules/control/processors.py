@@ -22,6 +22,7 @@ from modules.control.proc.openpose import OpenposeDetector
 from modules.control.proc.dwpose import DWposeDetector
 from modules.control.proc.segment_anything import SamDetector
 from modules.control.proc.zoe import ZoeDetector
+from modules.control.proc.marigold import MarigoldDetector
 
 
 models = {}
@@ -44,6 +45,7 @@ config = {
     'Midas Depth Hybrid': {'class': MidasDetector, 'checkpoint': True, 'params': {'bg_th': 0.1, 'depth_and_normal': False}},
     'Leres Depth': {'class': LeresDetector, 'checkpoint': True, 'params': {'boost': False, 'thr_a':0, 'thr_b':0}},
     'Zoe Depth': {'class': ZoeDetector, 'checkpoint': True, 'params': {'gamma_corrected': False}, 'load_config': {'pretrained_model_or_path': 'halffried/gyre_zoedepth', 'filename': 'ZoeD_M12_N.safetensors', 'model_type': "zoedepth"}},
+    'Marigold Depth': {'class': MarigoldDetector, 'checkpoint': True, 'params': {'denoising_steps': 10, 'ensemble_size': 10, 'processing_res': 512, 'match_input_res': True, 'color_map': 'None'}, 'load_config': {'pretrained_model_or_path': 'Bingxin/Marigold'}},
     'Normal Bae': {'class': NormalBaeDetector, 'checkpoint': True, 'params': {}},
     # segmentation models
     'SegmentAnything': {'class': SamDetector, 'checkpoint': True, 'model': 'Base', 'params': {}},
@@ -106,6 +108,9 @@ def update_settings(*settings):
     update(['Edge', 'params', 'pf'], settings[21])
     update(['Edge', 'params', 'mode'], settings[22])
     update(['Zoe Depth', 'params', 'gamma_corrected'], settings[23])
+    update(['Marigold Depth', 'params', 'color_map'], settings[24])
+    update(['Marigold Depth', 'params', 'denoising_steps'], settings[25])
+    update(['Marigold Depth', 'params', 'ensemble_size'], settings[26])
 
 
 class Processor():

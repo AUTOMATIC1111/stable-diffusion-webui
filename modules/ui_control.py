@@ -1,5 +1,6 @@
 import os
 import gradio as gr
+import matplotlib.pyplot
 from modules.control import unit
 from modules.control import processors # patrickvonplaten controlnet_aux
 from modules.control.units import controlnet # lllyasviel ControlNet
@@ -568,6 +569,10 @@ def create_ui(_blocks: gr.Blocks=None):
                             settings.append(gr.Radio(label="Mode", choices=['edge', 'gradient'], value='edge'))
                         with gr.Accordion('Zoe Depth', open=True, elem_classes=['processor-settings']):
                             settings.append(gr.Checkbox(label="Gamma corrected", value=False))
+                        with gr.Accordion('Marigold Depth', open=True, elem_classes=['processor-settings']):
+                            settings.append(gr.Dropdown(label="Color map", choices=['None'] + matplotlib.pyplot.colormaps(), value='None'))
+                            settings.append(gr.Slider(label="Denoising steps", minimum=1, maximum=99, step=1, value=10))
+                            settings.append(gr.Slider(label="Ensemble size", minimum=1, maximum=99, step=1, value=10))
                         for setting in settings:
                             setting.change(fn=processors.update_settings, inputs=settings, outputs=[])
 
