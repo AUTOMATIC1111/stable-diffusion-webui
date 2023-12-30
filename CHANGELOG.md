@@ -3,6 +3,8 @@
 ## Update for 2023-12-30
 
 - **Improvements**:
+  - allow deployment without git clone  
+    for example, zip of the sdnext folder can be used  
   - control: configurable output folder in settings
   - cli: sdapi.py allow manual api invoke  
     example: `python cli/sdapi.py /sdapi/v1/sd-models`  
