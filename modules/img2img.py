@@ -3,7 +3,7 @@ import itertools # SBM Batch frames
 import numpy as np
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops, UnidentifiedImageError
 import modules.scripts
-from modules import sd_samplers, shared, processing, images
+from modules import shared, processing, images
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.ui import plaintext_to_html
 from modules.memstats import memory_stats
@@ -212,8 +212,8 @@ def img2img(id_task: str, mode: int,
         seed_resize_from_h=seed_resize_from_h,
         seed_resize_from_w=seed_resize_from_w,
         seed_enable_extras=True,
-        sampler_name=sd_samplers.samplers_for_img2img[sampler_index].name,
-        latent_sampler=sd_samplers.samplers[latent_index].name,
+        sampler_name = processing.get_sampler_name(sampler_index, img=True),
+        latent_sampler = processing.get_sampler_name(latent_index, img=True),
         batch_size=batch_size,
         n_iter=n_iter,
         steps=steps,

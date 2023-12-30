@@ -2,10 +2,40 @@
 
 ## Update for 2023-12-30
 
-- Fixes:
-  - img2img interrogate
+- **Fixes**:
+  - img2img clip and blip interrogate
+  - guard against invalid sampler index
+  - reset default cfg scale to 6.0
 
 ## Update for 2023-12-29
+
+To wrap up this amazing year, we're releasing a new version of [SD.Next](https://github.com/vladmandic/automatic), this one is absolutely massive!  
+
+### Highlights  
+
+- Brand new Control module for *text, image, batch and video* processing  
+  Native implementation of all control methods for both *SD15* and *SD-XL*  
+  ▹ **ControlNet | ControlNet XS | Control LLLite | T2I Adapters | IP Adapters**  
+  For details, see [Wiki](https://github.com/vladmandic/automatic/wiki/Control) documentation:  
+- Support for new models types out-of-the-box  
+  This brings number of supported t2i/i2i model families to 13!  
+  ▹ **Stable Diffusion 1.5/2.1 | SD-XL | LCM | Segmind | Kandinsky | Pixart-α | Würstchen | aMUSEd | DeepFloyd IF | UniDiffusion | SD-Distilled | BLiP Diffusion | etc.**  
+- New video capabilities:  
+  ▹ **AnimateDiff | SVD | ModelScope | ZeroScope**  
+- Enhanced platform support  
+  ▹ **Windows | Linux | MacOS** with **nVidia | AMD | IntelArc | DirectML | OpenVINO | ONNX+Olive** backends  
+- Better onboarding experience (first install)  
+  with all model types available for single click download & load (networks -> reference)  
+- Performance optimizations!
+  For comparisment of different processing options and compile backends, see [Wiki](https://github.com/vladmandic/automatic/wiki/Benchmark)  
+  As a highlight, we're reaching **~100 it/s** (no tricks, this is with full features enabled and end-to-end on a standard nVidia RTX4090)  
+- New [custom pipelines](https://github.com/vladmandic/automatic/blob/dev/scripts/example.py) framework for quickly porting any new pipeline  
+
+And others improvements in areas such as: Upscaling (up to 8x now with 40+ available upscalers), Inpainting (better quality), Prompt scheduling, new Sampler options, new LoRA types, additional UI themes, better HDR processing, built-in Video interpolation, parallel Batch processing, etc.  
+
+Plus some nifty new modules such as **FaceID** automatic face guidance using embeds during generation and **Depth 3D** image to 3D scene
+
+### Full changelog
 
 - **Control**  
   - native implementation of all image control methods:  

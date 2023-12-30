@@ -15,7 +15,7 @@ from modules.control.units import lite # Kohya ControlLLLite
 from modules.control.units import t2iadapter # TencentARC T2I-Adapter
 from modules.control.units import reference # ControlNet-Reference
 from modules.control.units import ipadapter # IP-Adapter
-from modules import devices, shared, errors, processing, images, sd_models, sd_samplers
+from modules import devices, shared, errors, processing, images, sd_models
 
 
 debug = shared.log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
@@ -90,8 +90,8 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
         negative_prompt = negative,
         styles = styles,
         steps = steps,
-        sampler_name = sd_samplers.samplers[sampler_index].name,
-        latent_sampler = sd_samplers.samplers[sampler_index].name,
+        sampler_name = processing.get_sampler_name(sampler_index),
+        latent_sampler = processing.get_sampler_name(sampler_index),
         seed = seed,
         subseed = subseed,
         subseed_strength = subseed_strength,

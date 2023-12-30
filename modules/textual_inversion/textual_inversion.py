@@ -9,7 +9,7 @@ import safetensors.torch
 import numpy as np
 from PIL import Image, PngImagePlugin
 from torch.utils.tensorboard import SummaryWriter
-from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers, sd_hijack_checkpoint, errors
+from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_hijack_checkpoint, errors
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from modules.textual_inversion.image_embedding import embedding_to_b64, embedding_from_b64, insert_image_data_embed, extract_image_data_embed, caption_image_overlay
@@ -599,7 +599,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                         p.prompt = preview_prompt
                         p.negative_prompt = preview_negative_prompt
                         p.steps = preview_steps
-                        p.sampler_name = sd_samplers.samplers[preview_sampler_index].name
+                        p.sampler_name = processing.get_sampler_name(preview_sampler_index)
                         p.cfg_scale = preview_cfg_scale
                         p.seed = preview_seed
                         p.width = preview_width

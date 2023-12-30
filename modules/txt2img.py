@@ -1,6 +1,6 @@
 import os
 import modules.scripts
-from modules import sd_samplers, shared, processing
+from modules import shared, processing
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.ui import plaintext_to_html
 
@@ -50,8 +50,8 @@ def txt2img(id_task,
         seed_resize_from_h=seed_resize_from_h,
         seed_resize_from_w=seed_resize_from_w,
         seed_enable_extras=True,
-        sampler_name=sd_samplers.samplers[sampler_index].name,
-        latent_sampler=sd_samplers.samplers[latent_index].name,
+        sampler_name = processing.get_sampler_name(sampler_index),
+        latent_sampler = processing.get_sampler_name(latent_index),
         batch_size=batch_size,
         n_iter=n_iter,
         steps=steps,

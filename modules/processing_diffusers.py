@@ -350,7 +350,6 @@ def process_diffusers(p: StableDiffusionProcessing):
 
     def update_sampler(sd_model, second_pass=False):
         sampler_selection = p.latent_sampler if second_pass else p.sampler_name
-        # is_karras_compatible = sd_model.__class__.__init__.__annotations__.get("scheduler", None) == diffusers.schedulers.scheduling_utils.KarrasDiffusionSchedulers
         if sd_model.__class__.__name__ in ['AmusedPipeline']:
             return # models with their own schedulers
         if hasattr(sd_model, 'scheduler') and sampler_selection != 'Default':
