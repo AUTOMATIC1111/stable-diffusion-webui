@@ -52,6 +52,10 @@ class Script(scripts.Script):
             onnxruntime.set_default_logger_severity(3)
             app.prepare(ctx_id=0, det_thresh=0.5, det_size=(640, 640))
 
+        if isinstance(image, str):
+            from modules.api.api import decode_base64_to_image
+            image = decode_base64_to_image(image)
+
         image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
         faces = app.get(image)
         if len(faces) == 0:
