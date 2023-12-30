@@ -91,6 +91,18 @@ class PydanticModelGenerator:
         DynamicModel.__config__.allow_mutation = True
         return DynamicModel
 
+
+class IPAdapterItem(BaseModel):
+    adapter: str = Field(title="Adapter", default="Base", description="Adapter to use")
+    image: str = Field(title="Image", default="", description="Adapter image, must be a Base64 string containing the image's data.")
+    scale: float = Field(title="Scale", default=0.5, gt=0, le=1, description="Scale of the adapter image, must be between 0 and 1.")
+
+
+class FaceIDItem(BaseModel):
+    image: str = Field(title="Image", default="", description="Source face image, must be a Base64 string containing the image's data.")
+    scale: float = Field(title="Scale", default=0.5, gt=0, le=1, description="Scale of the source face, must be between 0 and 1.")
+
+
 StableDiffusionTxt2ImgProcessingAPI = PydanticModelGenerator(
     "StableDiffusionProcessingTxt2Img",
     StableDiffusionProcessingTxt2Img,
@@ -101,6 +113,8 @@ StableDiffusionTxt2ImgProcessingAPI = PydanticModelGenerator(
         {"key": "send_images", "type": bool, "default": True},
         {"key": "save_images", "type": bool, "default": False},
         {"key": "alwayson_scripts", "type": dict, "default": {}},
+        {"key": "ip_adapter", "type": Optional[IPAdapterItem], "default": None, "exclude": True},
+        {"key": "face_id", "type": Optional[FaceIDItem], "default": None, "exclude": True},
     ]
 ).generate_model()
 
@@ -112,12 +126,14 @@ StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
         {"key": "init_images", "type": list, "default": None},
         {"key": "denoising_strength", "type": float, "default": 0.75},
         {"key": "mask", "type": str, "default": None},
-        {"key": "include_init_images", "type": bool, "default": False, "exclude" : True},
+        {"key": "include_init_images", "type": bool, "default": False, "exclude": True},
         {"key": "script_name", "type": str, "default": None},
         {"key": "script_args", "type": list, "default": []},
         {"key": "send_images", "type": bool, "default": True},
         {"key": "save_images", "type": bool, "default": False},
         {"key": "alwayson_scripts", "type": dict, "default": {}},
+        {"key": "ip_adapter", "type": Optional[IPAdapterItem], "default": None, "exclude": True},
+        {"key": "face_id", "type": Optional[FaceIDItem], "default": None, "exclude": True},
     ]
 ).generate_model()
 

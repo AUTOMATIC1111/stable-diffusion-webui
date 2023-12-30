@@ -260,8 +260,31 @@ class Api:
                     p.per_script_args[alwayson_script.title()] = request.alwayson_scripts[alwayson_script_name]["args"]
         return script_args
 
+    def prepare_img_gen_request(self, request, img_gen_type: str):
+        if hasattr(request, "face_id") and request.face_id and not request.script_name and "FaceID" not in request.alwayson_scripts:
+            request.script_name = "FaceID"
+            request.script_args = [request.face_id.scale, request.face_id.image]
+            del request.face_id
+
+        if hasattr(request, "ip_adapter") and request.ip_adapter and request.script_name != "IP Adapter" and "IP Adapter" not in request.alwayson_scripts:
+            request.alwayson_scripts = {} if request.alwayson_scripts is None else request.alwayson_scripts
+            request.alwayson_scripts["IP Adapter"] = {
+                "args": [request.ip_adapter.adapter, request.ip_adapter.scale, request.ip_adapter.image]
+            }
+            del request.ip_adapter
+
+    def sanitize_img_gen_request(self, request, img_gen_type: str):
+        if hasattr(request, "alwayson_scripts") and request.alwayson_scripts and "IP Adapter" in request.alwayson_scripts:
+            # Avoid returning the same base64 ipadapter input image in the response
+            request.alwayson_scripts["IP Adapter"]["args"][2] = "<base64 encoded image>"
+
+        if hasattr(request, "script_name") and request.script_name == "FaceID":
+            # Avoid returning the same base64 FaceID input image in the response
+            request.script_args[1] = "<base64 encoded image>"
 
     def text2imgapi(self, txt2imgreq: models.StableDiffusionTxt2ImgProcessingAPI):
+        self.prepare_img_gen_request(txt2imgreq, "txt2img")
+
         script_runner = scripts.scripts_txt2img
         if not script_runner.scripts:
             script_runner.initialize_scripts(False)
@@ -279,6 +302,8 @@ class Api:
         args = vars(populate)
         args.pop('script_name', None)
         args.pop('script_args', None) # will refeed them to the pipeline directly after initializing them
+        args.pop('face_id', None)
+        args.pop('ip_adapter', None)
         args.pop('alwayson_scripts', None)
         send_images = args.pop('send_images', True)
         args.pop('save_images', None)
@@ -298,9 +323,12 @@ class Api:
             shared.state.end(api=False)
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
+        self.sanitize_img_gen_request(txt2imgreq, "txt2img")
         return models.TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
     def img2imgapi(self, img2imgreq: models.StableDiffusionImg2ImgProcessingAPI):
+        self.prepare_img_gen_request(img2imgreq, "img2img")
+
         init_images = img2imgreq.init_images
         if init_images is None:
             raise HTTPException(status_code=404, detail="Init image not found")
@@ -327,6 +355,8 @@ class Api:
         args.pop('script_name', None)
         args.pop('script_args', None)  # will refeed them to the pipeline directly after initializing them
         args.pop('alwayson_scripts', None)
+        args.pop('face_id', None)
+        args.pop('ip_adapter', None)
         send_images = args.pop('send_images', True)
         args.pop('save_images', None)
 
@@ -349,6 +379,7 @@ class Api:
         if not img2imgreq.include_init_images:
             img2imgreq.init_images = None
             img2imgreq.mask = None
+        self.sanitize_img_gen_request(img2imgreq, "img2img")
         return models.ImageToImageResponse(images=b64images, parameters=vars(img2imgreq), info=processed.js())
 
     def extras_single_image_api(self, req: models.ExtrasSingleImageRequest):
