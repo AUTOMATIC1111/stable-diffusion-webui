@@ -156,7 +156,7 @@ def compile_torch(sd_model):
 def compile_diffusers(sd_model):
     if shared.opts.ipex_optimize:
         sd_model = ipex_optimize(sd_model)
-    if shared.opts.nncf_compress_weights:
+    if shared.opts.nncf_compress_weights and not (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx"):
         sd_model = nncf_compress_weights(sd_model)
     if not (shared.opts.cuda_compile or shared.opts.cuda_compile_vae or shared.opts.cuda_compile_upscaler):
         return sd_model
