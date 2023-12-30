@@ -341,6 +341,7 @@ class Api:
 
         params = generation_parameters_copypaste.parse_generation_parameters(request.infotext)
 
+        handled_fields = {}
         for field in generation_parameters_copypaste.paste_fields[tabname]["fields"]:
             if not field.api:
                 continue
@@ -355,6 +356,15 @@ class Api:
                 value = target_type(value)
 
             setattr(request, field.api, value)
+            handled_fields[field.label] = 1
+
+        if request.override_settings is None:
+            request.override_settings = {}
+
+        overriden_settings = generation_parameters_copypaste.get_override_settings(params, skip_fields=handled_fields)
+        for infotext_text, setting_name, value in overriden_settings:
+            if setting_name not in request.override_settings:
+                request.override_settings[setting_name] = value
 
         return params
 
