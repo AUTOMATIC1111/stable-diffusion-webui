@@ -94,12 +94,12 @@ class PydanticModelGenerator:
 
 class IPAdapterItem(BaseModel):
     adapter: str = Field(title="Adapter", default="Base", description="Adapter to use")
-    image: str = Field(title="Image", default="", description="Adapter image, must be a Base64 string containing the image's data.")
+    image: str = Field(title="Image", default="", description="Adapter image, must be a base64 string containing the image's data.")
     scale: float = Field(title="Scale", default=0.5, gt=0, le=1, description="Scale of the adapter image, must be between 0 and 1.")
 
 
 class FaceIDItem(BaseModel):
-    image: str = Field(title="Image", default="", description="Source face image, must be a Base64 string containing the image's data.")
+    image: str = Field(title="Image", default="", description="Source face image, must be a base64 string containing the image's data.")
     scale: float = Field(title="Scale", default=0.5, gt=0, le=1, description="Scale of the source face, must be between 0 and 1.")
 
 
