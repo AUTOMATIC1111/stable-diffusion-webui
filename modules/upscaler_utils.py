@@ -16,9 +16,13 @@ def upscale_without_tiling(model, img: Image.Image):
     img = img[:, :, ::-1]
     img = np.ascontiguousarray(np.transpose(img, (2, 0, 1))) / 255
     img = torch.from_numpy(img).float()
-    img = img.unsqueeze(0).to(devices.device_esrgan)
+
+    model_weight = next(iter(model.parameters()))
+    img = img.unsqueeze(0).to(device=model_weight.device, dtype=model_weight.dtype)
+
     with torch.no_grad():
         output = model(img)
+
     output = output.squeeze().float().cpu().clamp_(0, 1).numpy()
     output = 255. * np.moveaxis(output, 0, 2)
     output = output.astype(np.uint8)
