@@ -11,6 +11,18 @@ function setupControlUI() {
       c.style.flexGrow = c.style.flexGrow === '0' ? '9' : '0';
     };
   }
+
+  const el = gradioApp().getElementById('control-input-column');
+  if (!el) return;
+  const intersectionObserver = new IntersectionObserver((entries) => {
+    if (entries[0].intersectionRatio > 0) {
+      const tab = gradioApp().querySelector('#control-tabs > .tab-nav > .selected')?.innerText.toLowerCase() || ''; // selected tab name
+      const btn = gradioApp().getElementById(`refresh_${tab}_models`);
+      if (btn) btn.click();
+    }
+  });
+  intersectionObserver.observe(el); // monitor visibility of tab
+
   log('initControlUI');
 }
 

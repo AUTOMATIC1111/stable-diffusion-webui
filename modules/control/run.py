@@ -263,6 +263,8 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
         shared.sd_model = pipe
         if not ((shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) or (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram)):
             shared.sd_model.to(shared.device)
+        shared.sd_model.to(device=devices.device, dtype=devices.dtype)
+        debug(f'Control device={devices.device} dtype={devices.dtype}')
         sd_models.copy_diffuser_options(shared.sd_model, original_pipeline) # copy options from original pipeline
         sd_models.set_diffuser_options(shared.sd_model)
         if ipadapter.apply_ip_adapter(shared.sd_model, p, ip_adapter, ip_scale, ip_image, reset=True):

@@ -2,23 +2,27 @@
 
 ## Update for 2023-12-30
 
-- **Improvements**:
+- **Improvements**  
   - allow deployment without git clone  
     for example, zip of the sdnext folder can be used  
-  - control: configurable output folder in settings
-  - hypertile: enable vae tiling
+  - control: configurable output folder in settings  
+  - control: auto-refresh available models on tab activate  
+  - hypertile: enable vae tiling  
   - hypertile: add autodetect optimial value  
     set tile size to 0 to use autodetected value  
   - cli: sdapi.py allow manual api invoke  
     example: `python cli/sdapi.py /sdapi/v1/sd-models`  
-- **Fixes**:
+- **Fixes**  
+  - python: fix python 3.9 compatibility  
   - control: fix input image size  
   - control: fix correct image mode  
-  - control: reduce usage of temp files
+  - control: reduce usage of temp files  
+  - control: add context menu to action buttons  
   - img2img: clip and blip interrogate  
-  - guard against invalid sampler index  
-  - reset default cfg scale to 6.0  
+  - sampler: guard against invalid sampler index  
+  - config: reset default cfg scale to 6.0  
   - processing: correct display metadata  
+  - upscale: fix ldsr  
 
 ## Update for 2023-12-29
 

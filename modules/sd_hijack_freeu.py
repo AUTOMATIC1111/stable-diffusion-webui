@@ -59,6 +59,8 @@ def free_u_cat_hijack(hs, *args, original_function, **kwargs):
     except ValueError:
         return original_function(hs, *args, **kwargs)
     dims = h.shape[1]
+    if dims not in [1280, 640, 320]:
+        return original_function(hs, *args, **kwargs)
     index = [1280, 640, 320].index(dims)
     if index > 1: # not 1st or 2nd stage
         return original_function([h, h_skip], *args, **kwargs)
