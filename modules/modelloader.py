@@ -196,7 +196,9 @@ def load_spandrel_model(
     import spandrel
     model = spandrel.ModelLoader(device=device).load_from_file(path)
     if expected_architecture and model.architecture != expected_architecture:
-        raise TypeError(f"Model {path} is not a {expected_architecture} model")
+        logger.warning(
+            f"Model {path!r} is not a {expected_architecture!r} model (got {model.architecture!r})",
+        )
     if half:
         model = model.model.half()
     if dtype:
