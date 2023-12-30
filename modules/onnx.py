@@ -33,7 +33,7 @@ def preprocess_pipeline(p, refiner_enabled: bool):
         shared.log.warning(f"Unsupported pipeline for 'olive-ai' compile backend: {shared.opts.diffusers_pipeline}. You should select one of the ONNX pipelines.")
         return
 
-    if shared.opts.cuda_compile_backend == "olive-ai":
+    if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "olive-ai":
         compile_height = p.height
         compile_width = p.width
         if (shared.compiled_model_state is None or
@@ -62,12 +62,29 @@ def initialize():
     if initialized:
         return
 
-    from modules.onnx_pipelines import do_diffusers_hijack
+    from modules import onnx_pipelines as pipelines
 
     # OnnxRuntimeModel Hijack.
     OnnxRuntimeModel.__module__ = 'diffusers'
     diffusers.OnnxRuntimeModel = OnnxRuntimeModel
 
-    do_diffusers_hijack()
+    diffusers.OnnxStableDiffusionPipeline = pipelines.OnnxStableDiffusionPipeline
+    diffusers.pipelines.auto_pipeline.AUTO_TEXT2IMAGE_PIPELINES_MAPPING["onnx-stable-diffusion"] = diffusers.OnnxStableDiffusionPipeline
+
+    diffusers.OnnxStableDiffusionImg2ImgPipeline = pipelines.OnnxStableDiffusionImg2ImgPipeline
+    diffusers.pipelines.auto_pipeline.AUTO_IMAGE2IMAGE_PIPELINES_MAPPING["onnx-stable-diffusion"] = diffusers.OnnxStableDiffusionImg2ImgPipeline
+
+    diffusers.OnnxStableDiffusionInpaintPipeline = pipelines.OnnxStableDiffusionInpaintPipeline
+    diffusers.pipelines.auto_pipeline.AUTO_INPAINT_PIPELINES_MAPPING["onnx-stable-diffusion"] = diffusers.OnnxStableDiffusionInpaintPipeline
+
+    diffusers.OnnxStableDiffusionXLPipeline = pipelines.OnnxStableDiffusionXLPipeline
+    diffusers.pipelines.auto_pipeline.AUTO_TEXT2IMAGE_PIPELINES_MAPPING["onnx-stable-diffusion-xl"] = diffusers.OnnxStableDiffusionXLPipeline
+
+    diffusers.OnnxStableDiffusionXLImg2ImgPipeline = pipelines.OnnxStableDiffusionXLImg2ImgPipeline
+    diffusers.pipelines.auto_pipeline.AUTO_IMAGE2IMAGE_PIPELINES_MAPPING["onnx-stable-diffusion-xl"] = diffusers.OnnxStableDiffusionXLImg2ImgPipeline
+
+    # Huggingface model compatibility
+    diffusers.ORTStableDiffusionXLPipeline = diffusers.OnnxStableDiffusionXLPipeline
+    diffusers.ORTStableDiffusionXLImg2ImgPipeline = diffusers.OnnxStableDiffusionXLImg2ImgPipeline
 
     initialized = True

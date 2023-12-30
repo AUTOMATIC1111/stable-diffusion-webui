@@ -471,7 +471,6 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "ldsr_models_path": OptionInfo(os.path.join(paths.models_path, 'LDSR'), "Folder with LDSR models", folder=True),
     "clip_models_path": OptionInfo(os.path.join(paths.models_path, 'CLIP'), "Folder with CLIP models", folder=True),
     "onnx_cached_models_path": OptionInfo(os.path.join(paths.models_path, 'ONNX', 'cache'), "Folder with ONNX cached models", folder=True),
-    "onnx_sideloaded_models_path": OptionInfo(os.path.join(paths.models_path, 'ONNX', 'sideloaded'), "Folder with ONNX models from huggingface", folder=True),
 
     "other_paths_sep_options": OptionInfo("<h2>Other paths</h2>", "", gr.HTML),
     "openvino_cache_path": OptionInfo('cache', "Directory for OpenVINO cache", folder=True),

@@ -44,6 +44,20 @@ def check_pipeline_sdxl(cls: Type[diffusers.DiffusionPipeline]) -> bool:
     return 'XL' in cls.__name__
 
 
+def check_cache_onnx(path: os.PathLike) -> bool:
+    if not os.path.isdir(path):
+        return False
+    init_dict_path = os.path.join(path, "model_index.json")
+    if not os.path.isfile(init_dict_path):
+        return False
+    init_dict = None
+    with open(init_dict_path, "r") as file:
+        init_dict = file.read()
+    if "OnnxRuntimeModel" not in init_dict:
+        return False
+    return True
+
+
 def load_submodel(path: os.PathLike, is_sdxl: bool, submodel_name: str, item: List[Union[str, None]], **kwargs_ort):
     lib, atr = item
     if lib is None or atr is None:

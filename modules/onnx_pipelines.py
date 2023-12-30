@@ -22,7 +22,7 @@ from modules.sd_models import CheckpointInfo
 from modules.processing import StableDiffusionProcessing
 from modules.olive import config
 from modules.onnx import OnnxFakeModule, submodels_sd, submodels_sdxl, submodels_sdxl_refiner
-from modules.onnx_utils import check_pipeline_sdxl, load_init_dict, load_submodel, load_submodels, load_pipeline, get_sess_options, patch_kwargs, construct_refiner_pipeline
+from modules.onnx_utils import check_pipeline_sdxl, check_cache_onnx, load_init_dict, load_submodel, load_submodels, load_pipeline, get_sess_options, patch_kwargs, construct_refiner_pipeline
 from modules.onnx_ep import ExecutionProvider, EP_TO_NAME, get_provider
 
 
@@ -80,8 +80,8 @@ class OnnxRawPipeline(OnnxPipelineBase):
             self.init_dict = load_init_dict(constructor, path)
             self.scheduler = load_submodel(self.path, None, "scheduler", self.init_dict["scheduler"])
         else:
+            cls = diffusers.StableDiffusionXLPipeline if self._is_sdxl else diffusers.StableDiffusionPipeline
             try:
-                cls = diffusers.StableDiffusionXLPipeline if self._is_sdxl else diffusers.StableDiffusionPipeline
                 pipeline = cls.from_single_file(path)
                 self.scheduler = pipeline.scheduler
                 if os.path.isdir(shared.opts.onnx_temp_dir):
@@ -92,7 +92,9 @@ class OnnxRawPipeline(OnnxPipelineBase):
                 self.is_refiner = self._is_sdxl and "Img2Img" in diffusers.DiffusionPipeline.load_config(shared.opts.onnx_temp_dir)["_class_name"]
                 self.init_dict = load_init_dict(constructor, shared.opts.onnx_temp_dir)
             except Exception:
-                log.error('Failed to load pipeline to optimize.')
+                log.error(f'Failed to load pipeline to optimize: is_sdxl={self._is_sdxl}')
+                log.warn('Model load failed. Please check Diffusers pipeline in Compute Settings.')
+                return
         if "vae" in self.init_dict:
             del self.init_dict["vae"]
 
@@ -111,7 +113,9 @@ class OnnxRawPipeline(OnnxPipelineBase):
             ort.set_default_logger_severity(3)
 
         out_dir = os.path.join(shared.opts.onnx_cached_models_path, self.original_filename)
-        if os.path.isdir(out_dir): # already converted (cached)
+        if (self.from_huggingface_cache and check_cache_onnx(self.path)):
+            return self.path
+        if os.path.isdir(out_dir): # if model is ONNX format or had already converted.
             return out_dir
 
         try:
@@ -357,7 +361,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
             return self.derive_properties(load_pipeline(diffusers.StableDiffusionXLPipeline if self._is_sdxl else diffusers.StableDiffusionPipeline, self.path, **kwargs))
         out_dir = converted_dir
 
-        if shared.opts.cuda_compile_backend == "olive-ai":
+        if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "olive-ai":
             log.warning("Olive implementation is experimental. It contains potentially an issue and is subject to change at any time.")
             if p.width != p.height:
                 log.warning("Olive detected different width and height. The quality of the result is not guaranteed.")
@@ -413,6 +417,9 @@ def prepare_latents(
 
 
 class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline, OnnxPipelineBase):
+    __module__ = 'diffusers'
+    __name__ = 'OnnxStableDiffusionPipeline'
+
     def __init__(
         self,
         vae_encoder: diffusers.OnnxRuntimeModel,
@@ -570,6 +577,9 @@ class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline, OnnxPip
 
 
 class OnnxStableDiffusionImg2ImgPipeline(diffusers.OnnxStableDiffusionImg2ImgPipeline, OnnxPipelineBase):
+    __module__ = 'diffusers'
+    __name__ = 'OnnxStableDiffusionImg2ImgPipeline'
+
     image_processor: VaeImageProcessor
 
     def __init__(
@@ -762,6 +772,9 @@ class OnnxStableDiffusionImg2ImgPipeline(diffusers.OnnxStableDiffusionImg2ImgPip
 
 
 class OnnxStableDiffusionInpaintPipeline(diffusers.OnnxStableDiffusionInpaintPipeline, OnnxPipelineBase):
+    __module__ = 'diffusers'
+    __name__ = 'OnnxStableDiffusionInpaintPipeline'
+
     def __init__(
         self,
         vae_encoder: diffusers.OnnxRuntimeModel,
@@ -969,6 +982,9 @@ class OnnxStableDiffusionInpaintPipeline(diffusers.OnnxStableDiffusionInpaintPip
 
 
 class OnnxStableDiffusionXLPipeline(OnnxPipelineBase, optimum.onnxruntime.ORTStableDiffusionXLPipeline):
+    __module__ = 'optimum.onnxruntime.modeling_diffusion'
+    __name__ = 'ORTStableDiffusionXLPipeline'
+
     def __init__(
         self,
         vae_decoder,
@@ -1159,6 +1175,9 @@ class OnnxStableDiffusionXLPipeline(OnnxPipelineBase, optimum.onnxruntime.ORTSta
 
 
 class OnnxStableDiffusionXLImg2ImgPipeline(OnnxPipelineBase, optimum.onnxruntime.ORTStableDiffusionXLImg2ImgPipeline):
+    __module__ = 'optimum.onnxruntime.modeling_diffusion'
+    __name__ = 'ORTStableDiffusionXLImg2ImgPipeline'
+
     def __init__(
         self,
         vae_decoder,
@@ -1344,28 +1363,3 @@ class OnnxStableDiffusionXLImg2ImgPipeline(OnnxPipelineBase, optimum.onnxruntime
             return (image,)
 
         return StableDiffusionXLPipelineOutput(images=image)
-
-
-def do_diffusers_hijack():
-    diffusers.OnnxStableDiffusionPipeline = OnnxStableDiffusionPipeline
-    diffusers.pipelines.auto_pipeline.AUTO_TEXT2IMAGE_PIPELINES_MAPPING["onnx-stable-diffusion"] = diffusers.OnnxStableDiffusionPipeline
-
-    OnnxStableDiffusionImg2ImgPipeline.__module__ = 'diffusers'
-    OnnxStableDiffusionImg2ImgPipeline.__name__ = 'OnnxStableDiffusionImg2ImgPipeline'
-    diffusers.OnnxStableDiffusionImg2ImgPipeline = OnnxStableDiffusionImg2ImgPipeline
-    diffusers.pipelines.auto_pipeline.AUTO_IMAGE2IMAGE_PIPELINES_MAPPING["onnx-stable-diffusion"] = diffusers.OnnxStableDiffusionImg2ImgPipeline
-
-    OnnxStableDiffusionInpaintPipeline.__module__ = 'diffusers'
-    OnnxStableDiffusionInpaintPipeline.__name__ = 'OnnxStableDiffusionInpaintPipeline'
-    diffusers.OnnxStableDiffusionInpaintPipeline = OnnxStableDiffusionInpaintPipeline
-    diffusers.pipelines.auto_pipeline.AUTO_INPAINT_PIPELINES_MAPPING["onnx-stable-diffusion"] = diffusers.OnnxStableDiffusionInpaintPipeline
-
-    OnnxStableDiffusionXLPipeline.__module__ = 'optimum.onnxruntime.modeling_diffusion'
-    OnnxStableDiffusionXLPipeline.__name__ = 'ORTStableDiffusionXLPipeline'
-    diffusers.OnnxStableDiffusionXLPipeline = OnnxStableDiffusionXLPipeline
-    diffusers.pipelines.auto_pipeline.AUTO_TEXT2IMAGE_PIPELINES_MAPPING["onnx-stable-diffusion-xl"] = diffusers.OnnxStableDiffusionXLPipeline
-
-    OnnxStableDiffusionXLImg2ImgPipeline.__module__ = 'optimum.onnxruntime.modeling_diffusion'
-    OnnxStableDiffusionXLImg2ImgPipeline.__name__ = 'ORTStableDiffusionXLImg2ImgPipeline'
-    diffusers.OnnxStableDiffusionXLImg2ImgPipeline = OnnxStableDiffusionXLImg2ImgPipeline
-    diffusers.pipelines.auto_pipeline.AUTO_IMAGE2IMAGE_PIPELINES_MAPPING["onnx-stable-diffusion-xl"] = diffusers.OnnxStableDiffusionXLImg2ImgPipeline
