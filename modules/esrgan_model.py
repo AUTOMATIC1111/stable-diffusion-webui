@@ -49,6 +49,7 @@ class UpscalerESRGAN(Upscaler):
         return modelloader.load_spandrel_model(
             filename,
             device=('cpu' if devices.device_esrgan.type == 'mps' else None),
+            expected_architecture='ESRGAN',
         )
 
 

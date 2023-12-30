@@ -37,6 +37,7 @@ class FaceRestorerCodeFormer(face_restoration_utils.CommonFaceRestoration):
             return modelloader.load_spandrel_model(
                 model_path,
                 device=devices.device_codeformer,
+                expected_architecture='CodeFormer',
             ).model
         raise ValueError("No codeformer model found")
 

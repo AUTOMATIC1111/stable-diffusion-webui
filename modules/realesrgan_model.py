@@ -1,9 +1,9 @@
 import os
 
-from modules.upscaler_utils import upscale_with_model
-from modules.upscaler import Upscaler, UpscalerData
-from modules.shared import cmd_opts, opts
 from modules import modelloader, errors
+from modules.shared import cmd_opts, opts
+from modules.upscaler import Upscaler, UpscalerData
+from modules.upscaler_utils import upscale_with_model
 
 
 class UpscalerRealESRGAN(Upscaler):
@@ -40,6 +40,7 @@ class UpscalerRealESRGAN(Upscaler):
             info.local_data_path,
             device=self.device,
             half=(not cmd_opts.no_half and not cmd_opts.upcast_sampling),
+            expected_architecture="RealESRGAN",
         )
         return upscale_with_model(
             mod,

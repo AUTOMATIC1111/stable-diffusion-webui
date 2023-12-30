@@ -121,7 +121,7 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
             filename = modelloader.load_file_from_url(self.model_url, model_dir=self.model_download_path, file_name=f"{self.name}.pth")
         else:
             filename = path
-        return modelloader.load_spandrel_model(filename, device=device)
+        return modelloader.load_spandrel_model(filename, device=device, expected_architecture='SCUNet')
 
 
 def on_ui_settings():

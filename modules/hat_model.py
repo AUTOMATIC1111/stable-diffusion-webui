@@ -39,4 +39,5 @@ class UpscalerHAT(Upscaler):
         return modelloader.load_spandrel_model(
             path,
             device=devices.device_esrgan,  # TODO: should probably be device_hat
+            expected_architecture='HAT',
         )

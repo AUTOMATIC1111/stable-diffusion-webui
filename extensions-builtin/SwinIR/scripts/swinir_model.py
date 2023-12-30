@@ -75,6 +75,7 @@ class UpscalerSwinIR(Upscaler):
             filename,
             device=self._get_device(),
             dtype=devices.dtype,
+            expected_architecture="SwinIR",
         )
         if getattr(opts, 'SWIN_torch_compile', False):
             try:

@@ -37,6 +37,7 @@ class FaceRestorerGFPGAN(face_restoration_utils.CommonFaceRestoration):
                 net = modelloader.load_spandrel_model(
                     model_path,
                     device=self.get_device(),
+                    expected_architecture='GFPGAN',
                 ).model
                 net.different_w = True  # see https://github.com/chaiNNer-org/spandrel/pull/81
                 return net
