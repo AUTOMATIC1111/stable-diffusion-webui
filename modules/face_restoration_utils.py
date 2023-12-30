@@ -36,7 +36,7 @@ def create_face_helper(device) -> FaceRestoreHelper:
 def restore_with_face_helper(
     np_image: np.ndarray,
     face_helper: FaceRestoreHelper,
-    restore_face: Callable[[np.ndarray], np.ndarray],
+    restore_face: Callable[[torch.Tensor], torch.Tensor],
 ) -> np.ndarray:
     """
     Find faces in the image using face_helper, restore them using restore_face, and paste them back into the image.
@@ -126,7 +126,7 @@ class CommonFaceRestoration(face_restoration.FaceRestoration):
     def restore_with_helper(
         self,
         np_image: np.ndarray,
-        restore_face: Callable[[np.ndarray], np.ndarray],
+        restore_face: Callable[[torch.Tensor], torch.Tensor],
     ) -> np.ndarray:
         try:
             if self.net is None:
