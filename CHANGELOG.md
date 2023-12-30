@@ -26,6 +26,8 @@
   - processing: correct display metadata  
   - upscale: fix ldsr  
   - ipex: fix torch.load, thanks @Disty0
+- **Other**
+  - updated core requirements  
 
 ## Update for 2023-12-29
 
