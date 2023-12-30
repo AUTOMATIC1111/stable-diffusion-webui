@@ -143,7 +143,7 @@ def load_spandrel_model(
     *,
     device: str | torch.device | None,
     half: bool = False,
-    dtype: str | None = None,
+    dtype: str | torch.dtype | None = None,
     expected_architecture: str | None = None,
 ) -> spandrel.ModelDescriptor:
     import spandrel

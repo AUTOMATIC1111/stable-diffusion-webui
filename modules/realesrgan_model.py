@@ -36,14 +36,14 @@ class UpscalerRealESRGAN(Upscaler):
             errors.report(f"Unable to load RealESRGAN model {path}", exc_info=True)
             return img
 
-        mod = modelloader.load_spandrel_model(
+        model_descriptor = modelloader.load_spandrel_model(
             info.local_data_path,
             device=self.device,
             half=(not cmd_opts.no_half and not cmd_opts.upcast_sampling),
             expected_architecture="ESRGAN",  # "RealESRGAN" isn't a specific thing for Spandrel
         )
         return upscale_with_model(
-            mod,
+            model_descriptor,
             img,
             tile_size=opts.ESRGAN_tile,
             tile_overlap=opts.ESRGAN_tile_overlap,
