@@ -385,6 +385,13 @@ def prepare_environment():
         )
     startup_timer.record("torch GPU test")
 
+    if not os.path.isfile(requirements_file):
+        requirements_file = os.path.join(script_path, requirements_file)
+
+    if not requirements_met(requirements_file):
+        run_pip(f"install -r \"{requirements_file}\"", "requirements")
+        startup_timer.record("install requirements")
+
     if not is_installed("clip"):
         run_pip(f"install {clip_package}", "clip")
         startup_timer.record("install clip")
@@ -409,13 +416,6 @@ def prepare_environment():
     git_clone(blip_repo, repo_dir('BLIP'), "BLIP", blip_commit_hash)
 
     startup_timer.record("clone repositores")
-
-    if not os.path.isfile(requirements_file):
-        requirements_file = os.path.join(script_path, requirements_file)
-
-    if not requirements_met(requirements_file):
-        run_pip(f"install -r \"{requirements_file}\"", "requirements")
-        startup_timer.record("install requirements")
 
     if not args.skip_install:
         run_extensions_installers(settings_file=args.ui_settings_file)
