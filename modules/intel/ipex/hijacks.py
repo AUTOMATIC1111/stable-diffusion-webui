@@ -155,7 +155,7 @@ def ipex_hijacks():
         lambda orig_func, *args, device=None, **kwargs: check_device(device))
     CondFunc('torch.load',
         lambda orig_func, f, map_location=None, pickle_module=None, *, weights_only=False, mmap=None, **kwargs:
-        orig_func(orig_func, f, map_location=return_xpu(map_location), pickle_module=pickle_module, weights_only=weights_only, mmap=mmap, **kwargs),
+        orig_func(f, map_location=return_xpu(map_location), pickle_module=pickle_module, weights_only=weights_only, mmap=mmap, **kwargs),
         lambda orig_func, f, map_location=None, pickle_module=None, *, weights_only=False, mmap=None, **kwargs: check_device(map_location))
     if hasattr(torch.xpu, "Generator"):
         CondFunc('torch.Generator',
