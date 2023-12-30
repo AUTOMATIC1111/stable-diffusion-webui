@@ -7,9 +7,7 @@ from tqdm import tqdm
 
 import modules.upscaler
 from modules import devices, modelloader, script_callbacks, errors
-from scunet_model_arch import SCUNet
 
-from modules.modelloader import load_file_from_url
 from modules.shared import opts
 
 
@@ -120,17 +118,10 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         device = devices.get_device_for('scunet')
         if path.startswith("http"):
             # TODO: this doesn't use `path` at all?
-            filename = load_file_from_url(self.model_url, model_dir=self.model_download_path, file_name=f"{self.name}.pth")
+            filename = modelloader.load_file_from_url(self.model_url, model_dir=self.model_download_path, file_name=f"{self.name}.pth")
         else:
             filename = path
-        model = SCUNet(in_nc=3, config=[4, 4, 4, 4, 4, 4, 4], dim=64)
-        model.load_state_dict(torch.load(filename), strict=True)
-        model.eval()
-        for _, v in model.named_parameters():
-            v.requires_grad = False
-        model = model.to(device)
-
-        return model
+        return modelloader.load_spandrel_model(filename, device=device, expected_architecture='SCUNet')
 
 
 def on_ui_settings():
