@@ -1,17 +1,12 @@
 import os
 import gradio as gr
 
-from modules import localization, shared, scripts
-from modules.paths import script_path, data_path, cwd
+from modules import localization, shared, scripts, util
+from modules.paths import script_path, data_path
 
 
 def webpath(fn):
-    if fn.startswith(cwd):
-        web_path = os.path.relpath(fn, cwd)
-    else:
-        web_path = os.path.abspath(fn)
-
-    return f'file={web_path}?{os.path.getmtime(fn)}'
+    return f'file={util.truncate_path(fn)}?{os.path.getmtime(fn)}'
 
 
 def javascript_html():
