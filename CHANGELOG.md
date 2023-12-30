@@ -6,6 +6,7 @@
   - img2img clip and blip interrogate
   - guard against invalid sampler index
   - reset default cfg scale to 6.0
+  - processing tab display metadata
 
 ## Update for 2023-12-29
 
