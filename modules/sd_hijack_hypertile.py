@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 from typing import Callable
-from functools import wraps
+from functools import wraps, cache
 from contextlib import contextmanager, nullcontext
 import random
 import math
@@ -11,7 +11,6 @@ import torch
 import torch.nn as nn
 from einops import rearrange
 from modules.shared import log
-from functools import cache
 
 
 # global variables to keep track of changing image size in multiple passes
@@ -21,11 +20,6 @@ max_h = 0
 max_w = 0
 error_reported = False
 reset_needed = False
-RNG_INSTANCE = random.Random()
-
-
-def set_seed(seed: int) -> None:
-    RNG_INSTANCE.seed(seed)
 
 
 def iterative_closest_divisors(hw:int, aspect_ratio:float) -> tuple[int, int]:
@@ -105,10 +99,8 @@ def split_attention(layer: nn.Module, tile_size: int=256, min_tile_size: int=128
             global height, width, max_h, max_w, reset_needed, error_reported # pylint: disable=global-statement
             x = args[0]
             try:
-                nh = RNG_INSTANCE.randint(0, len(nhs) - 1)
-                nw = RNG_INSTANCE.randint(0, len(nws) - 1)
-                # nh = nhs[random.randint(0, len(nhs) - 1)]
-                # nw = nws[random.randint(0, len(nws) - 1)]
+                nh = nhs[random.randint(0, len(nhs) - 1)]
+                nw = nws[random.randint(0, len(nws) - 1)]
             except Exception as e:
                 if not error_reported:
                     error_reported = True
@@ -125,7 +117,7 @@ def split_attention(layer: nn.Module, tile_size: int=256, min_tile_size: int=128
             else: # Unet
                 hw = x.size(1)
                 h, w = round(math.sqrt(ar * hw)), round(math.sqrt(hw / ar))
-                h, w = find_hw_candidates(hw, ar)
+                # h, w = find_hw_candidates(hw, ar)
                 # dynamic height/width based on fact that first two forward calls contain actual height/width
                 # and reset if latest hw is larger since we're never downscaling in 2nd pass
                 if reset_needed:
@@ -244,5 +236,4 @@ def hypertile_set(p, hr=False):
     else:
         width=p.width
         height=p.height
-    set_seed(p.all_seeds[0])
     reset_needed = True
