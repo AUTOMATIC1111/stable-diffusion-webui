@@ -23,6 +23,7 @@
   - config: reset default cfg scale to 6.0  
   - processing: correct display metadata  
   - upscale: fix ldsr  
+  - ipex: fix torch.load, thanks @Disty0
 
 ## Update for 2023-12-29
 

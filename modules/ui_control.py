@@ -110,7 +110,9 @@ def get_video(filepath: str):
 
 
 def select_input(selected_input, selected_init, init_type):
-    debug(f'Control select input: source={selected_input} init={selected_init}, type={init_type}')
+    if selected_input is None:
+        return [gr.Tabs.update(), '']
+    debug(f'Control select input: source={selected_input} init={selected_init} type={init_type}')
     global input_source, input_init # pylint: disable=global-statement
     input_type = type(selected_input)
     status = 'Control input | Unknown'
@@ -120,6 +122,14 @@ def select_input(selected_input, selected_init, init_type):
         input_source = [selected_input]
         input_type = 'PIL.Image'
         shared.log.debug(f'Control input: type={input_type} input={input_source}')
+        status = f'Control input | Image | Size {selected_input.width}x{selected_input.height} | Mode {selected_input.mode}'
+        res = [gr.Tabs.update(selected='out-gallery'), status]
+    elif isinstance(selected_input, dict): # inpaint
+        mask = selected_input['mask']
+        selected_input = selected_input['image']
+        input_source = [selected_input]
+        input_type = 'PIL.Image'
+        shared.log.debug(f'Control input: type={input_type} input={input_source} mask={mask}')
         status = f'Control input | Image | Size {selected_input.width}x{selected_input.height} | Mode {selected_input.mode}'
         res = [gr.Tabs.update(selected='out-gallery'), status]
     elif isinstance(selected_input, gr.components.image.Image): # not likely
@@ -301,7 +311,7 @@ def create_ui(_blocks: gr.Blocks=None):
                     outputs = [output_tabs, result_txt]
                     if hasattr(ctrl, 'change'):
                         ctrl.change(fn=select_input, inputs=inputs, outputs=outputs)
-                    if hasattr(ctrl, 'select'):
+                    elif hasattr(ctrl, 'select'):
                         ctrl.select(fn=select_input, inputs=inputs, outputs=outputs)
                 show_preview.change(fn=lambda x: gr.update(visible=x), inputs=[show_preview], outputs=[column_preview])
                 show_ip.change(fn=lambda x: gr.update(visible=x), inputs=[show_ip], outputs=[column_ip])
