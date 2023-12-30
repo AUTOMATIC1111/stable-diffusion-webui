@@ -566,7 +566,12 @@ class ScriptRunner:
         auto_processing_scripts = scripts_auto_postprocessing.create_auto_preprocessing_script_data()
 
         for script_data in auto_processing_scripts + scripts_data:
-            script = script_data.script_class()
+            try:
+                script = script_data.script_class()
+            except Exception:
+                errors.report(f"Error # failed to initialize Script {script_data.module}: ", exc_info=True)
+                continue
+
             script.filename = script_data.path
             script.is_txt2img = not is_img2img
             script.is_img2img = is_img2img
