@@ -243,11 +243,11 @@ function updatePromptArea(text, textArea, isNeg) {
 
 function cardClicked(tabname, textToAdd, textToAddNegative, allowNegativePrompt) {
     if (textToAddNegative.length > 0) {
-        updatePromptArea(textToAdd, gradioApp().querySelector("#" + tabname + "_prompt > label > textarea"))
-        updatePromptArea(textToAddNegative, gradioApp().querySelector("#" + tabname + "_neg_prompt > label > textarea"), true)
+        updatePromptArea(textToAdd, gradioApp().querySelector("#" + tabname + "_prompt > label > textarea"));
+        updatePromptArea(textToAddNegative, gradioApp().querySelector("#" + tabname + "_neg_prompt > label > textarea"), true);
     } else {
         var textarea = allowNegativePrompt ? activePromptTextarea[tabname] : gradioApp().querySelector("#" + tabname + "_prompt > label > textarea");
-        updatePromptArea(textToAdd, textarea)
+        updatePromptArea(textToAdd, textarea);
     }
 }
 
