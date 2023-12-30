@@ -251,6 +251,24 @@ class Api:
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
 
+        txt2img_script_runner = scripts.scripts_txt2img
+        img2img_script_runner = scripts.scripts_img2img
+
+        if not txt2img_script_runner.scripts or not img2img_script_runner.scripts:
+            ui.create_ui()
+
+        if not txt2img_script_runner.scripts:
+            txt2img_script_runner.initialize_scripts(False)
+        if not self.default_script_arg_txt2img:
+            self.default_script_arg_txt2img = self.init_default_script_args(txt2img_script_runner)
+
+        if not img2img_script_runner.scripts:
+            img2img_script_runner.initialize_scripts(True)
+        if not self.default_script_arg_img2img:
+            self.default_script_arg_img2img = self.init_default_script_args(img2img_script_runner)
+
+
+
     def add_api_route(self, path: str, endpoint, **kwargs):
         if shared.cmd_opts.api_auth:
             return self.app.add_api_route(path, endpoint, dependencies=[Depends(self.auth)], **kwargs)
@@ -413,15 +431,10 @@ class Api:
         task_id = txt2imgreq.force_task_id or create_task_id("txt2img")
 
         script_runner = scripts.scripts_txt2img
-        if not script_runner.scripts:
-            script_runner.initialize_scripts(False)
-            ui.create_ui()
 
         infotext_script_args = {}
         self.apply_infotext(txt2imgreq, "txt2img", script_runner=script_runner, mentioned_script_args=infotext_script_args)
 
-        if not self.default_script_arg_txt2img:
-            self.default_script_arg_txt2img = self.init_default_script_args(script_runner)
         selectable_scripts, selectable_script_idx = self.get_selectable_script(txt2imgreq.script_name, script_runner)
 
         populate = txt2imgreq.copy(update={  # Override __init__ params
@@ -482,15 +495,10 @@ class Api:
             mask = decode_base64_to_image(mask)
 
         script_runner = scripts.scripts_img2img
-        if not script_runner.scripts:
-            script_runner.initialize_scripts(True)
-            ui.create_ui()
 
         infotext_script_args = {}
         self.apply_infotext(img2imgreq, "img2img", script_runner=script_runner, mentioned_script_args=infotext_script_args)
 
-        if not self.default_script_arg_img2img:
-            self.default_script_arg_img2img = self.init_default_script_args(script_runner)
         selectable_scripts, selectable_script_idx = self.get_selectable_script(img2imgreq.script_name, script_runner)
 
         populate = img2imgreq.copy(update={  # Override __init__ params
