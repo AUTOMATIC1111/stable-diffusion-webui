@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 import os
 
+import torch
+
 from modules import (
     devices,
     errors,
@@ -25,7 +27,7 @@ class FaceRestorerGFPGAN(face_restoration_utils.CommonFaceRestoration):
     def get_device(self):
         return devices.device_gfpgan
 
-    def load_net(self) -> None:
+    def load_net(self) -> torch.Module:
         for model_path in modelloader.load_models(
             model_path=self.model_path,
             model_url=model_url,
@@ -34,13 +36,13 @@ class FaceRestorerGFPGAN(face_restoration_utils.CommonFaceRestoration):
             ext_filter=['.pth'],
         ):
             if 'GFPGAN' in os.path.basename(model_path):
-                net = modelloader.load_spandrel_model(
+                model = modelloader.load_spandrel_model(
                     model_path,
                     device=self.get_device(),
                     expected_architecture='GFPGAN',
                 ).model
-                net.different_w = True  # see https://github.com/chaiNNer-org/spandrel/pull/81
-                return net
+                model.different_w = True  # see https://github.com/chaiNNer-org/spandrel/pull/81
+                return model
         raise ValueError("No GFPGAN model found")
 
     def restore(self, np_image):

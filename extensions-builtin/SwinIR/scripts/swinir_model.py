@@ -71,7 +71,7 @@ class UpscalerSwinIR(Upscaler):
         else:
             filename = path
 
-        model = modelloader.load_spandrel_model(
+        model_descriptor = modelloader.load_spandrel_model(
             filename,
             device=self._get_device(),
             dtype=devices.dtype,
@@ -79,10 +79,10 @@ class UpscalerSwinIR(Upscaler):
         )
         if getattr(opts, 'SWIN_torch_compile', False):
             try:
-                model = torch.compile(model)
+                model_descriptor.model.compile()
             except Exception:
                 logger.warning("Failed to compile SwinIR model, fallback to JIT", exc_info=True)
-        return model
+        return model_descriptor
 
     def _get_device(self):
         return devices.get_device_for('swinir')
