@@ -40,7 +40,7 @@ class UpscalerRealESRGAN(Upscaler):
             info.local_data_path,
             device=self.device,
             half=(not cmd_opts.no_half and not cmd_opts.upcast_sampling),
-            expected_architecture="RealESRGAN",
+            expected_architecture="ESRGAN",  # "RealESRGAN" isn't a specific thing for Spandrel
         )
         return upscale_with_model(
             mod,
