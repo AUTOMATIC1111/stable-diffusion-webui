@@ -3,10 +3,12 @@
 ## Update for 2023-12-30
 
 - **Fixes**:
-  - img2img clip and blip interrogate
-  - guard against invalid sampler index
-  - reset default cfg scale to 6.0
-  - processing tab display metadata
+  - control: fix input image size  
+  - control: fix correct image mode  
+  - img2img: clip and blip interrogate  
+  - guard against invalid sampler index  
+  - reset default cfg scale to 6.0  
+  - processing: correct display metadata  
 
 ## Update for 2023-12-29
 

@@ -340,6 +340,9 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
                     if p.resize_mode != 0 and input_image is not None and resize_time == 'Before':
                         debug(f'Control resize: image={input_image} width={width} height={height} mode={p.resize_mode} name={resize_name} sequence={resize_time}')
                         input_image = images.resize_image(p.resize_mode, input_image, width, height, resize_name)
+                    p.width = input_image.width
+                    p.height = input_image.height
+                    debug(f'Control: input image={input_image}')
 
                     # process
                     if input_image is None:
@@ -357,7 +360,8 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
                             return msg
                         processed_image = p.ref_image
                     elif len(active_process) == 1:
-                        p.image = active_process[0](input_image)
+                        image_mode = 'L' if unit_type == 'adapter' and len(active_model) > 0 and ('Canny' in active_model[0].model_id or 'Sketch' in active_model[0].model_id) else 'RGB'
+                        p.image = active_process[0](input_image, image_mode)
                         p.task_args['image'] = p.image
                         p.extra_generation_params["Control process"] = active_process[0].processor_id
                         debug(f'Control: process={active_process[0].processor_id} image={p.image}')
@@ -369,7 +373,10 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
                         processed_image = p.image
                     else:
                         if len(active_process) > 0:
-                            p.image = [p(input_image) for p in active_process] # list[image]
+                            p.image = []
+                            for i, process in enumerate(active_process): # list[image]
+                                image_mode = 'L' if unit_type == 'adapter' and len(active_model) > i and ('Canny' in active_model[i].model_id or 'Sketch' in active_model[i].model_id) else 'RGB'
+                                p.image.append(process(input_image, image_mode))
                         else:
                             p.image = [input_image]
                         p.task_args['image'] = p.image

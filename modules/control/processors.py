@@ -1,9 +1,9 @@
 import os
 import time
-import torch
 from PIL import Image
 from modules.shared import log
 from modules.errors import display
+from modules import devices
 
 from modules.control.proc.hed import HEDdetector
 from modules.control.proc.canny import CannyDetector
@@ -184,7 +184,7 @@ class Processor():
             display(e, 'Control processor load')
             return f'Processor load filed: {processor_id}'
 
-    def __call__(self, image_input: Image):
+    def __call__(self, image_input: Image, mode: str = 'RGB'):
         if self.override is not None:
             image_input = self.override
         image_process = image_input
@@ -203,19 +203,20 @@ class Processor():
             t0 = time.time()
             kwargs = config.get(self.processor_id, {}).get('params', None)
             if self.resize:
-                orig_size = image_input.size
                 image_resized = image_input.resize((512, 512))
             else:
                 image_resized = image_input
-            with torch.no_grad():
+            with devices.inference_context():
                 image_process = self.model(image_resized, **kwargs)
-            if self.resize:
-                image_process = image_process.resize(orig_size, Image.Resampling.LANCZOS)
+            if self.resize and image_process.size != image_input.size:
+                image_process = image_process.resize(image_input.size, Image.Resampling.LANCZOS)
             t1 = time.time()
-            log.debug(f'Control processor: id="{self.processor_id}" args={kwargs} time={t1-t0:.2f}')
+            log.debug(f'Control processor: id="{self.processor_id}" mode={mode} args={kwargs} time={t1-t0:.2f}')
         except Exception as e:
             log.error(f'Control processor failed: id="{self.processor_id}" error={e}')
             display(e, 'Control processor')
+        if mode != 'RGB':
+            image_process = image_process.convert(mode)
         return image_process
 
     def preview(self, image_input: Image):
