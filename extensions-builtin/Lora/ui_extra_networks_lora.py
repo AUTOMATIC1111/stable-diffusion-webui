@@ -45,6 +45,15 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         if activation_text:
             item["prompt"] += " + " + quote_js(" " + activation_text)
 
+        negative_prompt = item["user_metadata"].get("negative text")
+        preferred_negative_weight = item["user_metadata"].get("negative weight")
+        item["negative_prompt"] = quote_js("")
+        if negative_prompt:
+            neg_prompt = negative_prompt
+            if (preferred_negative_weight > 0):
+                neg_prompt = '(' + negative_prompt + ':' + str(preferred_negative_weight) + ')'
+            item["negative_prompt"] = quote_js(neg_prompt)  
+            
         sd_version = item["user_metadata"].get("sd version")
         if sd_version in network.SdVersion.__members__:
             item["sd_version"] = sd_version
