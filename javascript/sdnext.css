@@ -87,7 +87,7 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 #txt2img_actions_column, #img2img_actions_column, #control_actions { flex-flow: wrap; justify-content: space-between; }
 #txt2img_enqueue_wrapper, #img2img_enqueue_wrapper, #control_enqueue_wrapper { min-width: unset !important; width: 48%; }
 .interrogate-col{ min-width: 0 !important; max-width: fit-content; margin-right: var(--spacing-xxl); }
-.interrogate-col>button{ flex: 1; }
+.interrogate-col>button{ flex: 1; width: 7em; max-height: 84px; }
 #sampler_selection_img2img { margin-top: 1em; }
 #txtimg_hr_finalres{ min-height: 0 !important; }
 #img2img_scale_resolution_preview.block{ display: flex; align-items: end; }

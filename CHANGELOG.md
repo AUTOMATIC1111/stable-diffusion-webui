@@ -1,5 +1,10 @@
 # Change Log for SD.Next
 
+## Update for 2023-12-30
+
+- Fixes:
+  - img2img interrogate
+
 ## Update for 2023-12-29
 
 - **Control**  

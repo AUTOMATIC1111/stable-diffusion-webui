@@ -111,6 +111,7 @@ def parse_style(styles):
 
 
 def process_interrogate(interrogation_function, mode, ii_input_files, ii_input_dir, ii_output_dir, *ii_singles):
+    mode = int(mode)
     if mode in {0, 1, 3, 4}:
         return [interrogation_function(ii_singles[mode]), None]
     if mode == 2:
