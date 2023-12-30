@@ -317,8 +317,13 @@ class Api:
                     script_args[script.args_from:script.args_to] = ui_default_values
         return script_args
 
-    def init_script_args(self, request, default_script_args, selectable_scripts, selectable_idx, script_runner):
+    def init_script_args(self, request, default_script_args, selectable_scripts, selectable_idx, script_runner, *, input_script_args=None):
         script_args = default_script_args.copy()
+
+        if input_script_args is not None:
+            for index, value in input_script_args.items():
+                script_args[index] = value
+
         # position 0 in script_arg is the idx+1 of the selectable script that is going to be run when using scripts.scripts_*2img.run()
         if selectable_scripts:
             script_args[selectable_scripts.args_from:selectable_scripts.args_to] = request.script_args
@@ -340,14 +345,88 @@ class Api:
                         script_args[alwayson_script.args_from + idx] = request.alwayson_scripts[alwayson_script_name]["args"][idx]
         return script_args
 
+    def apply_infotext(self, request, tabname, *, script_runner=None, mentioned_script_args=None):
+        """Processes `infotext` field from the `request`, and sets other fields of the `request` accoring to what's in infotext.
+
+        If request already has a field set, and that field is encountered in infotext too, the value from infotext is ignored.
+
+        Additionally, fills `mentioned_script_args` dict with index: value pairs for script arguments read from infotext.
+        """
+
+        if not request.infotext:
+            return {}
+
+        possible_fields = generation_parameters_copypaste.paste_fields[tabname]["fields"]
+        set_fields = request.model_dump(exclude_unset=True) if hasattr(request, "request") else request.dict(exclude_unset=True)  # pydantic v1/v2 have differenrt names for this
+        params = generation_parameters_copypaste.parse_generation_parameters(request.infotext)
+
+        def get_field_value(field, params):
+            value = field.function(params) if field.function else params.get(field.label)
+            if value is None:
+                return None
+
+            if field.api in request.__fields__:
+                target_type = request.__fields__[field.api].type_
+            else:
+                target_type = type(field.component.value)
+
+            if target_type == type(None):
+                return None
+
+            if isinstance(value, dict) and value.get('__type__') == 'generic_update':  # this is a gradio.update rather than a value
+                value = value.get('value')
+
+            if value is not None and not isinstance(value, target_type):
+                value = target_type(value)
+
+            return value
+
+        for field in possible_fields:
+            if not field.api:
+                continue
+
+            if field.api in set_fields:
+                continue
+
+            value = get_field_value(field, params)
+            if value is not None:
+                setattr(request, field.api, value)
+
+        if request.override_settings is None:
+            request.override_settings = {}
+
+        overriden_settings = generation_parameters_copypaste.get_override_settings(params)
+        for _, setting_name, value in overriden_settings:
+            if setting_name not in request.override_settings:
+                request.override_settings[setting_name] = value
+
+        if script_runner is not None and mentioned_script_args is not None:
+            indexes = {v: i for i, v in enumerate(script_runner.inputs)}
+            script_fields = ((field, indexes[field.component]) for field in possible_fields if field.component in indexes)
+
+            for field, index in script_fields:
+                value = get_field_value(field, params)
+
+                if value is None:
+                    continue
+
+                mentioned_script_args[index] = value
+
+        return params
+
     def text2imgapi(self, txt2imgreq: models.StableDiffusionTxt2ImgProcessingAPI):
         task_id = txt2imgreq.force_task_id or create_task_id("txt2img")
 
         script_runner = scripts.scripts_txt2img
+
         with self.txt2img_script_arg_init_lock:
             if not script_runner.scripts:
                 script_runner.initialize_scripts(False)
                 ui.create_ui()
+
+            infotext_script_args = {}
+            self.apply_infotext(txt2imgreq, "txt2img", script_runner=script_runner, mentioned_script_args=infotext_script_args)
+
             if not self.default_script_arg_txt2img:
                 self.default_script_arg_txt2img = self.init_default_script_args(script_runner)
         selectable_scripts, selectable_script_idx = self.get_selectable_script(txt2imgreq.script_name, script_runner)
@@ -364,8 +443,9 @@ class Api:
         args.pop('script_name', None)
         args.pop('script_args', None) # will refeed them to the pipeline directly after initializing them
         args.pop('alwayson_scripts', None)
+        args.pop('infotext', None)
 
-        script_args = self.init_script_args(txt2imgreq, self.default_script_arg_txt2img, selectable_scripts, selectable_script_idx, script_runner)
+        script_args = self.init_script_args(txt2imgreq, self.default_script_arg_txt2img, selectable_scripts, selectable_script_idx, script_runner, input_script_args=infotext_script_args)
 
         send_images = args.pop('send_images', True)
         args.pop('save_images', None)
@@ -409,10 +489,15 @@ class Api:
             mask = decode_base64_to_image(mask)
 
         script_runner = scripts.scripts_img2img
+
         with self.img2img_script_arg_init_lock:
             if not script_runner.scripts:
                 script_runner.initialize_scripts(True)
                 ui.create_ui()
+
+          infotext_script_args = {}
+          self.apply_infotext(img2imgreq, "img2img", script_runner=script_runner, mentioned_script_args=infotext_script_args)
+
             if not self.default_script_arg_img2img:
                 self.default_script_arg_img2img = self.init_default_script_args(script_runner)
         selectable_scripts, selectable_script_idx = self.get_selectable_script(img2imgreq.script_name, script_runner)
@@ -432,7 +517,7 @@ class Api:
         args.pop('script_args', None)  # will refeed them to the pipeline directly after initializing them
         args.pop('alwayson_scripts', None)
 
-        script_args = self.init_script_args(img2imgreq, self.default_script_arg_img2img, selectable_scripts, selectable_script_idx, script_runner)
+        script_args = self.init_script_args(img2imgreq, self.default_script_arg_img2img, selectable_scripts, selectable_script_idx, script_runner, input_script_args=infotext_script_args)
 
         send_images = args.pop('send_images', True)
         args.pop('save_images', None)

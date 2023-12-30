@@ -113,6 +113,21 @@ def txt2img_image_conditioning(sd_model, x, width, height):
         return x.new_zeros(x.shape[0], 2*sd_model.noise_augmentor.time_embed.dim, dtype=x.dtype, device=x.device)
 
     else:
+        sd = sd_model.model.state_dict()
+        diffusion_model_input = sd.get('diffusion_model.input_blocks.0.0.weight', None)
+        if diffusion_model_input is not None:
+            if diffusion_model_input.shape[1] == 9:
+                # The "masked-image" in this case will just be all 0.5 since the entire image is masked.
+                image_conditioning = torch.ones(x.shape[0], 3, height, width, device=x.device) * 0.5
+                image_conditioning = images_tensor_to_samples(image_conditioning,
+                                                              approximation_indexes.get(opts.sd_vae_encode_method))
+
+                # Add the fake full 1s mask to the first dimension.
+                image_conditioning = torch.nn.functional.pad(image_conditioning, (0, 0, 0, 0, 1, 0), value=1.0)
+                image_conditioning = image_conditioning.to(x.dtype)
+
+                return image_conditioning
+
         # Dummy zero conditioning if we're not using inpainting or unclip models.
         # Still takes up a bit of memory, but no encoder call.
         # Pretty sure we can just make this a 1x1 image since its not going to be used besides its batch size.
@@ -370,6 +385,12 @@ class StableDiffusionProcessing:
 
         if self.sampler.conditioning_key == "crossattn-adm":
             return self.unclip_image_conditioning(source_image)
+
+        sd = self.sampler.model_wrap.inner_model.model.state_dict()
+        diffusion_model_input = sd.get('diffusion_model.input_blocks.0.0.weight', None)
+        if diffusion_model_input is not None:
+            if diffusion_model_input.shape[1] == 9:
+                return self.inpainting_image_conditioning(source_image, latent_image, image_mask=image_mask)
 
         # Dummy zero conditioning if we're not using inpainting or depth model.
         return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
@@ -1135,7 +1156,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
-            if self.hr_checkpoint_name:
+            if self.hr_checkpoint_name and self.hr_checkpoint_name != 'Use same checkpoint':
                 self.hr_checkpoint_info = sd_models.get_closet_checkpoint_match(self.hr_checkpoint_name)
 
                 if self.hr_checkpoint_info is None:
@@ -1482,7 +1503,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             # Save init image
             if opts.save_init_img:
                 self.init_img_hash = hashlib.md5(img.tobytes()).hexdigest()
-                images.save_image(img, path=opts.outdir_init_images, basename=None, forced_filename=self.init_img_hash, save_to_dirs=False)
+                images.save_image(img, path=opts.outdir_init_images, basename=None, forced_filename=self.init_img_hash, save_to_dirs=False, existing_info=img.info)
 
             image = images.flatten(img, opts.img2img_background_color)
 
