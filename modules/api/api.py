@@ -339,11 +339,15 @@ class Api:
         if not request.infotext:
             return {}
 
+        set_fields = request.model_dump(exclude_unset=True) if hasattr(request, "request") else request.dict(exclude_unset=True)  # pydantic v1/v2 have differenrt names for this
         params = generation_parameters_copypaste.parse_generation_parameters(request.infotext)
 
         handled_fields = {}
         for field in generation_parameters_copypaste.paste_fields[tabname]["fields"]:
             if not field.api:
+                continue
+
+            if field.api in set_fields:
                 continue
 
             value = field.function(params) if field.function else params.get(field.label)
@@ -376,7 +380,7 @@ class Api:
             script_runner.initialize_scripts(False)
             ui.create_ui()
 
-        infotext_params = self.apply_infotext(txt2imgreq, "txt2img")
+        self.apply_infotext(txt2imgreq, "txt2img")
 
         if not self.default_script_arg_txt2img:
             self.default_script_arg_txt2img = self.init_default_script_args(script_runner)
