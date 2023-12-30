@@ -68,6 +68,7 @@ def pil_to_temp_file(self, img: Image, dir: str, format="png") -> str: # pylint:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".png", dir=dir) as tmp:
         name = tmp.name
         img.save(name, pnginfo=(metadata if use_metadata else None))
+        img.already_saved_as = name
         size = os.path.getsize(name)
         shared.log.debug(f'Saving temp: image="{name}" resolution={img.width}x{img.height} size={size}')
     params = ', '.join([f'{k}: {v}' for k, v in img.info.items()])

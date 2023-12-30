@@ -2,16 +2,18 @@
 
 ## Update for 2023-12-30
 
+- **Improvements**:
+  - control: configurable output folder in settings
+  - cli: sdapi.py allow manual api invoke  
+    example: `python cli/sdapi.py /sdapi/v1/sd-models`  
 - **Fixes**:
   - control: fix input image size  
   - control: fix correct image mode  
+  - control: reduce usage of temp files
   - img2img: clip and blip interrogate  
   - guard against invalid sampler index  
   - reset default cfg scale to 6.0  
   - processing: correct display metadata  
-- **Improvements**:
-  - cli: sdapi.py allow manual api invoke  
-    example: `python cli/sdapi.py /sdapi/v1/sd-models`  
 
 ## Update for 2023-12-29
 

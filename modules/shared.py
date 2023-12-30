@@ -469,6 +469,7 @@ options_templates.update(options_section(('saving-paths', "Image Naming & Paths"
     "outdir_samples": OptionInfo("", "Output directory for images", component_args=hide_dirs, folder=True),
     "outdir_txt2img_samples": OptionInfo("outputs/text", 'Directory for text generate', component_args=hide_dirs, folder=True),
     "outdir_img2img_samples": OptionInfo("outputs/image", 'Directory for image generate', component_args=hide_dirs, folder=True),
+    "outdir_control_samples": OptionInfo("outputs/control", 'Directory for control generate', component_args=hide_dirs, folder=True),
     "outdir_extras_samples": OptionInfo("outputs/extras", 'Directory for processed images', component_args=hide_dirs, folder=True),
     "outdir_save": OptionInfo("outputs/save", "Directory for manually saved images", component_args=hide_dirs, folder=True),
     "outdir_video": OptionInfo("outputs/video", "Directory for videos", component_args=hide_dirs, folder=True),
@@ -480,6 +481,7 @@ options_templates.update(options_section(('saving-paths', "Image Naming & Paths"
     "outdir_grids": OptionInfo("", "Output directory for grids", component_args=hide_dirs, folder=True),
     "outdir_txt2img_grids": OptionInfo("outputs/grids", 'Output directory for txt2img grids', component_args=hide_dirs, folder=True),
     "outdir_img2img_grids": OptionInfo("outputs/grids", 'Output directory for img2img grids', component_args=hide_dirs, folder=True),
+    "outdir_control_grids": OptionInfo("outputs/grids", 'Output directory for control grids', component_args=hide_dirs, folder=True),
 }))
 
 options_templates.update(options_section(('ui', "User Interface"), {

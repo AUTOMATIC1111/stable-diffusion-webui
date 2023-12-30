@@ -120,6 +120,8 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
         denoising_strength = denoising_strength,
         n_iter = batch_count,
         batch_size = batch_size,
+        outpath_samples=shared.opts.outdir_samples or shared.opts.outdir_control_samples,
+        outpath_grids=shared.opts.outdir_grids or shared.opts.outdir_control_grids,
     )
     processing.process_init(p)
 
@@ -340,9 +342,10 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
                     if p.resize_mode != 0 and input_image is not None and resize_time == 'Before':
                         debug(f'Control resize: image={input_image} width={width} height={height} mode={p.resize_mode} name={resize_name} sequence={resize_time}')
                         input_image = images.resize_image(p.resize_mode, input_image, width, height, resize_name)
-                    p.width = input_image.width
-                    p.height = input_image.height
-                    debug(f'Control: input image={input_image}')
+                    if input_image is not None:
+                        p.width = input_image.width
+                        p.height = input_image.height
+                        debug(f'Control: input image={input_image}')
 
                     # process
                     if input_image is None:
