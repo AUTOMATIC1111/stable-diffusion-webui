@@ -1,5 +1,6 @@
 import gc
 import sys
+import time
 import contextlib
 import torch
 from modules.errors import log
@@ -123,31 +124,38 @@ def get_device_for(task):
 
 
 def torch_gc(force=False):
+    t0 = time.time()
     mem = memstats.memory_stats()
     gpu = mem.get('gpu', {})
+    ram = mem.get('ram', {})
     oom = gpu.get('oom', 0)
     if backend == "directml":
-        used = round(100 * torch.cuda.memory_allocated() / (1 << 30) / gpu.get('total', 1)) if gpu.get('total', 1) > 1 else 0
+        used_gpu = round(100 * torch.cuda.memory_allocated() / (1 << 30) / gpu.get('total', 1)) if gpu.get('total', 1) > 1 else 0
     else:
-        used = round(100 * gpu.get('used', 0) / gpu.get('total', 1)) if gpu.get('total', 1) > 1 else 0
+        used_gpu = round(100 * gpu.get('used', 0) / gpu.get('total', 1)) if gpu.get('total', 1) > 1 else 0
+    used_ram = round(100 * ram.get('used', 0) / ram.get('total', 1)) if ram.get('total', 1) > 1 else 0
     global previous_oom # pylint: disable=global-statement
     if oom > previous_oom:
         previous_oom = oom
         log.warning(f'GPU out-of-memory error: {mem}')
-    if used >= shared.opts.torch_gc_threshold:
-        log.info(f'GPU high memory utilization: {used}% {mem}')
+        force = True
+    if used_gpu >= shared.opts.torch_gc_threshold or used_ram >= shared.opts.torch_gc_threshold:
+        log.info(f'High memory utilization: GPU={used_gpu}% RAM={used_ram}% {mem}')
         force = True
     if not force:
         return
-    collected = gc.collect()
+
+    # actual gc
+    collected = gc.collect() # python gc
     if cuda_ok:
         try:
             with torch.cuda.device(get_cuda_device_string()):
-                torch.cuda.empty_cache()
+                torch.cuda.empty_cache() # cuda gc
                 torch.cuda.ipc_collect()
         except Exception:
             pass
-    log.debug(f'gc: collected={collected} device={torch.device(get_optimal_device_name())} {memstats.memory_stats()}')
+    t1 = time.time()
+    log.debug(f'GC: collected={collected} device={torch.device(get_optimal_device_name())} {memstats.memory_stats()} time={round(t1 - t0, 2)}')
 
 
 def set_cuda_sync_mode(mode):

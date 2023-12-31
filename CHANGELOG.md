@@ -14,6 +14,7 @@
     set tile size to 0 to use autodetected value  
   - cli: sdapi.py allow manual api invoke  
     example: `python cli/sdapi.py /sdapi/v1/sd-models`  
+  - memory: add ram usage monitoring in addition to gpu memory usage monitoring  
 - **Fixes**  
   - python: fix python 3.9 compatibility  
   - control: fix input image size  
