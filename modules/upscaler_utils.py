@@ -6,7 +6,7 @@ import torch
 import tqdm
 from PIL import Image
 
-from modules import images
+from modules import devices, images
 
 logger = logging.getLogger(__name__)
 
