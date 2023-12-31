@@ -105,7 +105,7 @@ class SlicedAttnProcessor: # pylint: disable=too-few-public-methods
 
         ####################################################################
         # ARC GPUs can't allocate more than 4GB to a single block, Slice it:
-        do_split, do_split_2, do_split_3, split_slice_size, split_2_slice_size, split_3_slice_size = find_attention_slice_sizes(query.shape, query.element_size(), slice_size=self.slice_size)
+        _, do_split_2, do_split_3, split_slice_size, split_2_slice_size, split_3_slice_size = find_attention_slice_sizes(query.shape, query.element_size(), slice_size=self.slice_size)
 
         for i in range(batch_size_attention // split_slice_size):
             start_idx = i * split_slice_size
@@ -232,58 +232,61 @@ class AttnProcessor:
         hidden_states = torch.zeros(query.shape, device=query.device, dtype=query.dtype)
         do_split, do_split_2, do_split_3, split_slice_size, split_2_slice_size, split_3_slice_size = find_attention_slice_sizes(query.shape, query.element_size())
 
-        for i in range(batch_size_attention // split_slice_size):
-            start_idx = i * split_slice_size
-            end_idx = (i + 1) * split_slice_size
-            if do_split_2:
-                for i2 in range(query_tokens // split_2_slice_size): # pylint: disable=invalid-name
-                    start_idx_2 = i2 * split_2_slice_size
-                    end_idx_2 = (i2 + 1) * split_2_slice_size
-                    if do_split_3:
-                        for i3 in range(shape_three // split_3_slice_size): # pylint: disable=invalid-name
-                            start_idx_3 = i3 * split_3_slice_size
-                            end_idx_3 = (i3 + 1) * split_3_slice_size
+        if do_split:
+            for i in range(batch_size_attention // split_slice_size):
+                start_idx = i * split_slice_size
+                end_idx = (i + 1) * split_slice_size
+                if do_split_2:
+                    for i2 in range(query_tokens // split_2_slice_size): # pylint: disable=invalid-name
+                        start_idx_2 = i2 * split_2_slice_size
+                        end_idx_2 = (i2 + 1) * split_2_slice_size
+                        if do_split_3:
+                            for i3 in range(shape_three // split_3_slice_size): # pylint: disable=invalid-name
+                                start_idx_3 = i3 * split_3_slice_size
+                                end_idx_3 = (i3 + 1) * split_3_slice_size
 
-                            query_slice = query[start_idx:end_idx, start_idx_2:end_idx_2, start_idx_3:end_idx_3]
-                            key_slice = key[start_idx:end_idx, start_idx_2:end_idx_2, start_idx_3:end_idx_3]
-                            attn_mask_slice = attention_mask[start_idx:end_idx, start_idx_2:end_idx_2, start_idx_3:end_idx_3] if attention_mask is not None else None
+                                query_slice = query[start_idx:end_idx, start_idx_2:end_idx_2, start_idx_3:end_idx_3]
+                                key_slice = key[start_idx:end_idx, start_idx_2:end_idx_2, start_idx_3:end_idx_3]
+                                attn_mask_slice = attention_mask[start_idx:end_idx, start_idx_2:end_idx_2, start_idx_3:end_idx_3] if attention_mask is not None else None
+
+                                attn_slice = attn.get_attention_scores(query_slice, key_slice, attn_mask_slice)
+                                del query_slice
+                                del key_slice
+                                del attn_mask_slice
+                                attn_slice = torch.bmm(attn_slice, value[start_idx:end_idx, start_idx_2:end_idx_2, start_idx_3:end_idx_3])
+
+                                hidden_states[start_idx:end_idx, start_idx_2:end_idx_2, start_idx_3:end_idx_3] = attn_slice
+                                del attn_slice
+                        else:
+                            query_slice = query[start_idx:end_idx, start_idx_2:end_idx_2]
+                            key_slice = key[start_idx:end_idx, start_idx_2:end_idx_2]
+                            attn_mask_slice = attention_mask[start_idx:end_idx, start_idx_2:end_idx_2] if attention_mask is not None else None
 
                             attn_slice = attn.get_attention_scores(query_slice, key_slice, attn_mask_slice)
                             del query_slice
                             del key_slice
                             del attn_mask_slice
-                            attn_slice = torch.bmm(attn_slice, value[start_idx:end_idx, start_idx_2:end_idx_2, start_idx_3:end_idx_3])
+                            attn_slice = torch.bmm(attn_slice, value[start_idx:end_idx, start_idx_2:end_idx_2])
 
-                            hidden_states[start_idx:end_idx, start_idx_2:end_idx_2, start_idx_3:end_idx_3] = attn_slice
+                            hidden_states[start_idx:end_idx, start_idx_2:end_idx_2] = attn_slice
                             del attn_slice
-                    else:
-                        query_slice = query[start_idx:end_idx, start_idx_2:end_idx_2]
-                        key_slice = key[start_idx:end_idx, start_idx_2:end_idx_2]
-                        attn_mask_slice = attention_mask[start_idx:end_idx, start_idx_2:end_idx_2] if attention_mask is not None else None
+                else:
+                    query_slice = query[start_idx:end_idx]
+                    key_slice = key[start_idx:end_idx]
+                    attn_mask_slice = attention_mask[start_idx:end_idx] if attention_mask is not None else None
 
-                        attn_slice = attn.get_attention_scores(query_slice, key_slice, attn_mask_slice)
-                        del query_slice
-                        del key_slice
-                        del attn_mask_slice
-                        attn_slice = torch.bmm(attn_slice, value[start_idx:end_idx, start_idx_2:end_idx_2])
+                    attn_slice = attn.get_attention_scores(query_slice, key_slice, attn_mask_slice)
+                    del query_slice
+                    del key_slice
+                    del attn_mask_slice
+                    attn_slice = torch.bmm(attn_slice, value[start_idx:end_idx])
 
-                        hidden_states[start_idx:end_idx, start_idx_2:end_idx_2] = attn_slice
-                        del attn_slice
-            else:
-                query_slice = query[start_idx:end_idx]
-                key_slice = key[start_idx:end_idx]
-                attn_mask_slice = attention_mask[start_idx:end_idx] if attention_mask is not None else None
-
-                attn_slice = attn.get_attention_scores(query_slice, key_slice, attn_mask_slice)
-                del query_slice
-                del key_slice
-                del attn_mask_slice
-                attn_slice = torch.bmm(attn_slice, value[start_idx:end_idx])
-
-                hidden_states[start_idx:end_idx] = attn_slice
-                del attn_slice
+                    hidden_states[start_idx:end_idx] = attn_slice
+                    del attn_slice
+        else:
+            attention_probs = attn.get_attention_scores(query, key, attention_mask)
+            hidden_states = torch.bmm(attention_probs, value)
         ####################################################################
-
         hidden_states = attn.batch_to_head_dim(hidden_states)
 
         # linear proj
