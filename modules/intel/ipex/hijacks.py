@@ -55,6 +55,11 @@ def ipex_no_cuda(orig_func, *args, **kwargs):
     orig_func(*args, **kwargs)
     torch.cuda.is_available = torch.xpu.is_available
 
+@property
+def is_cuda(self):
+    return self.device.type == 'xpu'
+
+
 original_autocast = torch.autocast
 def ipex_autocast(*args, **kwargs):
     if len(args) > 0 and args[0] == "cuda" or args[0] == "xpu":
@@ -65,15 +70,8 @@ def ipex_autocast(*args, **kwargs):
     else:
         return original_autocast(*args, **kwargs)
 
-# Embedding BF16
-original_torch_cat = torch.cat
-def torch_cat(tensor, *args, **kwargs):
-    if len(tensor) == 3 and (tensor[0].dtype != tensor[1].dtype or tensor[2].dtype != tensor[1].dtype):
-        return original_torch_cat([tensor[0].to(tensor[1].dtype), tensor[1], tensor[2].to(tensor[1].dtype)], *args, **kwargs)
-    else:
-        return original_torch_cat(tensor, *args, **kwargs)
 
-# Latent antialias:
+# Latent Antialias CPU Offload:
 original_interpolate = torch.nn.functional.interpolate
 def interpolate(tensor, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False): # pylint: disable=too-many-arguments
     if antialias or align_corners is not None:
@@ -85,6 +83,7 @@ def interpolate(tensor, size=None, scale_factor=None, mode='nearest', align_corn
         return original_interpolate(tensor, size=size, scale_factor=scale_factor, mode=mode,
         align_corners=align_corners, recompute_scale_factor=recompute_scale_factor, antialias=antialias)
 
+# Torch Linalg Solve CPU Offload for IPEX 2.0 and older:
 original_linalg_solve = torch.linalg.solve
 def linalg_solve(A, B, *args, **kwargs): # pylint: disable=invalid-name
     if A.device != torch.device("cpu") or B.device != torch.device("cpu"):
@@ -93,11 +92,12 @@ def linalg_solve(A, B, *args, **kwargs): # pylint: disable=invalid-name
     else:
         return original_linalg_solve(A, B, *args, **kwargs)
 
+
 if torch.xpu.has_fp64_dtype():
     original_torch_bmm = torch.bmm
     original_scaled_dot_product_attention = torch.nn.functional.scaled_dot_product_attention
 else:
-    # 64 bit attention workarounds for Alchemist:
+    # 32 bit attention workarounds for Alchemist:
     try:
         from .attention import torch_bmm_32_bit as original_torch_bmm
         from .attention import scaled_dot_product_attention_32_bit as original_scaled_dot_product_attention
@@ -105,7 +105,8 @@ else:
         original_torch_bmm = torch.bmm
         original_scaled_dot_product_attention = torch.nn.functional.scaled_dot_product_attention
 
-# dtype errors:
+
+# Data Type Errors:
 def torch_bmm(input, mat2, *, out=None):
     if input.dtype != mat2.dtype:
         mat2 = mat2.to(input.dtype)
@@ -118,9 +119,49 @@ def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.
         value = value.to(dtype=query.dtype)
     return original_scaled_dot_product_attention(query, key, value, attn_mask=attn_mask, dropout_p=dropout_p, is_causal=is_causal)
 
-@property
-def is_cuda(self):
-    return self.device.type == 'xpu'
+# A1111 FP16
+original_functional_group_norm = torch.nn.functional.group_norm
+def functional_group_norm(input, num_groups, weight=None, bias=None, eps=1e-05):
+    if weight is not None and input.dtype != weight.data.dtype:
+        input = input.to(dtype=weight.data.dtype)
+    if bias is not None and weight is not None and bias.data.dtype != weight.data.dtype:
+        bias.data = bias.data.to(dtype=weight.data.dtype)
+    return original_functional_group_norm(input, num_groups, weight=weight, bias=bias, eps=eps)
+
+# A1111 BF16
+original_functional_layer_norm = torch.nn.functional.layer_norm
+def functional_layer_norm(input, normalized_shape, weight=None, bias=None, eps=1e-05):
+    if weight is not None and input.dtype != weight.data.dtype:
+        input = input.to(dtype=weight.data.dtype)
+    if bias is not None and weight is not None and bias.data.dtype != weight.data.dtype:
+        bias.data = bias.data.to(dtype=weight.data.dtype)
+    return original_functional_layer_norm(input, normalized_shape, weight=weight, bias=bias, eps=eps)
+
+# Training
+original_functional_linear = torch.nn.functional.linear
+def functional_linear(input, weight, bias=None):
+    if input.dtype != weight.data.dtype:
+        input = input.to(dtype=weight.data.dtype)
+    if bias is not None and bias.data.dtype != weight.data.dtype:
+        bias.data = bias.data.to(dtype=weight.data.dtype)
+    return original_functional_linear(input, weight, bias=bias)
+
+original_functional_conv2d = torch.nn.functional.conv2d
+def functional_conv2d(input, weight, bias=None, stride=1, padding=0, dilation=1, groups=1):
+    if input.dtype != weight.data.dtype:
+        input = input.to(dtype=weight.data.dtype)
+    if bias is not None and bias.data.dtype != weight.data.dtype:
+        bias.data = bias.data.to(dtype=weight.data.dtype)
+    return original_functional_conv2d(input, weight, bias=bias, stride=stride, padding=padding, dilation=dilation, groups=groups)
+
+# A1111 Embedding BF16
+original_torch_cat = torch.cat
+def torch_cat(tensor, *args, **kwargs):
+    if len(tensor) == 3 and (tensor[0].dtype != tensor[1].dtype or tensor[2].dtype != tensor[1].dtype):
+        return original_torch_cat([tensor[0].to(tensor[1].dtype), tensor[1], tensor[2].to(tensor[1].dtype)], *args, **kwargs)
+    else:
+        return original_torch_cat(tensor, *args, **kwargs)
+
 
 def ipex_hijacks():
     CondFunc('torch.tensor',
@@ -166,7 +207,7 @@ def ipex_hijacks():
             lambda orig_func, device=None: orig_func(return_xpu(device)),
             lambda orig_func, device=None: check_device(device))
 
-    # TiledVAE and ControlNet:
+    # A1111 TiledVAE and ControlNet:
     CondFunc('torch.batch_norm',
         lambda orig_func, input, weight, bias, *args, **kwargs: orig_func(input,
         weight if weight is not None else torch.ones(input.size()[1], device=input.device),
@@ -178,23 +219,6 @@ def ipex_hijacks():
         bias if bias is not None else torch.zeros(input.size()[1], device=input.device), *args, **kwargs),
         lambda orig_func, input, *args, **kwargs: input.device != torch.device("cpu"))
 
-    # Functions with dtype errors:
-    CondFunc('torch.nn.modules.GroupNorm.forward',
-        lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
-        lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
-    # Training:
-    CondFunc('torch.nn.modules.linear.Linear.forward',
-        lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
-        lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
-    CondFunc('torch.nn.modules.conv.Conv2d.forward',
-        lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
-        lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
-    # BF16:
-    CondFunc('torch.nn.functional.layer_norm',
-        lambda orig_func, input, normalized_shape=None, weight=None, *args, **kwargs:
-        orig_func(input.to(weight.data.dtype), normalized_shape, weight, *args, **kwargs),
-        lambda orig_func, input, normalized_shape=None, weight=None, *args, **kwargs:
-        weight is not None and input.dtype != weight.data.dtype)
     # SwinIR BF16:
     CondFunc('torch.nn.functional.pad',
         lambda orig_func, input, pad, mode='constant', value=None: orig_func(input.to(torch.float32), pad, mode=mode, value=value).to(dtype=torch.bfloat16),
@@ -212,13 +236,18 @@ def ipex_hijacks():
         lambda orig_func, *args, **kwargs: ipex_no_cuda(orig_func, *args, **kwargs),
         lambda orig_func, *args, **kwargs: True)
 
-    # Functions that make compile mad with CondFunc:
+    # Hijack Functions:
     torch.nn.DataParallel = DummyDataParallel
     torch.utils.data.dataloader._MultiProcessingDataLoaderIter._shutdown_workers = _shutdown_workers
+    torch.UntypedStorage.is_cuda = is_cuda
 
     torch.autocast = ipex_autocast
     torch.backends.cuda.sdp_kernel = return_null_context
-    torch.UntypedStorage.is_cuda = is_cuda
+
+    torch.nn.functional.group_norm = functional_group_norm
+    torch.nn.functional.layer_norm = functional_layer_norm
+    torch.nn.functional.linear = functional_linear
+    torch.nn.functional.conv2d = functional_conv2d
 
     torch.nn.functional.interpolate = interpolate
     if hasattr(torch.xpu, "Generator"):
