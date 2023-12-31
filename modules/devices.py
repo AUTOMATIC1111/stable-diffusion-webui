@@ -4,6 +4,7 @@ from functools import lru_cache
 
 import torch
 from modules import errors, shared
+from modules.torch_utils import get_param
 
 if sys.platform == "darwin":
     from modules import mac_specific
@@ -131,7 +132,7 @@ patch_module_list = [
 
 
 def manual_cast_forward(self, *args, **kwargs):
-    org_dtype = next(self.parameters()).dtype
+    org_dtype = get_param(self).dtype
     self.to(dtype)
     args = [arg.to(dtype) if isinstance(arg, torch.Tensor) else arg for arg in args]
     kwargs = {k: v.to(dtype) if isinstance(v, torch.Tensor) else v for k, v in kwargs.items()}
