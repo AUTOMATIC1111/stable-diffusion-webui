@@ -67,7 +67,9 @@ class SlicedAttnProcessor: # pylint: disable=too-few-public-methods
     def __init__(self, slice_size):
         self.slice_size = slice_size
 
-    def __call__(self, attn: Attention, hidden_states, encoder_hidden_states=None, attention_mask=None): # pylint: disable=too-many-statements, too-many-locals, too-many-branches
+    def __call__(self, attn: Attention, hidden_states: torch.FloatTensor,
+    encoder_hidden_states=None, attention_mask=None) -> torch.FloatTensor: # pylint: disable=too-many-statements, too-many-locals, too-many-branches
+
         residual = hidden_states
 
         input_ndim = hidden_states.ndim
@@ -182,15 +184,10 @@ class AttnProcessor:
     Default processor for performing attention-related computations.
     """
 
-    def __call__(
-        self,
-        attn: Attention,
-        hidden_states: torch.FloatTensor,
-        encoder_hidden_states=None,
-        attention_mask=None,
-        temb=None,
-        scale: float = 1.0,
-    ) -> torch.Tensor:
+    def __call__(self, attn: Attention, hidden_states: torch.FloatTensor,
+    encoder_hidden_states=None, attention_mask=None,
+    temb=None, scale: float = 1.0) -> torch.Tensor: # pylint: disable=too-many-statements, too-many-locals, too-many-branches
+
         residual = hidden_states
 
         args = () if USE_PEFT_BACKEND else (scale,)

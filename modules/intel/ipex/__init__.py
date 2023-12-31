@@ -140,6 +140,7 @@ def ipex_init(): # pylint: disable=too-many-statements
 
         # C
         torch._C._cuda_getCurrentRawStream = ipex._C._getCurrentStream
+        ipex._C._DeviceProperties.multi_processor_count = ipex._C._DeviceProperties.gpu_eu_count
         ipex._C._DeviceProperties.major = 2023
         ipex._C._DeviceProperties.minor = 2
 

@@ -171,7 +171,5 @@ def scaled_dot_product_attention_32_bit(query, key, value, attn_mask=None, dropo
                     dropout_p=dropout_p, is_causal=is_causal
                 )
     else:
-        return original_scaled_dot_product_attention(
-            query, key, value, attn_mask=attn_mask, dropout_p=dropout_p, is_causal=is_causal
-        )
+        return original_scaled_dot_product_attention(query, key, value, attn_mask=attn_mask, dropout_p=dropout_p, is_causal=is_causal)
     return hidden_states
