@@ -1,7 +1,6 @@
 import contextlib
 import torch
 import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-from modules.sd_hijack_utils import CondFunc
 from modules import devices
 
 # pylint: disable=protected-access, missing-function-docstring, line-too-long, unnecessary-lambda, no-else-return
@@ -17,7 +16,7 @@ def return_null_context(*args, **kwargs): # pylint: disable=unused-argument
 
 @property
 def is_cuda(self):
-    return self.device.type == 'xpu'
+    return self.device.type == 'xpu' or self.device.type == 'cuda'
 
 def check_device(device):
     return bool((isinstance(device, torch.device) and device.type == "cuda") or (isinstance(device, str) and "cuda" in device) or isinstance(device, int))
@@ -135,46 +134,105 @@ def funtional_pad(input, pad, mode='constant', value=None):
         return original_funtional_pad(input, pad, mode=mode, value=value)
 
 
-def ipex_hijacks():
-    CondFunc('torch.tensor',
-        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
-        lambda orig_func, *args, device=None, **kwargs: check_device(device))
-    CondFunc('torch.Tensor.to',
-        lambda orig_func, self, device=None, *args, **kwargs: orig_func(self, return_xpu(device), *args, **kwargs),
-        lambda orig_func, self, device=None, *args, **kwargs: check_device(device))
-    CondFunc('torch.Tensor.cuda',
-        lambda orig_func, self, device=None, *args, **kwargs: orig_func(self, return_xpu(device), *args, **kwargs),
-        lambda orig_func, self, device=None, *args, **kwargs: check_device(device))
-    CondFunc('torch.UntypedStorage.__init__',
-        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
-        lambda orig_func, *args, device=None, **kwargs: check_device(device))
-    CondFunc('torch.UntypedStorage.cuda',
-        lambda orig_func, self, device=None, *args, **kwargs: orig_func(self, return_xpu(device), *args, **kwargs),
-        lambda orig_func, self, device=None, *args, **kwargs: check_device(device))
-    CondFunc('torch.empty',
-        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
-        lambda orig_func, *args, device=None, **kwargs: check_device(device))
-    CondFunc('torch.randn',
-        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
-        lambda orig_func, *args, device=None, **kwargs: check_device(device))
-    CondFunc('torch.ones',
-        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
-        lambda orig_func, *args, device=None, **kwargs: check_device(device))
-    CondFunc('torch.zeros',
-        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
-        lambda orig_func, *args, device=None, **kwargs: check_device(device))
-    CondFunc('torch.linspace',
-        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
-        lambda orig_func, *args, device=None, **kwargs: check_device(device))
-    CondFunc('torch.Generator',
-        lambda orig_func, device=None: orig_func(return_xpu(device)),
-        lambda orig_func, device=None: check_device(device))
-    CondFunc('torch.load',
-        lambda orig_func, f, map_location=None, pickle_module=None, *, weights_only=False, mmap=None, **kwargs:
-        orig_func(f, map_location=return_xpu(map_location), pickle_module=pickle_module, weights_only=weights_only, mmap=mmap, **kwargs),
-        lambda orig_func, f, map_location=None, pickle_module=None, *, weights_only=False, mmap=None, **kwargs: check_device(map_location))
+original_torch_tensor = torch.tensor
+def torch_tensor(*args, device=None, **kwargs):
+    if check_device(device):
+        return original_torch_tensor(*args, device=return_xpu(device), **kwargs)
+    else:
+        return original_torch_tensor(*args, device=device, **kwargs)
 
-    # Hijack Functions:
+original_Tensor_to = torch.Tensor.to
+def Tensor_to(self, device=None, *args, **kwargs):
+    if check_device(device):
+        return original_Tensor_to(self, return_xpu(device), *args, **kwargs)
+    else:
+        return original_Tensor_to(self, device, *args, **kwargs)
+
+original_Tensor_cuda = torch.Tensor.cuda
+def Tensor_cuda(self, device=None, *args, **kwargs):
+    if check_device(device):
+        return original_Tensor_cuda(self, return_xpu(device), *args, **kwargs)
+    else:
+        return original_Tensor_cuda(self, device, *args, **kwargs)
+
+original_UntypedStorage_init = torch.UntypedStorage.__init__
+def UntypedStorage_init(*args, device=None, **kwargs):
+    if check_device(device):
+        return original_UntypedStorage_init(*args, device=return_xpu(device), **kwargs)
+    else:
+        return original_UntypedStorage_init(*args, device=device, **kwargs)
+
+original_UntypedStorage_cuda = torch.UntypedStorage.cuda
+def UntypedStorage_cuda(self, device=None, *args, **kwargs):
+    if check_device(device):
+        return original_UntypedStorage_cuda(self, return_xpu(device), *args, **kwargs)
+    else:
+        return original_UntypedStorage_cuda(self, device, *args, **kwargs)
+
+original_torch_empty = torch.empty
+def torch_empty(*args, device=None, **kwargs):
+    if check_device(device):
+        return original_torch_empty(*args, device=return_xpu(device), **kwargs)
+    else:
+        return original_torch_empty(*args, device=device, **kwargs)
+
+original_torch_randn = torch.randn
+def torch_randn(*args, device=None, **kwargs):
+    if check_device(device):
+        return original_torch_randn(*args, device=return_xpu(device), **kwargs)
+    else:
+        return original_torch_randn(*args, device=device, **kwargs)
+
+original_torch_ones = torch.ones
+def torch_ones(*args, device=None, **kwargs):
+    if check_device(device):
+        return original_torch_ones(*args, device=return_xpu(device), **kwargs)
+    else:
+        return original_torch_ones(*args, device=device, **kwargs)
+
+original_torch_zeros = torch.zeros
+def torch_zeros(*args, device=None, **kwargs):
+    if check_device(device):
+        return original_torch_zeros(*args, device=return_xpu(device), **kwargs)
+    else:
+        return original_torch_zeros(*args, device=device, **kwargs)
+
+original_torch_linspace = torch.linspace
+def torch_linspace(*args, device=None, **kwargs):
+    if check_device(device):
+        return original_torch_linspace(*args, device=return_xpu(device), **kwargs)
+    else:
+        return original_torch_linspace(*args, device=device, **kwargs)
+
+original_torch_Generator = torch.Generator
+def torch_Generator(device=None):
+    if check_device(device):
+        return original_torch_Generator(return_xpu(device))
+    else:
+        return original_torch_Generator(device)
+
+original_torch_load = torch.load
+def torch_load(f, map_location=None, pickle_module=None, *, weights_only=False, mmap=None, **kwargs):
+    if check_device(map_location):
+        return original_torch_load(f, map_location=return_xpu(map_location), pickle_module=pickle_module, weights_only=weights_only, mmap=mmap, **kwargs)
+    else:
+        return original_torch_load(f, map_location=map_location, pickle_module=pickle_module, weights_only=weights_only, mmap=mmap, **kwargs)
+
+# Hijack Functions:
+def ipex_hijacks():
+    torch.tensor = torch_tensor
+    torch.Tensor.to = Tensor_to
+    torch.Tensor.cuda = Tensor_cuda
+    torch.UntypedStorage.__init__ = UntypedStorage_init
+    torch.UntypedStorage.cuda = UntypedStorage_cuda
+    torch.empty = torch_empty
+    torch.randn = torch_randn
+    torch.ones = torch_ones
+    torch.zeros = torch_zeros
+    torch.linspace = torch_linspace
+    torch.Generator = torch_Generator
+    torch.load = torch_load
+
     torch.backends.cuda.sdp_kernel = return_null_context
     torch.nn.DataParallel = DummyDataParallel
     torch.UntypedStorage.is_cuda = is_cuda
