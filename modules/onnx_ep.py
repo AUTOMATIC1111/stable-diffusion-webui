@@ -21,6 +21,12 @@ EP_TO_NAME = {
     ExecutionProvider.ROCm: "gpu-rocm", # test required
     ExecutionProvider.OpenVINO: "gpu-openvino??", # test required
 }
+TORCH_DEVICE_TO_EP = {
+    "cpu": ExecutionProvider.CPU,
+    "cuda": ExecutionProvider.CUDA,
+    "privateuseone": ExecutionProvider.DirectML,
+    "meta": None,
+}
 
 
 def get_default_execution_provider() -> ExecutionProvider:

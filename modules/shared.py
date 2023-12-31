@@ -443,7 +443,8 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
 
     "onnx_sep": OptionInfo("<h2>ONNX Runtime</h2>", "", gr.HTML),
     "onnx_execution_provider": OptionInfo(get_default_execution_provider().value, 'Execution Provider', gr.Dropdown, lambda: {"choices": available_execution_providers }),
-    "onnx_cache_converted": OptionInfo(True, 'Cache converted models'),
+    "onnx_cache_converted": OptionInfo(True, 'ONNX cache converted models'),
+    "onnx_unload_base": OptionInfo(False, 'ONNX unload base model when processing refiner'),
 }))
 
 options_templates.update(options_section(('system-paths', "System Paths"), {

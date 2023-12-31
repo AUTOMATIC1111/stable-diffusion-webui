@@ -67,7 +67,9 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             for j in range(len(decoded)):
                 images.save_image(decoded[j], path=p.outpath_samples, basename="", seed=p.seeds[i], prompt=p.prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix=suffix)
 
-    def diffusers_callback_legacy(step: int, timestep: int, latents: torch.FloatTensor):
+    def diffusers_callback_legacy(step: int, timestep: int, latents: typing.Union[torch.FloatTensor, np.ndarray]):
+        if isinstance(latents, np.ndarray): # latents from Onnx pipelines is ndarray.
+            latents = torch.from_numpy(latents)
         shared.state.sampling_step = step
         shared.state.current_latent = latents
         latents = processing_correction.correction_callback(p, timestep, {'latents': latents})

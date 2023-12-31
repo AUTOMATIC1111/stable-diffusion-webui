@@ -25,6 +25,22 @@ class OnnxRuntimeModel(OnnxFakeModule, diffusers.OnnxRuntimeModel):
     def named_modules(self): # dummy
         return ()
 
+    def to(self, *args, **kwargs):
+        from modules.onnx_utils import extract_device
+
+        device = extract_device(args, kwargs)
+        if device is not None:
+            from modules.onnx_ep import TORCH_DEVICE_TO_EP
+
+            self.device = device
+            provider = TORCH_DEVICE_TO_EP[device.type] if device.type in TORCH_DEVICE_TO_EP else self.model._providers
+            path = self.model._model_path
+            sess_options = self.model._sess_options
+            del self.model
+            if provider is not None:
+                self.model = OnnxRuntimeModel.load_model(path, provider, sess_options)
+        return self
+
 
 def preprocess_pipeline(p, refiner_enabled: bool):
     from modules import shared, sd_models
@@ -54,6 +70,13 @@ def preprocess_pipeline(p, refiner_enabled: bool):
 
     if hasattr(shared.sd_model, "preprocess"):
         shared.sd_model = shared.sd_model.preprocess(p)
+    if hasattr(shared.sd_refiner, "preprocess"):
+        if shared.opts.onnx_unload_base:
+            sd_models.unload_model_weights(op='model')
+        shared.sd_refiner = shared.sd_refiner.preprocess(p)
+        if shared.opts.onnx_unload_base:
+            sd_models.reload_model_weights(op='model')
+            shared.sd_model = shared.sd_model.preprocess(p)
 
 
 def initialize():

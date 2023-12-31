@@ -12,9 +12,7 @@ from abc import ABCMeta
 from typing import Union, Optional, Callable, Type, Tuple, List, Any, Dict
 from diffusers.pipelines.onnx_utils import ORT_TO_NP_TYPE
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
-from diffusers.pipelines.stable_diffusion_xl import StableDiffusionXLPipelineOutput
 from diffusers.image_processor import VaeImageProcessor, PipelineImageInput
-from optimum.pipelines.diffusers.pipeline_stable_diffusion_xl import rescale_noise_cfg
 from installer import log
 from modules import shared
 from modules.paths import sd_configs_path
@@ -22,8 +20,8 @@ from modules.sd_models import CheckpointInfo
 from modules.processing import StableDiffusionProcessing
 from modules.olive import config
 from modules.onnx import OnnxFakeModule, submodels_sd, submodels_sdxl, submodels_sdxl_refiner
-from modules.onnx_utils import check_pipeline_sdxl, check_cache_onnx, load_init_dict, load_submodel, load_submodels, load_pipeline, get_sess_options, patch_kwargs, construct_refiner_pipeline
-from modules.onnx_ep import ExecutionProvider, EP_TO_NAME, get_provider
+from modules.onnx_utils import extract_device, check_pipeline_sdxl, check_cache_onnx, load_init_dict, load_submodel, load_submodels, get_sess_options, patch_kwargs, load_pipeline
+from modules.onnx_ep import ExecutionProvider, EP_TO_NAME, TORCH_DEVICE_TO_EP, get_provider
 
 
 class OnnxPipelineBase(OnnxFakeModule, diffusers.DiffusionPipeline, metaclass=ABCMeta):
@@ -34,6 +32,40 @@ class OnnxPipelineBase(OnnxFakeModule, diffusers.DiffusionPipeline, metaclass=AB
 
     def __init__(self):
         self.model_type = self.__class__.__name__
+
+    def to(self, *args, **kwargs):
+        if self.__class__ == OnnxRawPipeline:
+            return super().to(*args, **kwargs)
+
+        expected_modules, _ = self._get_signature_keys(self)
+        for name in expected_modules:
+            if not hasattr(self, name):
+                log.warn(f"Pipeline does not have module '{name}'.")
+                continue
+
+            module = getattr(self, name)
+
+            if isinstance(module, optimum.onnxruntime.modeling_diffusion._ORTDiffusionModelPart):
+                device = extract_device(args, kwargs)
+                if device is None:
+                    return self
+                provider = TORCH_DEVICE_TO_EP[device.type] if device.type in TORCH_DEVICE_TO_EP else module.session._providers
+                path = module.session._model_path
+                sess_options = module.session._sess_options
+                del module
+                delattr(self, name)
+                if provider is not None:
+                    setattr(self, name, diffusers.OnnxRuntimeModel.load_model(path, provider, sess_options))
+
+            if not isinstance(module, diffusers.OnnxRuntimeModel):
+                continue
+
+            try:
+                setattr(self, name, module.to(*args, **kwargs))
+                del module
+            except Exception:
+                log.debug(f"Component device/dtype conversion failed: module={name} args={args}, kwargs={kwargs}")
+        return self
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path, **_):
@@ -69,14 +101,12 @@ class OnnxRawPipeline(OnnxPipelineBase):
     scheduler: Any = None # for Img2Img
 
     def __init__(self, constructor: Type[OnnxPipelineBase], path: os.PathLike):
-        self.model_type = constructor.__name__
         self._is_sdxl = check_pipeline_sdxl(constructor)
         self.from_huggingface_cache = shared.opts.diffusers_dir in os.path.abspath(path)
         self.path = path
-        self.original_filename = os.path.basename(path)
+        self.original_filename = os.path.basename(os.path.dirname(os.path.dirname(path))) if self.from_huggingface_cache else os.path.basename(path)
 
         if os.path.isdir(path):
-            self.is_refiner = self._is_sdxl and "Img2Img" in diffusers.DiffusionPipeline.load_config(path)["_class_name"]
             self.init_dict = load_init_dict(constructor, path)
             self.scheduler = load_submodel(self.path, None, "scheduler", self.init_dict["scheduler"])
         else:
@@ -84,21 +114,23 @@ class OnnxRawPipeline(OnnxPipelineBase):
             try:
                 pipeline = cls.from_single_file(path)
                 self.scheduler = pipeline.scheduler
-                if os.path.isdir(shared.opts.onnx_temp_dir):
-                    shutil.rmtree(shared.opts.onnx_temp_dir)
-                os.mkdir(shared.opts.onnx_temp_dir)
-                pipeline.save_pretrained(shared.opts.onnx_temp_dir)
+                path = shared.opts.onnx_temp_dir
+                if os.path.isdir(path):
+                    shutil.rmtree(path)
+                os.mkdir(path)
+                pipeline.save_pretrained(path)
                 del pipeline
-                self.is_refiner = self._is_sdxl and "Img2Img" in diffusers.DiffusionPipeline.load_config(shared.opts.onnx_temp_dir)["_class_name"]
-                self.init_dict = load_init_dict(constructor, shared.opts.onnx_temp_dir)
+                self.init_dict = load_init_dict(constructor, path)
             except Exception:
-                log.error(f'Failed to load pipeline to optimize: is_sdxl={self._is_sdxl}')
+                log.error(f'Failed to load ONNX pipeline: is_sdxl={self._is_sdxl}')
                 log.warn('Model load failed. Please check Diffusers pipeline in Compute Settings.')
                 return
         if "vae" in self.init_dict:
             del self.init_dict["vae"]
 
-        self.constructor = construct_refiner_pipeline if self.is_refiner else constructor
+        self.is_refiner = self._is_sdxl and "Img2Img" not in constructor.__name__ and "Img2Img" in diffusers.DiffusionPipeline.load_config(path)["_class_name"]
+        self.constructor = OnnxStableDiffusionXLImg2ImgPipeline if self.is_refiner else constructor
+        self.model_type = self.constructor.__name__
         self.submodels = (submodels_sdxl_refiner if self.is_refiner else submodels_sdxl) if self._is_sdxl else submodels_sd
 
     def derive_properties(self, pipeline: diffusers.DiffusionPipeline):
@@ -345,8 +377,12 @@ class OnnxRawPipeline(OnnxPipelineBase):
         config.height = p.height
         config.batch_size = p.batch_size
 
-        config.cross_attention_dim = 2048 if self._is_sdxl else (256 + p.height)
-        config.time_ids_size = 6 if self._is_sdxl and not self.is_refiner else 5
+        if self._is_sdxl and not self.is_refiner:
+            config.cross_attention_dim = 2048
+            config.time_ids_size = 6
+        else:
+            config.cross_attention_dim = 256 + p.height
+            config.time_ids_size = 5
 
         if not disable_classifier_free_guidance and "turbo" in str(self.path).lower():
             log.warning("It looks like you are trying to run a Turbo model with CFG Scale, which will lead to 'size mismatch' or 'unexpected parameter' error.")
@@ -357,29 +393,45 @@ class OnnxRawPipeline(OnnxPipelineBase):
 
         converted_dir = self.convert(in_dir)
         if converted_dir is None:
-            log.error('Failed to convert model. The generation will fall back to unconverted one.')
-            return self.derive_properties(load_pipeline(diffusers.StableDiffusionXLPipeline if self._is_sdxl else diffusers.StableDiffusionPipeline, self.path, **kwargs))
+            log.error('Failed to convert model.')
+            return
         out_dir = converted_dir
 
         if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "olive-ai":
             log.warning("Olive implementation is experimental. It contains potentially an issue and is subject to change at any time.")
             if p.width != p.height:
-                log.warning("Olive detected different width and height. The quality of the result is not guaranteed.")
-            if shared.opts.olive_static_dims:
+                log.warning("Olive: different width and height are detected. The quality of the result is not guaranteed.")
+            if shared.opts.olive_static_dims and not self.is_refiner: # Session Conflict
                 kwargs["sess_options"] = get_sess_options(p.batch_size if disable_classifier_free_guidance else p.batch_size * 2, p.height, p.width, self._is_sdxl)
             optimized_dir = self.optimize(converted_dir)
             if optimized_dir is None:
-                log.error('Failed to optimize pipeline. The generation will fall back to unoptimized one.')
-                return self.derive_properties(load_pipeline(diffusers.OnnxStableDiffusionXLPipeline if self._is_sdxl else diffusers.OnnxStableDiffusionPipeline, converted_dir, **kwargs))
+                log.error('Olive: failed to optimize pipeline. The generation will fall back to unoptimized one.')
+                return self.derive_properties(load_pipeline(self.constructor, converted_dir, **kwargs))
             out_dir = optimized_dir
 
-        pipeline = self.derive_properties(load_pipeline(diffusers.OnnxStableDiffusionXLPipeline if self._is_sdxl else diffusers.OnnxStableDiffusionPipeline, out_dir, **kwargs))
+        pipeline = self.derive_properties(load_pipeline(self.constructor, out_dir, **kwargs))
 
         if not shared.opts.onnx_cache_converted:
             shutil.rmtree(converted_dir)
         shutil.rmtree(shared.opts.onnx_temp_dir, ignore_errors=True)
 
         return pipeline
+
+
+def extract_generator_seed(generator: Union[torch.Generator, List[torch.Generator]]) -> List[int]:
+    if isinstance(generator, list):
+        generator = [g.seed() for g in generator]
+    else:
+        generator = [generator.seed()]
+    return generator
+
+
+def randn_tensor(shape, dtype, generator: Union[torch.Generator, List[torch.Generator], int, List[int]]):
+    if hasattr(generator, "seed") or (isinstance(generator, list) and hasattr(generator[0], "seed")):
+        generator = extract_generator_seed(generator)
+        if len(generator) == 1:
+            generator = generator[0]
+    return np.random.default_rng(generator).standard_normal(shape).astype(dtype)
 
 
 def prepare_latents(
@@ -401,12 +453,7 @@ def prepare_latents(
         )
 
     if latents is None:
-        if isinstance(generator, list):
-            generator = [g.seed() for g in generator]
-            if len(generator) == 1:
-                generator = generator[0]
-
-        latents = np.random.default_rng(generator).standard_normal(shape).astype(dtype)
+        latents = randn_tensor(shape, dtype, generator)
     elif latents.shape != shape:
         raise ValueError(f"Unexpected latents shape, got {latents.shape}, expected {shape}")
 
@@ -425,11 +472,11 @@ class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline, OnnxPip
         vae_encoder: diffusers.OnnxRuntimeModel,
         vae_decoder: diffusers.OnnxRuntimeModel,
         text_encoder: diffusers.OnnxRuntimeModel,
-        tokenizer,
+        tokenizer: Any,
         unet: diffusers.OnnxRuntimeModel,
-        scheduler,
+        scheduler: Any,
         safety_checker: diffusers.OnnxRuntimeModel,
-        feature_extractor,
+        feature_extractor: Any,
         requires_safety_checker: bool = True
     ):
         super().__init__(vae_encoder, vae_decoder, text_encoder, tokenizer, unet, scheduler, safety_checker, feature_extractor, requires_safety_checker)
@@ -535,7 +582,7 @@ class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline, OnnxPip
 
             # call the callback, if provided
             if callback is not None and i % callback_steps == 0:
-                callback(i, t, torch.from_numpy(latents))
+                callback(i, t, latents)
 
         latents /= self.vae_decoder.config.get("scaling_factor", 0.18215)
 
@@ -587,11 +634,11 @@ class OnnxStableDiffusionImg2ImgPipeline(diffusers.OnnxStableDiffusionImg2ImgPip
         vae_encoder: diffusers.OnnxRuntimeModel,
         vae_decoder: diffusers.OnnxRuntimeModel,
         text_encoder: diffusers.OnnxRuntimeModel,
-        tokenizer,
+        tokenizer: Any,
         unet: diffusers.OnnxRuntimeModel,
-        scheduler,
+        scheduler: Any,
         safety_checker: diffusers.OnnxRuntimeModel,
-        feature_extractor,
+        feature_extractor: Any,
         requires_safety_checker: bool = True
     ):
         super().__init__(vae_encoder, vae_decoder, text_encoder, tokenizer, unet, scheduler, safety_checker, feature_extractor, requires_safety_checker)
@@ -672,13 +719,8 @@ class OnnxStableDiffusionImg2ImgPipeline(diffusers.OnnxStableDiffusionImg2ImgPip
         timesteps = self.scheduler.timesteps.numpy()[-init_timestep]
         timesteps = np.array([timesteps] * batch_size * num_images_per_prompt)
 
-        if isinstance(generator, list):
-            generator = [g.seed() for g in generator]
-            if len(generator) == 1:
-                generator = generator[0]
-
         # add noise to latents using the timesteps
-        noise = np.random.default_rng(generator).standard_normal(init_latents.shape).astype(latents_dtype)
+        noise = randn_tensor(init_latents.shape, latents_dtype, generator)
         init_latents = self.scheduler.add_noise(
             torch.from_numpy(init_latents), torch.from_numpy(noise), torch.from_numpy(timesteps)
         )
@@ -728,7 +770,7 @@ class OnnxStableDiffusionImg2ImgPipeline(diffusers.OnnxStableDiffusionImg2ImgPip
 
             # call the callback, if provided
             if callback is not None and i % callback_steps == 0:
-                callback(i, t, torch.from_numpy(latents))
+                callback(i, t, latents)
 
         latents /= scaling_factor
 
@@ -780,14 +822,16 @@ class OnnxStableDiffusionInpaintPipeline(diffusers.OnnxStableDiffusionInpaintPip
         vae_encoder: diffusers.OnnxRuntimeModel,
         vae_decoder: diffusers.OnnxRuntimeModel,
         text_encoder: diffusers.OnnxRuntimeModel,
-        tokenizer,
+        tokenizer: Any,
         unet: diffusers.OnnxRuntimeModel,
-        scheduler,
+        scheduler: Any,
         safety_checker: diffusers.OnnxRuntimeModel,
-        feature_extractor,
+        feature_extractor: Any,
         requires_safety_checker: bool = True
     ):
         super().__init__(vae_encoder, vae_decoder, text_encoder, tokenizer, unet, scheduler, safety_checker, feature_extractor, requires_safety_checker)
+
+        self.vae_scale_factor = 2 ** (len(self.vae_decoder.config.get("block_out_channels")) - 1)
 
     @torch.no_grad()
     def __call__(
@@ -856,7 +900,7 @@ class OnnxStableDiffusionInpaintPipeline(diffusers.OnnxStableDiffusionInpaintPip
             generator,
             latents,
             num_channels_latents,
-            8,
+            self.vae_scale_factor,
         )
 
         scaling_factor = self.vae_decoder.config.get("scaling_factor", 0.18215)
@@ -940,7 +984,7 @@ class OnnxStableDiffusionInpaintPipeline(diffusers.OnnxStableDiffusionInpaintPip
             # call the callback, if provided
             if callback is not None and i % callback_steps == 0:
                 step_idx = i // getattr(self.scheduler, "order", 1)
-                callback(step_idx, t, torch.from_numpy(latents))
+                callback(step_idx, t, latents)
 
         latents /= scaling_factor
 
@@ -987,191 +1031,24 @@ class OnnxStableDiffusionXLPipeline(OnnxPipelineBase, optimum.onnxruntime.ORTSta
 
     def __init__(
         self,
-        vae_decoder,
-        text_encoder,
-        unet,
+        vae_decoder: ort.InferenceSession,
+        text_encoder: ort.InferenceSession,
+        unet: ort.InferenceSession,
         config: Dict[str, Any],
-        tokenizer,
-        scheduler,
-        feature_extractor = None,
-        vae_encoder = None,
-        text_encoder_2 = None,
-        tokenizer_2 = None,
+        tokenizer: Any,
+        scheduler: Any,
+        feature_extractor: Any = None,
+        vae_encoder: Optional[ort.InferenceSession] = None,
+        text_encoder_2: Optional[ort.InferenceSession] = None,
+        tokenizer_2: Any = None,
         use_io_binding: bool | None = None,
         model_save_dir = None,
         add_watermarker: bool | None = None
     ):
         super(optimum.onnxruntime.ORTStableDiffusionXLPipeline, self).__init__(vae_decoder, text_encoder, unet, config, tokenizer, scheduler, feature_extractor, vae_encoder, text_encoder_2, tokenizer_2, use_io_binding, model_save_dir, add_watermarker)
 
-    # Adapted from diffusers.pipelines.stable_diffusion_xl.pipeline_stable_diffusion_xl.StableDiffusionXLPipeline.__call__
-    def __call__(
-        self,
-        prompt: Optional[Union[str, List[str]]] = None,
-        height: Optional[int] = None,
-        width: Optional[int] = None,
-        num_inference_steps: int = 50,
-        guidance_scale: float = 5.0,
-        negative_prompt: Optional[Union[str, List[str]]] = None,
-        num_images_per_prompt: int = 1,
-        eta: float = 0.0,
-        generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
-        latents: Optional[np.ndarray] = None,
-        prompt_embeds: Optional[np.ndarray] = None,
-        negative_prompt_embeds: Optional[np.ndarray] = None,
-        pooled_prompt_embeds: Optional[np.ndarray] = None,
-        negative_pooled_prompt_embeds: Optional[np.ndarray] = None,
-        output_type: str = "pil",
-        return_dict: bool = True,
-        callback: Optional[Callable[[int, int, np.ndarray], None]] = None,
-        callback_steps: int = 1,
-        cross_attention_kwargs: Optional[Dict[str, Any]] = None,
-        guidance_rescale: float = 0.0,
-        original_size: Optional[Tuple[int, int]] = None,
-        crops_coords_top_left: Tuple[int, int] = (0, 0),
-        target_size: Optional[Tuple[int, int]] = None,
-    ):
-        # 0. Default height and width to unet
-        height = height or self.unet.config["sample_size"] * self.vae_scale_factor
-        width = width or self.unet.config["sample_size"] * self.vae_scale_factor
-
-        original_size = original_size or (height, width)
-        target_size = target_size or (height, width)
-
-        # 1. Check inputs. Raise error if not correct
-        self.check_inputs(
-            prompt,
-            height,
-            width,
-            callback_steps,
-            negative_prompt,
-            prompt_embeds,
-            negative_prompt_embeds,
-            pooled_prompt_embeds,
-            negative_pooled_prompt_embeds,
-        )
-
-        # 2. Define call parameters
-        if isinstance(prompt, str):
-            batch_size = 1
-        elif isinstance(prompt, list):
-            batch_size = len(prompt)
-        else:
-            batch_size = prompt_embeds.shape[0]
-
-        if generator is None:
-            generator = torch.Generator("cpu")
-
-        # here `guidance_scale` is defined analog to the guidance weight `w` of equation (2)
-        # of the Imagen paper: https://arxiv.org/pdf/2205.11487.pdf . `guidance_scale = 1`
-        # corresponds to doing no classifier free guidance.
-        do_classifier_free_guidance = guidance_scale > 1.0
-
-        # 3. Encode input prompt
-        (
-            prompt_embeds,
-            negative_prompt_embeds,
-            pooled_prompt_embeds,
-            negative_pooled_prompt_embeds,
-        ) = self._encode_prompt(
-            prompt,
-            num_images_per_prompt,
-            do_classifier_free_guidance,
-            negative_prompt,
-            prompt_embeds=prompt_embeds,
-            negative_prompt_embeds=negative_prompt_embeds,
-            pooled_prompt_embeds=pooled_prompt_embeds,
-            negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
-        )
-
-        # 4. Prepare timesteps
-        self.scheduler.set_timesteps(num_inference_steps)
-        timesteps = self.scheduler.timesteps
-
-        # 5. Prepare latent variables
-        latents = prepare_latents(
-            self.scheduler.init_noise_sigma,
-            batch_size * num_images_per_prompt,
-            height,
-            width,
-            prompt_embeds.dtype,
-            generator,
-            latents,
-            self.unet.config.get("in_channels", 4),
-            self.vae_scale_factor,
-        )
-
-        # 6. Prepare extra step kwargs
-        extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
-
-        # 7. Prepare added time ids & embeddings
-        add_text_embeds = pooled_prompt_embeds
-        add_time_ids = (original_size + crops_coords_top_left + target_size,)
-        add_time_ids = np.array(add_time_ids, dtype=prompt_embeds.dtype)
-
-        if do_classifier_free_guidance:
-            prompt_embeds = np.concatenate((negative_prompt_embeds, prompt_embeds), axis=0)
-            add_text_embeds = np.concatenate((negative_pooled_prompt_embeds, add_text_embeds), axis=0)
-            add_time_ids = np.concatenate((add_time_ids, add_time_ids), axis=0)
-        add_time_ids = np.repeat(add_time_ids, batch_size * num_images_per_prompt, axis=0)
-
-        # Adapted from diffusers to extend it for other runtimes than ORT
-        timestep_dtype = self.unet.input_dtype.get("timestep", np.float32)
-
-        # 8. Denoising loop
-        num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
-        for i, t in enumerate(self.progress_bar(timesteps)):
-            # expand the latents if we are doing classifier free guidance
-            latent_model_input = np.concatenate([latents] * 2) if do_classifier_free_guidance else latents
-            latent_model_input = self.scheduler.scale_model_input(torch.from_numpy(latent_model_input), t)
-            latent_model_input = latent_model_input.cpu().numpy()
-
-            # predict the noise residual
-            timestep = np.array([t], dtype=timestep_dtype)
-            noise_pred = self.unet(
-                sample=latent_model_input,
-                timestep=timestep,
-                encoder_hidden_states=prompt_embeds,
-                text_embeds=add_text_embeds,
-                time_ids=add_time_ids,
-            )
-            noise_pred = noise_pred[0]
-
-            # perform guidance
-            if do_classifier_free_guidance:
-                noise_pred_uncond, noise_pred_text = np.split(noise_pred, 2)
-                noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
-                if guidance_rescale > 0.0:
-                    # Based on 3.4. in https://arxiv.org/pdf/2305.08891.pdf
-                    noise_pred = rescale_noise_cfg(noise_pred, noise_pred_text, guidance_rescale=guidance_rescale)
-
-            # compute the previous noisy sample x_t -> x_t-1
-            scheduler_output = self.scheduler.step(
-                torch.from_numpy(noise_pred), t, torch.from_numpy(latents), **extra_step_kwargs
-            )
-            latents = scheduler_output.prev_sample.numpy()
-
-            # call the callback, if provided
-            if i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0):
-                if callback is not None and i % callback_steps == 0:
-                    callback(i, t, torch.from_numpy(latents))
-
-        if output_type == "latent":
-            image = latents
-        else:
-            latents /= self.vae_decoder.config.get("scaling_factor", 0.18215)
-            # it seems likes there is a strange result for using half-precision vae decoder if batchsize>1
-            image = np.concatenate(
-                [self.vae_decoder(latent_sample=latents[i : i + 1])[0] for i in range(latents.shape[0])]
-            )
-            # apply watermark if available
-            if self.watermark is not None:
-                image = self.watermark.apply_watermark(image)
-            image = self.image_processor.postprocess(image, output_type=output_type)
-
-        if not return_dict:
-            return (image,)
-
-        return StableDiffusionXLPipelineOutput(images=image)
+    def prepare_latents(self, batch_size, num_channels_latents, height, width, dtype, generator, latents=None):
+        return prepare_latents(self.scheduler.init_noise_sigma, batch_size, height, width, dtype, generator, latents, num_channels_latents, self.vae_scale_factor)
 
 
 class OnnxStableDiffusionXLImg2ImgPipeline(OnnxPipelineBase, optimum.onnxruntime.ORTStableDiffusionXLImg2ImgPipeline):
@@ -1180,186 +1057,44 @@ class OnnxStableDiffusionXLImg2ImgPipeline(OnnxPipelineBase, optimum.onnxruntime
 
     def __init__(
         self,
-        vae_decoder,
-        text_encoder,
-        unet,
+        vae_decoder: ort.InferenceSession,
+        text_encoder: ort.InferenceSession,
+        unet: ort.InferenceSession,
         config: Dict[str, Any],
-        tokenizer,
-        scheduler,
+        tokenizer: Any,
+        scheduler: Any,
         feature_extractor = None,
-        vae_encoder = None,
-        text_encoder_2 = None,
-        tokenizer_2 = None,
+        vae_encoder: Optional[ort.InferenceSession] = None,
+        text_encoder_2: Optional[ort.InferenceSession] = None,
+        tokenizer_2: Any = None,
         use_io_binding: bool | None = None,
         model_save_dir = None,
         add_watermarker: bool | None = None
     ):
         super(optimum.onnxruntime.ORTStableDiffusionXLImg2ImgPipeline, self).__init__(vae_decoder, text_encoder, unet, config, tokenizer, scheduler, feature_extractor, vae_encoder, text_encoder_2, tokenizer_2, use_io_binding, model_save_dir, add_watermarker)
 
-    # Adapted from diffusers.pipelines.stable_diffusion_xl.pipeline_stable_diffusion_xl.StableDiffusionXLPipeline.__call__
-    def __call__(
-        self,
-        prompt: Optional[Union[str, List[str]]] = None,
-        image: PipelineImageInput = None,
-        strength: float = 0.3,
-        num_inference_steps: int = 50,
-        guidance_scale: float = 5.0,
-        negative_prompt: Optional[Union[str, List[str]]] = None,
-        num_images_per_prompt: int = 1,
-        eta: float = 0.0,
-        generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
-        latents: Optional[np.ndarray] = None,
-        prompt_embeds: Optional[np.ndarray] = None,
-        negative_prompt_embeds: Optional[np.ndarray] = None,
-        pooled_prompt_embeds: Optional[np.ndarray] = None,
-        negative_pooled_prompt_embeds: Optional[np.ndarray] = None,
-        output_type: str = "pil",
-        return_dict: bool = True,
-        callback: Optional[Callable[[int, int, np.ndarray], None]] = None,
-        callback_steps: int = 1,
-        cross_attention_kwargs: Optional[Dict[str, Any]] = None,
-        guidance_rescale: float = 0.0,
-        original_size: Optional[Tuple[int, int]] = None,
-        crops_coords_top_left: Tuple[int, int] = (0, 0),
-        target_size: Optional[Tuple[int, int]] = None,
-        aesthetic_score: float = 6.0,
-        negative_aesthetic_score: float = 2.5,
-    ):
-        # 0. Check inputs. Raise error if not correct
-        self.check_inputs(prompt, strength, callback_steps, negative_prompt, prompt_embeds, negative_prompt_embeds)
+    def prepare_latents(self, image, timestep, batch_size, num_images_per_prompt, dtype, generator=None):
+        batch_size = batch_size * num_images_per_prompt
 
-        # 1. Define call parameters
-        if isinstance(prompt, str):
-            batch_size = 1
-        elif isinstance(prompt, list):
-            batch_size = len(prompt)
+        if image.shape[1] == 4:
+            init_latents = image
         else:
-            batch_size = prompt_embeds.shape[0]
+            init_latents = self.vae_encoder(sample=image)[0] * self.vae_decoder.config.get("scaling_factor", 0.18215)
 
-        if generator is None:
-            generator = torch.Generator("cpu")
-
-        # here `guidance_scale` is defined analog to the guidance weight `w` of equation (2)
-        # of the Imagen paper: https://arxiv.org/pdf/2205.11487.pdf . `guidance_scale = 1`
-        # corresponds to doing no classifier free guidance.
-        do_classifier_free_guidance = guidance_scale > 1.0
-
-        # 2. Encode input prompt
-        (
-            prompt_embeds,
-            negative_prompt_embeds,
-            pooled_prompt_embeds,
-            negative_pooled_prompt_embeds,
-        ) = self._encode_prompt(
-            prompt,
-            num_images_per_prompt,
-            do_classifier_free_guidance,
-            negative_prompt,
-            prompt_embeds=prompt_embeds,
-            negative_prompt_embeds=negative_prompt_embeds,
-            pooled_prompt_embeds=pooled_prompt_embeds,
-            negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
-        )
-
-        # 3. Preprocess image
-        image = self.image_processor.preprocess(image)
-
-        # 4. Prepare timesteps
-        self.scheduler.set_timesteps(num_inference_steps)
-
-        timesteps, num_inference_steps = self.get_timesteps(num_inference_steps, strength)
-        latent_timestep = np.repeat(timesteps[:1], batch_size * num_images_per_prompt, axis=0)
-        timestep_dtype = self.unet.input_dtype.get("timestep", np.float32)
-
-        latents_dtype = prompt_embeds.dtype
-        image = image.astype(latents_dtype)
-
-        # 5. Prepare latent variables
-        latents = self.prepare_latents(
-            image, latent_timestep, batch_size, num_images_per_prompt, latents_dtype, generator
-        )
-
-        # 6. Prepare extra step kwargs
-        extra_step_kwargs = {}
-        accepts_eta = "eta" in set(inspect.signature(self.scheduler.step).parameters.keys())
-        if accepts_eta:
-            extra_step_kwargs["eta"] = eta
-
-        height, width = latents.shape[-2:]
-        height = height * self.vae_scale_factor
-        width = width * self.vae_scale_factor
-        original_size = original_size or (height, width)
-        target_size = target_size or (height, width)
-
-        # 8. Prepare added time ids & embeddings
-        add_text_embeds = pooled_prompt_embeds
-        add_time_ids, add_neg_time_ids = self._get_add_time_ids(
-            original_size,
-            crops_coords_top_left,
-            target_size,
-            aesthetic_score,
-            negative_aesthetic_score,
-            dtype=prompt_embeds.dtype,
-        )
-
-        if do_classifier_free_guidance:
-            prompt_embeds = np.concatenate((negative_prompt_embeds, prompt_embeds), axis=0)
-            add_text_embeds = np.concatenate((negative_pooled_prompt_embeds, add_text_embeds), axis=0)
-            add_time_ids = np.concatenate((add_time_ids, add_time_ids), axis=0)
-        add_time_ids = np.repeat(add_time_ids, batch_size * num_images_per_prompt, axis=0)
-
-        # 8. Denoising loop
-        num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
-        for i, t in enumerate(self.progress_bar(timesteps)):
-            # expand the latents if we are doing classifier free guidance
-            latent_model_input = np.concatenate([latents] * 2) if do_classifier_free_guidance else latents
-            latent_model_input = self.scheduler.scale_model_input(torch.from_numpy(latent_model_input), t)
-            latent_model_input = latent_model_input.cpu().numpy()
-
-            # predict the noise residual
-            timestep = np.array([t], dtype=timestep_dtype)
-            noise_pred = self.unet(
-                sample=latent_model_input,
-                timestep=timestep,
-                encoder_hidden_states=prompt_embeds,
-                text_embeds=add_text_embeds,
-                time_ids=add_time_ids,
+        if batch_size > init_latents.shape[0] and batch_size % init_latents.shape[0] == 0:
+            # expand init_latents for batch_size
+            additional_image_per_prompt = batch_size // init_latents.shape[0]
+            init_latents = np.concatenate([init_latents] * additional_image_per_prompt, axis=0)
+        elif batch_size > init_latents.shape[0] and batch_size % init_latents.shape[0] != 0:
+            raise ValueError(
+                f"Cannot duplicate `image` of batch size {init_latents.shape[0]} to {batch_size} text prompts."
             )
-            noise_pred = noise_pred[0]
-
-            # perform guidance
-            if do_classifier_free_guidance:
-                noise_pred_uncond, noise_pred_text = np.split(noise_pred, 2)
-                noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
-                if guidance_rescale > 0.0:
-                    # Based on 3.4. in https://arxiv.org/pdf/2305.08891.pdf
-                    noise_pred = rescale_noise_cfg(noise_pred, noise_pred_text, guidance_rescale=guidance_rescale)
-
-            # compute the previous noisy sample x_t -> x_t-1
-            scheduler_output = self.scheduler.step(
-                torch.from_numpy(noise_pred), t, torch.from_numpy(latents), **extra_step_kwargs
-            )
-            latents = scheduler_output.prev_sample.numpy()
-
-            # call the callback, if provided
-            if i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0):
-                if callback is not None and i % callback_steps == 0:
-                    callback(i, t, torch.from_numpy(latents))
-
-        if output_type == "latent":
-            image = latents
         else:
-            latents /= self.vae_decoder.config.get("scaling_factor", 0.18215)
-            # it seems likes there is a strange result for using half-precision vae decoder if batchsize>1
-            image = np.concatenate(
-                [self.vae_decoder(latent_sample=latents[i : i + 1])[0] for i in range(latents.shape[0])]
-            )
-            # apply watermark if available
-            if self.watermark is not None:
-                image = self.watermark.apply_watermark(image)
-            image = self.image_processor.postprocess(image, output_type=output_type)
+            init_latents = np.concatenate([init_latents], axis=0)
 
-        if not return_dict:
-            return (image,)
-
-        return StableDiffusionXLPipelineOutput(images=image)
+        # add noise to latents using the timesteps
+        noise = randn_tensor(init_latents.shape, dtype, generator)
+        init_latents = self.scheduler.add_noise(
+            torch.from_numpy(init_latents), torch.from_numpy(noise), torch.from_numpy(timestep)
+        )
+        return init_latents.numpy()

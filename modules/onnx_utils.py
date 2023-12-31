@@ -1,9 +1,9 @@
 import os
 import importlib
 from typing import Type, Tuple, Union, List, Dict, Any
+import torch
 import diffusers
 import onnxruntime as ort
-from installer import log
 
 
 def get_sess_options(hidden_batch_size: int, height: int, width: int, is_sdxl: bool) -> ort.SessionOptions:
@@ -24,6 +24,15 @@ def get_sess_options(hidden_batch_size: int, height: int, width: int, is_sdxl: b
     return sess_options
 
 
+def extract_device(args: List, kwargs: Dict):
+    device = kwargs.get("device", None)
+    if device is None:
+        for arg in args:
+            if isinstance(arg, torch.device):
+                device = arg
+    return device
+
+
 def load_init_dict(cls: Type[diffusers.DiffusionPipeline], path: os.PathLike):
     merged: Dict[str, Any] = {}
     extracted = cls.extract_init_dict(diffusers.DiffusionPipeline.load_config(path))
@@ -33,8 +42,7 @@ def load_init_dict(cls: Type[diffusers.DiffusionPipeline], path: os.PathLike):
     R: Dict[str, Tuple[str]] = {}
     for k, v in merged:
         if isinstance(v, list):
-            if v[0] is None or v[1] is None:
-                log.debug(f"Skipping {k} while loading init dict of '{path}': {v}")
+            if k not in cls.__init__.__annotations__:
                 continue
             R[k] = v
     return R
@@ -99,15 +107,8 @@ def patch_kwargs(cls: Type[diffusers.DiffusionPipeline], kwargs: Dict) -> Dict:
     return kwargs
 
 
-def load_pipeline(cls: Type[diffusers.DiffusionPipeline], path: os.PathLike, **kwargs_ort):
+def load_pipeline(cls: Type[diffusers.DiffusionPipeline], path: os.PathLike, **kwargs_ort) -> diffusers.DiffusionPipeline:
     if os.path.isdir(path):
         return cls(**patch_kwargs(cls, load_submodels(path, check_pipeline_sdxl(cls), load_init_dict(cls, path), **kwargs_ort)))
     else:
         return cls.from_single_file(path)
-
-
-def construct_refiner_pipeline(**kwargs):
-    kwargs["text_encoder"] = kwargs["text_encoder_2"]
-    kwargs["tokenizer"] = kwargs["tokenizer_2"]
-    del kwargs["text_encoder_2"], kwargs["tokenizer_2"]
-    return diffusers.OnnxStableDiffusionXLImg2ImgPipeline(**patch_kwargs(diffusers.OnnxStableDiffusionXLImg2ImgPipeline, kwargs))
