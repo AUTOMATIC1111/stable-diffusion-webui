@@ -185,8 +185,10 @@ onUiLoaded(setupExtraNetworks);
 var re_extranet = /<([^:^>]+:[^:]+):[\d.]+>(.*)/;
 var re_extranet_g = /<([^:^>]+:[^:]+):[\d.]+>/g;
 
-function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
-    var m = text.match(re_extranet);
+var re_extranet_neg = /\(([^:^>]+:[\d.]+)\)/;
+var re_extranet_g_neg = /\(([^:^>]+:[\d.]+)\)/g;
+function tryToRemoveExtraNetworkFromPrompt(textarea, text, isNeg) {
+    var m = text.match(isNeg ? re_extranet_neg : re_extranet);
     var replaced = false;
     var newTextareaText;
     if (m) {
@@ -194,8 +196,8 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
         var extraTextAfterNet = m[2];
         var partToSearch = m[1];
         var foundAtPosition = -1;
-        newTextareaText = textarea.value.replaceAll(re_extranet_g, function(found, net, pos) {
-            m = found.match(re_extranet);
+        newTextareaText = textarea.value.replaceAll(isNeg ? re_extranet_g_neg : re_extranet_g, function(found, net, pos) {
+            m = found.match(isNeg ? re_extranet_neg : re_extranet);
             if (m[1] == partToSearch) {
                 replaced = true;
                 foundAtPosition = pos;
@@ -205,7 +207,7 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
         });
 
         if (foundAtPosition >= 0) {
-            if (newTextareaText.substr(foundAtPosition, extraTextAfterNet.length) == extraTextAfterNet) {
+            if (extraTextAfterNet && newTextareaText.substr(foundAtPosition, extraTextAfterNet.length) == extraTextAfterNet) {
                 newTextareaText = newTextareaText.substr(0, foundAtPosition) + newTextareaText.substr(foundAtPosition + extraTextAfterNet.length);
             }
             if (newTextareaText.substr(foundAtPosition - extraTextBeforeNet.length, extraTextBeforeNet.length) == extraTextBeforeNet) {
@@ -230,14 +232,23 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
     return false;
 }
 
-function cardClicked(tabname, textToAdd, allowNegativePrompt) {
-    var textarea = allowNegativePrompt ? activePromptTextarea[tabname] : gradioApp().querySelector("#" + tabname + "_prompt > label > textarea");
+function updatePromptArea(text, textArea, isNeg) {
 
-    if (!tryToRemoveExtraNetworkFromPrompt(textarea, textToAdd)) {
-        textarea.value = textarea.value + opts.extra_networks_add_text_separator + textToAdd;
+    if (!tryToRemoveExtraNetworkFromPrompt(textArea, text, isNeg)) {
+        textArea.value = textArea.value + opts.extra_networks_add_text_separator + text;
     }
 
-    updateInput(textarea);
+    updateInput(textArea);
+}
+
+function cardClicked(tabname, textToAdd, textToAddNegative, allowNegativePrompt) {
+    if (textToAddNegative.length > 0) {
+        updatePromptArea(textToAdd, gradioApp().querySelector("#" + tabname + "_prompt > label > textarea"));
+        updatePromptArea(textToAddNegative, gradioApp().querySelector("#" + tabname + "_neg_prompt > label > textarea"), true);
+    } else {
+        var textarea = allowNegativePrompt ? activePromptTextarea[tabname] : gradioApp().querySelector("#" + tabname + "_prompt > label > textarea");
+        updatePromptArea(textToAdd, textarea);
+    }
 }
 
 function saveCardPreview(event, tabname, filename) {
