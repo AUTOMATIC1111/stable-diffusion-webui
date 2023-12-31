@@ -6,7 +6,7 @@ import sgm.models.diffusion
 import sgm.modules.diffusionmodules.denoiser_scaling
 import sgm.modules.diffusionmodules.discretizer
 from modules import devices, shared, prompt_parser
-from modules.torch_utils import get_param
+from modules import torch_utils
 
 
 def get_learned_conditioning(self: sgm.models.diffusion.DiffusionEngine, batch: prompt_parser.SdConditioning | list[str]):
@@ -91,7 +91,7 @@ sgm.modules.GeneralConditioner.get_target_prompt_token_count = get_target_prompt
 def extend_sdxl(model):
     """this adds a bunch of parameters to make SDXL model look a bit more like SD1.5 to the rest of the codebase."""
 
-    dtype = get_param(model.model.diffusion_model).dtype
+    dtype = torch_utils.get_param(model.model.diffusion_model).dtype
     model.model.diffusion_model.dtype = dtype
     model.model.conditioning_key = 'crossattn'
     model.cond_stage_key = 'txt'

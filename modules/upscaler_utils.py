@@ -6,8 +6,7 @@ import torch
 import tqdm
 from PIL import Image
 
-from modules import images, shared
-from modules.torch_utils import get_param
+from modules import images, shared, torch_utils
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +17,7 @@ def upscale_without_tiling(model, img: Image.Image):
     img = np.ascontiguousarray(np.transpose(img, (2, 0, 1))) / 255
     img = torch.from_numpy(img).float()
 
-    param = get_param(model)
+    param = torch_utils.get_param(model)
     img = img.unsqueeze(0).to(device=param.device, dtype=param.dtype)
 
     with torch.no_grad():

@@ -4,8 +4,7 @@ import torch
 from transformers.models.xlm_roberta.configuration_xlm_roberta import XLMRobertaConfig
 from transformers import XLMRobertaModel,XLMRobertaTokenizer
 from typing import Optional
-
-from modules.torch_utils import get_param
+from modules import torch_utils
 
 
 class BertSeriesConfig(BertConfig):
@@ -71,7 +70,7 @@ class BertSeriesModelWithTransformation(BertPreTrainedModel):
         self.post_init()
 
     def encode(self,c):
-        device = get_param(self).device
+        device = torch_utils.get_param(self).device
         text = self.tokenizer(c,
                         truncation=True,
                         max_length=77,
