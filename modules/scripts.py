@@ -696,6 +696,8 @@ class ScriptRunner:
         self.setup_ui_for_section(None, self.selectable_scripts)
 
         def select_script(script_index):
+            if script_index is None:
+                script_index = 0
             selected_script = self.selectable_scripts[script_index - 1] if script_index>0 else None
 
             return [gr.update(visible=selected_script == s) for s in self.selectable_scripts]
@@ -739,7 +741,7 @@ class ScriptRunner:
     def run(self, p, *args):
         script_index = args[0]
 
-        if script_index == 0:
+        if script_index == 0 or script_index is None:
             return None
 
         script = self.selectable_scripts[script_index-1]
