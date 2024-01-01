@@ -80,6 +80,7 @@ class CompVisSampler(sd_samplers_common.Sampler):
         self.eta_default = 0.0
 
         self.model_wrap_cfg = CFGDenoiserTimesteps(self)
+        self.model_wrap = self.model_wrap_cfg.inner_model
 
     def get_timesteps(self, p, steps):
         discard_next_to_last_sigma = self.config is not None and self.config.options.get('discard_next_to_last_sigma', False)
