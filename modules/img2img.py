@@ -51,7 +51,7 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
         if state.skipped:
             state.skipped = False
 
-        if state.interrupted:
+        if state.interrupted or state.interrupted_next:
             break
 
         try:

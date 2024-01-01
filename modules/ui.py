@@ -177,7 +177,6 @@ def update_negative_prompt_token_counter(text, steps):
     return update_token_counter(text, steps, is_positive=False)
 
 
-
 def setup_progressbar(*args, **kwargs):
     pass
 

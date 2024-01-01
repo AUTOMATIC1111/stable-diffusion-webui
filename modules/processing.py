@@ -865,7 +865,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if state.skipped:
                 state.skipped = False
 
-            if state.interrupted:
+            if state.interrupted or state.interrupted_next:
                 break
 
             sd_models.reload_model_weights()  # model can be changed for example by refiner
