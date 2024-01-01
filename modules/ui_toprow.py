@@ -106,8 +106,14 @@ class Toprow:
                 outputs=[],
             )
 
+            def interrupt_function():
+                if shared.state.job_count > 1 and shared.opts.interrupt_after_current:
+                    shared.state.stop_generating()
+                else:
+                    shared.state.interrupt()
+
             self.interrupt.click(
-                fn=lambda: shared.state.interrupt(),
+                fn=interrupt_function,
                 inputs=[],
                 outputs=[],
             )
