@@ -6,6 +6,21 @@ import traceback
 exception_records = []
 
 
+def format_traceback(tb):
+    return [[f"{x.filename}, line {x.lineno}, {x.name}", x.line] for x in traceback.extract_tb(tb)]
+
+
+def format_exception(e, tb):
+    return {"exception": str(e), "traceback": format_traceback(tb)}
+
+
+def get_exceptions():
+    try:
+        return list(reversed(exception_records))
+    except Exception as e:
+        return str(e)
+
+
 def record_exception():
     _, e, tb = sys.exc_info()
     if e is None:
@@ -14,8 +29,7 @@ def record_exception():
     if exception_records and exception_records[-1] == e:
         return
 
-    from modules import sysinfo
-    exception_records.append(sysinfo.format_exception(e, tb))
+    exception_records.append(format_exception(e, tb))
 
     if len(exception_records) > 5:
         exception_records.pop(0)
@@ -93,8 +107,8 @@ def check_versions():
     import torch
     import gradio
 
-    expected_torch_version = "2.0.0"
-    expected_xformers_version = "0.0.20"
+    expected_torch_version = "2.1.2"
+    expected_xformers_version = "0.0.23.post1"
     expected_gradio_version = "3.41.2"
 
     if version.parse(torch.__version__) < version.parse(expected_torch_version):

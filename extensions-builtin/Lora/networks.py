@@ -1,3 +1,4 @@
+import gradio as gr
 import logging
 import os
 import re
@@ -11,6 +12,7 @@ import network_ia3
 import network_lokr
 import network_full
 import network_norm
+import network_oft
 
 import torch
 from typing import Union
@@ -28,6 +30,7 @@ module_types = [
     network_full.ModuleTypeFull(),
     network_norm.ModuleTypeNorm(),
     network_glora.ModuleTypeGLora(),
+    network_oft.ModuleTypeOFT(),
 ]
 
 
@@ -157,7 +160,8 @@ def load_network(name, network_on_disk):
     bundle_embeddings = {}
 
     for key_network, weight in sd.items():
-        key_network_without_network_parts, network_part = key_network.split(".", 1)
+        key_network_without_network_parts, _, network_part = key_network.partition(".")
+
         if key_network_without_network_parts == "bundle_emb":
             emb_name, vec_name = network_part.split(".", 1)
             emb_dict = bundle_embeddings.get(emb_name, {})
@@ -188,6 +192,17 @@ def load_network(name, network_on_disk):
             if sd_module is None:
                 key = key_network_without_network_parts.replace("lora_te1_text_model", "transformer_text_model")
                 sd_module = shared.sd_model.network_layer_mapping.get(key, None)
+
+        # kohya_ss OFT module
+        elif sd_module is None and "oft_unet" in key_network_without_network_parts:
+            key = key_network_without_network_parts.replace("oft_unet", "diffusion_model")
+            sd_module = shared.sd_model.network_layer_mapping.get(key, None)
+
+        # KohakuBlueLeaf OFT module
+        if sd_module is None and "oft_diag" in key:
+            key = key_network_without_network_parts.replace("lora_unet", "diffusion_model")
+            key = key_network_without_network_parts.replace("lora_te1_text_model", "0_transformer_text_model")
+            sd_module = shared.sd_model.network_layer_mapping.get(key, None)
 
         if sd_module is None:
             keys_failed_to_match[key_network] = key
@@ -300,7 +315,12 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
                 emb_db.skipped_embeddings[name] = embedding
 
     if failed_to_load_networks:
-        sd_hijack.model_hijack.comments.append("Networks not found: " + ", ".join(failed_to_load_networks))
+        lora_not_found_message = f'Lora not found: {", ".join(failed_to_load_networks)}'
+        sd_hijack.model_hijack.comments.append(lora_not_found_message)
+        if shared.opts.lora_not_found_warning_console:
+            print(f'\n{lora_not_found_message}\n')
+        if shared.opts.lora_not_found_gradio_warning:
+            gr.Warning(lora_not_found_message)
 
     purge_networks_from_memory()
 
@@ -375,18 +395,26 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
             if module is not None and hasattr(self, 'weight'):
                 try:
                     with torch.no_grad():
-                        updown, ex_bias = module.calc_updown(self.weight)
+                        if getattr(self, 'fp16_weight', None) is None:
+                            weight = self.weight
+                            bias = self.bias
+                        else:
+                            weight = self.fp16_weight.clone().to(self.weight.device)
+                            bias = getattr(self, 'fp16_bias', None)
+                            if bias is not None:
+                                bias = bias.clone().to(self.bias.device)
+                        updown, ex_bias = module.calc_updown(weight)
 
-                        if len(self.weight.shape) == 4 and self.weight.shape[1] == 9:
+                        if len(weight.shape) == 4 and weight.shape[1] == 9:
                             # inpainting model. zero pad updown to make channel[1]  4 to 9
                             updown = torch.nn.functional.pad(updown, (0, 0, 0, 0, 0, 5))
 
-                        self.weight += updown
+                        self.weight.copy_((weight.to(dtype=updown.dtype) + updown).to(dtype=self.weight.dtype))
                         if ex_bias is not None and hasattr(self, 'bias'):
                             if self.bias is None:
-                                self.bias = torch.nn.Parameter(ex_bias)
+                                self.bias = torch.nn.Parameter(ex_bias).to(self.weight.dtype)
                             else:
-                                self.bias += ex_bias
+                                self.bias.copy_((bias + ex_bias).to(dtype=self.bias.dtype))
                 except RuntimeError as e:
                     logging.debug(f"Network {net.name} layer {network_layer_name}: {e}")
                     extra_network_lora.errors[net.name] = extra_network_lora.errors.get(net.name, 0) + 1

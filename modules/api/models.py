@@ -107,6 +107,8 @@ StableDiffusionTxt2ImgProcessingAPI = PydanticModelGenerator(
         {"key": "send_images", "type": bool, "default": True},
         {"key": "save_images", "type": bool, "default": False},
         {"key": "alwayson_scripts", "type": dict, "default": {}},
+        {"key": "force_task_id", "type": str, "default": None},
+        {"key": "infotext", "type": str, "default": None},
     ]
 ).generate_model()
 
@@ -124,6 +126,8 @@ StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
         {"key": "send_images", "type": bool, "default": True},
         {"key": "save_images", "type": bool, "default": False},
         {"key": "alwayson_scripts", "type": dict, "default": {}},
+        {"key": "force_task_id", "type": str, "default": None},
+        {"key": "infotext", "type": str, "default": None},
     ]
 ).generate_model()
 
@@ -201,9 +205,6 @@ class TrainResponse(BaseModel):
 
 class CreateResponse(BaseModel):
     info: str = Field(title="Create info", description="Response string from create embedding or hypernetwork task.")
-
-class PreprocessResponse(BaseModel):
-    info: str = Field(title="Preprocess info", description="Response string from preprocessing task.")
 
 fields = {}
 for key, metadata in opts.data_labels.items():

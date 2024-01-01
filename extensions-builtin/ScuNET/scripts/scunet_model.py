@@ -3,14 +3,11 @@ import sys
 import PIL.Image
 import numpy as np
 import torch
-from tqdm import tqdm
 
 import modules.upscaler
 from modules import devices, modelloader, script_callbacks, errors
-from scunet_model_arch import SCUNet
-
-from modules.modelloader import load_file_from_url
 from modules.shared import opts
+from modules.upscaler_utils import tiled_upscale_2
 
 
 class UpscalerScuNET(modules.upscaler.Upscaler):
@@ -42,47 +39,6 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
             scalers.append(scaler_data2)
         self.scalers = scalers
 
-    @staticmethod
-    @torch.no_grad()
-    def tiled_inference(img, model):
-        # test the image tile by tile
-        h, w = img.shape[2:]
-        tile = opts.SCUNET_tile
-        tile_overlap = opts.SCUNET_tile_overlap
-        if tile == 0:
-            return model(img)
-
-        device = devices.get_device_for('scunet')
-        assert tile % 8 == 0, "tile size should be a multiple of window_size"
-        sf = 1
-
-        stride = tile - tile_overlap
-        h_idx_list = list(range(0, h - tile, stride)) + [h - tile]
-        w_idx_list = list(range(0, w - tile, stride)) + [w - tile]
-        E = torch.zeros(1, 3, h * sf, w * sf, dtype=img.dtype, device=device)
-        W = torch.zeros_like(E, dtype=devices.dtype, device=device)
-
-        with tqdm(total=len(h_idx_list) * len(w_idx_list), desc="ScuNET tiles") as pbar:
-            for h_idx in h_idx_list:
-
-                for w_idx in w_idx_list:
-
-                    in_patch = img[..., h_idx: h_idx + tile, w_idx: w_idx + tile]
-
-                    out_patch = model(in_patch)
-                    out_patch_mask = torch.ones_like(out_patch)
-
-                    E[
-                        ..., h_idx * sf: (h_idx + tile) * sf, w_idx * sf: (w_idx + tile) * sf
-                    ].add_(out_patch)
-                    W[
-                        ..., h_idx * sf: (h_idx + tile) * sf, w_idx * sf: (w_idx + tile) * sf
-                    ].add_(out_patch_mask)
-                    pbar.update(1)
-        output = E.div_(W)
-
-        return output
-
     def do_upscale(self, img: PIL.Image.Image, selected_file):
 
         devices.torch_gc()
@@ -106,7 +62,16 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
             _img[:, :, :h, :w] = torch_img # pad image
             torch_img = _img
 
-        torch_output = self.tiled_inference(torch_img, model).squeeze(0)
+        with torch.no_grad():
+            torch_output = tiled_upscale_2(
+                torch_img,
+                model,
+                tile_size=opts.SCUNET_tile,
+                tile_overlap=opts.SCUNET_tile_overlap,
+                scale=1,
+                device=devices.get_device_for('scunet'),
+                desc="ScuNET tiles",
+            ).squeeze(0)
         torch_output = torch_output[:, :h * 1, :w * 1] # remove padding, if any
         np_output: np.ndarray = torch_output.float().cpu().clamp_(0, 1).numpy()
         del torch_img, torch_output
@@ -120,17 +85,10 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         device = devices.get_device_for('scunet')
         if path.startswith("http"):
             # TODO: this doesn't use `path` at all?
-            filename = load_file_from_url(self.model_url, model_dir=self.model_download_path, file_name=f"{self.name}.pth")
+            filename = modelloader.load_file_from_url(self.model_url, model_dir=self.model_download_path, file_name=f"{self.name}.pth")
         else:
             filename = path
-        model = SCUNet(in_nc=3, config=[4, 4, 4, 4, 4, 4, 4], dim=64)
-        model.load_state_dict(torch.load(filename), strict=True)
-        model.eval()
-        for _, v in model.named_parameters():
-            v.requires_grad = False
-        model = model.to(device)
-
-        return model
+        return modelloader.load_spandrel_model(filename, device=device, expected_architecture='SCUNet')
 
 
 def on_ui_settings():

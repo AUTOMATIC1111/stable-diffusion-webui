@@ -114,6 +114,7 @@ class Script(scripts.Script):
     def ui(self, is_img2img):
         checkbox_iterate = gr.Checkbox(label="Iterate seed every line", value=False, elem_id=self.elem_id("checkbox_iterate"))
         checkbox_iterate_batch = gr.Checkbox(label="Use same random seed for all lines", value=False, elem_id=self.elem_id("checkbox_iterate_batch"))
+        prompt_position = gr.Radio(["start", "end"], label="Insert prompts at the", elem_id=self.elem_id("prompt_position"), value="start")
 
         prompt_txt = gr.Textbox(label="List of prompt inputs", lines=1, elem_id=self.elem_id("prompt_txt"))
         file = gr.File(label="Upload prompt inputs", type='binary', elem_id=self.elem_id("file"))
@@ -124,9 +125,9 @@ class Script(scripts.Script):
         # We don't shrink back to 1, because that causes the control to ignore [enter], and it may
         # be unclear to the user that shift-enter is needed.
         prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=2), inputs=[prompt_txt], outputs=[prompt_txt], show_progress=False)
-        return [checkbox_iterate, checkbox_iterate_batch, prompt_txt]
+        return [checkbox_iterate, checkbox_iterate_batch, prompt_position, prompt_txt]
 
-    def run(self, p, checkbox_iterate, checkbox_iterate_batch, prompt_txt: str):
+    def run(self, p, checkbox_iterate, checkbox_iterate_batch, prompt_position, prompt_txt: str):
         lines = [x for x in (x.strip() for x in prompt_txt.splitlines()) if x]
 
         p.do_not_save_grid = True
@@ -166,6 +167,18 @@ class Script(scripts.Script):
                     copy_p.override_settings['sd_model_checkpoint'] = v
                 else:
                     setattr(copy_p, k, v)
+
+            if args.get("prompt") and p.prompt:
+                if prompt_position == "start":
+                    copy_p.prompt = args.get("prompt") + " " + p.prompt
+                else:
+                    copy_p.prompt = p.prompt + " " + args.get("prompt")
+
+            if args.get("negative_prompt") and p.negative_prompt:
+                if prompt_position == "start":
+                    copy_p.negative_prompt = args.get("negative_prompt") + " " + p.negative_prompt
+                else:
+                    copy_p.negative_prompt = p.negative_prompt + " " + args.get("negative_prompt")
 
             proc = process_images(copy_p)
             images += proc.images

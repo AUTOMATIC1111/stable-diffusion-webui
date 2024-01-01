@@ -36,7 +36,7 @@ class CompVisTimestepsVDenoiser(torch.nn.Module):
         self.inner_model = model
 
     def predict_eps_from_z_and_v(self, x_t, t, v):
-        return self.inner_model.sqrt_alphas_cumprod[t.to(torch.int), None, None, None] * v + self.inner_model.sqrt_one_minus_alphas_cumprod[t.to(torch.int), None, None, None] * x_t
+        return torch.sqrt(self.inner_model.alphas_cumprod)[t.to(torch.int), None, None, None] * v + torch.sqrt(1 - self.inner_model.alphas_cumprod)[t.to(torch.int), None, None, None] * x_t
 
     def forward(self, input, timesteps, **kwargs):
         model_output = self.inner_model.apply_model(input, timesteps, **kwargs)
@@ -80,6 +80,7 @@ class CompVisSampler(sd_samplers_common.Sampler):
         self.eta_default = 0.0
 
         self.model_wrap_cfg = CFGDenoiserTimesteps(self)
+        self.model_wrap = self.model_wrap_cfg.inner_model
 
     def get_timesteps(self, p, steps):
         discard_next_to_last_sigma = self.config is not None and self.config.options.get('discard_next_to_last_sigma', False)

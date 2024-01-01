@@ -38,7 +38,6 @@ mute_sdxl_imports()
 path_dirs = [
     (sd_path, 'ldm', 'Stable Diffusion', []),
     (os.path.join(sd_path, '../generative-models'), 'sgm', 'Stable Diffusion XL', ["sgm"]),
-    (os.path.join(sd_path, '../CodeFormer'), 'inference_codeformer.py', 'CodeFormer', []),
     (os.path.join(sd_path, '../BLIP'), 'models/blip.py', 'BLIP', []),
     (os.path.join(sd_path, '../k-diffusion'), 'k_diffusion/sampling.py', 'k_diffusion', ["atstart"]),
 ]

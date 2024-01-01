@@ -4,7 +4,7 @@ import re
 from collections import namedtuple
 import lark
 
-# a prompt like this: "fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]"
+# a prompt like this: "fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][: in background:0.25] [shoddy:masterful:0.5]"
 # will be represented with prompt_schedule like this (assuming steps=100):
 # [25, 'fantasy landscape with a mountain and an oak in foreground shoddy']
 # [50, 'fantasy landscape with a lake and an oak in foreground in background shoddy']

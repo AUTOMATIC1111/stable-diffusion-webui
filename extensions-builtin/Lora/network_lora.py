@@ -61,13 +61,13 @@ class NetworkModuleLora(network.NetworkModule):
         return module
 
     def calc_updown(self, orig_weight):
-        up = self.up_model.weight.to(orig_weight.device, dtype=orig_weight.dtype)
-        down = self.down_model.weight.to(orig_weight.device, dtype=orig_weight.dtype)
+        up = self.up_model.weight.to(orig_weight.device)
+        down = self.down_model.weight.to(orig_weight.device)
 
         output_shape = [up.size(0), down.size(1)]
         if self.mid_model is not None:
             # cp-decomposition
-            mid = self.mid_model.weight.to(orig_weight.device, dtype=orig_weight.dtype)
+            mid = self.mid_model.weight.to(orig_weight.device)
             updown = lyco_helpers.rebuild_cp_decomposition(up, down, mid)
             output_shape += mid.shape[2:]
         else:
