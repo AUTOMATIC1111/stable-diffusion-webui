@@ -1,7 +1,6 @@
 import collections
 import os.path
 import sys
-import gc
 import threading
 
 import torch
@@ -231,15 +230,19 @@ def select_checkpoint():
     return checkpoint_info
 
 
-checkpoint_dict_replacements = {
+checkpoint_dict_replacements_sd1 = {
     'cond_stage_model.transformer.embeddings.': 'cond_stage_model.transformer.text_model.embeddings.',
     'cond_stage_model.transformer.encoder.': 'cond_stage_model.transformer.text_model.encoder.',
     'cond_stage_model.transformer.final_layer_norm.': 'cond_stage_model.transformer.text_model.final_layer_norm.',
 }
 
+checkpoint_dict_replacements_sd2_turbo = { # Converts SD 2.1 Turbo from SGM to LDM format.
+    'conditioner.embedders.0.': 'cond_stage_model.',
+}
 
-def transform_checkpoint_dict_key(k):
-    for text, replacement in checkpoint_dict_replacements.items():
+
+def transform_checkpoint_dict_key(k, replacements):
+    for text, replacement in replacements.items():
         if k.startswith(text):
             k = replacement + k[len(text):]
 
@@ -250,9 +253,14 @@ def get_state_dict_from_checkpoint(pl_sd):
     pl_sd = pl_sd.pop("state_dict", pl_sd)
     pl_sd.pop("state_dict", None)
 
+    is_sd2_turbo = 'conditioner.embedders.0.model.ln_final.weight' in pl_sd and pl_sd['conditioner.embedders.0.model.ln_final.weight'].size()[0] == 1024
+
     sd = {}
     for k, v in pl_sd.items():
-        new_key = transform_checkpoint_dict_key(k)
+        if is_sd2_turbo:
+            new_key = transform_checkpoint_dict_key(k, checkpoint_dict_replacements_sd2_turbo)
+        else:
+            new_key = transform_checkpoint_dict_key(k, checkpoint_dict_replacements_sd1)
 
         if new_key is not None:
             sd[new_key] = v
@@ -353,16 +361,19 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     model.is_sdxl = hasattr(model, 'conditioner')
     model.is_sd2 = not model.is_sdxl and hasattr(model.cond_stage_model, 'model')
     model.is_sd1 = not model.is_sdxl and not model.is_sd2
-
+    model.is_ssd = model.is_sdxl and 'model.diffusion_model.middle_block.1.transformer_blocks.0.attn1.to_q.weight' not in state_dict.keys()
     if model.is_sdxl:
         sd_models_xl.extend_sdxl(model)
 
-    model.load_state_dict(state_dict, strict=False)
-    timer.record("apply weights to model")
+    if model.is_ssd:
+        sd_hijack.model_hijack.convert_sdxl_to_ssd(model)
 
     if shared.opts.sd_checkpoint_cache > 0:
         # cache newly loaded model
-        checkpoints_loaded[checkpoint_info] = state_dict
+        checkpoints_loaded[checkpoint_info] = state_dict.copy()
+
+    model.load_state_dict(state_dict, strict=False)
+    timer.record("apply weights to model")
 
     del state_dict
 
@@ -798,17 +809,7 @@ def reload_model_weights(sd_model=None, info=None):
 
 
 def unload_model_weights(sd_model=None, info=None):
-    timer = Timer()
-
-    if model_data.sd_model:
-        model_data.sd_model.to(devices.cpu)
-        sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
-        model_data.sd_model = None
-        sd_model = None
-        gc.collect()
-        devices.torch_gc()
-
-    print(f"Unloaded weights {timer.summary()}.")
+    send_model_to_cpu(sd_model or shared.sd_model)
 
     return sd_model
 

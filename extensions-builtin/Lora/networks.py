@@ -5,17 +5,19 @@ import re
 import lora_patches
 import network
 import network_lora
+import network_glora
 import network_hada
 import network_ia3
 import network_lokr
 import network_full
 import network_norm
+import network_oft
 
 import torch
 from typing import Union
 
 from modules import shared, devices, sd_models, errors, scripts, sd_hijack
-from modules.textual_inversion.textual_inversion import Embedding
+import modules.textual_inversion.textual_inversion as textual_inversion
 
 from lora_logger import logger
 
@@ -26,6 +28,8 @@ module_types = [
     network_lokr.ModuleTypeLokr(),
     network_full.ModuleTypeFull(),
     network_norm.ModuleTypeNorm(),
+    network_glora.ModuleTypeGLora(),
+    network_oft.ModuleTypeOFT(),
 ]
 
 
@@ -155,7 +159,8 @@ def load_network(name, network_on_disk):
     bundle_embeddings = {}
 
     for key_network, weight in sd.items():
-        key_network_without_network_parts, network_part = key_network.split(".", 1)
+        key_network_without_network_parts, _, network_part = key_network.partition(".")
+
         if key_network_without_network_parts == "bundle_emb":
             emb_name, vec_name = network_part.split(".", 1)
             emb_dict = bundle_embeddings.get(emb_name, {})
@@ -187,6 +192,17 @@ def load_network(name, network_on_disk):
                 key = key_network_without_network_parts.replace("lora_te1_text_model", "transformer_text_model")
                 sd_module = shared.sd_model.network_layer_mapping.get(key, None)
 
+        # kohya_ss OFT module
+        elif sd_module is None and "oft_unet" in key_network_without_network_parts:
+            key = key_network_without_network_parts.replace("oft_unet", "diffusion_model")
+            sd_module = shared.sd_model.network_layer_mapping.get(key, None)
+
+        # KohakuBlueLeaf OFT module
+        if sd_module is None and "oft_diag" in key:
+            key = key_network_without_network_parts.replace("lora_unet", "diffusion_model")
+            key = key_network_without_network_parts.replace("lora_te1_text_model", "0_transformer_text_model")
+            sd_module = shared.sd_model.network_layer_mapping.get(key, None)
+
         if sd_module is None:
             keys_failed_to_match[key_network] = key
             continue
@@ -210,34 +226,7 @@ def load_network(name, network_on_disk):
 
     embeddings = {}
     for emb_name, data in bundle_embeddings.items():
-        # textual inversion embeddings
-        if 'string_to_param' in data:
-            param_dict = data['string_to_param']
-            param_dict = getattr(param_dict, '_parameters', param_dict)  # fix for torch 1.12.1 loading saved file from torch 1.11
-            assert len(param_dict) == 1, 'embedding file has multiple terms in it'
-            emb = next(iter(param_dict.items()))[1]
-            vec = emb.detach().to(devices.device, dtype=torch.float32)
-            shape = vec.shape[-1]
-            vectors = vec.shape[0]
-        elif type(data) == dict and 'clip_g' in data and 'clip_l' in data:  # SDXL embedding
-            vec = {k: v.detach().to(devices.device, dtype=torch.float32) for k, v in data.items()}
-            shape = data['clip_g'].shape[-1] + data['clip_l'].shape[-1]
-            vectors = data['clip_g'].shape[0]
-        elif type(data) == dict and type(next(iter(data.values()))) == torch.Tensor: # diffuser concepts
-            assert len(data.keys()) == 1, 'embedding file has multiple terms in it'
-
-            emb = next(iter(data.values()))
-            if len(emb.shape) == 1:
-                emb = emb.unsqueeze(0)
-            vec = emb.detach().to(devices.device, dtype=torch.float32)
-            shape = vec.shape[-1]
-            vectors = vec.shape[0]
-        else:
-            raise Exception(f"Couldn't identify {emb_name} in lora: {name} as neither textual inversion embedding nor diffuser concept.")
-
-        embedding = Embedding(vec, emb_name)
-        embedding.vectors = vectors
-        embedding.shape = shape
+        embedding = textual_inversion.create_embedding_from_data(data, emb_name, filename=network_on_disk.filename + "/" + emb_name)
         embedding.loaded = None
         embeddings[emb_name] = embedding
 

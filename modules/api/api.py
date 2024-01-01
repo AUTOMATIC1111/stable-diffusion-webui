@@ -17,15 +17,13 @@ from fastapi.encoders import jsonable_encoder
 from secrets import compare_digest
 
 import modules.shared as shared
-from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors, restart, shared_items, script_callbacks, generation_parameters_copypaste
+from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors, restart, shared_items, script_callbacks, generation_parameters_copypaste, sd_models
 from modules.api import models
 from modules.shared import opts
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.textual_inversion.textual_inversion import create_embedding, train_embedding
-from modules.textual_inversion.preprocess import preprocess
 from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
-from PIL import PngImagePlugin,Image
-from modules.sd_models import unload_model_weights, reload_model_weights, checkpoint_aliases
+from PIL import PngImagePlugin, Image
 from modules.sd_models_config import find_checkpoint_config_near_filename
 from modules.realesrgan_model import get_realesrgan_models
 from modules import devices
@@ -103,7 +101,8 @@ def decode_base64_to_image(encoding):
 
 def encode_pil_to_base64(image):
     with io.BytesIO() as output_bytes:
-
+        if isinstance(image, str):
+            return image
         if opts.samples_format.lower() == 'png':
             use_metadata = False
             metadata = PngImagePlugin.PngInfo()
@@ -235,7 +234,6 @@ class Api:
         self.add_api_route("/sdapi/v1/refresh-vae", self.refresh_vae, methods=["POST"])
         self.add_api_route("/sdapi/v1/create/embedding", self.create_embedding, methods=["POST"], response_model=models.CreateResponse)
         self.add_api_route("/sdapi/v1/create/hypernetwork", self.create_hypernetwork, methods=["POST"], response_model=models.CreateResponse)
-        self.add_api_route("/sdapi/v1/preprocess", self.preprocess, methods=["POST"], response_model=models.PreprocessResponse)
         self.add_api_route("/sdapi/v1/train/embedding", self.train_embedding, methods=["POST"], response_model=models.TrainResponse)
         self.add_api_route("/sdapi/v1/train/hypernetwork", self.train_hypernetwork, methods=["POST"], response_model=models.TrainResponse)
         self.add_api_route("/sdapi/v1/memory", self.get_memory, methods=["GET"], response_model=models.MemoryResponse)
@@ -540,12 +538,12 @@ class Api:
         return {}
 
     def unloadapi(self):
-        unload_model_weights()
+        sd_models.unload_model_weights()
 
         return {}
 
     def reloadapi(self):
-        reload_model_weights()
+        sd_models.send_model_to_device(shared.sd_model)
 
         return {}
 
@@ -565,7 +563,7 @@ class Api:
 
     def set_config(self, req: dict[str, Any]):
         checkpoint_name = req.get("sd_model_checkpoint", None)
-        if checkpoint_name is not None and checkpoint_name not in checkpoint_aliases:
+        if checkpoint_name is not None and checkpoint_name not in sd_models.checkpoint_aliases:
             raise RuntimeError(f"model {checkpoint_name!r} not found")
 
         for k, v in req.items():
@@ -672,19 +670,6 @@ class Api:
             return models.CreateResponse(info=f"create hypernetwork filename: {filename}")
         except AssertionError as e:
             return models.TrainResponse(info=f"create hypernetwork error: {e}")
-        finally:
-            shared.state.end()
-
-    def preprocess(self, args: dict):
-        try:
-            shared.state.begin(job="preprocess")
-            preprocess(**args) # quick operation unless blip/booru interrogation is enabled
-            shared.state.end()
-            return models.PreprocessResponse(info='preprocess complete')
-        except KeyError as e:
-            return models.PreprocessResponse(info=f"preprocess error: invalid token: {e}")
-        except Exception as e:
-            return models.PreprocessResponse(info=f"preprocess error: {e}")
         finally:
             shared.state.end()
 
