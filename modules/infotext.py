@@ -8,7 +8,7 @@ import sys
 
 import gradio as gr
 from modules.paths import data_path
-from modules import shared, ui_tempdir, script_callbacks, processing
+from modules import shared, ui_tempdir, script_callbacks, processing, infotext_versions, errors
 from PIL import Image
 
 sys.modules['modules.generation_parameters_copypaste'] = sys.modules[__name__]  # alias for old name
@@ -341,6 +341,8 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
     if "Cache FP16 weight for LoRA" not in res and res["FP8 weight"] != "Disable":
         res["Cache FP16 weight for LoRA"] = False
+
+    infotext_versions.backcompat(res)
 
     skip = set(shared.opts.infotext_skip_pasting)
     res = {k: v for k, v in res.items() if k not in skip}
