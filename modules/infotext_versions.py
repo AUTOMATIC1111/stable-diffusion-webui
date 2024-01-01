@@ -17,7 +17,7 @@ def parse_version(text):
 
     try:
         return version.parse(text)
-    except Exception as e:
+    except Exception:
         return None
 
 
