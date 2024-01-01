@@ -189,7 +189,10 @@ def git_clone(url, dir, name, commithash=None):
         return
 
     try:
-        run(f'"{git}" clone "{url}" "{dir}"', f"Cloning {name} into {dir}...", f"Couldn't clone {name}", live=True)
+        if commithash is not None:
+            run(f'"{git}" clone -b "{commithash}" "{url}" "{dir}" ', f"Cloning {name} into {dir}...", f"Couldn't clone {name}", live=True)
+        else:
+            run(f'"{git}" clone "{url}" "{dir}" --depth 1', f"Cloning {name} into {dir}...", f"Couldn't clone {name}", live=True)
     except RuntimeError:
         shutil.rmtree(dir, ignore_errors=True)
         raise
