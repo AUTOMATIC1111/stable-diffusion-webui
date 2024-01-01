@@ -1,3 +1,6 @@
+## 1.8.0 (dev: 1.7.0-225) [2024-01-01](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14145) - zero terminal SNR noise schedule option
+Slightly changes all image generation. The PR changes alphas_cumprod to be never be fp16 unless the backwards compatibility option is enabled. Backwards compatibility option is "Downcast model alphas_cumprod to fp16 before sampling", and it's automatically enabled when restoring parameters from old pictures (as long as they have Version: ... in infotext).
+
 ## 1.6.0 [2023-08-24](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12457) - prompt editing timeline has separate range for first pass and hires-fix pass
 Two changes:
 1. Before the change, prompt editing instructions like `[red:green:0.25]` were the same for normal generation and for hires fix second pass. After: values in range 0.0 - 1.0 apply to first pass, and in range 1.0 - 2.0 - to second pass.
