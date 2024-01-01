@@ -21,14 +21,14 @@ from modules.ui_gradio_extensions import reload_javascript
 
 from modules.shared import opts, cmd_opts
 
-import modules.infotext as parameters_copypaste
+import modules.infotext_utils as parameters_copypaste
 import modules.hypernetworks.ui as hypernetworks_ui
 import modules.textual_inversion.ui as textual_inversion_ui
 import modules.textual_inversion.textual_inversion as textual_inversion
 import modules.shared as shared
 from modules import prompt_parser
 from modules.sd_hijack import model_hijack
-from modules.infotext import image_from_url_text, PasteField
+from modules.infotext_utils import image_from_url_text, PasteField
 
 create_setting_component = ui_settings.create_setting_component
 

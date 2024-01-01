@@ -17,7 +17,7 @@ from fastapi.encoders import jsonable_encoder
 from secrets import compare_digest
 
 import modules.shared as shared
-from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors, restart, shared_items, script_callbacks, infotext, sd_models
+from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors, restart, shared_items, script_callbacks, infotext_utils, sd_models
 from modules.api import models
 from modules.shared import opts
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
@@ -369,9 +369,9 @@ class Api:
         if not request.infotext:
             return {}
 
-        possible_fields = infotext.paste_fields[tabname]["fields"]
+        possible_fields = infotext_utils.paste_fields[tabname]["fields"]
         set_fields = request.model_dump(exclude_unset=True) if hasattr(request, "request") else request.dict(exclude_unset=True)  # pydantic v1/v2 have differenrt names for this
-        params = infotext.parse_generation_parameters(request.infotext)
+        params = infotext_utils.parse_generation_parameters(request.infotext)
 
         def get_field_value(field, params):
             value = field.function(params) if field.function else params.get(field.label)
@@ -408,7 +408,7 @@ class Api:
         if request.override_settings is None:
             request.override_settings = {}
 
-        overriden_settings = infotext.get_override_settings(params)
+        overriden_settings = infotext_utils.get_override_settings(params)
         for _, setting_name, value in overriden_settings:
             if setting_name not in request.override_settings:
                 request.override_settings[setting_name] = value
@@ -584,7 +584,7 @@ class Api:
         if geninfo is None:
             geninfo = ""
 
-        params = infotext.parse_generation_parameters(geninfo)
+        params = infotext_utils.parse_generation_parameters(geninfo)
         script_callbacks.infotext_pasted_callback(geninfo, params)
 
         return models.PNGInfoResponse(info=geninfo, items=items, parameters=params)

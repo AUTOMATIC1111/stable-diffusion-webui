@@ -7,7 +7,7 @@ from PIL import Image, ImageOps, ImageFilter, ImageEnhance, UnidentifiedImageErr
 import gradio as gr
 
 from modules import images as imgutil
-from modules.infotext import create_override_settings_dict, parse_generation_parameters
+from modules.infotext_utils import create_override_settings_dict, parse_generation_parameters
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
 from modules.shared import opts, state
 from modules.sd_models import get_closet_checkpoint_match

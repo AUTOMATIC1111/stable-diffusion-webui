@@ -2,7 +2,7 @@ from contextlib import closing
 
 import modules.scripts
 from modules import processing
-from modules.infotext import create_override_settings_dict
+from modules.infotext_utils import create_override_settings_dict
 from modules.shared import opts
 import modules.shared as shared
 from modules.ui import plaintext_to_html

@@ -10,7 +10,7 @@ import json
 import html
 from fastapi.exceptions import HTTPException
 
-from modules.infotext import image_from_url_text
+from modules.infotext_utils import image_from_url_text
 from modules.ui_components import ToolButton
 
 extra_pages = []
