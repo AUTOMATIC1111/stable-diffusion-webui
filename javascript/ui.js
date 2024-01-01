@@ -151,7 +151,7 @@ function submit() {
 }
 
 function submit_txt2img_upscale() {
-    res = submit.apply(null, arguments);
+    var res = submit(...arguments);
 
     res[2] = selected_gallery_index();
 
