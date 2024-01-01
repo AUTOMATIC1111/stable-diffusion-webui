@@ -401,6 +401,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
 
     if shared.cmd_opts.no_half:
         model.float()
+        model.alphas_cumprod_original = model.alphas_cumprod
         devices.dtype_unet = torch.float32
         timer.record("apply float()")
     else:
@@ -414,7 +415,11 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         if shared.cmd_opts.upcast_sampling and depth_model:
             model.depth_model = None
 
+        alphas_cumprod = model.alphas_cumprod
+        model.alphas_cumprod = None
         model.half()
+        model.alphas_cumprod = alphas_cumprod
+        model.alphas_cumprod_original = alphas_cumprod
         model.first_stage_model = vae
         if depth_model:
             model.depth_model = depth_model
@@ -691,6 +696,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     else:
         weight_dtype_conversion = {
             'first_stage_model': None,
+            'alphas_cumprod': None,
             '': torch.float16,
         }
 
