@@ -132,7 +132,7 @@ class Processor():
 
     def reset(self):
         if self.model is not None:
-            log.debug(f'Control processor unloaded: id="{self.processor_id}"')
+            log.debug(f'Control Processor unloaded: id="{self.processor_id}"')
         self.model = None
         self.processor_id = None
         self.override = None
@@ -149,8 +149,8 @@ class Processor():
                 for k, v in from_config.items():
                     self.load_config[k] = v
             cls = config[processor_id]['class']
-            log.debug(f'Control processor loading: id="{processor_id}" class={cls.__name__}')
-            debug(f'Control processor config={self.load_config}')
+            log.debug(f'Control Processor loading: id="{processor_id}" class={cls.__name__}')
+            debug(f'Control Processor config={self.load_config}')
             if 'DWPose' in processor_id:
                 det_ckpt = 'https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_l_8x8_300e_coco/yolox_l_8x8_300e_coco_20211126_140236-d3bd2b23.pth'
                 if 'Tiny' == config['DWPose']['model']:
@@ -163,7 +163,7 @@ class Processor():
                     pose_config = 'config/rtmpose-l_8xb32-270e_coco-ubody-wholebody-384x288.py'
                     pose_ckpt = 'https://huggingface.co/yzd-v/DWPose/resolve/main/dw-ll_ucoco_384.pth'
                 else:
-                    log.error(f'Control processor load failed: id="{processor_id}" error=unknown model type')
+                    log.error(f'Control Processor load failed: id="{processor_id}" error=unknown model type')
                     return f'Processor failed to load: {processor_id}'
                 self.model = cls(det_ckpt=det_ckpt, pose_config=pose_config, pose_ckpt=pose_ckpt, device="cpu")
             elif 'SegmentAnything' in processor_id:
@@ -172,7 +172,7 @@ class Processor():
                 elif 'Large' == config['SegmentAnything']['model']:
                     self.model = cls.from_pretrained(model_path = 'segments-arnaud/sam_vit_l', filename='sam_vit_l_0b3195.pth', model_type='vit_l', **self.load_config)
                 else:
-                    log.error(f'Control processor load failed: id="{processor_id}" error=unknown model type')
+                    log.error(f'Control Processor load failed: id="{processor_id}" error=unknown model type')
                     return f'Processor failed to load: {processor_id}'
             elif config[processor_id].get('load_config', None) is not None:
                 self.model = cls.from_pretrained(**self.load_config)
@@ -182,11 +182,11 @@ class Processor():
                 self.model = cls() # class instance only
             t1 = time.time()
             self.processor_id = processor_id
-            log.debug(f'Control processor loaded: id="{processor_id}" class={self.model.__class__.__name__} time={t1-t0:.2f}')
+            log.debug(f'Control Processor loaded: id="{processor_id}" class={self.model.__class__.__name__} time={t1-t0:.2f}')
             return f'Processor loaded: {processor_id}'
         except Exception as e:
-            log.error(f'Control processor load failed: id="{processor_id}" error={e}')
-            display(e, 'Control processor load')
+            log.error(f'Control Processor load failed: id="{processor_id}" error={e}')
+            display(e, 'Control Processor load')
             return f'Processor load filed: {processor_id}'
 
     def __call__(self, image_input: Image, mode: str = 'RGB'):
@@ -194,10 +194,10 @@ class Processor():
             image_input = self.override
         image_process = image_input
         if image_input is None:
-            log.error('Control processor: no input')
+            log.error('Control Processor: no input')
             return image_process
         if self.model is None:
-            # log.error('Control processor: model not loaded')
+            # log.error('Control Processor: model not loaded')
             return image_process
         if config[self.processor_id].get('dirty', False):
             processor_id = self.processor_id
@@ -216,10 +216,10 @@ class Processor():
             if self.resize and image_process.size != image_input.size:
                 image_process = image_process.resize(image_input.size, Image.Resampling.LANCZOS)
             t1 = time.time()
-            log.debug(f'Control processor: id="{self.processor_id}" mode={mode} args={kwargs} time={t1-t0:.2f}')
+            log.debug(f'Control Processor: id="{self.processor_id}" mode={mode} args={kwargs} time={t1-t0:.2f}')
         except Exception as e:
-            log.error(f'Control processor failed: id="{self.processor_id}" error={e}')
-            display(e, 'Control processor')
+            log.error(f'Control Processor failed: id="{self.processor_id}" error={e}')
+            display(e, 'Control Processor')
         if mode != 'RGB':
             image_process = image_process.convert(mode)
         return image_process

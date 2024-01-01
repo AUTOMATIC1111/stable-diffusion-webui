@@ -1037,25 +1037,6 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     image_encoder = getattr(pipe, "image_encoder", None)
     feature_extractor = getattr(pipe, "feature_extractor", None)
 
-    # TODO implement alternative diffusion pipelines
-    """
-    from collections import OrderedDict
-    AUTO_TEXT2IMAGE_PIPELINES_MAPPING = OrderedDict(
-        [
-            ("stable-diffusion", diffusers.StableDiffusionPipeline),
-            ("stable-diffusion-xl", diffusers.StableDiffusionXLPipeline),
-            ("if", diffusers.IFPipeline),
-            ("kandinsky", diffusers.KandinskyCombinedPipeline),
-            ("kandinsky22", diffusers.KandinskyV22CombinedPipeline),
-            ("stable-diffusion-controlnet", diffusers.StableDiffusionControlNetPipeline),
-            ("stable-diffusion-xl-controlnet", diffusers.StableDiffusionXLControlNetPipeline),
-            ("wuerstchen", diffusers.WuerstchenCombinedPipeline),
-            ("lcm", diffusers.LatentConsistencyModelPipeline),
-            ("pixart", diffusers.PixArtAlphaPipeline),
-        ]
-    )
-    diffusers.pipelines.auto_pipeline.AUTO_TEXT2IMAGE_PIPELINES_MAPPING = AUTO_TEXT2IMAGE_PIPELINES_MAPPING
-    """
     try:
         if new_pipe_type == DiffusersTaskType.TEXT_2_IMAGE:
             new_pipe = diffusers.AutoPipelineForText2Image.from_pipe(pipe)
@@ -1063,8 +1044,8 @@ def set_diffuser_pipe(pipe, new_pipe_type):
             new_pipe = diffusers.AutoPipelineForImage2Image.from_pipe(pipe)
         elif new_pipe_type == DiffusersTaskType.INPAINTING:
             new_pipe = diffusers.AutoPipelineForInpainting.from_pipe(pipe)
-    except Exception: # pylint: disable=unused-variable
-        # shared.log.error(f'Failed to change: type={new_pipe_type} pipeline={pipe.__class__.__name__} {e}')
+    except Exception as e: # pylint: disable=unused-variable
+        shared.log.error(f'Failed to change: type={new_pipe_type} pipeline={pipe.__class__.__name__} {e}')
         return pipe
 
     if pipe.__class__ == new_pipe.__class__:

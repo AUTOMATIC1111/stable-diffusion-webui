@@ -1,3 +1,10 @@
+function controlInputMode(inputMode, ...args) {
+  if (!gradioApp().getElementById('control_input_select').classList.contains('hidden')) inputMode = 'Select';
+  else if (!gradioApp().getElementById('control_input_resize').classList.contains('hidden')) inputMode = 'Outpaint';
+  else if (!gradioApp().getElementById('control_input_inpaint').classList.contains('hidden')) inputMode = 'Inpaint';
+  return [inputMode, ...args];
+}
+
 function setupControlUI() {
   const tabs = ['input', 'output', 'preview'];
   for (const tab of tabs) {

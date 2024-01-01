@@ -9,7 +9,7 @@ import gradio.utils
 import numpy as np
 from PIL import Image
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
-from modules import timer, shared, theme, sd_models, script_callbacks, modelloader, prompt_parser, ui_common, ui_loadsave, ui_symbols, generation_parameters_copypaste
+from modules import timer, gr_hijack, shared, theme, sd_models, script_callbacks, modelloader, prompt_parser, ui_common, ui_loadsave, ui_symbols, generation_parameters_copypaste
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path, data_path
 from modules.dml import directml_override_opts
@@ -40,6 +40,7 @@ img2img_paste_fields = []
 txt2img_args = []
 img2img_args = []
 paste_function = None
+gr_hijack.init()
 
 
 if not cmd_opts.share and not cmd_opts.listen:

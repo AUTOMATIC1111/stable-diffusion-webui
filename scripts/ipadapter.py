@@ -16,6 +16,7 @@ from modules import scripts, processing, shared, devices
 image_encoder = None
 image_encoder_type = None
 loaded = None
+checkpoint = None
 ADAPTERS = {
     'None': 'none',
     'Base': 'ip-adapter_sd15',
@@ -59,12 +60,15 @@ class Script(scripts.Script):
         if adapter is None:
             return
         # init code
-        global loaded, image_encoder, image_encoder_type # pylint: disable=global-statement
+        global loaded, checkpoint, image_encoder, image_encoder_type # pylint: disable=global-statement
         if shared.sd_model is None:
             return
         if shared.backend != shared.Backend.DIFFUSERS:
             shared.log.warning('IP adapter: not in diffusers mode')
             return
+        if image is None and adapter != 'none':
+            shared.log.error('IP adapter: no image provided')
+            adapter = 'none' # unload adapter if previously loaded as it will cause runtime errors
         if adapter == 'none':
             if hasattr(shared.sd_model, 'set_ip_adapter_scale'):
                 shared.sd_model.set_ip_adapter_scale(0)
@@ -73,9 +77,6 @@ class Script(scripts.Script):
                 shared.sd_model.unet.set_default_attn_processor()
                 shared.sd_model.unet.config.encoder_hid_dim_type = None
                 loaded = None
-            return
-        if image is None:
-            shared.log.error('IP adapter: no image')
             return
         if not hasattr(shared.sd_model, 'load_ip_adapter'):
             shared.log.error(f'IP adapter: pipeline not supported: {shared.sd_model.__class__.__name__}')
@@ -88,7 +89,7 @@ class Script(scripts.Script):
             else:
                 shared.log.error(f'IP adapter: unsupported model type: {shared.sd_model_type}')
                 return
-            if image_encoder is None or image_encoder_type != shared.sd_model_type:
+            if image_encoder is None or image_encoder_type != shared.sd_model_type or checkpoint != shared.opts.sd_model_checkpoint:
                 try:
                     from transformers import CLIPVisionModelWithProjection
                     image_encoder = CLIPVisionModelWithProjection.from_pretrained("h94/IP-Adapter", subfolder=subfolder, torch_dtype=devices.dtype, cache_dir=shared.opts.diffusers_dir, use_safetensors=True).to(devices.device)
@@ -99,7 +100,7 @@ class Script(scripts.Script):
 
         # main code
         subfolder = 'models' if 'sd15' in adapter else 'sdxl_models'
-        if adapter != loaded or getattr(shared.sd_model.unet.config, 'encoder_hid_dim_type', None) is None:
+        if adapter != loaded or getattr(shared.sd_model.unet.config, 'encoder_hid_dim_type', None) is None or checkpoint != shared.opts.sd_model_checkpoint:
             t0 = time.time()
             if loaded is not None:
                 shared.log.debug('IP adapter: reset attention processor')
@@ -112,6 +113,7 @@ class Script(scripts.Script):
             t1 = time.time()
             shared.log.info(f'IP adapter load: adapter="{adapter}" scale={scale} image={image} time={t1-t0:.2f}')
             loaded = adapter
+            checkpoint = shared.opts.sd_model_checkpoint
         else:
             shared.log.debug(f'IP adapter cache: adapter="{adapter}" scale={scale} image={image}')
         shared.sd_model.set_ip_adapter_scale(scale)

@@ -61,7 +61,7 @@ def restore_pipeline():
     devices.torch_gc()
 
 
-def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_generator: bool, input_type: int,
+def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_generator: bool, input_type: int,
                 prompt, negative, styles, steps, sampler_index,
                 seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
                 cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, full_quality, restore_faces, tiling,
@@ -84,6 +84,8 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
     processed_image: Image.Image = None # last processed image
     width = 8 * math.ceil(width / 8)
     height = 8 * math.ceil(height / 8)
+    if mask is not None and input_type == 0:
+        input_type = 1 # inpaint always requires control_image
 
     p = ControlProcessing(
         prompt = prompt,
@@ -246,7 +248,8 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
     else: # run in img2img mode
         if len(active_strength) > 0:
             p.strength = active_strength[0]
-        pipe = diffusers.AutoPipelineForImage2Image.from_pipe(shared.sd_model) # use set_diffuser_pipe
+        pipe = diffusers.AutoPipelineForText2Image.from_pipe(shared.sd_model) # use set_diffuser_pipe
+        # pipe = diffusers.AutoPipelineForImage2Image.from_pipe(shared.sd_model) # use set_diffuser_pipe
         instance = None
 
     debug(f'Control pipeline: class={pipe.__class__} args={vars(p)}')
@@ -353,7 +356,10 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
                     if input_image is None:
                         p.image = None
                         processed_image = None
-                        debug('Control: process=None image=None')
+                        debug(f'Control: process=None image={p.image} mask={mask}')
+                    elif mask is not None and not has_models:
+                        processed_image = mask
+                        debug(f'Control: process=None image={p.image} mask={mask}')
                     elif len(active_process) == 0 and unit_type == 'reference':
                         p.ref_image = p.override or input_image
                         p.task_args['ref_image'] = p.ref_image
@@ -423,8 +429,17 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
                     if hasattr(p, 'init_images'):
                         del p.init_images # control never uses init_image as-is
                     if pipe is not None:
-                        if not has_models and (unit_type == 'controlnet' or unit_type == 'adapter' or unit_type == 'xs' or unit_type == 'lite'): # run in txt2img or img2img mode
-                            if processed_image is not None:
+                        if not has_models and (unit_type == 'controlnet' or unit_type == 'adapter' or unit_type == 'xs' or unit_type == 'lite'): # run in txt2img/img2img/inpaint mode
+                            if mask is not None:
+                                p.task_args['image'] = input_image
+                                p.task_args['mask_image'] = mask
+                                p.task_args['strength'] = denoising_strength
+                                p.image_mask = mask
+                                p.mask = mask
+                                p.inpaint_full_res = False
+                                p.init_images = [input_image]
+                                shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING)
+                            elif processed_image is not None:
                                 p.init_images = [processed_image]
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                             else:
@@ -434,7 +449,15 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
                             shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
                         else: # actual control
                             p.is_control = True
-                            if 'control_image' in p.task_args:
+                            if mask is not None:
+                                # p.task_args['image'] = p.image
+                                p.task_args['mask_image'] = mask
+                                p.task_args['strength'] = denoising_strength
+                                p.image_mask = mask
+                                p.mask = mask
+                                p.inpaint_full_res = False
+                                shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING) # only controlnet supports inpaint
+                            elif 'control_image' in p.task_args:
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE) # only controlnet supports img2img
                             else:
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
@@ -448,7 +471,7 @@ def control_run(units: List[unit.Unit], inputs, inits, unit_type: str, is_genera
                         debug(f'Control exec pipeline: task={sd_models.get_diffusers_task(pipe)}')
                         debug(f'Control exec pipeline: p={vars(p)}')
                         debug(f'Control exec pipeline: args={p.task_args}')
-                        debug(f'Control exec pipeline: image={p.task_args.get("image", None)}')
+                        debug(f'Control exec pipeline: image={p.task_args.get("image", None)} control={p.task_args.get("control_image", None)} mask={p.task_args.get("mask_image", None)} ref={p.task_args.get("ref_image", None)}')
                         processed: processing.Processed = processing.process_images(p) # run actual pipeline
                         output = processed.images if processed is not None else None
                         # output = pipe(**vars(p)).images # alternative direct pipe exec call

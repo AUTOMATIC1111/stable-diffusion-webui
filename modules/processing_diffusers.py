@@ -165,8 +165,10 @@ def process_diffusers(p: StableDiffusionProcessing):
         elif (sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INPAINTING or is_img2img_model) and len(getattr(p, 'init_images' ,[])) > 0:
             p.ops.append('inpaint')
             if getattr(p, 'mask', None) is None:
-                p.mask = TF.to_pil_image(torch.ones_like(TF.to_tensor(p.init_images[0]))).convert("L")
-            p.mask = shared.sd_model.mask_processor.blur(p.mask, blur_factor=p.mask_blur)
+                if getattr(p, 'image_mask', None) is not None:
+                    p.mask = p.image_mask
+                else:
+                    p.mask = TF.to_pil_image(torch.ones_like(TF.to_tensor(p.init_images[0]))).convert("L")
             width = 8 * math.ceil(p.init_images[0].width / 8)
             height = 8 * math.ceil(p.init_images[0].height / 8)
             task_args = {
@@ -177,6 +179,10 @@ def process_diffusers(p: StableDiffusionProcessing):
                 'width': width,
                 # 'padding_mask_crop': p.inpaint_full_res_padding # done back in main processing method
             }
+            if p.task_args.get('mask_image', None) is None:
+                if p.mask_blur > 0:
+                    p.mask = shared.sd_model.mask_processor.blur(p.mask, blur_factor=p.mask_blur)
+                task_args['mask_image'] = p.mask
         if model.__class__.__name__ == 'LatentConsistencyModelPipeline' and hasattr(p, 'init_images') and len(p.init_images) > 0:
             p.ops.append('lcm')
             init_latents = [vae_encode(image, model=shared.sd_model, full_quality=p.full_quality).squeeze(dim=0) for image in p.init_images]
@@ -373,10 +379,11 @@ def process_diffusers(p: StableDiffusionProcessing):
         shared.sd_model.to(devices.device)
 
     # pipeline type is set earlier in processing, but check for sanity
-    has_images = len(getattr(p, 'init_images' ,[])) > 0 or getattr(p, 'is_control', False) is True
-    if sd_models.get_diffusers_task(shared.sd_model) != sd_models.DiffusersTaskType.TEXT_2_IMAGE and not has_images:
+    is_control = getattr(p, 'is_control', False) is True
+    has_images = len(getattr(p, 'init_images' ,[])) > 0
+    if sd_models.get_diffusers_task(shared.sd_model) != sd_models.DiffusersTaskType.TEXT_2_IMAGE and not has_images and not is_control:
         shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE) # reset pipeline
-    if hasattr(shared.sd_model, 'unet') and hasattr(shared.sd_model.unet, 'config') and hasattr(shared.sd_model.unet.config, 'in_channels') and shared.sd_model.unet.config.in_channels == 9:
+    if hasattr(shared.sd_model, 'unet') and hasattr(shared.sd_model.unet, 'config') and hasattr(shared.sd_model.unet.config, 'in_channels') and shared.sd_model.unet.config.in_channels == 9 and not is_control:
         shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING) # force pipeline
         if len(getattr(p, 'init_images' ,[])) == 0:
             p.init_images = [TF.to_pil_image(torch.rand((3, getattr(p, 'height', 512), getattr(p, 'width', 512))))]

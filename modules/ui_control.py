@@ -1,6 +1,9 @@
 import os
+import time
 import gradio as gr
-import matplotlib.pyplot
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image
 from modules.control import unit
 from modules.control import processors # patrickvonplaten controlnet_aux
 from modules.control.units import controlnet # lllyasviel ControlNet
@@ -18,8 +21,10 @@ max_units = 5
 units: list[unit.Unit] = [] # main state variable
 input_source = None
 input_init = None
+input_mask = None
 debug = shared.log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
 debug('Trace: CONTROL')
+busy = False # used to synchronize select_input and generate_click
 
 
 def initialize():
@@ -60,6 +65,8 @@ def return_controls(res):
 
 
 def generate_click(job_id: str, active_tab: str, *args):
+    while busy:
+        time.sleep(0.01)
     from modules.control.run import control_run
     shared.log.debug(f'Control: tab={active_tab} job={job_id} args={args}')
     if active_tab not in ['controlnet', 'xs', 'adapter', 'reference', 'lite']:
@@ -71,7 +78,7 @@ def generate_click(job_id: str, active_tab: str, *args):
         shared.mem_mon.reset()
         progress.start_task(job_id)
         try:
-            for results in control_run(units, input_source, input_init, active_tab, True, *args):
+            for results in control_run(units, input_source, input_init, input_mask, active_tab, True, *args):
                 progress.record_results(job_id, results)
                 yield return_controls(results)
         except Exception as e:
@@ -110,27 +117,70 @@ def get_video(filepath: str):
         return msg
 
 
-def select_input(selected_input, selected_init, init_type):
+def select_mask(image: Image.Image, blur: int = 0, negative: bool = False):
+    import hashlib
+    import cv2
+    from modules import images
+
+    if image is None:
+        return image
+    image_mask = image.convert("L")
+    if negative:
+        image_mask = image_mask.point(lambda x: 255 if x < 4 else 0)
+    else:
+        image_mask = image_mask.point(lambda x: 255 if x > 127 else 0)
+    if blur > 0:
+        kernel_size = 2 * int(2.5 * blur + 0.5) + 1
+        np_mask = np.array(image_mask)
+        np_mask = cv2.GaussianBlur(np_mask, (kernel_size, 1), blur)
+        np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), blur)
+        image_mask = Image.fromarray(np_mask.astype(np.uint8))
+    if shared.opts.save_init_img:
+        init_img_hash = hashlib.sha256(image_mask.tobytes()).hexdigest()[0:8] # pylint: disable=attribute-defined-outside-init
+        images.save_image(image_mask, path=shared.opts.outdir_init_images, basename=None, forced_filename=init_img_hash, suffix="-init-image")
+    return image_mask
+
+
+def select_noise(image: Image.Image, mask: Image.Image):
+    # TODO create noise based on input image with mask
+    return image
+
+
+def select_input(input_mode, input_image, selected_init, init_type, input_resize, input_inpaint, mask_blur):
+    global busy, input_source, input_init, input_mask # pylint: disable=global-statement
+    busy = True
+    if input_mode == 'Select':
+        selected_input = input_image
+    elif input_mode == 'Outpaint':
+        selected_input = input_resize
+    elif input_mode == 'Inpaint':
+        selected_input = input_inpaint
+    else:
+        selected_input = None
     if selected_input is None:
+        busy = False
         return [gr.Tabs.update(), '']
-    debug(f'Control select input: source={selected_input} init={selected_init} type={init_type}')
-    global input_source, input_init # pylint: disable=global-statement
+    debug(f'Control select input: source={selected_input} init={selected_init} type={init_type} mode={input_mode}')
     input_type = type(selected_input)
+    input_mask = None
     status = 'Control input | Unknown'
     res = [gr.Tabs.update(selected='out-gallery'), status]
     # control inputs
-    if hasattr(selected_input, 'size'): # image via upload -> image
+    if isinstance(selected_input, Image.Image): # image via upload -> image
+        if input_mode == 'Outpaint':
+            input_mask = select_mask(image=selected_input, blur=mask_blur, negative=True)
+            selected_input = select_noise(image=selected_input, mask=input_mask)
         input_source = [selected_input]
         input_type = 'PIL.Image'
         shared.log.debug(f'Control input: type={input_type} input={input_source}')
         status = f'Control input | Image | Size {selected_input.width}x{selected_input.height} | Mode {selected_input.mode}'
         res = [gr.Tabs.update(selected='out-gallery'), status]
-    elif isinstance(selected_input, dict): # inpaint
-        mask = selected_input['mask']
+    elif isinstance(selected_input, dict): # inpaint -> dict image+mask
+        input_mask = select_mask(image=selected_input['mask'], blur=mask_blur, negative=False)
         selected_input = selected_input['image']
         input_source = [selected_input]
         input_type = 'PIL.Image'
-        shared.log.debug(f'Control input: type={input_type} input={input_source} mask={mask}')
+        shared.log.debug(f'Control input: type={input_type} input={input_source} mask={input_mask}')
         status = f'Control input | Image | Size {selected_input.width}x{selected_input.height} | Mode {selected_input.mode}'
         res = [gr.Tabs.update(selected='out-gallery'), status]
     elif isinstance(selected_input, gr.components.image.Image): # not likely
@@ -162,11 +212,23 @@ def select_input(selected_input, selected_init, init_type):
     elif init_type == 1: # Init image same as control assigned during runtime
         input_init = None
     elif init_type == 2: # Separate init image
-        if hasattr(selected_init, 'size'): # image via upload -> image
+        if isinstance(selected_init, Image.Image): # image via upload -> image
+            if input_mode == 'Outpaint':
+                input_mask = select_mask(image=selected_init, blur=mask_blur, negative=True)
+                selected_init = select_noise(image=selected_init, mask=input_mask)
+            input_source = [selected_init]
             input_init = [selected_init]
             input_type = 'PIL.Image'
-            shared.log.debug(f'Control input: type={input_type} input={input_init}')
+            shared.log.debug(f'Control input: type={input_type} input={input_source}')
             status = f'Control input | Image | Size {selected_init.width}x{selected_init.height} | Mode {selected_init.mode}'
+            res = [gr.Tabs.update(selected='out-gallery'), status]
+        elif isinstance(selected_init, dict): # inpaint -> dict image+mask
+            input_mask = select_mask(image=selected_init['mask'], blur=mask_blur)
+            input_init = selected_init['image']
+            input_source = [selected_init]
+            input_type = 'PIL.Image'
+            shared.log.debug(f'Control input: type={input_type} input={input_source} mask={input_mask}')
+            status = f'Control input | Image | Size {selected_init.width}x{selected_init.height} | Mode {selected_input.mode}'
             res = [gr.Tabs.update(selected='out-gallery'), status]
         elif isinstance(selected_init, gr.components.image.Image): # not likely
             input_init = [selected_init.value]
@@ -187,11 +249,12 @@ def select_input(selected_input, selected_init, init_type):
                 input_type = 'files'
                 input_init = selected_init
             status = f'Control input | Images | Files {len(input_init)}'
-            shared.log.debug(f'Control input: type={input_type} input={input_init}')
+            shared.log.debug(f'Control input: type={input_type} input={input_init} mode={input_mode}')
             res = [gr.Tabs.update(selected='out-gallery'), status]
         else: # unknown
             input_init = None
-    debug(f'Control select input: source={input_source} init={input_init}')
+    debug(f'Control select input: source={input_source} init={input_init} mode={input_mode}')
+    busy = False
     return res
 
 
@@ -202,6 +265,30 @@ def video_type_change(video_type):
         gr.update(visible=video_type == 'MP4'),
         gr.update(visible=video_type == 'MP4'),
     ]
+
+
+def copy_input(mode_from, mode_to, input_image, input_resize, input_inpaint):
+    debug(f'Control transfter input: from={mode_from} to={mode_to} image={input_image} resize={input_resize} inpaint={input_inpaint}')
+    def getimg(ctrl):
+        if ctrl is None:
+            return None
+        return ctrl.get('image', None) if isinstance(ctrl, dict) else ctrl
+
+    if mode_from == mode_to:
+        return [gr.update(), gr.update(), gr.update()]
+    elif mode_to == 'Select':
+        return [getimg(input_resize) if mode_from == 'Outpaint' else getimg(input_inpaint), None, None]
+    elif mode_to == 'Inpaint':
+        return [None, None, getimg(input_image) if mode_from == 'Select' else getimg(input_resize)]
+    elif mode_to == 'Outpaint':
+        return [None, getimg(input_image) if mode_from == 'Select' else getimg(input_inpaint), None]
+    else:
+        shared.log.error(f'Control transfer unknown input: from={mode_from} to={mode_to}')
+        return [gr.update(), gr.update(), gr.update()]
+
+
+def transfer_input(dst):
+    return [gr.update(visible=dst=='Select'), gr.update(visible=dst=='Outpaint'), gr.update(visible=dst=='Inpaint'), gr.update(interactive=dst!='Select'), gr.update(interactive=dst!='Inpaint'), gr.update(interactive=dst!='Outpaint')]
 
 
 def create_ui(_blocks: gr.Blocks=None):
@@ -220,11 +307,13 @@ def create_ui(_blocks: gr.Blocks=None):
                     with gr.Row():
                         show_ip = gr.Checkbox(label="Enable IP adapter", value=False, elem_id="control_show_ip")
                     with gr.Row():
-                        show_preview = gr.Checkbox(label="Show preview", value=False, elem_id="control_show_preview")
+                        show_preview = gr.Checkbox(label="Show preview", value=True, elem_id="control_show_preview")
                     with gr.Row():
                         input_type = gr.Radio(label="Input type", choices=['Control only', 'Init image same as control', 'Separate init image'], value='Control only', type='index', elem_id='control_input_type')
                     with gr.Row():
                         denoising_strength = gr.Slider(minimum=0.01, maximum=0.99, step=0.01, label='Denoising strength', value=0.50, elem_id="control_denoising_strength")
+                    with gr.Row():
+                        mask_blur = gr.Slider(minimum=0, maximum=100, step=1, label='Mask blur', value=8, elem_id="control_mask_blur")
 
                 resize_mode, resize_name, width, height, scale_by, selected_scale_tab, resize_time = ui.create_resize_inputs('control', [], time_selector=True, scale_visible=False, mode='Fixed')
 
@@ -263,7 +352,12 @@ def create_ui(_blocks: gr.Blocks=None):
                     gr.HTML('<span id="control-input-button">Control input</p>')
                     with gr.Tabs(elem_classes=['control-tabs'], elem_id='control-tab-input'):
                         with gr.Tab('Image', id='in-image') as tab_image:
-                            input_image = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="editor", height=gr_height)
+                            input_mode = gr.Label(value='select', visible=False)
+                            input_image = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="editor", height=gr_height, visible=True, image_mode='RGB', elem_id='control_input_select')
+                            input_resize = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="select", height=gr_height, visible=False, image_mode='RGB', elem_id='control_input_resize')
+                            input_inpaint = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="sketch", height=gr_height, visible=False, image_mode='RGB', elem_id='control_input_inpaint')
+                            with gr.Row():
+                                input_buttons = [gr.Button('Select', visible=True, interactive=False), gr.Button('Inpaint', visible=True, interactive=True), gr.Button('Outpaint', visible=True, interactive=True)]
                         with gr.Tab('Video', id='in-video') as tab_video:
                             input_video = gr.Video(label="Input", show_label=False, interactive=True, height=gr_height)
                         with gr.Tab('Batch', id='in-batch') as tab_batch:
@@ -301,22 +395,11 @@ def create_ui(_blocks: gr.Blocks=None):
                             output_image = gr.Image(label="Input", show_label=False, type="pil", interactive=False, tool="editor", height=gr_height)
                         with gr.Tab('Video', id='out-video'):
                             output_video = gr.Video(label="Input", show_label=False, height=gr_height)
-                with gr.Column(scale=9, elem_id='control-preview-column', visible=False) as column_preview:
+                with gr.Column(scale=9, elem_id='control-preview-column', visible=True) as column_preview:
                     gr.HTML('<span id="control-preview-button">Preview</p>')
                     with gr.Tabs(elem_classes=['control-tabs'], elem_id='control-tab-preview'):
                         with gr.Tab('Preview', id='preview-image') as tab_image:
                             preview_process = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=False, height=gr_height, visible=True)
-
-                for ctrl in [input_image, input_video, input_batch, input_folder, init_image, init_video, init_batch, init_folder, tab_image, tab_video, tab_batch, tab_folder, tab_image_init, tab_video_init, tab_batch_init, tab_folder_init]:
-                    inputs = [input_image, init_image, input_type]
-                    outputs = [output_tabs, result_txt]
-                    if hasattr(ctrl, 'change'):
-                        ctrl.change(fn=select_input, inputs=inputs, outputs=outputs)
-                    elif hasattr(ctrl, 'select'):
-                        ctrl.select(fn=select_input, inputs=inputs, outputs=outputs)
-                show_preview.change(fn=lambda x: gr.update(visible=x), inputs=[show_preview], outputs=[column_preview])
-                show_ip.change(fn=lambda x: gr.update(visible=x), inputs=[show_ip], outputs=[column_ip])
-                input_type.change(fn=lambda x: gr.update(visible=x == 2), inputs=[input_type], outputs=[column_init])
 
             with gr.Tabs(elem_id='control-tabs') as _tabs_control_type:
 
@@ -570,11 +653,39 @@ def create_ui(_blocks: gr.Blocks=None):
                         with gr.Accordion('Zoe Depth', open=True, elem_classes=['processor-settings']):
                             settings.append(gr.Checkbox(label="Gamma corrected", value=False))
                         with gr.Accordion('Marigold Depth', open=True, elem_classes=['processor-settings']):
-                            settings.append(gr.Dropdown(label="Color map", choices=['None'] + matplotlib.pyplot.colormaps(), value='None'))
+                            settings.append(gr.Dropdown(label="Color map", choices=['None'] + plt.colormaps(), value='None'))
                             settings.append(gr.Slider(label="Denoising steps", minimum=1, maximum=99, step=1, value=10))
                             settings.append(gr.Slider(label="Ensemble size", minimum=1, maximum=99, step=1, value=10))
                         for setting in settings:
                             setting.change(fn=processors.update_settings, inputs=settings, outputs=[])
+
+                for btn in input_buttons:
+                    btn.click(fn=copy_input, inputs=[input_mode, btn, input_image, input_resize, input_inpaint], outputs=[input_image, input_resize, input_inpaint], _js='controlInputMode')
+                    btn.click(fn=transfer_input, inputs=[btn], outputs=[input_image, input_resize, input_inpaint] + input_buttons)
+
+                show_preview.change(fn=lambda x: gr.update(visible=x), inputs=[show_preview], outputs=[column_preview])
+                show_ip.change(fn=lambda x: gr.update(visible=x), inputs=[show_ip], outputs=[column_ip])
+                input_type.change(fn=lambda x: gr.update(visible=x == 2), inputs=[input_type], outputs=[column_init])
+                btn_prompt_counter.click(fn=call_queue.wrap_queued_call(ui.update_token_counter), inputs=[prompt, steps], outputs=[prompt_counter])
+                btn_negative_counter.click(fn=call_queue.wrap_queued_call(ui.update_token_counter), inputs=[negative, steps], outputs=[negative_counter])
+
+                select_fields = [input_mode, input_image, init_image, input_type, input_resize, input_inpaint, mask_blur]
+                select_output = [output_tabs, result_txt]
+                select_dict = dict(
+                    fn=select_input,
+                    _js="controlInputMode",
+                    inputs=select_fields,
+                    outputs=select_output,
+                    show_progress=True,
+                    queue=False,
+                )
+                prompt.submit(**select_dict)
+                btn_generate.click(**select_dict)
+                for ctrl in [input_image, input_video, input_batch, input_folder, init_image, init_video, init_batch, init_folder, tab_image, tab_video, tab_batch, tab_folder, tab_image_init, tab_video_init, tab_batch_init, tab_folder_init]:
+                    if hasattr(ctrl, 'change'):
+                        ctrl.change(**select_dict)
+                    elif hasattr(ctrl, 'select'):
+                        ctrl.select(**select_dict)
 
                 tabs_state = gr.Text(value='none', visible=False)
                 input_fields = [
@@ -595,21 +706,17 @@ def create_ui(_blocks: gr.Blocks=None):
                     output_gallery,
                     result_txt,
                 ]
-                paste_fields = [] # TODO paste fields
-
                 control_dict = dict(
                     fn=generate_click,
                     _js="submit_control",
                     inputs=[tabs_state, tabs_state] + input_fields,
                     outputs=output_fields,
-                    show_progress=False,
+                    show_progress=True,
                 )
                 prompt.submit(**control_dict)
                 btn_generate.click(**control_dict)
 
-                btn_prompt_counter.click(fn=call_queue.wrap_queued_call(ui.update_token_counter), inputs=[prompt, steps], outputs=[prompt_counter])
-                btn_negative_counter.click(fn=call_queue.wrap_queued_call(ui.update_token_counter), inputs=[negative, steps], outputs=[negative_counter])
-
+                paste_fields = [] # TODO paste fields
                 generation_parameters_copypaste.add_paste_fields("control", input_image, paste_fields, override_settings)
                 bindings = generation_parameters_copypaste.ParamBinding(paste_button=btn_paste, tabname="control", source_text_component=prompt, source_image_component=output_gallery)
                 generation_parameters_copypaste.register_paste_params_button(bindings)

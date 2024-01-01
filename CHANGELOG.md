@@ -1,34 +1,40 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-30
+## Update for 2023-12-31
 
+Following-up on a major release, some more functionality to new Control module  
+And it also includes fixes for all reported issues so far  
+
+- **Control**:
+  - add **inpaint** support  
+    applies to both *img2img* and *controlnet* workflows  
+  - add **marigold** depth map processor  
+    this is state-of-the-art depth estimation model, but its quite heavy on resources  
+  - configurable output folder in settings  
+  - auto-refresh available models on tab activate  
+  - reduce usage of temp files  
+  - add context menu to action buttons  
+  - fix input image size  
+  - fix correct image mode  
 - **Improvements**  
   - allow deployment without git clone  
     for example, zip of the sdnext folder can be used  
-  - control: add marigold depth maps processor  
-    this is state-of-the-art depth estimation model, but its quite heavy on resources  
-  - control: configurable output folder in settings  
-  - control: auto-refresh available models on tab activate  
   - hypertile: enable vae tiling  
   - hypertile: add autodetect optimial value  
     set tile size to 0 to use autodetected value  
   - cli: sdapi.py allow manual api invoke  
     example: `python cli/sdapi.py /sdapi/v1/sd-models`  
   - memory: add ram usage monitoring in addition to gpu memory usage monitoring  
+  - updated core requirements  
 - **Fixes**  
+  - ipadapter: allow changing of model/image on-the-fly  
   - python: fix python 3.9 compatibility  
-  - control: fix input image size  
-  - control: fix correct image mode  
-  - control: reduce usage of temp files  
-  - control: add context menu to action buttons  
   - img2img: clip and blip interrogate  
   - sampler: guard against invalid sampler index  
   - config: reset default cfg scale to 6.0  
   - processing: correct display metadata  
   - upscale: fix ldsr  
   - ipex: fix torch.load, thanks @Disty0
-- **Other**
-  - updated core requirements  
 
 ## Update for 2023-12-29
 
