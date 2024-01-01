@@ -1,5 +1,6 @@
 import os
 import json
+import shutil
 from typing import Dict, List, Union
 import gradio as gr
 
@@ -11,10 +12,13 @@ def get_recursively(d: Union[Dict, List], *args):
 
 
 def create_ui():
+    from modules.ui_common import create_refresh_button
     from modules.ui_components import DropdownMulti
-    from modules.shared import log, opts, cmd_opts
+    from modules.shared import log, opts, cmd_opts, refresh_checkpoints
+    from modules.sd_models import checkpoint_tiles, get_closet_checkpoint_match
     from modules.paths import sd_configs_path
     from modules.onnx_ep import ExecutionProvider, install_execution_provider
+    from modules.onnx_utils import check_diffusers_cache
     from modules.olive import config as olive_config
 
     with gr.Blocks(analytics_enabled=False) as ui:
@@ -67,6 +71,76 @@ def create_ui():
                 from olive.passes import REGISTRY
 
                 with gr.Tabs(elem_id="tabs_olive"):
+                    with gr.TabItem("Manage cache", id="manage_cache"):
+                        cache_state_dirname = gr.Textbox(value=None, visible=False)
+
+                        with gr.Row():
+                            model_dropdown = gr.Dropdown(label="Model", value="Please select model", choices=checkpoint_tiles())
+                            create_refresh_button(model_dropdown, refresh_checkpoints, {}, "onnx_cache_refresh_diffusers_model")
+
+                        with gr.Row():
+                            def remove_cache_onnx_converted(dirname: str):
+                                shutil.rmtree(os.path.join(opts.onnx_cached_models_path, dirname))
+                                log.info(f"ONNX converted cache of '{dirname}' is removed.")
+
+                            cache_onnx_converted = gr.Markdown("Please select model")
+                            cache_remove_onnx_converted = gr.Button(value="Remove cache", visible=False)
+                            cache_remove_onnx_converted.click(fn=remove_cache_onnx_converted, inputs=[cache_state_dirname,])
+
+                        with gr.Column():
+                            cache_optimized_selected = gr.Textbox(value=None, visible=False)
+
+                            def select_cache_optimized(evt: gr.SelectData, data):
+                                return ",".join(data[evt.index[0]])
+
+                            def remove_cache_optimized(dirname: str, s: str):
+                                if s == "":
+                                    return
+                                size = s.split(",")
+                                shutil.rmtree(os.path.join(opts.onnx_cached_models_path, f"{dirname}-{size[0]}w-{size[1]}h"))
+                                log.info(f"Olive processed cache of '{dirname}' is removed: width={size[0]}, height={size[1]}")
+
+                            cache_list_optimized_headers = ["height", "width"]
+                            cache_list_optimized_types = ["str", "str"]
+                            cache_list_optimized = gr.DataFrame(None, label="Optimized caches", show_label=True, overflow_row_behaviour='paginate', interactive=False, max_rows=10, headers=cache_list_optimized_headers, datatype=cache_list_optimized_types, type="array")
+                            cache_list_optimized.select(fn=select_cache_optimized, inputs=[cache_list_optimized,], outputs=[cache_optimized_selected,])
+                            cache_remove_optimized = gr.Button(value="Remove selected cache", visible=False)
+                            cache_remove_optimized.click(fn=remove_cache_optimized, inputs=[cache_state_dirname, cache_optimized_selected,])
+
+                        def cache_update_menus(query: str):
+                            checkpoint_info = get_closet_checkpoint_match(query)
+                            if checkpoint_info is None:
+                                log.error(f"Could not find checkpoint object for '{query}'.")
+                                return
+                            model_name = os.path.basename(os.path.dirname(os.path.dirname(checkpoint_info.path)) if check_diffusers_cache(checkpoint_info.path) else checkpoint_info.path)
+                            caches = os.listdir(opts.onnx_cached_models_path)
+                            onnx_converted = False
+                            optimized_sizes = []
+                            for cache in caches:
+                                if cache == model_name:
+                                    onnx_converted = True
+                                elif model_name in cache:
+                                    try:
+                                        splitted = cache.split("-")
+                                        height = splitted[-1][:-1]
+                                        width = splitted[-2][:-1]
+                                        optimized_sizes.append((width, height,))
+                                    except Exception:
+                                        pass
+                            return (
+                                model_name,
+                                cache_onnx_converted.update(value="ONNX model cache of this model exists." if onnx_converted else "ONNX model cache of this model does not exist."),
+                                cache_remove_onnx_converted.update(visible=onnx_converted),
+                                None if len(optimized_sizes) == 0 else optimized_sizes,
+                                cache_remove_optimized.update(visible=True),
+                            )
+
+                        model_dropdown.change(fn=cache_update_menus, inputs=[model_dropdown,], outputs=[
+                            cache_state_dirname,
+                            cache_onnx_converted, cache_remove_onnx_converted,
+                            cache_list_optimized, cache_remove_optimized,
+                        ])
+
                     with gr.TabItem("Customize pass flow", id="pass_flow"):
                         with gr.Tabs(elem_id="tabs_model_type"):
                             with gr.TabItem("Stable Diffusion", id="sd"):

@@ -39,7 +39,7 @@ class ENVStore:
 
 
 class OliveOptimizerConfig(ENVStore):
-    from_huggingface_cache: bool
+    from_diffusers_cache: bool
 
     is_sdxl: bool
 
@@ -70,7 +70,7 @@ def get_variant():
 
 
 def get_loader_arguments():
-    if config.from_huggingface_cache:
+    if config.from_diffusers_cache:
         from modules.shared import opts
         return {
             "cache_dir": opts.diffusers_dir,

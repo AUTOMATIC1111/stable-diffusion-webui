@@ -6,24 +6,6 @@ import diffusers
 import onnxruntime as ort
 
 
-def get_sess_options(hidden_batch_size: int, height: int, width: int, is_sdxl: bool) -> ort.SessionOptions:
-    sess_options = ort.SessionOptions()
-    sess_options.enable_mem_pattern = False
-    sess_options.add_free_dimension_override_by_name("unet_sample_batch", hidden_batch_size)
-    sess_options.add_free_dimension_override_by_name("unet_sample_channels", 4)
-    sess_options.add_free_dimension_override_by_name("unet_sample_height", height // 8)
-    sess_options.add_free_dimension_override_by_name("unet_sample_width", width // 8)
-    sess_options.add_free_dimension_override_by_name("unet_time_batch", 1)
-    sess_options.add_free_dimension_override_by_name("unet_hidden_batch", hidden_batch_size)
-    sess_options.add_free_dimension_override_by_name("unet_hidden_sequence", 77)
-    if is_sdxl:
-        sess_options.add_free_dimension_override_by_name("unet_text_embeds_batch", hidden_batch_size)
-        sess_options.add_free_dimension_override_by_name("unet_text_embeds_size", 1280)
-        sess_options.add_free_dimension_override_by_name("unet_time_ids_batch", hidden_batch_size)
-        sess_options.add_free_dimension_override_by_name("unet_time_ids_size", 6)
-    return sess_options
-
-
 def extract_device(args: List, kwargs: Dict):
     device = kwargs.get("device", None)
     if device is None:
@@ -31,6 +13,20 @@ def extract_device(args: List, kwargs: Dict):
             if isinstance(arg, torch.device):
                 device = arg
     return device
+
+
+def move_inference_session(session: ort.InferenceSession, device: torch.device):
+    from modules.onnx import DynamicSessionOptions, OnnxTemporalModel
+    from modules.onnx_ep import TORCH_DEVICE_TO_EP
+
+    previous_provider = session._providers
+    provider = TORCH_DEVICE_TO_EP[device.type] if device.type in TORCH_DEVICE_TO_EP else previous_provider
+    path = session._model_path
+    if provider is not None:
+        try:
+            return diffusers.OnnxRuntimeModel.load_model(path, provider, DynamicSessionOptions.from_sess_options(session._sess_options))
+        except Exception:
+            return OnnxTemporalModel(previous_provider, path, session._sess_options)
 
 
 def load_init_dict(cls: Type[diffusers.DiffusionPipeline], path: os.PathLike):
@@ -46,6 +42,11 @@ def load_init_dict(cls: Type[diffusers.DiffusionPipeline], path: os.PathLike):
                 continue
             R[k] = v
     return R
+
+
+def check_diffusers_cache(path: os.PathLike):
+    from modules.shared import opts
+    return opts.diffusers_dir in os.path.abspath(path)
 
 
 def check_pipeline_sdxl(cls: Type[diffusers.DiffusionPipeline]) -> bool:
@@ -112,3 +113,11 @@ def load_pipeline(cls: Type[diffusers.DiffusionPipeline], path: os.PathLike, **k
         return cls(**patch_kwargs(cls, load_submodels(path, check_pipeline_sdxl(cls), load_init_dict(cls, path), **kwargs_ort)))
     else:
         return cls.from_single_file(path)
+
+
+def get_base_constructor(cls: Type[diffusers.DiffusionPipeline], is_refiner: bool):
+    if cls == diffusers.OnnxStableDiffusionImg2ImgPipeline or cls == diffusers.OnnxStableDiffusionInpaintPipeline:
+        return diffusers.OnnxStableDiffusionPipeline
+    if cls == diffusers.OnnxStableDiffusionXLImg2ImgPipeline and not is_refiner:
+        return diffusers.OnnxStableDiffusionXLPipeline
+    return cls

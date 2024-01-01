@@ -387,6 +387,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "directml_catch_nan": OptionInfo(False, "DirectML retry ops for NaN", gr.Checkbox, {"visible": devices.backend == "directml"}),
     "directml_olive_sep": OptionInfo("<h2>DirectML and Olive</h2>", "", gr.HTML),
     "olive_float16": OptionInfo(True, 'Olive use FP16 on optimization (will use FP32 if unchecked)'),
+    "olive_vae_encoder_float32": OptionInfo(False, 'Olive force FP32 for VAE Encoder (if Img2Img generates NaN, enable this option and remove previously optimized model)'),
     "olive_static_dims": OptionInfo(True, 'Olive use static dimensions (make inference faster with OrtTransformersOptimization)'),
     "olive_cache_optimized": OptionInfo(True, 'Olive cache optimized models'),
 }))

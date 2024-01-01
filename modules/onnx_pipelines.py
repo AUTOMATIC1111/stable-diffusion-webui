@@ -19,9 +19,9 @@ from modules.paths import sd_configs_path
 from modules.sd_models import CheckpointInfo
 from modules.processing import StableDiffusionProcessing
 from modules.olive import config
-from modules.onnx import OnnxFakeModule, submodels_sd, submodels_sdxl, submodels_sdxl_refiner
-from modules.onnx_utils import extract_device, check_pipeline_sdxl, check_cache_onnx, load_init_dict, load_submodel, load_submodels, get_sess_options, patch_kwargs, load_pipeline
-from modules.onnx_ep import ExecutionProvider, EP_TO_NAME, TORCH_DEVICE_TO_EP, get_provider
+from modules.onnx import DynamicSessionOptions, OnnxFakeModule, submodels_sd, submodels_sdxl, submodels_sdxl_refiner
+from modules.onnx_utils import extract_device, move_inference_session, check_diffusers_cache, check_pipeline_sdxl, check_cache_onnx, load_init_dict, load_submodel, load_submodels, patch_kwargs, load_pipeline, get_base_constructor
+from modules.onnx_ep import ExecutionProvider, EP_TO_NAME, get_provider
 
 
 class OnnxPipelineBase(OnnxFakeModule, diffusers.DiffusionPipeline, metaclass=ABCMeta):
@@ -49,13 +49,7 @@ class OnnxPipelineBase(OnnxFakeModule, diffusers.DiffusionPipeline, metaclass=AB
                 device = extract_device(args, kwargs)
                 if device is None:
                     return self
-                provider = TORCH_DEVICE_TO_EP[device.type] if device.type in TORCH_DEVICE_TO_EP else module.session._providers
-                path = module.session._model_path
-                sess_options = module.session._sess_options
-                del module
-                delattr(self, name)
-                if provider is not None:
-                    setattr(self, name, diffusers.OnnxRuntimeModel.load_model(path, provider, sess_options))
+                module.session = move_inference_session(module.session, device)
 
             if not isinstance(module, diffusers.OnnxRuntimeModel):
                 continue
@@ -90,7 +84,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
     config = {}
     _is_sdxl: bool
     is_refiner: bool
-    from_huggingface_cache: bool
+    from_diffusers_cache: bool
     path: os.PathLike
     original_filename: str
 
@@ -102,9 +96,9 @@ class OnnxRawPipeline(OnnxPipelineBase):
 
     def __init__(self, constructor: Type[OnnxPipelineBase], path: os.PathLike):
         self._is_sdxl = check_pipeline_sdxl(constructor)
-        self.from_huggingface_cache = shared.opts.diffusers_dir in os.path.abspath(path)
+        self.from_diffusers_cache = check_diffusers_cache(path)
         self.path = path
-        self.original_filename = os.path.basename(os.path.dirname(os.path.dirname(path))) if self.from_huggingface_cache else os.path.basename(path)
+        self.original_filename = os.path.basename(os.path.dirname(os.path.dirname(path)) if self.from_diffusers_cache else path)
 
         if os.path.isdir(path):
             self.init_dict = load_init_dict(constructor, path)
@@ -145,7 +139,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
             ort.set_default_logger_severity(3)
 
         out_dir = os.path.join(shared.opts.onnx_cached_models_path, self.original_filename)
-        if (self.from_huggingface_cache and check_cache_onnx(self.path)):
+        if (self.from_diffusers_cache and check_cache_onnx(self.path)):
             return self.path
         if os.path.isdir(out_dir): # if model is ONNX format or had already converted.
             return out_dir
@@ -223,9 +217,10 @@ class OnnxRawPipeline(OnnxPipelineBase):
                 if submodel in init_dict:
                     del init_dict[submodel] # already loaded as OnnxRuntimeModel.
             kwargs.update(load_submodels(in_dir, self._is_sdxl, init_dict)) # load others.
-            kwargs = patch_kwargs(self.constructor, kwargs)
+            constructor = get_base_constructor(self.constructor, self.is_refiner)
+            kwargs = patch_kwargs(constructor, kwargs)
 
-            pipeline = self.constructor(**kwargs)
+            pipeline = constructor(**kwargs)
             model_index = json.loads(pipeline.to_json_string())
             del pipeline
 
@@ -282,11 +277,12 @@ class OnnxRawPipeline(OnnxPipelineBase):
                 olive_config["input_model"]["config"]["model_path"] = os.path.abspath(os.path.join(in_dir, submodel, "model.onnx"))
                 olive_config["engine"]["execution_providers"] = [shared.opts.onnx_execution_provider]
                 if pass_key in olive_config["passes"]:
-                    olive_config["passes"][pass_key]["config"]["float16"] = shared.opts.olive_float16
+                    float16 = shared.opts.olive_float16 and not (submodel == "vae_encoder" and shared.opts.olive_vae_encoder_float32)
+                    olive_config["passes"][pass_key]["config"]["float16"] = float16
                     if shared.opts.onnx_execution_provider == ExecutionProvider.CUDA or shared.opts.onnx_execution_provider == ExecutionProvider.ROCm:
                         if version.parse(ort.__version__) < version.parse("1.17.0"):
                             olive_config["passes"][pass_key]["config"]["optimization_options"] = {"enable_skip_group_norm": False}
-                        if shared.opts.olive_float16:
+                        if float16:
                             olive_config["passes"][pass_key]["config"]["keep_io_types"] = False
 
                 run(olive_config)
@@ -340,9 +336,10 @@ class OnnxRawPipeline(OnnxPipelineBase):
                 if submodel in init_dict:
                     del init_dict[submodel] # already loaded as OnnxRuntimeModel.
             kwargs.update(load_submodels(in_dir, self._is_sdxl, init_dict)) # load others.
-            kwargs = patch_kwargs(self.constructor, kwargs)
+            constructor = get_base_constructor(self.constructor, self.is_refiner)
+            kwargs = patch_kwargs(constructor, kwargs)
 
-            pipeline = self.constructor(**kwargs)
+            pipeline = constructor(**kwargs)
             model_index = json.loads(pipeline.to_json_string())
             del pipeline
 
@@ -365,7 +362,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
         in_dir = self.path if os.path.isdir(self.path) else shared.opts.onnx_temp_dir
         disable_classifier_free_guidance = p.cfg_scale < 0.01
 
-        config.from_huggingface_cache = self.from_huggingface_cache
+        config.from_diffusers_cache = self.from_diffusers_cache
         if self._is_sdxl and not shared.opts.diffusers_vae_upcast:
             log.info("ONNX: VAE override set: id=madebyollin/sdxl-vae-fp16-fix, subfolder=")
             config.vae_id = "madebyollin/sdxl-vae-fp16-fix"
@@ -401,8 +398,18 @@ class OnnxRawPipeline(OnnxPipelineBase):
             log.warning("Olive implementation is experimental. It contains potentially an issue and is subject to change at any time.")
             if p.width != p.height:
                 log.warning("Olive: different width and height are detected. The quality of the result is not guaranteed.")
-            if shared.opts.olive_static_dims and not self.is_refiner: # Session Conflict
-                kwargs["sess_options"] = get_sess_options(p.batch_size if disable_classifier_free_guidance else p.batch_size * 2, p.height, p.width, self._is_sdxl)
+            if shared.opts.olive_static_dims:
+                sess_options = DynamicSessionOptions()
+                sess_options_config = {
+                    "is_sdxl": self._is_sdxl,
+                    "is_refiner": self.is_refiner,
+
+                    "hidden_batch_size": p.batch_size if disable_classifier_free_guidance else p.batch_size * 2,
+                    "height": p.height,
+                    "width": p.width,
+                }
+                sess_options.enable_static_dims(sess_options_config)
+                kwargs["sess_options"] = sess_options
             optimized_dir = self.optimize(converted_dir)
             if optimized_dir is None:
                 log.error('Olive: failed to optimize pipeline. The generation will fall back to unoptimized one.')
