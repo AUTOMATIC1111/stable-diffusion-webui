@@ -230,15 +230,19 @@ def select_checkpoint():
     return checkpoint_info
 
 
-checkpoint_dict_replacements = {
+checkpoint_dict_replacements_sd1 = {
     'cond_stage_model.transformer.embeddings.': 'cond_stage_model.transformer.text_model.embeddings.',
     'cond_stage_model.transformer.encoder.': 'cond_stage_model.transformer.text_model.encoder.',
     'cond_stage_model.transformer.final_layer_norm.': 'cond_stage_model.transformer.text_model.final_layer_norm.',
 }
 
+checkpoint_dict_replacements_sd2_turbo = { # Converts SD 2.1 Turbo from SGM to LDM format.
+    'conditioner.embedders.0.': 'cond_stage_model.',
+}
 
-def transform_checkpoint_dict_key(k):
-    for text, replacement in checkpoint_dict_replacements.items():
+
+def transform_checkpoint_dict_key(k, replacements):
+    for text, replacement in replacements.items():
         if k.startswith(text):
             k = replacement + k[len(text):]
 
@@ -249,9 +253,14 @@ def get_state_dict_from_checkpoint(pl_sd):
     pl_sd = pl_sd.pop("state_dict", pl_sd)
     pl_sd.pop("state_dict", None)
 
+    is_sd2_turbo = 'conditioner.embedders.0.model.ln_final.weight' in pl_sd and pl_sd['conditioner.embedders.0.model.ln_final.weight'].size()[0] == 1024
+
     sd = {}
     for k, v in pl_sd.items():
-        new_key = transform_checkpoint_dict_key(k)
+        if is_sd2_turbo:
+            new_key = transform_checkpoint_dict_key(k, checkpoint_dict_replacements_sd2_turbo)
+        else:
+            new_key = transform_checkpoint_dict_key(k, checkpoint_dict_replacements_sd1)
 
         if new_key is not None:
             sd[new_key] = v
@@ -339,9 +348,27 @@ class SkipWritingToConfig:
         SkipWritingToConfig.skip = self.previous
 
 
+def check_fp8(model):
+    if model is None:
+        return None
+    if devices.get_optimal_device_name() == "mps":
+        enable_fp8 = False
+    elif shared.opts.fp8_storage == "Enable":
+        enable_fp8 = True
+    elif getattr(model, "is_sdxl", False) and shared.opts.fp8_storage == "Enable for SDXL":
+        enable_fp8 = True
+    else:
+        enable_fp8 = False
+    return enable_fp8
+
+
 def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer):
     sd_model_hash = checkpoint_info.calculate_shorthash()
     timer.record("calculate hash")
+
+    if devices.fp8:
+        # prevent model to load state dict in fp8
+        model.half()
 
     if not SkipWritingToConfig.skip:
         shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title
@@ -352,9 +379,12 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     model.is_sdxl = hasattr(model, 'conditioner')
     model.is_sd2 = not model.is_sdxl and hasattr(model.cond_stage_model, 'model')
     model.is_sd1 = not model.is_sdxl and not model.is_sd2
-
+    model.is_ssd = model.is_sdxl and 'model.diffusion_model.middle_block.1.transformer_blocks.0.attn1.to_q.weight' not in state_dict.keys()
     if model.is_sdxl:
         sd_models_xl.extend_sdxl(model)
+
+    if model.is_ssd:
+        sd_hijack.model_hijack.convert_sdxl_to_ssd(model)
 
     if shared.opts.sd_checkpoint_cache > 0:
         # cache newly loaded model
@@ -371,6 +401,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
 
     if shared.cmd_opts.no_half:
         model.float()
+        model.alphas_cumprod_original = model.alphas_cumprod
         devices.dtype_unet = torch.float32
         timer.record("apply float()")
     else:
@@ -384,13 +415,39 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         if shared.cmd_opts.upcast_sampling and depth_model:
             model.depth_model = None
 
+        alphas_cumprod = model.alphas_cumprod
+        model.alphas_cumprod = None
         model.half()
+        model.alphas_cumprod = alphas_cumprod
+        model.alphas_cumprod_original = alphas_cumprod
         model.first_stage_model = vae
         if depth_model:
             model.depth_model = depth_model
 
         devices.dtype_unet = torch.float16
         timer.record("apply half()")
+
+    for module in model.modules():
+        if hasattr(module, 'fp16_weight'):
+            del module.fp16_weight
+        if hasattr(module, 'fp16_bias'):
+            del module.fp16_bias
+
+    if check_fp8(model):
+        devices.fp8 = True
+        first_stage = model.first_stage_model
+        model.first_stage_model = None
+        for module in model.modules():
+            if isinstance(module, (torch.nn.Conv2d, torch.nn.Linear)):
+                if shared.opts.cache_fp16_weight:
+                    module.fp16_weight = module.weight.data.clone().cpu().half()
+                    if module.bias is not None:
+                        module.fp16_bias = module.bias.data.clone().cpu().half()
+                module.to(torch.float8_e4m3fn)
+        model.first_stage_model = first_stage
+        timer.record("apply fp8")
+    else:
+        devices.fp8 = False
 
     devices.unet_needs_upcast = shared.cmd_opts.upcast_sampling and devices.dtype == torch.float16 and devices.dtype_unet == torch.float16
 
@@ -639,6 +696,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     else:
         weight_dtype_conversion = {
             'first_stage_model': None,
+            'alphas_cumprod': None,
             '': torch.float16,
         }
 
@@ -734,7 +792,7 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
         return None
 
 
-def reload_model_weights(sd_model=None, info=None):
+def reload_model_weights(sd_model=None, info=None, forced_reload=False):
     checkpoint_info = info or select_checkpoint()
 
     timer = Timer()
@@ -746,11 +804,14 @@ def reload_model_weights(sd_model=None, info=None):
         current_checkpoint_info = None
     else:
         current_checkpoint_info = sd_model.sd_checkpoint_info
-        if sd_model.sd_model_checkpoint == checkpoint_info.filename:
+        if check_fp8(sd_model) != devices.fp8:
+            # load from state dict again to prevent extra numerical errors
+            forced_reload = True
+        elif sd_model.sd_model_checkpoint == checkpoint_info.filename and not forced_reload:
             return sd_model
 
     sd_model = reuse_model_from_already_loaded(sd_model, checkpoint_info, timer)
-    if sd_model is not None and sd_model.sd_checkpoint_info.filename == checkpoint_info.filename:
+    if not forced_reload and sd_model is not None and sd_model.sd_checkpoint_info.filename == checkpoint_info.filename:
         return sd_model
 
     if sd_model is not None:

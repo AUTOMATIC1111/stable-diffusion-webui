@@ -54,12 +54,13 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
         self.slider_preferred_weight = None
         self.edit_notes = None
 
-    def save_lora_user_metadata(self, name, desc, sd_version, activation_text, preferred_weight, notes):
+    def save_lora_user_metadata(self, name, desc, sd_version, activation_text, preferred_weight, negative_text, notes):
         user_metadata = self.get_user_metadata(name)
         user_metadata["description"] = desc
         user_metadata["sd version"] = sd_version
         user_metadata["activation text"] = activation_text
         user_metadata["preferred weight"] = preferred_weight
+        user_metadata["negative text"] = negative_text
         user_metadata["notes"] = notes
 
         self.write_user_metadata(name, user_metadata)
@@ -127,6 +128,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
             gr.HighlightedText.update(value=gradio_tags, visible=True if tags else False),
             user_metadata.get('activation text', ''),
             float(user_metadata.get('preferred weight', 0.0)),
+            user_metadata.get('negative text', ''),
             gr.update(visible=True if tags else False),
             gr.update(value=self.generate_random_prompt_from_tags(tags), visible=True if tags else False),
         ]
@@ -162,7 +164,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
         self.taginfo = gr.HighlightedText(label="Training dataset tags")
         self.edit_activation_text = gr.Text(label='Activation text', info="Will be added to prompt along with Lora")
         self.slider_preferred_weight = gr.Slider(label='Preferred weight', info="Set to 0 to disable", minimum=0.0, maximum=2.0, step=0.01)
-
+        self.edit_negative_text = gr.Text(label='Negative prompt', info="Will be added to negative prompts")
         with gr.Row() as row_random_prompt:
             with gr.Column(scale=8):
                 random_prompt = gr.Textbox(label='Random prompt', lines=4, max_lines=4, interactive=False)
@@ -198,6 +200,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
             self.taginfo,
             self.edit_activation_text,
             self.slider_preferred_weight,
+            self.edit_negative_text,
             row_random_prompt,
             random_prompt,
         ]
@@ -211,7 +214,9 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
             self.select_sd_version,
             self.edit_activation_text,
             self.slider_preferred_weight,
+            self.edit_negative_text,
             self.edit_notes,
         ]
+
 
         self.setup_save_handler(self.button_save, self.save_lora_user_metadata, edited_components)

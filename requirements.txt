@@ -2,12 +2,11 @@ GitPython
 Pillow
 accelerate
 
-basicsr
 blendmodes
 clean-fid
 einops
+facexlib
 fastapi>=0.90.1
-gfpgan
 gradio==3.41.2
 inflection
 jsonmerge
@@ -20,13 +19,11 @@ open-clip-torch
 piexif
 psutil
 pytorch_lightning
-realesrgan
 requests
 resize-right
 
 safetensors
 scikit-image>=0.19
-timm
 tomesd
 torch
 torchdiffeq

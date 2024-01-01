@@ -65,3 +65,7 @@ def reload_gradio_theme(theme_name=None):
         except Exception as e:
             errors.display(e, "changing gradio theme")
             shared.gradio_theme = gr.themes.Default(**default_theme_args)
+
+    # append additional values gradio_theme
+    shared.gradio_theme.sd_webui_modal_lightbox_toolbar_opacity = shared.opts.sd_webui_modal_lightbox_toolbar_opacity
+    shared.gradio_theme.sd_webui_modal_lightbox_icon_opacity = shared.opts.sd_webui_modal_lightbox_icon_opacity

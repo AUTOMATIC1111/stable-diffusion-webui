@@ -28,7 +28,7 @@ function keyupEditAttention(event) {
         if (afterParen == -1) return false;
 
         let afterOpeningParen = after.indexOf(OPEN);
-        if (afterOpeningParen != -1 && afterOpeningParen < beforeParen) return false;
+        if (afterOpeningParen != -1 && afterOpeningParen < afterParen) return false;
 
         // Set the selection to the text between the parenthesis
         const parenContent = text.substring(beforeParen + 1, selectionStart + afterParen);

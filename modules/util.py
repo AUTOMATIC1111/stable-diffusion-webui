@@ -2,7 +2,7 @@ import os
 import re
 
 from modules import shared
-from modules.paths_internal import script_path
+from modules.paths_internal import script_path, cwd
 
 
 def natural_sort_key(s, regex=re.compile('([0-9]+)')):
@@ -56,3 +56,13 @@ def ldm_print(*args, **kwargs):
         return
 
     print(*args, **kwargs)
+
+
+def truncate_path(target_path, base_path=cwd):
+    abs_target, abs_base = os.path.abspath(target_path), os.path.abspath(base_path)
+    try:
+        if os.path.commonpath([abs_target, abs_base]) == abs_base:
+            return os.path.relpath(abs_target, abs_base)
+    except ValueError:
+        pass
+    return abs_target

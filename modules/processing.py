@@ -16,7 +16,7 @@ from skimage import exposure
 from typing import Any
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_unet, errors, rng
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, infotext, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_unet, errors, rng
 from modules.rng import slerp # noqa: F401
 from modules.sd_hijack import model_hijack
 from modules.sd_samplers_common import images_tensor_to_samples, decode_first_stage, approximation_indexes
@@ -62,18 +62,22 @@ def apply_color_correction(correction, original_image):
     return image.convert('RGB')
 
 
-def apply_overlay(image, paste_loc, index, overlays):
-    if overlays is None or index >= len(overlays):
+def uncrop(image, dest_size, paste_loc):
+    x, y, w, h = paste_loc
+    base_image = Image.new('RGBA', dest_size)
+    image = images.resize_image(1, image, w, h)
+    base_image.paste(image, (x, y))
+    image = base_image
+
+    return image
+
+
+def apply_overlay(image, paste_loc, overlay):
+    if overlay is None:
         return image
 
-    overlay = overlays[index]
-
     if paste_loc is not None:
-        x, y, w, h = paste_loc
-        base_image = Image.new('RGBA', (overlay.width, overlay.height))
-        image = images.resize_image(1, image, w, h)
-        base_image.paste(image, (x, y))
-        image = base_image
+        image = uncrop(image, (overlay.width, overlay.height), paste_loc)
 
     image = image.convert('RGBA')
     image.alpha_composite(overlay)
@@ -81,9 +85,12 @@ def apply_overlay(image, paste_loc, index, overlays):
 
     return image
 
-def create_binary_mask(image):
+def create_binary_mask(image, round=True):
     if image.mode == 'RGBA' and image.getextrema()[-1] != (255, 255):
-        image = image.split()[-1].convert("L").point(lambda x: 255 if x > 128 else 0)
+        if round:
+            image = image.split()[-1].convert("L").point(lambda x: 255 if x > 128 else 0)
+        else:
+            image = image.split()[-1].convert("L")
     else:
         image = image.convert('L')
     return image
@@ -106,6 +113,21 @@ def txt2img_image_conditioning(sd_model, x, width, height):
         return x.new_zeros(x.shape[0], 2*sd_model.noise_augmentor.time_embed.dim, dtype=x.dtype, device=x.device)
 
     else:
+        sd = sd_model.model.state_dict()
+        diffusion_model_input = sd.get('diffusion_model.input_blocks.0.0.weight', None)
+        if diffusion_model_input is not None:
+            if diffusion_model_input.shape[1] == 9:
+                # The "masked-image" in this case will just be all 0.5 since the entire image is masked.
+                image_conditioning = torch.ones(x.shape[0], 3, height, width, device=x.device) * 0.5
+                image_conditioning = images_tensor_to_samples(image_conditioning,
+                                                              approximation_indexes.get(opts.sd_vae_encode_method))
+
+                # Add the fake full 1s mask to the first dimension.
+                image_conditioning = torch.nn.functional.pad(image_conditioning, (0, 0, 0, 0, 1, 0), value=1.0)
+                image_conditioning = image_conditioning.to(x.dtype)
+
+                return image_conditioning
+
         # Dummy zero conditioning if we're not using inpainting or unclip models.
         # Still takes up a bit of memory, but no encoder call.
         # Pretty sure we can just make this a 1x1 image since its not going to be used besides its batch size.
@@ -296,7 +318,7 @@ class StableDiffusionProcessing:
         return conditioning
 
     def edit_image_conditioning(self, source_image):
-        conditioning_image = images_tensor_to_samples(source_image*0.5+0.5, approximation_indexes.get(opts.sd_vae_encode_method))
+        conditioning_image = shared.sd_model.encode_first_stage(source_image).mode()
 
         return conditioning_image
 
@@ -308,7 +330,7 @@ class StableDiffusionProcessing:
             c_adm = torch.cat((c_adm, noise_level_emb), 1)
         return c_adm
 
-    def inpainting_image_conditioning(self, source_image, latent_image, image_mask=None):
+    def inpainting_image_conditioning(self, source_image, latent_image, image_mask=None, round_image_mask=True):
         self.is_using_inpainting_conditioning = True
 
         # Handle the different mask inputs
@@ -320,8 +342,10 @@ class StableDiffusionProcessing:
                 conditioning_mask = conditioning_mask.astype(np.float32) / 255.0
                 conditioning_mask = torch.from_numpy(conditioning_mask[None, None])
 
-                # Inpainting model uses a discretized mask as input, so we round to either 1.0 or 0.0
-                conditioning_mask = torch.round(conditioning_mask)
+                if round_image_mask:
+                    # Caller is requesting a discretized mask as input, so we round to either 1.0 or 0.0
+                    conditioning_mask = torch.round(conditioning_mask)
+
         else:
             conditioning_mask = source_image.new_ones(1, 1, *source_image.shape[-2:])
 
@@ -345,7 +369,7 @@ class StableDiffusionProcessing:
 
         return image_conditioning
 
-    def img2img_image_conditioning(self, source_image, latent_image, image_mask=None):
+    def img2img_image_conditioning(self, source_image, latent_image, image_mask=None, round_image_mask=True):
         source_image = devices.cond_cast_float(source_image)
 
         # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
@@ -357,10 +381,16 @@ class StableDiffusionProcessing:
             return self.edit_image_conditioning(source_image)
 
         if self.sampler.conditioning_key in {'hybrid', 'concat'}:
-            return self.inpainting_image_conditioning(source_image, latent_image, image_mask=image_mask)
+            return self.inpainting_image_conditioning(source_image, latent_image, image_mask=image_mask, round_image_mask=round_image_mask)
 
         if self.sampler.conditioning_key == "crossattn-adm":
             return self.unclip_image_conditioning(source_image)
+
+        sd = self.sampler.model_wrap.inner_model.model.state_dict()
+        diffusion_model_input = sd.get('diffusion_model.input_blocks.0.0.weight', None)
+        if diffusion_model_input is not None:
+            if diffusion_model_input.shape[1] == 9:
+                return self.inpainting_image_conditioning(source_image, latent_image, image_mask=image_mask)
 
         # Dummy zero conditioning if we're not using inpainting or depth model.
         return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
@@ -422,6 +452,8 @@ class StableDiffusionProcessing:
             opts.sdxl_crop_top,
             self.width,
             self.height,
+            opts.fp8_storage,
+            opts.cache_fp16_weight,
         )
 
     def get_conds_with_caching(self, function, required_prompts, steps, caches, extra_network_data, hires_steps=None):
@@ -596,20 +628,33 @@ def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
         sample = decode_first_stage(model, batch[i:i + 1])[0]
 
         if check_for_nans:
+
             try:
                 devices.test_for_nans(sample, "vae")
             except devices.NansException as e:
-                if devices.dtype_vae == torch.float32 or not shared.opts.auto_vae_precision:
+                if shared.opts.auto_vae_precision_bfloat16:
+                    autofix_dtype = torch.bfloat16
+                    autofix_dtype_text = "bfloat16"
+                    autofix_dtype_setting = "Automatically convert VAE to bfloat16"
+                    autofix_dtype_comment = ""
+                elif shared.opts.auto_vae_precision:
+                    autofix_dtype = torch.float32
+                    autofix_dtype_text = "32-bit float"
+                    autofix_dtype_setting = "Automatically revert VAE to 32-bit floats"
+                    autofix_dtype_comment = "\nTo always start with 32-bit VAE, use --no-half-vae commandline flag."
+                else:
+                    raise e
+
+                if devices.dtype_vae == autofix_dtype:
                     raise e
 
                 errors.print_error_explanation(
                     "A tensor with all NaNs was produced in VAE.\n"
-                    "Web UI will now convert VAE into 32-bit float and retry.\n"
-                    "To disable this behavior, disable the 'Automatically revert VAE to 32-bit floats' setting.\n"
-                    "To always start with 32-bit VAE, use --no-half-vae commandline flag."
+                    f"Web UI will now convert VAE into {autofix_dtype_text} and retry.\n"
+                    f"To disable this behavior, disable the '{autofix_dtype_setting}' setting.{autofix_dtype_comment}"
                 )
 
-                devices.dtype_vae = torch.float32
+                devices.dtype_vae = autofix_dtype
                 model.first_stage_model.to(devices.dtype_vae)
                 batch = batch.to(devices.dtype_vae)
 
@@ -679,8 +724,10 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Size": f"{p.width}x{p.height}",
         "Model hash": p.sd_model_hash if opts.add_model_hash_to_info else None,
         "Model": p.sd_model_name if opts.add_model_name_to_info else None,
-        "VAE hash": p.sd_vae_hash if opts.add_model_hash_to_info else None,
-        "VAE": p.sd_vae_name if opts.add_model_name_to_info else None,
+        "FP8 weight": opts.fp8_storage if devices.fp8 else None,
+        "Cache FP16 weight for LoRA": opts.cache_fp16_weight if devices.fp8 else None,
+        "VAE hash": p.sd_vae_hash if opts.add_vae_hash_to_info else None,
+        "VAE": p.sd_vae_name if opts.add_vae_name_to_info else None,
         "Variation seed": (None if p.subseed_strength == 0 else (p.all_subseeds[0] if use_main_prompt else all_subseeds[index])),
         "Variation seed strength": (None if p.subseed_strength == 0 else p.subseed_strength),
         "Seed resize from": (None if p.seed_resize_from_w <= 0 or p.seed_resize_from_h <= 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}"),
@@ -699,7 +746,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "User": p.user if opts.add_user_name_to_info else None,
     }
 
-    generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
+    generation_params_text = ", ".join([k if k == v else f'{k}: {infotext.quote(v)}' for k, v in generation_params.items() if v is not None])
 
     prompt_text = p.main_prompt if use_main_prompt else all_prompts[index]
     negative_prompt_text = f"\nNegative prompt: {p.main_negative_prompt if use_main_prompt else all_negative_prompts[index]}" if all_negative_prompts[index] else ""
@@ -799,7 +846,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     infotexts = []
     output_images = []
-
     with torch.no_grad(), p.sd_model.ema_scope():
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
@@ -819,7 +865,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if state.skipped:
                 state.skipped = False
 
-            if state.interrupted:
+            if state.interrupted or state.stopping_generation:
                 break
 
             sd_models.reload_model_weights()  # model can be changed for example by refiner
@@ -865,15 +911,47 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
+            def rescale_zero_terminal_snr_abar(alphas_cumprod):
+                alphas_bar_sqrt = alphas_cumprod.sqrt()
+
+                # Store old values.
+                alphas_bar_sqrt_0 = alphas_bar_sqrt[0].clone()
+                alphas_bar_sqrt_T = alphas_bar_sqrt[-1].clone()
+
+                # Shift so the last timestep is zero.
+                alphas_bar_sqrt -= (alphas_bar_sqrt_T)
+
+                # Scale so the first timestep is back to the old value.
+                alphas_bar_sqrt *= alphas_bar_sqrt_0 / (alphas_bar_sqrt_0 - alphas_bar_sqrt_T)
+
+                # Convert alphas_bar_sqrt to betas
+                alphas_bar = alphas_bar_sqrt**2  # Revert sqrt
+                alphas_bar[-1] = 4.8973451890853435e-08
+                return alphas_bar
+
+            if hasattr(p.sd_model, 'alphas_cumprod') and hasattr(p.sd_model, 'alphas_cumprod_original'):
+                p.sd_model.alphas_cumprod = p.sd_model.alphas_cumprod_original.to(shared.device)
+
+                if opts.use_downcasted_alpha_bar:
+                    p.extra_generation_params['Downcast alphas_cumprod'] = opts.use_downcasted_alpha_bar
+                    p.sd_model.alphas_cumprod = p.sd_model.alphas_cumprod.half().to(shared.device)
+                if opts.sd_noise_schedule == "Zero Terminal SNR":
+                    p.extra_generation_params['Noise Schedule'] = opts.sd_noise_schedule
+                    p.sd_model.alphas_cumprod = rescale_zero_terminal_snr_abar(p.sd_model.alphas_cumprod).to(shared.device)
+
             with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
                 samples_ddim = p.sample(conditioning=p.c, unconditional_conditioning=p.uc, seeds=p.seeds, subseeds=p.subseeds, subseed_strength=p.subseed_strength, prompts=p.prompts)
+
+            if p.scripts is not None:
+                ps = scripts.PostSampleArgs(samples_ddim)
+                p.scripts.post_sample(p, ps)
+                samples_ddim = ps.samples
 
             if getattr(samples_ddim, 'already_decoded', False):
                 x_samples_ddim = samples_ddim
             else:
                 if opts.sd_vae_decode_method != 'Full':
                     p.extra_generation_params['VAE Decoder'] = opts.sd_vae_decode_method
-
                 x_samples_ddim = decode_latent_batch(p.sd_model, samples_ddim, target_device=devices.cpu, check_for_nans=True)
 
             x_samples_ddim = torch.stack(x_samples_ddim).float()
@@ -885,6 +963,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 lowvram.send_everything_to_cpu()
 
             devices.torch_gc()
+
+            state.nextjob()
 
             if p.scripts is not None:
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
@@ -922,13 +1002,31 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     pp = scripts.PostprocessImageArgs(image)
                     p.scripts.postprocess_image(p, pp)
                     image = pp.image
+
+                mask_for_overlay = getattr(p, "mask_for_overlay", None)
+                overlay_image = p.overlay_images[i] if getattr(p, "overlay_images", None) is not None and i < len(p.overlay_images) else None
+
+                if p.scripts is not None:
+                    ppmo = scripts.PostProcessMaskOverlayArgs(i, mask_for_overlay, overlay_image)
+                    p.scripts.postprocess_maskoverlay(p, ppmo)
+                    mask_for_overlay, overlay_image = ppmo.mask_for_overlay, ppmo.overlay_image
+
                 if p.color_corrections is not None and i < len(p.color_corrections):
                     if save_samples and opts.save_images_before_color_correction:
-                        image_without_cc = apply_overlay(image, p.paste_to, i, p.overlay_images)
+                        image_without_cc = apply_overlay(image, p.paste_to, overlay_image)
                         images.save_image(image_without_cc, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p, suffix="-before-color-correction")
                     image = apply_color_correction(p.color_corrections[i], image)
 
-                image = apply_overlay(image, p.paste_to, i, p.overlay_images)
+                # If the intention is to show the output from the model
+                # that is being composited over the original image,
+                # we need to keep the original image around
+                # and use it in the composite step.
+                original_denoised_image = image.copy()
+
+                if p.paste_to is not None:
+                    original_denoised_image = uncrop(original_denoised_image, (overlay_image.width, overlay_image.height), p.paste_to)
+
+                image = apply_overlay(image, p.paste_to, overlay_image)
 
                 if save_samples:
                     images.save_image(image, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p)
@@ -938,27 +1036,25 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 if opts.enable_pnginfo:
                     image.info["parameters"] = text
                 output_images.append(image)
-                if save_samples and hasattr(p, 'mask_for_overlay') and p.mask_for_overlay and any([opts.save_mask, opts.save_mask_composite, opts.return_mask, opts.return_mask_composite]):
-                    image_mask = p.mask_for_overlay.convert('RGB')
-                    image_mask_composite = Image.composite(image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size), images.resize_image(2, p.mask_for_overlay, image.width, image.height).convert('L')).convert('RGBA')
 
-                    if opts.save_mask:
-                        images.save_image(image_mask, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p, suffix="-mask")
+                if mask_for_overlay is not None:
+                    if opts.return_mask or opts.save_mask:
+                        image_mask = mask_for_overlay.convert('RGB')
+                        if save_samples and opts.save_mask:
+                            images.save_image(image_mask, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p, suffix="-mask")
+                        if opts.return_mask:
+                            output_images.append(image_mask)
 
-                    if opts.save_mask_composite:
-                        images.save_image(image_mask_composite, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p, suffix="-mask-composite")
-
-                    if opts.return_mask:
-                        output_images.append(image_mask)
-
-                    if opts.return_mask_composite:
-                        output_images.append(image_mask_composite)
+                    if opts.return_mask_composite or opts.save_mask_composite:
+                        image_mask_composite = Image.composite(original_denoised_image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size), images.resize_image(2, mask_for_overlay, image.width, image.height).convert('L')).convert('RGBA')
+                        if save_samples and opts.save_mask_composite:
+                            images.save_image(image_mask_composite, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p, suffix="-mask-composite")
+                        if opts.return_mask_composite:
+                            output_images.append(image_mask_composite)
 
             del x_samples_ddim
 
             devices.torch_gc()
-
-            state.nextjob()
 
         if not infotexts:
             infotexts.append(Processed(p, []).infotext(p, 0))
@@ -1028,6 +1124,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     hr_sampler_name: str = None
     hr_prompt: str = ''
     hr_negative_prompt: str = ''
+    force_task_id: str = None
 
     cached_hr_uc = [None, None]
     cached_hr_c = [None, None]
@@ -1100,7 +1197,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
-            if self.hr_checkpoint_name:
+            if self.hr_checkpoint_name and self.hr_checkpoint_name != 'Use same checkpoint':
                 self.hr_checkpoint_info = sd_models.get_closet_checkpoint_match(self.hr_checkpoint_name)
 
                 if self.hr_checkpoint_info is None:
@@ -1147,6 +1244,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         if not self.enable_hr:
             return samples
+        devices.torch_gc()
 
         if self.latent_scale_mode is None:
             decoded_samples = torch.stack(decode_latent_batch(self.sd_model, samples, target_device=devices.cpu, check_for_nans=True)).to(dtype=torch.float32)
@@ -1156,8 +1254,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         with sd_models.SkipWritingToConfig():
             sd_models.reload_model_weights(info=self.hr_checkpoint_info)
 
-        devices.torch_gc()
-
         return self.sample_hr_pass(samples, decoded_samples, seeds, subseeds, subseed_strength, prompts)
 
     def sample_hr_pass(self, samples, decoded_samples, seeds, subseeds, subseed_strength, prompts):
@@ -1165,7 +1261,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             return samples
 
         self.is_hr_pass = True
-
         target_width = self.hr_upscale_to_x
         target_height = self.hr_upscale_to_y
 
@@ -1254,7 +1349,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         decoded_samples = decode_latent_batch(self.sd_model, samples, target_device=devices.cpu, check_for_nans=True)
 
         self.is_hr_pass = False
-
         return decoded_samples
 
     def close(self):
@@ -1357,12 +1451,14 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     mask_blur_x: int = 4
     mask_blur_y: int = 4
     mask_blur: int = None
+    mask_round: bool = True
     inpainting_fill: int = 0
     inpaint_full_res: bool = True
     inpaint_full_res_padding: int = 0
     inpainting_mask_invert: int = 0
     initial_noise_multiplier: float = None
     latent_mask: Image = None
+    force_task_id: str = None
 
     image_mask: Any = field(default=None, init=False)
 
@@ -1402,7 +1498,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         if image_mask is not None:
             # image_mask is passed in as RGBA by Gradio to support alpha masks,
             # but we still want to support binary masks.
-            image_mask = create_binary_mask(image_mask)
+            image_mask = create_binary_mask(image_mask, round=self.mask_round)
 
             if self.inpainting_mask_invert:
                 image_mask = ImageOps.invert(image_mask)
@@ -1448,7 +1544,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             # Save init image
             if opts.save_init_img:
                 self.init_img_hash = hashlib.md5(img.tobytes()).hexdigest()
-                images.save_image(img, path=opts.outdir_init_images, basename=None, forced_filename=self.init_img_hash, save_to_dirs=False)
+                images.save_image(img, path=opts.outdir_init_images, basename=None, forced_filename=self.init_img_hash, save_to_dirs=False, existing_info=img.info)
 
             image = images.flatten(img, opts.img2img_background_color)
 
@@ -1509,7 +1605,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             latmask = init_mask.convert('RGB').resize((self.init_latent.shape[3], self.init_latent.shape[2]))
             latmask = np.moveaxis(np.array(latmask, dtype=np.float32), 2, 0) / 255
             latmask = latmask[0]
-            latmask = np.around(latmask)
+            if self.mask_round:
+                latmask = np.around(latmask)
             latmask = np.tile(latmask[None], (4, 1, 1))
 
             self.mask = torch.asarray(1.0 - latmask).to(shared.device).type(self.sd_model.dtype)
@@ -1521,7 +1618,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             elif self.inpainting_fill == 3:
                 self.init_latent = self.init_latent * self.mask
 
-        self.image_conditioning = self.img2img_image_conditioning(image * 2 - 1, self.init_latent, image_mask)
+        self.image_conditioning = self.img2img_image_conditioning(image * 2 - 1, self.init_latent, image_mask, self.mask_round)
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
         x = self.rng.next()
@@ -1533,7 +1630,14 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning)
 
         if self.mask is not None:
-            samples = samples * self.nmask + self.init_latent * self.mask
+            blended_samples = samples * self.nmask + self.init_latent * self.mask
+
+            if self.scripts is not None:
+                mba = scripts.MaskBlendArgs(samples, self.nmask, self.init_latent, self.mask, blended_samples)
+                self.scripts.on_mask_blend(self, mba)
+                blended_samples = mba.blended_latent
+
+            samples = blended_samples
 
         del x
         devices.torch_gc()

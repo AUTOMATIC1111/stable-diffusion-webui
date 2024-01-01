@@ -26,8 +26,9 @@ function setupExtraNetworksForTab(tabname) {
     var refresh = gradioApp().getElementById(tabname + '_extra_refresh');
     var showDirsDiv = gradioApp().getElementById(tabname + '_extra_show_dirs');
     var showDirs = gradioApp().querySelector('#' + tabname + '_extra_show_dirs input');
+    var promptContainer = gradioApp().querySelector('.prompt-container-compact#' + tabname + '_prompt_container');
+    var negativePrompt = gradioApp().querySelector('#' + tabname + '_neg_prompt');
 
-    sort.dataset.sortkey = 'sortDefault';
     tabs.appendChild(searchDiv);
     tabs.appendChild(sort);
     tabs.appendChild(sortOrder);
@@ -49,20 +50,23 @@ function setupExtraNetworksForTab(tabname) {
 
             elem.style.display = visible ? "" : "none";
         });
+
+        applySort();
     };
 
     var applySort = function() {
+        var cards = gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card');
+
         var reverse = sortOrder.classList.contains("sortReverse");
-        var sortKey = sort.querySelector("input").value.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim();
-        sortKey = sortKey ? "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1) : "";
-        var sortKeyStore = sortKey ? sortKey + (reverse ? "Reverse" : "") : "";
-        if (!sortKey || sortKeyStore == sort.dataset.sortkey) {
+        var sortKey = sort.querySelector("input").value.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim() || "name";
+        sortKey = "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1);
+        var sortKeyStore = sortKey + "-" + (reverse ? "Descending" : "Ascending") + "-" + cards.length;
+
+        if (sortKeyStore == sort.dataset.sortkey) {
             return;
         }
-
         sort.dataset.sortkey = sortKeyStore;
 
-        var cards = gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card');
         cards.forEach(function(card) {
             card.originalParentElement = card.parentElement;
         });
@@ -88,15 +92,13 @@ function setupExtraNetworksForTab(tabname) {
     };
 
     search.addEventListener("input", applyFilter);
-    applyFilter();
-    ["change", "blur", "click"].forEach(function(evt) {
-        sort.querySelector("input").addEventListener(evt, applySort);
-    });
     sortOrder.addEventListener("click", function() {
         sortOrder.classList.toggle("sortReverse");
         applySort();
     });
+    applyFilter();
 
+    extraNetworksApplySort[tabname] = applySort;
     extraNetworksApplyFilter[tabname] = applyFilter;
 
     var showDirsUpdate = function() {
@@ -109,11 +111,51 @@ function setupExtraNetworksForTab(tabname) {
     showDirsUpdate();
 }
 
+function extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt) {
+    if (!gradioApp().querySelector('.toprow-compact-tools')) return; // only applicable for compact prompt layout
+
+    var promptContainer = gradioApp().getElementById(tabname + '_prompt_container');
+    var prompt = gradioApp().getElementById(tabname + '_prompt_row');
+    var negPrompt = gradioApp().getElementById(tabname + '_neg_prompt_row');
+    var elem = id ? gradioApp().getElementById(id) : null;
+
+    if (showNegativePrompt && elem) {
+        elem.insertBefore(negPrompt, elem.firstChild);
+    } else {
+        promptContainer.insertBefore(negPrompt, promptContainer.firstChild);
+    }
+
+    if (showPrompt && elem) {
+        elem.insertBefore(prompt, elem.firstChild);
+    } else {
+        promptContainer.insertBefore(prompt, promptContainer.firstChild);
+    }
+
+    if (elem) {
+        elem.classList.toggle('extra-page-prompts-active', showNegativePrompt || showPrompt);
+    }
+}
+
+
+function extraNetworksUrelatedTabSelected(tabname) { // called from python when user selects an unrelated tab (generate)
+    extraNetworksMovePromptToTab(tabname, '', false, false);
+}
+
+function extraNetworksTabSelected(tabname, id, showPrompt, showNegativePrompt) { // called from python when user selects an extra networks tab
+    extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt);
+
+}
+
 function applyExtraNetworkFilter(tabname) {
     setTimeout(extraNetworksApplyFilter[tabname], 1);
 }
 
+function applyExtraNetworkSort(tabname) {
+    setTimeout(extraNetworksApplySort[tabname], 1);
+}
+
 var extraNetworksApplyFilter = {};
+var extraNetworksApplySort = {};
 var activePromptTextarea = {};
 
 function setupExtraNetworks() {
@@ -143,8 +185,10 @@ onUiLoaded(setupExtraNetworks);
 var re_extranet = /<([^:^>]+:[^:]+):[\d.]+>(.*)/;
 var re_extranet_g = /<([^:^>]+:[^:]+):[\d.]+>/g;
 
-function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
-    var m = text.match(re_extranet);
+var re_extranet_neg = /\(([^:^>]+:[\d.]+)\)/;
+var re_extranet_g_neg = /\(([^:^>]+:[\d.]+)\)/g;
+function tryToRemoveExtraNetworkFromPrompt(textarea, text, isNeg) {
+    var m = text.match(isNeg ? re_extranet_neg : re_extranet);
     var replaced = false;
     var newTextareaText;
     if (m) {
@@ -152,8 +196,8 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
         var extraTextAfterNet = m[2];
         var partToSearch = m[1];
         var foundAtPosition = -1;
-        newTextareaText = textarea.value.replaceAll(re_extranet_g, function(found, net, pos) {
-            m = found.match(re_extranet);
+        newTextareaText = textarea.value.replaceAll(isNeg ? re_extranet_g_neg : re_extranet_g, function(found, net, pos) {
+            m = found.match(isNeg ? re_extranet_neg : re_extranet);
             if (m[1] == partToSearch) {
                 replaced = true;
                 foundAtPosition = pos;
@@ -163,7 +207,7 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
         });
 
         if (foundAtPosition >= 0) {
-            if (newTextareaText.substr(foundAtPosition, extraTextAfterNet.length) == extraTextAfterNet) {
+            if (extraTextAfterNet && newTextareaText.substr(foundAtPosition, extraTextAfterNet.length) == extraTextAfterNet) {
                 newTextareaText = newTextareaText.substr(0, foundAtPosition) + newTextareaText.substr(foundAtPosition + extraTextAfterNet.length);
             }
             if (newTextareaText.substr(foundAtPosition - extraTextBeforeNet.length, extraTextBeforeNet.length) == extraTextBeforeNet) {
@@ -188,14 +232,23 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
     return false;
 }
 
-function cardClicked(tabname, textToAdd, allowNegativePrompt) {
-    var textarea = allowNegativePrompt ? activePromptTextarea[tabname] : gradioApp().querySelector("#" + tabname + "_prompt > label > textarea");
+function updatePromptArea(text, textArea, isNeg) {
 
-    if (!tryToRemoveExtraNetworkFromPrompt(textarea, textToAdd)) {
-        textarea.value = textarea.value + opts.extra_networks_add_text_separator + textToAdd;
+    if (!tryToRemoveExtraNetworkFromPrompt(textArea, text, isNeg)) {
+        textArea.value = textArea.value + opts.extra_networks_add_text_separator + text;
     }
 
-    updateInput(textarea);
+    updateInput(textArea);
+}
+
+function cardClicked(tabname, textToAdd, textToAddNegative, allowNegativePrompt) {
+    if (textToAddNegative.length > 0) {
+        updatePromptArea(textToAdd, gradioApp().querySelector("#" + tabname + "_prompt > label > textarea"));
+        updatePromptArea(textToAddNegative, gradioApp().querySelector("#" + tabname + "_neg_prompt > label > textarea"), true);
+    } else {
+        var textarea = allowNegativePrompt ? activePromptTextarea[tabname] : gradioApp().querySelector("#" + tabname + "_prompt > label > textarea");
+        updatePromptArea(textToAdd, textarea);
+    }
 }
 
 function saveCardPreview(event, tabname, filename) {
@@ -350,3 +403,9 @@ function extraNetworksRefreshSingleCard(page, tabname, name) {
         }
     });
 }
+
+window.addEventListener("keydown", function(event) {
+    if (event.key == "Escape") {
+        closePopup();
+    }
+});

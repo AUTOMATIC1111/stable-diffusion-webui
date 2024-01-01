@@ -1,22 +1,23 @@
+from __future__ import annotations
 import base64
 import io
 import json
 import os
 import re
+import sys
 
 import gradio as gr
 from modules.paths import data_path
-from modules import shared, ui_tempdir, script_callbacks, processing
+from modules import shared, ui_tempdir, script_callbacks, processing, infotext_versions
 from PIL import Image
+
+sys.modules['modules.generation_parameters_copypaste'] = sys.modules[__name__]  # alias for old name
 
 re_param_code = r'\s*(\w[\w \-/]+):\s*("(?:\\.|[^\\"])+"|[^,]*)(?:,|$)'
 re_param = re.compile(re_param_code)
 re_imagesize = re.compile(r"^(\d+)x(\d+)$")
 re_hypernet_hash = re.compile("\(([0-9a-f]+)\)$")
 type_of_gr_update = type(gr.update())
-
-paste_fields = {}
-registered_param_bindings = []
 
 
 class ParamBinding:
@@ -28,6 +29,23 @@ class ParamBinding:
         self.source_tabname = source_tabname
         self.override_settings_component = override_settings_component
         self.paste_field_names = paste_field_names or []
+
+
+class PasteField(tuple):
+    def __new__(cls, component, target, *, api=None):
+        return super().__new__(cls, (component, target))
+
+    def __init__(self, component, target, *, api=None):
+        super().__init__()
+
+        self.api = api
+        self.component = component
+        self.label = target if isinstance(target, str) else None
+        self.function = target if callable(target) else None
+
+
+paste_fields: dict[str, dict] = {}
+registered_param_bindings: list[ParamBinding] = []
 
 
 def reset():
@@ -82,6 +100,12 @@ def image_from_url_text(filedata):
 
 
 def add_paste_fields(tabname, init_img, fields, override_settings_component=None):
+
+    if fields:
+        for i in range(len(fields)):
+            if not isinstance(fields[i], PasteField):
+                fields[i] = PasteField(*fields[i])
+
     paste_fields[tabname] = {"init_img": init_img, "fields": fields, "override_settings_component": override_settings_component}
 
     # backwards compatibility for existing extensions
@@ -113,7 +137,6 @@ def register_paste_params_button(binding: ParamBinding):
 
 
 def connect_paste_params_buttons():
-    binding: ParamBinding
     for binding in registered_param_bindings:
         destination_image_component = paste_fields[binding.tabname]["init_img"]
         fields = paste_fields[binding.tabname]["fields"]
@@ -313,6 +336,17 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "VAE Decoder" not in res:
         res["VAE Decoder"] = "Full"
 
+    if "FP8 weight" not in res:
+        res["FP8 weight"] = "Disable"
+
+    if "Cache FP16 weight for LoRA" not in res and res["FP8 weight"] != "Disable":
+        res["Cache FP16 weight for LoRA"] = False
+
+    infotext_versions.backcompat(res)
+
+    skip = set(shared.opts.infotext_skip_pasting)
+    res = {k: v for k, v in res.items() if k not in skip}
+
     return res
 
 
@@ -361,6 +395,48 @@ def create_override_settings_dict(text_pairs):
     return res
 
 
+def get_override_settings(params, *, skip_fields=None):
+    """Returns a list of settings overrides from the infotext parameters dictionary.
+
+    This function checks the `params` dictionary for any keys that correspond to settings in `shared.opts` and returns
+    a list of tuples containing the parameter name, setting name, and new value cast to correct type.
+
+    It checks for conditions before adding an override:
+    - ignores settings that match the current value
+    - ignores parameter keys present in skip_fields argument.
+
+    Example input:
+        {"Clip skip": "2"}
+
+    Example output:
+        [("Clip skip", "CLIP_stop_at_last_layers", 2)]
+    """
+
+    res = []
+
+    mapping = [(info.infotext, k) for k, info in shared.opts.data_labels.items() if info.infotext]
+    for param_name, setting_name in mapping + infotext_to_setting_name_mapping:
+        if param_name in (skip_fields or {}):
+            continue
+
+        v = params.get(param_name, None)
+        if v is None:
+            continue
+
+        if setting_name == "sd_model_checkpoint" and shared.opts.disable_weights_auto_swap:
+            continue
+
+        v = shared.opts.cast_value(setting_name, v)
+        current_value = getattr(shared.opts, setting_name, None)
+
+        if v == current_value:
+            continue
+
+        res.append((param_name, setting_name, v))
+
+    return res
+
+
 def connect_paste(button, paste_fields, input_comp, override_settings_component, tabname):
     def paste_func(prompt):
         if not prompt and not shared.cmd_opts.hide_ui_dir_config:
@@ -402,29 +478,9 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
         already_handled_fields = {key: 1 for _, key in paste_fields}
 
         def paste_settings(params):
-            vals = {}
+            vals = get_override_settings(params, skip_fields=already_handled_fields)
 
-            mapping = [(info.infotext, k) for k, info in shared.opts.data_labels.items() if info.infotext]
-            for param_name, setting_name in mapping + infotext_to_setting_name_mapping:
-                if param_name in already_handled_fields:
-                    continue
-
-                v = params.get(param_name, None)
-                if v is None:
-                    continue
-
-                if setting_name == "sd_model_checkpoint" and shared.opts.disable_weights_auto_swap:
-                    continue
-
-                v = shared.opts.cast_value(setting_name, v)
-                current_value = getattr(shared.opts, setting_name, None)
-
-                if v == current_value:
-                    continue
-
-                vals[param_name] = v
-
-            vals_pairs = [f"{k}: {v}" for k, v in vals.items()]
+            vals_pairs = [f"{infotext_text}: {value}" for infotext_text, setting_name, value in vals]
 
             return gr.Dropdown.update(value=vals_pairs, choices=vals_pairs, visible=bool(vals_pairs))
 
@@ -443,3 +499,4 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
         outputs=[],
         show_progress=False,
     )
+

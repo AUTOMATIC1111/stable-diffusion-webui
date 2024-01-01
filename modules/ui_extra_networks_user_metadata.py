@@ -5,7 +5,7 @@ import os.path
 
 import gradio as gr
 
-from modules import generation_parameters_copypaste, images, sysinfo, errors, ui_extra_networks
+from modules import infotext, images, sysinfo, errors, ui_extra_networks
 
 
 class UserMetadataEditor:
@@ -134,7 +134,7 @@ class UserMetadataEditor:
         basename, ext = os.path.splitext(filename)
 
         with open(basename + '.json', "w", encoding="utf8") as file:
-            json.dump(metadata, file, indent=4)
+            json.dump(metadata, file, indent=4, ensure_ascii=False)
 
     def save_user_metadata(self, name, desc, notes):
         user_metadata = self.get_user_metadata(name)
@@ -181,7 +181,7 @@ class UserMetadataEditor:
         index = len(gallery) - 1 if index >= len(gallery) else index
 
         img_info = gallery[index if index >= 0 else 0]
-        image = generation_parameters_copypaste.image_from_url_text(img_info)
+        image = infotext.image_from_url_text(img_info)
         geninfo, items = images.read_info_from_image(image)
 
         images.save_image_with_geninfo(image, geninfo, item["local_preview"])

@@ -20,6 +20,12 @@ jobs:
           cache-dependency-path: |
             **/requirements*txt
             launch.py
+      - name: Cache models
+        id: cache-models
+        uses: actions/cache@v3
+        with:
+          path: models
+          key: "2023-12-30"
       - name: Install test dependencies
         run: pip install wait-for-it -r requirements-test.txt
         env:
@@ -33,6 +39,8 @@ jobs:
           TORCH_INDEX_URL: https://download.pytorch.org/whl/cpu
           WEBUI_LAUNCH_LIVE_OUTPUT: "1"
           PYTHONUNBUFFERED: "1"
+      - name: Print installed packages
+        run: pip freeze
       - name: Start test server
         run: >
           python -m coverage run
@@ -49,7 +57,7 @@ jobs:
           2>&1 | tee output.txt &
       - name: Run tests
         run: |
-          wait-for-it --service 127.0.0.1:7860 -t 600
+          wait-for-it --service 127.0.0.1:7860 -t 20
           python -m pytest -vv --junitxml=test/results.xml --cov . --cov-report=xml --verify-base-url test
       - name: Kill test server
         if: always()
