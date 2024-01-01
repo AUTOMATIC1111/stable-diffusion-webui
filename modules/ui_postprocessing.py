@@ -28,7 +28,7 @@ def create_ui():
             toprow.create_inline_toprow_image()
             submit = toprow.submit
 
-            result_images, html_info_x, html_info, html_log = ui_common.create_output_panel("extras", shared.opts.outdir_extras_samples)
+            output_panel = ui_common.create_output_panel("extras", shared.opts.outdir_extras_samples)
 
     tab_single.select(fn=lambda: 0, inputs=[], outputs=[tab_index])
     tab_batch.select(fn=lambda: 1, inputs=[], outputs=[tab_index])
@@ -48,9 +48,9 @@ def create_ui():
             *script_inputs
         ],
         outputs=[
-            result_images,
-            html_info_x,
-            html_log,
+            output_panel.gallery,
+            output_panel.infotext,
+            output_panel.html_log,
         ],
         show_progress=False,
     )

@@ -375,49 +375,59 @@ def create_ui():
                     show_progress=False,
                 )
 
-            txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples, toprow)
+            output_panel = create_output_panel("txt2img", opts.outdir_txt2img_samples, toprow)
+
+            txt2img_inputs = [
+                dummy_component,
+                toprow.prompt,
+                toprow.negative_prompt,
+                toprow.ui_styles.dropdown,
+                steps,
+                sampler_name,
+                batch_count,
+                batch_size,
+                cfg_scale,
+                height,
+                width,
+                enable_hr,
+                denoising_strength,
+                hr_scale,
+                hr_upscaler,
+                hr_second_pass_steps,
+                hr_resize_x,
+                hr_resize_y,
+                hr_checkpoint_name,
+                hr_sampler_name,
+                hr_prompt,
+                hr_negative_prompt,
+                override_settings,
+            ] + custom_inputs
+
+            txt2img_outputs = [
+                output_panel.gallery,
+                output_panel.infotext,
+                output_panel.html_info,
+                output_panel.html_log,
+            ]
 
             txt2img_args = dict(
                 fn=wrap_gradio_gpu_call(modules.txt2img.txt2img, extra_outputs=[None, '', '']),
                 _js="submit",
-                inputs=[
-                    dummy_component,
-                    toprow.prompt,
-                    toprow.negative_prompt,
-                    toprow.ui_styles.dropdown,
-                    steps,
-                    sampler_name,
-                    batch_count,
-                    batch_size,
-                    cfg_scale,
-                    height,
-                    width,
-                    enable_hr,
-                    denoising_strength,
-                    hr_scale,
-                    hr_upscaler,
-                    hr_second_pass_steps,
-                    hr_resize_x,
-                    hr_resize_y,
-                    hr_checkpoint_name,
-                    hr_sampler_name,
-                    hr_prompt,
-                    hr_negative_prompt,
-                    override_settings,
-
-                ] + custom_inputs,
-
-                outputs=[
-                    txt2img_gallery,
-                    generation_info,
-                    html_info,
-                    html_log,
-                ],
+                inputs=txt2img_inputs,
+                outputs=txt2img_outputs,
                 show_progress=False,
             )
 
             toprow.prompt.submit(**txt2img_args)
             toprow.submit.click(**txt2img_args)
+
+            output_panel.button_upscale.click(
+                fn=wrap_gradio_gpu_call(modules.txt2img.txt2img_upscale, extra_outputs=[None, '', '']),
+                _js="submit_txt2img_upscale",
+                inputs=txt2img_inputs[0:1] + [output_panel.gallery, dummy_component] + txt2img_inputs[1:],
+                outputs=txt2img_outputs,
+                show_progress=False,
+            )
 
             res_switch_btn.click(fn=None, _js="function(){switchWidthHeight('txt2img')}", inputs=None, outputs=None, show_progress=False)
 
@@ -426,10 +436,10 @@ def create_ui():
                 _js="restoreProgressTxt2img",
                 inputs=[dummy_component],
                 outputs=[
-                    txt2img_gallery,
-                    generation_info,
-                    html_info,
-                    html_log,
+                    output_panel.gallery,
+                    output_panel.infotext,
+                    output_panel.html_info,
+                    output_panel.html_log,
                 ],
                 show_progress=False,
             )
@@ -479,7 +489,7 @@ def create_ui():
             toprow.negative_token_button.click(fn=wrap_queued_call(update_negative_prompt_token_counter), inputs=[toprow.negative_prompt, steps], outputs=[toprow.negative_token_counter])
 
         extra_networks_ui = ui_extra_networks.create_ui(txt2img_interface, [txt2img_generation_tab], 'txt2img')
-        ui_extra_networks.setup_ui(extra_networks_ui, txt2img_gallery)
+        ui_extra_networks.setup_ui(extra_networks_ui, output_panel.gallery)
 
         extra_tabs.__exit__()
 
@@ -710,7 +720,7 @@ def create_ui():
                     outputs=[inpaint_controls, mask_alpha],
                 )
 
-            img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples, toprow)
+            output_panel = create_output_panel("img2img", opts.outdir_img2img_samples, toprow)
 
             img2img_args = dict(
                 fn=wrap_gradio_gpu_call(modules.img2img.img2img, extra_outputs=[None, '', '']),
@@ -755,10 +765,10 @@ def create_ui():
                     img2img_batch_png_info_dir,
                 ] + custom_inputs,
                 outputs=[
-                    img2img_gallery,
-                    generation_info,
-                    html_info,
-                    html_log,
+                    output_panel.gallery,
+                    output_panel.infotext,
+                    output_panel.html_info,
+                    output_panel.html_log,
                 ],
                 show_progress=False,
             )
@@ -796,10 +806,10 @@ def create_ui():
                 _js="restoreProgressImg2img",
                 inputs=[dummy_component],
                 outputs=[
-                    img2img_gallery,
-                    generation_info,
-                    html_info,
-                    html_log,
+                    output_panel.gallery,
+                    output_panel.infotext,
+                    output_panel.html_info,
+                    output_panel.html_log,
                 ],
                 show_progress=False,
             )
@@ -839,7 +849,7 @@ def create_ui():
             ))
 
         extra_networks_ui_img2img = ui_extra_networks.create_ui(img2img_interface, [img2img_generation_tab], 'img2img')
-        ui_extra_networks.setup_ui(extra_networks_ui_img2img, img2img_gallery)
+        ui_extra_networks.setup_ui(extra_networks_ui_img2img, output_panel.gallery)
 
         extra_tabs.__exit__()
 

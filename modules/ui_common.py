@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import html
 import os
@@ -104,7 +105,17 @@ def save_files(js_data, images, do_make_zip, index):
     return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0]}")
 
 
+@dataclasses.dataclass
+class OutputPanel:
+    gallery = None
+    infotext = None
+    html_info = None
+    html_log = None
+    button_upscale = None
+
+
 def create_output_panel(tabname, outdir, toprow=None):
+    res = OutputPanel()
 
     def open_folder(f):
         if not os.path.exists(f):
@@ -136,9 +147,8 @@ Requested path was: {f}
 
         with gr.Column(variant='panel', elem_id=f"{tabname}_results_panel"):
             with gr.Group(elem_id=f"{tabname}_gallery_container"):
-                result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery", columns=4, preview=True, height=shared.opts.gallery_height or None)
+                res.gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery", columns=4, preview=True, height=shared.opts.gallery_height or None)
 
-            generation_info = None
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
                 open_folder_button = ToolButton(folder_symbol, elem_id=f'{tabname}_open_folder', visible=not shared.cmd_opts.hide_ui_dir_config, tooltip="Open images output directory.")
 
@@ -152,6 +162,9 @@ Requested path was: {f}
                     'extras': ToolButton('📐', elem_id=f'{tabname}_send_to_extras', tooltip="Send image and generation parameters to extras tab.")
                 }
 
+                if tabname == 'txt2img':
+                    res.button_upscale = ToolButton('✨', elem_id=f'{tabname}_upscale', tooltip="Create an upscaled version of the current image using hires fix settings.")
+
             open_folder_button.click(
                 fn=lambda: open_folder(shared.opts.outdir_samples or outdir),
                 inputs=[],
@@ -162,17 +175,17 @@ Requested path was: {f}
                 download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
 
                 with gr.Group():
-                    html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
-                    html_log = gr.HTML(elem_id=f'html_log_{tabname}', elem_classes="html-log")
+                    res.html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
+                    res.html_log = gr.HTML(elem_id=f'html_log_{tabname}', elem_classes="html-log")
 
-                    generation_info = gr.Textbox(visible=False, elem_id=f'generation_info_{tabname}')
+                    res.infotext = gr.Textbox(visible=False, elem_id=f'generation_info_{tabname}')
                     if tabname == 'txt2img' or tabname == 'img2img':
                         generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
                         generation_info_button.click(
                             fn=update_generation_info,
                             _js="function(x, y, z){ return [x, y, selected_gallery_index()] }",
-                            inputs=[generation_info, html_info, html_info],
-                            outputs=[html_info, html_info],
+                            inputs=[res.infotext, res.html_info, res.html_info],
+                            outputs=[res.html_info, res.html_info],
                             show_progress=False,
                         )
 
@@ -180,14 +193,14 @@ Requested path was: {f}
                         fn=call_queue.wrap_gradio_call(save_files),
                         _js="(x, y, z, w) => [x, y, false, selected_gallery_index()]",
                         inputs=[
-                            generation_info,
-                            result_gallery,
-                            html_info,
-                            html_info,
+                            res.infotext,
+                            res.gallery,
+                            res.html_info,
+                            res.html_info,
                         ],
                         outputs=[
                             download_files,
-                            html_log,
+                            res.html_log,
                         ],
                         show_progress=False,
                     )
@@ -196,21 +209,21 @@ Requested path was: {f}
                         fn=call_queue.wrap_gradio_call(save_files),
                         _js="(x, y, z, w) => [x, y, true, selected_gallery_index()]",
                         inputs=[
-                            generation_info,
-                            result_gallery,
-                            html_info,
-                            html_info,
+                            res.infotext,
+                            res.gallery,
+                            res.html_info,
+                            res.html_info,
                         ],
                         outputs=[
                             download_files,
-                            html_log,
+                            res.html_log,
                         ]
                     )
 
             else:
-                html_info_x = gr.HTML(elem_id=f'html_info_x_{tabname}')
-                html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
-                html_log = gr.HTML(elem_id=f'html_log_{tabname}')
+                res.infotext = gr.HTML(elem_id=f'html_info_x_{tabname}')
+                res.html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
+                res.html_log = gr.HTML(elem_id=f'html_log_{tabname}')
 
             paste_field_names = []
             if tabname == "txt2img":
@@ -220,11 +233,11 @@ Requested path was: {f}
 
             for paste_tabname, paste_button in buttons.items():
                 parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
-                    paste_button=paste_button, tabname=paste_tabname, source_tabname="txt2img" if tabname == "txt2img" else None, source_image_component=result_gallery,
+                    paste_button=paste_button, tabname=paste_tabname, source_tabname="txt2img" if tabname == "txt2img" else None, source_image_component=res.gallery,
                     paste_field_names=paste_field_names
                 ))
 
-            return result_gallery, generation_info if tabname != "extras" else html_info_x, html_info, html_log
+    return res
 
 
 def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):

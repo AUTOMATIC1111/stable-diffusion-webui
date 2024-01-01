@@ -1,7 +1,7 @@
 from contextlib import closing
 
 import modules.scripts
-from modules import processing
+from modules import processing, infotext_utils
 from modules.infotext_utils import create_override_settings_dict
 from modules.shared import opts
 import modules.shared as shared
@@ -9,8 +9,22 @@ from modules.ui import plaintext_to_html
 import gradio as gr
 
 
-def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, steps: int, sampler_name: str, n_iter: int, batch_size: int, cfg_scale: float, height: int, width: int, enable_hr: bool, denoising_strength: float, hr_scale: float, hr_upscaler: str, hr_second_pass_steps: int, hr_resize_x: int, hr_resize_y: int, hr_checkpoint_name: str, hr_sampler_name: str, hr_prompt: str, hr_negative_prompt, override_settings_texts, request: gr.Request, *args):
+def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, *args):
+    assert len(gallery) > 0, 'No image to upscale'
+
+    image_info = gallery[gallery_index] if 0 <= gallery_index < len(gallery) else gallery[0]
+    image = infotext_utils.image_from_url_text(image_info)
+
+    return txt2img(id_task, request, *args, firstpass_image=image)
+
+
+def txt2img(id_task: str, request: gr.Request, prompt: str, negative_prompt: str, prompt_styles, steps: int, sampler_name: str, n_iter: int, batch_size: int, cfg_scale: float, height: int, width: int, enable_hr: bool, denoising_strength: float, hr_scale: float, hr_upscaler: str, hr_second_pass_steps: int, hr_resize_x: int, hr_resize_y: int, hr_checkpoint_name: str, hr_sampler_name: str, hr_prompt: str, hr_negative_prompt, override_settings_texts, *args, firstpass_image=None):
     override_settings = create_override_settings_dict(override_settings_texts)
+
+    if firstpass_image is not None:
+        enable_hr = True
+        batch_size = 1
+        n_iter = 1
 
     p = processing.StableDiffusionProcessingTxt2Img(
         sd_model=shared.sd_model,
@@ -38,6 +52,7 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
         hr_prompt=hr_prompt,
         hr_negative_prompt=hr_negative_prompt,
         override_settings=override_settings,
+        firstpass_image=firstpass_image,
     )
 
     p.scripts = modules.scripts.scripts_txt2img
