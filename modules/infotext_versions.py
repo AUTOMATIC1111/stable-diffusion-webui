@@ -4,6 +4,7 @@ import re
 
 
 v160 = version.parse("1.6.0")
+v170_tsnr = version.parse("v1.7.0-225")
 
 
 def parse_version(text):
@@ -32,4 +33,7 @@ def backcompat(d):
 
     if ver < v160:
         d["Old prompt editing timelines"] = True
+
+    if ver < v170_tsnr:
+        d["Downcast alphas_cumprod"] = True
 
