@@ -1,7 +1,7 @@
 import gradio as gr
 
 from modules import scripts, sd_models
-from modules.generation_parameters_copypaste import PasteField
+from modules.infotext import PasteField
 from modules.ui_common import create_refresh_button
 from modules.ui_components import InputAccordion
 

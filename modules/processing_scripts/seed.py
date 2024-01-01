@@ -3,7 +3,7 @@ import json
 import gradio as gr
 
 from modules import scripts, ui, errors
-from modules.generation_parameters_copypaste import PasteField
+from modules.infotext import PasteField
 from modules.shared import cmd_opts
 from modules.ui_components import ToolButton
 

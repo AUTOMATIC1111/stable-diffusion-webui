@@ -8,10 +8,10 @@ import gradio as gr
 import subprocess as sp
 
 from modules import call_queue, shared
-from modules.generation_parameters_copypaste import image_from_url_text
+from modules.infotext import image_from_url_text
 import modules.images
 from modules.ui_components import ToolButton
-import modules.generation_parameters_copypaste as parameters_copypaste
+import modules.infotext as parameters_copypaste
 
 folder_symbol = '\U0001f4c2'  # 📂
 refresh_symbol = '\U0001f504'  # 🔄

@@ -2,7 +2,7 @@ import os
 
 from PIL import Image
 
-from modules import shared, images, devices, scripts, scripts_postprocessing, ui_common, generation_parameters_copypaste
+from modules import shared, images, devices, scripts, scripts_postprocessing, ui_common, infotext
 from modules.shared import opts
 
 
@@ -86,7 +86,7 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
                 basename = ''
                 forced_filename = None
 
-            infotext = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in pp.info.items() if v is not None])
+            infotext = ", ".join([k if k == v else f'{k}: {infotext.quote(v)}' for k, v in pp.info.items() if v is not None])
 
             if opts.enable_pnginfo:
                 pp.image.info = existing_pnginfo
