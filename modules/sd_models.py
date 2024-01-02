@@ -760,7 +760,9 @@ def set_diffuser_options(sd_model, vae = None, op: str = 'model'):
         sd_model.vqvae.to(torch.float32) # vqvae is producing nans in fp16
     if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):
         sd_model.enable_xformers_memory_efficient_attention()
-
+    if shared.opts.diffusers_fuse_projections and hasattr(sd_model, 'fuse_qkv_projections'):
+        shared.log.debug(f'Setting {op}: enable fused projections')
+        sd_model.fuse_qkv_projections()
     if shared.opts.diffusers_eval:
         if hasattr(sd_model, "unet") and hasattr(sd_model.unet, "requires_grad_"):
             sd_model.unet.requires_grad_(False)
@@ -771,6 +773,8 @@ def set_diffuser_options(sd_model, vae = None, op: str = 'model'):
         if hasattr(sd_model, "text_encoder") and hasattr(sd_model.text_encoder, "requires_grad_"):
             sd_model.text_encoder.requires_grad_(False)
             sd_model.text_encoder.eval()
+    if shared.opts.diffusers_quantization:
+        sd_model = sd_models_compile.dynamic_quantization(sd_model)
 
     if shared.opts.opt_channelslast and hasattr(sd_model, 'unet'):
         shared.log.debug(f'Setting {op}: enable channels last')

@@ -26,12 +26,24 @@ And it also includes fixes for all reported issues so far
     example: `python cli/sdapi.py /sdapi/v1/sd-models`  
   - memory: add ram usage monitoring in addition to gpu memory usage monitoring  
   - updated core requirements  
+- **Compile**
+  - new option: **fused projections**  
+    pretty much free 5% performance boost for compatible models  
+    enable in settings -> compute settings  
+  - new option: **dynamic quantization** (experimental)  
+    reduces memory usage and increases performance  
+    enable in settings -> compute settings  
+    best used together with torch compile: *inductor*  
+    this feature is highly experimental and will evolve over time  
+    requires nightly versions of `torch` and `torchao`  
+    > pip install -U --pre torch torchvision torchaudio --index-url <https://download.pytorch.org/whl/nightly/cu121>  
+    > pip install git+<https://github.com/pytorch-labs/ao>  
 - **IPEX**, thanks @disty0  
-    - rewrote IPEX hijacks to get rid of CondFunc  
-    - dropped IPEX 2.0 specific fixes, update to IPEX 2.1  
-    - add `IPEX_SDPA_SLICE_TRIGGER_RATE` and `IPEX_ATTENTION_SLICE_RATE` env variables  
+  - update to IPEX 2.1  
+  - add `IPEX_SDPA_SLICE_TRIGGER_RATE` and `IPEX_ATTENTION_SLICE_RATE` env variables  
 - **Fixes**  
   - ipadapter: allow changing of model/image on-the-fly  
+  - ipadapter: fix fallback of cross-attention on unload  
   - python: fix python 3.9 compatibility  
   - img2img: clip and blip interrogate  
   - sampler: guard against invalid sampler index  

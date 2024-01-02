@@ -74,7 +74,6 @@ class Script(scripts.Script):
                 shared.sd_model.set_ip_adapter_scale(0)
             if loaded is not None:
                 shared.log.debug('IP adapter: unload attention processor')
-                shared.sd_model.unet.set_default_attn_processor()
                 shared.sd_model.unet.config.encoder_hid_dim_type = None
                 loaded = None
             return
@@ -104,7 +103,6 @@ class Script(scripts.Script):
             t0 = time.time()
             if loaded is not None:
                 shared.log.debug('IP adapter: reset attention processor')
-                shared.sd_model.unet.set_default_attn_processor()
                 loaded = None
             else:
                 shared.log.debug('IP adapter: load attention processor')

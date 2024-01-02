@@ -317,6 +317,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "other_sep": OptionInfo("<h2>Execution precision</h2>", "", gr.HTML),
     "opt_channelslast": OptionInfo(False, "Use channels last as torch memory format "),
     "cudnn_benchmark": OptionInfo(False, "Enable full-depth cuDNN benchmark feature"),
+    "diffusers_fuse_projections": OptionInfo(False, "Enable fused projections"),
     "torch_gc_threshold": OptionInfo(80, "Memory usage threshold before running Torch GC", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
 
     "cuda_compile_sep": OptionInfo("<h2>Model Compile</h2>", "", gr.HTML),
@@ -329,6 +330,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_compile_precompile": OptionInfo(False, "Model compile precompile"),
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
     "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
+    "diffusers_quantization": OptionInfo(False, "Enable dynamic quantization"),
 
     "ipex_sep": OptionInfo("<h2>IPEX, DirectML and OpenVINO</h2>", "", gr.HTML),
     "ipex_optimize": OptionInfo(False if not devices.backend == "ipex" else True, "Enable IPEX Optimize for Intel GPUs"),
