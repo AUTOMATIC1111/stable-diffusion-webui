@@ -453,6 +453,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                                 # p.task_args['image'] = p.image
                                 p.task_args['mask_image'] = mask
                                 p.task_args['strength'] = denoising_strength
+                                p.task_args['padding_mask_crop'] = 64 # should be configurable based on ui
                                 p.image_mask = mask
                                 p.mask = mask
                                 p.inpaint_full_res = False

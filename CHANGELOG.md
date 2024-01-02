@@ -8,6 +8,10 @@ And it also includes fixes for all reported issues so far
 - **Control**:
   - add **inpaint** support  
     applies to both *img2img* and *controlnet* workflows  
+    *note*: set blur to level you desire  
+  - add **outpaint** support  
+    applies to both *img2img* and *controlnet* workflows  
+    *note*: increase denoising strength since outpainted area is blank by default  
   - add **marigold** depth map processor  
     this is state-of-the-art depth estimation model, but its quite heavy on resources  
   - configurable output folder in settings  

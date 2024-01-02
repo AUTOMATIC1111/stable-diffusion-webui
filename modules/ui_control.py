@@ -118,10 +118,7 @@ def get_video(filepath: str):
 
 
 def select_mask(image: Image.Image, blur: int = 0, negative: bool = False):
-    import hashlib
     import cv2
-    from modules import images
-
     if image is None:
         return image
     image_mask = image.convert("L")
@@ -135,18 +132,31 @@ def select_mask(image: Image.Image, blur: int = 0, negative: bool = False):
         np_mask = cv2.GaussianBlur(np_mask, (kernel_size, 1), blur)
         np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), blur)
         image_mask = Image.fromarray(np_mask.astype(np.uint8))
-    if shared.opts.save_init_img:
-        init_img_hash = hashlib.sha256(image_mask.tobytes()).hexdigest()[0:8] # pylint: disable=attribute-defined-outside-init
-        images.save_image(image_mask, path=shared.opts.outdir_init_images, basename=None, forced_filename=init_img_hash, suffix="-init-image")
     return image_mask
 
 
-def select_noise(image: Image.Image, mask: Image.Image):
-    # TODO create noise based on input image with mask
-    return image
+def expand_mask(image: Image.Image, blur: int = 0, erode: int = 3, dilate: int = 16, iterations: int = 8, threshold: int = 4):
+    import cv2
+    if image is None:
+        return image
+    pil_mask = image.convert("L")
+    np_mask = np.array(pil_mask)
+    if threshold > 0:
+        _thres, np_mask = cv2.threshold(np_mask, threshold, 255, cv2.THRESH_BINARY_INV) # create mask
+    if erode > 0:
+        np_mask = cv2.erode(np_mask, np.ones((erode, erode), np.uint8), iterations=iterations) # remove noise
+    if dilate > 0:
+        np_mask = cv2.dilate(np_mask, np.ones((dilate, dilate), np.uint8), iterations=iterations) # expand area
+    if blur > 0:
+        blur_size = 2 * int(2.5 * blur + 0.5) + 1
+        np_mask = cv2.GaussianBlur(np_mask, (blur_size, 1), blur) # blur x-axis
+        np_mask = cv2.GaussianBlur(np_mask, (1, blur_size), blur) # blur y-axis
+    image_mask = Image.fromarray(np_mask.astype(np.uint8))
+    image_mask.save('/tmp/expanded.png')
+    return image_mask
 
 
-def select_input(input_mode, input_image, selected_init, init_type, input_resize, input_inpaint, mask_blur):
+def select_input(input_mode, input_image, selected_init, init_type, input_resize, input_inpaint, mask_blur, mask_overlap):
     global busy, input_source, input_init, input_mask # pylint: disable=global-statement
     busy = True
     if input_mode == 'Select':
@@ -168,8 +178,7 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
     # control inputs
     if isinstance(selected_input, Image.Image): # image via upload -> image
         if input_mode == 'Outpaint':
-            input_mask = select_mask(image=selected_input, blur=mask_blur, negative=True)
-            selected_input = select_noise(image=selected_input, mask=input_mask)
+            input_mask = expand_mask(image=selected_input, blur=mask_blur, iterations=mask_overlap)
         input_source = [selected_input]
         input_type = 'PIL.Image'
         shared.log.debug(f'Control input: type={input_type} input={input_source}')
@@ -214,8 +223,7 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
     elif init_type == 2: # Separate init image
         if isinstance(selected_init, Image.Image): # image via upload -> image
             if input_mode == 'Outpaint':
-                input_mask = select_mask(image=selected_init, blur=mask_blur, negative=True)
-                selected_init = select_noise(image=selected_init, mask=input_mask)
+                input_mask = expand_mask(image=selected_init, blur=mask_blur, iterations=mask_overlap)
             input_source = [selected_init]
             input_init = [selected_init]
             input_type = 'PIL.Image'
@@ -313,7 +321,8 @@ def create_ui(_blocks: gr.Blocks=None):
                     with gr.Row():
                         denoising_strength = gr.Slider(minimum=0.01, maximum=0.99, step=0.01, label='Denoising strength', value=0.50, elem_id="control_denoising_strength")
                     with gr.Row():
-                        mask_blur = gr.Slider(minimum=0, maximum=100, step=1, label='Mask blur', value=8, elem_id="control_mask_blur")
+                        mask_blur = gr.Slider(minimum=0, maximum=100, step=1, label='Blur', value=8, elem_id="control_mask_blur")
+                        mask_overlap = gr.Slider(minimum=0, maximum=100, step=1, label='Overlap', value=8, elem_id="control_mask_overlap")
 
                 resize_mode, resize_name, width, height, scale_by, selected_scale_tab, resize_time = ui.create_resize_inputs('control', [], time_selector=True, scale_visible=False, mode='Fixed')
 
@@ -669,7 +678,7 @@ def create_ui(_blocks: gr.Blocks=None):
                 btn_prompt_counter.click(fn=call_queue.wrap_queued_call(ui.update_token_counter), inputs=[prompt, steps], outputs=[prompt_counter])
                 btn_negative_counter.click(fn=call_queue.wrap_queued_call(ui.update_token_counter), inputs=[negative, steps], outputs=[negative_counter])
 
-                select_fields = [input_mode, input_image, init_image, input_type, input_resize, input_inpaint, mask_blur]
+                select_fields = [input_mode, input_image, init_image, input_type, input_resize, input_inpaint, mask_blur, mask_overlap]
                 select_output = [output_tabs, result_txt]
                 select_dict = dict(
                     fn=select_input,
