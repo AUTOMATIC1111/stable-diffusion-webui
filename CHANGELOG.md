@@ -1,8 +1,8 @@
 # Change Log for SD.Next
 
-## Update for 2023-12-31
+## Update for 2023-01-02
 
-Following-up on a major release, some more functionality to new Control module  
+Following-up on a major release, some more functionality in new Control module  
 And it also includes fixes for all reported issues so far  
 
 - **Control**:
@@ -22,7 +22,7 @@ And it also includes fixes for all reported issues so far
   - fix correct image mode  
 - **Improvements**  
   - allow deployment without git clone  
-    for example, zip of the sdnext folder can be used  
+    for example, you can now deploy a zip of the sdnext folder  
   - hypertile: enable vae tiling  
   - hypertile: add autodetect optimial value  
     set tile size to 0 to use autodetected value  
@@ -40,8 +40,8 @@ And it also includes fixes for all reported issues so far
     best used together with torch compile: *inductor*  
     this feature is highly experimental and will evolve over time  
     requires nightly versions of `torch` and `torchao`  
-    > pip install -U --pre torch torchvision torchaudio --index-url <https://download.pytorch.org/whl/nightly/cu121>  
-    > pip install git+<https://github.com/pytorch-labs/ao>  
+    > pip install -U --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu121  
+    > pip install -U git+https://github.com/pytorch-labs/ao  
 - **IPEX**, thanks @disty0  
   - better compile support  
   - remove IPEX / Torch 2.0 specific hijacks  
