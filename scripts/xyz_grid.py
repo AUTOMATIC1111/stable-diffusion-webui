@@ -62,12 +62,12 @@ def apply_sampler(p, x, xs):
     else:
         p.sampler_name = sampler_name
 
-def apply_latent_sampler(p, x, xs):
-    latent_sampler = sd_samplers.samplers_map.get(x.lower(), None)
-    if latent_sampler is None:
+def apply_hr_sampler_name(p, x, xs):
+    hr_sampler_name = sd_samplers.samplers_map.get(x.lower(), None)
+    if hr_sampler_name is None:
         shared.log.warning(f"XYZ grid: unknown sampler: {x}")
     else:
-        p.latent_sampler = latent_sampler
+        p.hr_sampler_name = hr_sampler_name
 
 def confirm_samplers(p, xs):
     for x in xs:
@@ -249,7 +249,7 @@ axis_options = [
     AxisOption("[Sampler] ETA", float, apply_field("eta")),
     AxisOption("[Sampler] Solver order", int, apply_setting("schedulers_solver_order")),
     AxisOption("[Second pass] Upscaler", str, apply_field("hr_upscaler"), choices=lambda: [*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]]),
-    AxisOption("[Second pass] Sampler", str, apply_latent_sampler, fmt=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
+    AxisOption("[Second pass] Sampler", str, apply_hr_sampler_name, fmt=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
     AxisOption("[Second pass] Denoising Strength", float, apply_field("denoising_strength")),
     AxisOption("[Second pass] Hires steps", int, apply_field("hr_second_pass_steps")),
     AxisOption("[Second pass] CFG scale", float, apply_field("image_cfg_scale")),

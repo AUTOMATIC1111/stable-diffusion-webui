@@ -465,7 +465,7 @@ def create_hires_inputs(tab):
             with FormRow(elem_id=f"{tab}_hires_row1"):
                 enable_hr = gr.Checkbox(label='Enable second pass', value=False, elem_id=f"{tab}_enable_hr")
             with FormRow(elem_id=f"{tab}_hires_row2"):
-                latent_index = gr.Dropdown(label='Secondary sampler', elem_id=f"{tab}_sampling_alt", choices=[x.name for x in modules.sd_samplers.samplers], value='Default', type="index")
+                hr_sampler_index = gr.Dropdown(label='Secondary sampler', elem_id=f"{tab}_sampling_alt", choices=[x.name for x in modules.sd_samplers.samplers], value='Default', type="index")
                 denoising_strength = gr.Slider(minimum=0.0, maximum=0.99, step=0.01, label='Denoising strength', value=0.5, elem_id=f"{tab}_denoising_strength")
             with FormRow(elem_id=f"{tab}_hires_finalres", variant="compact"):
                 hr_final_resolution = FormHTML(value="", elem_id=f"{tab}_hr_finalres", label="Upscaled resolution", interactive=False)
@@ -486,7 +486,7 @@ def create_hires_inputs(tab):
                 refiner_prompt = gr.Textbox(value='', label='Secondary prompt', elem_id=f"{tab}_refiner_prompt")
             with FormRow(elem_id="txt2img_refiner_row4", variant="compact"):
                 refiner_negative = gr.Textbox(value='', label='Secondary negative prompt', elem_id=f"{tab}_refiner_neg_prompt")
-    return enable_hr, latent_index, denoising_strength, hr_final_resolution, hr_upscaler, hr_force, hr_second_pass_steps, hr_scale, hr_resize_x, hr_resize_y, refiner_steps, refiner_start, refiner_prompt, refiner_negative
+    return enable_hr, hr_sampler_index, denoising_strength, hr_final_resolution, hr_upscaler, hr_force, hr_second_pass_steps, hr_scale, hr_resize_x, hr_resize_y, refiner_steps, refiner_start, refiner_prompt, refiner_negative
 
 
 def get_value_for_setting(key):
@@ -543,7 +543,7 @@ def create_ui(startup_timer = None):
                     batch_count, batch_size = create_batch_inputs('txt2img')
                     seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = create_seed_inputs('txt2img')
                     cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry = create_advanced_inputs('txt2img')
-                    enable_hr, latent_index, denoising_strength, hr_final_resolution, hr_upscaler, hr_force, hr_second_pass_steps, hr_scale, hr_resize_x, hr_resize_y, refiner_steps, refiner_start, refiner_prompt, refiner_negative = create_hires_inputs('txt2img')
+                    enable_hr, hr_sampler_index, denoising_strength, hr_final_resolution, hr_upscaler, hr_force, hr_second_pass_steps, hr_scale, hr_resize_x, hr_resize_y, refiner_steps, refiner_start, refiner_prompt, refiner_negative = create_hires_inputs('txt2img')
                     override_settings = create_override_inputs('txt2img')
 
                 txt2img_script_inputs = modules.scripts.scripts_txt2img.setup_ui()
@@ -567,7 +567,7 @@ def create_ui(startup_timer = None):
             txt2img_args = [
                 dummy_component,
                 txt2img_prompt, txt2img_negative_prompt, txt2img_prompt_styles,
-                steps, sampler_index, latent_index,
+                steps, sampler_index, hr_sampler_index,
                 full_quality, restore_faces, tiling,
                 batch_count, batch_size,
                 cfg_scale, image_cfg_scale, diffusers_guidance_rescale,
@@ -623,7 +623,7 @@ def create_ui(startup_timer = None):
                 (tiling, "Tiling"),
                 # second pass
                 (enable_hr, "Second pass"),
-                (latent_index, "Latent sampler"),
+                (hr_sampler_index, "Hires sampler"),
                 (denoising_strength, "Denoising strength"),
                 (hr_upscaler, "Hires upscaler"),
                 (hr_force, "Hires force"),
@@ -794,7 +794,7 @@ def create_ui(startup_timer = None):
                 init_img_inpaint,
                 init_mask_inpaint,
                 steps,
-                sampler_index, latent_index,
+                sampler_index, hr_sampler_index,
                 mask_blur, mask_alpha,
                 inpainting_fill,
                 full_quality, restore_faces, tiling,
@@ -1025,8 +1025,8 @@ def create_ui(startup_timer = None):
                 shared.log.warning("OpenVINO: Setting backend to Diffusers")
                 shared.opts.sd_backend = "diffusers"
         try:
-            opts.save(shared.config_filename)
             if len(changed) > 0:
+                opts.save(shared.config_filename)
                 log.info(f'Settings: changed={len(changed)} {changed}')
         except RuntimeError:
             log.error(f'Settings failed: change={len(changed)} {changed}')

@@ -93,7 +93,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
         styles = styles,
         steps = steps,
         sampler_name = processing.get_sampler_name(sampler_index),
-        latent_sampler = processing.get_sampler_name(sampler_index),
+        hr_sampler_name = processing.get_sampler_name(sampler_index),
         seed = seed,
         subseed = subseed,
         subseed_strength = subseed_strength,

@@ -986,7 +986,7 @@ Actual changelog is:
 
 - original
   - fix hires secondary sampler  
-    this now fully obsoletes `fallback_sampler` and `force_latent_sampler`  
+    this now fully obsoletes `fallback_sampler` and `force_hr_sampler_name`  
 
 
 ## Update for 2023-07-18
@@ -1026,7 +1026,7 @@ Trying to unify settings for both original and diffusers backend without introdu
 - renamed **hires fix** to **second pass**  
   as that is what it actually is, name hires fix is misleading to start with  
 - actual **hires fix** and **refiner** are now options inside **second pass** section  
-- obsoleted settings -> sampler -> **force_latent_sampler**  
+- obsoleted settings -> sampler -> **force_hr_sampler_name**  
   it is now part of **second pass** options and it works the same for both original and diffusers backend  
   which means you can use different scheduler settings for txt2img and hires if you want  
 - sd-xl refiner will run if its loaded and if second pass is enabled  

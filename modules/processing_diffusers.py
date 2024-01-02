@@ -357,7 +357,7 @@ def process_diffusers(p: StableDiffusionProcessing):
                     devices.torch_gc(force=True)
 
     def update_sampler(sd_model, second_pass=False):
-        sampler_selection = p.latent_sampler if second_pass else p.sampler_name
+        sampler_selection = p.hr_sampler_name if second_pass else p.sampler_name
         if sd_model.__class__.__name__ in ['AmusedPipeline']:
             return # models with their own schedulers
         if hasattr(sd_model, 'scheduler') and sampler_selection != 'Default':
