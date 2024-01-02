@@ -121,12 +121,14 @@ def txt2img_image_conditioning(sd_model, x, width, height):
 
 
 def get_sampler_name(sampler_index: int, img: bool = False) -> str:
-    samplers = modules.sd_samplers.samplers if not img else modules.sd_samplers.samplers_for_img2img
-    if len(samplers) > sampler_index:
-        sampler_name = samplers[sampler_index].name
+    if len(modules.sd_samplers.samplers) > sampler_index:
+        sampler_name = modules.sd_samplers.samplers[sampler_index].name
     else:
         sampler_name = "UniPC"
-        shared.log.warning(f'Sampler not found: index={sampler_index} available={[s.name for s in samplers]} fallback={sampler_name}')
+        shared.log.warning(f'Sampler not found: index={sampler_index} available={[s.name for s in modules.sd_samplers.samplers]} fallback={sampler_name}')
+    if img and sampler_name == "PLMS":
+        sampler_name = "UniPC"
+        shared.log.warning(f'Sampler not compatible: name=PLMS fallback={sampler_name}')
     return sampler_name
 
 

@@ -46,6 +46,7 @@ And it also includes fixes for all reported issues so far
   - ipadapter: fix fallback of cross-attention on unload  
   - python: fix python 3.9 compatibility  
   - img2img: clip and blip interrogate  
+  - img2img: sampler selection offset  
   - sampler: guard against invalid sampler index  
   - config: reset default cfg scale to 6.0  
   - processing: correct display metadata  
