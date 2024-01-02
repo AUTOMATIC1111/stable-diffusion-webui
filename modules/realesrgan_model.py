@@ -39,7 +39,7 @@ class UpscalerRealESRGAN(Upscaler):
         model_descriptor = modelloader.load_spandrel_model(
             info.local_data_path,
             device=self.device,
-            half=(not cmd_opts.no_half and not cmd_opts.upcast_sampling),
+            prefer_half=(not cmd_opts.no_half and not cmd_opts.upcast_sampling),
             expected_architecture="ESRGAN",  # "RealESRGAN" isn't a specific thing for Spandrel
         )
         return upscale_with_model(
