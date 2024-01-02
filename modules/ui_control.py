@@ -152,7 +152,6 @@ def expand_mask(image: Image.Image, blur: int = 0, erode: int = 3, dilate: int =
         np_mask = cv2.GaussianBlur(np_mask, (blur_size, 1), blur) # blur x-axis
         np_mask = cv2.GaussianBlur(np_mask, (1, blur_size), blur) # blur y-axis
     image_mask = Image.fromarray(np_mask.astype(np.uint8))
-    image_mask.save('/tmp/expanded.png')
     return image_mask
 
 
