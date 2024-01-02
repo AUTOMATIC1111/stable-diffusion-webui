@@ -1530,6 +1530,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
             if self.inpainting_mask_invert:
                 image_mask = ImageOps.invert(image_mask)
+                self.extra_generation_params["Mask mode"] = "Inpaint not masked"
 
             if self.mask_blur_x > 0:
                 np_mask = np.array(image_mask)
@@ -1543,6 +1544,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), self.mask_blur_y)
                 image_mask = Image.fromarray(np_mask)
 
+            if self.mask_blur_x > 0 or self.mask_blur_y > 0:
+                self.extra_generation_params["Mask blur"] = self.mask_blur
+
             if self.inpaint_full_res:
                 self.mask_for_overlay = image_mask
                 mask = image_mask.convert('L')
@@ -1553,6 +1557,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 mask = mask.crop(crop_region)
                 image_mask = images.resize_image(2, mask, self.width, self.height)
                 self.paste_to = (x1, y1, x2-x1, y2-y1)
+
+                self.extra_generation_params["Inpaint area"] = "Only masked"
+                self.extra_generation_params["Masked area padding"] = self.inpaint_full_res_padding
             else:
                 image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height)
                 np_mask = np.array(image_mask)
@@ -1593,6 +1600,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if image_mask is not None:
                 if self.inpainting_fill != 1:
                     image = masking.fill(image, latent_mask)
+
+                    if self.inpainting_fill == 0:
+                        self.extra_generation_params["Masked content"] = 'fill'
 
             if add_color_corrections:
                 self.color_corrections.append(setup_color_correction(image))
@@ -1643,8 +1653,11 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             # this needs to be fixed to be done in sample() using actual seeds for batches
             if self.inpainting_fill == 2:
                 self.init_latent = self.init_latent * self.mask + create_random_tensors(self.init_latent.shape[1:], all_seeds[0:self.init_latent.shape[0]]) * self.nmask
+                self.extra_generation_params["Masked content"] = 'latent noise'
+
             elif self.inpainting_fill == 3:
                 self.init_latent = self.init_latent * self.mask
+                self.extra_generation_params["Masked content"] = 'latent nothing'
 
         self.image_conditioning = self.img2img_image_conditioning(image * 2 - 1, self.init_latent, image_mask, self.mask_round)
 

@@ -312,6 +312,18 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "Hires negative prompt" not in res:
         res["Hires negative prompt"] = ""
 
+    if "Mask mode" not in res:
+        res["Mask mode"] = "Inpaint masked"
+
+    if "Masked content" not in res:
+        res["Masked content"] = 'original'
+
+    if "Inpaint area" not in res:
+        res["Inpaint area"] = "Whole picture"
+
+    if "Masked area padding" not in res:
+        res["Masked area padding"] = 32
+
     restore_old_hires_fix_params(res)
 
     # Missing RNG means the default was set, which is GPU RNG

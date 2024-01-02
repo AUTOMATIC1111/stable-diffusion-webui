@@ -222,21 +222,6 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     if shared.opts.enable_console_prompts:
         print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
 
-    if mask:
-        p.extra_generation_params["Mask blur"] = mask_blur
-
-        if inpainting_mask_invert is not None:
-            p.extra_generation_params["Mask mode"] = inpainting_mask_invert
-
-        if inpainting_fill is not None:
-            p.extra_generation_params["Masked content"] = inpainting_fill
-
-        if inpaint_full_res is not None:
-            p.extra_generation_params["Inpaint area"] = inpaint_full_res
-
-        if inpaint_full_res_padding is not None:
-            p.extra_generation_params["Only masked padding, pixels"] = inpaint_full_res_padding
-
     with closing(p):
         if is_batch:
             assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
