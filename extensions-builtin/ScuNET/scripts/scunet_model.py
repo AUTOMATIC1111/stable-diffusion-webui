@@ -1,13 +1,9 @@
 import sys
 
 import PIL.Image
-import numpy as np
-import torch
 
 import modules.upscaler
-from modules import devices, modelloader, script_callbacks, errors
-from modules.shared import opts
-from modules.upscaler_utils import tiled_upscale_2
+from modules import devices, errors, modelloader, script_callbacks, shared, upscaler_utils
 
 
 class UpscalerScuNET(modules.upscaler.Upscaler):
@@ -40,46 +36,23 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         self.scalers = scalers
 
     def do_upscale(self, img: PIL.Image.Image, selected_file):
-
         devices.torch_gc()
-
         try:
             model = self.load_model(selected_file)
         except Exception as e:
             print(f"ScuNET: Unable to load model from {selected_file}: {e}", file=sys.stderr)
             return img
 
-        device = devices.get_device_for('scunet')
-        tile = opts.SCUNET_tile
-        h, w = img.height, img.width
-        np_img = np.array(img)
-        np_img = np_img[:, :, ::-1]  # RGB to BGR
-        np_img = np_img.transpose((2, 0, 1)) / 255  # HWC to CHW
-        torch_img = torch.from_numpy(np_img).float().unsqueeze(0).to(device)  # type: ignore
-
-        if tile > h or tile > w:
-            _img = torch.zeros(1, 3, max(h, tile), max(w, tile), dtype=torch_img.dtype, device=torch_img.device)
-            _img[:, :, :h, :w] = torch_img # pad image
-            torch_img = _img
-
-        with torch.no_grad():
-            torch_output = tiled_upscale_2(
-                torch_img,
-                model,
-                tile_size=opts.SCUNET_tile,
-                tile_overlap=opts.SCUNET_tile_overlap,
-                scale=1,
-                device=devices.get_device_for('scunet'),
-                desc="ScuNET tiles",
-            ).squeeze(0)
-        torch_output = torch_output[:, :h * 1, :w * 1] # remove padding, if any
-        np_output: np.ndarray = torch_output.float().cpu().clamp_(0, 1).numpy()
-        del torch_img, torch_output
+        img = upscaler_utils.upscale_2(
+            img,
+            model,
+            tile_size=shared.opts.SCUNET_tile,
+            tile_overlap=shared.opts.SCUNET_tile_overlap,
+            scale=1,  # ScuNET is a denoising model, not an upscaler
+            desc='ScuNET',
+        )
         devices.torch_gc()
-
-        output = np_output.transpose((1, 2, 0))  # CHW to HWC
-        output = output[:, :, ::-1]  # BGR to RGB
-        return PIL.Image.fromarray((output * 255).astype(np.uint8))
+        return img
 
     def load_model(self, path: str):
         device = devices.get_device_for('scunet')
@@ -93,7 +66,6 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
 
 def on_ui_settings():
     import gradio as gr
-    from modules import shared
 
     shared.opts.add_option("SCUNET_tile", shared.OptionInfo(256, "Tile size for SCUNET upscalers.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}, section=('upscaling', "Upscaling")).info("0 = no tiling"))
     shared.opts.add_option("SCUNET_tile_overlap", shared.OptionInfo(8, "Tile overlap for SCUNET upscalers.", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}, section=('upscaling', "Upscaling")).info("Low values = visible seam"))
