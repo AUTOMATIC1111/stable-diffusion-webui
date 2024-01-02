@@ -107,7 +107,7 @@ def get_cuda_device_string():
 def get_optimal_device_name():
     if cuda_ok or backend == 'directml':
         return get_cuda_device_string()
-    if has_mps():
+    if has_mps() and backend != 'openvino':
         return "mps"
     return "cpu"
 
