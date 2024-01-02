@@ -96,8 +96,8 @@ def get_device():
     elif "GPU.0" in core.available_devices:
         device = "GPU.0"
     else:
-        device = "CPU"
-        shared.log.warning("OpenVINO: No compatible GPU detected!")
+        device = core.available_devices[-1]
+        shared.log.warning(f"OpenVINO: No compatible GPU detected! Using {device}")
     os.environ.setdefault('OPENVINO_TORCH_BACKEND_DEVICE', device)
     return device
 
