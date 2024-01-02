@@ -112,7 +112,7 @@ class SlicedAttnProcessor: # pylint: disable=too-few-public-methods
         for i in range(batch_size_attention // split_slice_size):
             start_idx = i * split_slice_size
             end_idx = (i + 1) * split_slice_size
-            if do_split_2:
+            if do_split_2 and query.device.type == "xpu":
                 for i2 in range(query_tokens // split_2_slice_size): # pylint: disable=invalid-name
                     start_idx_2 = i2 * split_2_slice_size
                     end_idx_2 = (i2 + 1) * split_2_slice_size
@@ -229,7 +229,7 @@ class AttnProcessor:
         hidden_states = torch.zeros(query.shape, device=query.device, dtype=query.dtype)
         do_split, do_split_2, do_split_3, split_slice_size, split_2_slice_size, split_3_slice_size = find_attention_slice_sizes(query.shape, query.element_size())
 
-        if do_split:
+        if do_split and query.device.type == "xpu":
             for i in range(batch_size_attention // split_slice_size):
                 start_idx = i * split_slice_size
                 end_idx = (i + 1) * split_slice_size

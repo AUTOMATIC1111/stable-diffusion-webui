@@ -26,6 +26,10 @@ And it also includes fixes for all reported issues so far
     example: `python cli/sdapi.py /sdapi/v1/sd-models`  
   - memory: add ram usage monitoring in addition to gpu memory usage monitoring  
   - updated core requirements  
+- **IPEX**, thanks @disty0  
+    - rewrote IPEX hijacks to get rid of CondFunc  
+    - dropped IPEX 2.0 specific fixes, update to IPEX 2.1  
+    - add `IPEX_SDPA_SLICE_TRIGGER_RATE` and `IPEX_ATTENTION_SLICE_RATE` env variables  
 - **Fixes**  
   - ipadapter: allow changing of model/image on-the-fly  
   - python: fix python 3.9 compatibility  
@@ -33,8 +37,7 @@ And it also includes fixes for all reported issues so far
   - sampler: guard against invalid sampler index  
   - config: reset default cfg scale to 6.0  
   - processing: correct display metadata  
-  - upscale: fix ldsr  
-  - ipex: fix torch.load, thanks @Disty0
+  - upscale: fix ldsr
 
 ## Update for 2023-12-29
 
