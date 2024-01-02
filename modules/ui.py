@@ -840,6 +840,10 @@ def create_ui():
                 (toprow.ui_styles.dropdown, lambda d: d["Styles array"] if isinstance(d.get("Styles array"), list) else gr.update()),
                 (denoising_strength, "Denoising strength"),
                 (mask_blur, "Mask blur"),
+                (inpainting_mask_invert, 'Mask mode'),
+                (inpainting_fill, 'Masked content'),
+                (inpaint_full_res, 'Inpaint area'),
+                (inpaint_full_res_padding, 'Only masked padding, pixels'),
                 *scripts.scripts_img2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields, override_settings)
