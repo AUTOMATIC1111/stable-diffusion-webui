@@ -114,7 +114,7 @@ class ExtraNetworksPage:
 
     def read_user_metadata(self, item):
         filename = item.get("filename", None)
-        metadata = extra_networks.get_user_metadata(filename)
+        metadata = extra_networks.get_user_metadata(filename, lister=self.lister)
 
         desc = metadata.get("description", None)
         if desc is not None:
