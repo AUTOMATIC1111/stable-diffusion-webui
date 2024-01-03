@@ -417,21 +417,21 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
     dropdown_sort.change(fn=lambda: None, _js="function(){ applyExtraNetworkSort('" + tabname + "'); }")
 
+    def create_html():
+        ui.pages_contents = [pg.create_html(ui.tabname) for pg in ui.stored_extra_pages]
+
     def pages_html():
         if not ui.pages_contents:
-            return refresh()
-
+            create_html()
         return ui.pages_contents
 
     def refresh():
         for pg in ui.stored_extra_pages:
             pg.refresh()
-
-        ui.pages_contents = [pg.create_html(ui.tabname) for pg in ui.stored_extra_pages]
-
+        create_html()
         return ui.pages_contents
 
-    interface.load(fn=pages_html, inputs=[], outputs=[*ui.pages])
+    interface.load(fn=pages_html, inputs=[], outputs=ui.pages)
     button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
 
     return ui
