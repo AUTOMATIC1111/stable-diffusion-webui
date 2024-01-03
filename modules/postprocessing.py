@@ -97,11 +97,12 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
 
                 if pp.caption:
                     caption_filename = os.path.splitext(fullfn)[0] + ".txt"
-                    if os.path.isfile(caption_filename):
+                    existing_caption = ""
+                    try:
                         with open(caption_filename, encoding="utf8") as file:
                             existing_caption = file.read().strip()
-                    else:
-                        existing_caption = ""
+                    except FileNotFoundError:
+                        pass
 
                     action = shared.opts.postprocessing_existing_caption_action
                     if action == 'Prepend' and existing_caption:

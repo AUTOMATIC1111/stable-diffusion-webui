@@ -26,8 +26,9 @@ class UiLoadsave:
         self.ui_defaults_review = None
 
         try:
-            if os.path.exists(self.filename):
-                self.ui_settings = self.read_from_file()
+            self.ui_settings = self.read_from_file()
+        except FileNotFoundError:
+            pass
         except Exception as e:
             self.error_loading = True
             errors.display(e, "loading settings")

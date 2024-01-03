@@ -32,11 +32,12 @@ class ExtensionMetadata:
         self.config = configparser.ConfigParser()
 
         filepath = os.path.join(path, self.filename)
-        if os.path.isfile(filepath):
-            try:
-                self.config.read(filepath)
-            except Exception:
-                errors.report(f"Error reading {self.filename} for extension {canonical_name}.", exc_info=True)
+        # `self.config.read()` will quietly swallow OSErrors (which FileNotFoundError is),
+        # so no need to check whether the file exists beforehand.
+        try:
+            self.config.read(filepath)
+        except Exception:
+            errors.report(f"Error reading {self.filename} for extension {canonical_name}.", exc_info=True)
 
         self.canonical_name = self.config.get("Extension", "Name", fallback=canonical_name)
         self.canonical_name = canonical_name.lower().strip()

@@ -215,9 +215,10 @@ def get_user_metadata(filename):
 
     metadata = {}
     try:
-        if os.path.isfile(metadata_filename):
-            with open(metadata_filename, "r", encoding="utf8") as file:
-                metadata = json.load(file)
+        with open(metadata_filename, "r", encoding="utf8") as file:
+            metadata = json.load(file)
+    except FileNotFoundError:
+        pass
     except Exception as e:
         errors.display(e, f"reading extra network user metadata from {metadata_filename}")
 

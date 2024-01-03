@@ -21,11 +21,11 @@ def html_path(filename):
 def html(filename):
     path = html_path(filename)
 
-    if os.path.exists(path):
+    try:
         with open(path, encoding="utf8") as file:
             return file.read()
-
-    return ""
+    except OSError:
+        return ""
 
 
 def walk_files(path, allowed_extensions=None):
