@@ -36,6 +36,9 @@ And it also includes fixes for all reported issues so far
   - vae: enable taesd batch decode  
     enable/disable with settings -> diffusers > vae slicing  
   - updated core requirements  
+  - major internal ui module refactoring  
+    this may cause compatibility issues if an extension is doing a direct import from `ui.py`  
+    in which case, report it so i can add a compatibility layer  
 - **Compile**
   - new option: **fused projections**  
     pretty much free 5% performance boost for compatible models  
@@ -56,6 +59,7 @@ And it also includes fixes for all reported issues so far
   - ipadapter: allow changing of model/image on-the-fly  
   - ipadapter: fix fallback of cross-attention on unload  
   - python: fix python 3.9 compatibility  
+  - sdxl: fix positive prompt embeds
   - img2img: clip and blip interrogate  
   - img2img: sampler selection offset  
   - sampler: guard against invalid sampler index  

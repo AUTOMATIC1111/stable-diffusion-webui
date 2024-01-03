@@ -225,8 +225,8 @@ def process_diffusers(p: StableDiffusionProcessing):
         if 'prompt' in possible:
             if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and len(p.prompt_embeds) > 0 and p.prompt_embeds[0] is not None:
                 args['prompt_embeds'] = p.prompt_embeds[0]
-                if 'XL' in model.__class__.__name__ and len(getattr(p, 'negative_pooleds', [])) > 0:
-                    args['pooled_prompt_embeds'] = p.negative_pooleds[0]
+                if 'XL' in model.__class__.__name__ and len(getattr(p, 'positive_pooleds', [])) > 0:
+                    args['pooled_prompt_embeds'] = p.positive_pooleds[0]
             else:
                 args['prompt'] = prompts
         if 'negative_prompt' in possible:
