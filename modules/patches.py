@@ -1,7 +1,8 @@
 from collections import defaultdict
+from typing import Optional
 
 
-def patch(key, obj, field, replacement):
+def patch(key, obj, field, replacement, add_if_not_exists:bool = False):
     """Replaces a function in a module or a class.
 
     Also stores the original function in this module, possible to be retrieved via original(key, obj, field).
@@ -21,7 +22,10 @@ def patch(key, obj, field, replacement):
     if patch_key in originals[key]:
         raise RuntimeError(f"patch for {field} is already applied")
 
-    original_func = getattr(obj, field)
+    if not hasattr(obj, field) and not add_if_not_exists:
+        raise AttributeError(f"type {type(obj)} '{type.__name__}' has no attribute '{field}'")
+    
+    original_func = getattr(obj, field, None)
     originals[key][patch_key] = original_func
 
     setattr(obj, field, replacement)
@@ -49,6 +53,8 @@ def undo(key, obj, field):
         raise RuntimeError(f"there is no patch for {field} to undo")
 
     original_func = originals[key].pop(patch_key)
+    if original_func is None:
+        delattr(obj, field)
     setattr(obj, field, original_func)
     return None
 
@@ -58,6 +64,18 @@ def original(key, obj, field):
     patch_key = (obj, field)
 
     return originals[key].get(patch_key, None)
+
+
+def patch_method(cls, key:Optional[str]=None):
+    def decorator(func):
+        patch(func.__module__ if key is None else key, cls, func.__name__, func)
+    return decorator
+
+
+def add_method(cls, key:Optional[str]=None):
+    def decorator(func):
+        patch(func.__module__ if key is None else key, cls, func.__name__, func, True)
+    return decorator
 
 
 originals = defaultdict(dict)
