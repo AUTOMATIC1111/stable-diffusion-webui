@@ -195,7 +195,7 @@ def git_clone(url, dir, name, commithash=None):
             # # os.chdir(dir)
             # # run(f'{git} init')
             # # run(f'{git} remote add origin {url}')
-            run(f'""{git}" -C "{dir}" remote add origin "{url}"')
+            run(f'"{git}" -C "{dir}" remote add origin "{url}"')
             run(f'"{git}" pull origin {commithash}', f"Cloning {name} into {dir}...", f"Couldn't clone {name}",live=True)
             # os.chdir(now_dir)
         else:
