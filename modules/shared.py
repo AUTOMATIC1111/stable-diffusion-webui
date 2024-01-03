@@ -367,7 +367,7 @@ options_templates.update(options_section(('advanced', "Inference Settings"), {
     "inference_other_sep": OptionInfo("<h2>Other</h2>", "", gr.HTML),
     "batch_frame_mode": OptionInfo(False, "Process multiple images in batch in parallel"),
     "inference_mode": OptionInfo("no-grad", "Torch inference mode", gr.Radio, {"choices": ["no-grad", "inference-mode", "none"]}),
-    "sd_vae_sliced_encode": OptionInfo(False, "VAE Slicing (original)"),
+    "sd_vae_sliced_encode": OptionInfo(False, "VAE sliced encode"),
 }))
 
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {

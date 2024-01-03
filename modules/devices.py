@@ -181,7 +181,7 @@ def test_fp16():
     if shared.cmd_opts.experimental:
         return True
     try:
-        x = torch.tensor([[1.5,.0,.0,.0]]).to(device).half()
+        x = torch.tensor([[1.5,.0,.0,.0]]).to(device=device, dtype=torch.float16)
         layerNorm = torch.nn.LayerNorm(4, eps=0.00001, elementwise_affine=True, dtype=torch.float16, device=device)
         _y = layerNorm(x)
         return True
@@ -228,20 +228,20 @@ def set_cuda_params():
         dtype = torch.float32
         dtype_vae = torch.float32
         dtype_unet = torch.float32
-    if shared.opts.cuda_dtype == 'BF16' or dtype == torch.bfloat16:
+        fp16_ok = None
+        bf16_ok = None
+    elif shared.opts.cuda_dtype == 'BF16' or dtype == torch.bfloat16:
+        fp16_ok = test_fp16()
         bf16_ok = test_bf16()
         dtype = torch.bfloat16 if bf16_ok else torch.float16
         dtype_vae = torch.bfloat16 if bf16_ok else torch.float16
         dtype_unet = torch.bfloat16 if bf16_ok else torch.float16
-    else:
-        bf16_ok = False
-    if shared.opts.cuda_dtype == 'FP16' or dtype == torch.float16:
+    elif shared.opts.cuda_dtype == 'FP16' or dtype == torch.float16:
         fp16_ok = test_fp16()
+        bf16_ok = None
         dtype = torch.float16 if fp16_ok else torch.float32
         dtype_vae = torch.float16 if fp16_ok else torch.float32
         dtype_unet = torch.float16 if fp16_ok else torch.float32
-    else:
-        fp16_ok = False
     if shared.opts.no_half:
         log.info('Torch override dtype: no-half set')
         dtype = torch.float32

@@ -85,7 +85,7 @@ function requestProgress(id_task, progressEl, galleryEl, atEnd = null, onProgres
   let livePreview;
   let img;
 
-  const init = () => {
+  const initLivePreview = () => {
     img = new Image();
     if (parentGallery) {
       livePreview = document.createElement('div');
@@ -123,7 +123,7 @@ function requestProgress(id_task, progressEl, galleryEl, atEnd = null, onProgres
         return;
       }
       setProgress(res);
-      if (res.live_preview && !livePreview) init();
+      if (res.live_preview && !livePreview) initLivePreview();
       if (res.live_preview && galleryEl) img.src = res.live_preview;
       if (onProgress) onProgress(res);
       setTimeout(() => start(id_task, id_live_preview), opts.live_preview_refresh_period || 500);

@@ -130,9 +130,6 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
     if resize_mode != 0 or inputs is None or inputs == [None]:
         p.width = width # pylint: disable=attribute-defined-outside-init
         p.height = height # pylint: disable=attribute-defined-outside-init
-        if selected_scale_tab == 1:
-            width = int(width * scale_by)
-            height = int(height * scale_by)
     else:
         del p.width
         del p.height
@@ -293,6 +290,8 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                     w, h = int(video.get(cv2.CAP_PROP_FRAME_WIDTH)), int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
                     codec = util.decode_fourcc(video.get(cv2.CAP_PROP_FOURCC))
                     status, frame = video.read()
+                    if status:
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     shared.log.debug(f'Control: input video: path={inputs} frames={frames} fps={fps} size={w}x{h} codec={codec}')
                 except Exception as e:
                     msg = f'Control: video open failed: path={inputs} {e}'
@@ -344,6 +343,9 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                     # resize
                     if p.resize_mode != 0 and input_image is not None:
                         p.extra_generation_params["Control resize"] = f'{resize_time}: {resize_name}'
+                        if selected_scale_tab == 1:
+                            width = int(input_image.width * scale_by)
+                            height = int(input_image.height * scale_by)
                     if p.resize_mode != 0 and input_image is not None and resize_time == 'Before':
                         debug(f'Control resize: image={input_image} width={width} height={height} mode={p.resize_mode} name={resize_name} sequence={resize_time}')
                         input_image = images.resize_image(p.resize_mode, input_image, width, height, resize_name)
@@ -502,6 +504,8 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
 
                 if video is not None and frame is not None:
                     status, frame = video.read()
+                    if status:
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     debug(f'Control: video frame={index} frames={frames} status={status} skip={index % (video_skip_frames + 1)} progress={index/frames:.2f}')
                 else:
                     status = False

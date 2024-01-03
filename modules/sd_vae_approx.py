@@ -42,10 +42,10 @@ def nn_approximation(sample): # Approximate NN
         approx_weights = torch.load(model_path, map_location='cpu' if devices.device.type != 'cuda' else None)
         sd_vae_approx_model.load_state_dict(approx_weights)
         sd_vae_approx_model.eval()
-        sd_vae_approx_model.to(devices.device, devices.dtype)
+        sd_vae_approx_model.to(devices.device, sample.dtype)
         shared.log.debug(f'Load VAE decode approximate: model="{model_path}"')
     try:
-        in_sample = sample.to(devices.device, devices.dtype).unsqueeze(0)
+        in_sample = sample.to(devices.device).unsqueeze(0)
         x_sample = sd_vae_approx_model(in_sample)
         x_sample = x_sample[0]
         return x_sample
@@ -71,7 +71,9 @@ def cheap_approximation(sample): # Approximate simple
         ]).reshape(3, 4, 1, 1)
         simple_bias = None
     try:
-        x_sample = nn.functional.conv2d(sample, simple_weights.to(sample.device, sample.dtype), simple_bias.to(sample.device, sample.dtype) if simple_bias is not None else None) # pylint: disable=not-callable
+        weights = simple_weights.to(sample.device, sample.dtype)
+        bias = simple_bias.to(sample.device, sample.dtype) if simple_bias is not None else None
+        x_sample = nn.functional.conv2d(sample, weights, bias) # pylint: disable=not-callable
         return x_sample
     except Exception as e:
         shared.log.error(f'Decode simple: {e}')

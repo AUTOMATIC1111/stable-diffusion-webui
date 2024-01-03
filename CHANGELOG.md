@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-02
+## Update for 2023-01-03
 
 Following-up on a major release, some more functionality in new Control module  
 And it also includes fixes for all reported issues so far  
@@ -18,8 +18,12 @@ And it also includes fixes for all reported issues so far
   - auto-refresh available models on tab activate  
   - reduce usage of temp files  
   - add context menu to action buttons  
+  - resize by now applies to input image or frame individually  
+    allows for processing where input images are of different sizes  
   - fix input image size  
+  - fix video color mode  
   - fix correct image mode  
+  - fix batch/folder/video modes  
 - **Improvements**  
   - allow deployment without git clone  
     for example, you can now deploy a zip of the sdnext folder  
@@ -29,6 +33,8 @@ And it also includes fixes for all reported issues so far
   - cli: sdapi.py allow manual api invoke  
     example: `python cli/sdapi.py /sdapi/v1/sd-models`  
   - memory: add ram usage monitoring in addition to gpu memory usage monitoring  
+  - vae: enable taesd batch decode  
+    enable/disable with settings -> diffusers > vae slicing  
   - updated core requirements  
 - **Compile**
   - new option: **fused projections**  
@@ -55,6 +61,7 @@ And it also includes fixes for all reported issues so far
   - sampler: guard against invalid sampler index  
   - config: reset default cfg scale to 6.0  
   - processing: correct display metadata  
+  - live preview: fix when using `bfloat16`
   - upscale: fix ldsr
 
 ## Update for 2023-12-29

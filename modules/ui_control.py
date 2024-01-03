@@ -155,7 +155,7 @@ def expand_mask(image: Image.Image, blur: int = 0, erode: int = 3, dilate: int =
     return image_mask
 
 
-def select_input(input_mode, input_image, selected_init, init_type, input_resize, input_inpaint, mask_blur, mask_overlap):
+def select_input(input_mode, input_image, selected_init, init_type, input_resize, input_inpaint, input_video, input_batch, input_folder, mask_blur, mask_overlap):
     global busy, input_source, input_init, input_mask # pylint: disable=global-statement
     busy = True
     if input_mode == 'Select':
@@ -164,6 +164,12 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
         selected_input = input_resize
     elif input_mode == 'Inpaint':
         selected_input = input_inpaint
+    elif input_mode == 'Video':
+        selected_input = input_video
+    elif input_mode == 'Batch':
+        selected_input = input_batch
+    elif input_mode == 'Folder':
+        selected_input = input_folder
     else:
         selected_input = None
     if selected_input is None:
@@ -318,7 +324,7 @@ def create_ui(_blocks: gr.Blocks=None):
                     with gr.Row():
                         input_type = gr.Radio(label="Input type", choices=['Control only', 'Init image same as control', 'Separate init image'], value='Control only', type='index', elem_id='control_input_type')
                     with gr.Row():
-                        denoising_strength = gr.Slider(minimum=0.01, maximum=0.99, step=0.01, label='Denoising strength', value=0.50, elem_id="control_denoising_strength")
+                        denoising_strength = gr.Slider(minimum=0.01, maximum=1.0, step=0.01, label='Denoising strength', value=0.50, elem_id="control_denoising_strength")
                     with gr.Row():
                         mask_blur = gr.Slider(minimum=0, maximum=100, step=1, label='Blur', value=8, elem_id="control_mask_blur")
                         mask_overlap = gr.Slider(minimum=0, maximum=100, step=1, label='Overlap', value=8, elem_id="control_mask_overlap")
@@ -338,7 +344,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         video_skip_frames = gr.Slider(minimum=0, maximum=100, step=1, label='Skip input frames', value=0, elem_id="control_video_skip_frames")
                     with gr.Row():
                         video_type = gr.Dropdown(label='Video file', choices=['None', 'GIF', 'PNG', 'MP4'], value='None')
-                        video_duration = gr.Slider(label='Duration', minimum=0.25, maximum=10, step=0.25, value=2, visible=False)
+                        video_duration = gr.Slider(label='Duration', minimum=0.25, maximum=300, step=0.25, value=2, visible=False)
                     with gr.Row():
                         video_loop = gr.Checkbox(label='Loop', value=True, visible=False)
                         video_pad = gr.Slider(label='Pad frames', minimum=0, maximum=24, step=1, value=1, visible=False)
@@ -677,7 +683,7 @@ def create_ui(_blocks: gr.Blocks=None):
                 btn_prompt_counter.click(fn=call_queue.wrap_queued_call(ui.update_token_counter), inputs=[prompt, steps], outputs=[prompt_counter])
                 btn_negative_counter.click(fn=call_queue.wrap_queued_call(ui.update_token_counter), inputs=[negative, steps], outputs=[negative_counter])
 
-                select_fields = [input_mode, input_image, init_image, input_type, input_resize, input_inpaint, mask_blur, mask_overlap]
+                select_fields = [input_mode, input_image, init_image, input_type, input_resize, input_inpaint, input_video, input_batch, input_folder, mask_blur, mask_overlap]
                 select_output = [output_tabs, result_txt]
                 select_dict = dict(
                     fn=select_input,
