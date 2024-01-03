@@ -5,6 +5,7 @@ import inspect
 import typing
 import torch
 import torchvision.transforms.functional as TF
+import diffusers
 import modules.devices as devices
 import modules.shared as shared
 import modules.sd_samplers as sd_samplers
@@ -368,6 +369,13 @@ def process_diffusers(p: StableDiffusionProcessing):
             # TODO extra_generation_params add sampler options
             # p.extra_generation_params['Sampler options'] = ''
 
+    def update_pipeline(sd_model, p: StableDiffusionProcessing):
+        if p.sag_scale > 0 and is_txt2img():
+            sd_model = sd_models.switch_diffuser_pipe(sd_model, diffusers.StableDiffusionSAGPipeline)
+            p.extra_generation_params["SAG scale"] = p.sag_scale
+            p.task_args['sag_scale'] = p.sag_scale
+        return sd_model
+
     if len(getattr(p, 'init_images', [])) > 0:
         while len(p.init_images) < len(p.prompts):
             p.init_images.append(p.init_images[-1])
@@ -431,6 +439,7 @@ def process_diffusers(p: StableDiffusionProcessing):
         debug_steps(f'Steps: type=refiner input={p.refiner_steps} output={steps} start={p.refiner_start} denoise={p.denoising_strength}')
         return max(2, int(steps))
 
+    shared.sd_model = update_pipeline(shared.sd_model, p)
     base_args = set_pipeline_args(
         model=shared.sd_model,
         prompts=p.prompts,

@@ -15,6 +15,7 @@ from enum import Enum
 from rich import progress # pylint: disable=redefined-builtin
 import torch
 import safetensors.torch
+import diffusers
 from omegaconf import OmegaConf
 import tomesd
 from transformers import logging as transformers_logging
@@ -24,11 +25,6 @@ from modules import paths, shared, shared_items, shared_state, modelloader, devi
 from modules.timer import Timer
 from modules.memstats import memory_stats
 from modules.paths import models_path, script_path
-
-try:
-    import diffusers
-except Exception as ex:
-    shared.log.error(f'Failed to import diffusers: {ex}')
 
 
 transformers_logging.set_verbosity_error()
@@ -692,7 +688,6 @@ def copy_diffuser_options(new_pipe, orig_pipe):
     new_pipe.is_sd1 = getattr(orig_pipe, 'is_sd1', True)
 
 
-
 def set_diffuser_options(sd_model, vae = None, op: str = 'model'):
     if sd_model is None:
         shared.log.warning(f'{op} is not loaded')
@@ -1030,6 +1025,47 @@ def get_diffusers_task(pipe: diffusers.DiffusionPipeline) -> DiffusersTaskType:
         return DiffusersTaskType.INPAINTING
     else:
         return DiffusersTaskType.TEXT_2_IMAGE
+
+
+def switch_diffuser_pipe(pipeline, cls):
+    try:
+        new_pipe = None
+        if isinstance(pipeline, cls):
+            return pipeline
+        elif isinstance(pipeline, diffusers.StableDiffusionXLPipeline):
+            new_pipe = cls(
+                vae=pipeline.vae,
+                text_encoder=pipeline.text_encoder,
+                text_encoder_2=pipeline.text_encoder_2,
+                tokenizer=pipeline.tokenizer,
+                tokenizer_2=pipeline.tokenizer_2,
+                unet=pipeline.unet,
+                scheduler=pipeline.scheduler,
+                feature_extractor=getattr(pipeline, 'feature_extractor', None),
+            ).to(pipeline.device)
+        elif isinstance(pipeline, diffusers.StableDiffusionPipeline):
+            new_pipe = cls(
+                vae=pipeline.vae,
+                text_encoder=pipeline.text_encoder,
+                tokenizer=pipeline.tokenizer,
+                unet=pipeline.unet,
+                scheduler=pipeline.scheduler,
+                feature_extractor=getattr(pipeline, 'feature_extractor', None),
+                requires_safety_checker=False,
+                safety_checker=None,
+            ).to(pipeline.device)
+        else:
+            shared.log.error(f'Pipeline switch error: {pipeline.__class__.__name__} unrecognized')
+            return pipeline
+        if new_pipe is not None:
+            copy_diffuser_options(new_pipe, pipeline)
+            shared.log.debug(f'Pipeline switch: from={pipeline.__class__.__name__} to={new_pipe.__class__.__name__}')
+            return new_pipe
+        else:
+            shared.log.error(f'Pipeline switch error: from={pipeline.__class__.__name__} to={cls.__name__} empty pipeline')
+    except Exception as e:
+        shared.log.error(f'Pipeline switch error: from={pipeline.__class__.__name__} to={cls.__name__} {e}')
+    return pipeline
 
 
 def set_diffuser_pipe(pipe, new_pipe_type):

@@ -142,7 +142,7 @@ def create_ui():
                             denoising_strength = gr.Slider(minimum=0.0, maximum=0.99, step=0.01, label='Denoising strength', value=0.50, elem_id="img2img_denoising_strength")
                             refiner_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise start', value=0.0, elem_id="img2img_refiner_start")
 
-                    cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry = ui_sections.create_advanced_inputs('img2img')
+                    cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry = ui_sections.create_advanced_inputs('img2img')
 
                     with FormGroup(elem_id="inpaint_controls", visible=False) as inpaint_controls:
                         with FormRow():
@@ -195,7 +195,7 @@ def create_ui():
                 full_quality, restore_faces, tiling,
                 batch_count, batch_size,
                 cfg_scale, image_cfg_scale,
-                diffusers_guidance_rescale,
+                diffusers_guidance_rescale, sag_scale,
                 refiner_start,
                 clip_skip,
                 denoising_strength,

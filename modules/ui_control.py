@@ -337,7 +337,7 @@ def create_ui(_blocks: gr.Blocks=None):
 
                 batch_count, batch_size = ui_sections.create_batch_inputs('control')
                 seed, _reuse_seed, subseed, _reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = ui_sections.create_seed_inputs('control', reuse_visible=False)
-                cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry = ui_sections.create_advanced_inputs('control')
+                cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry = ui_sections.create_advanced_inputs('control')
 
                 with gr.Accordion(open=False, label="Video", elem_id="control_video", elem_classes=["small-accordion"]):
                     with gr.Row():
@@ -707,7 +707,7 @@ def create_ui(_blocks: gr.Blocks=None):
                     prompt, negative, styles,
                     steps, sampler_index,
                     seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
-                    cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry,
+                    cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry,
                     resize_mode, resize_name, width, height, scale_by, selected_scale_tab, resize_time,
                     denoising_strength, batch_count, batch_size,
                     video_skip_frames, video_type, video_duration, video_loop, video_pad, video_interpolate,

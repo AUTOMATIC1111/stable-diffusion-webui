@@ -121,6 +121,7 @@ def img2img(id_task: str, mode: int,
             n_iter, batch_size,
             cfg_scale, image_cfg_scale,
             diffusers_guidance_rescale,
+            sag_scale,
             refiner_start,
             clip_skip,
             denoising_strength,
@@ -229,6 +230,7 @@ def img2img(id_task: str, mode: int,
         denoising_strength=denoising_strength,
         image_cfg_scale=image_cfg_scale,
         diffusers_guidance_rescale=diffusers_guidance_rescale,
+        sag_scale=sag_scale,
         refiner_start=refiner_start,
         inpaint_full_res=inpaint_full_res != 0,
         inpaint_full_res_padding=inpaint_full_res_padding,
@@ -258,5 +260,5 @@ def img2img(id_task: str, mode: int,
         if processed is None:
             processed = processing.process_images(p)
     p.close()
-    generation_info_js = processed.js()
+    generation_info_js = processed.js() if processed is not None else ''
     return processed.images, generation_info_js, processed.info, plaintext_to_html(processed.comments)

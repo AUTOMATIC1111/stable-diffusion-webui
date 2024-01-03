@@ -25,15 +25,18 @@ And it also includes fixes for all reported issues so far
   - fix correct image mode  
   - fix batch/folder/video modes  
 - **Improvements**  
-  - allow deployment without git clone  
+  - **offline deployment**: allow deployment without git clone  
     for example, you can now deploy a zip of the sdnext folder  
-  - hypertile: enable vae tiling  
-  - hypertile: add autodetect optimial value  
-    set tile size to 0 to use autodetected value  
-  - cli: sdapi.py allow manual api invoke  
+  - **xyz grid**: continue on error  
+    now you can use xyz grid with different params and test which ones work and which dont  
+  - **hypertile**  
+    - enable vae tiling  
+    - add autodetect optimial value  
+      set tile size to 0 to use autodetected value  
+  - **cli**: sdapi.py allow manual api invoke  
     example: `python cli/sdapi.py /sdapi/v1/sd-models`  
-  - memory: add ram usage monitoring in addition to gpu memory usage monitoring  
-  - vae: enable taesd batch decode  
+  - **memory**: add ram usage monitoring in addition to gpu memory usage monitoring  
+  - **vae**: enable taesd batch decode  
     enable/disable with settings -> diffusers > vae slicing  
   - updated core requirements  
   - major internal ui module refactoring  

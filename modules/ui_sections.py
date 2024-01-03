@@ -105,10 +105,13 @@ def create_advanced_inputs(tab):
         with gr.Group():
             with FormRow():
                 cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.1, label='CFG scale', value=6.0, elem_id=f"{tab}_cfg_scale")
-                clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=14, step=1, elem_id=f"{tab}_clip_skip", interactive=True)
-            with FormRow():
                 image_cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.1, label='Secondary CFG scale', value=6.0, elem_id=f"{tab}_image_cfg_scale")
+            with FormRow():
                 diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id=f"{tab}_image_cfg_rescale", visible=shared.backend == shared.Backend.DIFFUSERS)
+                # diffusers_sag_scale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Self-attention guidance', value=0.0, elem_id=f"{tab}_image_sag_scale", visible=shared.backend == shared.Backend.DIFFUSERS) # TODO enable SAG once fixed in diffusers
+                diffusers_sag_scale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Self-attention guidance', value=0.0, elem_id=f"{tab}_image_sag_scale", visible=False)
+            with FormRow():
+                clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=14, step=1, elem_id=f"{tab}_clip_skip", interactive=True)
         with gr.Group():
             with FormRow():
                 full_quality = gr.Checkbox(label='Full quality', value=True, elem_id=f"{tab}_full_quality")
@@ -127,7 +130,7 @@ def create_advanced_inputs(tab):
                 hdr_maximize = gr.Checkbox(label='HDR maximize', value=False, elem_id=f"{tab}_hdr_maximize")
                 hdr_max_center = gr.Slider(minimum=0.0, maximum=2.0, step=0.1, value=0.6,  label='Center', elem_id=f"{tab}_hdr_max_center")
                 hdr_max_boundry = gr.Slider(minimum=0.5, maximum=2.0, step=0.1, value=1.0,  label='Range', elem_id=f"{tab}_hdr_max_boundry")
-    return cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry
+    return cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, diffusers_sag_scale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry
 
 
 def create_sampler_and_steps_selection(choices, tabname):
