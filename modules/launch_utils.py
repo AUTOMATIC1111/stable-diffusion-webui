@@ -190,16 +190,16 @@ def git_clone(url, dir, name, commithash=None):
 
     try:
         if commithash is not None:
-            # os.makedirs(dir)
-            # now_dir = os.getcwd()
-            # os.chdir(dir)
-            # run(f'{git} init')
-            # run(f'{git} remote add origin {url}')
-            run(f'"{git}" -C "{dir}" remote add origin "{url}"')
+            # # os.makedirs(dir)
+            # # now_dir = os.getcwd()
+            # # os.chdir(dir)
+            # # run(f'{git} init')
+            # # run(f'{git} remote add origin {url}')
+            run(f'""{git}" -C "{dir}" remote add origin "{url}"')
             run(f'"{git}" pull origin {commithash}', f"Cloning {name} into {dir}...", f"Couldn't clone {name}",live=True)
             # os.chdir(now_dir)
         else:
-            run(f'{git} clone "{url}" "{dir}" --depth 1', f"Cloning {name} into {dir}...", f"Couldn't clone {name}", live=True)
+            run(f'"{git}" clone "{url}" "{dir}" --depth 1', f"Cloning {name} into {dir}...", f"Couldn't clone {name}", live=True)
     except RuntimeError:
         shutil.rmtree(dir, ignore_errors=True)
         raise
