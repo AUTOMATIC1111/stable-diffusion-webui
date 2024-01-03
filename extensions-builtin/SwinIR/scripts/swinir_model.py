@@ -51,7 +51,7 @@ class UpscalerSwinIR(Upscaler):
             model,
             tile_size=shared.opts.SWIN_tile,
             tile_overlap=shared.opts.SWIN_tile_overlap,
-            scale=4,  # TODO: This was hard-coded before too...
+            scale=model.scale,
             desc="SwinIR",
         )
         devices.torch_gc()
