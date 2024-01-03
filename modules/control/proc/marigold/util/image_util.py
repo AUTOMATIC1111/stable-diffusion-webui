@@ -18,7 +18,7 @@
 # --------------------------------------------------------------------------
 
 
-import matplotlib
+import matplotlib as mpl
 import numpy as np
 import torch
 from PIL import Image
@@ -41,7 +41,7 @@ def colorize_depth_maps(
         depth = depth[np.newaxis, :, :]
 
     # colorize
-    cm = matplotlib.colormaps[cmap]
+    cm = mpl.colormaps[cmap]
     depth = ((depth - min_depth) / (max_depth - min_depth)).clip(0, 1)
     img_colored_np = cm(depth, bytes=False)[:, :, :, 0:3]  # value from 0 to 1
     img_colored_np = np.rollaxis(img_colored_np, 3, 1)
