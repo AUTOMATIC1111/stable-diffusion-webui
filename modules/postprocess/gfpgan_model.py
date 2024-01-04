@@ -68,7 +68,6 @@ gfpgan_constructor = None
 def setup_model(dirname):
     if not os.path.exists(model_path):
         os.makedirs(model_path)
-
     try:
         import gfpgan
         import facexlib
@@ -76,7 +75,6 @@ def setup_model(dirname):
         global user_path # pylint: disable=global-statement
         global have_gfpgan # pylint: disable=global-statement
         global gfpgan_constructor # pylint: disable=global-statement
-
         load_file_from_url_orig = gfpgan.utils.load_file_from_url
         facex_load_file_from_url_orig = facexlib.detection.load_file_from_url
         facex_load_file_from_url_orig2 = facexlib.parsing.load_file_from_url

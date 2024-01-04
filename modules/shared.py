@@ -10,6 +10,7 @@ from enum import Enum
 import requests
 import gradio as gr
 import fasteners
+import orjson
 from rich.console import Console
 from modules import errors, shared_items, shared_state, cmd_args, ui_components, theme
 from modules.paths import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
@@ -189,23 +190,23 @@ def readfile(filename, silent=False, lock=False):
     lock_file = None
     locked = False
     try:
-        if not os.path.exists(filename):
-            return {}
+        # if not os.path.exists(filename):
+        #    return {}
         t0 = time.time()
         if lock:
             lock_file = fasteners.InterProcessReaderWriterLock(f"{filename}.lock", logger=log)
             locked = lock_file.acquire_read_lock(blocking=True, timeout=3)
-        with open(filename, "r", encoding="utf8") as file:
-            data = json.load(file)
-        if type(data) is str:
-            data = json.loads(data)
+        with open(filename, "rb") as file:
+            b = file.read()
+            data = orjson.loads(b) # pylint: disable=no-member
+        # if type(data) is str:
+        #    data = json.loads(data)
         t1 = time.time()
         if not silent:
             log.debug(f'Read: file="{filename}" json={len(data)} bytes={os.path.getsize(filename)} time={t1-t0:.3f}')
     except Exception as e:
         if not silent:
             log.error(f'Reading failed: {filename} {e}')
-        return {}
     finally:
         if lock_file is not None:
             lock_file.release_read_lock()
@@ -831,7 +832,7 @@ device = devices.device
 batch_cond_uncond = opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram
 mem_mon = modules.memmon.MemUsageMonitor("MemMon", devices.device)
-max_workers = 2
+max_workers = 4
 if devices.backend == "directml":
     directml_do_hijack()
 

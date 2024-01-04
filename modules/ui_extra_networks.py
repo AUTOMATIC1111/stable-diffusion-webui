@@ -21,6 +21,7 @@ import modules.ui_symbols as symbols
 
 
 allowed_dirs = []
+dir_timestamps = {}
 dir_cache = {} # key=path, value=(mtime, listdir(path))
 refresh_time = 0
 extra_pages = shared.extra_networks
@@ -53,12 +54,14 @@ card_list = '''
 def listdir(path):
     if not os.path.exists(path):
         return []
-    if path in dir_cache and os.path.getmtime(path) == dir_cache[path][0]:
-        return dir_cache[path][1]
+    mtime = os.path.getmtime(path)
+    if path in dir_timestamps and mtime == dir_timestamps[path]:
+        return dir_cache[path]
     else:
         # debug(f'EN list-dir list: {path}')
-        dir_cache[path] = (os.path.getmtime(path), [os.path.join(path, f) for f in os.listdir(path)])
-        return dir_cache[path][1]
+        dir_cache[path] = [os.path.join(path, f) for f in os.listdir(path)]
+        dir_timestamps[path] = mtime
+        return dir_cache[path]
 
 
 def init_api(app):
@@ -361,15 +364,15 @@ class ExtraNetworksPage:
         return f.text
 
     def find_info(self, path):
-        t0 = time.time()
         fn = os.path.splitext(path)[0] + '.json'
         data = {}
         if fn in listdir(os.path.dirname(path)):
+            t0 = time.time()
             data = shared.readfile(fn, silent=True)
             if type(data) is list:
                 data = data[0]
-        t1 = time.time()
-        self.info_time += t1-t0
+            t1 = time.time()
+            self.info_time += t1-t0
         return data
 
 

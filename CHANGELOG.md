@@ -25,6 +25,9 @@ And it also includes fixes for all reported issues so far
   - fix correct image mode  
   - fix batch/folder/video modes  
 - **Improvements**  
+  - **server startup**: performance  
+    - faster extension load
+    - faster json parsing
   - **offline deployment**: allow deployment without git clone  
     for example, you can now deploy a zip of the sdnext folder  
   - **xyz grid**: continue on error  

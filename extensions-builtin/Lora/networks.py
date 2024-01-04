@@ -2,6 +2,7 @@ from typing import Union, List
 import os
 import re
 import time
+from threading import Thread
 import lora_patches
 import network
 import network_lora
@@ -477,4 +478,5 @@ def infotext_pasted(infotext, params): # pylint: disable=W0613
         params["Prompt"] += "\n" + "".join(added)
 
 
-list_available_networks()
+thread_lora = Thread(target=list_available_networks)
+thread_lora.start()

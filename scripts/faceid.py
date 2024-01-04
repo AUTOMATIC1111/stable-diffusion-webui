@@ -6,17 +6,11 @@ import gradio as gr
 import diffusers
 import huggingface_hub as hf
 from modules import scripts, processing, shared, devices
+from installer import installed
 
 
 app = None
-try:
-    import onnxruntime
-    from insightface.app import FaceAnalysis
-    from ip_adapter.ip_adapter_faceid import IPAdapterFaceID
-    ok = True
-except Exception as e:
-    shared.log.error(f'FaceID: {e}')
-    ok = False
+ok = installed('insightface', reload=False, quiet=True) and installed('ip_adapter', reload=False, quiet=True)
 
 
 class Script(scripts.Script):
@@ -35,8 +29,12 @@ class Script(scripts.Script):
         return [scale, image]
 
     def run(self, p: processing.StableDiffusionProcessing, scale, image): # pylint: disable=arguments-differ, unused-argument
-        if not ok:
-            shared.log.error('FaceID: missing dependencies')
+        try:
+            import onnxruntime
+            from insightface.app import FaceAnalysis
+            from ip_adapter.ip_adapter_faceid import IPAdapterFaceID
+        except Exception as e:
+            shared.log.error(f'FaceID: {e}')
             return None
         if image is None:
             shared.log.error('FaceID: no init_images')
