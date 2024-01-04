@@ -35,18 +35,21 @@ def process_diffusers(p: StableDiffusionProcessing):
     def is_refiner_enabled():
         return p.enable_hr and p.refiner_steps > 0 and p.refiner_start > 0 and p.refiner_start < 1 and shared.sd_refiner is not None
 
-    if getattr(p, 'init_images', None) is not None and len(p.init_images) > 0:
-        tgt_width, tgt_height = 8 * math.ceil(p.init_images[0].width / 8), 8 * math.ceil(p.init_images[0].height / 8)
-        if p.init_images[0].width != tgt_width or p.init_images[0].height != tgt_height:
-            shared.log.debug(f'Resizing init images: original={p.init_images[0].width}x{p.init_images[0].height} target={tgt_width}x{tgt_height}')
-            p.init_images = [images.resize_image(1, image, tgt_width, tgt_height, upscaler_name=None) for image in p.init_images]
-            p.height = tgt_height
-            p.width = tgt_width
-            hypertile_set(p)
-        if getattr(p, 'mask', None) is not None and p.mask.size != (tgt_width, tgt_height):
-            p.mask = images.resize_image(1, p.mask, tgt_width, tgt_height, upscaler_name=None)
-        if getattr(p, 'mask_for_overlay', None) is not None and p.mask_for_overlay.size != (tgt_width, tgt_height):
-            p.mask_for_overlay = images.resize_image(1, p.mask_for_overlay, tgt_width, tgt_height, upscaler_name=None)
+    def resize_images():
+        if getattr(p, 'init_images', None) is not None and len(p.init_images) > 0:
+            tgt_width, tgt_height = 8 * math.ceil(p.init_images[0].width / 8), 8 * math.ceil(p.init_images[0].height / 8)
+            if p.init_images[0].size != (tgt_width, tgt_height):
+                shared.log.debug(f'Resizing init images: original={p.init_images[0].width}x{p.init_images[0].height} target={tgt_width}x{tgt_height}')
+                p.init_images = [images.resize_image(1, image, tgt_width, tgt_height, upscaler_name=None) for image in p.init_images]
+                p.height = tgt_height
+                p.width = tgt_width
+                hypertile_set(p)
+            if getattr(p, 'mask', None) is not None and p.mask.size != (tgt_width, tgt_height):
+                p.mask = images.resize_image(1, p.mask, tgt_width, tgt_height, upscaler_name=None)
+            if getattr(p, 'mask_for_overlay', None) is not None and p.mask_for_overlay.size != (tgt_width, tgt_height):
+                p.mask_for_overlay = images.resize_image(1, p.mask_for_overlay, tgt_width, tgt_height, upscaler_name=None)
+            return tgt_width, tgt_height
+        return p.width, p.height
 
     def hires_resize(latents): # input=latents output=pil
         if not torch.is_tensor(latents):
@@ -165,13 +168,15 @@ def process_diffusers(p: StableDiffusionProcessing):
             }
         elif (sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INPAINTING or is_img2img_model) and len(getattr(p, 'init_images' ,[])) > 0:
             p.ops.append('inpaint')
-            if getattr(p, 'mask', None) is None:
-                if getattr(p, 'image_mask', None) is not None:
-                    p.mask = p.image_mask
-                else:
-                    p.mask = TF.to_pil_image(torch.ones_like(TF.to_tensor(p.init_images[0]))).convert("L")
-            width = 8 * math.ceil(p.init_images[0].width / 8)
-            height = 8 * math.ceil(p.init_images[0].height / 8)
+            if p.task_args.get('mask_image', None) is not None: # provided as override by a module
+                p.mask = shared.sd_model.mask_processor.blur(p.task_args['mask_image'], blur_factor=p.mask_blur) if p.mask_blur > 0 else p.task_args['mask_image']
+            elif getattr(p, 'image_mask', None) is not None: # standard
+                p.mask = p.image_mask
+            elif getattr(p, 'mask', None) is not None: # backward compatibility
+                pass
+            else: # fallback
+                p.mask = TF.to_pil_image(torch.ones_like(TF.to_tensor(p.init_images[0]))).convert("L")
+            width, height = resize_images()
             task_args = {
                 'image': p.init_images,
                 'mask_image': p.mask,
@@ -180,10 +185,6 @@ def process_diffusers(p: StableDiffusionProcessing):
                 'width': width,
                 # 'padding_mask_crop': p.inpaint_full_res_padding # done back in main processing method
             }
-            if p.task_args.get('mask_image', None) is None:
-                if p.mask_blur > 0:
-                    p.mask = shared.sd_model.mask_processor.blur(p.mask, blur_factor=p.mask_blur)
-                task_args['mask_image'] = p.mask
         if model.__class__.__name__ == 'LatentConsistencyModelPipeline' and hasattr(p, 'init_images') and len(p.init_images) > 0:
             p.ops.append('lcm')
             init_latents = [vae_encode(image, model=shared.sd_model, full_quality=p.full_quality).squeeze(dim=0) for image in p.init_images]
@@ -465,7 +466,7 @@ def process_diffusers(p: StableDiffusionProcessing):
     try:
         t0 = time.time()
         output = shared.sd_model(**base_args) # pylint: disable=not-callable
-        downcast_openvino(op="base")
+        downcast_openvino(op="base") # only executes on compiled vino models
         if shared.cmd_opts.profile:
             t1 = time.time()
             shared.log.debug(f'Profile: pipeline call: {t1-t0:.2f}')

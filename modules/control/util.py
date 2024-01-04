@@ -46,7 +46,6 @@ def make_noise_disk(H, W, C, F):
 
 def nms(x, t, s):
     x = cv2.GaussianBlur(x.astype(np.float32), (0, 0), s)
-
     f1 = np.array([[0, 0, 0], [1, 1, 1], [0, 0, 0]], dtype=np.uint8)
     f2 = np.array([[0, 1, 0], [0, 1, 0], [0, 1, 0]], dtype=np.uint8)
     f3 = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=np.uint8)

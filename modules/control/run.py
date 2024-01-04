@@ -67,7 +67,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                 cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling,
                 hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry,
                 resize_mode, resize_name, width, height, scale_by, selected_scale_tab, resize_time,
-                denoising_strength, batch_count, batch_size,
+                denoising_strength, batch_count, batch_size, mask_blur, mask_overlap,
                 video_skip_frames, video_type, video_duration, video_loop, video_pad, video_interpolate,
                 ip_adapter, ip_scale, ip_image, ip_type,
         ):
@@ -123,6 +123,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
         denoising_strength = denoising_strength,
         n_iter = batch_count,
         batch_size = batch_size,
+        mask_blur=mask_blur,
         outpath_samples=shared.opts.outdir_samples or shared.opts.outdir_control_samples,
         outpath_grids=shared.opts.outdir_grids or shared.opts.outdir_control_grids,
     )
@@ -434,13 +435,12 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                     if pipe is not None:
                         if not has_models and (unit_type == 'controlnet' or unit_type == 'adapter' or unit_type == 'xs' or unit_type == 'lite'): # run in txt2img/img2img/inpaint mode
                             if mask is not None:
-                                p.task_args['image'] = input_image
-                                p.task_args['mask_image'] = mask
                                 p.task_args['strength'] = denoising_strength
                                 p.image_mask = mask
-                                p.mask = mask
                                 p.inpaint_full_res = False
                                 p.init_images = [input_image]
+                                # if mask_overlap > 0:
+                                #    p.task_args['padding_mask_crop'] = mask_overlap # TODO enable once fixed in diffusers
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING)
                             elif processed_image is not None:
                                 p.init_images = [processed_image]
@@ -453,13 +453,11 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         else: # actual control
                             p.is_control = True
                             if mask is not None:
-                                # p.task_args['image'] = p.image
-                                p.task_args['mask_image'] = mask
                                 p.task_args['strength'] = denoising_strength
-                                p.task_args['padding_mask_crop'] = 64 # should be configurable based on ui
                                 p.image_mask = mask
-                                p.mask = mask
                                 p.inpaint_full_res = False
+                                # if mask_overlap > 0:
+                                #    p.task_args['padding_mask_crop'] = mask_overlap # TODO enable once fixed in diffusers
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING) # only controlnet supports inpaint
                             elif 'control_image' in p.task_args:
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE) # only controlnet supports img2img

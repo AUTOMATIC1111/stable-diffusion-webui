@@ -117,8 +117,7 @@ def get_video(filepath: str):
         return msg
 
 
-def select_mask(image: Image.Image, blur: int = 0, negative: bool = False):
-    import cv2
+def select_mask(image: Image.Image, negative: bool = False):
     if image is None:
         return image
     image_mask = image.convert("L")
@@ -126,36 +125,27 @@ def select_mask(image: Image.Image, blur: int = 0, negative: bool = False):
         image_mask = image_mask.point(lambda x: 255 if x < 4 else 0)
     else:
         image_mask = image_mask.point(lambda x: 255 if x > 127 else 0)
-    if blur > 0:
-        kernel_size = 2 * int(2.5 * blur + 0.5) + 1
-        np_mask = np.array(image_mask)
-        np_mask = cv2.GaussianBlur(np_mask, (kernel_size, 1), blur)
-        np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), blur)
-        image_mask = Image.fromarray(np_mask.astype(np.uint8))
     return image_mask
 
 
-def expand_mask(image: Image.Image, blur: int = 0, erode: int = 3, dilate: int = 16, iterations: int = 8, threshold: int = 4):
+def expand_mask(image: Image.Image, expand: int = 64):
     import cv2
     if image is None:
         return image
     pil_mask = image.convert("L")
     np_mask = np.array(pil_mask)
+    erode, dilate, threshold = 3, 8, 4
     if threshold > 0:
         _thres, np_mask = cv2.threshold(np_mask, threshold, 255, cv2.THRESH_BINARY_INV) # create mask
     if erode > 0:
-        np_mask = cv2.erode(np_mask, np.ones((erode, erode), np.uint8), iterations=iterations) # remove noise
+        np_mask = cv2.erode(np_mask, np.ones((erode, erode), np.uint8), iterations=expand//dilate) # remove noise
     if dilate > 0:
-        np_mask = cv2.dilate(np_mask, np.ones((dilate, dilate), np.uint8), iterations=iterations) # expand area
-    if blur > 0:
-        blur_size = 2 * int(2.5 * blur + 0.5) + 1
-        np_mask = cv2.GaussianBlur(np_mask, (blur_size, 1), blur) # blur x-axis
-        np_mask = cv2.GaussianBlur(np_mask, (1, blur_size), blur) # blur y-axis
+        np_mask = cv2.dilate(np_mask, np.ones((dilate, dilate), np.uint8), iterations=expand//dilate) # expand area
     image_mask = Image.fromarray(np_mask.astype(np.uint8))
     return image_mask
 
 
-def select_input(input_mode, input_image, selected_init, init_type, input_resize, input_inpaint, input_video, input_batch, input_folder, mask_blur, mask_overlap):
+def select_input(input_mode, input_image, selected_init, init_type, input_resize, input_inpaint, input_video, input_batch, input_folder, _mask_blur, mask_overlap):
     global busy, input_source, input_init, input_mask # pylint: disable=global-statement
     busy = True
     if input_mode == 'Select':
@@ -183,14 +173,14 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
     # control inputs
     if isinstance(selected_input, Image.Image): # image via upload -> image
         if input_mode == 'Outpaint':
-            input_mask = expand_mask(image=selected_input, blur=mask_blur, iterations=mask_overlap)
+            input_mask = expand_mask(image=selected_input, expand=mask_overlap)
         input_source = [selected_input]
         input_type = 'PIL.Image'
         shared.log.debug(f'Control input: type={input_type} input={input_source}')
         status = f'Control input | Image | Size {selected_input.width}x{selected_input.height} | Mode {selected_input.mode}'
         res = [gr.Tabs.update(selected='out-gallery'), status]
     elif isinstance(selected_input, dict): # inpaint -> dict image+mask
-        input_mask = select_mask(image=selected_input['mask'], blur=mask_blur, negative=False)
+        input_mask = select_mask(image=selected_input['mask'], negative=False)
         selected_input = selected_input['image']
         input_source = [selected_input]
         input_type = 'PIL.Image'
@@ -228,7 +218,7 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
     elif init_type == 2: # Separate init image
         if isinstance(selected_init, Image.Image): # image via upload -> image
             if input_mode == 'Outpaint':
-                input_mask = expand_mask(image=selected_init, blur=mask_blur, iterations=mask_overlap)
+                input_mask = expand_mask(image=selected_init, expand=mask_overlap)
             input_source = [selected_init]
             input_init = [selected_init]
             input_type = 'PIL.Image'
@@ -236,7 +226,7 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
             status = f'Control input | Image | Size {selected_init.width}x{selected_init.height} | Mode {selected_init.mode}'
             res = [gr.Tabs.update(selected='out-gallery'), status]
         elif isinstance(selected_init, dict): # inpaint -> dict image+mask
-            input_mask = select_mask(image=selected_init['mask'], blur=mask_blur)
+            input_mask = select_mask(image=selected_init['mask'])
             input_init = selected_init['image']
             input_source = [selected_init]
             input_type = 'PIL.Image'
@@ -327,7 +317,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         denoising_strength = gr.Slider(minimum=0.01, maximum=1.0, step=0.01, label='Denoising strength', value=0.50, elem_id="control_denoising_strength")
                     with gr.Row():
                         mask_blur = gr.Slider(minimum=0, maximum=100, step=1, label='Blur', value=8, elem_id="control_mask_blur")
-                        mask_overlap = gr.Slider(minimum=0, maximum=100, step=1, label='Overlap', value=8, elem_id="control_mask_overlap")
+                        mask_overlap = gr.Slider(minimum=0, maximum=100, step=1, label='Overlap', value=64, elem_id="control_mask_overlap")
 
                 resize_mode, resize_name, width, height, scale_by, selected_scale_tab, resize_time = ui_sections.create_resize_inputs('control', [], time_selector=True, scale_visible=False, mode='Fixed')
 
@@ -709,7 +699,7 @@ def create_ui(_blocks: gr.Blocks=None):
                     seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
                     cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry,
                     resize_mode, resize_name, width, height, scale_by, selected_scale_tab, resize_time,
-                    denoising_strength, batch_count, batch_size,
+                    denoising_strength, batch_count, batch_size, mask_blur, mask_overlap,
                     video_skip_frames, video_type, video_duration, video_loop, video_pad, video_interpolate,
                     ip_adapter, ip_scale, ip_image, ip_type,
                 ]
