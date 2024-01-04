@@ -3,7 +3,7 @@ import os.path
 import urllib.parse
 from pathlib import Path
 
-from modules import shared, ui_extra_networks_user_metadata, errors, extra_networks
+from modules import shared, ui_extra_networks_user_metadata, errors, extra_networks, util
 from modules.images import read_info_from_image, save_image_with_geninfo
 import gradio as gr
 import json
@@ -107,13 +107,14 @@ class ExtraNetworksPage:
         self.allow_negative_prompt = False
         self.metadata = {}
         self.items = {}
+        self.lister = util.MassFileLister()
 
     def refresh(self):
         pass
 
     def read_user_metadata(self, item):
         filename = item.get("filename", None)
-        metadata = extra_networks.get_user_metadata(filename)
+        metadata = extra_networks.get_user_metadata(filename, lister=self.lister)
 
         desc = metadata.get("description", None)
         if desc is not None:
@@ -123,7 +124,7 @@ class ExtraNetworksPage:
 
     def link_preview(self, filename):
         quoted_filename = urllib.parse.quote(filename.replace('\\', '/'))
-        mtime = os.path.getmtime(filename)
+        mtime, _ = self.lister.mctime(filename)
         return f"./sd_extra_networks/thumb?filename={quoted_filename}&mtime={mtime}"
 
     def search_terms_from_path(self, filename, possible_directories=None):
@@ -137,6 +138,8 @@ class ExtraNetworksPage:
         return ""
 
     def create_html(self, tabname):
+        self.lister.reset()
+
         items_html = ''
 
         self.metadata = {}
@@ -282,10 +285,10 @@ class ExtraNetworksPage:
         List of default keys used for sorting in the UI.
         """
         pth = Path(path)
-        stat = pth.stat()
+        mtime, ctime = self.lister.mctime(path)
         return {
-            "date_created": int(stat.st_ctime or 0),
-            "date_modified": int(stat.st_mtime or 0),
+            "date_created": int(mtime),
+            "date_modified": int(ctime),
             "name": pth.name.lower(),
             "path": str(pth.parent).lower(),
         }
@@ -298,7 +301,7 @@ class ExtraNetworksPage:
         potential_files = sum([[path + "." + ext, path + ".preview." + ext] for ext in allowed_preview_extensions()], [])
 
         for file in potential_files:
-            if os.path.isfile(file):
+            if self.lister.exists(file):
                 return self.link_preview(file)
 
         return None
@@ -308,6 +311,9 @@ class ExtraNetworksPage:
         Find and read a description file for a given path (without extension).
         """
         for file in [f"{path}.txt", f"{path}.description.txt"]:
+            if not self.lister.exists(file):
+                continue
+
             try:
                 with open(file, "r", encoding="utf-8", errors="replace") as f:
                     return f.read()
@@ -417,21 +423,21 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
     dropdown_sort.change(fn=lambda: None, _js="function(){ applyExtraNetworkSort('" + tabname + "'); }")
 
+    def create_html():
+        ui.pages_contents = [pg.create_html(ui.tabname) for pg in ui.stored_extra_pages]
+
     def pages_html():
         if not ui.pages_contents:
-            return refresh()
-
+            create_html()
         return ui.pages_contents
 
     def refresh():
         for pg in ui.stored_extra_pages:
             pg.refresh()
-
-        ui.pages_contents = [pg.create_html(ui.tabname) for pg in ui.stored_extra_pages]
-
+        create_html()
         return ui.pages_contents
 
-    interface.load(fn=pages_html, inputs=[], outputs=[*ui.pages])
+    interface.load(fn=pages_html, inputs=[], outputs=ui.pages)
     button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
 
     return ui
