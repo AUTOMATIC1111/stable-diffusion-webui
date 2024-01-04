@@ -33,8 +33,10 @@ And it also includes fixes for all reported issues so far
     - enable vae tiling  
     - add autodetect optimial value  
       set tile size to 0 to use autodetected value  
-  - **cli**: sdapi.py allow manual api invoke  
-    example: `python cli/sdapi.py /sdapi/v1/sd-models`  
+  - **cli**: 
+    - `sdapi.py` allow manual api invoke  
+      example: `python cli/sdapi.py /sdapi/v1/sd-models`  
+    - `image-exif.py` improve metadata parsing  
   - **memory**: add ram usage monitoring in addition to gpu memory usage monitoring  
   - **vae**: enable taesd batch decode  
     enable/disable with settings -> diffusers > vae slicing  

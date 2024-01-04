@@ -228,7 +228,7 @@ def create_ui(startup_timer = None):
     def run_settings(*args):
         changed = []
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
-            if comp == dummy_component:
+            if comp == dummy_component or value=='dummy':
                 continue
             if not opts.same_type(value, opts.data_labels[key].default):
                 log.error(f'Setting bad value: {key}={value} expecting={type(opts.data_labels[key].default).__name__}')
