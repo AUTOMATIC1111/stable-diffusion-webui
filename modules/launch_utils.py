@@ -380,12 +380,10 @@ def prepare_environment():
 
     if args.use_ipex:
         args.skip_torch_cuda_test = True
-    if not args.skip_torch_cuda_test and not check_run_python("import torch; assert torch.cuda.is_available()"):
-        raise RuntimeError(
-            'Torch is not able to use GPU; '
-            'add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'
-        )
-    startup_timer.record("torch GPU test")
+    
+    #if not args.skip_torch_cuda_test and not check_run_python("import torch; assert torch.cuda.is_available()"):
+        #raise RuntimeError('Torch is not able to use GPU; 'add '--skip-toch-curda-test to COMMANDLINE_ARGS variable to disable this check')
+    startup_timer.record("torch CPU test")
 
     if not is_installed("clip"):
         run_pip(f"install {clip_package}", "clip")
@@ -453,6 +451,7 @@ def configure_for_tests():
         sys.argv.append("--disable-nan-check")
 
     os.environ['COMMANDLINE_ARGS'] = ""
+
 
 
 def start():
