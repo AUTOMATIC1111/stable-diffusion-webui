@@ -35,13 +35,11 @@ def css_html():
         return f'<link rel="stylesheet" property="stylesheet" href="{webpath(fn)}">'
 
     for cssfile in scripts.list_files_with_name("style.css"):
-        if not os.path.isfile(cssfile):
-            continue
-
         head += stylesheet(cssfile)
 
-    if os.path.exists(os.path.join(data_path, "user.css")):
-        head += stylesheet(os.path.join(data_path, "user.css"))
+    user_css = os.path.join(data_path, "user.css")
+    if os.path.exists(user_css):
+        head += stylesheet(user_css)
 
     return head
 

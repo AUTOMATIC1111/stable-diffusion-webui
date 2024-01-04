@@ -245,9 +245,10 @@ def list_extensions(settings_file):
     settings = {}
 
     try:
-        if os.path.isfile(settings_file):
-            with open(settings_file, "r", encoding="utf8") as file:
-                settings = json.load(file)
+        with open(settings_file, "r", encoding="utf8") as file:
+            settings = json.load(file)
+    except FileNotFoundError:
+        pass
     except Exception:
         errors.report("Could not load settings", exc_info=True)
 
