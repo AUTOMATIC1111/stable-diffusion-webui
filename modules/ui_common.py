@@ -108,8 +108,8 @@ def save_files(js_data, images, do_make_zip, index):
 @dataclasses.dataclass
 class OutputPanel:
     gallery = None
+    generation_info = None
     infotext = None
-    html_info = None
     html_log = None
     button_upscale = None
 
@@ -175,17 +175,17 @@ Requested path was: {f}
                 download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
 
                 with gr.Group():
-                    res.html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
+                    res.infotext = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
                     res.html_log = gr.HTML(elem_id=f'html_log_{tabname}', elem_classes="html-log")
 
-                    res.infotext = gr.Textbox(visible=False, elem_id=f'generation_info_{tabname}')
+                    res.generation_info = gr.Textbox(visible=False, elem_id=f'generation_info_{tabname}')
                     if tabname == 'txt2img' or tabname == 'img2img':
                         generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
                         generation_info_button.click(
                             fn=update_generation_info,
                             _js="function(x, y, z){ return [x, y, selected_gallery_index()] }",
-                            inputs=[res.infotext, res.html_info, res.html_info],
-                            outputs=[res.html_info, res.html_info],
+                            inputs=[res.generation_info, res.infotext, res.infotext],
+                            outputs=[res.infotext, res.infotext],
                             show_progress=False,
                         )
 
@@ -193,10 +193,10 @@ Requested path was: {f}
                         fn=call_queue.wrap_gradio_call(save_files),
                         _js="(x, y, z, w) => [x, y, false, selected_gallery_index()]",
                         inputs=[
-                            res.infotext,
+                            res.generation_info,
                             res.gallery,
-                            res.html_info,
-                            res.html_info,
+                            res.infotext,
+                            res.infotext,
                         ],
                         outputs=[
                             download_files,
@@ -209,10 +209,10 @@ Requested path was: {f}
                         fn=call_queue.wrap_gradio_call(save_files),
                         _js="(x, y, z, w) => [x, y, true, selected_gallery_index()]",
                         inputs=[
-                            res.infotext,
+                            res.generation_info,
                             res.gallery,
-                            res.html_info,
-                            res.html_info,
+                            res.infotext,
+                            res.infotext,
                         ],
                         outputs=[
                             download_files,
@@ -221,8 +221,8 @@ Requested path was: {f}
                     )
 
             else:
-                res.infotext = gr.HTML(elem_id=f'html_info_x_{tabname}')
-                res.html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
+                res.generation_info = gr.HTML(elem_id=f'html_info_x_{tabname}')
+                res.infotext = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
                 res.html_log = gr.HTML(elem_id=f'html_log_{tabname}')
 
             paste_field_names = []

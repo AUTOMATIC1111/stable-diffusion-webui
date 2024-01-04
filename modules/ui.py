@@ -405,8 +405,8 @@ def create_ui():
 
             txt2img_outputs = [
                 output_panel.gallery,
+                output_panel.generation_info,
                 output_panel.infotext,
-                output_panel.html_info,
                 output_panel.html_log,
             ]
 
@@ -424,7 +424,7 @@ def create_ui():
             output_panel.button_upscale.click(
                 fn=wrap_gradio_gpu_call(modules.txt2img.txt2img_upscale, extra_outputs=[None, '', '']),
                 _js="submit_txt2img_upscale",
-                inputs=txt2img_inputs[0:1] + [output_panel.gallery, dummy_component] + txt2img_inputs[1:],
+                inputs=txt2img_inputs[0:1] + [output_panel.gallery, dummy_component, output_panel.generation_info] + txt2img_inputs[1:],
                 outputs=txt2img_outputs,
                 show_progress=False,
             )
@@ -437,8 +437,8 @@ def create_ui():
                 inputs=[dummy_component],
                 outputs=[
                     output_panel.gallery,
+                    output_panel.generation_info,
                     output_panel.infotext,
-                    output_panel.html_info,
                     output_panel.html_log,
                 ],
                 show_progress=False,
@@ -766,8 +766,8 @@ def create_ui():
                 ] + custom_inputs,
                 outputs=[
                     output_panel.gallery,
+                    output_panel.generation_info,
                     output_panel.infotext,
-                    output_panel.html_info,
                     output_panel.html_log,
                 ],
                 show_progress=False,
@@ -807,8 +807,8 @@ def create_ui():
                 inputs=[dummy_component],
                 outputs=[
                     output_panel.gallery,
+                    output_panel.generation_info,
                     output_panel.infotext,
-                    output_panel.html_info,
                     output_panel.html_log,
                 ],
                 show_progress=False,

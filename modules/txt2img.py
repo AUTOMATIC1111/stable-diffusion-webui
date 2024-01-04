@@ -1,3 +1,4 @@
+import json
 from contextlib import closing
 
 import modules.scripts
@@ -9,11 +10,18 @@ from modules.ui import plaintext_to_html
 import gradio as gr
 
 
-def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, *args):
+def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, generation_info, *args):
     assert len(gallery) > 0, 'No image to upscale'
+    assert 0 <= gallery_index < len(gallery), f'Bad image index: {gallery_index}'
+
+    geninfo = json.loads(generation_info)
+    all_seeds = geninfo["all_seeds"]
 
     image_info = gallery[gallery_index] if 0 <= gallery_index < len(gallery) else gallery[0]
     image = infotext_utils.image_from_url_text(image_info)
+
+    gallery_index_from_end = len(gallery) - gallery_index
+    image.seed = all_seeds[-gallery_index_from_end if gallery_index_from_end < len(all_seeds) + 1 else 0]
 
     return txt2img(id_task, request, *args, firstpass_image=image)
 
@@ -22,6 +30,10 @@ def txt2img(id_task: str, request: gr.Request, prompt: str, negative_prompt: str
     override_settings = create_override_settings_dict(override_settings_texts)
 
     if firstpass_image is not None:
+        seed = getattr(firstpass_image, 'seed', None)
+        if seed:
+            args = modules.scripts.scripts_txt2img.set_named_arg(args, 'ScriptSeed', 'seed', seed)
+
         enable_hr = True
         batch_size = 1
         n_iter = 1

@@ -49,7 +49,7 @@ def create_ui():
         ],
         outputs=[
             output_panel.gallery,
-            output_panel.infotext,
+            output_panel.generation_info,
             output_panel.html_log,
         ],
         show_progress=False,
