@@ -1,6 +1,7 @@
 import logging
 import sys
 
+import torch
 from PIL import Image
 
 from modules import devices, modelloader, script_callbacks, shared, upscaler_utils
@@ -50,7 +51,7 @@ class UpscalerSwinIR(Upscaler):
             model,
             tile_size=shared.opts.SWIN_tile,
             tile_overlap=shared.opts.SWIN_tile_overlap,
-            scale=4,  # TODO: This was hard-coded before too...
+            scale=model.scale,
             desc="SwinIR",
         )
         devices.torch_gc()
@@ -69,7 +70,7 @@ class UpscalerSwinIR(Upscaler):
         model_descriptor = modelloader.load_spandrel_model(
             filename,
             device=self._get_device(),
-            dtype=devices.dtype,
+            prefer_half=(devices.dtype == torch.float16),
             expected_architecture="SwinIR",
         )
         if getattr(shared.opts, 'SWIN_torch_compile', False):
