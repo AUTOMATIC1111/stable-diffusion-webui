@@ -20,8 +20,7 @@ __pycache__
 /styles.csv
 /params.txt
 /styles.csv.bak
-/webui-user.bat
-/webui-user.sh
+/webui-user*
 /interrogate
 /user.css
 /.idea
@@ -38,3 +37,5 @@ notification.mp3
 /package-lock.json
 /.coverage*
 /test/test_outputs
+/xxx*
+/attic
