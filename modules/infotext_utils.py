@@ -479,6 +479,8 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
 
                     if valtype == bool and v == "False":
                         val = False
+                    elif valtype == int:
+                        val = float(v)
                     else:
                         val = valtype(v)
 
