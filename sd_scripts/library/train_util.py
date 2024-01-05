@@ -52,8 +52,8 @@ from diffusers import (
     KDPM2AncestralDiscreteScheduler,
     AutoencoderKL,
 )
-from sd_scripts.library import custom_train_functions
-from sd_scripts.library.original_unet import UNet2DConditionModel
+from library import custom_train_functions
+from library.original_unet import UNet2DConditionModel
 from huggingface_hub import hf_hub_download
 import albumentations as albu
 import numpy as np
@@ -62,11 +62,11 @@ import cv2
 from einops import rearrange
 from torch import einsum
 import safetensors.torch
-from sd_scripts.library.lpw_stable_diffusion import StableDiffusionLongPromptWeightingPipeline
-import sd_scripts.library.model_util as model_util
-import sd_scripts.library.huggingface_util as huggingface_util
-import sd_scripts.library.sai_model_spec as sai_model_spec
-from sd_scripts.library.original_unet import UNet2DConditionModel
+from library.lpw_stable_diffusion import StableDiffusionLongPromptWeightingPipeline
+import library.model_util as model_util
+import library.huggingface_util as huggingface_util
+import library.sai_model_spec as sai_model_spec
+from library.original_unet import UNet2DConditionModel
 
 # Tokenizer: checkpointから読み込むのではなくあらかじめ提供されているものを使う
 TOKENIZER_PATH = "openai/clip-vit-large-patch14"
@@ -3793,6 +3793,64 @@ def prepare_dataset_args(args: argparse.Namespace, support_metadata: bool):
 
 def load_tokenizer(args: argparse.Namespace):
     print("prepare tokenizer")
+    from transformers import PreTrainedTokenizerBase,PreTrainedModel
+    from modelscope import snapshot_download
+    from library.transformers_pretrained import ori_tokenizer_from_pretrained,ori_model_from_pretrained
+
+    def patch_tokenizer_base():
+        """ Monkey patch PreTrainedTokenizerBase.from_pretrained to adapt to modelscope hub.
+        """
+        ori_from_pretrained = ori_tokenizer_from_pretrained
+
+        @classmethod
+        def from_pretrained(cls, pretrained_model_name_or_path, *model_args,
+                            **kwargs):
+            ignore_file_pattern = [r'\w+\.bin', r'\w+\.safetensors']
+            if "use_modelscope" in kwargs:
+                if not os.path.exists(pretrained_model_name_or_path):
+                    revision = kwargs.pop('revision', None)
+                    model_dir = snapshot_download(
+                        pretrained_model_name_or_path,
+                        revision=revision,
+                        ignore_file_pattern=ignore_file_pattern)
+                else:
+                    model_dir = pretrained_model_name_or_path
+                return ori_from_pretrained(cls, model_dir, *model_args, **kwargs)
+            else:
+                model_dir = pretrained_model_name_or_path
+                return ori_from_pretrained(cls, model_dir, *model_args, **kwargs)
+
+        PreTrainedTokenizerBase.from_pretrained = from_pretrained
+
+
+    def patch_model_base():
+        """ Monkey patch PreTrainedModel.from_pretrained to adapt to modelscope hub.
+        """
+        ori_from_pretrained = ori_model_from_pretrained
+
+        @classmethod
+        def from_pretrained(cls, pretrained_model_name_or_path, *model_args,
+                            **kwargs):
+            ignore_file_pattern = [r'\w+\.safetensors']
+            if "use_modelscope" in kwargs:
+                if not os.path.exists(pretrained_model_name_or_path):
+                    revision = kwargs.pop('revision', None)
+                    model_dir = snapshot_download(
+                        pretrained_model_name_or_path,
+                        revision=revision,
+                        ignore_file_pattern=ignore_file_pattern)
+                else:
+                    model_dir = pretrained_model_name_or_path
+                return ori_from_pretrained(cls, model_dir, *model_args, **kwargs)
+            else:
+                model_dir = pretrained_model_name_or_path
+                return ori_from_pretrained(cls, model_dir, *model_args, **kwargs)
+
+        PreTrainedModel.from_pretrained = from_pretrained
+
+
+    patch_tokenizer_base()
+    patch_model_base()
     original_path = V2_STABLE_DIFFUSION_PATH if args.v2 else TOKENIZER_PATH
 
     tokenizer: CLIPTokenizer = None

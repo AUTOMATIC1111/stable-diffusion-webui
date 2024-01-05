@@ -24,10 +24,120 @@ import argparse
 import sys
 
 sys.path.append("PaddleSeg/contrib/PP-HumanSeg")
+from src.seg_demo import seg_image
 
 import sd_scripts.library.config_util as config_util
 import sd_scripts.library.custom_train_functions as custom_train_functions
 from sd_scripts.library.fix_photo import mopi
+from sd_scripts.library.face_process_utils import call_face_crop
+
+
+from modelscope.outputs import OutputKeys
+from modelscope.pipelines import pipeline
+from modelscope.utils.constant import Tasks
+from modelscope import snapshot_download
+from transformers import PreTrainedTokenizerBase,PreTrainedModel
+
+from library.transformers_pretrained import ori_tokenizer_from_pretrained,ori_model_from_pretrained
+from library.face_tool.super.face import insightface_main_face
+
+
+def patch_tokenizer_base():
+    """ Monkey patch PreTrainedTokenizerBase.from_pretrained to adapt to modelscope hub.
+    """
+    ori_from_pretrained = ori_tokenizer_from_pretrained
+
+    @classmethod
+    def from_pretrained(cls, pretrained_model_name_or_path, *model_args,
+                        **kwargs):
+        ignore_file_pattern = [r'\w+\.bin', r'\w+\.safetensors']
+        if "use_modelscope" in kwargs:
+            if not os.path.exists(pretrained_model_name_or_path):
+                revision = kwargs.pop('revision', None)
+                model_dir = snapshot_download(
+                    pretrained_model_name_or_path,
+                    revision=revision,
+                    ignore_file_pattern=ignore_file_pattern)
+            else:
+                model_dir = pretrained_model_name_or_path
+            return ori_from_pretrained(cls, model_dir, *model_args, **kwargs)
+        else:
+            model_dir = pretrained_model_name_or_path
+            return ori_from_pretrained(cls, model_dir, *model_args, **kwargs)
+
+    PreTrainedTokenizerBase.from_pretrained = from_pretrained
+
+
+def patch_model_base():
+    """ Monkey patch PreTrainedModel.from_pretrained to adapt to modelscope hub.
+    """
+    ori_from_pretrained = ori_model_from_pretrained
+
+    @classmethod
+    def from_pretrained(cls, pretrained_model_name_or_path, *model_args,
+                        **kwargs):
+        ignore_file_pattern = [r'\w+\.safetensors']
+        if "use_modelscope" in kwargs:
+            if not os.path.exists(pretrained_model_name_or_path):
+                revision = kwargs.pop('revision', None)
+                model_dir = snapshot_download(
+                    pretrained_model_name_or_path,
+                    revision=revision,
+                    ignore_file_pattern=ignore_file_pattern)
+            else:
+                model_dir = pretrained_model_name_or_path
+            return ori_from_pretrained(cls, model_dir, *model_args, **kwargs)
+        else:
+            model_dir = pretrained_model_name_or_path
+            return ori_from_pretrained(cls, model_dir, *model_args, **kwargs)
+
+    PreTrainedModel.from_pretrained = from_pretrained
+
+
+patch_tokenizer_base()
+patch_model_base()
+
+
+# 面部检测
+def face_detect(image_list):
+    retinaface_detection = pipeline(Tasks.face_detection, "damo/cv_resnet50_face-detection_retinaface", model_revision="v2.0.2")
+    head_list = []
+    for index, image in enumerate(image_list):
+        try:
+            h, w, c = np.shape(image)
+
+            retinaface_boxes, retinaface_keypoints, _ = call_face_crop(retinaface_detection, image, 3, prefix="tmp")
+            retinaface_box = retinaface_boxes[0]
+            retinaface_keypoint = retinaface_keypoints[0]
+
+            # get key point
+            retinaface_keypoint = np.reshape(retinaface_keypoint, [5, 2])
+            # get angle
+            x = retinaface_keypoint[0, 0] - retinaface_keypoint[1, 0]
+            y = retinaface_keypoint[0, 1] - retinaface_keypoint[1, 1]
+            angle = 0 if x == 0 else abs(math.atan(y / x) * 180 / math.pi)
+            angle = (90 - angle) / 90
+
+            # face size judge
+            face_width = (retinaface_box[2] - retinaface_box[0]) / (3 - 1)
+            face_height = (retinaface_box[3] - retinaface_box[1]) / (3 - 1)
+            if min(face_width, face_height) < 128:
+                print("Face size in {} is small than 128. Ignore it.".format(image))
+                continue
+
+            # face crop
+            sub_image = image.crop(retinaface_box)
+            # try:
+            #     sub_image = Image.fromarray(cv2.cvtColor(skin_retouching(sub_image)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
+            # except Exception as e:
+            #     print("面部修复失败")
+            head_list.append(sub_image)
+
+        except Exception as e:
+            print("面部检测失败")
+    del retinaface_detection
+    return head_list
+
 
 # scheduler:
 SCHEDULER_LINEAR_START = 0.00085
@@ -232,9 +342,10 @@ def image_process(proc_image_input_batch, options, resize_weight=512, resize_hei
                   model_p="", mode=ImageProcessMode.All):
     op1, op2, op3, op4, op5, op6, op7 = "抠出头部", "抠出全身", "放大", "镜像", "旋转", "改变尺寸", "磨皮"
 
-    if op1 or op2 in options:
+    load_model = False
+    if op1 in options or op2 in options:
         load_model = True
-
+    print("load_groundingdino_model:", load_model)
     myseg = load_seg_model(load_model, model_p)
 
     sum_list = []
@@ -350,7 +461,8 @@ def image_process(proc_image_input_batch, options, resize_weight=512, resize_hei
     # type_alone = False if tab_proc_index != 0 else True
     # res_path = save_imgprocess_batch(sum_list, proc_image_input_batch)
 
-    myseg.stop()
+    if load_model:
+        myseg.stop()
     return sum_list, sum_head_image_list
 
 
@@ -711,11 +823,11 @@ def train_auto(
     # 预设参数
     width_train = 512
     height_train = 768
-    # width = 512
-    # height = 768
+    width = 512
+    height = 768
     # options = ["抠出头部", "磨皮"]  # 数据预处理方法 "抠出全身","抠出头部", "放大", "镜像", "旋转", "改变尺寸","磨皮"
     head_width = 512
-    head_height = 768
+    head_height = 512
     trigger_word = ""
     # 是否采用wd14作为反推tag，否则采用deepbooru
     use_wd = os.getenv('WD', '1') == '1'
@@ -732,22 +844,85 @@ def train_auto(
     tmp_face_dir = os.path.join(dirname, f"{task_id}-tmp_face_dir")
     # seg_face(input_path=train_data_dir, output_path=tmp_face_dir, model_path=general_model_path)
 
-    # # 原图不再抠头
-    # image_list, _ = custom_configurable_image_processing(train_data_dir, options, width, height,
-    #                                                      if_res_oribody=True, model_p=general_model_path)
+    num_boys = 0
+    num_girls = 0
+    for image in images:
+        image_path = os.path.join(train_data_dir, image)
+        face, fq = insightface_main_face(image_path)
+        print("fq:", fq)
+
+        if fq.gender == 1:
+            num_girls += 1
+        elif fq.gender == 2:
+            num_boys += 1
+
+    if num_boys > num_girls:
+        gender = 2
+    else:
+        gender = 1
+    print("该数据集的性别识别为：", gender)
     # 脸部图，抠头
-    options = ["磨皮"]
+    options = []
+    if gender==2:
+        options.append("去除背景")
+
     if len(images) < 15:
         options.append("镜像")
 
+    args = parse_args()
+    if "去除背景" in options:
+        ori_img_list = os.listdir(train_data_dir)
+        for img in ori_img_list:
+            img_path = os.path.join(train_data_dir, img)
+            # print(img_path.split(".")[-2])
+            # out_path = img_path.split(".")[-2] + "_out.png"
+            config_path = os.path.join(model_p, "PaddleSeg", "inference_models/human_pp_humansegv1_server_512x512_inference_model_with_softmax/deploy.yaml"  )
+            seg_image(args, config = config_path, img_path=img_path, save_dir=img_path)
+
     body_list, head_list = custom_configurable_image_processing(
         train_data_dir, options, head_width, head_height, if_res_oribody=True, model_p=general_model_path)
-    # 抠出脸部
-    if only_face:
-        clean_dir(train_data_dir)
-        save_images(head_list, train_data_dir)
-        save_images(body_list, train_data_dir)
-        head_list = seg_face(input_path=train_data_dir, output_path=tmp_face_dir, model_path=general_model_path)
+    skin_retouching = pipeline("skin-retouching-torch", model="damo/cv_unet_skin_retouching_torch",
+                               model_revision="v1.0.2")
+    portrait_enhancement = pipeline(Tasks.image_portrait_enhancement, model="damo/cv_gpen_image-portrait-enhancement",
+                                    model_revision="v1.0.0")
+
+    retouch_body_list = []
+    retouch_head_list = []
+    head_list = face_detect(image_list=body_list)
+
+    if gender == 2:
+        for body_img in body_list:
+            body_img = Image.fromarray(
+                cv2.cvtColor(skin_retouching(body_img)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
+            retouch_body_list.append(body_img)
+
+    for head_img in head_list:
+        head_img = Image.fromarray(cv2.cvtColor(skin_retouching(head_img)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
+        retouch_head_list.append(head_img)
+
+    del skin_retouching
+
+    new_body_list = []
+    new_head_list = []
+    if gender == 2:
+        for body_img in retouch_body_list:
+            body_img = Image.fromarray(
+                cv2.cvtColor(portrait_enhancement(body_img)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
+            new_body_list.append(body_img)
+
+    for head_img in retouch_head_list:
+        head_img = Image.fromarray(
+            cv2.cvtColor(portrait_enhancement(head_img)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
+        new_head_list.append(head_img)
+
+    del portrait_enhancement
+
+    # # 抠出脸部
+    # if only_face:
+    clean_dir(train_data_dir)
+    # save_images_to_temp(head_list, train_data_dir)
+    save_images_to_temp(new_head_list, train_data_dir)
+    face_list = seg_face(input_path=train_data_dir, output_path=tmp_face_dir, model_path=general_model_path)
 
     tmp_dir = os.path.join(dirname, f"{task_id}-preprocess") if not only_face else tmp_face_dir
     os.makedirs(tmp_dir, exist_ok=True)
@@ -756,20 +931,35 @@ def train_auto(
     process_dir = train_dir
     # print("1111:::", image_list, head_list)
 
-    # 1.图片预处理
-    # train_preprocess(process_src=image_list, process_dst=train_dir, process_width=width, process_height=height,
-    #                  preprocess_txt_action='ignore', process_keep_original_size=False,
-    #                  process_split=False, process_flip=False, process_caption=True,
-    #                  process_caption_deepbooru=not use_wd, split_threshold=0.5,
-    #                  overlap_ratio=0.2, process_focal_crop=True, process_focal_crop_face_weight=0.9,
-    #                  process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
-    #                  process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
-    #                  process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
-    #                  process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
-    #                  model_path=general_model_path,
-    #                  filter_tags=undesired_tags, additional_tags=trigger_word)
+    if gender == 2:
+        # 1.图片预处理
+        train_preprocess(process_src=new_body_list, process_dst=train_dir, process_width=width, process_height=height,
+                         preprocess_txt_action='ignore', process_keep_original_size=False,
+                         process_split=False, process_flip=False, process_caption=True,
+                         process_caption_deepbooru=not use_wd, split_threshold=0.5,
+                         overlap_ratio=0.2, process_focal_crop=True, process_focal_crop_face_weight=0.9,
+                         process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
+                         process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
+                         process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
+                         process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
+                         model_path=general_model_path,
+                         filter_tags=undesired_tags, additional_tags=trigger_word)
 
-    train_preprocess(process_src=head_list, process_dst=train_dir, process_width=head_width, process_height=head_height,
+        train_preprocess(process_src=new_head_list, process_dst=train_dir, process_width=head_width,
+                         process_height=head_height,
+                         preprocess_txt_action='ignore', process_keep_original_size=False,
+                         process_split=False, process_flip=False, process_caption=True,
+                         process_caption_deepbooru=not use_wd, split_threshold=0.5,
+                         overlap_ratio=0.2, process_focal_crop=True, process_focal_crop_face_weight=0.9,
+                         process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
+                         process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
+                         process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
+                         process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
+                         model_path=general_model_path,
+                         filter_tags=undesired_tags, additional_tags=trigger_word)
+
+    train_preprocess(process_src=face_list, process_dst=train_dir, process_width=width_train,
+                     process_height=height_train,
                      preprocess_txt_action='ignore', process_keep_original_size=False,
                      process_split=False, process_flip=False, process_caption=True,
                      process_caption_deepbooru=not use_wd, split_threshold=0.5,
