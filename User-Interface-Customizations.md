@@ -55,3 +55,16 @@ The cached theme is stored under `stable-diffusion-webui/tmp/gradio_themes/your_
 It also possible create your own theme locally or modify the cached themes
 
 </details>
+
+## UI item order
+
+<details><summary>Customizing UI item order for txt2img/img2img tabs</summary>
+
+The generation parameter UI elements can can be rewarded using `Setting` -> `User interface` -> `UI item order for txt2img/img2img tabs`
+![UI-item-order-1](images/UI-item-order-1.png)
+default order (1.7)
+![UI-item-order-2](images/UI-item-order-2.png)
+Custom order
+![UI-item-order-3](images/UI-item-order-3.png)
+
+</details>
