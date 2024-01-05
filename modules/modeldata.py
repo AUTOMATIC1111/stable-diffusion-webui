@@ -16,6 +16,7 @@ class ModelData:
         if self.sd_model is None and shared.opts.sd_model_checkpoint != 'None' and not self.lock.locked():
             with self.lock:
                 try:
+                    # note: reload_model_weights directly updates model_data.sd_model and returns it at the end
                     self.sd_model = reload_model_weights(op='model')
                     self.initial = False
                 except Exception as e:
