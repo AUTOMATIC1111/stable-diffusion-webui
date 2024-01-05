@@ -1286,7 +1286,7 @@ def unload_model_weights(op='model', change_from='none'):
                 from modules import sd_hijack
                 model_data.sd_model.to(devices.cpu)
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
-            else:
+            elif not (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx"):
                 disable_offload(model_data.sd_model)
                 model_data.sd_model.to('meta')
             model_data.sd_model = None

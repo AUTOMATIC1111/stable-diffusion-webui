@@ -344,8 +344,8 @@ def process_diffusers(p: StableDiffusionProcessing):
                 shared.compiled_model_state.width = compile_width
                 shared.compiled_model_state.batch_size = p.batch_size
 
-    # Downcast UNET after OpenVINO compile
-    def downcast_openvino(op="base"):
+    # Delete UNET after OpenVINO compile
+    def openvino_post_compile(op="base"):
         if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx":
             if shared.compiled_model_state.first_pass and op == "base":
                 shared.compiled_model_state.first_pass = False
@@ -466,7 +466,7 @@ def process_diffusers(p: StableDiffusionProcessing):
     try:
         t0 = time.time()
         output = shared.sd_model(**base_args) # pylint: disable=not-callable
-        downcast_openvino(op="base") # only executes on compiled vino models
+        openvino_post_compile(op="base") # only executes on compiled vino models
         if shared.cmd_opts.profile:
             t1 = time.time()
             shared.log.debug(f'Profile: pipeline call: {t1-t0:.2f}')
@@ -533,7 +533,7 @@ def process_diffusers(p: StableDiffusionProcessing):
                 shared.state.sampling_steps = hires_args['num_inference_steps']
                 try:
                     output = shared.sd_model(**hires_args) # pylint: disable=not-callable
-                    downcast_openvino(op="base")
+                    openvino_post_compile(op="base")
                 except AssertionError as e:
                     shared.log.info(e)
                 p.init_images = []
@@ -593,7 +593,7 @@ def process_diffusers(p: StableDiffusionProcessing):
             try:
                 shared.sd_refiner.register_to_config(requires_aesthetics_score=shared.opts.diffusers_aesthetics_score)
                 refiner_output = shared.sd_refiner(**refiner_args) # pylint: disable=not-callable
-                downcast_openvino(op="refiner")
+                openvino_post_compile(op="refiner")
             except AssertionError as e:
                 shared.log.info(e)
 
