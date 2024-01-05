@@ -60,7 +60,9 @@ And it also includes fixes for all reported issues so far
     > pip install -U --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu121  
     > pip install -U git+https://github.com/pytorch-labs/ao  
 - **IPEX**, thanks @disty0  
-  - better compile support  
+  - rewrite ipex hijacks without CondFunc  
+    improves compatibilty and performance  
+    fixes random memory leaks  
   - remove IPEX / Torch 2.0 specific hijacks  
   - add `IPEX_SDPA_SLICE_TRIGGER_RATE` and `IPEX_ATTENTION_SLICE_RATE` env variables  
 - **Fixes**  
