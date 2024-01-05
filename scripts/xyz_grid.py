@@ -274,7 +274,7 @@ axis_options = [
 ]
 
 
-def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend, include_lone_images, include_sub_grids, first_axes_processed, second_axes_processed, margin_size):
+def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend, include_lone_images, include_sub_grids, first_axes_processed, second_axes_processed, margin_size, only_matching_axis):
     hor_texts = [[images.GridAnnotation(x)] for x in x_labels]
     ver_texts = [[images.GridAnnotation(y)] for y in y_labels]
     title_texts = [[images.GridAnnotation(z)] for z in z_labels]
@@ -285,15 +285,17 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
 
     state.job_count = list_size * p.n_iter
 
-    def process_cell(x, y, z, ix, iy, iz):
+    def process_cell(x, y, z, ix, iy, iz, skip: bool = False):
         nonlocal processed_result
 
         def index(ix, iy, iz):
             return ix + iy * len(xs) + iz * len(xs) * len(ys)
 
         state.job = f"{index(ix, iy, iz) + 1} out of {list_size}"
-
-        processed: Processed = cell(x, y, z, ix, iy, iz)
+        if skip:
+            processed: Processed = Processed(p, [], p.seed, "")
+        else:
+            processed: Processed = cell(x, y, z, ix, iy, iz)
 
         if processed_result is None:
             # Use our first processed result object as a template container to hold our full results
@@ -325,31 +327,31 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
             if second_axes_processed == 'y':
                 for iy, y in enumerate(ys):
                     for iz, z in enumerate(zs):
-                        process_cell(x, y, z, ix, iy, iz)
+                        process_cell(x, y, z, ix, iy, iz, skip=only_matching_axis and not iy == iz)
             else:
                 for iz, z in enumerate(zs):
                     for iy, y in enumerate(ys):
-                        process_cell(x, y, z, ix, iy, iz)
+                        process_cell(x, y, z, ix, iy, iz, skip=only_matching_axis and not iz == iy)
     elif first_axes_processed == 'y':
         for iy, y in enumerate(ys):
             if second_axes_processed == 'x':
                 for ix, x in enumerate(xs):
                     for iz, z in enumerate(zs):
-                        process_cell(x, y, z, ix, iy, iz)
+                        process_cell(x, y, z, ix, iy, iz, skip=only_matching_axis and not ix == iz)
             else:
                 for iz, z in enumerate(zs):
                     for ix, x in enumerate(xs):
-                        process_cell(x, y, z, ix, iy, iz)
+                        process_cell(x, y, z, ix, iy, iz, skip=only_matching_axis and not iz == ix)
     elif first_axes_processed == 'z':
         for iz, z in enumerate(zs):
             if second_axes_processed == 'x':
                 for ix, x in enumerate(xs):
                     for iy, y in enumerate(ys):
-                        process_cell(x, y, z, ix, iy, iz)
+                        process_cell(x, y, z, ix, iy, iz, skip=only_matching_axis and not ix == iy)
             else:
                 for iy, y in enumerate(ys):
                     for ix, x in enumerate(xs):
-                        process_cell(x, y, z, ix, iy, iz)
+                        process_cell(x, y, z, ix, iy, iz, skip=only_matching_axis and not iy == ix)
 
     if not processed_result:
         # Should never happen, I've only seen it on one of four open tabs and it needed to refresh.
@@ -446,6 +448,7 @@ class Script(scripts.Script):
                 include_lone_images = gr.Checkbox(label='Include Sub Images', value=False, elem_id=self.elem_id("include_lone_images"))
                 include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
                 csv_mode = gr.Checkbox(label='Use text inputs instead of dropdowns', value=False, elem_id=self.elem_id("csv_mode"))
+                only_matching_axis = gr.Checkbox(label="Only matching axis", value=False, elem_id=self.elem_id("only_matching_axis"))
             with gr.Column():
                 margin_size = gr.Slider(label="Grid margins (px)", minimum=0, maximum=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
 
@@ -528,9 +531,9 @@ class Script(scripts.Script):
             (z_values_dropdown, lambda params: get_dropdown_update_from_params("Z", params)),
         )
 
-        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode]
+        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode, only_matching_axis]
 
-    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode):
+    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode, only_matching_axis):
         x_type, y_type, z_type = x_type or 0, y_type or 0, z_type or 0  # if axle type is None set to 0
 
         if not no_fixed_seeds:
@@ -637,13 +640,13 @@ class Script(scripts.Script):
             zs = fix_axis_seeds(z_opt, zs)
 
         if x_opt.label == 'Steps':
-            total_steps = sum(xs) * len(ys) * len(zs)
+            total_steps = sum(xs) if only_matching_axis else sum(xs) * len(ys) * len(zs)
         elif y_opt.label == 'Steps':
-            total_steps = sum(ys) * len(xs) * len(zs)
+            total_steps = sum(ys) if only_matching_axis else sum(ys) * len(xs) * len(zs)
         elif z_opt.label == 'Steps':
-            total_steps = sum(zs) * len(xs) * len(ys)
+            total_steps = sum(zs) if only_matching_axis else sum(zs) * len(xs) * len(ys)
         else:
-            total_steps = p.steps * len(xs) * len(ys) * len(zs)
+            total_steps = p.steps * max(len(xs), len(ys), len(zs)) if only_matching_axis else p.steps * len(xs) * len(ys) * len(zs)
 
         if isinstance(p, StableDiffusionProcessingTxt2Img) and p.enable_hr:
             if x_opt.label == "Hires steps":
@@ -662,7 +665,8 @@ class Script(scripts.Script):
         image_cell_count = p.n_iter * p.batch_size
         cell_console_text = f"; {image_cell_count} images per cell" if image_cell_count > 1 else ""
         plural_s = 's' if len(zs) > 1 else ''
-        print(f"X/Y/Z plot will create {len(xs) * len(ys) * len(zs) * image_cell_count} images on {len(zs)} {len(xs)}x{len(ys)} grid{plural_s}{cell_console_text}. (Total steps to process: {total_steps})")
+        img_count = max(len(xs), len(ys), len(zs)) * image_cell_count if only_matching_axis else len(xs) * len(ys) * len(zs) * image_cell_count
+        print(f"X/Y/Z plot will create {img_count} images on {len(zs)} {len(xs)}x{len(ys)} grid{plural_s}{cell_console_text}. (Total steps to process: {total_steps})")
         shared.total_tqdm.updateTotal(total_steps)
 
         state.xyz_plot_x = AxisInfo(x_opt, xs)
@@ -771,7 +775,8 @@ class Script(scripts.Script):
                 include_sub_grids=include_sub_grids,
                 first_axes_processed=first_axes_processed,
                 second_axes_processed=second_axes_processed,
-                margin_size=margin_size
+                margin_size=margin_size,
+                only_matching_axis=only_matching_axis
             )
 
         if not processed.images:
