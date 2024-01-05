@@ -3,7 +3,6 @@ import os
 from collections import namedtuple
 import enum
 
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -124,7 +123,7 @@ class NetworkModule:
         if isinstance(self.sd_module, nn.Conv2d):
             self.ops = F.conv2d
             self.extra_kwargs = {
-                'stride': self.sd_module.stride, 
+                'stride': self.sd_module.stride,
                 'padding': self.sd_module.padding
             }
         elif isinstance(self.sd_module, nn.Linear):
