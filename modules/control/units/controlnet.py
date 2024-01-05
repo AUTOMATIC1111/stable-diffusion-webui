@@ -2,6 +2,7 @@ import os
 import time
 from typing import Union
 from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline, ControlNetModel, StableDiffusionControlNetPipeline, StableDiffusionXLControlNetPipeline
+from modules.control.units import detect
 from modules.shared import log, opts
 from modules import errors
 
@@ -129,7 +130,7 @@ class ControlNetPipeline():
         if pipeline is None:
             log.error('Control model pipeline: model not loaded')
             return
-        elif isinstance(pipeline, StableDiffusionXLPipeline):
+        elif detect.is_sdxl(pipeline):
             self.pipeline = StableDiffusionXLControlNetPipeline(
                 vae=pipeline.vae,
                 text_encoder=pipeline.text_encoder,
@@ -141,7 +142,7 @@ class ControlNetPipeline():
                 feature_extractor=getattr(pipeline, 'feature_extractor', None),
                 controlnet=controlnet, # can be a list
             ).to(pipeline.device)
-        elif isinstance(pipeline, StableDiffusionPipeline):
+        elif detect.is_sd15(pipeline):
             self.pipeline = StableDiffusionControlNetPipeline(
                 vae=pipeline.vae,
                 text_encoder=pipeline.text_encoder,

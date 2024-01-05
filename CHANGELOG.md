@@ -24,6 +24,7 @@ And it also includes fixes for all reported issues so far
   - fix video color mode  
   - fix correct image mode  
   - fix batch/folder/video modes  
+  - fix pipeline switching between different modes  
 - **Improvements**  
   - **server startup**: performance  
     - faster extension load
