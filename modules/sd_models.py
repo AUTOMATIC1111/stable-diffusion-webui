@@ -5,7 +5,6 @@ import json
 import time
 import copy
 import logging
-import threading
 import contextlib
 import collections
 import os.path
@@ -25,6 +24,7 @@ from modules import paths, shared, shared_items, shared_state, modelloader, devi
 from modules.timer import Timer
 from modules.memstats import memory_stats
 from modules.paths import models_path, script_path
+from modules.modeldata import model_data
 
 
 transformers_logging.set_verbosity_error()
@@ -534,47 +534,6 @@ def repair_config(sd_config):
 
 sd1_clip_weight = 'cond_stage_model.transformer.text_model.embeddings.token_embedding.weight'
 sd2_clip_weight = 'cond_stage_model.model.transformer.resblocks.0.attn.in_proj_weight'
-
-
-class ModelData:
-    def __init__(self):
-        self.sd_model = None
-        self.sd_refiner = None
-        self.sd_dict = 'None'
-        self.initial = True
-        self.lock = threading.Lock()
-
-    def get_sd_model(self):
-        if self.sd_model is None and shared.opts.sd_model_checkpoint != 'None' and not self.lock.locked():
-            with self.lock:
-                try:
-                    self.sd_model = reload_model_weights(op='model')
-                    self.initial = False
-                except Exception as e:
-                    shared.log.error("Failed to load stable diffusion model")
-                    errors.display(e, "loading stable diffusion model")
-                    self.sd_model = None
-        return self.sd_model
-
-    def set_sd_model(self, v):
-        self.sd_model = v
-
-    def get_sd_refiner(self):
-        if self.sd_refiner is None and shared.opts.sd_model_refiner != 'None' and not self.lock.locked():
-            with self.lock:
-                try:
-                    self.sd_refiner = reload_model_weights(op='refiner')
-                    self.initial = False
-                except Exception as e:
-                    shared.log.error("Failed to load stable diffusion model")
-                    errors.display(e, "loading stable diffusion model")
-                    self.sd_refiner = None
-        return self.sd_refiner
-
-    def set_sd_refiner(self, v):
-        self.sd_refiner = v
-
-model_data = ModelData()
 
 
 def change_backend():

@@ -294,7 +294,7 @@ options_templates.update(options_section(('sd', "Execution & Models"), {
     "prompt_mean_norm": OptionInfo(True, "Prompt attention mean normalization"),
     "comma_padding_backtrack": OptionInfo(20, "Prompt padding for long prompts", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
     "sd_checkpoint_cache": OptionInfo(0, "Number of cached models", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
-    "sd_vae_checkpoint_cache": OptionInfo(0, "Number of cached VAEs", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
+    "sd_vae_checkpoint_cache": OptionInfo(0, "Number of cached VAEs", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1, "visible": False}),
     "sd_disable_ckpt": OptionInfo(False, "Disallow usage of models in ckpt format"),
 }))
 
@@ -952,82 +952,12 @@ def req(url_addr, headers = None, **kwargs):
         res = SimpleNamespace(**res)
     return res
 
-class Shared(sys.modules[__name__].__class__): # this class is here to provide sd_model field as a property, so that it can be created and loaded on demand rather than at program startup.
-    @property
-    def sd_model(self):
-        import modules.sd_models # pylint: disable=W0621
-        if modules.sd_models.model_data.sd_model is None:
-            log.debug(f'Model requested: fn={sys._getframe().f_back.f_code.co_name}') # pylint: disable=protected-access
-        return modules.sd_models.model_data.get_sd_model()
 
-    @sd_model.setter
-    def sd_model(self, value):
-        import modules.sd_models # pylint: disable=W0621
-        modules.sd_models.model_data.set_sd_model(value)
-
-    @property
-    def sd_refiner(self):
-        import modules.sd_models # pylint: disable=W0621
-        return modules.sd_models.model_data.get_sd_refiner()
-
-    @sd_refiner.setter
-    def sd_refiner(self, value):
-        import modules.sd_models # pylint: disable=W0621
-        modules.sd_models.model_data.set_sd_refiner(value)
-
-    @property
-    def backend(self):
-        return Backend.ORIGINAL if not cmd_opts.use_openvino and opts.data['sd_backend'] == 'original' else Backend.DIFFUSERS
-
-    @property
-    def sd_model_type(self):
-        try:
-            import modules.sd_models # pylint: disable=W0621
-            if modules.sd_models.model_data.sd_model is None:
-                model_type = 'none'
-                return model_type
-            if backend == Backend.ORIGINAL:
-                model_type = 'ldm'
-            elif "StableDiffusionXL" in self.sd_model.__class__.__name__:
-                model_type = 'sdxl'
-            elif "StableDiffusion" in self.sd_model.__class__.__name__:
-                model_type = 'sd'
-            elif "LatentConsistencyModel" in self.sd_model.__class__.__name__:
-                model_type = 'sd' # lcm is compatible with sd
-            elif "AnimateDiffPipeline" in self.sd_model.__class__.__name__:
-                model_type = 'sd' # ad is compatible with sd
-            elif "Kandinsky" in self.sd_model.__class__.__name__:
-                model_type = 'kandinsky'
-            else:
-                model_type = self.sd_model.__class__.__name__
-        except Exception:
-            model_type = 'unknown'
-        return model_type
-
-    @property
-    def sd_refiner_type(self):
-        try:
-            import modules.sd_models # pylint: disable=W0621
-            if modules.sd_models.model_data.sd_refiner is None:
-                model_type = 'none'
-                return model_type
-            if backend == Backend.ORIGINAL:
-                model_type = 'ldm'
-            elif "StableDiffusionXL" in self.sd_refiner.__class__.__name__:
-                model_type = 'sdxl'
-            elif "StableDiffusion" in self.sd_refiner.__class__.__name__:
-                model_type = 'sd'
-            elif "Kandinsky" in self.sd_refiner.__class__.__name__:
-                model_type = 'kandinsky'
-            else:
-                model_type = self.sd_refiner.__class__.__name__
-        except Exception:
-            model_type = 'unknown'
-        return model_type
-
-sd_model = None
-sd_refiner = None
-sd_model_type = ''
-sd_refiner_type = ''
+sd_model = None # dummy and overwritten by class
+sd_refiner = None # dummy and overwritten by class
+sd_model_type = '' # dummy and overwritten by class
+sd_refiner_type = '' # dummy and overwritten by class
 compiled_model_state = None
+
+from modules.modeldata import Shared # pylint: disable=ungrouped-imports
 sys.modules[__name__].__class__ = Shared
