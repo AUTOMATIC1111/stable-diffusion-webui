@@ -1,5 +1,6 @@
 import importlib
 import logging
+import os
 import sys
 import warnings
 from threading import Thread
@@ -18,6 +19,7 @@ def imports():
     warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
     warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
 
+    os.environ.setdefault('GRADIO_ANALYTICS_ENABLED', 'False')
     import gradio  # noqa: F401
     startup_timer.record("import gradio")
 

@@ -27,8 +27,7 @@ dir_repos = "repositories"
 # Whether to default to printing command output
 default_command_live = (os.environ.get('WEBUI_LAUNCH_LIVE_OUTPUT') == "1")
 
-if 'GRADIO_ANALYTICS_ENABLED' not in os.environ:
-    os.environ['GRADIO_ANALYTICS_ENABLED'] = 'False'
+os.environ.setdefault('GRADIO_ANALYTICS_ENABLED', 'False')
 
 
 def check_python_version():
