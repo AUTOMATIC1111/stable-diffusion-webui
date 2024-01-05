@@ -350,12 +350,12 @@ def process_diffusers(p: StableDiffusionProcessing):
             if shared.compiled_model_state.first_pass and op == "base":
                 shared.compiled_model_state.first_pass = False
                 if hasattr(shared.sd_model, "unet"):
-                    shared.sd_model.unet.to(dtype=torch.float8_e4m3fn)
+                    shared.sd_model.unet.apply(sd_models.convert_to_faketensors)
                     devices.torch_gc(force=True)
             if shared.compiled_model_state.first_pass_refiner and op == "refiner":
                 shared.compiled_model_state.first_pass_refiner = False
                 if hasattr(shared.sd_refiner, "unet"):
-                    shared.sd_refiner.unet.to(dtype=torch.float8_e4m3fn)
+                    shared.sd_refiner.unet.apply(sd_models.convert_to_faketensors)
                     devices.torch_gc(force=True)
 
     def update_sampler(sd_model, second_pass=False):

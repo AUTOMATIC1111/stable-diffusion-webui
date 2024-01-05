@@ -18,7 +18,7 @@ from types import MappingProxyType
 from hashlib import sha256
 import functools
 
-from modules import shared, devices
+from modules import shared, devices, sd_models
 
 NNCFNodeName = str
 def get_node_by_name(self, name: NNCFNodeName) ->  nncf.common.graph.NNCFNode:
@@ -376,8 +376,8 @@ def openvino_fx(subgraph, example_inputs):
                                 example_inputs_reordered.append(example_inputs[idx1])
                 example_inputs = example_inputs_reordered
 
-            # Deleting unused subgraphs doesn't do anything, so we cast it down to fp8
-            subgraph = subgraph.to(dtype=torch.float8_e4m3fn)
+            # Delete unused subgraphs
+            subgraph = subgraph.apply(sd_models.convert_to_faketensors)
             devices.torch_gc(force=True)
 
             # Model is fully supported and already cached. Run the cached OV model directly.

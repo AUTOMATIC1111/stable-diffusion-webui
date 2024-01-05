@@ -2,7 +2,7 @@ import os
 import time
 import torch
 import torchvision.transforms.functional as TF
-from modules import shared, devices, sd_vae
+from modules import shared, devices, sd_vae, sd_models
 import modules.taesd.sd_vae_taesd as sd_vae_taesd
 
 
@@ -58,7 +58,7 @@ def full_vae_decode(latents, model):
     if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx" and shared.compiled_model_state.first_pass_vae:
         shared.compiled_model_state.first_pass_vae = False
         if hasattr(shared.sd_model, "vae"):
-            model.vae.to(dtype=torch.float8_e4m3fn)
+            model.vae.apply(sd_models.convert_to_faketensors)
             devices.torch_gc(force=True)
 
     if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False) and hasattr(model, 'unet'):

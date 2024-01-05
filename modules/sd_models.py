@@ -1262,6 +1262,13 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
     return sd_model
 
 
+def convert_to_faketensors(tensor):
+        fake = torch._subclasses.fake_tensor.FakeTensorMode()
+        if hasattr(tensor, "weight"):
+            tensor.weight = torch.nn.Parameter(fake.from_tensor(tensor.weight))
+        return tensor
+
+
 def disable_offload(sd_model):
     from accelerate.hooks import remove_hook_from_module
     if not getattr(sd_model, 'has_accelerate', False):
