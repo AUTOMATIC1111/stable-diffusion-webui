@@ -49,7 +49,7 @@ def full_vae_decode(latents, model):
         latents = latents.to(next(iter(model.vae.post_quant_conv.parameters())).dtype)
 
     # OpenVINO with INT4 doesn't work with VAE decode so we pass that we are using VAE right now to OpenVINO
-    if shared.compiled_model_state is not None:
+    if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx" and shared.compiled_model_state.first_pass_vae:
         shared.compiled_model_state.compiling_vae = True
 
     decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
