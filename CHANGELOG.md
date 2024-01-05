@@ -66,6 +66,10 @@ And it also includes fixes for all reported issues so far
     fixes random memory leaks  
   - remove IPEX / Torch 2.0 specific hijacks  
   - add `IPEX_SDPA_SLICE_TRIGGER_RATE` and `IPEX_ATTENTION_SLICE_RATE` env variables  
+- **OpenVINO**, thanks @disty0  
+  - **4-bit support with NNCF**  
+    enable *Compress Model weights with NNCF* from *Compute Settings* and set a 4-bit NNCF mode  
+    4-bit and 8-bit with OpenVINO is CPU only for now  
 - **Fixes**  
   - ipadapter: allow changing of model/image on-the-fly  
   - ipadapter: fix fallback of cross-attention on unload  

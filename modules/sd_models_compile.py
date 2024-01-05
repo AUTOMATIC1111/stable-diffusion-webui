@@ -20,6 +20,7 @@ class CompiledModelState:
         self.lora_compile = False
         self.compiled_cache = {}
         self.partitioned_modules = {}
+        self.compiling_vae = False
 
 
 def ipex_optimize(sd_model):

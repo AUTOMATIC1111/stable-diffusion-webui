@@ -331,7 +331,9 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_compile_precompile": OptionInfo(False, "Model compile precompile"),
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
     "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
-    "diffusers_quantization": OptionInfo(False, "Enable dynamic quantization"),
+    "diffusers_quantization": OptionInfo(False, "Enable dynamic quantization with torchao"),
+    "nncf_compress_weights": OptionInfo(False, "Compress Model weights with NNCF"),
+    "nncf_compress_vae_weights": OptionInfo(False, "Compress VAE weights with NNCF"),
 
     "ipex_sep": OptionInfo("<h2>IPEX, DirectML and OpenVINO</h2>", "", gr.HTML),
     "ipex_optimize": OptionInfo(False if not devices.backend == "ipex" else True, "Enable IPEX Optimize for Intel GPUs"),
@@ -342,8 +344,8 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "openvino_hetero_gpu": OptionInfo(False, "OpenVINO use Hetero Device for single inference with multiple devices"),
     "openvino_remove_cpu_from_hetero": OptionInfo(False, "OpenVINO remove CPU from Hetero Device"),
     "openvino_remove_igpu_from_hetero": OptionInfo(False, "OpenVINO remove iGPU from Hetero Device"),
-    "nncf_compress_weights": OptionInfo(False, "Compress Model weights to 8 bit with NNCF"),
-    "nncf_compress_vae_weights": OptionInfo(False, "Compress VAE weights to 8 bit with NNCF"),
+    "nncf_compress_weights_mode": OptionInfo("INT8", "OpenVINO compress mode for NNCF (CPU Only)", gr.Radio, {"choices": ['INT8', 'INT4_SYM', 'INT4_ASYM', 'NF4']}),
+    "nncf_compress_weights_raito": OptionInfo(1.0, "OpenVINO compress ratio for NNCF with 4-bit modes", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
 }))
 
 options_templates.update(options_section(('advanced', "Inference Settings"), {

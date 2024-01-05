@@ -48,6 +48,10 @@ def full_vae_decode(latents, model):
         model.upcast_vae()
         latents = latents.to(next(iter(model.vae.post_quant_conv.parameters())).dtype)
 
+    # OpenVINO with INT4 doesn't work with VAE decode so we pass that we are using VAE right now to OpenVINO
+    if shared.compiled_model_state is not None:
+        shared.compiled_model_state.compiling_vae = True
+
     decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
 
     # Downcast VAE after OpenVINO compile

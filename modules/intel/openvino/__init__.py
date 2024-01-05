@@ -229,12 +229,16 @@ def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_na
         om.inputs[idx].get_node().set_element_type(dtype_mapping[input_data.dtype])
         om.inputs[idx].get_node().set_partial_shape(PartialShape(list(input_data.shape)))
     om.validate_nodes_and_infer_types()
-    if shared.opts.nncf_compress_weights:
-        om = nncf.compress_weights(om)
+    if shared.opts.nncf_compress_weights and not (shared.compiled_model_state.compiling_vae and not shared.opts.nncf_compress_vae_weights):
+        if shared.compiled_model_state.compiling_vae or shared.opts.nncf_compress_weights_mode == "INT8":
+            om = nncf.compress_weights(om)
+        else:
+            om = nncf.compress_weights(om, mode=getattr(nncf.CompressWeightsMode, shared.opts.nncf_compress_weights_mode), group_size=8, ratio=shared.opts.nncf_compress_weights_raito)
 
     if model_hash_str is not None:
         core.set_property({'CACHE_DIR': cache_root + '/blob'})
 
+    shared.compiled_model_state.compiling_vae = False
     compiled_model = core.compile_model(om, device)
     return compiled_model
 
@@ -257,13 +261,16 @@ def openvino_compile_cached_model(cached_model_path, *example_inputs):
         om.inputs[idx].get_node().set_element_type(dtype_mapping[input_data.dtype])
         om.inputs[idx].get_node().set_partial_shape(PartialShape(list(input_data.shape)))
     om.validate_nodes_and_infer_types()
-    if shared.opts.nncf_compress_weights:
-        om = nncf.compress_weights(om)
+    if shared.opts.nncf_compress_weights and not (shared.compiled_model_state.compiling_vae and not shared.opts.nncf_compress_vae_weights):
+        if shared.compiled_model_state.compiling_vae or shared.opts.nncf_compress_weights_mode == "INT8":
+            om = nncf.compress_weights(om)
+        else:
+            om = nncf.compress_weights(om, mode=getattr(nncf.CompressWeightsMode, shared.opts.nncf_compress_weights_mode), group_size=8, ratio=shared.opts.nncf_compress_weights_raito)
 
     core.set_property({'CACHE_DIR': shared.opts.openvino_cache_path + '/blob'})
 
+    shared.compiled_model_state.compiling_vae = False
     compiled_model = core.compile_model(om, get_device())
-
     return compiled_model
 
 def openvino_execute(gm: GraphModule, *args, executor_parameters=None, partition_id, file_name=""):
