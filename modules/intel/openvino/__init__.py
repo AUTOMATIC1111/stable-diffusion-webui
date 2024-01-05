@@ -342,6 +342,11 @@ def partition_graph(gm: GraphModule, use_python_fusion_cache: bool, model_hash_s
 
     return gm
 
+def generate_subgraph_str(tensor):
+    if hasattr(tensor, "weight"):
+        shared.compiled_model_state.model_str = shared.compiled_model_state.model_str + str(tensor.weight)
+    return tensor
+
 @register_backend
 @fake_tensor_unsupported
 def openvino_fx(subgraph, example_inputs):
@@ -351,7 +356,9 @@ def openvino_fx(subgraph, example_inputs):
     if not shared.opts.openvino_disable_model_caching:
         os.environ.setdefault('OPENVINO_TORCH_MODEL_CACHING', "1")
         # Create a hash to be used for caching
-        model_hash_str = sha256(subgraph.code.encode('utf-8')).hexdigest()
+        shared.compiled_model_state.model_str = ""
+        subgraph.apply(generate_subgraph_str)
+        model_hash_str = sha256(shared.compiled_model_state.model_str.encode('utf-8')).hexdigest()
         if (shared.compiled_model_state.cn_model != [] and shared.compiled_model_state.partition_id == 0):
             model_hash_str = model_hash_str + str(shared.compiled_model_state.cn_model)
 

@@ -8,6 +8,7 @@ from installer import setup_logging
 #Used by OpenVINO, can be used with TensorRT or Olive
 class CompiledModelState:
     def __init__(self):
+        self.model_str = ""
         self.first_pass = True
         self.first_pass_refiner = True
         self.first_pass_vae = True
@@ -76,6 +77,8 @@ def optimize_openvino():
                 shared.compiled_model_state.lora_model = []
             shared.compiled_model_state.compiled_cache.clear()
             shared.compiled_model_state.partitioned_modules.clear()
+            shared.compiled_model_state.partition_id = 0
+            shared.compiled_model_state.model_str = ""
         shared.compiled_model_state.first_pass = True if not shared.opts.cuda_compile_precompile else False
         shared.compiled_model_state.first_pass_vae = True if not shared.opts.cuda_compile_precompile else False
         shared.compiled_model_state.first_pass_refiner = True if not shared.opts.cuda_compile_precompile else False
