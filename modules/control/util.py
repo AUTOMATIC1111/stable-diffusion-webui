@@ -148,6 +148,8 @@ def blend(images):
         return images
     y = np.zeros(images[0].shape, dtype=np.float32)
     for img in images:
+        if img.shape != y.shape:
+            img = cv2.resize(img, (y.shape[1], y.shape[0]), interpolation=cv2.INTER_CUBIC)
         y = cv2.add(y, img.astype(np.float32))
     y = y.clip(0, 255).astype(np.uint8)
     return y
