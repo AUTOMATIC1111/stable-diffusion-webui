@@ -67,6 +67,7 @@ And it also includes fixes for all reported issues so far
     requires nightly versions of `torch` and `torchao`  
     > pip install -U --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu121  
     > pip install -U git+https://github.com/pytorch-labs/ao  
+  - new option: **compile text encoder** (experimental)  
 - **IPEX**, thanks @disty0  
   - rewrite ipex hijacks without CondFunc  
     improves compatibilty and performance  
@@ -77,6 +78,8 @@ And it also includes fixes for all reported issues so far
   - **4-bit support with NNCF**  
     enable *Compress Model weights with NNCF* from *Compute Settings* and set a 4-bit NNCF mode  
     4-bit and 8-bit with OpenVINO is CPU only for now  
+  - experimental support for *Text Encoder* compiling  
+    OpenVINO is faster than IPEX now  
   - reduce system memory usage after compile  
   - fix cache loading with multiple models  
 - **Fixes**  
