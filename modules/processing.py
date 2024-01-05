@@ -732,7 +732,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Variation seed": (None if p.subseed_strength == 0 else (p.all_subseeds[0] if use_main_prompt else all_subseeds[index])),
         "Variation seed strength": (None if p.subseed_strength == 0 else p.subseed_strength),
         "Seed resize from": (None if p.seed_resize_from_w <= 0 or p.seed_resize_from_h <= 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}"),
-        "Denoising strength": getattr(p, 'denoising_strength', None),
+        "Denoising strength": p.extra_generation_params.get("Denoising strength"),
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Clip skip": None if clip_skip <= 1 else clip_skip,
         "ENSD": opts.eta_noise_seed_delta if uses_ensd else None,
@@ -1198,6 +1198,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
+            self.extra_generation_params["Denoising strength"] = self.denoising_strength
+
             if self.hr_checkpoint_name and self.hr_checkpoint_name != 'Use same checkpoint':
                 self.hr_checkpoint_info = sd_models.get_closet_checkpoint_match(self.hr_checkpoint_name)
 
@@ -1516,6 +1518,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.mask_blur_y = value
 
     def init(self, all_prompts, all_seeds, all_subseeds):
+        self.extra_generation_params["Denoising strength"] = self.denoising_strength
+
         self.image_cfg_scale: float = self.image_cfg_scale if shared.sd_model.cond_stage_key == "edit" else None
 
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
