@@ -77,6 +77,8 @@ def optimize_openvino():
             shared.compiled_model_state.compiled_cache.clear()
             shared.compiled_model_state.partitioned_modules.clear()
         shared.compiled_model_state.first_pass = True if not shared.opts.cuda_compile_precompile else False
+        shared.compiled_model_state.first_pass_vae = True if not shared.opts.cuda_compile_precompile else False
+        shared.compiled_model_state.first_pass_refiner = True if not shared.opts.cuda_compile_precompile else False
     except Exception as e:
         shared.log.warning(f"Model compile: task=OpenVINO: {e}")
 
