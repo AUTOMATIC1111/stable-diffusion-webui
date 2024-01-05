@@ -15,14 +15,13 @@ from collections import OrderedDict
 import gradio as gr
 from PIL import Image
 from starlette.responses import FileResponse, JSONResponse
-from modules import paths, shared, scripts, modelloader, errors
+from modules import paths, shared, scripts, files_cache, errors
 from modules.ui_components import ToolButton
 import modules.ui_symbols as symbols
 
 
 allowed_dirs = []
 dir_timestamps = {}
-dir_cache = {} # key=path, value=(mtime, listdir(path))
 refresh_time = 0
 extra_pages = shared.extra_networks
 debug = shared.log.trace if os.environ.get('SD_EN_DEBUG', None) is not None else lambda *args, **kwargs: None
@@ -49,19 +48,6 @@ card_list = '''
         </div>
     </div>
 '''
-
-
-def listdir(path):
-    if not os.path.exists(path):
-        return []
-    mtime = os.path.getmtime(path)
-    if path in dir_timestamps and mtime == dir_timestamps[path]:
-        return dir_cache[path]
-    else:
-        # debug(f'EN list-dir list: {path}')
-        dir_cache[path] = [os.path.join(path, f) for f in os.listdir(path)]
-        dir_timestamps[path] = mtime
-        return dir_cache[path]
 
 
 def init_api(app):
@@ -167,11 +153,7 @@ class ExtraNetworksPage:
         return filename.replace('\\', '/')
 
     def is_empty(self, folder):
-        for f in listdir(folder):
-            _fn, ext = os.path.splitext(f)
-            if ext.lower() in ['.ckpt', '.safetensors', '.pt', '.json'] or os.path.isdir(os.path.join(folder, f)):
-                return False
-        return True
+        return any(files_cache.list_files(folder, ext_filter=['.ckpt', '.safetensors', '.pt', '.json']))
 
     def create_thumb(self):
         debug(f'EN create-thumb: {self.name}')
@@ -234,8 +216,9 @@ class ExtraNetworksPage:
             return f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'></div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>Extra network page not ready<br>Click refresh to try again</div>"
         subdirs = {}
         allowed_folders = [os.path.abspath(x) for x in self.allowed_directories_for_previews()]
-        for parentdir, dirs in {d: modelloader.directory_list(d) for d in allowed_folders}.items():
-            for tgt in dirs.keys():
+        for parentdir, dirs in {d: files_cache.walk(d, cached=True, recurse=files_cache.not_hidden) for d in allowed_folders}.items():
+            for tgt in dirs:
+                tgt = tgt.path
                 if os.path.join(paths.models_path, 'Reference') in tgt:
                     subdirs['Reference'] = 1
                 if shared.backend == shared.Backend.DIFFUSERS and shared.opts.diffusers_dir in tgt:
@@ -245,9 +228,10 @@ class ExtraNetworksPage:
                 subdir = tgt[len(parentdir):].replace("\\", "/")
                 while subdir.startswith("/"):
                     subdir = subdir[1:]
+                if not subdir:
+                    continue
                 # if not self.is_empty(tgt):
-                if not subdir.startswith("."):
-                    subdirs[subdir] = 1
+                subdirs[subdir] = 1
         debug(f"Extra networks: page='{self.name}' subfolders={list(subdirs)}")
         subdirs = OrderedDict(sorted(subdirs.items()))
         if self.name == 'model':
@@ -313,17 +297,17 @@ class ExtraNetworksPage:
             return ""
 
     def find_preview_file(self, path):
+        exts = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
         if path is None:
             return 'html/card-no-preview.png'
         if shared.opts.diffusers_dir in path:
             path = os.path.relpath(path, shared.opts.diffusers_dir)
             ref = os.path.join('models', 'Reference')
             fn = os.path.join(ref, path.replace('models--', '').replace('\\', '/').split('/')[0])
-            files = listdir(ref)
+            files = list(files_cache.list_files(ref, ext_filter=exts, recursive=False))
         else:
-            files = listdir(os.path.dirname(path))
+            files = list(files_cache.list_files(os.path.dirname(path), ext_filter=exts, recursive=False))
             fn = os.path.splitext(path)[0]
-        exts = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
         for file in [f'{fn}{mid}{ext}' for ext in exts for mid in ['.thumb.', '.', '.preview.']]:
             if file in files:
                 if 'Reference' not in file and '.thumb.' not in file:
@@ -346,7 +330,7 @@ class ExtraNetworksPage:
                     self.text += '\n'
 
         fn = os.path.splitext(path)[0] + '.txt'
-        if fn in listdir(os.path.dirname(path)):
+        if os.path.exists(fn):
             try:
                 with open(fn, "r", encoding="utf-8", errors="replace") as f:
                     txt = f.read()
@@ -366,7 +350,7 @@ class ExtraNetworksPage:
     def find_info(self, path):
         fn = os.path.splitext(path)[0] + '.json'
         data = {}
-        if fn in listdir(os.path.dirname(path)):
+        if os.path.exists(fn):
             t0 = time.time()
             data = shared.readfile(fn, silent=True)
             if type(data) is list:

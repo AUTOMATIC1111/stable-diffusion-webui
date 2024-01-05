@@ -16,7 +16,7 @@ import network_glora
 import lora_convert
 import torch
 import diffusers.models.lora
-from modules import shared, devices, sd_models, sd_models_compile, errors, scripts, sd_hijack
+from modules import shared, devices, sd_models, sd_models_compile, errors, scripts, sd_hijack, files_cache
 
 
 debug = os.environ.get('SD_LORA_DEBUG', None) is not None
@@ -433,16 +433,14 @@ def list_available_networks():
     available_network_hash_lookup.clear()
     forbidden_network_aliases.update({"none": 1, "Addams": 1})
     os.makedirs(shared.cmd_opts.lora_dir, exist_ok=True)
-    candidates = []
+    directories = []
     if os.path.exists(shared.cmd_opts.lora_dir):
-        candidates += list(shared.walk_files(shared.cmd_opts.lora_dir, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
+        directories.append(shared.cmd_opts.lora_dir)
     else:
         shared.log.warning('LoRA directory not found: path="{shared.cmd_opts.lora_dir}"')
     if os.path.exists(shared.cmd_opts.lyco_dir):
-        candidates += list(shared.walk_files(shared.cmd_opts.lyco_dir, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
-    for filename in candidates:
-        if os.path.isdir(filename):
-            continue
+        directories.append(shared.cmd_opts.lyco_dir)
+    for filename in files_cache.list_files(*directories, ext_filter=[".pt", ".ckpt", ".safetensors"]):
         name = os.path.splitext(os.path.basename(filename))[0]
         try:
             entry = network.NetworkOnDisk(name, filename)

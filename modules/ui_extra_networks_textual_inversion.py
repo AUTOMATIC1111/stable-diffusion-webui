@@ -1,7 +1,7 @@
 import json
 import os
 import concurrent
-from modules import shared, sd_hijack, sd_models, ui_extra_networks
+from modules import shared, sd_hijack, sd_models, ui_extra_networks, files_cache
 from modules.textual_inversion.textual_inversion import Embedding
 
 
@@ -46,20 +46,16 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
         return record
 
     def list_items(self):
-
-        def list_folder(folder):
-            for filename in os.listdir(folder):
-                fn = os.path.join(folder, filename)
-                if os.path.isfile(fn) and (fn.lower().endswith(".pt") or fn.lower().endswith(".safetensors")):
-                    embedding = Embedding(vec=0, name=os.path.basename(fn), filename=fn)
-                    embedding.filename = fn
-                    self.embeddings.append(embedding)
-                elif os.path.isdir(fn) and not fn.startswith('.'):
-                    list_folder(fn)
-
         if sd_models.model_data.sd_model is None:
-            self.embeddings = []
-            list_folder(shared.opts.embeddings_dir)
+            self.embeddings = [ 
+                Embedding(vec=0, name=os.path.basename(embedding_path), filename=embedding_path) 
+                for embedding_path 
+                in files_cache.list_files(
+                    shared.opts.embeddings_dir, 
+                    ext_filter=['.pt', '.safetensors'], 
+                    recursive=files_cache.not_hidden
+                )
+            ]
         elif shared.backend == shared.Backend.ORIGINAL:
             self.embeddings = list(sd_hijack.model_hijack.embedding_db.word_embeddings.values())
         elif hasattr(sd_models.model_data.sd_model, 'embedding_db'):

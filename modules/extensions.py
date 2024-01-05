@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 import git
-from modules import shared, errors
+from modules import shared, errors, files_cache
 from modules.paths import extensions_dir, extensions_builtin_dir
 
 
@@ -83,18 +83,17 @@ class Extension:
         dirpath = os.path.join(self.path, subdir)
         if not os.path.isdir(dirpath):
             return []
-        res = []
-        for filename in sorted(os.listdir(dirpath)):
-            if not filename.endswith(".py") and not filename.endswith(".js") and not filename.endswith(".mjs"):
-                continue
-            priority = '50'
-            if os.path.isfile(os.path.join(dirpath, "..", ".priority")):
-                with open(os.path.join(dirpath, "..", ".priority"), "r", encoding="utf-8") as f:
-                    priority = str(f.read().strip())
-            res.append(scripts.ScriptFile(self.path, filename, os.path.join(dirpath, filename), priority))
-            if priority != '50':
-                shared.log.debug(f'Extension priority override: {os.path.dirname(dirpath)}:{priority}')
-        res = [x for x in res if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
+        priority = '50'
+        if os.path.isfile(os.path.join(dirpath, "..", ".priority")):
+            with open(os.path.join(dirpath, "..", ".priority"), "r", encoding="utf-8") as f:
+                priority = str(f.read().strip())
+        if priority != '50':
+            shared.log.debug(f'Extension priority override: {os.path.dirname(dirpath)}:{priority}')
+        valid_extensions = map(str.upper, ['.py','.js','.mjs'])
+        extension = extension.upper()
+        assert extension in valid_extensions, f'list_files `extension` invalid: extension={extension}, valid_extensions={valid_extensions}'
+        files = files_cache.list_files(dirpath, ext_filter=[extension])
+        res = [scripts.ScriptFile(self.path, filename, filename, priority) for filename in sorted(files)]
         return res
 
     def check_updates(self):

@@ -7,7 +7,7 @@ import torch
 import torch.hub # pylint: disable=ungrouped-imports
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
-from modules import devices, paths, shared, lowvram, modelloader, errors
+from modules import devices, paths, shared, lowvram, errors
 
 
 blip_image_eval_size = 384
@@ -79,6 +79,7 @@ class InterrogateModels:
     def load_blip_model(self):
         self.create_fake_fairscale()
         import models.blip # pylint: disable=no-name-in-module
+        import modules.modelloader as modelloader
         model_path = os.path.join(paths.models_path, "BLIP")
         download_name='model_base_caption_capfilt_large.pth',
         shared.log.debug(f'Model interrogate load: type=BLiP model={download_name} path={model_path}')
