@@ -404,7 +404,6 @@ def openvino_fx(subgraph, example_inputs):
                 pass # Fails with FakeTensors or Downcast
             else:
                 # Delete unused subgraphs
-                print(shared.compiled_model_state.subgraph_type)
                 subgraph = subgraph.apply(sd_models.convert_to_faketensors)
                 devices.torch_gc(force=True)
 
