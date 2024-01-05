@@ -319,7 +319,12 @@ def create_ui(_blocks: gr.Blocks=None):
                         mask_blur = gr.Slider(minimum=0, maximum=100, step=1, label='Blur', value=8, elem_id="control_mask_blur")
                         mask_overlap = gr.Slider(minimum=0, maximum=100, step=1, label='Overlap', value=64, elem_id="control_mask_overlap")
 
-                resize_mode, resize_name, width, height, scale_by, selected_scale_tab, resize_time = ui_sections.create_resize_inputs('control', [], time_selector=True, scale_visible=False, mode='Fixed')
+                with gr.Accordion(open=False, label="Size", elem_id="control_size", elem_classes=["small-accordion"]):
+                    with gr.Tabs():
+                        with gr.Tab('Before'):
+                            resize_mode_before, resize_name_before, width_before, height_before, scale_by_before, selected_scale_tab_before = ui_sections.create_resize_inputs('control', [], scale_visible=False, mode='Fixed', accordion=False, latent=True)
+                        with gr.Tab('After'):
+                            resize_mode_after, resize_name_after, width_after, height_after, scale_by_after, selected_scale_tab_after = ui_sections.create_resize_inputs('control', [], scale_visible=False, mode='Fixed', accordion=False, latent=False)
 
                 with gr.Accordion(open=False, label="Sampler", elem_id="control_sampler", elem_classes=["small-accordion"]):
                     sd_samplers.set_samplers()
@@ -698,7 +703,8 @@ def create_ui(_blocks: gr.Blocks=None):
                     steps, sampler_index,
                     seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
                     cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry,
-                    resize_mode, resize_name, width, height, scale_by, selected_scale_tab, resize_time,
+                    resize_mode_before, resize_name_before, width_before, height_before, scale_by_before, selected_scale_tab_before,
+                    resize_mode_after, resize_name_after, width_after, height_after, scale_by_after, selected_scale_tab_after,
                     denoising_strength, batch_count, batch_size, mask_blur, mask_overlap,
                     video_skip_frames, video_type, video_duration, video_loop, video_pad, video_interpolate,
                     ip_adapter, ip_scale, ip_image, ip_type,

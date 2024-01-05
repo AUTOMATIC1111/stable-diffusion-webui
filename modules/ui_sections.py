@@ -108,7 +108,8 @@ def create_advanced_inputs(tab):
                 image_cfg_scale = gr.Slider(minimum=0.0, maximum=30.0, step=0.1, label='Secondary CFG scale', value=6.0, elem_id=f"{tab}_image_cfg_scale")
             with FormRow():
                 diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id=f"{tab}_image_cfg_rescale", visible=shared.backend == shared.Backend.DIFFUSERS)
-                # diffusers_sag_scale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Self-attention guidance', value=0.0, elem_id=f"{tab}_image_sag_scale", visible=shared.backend == shared.Backend.DIFFUSERS) # TODO enable SAG once fixed in diffusers
+                # TODO enable SAG once fixed in diffusers
+                # diffusers_sag_scale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Self-attention guidance', value=0.0, elem_id=f"{tab}_image_sag_scale", visible=shared.backend == shared.Backend.DIFFUSERS)
                 diffusers_sag_scale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Self-attention guidance', value=0.0, elem_id=f"{tab}_image_sag_scale", visible=False)
             with FormRow():
                 clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=14, step=1, elem_id=f"{tab}_clip_skip", interactive=True)
@@ -205,7 +206,7 @@ def create_hires_inputs(tab):
     return enable_hr, hr_sampler_index, denoising_strength, hr_final_resolution, hr_upscaler, hr_force, hr_second_pass_steps, hr_scale, hr_resize_x, hr_resize_y, refiner_steps, refiner_start, refiner_prompt, refiner_negative
 
 
-def create_resize_inputs(tab, images, time_selector=False, scale_visible=True, mode=None):
+def create_resize_inputs(tab, images, scale_visible=True, mode=None, accordion=True, latent=False):
     def resize_from_to_html(width, height, scale_by):
         target_width = int(width * scale_by)
         target_height = int(height * scale_by)
@@ -214,15 +215,14 @@ def create_resize_inputs(tab, images, time_selector=False, scale_visible=True, m
         return f"Hires resize: from <span class='resolution'>{width}x{height}</span> to <span class='resolution'>{target_width}x{target_height}</span>"
 
     dummy_component = gr.Number(visible=False, value=0)
-    with gr.Accordion(open=False, label="Resize", elem_classes=["small-accordion"], elem_id=f"{tab}_resize_group"):
+    with gr.Accordion(open=False, label="Resize", elem_classes=["small-accordion"], elem_id=f"{tab}_resize_group") if accordion else gr.Group():
         with gr.Row():
             if mode is not None:
                 resize_mode = gr.Radio(label="Resize mode", elem_id=f"{tab}_resize_mode", choices=shared.resize_modes, type="index", value=mode, visible=False)
             else:
                 resize_mode = gr.Radio(label="Resize mode", elem_id=f"{tab}_resize_mode", choices=shared.resize_modes, type="index", value='None')
-            resize_time = gr.Radio(label="Resize order", elem_id=f"{tab}_resize_order", choices=['Before', 'After'], value="Before", visible=time_selector)
         with gr.Row():
-            resize_name = gr.Dropdown(label="Resize method", elem_id=f"{tab}_resize_name", choices=[x.name for x in shared.sd_upscalers], value=shared.opts.upscaler_for_img2img)
+            resize_name = gr.Dropdown(label="Resize method", elem_id=f"{tab}_resize_name", choices=([] if not latent else list(shared.latent_upscale_modes)) + [x.name for x in shared.sd_upscalers], value=shared.latent_upscale_default_mode)
             ui_common.create_refresh_button(resize_name, modelloader.load_upscalers, lambda: {"choices": modelloader.load_upscalers()}, 'refresh_upscalers')
 
         with FormRow(visible=True) as _resize_group:
@@ -258,4 +258,4 @@ def create_resize_inputs(tab, images, time_selector=False, scale_visible=True, m
             tab_scale_to.select(fn=lambda: 0, inputs=[], outputs=[selected_scale_tab])
             tab_scale_by.select(fn=lambda: 1, inputs=[], outputs=[selected_scale_tab])
             # resize_mode.change(fn=lambda x: gr.update(visible=x != 0), inputs=[resize_mode], outputs=[_resize_group])
-    return resize_mode, resize_name, width, height, scale_by, selected_scale_tab, resize_time
+    return resize_mode, resize_name, width, height, scale_by, selected_scale_tab

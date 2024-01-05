@@ -133,7 +133,7 @@ def create_ui():
                 with FormGroup(elem_classes="settings-accordion"):
 
                     steps, sampler_index = ui_sections.create_sampler_inputs('img2img')
-                    resize_mode, resize_name, width, height, scale_by, selected_scale_tab, _resize_time = ui_sections.create_resize_inputs('img2img', [init_img, sketch])
+                    resize_mode, resize_name, width, height, scale_by, selected_scale_tab = ui_sections.create_resize_inputs('img2img', [init_img, sketch])
                     batch_count, batch_size = ui_sections.create_batch_inputs('img2img')
                     seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = ui_sections.create_seed_inputs('img2img')
 

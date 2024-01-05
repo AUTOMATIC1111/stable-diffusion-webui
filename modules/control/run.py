@@ -1,6 +1,5 @@
 import os
 import time
-import math
 from typing import List, Union
 import cv2
 import numpy as np
@@ -66,7 +65,8 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                 seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
                 cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling,
                 hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry,
-                resize_mode, resize_name, width, height, scale_by, selected_scale_tab, resize_time,
+                resize_mode_before, resize_name_before, width_before, height_before, scale_by_before, selected_scale_tab_before,
+                resize_mode_after, resize_name_after, width_after, height_after, scale_by_after, selected_scale_tab_after,
                 denoising_strength, batch_count, batch_size, mask_blur, mask_overlap,
                 video_skip_frames, video_type, video_duration, video_loop, video_pad, video_interpolate,
                 ip_adapter, ip_scale, ip_image, ip_type,
@@ -82,8 +82,6 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
     active_start: List[float] = [] # start step for all active models
     active_end: List[float] = [] # end step for all active models
     processed_image: Image.Image = None # last processed image
-    width = 8 * math.ceil(width / 8)
-    height = 8 * math.ceil(height / 8)
     if mask is not None and input_type == 0:
         input_type = 1 # inpaint always requires control_image
 
@@ -116,10 +114,10 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
         hdr_maximize = hdr_maximize,
         hdr_max_center = hdr_max_center,
         hdr_max_boundry = hdr_max_boundry,
-        resize_mode = resize_mode if resize_name != 'None' else 0,
-        resize_name = resize_name,
-        scale_by = scale_by,
-        selected_scale_tab = selected_scale_tab,
+        resize_mode = resize_mode_before if resize_name_before != 'None' else 0,
+        resize_name = resize_name_before,
+        scale_by = scale_by_before,
+        selected_scale_tab = selected_scale_tab_before,
         denoising_strength = denoising_strength,
         n_iter = batch_count,
         batch_size = batch_size,
@@ -129,9 +127,9 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
     )
     processing.process_init(p)
 
-    if resize_mode != 0 or inputs is None or inputs == [None]:
-        p.width = width # pylint: disable=attribute-defined-outside-init
-        p.height = height # pylint: disable=attribute-defined-outside-init
+    if resize_mode_before != 0 or inputs is None or inputs == [None]:
+        p.width = width_before # pylint: disable=attribute-defined-outside-init
+        p.height = height_before # pylint: disable=attribute-defined-outside-init
     else:
         del p.width
         del p.height
@@ -342,15 +340,15 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                     if video is not None and index % (video_skip_frames + 1) != 0:
                         continue
 
-                    # resize
-                    if p.resize_mode != 0 and input_image is not None:
-                        p.extra_generation_params["Control resize"] = f'{resize_time}: {resize_name}'
-                        if selected_scale_tab == 1:
-                            width = int(input_image.width * scale_by)
-                            height = int(input_image.height * scale_by)
-                    if p.resize_mode != 0 and input_image is not None and resize_time == 'Before':
-                        debug(f'Control resize: image={input_image} width={width} height={height} mode={p.resize_mode} name={resize_name} sequence={resize_time}')
-                        input_image = images.resize_image(p.resize_mode, input_image, width, height, resize_name)
+                    # resize before
+                    if resize_mode_before != 0 and resize_name_before != 'None':
+                        if selected_scale_tab_before == 1:
+                            width_before = int(input_image.width * scale_by_before)
+                            height_before = int(input_image.height * scale_by_before)
+                        if input_image is not None:
+                            p.extra_generation_params["Control resize"] = f'{resize_name_before}'
+                            debug(f'Control resize: op=before image={input_image} width={width_before} height={height_before} mode={resize_mode_before} name={resize_name_before}')
+                            input_image = images.resize_image(resize_mode_before, input_image, width_before, height_before, resize_name_before)
                     if input_image is not None:
                         p.width = input_image.width
                         p.height = input_image.height
@@ -485,10 +483,14 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                     if output is not None and len(output) > 0:
                         output_image = output[0]
                         if output_image is not None:
-                            # resize
-                            if p.resize_mode != 0 and resize_time == 'After':
-                                debug(f'Control resize: image={input_image} width={width} height={height} mode={p.resize_mode} name={resize_name} sequence={resize_time}')
-                                output_image = images.resize_image(p.resize_mode, output_image, width, height, resize_name)
+
+                            # resize after
+                            if selected_scale_tab_after == 1:
+                                width_after = int(output_image.width * scale_by_after)
+                                height_after = int(output_image.height * scale_by_after)
+                            if resize_mode_after != 0 and resize_name_after != 'None':
+                                debug(f'Control resize: op=after image={output_image} width={width_after} height={height_after} mode={resize_mode_after} name={resize_name_after}')
+                                output_image = images.resize_image(resize_mode_after, output_image, width_after, height_after, resize_name_after)
                             elif hasattr(p, 'width') and hasattr(p, 'height'):
                                 output_image = output_image.resize((p.width, p.height), Image.Resampling.LANCZOS)
 

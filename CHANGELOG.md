@@ -12,6 +12,10 @@ And it also includes fixes for all reported issues so far
   - add **outpaint** support  
     applies to both *img2img* and *controlnet* workflows  
     *note*: increase denoising strength since outpainted area is blank by default  
+  - allow **resize** both *before* and *after* generate operation  
+    this allows for workflows such as: *image -> upscale or downscale -> generate -> upscale or downscale -> output*  
+    providing more flexibility and than standard hires workflow  
+    *note*: resizing before generate can be done using standard upscalers or latent
   - add **marigold** depth map processor  
     this is state-of-the-art depth estimation model, but its quite heavy on resources  
   - add **openpose xl** controlnet  
@@ -32,6 +36,8 @@ And it also includes fixes for all reported issues so far
     - faster json parsing
   - **offline deployment**: allow deployment without git clone  
     for example, you can now deploy a zip of the sdnext folder  
+  - **latent upscale**: updated latent upscalers (some are new)  
+    *nearest, nearest-exact, area, bilinear, bicubic, bilinear-antialias, bicubic-antialias*
   - **xyz grid**: continue on error  
     now you can use xyz grid with different params and test which ones work and which dont  
   - **hypertile**  

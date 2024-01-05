@@ -226,18 +226,29 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None, output_type
     """
     upscaler_name = upscaler_name or shared.opts.upscaler_for_img2img
 
+    def latent(im, w, h, upscaler):
+        from modules.processing_vae import vae_encode, vae_decode
+        import torch
+        latents = vae_encode(im, shared.sd_model, full_quality=False) # TODO enable full VAE mode
+        latents = torch.nn.functional.interpolate(latents, size=(h // 8, w // 8), mode=upscaler["mode"], antialias=upscaler["antialias"])
+        im = vae_decode(latents, shared.sd_model, output_type='pil', full_quality=False)[0]
+        return im
+
     def resize(im, w, h):
         if upscaler_name is None or upscaler_name == "None" or im.mode == 'L':
             return im.resize((w, h), resample=Image.Resampling.LANCZOS)
         scale = max(w / im.width, h / im.height)
         if scale > 1.0:
             upscalers = [x for x in shared.sd_upscalers if x.name == upscaler_name]
-            if len(upscalers) == 0:
-                upscaler = shared.sd_upscalers[0]
-                shared.log.warning(f"Could not find upscaler: {upscaler_name or '<empty string>'} using fallback: {upscaler.name}")
-            else:
+            if len(upscalers) > 0:
                 upscaler = upscalers[0]
-            im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
+                im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
+            else:
+                upscaler = shared.latent_upscale_modes.get(upscaler_name, None)
+                if upscaler is not None:
+                    im = latent(im, w, h, upscaler)
+                else:
+                    shared.log.warning(f"Could not find upscaler: {upscaler_name or '<empty string>'} using fallback: {upscaler.name}")
         if im.width != w or im.height != h:
             im = im.resize((w, h), resample=Image.Resampling.LANCZOS)
         return im

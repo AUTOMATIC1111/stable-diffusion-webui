@@ -45,12 +45,15 @@ loaded_hypernetworks = []
 settings_components = None
 latent_upscale_default_mode = "None"
 latent_upscale_modes = {
-    "Latent": {"mode": "bilinear", "antialias": False},
-    "Latent (antialiased)": {"mode": "bilinear", "antialias": True},
-    "Latent (bicubic)": {"mode": "bicubic", "antialias": False},
-    "Latent (bicubic antialiased)": {"mode": "bicubic", "antialias": True},
-    "Latent (nearest)": {"mode": "nearest", "antialias": False},
-    "Latent (nearest-exact)": {"mode": "nearest-exact", "antialias": False},
+    "Latent Nearest": {"mode": "nearest", "antialias": False},
+    "Latent Nearest-exact": {"mode": "nearest-exact", "antialias": False},
+    "Latent Area": {"mode": "area", "antialias": False},
+    "Latent Bilinear": {"mode": "bilinear", "antialias": False},
+    "Latent Bicubic": {"mode": "bicubic", "antialias": False},
+    "Latent Bilinear antialias": {"mode": "bilinear", "antialias": True},
+    "Latent Bicubic antialias": {"mode": "bicubic", "antialias": True},
+    # "Latent Linear": {"mode": "linear", "antialias": False}, # not supported for latents with channels=4
+    # "Latent Trilinear": {"mode": "trilinear", "antialias": False}, # not supported for latents with channels=4
 }
 restricted_opts = {
     "samples_filename_pattern",
