@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-04
+## Update for 2023-01-05
 
 Following-up on a major release, some more functionality in new Control module  
 And it also includes fixes for all reported issues so far  
@@ -14,6 +14,7 @@ And it also includes fixes for all reported issues so far
     *note*: increase denoising strength since outpainted area is blank by default  
   - add **marigold** depth map processor  
     this is state-of-the-art depth estimation model, but its quite heavy on resources  
+  - add **openpose xl** controlnet  
   - configurable output folder in settings  
   - auto-refresh available models on tab activate  
   - reduce usage of temp files  

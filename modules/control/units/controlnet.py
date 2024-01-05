@@ -33,6 +33,7 @@ predefined_sdxl = {
     'Canny XL': 'diffusers/controlnet-canny-sdxl-1.0',
     'Depth Zoe XL': 'diffusers/controlnet-zoe-depth-sdxl-1.0',
     'Depth Mid XL': 'diffusers/controlnet-depth-sdxl-1.0-mid',
+    'OpenPose XL': 'thibaud/controlnet-openpose-sdxl-1.0',
 }
 models = {}
 all_models = {}
