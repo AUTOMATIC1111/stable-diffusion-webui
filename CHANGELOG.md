@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-03
+## Update for 2023-01-04
 
 Following-up on a major release, some more functionality in new Control module  
 And it also includes fixes for all reported issues so far  
