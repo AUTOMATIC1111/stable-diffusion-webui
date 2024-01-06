@@ -2,7 +2,7 @@
 Windows+AMD support has **not** officially been made for webui, \
 but you can install lshqqytiger's fork of webui that uses **Direct-ml**. 
 
--Training currently doesn't work, yet a variety of features/extensions do, such as LoRAs and controlnet. Report issues at https://github.com/lshqqytiger/stable-diffusion-webui-directml/issues 
+Training currently doesn't work, yet a variety of features/extensions do, such as LoRAs and controlnet. Report issues at https://github.com/lshqqytiger/stable-diffusion-webui-directml/issues 
 
 1. Install [Python 3.10.6](https://www.python.org/ftp/python/3.10.6/python-3.10.6-amd64.exe) (ticking **Add to PATH**), and [git](https://github.com/git-for-windows/git/releases/download/v2.39.2.windows.1/Git-2.39.2-64-bit.exe)
 2. paste this line in cmd/terminal: `git clone https://github.com/lshqqytiger/stable-diffusion-webui-directml && cd stable-diffusion-webui-directml && git submodule init && git submodule update` \
@@ -10,7 +10,8 @@ but you can install lshqqytiger's fork of webui that uses **Direct-ml**.
 3. Double-click webui-user.bat
 4. If it looks like it is stuck when installing or running, press enter in the terminal and it should continue.
 
-If you have 4-6gb vram, try adding these flags to `webui-user.bat` like so: 
+If you have 4-6gb vram, try adding these flags to `webui-user.bat` like so:
+
 `COMMANDLINE_ARGS=--opt-sub-quad-attention --lowvram --disable-nan-check`
 
 (The rest **below are installation guides for linux** with rocm.)
