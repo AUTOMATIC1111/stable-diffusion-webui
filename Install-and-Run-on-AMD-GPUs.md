@@ -9,15 +9,9 @@ but you can install lshqqytiger's fork of webui that uses **Direct-ml**.
 <sup>(you can move the program folder somewhere else.)</sup> 
 3. Double-click webui-user.bat
 4. If it looks like it is stuck when installing or running, press enter in the terminal and it should continue.
-<details>
+
 If you have 4-6gb vram, try adding these flags to `webui-user.bat` like so: 
-
-- `COMMANDLINE_ARGS=--opt-sub-quad-attention --lowvram --disable-nan-check`
-
-- You can add --autolaunch to auto open the url for you.
-
-- Rename your edited **webui-user.bat** file to **webui.settings.bat** to avoid your settings get overwrite after git pull for update.
-</details>
+`COMMANDLINE_ARGS=--opt-sub-quad-attention --lowvram --disable-nan-check`
 
 (The rest **below are installation guides for linux** with rocm.)
 
