@@ -41,6 +41,8 @@ def torch_xpu_scaled_dot_product_attention(
     # cast to same dtype first
     key = key.to(query.dtype)
     value = value.to(query.dtype)
+    if attn_mask is not None and attn_mask.dtype != torch.bool:
+        attn_mask = attn_mask.to(query.dtype)
 
     N = query.shape[:-2]  # Batch size
     L = query.size(-2)  # Target sequence length
