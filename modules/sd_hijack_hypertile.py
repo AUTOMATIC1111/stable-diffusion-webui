@@ -190,7 +190,7 @@ def context_hypertile_vae(p):
         # shared.log.warning('Hypertile VAE is enabled but no VAE model was found')
         return nullcontext()
     else:
-        tile_size = shared.opts.hypertile_vae_tile if shared.opts.hypertile_vae_tile > 0 else max(256, 64 * min(p.width // 128, p.height // 128))
+        tile_size = shared.opts.hypertile_vae_tile if shared.opts.hypertile_vae_tile > 0 else max(128, 64 * min(p.width // 128, p.height // 128))
         shared.log.info(f'Applying hypertile: vae={tile_size}')
         p.extra_generation_params['Hypertile VAE'] = tile_size
         return split_attention(vae, tile_size=tile_size, min_tile_size=128, swap_size=1)
@@ -216,7 +216,7 @@ def context_hypertile_unet(p):
         # shared.log.warning('Hypertile UNet is enabled but no Unet model was found')
         return nullcontext()
     else:
-        tile_size = shared.opts.hypertile_unet_tile if shared.opts.hypertile_unet_tile > 0 else max(256, 64 * min(p.width // 128, p.height // 128))
+        tile_size = shared.opts.hypertile_unet_tile if shared.opts.hypertile_unet_tile > 0 else max(128, 64 * min(p.width // 128, p.height // 128))
         shared.log.info(f'Applying hypertile: unet={tile_size}')
         p.extra_generation_params['Hypertile UNet'] = tile_size
         return split_attention(unet, tile_size=tile_size, min_tile_size=128, swap_size=1)

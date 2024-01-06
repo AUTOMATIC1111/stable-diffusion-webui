@@ -20,7 +20,7 @@ def process_interrogate(interrogation_function, mode, ii_input_files, ii_input_d
             if not os.path.isdir(ii_input_dir):
                 shared.log.error(f"Interrogate: Input directory not found: {ii_input_dir}")
                 return [gr.update(), None]
-            images = shared.listfiles(ii_input_dir)
+            images = shared.listdir(ii_input_dir)
         if ii_output_dir != "":
             os.makedirs(ii_output_dir, exist_ok=True)
         else:

@@ -2,7 +2,7 @@ import os
 import time
 from typing import Union
 from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline
-from modules.shared import log, opts
+from modules.shared import log, opts, listdir
 from modules import errors
 from modules.control.units.xs_model import ControlNetXSModel
 from modules.control.units.xs_pipe import StableDiffusionControlNetXSPipeline, StableDiffusionXLControlNetXSPipeline
@@ -27,7 +27,7 @@ cache_dir = 'models/control/xs'
 
 def find_models():
     path = os.path.join(opts.control_dir, 'xs')
-    files = os.listdir(path)
+    files = listdir(path)
     files = [f for f in files if f.endswith('.safetensors')]
     downloaded_models = {}
     for f in files:

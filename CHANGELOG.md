@@ -44,8 +44,9 @@ And it also includes fixes for all reported issues so far
   - **SDXL**: Base SXDL, Base ViT-H SXDL, Plus ViT-H SXDL, Plus Face ViT-H SXDL  
 - **Improvements**  
   - **server startup**: performance  
-    - faster extension load
-    - faster json parsing
+    - faster extension load  
+    - faster json parsing  
+    - faster lora indexing  
   - **offline deployment**: allow deployment without git clone  
     for example, you can now deploy a zip of the sdnext folder  
   - **latent upscale**: updated latent upscalers (some are new)  

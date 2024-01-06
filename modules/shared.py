@@ -70,6 +70,8 @@ restricted_opts = {
 resize_modes = ["None", "Fixed", "Crop", "Fill", "Latent"]
 compatibility_opts = ['clip_skip', 'uni_pc_lower_order_final', 'uni_pc_order']
 console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
+dir_timestamps = {}
+dir_cache = {}
 
 
 class Backend(Enum):
@@ -888,9 +890,16 @@ def restore_defaults(restart=True):
     restart_server(restart)
 
 
-def listfiles(dirname):
-    filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname), key=str.lower) if not x.startswith(".")]
-    return [file for file in filenames if os.path.isfile(file)]
+def listdir(path):
+    if not os.path.exists(path):
+        return []
+    mtime = os.path.getmtime(path)
+    if path in dir_timestamps and mtime == dir_timestamps[path]:
+        return dir_cache[path]
+    else:
+        dir_cache[path] = [os.path.join(path, f) for f in os.listdir(path)]
+        dir_timestamps[path] = mtime
+        return dir_cache[path]
 
 
 def walk_files(path, allowed_extensions=None):
