@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-05
+## Update for 2023-01-06
 
 Following-up on a major release, some more functionality in new Control module  
 And it also includes fixes for all reported issues so far  
@@ -21,6 +21,8 @@ And it also includes fixes for all reported issues so far
   - add **openpose xl** controlnet  
   - configurable output folder in settings  
   - auto-refresh available models on tab activate  
+  - add image preview for override images set per-unit  
+  - more compact unit layout  
   - reduce usage of temp files  
   - add context menu to action buttons  
   - resize by now applies to input image or frame individually  

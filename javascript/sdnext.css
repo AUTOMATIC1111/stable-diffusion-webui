@@ -261,7 +261,9 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 #control_input_type { max-width: 18em }
 #control_settings .small-accordion .form { min-width: 350px !important }
 .control-button { min-height: 42px; max-height: 42px; line-height: 1em; }
-.control-tabs>.tab-nav { margin-bottom: 0; margin-top: 0; }
+.control-tabs > .tab-nav { margin-bottom: 0; margin-top: 0; }
+.control-unit { max-width: 1200px; padding: 0 !important; margin-top: -10px !important; }
+.control-unit > .label-wrap { margin-bottom: 0 !important; }
 .processor-settings { padding: 0 !important; max-width: 300px; }
 .processor-group>div { flex-flow: wrap;gap: 1em; }
 

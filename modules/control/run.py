@@ -467,11 +467,9 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                     # pipeline
                     output = None
                     if pipe is not None: # run new pipeline
-                        debug(f'Control exec pipeline: class={pipe.__class__}')
-                        debug(f'Control exec pipeline: task={sd_models.get_diffusers_task(pipe)}')
+                        debug(f'Control exec pipeline: task={sd_models.get_diffusers_task(pipe)} class={pipe.__class__}')
                         debug(f'Control exec pipeline: p={vars(p)}')
-                        debug(f'Control exec pipeline: args={p.task_args}')
-                        debug(f'Control exec pipeline: image={p.task_args.get("image", None)} control={p.task_args.get("control_image", None)} mask={p.task_args.get("mask_image", None)} ref={p.task_args.get("ref_image", None)}')
+                        debug(f'Control exec pipeline: args={p.task_args} image={p.task_args.get("image", None)} control={p.task_args.get("control_image", None)} mask={p.task_args.get("mask_image", None)} ref={p.task_args.get("ref_image", None)}')
                         processed: processing.Processed = processing.process_images(p) # run actual pipeline
                         output = processed.images if processed is not None else None
                         # output = pipe(**vars(p)).images # alternative direct pipe exec call

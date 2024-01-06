@@ -1036,6 +1036,10 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     image_encoder = getattr(pipe, "image_encoder", None)
     feature_extractor = getattr(pipe, "feature_extractor", None)
 
+    # skip specific pipelines
+    if pipe.__class__.__name__ == 'StableDiffusionReferencePipeline' or pipe.__class__.__name__ == 'StableDiffusionAdapterPipeline':
+        return pipe
+
     try:
         if new_pipe_type == DiffusersTaskType.TEXT_2_IMAGE:
             new_pipe = diffusers.AutoPipelineForText2Image.from_pipe(pipe)
@@ -1044,7 +1048,7 @@ def set_diffuser_pipe(pipe, new_pipe_type):
         elif new_pipe_type == DiffusersTaskType.INPAINTING:
             new_pipe = diffusers.AutoPipelineForInpainting.from_pipe(pipe)
     except Exception as e: # pylint: disable=unused-variable
-        shared.log.error(f'Failed to change: type={new_pipe_type} pipeline={pipe.__class__.__name__} {e}')
+        shared.log.warning(f'Failed to change: type={new_pipe_type} pipeline={pipe.__class__.__name__} {e}')
         return pipe
 
     if pipe.__class__ == new_pipe.__class__:
@@ -1263,10 +1267,10 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
 
 
 def convert_to_faketensors(tensor):
-        fake_module = torch._subclasses.fake_tensor.FakeTensorMode(allow_non_fake_inputs=True)
-        if hasattr(tensor, "weight"):
-            tensor.weight = torch.nn.Parameter(fake_module.from_tensor(tensor.weight))
-        return tensor
+    fake_module = torch._subclasses.fake_tensor.FakeTensorMode(allow_non_fake_inputs=True) # pylint: disable=protected-access
+    if hasattr(tensor, "weight"):
+        tensor.weight = torch.nn.Parameter(fake_module.from_tensor(tensor.weight))
+    return tensor
 
 
 def disable_offload(sd_model):
