@@ -1,5 +1,6 @@
 import os
 import time
+import math
 from typing import List, Union
 import cv2
 import numpy as np
@@ -49,6 +50,18 @@ class ControlProcessing(processing.StableDiffusionProcessingImg2Img):
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts): # abstract
         pass
+
+    def init_hr(self):
+        if self.resize_name == 'None' or self.scale_by == 1.0:
+            return
+        self.is_hr_pass = True
+        self.hr_force = True
+        self.hr_upscaler = self.resize_name
+        self.hr_upscale_to_x, self.hr_upscale_to_y = int(self.width * self.scale_by), int(self.height * self.scale_by)
+        self.hr_upscale_to_x, self.hr_upscale_to_y = 8 * math.ceil(self.hr_upscale_to_x / 8), 8 * math.ceil(self.hr_upscale_to_y / 8)
+        # hypertile_set(self, hr=True)
+        shared.state.job_count = 2 * self.n_iter
+        shared.log.debug(f'Control hires: upscaler="{self.hr_upscaler}" upscale={self.scale_by} size={self.hr_upscale_to_x}x{self.hr_upscale_to_y}')
 
 
 def restore_pipeline():
@@ -128,8 +141,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
     processing.process_init(p)
 
     if resize_mode_before != 0 or inputs is None or inputs == [None]:
-        p.width = width_before # pylint: disable=attribute-defined-outside-init
-        p.height = height_before # pylint: disable=attribute-defined-outside-init
+        p.width, p.height = width_before, height_before # pylint: disable=attribute-defined-outside-init
     else:
         del p.width
         del p.height
@@ -342,9 +354,8 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
 
                     # resize before
                     if resize_mode_before != 0 and resize_name_before != 'None':
-                        if selected_scale_tab_before == 1:
-                            width_before = int(input_image.width * scale_by_before)
-                            height_before = int(input_image.height * scale_by_before)
+                        if selected_scale_tab_before == 1 and input_image is not None:
+                            width_before, height_before = int(input_image.width * scale_by_before), int(input_image.height * scale_by_before)
                         if input_image is not None:
                             p.extra_generation_params["Control resize"] = f'{resize_name_before}'
                             debug(f'Control resize: op=before image={input_image} width={width_before} height={height_before} mode={resize_mode_before} name={resize_name_before}')
@@ -444,6 +455,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                                 p.init_images = [processed_image]
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                             else:
+                                p.init_hr()
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
                         elif unit_type == 'reference':
                             p.is_control = True
@@ -489,8 +501,6 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                             if resize_mode_after != 0 and resize_name_after != 'None':
                                 debug(f'Control resize: op=after image={output_image} width={width_after} height={height_after} mode={resize_mode_after} name={resize_name_after}')
                                 output_image = images.resize_image(resize_mode_after, output_image, width_after, height_after, resize_name_after)
-                            elif hasattr(p, 'width') and hasattr(p, 'height'):
-                                output_image = output_image.resize((p.width, p.height), Image.Resampling.LANCZOS)
 
                             output_images.append(output_image)
                             if is_generator:

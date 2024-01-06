@@ -421,7 +421,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         num_controlnet_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
                     controlnet_ui_units = [] # list of hidable accordions
                     for i in range(max_units):
-                        with gr.Accordion(f'Control unit {i+1}', visible= i < num_controlnet_units.value, elem_classes='control-unit') as unit_ui:
+                        with gr.Accordion(f'ControlNet unit {i+1}', visible= i < num_controlnet_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
                                 enabled_cb = gr.Checkbox(value= i==0, label="")
                                 process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
@@ -466,7 +466,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         num_adapter_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
                     adapter_ui_units = [] # list of hidable accordions
                     for i in range(max_units):
-                        with gr.Accordion(f'Adapter unit {i+1}', visible= i < num_adapter_units.value, elem_classes='control-unit') as unit_ui:
+                        with gr.Accordion(f'T2I-Adapter unit {i+1}', visible= i < num_adapter_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
                                 enabled_cb = gr.Checkbox(value= i == 0, label="Enabled")
                                 process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
@@ -507,7 +507,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         num_controlnet_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
                     controlnetxs_ui_units = [] # list of hidable accordions
                     for i in range(max_units):
-                        with gr.Accordion(f'Control unit {i+1}', visible= i < num_controlnet_units.value, elem_classes='control-unit') as unit_ui:
+                        with gr.Accordion(f'ControlNet-XS unit {i+1}', visible= i < num_controlnet_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
                                 enabled_cb = gr.Checkbox(value= i==0, label="")
                                 process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
@@ -551,7 +551,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         num_lite_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
                     lite_ui_units = [] # list of hidable accordions
                     for i in range(max_units):
-                        with gr.Accordion(f'Control unit {i+1}', visible= i < num_lite_units.value, elem_classes='control-unit') as unit_ui:
+                        with gr.Accordion(f'Control-LLLite unit {i+1}', visible= i < num_lite_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
                                 enabled_cb = gr.Checkbox(value= i == 0, label="Enabled")
                                 process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
