@@ -427,6 +427,7 @@ def network_MultiheadAttention_load_state_dict(self, *args, **kwargs):
 
 
 def list_available_networks():
+    global available_networks, available_network_aliases, forbidden_network_aliases, available_network_hash_lookup
     available_networks.clear()
     available_network_aliases.clear()
     forbidden_network_aliases.clear()
@@ -452,6 +453,7 @@ def list_available_networks():
             forbidden_network_aliases[entry.alias.lower()] = 1
         available_network_aliases[name] = entry
         available_network_aliases[entry.alias] = entry
+    print(f'Lora/LyCORIS Networks: networks={len(available_networks)} directories={directories}')
 
 
 def infotext_pasted(infotext, params): # pylint: disable=W0613
