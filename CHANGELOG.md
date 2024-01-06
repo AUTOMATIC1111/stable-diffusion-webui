@@ -30,6 +30,16 @@ And it also includes fixes for all reported issues so far
   - fix correct image mode  
   - fix batch/folder/video modes  
   - fix pipeline switching between different modes  
+- [FaceID](https://huggingface.co/h94/IP-Adapter-FaceID)  
+  full implementation for *SD15* and *SD-XL*, to use simply select from *Scripts*  
+  - **Base** (93MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-H-14* (2.5GB) as image encoder  
+  - **SXDL** (1022MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-bigG-14* (3.7GB) as image encoder  
+  - **Plus** (150MB) uses *InsightFace* to generate face embeds and *CLIP-ViT-H-14-laion2B* (3.8GB) as image encoder  
+  *note*: all models are downloaded on first use  
+- [IPAdapter](https://huggingface.co/h94/IP-Adapter)  
+  additional models for *SD15* and *SD-XL*, to use simply select from *Scripts*:  
+  - **SD15**: Base, Base ViT-G, Light, Plus, Plus Face, Full Face  
+  - **SDXL**: Base SXDL, Base ViT-H SXDL, Plus ViT-H SXDL, Plus Face ViT-H SXDL  
 - **Improvements**  
   - **server startup**: performance  
     - faster extension load
@@ -44,7 +54,7 @@ And it also includes fixes for all reported issues so far
     - enable vae tiling  
     - add autodetect optimial value  
       set tile size to 0 to use autodetected value  
-  - **cli**: 
+  - **cli**  
     - `sdapi.py` allow manual api invoke  
       example: `python cli/sdapi.py /sdapi/v1/sd-models`  
     - `image-exif.py` improve metadata parsing  
@@ -94,6 +104,7 @@ And it also includes fixes for all reported issues so far
   - processing: correct display metadata  
   - live preview: fix when using `bfloat16`
   - upscale: fix ldsr
+  - cli: fix cmd args parsing  
 
 ## Update for 2023-12-29
 
