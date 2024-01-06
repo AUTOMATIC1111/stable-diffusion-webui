@@ -504,7 +504,7 @@ def get_next_sequence_number(path, basename):
     prefix_length = len(basename)
     if not os.path.isdir(path):
         return 0
-    for p in os.listdir(path):
+    for p in shared.listdir(path):
         if p.startswith(basename):
             parts = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
             try:

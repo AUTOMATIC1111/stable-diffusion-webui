@@ -2,7 +2,7 @@ from typing import Union, List
 import os
 import re
 import time
-from threading import Thread
+import concurrent
 import lora_patches
 import network
 import network_lora
@@ -441,18 +441,25 @@ def list_available_networks():
         shared.log.warning('LoRA directory not found: path="{shared.cmd_opts.lora_dir}"')
     if os.path.exists(shared.cmd_opts.lyco_dir):
         directories.append(shared.cmd_opts.lyco_dir)
-    for filename in files_cache.list_files(*directories, ext_filter=[".pt", ".ckpt", ".safetensors"]):
+    def add_network(filename):
+        if os.path.isdir(filename):
+            return
         name = os.path.splitext(os.path.basename(filename))[0]
         try:
             entry = network.NetworkOnDisk(name, filename)
+            available_networks[entry.name] = entry
+            if entry.alias in available_network_aliases:
+                forbidden_network_aliases[entry.alias.lower()] = 1
+            available_network_aliases[entry.name] = entry
+            available_network_aliases[entry.alias] = entry
+            if entry.shorthash:
+                available_network_hash_lookup[entry.shorthash] = entry
         except OSError as e:  # should catch FileNotFoundError and PermissionError etc.
             shared.log.error(f"Failed to load network {name} from {filename} {e}")
-            continue
-        available_networks[name] = entry
-        if entry.alias in available_network_aliases:
-            forbidden_network_aliases[entry.alias.lower()] = 1
-        available_network_aliases[name] = entry
-        available_network_aliases[entry.alias] = entry
+            
+    with concurrent.futures.ThreadPoolExecutor(max_workers=shared.max_workers) as executor:
+        for fn in files_cache.list_files(*directories, ext_filter=[".pt", ".ckpt", ".safetensors"]):
+            executor.submit(add_network, fn)
     print(f'Lora/LyCORIS Networks: networks={len(available_networks)} directories={directories}')
 
 
@@ -478,5 +485,4 @@ def infotext_pasted(infotext, params): # pylint: disable=W0613
         params["Prompt"] += "\n" + "".join(added)
 
 
-thread_lora = Thread(target=list_available_networks)
-thread_lora.start()
+list_available_networks()

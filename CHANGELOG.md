@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-05
+## Update for 2023-01-06
 
 Following-up on a major release, some more functionality in new Control module  
 And it also includes fixes for all reported issues so far  
@@ -21,6 +21,8 @@ And it also includes fixes for all reported issues so far
   - add **openpose xl** controlnet  
   - configurable output folder in settings  
   - auto-refresh available models on tab activate  
+  - add image preview for override images set per-unit  
+  - more compact unit layout  
   - reduce usage of temp files  
   - add context menu to action buttons  
   - resize by now applies to input image or frame individually  
@@ -30,10 +32,21 @@ And it also includes fixes for all reported issues so far
   - fix correct image mode  
   - fix batch/folder/video modes  
   - fix pipeline switching between different modes  
+- [FaceID](https://huggingface.co/h94/IP-Adapter-FaceID)  
+  full implementation for *SD15* and *SD-XL*, to use simply select from *Scripts*  
+  - **Base** (93MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-H-14* (2.5GB) as image encoder  
+  - **SXDL** (1022MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-bigG-14* (3.7GB) as image encoder  
+  - **Plus** (150MB) uses *InsightFace* to generate face embeds and *CLIP-ViT-H-14-laion2B* (3.8GB) as image encoder  
+  *note*: all models are downloaded on first use  
+- [IPAdapter](https://huggingface.co/h94/IP-Adapter)  
+  additional models for *SD15* and *SD-XL*, to use simply select from *Scripts*:  
+  - **SD15**: Base, Base ViT-G, Light, Plus, Plus Face, Full Face  
+  - **SDXL**: Base SXDL, Base ViT-H SXDL, Plus ViT-H SXDL, Plus Face ViT-H SXDL  
 - **Improvements**  
   - **server startup**: performance  
-    - faster extension load
-    - faster json parsing
+    - faster extension load  
+    - faster json parsing  
+    - faster lora indexing  
   - **offline deployment**: allow deployment without git clone  
     for example, you can now deploy a zip of the sdnext folder  
   - **latent upscale**: updated latent upscalers (some are new)  
@@ -44,7 +57,7 @@ And it also includes fixes for all reported issues so far
     - enable vae tiling  
     - add autodetect optimial value  
       set tile size to 0 to use autodetected value  
-  - **cli**: 
+  - **cli**  
     - `sdapi.py` allow manual api invoke  
       example: `python cli/sdapi.py /sdapi/v1/sd-models`  
     - `image-exif.py` improve metadata parsing  
@@ -67,6 +80,7 @@ And it also includes fixes for all reported issues so far
     requires nightly versions of `torch` and `torchao`  
     > pip install -U --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu121  
     > pip install -U git+https://github.com/pytorch-labs/ao  
+  - new option: **compile text encoder** (experimental)  
 - **IPEX**, thanks @disty0  
   - rewrite ipex hijacks without CondFunc  
     improves compatibilty and performance  
@@ -77,6 +91,8 @@ And it also includes fixes for all reported issues so far
   - **4-bit support with NNCF**  
     enable *Compress Model weights with NNCF* from *Compute Settings* and set a 4-bit NNCF mode  
     4-bit and 8-bit with OpenVINO is CPU only for now  
+  - experimental support for *Text Encoder* compiling  
+    OpenVINO is faster than IPEX now  
   - reduce system memory usage after compile  
   - fix cache loading with multiple models  
 - **Fixes**  
@@ -91,6 +107,7 @@ And it also includes fixes for all reported issues so far
   - processing: correct display metadata  
   - live preview: fix when using `bfloat16`
   - upscale: fix ldsr
+  - cli: fix cmd args parsing  
 
 ## Update for 2023-12-29
 

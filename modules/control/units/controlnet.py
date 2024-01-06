@@ -3,7 +3,7 @@ import time
 from typing import Union
 from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline, ControlNetModel, StableDiffusionControlNetPipeline, StableDiffusionXLControlNetPipeline
 from modules.control.units import detect
-from modules.shared import log, opts
+from modules.shared import log, opts, listdir
 from modules import errors
 
 
@@ -44,7 +44,7 @@ cache_dir = 'models/control/controlnet'
 
 def find_models():
     path = os.path.join(opts.control_dir, 'controlnet')
-    files = os.listdir(path)
+    files = listdir(path)
     files = [f for f in files if f.endswith('.safetensors')]
     downloaded_models = {}
     for f in files:

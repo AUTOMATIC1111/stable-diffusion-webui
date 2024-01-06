@@ -230,7 +230,7 @@ def load_diffusers_models(model_path: str, command_path: str = None, clear=True)
                 if not os.path.isfile(os.path.join(cache_path, "hidden")):
                     output.append(str(r.repo_id))
             """
-            for folder in os.listdir(place):
+            for folder in shared.listdir(place):
                 try:
                     if "--" not in folder:
                         continue
@@ -240,7 +240,7 @@ def load_diffusers_models(model_path: str, command_path: str = None, clear=True)
                     name = name.replace("--", "/")
                     folder = os.path.join(place, folder)
                     friendly = os.path.join(place, name)
-                    snapshots = os.listdir(os.path.join(folder, "snapshots"))
+                    snapshots = shared.listdir(os.path.join(folder, "snapshots"))
                     if len(snapshots) == 0:
                         shared.log.warning(f"Diffusers folder has no snapshots: location={place} folder={folder} name={name}")
                         continue
@@ -450,7 +450,7 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
         if not os.path.exists(dest_path):
             os.makedirs(dest_path)
         if os.path.exists(src_path):
-            for file in os.listdir(src_path):
+            for file in shared.listdir(src_path):
                 fullpath = os.path.join(src_path, file)
                 if os.path.isfile(fullpath):
                     if ext_filter is not None:

@@ -70,6 +70,8 @@ restricted_opts = {
 resize_modes = ["None", "Fixed", "Crop", "Fill", "Latent"]
 compatibility_opts = ['clip_skip', 'uni_pc_lower_order_final', 'uni_pc_order']
 console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
+dir_timestamps = {}
+dir_cache = {}
 
 
 class Backend(Enum):
@@ -327,7 +329,8 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_compile_sep": OptionInfo("<h2>Model Compile</h2>", "", gr.HTML),
     "cuda_compile": OptionInfo(False if not cmd_opts.use_openvino else True, "Compile UNet"),
     "cuda_compile_vae": OptionInfo(False if not cmd_opts.use_openvino else True, "Compile VAE"),
-    "cuda_compile_upscaler": OptionInfo(False if not cmd_opts.use_openvino else True, "Compile upscaler"),
+    "cuda_compile_text_encoder": OptionInfo(False, "Compile Text Encoder"),
+    "cuda_compile_upscaler": OptionInfo(False if not cmd_opts.use_openvino else True, "Compile Upscaler"),
     "cuda_compile_backend": OptionInfo("none" if not cmd_opts.use_openvino else "openvino_fx", "Model compile backend", gr.Radio, {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx', 'stable-fast']}),
     "cuda_compile_mode": OptionInfo("default", "Model compile mode", gr.Radio, {"choices": ['default', 'reduce-overhead', 'max-autotune', 'max-autotune-no-cudagraphs']}),
     "cuda_compile_fullgraph": OptionInfo(False, "Model compile fullgraph"),
@@ -887,9 +890,16 @@ def restore_defaults(restart=True):
     restart_server(restart)
 
 
-def listfiles(dirname):
-    filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname), key=str.lower) if not x.startswith(".")]
-    return [file for file in filenames if os.path.isfile(file)]
+def listdir(path):
+    if not os.path.exists(path):
+        return []
+    mtime = os.path.getmtime(path)
+    if path in dir_timestamps and mtime == dir_timestamps[path]:
+        return dir_cache[path]
+    else:
+        dir_cache[path] = [os.path.join(path, f) for f in os.listdir(path)]
+        dir_timestamps[path] = mtime
+        return dir_cache[path]
 
 
 def walk_files(path, allowed_extensions=None):

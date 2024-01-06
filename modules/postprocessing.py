@@ -38,7 +38,7 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
     elif extras_mode == 2:
         assert not shared.cmd_opts.hide_ui_dir_config, '--hide-ui-dir-config option must be disabled'
         assert input_dir, 'input directory not selected'
-        image_list = shared.listfiles(input_dir)
+        image_list = shared.listdir(input_dir)
         for filename in image_list:
             try:
                 image = Image.open(filename)
