@@ -73,13 +73,13 @@ def optimize_openvino():
         if shared.compiled_model_state is None:
             shared.compiled_model_state = CompiledModelState()
         else:
-            if not shared.compiled_model_state.lora_compile:
-                shared.compiled_model_state.lora_compile = False
-                shared.compiled_model_state.lora_model = []
             shared.compiled_model_state.compiled_cache.clear()
             shared.compiled_model_state.partitioned_modules.clear()
-            shared.compiled_model_state.partition_id = 0
-            shared.compiled_model_state.model_str = ""
+            backup_lora_model = []
+            if shared.compiled_model_state.lora_compile:
+                backup_lora_model = shared.compiled_model_state.lora_model
+            shared.compiled_model_state = CompiledModelState()
+            shared.compiled_model_state.lora_model = backup_lora_model
         shared.compiled_model_state.first_pass = True if not shared.opts.cuda_compile_precompile else False
         shared.compiled_model_state.first_pass_vae = True if not shared.opts.cuda_compile_precompile else False
         shared.compiled_model_state.first_pass_refiner = True if not shared.opts.cuda_compile_precompile else False
@@ -167,7 +167,7 @@ def compile_torch(sd_model):
                 if hasattr(sd_model, 'text_encoder_2'):
                     sd_model.text_encoder_2 = torch.compile(sd_model.text_encoder_2, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph)
             else:
-                shared.log.warning('Model compile enabled but model has no Unet')
+                shared.log.warning('Text Encoder compile enabled but model has no Text Encoder')
         setup_logging() # compile messes with logging so reset is needed
         if shared.opts.cuda_compile_precompile:
             sd_model("dummy prompt")
