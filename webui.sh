@@ -80,7 +80,7 @@ else
     exit 1
 fi
 
-if [ -d "$(realpath "$venv_dir")/lib/" ]
+if [ -d "$(realpath "$venv_dir")/lib/" ] && [[ -z "${DISABLE_VENV_LIBS}" ]]
 then
     export LD_LIBRARY_PATH=$(realpath "$venv_dir")/lib/:$LD_LIBRARY_PATH
 fi

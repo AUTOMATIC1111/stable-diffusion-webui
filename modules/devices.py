@@ -264,7 +264,7 @@ def set_cuda_params():
 
 args = cmd_args.parser.parse_args()
 backend = 'not set'
-if args.use_ipex or (hasattr(torch, 'xpu') and torch.xpu.is_available()):
+if (args.use_ipex or (hasattr(torch, 'xpu') and torch.xpu.is_available())) and not args.use_openvino:
     backend = 'ipex'
     from modules.intel.ipex import ipex_init
     ok, e = ipex_init()
