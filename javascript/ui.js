@@ -317,9 +317,9 @@ function selectCheckpoint(name) {
     gradioApp().getElementById('change_checkpoint').click();
 }
 
-function currentImg2imgSourceResolution(w, h) {
+function currentImg2imgSourceResolution(w, h, r) {
     var img = gradioApp().querySelector('#mode_img2img > div[style="display: block;"] :is(img, canvas)');
-    return img ? [img.naturalWidth || img.width, img.naturalHeight || img.height] : [0, 0];
+    return img ? [img.naturalWidth || img.width, img.naturalHeight || img.height, r] : [0, 0, r];
 }
 
 function updateImg2imgResizeToTextAfterChangingImage() {

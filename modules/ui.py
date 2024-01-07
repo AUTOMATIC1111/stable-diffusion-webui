@@ -99,8 +99,8 @@ def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resiz
 
 
 def resize_from_to_html(width, height, scale_by):
-    target_width = int(width * scale_by)
-    target_height = int(height * scale_by)
+    target_width = int(float(width) * scale_by)
+    target_height = int(float(height) * scale_by)
 
     if not target_width or not target_height:
         return "no image selected"
