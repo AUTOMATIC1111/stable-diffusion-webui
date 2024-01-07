@@ -66,6 +66,20 @@ function extract_image_from_gallery(gallery) {
 
 window.args_to_array = Array.from; // Compatibility with e.g. extensions that may expect this to be around
 
+function setFontSize(val) {
+  const size = val || opts.font_size;
+  document.documentElement.style.setProperty('--font-size', `${size}px`);
+  gradioApp().style.setProperty('--font-size', `${size}px`);
+  gradioApp().style.setProperty('--text-xxs', `${size - 3}px`);
+  gradioApp().style.setProperty('--text-xs', `${size - 2}px`);
+  gradioApp().style.setProperty('--text-sm', `${size - 1}px`);
+  gradioApp().style.setProperty('--text-md', `${size}px`);
+  gradioApp().style.setProperty('--text-lg', `${size + 1}px`);
+  gradioApp().style.setProperty('--text-xl', `${size + 2}px`);
+  gradioApp().style.setProperty('--text-xxl', `${size + 3}px`);
+  log('setFontSize', size);
+}
+
 function switchToTab(tab) {
   const tabs = Array.from(gradioApp().querySelectorAll('#tabs > .tab-nav > button'));
   const btn = tabs?.find((t) => t.innerText === tab);
@@ -341,7 +355,7 @@ function monitorServerStatus() {
         <h1>Waiting for server...</h1>
         <script>
           function monitorServerStatus() {
-            fetch('/sdapi/v1/progress')
+            fetch('/sdapi/v1/progress?skip_current_image=true')
               .then((res) => { !res?.ok ? setTimeout(monitorServerStatus, 1000) : location.reload(); })
               .catch((e) => setTimeout(monitorServerStatus, 1000))
           }
@@ -356,7 +370,7 @@ function monitorServerStatus() {
 function restartReload() {
   document.body.style = 'background: #222222; font-size: 1rem; font-family:monospace; margin-top:20%; color:lightgray; text-align:center';
   document.body.innerHTML = '<h1>Server shutdown in progress...</h1>';
-  fetch('/sdapi/v1/progress')
+  fetch('/sdapi/v1/progress?skip_current_image=true')
     .then((res) => setTimeout(restartReload, 1000))
     .catch((e) => setTimeout(monitorServerStatus, 500));
   return [];

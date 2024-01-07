@@ -1,8 +1,9 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-06
+## Update for 2023-01-07
 
-Following-up on a major release, here is a lot more functionality in new Control module and FaceID module  
+Following-up on a major release, here is a lot more functionality in new Control module and FaceID & IPAdapter modules  
+Plus welcome additions to UI accessibility and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
 
 - **Control**:
@@ -47,6 +48,9 @@ And it also includes fixes for all reported issues so far
   - **SD15**: Base, Base ViT-G, Light, Plus, Plus Face, Full Face  
   - **SDXL**: Base SXDL, Base ViT-H SXDL, Plus ViT-H SXDL, Plus Face ViT-H SXDL  
 - **Improvements**  
+  - **ui**  
+    - globally configurable font size  
+      will dynamically rescale ui depending on settings -> user interface  
   - **server startup**: performance  
     - faster extension load  
     - faster json parsing  

@@ -36,7 +36,7 @@
 
 html { font-size: var(--font-size); font-family: var(--font); }
 body, button, input, select, textarea { font-family: var(--font); }
-button { font-size: 1.2rem; max-width: 400px; }
+button { max-width: 400px; }
 img { background-color: var(--background-color); }
 input[type=range] { height: var(--line-sm) !important; appearance: none !important; margin-top: 0 !important; min-width: max(4em, 100%) !important;
   background-color: var(--background-color) !important; width: 100% !important; background: transparent !important; }
@@ -79,7 +79,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .py-6 { padding-bottom: 0; }
 .tabs { background-color: var(--background-color); }
 .block.token-counter span { background-color: var(--input-background-fill) !important; box-shadow: 2px 2px 2px #111; border: none !important; font-size: 0.7rem; }
-.tab-nav { zoom: 120%; margin-top: 10px; margin-bottom: 10px; border-bottom: 2px solid var(--highlight-color) !important; padding-bottom: 2px; }
+.tab-nav { zoom: 110%; margin-top: 10px; margin-bottom: 10px; border-bottom: 2px solid var(--highlight-color) !important; padding-bottom: 2px; }
 .label-wrap { margin: 8px 0px 4px 0px; }
 .gradio-button.tool { border: none; background: none; box-shadow: none; filter: hue-rotate(340deg) saturate(0.5); }
 #tab_extensions table td, #tab_extensions table th, #tab_config table td, #tab_config table th { border: none; }
@@ -97,7 +97,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .image-buttons { gap: 10px !important; justify-content: center; }
 .image-buttons > button { max-width: 160px; }
 .tooltip { background: var(--primary-300); color: black; border: none; border-radius: var(--radius-lg) }
-#system_row > button, #settings_row > button, #config_row > button { max-width: 190px; }
+#system_row > button, #settings_row > button, #config_row > button { max-width: 10em; }
 
 /* gradio elements overrides */
 #div.gradio-container { overflow-x: hidden; }
@@ -262,7 +262,7 @@ textarea[rows="1"] { height: 33px !important; width: 99% !important; padding: 8p
   --form-gap-width: 1px;
   --layout-gap: var(--spacing-xxl);
   --panel-border-width: 0;
-  --section-header-text-size: 13px;
+  --section-header-text-size: var(--text-md);
   --section-header-text-weight: 400;
   --checkbox-border-radius: var(--radius-sm);
   --checkbox-label-gap: 2px;

@@ -71,6 +71,7 @@
     "restartReload": "readonly",
     "updateInput": "readonly",
     "toggleCompact": "readonly",
+    "setFontSize": "readonly",
     // settings.js
     "registerDragDrop": "readonly",
     //extraNetworks.js
