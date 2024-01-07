@@ -110,6 +110,7 @@ And it also includes fixes for all reported issues so far
   - sdxl: fix positive prompt embeds
   - img2img: clip and blip interrogate  
   - img2img: sampler selection offset  
+  - api: return current image in progress api if requested  
   - sampler: guard against invalid sampler index  
   - config: reset default cfg scale to 6.0  
   - processing: correct display metadata  

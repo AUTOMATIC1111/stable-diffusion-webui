@@ -12,6 +12,7 @@ from modules.paths import script_path, models_path
 
 diffuser_repos = []
 
+
 def walk(top, onerror:callable=None):
     # A near-exact copy of `os.path.walk()`, trimmed slightly. Probably not nessesary for most people's collections, but makes a difference on really large datasets.
     nondirs = []

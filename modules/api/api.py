@@ -428,7 +428,7 @@ class Api:
         if shared.state.job_count == 0:
             return models.ProgressResponse(progress=0, eta_relative=0, state=shared.state.dict(), textinfo=shared.state.textinfo)
 
-        shared.state.set_current_image()
+        shared.state.do_set_current_image()
         current_image = None
         if shared.state.current_image and not req.skip_current_image:
             current_image = encode_pil_to_base64(shared.state.current_image)
