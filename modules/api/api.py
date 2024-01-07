@@ -273,14 +273,21 @@ class Api:
             }
             del request.ip_adapter
 
-    def sanitize_img_gen_request(self, request, img_gen_type: str):
-        if hasattr(request, "alwayson_scripts") and request.alwayson_scripts and "IP Adapter" in request.alwayson_scripts:
-            # Avoid returning the same base64 ipadapter input image in the response
-            request.alwayson_scripts["IP Adapter"]["args"][2] = "<base64 encoded image>"
+    def sanitize_args(self, args: list):
+        for idx in range(0, len(args)):
+            if args[idx].length >= 1000:
+                args[idx] = f"<str {len(args[idx])}>"
 
-        if hasattr(request, "script_name") and request.script_name == "FaceID":
-            # Avoid returning the same base64 FaceID input image in the response
-            request.script_args[1] = "<base64 encoded image>"
+    def sanitize_img_gen_request(self, request, img_gen_type: str):
+        if hasattr(request, "alwayson_scripts") and request.alwayson_scripts:
+            for script_name in request.alwayson_scripts.dict().keys():
+                script_obj = getattr(request.alwayson_scripts, script_name)
+
+                if hasattr(script_obj, "args") and script_obj.args:
+                    self.sanitize_args(script_obj.args)
+
+        if hasattr(request, "script_args") and request.script_args:
+            self.sanitize_args(request.script_args)
 
     def text2imgapi(self, txt2imgreq: models.StableDiffusionTxt2ImgProcessingAPI):
         self.prepare_img_gen_request(txt2imgreq, "txt2img")
