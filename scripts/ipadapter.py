@@ -80,6 +80,8 @@ class Script(scripts.Script):
                 loaded = None
             return
         if not hasattr(shared.sd_model, 'load_ip_adapter'):
+            import diffusers
+            diffusers.StableDiffusionPipeline.load_ip_adapter()
             shared.log.error(f'IP adapter: pipeline not supported: {shared.sd_model.__class__.__name__}')
             return
 
@@ -112,6 +114,10 @@ class Script(scripts.Script):
                 except Exception as e:
                     shared.log.error(f'IP adapter: failed to load image encoder: {e}')
                     return
+        if getattr(shared.sd_model, 'feature_extractor', None) is None:
+            from transformers import CLIPImageProcessor
+            shared.log.debug('IP adapter: load feature extractor')
+            shared.sd_model.feature_extractor = CLIPImageProcessor()
 
         # main code
         # subfolder = 'models' if 'sd15' in adapter else 'sdxl_models'

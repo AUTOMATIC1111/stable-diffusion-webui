@@ -274,9 +274,10 @@ def load_scripts():
             current_basedir = paths.script_path
             t.record(os.path.basename(scriptfile.basedir) if scriptfile.basedir != paths.script_path else scriptfile.filename)
             sys.path = syspath
-    global scripts_txt2img, scripts_img2img, scripts_postproc # pylint: disable=global-statement
+    global scripts_txt2img, scripts_img2img, scripts_control, scripts_postproc # pylint: disable=global-statement
     scripts_txt2img = ScriptRunner()
     scripts_img2img = ScriptRunner()
+    scripts_control = ScriptRunner()
     scripts_postproc = scripts_postprocessing.ScriptPostprocessingRunner()
     return t, time.time()-t0
 
@@ -354,7 +355,8 @@ class ScriptRunner:
             except Exception as e:
                 log.error(f'Script initialize: {path} {e}')
 
-    def create_script_ui(self, script):
+    """
+    def create_script_ui(self, script): # TODO this is legacy implementation
         import modules.api.models as api_models
         script.args_from = len(self.inputs)
         script.args_to = len(self.inputs)
@@ -394,71 +396,72 @@ class ScriptRunner:
                 script.group = group
             else:
                 self.create_script_ui(script)
+    """
 
     def prepare_ui(self):
         self.inputs = [None]
 
-    def setup_ui(self):
+    def create_script_ui(self, script, inputs = [], inputs_alwayson = []): # noqa
         import modules.api.models as api_models
+        script.args_from = len(inputs)
+        script.args_to = len(inputs)
+        controls = wrap_call(script.ui, script.filename, "ui", script.is_img2img)
+        if controls is None:
+            return
+        script.name = wrap_call(script.title, script.filename, "title", default=script.filename).lower()
+        api_args = []
+        for control in controls:
+            if not isinstance(control, gr.components.IOComponent):
+                log.error(f'Invalid script control: "{script.filename}" control={control}')
+                continue
+            control.custom_script_source = os.path.basename(script.filename)
+            arg_info = api_models.ScriptArg(label=control.label or "")
+            for field in ("value", "minimum", "maximum", "step", "choices"):
+                v = getattr(control, field, None)
+                if v is not None:
+                    setattr(arg_info, field, v)
+            api_args.append(arg_info)
+
+        script.api_info = api_models.ScriptInfo(
+            name=script.name,
+            is_img2img=script.is_img2img,
+            is_alwayson=script.alwayson,
+            args=api_args,
+        )
+        if script.infotext_fields is not None:
+            self.infotext_fields += script.infotext_fields
+        if script.paste_field_names is not None:
+            self.paste_field_names += script.paste_field_names
+        inputs += controls
+        inputs_alwayson += [script.alwayson for _ in controls]
+        script.args_to = len(inputs)
+
+    def select_script(self, script_index):
+        selected_script = self.selectable_scripts[script_index - 1] if script_index > 0 else None
+        return [gr.update(visible=selected_script == s) for s in self.selectable_scripts]
+
+    def init_field(self, title):
+        if title == 'None': # called when an initial value is set from ui-config.json to show script's UI components
+            return
+        script_index = self.titles.index(title)
+        self.selectable_scripts[script_index].group.visible = True
+
+    def setup_ui(self, accordion=True):
         self.titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in self.selectable_scripts]
         inputs = []
         inputs_alwayson = [True]
-
-        def create_script_ui(script, inputs, inputs_alwayson): # TODO this is legacy implementation, see self.create_script_ui
-            script.args_from = len(inputs)
-            script.args_to = len(inputs)
-            controls = wrap_call(script.ui, script.filename, "ui", script.is_img2img)
-            if controls is None:
-                return
-            script.name = wrap_call(script.title, script.filename, "title", default=script.filename).lower()
-            api_args = []
-            for control in controls:
-                if not isinstance(control, gr.components.IOComponent):
-                    log.error(f'Invalid script control: "{script.filename}" control={control}')
-                    continue
-                control.custom_script_source = os.path.basename(script.filename)
-                arg_info = api_models.ScriptArg(label=control.label or "")
-                for field in ("value", "minimum", "maximum", "step", "choices"):
-                    v = getattr(control, field, None)
-                    if v is not None:
-                        setattr(arg_info, field, v)
-                api_args.append(arg_info)
-
-            script.api_info = api_models.ScriptInfo(
-                name=script.name,
-                is_img2img=script.is_img2img,
-                is_alwayson=script.alwayson,
-                args=api_args,
-            )
-            if script.infotext_fields is not None:
-                self.infotext_fields += script.infotext_fields
-            if script.paste_field_names is not None:
-                self.paste_field_names += script.paste_field_names
-            inputs += controls
-            inputs_alwayson += [script.alwayson for _ in controls]
-            script.args_to = len(inputs)
 
         dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None", type="index")
         inputs.insert(0, dropdown)
         for script in self.selectable_scripts:
             with gr.Group(visible=False) as group:
                 t0 = time.time()
-                create_script_ui(script, inputs, inputs_alwayson)
+                self.create_script_ui(script, inputs, inputs_alwayson)
                 time_setup[script.title()] = time_setup.get(script.title(), 0) + (time.time()-t0)
                 script.group = group
 
-        def select_script(script_index):
-            selected_script = self.selectable_scripts[script_index - 1] if script_index > 0 else None
-            return [gr.update(visible=selected_script == s) for s in self.selectable_scripts]
-
-        def init_field(title):
-            if title == 'None': # called when an initial value is set from ui-config.json to show script's UI components
-                return
-            script_index = self.titles.index(title)
-            self.selectable_scripts[script_index].group.visible = True
-
-        dropdown.init_field = init_field
-        dropdown.change(fn=select_script, inputs=[dropdown], outputs=[script.group for script in self.selectable_scripts])
+        dropdown.init_field = self.init_field
+        dropdown.change(fn=self.select_script, inputs=[dropdown], outputs=[script.group for script in self.selectable_scripts])
 
         def onload_script_visibility(params):
             title = params.get('Script', None)
@@ -471,12 +474,12 @@ class ScriptRunner:
                 return gr.update(visible=False)
 
         # with gr.Group(elem_id='scripts_alwayson_img2img' if self.is_img2img else 'scripts_alwayson_txt2img'):
-        with gr.Accordion(label="Extensions", elem_id='scripts_alwayson_img2img' if self.is_img2img else 'scripts_alwayson_txt2img'):
+        with gr.Accordion(label="Extensions", elem_id='scripts_alwayson_img2img' if self.is_img2img else 'scripts_alwayson_txt2img') if accordion else gr.Group():
             for script in self.alwayson_scripts:
                 t0 = time.time()
                 elem_id = f'script_{"txt2img" if script.is_txt2img else "img2img"}_{script.title().lower().replace(" ", "_")}'
                 with gr.Group(elem_id=elem_id, elem_classes=['extension-script']) as group:
-                    create_script_ui(script, inputs, inputs_alwayson)
+                    self.create_script_ui(script, inputs, inputs_alwayson)
                 script.group = group
                 time_setup[script.title()] = time_setup.get(script.title(), 0) + (time.time()-t0)
 
@@ -628,6 +631,7 @@ class ScriptRunner:
 
 scripts_txt2img: ScriptRunner = None
 scripts_img2img: ScriptRunner = None
+scripts_control: ScriptRunner = None
 scripts_current: ScriptRunner = None
 scripts_postproc: scripts_postprocessing.ScriptPostprocessingRunner = None
 reload_scripts = load_scripts  # compatibility alias
@@ -637,6 +641,7 @@ def reload_script_body_only():
     cache = {}
     scripts_txt2img.reload_sources(cache)
     scripts_img2img.reload_sources(cache)
+    scripts_control.reload_sources(cache)
 
 
 def add_classes_to_gradio_component(comp):

@@ -11,6 +11,7 @@ import requests
 import gradio as gr
 import fasteners
 import orjson
+import diffusers
 from rich.console import Console
 from modules import errors, shared_items, shared_state, cmd_args, ui_components, theme
 from modules.paths import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
@@ -964,10 +965,10 @@ def req(url_addr, headers = None, **kwargs):
     return res
 
 
-sd_model = None # dummy and overwritten by class
-sd_refiner = None # dummy and overwritten by class
-sd_model_type = '' # dummy and overwritten by class
-sd_refiner_type = '' # dummy and overwritten by class
+sd_model: diffusers.DiffusionPipeline = None # dummy and overwritten by class
+sd_refiner: diffusers.DiffusionPipeline = None # dummy and overwritten by class
+sd_model_type: str = '' # dummy and overwritten by class
+sd_refiner_type: str = '' # dummy and overwritten by class
 compiled_model_state = None
 
 from modules.modeldata import Shared # pylint: disable=ungrouped-imports

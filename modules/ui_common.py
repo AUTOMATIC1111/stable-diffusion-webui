@@ -255,6 +255,8 @@ def create_output_panel(tabname, preview=True):
                 paste_field_names = modules.scripts.scripts_txt2img.paste_field_names
             elif tabname == "img2img":
                 paste_field_names = modules.scripts.scripts_img2img.paste_field_names
+            elif tabname == "control":
+                paste_field_names = modules.scripts.scripts_control.paste_field_names
             else:
                 paste_field_names = []
             for paste_tabname, paste_button in buttons.items():

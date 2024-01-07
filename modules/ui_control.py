@@ -12,8 +12,8 @@ from modules.control.units import lite # vislearn ControlNet-XS
 from modules.control.units import t2iadapter # TencentARC T2I-Adapter
 from modules.control.units import reference # reference pipeline
 from modules.control.units import ipadapter # reference pipeline
-from modules import errors, shared, progress, sd_samplers, ui_components, ui_symbols, ui_common, ui_sections, generation_parameters_copypaste, call_queue
-from modules.ui_components import FormRow, FormGroup
+from modules import errors, shared, progress, sd_samplers, ui_components, ui_symbols, ui_common, ui_sections, generation_parameters_copypaste, call_queue, scripts
+from modules.ui_components import FormGroup
 
 
 gr_height = 512
@@ -43,6 +43,8 @@ def initialize():
     os.makedirs(lite.cache_dir, exist_ok=True)
     os.makedirs(t2iadapter.cache_dir, exist_ok=True)
     os.makedirs(processors.cache_dir, exist_ok=True)
+    scripts.scripts_current = scripts.scripts_control
+    scripts.scripts_control.initialize_scripts(is_img2img=True)
 
 
 def return_controls(res):
@@ -296,6 +298,7 @@ def transfer_input(dst):
 
 def create_ui(_blocks: gr.Blocks=None):
     initialize()
+
     if shared.backend == shared.Backend.ORIGINAL:
         with gr.Blocks(analytics_enabled = False) as control_ui:
             pass
@@ -303,7 +306,7 @@ def create_ui(_blocks: gr.Blocks=None):
 
     with gr.Blocks(analytics_enabled = False) as control_ui:
         prompt, styles, negative, btn_generate, _btn_interrogate, _btn_deepbooru, btn_paste, btn_extra, prompt_counter, btn_prompt_counter, negative_counter, btn_negative_counter  = ui_sections.create_toprow(is_img2img=False, id_part='control')
-        with FormGroup(elem_id="control_interface", equal_height=False):
+        with gr.Group(elem_id="control_interface", equal_height=False):
             with gr.Row(elem_id='control_settings'):
 
                 with gr.Accordion(open=False, label="Input", elem_id="control_input", elem_classes=["small-accordion"]):
@@ -346,9 +349,13 @@ def create_ui(_blocks: gr.Blocks=None):
                         video_interpolate = gr.Slider(label='Interpolate frames', minimum=0, maximum=24, step=1, value=0, visible=False)
                     video_type.change(fn=video_type_change, inputs=[video_type], outputs=[video_duration, video_loop, video_pad, video_interpolate])
 
+                with gr.Accordion(open=False, label="Extensions", elem_id="control_extensions", elem_classes=["small-accordion"]):
+                    input_script_args = scripts.scripts_control.setup_ui(accordion=False)
+
+            with gr.Row():
                 override_settings = ui_common.create_override_inputs('control')
 
-            with FormRow(variant='compact', elem_id="control_extra_networks", visible=False) as extra_networks_ui:
+            with gr.Row(variant='compact', elem_id="control_extra_networks", visible=False) as extra_networks_ui:
                 from modules import timer, ui_extra_networks
                 extra_networks_ui = ui_extra_networks.create_ui(extra_networks_ui, btn_extra, 'control', skip_indexing=shared.opts.extra_network_skip_indexing)
                 timer.startup.record('ui-extra-networks')
@@ -719,7 +726,7 @@ def create_ui(_blocks: gr.Blocks=None):
                 control_dict = dict(
                     fn=generate_click,
                     _js="submit_control",
-                    inputs=[tabs_state, tabs_state] + input_fields,
+                    inputs=[tabs_state, tabs_state] + input_fields + input_script_args,
                     outputs=output_fields,
                     show_progress=True,
                 )

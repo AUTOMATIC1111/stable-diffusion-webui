@@ -326,6 +326,7 @@ class MemoryResponse(BaseModel):
 class ScriptsList(BaseModel):
     txt2img: list = Field(default=None, title="Txt2img", description="Titles of scripts (txt2img)")
     img2img: list = Field(default=None, title="Img2img", description="Titles of scripts (img2img)")
+    control: list = Field(default=None, title="Control", description="Titles of scripts (control)")
 
 class ScriptArg(BaseModel):
     label: str = Field(default=None, title="Label", description="Name of the argument in UI")

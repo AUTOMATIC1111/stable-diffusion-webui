@@ -15,7 +15,7 @@ from modules.control.units import lite # Kohya ControlLLLite
 from modules.control.units import t2iadapter # TencentARC T2I-Adapter
 from modules.control.units import reference # ControlNet-Reference
 from modules.control.units import ipadapter # IP-Adapter
-from modules import devices, shared, errors, processing, images, sd_models
+from modules import devices, shared, errors, processing, images, sd_models, scripts
 
 
 debug = shared.log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
@@ -83,6 +83,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                 denoising_strength, batch_count, batch_size, mask_blur, mask_overlap,
                 video_skip_frames, video_type, video_duration, video_loop, video_pad, video_interpolate,
                 ip_adapter, ip_scale, ip_image, ip_type,
+                *input_script_args
         ):
     global pipe, original_pipeline # pylint: disable=global-statement
     debug(f'Control {unit_type}: input={inputs} init={inits} type={input_type}')
@@ -482,7 +483,12 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         debug(f'Control exec pipeline: task={sd_models.get_diffusers_task(pipe)} class={pipe.__class__}')
                         debug(f'Control exec pipeline: p={vars(p)}')
                         debug(f'Control exec pipeline: args={p.task_args} image={p.task_args.get("image", None)} control={p.task_args.get("control_image", None)} mask={p.task_args.get("mask_image", None)} ref={p.task_args.get("ref_image", None)}')
-                        processed: processing.Processed = processing.process_images(p) # run actual pipeline
+                        p.scripts = scripts.scripts_control
+                        p.script_args = input_script_args
+                        print('HERE', p.script_args)
+                        processed = p.scripts.run(p, *input_script_args)
+                        if processed is None:
+                            processed: processing.Processed = processing.process_images(p) # run actual pipeline
                         output = processed.images if processed is not None else None
                         # output = pipe(**vars(p)).images # alternative direct pipe exec call
                     else: # blend all processed images and return

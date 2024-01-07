@@ -201,11 +201,12 @@ class Api:
     def get_scripts_list(self):
         t2ilist = [script.name for script in scripts.scripts_txt2img.scripts if script.name is not None]
         i2ilist = [script.name for script in scripts.scripts_img2img.scripts if script.name is not None]
-        return models.ScriptsList(txt2img = t2ilist, img2img = i2ilist)
+        control = [script.name for script in scripts.scripts_control.scripts if script.name is not None]
+        return models.ScriptsList(txt2img = t2ilist, img2img = i2ilist, control = control)
 
     def get_script_info(self, script_name: Optional[str] = None):
         res = []
-        for script_list in [scripts.scripts_txt2img.scripts, scripts.scripts_img2img.scripts]:
+        for script_list in [scripts.scripts_txt2img.scripts, scripts.scripts_img2img.scripts, scripts.scripts_control.scripts]:
             for script in script_list:
                 if script.api_info is not None and (script_name is None or script_name == script.api_info.name):
                     res.append(script.api_info)
