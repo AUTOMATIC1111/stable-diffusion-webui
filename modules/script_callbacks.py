@@ -41,7 +41,7 @@ class ExtraNoiseParams:
 
 
 class CFGDenoiserParams:
-    def __init__(self, x, image_cond, sigma, sampling_step, total_sampling_steps, text_cond, text_uncond, p):
+    def __init__(self, x, image_cond, sigma, sampling_step, total_sampling_steps, text_cond, text_uncond, denoiser):
         self.x = x
         """Latent image representation in the process of being denoised"""
 
@@ -63,8 +63,8 @@ class CFGDenoiserParams:
         self.text_uncond = text_uncond
         """ Encoder hidden states of text conditioning from negative prompt"""
 
-        self.p = p
-        """StableDiffusionProcessing object with processing parameters"""
+        self.denoiser = denoiser
+        """Current CFGDenoiser object with processing parameters"""
 
 
 class CFGDenoisedParams:
