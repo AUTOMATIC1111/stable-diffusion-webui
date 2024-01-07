@@ -2,7 +2,7 @@
 
 ## Update for 2023-01-06
 
-Following-up on a major release, some more functionality in new Control module  
+Following-up on a major release, here is a lot more functionality in new Control module and FaceID module  
 And it also includes fixes for all reported issues so far  
 
 - **Control**:
@@ -16,6 +16,10 @@ And it also includes fixes for all reported issues so far
     this allows for workflows such as: *image -> upscale or downscale -> generate -> upscale or downscale -> output*  
     providing more flexibility and than standard hires workflow  
     *note*: resizing before generate can be done using standard upscalers or latent
+  - implicit **hires**  
+    since hires is only used for txt2img, control reuses existing resize functionality
+    any image size is used as txt2img target size  
+    but if resize scale is also set its used to additionally upscale image after initial txt2img and for hires pass
   - add **marigold** depth map processor  
     this is state-of-the-art depth estimation model, but its quite heavy on resources  
   - add **openpose xl** controlnet  
