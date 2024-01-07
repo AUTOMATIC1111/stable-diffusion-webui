@@ -133,6 +133,30 @@ wget -q https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/m
 ```
 3. Run `webui.sh`.
 4. Check `webui-user.sh` for options.
+
+### Automatic Installation on Linux (Ubuntu container w/ GPU)
+
+By default the `webui.sh` script requires GPU access during installation, so building a Ubuntu container takes a few additional steps:
+
+```bash
+# 1) after cloning this repo, build the debian/ubuntu container
+sudo docker build -t stable-diffusion-webui-build -f Dockerfile.ubuntu .
+# 2) start it with --gpus to allow GPU passthrough
+sudo docker run -it --rm --name sdwebui -p 7860 --gpus all stable-diffusion-webui-build
+# 3) manually execute webui.sh within the container, -f allows root user to run the script
+./webui.sh -f
+# 4) *from a separate terminal* commit the image (AFTER webui.sh is done)
+docker commit sdwebui stable-diffusion-webui
+```
+
+Run the container image with gpu passthrough & specify any additional command line args, by default it will listen on [http://0.0.0.0:7860](http://0.0.0.0:7860):
+
+```bash
+ sudo docker run -it --rm -p 7860 --gpus all stable-diffusion-webui bash -c "./webui.sh -f --listen"
+```
+
+The container will start quickly because download & installation was completed in the earlier build steps.
+
 ### Installation on Apple Silicon
 
 Find the instructions [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Installation-on-Apple-Silicon).
