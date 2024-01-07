@@ -145,7 +145,7 @@ sudo docker build -t stable-diffusion-webui-build -f Dockerfile.ubuntu .
 sudo docker run -it --rm --name sdwebui -p 7860 --gpus all stable-diffusion-webui-build
 # 3) manually execute webui.sh within the container, -f allows root user to run the script
 ./webui.sh -f
-# 4) *from a separate terminal* commit the image (AFTER webui.sh is done)
+# 4) *from a separate terminal* commit the running container (AFTER webui.sh is done)
 docker commit sdwebui stable-diffusion-webui
 ```
 
