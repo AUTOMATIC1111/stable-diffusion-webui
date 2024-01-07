@@ -129,6 +129,10 @@ div.gradio-html.min{
     background: var(--input-background-fill);
 }
 
+.gradio-gallery > button.preview{
+    width: 100%;
+}
+
 .gradio-container .prose a, .gradio-container .prose a:visited{
     color: unset;
     text-decoration: none;
