@@ -261,12 +261,12 @@ class Api:
         return script_args
 
     def prepare_img_gen_request(self, request, img_gen_type: str):
-        if hasattr(request, "face_id") and request.face_id and not request.script_name and "FaceID" not in request.alwayson_scripts:
+        if hasattr(request, "face_id") and request.face_id and not request.script_name and "FaceID" not in request.alwayson_scripts.keys():
             request.script_name = "FaceID"
             request.script_args = [request.face_id.scale, request.face_id.image]
             del request.face_id
 
-        if hasattr(request, "ip_adapter") and request.ip_adapter and request.script_name != "IP Adapter" and "IP Adapter" not in request.alwayson_scripts:
+        if hasattr(request, "ip_adapter") and request.ip_adapter and request.script_name != "IP Adapter" and "IP Adapter" not in request.alwayson_scripts.keys():
             request.alwayson_scripts = {} if request.alwayson_scripts is None else request.alwayson_scripts
             request.alwayson_scripts["IP Adapter"] = {
                 "args": [request.ip_adapter.adapter, request.ip_adapter.scale, request.ip_adapter.image]
@@ -280,11 +280,11 @@ class Api:
 
     def sanitize_img_gen_request(self, request, img_gen_type: str):
         if hasattr(request, "alwayson_scripts") and request.alwayson_scripts:
-            for script_name in request.alwayson_scripts.dict().keys():
-                script_obj = getattr(request.alwayson_scripts, script_name)
+            for script_name in request.alwayson_scripts.keys():
+                script_obj = request.alwayson_scripts[script_name]
 
-                if hasattr(script_obj, "args") and script_obj.args:
-                    self.sanitize_args(script_obj.args)
+                if "args" in script_obj and script_obj["args"]:
+                    self.sanitize_args(script_obj["args"])
 
         if hasattr(request, "script_args") and request.script_args:
             self.sanitize_args(request.script_args)
