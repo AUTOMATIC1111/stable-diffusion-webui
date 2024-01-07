@@ -275,7 +275,7 @@ class Api:
 
     def sanitize_args(self, args: list):
         for idx in range(0, len(args)):
-            if args[idx].length >= 1000:
+            if len(args[idx]) >= 1000:
                 args[idx] = f"<str {len(args[idx])}>"
 
     def sanitize_img_gen_request(self, request, img_gen_type: str):
