@@ -261,12 +261,12 @@ class Api:
         return script_args
 
     def prepare_img_gen_request(self, request, img_gen_type: str):
-        if hasattr(request, "face_id") and request.face_id and not request.script_name and "FaceID" not in request.alwayson_scripts.keys():
+        if hasattr(request, "face_id") and request.face_id and not request.script_name and (not request.alwayson_scripts or "FaceID" not in request.alwayson_scripts.keys()):
             request.script_name = "FaceID"
             request.script_args = [request.face_id.scale, request.face_id.image]
             del request.face_id
 
-        if hasattr(request, "ip_adapter") and request.ip_adapter and request.script_name != "IP Adapter" and "IP Adapter" not in request.alwayson_scripts.keys():
+        if hasattr(request, "ip_adapter") and request.ip_adapter and request.script_name != "IP Adapter" and (not request.alwayson_scripts or "IP Adapter" not in request.alwayson_scripts.keys()):
             request.alwayson_scripts = {} if request.alwayson_scripts is None else request.alwayson_scripts
             request.alwayson_scripts["IP Adapter"] = {
                 "args": [request.ip_adapter.adapter, request.ip_adapter.scale, request.ip_adapter.image]
