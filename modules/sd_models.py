@@ -842,12 +842,12 @@ def reload_model_weights(sd_model=None, info=None, forced_reload=False):
         sd_hijack.model_hijack.hijack(sd_model)
         timer.record("hijack")
 
-        script_callbacks.model_loaded_callback(sd_model)
-        timer.record("script callbacks")
-
         if not sd_model.lowvram:
             sd_model.to(devices.device)
             timer.record("move model to device")
+
+        script_callbacks.model_loaded_callback(sd_model)
+        timer.record("script callbacks")
 
     print(f"Weights loaded in {timer.summary()}.")
 
