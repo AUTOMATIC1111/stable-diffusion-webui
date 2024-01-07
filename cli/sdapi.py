@@ -14,6 +14,7 @@ import aiohttp
 import requests
 import urllib3
 from util import Map, log
+from rich import print # pylint: disable=redefined-builtin
 
 
 sd_url = os.environ.get('SDAPI_URL', "http://127.0.0.1:7860") # automatic1111 api url root
@@ -225,25 +226,29 @@ async def close():
 
 
 if __name__ == "__main__":
+    sys.argv.pop(0)
     log.setLevel(logging.DEBUG)
     if 'interrupt' in sys.argv:
         asyncio.run(interrupt())
-    if 'progress' in sys.argv:
+    elif 'progress' in sys.argv:
         asyncio.run(progress())
-    if 'progresssync' in sys.argv:
+    elif 'progresssync' in sys.argv:
         progresssync()
-    if 'options' in sys.argv:
+    elif 'options' in sys.argv:
         opt = options()
         log.debug({ 'options' })
         import json
         print(json.dumps(opt['options'], indent = 2))
         log.debug({ 'cmd-flags' })
         print(json.dumps(opt['flags'], indent = 2))
-    if 'log' in sys.argv:
+    elif 'log' in sys.argv:
         get_log()
-    if 'info' in sys.argv:
+    elif 'info' in sys.argv:
         get_info()
-    if 'shutdown' in sys.argv:
+    elif 'shutdown' in sys.argv:
         shutdown()
+    else:
+        res = getsync(sys.argv[0])
+        print(res)
     asyncio.run(close(), debug=True)
     asyncio.run(asyncio.sleep(0.5))

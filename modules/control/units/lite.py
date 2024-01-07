@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 from PIL import Image
 from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline
-from modules.shared import log, opts
+from modules.shared import log, opts, listdir
 from modules import errors
 from modules.control.units.lite_model import ControlNetLLLite
 
@@ -31,7 +31,7 @@ cache_dir = 'models/control/lite'
 
 def find_models():
     path = os.path.join(opts.control_dir, 'lite')
-    files = os.listdir(path)
+    files = listdir(path)
     files = [f for f in files if f.endswith('.safetensors')]
     downloaded_models = {}
     for f in files:

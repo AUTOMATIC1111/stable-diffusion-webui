@@ -104,11 +104,15 @@ def create_paths(opts):
     create_path(fix_path('outdir_samples'))
     create_path(fix_path('outdir_txt2img_samples'))
     create_path(fix_path('outdir_img2img_samples'))
+    create_path(fix_path('outdir_control_samples'))
     create_path(fix_path('outdir_extras_samples'))
+    create_path(fix_path('outdir_init_images'))
     create_path(fix_path('outdir_grids'))
     create_path(fix_path('outdir_txt2img_grids'))
     create_path(fix_path('outdir_img2img_grids'))
+    create_path(fix_path('outdir_control_grids'))
     create_path(fix_path('outdir_save'))
+    create_path(fix_path('outdir_video'))
     create_path(fix_path('styles_dir'))
 
 

@@ -80,12 +80,13 @@ class InterrogateModels:
         self.create_fake_fairscale()
         import models.blip # pylint: disable=no-name-in-module
         model_path = os.path.join(paths.models_path, "BLIP")
-        shared.log.debug(f'Loading interrogate model: type=BLIP folder={model_path}')
+        download_name='model_base_caption_capfilt_large.pth',
+        shared.log.debug(f'Model interrogate load: type=BLiP model={download_name} path={model_path}')
         files = modelloader.load_models(
             model_path=model_path,
             model_url='https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_caption_capfilt_large.pth',
             ext_filter=[".pth"],
-            download_name='model_base_caption_capfilt_large.pth',
+            download_name=download_name,
         )
         blip_model = models.blip.blip_decoder(pretrained=files[0], image_size=blip_image_eval_size, vit='base', med_config=os.path.join(paths.paths["BLIP"], "configs", "med_config.json")) # pylint: disable=c-extension-no-member
         blip_model.eval()
@@ -93,6 +94,7 @@ class InterrogateModels:
         return blip_model
 
     def load_clip_model(self):
+        shared.log.debug(f'Model interrogate load: type=CLiP model={clip_model_name} path={shared.opts.clip_models_path}')
         import clip
         if self.running_on_cpu:
             model, preprocess = clip.load(clip_model_name, device="cpu", download_root=shared.opts.clip_models_path)

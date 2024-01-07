@@ -21,7 +21,6 @@ import modules.ui_symbols as symbols
 
 
 allowed_dirs = []
-dir_cache = {} # key=path, value=(mtime, listdir(path))
 refresh_time = 0
 extra_pages = shared.extra_networks
 debug = shared.log.trace if os.environ.get('SD_EN_DEBUG', None) is not None else lambda *args, **kwargs: None
@@ -48,17 +47,6 @@ card_list = '''
         </div>
     </div>
 '''
-
-
-def listdir(path):
-    if not os.path.exists(path):
-        return []
-    if path in dir_cache and os.path.getmtime(path) == dir_cache[path][0]:
-        return dir_cache[path][1]
-    else:
-        # debug(f'EN list-dir list: {path}')
-        dir_cache[path] = (os.path.getmtime(path), [os.path.join(path, f) for f in os.listdir(path)])
-        return dir_cache[path][1]
 
 
 def init_api(app):
@@ -164,7 +152,7 @@ class ExtraNetworksPage:
         return filename.replace('\\', '/')
 
     def is_empty(self, folder):
-        for f in listdir(folder):
+        for f in shared.listdir(folder):
             _fn, ext = os.path.splitext(f)
             if ext.lower() in ['.ckpt', '.safetensors', '.pt', '.json'] or os.path.isdir(os.path.join(folder, f)):
                 return False
@@ -316,9 +304,9 @@ class ExtraNetworksPage:
             path = os.path.relpath(path, shared.opts.diffusers_dir)
             ref = os.path.join('models', 'Reference')
             fn = os.path.join(ref, path.replace('models--', '').replace('\\', '/').split('/')[0])
-            files = listdir(ref)
+            files = shared.listdir(ref)
         else:
-            files = listdir(os.path.dirname(path))
+            files = shared.listdir(os.path.dirname(path))
             fn = os.path.splitext(path)[0]
         exts = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
         for file in [f'{fn}{mid}{ext}' for ext in exts for mid in ['.thumb.', '.', '.preview.']]:
@@ -343,7 +331,7 @@ class ExtraNetworksPage:
                     self.text += '\n'
 
         fn = os.path.splitext(path)[0] + '.txt'
-        if fn in listdir(os.path.dirname(path)):
+        if fn in shared.listdir(os.path.dirname(path)):
             try:
                 with open(fn, "r", encoding="utf-8", errors="replace") as f:
                     txt = f.read()
@@ -361,15 +349,15 @@ class ExtraNetworksPage:
         return f.text
 
     def find_info(self, path):
-        t0 = time.time()
         fn = os.path.splitext(path)[0] + '.json'
         data = {}
-        if fn in listdir(os.path.dirname(path)):
+        if fn in shared.listdir(os.path.dirname(path)):
+            t0 = time.time()
             data = shared.readfile(fn, silent=True)
             if type(data) is list:
                 data = data[0]
-        t1 = time.time()
-        self.info_time += t1-t0
+            t1 = time.time()
+            self.info_time += t1-t0
         return data
 
 

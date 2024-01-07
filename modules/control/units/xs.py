@@ -2,10 +2,11 @@ import os
 import time
 from typing import Union
 from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline
-from modules.shared import log, opts
+from modules.shared import log, opts, listdir
 from modules import errors
 from modules.control.units.xs_model import ControlNetXSModel
 from modules.control.units.xs_pipe import StableDiffusionControlNetXSPipeline, StableDiffusionXLControlNetXSPipeline
+from modules.control.units import detect
 
 
 what = 'ControlNet-XS'
@@ -26,7 +27,7 @@ cache_dir = 'models/control/xs'
 
 def find_models():
     path = os.path.join(opts.control_dir, 'xs')
-    files = os.listdir(path)
+    files = listdir(path)
     files = [f for f in files if f.endswith('.safetensors')]
     downloaded_models = {}
     for f in files:
@@ -114,7 +115,7 @@ class ControlNetXSPipeline():
         if pipeline is None:
             log.error(f'Control {what} pipeline: model not loaded')
             return
-        if isinstance(pipeline, StableDiffusionXLPipeline):
+        if detect.is_sdxl(pipeline):
             self.pipeline = StableDiffusionXLControlNetXSPipeline(
                 vae=pipeline.vae,
                 text_encoder=pipeline.text_encoder,
@@ -126,7 +127,7 @@ class ControlNetXSPipeline():
                 # feature_extractor=getattr(pipeline, 'feature_extractor', None),
                 controlnet=controlnet, # can be a list
             ).to(pipeline.device)
-        elif isinstance(pipeline, StableDiffusionPipeline):
+        elif detect.is_sd15(pipeline):
             self.pipeline = StableDiffusionControlNetXSPipeline(
                 vae=pipeline.vae,
                 text_encoder=pipeline.text_encoder,

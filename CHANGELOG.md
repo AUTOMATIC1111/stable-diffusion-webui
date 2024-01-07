@@ -1,6 +1,147 @@
 # Change Log for SD.Next
 
+## Update for 2023-01-06
+
+Following-up on a major release, here is a lot more functionality in new Control module and FaceID module  
+And it also includes fixes for all reported issues so far  
+
+- **Control**:
+  - add **inpaint** support  
+    applies to both *img2img* and *controlnet* workflows  
+    *note*: set blur to level you desire  
+  - add **outpaint** support  
+    applies to both *img2img* and *controlnet* workflows  
+    *note*: increase denoising strength since outpainted area is blank by default  
+  - allow **resize** both *before* and *after* generate operation  
+    this allows for workflows such as: *image -> upscale or downscale -> generate -> upscale or downscale -> output*  
+    providing more flexibility and than standard hires workflow  
+    *note*: resizing before generate can be done using standard upscalers or latent
+  - implicit **hires**  
+    since hires is only used for txt2img, control reuses existing resize functionality
+    any image size is used as txt2img target size  
+    but if resize scale is also set its used to additionally upscale image after initial txt2img and for hires pass
+  - add **marigold** depth map processor  
+    this is state-of-the-art depth estimation model, but its quite heavy on resources  
+  - add **openpose xl** controlnet  
+  - configurable output folder in settings  
+  - auto-refresh available models on tab activate  
+  - add image preview for override images set per-unit  
+  - more compact unit layout  
+  - reduce usage of temp files  
+  - add context menu to action buttons  
+  - resize by now applies to input image or frame individually  
+    allows for processing where input images are of different sizes  
+  - fix input image size  
+  - fix video color mode  
+  - fix correct image mode  
+  - fix batch/folder/video modes  
+  - fix pipeline switching between different modes  
+- [FaceID](https://huggingface.co/h94/IP-Adapter-FaceID)  
+  full implementation for *SD15* and *SD-XL*, to use simply select from *Scripts*  
+  - **Base** (93MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-H-14* (2.5GB) as image encoder  
+  - **SXDL** (1022MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-bigG-14* (3.7GB) as image encoder  
+  - **Plus** (150MB) uses *InsightFace* to generate face embeds and *CLIP-ViT-H-14-laion2B* (3.8GB) as image encoder  
+  *note*: all models are downloaded on first use  
+- [IPAdapter](https://huggingface.co/h94/IP-Adapter)  
+  additional models for *SD15* and *SD-XL*, to use simply select from *Scripts*:  
+  - **SD15**: Base, Base ViT-G, Light, Plus, Plus Face, Full Face  
+  - **SDXL**: Base SXDL, Base ViT-H SXDL, Plus ViT-H SXDL, Plus Face ViT-H SXDL  
+- **Improvements**  
+  - **server startup**: performance  
+    - faster extension load  
+    - faster json parsing  
+    - faster lora indexing  
+  - **offline deployment**: allow deployment without git clone  
+    for example, you can now deploy a zip of the sdnext folder  
+  - **latent upscale**: updated latent upscalers (some are new)  
+    *nearest, nearest-exact, area, bilinear, bicubic, bilinear-antialias, bicubic-antialias*
+  - **xyz grid**: continue on error  
+    now you can use xyz grid with different params and test which ones work and which dont  
+  - **hypertile**  
+    - enable vae tiling  
+    - add autodetect optimial value  
+      set tile size to 0 to use autodetected value  
+  - **cli**  
+    - `sdapi.py` allow manual api invoke  
+      example: `python cli/sdapi.py /sdapi/v1/sd-models`  
+    - `image-exif.py` improve metadata parsing  
+  - **memory**: add ram usage monitoring in addition to gpu memory usage monitoring  
+  - **vae**: enable taesd batch decode  
+    enable/disable with settings -> diffusers > vae slicing  
+  - updated core requirements  
+  - major internal ui module refactoring  
+    this may cause compatibility issues if an extension is doing a direct import from `ui.py`  
+    in which case, report it so i can add a compatibility layer  
+- **Compile**
+  - new option: **fused projections**  
+    pretty much free 5% performance boost for compatible models  
+    enable in settings -> compute settings  
+  - new option: **dynamic quantization** (experimental)  
+    reduces memory usage and increases performance  
+    enable in settings -> compute settings  
+    best used together with torch compile: *inductor*  
+    this feature is highly experimental and will evolve over time  
+    requires nightly versions of `torch` and `torchao`  
+    > pip install -U --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu121  
+    > pip install -U git+https://github.com/pytorch-labs/ao  
+  - new option: **compile text encoder** (experimental)  
+- **IPEX**, thanks @disty0  
+  - rewrite ipex hijacks without CondFunc  
+    improves compatibilty and performance  
+    fixes random memory leaks  
+  - remove IPEX / Torch 2.0 specific hijacks  
+  - add `IPEX_SDPA_SLICE_TRIGGER_RATE` and `IPEX_ATTENTION_SLICE_RATE` env variables  
+- **OpenVINO**, thanks @disty0  
+  - **4-bit support with NNCF**  
+    enable *Compress Model weights with NNCF* from *Compute Settings* and set a 4-bit NNCF mode  
+    4-bit and 8-bit with OpenVINO is CPU only for now  
+  - experimental support for *Text Encoder* compiling  
+    OpenVINO is faster than IPEX now  
+  - reduce system memory usage after compile  
+  - fix cache loading with multiple models  
+- **Fixes**  
+  - ipadapter: allow changing of model/image on-the-fly  
+  - ipadapter: fix fallback of cross-attention on unload  
+  - python: fix python 3.9 compatibility  
+  - sdxl: fix positive prompt embeds
+  - img2img: clip and blip interrogate  
+  - img2img: sampler selection offset  
+  - sampler: guard against invalid sampler index  
+  - config: reset default cfg scale to 6.0  
+  - processing: correct display metadata  
+  - live preview: fix when using `bfloat16`
+  - upscale: fix ldsr
+  - cli: fix cmd args parsing  
+
 ## Update for 2023-12-29
+
+To wrap up this amazing year, we're releasing a new version of [SD.Next](https://github.com/vladmandic/automatic), this one is absolutely massive!  
+
+### Highlights  
+
+- Brand new Control module for *text, image, batch and video* processing  
+  Native implementation of all control methods for both *SD15* and *SD-XL*  
+  ▹ **ControlNet | ControlNet XS | Control LLLite | T2I Adapters | IP Adapters**  
+  For details, see [Wiki](https://github.com/vladmandic/automatic/wiki/Control) documentation:  
+- Support for new models types out-of-the-box  
+  This brings number of supported t2i/i2i model families to 13!  
+  ▹ **Stable Diffusion 1.5/2.1 | SD-XL | LCM | Segmind | Kandinsky | Pixart-α | Würstchen | aMUSEd | DeepFloyd IF | UniDiffusion | SD-Distilled | BLiP Diffusion | etc.**  
+- New video capabilities:  
+  ▹ **AnimateDiff | SVD | ModelScope | ZeroScope**  
+- Enhanced platform support  
+  ▹ **Windows | Linux | MacOS** with **nVidia | AMD | IntelArc | DirectML | OpenVINO | ONNX+Olive** backends  
+- Better onboarding experience (first install)  
+  with all model types available for single click download & load (networks -> reference)  
+- Performance optimizations!
+  For comparisment of different processing options and compile backends, see [Wiki](https://github.com/vladmandic/automatic/wiki/Benchmark)  
+  As a highlight, we're reaching **~100 it/s** (no tricks, this is with full features enabled and end-to-end on a standard nVidia RTX4090)  
+- New [custom pipelines](https://github.com/vladmandic/automatic/blob/dev/scripts/example.py) framework for quickly porting any new pipeline  
+
+And others improvements in areas such as: Upscaling (up to 8x now with 40+ available upscalers), Inpainting (better quality), Prompt scheduling, new Sampler options, new LoRA types, additional UI themes, better HDR processing, built-in Video interpolation, parallel Batch processing, etc.  
+
+Plus some nifty new modules such as **FaceID** automatic face guidance using embeds during generation and **Depth 3D** image to 3D scene
+
+### Full changelog
 
 - **Control**  
   - native implementation of all image control methods:  
@@ -919,7 +1060,7 @@ Actual changelog is:
 
 - original
   - fix hires secondary sampler  
-    this now fully obsoletes `fallback_sampler` and `force_latent_sampler`  
+    this now fully obsoletes `fallback_sampler` and `force_hr_sampler_name`  
 
 
 ## Update for 2023-07-18
@@ -959,7 +1100,7 @@ Trying to unify settings for both original and diffusers backend without introdu
 - renamed **hires fix** to **second pass**  
   as that is what it actually is, name hires fix is misleading to start with  
 - actual **hires fix** and **refiner** are now options inside **second pass** section  
-- obsoleted settings -> sampler -> **force_latent_sampler**  
+- obsoleted settings -> sampler -> **force_hr_sampler_name**  
   it is now part of **second pass** options and it works the same for both original and diffusers backend  
   which means you can use different scheduler settings for txt2img and hires if you want  
 - sd-xl refiner will run if its loaded and if second pass is enabled  

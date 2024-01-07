@@ -1,5 +1,6 @@
 import gc
 import sys
+import time
 import contextlib
 import torch
 from modules.errors import log
@@ -106,7 +107,7 @@ def get_cuda_device_string():
 def get_optimal_device_name():
     if cuda_ok or backend == 'directml':
         return get_cuda_device_string()
-    if has_mps():
+    if has_mps() and backend != 'openvino':
         return "mps"
     return "cpu"
 
@@ -123,31 +124,38 @@ def get_device_for(task):
 
 
 def torch_gc(force=False):
+    t0 = time.time()
     mem = memstats.memory_stats()
     gpu = mem.get('gpu', {})
+    ram = mem.get('ram', {})
     oom = gpu.get('oom', 0)
     if backend == "directml":
-        used = round(100 * torch.cuda.memory_allocated() / (1 << 30) / gpu.get('total', 1)) if gpu.get('total', 1) > 1 else 0
+        used_gpu = round(100 * torch.cuda.memory_allocated() / (1 << 30) / gpu.get('total', 1)) if gpu.get('total', 1) > 1 else 0
     else:
-        used = round(100 * gpu.get('used', 0) / gpu.get('total', 1)) if gpu.get('total', 1) > 1 else 0
+        used_gpu = round(100 * gpu.get('used', 0) / gpu.get('total', 1)) if gpu.get('total', 1) > 1 else 0
+    used_ram = round(100 * ram.get('used', 0) / ram.get('total', 1)) if ram.get('total', 1) > 1 else 0
     global previous_oom # pylint: disable=global-statement
     if oom > previous_oom:
         previous_oom = oom
         log.warning(f'GPU out-of-memory error: {mem}')
-    if used >= shared.opts.torch_gc_threshold:
-        log.info(f'GPU high memory utilization: {used}% {mem}')
+        force = True
+    if used_gpu >= shared.opts.torch_gc_threshold or used_ram >= shared.opts.torch_gc_threshold:
+        log.info(f'High memory utilization: GPU={used_gpu}% RAM={used_ram}% {mem}')
         force = True
     if not force:
         return
-    collected = gc.collect()
+
+    # actual gc
+    collected = gc.collect() # python gc
     if cuda_ok:
         try:
             with torch.cuda.device(get_cuda_device_string()):
-                torch.cuda.empty_cache()
+                torch.cuda.empty_cache() # cuda gc
                 torch.cuda.ipc_collect()
         except Exception:
             pass
-    log.debug(f'gc: collected={collected} device={torch.device(get_optimal_device_name())} {memstats.memory_stats()}')
+    t1 = time.time()
+    log.debug(f'GC: collected={collected} device={torch.device(get_optimal_device_name())} {memstats.memory_stats()} time={round(t1 - t0, 2)}')
 
 
 def set_cuda_sync_mode(mode):
@@ -173,7 +181,7 @@ def test_fp16():
     if shared.cmd_opts.experimental:
         return True
     try:
-        x = torch.tensor([[1.5,.0,.0,.0]]).to(device).half()
+        x = torch.tensor([[1.5,.0,.0,.0]]).to(device=device, dtype=torch.float16)
         layerNorm = torch.nn.LayerNorm(4, eps=0.00001, elementwise_affine=True, dtype=torch.float16, device=device)
         _y = layerNorm(x)
         return True
@@ -220,20 +228,20 @@ def set_cuda_params():
         dtype = torch.float32
         dtype_vae = torch.float32
         dtype_unet = torch.float32
-    if shared.opts.cuda_dtype == 'BF16' or dtype == torch.bfloat16:
+        fp16_ok = None
+        bf16_ok = None
+    elif shared.opts.cuda_dtype == 'BF16' or dtype == torch.bfloat16:
+        fp16_ok = test_fp16()
         bf16_ok = test_bf16()
         dtype = torch.bfloat16 if bf16_ok else torch.float16
         dtype_vae = torch.bfloat16 if bf16_ok else torch.float16
         dtype_unet = torch.bfloat16 if bf16_ok else torch.float16
-    else:
-        bf16_ok = False
-    if shared.opts.cuda_dtype == 'FP16' or dtype == torch.float16:
+    elif shared.opts.cuda_dtype == 'FP16' or dtype == torch.float16:
         fp16_ok = test_fp16()
+        bf16_ok = None
         dtype = torch.float16 if fp16_ok else torch.float32
         dtype_vae = torch.float16 if fp16_ok else torch.float32
         dtype_unet = torch.float16 if fp16_ok else torch.float32
-    else:
-        fp16_ok = False
     if shared.opts.no_half:
         log.info('Torch override dtype: no-half set')
         dtype = torch.float32

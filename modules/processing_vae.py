@@ -2,7 +2,7 @@ import os
 import time
 import torch
 import torchvision.transforms.functional as TF
-from modules import shared, devices, sd_vae
+from modules import shared, devices, sd_vae, sd_models
 import modules.taesd.sd_vae_taesd as sd_vae_taesd
 
 
@@ -50,11 +50,11 @@ def full_vae_decode(latents, model):
 
     decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
 
-    # Downcast VAE after OpenVINO compile
+    # Delete PyTorch VAE after OpenVINO compile
     if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx" and shared.compiled_model_state.first_pass_vae:
         shared.compiled_model_state.first_pass_vae = False
         if hasattr(shared.sd_model, "vae"):
-            model.vae.to(dtype=torch.float8_e4m3fn)
+            model.vae.apply(sd_models.convert_to_faketensors)
             devices.torch_gc(force=True)
 
     if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False) and hasattr(model, 'unet'):
@@ -80,12 +80,15 @@ def full_vae_encode(image, model):
 
 
 def taesd_vae_decode(latents):
-    debug(f'VAE decode: name=TAESD images={len(latents)} latents={latents.shape}')
+    debug(f'VAE decode: name=TAESD images={len(latents)} latents={latents.shape} slicing={shared.opts.diffusers_vae_slicing}')
     if len(latents) == 0:
         return []
-    decoded = torch.zeros((len(latents), 3, latents.shape[2] * 8, latents.shape[3] * 8), dtype=devices.dtype_vae, device=devices.device)
-    for i in range(latents.shape[0]):
-        decoded[i] = sd_vae_taesd.decode(latents[i])
+    if shared.opts.diffusers_vae_slicing:
+        decoded = torch.zeros((len(latents), 3, latents.shape[2] * 8, latents.shape[3] * 8), dtype=devices.dtype_vae, device=devices.device)
+        for i in range(latents.shape[0]):
+            decoded[i] = sd_vae_taesd.decode(latents[i])
+    else:
+        decoded = sd_vae_taesd.decode(latents)
     return decoded
 
 

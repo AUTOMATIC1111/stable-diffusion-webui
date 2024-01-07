@@ -2,7 +2,8 @@ import os
 import time
 from typing import Union
 from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline, ControlNetModel, StableDiffusionControlNetPipeline, StableDiffusionXLControlNetPipeline
-from modules.shared import log, opts
+from modules.control.units import detect
+from modules.shared import log, opts, listdir
 from modules import errors
 
 
@@ -32,6 +33,7 @@ predefined_sdxl = {
     'Canny XL': 'diffusers/controlnet-canny-sdxl-1.0',
     'Depth Zoe XL': 'diffusers/controlnet-zoe-depth-sdxl-1.0',
     'Depth Mid XL': 'diffusers/controlnet-depth-sdxl-1.0-mid',
+    'OpenPose XL': 'thibaud/controlnet-openpose-sdxl-1.0',
 }
 models = {}
 all_models = {}
@@ -42,7 +44,7 @@ cache_dir = 'models/control/controlnet'
 
 def find_models():
     path = os.path.join(opts.control_dir, 'controlnet')
-    files = os.listdir(path)
+    files = listdir(path)
     files = [f for f in files if f.endswith('.safetensors')]
     downloaded_models = {}
     for f in files:
@@ -129,7 +131,7 @@ class ControlNetPipeline():
         if pipeline is None:
             log.error('Control model pipeline: model not loaded')
             return
-        elif isinstance(pipeline, StableDiffusionXLPipeline):
+        elif detect.is_sdxl(pipeline):
             self.pipeline = StableDiffusionXLControlNetPipeline(
                 vae=pipeline.vae,
                 text_encoder=pipeline.text_encoder,
@@ -141,7 +143,7 @@ class ControlNetPipeline():
                 feature_extractor=getattr(pipeline, 'feature_extractor', None),
                 controlnet=controlnet, # can be a list
             ).to(pipeline.device)
-        elif isinstance(pipeline, StableDiffusionPipeline):
+        elif detect.is_sd15(pipeline):
             self.pipeline = StableDiffusionControlNetPipeline(
                 vae=pipeline.vae,
                 text_encoder=pipeline.text_encoder,

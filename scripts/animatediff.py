@@ -72,7 +72,7 @@ def set_adapter(adapter_name: str = 'None'):
     if getattr(shared.sd_model, 'image_encoder', None) is not None:
         shared.log.debug('AnimateDiff: unloading IP adapter')
         # shared.sd_model.image_encoder = None
-        shared.sd_model.unet.set_default_attn_processor()
+        # shared.sd_model.unet.set_default_attn_processor()
         shared.sd_model.unet.config.encoder_hid_dim_type = None
     if adapter_name.endswith('.ckpt') or adapter_name.endswith('.safetensors'):
         import huggingface_hub as hf

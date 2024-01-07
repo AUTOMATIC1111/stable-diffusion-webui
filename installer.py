@@ -815,9 +815,8 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
     if args.skip_all:
         return
     if not os.path.exists('.git'):
-        log.error('Not a git repository')
-        if not args.ignore:
-            sys.exit(1)
+        log.warning('Not a git repository, all git operations are disabled')
+        args.skip_git = True # pylint: disable=attribute-defined-outside-init
     log.info(f'Version: {print_dict(get_version())}')
     if args.version or args.skip_git:
         return

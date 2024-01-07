@@ -1,5 +1,5 @@
+import sys
 import time
-import inspect
 from collections import namedtuple
 from typing import Optional, Dict, Any
 from fastapi import FastAPI
@@ -329,16 +329,18 @@ def before_ui_callback():
 
 
 def add_callback(callbacks, fun):
-    stack = [x for x in inspect.stack(0) if x.filename != __file__]
-    filename = stack[0].filename if len(stack) > 0 else 'unknown file'
+    # stack = [x for x in inspect.stack(0) if x.filename != __file__]
+    # filename = stack[0].filename if len(stack) > 0 else 'unknown file'
+    filename = sys._getframe().f_back.f_back.f_code.co_filename # pylint: disable=protected-access
     callbacks.append(ScriptCallback(filename, fun))
 
 
 def remove_current_script_callbacks():
-    stack = [x for x in inspect.stack() if x.filename != __file__]
-    filename = stack[0].filename if len(stack) > 0 else 'unknown file'
-    if filename == 'unknown file':
-        return
+    # stack = [x for x in inspect.stack() if x.filename != __file__]
+    # filename = stack[0].filename if len(stack) > 0 else 'unknown file'
+    # if filename == 'unknown file':
+    #    return
+    filename = sys._getframe().f_back.f_back.f_code.co_filename # pylint: disable=protected-access
     for callback_list in callback_map.values():
         for callback_to_remove in [cb for cb in callback_list if cb.script == filename]:
             callback_list.remove(callback_to_remove)

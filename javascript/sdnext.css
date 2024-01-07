@@ -75,7 +75,7 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 #control-result { padding: 0.5em; }
 #control-inputs { margin-top: 1em; }
 #txt2img_prompt_container, #img2img_prompt_container, #control_prompt_container { margin-right: var(--layout-gap) }
-#txt2img_footer, #img2img_footer, #extras_footer, #control_footer { height: fit-content; display: none; }
+#txt2img_footer, #img2img_footer, #control_footer { height: fit-content; display: none; }
 #txt2img_generate_box, #img2img_generate_box, #control_general_box { gap: 0.5em; flex-wrap: wrap-reverse; height: fit-content; }
 #txt2img_actions_column, #img2img_actions_column, #control_actions_column { gap: 0.3em; height: fit-content; }
 #txt2img_generate_box>button, #img2img_generate_box>button, #control_generate_box>button, #txt2img_enqueue, #img2img_enqueue { min-height: 42px; max-height: 42px; line-height: 1em; }
@@ -87,7 +87,7 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 #txt2img_actions_column, #img2img_actions_column, #control_actions { flex-flow: wrap; justify-content: space-between; }
 #txt2img_enqueue_wrapper, #img2img_enqueue_wrapper, #control_enqueue_wrapper { min-width: unset !important; width: 48%; }
 .interrogate-col{ min-width: 0 !important; max-width: fit-content; margin-right: var(--spacing-xxl); }
-.interrogate-col>button{ flex: 1; }
+.interrogate-col>button{ flex: 1; width: 7em; max-height: 84px; }
 #sampler_selection_img2img { margin-top: 1em; }
 #txtimg_hr_finalres{ min-height: 0 !important; }
 #img2img_scale_resolution_preview.block{ display: flex; align-items: end; }
@@ -240,6 +240,7 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extras { gap: 0.2em 1em !important }
 #extras_generate, #extras_interrupt, #extras_skip { display: block !important; position: relative; height: 36px; }
 #extras_upscale { margin-top: 10px }
+#pnginfo_html_info .gradio-html > div { margin: 0.5em; }
 
 /* log monitor */
 .log-monitor { display: none; justify-content: unset !important; overflow: hidden; padding: 0; margin-top: auto; font-family: monospace; font-size: 0.85em; }
@@ -260,7 +261,9 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 #control_input_type { max-width: 18em }
 #control_settings .small-accordion .form { min-width: 350px !important }
 .control-button { min-height: 42px; max-height: 42px; line-height: 1em; }
-.control-tabs>.tab-nav { margin-bottom: 0; margin-top: 0; }
+.control-tabs > .tab-nav { margin-bottom: 0; margin-top: 0; }
+.control-unit { max-width: 1200px; padding: 0 !important; margin-top: -10px !important; }
+.control-unit > .label-wrap { margin-bottom: 0 !important; }
 .processor-settings { padding: 0 !important; max-width: 300px; }
 .processor-group>div { flex-flow: wrap;gap: 1em; }
 

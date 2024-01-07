@@ -59,6 +59,5 @@ class EdgeDetector:
 
         if output_type == "pil":
             edge_map = Image.fromarray(edge_map)
-            edge_map = edge_map.convert('L')
 
         return edge_map

@@ -261,7 +261,6 @@ def load_scripts():
             elif issubclass(script_class, scripts_postprocessing.ScriptPostprocessing):
                 postprocessing_scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
 
-    from installer import args
     for scriptfile in scripts_list:
         try:
             if scriptfile.basedir != paths.script_path:
@@ -273,7 +272,7 @@ def load_scripts():
             errors.display(e, f'Load script: {scriptfile.filename}')
         finally:
             current_basedir = paths.script_path
-            t.record(os.path.basename(scriptfile.basedir))
+            t.record(os.path.basename(scriptfile.basedir) if scriptfile.basedir != paths.script_path else scriptfile.filename)
             sys.path = syspath
     global scripts_txt2img, scripts_img2img, scripts_postproc # pylint: disable=global-statement
     scripts_txt2img = ScriptRunner()

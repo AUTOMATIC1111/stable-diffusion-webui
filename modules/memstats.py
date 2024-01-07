@@ -6,6 +6,7 @@ from modules import shared
 def memory_stats():
     def gb(val: float):
         return round(val / 1024 / 1024 / 1024, 2)
+
     mem = {}
     try:
         process = psutil.Process(os.getpid())

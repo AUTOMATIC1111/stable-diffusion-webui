@@ -28,7 +28,7 @@ const sd_options = {
   // second pass: hires
   hr_force: true,
   hr_second_pass_steps: 20,
-  latent_sampler: 'UniPC',
+  hr_sampler_name: 'UniPC',
   denoising_strength: 0.5,
   // second pass: refiner
   refiner_steps: 5,

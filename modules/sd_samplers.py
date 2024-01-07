@@ -74,7 +74,8 @@ def set_samplers():
     global samplers # pylint: disable=global-statement
     global samplers_for_img2img # pylint: disable=global-statement
     samplers = visible_sampler_names()
-    samplers_for_img2img = [x for x in samplers if x.name != "PLMS"]
+    # samplers_for_img2img = [x for x in samplers if x.name != "PLMS"]
+    samplers_for_img2img = samplers
     samplers_map.clear()
     for sampler in all_samplers:
         samplers_map[sampler.name.lower()] = sampler.name

@@ -42,7 +42,6 @@ def apply_ip_adapter(pipe, p: processing.StableDiffusionProcessing, adapter, sca
             pipe.set_ip_adapter_scale(0)
         if loaded is not None:
             shared.log.debug('IP adapter: unload attention processor')
-            pipe.unet.set_default_attn_processor()
             pipe.unet.config.encoder_hid_dim_type = None
             loaded = None
         return False
@@ -74,7 +73,6 @@ def apply_ip_adapter(pipe, p: processing.StableDiffusionProcessing, adapter, sca
         t0 = time.time()
         if loaded is not None:
             # shared.log.debug('IP adapter: reset attention processor')
-            pipe.unet.set_default_attn_processor()
             loaded = None
         else:
             shared.log.debug('IP adapter: load attention processor')

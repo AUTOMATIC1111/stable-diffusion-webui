@@ -103,7 +103,7 @@ function initContextMenu() {
     }
   };
 
-  for (const tab of ['txt2img', 'img2img']) {
+  for (const tab of ['txt2img', 'img2img', 'control']) {
     for (const el of ['generate', 'interrupt', 'skip', 'pause', 'paste', 'clear_prompt', 'extra_networks_btn']) {
       const id = `#${tab}_${el}`;
       appendContextMenuOption(id, 'Copy to clipboard', () => navigator.clipboard.writeText(document.querySelector(`#${tab}_prompt > label > textarea`).value));

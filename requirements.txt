@@ -42,10 +42,13 @@ basicsr
 fasteners
 dctorch
 pymatting
+matplotlib
+peft
+orjson
 httpx==0.24.1
 compel==2.0.2
 torchsde==0.2.6
-clip-interrogator==0.6.0
+ clip-interrogator==0.6.0
 antlr4-python3-runtime==4.9.3
 requests==2.31.0
 tqdm==4.66.1
@@ -56,8 +59,8 @@ einops==0.4.1
 gradio==3.43.2
 huggingface_hub==0.20.1
 numexpr==2.8.4
-numpy==1.24.4
-numba==0.57.1
+numpy==1.26.2
+numba==0.58.1
 pandas==1.5.3
 protobuf==3.20.3
 pytorch_lightning==1.9.4
@@ -69,4 +72,3 @@ Pillow==10.1.0
 timm==0.9.12
 pydantic==1.10.13
 typing-extensions==4.9.0
-peft

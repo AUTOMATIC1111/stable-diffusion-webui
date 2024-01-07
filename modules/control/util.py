@@ -46,7 +46,6 @@ def make_noise_disk(H, W, C, F):
 
 def nms(x, t, s):
     x = cv2.GaussianBlur(x.astype(np.float32), (0, 0), s)
-
     f1 = np.array([[0, 0, 0], [1, 1, 1], [0, 0, 0]], dtype=np.uint8)
     f2 = np.array([[0, 1, 0], [0, 1, 0], [0, 1, 0]], dtype=np.uint8)
     f3 = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=np.uint8)
@@ -149,6 +148,8 @@ def blend(images):
         return images
     y = np.zeros(images[0].shape, dtype=np.float32)
     for img in images:
+        if img.shape != y.shape:
+            img = cv2.resize(img, (y.shape[1], y.shape[0]), interpolation=cv2.INTER_CUBIC)
         y = cv2.add(y, img.astype(np.float32))
     y = y.clip(0, 255).astype(np.uint8)
     return y

@@ -58,10 +58,19 @@ def decode(latents):
             taesd_models[f'{model_class}-decoder'] = TAESD(decoder_path=model_path, encoder_path=None)
             vae = taesd_models[f'{model_class}-decoder']
             vae.to(devices.device, devices.dtype_vae)
-    enc = latents.unsqueeze(0).to(devices.device, devices.dtype_vae)
-    image = vae.decoder(enc).clamp(0, 1).detach()
-    image = 2.0 * image - 1.0 # typical normalized range except for preview which runs denormalization
-    return image[0]
+    latents.to(devices.device, devices.dtype_vae)
+    if len(latents.shape) == 3:
+        latents = latents.unsqueeze(0)
+        image = vae.decoder(latents).clamp(0, 1).detach()
+        image = 2.0 * image - 1.0 # typical normalized range except for preview which runs denormalization
+        return image[0]
+    elif len(latents.shape) == 4:
+        image = vae.decoder(latents).clamp(0, 1).detach()
+        image = 2.0 * image - 1.0 # typical normalized range except for preview which runs denormalization
+        return image
+    else:
+        shared.log.error(f'TAESD decode unsupported latent type: {latents.shape}')
+        return latents
 
 
 def encode(image):

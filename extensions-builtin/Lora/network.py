@@ -24,20 +24,8 @@ class NetworkOnDisk:
         self.metadata = {}
         self.is_safetensors = os.path.splitext(filename)[1].lower() == ".safetensors"
 
-        def read_metadata(): #  # pylint: disable=W0612
-            metadata = sd_models.read_metadata_from_safetensors(filename)
-            metadata.pop('ssmd_cover_images', None)  # those are cover images, and they are too big to display in UI as text
-            return metadata
-
         if self.is_safetensors:
             self.metadata = sd_models.read_metadata_from_safetensors(filename)
-            """
-            try:
-                self.metadata = cache.cached_data_for_file('safetensors-metadata', "lora/" + self.name, filename, read_metadata)
-            except Exception as e:
-                errors.display(e, f"reading lora {filename}")
-            """
-
         if self.metadata:
             m = {}
             for k, v in sorted(self.metadata.items(), key=lambda x: metadata_tags_order.get(x[0], 999)):
@@ -46,11 +34,7 @@ class NetworkOnDisk:
         self.alias = self.metadata.get('ss_output_name', self.name)
         self.hash = None
         self.shorthash = None
-        self.set_hash(
-            self.metadata.get('sshs_model_hash') or
-            hashes.sha256_from_cache(self.filename, "lora/" + self.name, use_addnet_hash=self.is_safetensors) or
-            ''
-        )
+        self.set_hash(self.metadata.get('sshs_model_hash') or hashes.sha256_from_cache(self.filename, "lora/" + self.name, use_addnet_hash=self.is_safetensors) or '')
         self.sd_version = self.detect_version()
 
     def detect_version(self):
@@ -65,9 +49,6 @@ class NetworkOnDisk:
     def set_hash(self, v):
         self.hash = v
         self.shorthash = self.hash[0:12]
-        if self.shorthash:
-            import networks
-            networks.available_network_hash_lookup[self.shorthash] = self
 
     def read_hash(self):
         if not self.hash:

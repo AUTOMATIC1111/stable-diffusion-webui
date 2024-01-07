@@ -5,7 +5,6 @@ import json
 import time
 import copy
 import logging
-import threading
 import contextlib
 import collections
 import os.path
@@ -15,6 +14,7 @@ from enum import Enum
 from rich import progress # pylint: disable=redefined-builtin
 import torch
 import safetensors.torch
+import diffusers
 from omegaconf import OmegaConf
 import tomesd
 from transformers import logging as transformers_logging
@@ -24,11 +24,7 @@ from modules import paths, shared, shared_items, shared_state, modelloader, devi
 from modules.timer import Timer
 from modules.memstats import memory_stats
 from modules.paths import models_path, script_path
-
-try:
-    import diffusers
-except Exception as ex:
-    shared.log.error(f'Failed to import diffusers: {ex}')
+from modules.modeldata import model_data
 
 
 transformers_logging.set_verbosity_error()
@@ -540,47 +536,6 @@ sd1_clip_weight = 'cond_stage_model.transformer.text_model.embeddings.token_embe
 sd2_clip_weight = 'cond_stage_model.model.transformer.resblocks.0.attn.in_proj_weight'
 
 
-class ModelData:
-    def __init__(self):
-        self.sd_model = None
-        self.sd_refiner = None
-        self.sd_dict = 'None'
-        self.initial = True
-        self.lock = threading.Lock()
-
-    def get_sd_model(self):
-        if self.sd_model is None and shared.opts.sd_model_checkpoint != 'None' and not self.lock.locked():
-            with self.lock:
-                try:
-                    self.sd_model = reload_model_weights(op='model')
-                    self.initial = False
-                except Exception as e:
-                    shared.log.error("Failed to load stable diffusion model")
-                    errors.display(e, "loading stable diffusion model")
-                    self.sd_model = None
-        return self.sd_model
-
-    def set_sd_model(self, v):
-        self.sd_model = v
-
-    def get_sd_refiner(self):
-        if self.sd_refiner is None and shared.opts.sd_model_refiner != 'None' and not self.lock.locked():
-            with self.lock:
-                try:
-                    self.sd_refiner = reload_model_weights(op='refiner')
-                    self.initial = False
-                except Exception as e:
-                    shared.log.error("Failed to load stable diffusion model")
-                    errors.display(e, "loading stable diffusion model")
-                    self.sd_refiner = None
-        return self.sd_refiner
-
-    def set_sd_refiner(self, v):
-        self.sd_refiner = v
-
-model_data = ModelData()
-
-
 def change_backend():
     shared.log.info(f'Backend changed: {shared.backend}')
     shared.log.warning('Full server restart required to apply all changes')
@@ -692,7 +647,6 @@ def copy_diffuser_options(new_pipe, orig_pipe):
     new_pipe.is_sd1 = getattr(orig_pipe, 'is_sd1', True)
 
 
-
 def set_diffuser_options(sd_model, vae = None, op: str = 'model'):
     if sd_model is None:
         shared.log.warning(f'{op} is not loaded')
@@ -760,7 +714,9 @@ def set_diffuser_options(sd_model, vae = None, op: str = 'model'):
         sd_model.vqvae.to(torch.float32) # vqvae is producing nans in fp16
     if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):
         sd_model.enable_xformers_memory_efficient_attention()
-
+    if shared.opts.diffusers_fuse_projections and hasattr(sd_model, 'fuse_qkv_projections'):
+        shared.log.debug(f'Setting {op}: enable fused projections')
+        sd_model.fuse_qkv_projections()
     if shared.opts.diffusers_eval:
         if hasattr(sd_model, "unet") and hasattr(sd_model.unet, "requires_grad_"):
             sd_model.unet.requires_grad_(False)
@@ -771,6 +727,8 @@ def set_diffuser_options(sd_model, vae = None, op: str = 'model'):
         if hasattr(sd_model, "text_encoder") and hasattr(sd_model.text_encoder, "requires_grad_"):
             sd_model.text_encoder.requires_grad_(False)
             sd_model.text_encoder.eval()
+    if shared.opts.diffusers_quantization:
+        sd_model = sd_models_compile.dynamic_quantization(sd_model)
 
     if shared.opts.opt_channelslast and hasattr(sd_model, 'unet'):
         shared.log.debug(f'Setting {op}: enable channels last')
@@ -1028,6 +986,47 @@ def get_diffusers_task(pipe: diffusers.DiffusionPipeline) -> DiffusersTaskType:
         return DiffusersTaskType.TEXT_2_IMAGE
 
 
+def switch_diffuser_pipe(pipeline, cls):
+    try:
+        new_pipe = None
+        if isinstance(pipeline, cls):
+            return pipeline
+        elif isinstance(pipeline, diffusers.StableDiffusionXLPipeline):
+            new_pipe = cls(
+                vae=pipeline.vae,
+                text_encoder=pipeline.text_encoder,
+                text_encoder_2=pipeline.text_encoder_2,
+                tokenizer=pipeline.tokenizer,
+                tokenizer_2=pipeline.tokenizer_2,
+                unet=pipeline.unet,
+                scheduler=pipeline.scheduler,
+                feature_extractor=getattr(pipeline, 'feature_extractor', None),
+            ).to(pipeline.device)
+        elif isinstance(pipeline, diffusers.StableDiffusionPipeline):
+            new_pipe = cls(
+                vae=pipeline.vae,
+                text_encoder=pipeline.text_encoder,
+                tokenizer=pipeline.tokenizer,
+                unet=pipeline.unet,
+                scheduler=pipeline.scheduler,
+                feature_extractor=getattr(pipeline, 'feature_extractor', None),
+                requires_safety_checker=False,
+                safety_checker=None,
+            ).to(pipeline.device)
+        else:
+            shared.log.error(f'Pipeline switch error: {pipeline.__class__.__name__} unrecognized')
+            return pipeline
+        if new_pipe is not None:
+            copy_diffuser_options(new_pipe, pipeline)
+            shared.log.debug(f'Pipeline switch: from={pipeline.__class__.__name__} to={new_pipe.__class__.__name__}')
+            return new_pipe
+        else:
+            shared.log.error(f'Pipeline switch error: from={pipeline.__class__.__name__} to={cls.__name__} empty pipeline')
+    except Exception as e:
+        shared.log.error(f'Pipeline switch error: from={pipeline.__class__.__name__} to={cls.__name__} {e}')
+    return pipeline
+
+
 def set_diffuser_pipe(pipe, new_pipe_type):
     sd_checkpoint_info = getattr(pipe, "sd_checkpoint_info", None)
     sd_model_checkpoint = getattr(pipe, "sd_model_checkpoint", None)
@@ -1037,25 +1036,10 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     image_encoder = getattr(pipe, "image_encoder", None)
     feature_extractor = getattr(pipe, "feature_extractor", None)
 
-    # TODO implement alternative diffusion pipelines
-    """
-    from collections import OrderedDict
-    AUTO_TEXT2IMAGE_PIPELINES_MAPPING = OrderedDict(
-        [
-            ("stable-diffusion", diffusers.StableDiffusionPipeline),
-            ("stable-diffusion-xl", diffusers.StableDiffusionXLPipeline),
-            ("if", diffusers.IFPipeline),
-            ("kandinsky", diffusers.KandinskyCombinedPipeline),
-            ("kandinsky22", diffusers.KandinskyV22CombinedPipeline),
-            ("stable-diffusion-controlnet", diffusers.StableDiffusionControlNetPipeline),
-            ("stable-diffusion-xl-controlnet", diffusers.StableDiffusionXLControlNetPipeline),
-            ("wuerstchen", diffusers.WuerstchenCombinedPipeline),
-            ("lcm", diffusers.LatentConsistencyModelPipeline),
-            ("pixart", diffusers.PixArtAlphaPipeline),
-        ]
-    )
-    diffusers.pipelines.auto_pipeline.AUTO_TEXT2IMAGE_PIPELINES_MAPPING = AUTO_TEXT2IMAGE_PIPELINES_MAPPING
-    """
+    # skip specific pipelines
+    if pipe.__class__.__name__ == 'StableDiffusionReferencePipeline' or pipe.__class__.__name__ == 'StableDiffusionAdapterPipeline':
+        return pipe
+
     try:
         if new_pipe_type == DiffusersTaskType.TEXT_2_IMAGE:
             new_pipe = diffusers.AutoPipelineForText2Image.from_pipe(pipe)
@@ -1063,8 +1047,8 @@ def set_diffuser_pipe(pipe, new_pipe_type):
             new_pipe = diffusers.AutoPipelineForImage2Image.from_pipe(pipe)
         elif new_pipe_type == DiffusersTaskType.INPAINTING:
             new_pipe = diffusers.AutoPipelineForInpainting.from_pipe(pipe)
-    except Exception: # pylint: disable=unused-variable
-        # shared.log.error(f'Failed to change: type={new_pipe_type} pipeline={pipe.__class__.__name__} {e}')
+    except Exception as e: # pylint: disable=unused-variable
+        shared.log.warning(f'Failed to change: type={new_pipe_type} pipeline={pipe.__class__.__name__} {e}')
         return pipe
 
     if pipe.__class__ == new_pipe.__class__:
@@ -1282,6 +1266,13 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
     return sd_model
 
 
+def convert_to_faketensors(tensor):
+    fake_module = torch._subclasses.fake_tensor.FakeTensorMode(allow_non_fake_inputs=True) # pylint: disable=protected-access
+    if hasattr(tensor, "weight"):
+        tensor.weight = torch.nn.Parameter(fake_module.from_tensor(tensor.weight))
+    return tensor
+
+
 def disable_offload(sd_model):
     from accelerate.hooks import remove_hook_from_module
     if not getattr(sd_model, 'has_accelerate', False):
@@ -1293,13 +1284,16 @@ def disable_offload(sd_model):
 
 
 def unload_model_weights(op='model', change_from='none'):
+    if shared.compiled_model_state is not None:
+        shared.compiled_model_state.compiled_cache.clear()
+        shared.compiled_model_state.partitioned_modules.clear()
     if op == 'model' or op == 'dict':
         if model_data.sd_model:
             if (shared.backend == shared.Backend.ORIGINAL and change_from != shared.Backend.DIFFUSERS) or change_from == shared.Backend.ORIGINAL:
                 from modules import sd_hijack
                 model_data.sd_model.to(devices.cpu)
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
-            else:
+            elif not (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx"):
                 disable_offload(model_data.sd_model)
                 model_data.sd_model.to('meta')
             model_data.sd_model = None

@@ -10,6 +10,7 @@ from enum import Enum
 import requests
 import gradio as gr
 import fasteners
+import orjson
 from rich.console import Console
 from modules import errors, shared_items, shared_state, cmd_args, ui_components, theme
 from modules.paths import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
@@ -44,12 +45,15 @@ loaded_hypernetworks = []
 settings_components = None
 latent_upscale_default_mode = "None"
 latent_upscale_modes = {
-    "Latent": {"mode": "bilinear", "antialias": False},
-    "Latent (antialiased)": {"mode": "bilinear", "antialias": True},
-    "Latent (bicubic)": {"mode": "bicubic", "antialias": False},
-    "Latent (bicubic antialiased)": {"mode": "bicubic", "antialias": True},
-    "Latent (nearest)": {"mode": "nearest", "antialias": False},
-    "Latent (nearest-exact)": {"mode": "nearest-exact", "antialias": False},
+    "Latent Nearest": {"mode": "nearest", "antialias": False},
+    "Latent Nearest-exact": {"mode": "nearest-exact", "antialias": False},
+    "Latent Area": {"mode": "area", "antialias": False},
+    "Latent Bilinear": {"mode": "bilinear", "antialias": False},
+    "Latent Bicubic": {"mode": "bicubic", "antialias": False},
+    "Latent Bilinear antialias": {"mode": "bilinear", "antialias": True},
+    "Latent Bicubic antialias": {"mode": "bicubic", "antialias": True},
+    # "Latent Linear": {"mode": "linear", "antialias": False}, # not supported for latents with channels=4
+    # "Latent Trilinear": {"mode": "trilinear", "antialias": False}, # not supported for latents with channels=4
 }
 restricted_opts = {
     "samples_filename_pattern",
@@ -66,6 +70,8 @@ restricted_opts = {
 resize_modes = ["None", "Fixed", "Crop", "Fill", "Latent"]
 compatibility_opts = ['clip_skip', 'uni_pc_lower_order_final', 'uni_pc_order']
 console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
+dir_timestamps = {}
+dir_cache = {}
 
 
 class Backend(Enum):
@@ -189,23 +195,23 @@ def readfile(filename, silent=False, lock=False):
     lock_file = None
     locked = False
     try:
-        if not os.path.exists(filename):
-            return {}
+        # if not os.path.exists(filename):
+        #    return {}
         t0 = time.time()
         if lock:
             lock_file = fasteners.InterProcessReaderWriterLock(f"{filename}.lock", logger=log)
             locked = lock_file.acquire_read_lock(blocking=True, timeout=3)
-        with open(filename, "r", encoding="utf8") as file:
-            data = json.load(file)
-        if type(data) is str:
-            data = json.loads(data)
+        with open(filename, "rb") as file:
+            b = file.read()
+            data = orjson.loads(b) # pylint: disable=no-member
+        # if type(data) is str:
+        #    data = json.loads(data)
         t1 = time.time()
         if not silent:
             log.debug(f'Read: file="{filename}" json={len(data)} bytes={os.path.getsize(filename)} time={t1-t0:.3f}')
     except Exception as e:
         if not silent:
             log.error(f'Reading failed: {filename} {e}')
-        return {}
     finally:
         if lock_file is not None:
             lock_file.release_read_lock()
@@ -290,7 +296,7 @@ options_templates.update(options_section(('sd', "Execution & Models"), {
     "prompt_mean_norm": OptionInfo(True, "Prompt attention mean normalization"),
     "comma_padding_backtrack": OptionInfo(20, "Prompt padding for long prompts", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
     "sd_checkpoint_cache": OptionInfo(0, "Number of cached models", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
-    "sd_vae_checkpoint_cache": OptionInfo(0, "Number of cached VAEs", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
+    "sd_vae_checkpoint_cache": OptionInfo(0, "Number of cached VAEs", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1, "visible": False}),
     "sd_disable_ckpt": OptionInfo(False, "Disallow usage of models in ckpt format"),
 }))
 
@@ -317,18 +323,23 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "other_sep": OptionInfo("<h2>Execution precision</h2>", "", gr.HTML),
     "opt_channelslast": OptionInfo(False, "Use channels last as torch memory format "),
     "cudnn_benchmark": OptionInfo(False, "Enable full-depth cuDNN benchmark feature"),
-    "torch_gc_threshold": OptionInfo(80 if devices.backend == "ipex" else 90, "VRAM usage threshold before running Torch GC to clear up VRAM", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
+    "diffusers_fuse_projections": OptionInfo(False, "Enable fused projections"),
+    "torch_gc_threshold": OptionInfo(80, "Memory usage threshold before running Torch GC", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
 
     "cuda_compile_sep": OptionInfo("<h2>Model Compile</h2>", "", gr.HTML),
     "cuda_compile": OptionInfo(False if not cmd_opts.use_openvino else True, "Compile UNet"),
     "cuda_compile_vae": OptionInfo(False if not cmd_opts.use_openvino else True, "Compile VAE"),
-    "cuda_compile_upscaler": OptionInfo(False if not cmd_opts.use_openvino else True, "Compile upscaler"),
+    "cuda_compile_text_encoder": OptionInfo(False, "Compile Text Encoder"),
+    "cuda_compile_upscaler": OptionInfo(False if not cmd_opts.use_openvino else True, "Compile Upscaler"),
     "cuda_compile_backend": OptionInfo("none" if not cmd_opts.use_openvino else "openvino_fx", "Model compile backend", gr.Radio, {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx', 'stable-fast']}),
     "cuda_compile_mode": OptionInfo("default", "Model compile mode", gr.Radio, {"choices": ['default', 'reduce-overhead', 'max-autotune', 'max-autotune-no-cudagraphs']}),
     "cuda_compile_fullgraph": OptionInfo(False, "Model compile fullgraph"),
     "cuda_compile_precompile": OptionInfo(False, "Model compile precompile"),
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
     "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
+    "diffusers_quantization": OptionInfo(False, "Enable dynamic quantization with torchao"),
+    "nncf_compress_weights": OptionInfo(False, "Compress Model weights with NNCF"),
+    "nncf_compress_vae_weights": OptionInfo(False, "Compress VAE weights with NNCF"),
 
     "ipex_sep": OptionInfo("<h2>IPEX, DirectML and OpenVINO</h2>", "", gr.HTML),
     "ipex_optimize": OptionInfo(False if not devices.backend == "ipex" else True, "Enable IPEX Optimize for Intel GPUs"),
@@ -339,8 +350,8 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "openvino_hetero_gpu": OptionInfo(False, "OpenVINO use Hetero Device for single inference with multiple devices"),
     "openvino_remove_cpu_from_hetero": OptionInfo(False, "OpenVINO remove CPU from Hetero Device"),
     "openvino_remove_igpu_from_hetero": OptionInfo(False, "OpenVINO remove iGPU from Hetero Device"),
-    "nncf_compress_weights": OptionInfo(False, "Compress Model weights to 8 bit with NNCF"),
-    "nncf_compress_vae_weights": OptionInfo(False, "Compress VAE weights to 8 bit with NNCF"),
+    "nncf_compress_weights_mode": OptionInfo("INT8", "OpenVINO compress mode for NNCF (CPU Only)", gr.Radio, {"choices": ['INT8', 'INT4_SYM', 'INT4_ASYM', 'NF4']}),
+    "nncf_compress_weights_raito": OptionInfo(1.0, "OpenVINO compress ratio for NNCF with 4-bit modes", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
 }))
 
 options_templates.update(options_section(('advanced', "Inference Settings"), {
@@ -357,15 +368,15 @@ options_templates.update(options_section(('advanced', "Inference Settings"), {
     "freeu_s2": OptionInfo(0.2, "2nd stage skip factor", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
 
     "hypertile_sep": OptionInfo("<h2>HyperTile</h2>", "", gr.HTML),
-    "hypertile_vae_enabled": OptionInfo(False, "HyperTile for VAE enabled", gr.Checkbox, {"visible": False}),
-    "hypertile_vae_tile": OptionInfo(128, "HyperTile for VAE tile size", gr.Slider, {"minimum": 128, "maximum": 512, "step": 8, "visible": False}),
     "hypertile_unet_enabled": OptionInfo(False, "HyperTile for UNet enabled"),
-    "hypertile_unet_tile": OptionInfo(256, "HyperTile for UNet tile size", gr.Slider, {"minimum": 256, "maximum": 1024, "step": 8}),
+    "hypertile_unet_tile": OptionInfo(256, "HyperTile for UNet tile size", gr.Slider, {"minimum": 0, "maximum": 1024, "step": 8}),
+    "hypertile_vae_enabled": OptionInfo(False, "HyperTile for VAE enabled", gr.Checkbox),
+    "hypertile_vae_tile": OptionInfo(128, "HyperTile for VAE tile size", gr.Slider, {"minimum": 0, "maximum": 1024, "step": 8}),
 
     "inference_other_sep": OptionInfo("<h2>Other</h2>", "", gr.HTML),
     "batch_frame_mode": OptionInfo(False, "Process multiple images in batch in parallel"),
     "inference_mode": OptionInfo("no-grad", "Torch inference mode", gr.Radio, {"choices": ["no-grad", "inference-mode", "none"]}),
-    "sd_vae_sliced_encode": OptionInfo(False, "VAE Slicing (original)"),
+    "sd_vae_sliced_encode": OptionInfo(False, "VAE sliced encode"),
 }))
 
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
@@ -469,6 +480,7 @@ options_templates.update(options_section(('saving-paths', "Image Naming & Paths"
     "outdir_samples": OptionInfo("", "Output directory for images", component_args=hide_dirs, folder=True),
     "outdir_txt2img_samples": OptionInfo("outputs/text", 'Directory for text generate', component_args=hide_dirs, folder=True),
     "outdir_img2img_samples": OptionInfo("outputs/image", 'Directory for image generate', component_args=hide_dirs, folder=True),
+    "outdir_control_samples": OptionInfo("outputs/control", 'Directory for control generate', component_args=hide_dirs, folder=True),
     "outdir_extras_samples": OptionInfo("outputs/extras", 'Directory for processed images', component_args=hide_dirs, folder=True),
     "outdir_save": OptionInfo("outputs/save", "Directory for manually saved images", component_args=hide_dirs, folder=True),
     "outdir_video": OptionInfo("outputs/video", "Directory for videos", component_args=hide_dirs, folder=True),
@@ -480,6 +492,7 @@ options_templates.update(options_section(('saving-paths', "Image Naming & Paths"
     "outdir_grids": OptionInfo("", "Output directory for grids", component_args=hide_dirs, folder=True),
     "outdir_txt2img_grids": OptionInfo("outputs/grids", 'Output directory for txt2img grids', component_args=hide_dirs, folder=True),
     "outdir_img2img_grids": OptionInfo("outputs/grids", 'Output directory for img2img grids', component_args=hide_dirs, folder=True),
+    "outdir_control_grids": OptionInfo("outputs/grids", 'Output directory for control grids', component_args=hide_dirs, folder=True),
 }))
 
 options_templates.update(options_section(('ui', "User Interface"), {
@@ -566,7 +579,6 @@ options_templates.update(options_section(('postprocessing', "Postprocessing"), {
 
     "postprocessing_sep_img2img": OptionInfo("<h2>Img2Img & Inpainting</h2>", "", gr.HTML),
     "img2img_color_correction": OptionInfo(False, "Apply color correction"),
-    # "img2img_apply_overlay": OptionInfo(False, "Apply result as overlay"),
     "img2img_fix_steps": OptionInfo(False, "For image processing do exact number of steps as specified", gr.Checkbox, { "visible": False }),
     "img2img_background_color": OptionInfo("#ffffff", "Image transparent color fill", ui_components.FormColorPicker, {}),
     "inpainting_mask_weight": OptionInfo(1.0, "Inpainting conditioning mask strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
@@ -580,7 +592,6 @@ options_templates.update(options_section(('postprocessing', "Postprocessing"), {
 
     "postprocessing_sep_upscalers": OptionInfo("<h2>Upscaling</h2>", "", gr.HTML),
     "upscaler_unload": OptionInfo(False, "Unload upscaler after processing"),
-    # 'upscaling_max_images_in_cache': OptionInfo(5, "Maximum number of images in upscaling cache", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1, "visible": False}),
     "upscaler_for_img2img": OptionInfo("None", "Default upscaler for image resize operations", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers], "visible": False}, refresh=refresh_upscalers),
     "upscaler_tile_size": OptionInfo(192, "Upscaler tile size", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
     "upscaler_tile_overlap": OptionInfo(8, "Upscaler tile overlap", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),
@@ -829,7 +840,7 @@ device = devices.device
 batch_cond_uncond = opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram
 mem_mon = modules.memmon.MemUsageMonitor("MemMon", devices.device)
-max_workers = 2
+max_workers = 4
 if devices.backend == "directml":
     directml_do_hijack()
 
@@ -879,9 +890,16 @@ def restore_defaults(restart=True):
     restart_server(restart)
 
 
-def listfiles(dirname):
-    filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname), key=str.lower) if not x.startswith(".")]
-    return [file for file in filenames if os.path.isfile(file)]
+def listdir(path):
+    if not os.path.exists(path):
+        return []
+    mtime = os.path.getmtime(path)
+    if path in dir_timestamps and mtime == dir_timestamps[path]:
+        return dir_cache[path]
+    else:
+        dir_cache[path] = [os.path.join(path, f) for f in os.listdir(path)]
+        dir_timestamps[path] = mtime
+        return dir_cache[path]
 
 
 def walk_files(path, allowed_extensions=None):
@@ -944,82 +962,12 @@ def req(url_addr, headers = None, **kwargs):
         res = SimpleNamespace(**res)
     return res
 
-class Shared(sys.modules[__name__].__class__): # this class is here to provide sd_model field as a property, so that it can be created and loaded on demand rather than at program startup.
-    @property
-    def sd_model(self):
-        import modules.sd_models # pylint: disable=W0621
-        if modules.sd_models.model_data.sd_model is None:
-            log.debug(f'Model requested: fn={sys._getframe().f_back.f_code.co_name}') # pylint: disable=protected-access
-        return modules.sd_models.model_data.get_sd_model()
 
-    @sd_model.setter
-    def sd_model(self, value):
-        import modules.sd_models # pylint: disable=W0621
-        modules.sd_models.model_data.set_sd_model(value)
-
-    @property
-    def sd_refiner(self):
-        import modules.sd_models # pylint: disable=W0621
-        return modules.sd_models.model_data.get_sd_refiner()
-
-    @sd_refiner.setter
-    def sd_refiner(self, value):
-        import modules.sd_models # pylint: disable=W0621
-        modules.sd_models.model_data.set_sd_refiner(value)
-
-    @property
-    def backend(self):
-        return Backend.ORIGINAL if not cmd_opts.use_openvino and opts.data['sd_backend'] == 'original' else Backend.DIFFUSERS
-
-    @property
-    def sd_model_type(self):
-        try:
-            import modules.sd_models # pylint: disable=W0621
-            if modules.sd_models.model_data.sd_model is None:
-                model_type = 'none'
-                return model_type
-            if backend == Backend.ORIGINAL:
-                model_type = 'ldm'
-            elif "StableDiffusionXL" in self.sd_model.__class__.__name__:
-                model_type = 'sdxl'
-            elif "StableDiffusion" in self.sd_model.__class__.__name__:
-                model_type = 'sd'
-            elif "LatentConsistencyModel" in self.sd_model.__class__.__name__:
-                model_type = 'sd' # lcm is compatible with sd
-            elif "AnimateDiffPipeline" in self.sd_model.__class__.__name__:
-                model_type = 'sd' # ad is compatible with sd
-            elif "Kandinsky" in self.sd_model.__class__.__name__:
-                model_type = 'kandinsky'
-            else:
-                model_type = self.sd_model.__class__.__name__
-        except Exception:
-            model_type = 'unknown'
-        return model_type
-
-    @property
-    def sd_refiner_type(self):
-        try:
-            import modules.sd_models # pylint: disable=W0621
-            if modules.sd_models.model_data.sd_refiner is None:
-                model_type = 'none'
-                return model_type
-            if backend == Backend.ORIGINAL:
-                model_type = 'ldm'
-            elif "StableDiffusionXL" in self.sd_refiner.__class__.__name__:
-                model_type = 'sdxl'
-            elif "StableDiffusion" in self.sd_refiner.__class__.__name__:
-                model_type = 'sd'
-            elif "Kandinsky" in self.sd_refiner.__class__.__name__:
-                model_type = 'kandinsky'
-            else:
-                model_type = self.sd_refiner.__class__.__name__
-        except Exception:
-            model_type = 'unknown'
-        return model_type
-
-sd_model = None
-sd_refiner = None
-sd_model_type = ''
-sd_refiner_type = ''
+sd_model = None # dummy and overwritten by class
+sd_refiner = None # dummy and overwritten by class
+sd_model_type = '' # dummy and overwritten by class
+sd_refiner_type = '' # dummy and overwritten by class
 compiled_model_state = None
+
+from modules.modeldata import Shared # pylint: disable=ungrouped-imports
 sys.modules[__name__].__class__ = Shared

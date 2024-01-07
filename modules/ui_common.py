@@ -4,9 +4,11 @@ import os
 import shutil
 import platform
 import subprocess
+from functools import reduce
 import gradio as gr
-from modules import call_queue, shared
+from modules import call_queue, shared, prompt_parser
 from modules.generation_parameters_copypaste import image_from_url_text, parse_generation_parameters
+from modules.ui_components import FormRow, ToolButton
 import modules.ui_symbols as symbols
 import modules.images
 import modules.script_callbacks
@@ -15,6 +17,10 @@ import modules.script_callbacks
 folder_symbol = symbols.folder
 debug = shared.log.trace if os.environ.get('SD_PASTE_DEBUG', None) is not None else lambda *args, **kwargs: None
 debug('Trace: PASTE')
+
+
+def gr_show(visible=True):
+    return {"visible": visible, "__type__": "update"}
 
 
 def update_generation_info(generation_info, html_info, img_index):
@@ -259,7 +265,6 @@ def create_output_panel(tabname, preview=True):
 
 
 def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id, visible: bool = True):
-
     def refresh():
         refresh_method()
         args = refreshed_args() if callable(refreshed_args) else refreshed_args
@@ -267,21 +272,86 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
             setattr(refresh_component, k, v)
         return gr.update(**(args or {}))
 
-    from modules.ui_components import ToolButton
     refresh_button = ToolButton(value=symbols.refresh, elem_id=elem_id, visible=visible)
     refresh_button.click(fn=refresh, inputs=[], outputs=[refresh_component])
     return refresh_button
 
-def create_browse_button(browse_component, elem_id):
 
+def create_browse_button(browse_component, elem_id):
     def browse(folder):
         # import subprocess
         if folder is not None:
             return gr.update(value = folder)
         return gr.update()
 
-    from modules.ui_components import ToolButton
     browse_button = ToolButton(value=symbols.folder, elem_id=elem_id)
     browse_button.click(fn=browse, _js="async () => await browseFolder()", inputs=[browse_component], outputs=[browse_component])
     # browse_button.click(fn=browse, inputs=[browse_component], outputs=[browse_component])
     return browse_button
+
+
+def create_override_inputs(tab): # pylint: disable=unused-argument
+    with FormRow(elem_id=f"{tab}_override_settings_row"):
+        override_settings = gr.Dropdown([], value=None, label="Override settings", visible=False, elem_id=f"{tab}_override_settings", multiselect=True)
+        override_settings.change(fn=lambda x: gr.Dropdown.update(visible=len(x) > 0), inputs=[override_settings], outputs=[override_settings])
+    return override_settings
+
+
+def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: gr.Textbox, is_subseed):
+    """ Connects a 'reuse (sub)seed' button's click event so that it copies last used
+        (sub)seed value from generation info the to the seed field. If copying subseed and subseed strength
+        was 0, i.e. no variation seed was used, it copies the normal seed value instead."""
+    def copy_seed(gen_info_string: str, index: int):
+        res = -1
+        try:
+            gen_info = json.loads(gen_info_string)
+            shared.log.debug(f'Reuse: info={gen_info}')
+            index -= gen_info.get('index_of_first_image', 0)
+            index = int(index)
+
+            if is_subseed and gen_info.get('subseed_strength', 0) > 0:
+                all_subseeds = gen_info.get('all_subseeds', [-1])
+                res = all_subseeds[index if 0 <= index < len(all_subseeds) else 0]
+            else:
+                all_seeds = gen_info.get('all_seeds', [-1])
+                res = all_seeds[index if 0 <= index < len(all_seeds) else 0]
+        except json.decoder.JSONDecodeError:
+            if gen_info_string != '':
+                shared.log.error(f"Error parsing JSON generation info: {gen_info_string}")
+        return [res, gr_show(False)]
+
+    dummy_component = gr.Number(visible=False, value=0)
+    reuse_seed.click(fn=copy_seed, _js="(x, y) => [x, selected_gallery_index()]", show_progress=False, inputs=[generation_info, dummy_component], outputs=[seed, dummy_component])
+
+
+def update_token_counter(text, steps):
+    from modules import extra_networks, sd_hijack
+    try:
+        text, _ = extra_networks.parse_prompt(text)
+        _, prompt_flat_list, _ = prompt_parser.get_multicond_prompt_list([text])
+        prompt_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(prompt_flat_list, steps)
+    except Exception:
+        prompt_schedules = [[[steps, text]]]
+
+    flat_prompts = reduce(lambda list1, list2: list1+list2, prompt_schedules)
+    prompts = [prompt_text for step, prompt_text in flat_prompts]
+    if shared.backend == shared.Backend.ORIGINAL:
+        token_count, max_length = max([sd_hijack.model_hijack.get_prompt_lengths(prompt) for prompt in prompts], key=lambda args: args[0])
+    elif shared.backend == shared.Backend.DIFFUSERS:
+        if shared.sd_model is not None and hasattr(shared.sd_model, 'tokenizer'):
+            tokenizer = shared.sd_model.tokenizer
+            if tokenizer is None:
+                token_count = 0
+                max_length = 75
+            else:
+                has_bos_token = tokenizer.bos_token_id is not None
+                has_eos_token = tokenizer.eos_token_id is not None
+                ids = [shared.sd_model.tokenizer(prompt) for prompt in prompts]
+                if len(ids) > 0 and hasattr(ids[0], 'input_ids'):
+                    ids = [x.input_ids for x in ids]
+                token_count = max([len(x) for x in ids]) - int(has_bos_token) - int(has_eos_token)
+                max_length = tokenizer.model_max_length - int(has_bos_token) - int(has_eos_token)
+        else:
+            token_count = 0
+            max_length = 75
+    return f"<span class='gr-box gr-text-input'>{token_count}/{max_length}</span>"
