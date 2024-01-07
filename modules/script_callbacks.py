@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 from collections import namedtuple
@@ -113,12 +114,19 @@ callback_map = dict(
     callbacks_on_reload=[],
 )
 
-
+timers = {}
 def timer(t0: float, script, callback: str):
     t1 = time.time()
-    s = round(t1 - t0, 2)
-    if s > 0.1:
-        errors.log.debug(f'Script: {s} {callback} {script}')
+    k = f'{os.path.basename(script)}:{callback}'
+    if k not in timers:
+        timers[k] = 0
+    timers[k] += t1 - t0
+
+
+def print_timers():
+    for k, v in timers.items():
+        if v > 0.05:
+            errors.log.debug(f'Script: time={v:.2f} {k}')
 
 
 def clear_callbacks():

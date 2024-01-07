@@ -14,8 +14,8 @@ from modules.control.units import xs # VisLearn ControlNet-XS
 from modules.control.units import lite # Kohya ControlLLLite
 from modules.control.units import t2iadapter # TencentARC T2I-Adapter
 from modules.control.units import reference # ControlNet-Reference
-from modules.control.units import ipadapter # IP-Adapter
-from modules import devices, shared, errors, processing, images, sd_models, scripts
+from scripts import ipadapter # pylint: disable=no-name-in-module
+from modules import devices, shared, errors, processing, images, sd_models, scripts # pylint: disable=ungrouped-imports
 
 
 debug = shared.log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
@@ -82,7 +82,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                 resize_mode_after, resize_name_after, width_after, height_after, scale_by_after, selected_scale_tab_after,
                 denoising_strength, batch_count, batch_size, mask_blur, mask_overlap,
                 video_skip_frames, video_type, video_duration, video_loop, video_pad, video_interpolate,
-                ip_adapter, ip_scale, ip_image, ip_type,
+                ip_adapter, ip_scale, ip_image,
                 *input_script_args
         ):
     global pipe, original_pipeline # pylint: disable=global-statement
@@ -209,7 +209,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
 
     debug(f'Control: run type={unit_type} models={has_models}')
     if unit_type == 'adapter' and has_models:
-        p.extra_generation_params["Control mode"] = 'Adapter'
+        p.extra_generation_params["Control mode"] = 'T2I-Adapter'
         p.extra_generation_params["Control conditioning"] = use_conditioning
         p.task_args['adapter_conditioning_scale'] = use_conditioning
         instance = t2iadapter.AdapterPipeline(selected_models, shared.sd_model)
@@ -255,11 +255,10 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
         pipe = instance.pipeline
         if inits is not None:
             shared.log.warning('Control: ControlNet-XS does not support separate init image')
-    else: # run in img2img mode
+    else: # run in txt2img/img2img mode
         if len(active_strength) > 0:
             p.strength = active_strength[0]
         pipe = diffusers.AutoPipelineForText2Image.from_pipe(shared.sd_model) # use set_diffuser_pipe
-        # pipe = diffusers.AutoPipelineForImage2Image.from_pipe(shared.sd_model) # use set_diffuser_pipe
         instance = None
 
     debug(f'Control pipeline: class={pipe.__class__} args={vars(p)}')
@@ -280,9 +279,6 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
         debug(f'Control device={devices.device} dtype={devices.dtype}')
         sd_models.copy_diffuser_options(shared.sd_model, original_pipeline) # copy options from original pipeline
         sd_models.set_diffuser_options(shared.sd_model)
-        if ipadapter.apply_ip_adapter(shared.sd_model, p, ip_adapter, ip_scale, ip_image, reset=True):
-            original_pipeline.feature_extractor = shared.sd_model.feature_extractor
-            original_pipeline.image_encoder = shared.sd_model.image_encoder
 
     try:
         with devices.inference_context():
@@ -429,9 +425,6 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         else:
                             p.task_args['image'] = init_image
 
-                    if ip_type == 1 and ip_adapter != 'none':
-                        p.task_args['ip_adapter_image'] = input_image
-
                     if is_generator:
                         image_txt = f'{processed_image.width}x{processed_image.height}' if processed_image is not None else 'None'
                         msg = f'process | {index} of {frames if video is not None else len(inputs)} | {"Image" if video is None else "Frame"} {image_txt}'
@@ -477,6 +470,11 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                             if unit_type == 'lite':
                                 instance.apply(selected_models, p.image, use_conditioning)
 
+                    # ip adapter
+                    if ipadapter.apply(shared.sd_model, p, ip_adapter, ip_scale, ip_image or input_image):
+                        original_pipeline.feature_extractor = shared.sd_model.feature_extractor
+                        original_pipeline.image_encoder = shared.sd_model.image_encoder
+
                     # pipeline
                     output = None
                     if pipe is not None: # run new pipeline
@@ -485,7 +483,6 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         debug(f'Control exec pipeline: args={p.task_args} image={p.task_args.get("image", None)} control={p.task_args.get("control_image", None)} mask={p.task_args.get("mask_image", None)} ref={p.task_args.get("ref_image", None)}')
                         p.scripts = scripts.scripts_control
                         p.script_args = input_script_args
-                        print('HERE', p.script_args)
                         processed = p.scripts.run(p, *input_script_args)
                         if processed is None:
                             processed: processing.Processed = processing.process_images(p) # run actual pipeline

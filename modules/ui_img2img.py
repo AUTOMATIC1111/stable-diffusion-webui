@@ -20,7 +20,7 @@ def process_interrogate(interrogation_function, mode, ii_input_files, ii_input_d
             if not os.path.isdir(ii_input_dir):
                 shared.log.error(f"Interrogate: Input directory not found: {ii_input_dir}")
                 return [gr.update(), None]
-            images = shared.listdir(ii_input_dir)
+            images = os.listdir(ii_input_dir)
         if ii_output_dir != "":
             os.makedirs(ii_output_dir, exist_ok=True)
         else:
@@ -48,6 +48,7 @@ def interrogate_deepbooru(image):
 
 
 def create_ui():
+    shared.log.debug('UI initialize: img2img')
     import modules.img2img # pylint: disable=redefined-outer-name
     modules.scripts.scripts_current = modules.scripts.scripts_img2img
     modules.scripts.scripts_img2img.initialize_scripts(is_img2img=True)
@@ -169,7 +170,7 @@ def create_ui():
                 override_settings = ui_common.create_override_inputs('img2img')
 
                 with FormGroup(elem_id="img2img_script_container"):
-                    img2img_script_inputs = modules.scripts.scripts_img2img.setup_ui()
+                    img2img_script_inputs = modules.scripts.scripts_img2img.setup_ui(parent='img2img', accordion=True)
 
             img2img_gallery, img2img_generation_info, img2img_html_info, _img2img_html_info_formatted, img2img_html_log = ui_common.create_output_panel("img2img")
 

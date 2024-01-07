@@ -48,7 +48,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
     def list_items(self):
 
         def list_folder(folder):
-            for filename in shared.listdir(folder):
+            for filename in os.listdir(folder):
                 fn = os.path.join(folder, filename)
                 if os.path.isfile(fn) and (fn.lower().endswith(".pt") or fn.lower().endswith(".safetensors")):
                     embedding = Embedding(vec=0, name=os.path.basename(fn), filename=fn)

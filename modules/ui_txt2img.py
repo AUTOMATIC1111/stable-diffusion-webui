@@ -16,6 +16,7 @@ def calc_resolution_hires(width, height, hr_scale, hr_resize_x, hr_resize_y, hr_
 
 
 def create_ui():
+    shared.log.debug('UI initialize: txt2img')
     import modules.txt2img # pylint: disable=redefined-outer-name
     modules.scripts.scripts_current = modules.scripts.scripts_txt2img
     modules.scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
@@ -48,7 +49,7 @@ def create_ui():
                     enable_hr, hr_sampler_index, denoising_strength, hr_final_resolution, hr_upscaler, hr_force, hr_second_pass_steps, hr_scale, hr_resize_x, hr_resize_y, refiner_steps, refiner_start, refiner_prompt, refiner_negative = ui_sections.create_hires_inputs('txt2img')
                     override_settings = ui_common.create_override_inputs('txt2img')
 
-                txt2img_script_inputs = modules.scripts.scripts_txt2img.setup_ui()
+                txt2img_script_inputs = modules.scripts.scripts_txt2img.setup_ui(parent='txt2img', accordion=True)
 
             hr_resolution_preview_inputs = [width, height, hr_scale, hr_resize_x, hr_resize_y, hr_upscaler]
             for preview_input in hr_resolution_preview_inputs:
