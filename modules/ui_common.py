@@ -7,7 +7,8 @@ import subprocess
 from functools import reduce
 import gradio as gr
 from modules import call_queue, shared, prompt_parser
-from modules.generation_parameters_copypaste import image_from_url_text, parse_generation_parameters
+from modules import generation_parameters_copypaste
+from modules import ui_sections
 from modules.ui_components import FormRow, ToolButton
 import modules.ui_symbols as symbols
 import modules.images
@@ -42,7 +43,7 @@ def plaintext_to_html(text):
 
 
 def infotext_to_html(text):
-    res = parse_generation_parameters(text)
+    res = generation_parameters_copypaste.parse_generation_parameters(text)
     prompt = res.get('Prompt', '')
     negative = res.get('Negative prompt', '')
     res.pop('Prompt', None)
@@ -155,7 +156,7 @@ def save_files(js_data, images, html_info, index):
                     shared.log.warning(f'Image description save failed: {filename_txt} {e}')
             modules.script_callbacks.image_save_btn_callback(tgt_filename)
         else:
-            image = image_from_url_text(filedata)
+            image = generation_parameters_copypaste.image_from_url_text(filedata)
             info = p.infotexts[i + 1] if len(p.infotexts) > len(p.all_seeds) else p.infotexts[i] # infotexts may be offset by 1 because the first image is the grid
             fullfn, txt_fullfn = modules.images.save_image(image, shared.opts.outdir_save, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], info=info, extension=shared.opts.samples_format, grid=is_grid, p=p)
             if fullfn is None:
@@ -203,15 +204,35 @@ def open_folder(result_gallery, gallery_index = 0):
             subprocess.Popen(["xdg-open", path]) # pylint: disable=consider-using-with
 
 
-def create_output_panel(tabname, preview=True):
-    import modules.generation_parameters_copypaste as parameters_copypaste
+def interrogate_clip(image):
+    if image is None:
+        shared.log.error("Interrogate: no image selected")
+        return gr.update()
+    prompt = shared.interrogator.interrogate(image)
+    return gr.update() if prompt is None else prompt
 
+
+def interrogate_booru(image):
+    if image is None:
+        shared.log.error("Interrogate: no image selected")
+        return gr.update()
+    from modules import deepbooru
+    prompt = deepbooru.model.tag(image)
+    return gr.update() if prompt is None else prompt
+
+
+def create_output_panel(tabname, preview=True, prompt=None):
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
             if tabname == "txt2img":
                 gr.HTML(value="", elem_id="main_info", visible=False, elem_classes=["main-info"])
             # columns are for <576px, <768px, <992px, <1200px, <1400px, >1400px
             result_gallery = gr.Gallery(value=[], label='Output', show_label=False, show_download_button=True, allow_preview=True, elem_id=f"{tabname}_gallery", container=False, preview=preview, columns=5, object_fit='scale-down', height=shared.opts.gallery_height or None)
+            if prompt is not None:
+                interrogate_clip_btn, interrogate_booru_btn = ui_sections.create_interrogate_buttons('control')
+                interrogate_clip_btn.click(fn=interrogate_clip, inputs=[result_gallery], outputs=[prompt])
+                interrogate_booru_btn.click(fn=interrogate_booru, inputs=[result_gallery], outputs=[prompt])
+
 
         with gr.Column(elem_id=f"{tabname}_footer", elem_classes="gallery_footer"):
             dummy_component = gr.Label(visible=False)
@@ -225,9 +246,9 @@ def create_output_panel(tabname, preview=True):
                 save = gr.Button('Save', elem_id=f'save_{tabname}')
                 delete = gr.Button('Delete', elem_id=f'delete_{tabname}')
                 if shared.backend == shared.Backend.ORIGINAL:
-                    buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras"])
+                    buttons = generation_parameters_copypaste.create_buttons(["img2img", "inpaint", "extras"])
                 else:
-                    buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "control", "extras"])
+                    buttons = generation_parameters_copypaste.create_buttons(["img2img", "inpaint", "control", "extras"])
 
             download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
             with gr.Group():
@@ -261,8 +282,8 @@ def create_output_panel(tabname, preview=True):
                 paste_field_names = []
             for paste_tabname, paste_button in buttons.items():
                 debug(f'Create output panel: button={paste_button} tabname={paste_tabname}')
-                bindings = parameters_copypaste.ParamBinding(paste_button=paste_button, tabname=paste_tabname, source_tabname=("txt2img" if tabname == "txt2img" else None), source_image_component=result_gallery, paste_field_names=paste_field_names)
-                parameters_copypaste.register_paste_params_button(bindings)
+                bindings = generation_parameters_copypaste.ParamBinding(paste_button=paste_button, tabname=paste_tabname, source_tabname=("txt2img" if tabname == "txt2img" else None), source_image_component=result_gallery, paste_field_names=paste_field_names)
+                generation_parameters_copypaste.register_paste_params_button(bindings)
             return result_gallery, generation_info, html_info, html_info_formatted, html_log
 
 

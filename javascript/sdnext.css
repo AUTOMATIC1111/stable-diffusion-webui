@@ -85,9 +85,12 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 #txt2img_generate_line2>button, #img2img_generate_line2>button, #extras_generate_box>button, #control_generate_line2>button, #txt2img_tools>button, #img2img_tools>button, #control_tools>button { height: 2em; line-height: 0; font-size: var(--text-md);
   min-width: unset; display: block !important; }
 #txt2img_prompt, #txt2img_neg_prompt, #img2img_prompt, #img2img_neg_prompt, #control_prompt, #control_neg_prompt { display: contents; }
-#txt2img_generate_box, #img2img_generate_box, #control_generate_box { min-width: unset; width: 48%; }
+#txt2img_generate_box, #img2img_generate_box { min-width: unset; width: 48%; }
+#control_generate_box { min-width: unset; width: 100%; }
 #txt2img_actions_column, #img2img_actions_column, #control_actions { flex-flow: wrap; justify-content: space-between; }
 #txt2img_enqueue_wrapper, #img2img_enqueue_wrapper, #control_enqueue_wrapper { min-width: unset !important; width: 48%; }
+.interrogate-clip { position: absolute; right: 3em; top: -2.7em; max-width: fit-content; }
+.interrogate-blip { position: absolute; right: 1em; top: -2.7em; max-width: fit-content; }
 .interrogate-col{ min-width: 0 !important; max-width: fit-content; margin-right: var(--spacing-xxl); }
 .interrogate-col>button{ flex: 1; width: 7em; max-height: 84px; }
 #sampler_selection_img2img { margin-top: 1em; }
@@ -207,11 +210,11 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
 .extra-network-cards .card .overlay .tags { display: none; overflow-wrap: break-word; }
 .extra-network-cards .card .overlay .tag { padding: 2px; margin: 2px; background: rgba(70, 70, 70, 0.60); font-size: var(--text-md); cursor: pointer; display: inline-block; }
-.extra-network-cards .card .actions>span { padding: 4px; }
+.extra-network-cards .card .actions>span { padding: 4px; font-size: 34px !important; }
 .extra-network-cards .card .actions>span:hover { color: var(--highlight-color); }
 .extra-network-cards .card:hover .actions { display: block; }
 .extra-network-cards .card:hover .overlay .tags { display: block; }
-.extra-network-cards .card .actions { font-size: 3em; display: none; text-align-last: right; cursor: pointer; font-variant: unicase; position: absolute; z-index: 100; right: 0; height: 0.7em; width: 100%; background: rgba(0, 0, 0, 0.40); }
+.extra-network-cards .card .actions { font-size: 3em; display: none; text-align-last: right; cursor: pointer; font-variant: unicase; position: absolute; z-index: 80; right: 0; height: 0.7em; width: 100%; background: rgba(0, 0, 0, 0.40); }
 .extra-network-cards .card-list { display: flex; margin: 0.3em; padding: 0.3em; background: var(--input-background-fill); cursor: pointer; border-radius: var(--button-large-radius); }
 .extra-network-cards .card-list .tag { color: var(--primary-500); margin-left: 0.8em; }
 .extra-details-close { position: fixed; top: 0.2em; right: 0.2em; z-index: 99; background: var(--button-secondary-background-fill) !important; }

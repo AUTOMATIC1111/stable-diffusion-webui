@@ -27,6 +27,7 @@ And it also includes fixes for all reported issues so far
   - add **marigold** depth map processor  
     this is state-of-the-art depth estimation model, but its quite heavy on resources  
   - add **openpose xl** controlnet  
+  - add blip/booru **interrogate** functionality to both input and output images  
   - configurable output folder in settings  
   - auto-refresh available models on tab activate  
   - add image preview for override images set per-unit  
@@ -57,6 +58,8 @@ And it also includes fixes for all reported issues so far
   - **ui**  
     - globally configurable font size  
       will dynamically rescale ui depending on settings -> user interface  
+    - modularized blip/booru interrogate  
+      now appears as toolbuttons on image/gallery output
   - **server startup**: performance  
     - faster extension load  
     - faster json parsing  
