@@ -1157,3 +1157,95 @@ body.resizing .resize-handle {
     left: 7.5px;
     border-left: 1px dashed var(--border-color-primary);
 }
+
+.extra-network-cards .card .copy-path-button:before {
+    content: "⎘";
+}
+
+.extra-network-cards .card-minimal .button-column {
+    display: inline-flex;
+    visibility: hidden;
+    color: white;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    align-items: center;
+}
+
+.extra-network-cards .card-minimal:hover .button-column {
+    visibility: visible;
+}
+
+.extra-network-cards .card-minimal .copy-path-button:before {
+    content: "⎘";
+}
+
+.extra-network-cards .card-minimal .metadata-button:before{
+    content: "🛈";
+}
+
+.extra-network-cards .card-minimal .edit-button:before{
+    content: "🛠";
+}
+
+.extra-network-cards .card-minimal .card-button {
+    color: white;
+    text-shadow: 2px 2px 3px black;
+    font-size: 1rem;
+    width: 1.5rem;
+}
+
+.extra-network-cards .card-minimal .card-button:hover {
+    color: red;
+}
+
+.extra-network-cards .card-minimal {
+    display: inline-flex;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    line-break: anywhere;
+}
+
+.file-item {
+    list-style-type: '📄';
+}
+
+/* prevents clicking/collapsing of details tags when disabled attribute is used*/
+details[disabled] summary {
+    pointer-events: none;
+    user-select: none;
+}
+
+details.folder-item > summary {
+    list-style-type: '📁';
+}
+
+details.folder-item[open] > summary {
+    list-style-type: '📂';
+}
+
+.file-item,
+.folder-item,
+.folder-item-summary {
+    display: block;
+    font-size: 1rem;
+    padding: 0.05rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.folder-item-summary:hover,
+.file-item:hover {
+    -webkit-transition: all 0.1s ease-in-out;
+	transition: all 0.1s ease-in-out;
+    background-color: var(--neutral-200);
+}
+
+.dark .folder-item-summary:hover,
+.dark .file-item:hover {
+    -webkit-transition: all 0.05s ease-in-out;
+	transition: all 0.05s ease-in-out;
+    background-color: var(--neutral-800);
+}

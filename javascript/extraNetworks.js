@@ -337,6 +337,11 @@ function requestGet(url, data, handler, errorHandler) {
     xhr.send(js);
 }
 
+function extraNetworksCopyCardPath(event, path) {
+    navigator.clipboard.writeText(path);
+    event.stopPropagation();
+}
+
 function extraNetworksRequestMetadata(event, extraPage, cardName) {
     var showError = function() {
         extraNetworksShowMetadata("there was an error getting metadata");

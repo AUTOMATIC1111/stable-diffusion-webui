@@ -2,6 +2,8 @@ import functools
 import os.path
 import urllib.parse
 from pathlib import Path
+from typing import Optional, Union
+from dataclasses import dataclass
 
 from modules import shared, ui_extra_networks_user_metadata, errors, extra_networks
 from modules.images import read_info_from_image, save_image_with_geninfo
@@ -15,9 +17,7 @@ from modules.ui_components import ToolButton
 
 extra_pages = []
 allowed_dirs = set()
-
 default_allowed_preview_extensions = ["png", "jpg", "jpeg", "webp", "gif"]
-
 
 @functools.cache
 def allowed_preview_extensions_with_extra(extra_extensions=None):
@@ -27,6 +27,58 @@ def allowed_preview_extensions_with_extra(extra_extensions=None):
 def allowed_preview_extensions():
     return allowed_preview_extensions_with_extra((shared.opts.samples_format, ))
 
+
+@dataclass
+class ExtraNetworksItem:
+    """Wrapper for dictionaries representing ExtraNetworks items."""
+    item: dict
+
+
+def get_tree(paths: Union[str, list[str]], items: dict[str, ExtraNetworksItem]) -> dict:
+    """Recursively builds a directory tree.
+
+    Args:
+        paths: Path or list of paths to directories. These paths are treated as roots from which
+            the tree will be built.
+        items: A dictionary associating filepaths to an ExtraNetworksItem instance.
+
+    Returns:
+        The result directory tree.
+    """
+    if isinstance(paths, (str,)):
+        paths = [paths]
+
+    def _get_tree(_paths: list[str]):
+        _res = {}
+        for path in _paths:
+            if os.path.isdir(path):
+                dir_items = os.listdir(path)
+                # Ignore empty directories.
+                if not dir_items:
+                    continue
+                dir_tree = _get_tree([os.path.join(path, x) for x in dir_items])
+                # We only want to store non-empty folders in the tree.
+                if dir_tree:
+                    _res[os.path.basename(path)] = dir_tree
+            else:
+                if path not in items:
+                    continue
+                # Add the ExtraNetworksItem to the result.
+                _res[os.path.basename(path)] = items[path]
+        return _res
+
+    res = {}
+    # Handle each root directory separately.
+    # Each root WILL have a key/value at the root of the result dict though
+    # the value can be an empty dict if the directory is empty. We want these
+    # placeholders for empty dirs so we can inform the user later.
+    for path in paths:
+        # Wrap the path in a list since that is what the `_get_tree` expects.
+        res[path] = _get_tree([path])
+        if res[path]:
+            res[path] = res[path][os.path.basename(path)]
+
+    return res
 
 def register_page(page):
     """registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions"""
@@ -80,7 +132,7 @@ def get_single_card(page: str = "", tabname: str = "", name: str = ""):
         item = page.items.get(name)
 
     page.read_user_metadata(item)
-    item_html = page.create_html_for_item(item, tabname)
+    item_html = page.create_item_html(tabname, item)
 
     return JSONResponse({"html": item_html})
 
@@ -96,13 +148,15 @@ def quote_js(s):
     s = s.replace('"', '\\"')
     return f'"{s}"'
 
-
 class ExtraNetworksPage:
     def __init__(self, title):
         self.title = title
         self.name = title.lower()
         self.id_page = self.name.replace(" ", "_")
-        self.card_page = shared.html("extra-networks-card.html")
+        if shared.opts.extra_networks_tree_view:
+            self.card_page = shared.html("extra-networks-card-minimal.html")
+        else:
+            self.card_page = shared.html("extra-networks-card.html")
         self.allow_prompt = True
         self.allow_negative_prompt = False
         self.metadata = {}
@@ -136,12 +190,141 @@ class ExtraNetworksPage:
 
         return ""
 
-    def create_html(self, tabname):
-        items_html = ''
+    def create_item_html(self, tabname: str, item: dict) -> str:
+        """Generates HTML for a single ExtraNetworks Item
+
+        Args:
+            tabname: The name of the active tab.
+            item: Dictionary containing item information.
+
+        Returns:
+            HTML string generated for this item.
+            Can be empty if the item is not meant to be shown.
+        """
+        metadata = item.get("metadata")
+        if metadata:
+            self.metadata[item["name"]] = metadata
+
+        if "user_metadata" not in item:
+            self.read_user_metadata(item)
+
+        preview = item.get("preview", None)
+        height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
+        width = f"width: {shared.opts.extra_networks_card_width}px;" if shared.opts.extra_networks_card_width else ''
+        background_image = f'<img src="{html.escape(preview)}" class="preview" loading="lazy">' if preview else ''
+
+        onclick = item.get("onclick", None)
+        if onclick is None:
+            onclick = '"' + html.escape(f"""return cardClicked({quote_js(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"'
+        
+        copy_path_button = f"<div class='copy-path-button card-button' title='Copy path to clipboard' onclick='extraNetworksCopyCardPath(event, {quote_js(item['filename'])})' data-clipboard-text='{quote_js(item['filename'])}'></div>"
+
+        metadata_button = ""
+        metadata = item.get("metadata")
+        if metadata:
+            metadata_button = f"<div class='metadata-button card-button' title='Show internal metadata' onclick='extraNetworksRequestMetadata(event, {quote_js(self.name)}, {quote_js(html.escape(item['name']))})'></div>"
+
+        edit_button = f"<div class='edit-button card-button' title='Edit metadata' onclick='extraNetworksEditUserMetadata(event, {quote_js(tabname)}, {quote_js(self.id_page)}, {quote_js(html.escape(item['name']))})'></div>"
+
+        local_path = ""
+        filename = item.get("filename", "")
+        for reldir in self.allowed_directories_for_previews():
+            absdir = os.path.abspath(reldir)
+
+            if filename.startswith(absdir):
+                local_path = filename[len(absdir):]
+
+        # if this is true, the item must not be shown in the default view, and must instead only be
+        # shown when searching for it
+        if shared.opts.extra_networks_hidden_models == "Always":
+            search_only = False
+        else:
+            search_only = "/." in local_path or "\\." in local_path
+
+        if search_only and shared.opts.extra_networks_hidden_models == "Never":
+            return ""
+
+        sort_keys = " ".join([f'data-sort-{k}="{html.escape(str(v))}"' for k, v in item.get("sort_keys", {}).items()]).strip()
+
+        # Some items here might not be used depending on HTML template used.
+        args = {
+            "background_image": background_image,
+            "card_clicked": onclick,
+            "copy_path_button": copy_path_button,
+            "description": (item.get("description") or "" if shared.opts.extra_networks_card_show_desc else ""),
+            "edit_button": edit_button,
+            "local_preview": quote_js(item["local_preview"]),
+            "metadata_button": metadata_button,
+            "name": html.escape(item["name"]),
+            "prompt": item.get("prompt", None),
+            "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {quote_js(tabname)}, {quote_js(item["local_preview"])})""") + '"',
+            "search_only": " search_only" if search_only else "",
+            "search_term": item.get("search_term", ""),
+            "sort_keys": sort_keys,
+            "style": f"'display: none; {height}{width}; font-size: {shared.opts.extra_networks_card_text_scale*100}%'",
+            "tabname": quote_js(tabname),
+        }
+
+        return self.card_page.format(**args)
+
+    def create_tree_view_html(self, tabname: str) -> str:
+        """Generates HTML for displaying folders in a tree view.
+
+        Args:
+            tabname: The name of the active tab.
+
+        Returns:
+            HTML string generated for this tree view.
+        """
+        self_name_id = self.name.replace(" ", "_")
+        res = f"<div id='{tabname}_{self_name_id}_tree_view' class='extra-network-cards'>"
 
         self.metadata = {}
+        self.items = {x["name"]: x for x in self.list_items()}
 
+        roots = self.allowed_directories_for_previews()
+        tree_items = {v["filename"]: ExtraNetworksItem(v) for v in self.items.values()}
+        tree = get_tree([os.path.abspath(x) for x in roots], items=tree_items)
+
+        if not tree:
+            return res + "</div>"
+
+        file_template = "<li class='file-item'>{}</li>"
+        dir_template = (
+            "<details {} class='folder-item'>"
+            "<summary class='folder-item-summary'>{}</summary>"
+            "{}</ul>"
+            "</details>"
+        )
+
+        def _build_tree(data: Optional[dict[str, ExtraNetworksItem]] = None) -> str:
+            """Recursively builds HTML for a tree."""
+            _res = "<ul class='folder-container'>"
+            if not data:
+                return "<ul style='list-style-type: \"⚠️\";'><li>DIRECTORY IS EMPTY</li></ul>"
+
+            for k, v in sorted(data.items(), key=lambda x: shared.natural_sort_key(x[0])):
+                if isinstance(v, (ExtraNetworksItem,)):
+                    _res += file_template.format(self.create_item_html(tabname, v.item))
+                else:
+                    _res += dir_template.format("", k, _build_tree(v))
+            return _res
+
+        res += "<ul class='folder-container'>"
+        # Add each root directory to the tree.
+        for k, v in sorted(tree.items(), key=lambda x: shared.natural_sort_key(x[0])):
+            # If root is empty, append the "disabled" attribute to the template details tag.
+            res += dir_template.format("open" if v else "open disabled", k, _build_tree(v))
+        res += "</ul>"
+        res += "</div>"
+
+        return res
+
+    def create_card_view_html(self, tabname):
+        items_html = ""
+        self.metadata = {}
         subdirs = {}
+
         for parentdir in [os.path.abspath(x) for x in self.allowed_directories_for_previews()]:
             for root, dirs, _ in sorted(os.walk(parentdir, followlinks=True), key=lambda x: shared.natural_sort_key(x[0])):
                 for dirname in sorted(dirs, key=shared.natural_sort_key):
@@ -171,39 +354,44 @@ class ExtraNetworksPage:
         if subdirs:
             subdirs = {"": 1, **subdirs}
 
-        subdirs_html = "".join([f"""
-<button class='lg secondary gradio-button custom-button{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_search", event)'>
-{html.escape(subdir if subdir!="" else "all")}
-</button>
-""" for subdir in subdirs])
+        subdirs_html_template = (
+            "<button class='lg secondary gradio-button custom-button{}' "
+            "onclick='extraNetworksSearchButton(\"{}_extra_search\", event)'>"
+            "{}"
+            "</button>"
+        )
+        subdirs_html = "".join(
+            [
+                subdirs_html_template.format(
+                    " search-all" if subdir == "" else "",
+                    tabname,
+                    html.escape(subdir if subdir != "" else "all"),
+                ) for subdir in subdirs
+            ]
+        )
 
         self.items = {x["name"]: x for x in self.list_items()}
         for item in self.items.values():
-            metadata = item.get("metadata")
-            if metadata:
-                self.metadata[item["name"]] = metadata
+            items_html += self.create_item_html(tabname, item)
 
-            if "user_metadata" not in item:
-                self.read_user_metadata(item)
-
-            items_html += self.create_html_for_item(item, tabname)
-
-        if items_html == '':
+        if items_html == "":
             dirs = "".join([f"<li>{x}</li>" for x in self.allowed_directories_for_previews()])
             items_html = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
 
         self_name_id = self.name.replace(" ", "_")
 
-        res = f"""
-<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs extra-network-subdirs-cards'>
-{subdirs_html}
-</div>
-<div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>
-{items_html}
-</div>
-"""
+        res = (
+            f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs extra-network-subdirs-cards'>{subdirs_html}</div>"
+            f"<div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{items_html}</div>"
+        )
 
         return res
+
+    def create_html(self, tabname):
+        if shared.opts.extra_networks_tree_view:
+            return self.create_tree_view_html(tabname)
+        else:
+            return self.create_card_view_html(tabname)
 
     def create_item(self, name, index=None):
         raise NotImplementedError()
@@ -213,66 +401,6 @@ class ExtraNetworksPage:
 
     def allowed_directories_for_previews(self):
         return []
-
-    def create_html_for_item(self, item, tabname):
-        """
-        Create HTML for card item in tab tabname; can return empty string if the item is not meant to be shown.
-        """
-
-        preview = item.get("preview", None)
-
-        onclick = item.get("onclick", None)
-        if onclick is None:
-            onclick = '"' + html.escape(f"""return cardClicked({quote_js(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"'
-
-        height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
-        width = f"width: {shared.opts.extra_networks_card_width}px;" if shared.opts.extra_networks_card_width else ''
-        background_image = f'<img src="{html.escape(preview)}" class="preview" loading="lazy">' if preview else ''
-        metadata_button = ""
-        metadata = item.get("metadata")
-        if metadata:
-            metadata_button = f"<div class='metadata-button card-button' title='Show internal metadata' onclick='extraNetworksRequestMetadata(event, {quote_js(self.name)}, {quote_js(html.escape(item['name']))})'></div>"
-
-        edit_button = f"<div class='edit-button card-button' title='Edit metadata' onclick='extraNetworksEditUserMetadata(event, {quote_js(tabname)}, {quote_js(self.id_page)}, {quote_js(html.escape(item['name']))})'></div>"
-
-        local_path = ""
-        filename = item.get("filename", "")
-        for reldir in self.allowed_directories_for_previews():
-            absdir = os.path.abspath(reldir)
-
-            if filename.startswith(absdir):
-                local_path = filename[len(absdir):]
-
-        # if this is true, the item must not be shown in the default view, and must instead only be
-        # shown when searching for it
-        if shared.opts.extra_networks_hidden_models == "Always":
-            search_only = False
-        else:
-            search_only = "/." in local_path or "\\." in local_path
-
-        if search_only and shared.opts.extra_networks_hidden_models == "Never":
-            return ""
-
-        sort_keys = " ".join([f'data-sort-{k}="{html.escape(str(v))}"' for k, v in item.get("sort_keys", {}).items()]).strip()
-
-        args = {
-            "background_image": background_image,
-            "style": f"'display: none; {height}{width}; font-size: {shared.opts.extra_networks_card_text_scale*100}%'",
-            "prompt": item.get("prompt", None),
-            "tabname": quote_js(tabname),
-            "local_preview": quote_js(item["local_preview"]),
-            "name": html.escape(item["name"]),
-            "description": (item.get("description") or "" if shared.opts.extra_networks_card_show_desc else ""),
-            "card_clicked": onclick,
-            "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {quote_js(tabname)}, {quote_js(item["local_preview"])})""") + '"',
-            "search_term": item.get("search_term", ""),
-            "metadata_button": metadata_button,
-            "edit_button": edit_button,
-            "search_only": " search_only" if search_only else "",
-            "sort_keys": sort_keys,
-        }
-
-        return self.card_page.format(**args)
 
     def get_sort_keys(self, path):
         """
@@ -360,7 +488,6 @@ def pages_in_preferred_order(pages):
 
     return sorted(pages, key=lambda x: tab_scores[x.name])
 
-
 def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
     from modules.ui import switch_values_symbol
 
@@ -381,7 +508,6 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             elem_id = f"{tabname}_{page.id_page}_cards_html"
             page_elem = gr.HTML('Loading...', elem_id=elem_id)
             ui.pages.append(page_elem)
-
             page_elem.change(fn=lambda: None, _js='function(){applyExtraNetworkFilter(' + quote_js(tabname) + '); return []}', inputs=[], outputs=[])
 
             editor = page.create_user_metadata_editor(ui, tabname)
@@ -390,29 +516,59 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
             related_tabs.append(tab)
 
+    tab_controls = {}
+
     edit_search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", elem_classes="search", placeholder="Search...", visible=False, interactive=True)
     dropdown_sort = gr.Dropdown(choices=['Path', 'Name', 'Date Created', 'Date Modified', ], value=shared.opts.extra_networks_card_order_field, elem_id=tabname+"_extra_sort", elem_classes="sort", multiselect=False, visible=False, show_label=False, interactive=True, label=tabname+"_extra_sort_order")
     button_sortorder = ToolButton(switch_values_symbol, elem_id=tabname+"_extra_sortorder", elem_classes=["sortorder"] + ([] if shared.opts.extra_networks_card_order == "Ascending" else ["sortReverse"]), visible=False, tooltip="Invert sort order")
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh", visible=False)
     checkbox_show_dirs = gr.Checkbox(True, label='Show dirs', elem_id=tabname+"_extra_show_dirs", elem_classes="show-dirs", visible=False)
+    
+    tab_controls["edit_search"] = edit_search
+    tab_controls["dropdown_sort"] = dropdown_sort
+    tab_controls["button_sortorder"] = button_sortorder
+    tab_controls["button_refresh"] = button_refresh
+    tab_controls["checkbox_show_dirs"] = checkbox_show_dirs
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
 
-    tab_controls = [edit_search, dropdown_sort, button_sortorder, button_refresh, checkbox_show_dirs]
-
     for tab in unrelated_tabs:
-        tab.select(fn=lambda: [gr.update(visible=False) for _ in tab_controls], _js='function(){ extraNetworksUrelatedTabSelected("' + tabname + '"); }', inputs=[], outputs=tab_controls, show_progress=False)
+        tab.select(
+            fn=lambda: [gr.update(visible=False) for _ in tab_controls],
+            _js="function(){ extraNetworksUrelatedTabSelected('" + tabname + "'); }",
+            inputs=[],
+            outputs=list(tab_controls.values()),
+            show_progress=False,
+        )
+
+    visible_controls = list(tab_controls.keys())
+    if shared.opts.extra_networks_tree_view:
+        visible_controls = ["button_refresh"]
 
     for page, tab in zip(ui.stored_extra_pages, related_tabs):
         allow_prompt = "true" if page.allow_prompt else "false"
         allow_negative_prompt = "true" if page.allow_negative_prompt else "false"
 
-        jscode = 'extraNetworksTabSelected("' + tabname + '", "' + f"{tabname}_{page.id_page}_prompts" + '", ' + allow_prompt + ', ' + allow_negative_prompt + ');'
+        jscode = (
+            "extraNetworksTabSelected("
+                f"'{tabname}', "
+                f"'{tabname}_{page.id_page}_prompts', "
+                f"'{allow_prompt}', "
+                f"'{allow_negative_prompt}'"
+            ");"
+        )
 
-        tab.select(fn=lambda: [gr.update(visible=True) for _ in tab_controls],  _js='function(){ ' + jscode + ' }', inputs=[], outputs=tab_controls, show_progress=False)
+        tab.select(
+            fn=lambda: [gr.update(visible=k in visible_controls) for k in tab_controls], 
+            _js="function(){ " + jscode + " }",
+            inputs=[],
+            outputs=list(tab_controls.values()),
+            show_progress=False,
+        )
 
     dropdown_sort.change(fn=lambda: None, _js="function(){ applyExtraNetworkSort('" + tabname + "'); }")
+
 
     def pages_html():
         if not ui.pages_contents:
@@ -478,5 +634,3 @@ def setup_ui(ui, gallery):
 
     for editor in ui.user_metadata_editors:
         editor.setup_ui(gallery)
-
-
