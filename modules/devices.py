@@ -264,7 +264,14 @@ def set_cuda_params():
 
 args = cmd_args.parser.parse_args()
 backend = 'not set'
-if (args.use_ipex or (hasattr(torch, 'xpu') and torch.xpu.is_available())) and not args.use_openvino:
+if args.use_openvino:
+    from modules.intel.openvino import get_openvino_device
+    from modules.intel.openvino import get_device as get_raw_openvino_device
+    backend = 'openvino'
+    if hasattr(torch, 'xpu') and torch.xpu.is_available():
+        torch.xpu.is_available = lambda *args, **kwargs: False
+    torch.cuda.is_available = lambda *args, **kwargs: False
+elif args.use_ipex or (hasattr(torch, 'xpu') and torch.xpu.is_available()):
     backend = 'ipex'
     from modules.intel.ipex import ipex_init
     ok, e = ipex_init()
@@ -278,10 +285,6 @@ elif args.use_directml:
     if not ok:
         log.error('DirectML initialization failed: {e}')
         backend = 'cpu'
-elif args.use_openvino:
-    from modules.intel.openvino import get_openvino_device
-    from modules.intel.openvino import get_device as get_raw_openvino_device
-    backend = 'openvino'
 elif torch.cuda.is_available() and torch.version.cuda:
     backend = 'cuda'
 elif torch.cuda.is_available() and torch.version.hip:
