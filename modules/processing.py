@@ -13,8 +13,6 @@ import numpy as np
 import cv2
 from PIL import Image, ImageOps
 from skimage import exposure
-from ldm.data.util import AddMiDaS
-from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
 from installer import git_commit
@@ -30,7 +28,6 @@ import modules.extra_networks
 import modules.face_restoration
 import modules.images as images
 import modules.styles
-import modules.sd_hijack
 import modules.sd_hijack_freeu
 import modules.sd_samplers
 import modules.sd_samplers_common
@@ -41,6 +38,9 @@ import modules.taesd.sd_vae_taesd
 import modules.generation_parameters_copypaste
 from modules.sd_hijack_hypertile import context_hypertile_vae, context_hypertile_unet, hypertile_set
 
+
+if shared.backend == shared.Backend.ORIGINAL:
+    import modules.sd_hijack
 
 opt_C = 4
 opt_f = 8
@@ -289,6 +289,7 @@ class StableDiffusionProcessing:
 
     def depth2img_image_conditioning(self, source_image):
         # Use the AddMiDaS helper to Format our source image to suit the MiDaS model
+        from ldm.data.util import AddMiDaS
         transformer = AddMiDaS(model_type="dpt_hybrid")
         transformed = transformer({"jpg": rearrange(source_image[0], "c h w -> h w c")})
         midas_in = torch.from_numpy(transformed["midas_in"][None, ...]).to(device=shared.device)
@@ -352,6 +353,7 @@ class StableDiffusionProcessing:
         return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
 
     def img2img_image_conditioning(self, source_image, latent_image, image_mask=None):
+        from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
         source_image = devices.cond_cast_float(source_image)
         # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
         # identify itself with a field common to all models. The conditioning_key is also hybrid.

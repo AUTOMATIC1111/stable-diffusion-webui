@@ -9,8 +9,6 @@ from modules.ui_components import FormRow
 from modules.paths import script_path, data_path # pylint: disable=unused-import
 from modules.dml import directml_override_opts
 import modules.scripts
-import modules.textual_inversion.ui
-import modules.hypernetworks.ui
 import modules.errors
 
 
@@ -143,9 +141,10 @@ def create_ui(startup_timer = None):
         timer.startup.record("ui-extras")
 
     with gr.Blocks(analytics_enabled=False) as train_interface:
-        from modules import ui_train
-        ui_train.create_ui()
-        timer.startup.record("ui-train")
+        if shared.backend == shared.Backend.ORIGINAL:
+            from modules import ui_train
+            ui_train.create_ui()
+            timer.startup.record("ui-train")
 
     with gr.Blocks(analytics_enabled=False) as models_interface:
         from modules import ui_models

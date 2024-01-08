@@ -20,7 +20,6 @@ import modules.devices
 import modules.sd_samplers
 import modules.lowvram
 import modules.scripts
-import modules.sd_hijack
 import modules.sd_models
 import modules.sd_vae
 import modules.progress
@@ -57,6 +56,11 @@ fastapi_args = {
         "deepLinking": False,
     }
 }
+
+if shared.backend == shared.Backend.ORIGINAL:
+    import modules.sd_hijack
+    timer.startup.record("ldm")
+
 modules.loader.initialized = True
 
 

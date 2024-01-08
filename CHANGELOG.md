@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-07
+## Update for 2023-01-08
 
 Following-up on a major release, here is a lot more functionality in new Control module and FaceID & IPAdapter modules  
 Plus welcome additions to UI accessibility and flexibility of deployment  
@@ -64,6 +64,7 @@ And it also includes fixes for all reported issues so far
     - faster extension load  
     - faster json parsing  
     - faster lora indexing  
+    - reduced module imports  
   - **offline deployment**: allow deployment without git clone  
     for example, you can now deploy a zip of the sdnext folder  
   - **latent upscale**: updated latent upscalers (some are new)  

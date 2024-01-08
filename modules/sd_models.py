@@ -18,9 +18,8 @@ import diffusers
 from omegaconf import OmegaConf
 import tomesd
 from transformers import logging as transformers_logging
-import ldm.modules.midas as midas
 from ldm.util import instantiate_from_config
-from modules import paths, shared, shared_items, shared_state, modelloader, devices, script_callbacks, sd_vae, errors, hashes, sd_models_config, sd_models_compile, sd_hijack_inpainting
+from modules import paths, shared, shared_items, shared_state, modelloader, devices, script_callbacks, sd_vae, errors, hashes, sd_models_config, sd_models_compile
 from modules.timer import Timer
 from modules.memstats import memory_stats
 from modules.paths import models_path, script_path
@@ -123,7 +122,8 @@ def setup_model():
     if not os.path.exists(model_path):
         os.makedirs(model_path, exist_ok=True)
     list_models()
-    enable_midas_autodownload()
+    if shared.backend == shared.Backend.ORIGINAL:
+        enable_midas_autodownload()
 
 
 def checkpoint_tiles(use_short=False): # pylint: disable=unused-argument
@@ -492,29 +492,30 @@ def enable_midas_autodownload():
     This function applies a wrapper to download the model to the correct
     location automatically.
     """
+    import ldm.modules.midas.api
     midas_path = os.path.join(paths.models_path, 'midas')
-    for k, v in midas.api.ISL_PATHS.items():
+    for k, v in ldm.modules.midas.api.ISL_PATHS.items():
         file_name = os.path.basename(v)
-        midas.api.ISL_PATHS[k] = os.path.join(midas_path, file_name)
+        ldm.modules.midas.api.ISL_PATHS[k] = os.path.join(midas_path, file_name)
     midas_urls = {
         "dpt_large": "https://github.com/intel-isl/DPT/releases/download/1_0/dpt_large-midas-2f21e586.pt",
         "dpt_hybrid": "https://github.com/intel-isl/DPT/releases/download/1_0/dpt_hybrid-midas-501f0c75.pt",
         "midas_v21": "https://github.com/AlexeyAB/MiDaS/releases/download/midas_dpt/midas_v21-f6b98070.pt",
         "midas_v21_small": "https://github.com/AlexeyAB/MiDaS/releases/download/midas_dpt/midas_v21_small-70d6b9c8.pt",
     }
-    midas.api.load_model_inner = midas.api.load_model
+    ldm.modules.midas.api.load_model_inner = ldm.modules.midas.api.load_model
 
     def load_model_wrapper(model_type):
-        path = midas.api.ISL_PATHS[model_type]
+        path = ldm.modules.midas.api.ISL_PATHS[model_type]
         if not os.path.exists(path):
             if not os.path.exists(midas_path):
                 mkdir(midas_path)
             shared.log.info(f"Downloading midas model weights for {model_type} to {path}")
             request.urlretrieve(midas_urls[model_type], path)
             shared.log.info(f"{model_type} downloaded")
-        return midas.api.load_model_inner(model_type)
+        return ldm.modules.midas.api.load_model_inner(model_type)
 
-    midas.api.load_model = load_model_wrapper
+    ldm.modules.midas.api.load_model = load_model_wrapper
 
 
 def repair_config(sd_config):
@@ -1108,7 +1109,10 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
             current_checkpoint_info = model_data.sd_refiner.sd_checkpoint_info
             unload_model_weights(op=op)
 
-    sd_hijack_inpainting.do_inpainting_hijack()
+    if shared.backend == shared.Backend.ORIGINAL:
+        from modules import sd_hijack_inpainting
+        sd_hijack_inpainting.do_inpainting_hijack()
+
     devices.set_cuda_params()
     if already_loaded_state_dict is not None:
         state_dict = already_loaded_state_dict

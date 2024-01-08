@@ -1,7 +1,6 @@
 import os
-from modules import sd_samplers_compvis, sd_samplers_kdiffusion, sd_samplers_diffusers, shared
+from modules import shared
 from modules.sd_samplers_common import samples_to_image_grid, sample_to_image # pylint: disable=unused-import
-
 
 debug = shared.log.trace if os.environ.get('SD_SAMPLER_DEBUG', None) is not None else lambda *args, **kwargs: None
 debug('Trace: SAMPLER')
@@ -20,8 +19,10 @@ def list_samplers(backend_name = shared.backend):
     global samplers_for_img2img # pylint: disable=global-statement
     global samplers_map # pylint: disable=global-statement
     if backend_name == shared.Backend.ORIGINAL:
+        from modules import sd_samplers_compvis, sd_samplers_kdiffusion
         all_samplers = [*sd_samplers_compvis.samplers_data_compvis, *sd_samplers_kdiffusion.samplers_data_k_diffusion]
     else:
+        from modules import sd_samplers_diffusers
         all_samplers = [*sd_samplers_diffusers.samplers_data_diffusers]
     all_samplers_map = {x.name: x for x in all_samplers}
     samplers = all_samplers

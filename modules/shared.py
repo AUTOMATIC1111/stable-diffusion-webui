@@ -846,6 +846,7 @@ max_workers = 4
 if devices.backend == "directml":
     directml_do_hijack()
 
+
 class TotalTQDM: # compatibility with previous global-tqdm
     # import tqdm
     def __init__(self):
