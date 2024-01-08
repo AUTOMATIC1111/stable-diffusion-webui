@@ -24,7 +24,7 @@ __dir__ = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.abspath(os.path.join(__dir__, '../../../')))
 from paddleseg.utils import get_sys_env, logger, get_image_list
 
-sys.path.append("PaddleSeg/contrib/PP-HumanSeg/src/")
+sys.path.append("sd_scripts/PaddleSeg/contrib/PP-HumanSeg/src/")
 # print(os.getcwd())
 from infer import Predictor
 
