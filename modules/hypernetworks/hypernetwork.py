@@ -282,7 +282,7 @@ class Hypernetwork:
 
 
 def list_hypernetworks(path):
-    return { 
+    hypernetworks = { 
         os.path.splitext(os.path.basename(hypernetwork_path))[0]: hypernetwork_path 
         for hypernetwork_path 
         in files_cache.list_files(
@@ -291,6 +291,7 @@ def list_hypernetworks(path):
             recursive=files_cache.not_hidden
         )
     }
+    return hypernetworks
 
 
 def load_hypernetwork(name):

@@ -22,10 +22,10 @@ def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args)
         if not os.path.isdir(input_dir):
             shared.log.error(f"Process batch: directory not found: {input_dir}")
             return
-        image_files = shared.listdir(input_dir)
+        image_files = os.listdir(input_dir)
     is_inpaint_batch = False
     if inpaint_mask_dir:
-        inpaint_masks = shared.listdir(inpaint_mask_dir)
+        inpaint_masks = os.listdir(inpaint_mask_dir)
         is_inpaint_batch = len(inpaint_masks) > 0
     if is_inpaint_batch:
         shared.log.info(f"Process batch: inpaint batch masks={len(inpaint_masks)}")

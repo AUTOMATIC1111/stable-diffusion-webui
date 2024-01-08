@@ -1,8 +1,9 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-06
+## Update for 2023-01-07
 
-Following-up on a major release, here is a lot more functionality in new Control module and FaceID module  
+Following-up on a major release, here is a lot more functionality in new Control module and FaceID & IPAdapter modules  
+Plus welcome additions to UI accessibility and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
 
 - **Control**:
@@ -20,15 +21,20 @@ And it also includes fixes for all reported issues so far
     since hires is only used for txt2img, control reuses existing resize functionality
     any image size is used as txt2img target size  
     but if resize scale is also set its used to additionally upscale image after initial txt2img and for hires pass
+  - add support for **scripts** and **extensions**
+    you can now combine control workflow with your favorite script or extension  
+    *note* extensions that are hard-coded for txt2img or img2img tabs may not work until they are updated  
   - add **marigold** depth map processor  
     this is state-of-the-art depth estimation model, but its quite heavy on resources  
   - add **openpose xl** controlnet  
+  - add blip/booru **interrogate** functionality to both input and output images  
   - configurable output folder in settings  
   - auto-refresh available models on tab activate  
   - add image preview for override images set per-unit  
   - more compact unit layout  
   - reduce usage of temp files  
   - add context menu to action buttons  
+  - move ip-adapter implementation to control tabs  
   - resize by now applies to input image or frame individually  
     allows for processing where input images are of different sizes  
   - fix input image size  
@@ -37,16 +43,23 @@ And it also includes fixes for all reported issues so far
   - fix batch/folder/video modes  
   - fix pipeline switching between different modes  
 - [FaceID](https://huggingface.co/h94/IP-Adapter-FaceID)  
-  full implementation for *SD15* and *SD-XL*, to use simply select from *Scripts*  
-  - **Base** (93MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-H-14* (2.5GB) as image encoder  
-  - **SXDL** (1022MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-bigG-14* (3.7GB) as image encoder  
-  - **Plus** (150MB) uses *InsightFace* to generate face embeds and *CLIP-ViT-H-14-laion2B* (3.8GB) as image encoder  
-  *note*: all models are downloaded on first use  
+  - full implementation for *SD15* and *SD-XL*, to use simply select from *Scripts*  
+    **Base** (93MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-H-14* (2.5GB) as image encoder  
+    **SXDL** (1022MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-bigG-14* (3.7GB) as image encoder  
+    **Plus** (150MB) uses *InsightFace* to generate face embeds and *CLIP-ViT-H-14-laion2B* (3.8GB) as image encoder  
+  - *note*: all models are downloaded on first use  
+  - enable use via api, thanks @trojaner
 - [IPAdapter](https://huggingface.co/h94/IP-Adapter)  
-  additional models for *SD15* and *SD-XL*, to use simply select from *Scripts*:  
-  - **SD15**: Base, Base ViT-G, Light, Plus, Plus Face, Full Face  
-  - **SDXL**: Base SXDL, Base ViT-H SXDL, Plus ViT-H SXDL, Plus Face ViT-H SXDL  
+  - additional models for *SD15* and *SD-XL*, to use simply select from *Scripts*:  
+    **SD15**: Base, Base ViT-G, Light, Plus, Plus Face, Full Face  
+    **SDXL**: Base SXDL, Base ViT-H SXDL, Plus ViT-H SXDL, Plus Face ViT-H SXDL  
+  - enable use via api, thanks @trojaner
 - **Improvements**  
+  - **ui**  
+    - globally configurable font size  
+      will dynamically rescale ui depending on settings -> user interface  
+    - modularized blip/booru interrogate  
+      now appears as toolbuttons on image/gallery output
   - **server startup**: performance  
     - faster extension load  
     - faster json parsing  
@@ -106,6 +119,8 @@ And it also includes fixes for all reported issues so far
   - sdxl: fix positive prompt embeds
   - img2img: clip and blip interrogate  
   - img2img: sampler selection offset  
+  - api: return current image in progress api if requested  
+  - api: sanitize response object  
   - sampler: guard against invalid sampler index  
   - config: reset default cfg scale to 6.0  
   - processing: correct display metadata  

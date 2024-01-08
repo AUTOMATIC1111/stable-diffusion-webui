@@ -11,6 +11,7 @@ import requests
 import gradio as gr
 import fasteners
 import orjson
+import diffusers
 from rich.console import Console
 from modules import errors, shared_items, shared_state, cmd_args, ui_components, theme
 from modules.paths import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
@@ -499,6 +500,7 @@ options_templates.update(options_section(('ui', "User Interface"), {
     "motd": OptionInfo(True, "Show MOTD"),
     "gradio_theme": OptionInfo("black-teal", "UI theme", gr.Dropdown, lambda: {"choices": theme.list_themes()}, refresh=theme.refresh_themes),
     "theme_style": OptionInfo("Auto", "Theme mode", gr.Radio, {"choices": ["Auto", "Dark", "Light"]}),
+    "font_size": OptionInfo(16, "Font size", gr.Slider, {"minimum": 8, "maximum": 32, "step": 1, "visible": True}),
     "tooltips": OptionInfo("UI Tooltips", "UI tooltips", gr.Radio, {"choices": ["None", "Browser default", "UI tooltips"], "visible": False}),
     "gallery_height": OptionInfo("", "Gallery height", gr.Textbox),
     "compact_view": OptionInfo(False, "Compact view"),
@@ -963,10 +965,10 @@ def req(url_addr, headers = None, **kwargs):
     return res
 
 
-sd_model = None # dummy and overwritten by class
-sd_refiner = None # dummy and overwritten by class
-sd_model_type = '' # dummy and overwritten by class
-sd_refiner_type = '' # dummy and overwritten by class
+sd_model: diffusers.DiffusionPipeline = None # dummy and overwritten by class
+sd_refiner: diffusers.DiffusionPipeline = None # dummy and overwritten by class
+sd_model_type: str = '' # dummy and overwritten by class
+sd_refiner_type: str = '' # dummy and overwritten by class
 compiled_model_state = None
 
 from modules.modeldata import Shared # pylint: disable=ungrouped-imports

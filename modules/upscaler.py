@@ -52,7 +52,7 @@ class Upscaler:
             pass
 
     def find_folder(self, folder, scalers, loaded):
-        for fn in modules.shared.listdir(folder): # from folder
+        for fn in os.listdir(folder): # from folder
             file_name = os.path.join(folder, fn)
             if os.path.isdir(file_name):
                 self.find_folder(file_name, scalers, loaded)

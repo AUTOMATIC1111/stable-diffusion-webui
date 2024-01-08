@@ -135,7 +135,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
     overlap_ratio = max(0.0, min(0.9, overlap_ratio))
     assert src != dst, 'same directory specified as source and destination'
     os.makedirs(dst, exist_ok=True)
-    files = shared.listdir(src)
+    files = os.listdir(src)
     shared.state.job = "preprocess"
     shared.state.textinfo = "Preprocessing..."
     shared.state.job_count = len(files)

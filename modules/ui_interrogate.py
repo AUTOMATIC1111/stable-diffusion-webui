@@ -119,7 +119,7 @@ def batch_process(batch_files, batch_folder, batch_str, mode, clip_model, write)
     if batch_folder is not None:
         files += [f.name for f in batch_folder]
     if batch_str is not None and len(batch_str) > 0 and os.path.exists(batch_str) and os.path.isdir(batch_str):
-        files += [os.path.join(batch_str, f) for f in shared.listdir(batch_str) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))]
+        files += [os.path.join(batch_str, f) for f in os.listdir(batch_str) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))]
     if len(files) == 0:
         shared.log.error('Interrogate batch no images')
         return ''

@@ -41,7 +41,7 @@
 
 html { font-size: var(--font-size); }
 body, button, input, select, textarea { font-family: var(--font);}
-button { font-size: 1.2rem; max-width: 400px; }
+button { max-width: 400px; }
 img { background-color: var(--background-color); }
 input[type=checkbox] { background-color: transparent !important; }
 input[type=range] { height: var(--line-sm) !important; appearance: none !important; margin-top: 0 !important; min-width: 160px !important;
@@ -86,7 +86,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .py-6 { padding-bottom: 0; }
 .tabs { background-color: var(--background-color); }
 .block.token-counter span { background-color: #222 !important; box-shadow: 2px 2px 2px #111; border: none !important; font-size: 0.8rem; }
-.tab-nav { zoom: 120%; margin-bottom: 10px; border-bottom: 2px solid var(--highlight-color) !important; padding-bottom: 2px; }
+.tab-nav { zoom: 110%; margin-bottom: 10px; border-bottom: 2px solid var(--highlight-color) !important; padding-bottom: 2px; }
 .label-wrap { margin: 16px 0px 8px 0px; }
 .gradio-button.tool { border: none; background: none; box-shadow: none; }
 #tab_extensions table td, #tab_extensions table th { border: none; padding: 0.5em; }

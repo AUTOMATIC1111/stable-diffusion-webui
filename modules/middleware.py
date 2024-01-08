@@ -72,6 +72,8 @@ def setup_middleware(app: FastAPI, cmd_opts):
         if not isinstance(e, HTTPException) and err['error'] != 'TypeError': # do not print backtrace on known httpexceptions
             log.error(f"API error: {req.method}: {req.url} {err}")
             errors.display(e, 'HTTP API', [anyio, fastapi, uvicorn, starlette])
+        else:
+            log.debug(e, exc_info=True)
         return JSONResponse(status_code=vars(e).get('status_code', 500), content=jsonable_encoder(err))
 
     @app.exception_handler(HTTPException)

@@ -1,9 +1,8 @@
 import os
 import re
-
 import torch
 import numpy as np
-
+from PIL import Image
 from modules import modelloader, paths, deepbooru_model, devices, images, shared
 
 re_special = re.compile(r'([\\()])')
@@ -53,6 +52,11 @@ class DeepDanbooru:
         use_escape = shared.opts.deepbooru_escape
         alpha_sort = shared.opts.deepbooru_sort_alpha
         include_ranks = shared.opts.interrogate_return_ranks and not force_disable_ranks
+
+        if isinstance(pil_image, list):
+            pil_image = pil_image[0]
+        if isinstance(pil_image, dict) and 'name' in pil_image:
+            pil_image = Image.open(pil_image['name'])
 
         pic = images.resize_image(2, pil_image.convert("RGB"), 512, 512)
         a = np.expand_dims(np.array(pic, dtype=np.float32), 0) / 255

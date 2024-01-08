@@ -119,6 +119,8 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
             self.controlnet = lite.ControlLLLite(device=default_device, dtype=default_dtype)
         elif self.type == 'reference':
             pass
+        elif self.type == 'ip':
+            pass
         else:
             log.error(f'Control unknown type: unit={unit_type}')
             return

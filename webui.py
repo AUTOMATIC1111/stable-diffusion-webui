@@ -311,13 +311,13 @@ def webui(restart=False):
     log.info(f"Startup time: {timer.startup.summary()}")
     debug = log.trace if os.environ.get('SD_SCRIPT_DEBUG', None) is not None else lambda *args, **kwargs: None
     debug('Trace: SCRIPTS')
-    debug('Loaded scripts:')
     for m in modules.scripts.scripts_data:
         debug(f'  {m}')
     debug('Loaded postprocessing scripts:')
     for m in modules.scripts.postprocessing_scripts_data:
         debug(f'  {m}')
     timer.startup.reset()
+    modules.script_callbacks.print_timers()
 
     if not restart:
         # override all loggers to use the same handlers as the main logger

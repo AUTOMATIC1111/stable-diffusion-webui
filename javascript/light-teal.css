@@ -36,7 +36,7 @@
 
 html { font-size: var(--font-size); }
 body, button, input, select, textarea { font-family: var(--font);}
-button { font-size: 1.2rem; max-width: 400px; --button-large-radius: var(--radius-lg) }
+button { max-width: 400px; --button-large-radius: var(--radius-lg) }
 img { background-color: var(--background-color); }
 input[type=range] { height: var(--line-sm) !important; appearance: none !important; margin-top: 0 !important; min-width: 160px !important;
   background-color: var(--background-color) !important; width: 100% !important; background: transparent !important; }
@@ -80,7 +80,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .py-6 { padding-bottom: 0; }
 .tabs { background-color: var(--background-color); }
 .block.token-counter span { background-color: var(--input-background-fill) !important; box-shadow: 2px 2px 2px #111; border: none !important; font-size: 0.7rem; }
-.tab-nav { zoom: 120%; margin-top: 10px; margin-bottom: 10px; border-bottom: 2px solid var(--highlight-color) !important; padding-bottom: 2px; }
+.tab-nav { zoom: 110%; margin-top: 10px; margin-bottom: 10px; border-bottom: 2px solid var(--highlight-color) !important; padding-bottom: 2px; }
 .label-wrap { margin: 16px 0px 8px 0px; }
 .gradio-button.tool { border: none; background: none; box-shadow: none; filter: hue-rotate(340deg) saturate(0.5); }
 #tab_extensions table td, #tab_extensions table th { border: none; padding: 0.5em; }
@@ -95,15 +95,15 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .extra-networks { border-left: 2px solid var(--highlight-color) !important; padding-left: 4px; }
 .image-buttons { gap: 10px !important; justify-content: center; }
 .image-buttons > button { max-width: 160px; }
-#system_row > button, #settings_row > button, #config_row > button { max-width: 190px; }
+#system_row > button, #settings_row > button, #config_row > button { max-width: 10em; }
 
 /* gradio elements overrides */
 #div.gradio-container { overflow-x: hidden; }
 #img2img_label_copy_to_img2img { font-weight: normal; }
-#txt2img_prompt, #txt2img_neg_prompt, #img2img_prompt, #img2img_neg_prompt { background-color: var(--background-color); box-shadow: 4px 4px 4px 0px #333333  !important; }
-#txt2img_prompt > label > textarea, #txt2img_neg_prompt > label > textarea, #img2img_prompt > label > textarea, #img2img_neg_prompt > label > textarea { font-size: 1.0em; line-height: 1.4em; }
-#txt2img_styles, #img2img_styles { padding: 0; }
-#txt2img_styles_refresh, #img2img_styles_refresh { padding: 0; margin-top: 1em; }
+#txt2img_prompt, #txt2img_neg_prompt, #img2img_prompt, #img2img_neg_prompt, #control_prompt, #control_neg_prompt { background-color: var(--background-color); box-shadow: 4px 4px 4px 0px #333333  !important; }
+#txt2img_prompt > label > textarea, #txt2img_neg_prompt > label > textarea, #img2img_prompt > label > textarea, #img2img_neg_prompt > label > textarea, #control_prompt > label > textarea, #control_neg_prompt > label > textarea { font-size: 1.0em; line-height: 1.4em; }
+#txt2img_styles, #img2img_styles, #control_styles { padding: 0; }
+#txt2img_styles_refresh, #img2img_styles_refresh, #control_styles_refresh { padding: 0; margin-top: 1em; }
 #img2img_settings { min-width: calc(2 * var(--left-column)); max-width: calc(2 * var(--left-column)); background-color: #111111; padding-top: 16px; }
 #interrogate, #deepbooru { margin: 0 0px 10px 0px; max-width: 80px; max-height: 80px; font-weight: normal; font-size: 0.95em; }
 #quicksettings .gr-button-tool { font-size: 1.6rem; box-shadow: none; margin-left: -20px; margin-top: -2px; height: 2.4em; }
@@ -113,14 +113,13 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #settings > div.flex-wrap { width: 15em; }
 #tab_extensions table { background-color: #222222; }
 #txt2img_cfg_scale { min-width: 200px; }
-#txt2img_checkboxes, #img2img_checkboxes { background-color: transparent; }
-#txt2img_checkboxes, #img2img_checkboxes { margin-bottom: 0.2em; }
+#txt2img_checkboxes, #img2img_checkboxes, #control_checkboxes { background-color: transparent; margin-bottom: 0.2em; }
 
 #extras_upscale { margin-top: 10px }
 #txt2img_progress_row > div { min-width: var(--left-column); max-width: var(--left-column); }
 #txt2img_settings { min-width: var(--left-column); max-width: var(--left-column); background-color: #111111; padding-top: 16px; }
 #pnginfo_html2_info { margin-top: -18px; background-color: var(--input-background-fill); padding: var(--input-padding) }
-#txt2img_styles_row, #img2img_styles_row { margin-top: -6px; z-index: 200; }
+#txt2img_styles_row, #img2img_styles_row, #control_styles_row { margin-top: -6px; }
 
 /* based on gradio built-in dark theme */
 :root, .light, .dark {
@@ -279,7 +278,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --secondary-800: #1e40af;
   --secondary-900: #1e3a8a;
   --secondary-950: #1d3660;
-  --section-header-text-size: 13px;
+  --section-header-text-size: var(--text-md);
   --section-header-text-weight: 400;
   --shadow-drop-lg: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-drop: 0;
