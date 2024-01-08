@@ -142,13 +142,13 @@ Clone this repo, then build the Ubuntu container image:
 sudo docker build -t stable-diffusion-webui -f Dockerfile.ubuntu .
 ```
 
-Run the container image with gpu passthrough, by default it will listen on [http://0.0.0.0:7860](http://0.0.0.0:7860). Be sure to mount your huggingface cache directory to avoid downloading models every time the container starts (`-v ~/.cache/huggingface:/root/.cache/huggingface`).
+Run the container image, by default it will listen on [http://0.0.0.0:7860](http://0.0.0.0:7860). Be sure to mount a cache directory to avoid downloading models every time the container starts (`-v ~/.cache/huggingface:/app/models`). The `--gpus all` option is necessary to use available GPU(s).
 
 ```bash
-sudo docker run -it --rm -p 7860:7860 --gpus all -v ~/.cache/huggingface:/root/.cache/huggingface stable-diffusion-webui
+sudo docker run -it --rm -p 7860:7860 --gpus all -v ~/.cache/huggingface:/app/models stable-diffusion-webui
 ```
 
-The container will start quickly because download & installation was completed in the earlier build steps. If you need to specify additional command line args you can do it like this:
+You can pass command line args like so:
 
 ```bash
 sudo docker run -it --rm -p 7860:7860 --gpus all  stable-diffusion-webui bash -c "./webui.sh -f --listen --medvram --opt-split-attention"
