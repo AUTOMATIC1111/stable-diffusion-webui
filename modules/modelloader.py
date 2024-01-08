@@ -4,7 +4,7 @@ import shutil
 import importlib
 from typing import Dict
 from urllib.parse import urlparse
-import PIL.Image as Image
+from PIL import Image
 import rich.progress as p
 from modules import shared, errors
 from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone

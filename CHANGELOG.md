@@ -61,10 +61,12 @@ And it also includes fixes for all reported issues so far
     - modularized blip/booru interrogate  
       now appears as toolbuttons on image/gallery output
   - **server startup**: performance  
+    - reduced module imports  
+      ldm support is now only loaded when running in backend=original  
     - faster extension load  
     - faster json parsing  
     - faster lora indexing  
-    - reduced module imports  
+    - lazy load optional imports
   - **offline deployment**: allow deployment without git clone  
     for example, you can now deploy a zip of the sdnext folder  
   - **latent upscale**: updated latent upscalers (some are new)  

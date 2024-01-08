@@ -13,7 +13,8 @@ import torch # pylint: disable=wrong-import-order
 from modules import timer, errors, paths # pylint: disable=unused-import
 from installer import log, git_commit, custom_excepthook
 import ldm.modules.encoders.modules # pylint: disable=W0611,C0411,E0401
-from modules import shared, extensions, extra_networks, ui_tempdir, ui_extra_networks, modelloader # pylint: disable=ungrouped-imports
+from modules import shared, extensions, ui_tempdir, modelloader # pylint: disable=ungrouped-imports
+from modules import extra_networks, ui_extra_networks # pylint: disable=ungrouped-imports
 from modules.paths import create_paths
 from modules.call_queue import queue_lock, wrap_queued_call, wrap_gradio_gpu_call # pylint: disable=W0611,C0411,C0412
 import modules.devices

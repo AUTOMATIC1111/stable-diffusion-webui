@@ -8,13 +8,13 @@ from tqdm import tqdm
 import safetensors.torch
 import numpy as np
 from PIL import Image, PngImagePlugin
-from torch.utils.tensorboard import SummaryWriter
 from modules import shared, devices, processing, sd_models, images, errors
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from modules.textual_inversion.image_embedding import embedding_to_b64, embedding_from_b64, insert_image_data_embed, extract_image_data_embed, caption_image_overlay
 from modules.textual_inversion.ti_logging import save_settings_to_file
 from modules.modelloader import directory_files, extension_filter, directory_mtime
+
 
 TextualInversionTemplate = namedtuple("TextualInversionTemplate", ["name", "path"])
 textual_inversion_templates = {}
@@ -367,6 +367,7 @@ def write_loss(log_directory, filename, step, epoch_len, values):
 
 
 def tensorboard_setup(log_directory):
+    from torch.utils.tensorboard import SummaryWriter
     os.makedirs(os.path.join(log_directory, "tensorboard"), exist_ok=True)
     return SummaryWriter(
             log_dir=os.path.join(log_directory, "tensorboard"),

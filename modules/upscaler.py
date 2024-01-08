@@ -1,7 +1,6 @@
 import os
 import copy
 from abc import abstractmethod
-import PIL
 from PIL import Image
 import modules.shared
 from modules import modelloader
@@ -86,10 +85,10 @@ class Upscaler:
         return scalers
 
     @abstractmethod
-    def do_upscale(self, img: PIL.Image, selected_model: str):
+    def do_upscale(self, img: Image, selected_model: str):
         return img
 
-    def upscale(self, img: PIL.Image, scale, selected_model: str = None):
+    def upscale(self, img: Image, scale, selected_model: str = None):
         orig_state = copy.deepcopy(modules.shared.state)
         modules.shared.state.begin('upscale')
         self.scale = scale
