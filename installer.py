@@ -750,7 +750,7 @@ def set_environment():
     os.environ.setdefault('KINETO_LOG_LEVEL', '3')
     os.environ.setdefault('DO_NOT_TRACK', '1')
     os.environ.setdefault('HF_HUB_CACHE', opts.get('hfcache_dir', os.path.join(os.path.expanduser('~'), '.cache', 'huggingface', 'hub')))
-    log.debug(f'Cache folder: {os.environ.get("HF_HUB_CACHE")}')
+    log.debug(f'HF cache folder: {os.environ.get("HF_HUB_CACHE")}')
     if sys.platform == 'darwin':
         os.environ.setdefault('PYTORCH_ENABLE_MPS_FALLBACK', '1')
 
