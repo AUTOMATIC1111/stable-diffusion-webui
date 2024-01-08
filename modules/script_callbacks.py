@@ -41,7 +41,7 @@ class ExtraNoiseParams:
 
 
 class CFGDenoiserParams:
-    def __init__(self, x, image_cond, sigma, sampling_step, total_sampling_steps, text_cond, text_uncond, denoiser):
+    def __init__(self, x, image_cond, sigma, sampling_step, total_sampling_steps, text_cond, text_uncond, denoiser=None):
         self.x = x
         """Latent image representation in the process of being denoised"""
 
