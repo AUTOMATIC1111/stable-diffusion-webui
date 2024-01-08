@@ -136,26 +136,23 @@ wget -q https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/m
 
 ### Automatic Installation on Linux (Ubuntu container w/ GPU)
 
-By default the `webui.sh` script requires GPU access during installation, so building a Ubuntu container takes a few additional steps:
+Clone this repo, then build the Ubuntu container image:
 
 ```bash
-# 1) after cloning this repo, build the debian/ubuntu container
-sudo docker build -t stable-diffusion-webui-build -f Dockerfile.ubuntu .
-# 2) start it with --gpus to allow GPU passthrough
-sudo docker run -it --rm --name sdwebui -p 7860 --gpus all stable-diffusion-webui-build
-# 3) manually execute webui.sh within the container, -f allows root user to run the script
-./webui.sh -f
-# 4) *from a separate terminal* commit the running container (AFTER webui.sh is done)
-docker commit sdwebui stable-diffusion-webui
+sudo docker build -t stable-diffusion-webui -f Dockerfile.ubuntu .
 ```
 
-Run the container image with gpu passthrough & specify any additional command line args, by default it will listen on [http://0.0.0.0:7860](http://0.0.0.0:7860):
+Run the container image with gpu passthrough, by default it will listen on [http://0.0.0.0:7860](http://0.0.0.0:7860). Be sure to mount your huggingface cache directory to avoid downloading models every time the container starts (`-v ~/.cache/huggingface:/root/.cache/huggingface`).
 
 ```bash
- sudo docker run -it --rm -p 7860 --gpus all stable-diffusion-webui bash -c "./webui.sh -f --listen"
+sudo docker run -it --rm -p 7860:7860 --gpus all -v ~/.cache/huggingface:/root/.cache/huggingface stable-diffusion-webui
 ```
 
-The container will start quickly because download & installation was completed in the earlier build steps.
+The container will start quickly because download & installation was completed in the earlier build steps. If you need to specify additional command line args you can do it like this:
+
+```bash
+sudo docker run -it --rm -p 7860:7860 --gpus all  stable-diffusion-webui bash -c "./webui.sh -f --listen --medvram --opt-split-attention"
+```
 
 ### Installation on Apple Silicon
 
