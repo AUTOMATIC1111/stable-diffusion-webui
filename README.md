@@ -151,7 +151,7 @@ sudo docker run -it --rm -p 7860:7860 --gpus all -v ~/.cache/huggingface:/app/mo
 You can pass command line args like so:
 
 ```bash
-sudo docker run -it --rm -p 7860:7860 --gpus all  stable-diffusion-webui bash -c "./webui.sh -f --listen --medvram --opt-split-attention"
+sudo docker run -it --rm -p 7860:7860 --gpus all -v ~/.cache/huggingface:/app/models stable-diffusion-webui bash -c "./webui.sh -f --listen --medvram --opt-split-attention"
 ```
 
 ### Installation on Apple Silicon
