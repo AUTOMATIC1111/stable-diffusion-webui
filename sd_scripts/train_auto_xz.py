@@ -23,7 +23,7 @@ import argparse
 
 import sys
 
-sys.path.append("PaddleSeg/contrib/PP-HumanSeg")
+sys.path.append("sd_scripts/PaddleSeg/contrib/PP-HumanSeg")
 from src.seg_demo import seg_image
 
 import sd_scripts.library.config_util as config_util

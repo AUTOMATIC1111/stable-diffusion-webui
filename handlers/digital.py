@@ -61,15 +61,15 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
                 pass
             return False
         if is_like_me():
-            return [0.6, 0.6, 0.65, 0.7]
-        return [0.55, 0.6, 0.6, 0.65]
+            return [0.5, 0.55, 0.6, 0.6]
+        return [0.55, 0.6, 0.6, 0.6]
 
     def _build_i2i_tasks(self, t: Task):
         tasks = []
 
         denoising_strengths = self._denoising_strengths(t)
         for i, denoising_strength in enumerate(denoising_strengths):
-            t['denoising_strength'] = 0.1 + 0.05*i
+            t['denoising_strength'] = 0
             t['n_iter'] = 1
             t['batch_size'] = 1
             t['alwayson_scripts'] = {
