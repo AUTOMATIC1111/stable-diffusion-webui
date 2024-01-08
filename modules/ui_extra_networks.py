@@ -216,7 +216,7 @@ class ExtraNetworksPage:
         onclick = item.get("onclick", None)
         if onclick is None:
             onclick = '"' + html.escape(f"""return cardClicked({quote_js(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"'
-        
+
         copy_path_button = f"<div class='copy-path-button card-button' title='Copy path to clipboard' onclick='extraNetworksCopyCardPath(event, {quote_js(item['filename'])})' data-clipboard-text='{quote_js(item['filename'])}'></div>"
 
         metadata_button = ""
@@ -523,7 +523,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
     button_sortorder = ToolButton(switch_values_symbol, elem_id=tabname+"_extra_sortorder", elem_classes=["sortorder"] + ([] if shared.opts.extra_networks_card_order == "Ascending" else ["sortReverse"]), visible=False, tooltip="Invert sort order")
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh", visible=False)
     checkbox_show_dirs = gr.Checkbox(True, label='Show dirs', elem_id=tabname+"_extra_show_dirs", elem_classes="show-dirs", visible=False)
-    
+
     tab_controls["edit_search"] = edit_search
     tab_controls["dropdown_sort"] = dropdown_sort
     tab_controls["button_sortorder"] = button_sortorder
@@ -560,7 +560,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
         )
 
         tab.select(
-            fn=lambda: [gr.update(visible=k in visible_controls) for k in tab_controls], 
+            fn=lambda: [gr.update(visible=k in visible_controls) for k in tab_controls],
             _js="function(){ " + jscode + " }",
             inputs=[],
             outputs=list(tab_controls.values()),
