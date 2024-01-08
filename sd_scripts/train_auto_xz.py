@@ -38,8 +38,8 @@ from modelscope.utils.constant import Tasks
 from modelscope import snapshot_download
 from transformers import PreTrainedTokenizerBase,PreTrainedModel
 
-from library.transformers_pretrained import ori_tokenizer_from_pretrained,ori_model_from_pretrained
-from library.face_tool.super.face import insightface_main_face
+from sd_scripts.library.transformers_pretrained import ori_tokenizer_from_pretrained,ori_model_from_pretrained
+from sd_scripts.library.face_tool import insightface_main_face
 
 
 def patch_tokenizer_base():
