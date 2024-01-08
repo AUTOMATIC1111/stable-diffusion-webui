@@ -4,5 +4,4 @@ RUN apt update
 RUN apt install -y wget git libgl1 libglib2.0-0
 COPY ./ ./
 RUN ./webui.sh -f --skip-torch-cuda-test --exit
-ENV HF_HOME=/root/.cache/huggingface
 CMD ["./webui.sh", "-f", "--listen"]
