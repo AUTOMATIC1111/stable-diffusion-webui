@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-08
+## Update for 2023-01-09
 
 Following-up on a major release, here is a lot more functionality in new Control module and FaceID & IPAdapter modules  
 Plus welcome additions to UI accessibility and flexibility of deployment  
@@ -41,6 +41,7 @@ And it also includes fixes for all reported issues so far
   - fix video color mode  
   - fix correct image mode  
   - fix batch/folder/video modes  
+  - fix processor switching within same unit  
   - fix pipeline switching between different modes  
 - [FaceID](https://huggingface.co/h94/IP-Adapter-FaceID)  
   - full implementation for *SD15* and *SD-XL*, to use simply select from *Scripts*  

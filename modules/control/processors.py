@@ -114,19 +114,13 @@ def update_settings(*settings):
 
 
 class Processor():
-    def __init__(self, processor_id: str = None, resize = True, load_config = None):
+    def __init__(self, processor_id: str = None, resize = True):
         self.model = None
+        self.processor_id = None
+        self.override = None
         self.resize = resize
-        self.processor_id = processor_id
-        self.override = None # override input image
-        self.load_config = { 'cache_dir': cache_dir }
-        from_config = config.get(processor_id, {}).get('load_config', None)
-        if load_config is not None:
-            for k, v in load_config.items():
-                self.load_config[k] = v
-        if from_config is not None:
-            for k, v in from_config.items():
-                self.load_config[k] = v
+        self.reset()
+        self.config(processor_id)
         if processor_id is not None:
             self.load()
 
@@ -136,6 +130,20 @@ class Processor():
         self.model = None
         self.processor_id = None
         self.override = None
+        self.load_config = { 'cache_dir': cache_dir }
+
+    def config(self, processor_id = None):
+        if processor_id is not None:
+            self.processor_id = processor_id
+        from_config = config.get(self.processor_id, {}).get('load_config', None)
+        """
+        if load_config is not None:
+            for k, v in load_config.items():
+                self.load_config[k] = v
+        """
+        if from_config is not None:
+            for k, v in from_config.items():
+                self.load_config[k] = v
 
     def load(self, processor_id: str = None) -> str:
         try:
@@ -144,10 +152,10 @@ class Processor():
             if processor_id is None or processor_id == 'None':
                 self.reset()
                 return ''
-            from_config = config.get(processor_id, {}).get('load_config', None)
-            if from_config is not None:
-                for k, v in from_config.items():
-                    self.load_config[k] = v
+            if self.processor_id != processor_id:
+                self.reset()
+                self.config(processor_id)
+            print('HERE', self.processor_id, processor_id, self.load_config)
             cls = config[processor_id]['class']
             log.debug(f'Control Processor loading: id="{processor_id}" class={cls.__name__}')
             debug(f'Control Processor config={self.load_config}')

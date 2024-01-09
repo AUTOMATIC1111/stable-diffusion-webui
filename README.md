@@ -184,31 +184,6 @@ SD.Next comes with several extensions pre-installed:
 - In addition to general cross-platform code, desire is to have a lead for each of the main platforms.
 This should be fully cross-platform, but we'd really love to have additional contributors and/or maintainers to join and help lead the efforts on different platforms.
 
-### **Goals**
-
-This project started as a fork from [Automatic1111 WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui/) and it grew significantly since then,  
-but although it diverged considerably, any substantial features to original work is ported to this repository as well.
-
-The idea behind the fork is to enable latest technologies and advances in text-to-image generation.
-
-*Sometimes this is not the same as "as simple as possible to use".*
-
-General goals:
-
-- Multi-model
-  - Enable usage of as many as possible txt2img and img2img generative models  
-- Cross-platform
-  - Create uniform experience while automatically managing any platform specific differences
-- Performance
-  - Enable best possible performance on all platforms
-- Ease-of-Use
-  - Automatically handle all requirements, dependencies, flags regardless of platform
-  - Integrate all best options for uniform out-of-the-box experience without the need to tweak anything manually
-- Look-and-Feel
-  - Create modern, intuitive and clean UI
-- Up-to-Date
-  - Keep code up to date with latest advanced in text-to-image generation
-
 ## Credits
 
 - Main credit goes to [Automatic1111 WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
