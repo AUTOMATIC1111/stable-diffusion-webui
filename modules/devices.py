@@ -140,20 +140,20 @@ def manual_cast_forward(target_dtype):
         ):
             args = [arg.to(target_dtype) if isinstance(arg, torch.Tensor) else arg for arg in args]
             kwargs = {k: v.to(target_dtype) if isinstance(v, torch.Tensor) else v for k, v in kwargs.items()}
-        
+
         org_dtype = torch_utils.get_param(self).dtype
         if org_dtype != target_dtype:
             self.to(target_dtype)
         result = self.org_forward(*args, **kwargs)
         if org_dtype != target_dtype:
             self.to(org_dtype)
-        
+
         if target_dtype != dtype_inference:
             if isinstance(result, tuple):
                 result = tuple(
-                    i.to(dtype_inference) 
-                    if isinstance(i, torch.Tensor) 
-                    else i 
+                    i.to(dtype_inference)
+                    if isinstance(i, torch.Tensor)
+                    else i
                     for i in result
                 )
             elif isinstance(result, torch.Tensor):
@@ -185,7 +185,7 @@ def autocast(disable=False):
     if fp8 and device==cpu:
         return torch.autocast("cpu", dtype=torch.bfloat16, enabled=True)
 
-    if dtype == torch.float32 and shared.cmd_opts.precision == "full":
+    if dtype == torch.float32:
         return contextlib.nullcontext()
 
     if has_xpu() or has_mps() or cuda_no_autocast():
