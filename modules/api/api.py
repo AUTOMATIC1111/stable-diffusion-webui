@@ -879,7 +879,15 @@ class Api:
 
     def launch(self, server_name, port, root_path):
         self.app.include_router(self.router)
-        uvicorn.run(self.app, host=server_name, port=port, timeout_keep_alive=shared.cmd_opts.timeout_keep_alive, root_path=root_path)
+        uvicorn.run(
+            self.app,
+            host=server_name,
+            port=port,
+            timeout_keep_alive=shared.cmd_opts.timeout_keep_alive,
+            root_path=root_path,
+            ssl_keyfile=shared.cmd_opts.tls_keyfile,
+            ssl_certfile=shared.cmd_opts.tls_certfile
+        )
 
     def kill_webui(self):
         restart.stop_program()
