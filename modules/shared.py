@@ -345,14 +345,23 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
     "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
     "diffusers_quantization": OptionInfo(False, "Enable dynamic quantization with torchao"),
+
+    "nncf_sep": OptionInfo("<h2>NNCF</h2>", "", gr.HTML),
     "nncf_compress_weights": OptionInfo(False, "Compress Model weights with NNCF"),
     "nncf_compress_vae_weights": OptionInfo(False, "Compress VAE weights with NNCF"),
+    "nncf_compress_text_encoder_weights": OptionInfo(False, "Compress Text Encoder weights with NNCF"),
 
-    "ipex_sep": OptionInfo("<h2>IPEX, DirectML and OpenVINO</h2>", "", gr.HTML),
-    "ipex_optimize": OptionInfo(False if not devices.backend == "ipex" else True, "Enable IPEX Optimize for Intel GPUs"),
-    "ipex_optimize_upscaler": OptionInfo(False if not devices.backend == "ipex" else True, "Enable IPEX Optimize for Intel GPUs with Upscalers"),
+    "directml_sep": OptionInfo("<h2>DirectML</h2>", "", gr.HTML),
     "directml_memory_provider": OptionInfo(default_memory_provider, 'DirectML memory stats provider', gr.Radio, {"choices": memory_providers}),
     "directml_catch_nan": OptionInfo(False, "DirectML retry specific operation when NaN is produced if possible. (makes generation slower)"),
+
+    "ipex_sep": OptionInfo("<h2>IPEX</h2>", "", gr.HTML),
+    "ipex_optimize": OptionInfo(False if not devices.backend == "ipex" else True, "Enable IPEX Optimize for Intel GPUs with UNet"),
+    "ipex_optimize_vae": OptionInfo(False if not devices.backend == "ipex" else True, "Enable IPEX Optimize for Intel GPUs with VAE"),
+    "ipex_optimize_text_encoder": OptionInfo(False if not devices.backend == "ipex" else True, "Enable IPEX Optimize for Intel GPUs with Text Encoder"),
+    "ipex_optimize_upscaler": OptionInfo(False if not devices.backend == "ipex" else True, "Enable IPEX Optimize for Intel GPUs with Upscalers"),
+
+    "openvino_sep": OptionInfo("<h2>OpenVINO</h2>", "", gr.HTML),
     "openvino_disable_model_caching": OptionInfo(False, "OpenVINO disable model caching"),
     "openvino_hetero_gpu": OptionInfo(False, "OpenVINO use Hetero Device for single inference with multiple devices"),
     "openvino_remove_cpu_from_hetero": OptionInfo(False, "OpenVINO remove CPU from Hetero Device"),

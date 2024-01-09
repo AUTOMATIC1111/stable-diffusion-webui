@@ -157,8 +157,10 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
         list_available_networks()
         networks_on_disk = [available_network_aliases.get(name, None) for name in names]
     failed_to_load_networks = []
+
     recompile_model = False
-    if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx":
+    if ((shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx") or
+    shared.opts.nncf_compress_weights or shared.opts.nncf_compress_text_encoder_weights):
         if len(names) == len(shared.compiled_model_state.lora_model):
             for i, name in enumerate(names):
                 if shared.compiled_model_state.lora_model[i] != f"{name}:{te_multipliers[i] if te_multipliers else 1.0}":
@@ -173,11 +175,19 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
             recompile_model = True
             shared.compiled_model_state.lora_model = []
     if recompile_model:
+        backup_cuda_compile = shared.opts.cuda_compile
+        backup_nncf_compress_weights = shared.opts.nncf_compress_weights
+        backup_nncf_compress_text_encoder_weights = shared.opts.nncf_compress_text_encoder_weights
         shared.compiled_model_state.lora_compile = True
         sd_models.unload_model_weights(op='model')
         shared.opts.cuda_compile = False
+        shared.opts.nncf_compress_weights = False
+        shared.opts.nncf_compress_text_encoder_weights = False
         sd_models.reload_model_weights(op='model')
-        shared.opts.cuda_compile = True
+        shared.opts.cuda_compile = backup_cuda_compile
+        shared.opts.nncf_compress_weights = backup_nncf_compress_weights
+        shared.opts.nncf_compress_text_encoder_weights = backup_nncf_compress_text_encoder_weights
+
     loaded_networks.clear()
     for i, (network_on_disk, name) in enumerate(zip(networks_on_disk, names)):
         net = None

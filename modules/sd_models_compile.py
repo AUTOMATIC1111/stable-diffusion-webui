@@ -34,12 +34,24 @@ def ipex_optimize(sd_model):
             sd_model.unet = ipex.optimize(sd_model.unet, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
         else:
             shared.log.warning('IPEX Optimize enabled but model has no Unet')
-        if hasattr(sd_model, 'vae'):
-            sd_model.vae.training = False
-            sd_model.vae = ipex.optimize(sd_model.vae, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
-        if hasattr(sd_model, 'movq'):
-            sd_model.movq.training = False
-            sd_model.movq = ipex.optimize(sd_model.movq, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+        if shared.opts.ipex_optimize_vae:
+            if hasattr(sd_model, 'vae'):
+                sd_model.vae.training = False
+                sd_model.vae = ipex.optimize(sd_model.vae, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+            elif hasattr(sd_model, 'movq'):
+                sd_model.movq.training = False
+                sd_model.movq = ipex.optimize(sd_model.movq, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+            else:
+                shared.log.warning('Compress VAE Weights enabled but model has no VAE')
+        if shared.opts.ipex_optimize_text_encoder:
+            if hasattr(sd_model, 'text_encoder'):
+                sd_model.text_encoder.training = False
+                sd_model.text_encoder = ipex.optimize(sd_model.text_encoder, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+                if hasattr(sd_model, 'text_encoder_2'):
+                    sd_model.text_encoder_2.training = False
+                    sd_model.text_encoder_2 = ipex.optimize(sd_model.text_encoder_2, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+            else:
+                shared.log.warning('IPEX Optimize Text Encoder Weights enabled but model has no Text Encoder')
         t1 = time.time()
         shared.log.info(f"IPEX Optimize: time={t1-t0:.2f}")
         return sd_model
@@ -50,15 +62,36 @@ def nncf_compress_weights(sd_model):
     try:
         t0 = time.time()
         import nncf
-        if hasattr(sd_model, 'unet'):
-            sd_model.unet = nncf.compress_weights(sd_model.unet)
+        if shared.compiled_model_state is None:
+            shared.compiled_model_state = CompiledModelState()
         else:
-            shared.log.warning('Compress Weights enabled but model has no Unet')
+            shared.compiled_model_state.compiled_cache.clear()
+            shared.compiled_model_state.partitioned_modules.clear()
+            backup_lora_model = []
+            if shared.compiled_model_state.lora_compile:
+                backup_lora_model = shared.compiled_model_state.lora_model
+            shared.compiled_model_state = CompiledModelState()
+            shared.compiled_model_state.lora_model = backup_lora_model
+
+        if shared.opts.nncf_compress_weights:
+            if hasattr(sd_model, 'unet'):
+                sd_model.unet = nncf.compress_weights(sd_model.unet)
+            else:
+                shared.log.warning('Compress Weights enabled but model has no Unet')
         if shared.opts.nncf_compress_vae_weights:
             if hasattr(sd_model, 'vae'):
                 sd_model.vae = nncf.compress_weights(sd_model.vae)
-            if hasattr(sd_model, 'movq'):
+            elif hasattr(sd_model, 'movq'):
                 sd_model.movq = nncf.compress_weights(sd_model.movq)
+            else:
+                shared.log.warning('Compress VAE Weights enabled but model has no VAE')
+        if shared.opts.nncf_compress_text_encoder_weights:
+            if hasattr(sd_model, 'text_encoder'):
+                sd_model.text_encoder = nncf.compress_weights(sd_model.text_encoder)
+                if hasattr(sd_model, 'text_encoder_2'):
+                    sd_model.text_encoder_2 = nncf.compress_weights(sd_model.text_encoder_2)
+            else:
+                shared.log.warning('Compress VAE Text Encoder Weights enabled but model has no Text Encoder')
         t1 = time.time()
         shared.log.info(f"Compress Weights: time={t1-t0:.2f}")
         return sd_model
@@ -181,7 +214,7 @@ def compile_torch(sd_model):
 def compile_diffusers(sd_model):
     if shared.opts.ipex_optimize:
         sd_model = ipex_optimize(sd_model)
-    if shared.opts.nncf_compress_weights and not (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx"):
+    if not (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx"):
         sd_model = nncf_compress_weights(sd_model)
     if not (shared.opts.cuda_compile or shared.opts.cuda_compile_vae or shared.opts.cuda_compile_upscaler):
         return sd_model
