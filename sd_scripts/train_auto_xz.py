@@ -849,7 +849,7 @@ def parse_args():
         '--use_gpu', default=True
     )
 
-    return parser.parse_args()
+    return parser.parse_args([])
 
 
 # 一键训练入口函数
@@ -920,7 +920,10 @@ def train_auto(
             img_path = os.path.join(train_data_dir, img)
             # print(img_path.split(".")[-2])
             # out_path = img_path.split(".")[-2] + "_out.png"
-            config_path = os.path.join(model_p, "PaddleSeg", "inference_models/human_pp_humansegv1_server_512x512_inference_model_with_softmax/deploy.yaml"  )
+            config_path = os.path.join(general_model_path, "PaddleSeg", "inference_models/human_pp_humansegv1_server_512x512_inference_model_with_softmax/deploy.yaml"  )
+            if not os.path.isfile(config_path):
+                config_path = os.path.join('/data/apksamba/sd/models/', "PaddleSeg", "inference_models/human_pp_humansegv1_server_512x512_inference_model_with_softmax/deploy.yaml")
+
             seg_image(args, config = config_path, img_path=img_path, save_dir=img_path)
 
     body_list, head_list = custom_configurable_image_processing(
@@ -1054,19 +1057,7 @@ def train_auto(
     lora_name = f"{task_id}"
 
     # 判断性别
-    girl_count, man_count = 0, 0
-    for f in os.listdir(process_dir):
-        full = os.path.join(process_dir, f)
-        _, ex = os.path.splitext(f)
-        if ex.lower().lstrip('.') == 'txt':
-            with open(full) as f:
-                tags = ' '.join(f.readlines()).lower()
-                if 'girl' in tags:
-                    girl_count += 1
-                elif 'boy' in tags:
-                    man_count += 1
-
-    gender = '1girl' if girl_count > man_count else '1boy'
+    gender = '1girl' if num_boys > num_girls else '1boy'
     print(f">>>>>> gender:{gender}")
     pk = SubProcessKiller()
     # 3.自动训练出图
