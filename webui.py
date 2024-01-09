@@ -58,9 +58,8 @@ fastapi_args = {
     }
 }
 
-if shared.backend == shared.Backend.ORIGINAL:
-    import modules.sd_hijack
-    timer.startup.record("ldm")
+import modules.sd_hijack
+timer.startup.record("ldm")
 
 modules.loader.initialized = True
 

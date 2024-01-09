@@ -16,7 +16,7 @@ import network_glora
 import lora_convert
 import torch
 import diffusers.models.lora
-from modules import shared, devices, sd_models, sd_models_compile, errors, scripts, sd_hijack
+from modules import shared, devices, sd_models, sd_models_compile, errors, scripts
 
 
 debug = os.environ.get('SD_LORA_DEBUG', None) is not None
@@ -209,8 +209,6 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
         net.unet_multiplier = unet_multipliers[i] if unet_multipliers else 1.0
         net.dyn_dim = dyn_dims[i] if dyn_dims else 1.0
         loaded_networks.append(net)
-    if failed_to_load_networks:
-        sd_hijack.model_hijack.comments.append("Networks not found: " + ", ".join(failed_to_load_networks))
 
     while len(lora_cache) > shared.opts.lora_in_memory_limit:
         name = next(iter(lora_cache))
