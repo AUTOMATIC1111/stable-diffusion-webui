@@ -440,7 +440,7 @@ def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, 
         return False
     del state_dict
     timer.record("apply")
-    if shared.opts.sd_checkpoint_cache > 0:
+    if shared.opts.sd_checkpoint_cache > 0 and shared.backend == shared.Backend.ORIGINAL:
         # cache newly loaded model
         checkpoints_loaded[checkpoint_info] = model.state_dict().copy()
     if shared.opts.opt_channelslast:

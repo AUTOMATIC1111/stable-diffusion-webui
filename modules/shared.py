@@ -83,11 +83,96 @@ class Backend(Enum):
 state = shared_state.State()
 if not hasattr(cmd_opts, "use_openvino"):
     cmd_opts.use_openvino = False
-if cmd_opts.use_openvino:
+
+
+def readfile(filename, silent=False, lock=False):
+    data = {}
+    lock_file = None
+    locked = False
+    try:
+        # if not os.path.exists(filename):
+        #    return {}
+        t0 = time.time()
+        if lock:
+            lock_file = fasteners.InterProcessReaderWriterLock(f"{filename}.lock", logger=log)
+            locked = lock_file.acquire_read_lock(blocking=True, timeout=3)
+        with open(filename, "rb") as file:
+            b = file.read()
+            data = orjson.loads(b) # pylint: disable=no-member
+        # if type(data) is str:
+        #    data = json.loads(data)
+        t1 = time.time()
+        if not silent:
+            log.debug(f'Read: file="{filename}" json={len(data)} bytes={os.path.getsize(filename)} time={t1-t0:.3f}')
+    except Exception as e:
+        if not silent:
+            log.error(f'Reading failed: {filename} {e}')
+    finally:
+        if lock_file is not None:
+            lock_file.release_read_lock()
+        if locked and os.path.exists(f"{filename}.lock"):
+            os.remove(f"{filename}.lock")
+    return data
+
+
+def writefile(data, filename, mode='w', silent=False, atomic=False):
+    lock = None
+    locked = False
+    import tempfile
+
+
+    def default(obj):
+        log.error(f"Saving: {filename} not a valid object: {obj}")
+        return str(obj)
+
+    try:
+        t0 = time.time()
+        # skipkeys=True, ensure_ascii=True, check_circular=True, allow_nan=True
+        if type(data) == dict:
+            output = json.dumps(data, indent=2, default=default)
+        elif type(data) == list:
+            output = json.dumps(data, indent=2, default=default)
+        elif isinstance(data, object):
+            simple = {}
+            for k in data.__dict__:
+                if data.__dict__[k] is not None:
+                    simple[k] = data.__dict__[k]
+            output = json.dumps(simple, indent=2, default=default)
+        else:
+            raise ValueError('not a valid object')
+        lock = fasteners.InterProcessReaderWriterLock(f"{filename}.lock", logger=log)
+        locked = lock.acquire_write_lock(blocking=True, timeout=3)
+        if atomic:
+            with tempfile.NamedTemporaryFile(mode=mode, encoding="utf8", delete=False, dir=os.path.dirname(filename)) as f:
+                f.write(output)
+                f.flush()
+                os.fsync(f.fileno())
+                os.replace(f.name, filename)
+        else:
+            with open(filename, mode=mode, encoding="utf8") as file:
+                file.write(output)
+        t1 = time.time()
+        if not silent:
+            log.debug(f'Save: file="{filename}" json={len(data)} bytes={len(output)} time={t1-t0:.3f}')
+    except Exception as e:
+        log.error(f'Saving failed: {filename} {e}')
+        errors.display(e, 'Saving failed')
+    finally:
+        if lock is not None:
+            lock.release_read_lock()
+        if locked and os.path.exists(f"{filename}.lock"):
+            os.remove(f"{filename}.lock")
+
+
+# early select backend
+default_backend = 'original'
+early_opts = readfile(cmd_opts.config, silent=True)
+early_backend = early_opts.get('sd_backend', default_backend)
+backend = Backend.DIFFUSERS if early_backend.lower() == 'diffusers' else Backend.ORIGINAL
+if cmd_opts.backend is not None: # override with args
+    backend = Backend.DIFFUSERS if cmd_opts.backend.lower() == 'diffusers' else Backend.ORIGINAL
+if cmd_opts.use_openvino: # override for openvino
     backend = Backend.DIFFUSERS
-    cmd_opts.backend = 'diffusers'
-else:
-    backend = Backend.DIFFUSERS if (cmd_opts.backend is not None) and (cmd_opts.backend.lower() == 'diffusers') else Backend.ORIGINAL # initial since we don't have opts loaded yet
 
 
 class OptionInfo:
@@ -191,85 +276,6 @@ def temp_disable_extensions():
     return disabled
 
 
-def readfile(filename, silent=False, lock=False):
-    data = {}
-    lock_file = None
-    locked = False
-    try:
-        # if not os.path.exists(filename):
-        #    return {}
-        t0 = time.time()
-        if lock:
-            lock_file = fasteners.InterProcessReaderWriterLock(f"{filename}.lock", logger=log)
-            locked = lock_file.acquire_read_lock(blocking=True, timeout=3)
-        with open(filename, "rb") as file:
-            b = file.read()
-            data = orjson.loads(b) # pylint: disable=no-member
-        # if type(data) is str:
-        #    data = json.loads(data)
-        t1 = time.time()
-        if not silent:
-            log.debug(f'Read: file="{filename}" json={len(data)} bytes={os.path.getsize(filename)} time={t1-t0:.3f}')
-    except Exception as e:
-        if not silent:
-            log.error(f'Reading failed: {filename} {e}')
-    finally:
-        if lock_file is not None:
-            lock_file.release_read_lock()
-        if locked and os.path.exists(f"{filename}.lock"):
-            os.remove(f"{filename}.lock")
-    return data
-
-
-def writefile(data, filename, mode='w', silent=False, atomic=False):
-    lock = None
-    locked = False
-    import tempfile
-
-
-    def default(obj):
-        log.error(f"Saving: {filename} not a valid object: {obj}")
-        return str(obj)
-
-    try:
-        t0 = time.time()
-        # skipkeys=True, ensure_ascii=True, check_circular=True, allow_nan=True
-        if type(data) == dict:
-            output = json.dumps(data, indent=2, default=default)
-        elif type(data) == list:
-            output = json.dumps(data, indent=2, default=default)
-        elif isinstance(data, object):
-            simple = {}
-            for k in data.__dict__:
-                if data.__dict__[k] is not None:
-                    simple[k] = data.__dict__[k]
-            output = json.dumps(simple, indent=2, default=default)
-        else:
-            raise ValueError('not a valid object')
-        lock = fasteners.InterProcessReaderWriterLock(f"{filename}.lock", logger=log)
-        locked = lock.acquire_write_lock(blocking=True, timeout=3)
-        if atomic:
-            with tempfile.NamedTemporaryFile(mode=mode, encoding="utf8", delete=False, dir=os.path.dirname(filename)) as f:
-                f.write(output)
-                f.flush()
-                os.fsync(f.fileno())
-                os.replace(f.name, filename)
-        else:
-            with open(filename, mode=mode, encoding="utf8") as file:
-                file.write(output)
-        t1 = time.time()
-        if not silent:
-            log.debug(f'Save: file="{filename}" json={len(data)} bytes={len(output)} time={t1-t0:.3f}')
-    except Exception as e:
-        log.error(f'Saving failed: {filename} {e}')
-        errors.display(e, 'Saving failed')
-    finally:
-        if lock is not None:
-            lock.release_read_lock()
-        if locked and os.path.exists(f"{filename}.lock"):
-            os.remove(f"{filename}.lock")
-
-
 if devices.backend == "cpu":
     cross_attention_optimization_default = "Doggettx's"
 elif devices.backend == "mps":
@@ -285,18 +291,18 @@ else: # cuda
 
 
 options_templates.update(options_section(('sd', "Execution & Models"), {
-    "sd_backend": OptionInfo("original" if not cmd_opts.use_openvino else "diffusers", "Execution backend", gr.Radio, {"choices": ["original", "diffusers"] }),
+    "sd_backend": OptionInfo('diffusers' if backend == Backend.DIFFUSERS else 'original', "Execution backend", gr.Radio, {"choices": ["original", "diffusers"] }),
     "sd_checkpoint_autoload": OptionInfo(True, "Model autoload on server start"),
     "sd_model_checkpoint": OptionInfo(default_checkpoint, "Base model", gr.Dropdown, lambda: {"choices": list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "sd_model_refiner": OptionInfo('None', "Refiner model", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "sd_vae": OptionInfo("Automatic", "VAE model", gr.Dropdown, lambda: {"choices": shared_items.sd_vae_items()}, refresh=shared_items.refresh_vae_list),
     "sd_model_dict": OptionInfo('None', "Use baseline data from a different model", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
-    "stream_load": OptionInfo(False, "Load models using stream loading method"),
+    "stream_load": OptionInfo(False, "Load models using stream loading method", gr.Checkbox, {"visible": backend == Backend.ORIGINAL }),
     "model_reuse_dict": OptionInfo(False, "When loading models attempt to reuse previous model dictionary", gr.Checkbox, {"visible": False}),
     "prompt_attention": OptionInfo("Full parser", "Prompt attention parser", gr.Radio, {"choices": ["Full parser", "Compel parser", "A1111 parser", "Fixed attention"] }),
-    "prompt_mean_norm": OptionInfo(True, "Prompt attention mean normalization"),
-    "comma_padding_backtrack": OptionInfo(20, "Prompt padding for long prompts", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
-    "sd_checkpoint_cache": OptionInfo(0, "Number of cached models", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
+    "prompt_mean_norm": OptionInfo(True, "Prompt attention mean normalization", gr.Checkbox, {"visible": backend == Backend.ORIGINAL }),
+    "comma_padding_backtrack": OptionInfo(20, "Prompt padding for long prompts", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1, "visible": backend == Backend.ORIGINAL }),
+    "sd_checkpoint_cache": OptionInfo(0, "Number of cached models", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1, "visible": backend == Backend.ORIGINAL }),
     "sd_vae_checkpoint_cache": OptionInfo(0, "Number of cached VAEs", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1, "visible": False}),
     "sd_disable_ckpt": OptionInfo(False, "Disallow usage of models in ckpt format"),
 }))
@@ -823,16 +829,11 @@ opts = Options()
 config_filename = cmd_opts.config
 opts.load(config_filename)
 cmd_opts = cmd_args.compatibility_args(opts, cmd_opts)
-if cmd_opts.backend is None:
-    backend = Backend.DIFFUSERS if cmd_opts.use_openvino or opts.data.get('sd_backend', 'original') == 'diffusers' else Backend.ORIGINAL
-else:
-    backend = Backend.DIFFUSERS if cmd_opts.use_openvino or cmd_opts.backend.lower() == 'diffusers' else Backend.ORIGINAL
-opts.data['sd_backend'] = 'diffusers' if backend == Backend.DIFFUSERS else 'original'
 if cmd_opts.use_xformers:
     opts.data['cross_attention_optimization'] = 'xFormers'
 opts.data['uni_pc_lower_order_final'] = opts.schedulers_use_loworder # compatibility
 opts.data['uni_pc_order'] = opts.schedulers_solver_order # compatibility
-log.info(f'Engine: backend={backend} compute={devices.backend} mode={devices.inference_context.__name__} device={devices.get_optimal_device_name()} cross-optimization="{opts.cross_attention_optimization}"')
+log.info(f'Engine: backend={backend} compute={devices.backend} device={devices.get_optimal_device_name()} attention="{opts.cross_attention_optimization}" mode={devices.inference_context.__name__}')
 log.info(f'Device: {print_dict(devices.get_gpu_info())}')
 
 prompt_styles = modules.styles.StyleDatabase(opts)
