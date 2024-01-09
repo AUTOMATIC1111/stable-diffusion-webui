@@ -538,13 +538,10 @@ sd2_clip_weight = 'cond_stage_model.model.transformer.resblocks.0.attn.in_proj_w
 
 
 def change_backend():
-    shared.log.info(f'Backend changed: {shared.backend}')
+    shared.log.info(f'Backend changed: from={shared.backend} to={shared.opts.sd_backend}')
     shared.log.warning('Full server restart required to apply all changes')
-    if shared.backend == shared.Backend.ORIGINAL:
-        change_from = shared.Backend.DIFFUSERS
-    else:
-        change_from = shared.Backend.ORIGINAL
-    unload_model_weights(change_from=change_from)
+    unload_model_weights()
+    shared.backend = shared.Backend.ORIGINAL if shared.opts.sd_backend == 'original' else shared.Backend.DIFFUSERS
     checkpoints_loaded.clear()
     from modules.sd_samplers import list_samplers
     list_samplers(shared.backend)
@@ -1287,13 +1284,13 @@ def disable_offload(sd_model):
         remove_hook_from_module(model, recurse=True)
 
 
-def unload_model_weights(op='model', change_from='none'):
+def unload_model_weights(op='model'):
     if shared.compiled_model_state is not None:
         shared.compiled_model_state.compiled_cache.clear()
         shared.compiled_model_state.partitioned_modules.clear()
     if op == 'model' or op == 'dict':
         if model_data.sd_model:
-            if (shared.backend == shared.Backend.ORIGINAL and change_from != shared.Backend.DIFFUSERS) or change_from == shared.Backend.ORIGINAL:
+            if shared.backend == shared.Backend.ORIGINAL:
                 from modules import sd_hijack
                 model_data.sd_model.to(devices.cpu)
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
@@ -1304,7 +1301,7 @@ def unload_model_weights(op='model', change_from='none'):
             shared.log.debug(f'Unload weights {op}: {memory_stats()}')
     else:
         if model_data.sd_refiner:
-            if (shared.backend == shared.Backend.ORIGINAL and change_from != shared.Backend.DIFFUSERS) or change_from == shared.Backend.ORIGINAL:
+            if shared.backend == shared.Backend.ORIGINAL:
                 from modules import sd_hijack
                 model_data.sd_model.to(devices.cpu)
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_refiner)
