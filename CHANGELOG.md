@@ -131,6 +131,7 @@ And it also includes fixes for all reported issues so far
   - sampler: guard against invalid sampler index  
   - config: reset default cfg scale to 6.0  
   - processing: correct display metadata  
+  - processing: fix batch file names  
   - live preview: fix when using `bfloat16`
   - upscale: fix ldsr
   - cli: fix cmd args parsing  
