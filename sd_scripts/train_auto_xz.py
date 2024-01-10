@@ -932,39 +932,39 @@ def train_auto(
     body_list, head_list = custom_configurable_image_processing(
         train_data_dir, options, head_width, head_height, if_res_oribody=True, model_p=general_model_path)
     skin_retouching = pipeline(Tasks.skin_retouching, model="damo/cv_unet_skin-retouching")
-    portrait_enhancement = pipeline(Tasks.image_portrait_enhancement, model="damo/cv_gpen_image-portrait-enhancement",
-                                    model_revision="v1.0.0")
+    # portrait_enhancement = pipeline(Tasks.image_portrait_enhancement, model="damo/cv_gpen_image-portrait-enhancement",
+    #                                 model_revision="v1.0.0")
 
-    retouch_body_list = []
-    retouch_head_list = []
+    new_body_list = []
+    new_head_list = []
     head_list = face_detect(image_list=body_list)
 
     if gender == 2:
         for body_img in body_list:
             body_img = Image.fromarray(
                 cv2.cvtColor(skin_retouching(body_img)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
-            retouch_body_list.append(body_img)
+            new_body_list.append(body_img)
 
     for head_img in head_list:
         head_img = Image.fromarray(cv2.cvtColor(skin_retouching(head_img)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
-        retouch_head_list.append(head_img)
+        new_head_list.append(head_img)
 
     del skin_retouching
 
-    new_body_list = []
-    new_head_list = []
-    if gender == 2:
-        for body_img in retouch_body_list:
-            body_img = Image.fromarray(
-                cv2.cvtColor(portrait_enhancement(body_img)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
-            new_body_list.append(body_img)
-
-    for head_img in retouch_head_list:
-        head_img = Image.fromarray(
-            cv2.cvtColor(portrait_enhancement(head_img)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
-        new_head_list.append(head_img)
-
-    del portrait_enhancement
+    # new_body_list = []
+    # new_head_list = []
+    # if gender == 2:
+    #     for body_img in retouch_body_list:
+    #         body_img = Image.fromarray(
+    #             cv2.cvtColor(portrait_enhancement(body_img)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
+    #         new_body_list.append(body_img)
+    #
+    # for head_img in retouch_head_list:
+    #     head_img = Image.fromarray(
+    #         cv2.cvtColor(portrait_enhancement(head_img)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
+    #     new_head_list.append(head_img)
+    #
+    # del portrait_enhancement
 
     # # 抠出脸部
     # if only_face:
