@@ -69,7 +69,7 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
 
         denoising_strengths = self._denoising_strengths(t)
         for i, denoising_strength in enumerate(denoising_strengths):
-            t['denoising_strength'] = 0
+            t['denoising_strength'] = 0.1
             t['n_iter'] = 1
             t['batch_size'] = 1
             t['alwayson_scripts'] = {
