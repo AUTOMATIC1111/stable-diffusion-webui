@@ -31,14 +31,13 @@ import sd_scripts.library.custom_train_functions as custom_train_functions
 from sd_scripts.library.fix_photo import mopi
 from sd_scripts.library.face_process_utils import call_face_crop
 
-
 from modelscope.outputs import OutputKeys
 from modelscope.pipelines import pipeline
 from modelscope.utils.constant import Tasks
 from modelscope import snapshot_download
-from transformers import PreTrainedTokenizerBase,PreTrainedModel
+from transformers import PreTrainedTokenizerBase, PreTrainedModel
 
-from sd_scripts.library.transformers_pretrained import ori_tokenizer_from_pretrained,ori_model_from_pretrained
+from sd_scripts.library.transformers_pretrained import ori_tokenizer_from_pretrained, ori_model_from_pretrained
 from sd_scripts.library.face_tool import insightface_main_face
 
 
@@ -100,7 +99,8 @@ patch_model_base()
 
 # 面部检测
 def face_detect(image_list):
-    retinaface_detection = pipeline(Tasks.face_detection, "damo/cv_resnet50_face-detection_retinaface", model_revision="v2.0.2")
+    retinaface_detection = pipeline(Tasks.face_detection, "damo/cv_resnet50_face-detection_retinaface",
+                                    model_revision="v2.0.2")
     head_list = []
     for index, image in enumerate(image_list):
         try:
@@ -807,6 +807,7 @@ def clean_dir(dirname):
         except Exception as e:
             print(f'cannot remove file:{e}, path:{full_path}')
 
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description='PP-HumanSeg inference for video')
@@ -907,7 +908,7 @@ def train_auto(
     print("该数据集的性别识别为：", gender)
     # 脸部图，抠头
     options = []
-    if gender==2:
+    if gender == 2:
         options.append("去除背景")
 
     if len(images) < 15:
@@ -920,11 +921,13 @@ def train_auto(
             img_path = os.path.join(train_data_dir, img)
             # print(img_path.split(".")[-2])
             # out_path = img_path.split(".")[-2] + "_out.png"
-            config_path = os.path.join(general_model_path, "PaddleSeg", "inference_models/human_pp_humansegv1_server_512x512_inference_model_with_softmax/deploy.yaml"  )
+            config_path = os.path.join(general_model_path, "PaddleSeg",
+                                       "inference_models/human_pp_humansegv1_server_512x512_inference_model_with_softmax/deploy.yaml")
             if not os.path.isfile(config_path):
-                config_path = os.path.join('/data/apksamba/sd/models/', "PaddleSeg", "inference_models/human_pp_humansegv1_server_512x512_inference_model_with_softmax/deploy.yaml")
+                config_path = os.path.join('/data/apksamba/sd/models/', "PaddleSeg",
+                                           "inference_models/human_pp_humansegv1_server_512x512_inference_model_with_softmax/deploy.yaml")
 
-            seg_image(args, config = config_path, img_path=img_path, save_dir=img_path)
+            seg_image(args, config=config_path, img_path=img_path, save_dir=img_path)
 
     body_list, head_list = custom_configurable_image_processing(
         train_data_dir, options, head_width, head_height, if_res_oribody=True, model_p=general_model_path)
@@ -968,7 +971,7 @@ def train_auto(
     # if only_face:
     clean_dir(train_data_dir)
     # save_images_to_temp(head_list, train_data_dir)
-    save_images_to_temp(new_head_list, train_data_dir)
+    save_images(new_head_list, train_data_dir)
     face_list = seg_face(input_path=train_data_dir, output_path=tmp_face_dir, model_path=general_model_path)
 
     tmp_dir = os.path.join(dirname, f"{task_id}-preprocess") if not only_face else tmp_face_dir
