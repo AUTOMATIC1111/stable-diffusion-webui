@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-09
+## Update for 2023-01-10
 
 Following-up on a major release, here is a lot more functionality in new Control module and FaceID & IPAdapter modules  
 Plus welcome additions to UI accessibility and flexibility of deployment  
@@ -57,10 +57,12 @@ And it also includes fixes for all reported issues so far
   - enable use via api, thanks @trojaner
 - **Improvements**  
   - **ui**  
-    - globally configurable font size  
+    - globally configurable **font size**  
       will dynamically rescale ui depending on settings -> user interface  
+    - built-in **themes** can be changed on-the-fly  
+      this does not work with gradio-default themes as css is created by gradio itself  
     - modularized blip/booru interrogate  
-      now appears as toolbuttons on image/gallery output
+      now appears as toolbuttons on image/gallery output  
   - **server startup**: performance  
     - reduced module imports  
       ldm support is now only loaded when running in backend=original  
@@ -125,12 +127,14 @@ And it also includes fixes for all reported issues so far
   - img2img: sampler selection offset  
   - api: return current image in progress api if requested  
   - api: sanitize response object  
+  - api: cleanup error logging  
   - sampler: guard against invalid sampler index  
   - config: reset default cfg scale to 6.0  
   - processing: correct display metadata  
   - live preview: fix when using `bfloat16`
   - upscale: fix ldsr
   - cli: fix cmd args parsing  
+  - global crlf->lf switch  
 
 ## Update for 2023-12-29
 

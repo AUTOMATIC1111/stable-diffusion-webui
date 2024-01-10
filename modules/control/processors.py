@@ -155,7 +155,6 @@ class Processor():
             if self.processor_id != processor_id:
                 self.reset()
                 self.config(processor_id)
-            print('HERE', self.processor_id, processor_id, self.load_config)
             cls = config[processor_id]['class']
             log.debug(f'Control Processor loading: id="{processor_id}" class={cls.__name__}')
             debug(f'Control Processor config={self.load_config}')

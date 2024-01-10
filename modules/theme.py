@@ -2,10 +2,10 @@ import os
 import json
 import gradio as gr
 import modules.shared
-# from modules.shared import log, opts, req, writefile
 
 
 gradio_theme = gr.themes.Base()
+# modules.shared.opts.onchange("gradio_theme", reload_gradio_theme)
 
 
 def list_builtin_themes():
