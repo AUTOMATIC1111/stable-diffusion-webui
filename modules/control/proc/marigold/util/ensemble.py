@@ -74,7 +74,7 @@ def ensemble_depths(
 
     # objective function
     def closure(x):
-        l = len(x)
+        l = len(x) # noqa
         s = x[: int(l / 2)]
         t = x[int(l / 2) :]
         s = torch.from_numpy(s).to(dtype=dtype).to(device)
@@ -102,7 +102,7 @@ def ensemble_depths(
         closure, x, method="BFGS", tol=tol, options={"maxiter": max_iter, "disp": False}
     )
     x = res.x
-    l = len(x)
+    l = len(x) # noqa
     s = x[: int(l / 2)]
     t = x[int(l / 2) :]
 

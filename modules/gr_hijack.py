@@ -1,10 +1,9 @@
 from PIL import Image
-import numpy as np
 import gradio as gr
 import gradio.processing_utils
 
 
-def gr_image_preprocess(self, x: str | dict[str, str]) -> np.ndarray | Image.Image | str | dict | None:
+def gr_image_preprocess(self, x):
     if x is None:
         return x
     mask = None

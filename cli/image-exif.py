@@ -4,11 +4,8 @@ import os
 import io
 import re
 import sys
-import json
 from PIL import Image, ExifTags, TiffImagePlugin, PngImagePlugin
 from rich import print # pylint: disable=redefined-builtin
-
-# warnings.filterwarnings("ignore", category=UserWarning)
 
 
 class Exif: # pylint: disable=single-string-used-for-slots
@@ -69,6 +66,36 @@ class Exif: # pylint: disable=single-string-used-for-slots
                 pass
         return None
 
+    def parse(self):
+        re_param_code = r'\s*([\w ]+):\s*("(?:\\"[^,]|\\"|\\|[^\"])+"|[^,]*)(?:,|$)'
+        re_param = re.compile(re_param_code)
+        x = self.exif.pop('parameters', None) or self.exif.pop('UserComment', None)
+        res = {}
+        if x is None:
+            return res
+        remaining = x.replace('\n', ' ').strip()
+        if len(remaining) == 0:
+            return res
+        remaining = x[7:] if x.startswith('Prompt: ') else x
+        remaining = x[11:] if x.startswith('parameters: ') else x
+        if 'Steps: ' in remaining and 'Negative prompt: ' not in remaining:
+            remaining = remaining.replace('Steps: ', 'Negative prompt: Steps: ')
+        prompt, remaining = remaining.strip().split('Negative prompt: ', maxsplit=1) if 'Negative prompt: ' in remaining else (remaining, '')
+        res["Prompt"] = prompt.strip()
+        negative, remaining = remaining.strip().split('Steps: ', maxsplit=1) if 'Steps: ' in remaining else (remaining, None)
+        res["Negative prompt"] = negative.strip()
+        if remaining is None:
+            return res
+        remaining = f'Steps: {remaining}'
+        for k, v in re_param.findall(remaining.strip()):
+            if v.isdigit():
+                res[k] = float(v) if '.' in v else int(v)
+            else:
+                res[k] = v
+        from types import SimpleNamespace
+        ns = SimpleNamespace(**res)
+        return ns
+
     def get_bytes(self):
         ifd = TiffImagePlugin.ImageFileDirectory_v2()
         exif_stream = io.BytesIO()
@@ -87,13 +114,13 @@ def read_exif(filename: str):
         from pi_heif import register_heif_opener
         register_heif_opener()
     try:
-        img = Image.open(filename)
-        exif = Exif(img)
-        print('image:', filename, 'format:', img.format, 'metadata:', json.dumps(vars(exif.exif)['_data'], indent=2))
+        image = Image.open(filename)
+        exif = Exif(image)
+        print('image:', filename, 'format:', image)
+        print('exif:', vars(exif.exif)['_data'])
+        print('info:', exif.parse())
     except Exception as e:
         print('metadata error reading:', filename, e)
-    # exif.exif['Software'] = 'This is a Test'
-    # img.save('input-scored.jpg', exif=exif.bytes())
 
 
 if __name__ == '__main__':

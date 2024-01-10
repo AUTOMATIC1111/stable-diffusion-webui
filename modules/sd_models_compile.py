@@ -8,6 +8,7 @@ from installer import setup_logging
 #Used by OpenVINO, can be used with TensorRT or Olive
 class CompiledModelState:
     def __init__(self):
+        self.model_str = ""
         self.first_pass = True
         self.first_pass_refiner = True
         self.first_pass_vae = True
@@ -20,6 +21,8 @@ class CompiledModelState:
         self.lora_compile = False
         self.compiled_cache = {}
         self.partitioned_modules = {}
+        self.subgraph_type = []
+        self.compile_dont_use_4bit = False
 
 
 def ipex_optimize(sd_model):
@@ -70,12 +73,16 @@ def optimize_openvino():
         if shared.compiled_model_state is None:
             shared.compiled_model_state = CompiledModelState()
         else:
-            if not shared.compiled_model_state.lora_compile:
-                shared.compiled_model_state.lora_compile = False
-                shared.compiled_model_state.lora_model = []
             shared.compiled_model_state.compiled_cache.clear()
             shared.compiled_model_state.partitioned_modules.clear()
+            backup_lora_model = []
+            if shared.compiled_model_state.lora_compile:
+                backup_lora_model = shared.compiled_model_state.lora_model
+            shared.compiled_model_state = CompiledModelState()
+            shared.compiled_model_state.lora_model = backup_lora_model
         shared.compiled_model_state.first_pass = True if not shared.opts.cuda_compile_precompile else False
+        shared.compiled_model_state.first_pass_vae = True if not shared.opts.cuda_compile_precompile else False
+        shared.compiled_model_state.first_pass_refiner = True if not shared.opts.cuda_compile_precompile else False
     except Exception as e:
         shared.log.warning(f"Model compile: task=OpenVINO: {e}")
 
@@ -143,10 +150,10 @@ def compile_torch(sd_model):
 
         t0 = time.time()
         if shared.opts.cuda_compile:
-            if shared.opts.cuda_compile and (not hasattr(sd_model, 'unet') or not hasattr(sd_model.unet, 'config')):
-                shared.log.warning('Model compile enabled but model has no Unet')
-            else:
+            if hasattr(sd_model, 'unet') and hasattr(sd_model.unet, 'config'):
                 sd_model.unet = torch.compile(sd_model.unet, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph)
+            else:
+                shared.log.warning('Model compile enabled but model has no Unet')
         if shared.opts.cuda_compile_vae:
             if hasattr(sd_model, 'vae') and hasattr(sd_model.vae, 'decode'):
                 sd_model.vae.decode = torch.compile(sd_model.vae.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph)
@@ -154,6 +161,13 @@ def compile_torch(sd_model):
                 sd_model.movq.decode = torch.compile(sd_model.movq.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph)
             else:
                 shared.log.warning('Model compile enabled but model has no VAE')
+        if shared.opts.cuda_compile_text_encoder:
+            if hasattr(sd_model, 'text_encoder'):
+                sd_model.text_encoder = torch.compile(sd_model.text_encoder, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph)
+                if hasattr(sd_model, 'text_encoder_2'):
+                    sd_model.text_encoder_2 = torch.compile(sd_model.text_encoder_2, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph)
+            else:
+                shared.log.warning('Text Encoder compile enabled but model has no Text Encoder')
         setup_logging() # compile messes with logging so reset is needed
         if shared.opts.cuda_compile_precompile:
             sd_model("dummy prompt")

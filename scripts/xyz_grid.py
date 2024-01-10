@@ -10,10 +10,7 @@ from io import StringIO
 from PIL import Image
 import numpy as np
 import gradio as gr
-import modules.scripts as scripts
-import modules.shared as shared
-from modules import images, sd_samplers, processing, sd_models, sd_vae
-from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
+from modules import shared, errors, scripts, images, sd_samplers, processing, sd_models, sd_vae
 from modules.ui_components import ToolButton
 import modules.ui_symbols as symbols
 
@@ -133,11 +130,11 @@ def apply_vae(p, x, xs):
     sd_vae.reload_vae_weights(shared.sd_model, vae_file=find_vae(x))
 
 
-def apply_styles(p: StableDiffusionProcessingTxt2Img, x: str, _):
+def apply_styles(p: processing.StableDiffusionProcessingTxt2Img, x: str, _):
     p.styles.extend(x.split(','))
 
 
-def apply_upscaler(p: StableDiffusionProcessingTxt2Img, opt, x):
+def apply_upscaler(p: processing.StableDiffusionProcessingTxt2Img, opt, x):
     p.enable_hr = True
     p.hr_force = True
     p.denoising_strength = 0.0
@@ -289,7 +286,7 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
             return ix + iy * len(xs) + iz * len(xs) * len(ys)
 
         shared.state.job = 'grid'
-        processed: Processed = cell(x, y, z, ix, iy, iz)
+        processed: processing.Processed = cell(x, y, z, ix, iy, iz)
         if processed_result is None:
             processed_result = copy(processed)
             processed_result.images = [None] * list_size
@@ -298,7 +295,7 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
             processed_result.infotexts = [None] * list_size
             processed_result.index_of_first_image = 1
         idx = index(ix, iy, iz)
-        if processed.images:
+        if processed is not None and processed.images:
             processed_result.images[idx] = processed.images[0]
             processed_result.all_prompts[idx] = processed.prompt
             processed_result.all_seeds[idx] = processed.seed
@@ -344,10 +341,10 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
 
     if not processed_result:
         shared.log.error("XYZ grid: Failed to initialize processing")
-        return Processed(p, [])
+        return processing.Processed(p, [])
     elif not any(processed_result.images):
         shared.log.error("XYZ grid: Failed to return processed image")
-        return Processed(p, [])
+        return processing.Processed(p, [])
 
     z_count = len(zs)
     for i in range(z_count):
@@ -617,7 +614,7 @@ class Script(scripts.Script):
             total_steps = sum(zs) * len(xs) * len(ys)
         else:
             total_steps = p.steps * len(xs) * len(ys) * len(zs)
-        if isinstance(p, StableDiffusionProcessingTxt2Img) and p.enable_hr:
+        if isinstance(p, processing.StableDiffusionProcessingTxt2Img) and p.enable_hr:
             if x_opt.label == "Hires steps":
                 total_steps += sum(xs) * len(ys) * len(zs)
             elif y_opt.label == "Hires steps":
@@ -660,14 +657,19 @@ class Script(scripts.Script):
 
         def cell(x, y, z, ix, iy, iz):
             if shared.state.interrupted:
-                return Processed(p, [], p.seed, "")
+                return processing.Processed(p, [], p.seed, "")
             pc = copy(p)
             pc.override_settings_restore_afterwards = False
             pc.styles = pc.styles[:]
             x_opt.apply(pc, x, xs)
             y_opt.apply(pc, y, ys)
             z_opt.apply(pc, z, zs)
-            res = process_images(pc)
+            try:
+                res = processing.process_images(pc)
+            except Exception as e:
+                shared.log.error(f"XYZ grid: Failed to process image: {e}")
+                errors.display(e, 'XYZ grid')
+                res = None
             subgrid_index = 1 + iz # Sets subgrid infotexts
             if grid_infotext[subgrid_index] is None and ix == 0 and iy == 0:
                 pc.extra_generation_params = copy(pc.extra_generation_params)

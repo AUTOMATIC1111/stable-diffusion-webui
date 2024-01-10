@@ -14,7 +14,7 @@ def txt2img(id_task,
             steps, sampler_index, hr_sampler_index,
             full_quality, restore_faces, tiling,
             n_iter, batch_size,
-            cfg_scale, image_cfg_scale, diffusers_guidance_rescale,
+            cfg_scale, image_cfg_scale, diffusers_guidance_rescale, sag_scale,
             clip_skip,
             seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
             height, width,
@@ -58,6 +58,7 @@ def txt2img(id_task,
         cfg_scale=cfg_scale,
         image_cfg_scale=image_cfg_scale,
         diffusers_guidance_rescale=diffusers_guidance_rescale,
+        sag_scale=sag_scale,
         clip_skip=clip_skip,
         width=width,
         height=height,
@@ -89,5 +90,5 @@ def txt2img(id_task,
     p.close()
     if processed is None:
         return [], '', '', 'Error: processing failed'
-    generation_info_js = processed.js()
+    generation_info_js = processed.js() if processed is not None else ''
     return processed.images, generation_info_js, processed.info, plaintext_to_html(processed.comments)

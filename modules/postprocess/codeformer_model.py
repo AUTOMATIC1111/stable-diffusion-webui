@@ -24,14 +24,6 @@ def setup_model(dirname):
         return
 
     try:
-        from torchvision.transforms.functional import normalize
-        from modules.postprocess.codeformer_arch import CodeFormer
-        from basicsr.utils import img2tensor, tensor2img
-        from facelib.utils.face_restoration_helper import FaceRestoreHelper
-        from facelib.detection.retinaface import retinaface
-
-        net_class = CodeFormer
-
         class FaceRestorerCodeFormer(modules.face_restoration.FaceRestoration):
             def name(self):
                 return "CodeFormer"
@@ -42,6 +34,9 @@ def setup_model(dirname):
                 self.cmd_dir = dirname
 
             def create_models(self):
+                from modules.postprocess.codeformer_arch import CodeFormer
+                from facelib.utils.face_restoration_helper import FaceRestoreHelper
+                from facelib.detection.retinaface import retinaface
                 if self.net is not None and self.face_helper is not None:
                     self.net.to(devices.device_codeformer)
                     return self.net, self.face_helper
@@ -51,7 +46,7 @@ def setup_model(dirname):
                 else:
                     shared.log.error(f"Model failed loading: type=CodeFormer model={model_path}")
                     return None, None
-                net = net_class(dim_embd=512, codebook_size=1024, n_head=8, n_layers=9, connect_list=['32', '64', '128', '256']).to(devices.device_codeformer)
+                net = CodeFormer(dim_embd=512, codebook_size=1024, n_head=8, n_layers=9, connect_list=['32', '64', '128', '256']).to(devices.device_codeformer)
                 checkpoint = torch.load(ckpt_path)['params_ema']
                 net.load_state_dict(checkpoint)
                 net.eval()
@@ -69,6 +64,8 @@ def setup_model(dirname):
                 self.face_helper.face_parse.to(device)
 
             def restore(self, np_image, w=None):
+                from torchvision.transforms.functional import normalize
+                from basicsr.utils import img2tensor, tensor2img
                 np_image = np_image[:, :, ::-1]
                 original_resolution = np_image.shape[0:2]
                 self.create_models()

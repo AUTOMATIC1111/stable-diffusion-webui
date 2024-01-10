@@ -3,7 +3,8 @@ import time
 from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline
 from modules.control.proc.reference_sd15 import StableDiffusionReferencePipeline
 from modules.control.proc.reference_sdxl import StableDiffusionXLReferencePipeline
-from modules.shared import log
+from modules.shared import log, opts
+from modules.control.units import detect
 
 
 what = 'Reference'
@@ -21,7 +22,9 @@ class ReferencePipeline():
         if pipeline is None:
             log.error(f'Control {what} model pipeline: model not loaded')
             return
-        if isinstance(pipeline, StableDiffusionXLPipeline):
+        if opts.diffusers_fuse_projections and hasattr(pipeline, 'unfuse_qkv_projections'):
+            pipeline.unfuse_qkv_projections()
+        if detect.is_sdxl(pipeline):
             self.pipeline = StableDiffusionXLReferencePipeline(
                 vae=pipeline.vae,
                 text_encoder=pipeline.text_encoder,
@@ -32,7 +35,7 @@ class ReferencePipeline():
                 scheduler=pipeline.scheduler,
                 feature_extractor=getattr(pipeline, 'feature_extractor', None),
             ).to(pipeline.device)
-        elif isinstance(pipeline, StableDiffusionPipeline):
+        elif detect.is_sd15(pipeline):
             self.pipeline = StableDiffusionReferencePipeline(
                 vae=pipeline.vae,
                 text_encoder=pipeline.text_encoder,

@@ -59,6 +59,8 @@ cache
 .idea/
 /localizations
 
+.*/
+
 # force included
 !/models/VAE-approx
 !/models/VAE-approx/model.pt

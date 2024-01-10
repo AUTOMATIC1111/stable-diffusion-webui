@@ -15,20 +15,22 @@ from modules import scripts, processing, shared, devices
 
 image_encoder = None
 image_encoder_type = None
+image_encoder_name = None
 loaded = None
 checkpoint = None
+base_repo = "h94/IP-Adapter"
 ADAPTERS = {
     'None': 'none',
-    'Base': 'ip-adapter_sd15',
-    'Light': 'ip-adapter_sd15_light',
-    'Plus': 'ip-adapter-plus_sd15',
-    'Plus Face': 'ip-adapter-plus-face_sd15',
-    'Full face': 'ip-adapter-full-face_sd15',
-    'Base SXDL': 'ip-adapter_sdxl',
-    # 'models/ip-adapter_sd15_vit-G', # RuntimeError: mat1 and mat2 shapes cannot be multiplied (2x1024 and 1280x3072)
-    # 'sdxl_models/ip-adapter_sdxl_vit-h',
-    # 'sdxl_models/ip-adapter-plus_sdxl_vit-h',
-    # 'sdxl_models/ip-adapter-plus-face_sdxl_vit-h',
+    'Base': 'ip-adapter_sd15.safetensors',
+    'Base ViT-G': 'ip-adapter_sd15_vit-G.safetensors',
+    'Light': 'ip-adapter_sd15_light.safetensors',
+    'Plus': 'ip-adapter-plus_sd15.safetensors',
+    'Plus Face': 'ip-adapter-plus-face_sd15.safetensors',
+    'Full Face': 'ip-adapter-full-face_sd15.safetensors',
+    'Base SXDL': 'ip-adapter_sdxl.safetensors',
+    'Base ViT-H SXDL': 'ip-adapter_sdxl_vit-h.safetensors',
+    'Plus ViT-H SXDL': 'ip-adapter-plus_sdxl_vit-h.safetensors',
+    'Plus Face ViT-H SXDL': 'ip-adapter-plus-face_sdxl_vit-h.safetensors',
 }
 
 
@@ -48,9 +50,9 @@ class Script(scripts.Script):
                 image = gr.Image(image_mode='RGB', label='Image', source='upload', type='pil', width=512)
         return [adapter, scale, image]
 
-    def process(self, p: processing.StableDiffusionProcessing, adapter, scale, image): # pylint: disable=arguments-differ
+    def process(self, p: processing.StableDiffusionProcessing, adapter_name, scale, image): # pylint: disable=arguments-differ
         # overrides
-        adapter = ADAPTERS.get(adapter, None)
+        adapter = ADAPTERS.get(adapter_name, None)
         if hasattr(p, 'ip_adapter_name'):
             adapter = p.ip_adapter_name
         if hasattr(p, 'ip_adapter_scale'):
@@ -60,7 +62,7 @@ class Script(scripts.Script):
         if adapter is None:
             return
         # init code
-        global loaded, checkpoint, image_encoder, image_encoder_type # pylint: disable=global-statement
+        global loaded, checkpoint, image_encoder, image_encoder_type, image_encoder_name # pylint: disable=global-statement
         if shared.sd_model is None:
             return
         if shared.backend != shared.Backend.DIFFUSERS:
@@ -80,25 +82,39 @@ class Script(scripts.Script):
         if not hasattr(shared.sd_model, 'load_ip_adapter'):
             shared.log.error(f'IP adapter: pipeline not supported: {shared.sd_model.__class__.__name__}')
             return
-        if getattr(shared.sd_model, 'image_encoder', None) is None:
-            if shared.sd_model_type == 'sd':
-                subfolder = 'models/image_encoder'
-            elif shared.sd_model_type == 'sdxl':
-                subfolder = 'sdxl_models/image_encoder'
-            else:
-                shared.log.error(f'IP adapter: unsupported model type: {shared.sd_model_type}')
-                return
-            if image_encoder is None or image_encoder_type != shared.sd_model_type or checkpoint != shared.opts.sd_model_checkpoint:
+
+        # which clip to use
+        if 'ViT' not in adapter_name:
+            clip_repo = base_repo
+            subfolder = 'models/image_encoder' if shared.sd_model_type == 'sd' else 'sdxl_models/image_encoder' # defaults per model
+        elif 'ViT-H' in adapter_name:
+            clip_repo = base_repo
+            subfolder = 'models/image_encoder' # this is vit-h
+        elif 'ViT-G' in adapter_name:
+            clip_repo = base_repo
+            subfolder = 'sdxl_models/image_encoder' # this is vit-g
+        else:
+            shared.log.error(f'IP adapter: unknown model type: {adapter_name}')
+            return
+
+        # load image encoder used by ip adapter
+        if getattr(shared.sd_model, 'image_encoder', None) is None or image_encoder_name != clip_repo + '/' + subfolder:
+            if image_encoder is None or image_encoder_type != shared.sd_model_type or checkpoint != shared.opts.sd_model_checkpoint or image_encoder_name != clip_repo + '/' + subfolder:
+                if shared.sd_model_type != 'sd' and shared.sd_model_type != 'sdxl':
+                    shared.log.error(f'IP adapter: unsupported model type: {shared.sd_model_type}')
+                    return
                 try:
                     from transformers import CLIPVisionModelWithProjection
-                    image_encoder = CLIPVisionModelWithProjection.from_pretrained("h94/IP-Adapter", subfolder=subfolder, torch_dtype=devices.dtype, cache_dir=shared.opts.diffusers_dir, use_safetensors=True).to(devices.device)
+                    shared.log.debug(f'IP adapter: load image encoder: {clip_repo}/{subfolder}')
+                    image_encoder = CLIPVisionModelWithProjection.from_pretrained(clip_repo, subfolder=subfolder, torch_dtype=devices.dtype, cache_dir=shared.opts.diffusers_dir, use_safetensors=True).to(devices.device)
                     image_encoder_type = shared.sd_model_type
+                    image_encoder_name = clip_repo + '/' + subfolder
                 except Exception as e:
                     shared.log.error(f'IP adapter: failed to load image encoder: {e}')
                     return
 
         # main code
-        subfolder = 'models' if 'sd15' in adapter else 'sdxl_models'
+        # subfolder = 'models' if 'sd15' in adapter else 'sdxl_models'
         if adapter != loaded or getattr(shared.sd_model.unet.config, 'encoder_hid_dim_type', None) is None or checkpoint != shared.opts.sd_model_checkpoint:
             t0 = time.time()
             if loaded is not None:
@@ -107,7 +123,8 @@ class Script(scripts.Script):
             else:
                 shared.log.debug('IP adapter: load attention processor')
             shared.sd_model.image_encoder = image_encoder
-            shared.sd_model.load_ip_adapter("h94/IP-Adapter", subfolder=subfolder, weight_name=f'{adapter}.safetensors')
+            subfolder = 'models' if shared.sd_model_type == 'sd' else 'sdxl_models'
+            shared.sd_model.load_ip_adapter(base_repo, subfolder=subfolder, weight_name=adapter)
             t1 = time.time()
             shared.log.info(f'IP adapter load: adapter="{adapter}" scale={scale} image={image} time={t1-t0:.2f}')
             loaded = adapter

@@ -12,7 +12,7 @@ from modules.control.units import lite # vislearn ControlNet-XS
 from modules.control.units import t2iadapter # TencentARC T2I-Adapter
 from modules.control.units import reference # reference pipeline
 from modules.control.units import ipadapter # reference pipeline
-from modules import errors, shared, progress, sd_samplers, ui, ui_components, ui_symbols, ui_common, generation_parameters_copypaste, call_queue
+from modules import errors, shared, progress, sd_samplers, ui_components, ui_symbols, ui_common, ui_sections, generation_parameters_copypaste, call_queue
 from modules.ui_components import FormRow, FormGroup
 
 
@@ -117,8 +117,7 @@ def get_video(filepath: str):
         return msg
 
 
-def select_mask(image: Image.Image, blur: int = 0, negative: bool = False):
-    import cv2
+def select_mask(image: Image.Image, negative: bool = False):
     if image is None:
         return image
     image_mask = image.convert("L")
@@ -126,36 +125,27 @@ def select_mask(image: Image.Image, blur: int = 0, negative: bool = False):
         image_mask = image_mask.point(lambda x: 255 if x < 4 else 0)
     else:
         image_mask = image_mask.point(lambda x: 255 if x > 127 else 0)
-    if blur > 0:
-        kernel_size = 2 * int(2.5 * blur + 0.5) + 1
-        np_mask = np.array(image_mask)
-        np_mask = cv2.GaussianBlur(np_mask, (kernel_size, 1), blur)
-        np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), blur)
-        image_mask = Image.fromarray(np_mask.astype(np.uint8))
     return image_mask
 
 
-def expand_mask(image: Image.Image, blur: int = 0, erode: int = 3, dilate: int = 16, iterations: int = 8, threshold: int = 4):
+def expand_mask(image: Image.Image, expand: int = 64):
     import cv2
     if image is None:
         return image
     pil_mask = image.convert("L")
     np_mask = np.array(pil_mask)
+    erode, dilate, threshold = 3, 8, 4
     if threshold > 0:
         _thres, np_mask = cv2.threshold(np_mask, threshold, 255, cv2.THRESH_BINARY_INV) # create mask
     if erode > 0:
-        np_mask = cv2.erode(np_mask, np.ones((erode, erode), np.uint8), iterations=iterations) # remove noise
+        np_mask = cv2.erode(np_mask, np.ones((erode, erode), np.uint8), iterations=expand//dilate) # remove noise
     if dilate > 0:
-        np_mask = cv2.dilate(np_mask, np.ones((dilate, dilate), np.uint8), iterations=iterations) # expand area
-    if blur > 0:
-        blur_size = 2 * int(2.5 * blur + 0.5) + 1
-        np_mask = cv2.GaussianBlur(np_mask, (blur_size, 1), blur) # blur x-axis
-        np_mask = cv2.GaussianBlur(np_mask, (1, blur_size), blur) # blur y-axis
+        np_mask = cv2.dilate(np_mask, np.ones((dilate, dilate), np.uint8), iterations=expand//dilate) # expand area
     image_mask = Image.fromarray(np_mask.astype(np.uint8))
     return image_mask
 
 
-def select_input(input_mode, input_image, selected_init, init_type, input_resize, input_inpaint, mask_blur, mask_overlap):
+def select_input(input_mode, input_image, selected_init, init_type, input_resize, input_inpaint, input_video, input_batch, input_folder, _mask_blur, mask_overlap):
     global busy, input_source, input_init, input_mask # pylint: disable=global-statement
     busy = True
     if input_mode == 'Select':
@@ -164,6 +154,12 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
         selected_input = input_resize
     elif input_mode == 'Inpaint':
         selected_input = input_inpaint
+    elif input_mode == 'Video':
+        selected_input = input_video
+    elif input_mode == 'Batch':
+        selected_input = input_batch
+    elif input_mode == 'Folder':
+        selected_input = input_folder
     else:
         selected_input = None
     if selected_input is None:
@@ -177,14 +173,14 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
     # control inputs
     if isinstance(selected_input, Image.Image): # image via upload -> image
         if input_mode == 'Outpaint':
-            input_mask = expand_mask(image=selected_input, blur=mask_blur, iterations=mask_overlap)
+            input_mask = expand_mask(image=selected_input, expand=mask_overlap)
         input_source = [selected_input]
         input_type = 'PIL.Image'
         shared.log.debug(f'Control input: type={input_type} input={input_source}')
         status = f'Control input | Image | Size {selected_input.width}x{selected_input.height} | Mode {selected_input.mode}'
         res = [gr.Tabs.update(selected='out-gallery'), status]
     elif isinstance(selected_input, dict): # inpaint -> dict image+mask
-        input_mask = select_mask(image=selected_input['mask'], blur=mask_blur, negative=False)
+        input_mask = select_mask(image=selected_input['mask'], negative=False)
         selected_input = selected_input['image']
         input_source = [selected_input]
         input_type = 'PIL.Image'
@@ -222,7 +218,7 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
     elif init_type == 2: # Separate init image
         if isinstance(selected_init, Image.Image): # image via upload -> image
             if input_mode == 'Outpaint':
-                input_mask = expand_mask(image=selected_init, blur=mask_blur, iterations=mask_overlap)
+                input_mask = expand_mask(image=selected_init, expand=mask_overlap)
             input_source = [selected_init]
             input_init = [selected_init]
             input_type = 'PIL.Image'
@@ -230,7 +226,7 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
             status = f'Control input | Image | Size {selected_init.width}x{selected_init.height} | Mode {selected_init.mode}'
             res = [gr.Tabs.update(selected='out-gallery'), status]
         elif isinstance(selected_init, dict): # inpaint -> dict image+mask
-            input_mask = select_mask(image=selected_init['mask'], blur=mask_blur)
+            input_mask = select_mask(image=selected_init['mask'])
             input_init = selected_init['image']
             input_source = [selected_init]
             input_type = 'PIL.Image'
@@ -306,7 +302,7 @@ def create_ui(_blocks: gr.Blocks=None):
         return [(control_ui, 'Control', 'control')]
 
     with gr.Blocks(analytics_enabled = False) as control_ui:
-        prompt, styles, negative, btn_generate, _btn_interrogate, _btn_deepbooru, btn_paste, btn_extra, prompt_counter, btn_prompt_counter, negative_counter, btn_negative_counter  = ui.create_toprow(is_img2img=False, id_part='control')
+        prompt, styles, negative, btn_generate, _btn_interrogate, _btn_deepbooru, btn_paste, btn_extra, prompt_counter, btn_prompt_counter, negative_counter, btn_negative_counter  = ui_sections.create_toprow(is_img2img=False, id_part='control')
         with FormGroup(elem_id="control_interface", equal_height=False):
             with gr.Row(elem_id='control_settings'):
 
@@ -318,34 +314,39 @@ def create_ui(_blocks: gr.Blocks=None):
                     with gr.Row():
                         input_type = gr.Radio(label="Input type", choices=['Control only', 'Init image same as control', 'Separate init image'], value='Control only', type='index', elem_id='control_input_type')
                     with gr.Row():
-                        denoising_strength = gr.Slider(minimum=0.01, maximum=0.99, step=0.01, label='Denoising strength', value=0.50, elem_id="control_denoising_strength")
+                        denoising_strength = gr.Slider(minimum=0.01, maximum=1.0, step=0.01, label='Denoising strength', value=0.50, elem_id="control_denoising_strength")
                     with gr.Row():
                         mask_blur = gr.Slider(minimum=0, maximum=100, step=1, label='Blur', value=8, elem_id="control_mask_blur")
-                        mask_overlap = gr.Slider(minimum=0, maximum=100, step=1, label='Overlap', value=8, elem_id="control_mask_overlap")
+                        mask_overlap = gr.Slider(minimum=0, maximum=100, step=1, label='Overlap', value=64, elem_id="control_mask_overlap")
 
-                resize_mode, resize_name, width, height, scale_by, selected_scale_tab, resize_time = ui.create_resize_inputs('control', [], time_selector=True, scale_visible=False, mode='Fixed')
+                with gr.Accordion(open=False, label="Size", elem_id="control_size", elem_classes=["small-accordion"]):
+                    with gr.Tabs():
+                        with gr.Tab('Before'):
+                            resize_mode_before, resize_name_before, width_before, height_before, scale_by_before, selected_scale_tab_before = ui_sections.create_resize_inputs('control', [], scale_visible=False, mode='Fixed', accordion=False, latent=True)
+                        with gr.Tab('After'):
+                            resize_mode_after, resize_name_after, width_after, height_after, scale_by_after, selected_scale_tab_after = ui_sections.create_resize_inputs('control', [], scale_visible=False, mode='Fixed', accordion=False, latent=False)
 
                 with gr.Accordion(open=False, label="Sampler", elem_id="control_sampler", elem_classes=["small-accordion"]):
                     sd_samplers.set_samplers()
-                    steps, sampler_index = ui.create_sampler_and_steps_selection(sd_samplers.samplers, "control")
+                    steps, sampler_index = ui_sections.create_sampler_and_steps_selection(sd_samplers.samplers, "control")
 
-                batch_count, batch_size = ui.create_batch_inputs('control')
-                seed, _reuse_seed, subseed, _reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = ui.create_seed_inputs('control', reuse_visible=False)
-                cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry = ui.create_advanced_inputs('control')
+                batch_count, batch_size = ui_sections.create_batch_inputs('control')
+                seed, _reuse_seed, subseed, _reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = ui_sections.create_seed_inputs('control', reuse_visible=False)
+                cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry = ui_sections.create_advanced_inputs('control')
 
                 with gr.Accordion(open=False, label="Video", elem_id="control_video", elem_classes=["small-accordion"]):
                     with gr.Row():
                         video_skip_frames = gr.Slider(minimum=0, maximum=100, step=1, label='Skip input frames', value=0, elem_id="control_video_skip_frames")
                     with gr.Row():
                         video_type = gr.Dropdown(label='Video file', choices=['None', 'GIF', 'PNG', 'MP4'], value='None')
-                        video_duration = gr.Slider(label='Duration', minimum=0.25, maximum=10, step=0.25, value=2, visible=False)
+                        video_duration = gr.Slider(label='Duration', minimum=0.25, maximum=300, step=0.25, value=2, visible=False)
                     with gr.Row():
                         video_loop = gr.Checkbox(label='Loop', value=True, visible=False)
                         video_pad = gr.Slider(label='Pad frames', minimum=0, maximum=24, step=1, value=1, visible=False)
                         video_interpolate = gr.Slider(label='Interpolate frames', minimum=0, maximum=24, step=1, value=0, visible=False)
                     video_type.change(fn=video_type_change, inputs=[video_type], outputs=[video_duration, video_loop, video_pad, video_interpolate])
 
-                override_settings = ui.create_override_inputs('control')
+                override_settings = ui_common.create_override_inputs('control')
 
             with FormRow(variant='compact', elem_id="control_extra_networks", visible=False) as extra_networks_ui:
                 from modules import timer, ui_extra_networks
@@ -420,20 +421,19 @@ def create_ui(_blocks: gr.Blocks=None):
                         num_controlnet_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
                     controlnet_ui_units = [] # list of hidable accordions
                     for i in range(max_units):
-                        with gr.Accordion(f'Control unit {i+1}', visible= i < num_controlnet_units.value) as unit_ui:
+                        with gr.Accordion(f'Control unit {i+1}', visible= i < num_controlnet_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
-                                with gr.Column():
-                                    with gr.Row():
-                                        enabled_cb = gr.Checkbox(value= i==0, label="")
-                                        process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
-                                        model_id = gr.Dropdown(label="ControlNet", choices=controlnet.list_models(), value='None')
-                                        ui_common.create_refresh_button(model_id, controlnet.list_models, lambda: {"choices": controlnet.list_models(refresh=True)}, 'refresh_controlnet_models')
-                                        model_strength = gr.Slider(label="Strength", minimum=0.01, maximum=1.0, step=0.01, value=1.0-i/10)
-                                        control_start = gr.Slider(label="Start", minimum=0.0, maximum=1.0, step=0.05, value=0)
-                                        control_end = gr.Slider(label="End", minimum=0.0, maximum=1.0, step=0.05, value=1.0)
-                                        reset_btn = ui_components.ToolButton(value=ui_symbols.reset)
-                                        image_upload = gr.UploadButton(label=ui_symbols.upload, file_types=['image'], elem_classes=['form', 'gradio-button', 'tool'])
-                                        process_btn= ui_components.ToolButton(value=ui_symbols.preview)
+                                enabled_cb = gr.Checkbox(value= i==0, label="")
+                                process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
+                                model_id = gr.Dropdown(label="ControlNet", choices=controlnet.list_models(), value='None')
+                                ui_common.create_refresh_button(model_id, controlnet.list_models, lambda: {"choices": controlnet.list_models(refresh=True)}, 'refresh_controlnet_models')
+                                model_strength = gr.Slider(label="Strength", minimum=0.01, maximum=1.0, step=0.01, value=1.0-i/10)
+                                control_start = gr.Slider(label="Start", minimum=0.0, maximum=1.0, step=0.05, value=0)
+                                control_end = gr.Slider(label="End", minimum=0.0, maximum=1.0, step=0.05, value=1.0)
+                                reset_btn = ui_components.ToolButton(value=ui_symbols.reset)
+                                image_upload = gr.UploadButton(label=ui_symbols.upload, file_types=['image'], elem_classes=['form', 'gradio-button', 'tool'])
+                                process_btn= ui_components.ToolButton(value=ui_symbols.preview)
+                                image_preview = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=False, height=128, width=128, visible=False)
                         controlnet_ui_units.append(unit_ui)
                         units.append(unit.Unit(
                             unit_type = 'controlnet',
@@ -447,6 +447,7 @@ def create_ui(_blocks: gr.Blocks=None):
                             preview_process = preview_process,
                             preview_btn = process_btn,
                             image_upload = image_upload,
+                            image_preview = image_preview,
                             control_start = control_start,
                             control_end = control_end,
                             extra_controls = extra_controls,
@@ -455,51 +456,6 @@ def create_ui(_blocks: gr.Blocks=None):
                         if i == 0:
                             units[-1].enabled = True # enable first unit in group
                     num_controlnet_units.change(fn=display_units, inputs=[num_controlnet_units], outputs=controlnet_ui_units)
-
-                with gr.Tab('XS') as _tab_controlnetxs:
-                    gr.HTML('<a href="https://vislearn.github.io/ControlNet-XS/">ControlNet XS</a>')
-                    with gr.Row():
-                        extra_controls = [
-                            gr.Slider(label="Time embedding mix", minimum=0.0, maximum=1.0, step=0.05, value=0.0, scale=3)
-                        ]
-                        num_controlnet_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
-                    controlnetxs_ui_units = [] # list of hidable accordions
-                    for i in range(max_units):
-                        with gr.Accordion(f'Control unit {i+1}', visible= i < num_controlnet_units.value) as unit_ui:
-                            with gr.Row():
-                                with gr.Column():
-                                    with gr.Row():
-                                        enabled_cb = gr.Checkbox(value= i==0, label="")
-                                        process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
-                                        model_id = gr.Dropdown(label="ControlNet-XS", choices=xs.list_models(), value='None')
-                                        ui_common.create_refresh_button(model_id, xs.list_models, lambda: {"choices": xs.list_models(refresh=True)}, 'refresh_xs_models')
-                                        model_strength = gr.Slider(label="Strength", minimum=0.01, maximum=1.0, step=0.01, value=1.0-i/10)
-                                        control_start = gr.Slider(label="Start", minimum=0.0, maximum=1.0, step=0.05, value=0)
-                                        control_end = gr.Slider(label="End", minimum=0.0, maximum=1.0, step=0.05, value=1.0)
-                                        reset_btn = ui_components.ToolButton(value=ui_symbols.reset)
-                                        image_upload = gr.UploadButton(label=ui_symbols.upload, file_types=['image'], elem_classes=['form', 'gradio-button', 'tool'])
-                                        process_btn= ui_components.ToolButton(value=ui_symbols.preview)
-                        controlnetxs_ui_units.append(unit_ui)
-                        units.append(unit.Unit(
-                            unit_type = 'xs',
-                            result_txt = result_txt,
-                            image_input = input_image,
-                            enabled_cb = enabled_cb,
-                            reset_btn = reset_btn,
-                            process_id = process_id,
-                            model_id = model_id,
-                            model_strength = model_strength,
-                            preview_process = preview_process,
-                            preview_btn = process_btn,
-                            image_upload = image_upload,
-                            control_start = control_start,
-                            control_end = control_end,
-                            extra_controls = extra_controls,
-                            )
-                        )
-                        if i == 0:
-                            units[-1].enabled = True # enable first unit in group
-                    num_controlnet_units.change(fn=display_units, inputs=[num_controlnet_units], outputs=controlnetxs_ui_units)
 
                 with gr.Tab('Adapter') as _tab_adapter:
                     gr.HTML('<a href="https://github.com/TencentARC/T2I-Adapter">T2I-Adapter</a>')
@@ -510,18 +466,17 @@ def create_ui(_blocks: gr.Blocks=None):
                         num_adapter_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
                     adapter_ui_units = [] # list of hidable accordions
                     for i in range(max_units):
-                        with gr.Accordion(f'Adapter unit {i+1}', visible= i < num_adapter_units.value) as unit_ui:
+                        with gr.Accordion(f'Adapter unit {i+1}', visible= i < num_adapter_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
-                                with gr.Column():
-                                    with gr.Row():
-                                        enabled_cb = gr.Checkbox(value= i == 0, label="Enabled")
-                                        process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
-                                        model_id = gr.Dropdown(label="Adapter", choices=t2iadapter.list_models(), value='None')
-                                        ui_common.create_refresh_button(model_id, t2iadapter.list_models, lambda: {"choices": t2iadapter.list_models(refresh=True)}, 'refresh_adapter_models')
-                                        model_strength = gr.Slider(label="Strength", minimum=0.01, maximum=1.0, step=0.01, value=1.0-i/10)
-                                        reset_btn = ui_components.ToolButton(value=ui_symbols.reset)
-                                        image_upload = gr.UploadButton(label=ui_symbols.upload, file_types=['image'], elem_classes=['form', 'gradio-button', 'tool'])
-                                        process_btn= ui_components.ToolButton(value=ui_symbols.preview)
+                                enabled_cb = gr.Checkbox(value= i == 0, label="Enabled")
+                                process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
+                                model_id = gr.Dropdown(label="Adapter", choices=t2iadapter.list_models(), value='None')
+                                ui_common.create_refresh_button(model_id, t2iadapter.list_models, lambda: {"choices": t2iadapter.list_models(refresh=True)}, 'refresh_adapter_models')
+                                model_strength = gr.Slider(label="Strength", minimum=0.01, maximum=1.0, step=0.01, value=1.0-i/10)
+                                reset_btn = ui_components.ToolButton(value=ui_symbols.reset)
+                                image_upload = gr.UploadButton(label=ui_symbols.upload, file_types=['image'], elem_classes=['form', 'gradio-button', 'tool'])
+                                process_btn= ui_components.ToolButton(value=ui_symbols.preview)
+                                image_preview = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=False, height=128, width=128, visible=False)
                         adapter_ui_units.append(unit_ui)
                         units.append(unit.Unit(
                             unit_type = 'adapter',
@@ -535,12 +490,58 @@ def create_ui(_blocks: gr.Blocks=None):
                             preview_process = preview_process,
                             preview_btn = process_btn,
                             image_upload = image_upload,
+                            image_preview = image_preview,
                             extra_controls = extra_controls,
                             )
                         )
                         if i == 0:
                             units[-1].enabled = True # enable first unit in group
                     num_adapter_units.change(fn=display_units, inputs=[num_adapter_units], outputs=adapter_ui_units)
+
+                with gr.Tab('XS') as _tab_controlnetxs:
+                    gr.HTML('<a href="https://vislearn.github.io/ControlNet-XS/">ControlNet XS</a>')
+                    with gr.Row():
+                        extra_controls = [
+                            gr.Slider(label="Time embedding mix", minimum=0.0, maximum=1.0, step=0.05, value=0.0, scale=3)
+                        ]
+                        num_controlnet_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
+                    controlnetxs_ui_units = [] # list of hidable accordions
+                    for i in range(max_units):
+                        with gr.Accordion(f'Control unit {i+1}', visible= i < num_controlnet_units.value, elem_classes='control-unit') as unit_ui:
+                            with gr.Row():
+                                enabled_cb = gr.Checkbox(value= i==0, label="")
+                                process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
+                                model_id = gr.Dropdown(label="ControlNet-XS", choices=xs.list_models(), value='None')
+                                ui_common.create_refresh_button(model_id, xs.list_models, lambda: {"choices": xs.list_models(refresh=True)}, 'refresh_xs_models')
+                                model_strength = gr.Slider(label="Strength", minimum=0.01, maximum=1.0, step=0.01, value=1.0-i/10)
+                                control_start = gr.Slider(label="Start", minimum=0.0, maximum=1.0, step=0.05, value=0)
+                                control_end = gr.Slider(label="End", minimum=0.0, maximum=1.0, step=0.05, value=1.0)
+                                reset_btn = ui_components.ToolButton(value=ui_symbols.reset)
+                                image_upload = gr.UploadButton(label=ui_symbols.upload, file_types=['image'], elem_classes=['form', 'gradio-button', 'tool'])
+                                process_btn= ui_components.ToolButton(value=ui_symbols.preview)
+                                image_preview = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=False, height=128, width=128, visible=False)
+                        controlnetxs_ui_units.append(unit_ui)
+                        units.append(unit.Unit(
+                            unit_type = 'xs',
+                            result_txt = result_txt,
+                            image_input = input_image,
+                            enabled_cb = enabled_cb,
+                            reset_btn = reset_btn,
+                            process_id = process_id,
+                            model_id = model_id,
+                            model_strength = model_strength,
+                            preview_process = preview_process,
+                            preview_btn = process_btn,
+                            image_upload = image_upload,
+                            image_preview = image_preview,
+                            control_start = control_start,
+                            control_end = control_end,
+                            extra_controls = extra_controls,
+                            )
+                        )
+                        if i == 0:
+                            units[-1].enabled = True # enable first unit in group
+                    num_controlnet_units.change(fn=display_units, inputs=[num_controlnet_units], outputs=controlnetxs_ui_units)
 
                 with gr.Tab('Lite') as _tab_lite:
                     gr.HTML('<a href="https://huggingface.co/kohya-ss/controlnet-lllite">Control LLLite</a>')
@@ -550,18 +551,17 @@ def create_ui(_blocks: gr.Blocks=None):
                         num_lite_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
                     lite_ui_units = [] # list of hidable accordions
                     for i in range(max_units):
-                        with gr.Accordion(f'Control unit {i+1}', visible= i < num_lite_units.value) as unit_ui:
+                        with gr.Accordion(f'Control unit {i+1}', visible= i < num_lite_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
-                                with gr.Column():
-                                    with gr.Row():
-                                        enabled_cb = gr.Checkbox(value= i == 0, label="Enabled")
-                                        process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
-                                        model_id = gr.Dropdown(label="Model", choices=lite.list_models(), value='None')
-                                        ui_common.create_refresh_button(model_id, lite.list_models, lambda: {"choices": lite.list_models(refresh=True)}, 'refresh_lite_models')
-                                        model_strength = gr.Slider(label="Strength", minimum=0.01, maximum=1.0, step=0.01, value=1.0-i/10)
-                                        reset_btn = ui_components.ToolButton(value=ui_symbols.reset)
-                                        image_upload = gr.UploadButton(label=ui_symbols.upload, file_types=['image'], elem_classes=['form', 'gradio-button', 'tool'])
-                                        process_btn= ui_components.ToolButton(value=ui_symbols.preview)
+                                enabled_cb = gr.Checkbox(value= i == 0, label="Enabled")
+                                process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
+                                model_id = gr.Dropdown(label="Model", choices=lite.list_models(), value='None')
+                                ui_common.create_refresh_button(model_id, lite.list_models, lambda: {"choices": lite.list_models(refresh=True)}, 'refresh_lite_models')
+                                model_strength = gr.Slider(label="Strength", minimum=0.01, maximum=1.0, step=0.01, value=1.0-i/10)
+                                reset_btn = ui_components.ToolButton(value=ui_symbols.reset)
+                                image_upload = gr.UploadButton(label=ui_symbols.upload, file_types=['image'], elem_classes=['form', 'gradio-button', 'tool'])
+                                image_preview = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=False, height=128, width=128, visible=False)
+                                process_btn= ui_components.ToolButton(value=ui_symbols.preview)
                         lite_ui_units.append(unit_ui)
                         units.append(unit.Unit(
                             unit_type = 'lite',
@@ -575,6 +575,7 @@ def create_ui(_blocks: gr.Blocks=None):
                             preview_process = preview_process,
                             preview_btn = process_btn,
                             image_upload = image_upload,
+                            image_preview = image_preview,
                             extra_controls = extra_controls,
                             )
                         )
@@ -592,16 +593,15 @@ def create_ui(_blocks: gr.Blocks=None):
                             gr.Slider(label="Reference adain weight", minimum=0.0, maximum=2.0, step=0.05, value=1.0, interactive=True),
                         ]
                     for i in range(1): # can only have one reference unit
-                        with gr.Accordion(f'Reference unit {i+1}', visible=True) as unit_ui:
+                        with gr.Accordion(f'Reference unit {i+1}', visible=True, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
-                                with gr.Column():
-                                    with gr.Row():
-                                        enabled_cb = gr.Checkbox(value= i == 0, label="Enabled", visible=False)
-                                        model_id = gr.Dropdown(label="Reference", choices=reference.list_models(), value='Reference', visible=False)
-                                        model_strength = gr.Slider(label="Strength", minimum=0.01, maximum=1.0, step=0.01, value=1.0, visible=False)
-                                        reset_btn = ui_components.ToolButton(value=ui_symbols.reset)
-                                        image_upload = gr.UploadButton(label=ui_symbols.upload, file_types=['image'], elem_classes=['form', 'gradio-button', 'tool'])
-                                        process_btn= ui_components.ToolButton(value=ui_symbols.preview)
+                                enabled_cb = gr.Checkbox(value= i == 0, label="Enabled", visible=False)
+                                model_id = gr.Dropdown(label="Reference", choices=reference.list_models(), value='Reference', visible=False)
+                                model_strength = gr.Slider(label="Strength", minimum=0.01, maximum=1.0, step=0.01, value=1.0, visible=False)
+                                reset_btn = ui_components.ToolButton(value=ui_symbols.reset)
+                                image_upload = gr.UploadButton(label=ui_symbols.upload, file_types=['image'], elem_classes=['form', 'gradio-button', 'tool'])
+                                image_preview = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=False, height=128, width=128, visible=False)
+                                process_btn= ui_components.ToolButton(value=ui_symbols.preview)
                         units.append(unit.Unit(
                             unit_type = 'reference',
                             result_txt = result_txt,
@@ -614,6 +614,7 @@ def create_ui(_blocks: gr.Blocks=None):
                             preview_process = preview_process,
                             preview_btn = process_btn,
                             image_upload = image_upload,
+                            image_preview = image_preview,
                             extra_controls = extra_controls,
                             )
                         )
@@ -674,10 +675,10 @@ def create_ui(_blocks: gr.Blocks=None):
                 show_preview.change(fn=lambda x: gr.update(visible=x), inputs=[show_preview], outputs=[column_preview])
                 show_ip.change(fn=lambda x: gr.update(visible=x), inputs=[show_ip], outputs=[column_ip])
                 input_type.change(fn=lambda x: gr.update(visible=x == 2), inputs=[input_type], outputs=[column_init])
-                btn_prompt_counter.click(fn=call_queue.wrap_queued_call(ui.update_token_counter), inputs=[prompt, steps], outputs=[prompt_counter])
-                btn_negative_counter.click(fn=call_queue.wrap_queued_call(ui.update_token_counter), inputs=[negative, steps], outputs=[negative_counter])
+                btn_prompt_counter.click(fn=call_queue.wrap_queued_call(ui_common.update_token_counter), inputs=[prompt, steps], outputs=[prompt_counter])
+                btn_negative_counter.click(fn=call_queue.wrap_queued_call(ui_common.update_token_counter), inputs=[negative, steps], outputs=[negative_counter])
 
-                select_fields = [input_mode, input_image, init_image, input_type, input_resize, input_inpaint, mask_blur, mask_overlap]
+                select_fields = [input_mode, input_image, init_image, input_type, input_resize, input_inpaint, input_video, input_batch, input_folder, mask_blur, mask_overlap]
                 select_output = [output_tabs, result_txt]
                 select_dict = dict(
                     fn=select_input,
@@ -701,9 +702,10 @@ def create_ui(_blocks: gr.Blocks=None):
                     prompt, negative, styles,
                     steps, sampler_index,
                     seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
-                    cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry,
-                    resize_mode, resize_name, width, height, scale_by, selected_scale_tab, resize_time,
-                    denoising_strength, batch_count, batch_size,
+                    cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry,
+                    resize_mode_before, resize_name_before, width_before, height_before, scale_by_before, selected_scale_tab_before,
+                    resize_mode_after, resize_name_after, width_after, height_after, scale_by_after, selected_scale_tab_after,
+                    denoising_strength, batch_count, batch_size, mask_blur, mask_overlap,
                     video_skip_frames, video_type, video_duration, video_loop, video_pad, video_interpolate,
                     ip_adapter, ip_scale, ip_image, ip_type,
                 ]

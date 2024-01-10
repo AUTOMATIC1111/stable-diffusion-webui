@@ -25,10 +25,6 @@ def preprocess(id_task, process_src, process_dst, process_width, process_height,
             deepbooru.model.stop()
 
 
-def listfiles(dirname):
-    return os.listdir(dirname)
-
-
 class PreprocessParams:
     src = None
     dstdir = None
@@ -137,17 +133,12 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
     dst = os.path.abspath(process_dst)
     split_threshold = max(0.0, min(1.0, split_threshold))
     overlap_ratio = max(0.0, min(0.9, overlap_ratio))
-
     assert src != dst, 'same directory specified as source and destination'
-
     os.makedirs(dst, exist_ok=True)
-
-    files = listfiles(src)
-
+    files = shared.listdir(src)
     shared.state.job = "preprocess"
     shared.state.textinfo = "Preprocessing..."
     shared.state.job_count = len(files)
-
     params = PreprocessParams()
     params.dstdir = dst
     params.flip = process_flip
@@ -155,7 +146,6 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
     params.process_caption = process_caption
     params.process_caption_deepbooru = process_caption_deepbooru
     params.preprocess_txt_action = preprocess_txt_action
-
     pbar = tqdm(files)
     for index, imagefile in enumerate(pbar):
         params.subindex = 0
@@ -171,9 +161,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
         description = f"Preprocessing image {index + 1}/{len(files)}"
         pbar.set_description(description)
         shared.state.textinfo = description
-
         params.src = filename
-
         existing_caption = None
         existing_caption_filename = f"{os.path.splitext(filename)[0]}.txt"
         if os.path.exists(existing_caption_filename):
@@ -181,32 +169,25 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
                 existing_caption = file.read()
         else:
             existing_caption_filename = None
-
         if shared.state.interrupted:
             break
-
         if img.height > img.width:
             ratio = (img.width * height) / (img.height * width)
             inverse_xy = False
         else:
             ratio = (img.height * width) / (img.width * height)
             inverse_xy = True
-
         process_default_resize = True
-
         if process_split and ratio < 1.0 and ratio <= split_threshold:
             for splitted in split_pic(img, inverse_xy, width, height, overlap_ratio):
                 save_pic(splitted, index, params, existing_caption=existing_caption, existing_caption_filename=existing_caption_filename)
             process_default_resize = False
-
         if process_focal_crop and img.height != img.width:
-
             dnn_model_path = None
             try:
                 dnn_model_path = autocrop.download_and_cache_models(os.path.join(paths.models_path, "opencv"))
             except Exception as e:
                 print("Unable to load face detection model for auto crop selection. Falling back to lower quality haar method.", e)
-
             autocrop_settings = autocrop.Settings(
                 crop_width = width,
                 crop_height = height,
@@ -227,13 +208,10 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
             else:
                 print(f"skipped {img.width}x{img.height} image {filename} (can't find suitable size within error threshold)")
             process_default_resize = False
-
         if process_keep_original_size:
             save_pic(img, index, params, existing_caption=existing_caption)
             process_default_resize = False
-
         if process_default_resize:
             img = images.resize_image(1, img, width, height)
             save_pic(img, index, params, existing_caption=existing_caption)
-
         shared.state.nextjob()

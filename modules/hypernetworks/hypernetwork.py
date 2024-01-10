@@ -284,7 +284,7 @@ class Hypernetwork:
 def list_hypernetworks(path):
     res = {}
     def list_folder(folder):
-        for filename in os.listdir(folder):
+        for filename in shared.listdir(folder):
             fn = os.path.join(folder, filename)
             if os.path.isfile(fn) and fn.lower().endswith(".pt"):
                 name = os.path.splitext(os.path.basename(fn))[0]

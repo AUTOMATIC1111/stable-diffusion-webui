@@ -1,5 +1,6 @@
 from typing import Union
 from PIL import Image
+import gradio as gr
 from modules.shared import log
 from modules.control import processors
 from modules.control.units import controlnet
@@ -31,6 +32,7 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
                  image_input = None,
                  preview_process = None,
                  image_upload = None,
+                 image_preview = None,
                  control_start = None,
                  control_end = None,
                  result_txt = None,
@@ -101,8 +103,10 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
                 self.process.override = Image.open(image_file.name)
                 self.override = self.process.override
                 log.debug(f'Control process upload image: path="{image_file.name}" image={self.process.override}')
+                return gr.update(visible=self.process.override is not None, value=self.process.override)
             except Exception as e:
                 log.error(f'Control process upload image failed: path="{image_file.name}" error={e}')
+                return gr.update(visible=False, value=None)
 
         # actual init
         if self.type == 'adapter':
@@ -157,7 +161,7 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
         if preview_btn is not None:
             preview_btn.click(fn=self.process.preview, inputs=[self.input], outputs=[preview_process]) # return list of images for gallery
         if image_upload is not None:
-            image_upload.upload(fn=upload_image, inputs=[image_upload], outputs=[]) # return list of images for gallery
+            image_upload.upload(fn=upload_image, inputs=[image_upload], outputs=[image_preview]) # return list of images for gallery
         if control_start is not None and control_end is not None:
             control_start.change(fn=control_change, inputs=[control_start, control_end])
             control_end.change(fn=control_change, inputs=[control_start, control_end])

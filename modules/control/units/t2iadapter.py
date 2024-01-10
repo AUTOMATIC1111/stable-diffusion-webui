@@ -4,6 +4,7 @@ from typing import Union
 from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline, T2IAdapter, MultiAdapter, StableDiffusionAdapterPipeline, StableDiffusionXLAdapterPipeline # pylint: disable=unused-import
 from modules.shared import log
 from modules import errors
+from modules.control.units import detect
 
 
 what = 'T2I-Adapter'
@@ -116,7 +117,7 @@ class AdapterPipeline():
         if isinstance(adapter, list) and len(adapter) > 1: # TODO use MultiAdapter
             adapter = MultiAdapter(adapter)
         adapter.to(device=pipeline.device, dtype=pipeline.dtype)
-        if isinstance(pipeline, StableDiffusionXLPipeline):
+        if detect.is_sdxl(pipeline):
             self.pipeline = StableDiffusionXLAdapterPipeline(
                 vae=pipeline.vae,
                 text_encoder=pipeline.text_encoder,
@@ -128,7 +129,7 @@ class AdapterPipeline():
                 feature_extractor=getattr(pipeline, 'feature_extractor', None),
                 adapter=adapter,
             ).to(pipeline.device)
-        elif isinstance(pipeline, StableDiffusionPipeline):
+        elif detect.is_sd15(pipeline):
             self.pipeline = StableDiffusionAdapterPipeline(
                 vae=pipeline.vae,
                 text_encoder=pipeline.text_encoder,

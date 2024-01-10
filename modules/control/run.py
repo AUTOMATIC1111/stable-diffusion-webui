@@ -1,6 +1,5 @@
 import os
 import time
-import math
 from typing import List, Union
 import cv2
 import numpy as np
@@ -64,10 +63,11 @@ def restore_pipeline():
 def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_generator: bool, input_type: int,
                 prompt, negative, styles, steps, sampler_index,
                 seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
-                cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, full_quality, restore_faces, tiling,
+                cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling,
                 hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry,
-                resize_mode, resize_name, width, height, scale_by, selected_scale_tab, resize_time,
-                denoising_strength, batch_count, batch_size,
+                resize_mode_before, resize_name_before, width_before, height_before, scale_by_before, selected_scale_tab_before,
+                resize_mode_after, resize_name_after, width_after, height_after, scale_by_after, selected_scale_tab_after,
+                denoising_strength, batch_count, batch_size, mask_blur, mask_overlap,
                 video_skip_frames, video_type, video_duration, video_loop, video_pad, video_interpolate,
                 ip_adapter, ip_scale, ip_image, ip_type,
         ):
@@ -82,8 +82,6 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
     active_start: List[float] = [] # start step for all active models
     active_end: List[float] = [] # end step for all active models
     processed_image: Image.Image = None # last processed image
-    width = 8 * math.ceil(width / 8)
-    height = 8 * math.ceil(height / 8)
     if mask is not None and input_type == 0:
         input_type = 1 # inpaint always requires control_image
 
@@ -103,6 +101,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
         clip_skip = clip_skip,
         image_cfg_scale = image_cfg_scale,
         diffusers_guidance_rescale = diffusers_guidance_rescale,
+        sag_scale = sag_scale,
         full_quality = full_quality,
         restore_faces = restore_faces,
         tiling = tiling,
@@ -115,24 +114,22 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
         hdr_maximize = hdr_maximize,
         hdr_max_center = hdr_max_center,
         hdr_max_boundry = hdr_max_boundry,
-        resize_mode = resize_mode if resize_name != 'None' else 0,
-        resize_name = resize_name,
-        scale_by = scale_by,
-        selected_scale_tab = selected_scale_tab,
+        resize_mode = resize_mode_before if resize_name_before != 'None' else 0,
+        resize_name = resize_name_before,
+        scale_by = scale_by_before,
+        selected_scale_tab = selected_scale_tab_before,
         denoising_strength = denoising_strength,
         n_iter = batch_count,
         batch_size = batch_size,
+        mask_blur=mask_blur,
         outpath_samples=shared.opts.outdir_samples or shared.opts.outdir_control_samples,
         outpath_grids=shared.opts.outdir_grids or shared.opts.outdir_control_grids,
     )
     processing.process_init(p)
 
-    if resize_mode != 0 or inputs is None or inputs == [None]:
-        p.width = width # pylint: disable=attribute-defined-outside-init
-        p.height = height # pylint: disable=attribute-defined-outside-init
-        if selected_scale_tab == 1:
-            width = int(width * scale_by)
-            height = int(height * scale_by)
+    if resize_mode_before != 0 or inputs is None or inputs == [None]:
+        p.width = width_before # pylint: disable=attribute-defined-outside-init
+        p.height = height_before # pylint: disable=attribute-defined-outside-init
     else:
         del p.width
         del p.height
@@ -293,6 +290,8 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                     w, h = int(video.get(cv2.CAP_PROP_FRAME_WIDTH)), int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
                     codec = util.decode_fourcc(video.get(cv2.CAP_PROP_FOURCC))
                     status, frame = video.read()
+                    if status:
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     shared.log.debug(f'Control: input video: path={inputs} frames={frames} fps={fps} size={w}x{h} codec={codec}')
                 except Exception as e:
                     msg = f'Control: video open failed: path={inputs} {e}'
@@ -341,12 +340,15 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                     if video is not None and index % (video_skip_frames + 1) != 0:
                         continue
 
-                    # resize
-                    if p.resize_mode != 0 and input_image is not None:
-                        p.extra_generation_params["Control resize"] = f'{resize_time}: {resize_name}'
-                    if p.resize_mode != 0 and input_image is not None and resize_time == 'Before':
-                        debug(f'Control resize: image={input_image} width={width} height={height} mode={p.resize_mode} name={resize_name} sequence={resize_time}')
-                        input_image = images.resize_image(p.resize_mode, input_image, width, height, resize_name)
+                    # resize before
+                    if resize_mode_before != 0 and resize_name_before != 'None':
+                        if selected_scale_tab_before == 1:
+                            width_before = int(input_image.width * scale_by_before)
+                            height_before = int(input_image.height * scale_by_before)
+                        if input_image is not None:
+                            p.extra_generation_params["Control resize"] = f'{resize_name_before}'
+                            debug(f'Control resize: op=before image={input_image} width={width_before} height={height_before} mode={resize_mode_before} name={resize_name_before}')
+                            input_image = images.resize_image(resize_mode_before, input_image, width_before, height_before, resize_name_before)
                     if input_image is not None:
                         p.width = input_image.width
                         p.height = input_image.height
@@ -431,13 +433,12 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                     if pipe is not None:
                         if not has_models and (unit_type == 'controlnet' or unit_type == 'adapter' or unit_type == 'xs' or unit_type == 'lite'): # run in txt2img/img2img/inpaint mode
                             if mask is not None:
-                                p.task_args['image'] = input_image
-                                p.task_args['mask_image'] = mask
                                 p.task_args['strength'] = denoising_strength
                                 p.image_mask = mask
-                                p.mask = mask
                                 p.inpaint_full_res = False
                                 p.init_images = [input_image]
+                                # if mask_overlap > 0:
+                                #    p.task_args['padding_mask_crop'] = mask_overlap # TODO enable once fixed in diffusers
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING)
                             elif processed_image is not None:
                                 p.init_images = [processed_image]
@@ -450,13 +451,11 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         else: # actual control
                             p.is_control = True
                             if mask is not None:
-                                # p.task_args['image'] = p.image
-                                p.task_args['mask_image'] = mask
                                 p.task_args['strength'] = denoising_strength
-                                p.task_args['padding_mask_crop'] = 64 # should be configurable based on ui
                                 p.image_mask = mask
-                                p.mask = mask
                                 p.inpaint_full_res = False
+                                # if mask_overlap > 0:
+                                #    p.task_args['padding_mask_crop'] = mask_overlap # TODO enable once fixed in diffusers
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING) # only controlnet supports inpaint
                             elif 'control_image' in p.task_args:
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE) # only controlnet supports img2img
@@ -468,11 +467,9 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                     # pipeline
                     output = None
                     if pipe is not None: # run new pipeline
-                        debug(f'Control exec pipeline: class={pipe.__class__}')
-                        debug(f'Control exec pipeline: task={sd_models.get_diffusers_task(pipe)}')
+                        debug(f'Control exec pipeline: task={sd_models.get_diffusers_task(pipe)} class={pipe.__class__}')
                         debug(f'Control exec pipeline: p={vars(p)}')
-                        debug(f'Control exec pipeline: args={p.task_args}')
-                        debug(f'Control exec pipeline: image={p.task_args.get("image", None)} control={p.task_args.get("control_image", None)} mask={p.task_args.get("mask_image", None)} ref={p.task_args.get("ref_image", None)}')
+                        debug(f'Control exec pipeline: args={p.task_args} image={p.task_args.get("image", None)} control={p.task_args.get("control_image", None)} mask={p.task_args.get("mask_image", None)} ref={p.task_args.get("ref_image", None)}')
                         processed: processing.Processed = processing.process_images(p) # run actual pipeline
                         output = processed.images if processed is not None else None
                         # output = pipe(**vars(p)).images # alternative direct pipe exec call
@@ -484,10 +481,14 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                     if output is not None and len(output) > 0:
                         output_image = output[0]
                         if output_image is not None:
-                            # resize
-                            if p.resize_mode != 0 and resize_time == 'After':
-                                debug(f'Control resize: image={input_image} width={width} height={height} mode={p.resize_mode} name={resize_name} sequence={resize_time}')
-                                output_image = images.resize_image(p.resize_mode, output_image, width, height, resize_name)
+
+                            # resize after
+                            if selected_scale_tab_after == 1:
+                                width_after = int(output_image.width * scale_by_after)
+                                height_after = int(output_image.height * scale_by_after)
+                            if resize_mode_after != 0 and resize_name_after != 'None':
+                                debug(f'Control resize: op=after image={output_image} width={width_after} height={height_after} mode={resize_mode_after} name={resize_name_after}')
+                                output_image = images.resize_image(resize_mode_after, output_image, width_after, height_after, resize_name_after)
                             elif hasattr(p, 'width') and hasattr(p, 'height'):
                                 output_image = output_image.resize((p.width, p.height), Image.Resampling.LANCZOS)
 
@@ -502,6 +503,8 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
 
                 if video is not None and frame is not None:
                     status, frame = video.read()
+                    if status:
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     debug(f'Control: video frame={index} frames={frames} status={status} skip={index % (video_skip_frames + 1)} progress={index/frames:.2f}')
                 else:
                     status = False
