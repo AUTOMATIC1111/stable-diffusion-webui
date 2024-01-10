@@ -457,6 +457,12 @@ def check_torch():
     elif allow_openvino and args.use_openvino:
         log.info('Using OpenVINO')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu')
+        install(os.environ.get('OPENVINO_PACKAGE', 'openvino==2023.2.0'), 'openvino')
+        install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True) # TODO openvino: numpy version conflicts with tensorflow and doesn't support Python 3.11
+        install('nncf==2.7.0', 'nncf')
+        os.environ.setdefault('PYTORCH_TRACING_MODE', 'TORCHFX')
+        os.environ.setdefault('NEOReadDebugKeys', '1')
+        os.environ.setdefault('ClDeviceGlobalMemSizeAvailablePercent', '100')
     else:
         machine = platform.machine()
         if sys.platform == 'darwin':
@@ -523,13 +529,8 @@ def check_torch():
         log.debug(f'Cannot install xformers package: {e}')
     if opts.get('cuda_compile_backend', '') == 'hidet':
         install('hidet', 'hidet')
-    if args.use_openvino or opts.get('cuda_compile_backend', '') == 'openvino_fx':
-        install(os.environ.get('OPENVINO_PACKAGE', 'openvino==2023.2.0'), 'openvino')
+    if opts.get('nncf_compress_weights', False):
         install('nncf==2.7.0', 'nncf')
-        install('onnxruntime-openvino', 'onnxruntime-openvino', ignore=True) # TODO openvino: numpy version conflicts with tensorflow and doesn't support Python 3.11
-        os.environ.setdefault('PYTORCH_TRACING_MODE', 'TORCHFX')
-        os.environ.setdefault('NEOReadDebugKeys', '1')
-        os.environ.setdefault('ClDeviceGlobalMemSizeAvailablePercent', '100')
     if args.profile:
         print_profile(pr, 'Torch')
 
