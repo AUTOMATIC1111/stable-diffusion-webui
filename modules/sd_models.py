@@ -1289,6 +1289,7 @@ def unload_model_weights(op='model'):
     if shared.compiled_model_state is not None:
         shared.compiled_model_state.compiled_cache.clear()
         shared.compiled_model_state.partitioned_modules.clear()
+        shared.compiled_model_state = None
     if op == 'model' or op == 'dict':
         if model_data.sd_model:
             if shared.backend == shared.Backend.ORIGINAL:

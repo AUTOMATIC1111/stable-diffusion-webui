@@ -8,6 +8,7 @@ from installer import setup_logging
 #Used by OpenVINO, can be used with TensorRT or Olive
 class CompiledModelState:
     def __init__(self):
+        self.is_compiled = False
         self.model_str = ""
         self.first_pass = True
         self.first_pass_refiner = True
@@ -62,16 +63,8 @@ def nncf_compress_weights(sd_model):
     try:
         t0 = time.time()
         import nncf
-        if shared.compiled_model_state is None:
-            shared.compiled_model_state = CompiledModelState()
-        else:
-            shared.compiled_model_state.compiled_cache.clear()
-            shared.compiled_model_state.partitioned_modules.clear()
-            backup_lora_model = []
-            if shared.compiled_model_state.lora_compile:
-                backup_lora_model = shared.compiled_model_state.lora_model
-            shared.compiled_model_state = CompiledModelState()
-            shared.compiled_model_state.lora_model = backup_lora_model
+        shared.compiled_model_state = CompiledModelState()
+        shared.compiled_model_state.is_compiled = True
 
         if shared.opts.nncf_compress_weights:
             if hasattr(sd_model, 'unet'):
@@ -103,16 +96,11 @@ def optimize_openvino():
     try:
         from modules.intel.openvino import openvino_fx # pylint: disable=unused-import
         torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
-        if shared.compiled_model_state is None:
-            shared.compiled_model_state = CompiledModelState()
-        else:
+        if shared.compiled_model_state is not None:
             shared.compiled_model_state.compiled_cache.clear()
             shared.compiled_model_state.partitioned_modules.clear()
-            backup_lora_model = []
-            if shared.compiled_model_state.lora_compile:
-                backup_lora_model = shared.compiled_model_state.lora_model
-            shared.compiled_model_state = CompiledModelState()
-            shared.compiled_model_state.lora_model = backup_lora_model
+        shared.compiled_model_state = CompiledModelState()
+        shared.compiled_model_state.is_compiled = True
         shared.compiled_model_state.first_pass = True if not shared.opts.cuda_compile_precompile else False
         shared.compiled_model_state.first_pass_vae = True if not shared.opts.cuda_compile_precompile else False
         shared.compiled_model_state.first_pass_refiner = True if not shared.opts.cuda_compile_precompile else False

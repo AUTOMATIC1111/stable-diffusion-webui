@@ -159,8 +159,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
     failed_to_load_networks = []
 
     recompile_model = False
-    if ((shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx") or
-    shared.opts.nncf_compress_weights or shared.opts.nncf_compress_text_encoder_weights):
+    if shared.compiled_model_state is not None and shared.compiled_model_state.is_compiled == True:
         if len(names) == len(shared.compiled_model_state.lora_model):
             for i, name in enumerate(names):
                 if shared.compiled_model_state.lora_model[i] != f"{name}:{te_multipliers[i] if te_multipliers else 1.0}":
@@ -169,7 +168,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
                     break
             if not recompile_model:
                 if len(loaded_networks) > 0 and debug:
-                    shared.log.debug('OpenVINO: Skipping LoRa loading')
+                    shared.log.debug('Model Compile: Skipping LoRa loading')
                 return
         else:
             recompile_model = True
@@ -178,7 +177,6 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
         backup_cuda_compile = shared.opts.cuda_compile
         backup_nncf_compress_weights = shared.opts.nncf_compress_weights
         backup_nncf_compress_text_encoder_weights = shared.opts.nncf_compress_text_encoder_weights
-        shared.compiled_model_state.lora_compile = True
         sd_models.unload_model_weights(op='model')
         shared.opts.cuda_compile = False
         shared.opts.nncf_compress_weights = False
@@ -229,7 +227,9 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
 
     if recompile_model:
         shared.log.info("LoRA recompiling model")
+        backup_lora_model = shared.compiled_model_state.lora_model
         sd_models_compile.compile_diffusers(shared.sd_model)
+        shared.compiled_model_state.lora_model = backup_lora_model
 
 
 def network_restore_weights_from_backup(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.GroupNorm, torch.nn.LayerNorm, torch.nn.MultiheadAttention, diffusers.models.lora.LoRACompatibleLinear, diffusers.models.lora.LoRACompatibleConv]):
