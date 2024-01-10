@@ -31,112 +31,112 @@ import sd_scripts.library.custom_train_functions as custom_train_functions
 from sd_scripts.library.fix_photo import mopi
 from sd_scripts.library.face_process_utils import call_face_crop
 
-# from modelscope.outputs import OutputKeys
-# from modelscope.pipelines import pipeline
-# from modelscope.utils.constant import Tasks
-# from modelscope import snapshot_download
-# from transformers import PreTrainedTokenizerBase, PreTrainedModel
-#
-# from sd_scripts.library.transformers_pretrained import ori_tokenizer_from_pretrained, ori_model_from_pretrained
+from modelscope.outputs import OutputKeys
+from modelscope.pipelines import pipeline
+from modelscope.utils.constant import Tasks
+from modelscope import snapshot_download
+from transformers import PreTrainedTokenizerBase, PreTrainedModel
+
+from sd_scripts.library.transformers_pretrained import ori_tokenizer_from_pretrained, ori_model_from_pretrained
 from sd_scripts.library.face_tool import insightface_main_face
 
 
-# def patch_tokenizer_base():
-#     """ Monkey patch PreTrainedTokenizerBase.from_pretrained to adapt to modelscope hub.
-#     """
-#     ori_from_pretrained = ori_tokenizer_from_pretrained
-#
-#     @classmethod
-#     def from_pretrained(cls, pretrained_model_name_or_path, *model_args,
-#                         **kwargs):
-#         ignore_file_pattern = [r'\w+\.bin', r'\w+\.safetensors']
-#         if "use_modelscope" in kwargs:
-#             if not os.path.exists(pretrained_model_name_or_path):
-#                 revision = kwargs.pop('revision', None)
-#                 model_dir = snapshot_download(
-#                     pretrained_model_name_or_path,
-#                     revision=revision,
-#                     ignore_file_pattern=ignore_file_pattern)
-#             else:
-#                 model_dir = pretrained_model_name_or_path
-#             return ori_from_pretrained(cls, model_dir, *model_args, **kwargs)
-#         else:
-#             model_dir = pretrained_model_name_or_path
-#             return ori_from_pretrained(cls, model_dir, *model_args, **kwargs)
-#
-#     PreTrainedTokenizerBase.from_pretrained = from_pretrained
-#
-#
-# def patch_model_base():
-#     """ Monkey patch PreTrainedModel.from_pretrained to adapt to modelscope hub.
-#     """
-#     ori_from_pretrained = ori_model_from_pretrained
-#
-#     @classmethod
-#     def from_pretrained(cls, pretrained_model_name_or_path, *model_args,
-#                         **kwargs):
-#         ignore_file_pattern = [r'\w+\.safetensors']
-#         if "use_modelscope" in kwargs:
-#             if not os.path.exists(pretrained_model_name_or_path):
-#                 revision = kwargs.pop('revision', None)
-#                 model_dir = snapshot_download(
-#                     pretrained_model_name_or_path,
-#                     revision=revision,
-#                     ignore_file_pattern=ignore_file_pattern)
-#             else:
-#                 model_dir = pretrained_model_name_or_path
-#             return ori_from_pretrained(cls, model_dir, *model_args, **kwargs)
-#         else:
-#             model_dir = pretrained_model_name_or_path
-#             return ori_from_pretrained(cls, model_dir, *model_args, **kwargs)
-#
-#     PreTrainedModel.from_pretrained = from_pretrained
-#
-#
-# patch_tokenizer_base()
-# patch_model_base()
+def patch_tokenizer_base():
+    """ Monkey patch PreTrainedTokenizerBase.from_pretrained to adapt to modelscope hub.
+    """
+    ori_from_pretrained = ori_tokenizer_from_pretrained
+
+    @classmethod
+    def from_pretrained(cls, pretrained_model_name_or_path, *model_args,
+                        **kwargs):
+        ignore_file_pattern = [r'\w+\.bin', r'\w+\.safetensors']
+        if "use_modelscope" in kwargs:
+            if not os.path.exists(pretrained_model_name_or_path):
+                revision = kwargs.pop('revision', None)
+                model_dir = snapshot_download(
+                    pretrained_model_name_or_path,
+                    revision=revision,
+                    ignore_file_pattern=ignore_file_pattern)
+            else:
+                model_dir = pretrained_model_name_or_path
+            return ori_from_pretrained(cls, model_dir, *model_args, **kwargs)
+        else:
+            model_dir = pretrained_model_name_or_path
+            return ori_from_pretrained(cls, model_dir, *model_args, **kwargs)
+
+    PreTrainedTokenizerBase.from_pretrained = from_pretrained
 
 
-# # 面部检测
-# def face_detect(image_list):
-#     retinaface_detection = pipeline(Tasks.face_detection, "damo/cv_resnet50_face-detection_retinaface",
-#                                     model_revision="v2.0.2")
-#     head_list = []
-#     for index, image in enumerate(image_list):
-#         try:
-#             h, w, c = np.shape(image)
-#
-#             retinaface_boxes, retinaface_keypoints, _ = call_face_crop(retinaface_detection, image, 3, prefix="tmp")
-#             retinaface_box = retinaface_boxes[0]
-#             retinaface_keypoint = retinaface_keypoints[0]
-#
-#             # get key point
-#             retinaface_keypoint = np.reshape(retinaface_keypoint, [5, 2])
-#             # get angle
-#             x = retinaface_keypoint[0, 0] - retinaface_keypoint[1, 0]
-#             y = retinaface_keypoint[0, 1] - retinaface_keypoint[1, 1]
-#             angle = 0 if x == 0 else abs(math.atan(y / x) * 180 / math.pi)
-#             angle = (90 - angle) / 90
-#
-#             # face size judge
-#             face_width = (retinaface_box[2] - retinaface_box[0]) / (3 - 1)
-#             face_height = (retinaface_box[3] - retinaface_box[1]) / (3 - 1)
-#             if min(face_width, face_height) < 128:
-#                 print("Face size in {} is small than 128. Ignore it.".format(image))
-#                 continue
-#
-#             # face crop
-#             sub_image = image.crop(retinaface_box)
-#             # try:
-#             #     sub_image = Image.fromarray(cv2.cvtColor(skin_retouching(sub_image)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
-#             # except Exception as e:
-#             #     print("面部修复失败")
-#             head_list.append(sub_image)
-#
-#         except Exception as e:
-#             print("面部检测失败")
-#     del retinaface_detection
-#     return head_list
+def patch_model_base():
+    """ Monkey patch PreTrainedModel.from_pretrained to adapt to modelscope hub.
+    """
+    ori_from_pretrained = ori_model_from_pretrained
+
+    @classmethod
+    def from_pretrained(cls, pretrained_model_name_or_path, *model_args,
+                        **kwargs):
+        ignore_file_pattern = [r'\w+\.safetensors']
+        if "use_modelscope" in kwargs:
+            if not os.path.exists(pretrained_model_name_or_path):
+                revision = kwargs.pop('revision', None)
+                model_dir = snapshot_download(
+                    pretrained_model_name_or_path,
+                    revision=revision,
+                    ignore_file_pattern=ignore_file_pattern)
+            else:
+                model_dir = pretrained_model_name_or_path
+            return ori_from_pretrained(cls, model_dir, *model_args, **kwargs)
+        else:
+            model_dir = pretrained_model_name_or_path
+            return ori_from_pretrained(cls, model_dir, *model_args, **kwargs)
+
+    PreTrainedModel.from_pretrained = from_pretrained
+
+
+patch_tokenizer_base()
+patch_model_base()
+
+
+# 面部检测
+def face_detect(image_list):
+    retinaface_detection = pipeline(Tasks.face_detection, "damo/cv_resnet50_face-detection_retinaface",
+                                    model_revision="v2.0.2")
+    head_list = []
+    for index, image in enumerate(image_list):
+        try:
+            h, w, c = np.shape(image)
+
+            retinaface_boxes, retinaface_keypoints, _ = call_face_crop(retinaface_detection, image, 3, prefix="tmp")
+            retinaface_box = retinaface_boxes[0]
+            retinaface_keypoint = retinaface_keypoints[0]
+
+            # get key point
+            retinaface_keypoint = np.reshape(retinaface_keypoint, [5, 2])
+            # get angle
+            x = retinaface_keypoint[0, 0] - retinaface_keypoint[1, 0]
+            y = retinaface_keypoint[0, 1] - retinaface_keypoint[1, 1]
+            angle = 0 if x == 0 else abs(math.atan(y / x) * 180 / math.pi)
+            angle = (90 - angle) / 90
+
+            # face size judge
+            face_width = (retinaface_box[2] - retinaface_box[0]) / (3 - 1)
+            face_height = (retinaface_box[3] - retinaface_box[1]) / (3 - 1)
+            if min(face_width, face_height) < 128:
+                print("Face size in {} is small than 128. Ignore it.".format(image))
+                continue
+
+            # face crop
+            sub_image = image.crop(retinaface_box)
+            # try:
+            #     sub_image = Image.fromarray(cv2.cvtColor(skin_retouching(sub_image)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
+            # except Exception as e:
+            #     print("面部修复失败")
+            head_list.append(sub_image)
+
+        except Exception as e:
+            print("面部检测失败")
+    del retinaface_detection
+    return head_list
 
 
 # scheduler:
@@ -931,25 +931,25 @@ def train_auto(
 
     body_list, head_list = custom_configurable_image_processing(
         train_data_dir, options, head_width, head_height, if_res_oribody=True, model_p=general_model_path)
-    # skin_retouching = pipeline(Tasks.skin_retouching, model="damo/cv_unet_skin-retouching")
-    # # portrait_enhancement = pipeline(Tasks.image_portrait_enhancement, model="damo/cv_gpen_image-portrait-enhancement",
-    # #                                 model_revision="v1.0.0")
+    skin_retouching = pipeline(Tasks.skin_retouching, model="damo/cv_unet_skin-retouching")
+    # portrait_enhancement = pipeline(Tasks.image_portrait_enhancement, model="damo/cv_gpen_image-portrait-enhancement",
+    #                                 model_revision="v1.0.0")
 
-    # new_body_list = []
-    # new_head_list = []
-    # head_list = face_detect(image_list=body_list)
-    #
-    # if gender == 2:
-    #     for body_img in body_list:
-    #         body_img = Image.fromarray(
-    #             cv2.cvtColor(skin_retouching(body_img)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
-    #         new_body_list.append(body_img)
-    #
-    # for head_img in head_list:
-    #     head_img = Image.fromarray(cv2.cvtColor(skin_retouching(head_img)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
-    #     new_head_list.append(head_img)
-    #
-    # del skin_retouching
+    new_body_list = []
+    new_head_list = []
+    head_list = face_detect(image_list=body_list)
+
+    if gender == 2:
+        for body_img in body_list:
+            body_img = Image.fromarray(
+                cv2.cvtColor(skin_retouching(body_img)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
+            new_body_list.append(body_img)
+
+    for head_img in head_list:
+        head_img = Image.fromarray(cv2.cvtColor(skin_retouching(head_img)[OutputKeys.OUTPUT_IMG], cv2.COLOR_BGR2RGB))
+        new_head_list.append(head_img)
+
+    del skin_retouching
 
     # new_body_list = []
     # new_head_list = []
@@ -970,7 +970,7 @@ def train_auto(
     # if only_face:
     clean_dir(train_data_dir)
     # save_images_to_temp(head_list, train_data_dir)
-    save_images(body_list, train_data_dir)
+    save_images(new_head_list, train_data_dir)
     face_list = seg_face(input_path=train_data_dir, output_path=tmp_face_dir, model_path=general_model_path)
 
     tmp_dir = os.path.join(dirname, f"{task_id}-preprocess") if not only_face else tmp_face_dir
@@ -982,7 +982,7 @@ def train_auto(
 
     if gender == 2:
         # 1.图片预处理
-        train_preprocess(process_src=body_list, process_dst=train_dir, process_width=width, process_height=height,
+        train_preprocess(process_src=new_body_list, process_dst=train_dir, process_width=width, process_height=height,
                          preprocess_txt_action='ignore', process_keep_original_size=False,
                          process_split=False, process_flip=False, process_caption=True,
                          process_caption_deepbooru=not use_wd, split_threshold=0.5,
@@ -994,7 +994,7 @@ def train_auto(
                          model_path=general_model_path,
                          filter_tags=undesired_tags, additional_tags=trigger_word)
 
-        train_preprocess(process_src=head_list, process_dst=train_dir, process_width=head_width,
+        train_preprocess(process_src=new_head_list, process_dst=train_dir, process_width=head_width,
                          process_height=head_height,
                          preprocess_txt_action='ignore', process_keep_original_size=False,
                          process_split=False, process_flip=False, process_caption=True,
