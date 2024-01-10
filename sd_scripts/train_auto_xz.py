@@ -20,25 +20,22 @@ from sd_scripts.super_upscaler.super_upscaler import upscaler
 from sd_scripts.library import train_util
 import uuid
 import argparse
-
 import sys
-
-sys.path.append("sd_scripts/PaddleSeg/contrib/PP-HumanSeg")
-from src.seg_demo import seg_image
 
 import sd_scripts.library.config_util as config_util
 import sd_scripts.library.custom_train_functions as custom_train_functions
 from sd_scripts.library.fix_photo import mopi
 from sd_scripts.library.face_process_utils import call_face_crop
-
+from transformers import PreTrainedTokenizerBase, PreTrainedModel
+from sd_scripts.library.transformers_pretrained import ori_tokenizer_from_pretrained, ori_model_from_pretrained
+from sd_scripts.library.face_tool import insightface_main_face
 from modelscope.outputs import OutputKeys
 from modelscope.pipelines import pipeline
 from modelscope.utils.constant import Tasks
 from modelscope import snapshot_download
-from transformers import PreTrainedTokenizerBase, PreTrainedModel
 
-from sd_scripts.library.transformers_pretrained import ori_tokenizer_from_pretrained, ori_model_from_pretrained
-from sd_scripts.library.face_tool import insightface_main_face
+sys.path.append("sd_scripts/PaddleSeg/contrib/PP-HumanSeg")
+from src.seg_demo import seg_image
 
 
 def patch_tokenizer_base():
