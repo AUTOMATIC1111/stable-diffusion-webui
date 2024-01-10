@@ -931,8 +931,7 @@ def train_auto(
 
     body_list, head_list = custom_configurable_image_processing(
         train_data_dir, options, head_width, head_height, if_res_oribody=True, model_p=general_model_path)
-    skin_retouching = pipeline("skin-retouching-torch", model="damo/cv_unet_skin_retouching_torch",
-                               model_revision="v1.0.2")
+    skin_retouching = pipeline(Tasks.skin_retouching, model="damo/cv_unet_skin-retouching")
     portrait_enhancement = pipeline(Tasks.image_portrait_enhancement, model="damo/cv_gpen_image-portrait-enhancement",
                                     model_revision="v1.0.0")
 
