@@ -863,7 +863,7 @@ footer {
     margin-bottom: 1em;
 }
 
-.extra-network-cards{
+.extra-network-pane{
     height: calc(100vh - 24rem);
     overflow: clip scroll;
     resize: vertical;
@@ -908,53 +908,75 @@ footer {
     width: auto;
 }
 
-.extra-network-cards .nocards{
+.extra-network-pane .nocards{
     margin: 1.25em 0.5em 0.5em 0.5em;
 }
 
-.extra-network-cards .nocards h1{
+.extra-network-pane .nocards h1{
     font-size: 1.5em;
     margin-bottom: 1em;
 }
 
-.extra-network-cards .nocards li{
+.extra-network-pane .nocards li{
     margin-left: 0.5em;
 }
 
+.extra-network-pane :is(.card, .card-minimal) .button-row{
+    display: inline-flex;
+    visibility: hidden;
+    color: white;
+}
 
-.extra-network-cards .card .button-row{
-    display: none;
+.extra-network-pane .card .button-row {
     position: absolute;
-    color: white;
     right: 0;
-    z-index: 1
-}
-.extra-network-cards .card:hover .button-row{
-    display: flex;
+    z-index: 1;
 }
 
-.extra-network-cards .card .card-button{
+.extra-network-pane .card-minimal .button-row {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    align-items: center;
+}
+
+.extra-network-pane :is(.card:hover, .card-minimal:hover) .button-row{
+    visibility: visible;
+}
+
+.extra-network-pane .card-button{
     color: white;
 }
 
-.extra-network-cards .card .metadata-button:before{
+.extra-network-pane .copy-path-button:before {
+    content: "⎘";
+}
+
+.extra-network-pane .metadata-button:before{
     content: "🛈";
 }
 
-.extra-network-cards .card .edit-button:before{
+.extra-network-pane .edit-button:before{
     content: "🛠";
 }
 
-.extra-network-cards .card .card-button {
-    text-shadow: 2px 2px 3px black;
-    padding: 0.25em 0.1em;
-    font-size: 200%;
+.extra-network-pane .card-button {
     width: 1.5em;
+    text-shadow: 2px 2px 3px black;
+    color: white;
+    padding: 0.25em 0.1em;
 }
-.extra-network-cards .card .card-button:hover{
+
+.extra-network-pane .card-button:hover{
     color: red;
 }
 
+.extra-network-pane .card .card-button {
+    font-size: 2rem;
+}
+
+.extra-network-pane .card-minimal .card-button {
+    font-size: 1rem;
+}
 
 .standalone-card-preview.card .preview{
     position: absolute;
@@ -963,7 +985,7 @@ footer {
     height:100%;
 }
 
-.extra-network-cards .card, .standalone-card-preview.card{
+.extra-network-pane .card, .standalone-card-preview.card{
     display: inline-block;
     margin: 0.5rem;
     width: 16rem;
@@ -980,15 +1002,15 @@ footer {
     background-image: url('./file=html/card-no-preview.png')
 }
 
-.extra-network-cards .card:hover{
+.extra-network-pane .card:hover{
     box-shadow: 0 0 2px 0.3em rgba(0, 128, 255, 0.35);
 }
 
-.extra-network-cards .card .actions .additional{
+.extra-network-pane .card .actions .additional{
     display: none;
 }
 
-.extra-network-cards .card .actions{
+.extra-network-pane .card .actions{
     position: absolute;
     bottom: 0;
     left: 0;
@@ -999,45 +1021,45 @@ footer {
     text-shadow: 0 0 0.2em black;
 }
 
-.extra-network-cards .card .actions *{
+.extra-network-pane .card .actions *{
     color: white;
 }
 
-.extra-network-cards .card .actions .name{
+.extra-network-pane .card .actions .name{
     font-size: 1.7em;
     font-weight: bold;
     line-break: anywhere;
 }
 
-.extra-network-cards .card .actions .description {
+.extra-network-pane .card .actions .description {
     display: block;
     max-height: 3em;
     white-space: pre-wrap;
     line-height: 1.1;
 }
 
-.extra-network-cards .card .actions .description:hover {
+.extra-network-pane .card .actions .description:hover {
     max-height: none;
 }
 
-.extra-network-cards .card .actions:hover .additional{
+.extra-network-pane .card .actions:hover .additional{
     display: block;
 }
 
-.extra-network-cards .card ul{
+.extra-network-pane .card ul{
     margin: 0.25em 0 0.75em 0.25em;
     cursor: unset;
 }
 
-.extra-network-cards .card ul a{
+.extra-network-pane .card ul a{
     cursor: pointer;
 }
 
-.extra-network-cards .card ul a:hover{
+.extra-network-pane .card ul a:hover{
     color: red;
 }
 
-.extra-network-cards .card .preview{
+.extra-network-pane .card .preview{
     position: absolute;
     object-fit: cover;
     width: 100%;
@@ -1158,48 +1180,9 @@ body.resizing .resize-handle {
     border-left: 1px dashed var(--border-color-primary);
 }
 
-.extra-network-cards .card .copy-path-button:before {
-    content: "⎘";
-}
-
-.extra-network-cards .card-minimal .button-column {
+.extra-network-pane .card-minimal {
     display: inline-flex;
-    visibility: hidden;
-    color: white;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-    align-items: center;
-}
-
-.extra-network-cards .card-minimal:hover .button-column {
-    visibility: visible;
-}
-
-.extra-network-cards .card-minimal .copy-path-button:before {
-    content: "⎘";
-}
-
-.extra-network-cards .card-minimal .metadata-button:before{
-    content: "🛈";
-}
-
-.extra-network-cards .card-minimal .edit-button:before{
-    content: "🛠";
-}
-
-.extra-network-cards .card-minimal .card-button {
-    color: white;
-    text-shadow: 2px 2px 3px black;
-    font-size: 1rem;
-    width: 1.5rem;
-}
-
-.extra-network-cards .card-minimal .card-button:hover {
-    color: red;
-}
-
-.extra-network-cards .card-minimal {
-    display: inline-flex;
+    flex-grow: 1;
     position: relative;
     overflow: hidden;
     cursor: pointer;
@@ -1208,44 +1191,87 @@ body.resizing .resize-handle {
     line-break: anywhere;
 }
 
-.file-item {
-    list-style-type: '📄';
-}
-
-/* prevents clicking/collapsing of details tags when disabled attribute is used*/
-details[disabled] summary {
-    pointer-events: none;
-    user-select: none;
-}
-
-details.folder-item > summary {
-    list-style-type: '📁';
-}
-
-details.folder-item[open] > summary {
-    list-style-type: '📂';
+/* Pushes buttons to right */
+.extra-network-pane .card-minimal .name {
+    flex-grow: 1;
 }
 
 .file-item,
 .folder-item,
 .folder-item-summary {
-    display: block;
-    font-size: 1rem;
-    padding: 0.05rem;
+    padding-left: 0.05rem;
     cursor: pointer;
     user-select: none;
+    font-size: 1rem;
 }
 
-.folder-item-summary:hover,
-.file-item:hover {
+.extra-network-pane .extra-network-tree .folder-item-summary:hover,
+.extra-network-pane .extra-network-tree .file-item:hover {
     -webkit-transition: all 0.1s ease-in-out;
 	transition: all 0.1s ease-in-out;
     background-color: var(--neutral-200);
 }
 
-.dark .folder-item-summary:hover,
-.dark .file-item:hover {
+.dark .extra-network-pane .extra-network-tree .folder-item-summary:hover,
+.dark .extra-network-pane .extra-network-tree .file-item:hover {
     -webkit-transition: all 0.05s ease-in-out;
 	transition: all 0.05s ease-in-out;
     background-color: var(--neutral-800);
+}
+
+/* prevents clicking/collapsing of details tags when disabled attribute is used*/
+.extra-network-pane .extra-network-tree details[disabled] summary {
+    pointer-events: none;
+    user-select: none;
+}
+
+.extra-network-pane .extra-network-tree details.folder-item > summary {
+    list-style-type: '📁';
+    text-overflow: ellipsis;
+}
+
+.extra-network-pane .extra-network-tree details.folder-item[open] > summary {
+    list-style-type: '📂';
+    text-overflow: ellipsis;
+}
+
+.extra-network-pane .extra-network tree ul.folder-container {
+    list-style: none;
+    font-size: 1rem;
+    text-overflow: ellipsis;
+}
+
+.extra-network-pane .extra-network-tree li.file-item {
+    display: flex;
+    position: relative;
+    align-items: center;
+}
+
+.extra-network-pane .extra-network-tree li.file-item::before {
+    content: '📄';
+    font-size: 0.85rem;
+    vertical-align: middle;
+}
+
+.extra-network-pane {
+    display: flex;
+}
+
+.extra-network-pane .extra-network-subdirs {
+    display: block;
+}
+.extra-network-pane .extra-network-tree {
+    font-size: 1rem;
+    width: 25%;
+}
+.extra-network-pane .extra-network-cards {
+    flex-grow: 1;
+}
+
+.dark .extra-network-tree .folder-item-summary.selected{
+    background-color: var(--neutral-800);
+}
+
+.extra-network-tree .folder-item-summary.selected {
+    background-color: var(--neutral-200);
 }

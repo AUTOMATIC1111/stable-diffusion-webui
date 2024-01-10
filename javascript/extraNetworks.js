@@ -253,6 +253,28 @@ function saveCardPreview(event, tabname, filename) {
     event.preventDefault();
 }
 
+function extraNetworksFolderClick(event, tabs_id) {
+    var els = document.querySelectorAll(".folder-item-summary.selected");
+    [...els].forEach(el => {
+        el.classList.remove("selected");
+    });
+    event.target.classList.add("selected");
+
+    var searchTextArea = gradioApp().querySelector("#" + tabs_id + ' > label > textarea');
+    var text = event.target.classList.contains("search-all") ? "" : event.target.firstChild.textContent.trim();
+    searchTextArea.value = text;
+    updateInput(searchTextArea);
+
+    if (event.target.parentElement.open) {
+        // before close
+        console.log("closed");
+    } else {
+        // before open
+        console.log("opened");
+        //console.log("Opened:", event.target.parentElement);
+    }
+}
+
 function extraNetworksSearchButton(tabs_id, event) {
     var searchTextarea = gradioApp().querySelector("#" + tabs_id + ' > label > textarea');
     var button = event.target;

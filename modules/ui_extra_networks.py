@@ -73,10 +73,11 @@ def get_tree(paths: Union[str, list[str]], items: dict[str, ExtraNetworksItem]) 
     # the value can be an empty dict if the directory is empty. We want these
     # placeholders for empty dirs so we can inform the user later.
     for path in paths:
+        short_path = os.path.basename(path)
         # Wrap the path in a list since that is what the `_get_tree` expects.
-        res[path] = _get_tree([path])
-        if res[path]:
-            res[path] = res[path][os.path.basename(path)]
+        res[short_path] = _get_tree([path])
+        if res[short_path]:
+            res[short_path] = res[short_path][os.path.basename(path)]
 
     return res
 
@@ -153,10 +154,9 @@ class ExtraNetworksPage:
         self.title = title
         self.name = title.lower()
         self.id_page = self.name.replace(" ", "_")
-        if shared.opts.extra_networks_tree_view:
-            self.card_page = shared.html("extra-networks-card-minimal.html")
-        else:
-            self.card_page = shared.html("extra-networks-card.html")
+        self.extra_networks_pane_template = shared.html("extra-networks-pane.html")
+        self.card_page_template = shared.html("extra-networks-card.html")
+        self.card_page_minimal_template = shared.html("extra-networks-card-minimal.html")
         self.allow_prompt = True
         self.allow_negative_prompt = False
         self.metadata = {}
@@ -182,15 +182,14 @@ class ExtraNetworksPage:
 
     def search_terms_from_path(self, filename, possible_directories=None):
         abspath = os.path.abspath(filename)
-
         for parentdir in (possible_directories if possible_directories is not None else self.allowed_directories_for_previews()):
-            parentdir = os.path.abspath(parentdir)
+            parentdir = os.path.dirname(os.path.abspath(parentdir))
             if abspath.startswith(parentdir):
-                return abspath[len(parentdir):].replace('\\', '/')
+                return os.path.relpath(abspath, parentdir)
 
         return ""
 
-    def create_item_html(self, tabname: str, item: dict) -> str:
+    def create_item_html(self, tabname: str, item: dict, template: Optional[str] = None) -> str:
         """Generates HTML for a single ExtraNetworks Item
 
         Args:
@@ -265,7 +264,10 @@ class ExtraNetworksPage:
             "tabname": quote_js(tabname),
         }
 
-        return self.card_page.format(**args)
+        if template:
+            return template.format(**args)
+        else:
+            return self.card_page.format(**args)
 
     def create_tree_view_html(self, tabname: str) -> str:
         """Generates HTML for displaying folders in a tree view.
@@ -276,53 +278,67 @@ class ExtraNetworksPage:
         Returns:
             HTML string generated for this tree view.
         """
-        self_name_id = self.name.replace(" ", "_")
-        res = f"<div id='{tabname}_{self_name_id}_tree_view' class='extra-network-cards'>"
+        res = f""
 
-        self.metadata = {}
-        self.items = {x["name"]: x for x in self.list_items()}
-
+        # Generate HTML for the tree.
         roots = self.allowed_directories_for_previews()
         tree_items = {v["filename"]: ExtraNetworksItem(v) for v in self.items.values()}
         tree = get_tree([os.path.abspath(x) for x in roots], items=tree_items)
 
         if not tree:
-            return res + "</div>"
+            return res
 
-        file_template = "<li class='file-item'>{}</li>"
+        file_template = "<li class='file-item'>{card}</li>"
         dir_template = (
-            "<details {} class='folder-item'>"
-            "<summary class='folder-item-summary'>{}</summary>"
-            "{}</ul>"
+            "<details {attributes} class='folder-item'>"
+            "<summary class='folder-item-summary' onclick='extraNetworksFolderClick(event, \"{tabname}_extra_search\");'>"
+            "{folder_name}"
+            "</summary>"
+            "<ul class='folder-container'>{content}</ul>"
             "</details>"
         )
 
         def _build_tree(data: Optional[dict[str, ExtraNetworksItem]] = None) -> str:
             """Recursively builds HTML for a tree."""
-            _res = "<ul class='folder-container'>"
+            _res = ""
             if not data:
-                return "<ul style='list-style-type: \"⚠️\";'><li>DIRECTORY IS EMPTY</li></ul>"
+                return "<li style='list-style-type: \"⚠️\";'>DIRECTORY IS EMPTY</li>"
 
             for k, v in sorted(data.items(), key=lambda x: shared.natural_sort_key(x[0])):
                 if isinstance(v, (ExtraNetworksItem,)):
-                    _res += file_template.format(self.create_item_html(tabname, v.item))
+                    item_html = self.create_item_html(tabname, v.item, self.card_page_minimal_template)
+                    _res += file_template.format(**{"card": item_html})
                 else:
-                    _res += dir_template.format("", k, _build_tree(v))
+                    tmp = dir_template.format(
+                        **{
+                            "attributes": "",
+                            "tabname": tabname,
+                            "folder_name": k,
+                            "content": _build_tree(v),
+                        }
+                    )
+                    _res += tmp
+                    
             return _res
 
-        res += "<ul class='folder-container'>"
         # Add each root directory to the tree.
         for k, v in sorted(tree.items(), key=lambda x: shared.natural_sort_key(x[0])):
             # If root is empty, append the "disabled" attribute to the template details tag.
-            res += dir_template.format("open" if v else "open disabled", k, _build_tree(v))
+            res += "<ul class='folder-container'>"
+            res += dir_template.format(
+                **{
+                    "attributes": "open" if v else "open",
+                    "tabname": tabname,
+                    "folder_name": k,
+                    "content": _build_tree(v),
+                }
+            )
+            res += "</ul>"
         res += "</ul>"
-        res += "</div>"
 
         return res
 
-    def create_card_view_html(self, tabname):
-        items_html = ""
-        self.metadata = {}
+    def create_subdirs_html(self, tabname):
         subdirs = {}
 
         for parentdir in [os.path.abspath(x) for x in self.allowed_directories_for_previews()]:
@@ -355,43 +371,53 @@ class ExtraNetworksPage:
             subdirs = {"": 1, **subdirs}
 
         subdirs_html_template = (
-            "<button class='lg secondary gradio-button custom-button{}' "
-            "onclick='extraNetworksSearchButton(\"{}_extra_search\", event)'>"
-            "{}"
+            "<button class='lg secondary gradio-button custom-button {classes}' "
+            "onclick='extraNetworksSearchButton(\"{tabname}_extra_search\", event)'>"
+            "{content}"
             "</button>"
         )
-        subdirs_html = "".join(
+        return "".join(
             [
                 subdirs_html_template.format(
-                    " search-all" if subdir == "" else "",
-                    tabname,
-                    html.escape(subdir if subdir != "" else "all"),
+                    **{
+                        "classes": "search-all" if not subdir else "",
+                        "tabname": tabname,
+                        "content": html.escape(subdir if subdir else "all"),
+                    }
                 ) for subdir in subdirs
             ]
         )
 
+    def create_card_view_html(self, tabname):
+        res = ""
         self.items = {x["name"]: x for x in self.list_items()}
         for item in self.items.values():
-            items_html += self.create_item_html(tabname, item)
+            res += self.create_item_html(tabname, item, self.card_page_template)
 
-        if items_html == "":
+        if res == "":
             dirs = "".join([f"<li>{x}</li>" for x in self.allowed_directories_for_previews()])
-            items_html = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
-
-        self_name_id = self.name.replace(" ", "_")
-
-        res = (
-            f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs extra-network-subdirs-cards'>{subdirs_html}</div>"
-            f"<div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{items_html}</div>"
-        )
+            res = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
 
         return res
 
     def create_html(self, tabname):
-        if shared.opts.extra_networks_tree_view:
-            return self.create_tree_view_html(tabname)
-        else:
-            return self.create_card_view_html(tabname)
+        self.metadata = {}
+        self.items = {x["name"]: x for x in self.list_items()}
+
+        tree_view_html = self.create_tree_view_html(tabname)
+        subdirs_html = self.create_subdirs_html(tabname)
+        card_view_html = self.create_card_view_html(tabname)
+        network_type_id = self.name.replace(" ", "_")
+
+        return self.extra_networks_pane_template.format(
+            **{
+                "tabname": tabname,
+                "network_type_id": network_type_id,
+                "tree_html": tree_view_html,
+                "subdirs_html": subdirs_html,
+                "items_html": card_view_html,
+            }
+        )
 
     def create_item(self, name, index=None):
         raise NotImplementedError()
@@ -516,19 +542,19 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
             related_tabs.append(tab)
 
-    tab_controls = {}
-
     edit_search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", elem_classes="search", placeholder="Search...", visible=False, interactive=True)
     dropdown_sort = gr.Dropdown(choices=['Path', 'Name', 'Date Created', 'Date Modified', ], value=shared.opts.extra_networks_card_order_field, elem_id=tabname+"_extra_sort", elem_classes="sort", multiselect=False, visible=False, show_label=False, interactive=True, label=tabname+"_extra_sort_order")
     button_sortorder = ToolButton(switch_values_symbol, elem_id=tabname+"_extra_sortorder", elem_classes=["sortorder"] + ([] if shared.opts.extra_networks_card_order == "Ascending" else ["sortReverse"]), visible=False, tooltip="Invert sort order")
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh", visible=False)
     checkbox_show_dirs = gr.Checkbox(True, label='Show dirs', elem_id=tabname+"_extra_show_dirs", elem_classes="show-dirs", visible=False)
 
-    tab_controls["edit_search"] = edit_search
-    tab_controls["dropdown_sort"] = dropdown_sort
-    tab_controls["button_sortorder"] = button_sortorder
-    tab_controls["button_refresh"] = button_refresh
-    tab_controls["checkbox_show_dirs"] = checkbox_show_dirs
+    tab_controls = [
+        edit_search,
+        dropdown_sort,
+        button_sortorder,
+        button_refresh,
+        checkbox_show_dirs,
+    ]
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
@@ -538,13 +564,9 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             fn=lambda: [gr.update(visible=False) for _ in tab_controls],
             _js="function(){ extraNetworksUrelatedTabSelected('" + tabname + "'); }",
             inputs=[],
-            outputs=list(tab_controls.values()),
+            outputs=tab_controls,
             show_progress=False,
         )
-
-    visible_controls = list(tab_controls.keys())
-    if shared.opts.extra_networks_tree_view:
-        visible_controls = ["button_refresh"]
 
     for page, tab in zip(ui.stored_extra_pages, related_tabs):
         allow_prompt = "true" if page.allow_prompt else "false"
@@ -552,18 +574,18 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
         jscode = (
             "extraNetworksTabSelected("
-                f"'{tabname}', "
-                f"'{tabname}_{page.id_page}_prompts', "
-                f"'{allow_prompt}', "
-                f"'{allow_negative_prompt}'"
+            f"'{tabname}', "
+            f"'{tabname}_{page.id_page}_prompts', "
+            f"'{allow_prompt}', "
+            f"'{allow_negative_prompt}'"
             ");"
         )
 
         tab.select(
-            fn=lambda: [gr.update(visible=k in visible_controls) for k in tab_controls],
+            fn=lambda: [gr.update(visible=True) for _ in tab_controls],
             _js="function(){ " + jscode + " }",
             inputs=[],
-            outputs=list(tab_controls.values()),
+            outputs=tab_controls,
             show_progress=False,
         )
 
