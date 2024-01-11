@@ -21,13 +21,16 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
             return
 
         path, ext = os.path.splitext(checkpoint.filename)
+        search_terms = [self.search_terms_from_path(checkpoint.filename)]
+        if checkpoint.sha256:
+            search_terms.append(checkpoint.sha256)
         return {
             "name": checkpoint.name_for_extra,
             "filename": checkpoint.filename,
             "shorthash": checkpoint.shorthash,
             "preview": self.find_preview(path),
             "description": self.find_description(path),
-            "search_term": self.search_terms_from_path(checkpoint.filename) + " " + (checkpoint.sha256 or ""),
+            "search_terms": search_terms,
             "onclick": '"' + html.escape(f"""return selectCheckpoint({quote_js(name)})""") + '"',
             "local_preview": f"{path}.{shared.opts.samples_format}",
             "metadata": checkpoint.metadata,

@@ -24,8 +24,6 @@ function setupExtraNetworksForTab(tabname) {
     var sort = gradioApp().getElementById(tabname + '_extra_sort');
     var sortOrder = gradioApp().getElementById(tabname + '_extra_sortorder');
     var refresh = gradioApp().getElementById(tabname + '_extra_refresh');
-    var showDirsDiv = gradioApp().getElementById(tabname + '_extra_show_dirs');
-    var showDirs = gradioApp().querySelector('#' + tabname + '_extra_show_dirs input');
     var promptContainer = gradioApp().querySelector('.prompt-container-compact#' + tabname + '_prompt_container');
     var negativePrompt = gradioApp().querySelector('#' + tabname + '_neg_prompt');
 
@@ -33,14 +31,14 @@ function setupExtraNetworksForTab(tabname) {
     tabs.appendChild(sort);
     tabs.appendChild(sortOrder);
     tabs.appendChild(refresh);
-    tabs.appendChild(showDirsDiv);
 
     var applyFilter = function() {
         var searchTerm = search.value.toLowerCase();
 
         gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card').forEach(function(elem) {
             var searchOnly = elem.querySelector('.search_only');
-            var text = elem.querySelector('.name').textContent.toLowerCase() + " " + elem.querySelector('.search_term').textContent.toLowerCase();
+
+            var text = Array.prototype.map.call(elem.querySelectorAll('.search_terms'), function(t) { return t.textContent.toLowerCase() }).join(" ");
 
             var visible = text.indexOf(searchTerm) != -1;
 
@@ -100,15 +98,6 @@ function setupExtraNetworksForTab(tabname) {
 
     extraNetworksApplySort[tabname] = applySort;
     extraNetworksApplyFilter[tabname] = applyFilter;
-
-    var showDirsUpdate = function() {
-        var css = '#' + tabname + '_extra_tabs .extra-network-subdirs { display: none; }';
-        toggleCss(tabname + '_extra_show_dirs_style', css, !showDirs.checked);
-        localSet('extra-networks-show-dirs', showDirs.checked ? 1 : 0);
-    };
-    showDirs.checked = localGet('extra-networks-show-dirs', 1) == 1;
-    showDirs.addEventListener("change", showDirsUpdate);
-    showDirsUpdate();
 }
 
 function extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt) {
@@ -136,14 +125,23 @@ function extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePromp
     }
 }
 
+function clearSearch(tabname) {
+    // Clear search box.
+    var tab_id = tabname + "_extra_search";
+    var searchTextarea = gradioApp().querySelector("#" + tab_id + ' > label > textarea');
+    searchTextarea.value = "";
+    updateInput(searchTextarea);
+}
 
-function extraNetworksUrelatedTabSelected(tabname) { // called from python when user selects an unrelated tab (generate)
+
+function extraNetworksUnrelatedTabSelected(tabname) { // called from python when user selects an unrelated tab (generate)
     extraNetworksMovePromptToTab(tabname, '', false, false);
+    clearSearch(tabname);
 }
 
 function extraNetworksTabSelected(tabname, id, showPrompt, showNegativePrompt) { // called from python when user selects an extra networks tab
     extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt);
-
+    clearSearch(tabname);
 }
 
 function applyExtraNetworkFilter(tabname) {
@@ -254,6 +252,15 @@ function saveCardPreview(event, tabname, filename) {
 }
 
 function extraNetworksFolderClick(event, tabs_id) {
+    // If folder is open but not selected, we don't want to collapse it. Instead
+    // we override the removal of the "open" attribute so that the folder is
+    // only selected but remains open. Since this is a toggle event, removing
+    // the "open" attribute instead forces the event to add it back which keeps it open.
+    if (event.target.parentElement.open && !event.target.classList.contains("selected")) {
+        // before event handler removes "open"
+        event.target.parentElement.removeAttribute("open");
+    }
+
     var els = document.querySelectorAll(".folder-item-summary.selected");
     [...els].forEach(el => {
         el.classList.remove("selected");
@@ -261,18 +268,9 @@ function extraNetworksFolderClick(event, tabs_id) {
     event.target.classList.add("selected");
 
     var searchTextArea = gradioApp().querySelector("#" + tabs_id + ' > label > textarea');
-    var text = event.target.classList.contains("search-all") ? "" : event.target.firstChild.textContent.trim();
+    var text = event.target.classList.contains("search-all") ? "" : event.target.getAttribute("data-path");
     searchTextArea.value = text;
     updateInput(searchTextArea);
-
-    if (event.target.parentElement.open) {
-        // before close
-        console.log("closed");
-    } else {
-        // before open
-        console.log("opened");
-        //console.log("Opened:", event.target.parentElement);
-    }
 }
 
 function extraNetworksSearchButton(tabs_id, event) {

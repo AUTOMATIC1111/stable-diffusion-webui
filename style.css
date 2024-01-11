@@ -878,16 +878,8 @@ footer {
     margin: 0.3em;
 }
 
-.extra-network-subdirs{
-    padding: 0.2em 0.35em;
-}
-
-.extra-network-subdirs button{
-    margin: 0 0.15em;
-}
 .extra-networks .tab-nav .search,
-.extra-networks .tab-nav .sort,
-.extra-networks .tab-nav .show-dirs
+.extra-networks .tab-nav .sort
 {
     margin: 0.3em;
     align-self: center;
@@ -1196,6 +1188,10 @@ body.resizing .resize-handle {
     flex-grow: 1;
 }
 
+.folder-container {
+    margin-left: 1.5em !important;
+}
+
 .file-item,
 .folder-item,
 .folder-item-summary {
@@ -1235,7 +1231,7 @@ body.resizing .resize-handle {
     text-overflow: ellipsis;
 }
 
-.extra-network-pane .extra-network tree ul.folder-container {
+.extra-network-pane .extra-network-tree ul.folder-container {
     list-style: none;
     font-size: 1rem;
     text-overflow: ellipsis;
@@ -1257,15 +1253,15 @@ body.resizing .resize-handle {
     display: flex;
 }
 
-.extra-network-pane .extra-network-subdirs {
-    display: block;
-}
 .extra-network-pane .extra-network-tree {
     font-size: 1rem;
-    width: 25%;
+    min-width: 25%;
+    max-width: 25%;
+    border: 1px solid var(--block-border-color);
 }
 .extra-network-pane .extra-network-cards {
     flex-grow: 1;
+    border: 1px solid var(--block-border-color);
 }
 
 .dark .extra-network-tree .folder-item-summary.selected{
