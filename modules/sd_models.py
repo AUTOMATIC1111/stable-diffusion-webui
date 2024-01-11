@@ -897,7 +897,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         set_diffuser_options(sd_model, vae, op)
 
         base_sent_to_cpu=False
-        if (shared.opts.cuda_compile and shared.opts.cuda_compile_backend != 'none') or shared.opts.ipex_optimize:
+        if (shared.opts.cuda_compile and shared.opts.cuda_compile_backend != 'none') or shared.opts.ipex_optimize or shared.opts.nncf_compress_weights:
             if op == 'refiner' and not getattr(sd_model, 'has_accelerate', False):
                 gpu_vram = memory_stats().get('gpu', {})
                 free_vram = gpu_vram.get('total', 0) - gpu_vram.get('used', 0)

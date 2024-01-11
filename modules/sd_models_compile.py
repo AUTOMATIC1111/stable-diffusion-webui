@@ -9,7 +9,7 @@ from installer import setup_logging
 class CompiledModelState:
     def __init__(self):
         self.is_compiled = False
-        self.model_str = ""
+        self.model_hash_str = ""
         self.first_pass = True
         self.first_pass_refiner = True
         self.first_pass_vae = True
@@ -19,11 +19,8 @@ class CompiledModelState:
         self.partition_id = 0
         self.cn_model = []
         self.lora_model = []
-        self.lora_compile = False
         self.compiled_cache = {}
         self.partitioned_modules = {}
-        self.subgraph_type = []
-        self.compile_dont_use_4bit = False
 
 
 def ipex_optimize(sd_model):
@@ -66,11 +63,10 @@ def nncf_compress_weights(sd_model):
         shared.compiled_model_state = CompiledModelState()
         shared.compiled_model_state.is_compiled = True
 
-        if shared.opts.nncf_compress_weights:
-            if hasattr(sd_model, 'unet'):
-                sd_model.unet = nncf.compress_weights(sd_model.unet)
-            else:
-                shared.log.warning('Compress Weights enabled but model has no Unet')
+        if hasattr(sd_model, 'unet'):
+            sd_model.unet = nncf.compress_weights(sd_model.unet)
+        else:
+            shared.log.warning('Compress Weights enabled but model has no Unet')
         if shared.opts.nncf_compress_vae_weights:
             if hasattr(sd_model, 'vae'):
                 sd_model.vae = nncf.compress_weights(sd_model.vae)
@@ -202,7 +198,7 @@ def compile_torch(sd_model):
 def compile_diffusers(sd_model):
     if shared.opts.ipex_optimize:
         sd_model = ipex_optimize(sd_model)
-    if not (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx"):
+    if shared.opts.nncf_compress_weights and not (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx"):
         sd_model = nncf_compress_weights(sd_model)
     if not (shared.opts.cuda_compile or shared.opts.cuda_compile_vae or shared.opts.cuda_compile_upscaler):
         return sd_model

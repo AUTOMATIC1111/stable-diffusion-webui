@@ -356,7 +356,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "directml_catch_nan": OptionInfo(False, "DirectML retry specific operation when NaN is produced if possible. (makes generation slower)"),
 
     "ipex_sep": OptionInfo("<h2>IPEX</h2>", "", gr.HTML),
-    "ipex_optimize": OptionInfo(False if not devices.backend == "ipex" else True, "Enable IPEX Optimize for Intel GPUs with UNet"),
+    "ipex_optimize": OptionInfo(False if not devices.backend == "ipex" else True, "Enable IPEX Optimize for Intel GPUs"),
     "ipex_optimize_vae": OptionInfo(False if not devices.backend == "ipex" else True, "Enable IPEX Optimize for Intel GPUs with VAE"),
     "ipex_optimize_text_encoder": OptionInfo(False if not devices.backend == "ipex" else True, "Enable IPEX Optimize for Intel GPUs with Text Encoder"),
     "ipex_optimize_upscaler": OptionInfo(False if not devices.backend == "ipex" else True, "Enable IPEX Optimize for Intel GPUs with Upscalers"),
