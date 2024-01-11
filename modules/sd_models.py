@@ -847,6 +847,9 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                         }
                 if hasattr(pipeline, 'from_single_file'):
                     diffusers_load_config['use_safetensors'] = True
+                    if shared.opts.disable_accelerate:
+                        from diffusers.utils import import_utils
+                        import_utils._accelerate_available = False # pylint: disable=protected-access
                     sd_model = pipeline.from_single_file(checkpoint_info.path, **diffusers_load_config)
                     if sd_model is not None and hasattr(sd_model, 'unet') and hasattr(sd_model.unet, 'config') and 'inpainting' in checkpoint_info.path.lower():
                         shared.log.debug('Model patch: type=inpaint')
