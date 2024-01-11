@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-10
+## Update for 2023-01-11
 
 Following-up on a major release, here is a lot more functionality in new Control module and FaceID & IPAdapter modules  
 Plus welcome additions to UI accessibility and flexibility of deployment  
@@ -57,6 +57,8 @@ And it also includes fixes for all reported issues so far
   - enable use via api, thanks @trojaner
 - **Improvements**  
   - **ui**  
+    - check version and **update** SD.Next via UI  
+      simply go to: settings -> update
     - globally configurable **font size**  
       will dynamically rescale ui depending on settings -> user interface  
     - built-in **themes** can be changed on-the-fly  

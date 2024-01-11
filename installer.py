@@ -272,19 +272,21 @@ def branch(folder):
 
 
 # update git repository
-def update(folder, current_branch = False):
+def update(folder, current_branch = False, rebase = True):
     try:
         git('config rebase.Autostash true')
     except Exception:
         pass
+    arg = '--rebase --force' if rebase else ''
     if current_branch:
-        git('pull --rebase --force', folder)
-        return
+        res = git(f'pull {arg}', folder)
+        return res
     b = branch(folder)
     if branch is None:
-        git('pull --rebase --force', folder)
+        res = git(f'pull {arg}', folder)
     else:
-        git(f'pull origin {b} --rebase --force', folder)
+        res = git(f'pull origin {b} {arg}', folder)
+    return res
 
 
 # clone git repository
@@ -612,7 +614,7 @@ def list_extensions_folder(folder, quiet=False):
 
 
 # run installer for each installed and enabled extension and optionally update them
-def install_extensions():
+def install_extensions(force=False):
     if args.profile:
         pr = cProfile.Profile()
         pr.enable()
@@ -623,6 +625,7 @@ def install_extensions():
     extensions_duplicates = []
     extensions_enabled = []
     extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
+    res = []
     for folder in extension_folders:
         if not os.path.isdir(folder):
             continue
@@ -633,10 +636,11 @@ def install_extensions():
                 extensions_duplicates.append(ext)
                 continue
             extensions_enabled.append(ext)
-            if args.upgrade:
+            if args.upgrade or force:
                 try:
-                    update(os.path.join(folder, ext))
+                    res.append(update(os.path.join(folder, ext)))
                 except Exception:
+                    res.append(f'Error updating extension: {os.path.join(folder, ext)}')
                     log.error(f'Error updating extension: {os.path.join(folder, ext)}')
             if not args.skip_extensions:
                 run_extension_installer(os.path.join(folder, ext))
@@ -654,17 +658,18 @@ def install_extensions():
         log.warning(f'Extensions duplicates: {extensions_duplicates}')
     if args.profile:
         print_profile(pr, 'Extensions')
+    return '\n'.join(res)
 
 
 # initialize and optionally update submodules
-def install_submodules():
+def install_submodules(force=True):
     if args.profile:
         pr = cProfile.Profile()
         pr.enable()
     log.info('Verifying submodules')
     txt = git('submodule')
     # log.debug(f'Submodules list: {txt}')
-    if 'no submodule mapping found' in txt:
+    if force and 'no submodule mapping found' in txt:
         log.warning('Attempting repository recover')
         git('add .')
         git('stash')
@@ -677,17 +682,19 @@ def install_submodules():
     git('submodule --quiet update --init --recursive')
     git('submodule --quiet sync --recursive')
     submodules = txt.splitlines()
+    res = []
     for submodule in submodules:
         try:
             name = submodule.split()[1].strip()
             if args.upgrade:
-                update(name)
+                res.append(update(name))
             else:
                 branch(name)
         except Exception:
             log.error(f'Error updating submodule: {submodule}')
     if args.profile:
         print_profile(pr, 'Submodule')
+    return '\n'.join(res)
 
 
 def ensure_base_requirements():

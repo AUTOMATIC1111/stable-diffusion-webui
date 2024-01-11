@@ -130,7 +130,7 @@
   {"id":"","label":"Set new defaults","localized":"","hint":"Set current values as default values for the user interface"},
   {"id":"","label":"Benchmark","localized":"","hint":"Run benchmarks"},
   {"id":"","label":"Models & Networks","localized":"","hint":"View lists of all available models and networks"},
-  {"id":"","label":"Restore system defaults","localized":"","hint":"Restore default user interface values"}
+  {"id":"","label":"Restore defaults","localized":"","hint":"Restore default user interface values"}
 ],
 "txt2img tab": [
   {"id":"","label":"Batch","localized":"","hint":"Additional batching options"},

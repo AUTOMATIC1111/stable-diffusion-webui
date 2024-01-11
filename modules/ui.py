@@ -329,6 +329,10 @@ def create_ui(startup_timer = None):
                     with gr.TabItem("Show all pages", elem_id="settings_show_all_pages"):
                         create_dirty_indicator("show_all_pages", [], interactive=False)
 
+            with gr.TabItem("Update", id="system_update", elem_id="tab_update"):
+                from modules import update
+                update.create_ui()
+
             with gr.TabItem("User interface", id="system_config", elem_id="tab_config"):
                 loadsave.create_ui()
                 create_dirty_indicator("tab_defaults", [], interactive=False)
