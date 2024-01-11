@@ -162,27 +162,8 @@ def list_models():
     elif shared.cmd_opts.ckpt != shared.default_sd_model_file and shared.cmd_opts.ckpt is not None:
         shared.log.warning(f"Checkpoint not found: {shared.cmd_opts.ckpt}")
     shared.log.info(f'Available models: path="{shared.opts.ckpt_dir}" items={len(checkpoints_list)} time={time.time()-t0:.2f}')
-
     checkpoints_list = dict(sorted(checkpoints_list.items(), key=lambda cp: cp[1].filename))
-    """
-    if len(checkpoints_list) == 0:
-        if not shared.cmd_opts.no_download:
-            key = input('Download the default model? (y/N) ')
-            if key.lower().startswith('y'):
-                if shared.backend == shared.Backend.ORIGINAL:
-                    model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
-                    shared.opts.data['sd_model_checkpoint'] = "v1-5-pruned-emaonly.safetensors"
-                    model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
-                else:
-                    default_model_id = "runwayml/stable-diffusion-v1-5"
-                    modelloader.download_diffusers_model(default_model_id, shared.opts.diffusers_dir)
-                    model_list = modelloader.load_diffusers_models(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir)
 
-                for filename in sorted(model_list, key=str.lower):
-                    checkpoint_info = CheckpointInfo(filename)
-                    if checkpoint_info.name is not None:
-                        checkpoint_info.register()
-    """
 
 def update_model_hashes():
     txt = []
@@ -251,10 +232,12 @@ def select_checkpoint(op='model'):
     if checkpoint_info is not None:
         shared.log.info(f'Select: {op}="{checkpoint_info.title if checkpoint_info is not None else None}"')
         return checkpoint_info
-    if len(checkpoints_list) == 0 and not shared.cmd_opts.no_download:
+    if len(checkpoints_list) == 0:
         shared.log.warning("Cannot generate without a checkpoint")
         shared.log.info("Set system paths to use existing folders in a different location")
-        shared.log.info("Or use --ckpt <path-to-checkpoint> to force using existing checkpoint")
+        shared.log.info("  or use --models_dir <path-to-folder> to specify base folder with all models")
+        shared.log.info("  or use --ckpt_dir <path-to-folder> to specify folder with models")
+        shared.log.info("  or use --ckpt <path-to-checkpoint> to force using existing model")
         return None
     checkpoint_info = next(iter(checkpoints_list.values()))
     if model_checkpoint is not None:

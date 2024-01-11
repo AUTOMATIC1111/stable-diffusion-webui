@@ -151,7 +151,9 @@ def initialize():
 
 
 def load_model():
-    if opts.sd_checkpoint_autoload and (shared.cmd_opts.ckpt is not None and shared.cmd_opts.ckpt.lower() != 'none'):
+    if not opts.sd_checkpoint_autoload or (shared.cmd_opts.ckpt is not None and shared.cmd_opts.ckpt.lower() != 'none'):
+        log.debug('Model auto load disabled')
+    else:
         shared.state.begin('load')
         thread_model = Thread(target=lambda: shared.sd_model)
         thread_model.start()
@@ -160,8 +162,6 @@ def load_model():
         shared.state.end()
         thread_model.join()
         thread_refiner.join()
-    else:
-        log.debug('Model auto load disabled')
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(op='model')), call=False)
     shared.opts.onchange("sd_model_refiner", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(op='refiner')), call=False)
     shared.opts.onchange("sd_model_dict", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(op='dict')), call=False)

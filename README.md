@@ -143,7 +143,6 @@ Below is partial list of all available parameters, run `webui --help` for the fu
       --docs                           Mount Gradio docs at /docs, default: False
       --no-hashing                     Disable hashing of checkpoints, default: False
       --no-metadata                    Disable reading of metadata from models, default: False
-      --no-download                    Disable download of default model, default: False
       --backend {original,diffusers}   force model pipeline type
 
     Setup options:
