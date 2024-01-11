@@ -76,8 +76,12 @@ And it also includes fixes for all reported issues so far
     for example, you can now deploy a zip of the sdnext folder  
   - **latent upscale**: updated latent upscalers (some are new)  
     *nearest, nearest-exact, area, bilinear, bicubic, bilinear-antialias, bicubic-antialias*
-  - **xyz grid**: continue on error  
-    now you can use xyz grid with different params and test which ones work and which dont  
+  - **xyz grid**
+    - range control  
+      example: `5.0-6.0:3` will generate 3 images with values `5.0,5.5,6.0`  
+      example: `10-20:4` will generate 4 images with values `10,13,16,20`  
+    - continue on error  
+      now you can use xyz grid with different params and test which ones work and which dont  
   - **hypertile**  
     - enable vae tiling  
     - add autodetect optimial value  
