@@ -36,19 +36,20 @@ def setup_logging(loglevel):
         # Already configured, do not interfere
         return
 
+    formatter = logging.Formatter(
+        '%(asctime)s %(levelname)s [%(name)s] %(message)s',
+        '%Y-%m-%d %H:%M:%S',
+    )
+
     if os.environ.get("SD_WEBUI_RICH_LOG"):
         from rich.logging import RichHandler
         handler = RichHandler()
     else:
         handler = logging.StreamHandler()
+        handler.setFormatter(formatter)
 
     if TqdmLoggingHandler:
         handler = TqdmLoggingHandler(handler)
-
-    formatter = logging.Formatter(
-        '%(asctime)s %(levelname)s [%(name)s] %(message)s',
-        '%Y-%m-%d %H:%M:%S',
-    )
 
     handler.setFormatter(formatter)
 
