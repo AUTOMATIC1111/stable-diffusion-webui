@@ -13,7 +13,7 @@ from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
 from modules import gradio_extensons  # noqa: F401
-from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, shared_items, ui_settings, timer, sysinfo, ui_checkpoint_merger, scripts, sd_samplers, processing, ui_extra_networks, ui_toprow
+from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, shared_items, ui_settings, timer, sysinfo, ui_checkpoint_merger, scripts, sd_samplers, processing, ui_extra_networks, ui_toprow, launch_utils
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML, InputAccordion, ResizeHandleRow
 from modules.paths import script_path
 from modules.ui_common import create_refresh_button
@@ -21,14 +21,14 @@ from modules.ui_gradio_extensions import reload_javascript
 
 from modules.shared import opts, cmd_opts
 
-import modules.generation_parameters_copypaste as parameters_copypaste
+import modules.infotext_utils as parameters_copypaste
 import modules.hypernetworks.ui as hypernetworks_ui
 import modules.textual_inversion.ui as textual_inversion_ui
 import modules.textual_inversion.textual_inversion as textual_inversion
 import modules.shared as shared
 from modules import prompt_parser
 from modules.sd_hijack import model_hijack
-from modules.generation_parameters_copypaste import image_from_url_text
+from modules.infotext_utils import image_from_url_text, PasteField
 
 create_setting_component = ui_settings.create_setting_component
 
@@ -175,7 +175,6 @@ def update_token_counter(text, steps, *, is_positive=True):
 
 def update_negative_prompt_token_counter(text, steps):
     return update_token_counter(text, steps, is_positive=False)
-
 
 
 def setup_progressbar(*args, **kwargs):
@@ -376,49 +375,59 @@ def create_ui():
                     show_progress=False,
                 )
 
-            txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples, toprow)
+            output_panel = create_output_panel("txt2img", opts.outdir_txt2img_samples, toprow)
+
+            txt2img_inputs = [
+                dummy_component,
+                toprow.prompt,
+                toprow.negative_prompt,
+                toprow.ui_styles.dropdown,
+                steps,
+                sampler_name,
+                batch_count,
+                batch_size,
+                cfg_scale,
+                height,
+                width,
+                enable_hr,
+                denoising_strength,
+                hr_scale,
+                hr_upscaler,
+                hr_second_pass_steps,
+                hr_resize_x,
+                hr_resize_y,
+                hr_checkpoint_name,
+                hr_sampler_name,
+                hr_prompt,
+                hr_negative_prompt,
+                override_settings,
+            ] + custom_inputs
+
+            txt2img_outputs = [
+                output_panel.gallery,
+                output_panel.generation_info,
+                output_panel.infotext,
+                output_panel.html_log,
+            ]
 
             txt2img_args = dict(
                 fn=wrap_gradio_gpu_call(modules.txt2img.txt2img, extra_outputs=[None, '', '']),
                 _js="submit",
-                inputs=[
-                    dummy_component,
-                    toprow.prompt,
-                    toprow.negative_prompt,
-                    toprow.ui_styles.dropdown,
-                    steps,
-                    sampler_name,
-                    batch_count,
-                    batch_size,
-                    cfg_scale,
-                    height,
-                    width,
-                    enable_hr,
-                    denoising_strength,
-                    hr_scale,
-                    hr_upscaler,
-                    hr_second_pass_steps,
-                    hr_resize_x,
-                    hr_resize_y,
-                    hr_checkpoint_name,
-                    hr_sampler_name,
-                    hr_prompt,
-                    hr_negative_prompt,
-                    override_settings,
-
-                ] + custom_inputs,
-
-                outputs=[
-                    txt2img_gallery,
-                    generation_info,
-                    html_info,
-                    html_log,
-                ],
+                inputs=txt2img_inputs,
+                outputs=txt2img_outputs,
                 show_progress=False,
             )
 
             toprow.prompt.submit(**txt2img_args)
             toprow.submit.click(**txt2img_args)
+
+            output_panel.button_upscale.click(
+                fn=wrap_gradio_gpu_call(modules.txt2img.txt2img_upscale, extra_outputs=[None, '', '']),
+                _js="submit_txt2img_upscale",
+                inputs=txt2img_inputs[0:1] + [output_panel.gallery, dummy_component, output_panel.generation_info] + txt2img_inputs[1:],
+                outputs=txt2img_outputs,
+                show_progress=False,
+            )
 
             res_switch_btn.click(fn=None, _js="function(){switchWidthHeight('txt2img')}", inputs=None, outputs=None, show_progress=False)
 
@@ -427,37 +436,37 @@ def create_ui():
                 _js="restoreProgressTxt2img",
                 inputs=[dummy_component],
                 outputs=[
-                    txt2img_gallery,
-                    generation_info,
-                    html_info,
-                    html_log,
+                    output_panel.gallery,
+                    output_panel.generation_info,
+                    output_panel.infotext,
+                    output_panel.html_log,
                 ],
                 show_progress=False,
             )
 
             txt2img_paste_fields = [
-                (toprow.prompt, "Prompt"),
-                (toprow.negative_prompt, "Negative prompt"),
-                (steps, "Steps"),
-                (sampler_name, "Sampler"),
-                (cfg_scale, "CFG scale"),
-                (width, "Size-1"),
-                (height, "Size-2"),
-                (batch_size, "Batch size"),
-                (toprow.ui_styles.dropdown, lambda d: d["Styles array"] if isinstance(d.get("Styles array"), list) else gr.update()),
-                (denoising_strength, "Denoising strength"),
-                (enable_hr, lambda d: "Denoising strength" in d and ("Hires upscale" in d or "Hires upscaler" in d or "Hires resize-1" in d)),
-                (hr_scale, "Hires upscale"),
-                (hr_upscaler, "Hires upscaler"),
-                (hr_second_pass_steps, "Hires steps"),
-                (hr_resize_x, "Hires resize-1"),
-                (hr_resize_y, "Hires resize-2"),
-                (hr_checkpoint_name, "Hires checkpoint"),
-                (hr_sampler_name, "Hires sampler"),
-                (hr_sampler_container, lambda d: gr.update(visible=True) if d.get("Hires sampler", "Use same sampler") != "Use same sampler" or d.get("Hires checkpoint", "Use same checkpoint") != "Use same checkpoint" else gr.update()),
-                (hr_prompt, "Hires prompt"),
-                (hr_negative_prompt, "Hires negative prompt"),
-                (hr_prompts_container, lambda d: gr.update(visible=True) if d.get("Hires prompt", "") != "" or d.get("Hires negative prompt", "") != "" else gr.update()),
+                PasteField(toprow.prompt, "Prompt", api="prompt"),
+                PasteField(toprow.negative_prompt, "Negative prompt", api="negative_prompt"),
+                PasteField(steps, "Steps", api="steps"),
+                PasteField(sampler_name, "Sampler", api="sampler_name"),
+                PasteField(cfg_scale, "CFG scale", api="cfg_scale"),
+                PasteField(width, "Size-1", api="width"),
+                PasteField(height, "Size-2", api="height"),
+                PasteField(batch_size, "Batch size", api="batch_size"),
+                PasteField(toprow.ui_styles.dropdown, lambda d: d["Styles array"] if isinstance(d.get("Styles array"), list) else gr.update(), api="styles"),
+                PasteField(denoising_strength, "Denoising strength", api="denoising_strength"),
+                PasteField(enable_hr, lambda d: "Denoising strength" in d and ("Hires upscale" in d or "Hires upscaler" in d or "Hires resize-1" in d), api="enable_hr"),
+                PasteField(hr_scale, "Hires upscale", api="hr_scale"),
+                PasteField(hr_upscaler, "Hires upscaler", api="hr_upscaler"),
+                PasteField(hr_second_pass_steps, "Hires steps", api="hr_second_pass_steps"),
+                PasteField(hr_resize_x, "Hires resize-1", api="hr_resize_x"),
+                PasteField(hr_resize_y, "Hires resize-2", api="hr_resize_y"),
+                PasteField(hr_checkpoint_name, "Hires checkpoint", api="hr_checkpoint_name"),
+                PasteField(hr_sampler_name, "Hires sampler", api="hr_sampler_name"),
+                PasteField(hr_sampler_container, lambda d: gr.update(visible=True) if d.get("Hires sampler", "Use same sampler") != "Use same sampler" or d.get("Hires checkpoint", "Use same checkpoint") != "Use same checkpoint" else gr.update()),
+                PasteField(hr_prompt, "Hires prompt", api="hr_prompt"),
+                PasteField(hr_negative_prompt, "Hires negative prompt", api="hr_negative_prompt"),
+                PasteField(hr_prompts_container, lambda d: gr.update(visible=True) if d.get("Hires prompt", "") != "" or d.get("Hires negative prompt", "") != "" else gr.update()),
                 *scripts.scripts_txt2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields, override_settings)
@@ -480,7 +489,7 @@ def create_ui():
             toprow.negative_token_button.click(fn=wrap_queued_call(update_negative_prompt_token_counter), inputs=[toprow.negative_prompt, steps], outputs=[toprow.negative_token_counter])
 
         extra_networks_ui = ui_extra_networks.create_ui(txt2img_interface, [txt2img_generation_tab], 'txt2img')
-        ui_extra_networks.setup_ui(extra_networks_ui, txt2img_gallery)
+        ui_extra_networks.setup_ui(extra_networks_ui, output_panel.gallery)
 
         extra_tabs.__exit__()
 
@@ -711,7 +720,7 @@ def create_ui():
                     outputs=[inpaint_controls, mask_alpha],
                 )
 
-            img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples, toprow)
+            output_panel = create_output_panel("img2img", opts.outdir_img2img_samples, toprow)
 
             img2img_args = dict(
                 fn=wrap_gradio_gpu_call(modules.img2img.img2img, extra_outputs=[None, '', '']),
@@ -756,10 +765,10 @@ def create_ui():
                     img2img_batch_png_info_dir,
                 ] + custom_inputs,
                 outputs=[
-                    img2img_gallery,
-                    generation_info,
-                    html_info,
-                    html_log,
+                    output_panel.gallery,
+                    output_panel.generation_info,
+                    output_panel.infotext,
+                    output_panel.html_log,
                 ],
                 show_progress=False,
             )
@@ -797,10 +806,10 @@ def create_ui():
                 _js="restoreProgressImg2img",
                 inputs=[dummy_component],
                 outputs=[
-                    img2img_gallery,
-                    generation_info,
-                    html_info,
-                    html_log,
+                    output_panel.gallery,
+                    output_panel.generation_info,
+                    output_panel.infotext,
+                    output_panel.html_log,
                 ],
                 show_progress=False,
             )
@@ -831,6 +840,10 @@ def create_ui():
                 (toprow.ui_styles.dropdown, lambda d: d["Styles array"] if isinstance(d.get("Styles array"), list) else gr.update()),
                 (denoising_strength, "Denoising strength"),
                 (mask_blur, "Mask blur"),
+                (inpainting_mask_invert, 'Mask mode'),
+                (inpainting_fill, 'Masked content'),
+                (inpaint_full_res, 'Inpaint area'),
+                (inpaint_full_res_padding, 'Masked area padding'),
                 *scripts.scripts_img2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields, override_settings)
@@ -840,7 +853,7 @@ def create_ui():
             ))
 
         extra_networks_ui_img2img = ui_extra_networks.create_ui(img2img_interface, [img2img_generation_tab], 'img2img')
-        ui_extra_networks.setup_ui(extra_networks_ui_img2img, img2img_gallery)
+        ui_extra_networks.setup_ui(extra_networks_ui_img2img, output_panel.gallery)
 
         extra_tabs.__exit__()
 
@@ -1086,6 +1099,7 @@ def create_ui():
         )
 
     loadsave = ui_loadsave.UiLoadsave(cmd_opts.ui_config_file)
+    ui_settings_from_file = loadsave.ui_settings.copy()
 
     settings = ui_settings.UiSettings()
     settings.create_ui(loadsave, dummy_component)
@@ -1146,7 +1160,8 @@ def create_ui():
 
         modelmerger_ui.setup_ui(dummy_component=dummy_component, sd_model_checkpoint_component=settings.component_dict['sd_model_checkpoint'])
 
-    loadsave.dump_defaults()
+    if ui_settings_from_file != loadsave.ui_settings:
+        loadsave.dump_defaults()
     demo.ui_loadsave = loadsave
 
     return demo
@@ -1208,3 +1223,5 @@ def setup_ui_api(app):
     app.add_api_route("/internal/sysinfo", download_sysinfo, methods=["GET"])
     app.add_api_route("/internal/sysinfo-download", lambda: download_sysinfo(attachment=True), methods=["GET"])
 
+    import fastapi.staticfiles
+    app.mount("/webui-assets", fastapi.staticfiles.StaticFiles(directory=launch_utils.repo_dir('stable-diffusion-webui-assets')), name="webui-assets")

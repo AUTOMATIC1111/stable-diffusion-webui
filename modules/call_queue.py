@@ -78,6 +78,7 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
 
         shared.state.skipped = False
         shared.state.interrupted = False
+        shared.state.stopping_generation = False
         shared.state.job_count = 0
 
         if not add_stats:

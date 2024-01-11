@@ -18,10 +18,10 @@ class NetworkModuleNorm(network.NetworkModule):
 
     def calc_updown(self, orig_weight):
         output_shape = self.w_norm.shape
-        updown = self.w_norm.to(orig_weight.device, dtype=orig_weight.dtype)
+        updown = self.w_norm.to(orig_weight.device)
 
         if self.b_norm is not None:
-            ex_bias = self.b_norm.to(orig_weight.device, dtype=orig_weight.dtype)
+            ex_bias = self.b_norm.to(orig_weight.device)
         else:
             ex_bias = None
 

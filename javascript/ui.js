@@ -150,6 +150,14 @@ function submit() {
     return res;
 }
 
+function submit_txt2img_upscale() {
+    var res = submit(...arguments);
+
+    res[2] = selected_gallery_index();
+
+    return res;
+}
+
 function submit_img2img() {
     showSubmitButtons('img2img', false);
 

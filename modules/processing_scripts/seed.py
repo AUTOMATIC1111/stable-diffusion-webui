@@ -3,6 +3,7 @@ import json
 import gradio as gr
 
 from modules import scripts, ui, errors
+from modules.infotext_utils import PasteField
 from modules.shared import cmd_opts
 from modules.ui_components import ToolButton
 
@@ -51,12 +52,12 @@ class ScriptSeed(scripts.ScriptBuiltinUI):
         seed_checkbox.change(lambda x: gr.update(visible=x), show_progress=False, inputs=[seed_checkbox], outputs=[seed_extras])
 
         self.infotext_fields = [
-            (self.seed, "Seed"),
-            (seed_checkbox, lambda d: "Variation seed" in d or "Seed resize from-1" in d),
-            (subseed, "Variation seed"),
-            (subseed_strength, "Variation seed strength"),
-            (seed_resize_from_w, "Seed resize from-1"),
-            (seed_resize_from_h, "Seed resize from-2"),
+            PasteField(self.seed, "Seed", api="seed"),
+            PasteField(seed_checkbox, lambda d: "Variation seed" in d or "Seed resize from-1" in d),
+            PasteField(subseed, "Variation seed", api="subseed"),
+            PasteField(subseed_strength, "Variation seed strength", api="subseed_strength"),
+            PasteField(seed_resize_from_w, "Seed resize from-1", api="seed_resize_from_h"),
+            PasteField(seed_resize_from_h, "Seed resize from-2", api="seed_resize_from_w"),
         ]
 
         self.on_after_component(lambda x: connect_reuse_seed(self.seed, reuse_seed, x.component, False), elem_id=f'generation_info_{self.tabname}')
