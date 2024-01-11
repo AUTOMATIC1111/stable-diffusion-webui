@@ -129,6 +129,7 @@ And it also includes fixes for all reported issues so far
   - api: sanitize response object  
   - api: cleanup error logging  
   - sampler: guard against invalid sampler index  
+  - sampler: add img2img_extra_noise option
   - config: reset default cfg scale to 6.0  
   - processing: correct display metadata  
   - processing: fix batch file names  
