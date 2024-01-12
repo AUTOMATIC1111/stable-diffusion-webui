@@ -126,12 +126,16 @@ However,
     fixes random memory leaks  
   - remove IPEX / Torch 2.0 specific hijacks  
   - add `IPEX_SDPA_SLICE_TRIGGER_RATE` and `IPEX_ATTENTION_SLICE_RATE` env variables  
+  - fix lock-ups at very high resolutions  
 - **OpenVINO**, thanks @disty0  
   - **4-bit support with NNCF**  
     enable *Compress Model weights with NNCF* from *Compute Settings* and set a 4-bit NNCF mode  
     4-bit and 8-bit with OpenVINO is CPU only for now  
   - experimental support for *Text Encoder* compiling  
     OpenVINO is faster than IPEX now  
+  - add device selection to `Compute Settings`  
+    selecting multiple devices will use `HETERO` device  
+  - remove `OPENVINO_TORCH_BACKEND_DEVICE` env variable  
   - reduce system memory usage after compile  
   - fix cache loading with multiple models  
 - **fixes**  
