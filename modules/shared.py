@@ -173,6 +173,7 @@ if cmd_opts.backend is not None: # override with args
     backend = Backend.DIFFUSERS if cmd_opts.backend.lower() == 'diffusers' else Backend.ORIGINAL
 if cmd_opts.use_openvino: # override for openvino
     backend = Backend.DIFFUSERS
+    from modules.intel.openvino import get_device_list as get_openvino_device_list
 
 
 class OptionInfo:
@@ -334,10 +335,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "torch_gc_threshold": OptionInfo(80, "Memory usage threshold for GC", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
 
     "cuda_compile_sep": OptionInfo("<h2>Model Compile</h2>", "", gr.HTML),
-    "cuda_compile": OptionInfo(False if not cmd_opts.use_openvino else True, "Compile UNet"),
-    "cuda_compile_vae": OptionInfo(False if not cmd_opts.use_openvino else True, "Compile VAE"),
-    "cuda_compile_text_encoder": OptionInfo(False, "Compile Text Encoder"),
-    "cuda_compile_upscaler": OptionInfo(False if not cmd_opts.use_openvino else True, "Compile Upscaler"),
+    "cuda_compile": OptionInfo([] if not cmd_opts.use_openvino else ["Model", "VAE", "Upscaler"], "Compile Model", gr.CheckboxGroup, {"choices": ["Model", "VAE", "Text Encoder", "Upscaler"]}),
     "cuda_compile_backend": OptionInfo("none" if not cmd_opts.use_openvino else "openvino_fx", "Model compile backend", gr.Radio, {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx', 'stable-fast']}),
     "cuda_compile_mode": OptionInfo("default", "Model compile mode", gr.Radio, {"choices": ['default', 'reduce-overhead', 'max-autotune', 'max-autotune-no-cudagraphs']}),
     "cuda_compile_fullgraph": OptionInfo(False, "Model compile fullgraph"),
@@ -345,29 +343,20 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
     "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
     "diffusers_quantization": OptionInfo(False, "Dynamic quantization with TorchAO"),
+    "nncf_compress_weights": OptionInfo([], "Compress Model weights with NNCF", gr.CheckboxGroup, {"choices": ["Model", "VAE", "Text Encoder"], "visible": backend == Backend.DIFFUSERS}),
 
-    "nncf_sep": OptionInfo("<h2>NNCF</h2>", "", gr.HTML),
-    "nncf_compress_weights": OptionInfo(False, "Compress Model weights with NNCF"),
-    "nncf_compress_vae_weights": OptionInfo(False, "Compress VAE weights with NNCF"),
-    "nncf_compress_text_encoder_weights": OptionInfo(False, "Compress TextEncoder weights with NNCF"),
+    "ipex_sep": OptionInfo("<h2>IPEX</h2>", "", gr.HTML, {"visible": devices.backend == "ipex"}),
+    "ipex_optimize": OptionInfo(["Model", "VAE", "Text Encoder", "Upscaler"] if devices.backend == "ipex" else [], "IPEX Optimize for Intel GPUs", gr.CheckboxGroup, {"choices": ["Model", "VAE", "Text Encoder", "Upscaler"], "visible": devices.backend == "ipex"}),
 
-    "directml_sep": OptionInfo("<h2>DirectML</h2>", "", gr.HTML),
-    "directml_memory_provider": OptionInfo(default_memory_provider, 'DirectML memory stats provider', gr.Radio, {"choices": memory_providers}),
-    "directml_catch_nan": OptionInfo(False, "DirectML retry ops for NaN"),
+    "directml_sep": OptionInfo("<h2>IPEX and DirectML</h2>", "", gr.HTML, {"visible": devices.backend == "directml"}),
+    "directml_memory_provider": OptionInfo(default_memory_provider, 'DirectML memory stats provider', gr.Radio, {"choices": memory_providers, "visible": devices.backend == "directml"}),
+    "directml_catch_nan": OptionInfo(False, "DirectML retry ops for NaN", gr.Checkbox, {"visible": devices.backend == "directml"}),
 
-    "ipex_sep": OptionInfo("<h2>IPEX</h2>", "", gr.HTML),
-    "ipex_optimize": OptionInfo(False if not devices.backend == "ipex" else True, "IPEX Optimize for Intel GPUs"),
-    "ipex_optimize_vae": OptionInfo(False if not devices.backend == "ipex" else True, "IPEX Optimize for Intel GPUs with VAE"),
-    "ipex_optimize_text_encoder": OptionInfo(False if not devices.backend == "ipex" else True, "IPEX Optimize for Intel GPUs with Text Encoder"),
-    "ipex_optimize_upscaler": OptionInfo(False if not devices.backend == "ipex" else True, "IPEX Optimize for Intel GPUs with Upscalers"),
-
-    "openvino_sep": OptionInfo("<h2>OpenVINO</h2>", "", gr.HTML),
-    "openvino_disable_model_caching": OptionInfo(False, "OpenVINO disable model caching"),
-    "openvino_hetero_gpu": OptionInfo(False, "OpenVINO use Hetero Device"),
-    "openvino_remove_cpu_from_hetero": OptionInfo(False, "OpenVINO remove CPU from Hetero Device"),
-    "openvino_remove_igpu_from_hetero": OptionInfo(False, "OpenVINO remove iGPU from Hetero Device"),
-    "nncf_compress_weights_mode": OptionInfo("INT8", "OpenVINO compress mode for NNCF", gr.Radio, {"choices": ['INT8', 'INT4_SYM', 'INT4_ASYM', 'NF4']}),
-    "nncf_compress_weights_raito": OptionInfo(1.0, "OpenVINO compress ratio for NNCF", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
+    "openvino_sep": OptionInfo("<h2>OpenVINO</h2>", "", gr.HTML, {"visible": cmd_opts.use_openvino}),
+    "openvino_devices": OptionInfo([], "OpenVINO devices to use", gr.CheckboxGroup, {"choices": get_openvino_device_list() if cmd_opts.use_openvino else [], "visible": cmd_opts.use_openvino}),
+    "nncf_compress_weights_mode": OptionInfo("INT8", "OpenVINO compress mode for NNCF", gr.Radio, {"choices": ['INT8', 'INT4_SYM', 'INT4_ASYM', 'NF4'], "visible": cmd_opts.use_openvino}),
+    "nncf_compress_weights_raito": OptionInfo(1.0, "OpenVINO compress ratio for NNCF", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01, "visible": cmd_opts.use_openvino}),
+    "openvino_disable_model_caching": OptionInfo(False, "OpenVINO disable model caching", gr.Checkbox, {"visible": cmd_opts.use_openvino}),
 }))
 
 options_templates.update(options_section(('advanced', "Inference Settings"), {

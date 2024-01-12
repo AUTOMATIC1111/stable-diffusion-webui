@@ -70,19 +70,22 @@ class OpenVINOGraphModule(torch.nn.Module):
         result = openvino_execute(self.gm, *args, executor_parameters=self.executor_parameters, partition_id=self.partition_id, file_name=self.file_name)
         return result
 
-def get_device():
+def get_device_list():
     core = Core()
-    if os.getenv("OPENVINO_TORCH_BACKEND_DEVICE") is not None:
-        device = os.getenv("OPENVINO_TORCH_BACKEND_DEVICE")
-    elif shared.opts.openvino_hetero_gpu:
+    return core.available_devices
+
+def get_device():
+    if hasattr(shared, "opts") and len(shared.opts.openvino_devices) == 1:
+        return shared.opts.openvino_devices[0]
+
+    core = Core()
+    if hasattr(shared, "opts") and len(shared.opts.openvino_devices) > 1:
         device = ""
-        available_devices = core.available_devices
+        available_devices = shared.opts.openvino_devices.copy()
         available_devices.remove("CPU")
-        if shared.opts.openvino_remove_igpu_from_hetero and "GPU.0" in available_devices:
-            available_devices.remove("GPU.0")
-        for gpu in available_devices:
-            device = f"{device},{gpu}"
-        if not shared.opts.openvino_remove_cpu_from_hetero:
+        for hetero_device in available_devices:
+            device = f"{device},{hetero_device}"
+        if "CPU" in shared.opts.openvino_devices:
             device = f"{device},CPU"
         device = f"HETERO:{device[1:]}"
     elif any(openvino_cpu in cpu_module.lower() for cpu_module in shared.cmd_opts.use_cpu for openvino_cpu in ["openvino", "all"]):
@@ -98,7 +101,6 @@ def get_device():
     else:
         device = core.available_devices[-1]
         shared.log.warning(f"OpenVINO: No compatible GPU detected! Using {device}")
-    os.environ.setdefault('OPENVINO_TORCH_BACKEND_DEVICE', device)
     return device
 
 def get_openvino_device():
@@ -267,7 +269,7 @@ def openvino_compile_cached_model(cached_model_path, *example_inputs):
         om.inputs[idx].get_node().set_element_type(dtype_mapping[input_data.dtype])
         om.inputs[idx].get_node().set_partial_shape(PartialShape(list(input_data.shape)))
     om.validate_nodes_and_infer_types()
-    if shared.opts.nncf_compress_weights and not (dont_use_4bit_nncf and not shared.opts.nncf_compress_vae_weights):
+    if shared.opts.nncf_compress_weights and not dont_use_nncf:
         if dont_use_4bit_nncf or shared.opts.nncf_compress_weights_mode == "INT8":
             om = nncf.compress_weights(om)
         else:
@@ -383,7 +385,7 @@ def openvino_fx(subgraph, example_inputs):
         subgraph_type[3] is torch.nn.modules.activation.SiLU):
 
         dont_use_4bit_nncf = True
-        dont_use_nncf = not shared.opts.nncf_compress_vae_weights
+        dont_use_nncf = bool("VAE" not in shared.opts.nncf_compress_weights)
 
     # SD 1.5 / SDXL Text Encoder
     elif (subgraph_type[0] is torch.nn.modules.sparse.Embedding and
@@ -392,7 +394,7 @@ def openvino_fx(subgraph, example_inputs):
         subgraph_type[3] is torch.nn.modules.linear.Linear):
 
         dont_use_faketensors = True
-        dont_use_nncf = not shared.opts.nncf_compress_text_encoder_weights
+        dont_use_nncf = bool("Text Encoder" not in shared.opts.nncf_compress_weights)
 
     if not shared.opts.openvino_disable_model_caching:
         os.environ.setdefault('OPENVINO_TORCH_MODEL_CACHING', "1")

@@ -198,7 +198,7 @@ class UpscalerNearest(Upscaler):
 
 def compile_upscaler(model, name=""):
     try:
-        if modules.shared.opts.ipex_optimize_upscaler:
+        if modules.shared.opts.ipex_optimize and "Upscaler" in modules.shared.opts.ipex_optimize:
             import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
             from modules.devices import dtype as devices_dtype
             model.training = False
@@ -207,7 +207,7 @@ def compile_upscaler(model, name=""):
     except Exception as err:
         modules.shared.log.warning(f"Upscaler IPEX Optimize not supported: {err}")
     try:
-        if modules.shared.opts.cuda_compile_upscaler and modules.shared.opts.cuda_compile_backend != 'none':
+        if "Upscaler" in modules.shared.opts.cuda_compile and modules.shared.opts.cuda_compile_backend != 'none':
             modules.shared.log.info(f"Upscaler Compiling: {name} mode={modules.shared.opts.cuda_compile_backend}")
             import logging
             import torch._dynamo # pylint: disable=unused-import,redefined-outer-name

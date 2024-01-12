@@ -27,12 +27,16 @@ def ipex_optimize(sd_model):
     try:
         t0 = time.time()
         import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-        if hasattr(sd_model, 'unet'):
-            sd_model.unet.training = False
-            sd_model.unet = ipex.optimize(sd_model.unet, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
-        else:
-            shared.log.warning('IPEX Optimize enabled but model has no Unet')
-        if shared.opts.ipex_optimize_vae:
+        if "Model" in shared.opts.ipex_optimize:
+            if hasattr(sd_model, 'unet'):
+                sd_model.unet.training = False
+                sd_model.unet = ipex.optimize(sd_model.unet, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+            elif hasattr(sd_model, 'transformer'):
+                sd_model.transformer.training = False
+                sd_model.transformer = ipex.optimize(sd_model.transformer, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+            else:
+                shared.log.warning('IPEX Optimize enabled but model has no Unet or Transformer')
+        if "VAE" in shared.opts.ipex_optimize:
             if hasattr(sd_model, 'vae'):
                 sd_model.vae.training = False
                 sd_model.vae = ipex.optimize(sd_model.vae, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
@@ -41,7 +45,7 @@ def ipex_optimize(sd_model):
                 sd_model.movq = ipex.optimize(sd_model.movq, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
             else:
                 shared.log.warning('Compress VAE Weights enabled but model has no VAE')
-        if shared.opts.ipex_optimize_text_encoder:
+        if "Text Encoder" in shared.opts.ipex_optimize:
             if hasattr(sd_model, 'text_encoder'):
                 sd_model.text_encoder.training = False
                 sd_model.text_encoder = ipex.optimize(sd_model.text_encoder, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
@@ -63,18 +67,21 @@ def nncf_compress_weights(sd_model):
         shared.compiled_model_state = CompiledModelState()
         shared.compiled_model_state.is_compiled = True
 
-        if hasattr(sd_model, 'unet'):
-            sd_model.unet = nncf.compress_weights(sd_model.unet)
-        else:
-            shared.log.warning('Compress Weights enabled but model has no Unet')
-        if shared.opts.nncf_compress_vae_weights:
+        if "Model" in shared.opts.nncf_compress_weights:
+            if hasattr(sd_model, 'unet'):
+                sd_model.unet = nncf.compress_weights(sd_model.unet)
+            elif hasattr(sd_model, 'transformer'):
+                sd_model.transformer = nncf.compress_weights(sd_model.transformer)
+            else:
+                shared.log.warning('Compress Weights enabled but model has no Unet or Transformer')
+        if "VAE" in shared.opts.nncf_compress_weights:
             if hasattr(sd_model, 'vae'):
                 sd_model.vae = nncf.compress_weights(sd_model.vae)
             elif hasattr(sd_model, 'movq'):
                 sd_model.movq = nncf.compress_weights(sd_model.movq)
             else:
                 shared.log.warning('Compress VAE Weights enabled but model has no VAE')
-        if shared.opts.nncf_compress_text_encoder_weights:
+        if "Text Encoder" in shared.opts.nncf_compress_weights:
             if hasattr(sd_model, 'text_encoder'):
                 sd_model.text_encoder = nncf.compress_weights(sd_model.text_encoder)
                 if hasattr(sd_model, 'text_encoder_2'):
@@ -166,19 +173,19 @@ def compile_torch(sd_model):
             shared.log.error(f"Torch inductor config error: {e}")
 
         t0 = time.time()
-        if shared.opts.cuda_compile:
+        if "Model" in shared.opts.cuda_compile:
             if hasattr(sd_model, 'unet') and hasattr(sd_model.unet, 'config'):
                 sd_model.unet = torch.compile(sd_model.unet, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph)
             else:
                 shared.log.warning('Model compile enabled but model has no Unet')
-        if shared.opts.cuda_compile_vae:
+        if "VAE" in shared.opts.cuda_compile:
             if hasattr(sd_model, 'vae') and hasattr(sd_model.vae, 'decode'):
                 sd_model.vae.decode = torch.compile(sd_model.vae.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph)
             elif hasattr(sd_model, 'movq') and hasattr(sd_model.movq, 'decode'):
                 sd_model.movq.decode = torch.compile(sd_model.movq.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph)
             else:
                 shared.log.warning('Model compile enabled but model has no VAE')
-        if shared.opts.cuda_compile_text_encoder:
+        if "Text Encoder" in shared.opts.cuda_compile:
             if hasattr(sd_model, 'text_encoder'):
                 sd_model.text_encoder = torch.compile(sd_model.text_encoder, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph)
                 if hasattr(sd_model, 'text_encoder_2'):
@@ -200,12 +207,12 @@ def compile_diffusers(sd_model):
         sd_model = ipex_optimize(sd_model)
     if shared.opts.nncf_compress_weights and not (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx"):
         sd_model = nncf_compress_weights(sd_model)
-    if not (shared.opts.cuda_compile or shared.opts.cuda_compile_vae or shared.opts.cuda_compile_upscaler):
+    if not shared.opts.cuda_compile:
         return sd_model
     if shared.opts.cuda_compile_backend == 'none':
         shared.log.warning('Model compile enabled but no backend specified')
         return sd_model
-    shared.log.info(f"Model compile: pipeline={sd_model.__class__.__name__} mode={shared.opts.cuda_compile_mode} backend={shared.opts.cuda_compile_backend} fullgraph={shared.opts.cuda_compile_fullgraph} unet={shared.opts.cuda_compile} vae={shared.opts.cuda_compile_vae} upscaler={shared.opts.cuda_compile_upscaler}")
+    shared.log.info(f"Model compile: pipeline={sd_model.__class__.__name__} mode={shared.opts.cuda_compile_mode} backend={shared.opts.cuda_compile_backend} fullgraph={shared.opts.cuda_compile_fullgraph} compile={shared.opts.cuda_compile}")
     if shared.opts.cuda_compile_backend == 'stable-fast':
         sd_model = compile_stablefast(sd_model)
     else:
