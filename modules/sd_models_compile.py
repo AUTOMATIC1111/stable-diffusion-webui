@@ -68,23 +68,23 @@ def nncf_compress_weights(sd_model):
         shared.compiled_model_state.is_compiled = True
 
         if "Model" in shared.opts.nncf_compress_weights:
-            if hasattr(sd_model, 'unet'):
+            if hasattr(sd_model, 'unet') and hasattr(sd_model.unet, 'config'):
                 sd_model.unet = nncf.compress_weights(sd_model.unet)
-            elif hasattr(sd_model, 'transformer'):
+            elif hasattr(sd_model, 'transformer') and hasattr(sd_model.transformer, 'config'):
                 sd_model.transformer = nncf.compress_weights(sd_model.transformer)
             else:
                 shared.log.warning('Compress Weights enabled but model has no Unet or Transformer')
         if "VAE" in shared.opts.nncf_compress_weights:
-            if hasattr(sd_model, 'vae'):
+            if hasattr(sd_model, 'vae') and hasattr(sd_model.vae, 'decode'):
                 sd_model.vae = nncf.compress_weights(sd_model.vae)
-            elif hasattr(sd_model, 'movq'):
+            elif hasattr(sd_model, 'movq') and hasattr(sd_model.movq, 'decode'):
                 sd_model.movq = nncf.compress_weights(sd_model.movq)
             else:
                 shared.log.warning('Compress VAE Weights enabled but model has no VAE')
         if "Text Encoder" in shared.opts.nncf_compress_weights:
-            if hasattr(sd_model, 'text_encoder'):
+            if hasattr(sd_model, 'text_encoder') and hasattr(sd_model.text_encoder, 'config'):
                 sd_model.text_encoder = nncf.compress_weights(sd_model.text_encoder)
-                if hasattr(sd_model, 'text_encoder_2'):
+                if hasattr(sd_model, 'text_encoder_2') and hasattr(sd_model.text_encoder_2, 'config'):
                     sd_model.text_encoder_2 = nncf.compress_weights(sd_model.text_encoder_2)
             else:
                 shared.log.warning('Compress VAE Text Encoder Weights enabled but model has no Text Encoder')
@@ -176,8 +176,10 @@ def compile_torch(sd_model):
         if "Model" in shared.opts.cuda_compile:
             if hasattr(sd_model, 'unet') and hasattr(sd_model.unet, 'config'):
                 sd_model.unet = torch.compile(sd_model.unet, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph)
+            elif hasattr(sd_model, 'transformer') and hasattr(sd_model.transformer, 'config'):
+                sd_model.transformer = torch.compile(sd_model.transformer, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph)
             else:
-                shared.log.warning('Model compile enabled but model has no Unet')
+                shared.log.warning('Model compile enabled but model has no Unet or Transformer')
         if "VAE" in shared.opts.cuda_compile:
             if hasattr(sd_model, 'vae') and hasattr(sd_model.vae, 'decode'):
                 sd_model.vae.decode = torch.compile(sd_model.vae.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph)
@@ -186,9 +188,9 @@ def compile_torch(sd_model):
             else:
                 shared.log.warning('Model compile enabled but model has no VAE')
         if "Text Encoder" in shared.opts.cuda_compile:
-            if hasattr(sd_model, 'text_encoder'):
+            if hasattr(sd_model, 'text_encoder') and hasattr(sd_model.text_encoder, 'config'):
                 sd_model.text_encoder = torch.compile(sd_model.text_encoder, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph)
-                if hasattr(sd_model, 'text_encoder_2'):
+                if hasattr(sd_model, 'text_encoder_2') and hasattr(sd_model.text_encoder_2, 'config'):
                     sd_model.text_encoder_2 = torch.compile(sd_model.text_encoder_2, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph)
             else:
                 shared.log.warning('Text Encoder compile enabled but model has no Text Encoder')
