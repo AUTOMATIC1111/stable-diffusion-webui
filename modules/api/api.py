@@ -9,13 +9,14 @@ import requests
 import gradio as gr
 from threading import Lock
 from io import BytesIO
-from fastapi import APIRouter, Depends, FastAPI, Request, Response
+from fastapi import APIRouter, Depends, FastAPI, Request, Response, UploadFile, File
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from secrets import compare_digest
 
+from modules.face_verification import yk_face as YKF
 import modules.shared as shared
 from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors, restart, shared_items, script_callbacks, generation_parameters_copypaste, sd_models
 from modules.api import models
@@ -242,6 +243,9 @@ class Api:
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=list[models.ScriptInfo])
         self.add_api_route("/sdapi/v1/extensions", self.get_extensions_list, methods=["GET"], response_model=list[models.ExtensionItem])
+        self.add_api_route("/sdapi/v1/upload-lora", self.upload_lora, methods=["POST"])
+        self.add_api_route("/sdapi/v1/delete-lora/{lora}", self.delete_lora, methods=["DELETE"])
+        self.add_api_route("/sdapi/v1/verify", self.verify, methods=["POST"])
 
         if shared.cmd_opts.api_server_stop:
             self.add_api_route("/sdapi/v1/server-kill", self.kill_webui, methods=["POST"])
@@ -251,6 +255,40 @@ class Api:
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
 
+    async def verify(self, image1: UploadFile=File(...), image2: UploadFile = File(...)):
+        if image1.content_type not in self.ALLOWED_IMAGE_TYPES:
+            raise HTTPException(status_code=400, detail="Invalid File Format")
+        
+        YKF.Key.set('HmS76jJ8jbvgcvxMph1O8MDgHYYa1MmQzj7eXLxbzguQQ0MCyhrI4cUoHQTH')
+        YKF.BaseUrl.set('https://face.yoonik.me/v2')
+
+        matching_score = YKF.face.verify_images(image1.file,image2.file)
+        return matching_score
+
+    async def upload_lora(self, lora: UploadFile = File(...)):
+        _,extension = os.path.splitext(lora.filename)
+        extension = extension.lower()
+
+        if extension not in self.ALLOWED_LORA_EXTENSIONS:
+            raise HTTPException(status_code=400, detail="Invalid File Format")
+        
+        upload_dir = os.path.join(os.getcwd(),'models','Lora')
+        file_path = os.path.join(upload_dir, lora.filename)
+
+        with open(file_path, "wb") as f:
+            f.write(lora.file.read())
+        return {"message": "File uploaded successfully", "file_path": lora.filename}
+    
+    async def delete_lora(self, lora: str):
+        upload_dir = os.path.join(os.getcwd(), 'models', 'Lora')
+        file_path = os.path.join(upload_dir, lora)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            return {"message": f"File '{lora}' deleted successfully"}
+        else:
+            raise HTTPException(status_code=404, detail=f"File '{lora}' not found")
+        
     def add_api_route(self, path: str, endpoint, **kwargs):
         if shared.cmd_opts.api_auth:
             return self.app.add_api_route(path, endpoint, dependencies=[Depends(self.auth)], **kwargs)
