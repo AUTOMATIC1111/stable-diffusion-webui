@@ -202,13 +202,12 @@ table.settings-value-table td { padding: 0.4em; border: 1px solid #ccc; max-widt
 .extra-networks-page { display: flex }
 .extra-network-cards { display: flex; flex-wrap: wrap; overflow-y: auto; overflow-x: hidden; align-content: flex-start; width: -moz-available; width: -webkit-fill-available; }
 .extra-network-cards .card { height: fit-content; margin: 0 0 0.5em 0.5em; position: relative; scroll-snap-align: start; scroll-margin-top: 0; }
-.extra-network-cards .card .overlay { position: absolute; bottom: 0; padding: 0.2em; z-index: 10; width: 100%; background: none; }
-.extra-network-cards .card .overlay .name { font-size: var(--text-lg); font-weight: bold; text-shadow: 1px 1px black; color: white; overflow-wrap: break-word; }
+.extra-network-cards .card .overlay { z-index: 10; width: 100%; background: none; }
+.extra-network-cards .card .overlay .name { font-size: var(--text-lg); font-weight: bold; text-shadow: 1px 1px black; color: white; overflow-wrap: break-word; position: absolute; bottom: 0; padding: 0.2em; z-index: 10; }
 .extra-network-cards .card .preview { box-shadow: var(--button-shadow); min-height: 30px; }
-.extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
+.extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.70); }
 .extra-network-cards .card:hover .preview { box-shadow: none; filter: grayscale(100%); }
-.extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
-.extra-network-cards .card .overlay .tags { display: none; overflow-wrap: break-word; }
+.extra-network-cards .card .overlay .tags { display: none; overflow-wrap: anywhere; position: absolute; top: 100%; z-index: 20; background: var(--body-background-fill); }
 .extra-network-cards .card .overlay .tag { padding: 2px; margin: 2px; background: rgba(70, 70, 70, 0.60); font-size: var(--text-md); cursor: pointer; display: inline-block; }
 .extra-network-cards .card .actions>span { padding: 4px; font-size: 34px !important; }
 .extra-network-cards .card .actions>span:hover { color: var(--highlight-color); }

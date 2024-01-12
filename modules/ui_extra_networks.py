@@ -148,9 +148,6 @@ class ExtraNetworksPage:
         preview = f"./sd_extra_networks/thumb?filename={quoted_filename}&mtime={mtime}"
         return preview
 
-    def search_terms_from_path(self, filename):
-        return filename.replace('\\', '/')
-
     def is_empty(self, folder):
         for f in shared.listdir(folder):
             _fn, ext = os.path.splitext(f)

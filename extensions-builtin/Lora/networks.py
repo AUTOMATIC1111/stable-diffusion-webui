@@ -159,7 +159,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
     failed_to_load_networks = []
 
     recompile_model = False
-    if shared.compiled_model_state is not None and shared.compiled_model_state.is_compiled == True:
+    if shared.compiled_model_state is not None and shared.compiled_model_state.is_compiled:
         if len(names) == len(shared.compiled_model_state.lora_model):
             for i, name in enumerate(names):
                 if shared.compiled_model_state.lora_model[i] != f"{name}:{te_multipliers[i] if te_multipliers else 1.0}":

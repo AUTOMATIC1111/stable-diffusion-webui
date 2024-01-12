@@ -1,10 +1,12 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-11
+## Update for 2023-01-12
 
-Following-up on a major release, here is a lot more functionality in new Control module and FaceID & IPAdapter modules  
-Plus welcome additions to UI accessibility and flexibility of deployment  
+Another release with a lot more functionality in new Control module and FaceID & IPAdapter modules  
+Plus welcome additions to UI performance and accessibility and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
+
+However, 
 
 - **Control**:
   - add **inpaint** support  
@@ -65,13 +67,21 @@ And it also includes fixes for all reported issues so far
       this does not work with gradio-default themes as css is created by gradio itself  
     - modularized blip/booru interrogate  
       now appears as toolbuttons on image/gallery output  
+    - faster browser page load  
+    - cleanup hints  
+    - cleanup settings  
   - **server startup**: performance  
     - reduced module imports  
       ldm support is now only loaded when running in backend=original  
     - faster extension load  
     - faster json parsing  
     - faster lora indexing  
-    - lazy load optional imports
+    - lazy load optional imports  
+  - **extra networks**  
+    - 4x faster civitai metadata and previews lookup  
+    - better display and selection of tags & trigger words  
+    - better search  
+    - reduce html overhead  
   - **offline deployment**: allow deployment without git clone  
     for example, you can now deploy a zip of the sdnext folder  
   - **latent upscale**: updated latent upscalers (some are new)  
@@ -97,7 +107,7 @@ And it also includes fixes for all reported issues so far
   - major internal ui module refactoring  
     this may cause compatibility issues if an extension is doing a direct import from `ui.py`  
     in which case, report it so i can add a compatibility layer  
-- **Compile**
+- **compile**
   - new option: **fused projections**  
     pretty much free 5% performance boost for compatible models  
     enable in settings -> compute settings  
@@ -124,7 +134,7 @@ And it also includes fixes for all reported issues so far
     OpenVINO is faster than IPEX now  
   - reduce system memory usage after compile  
   - fix cache loading with multiple models  
-- **Fixes**  
+- **fixes**  
   - ipadapter: allow changing of model/image on-the-fly  
   - ipadapter: fix fallback of cross-attention on unload  
   - python: fix python 3.9 compatibility  

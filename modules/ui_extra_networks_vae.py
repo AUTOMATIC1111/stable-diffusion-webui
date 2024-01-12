@@ -20,7 +20,6 @@ class ExtraNetworksPageVAEs(ui_extra_networks.ExtraNetworksPage):
                     "title": name,
                     "filename": filename,
                     "hash": hashes.sha256_from_cache(filename, f"vae/{filename}"),
-                    "search_term": self.search_terms_from_path(filename),
                     "preview": self.find_preview(filename),
                     "local_preview": f"{os.path.splitext(filename)[0]}.{shared.opts.samples_format}",
                     "metadata": {},

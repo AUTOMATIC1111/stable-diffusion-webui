@@ -18,7 +18,7 @@ let img2img_gallery;
 let modal;
 let generationParamsInitialized = false;
 
-function initiGenerationParams() {
+async function initiGenerationParams() {
   if (generationParamsInitialized) return;
   if (!modal) modal = gradioApp().getElementById('lightboxModal');
   if (!modal) return;

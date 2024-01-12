@@ -1,4 +1,5 @@
 import os
+import time
 import json
 import inspect
 from datetime import datetime
@@ -7,7 +8,7 @@ from modules import sd_models, sd_vae, extras
 from modules.ui_components import FormRow, ToolButton
 from modules.ui_common import create_refresh_button
 from modules.call_queue import wrap_gradio_gpu_call
-from modules.shared import opts, log, req, readfile
+from modules.shared import opts, log, req, readfile, max_workers
 import modules.errors
 import modules.hashes
 from modules.merging import merge_methods
@@ -502,11 +503,50 @@ def create_ui():
                     list_models()
                     return res
 
-                def civit_search_metadata(civit_previews_rehash, title):
+                def atomic_civit_search_metadata(item, res, rehash):
+                    from modules.modelloader import download_civit_preview, download_civit_meta
+                    meta = os.path.splitext(item['filename'])[0] + '.json'
+                    has_meta = os.path.isfile(meta) and os.stat(meta).st_size > 0
+                    if ('card-no-preview.png' in item['preview'] or not has_meta) and os.path.isfile(item['filename']):
+                        sha = item.get('hash', None)
+                        found = False
+                        if sha is not None and len(sha) > 0:
+                            r = req(f'https://civitai.com/api/v1/model-versions/by-hash/{sha}')
+                            log.debug(f'CivitAI search: name="{item["name"]}" hash={sha} status={r.status_code}')
+                            if r.status_code == 200:
+                                d = r.json()
+                                res.append(download_civit_meta(item['filename'], d['modelId']))
+                                if d.get('images') is not None:
+                                    for i in d['images']:
+                                        preview_url = i['url']
+                                        img_res = download_civit_preview(item['filename'], preview_url)
+                                        res.append(img_res)
+                                        if 'error' not in img_res:
+                                            found = True
+                                            break
+                        if not found and rehash and os.stat(item['filename']).st_size < (1024 * 1024 * 1024):
+                            sha = modules.hashes.calculate_sha256(item['filename'], quiet=True)[:10]
+                            r = req(f'https://civitai.com/api/v1/model-versions/by-hash/{sha}')
+                            log.debug(f'CivitAI search: name="{item["name"]}" hash={sha} status={r.status_code}')
+                            if r.status_code == 200:
+                                d = r.json()
+                                res.append(download_civit_meta(item['filename'], d['modelId']))
+                                if d.get('images') is not None:
+                                    for i in d['images']:
+                                        preview_url = i['url']
+                                        img_res = download_civit_preview(item['filename'], preview_url)
+                                        res.append(img_res)
+                                        if 'error' not in img_res:
+                                            found = True
+                                            break
+
+                def civit_search_metadata(rehash, title):
                     log.debug(f'CivitAI search metadata: {title if type(title) == str else "all"}')
                     from modules.ui_extra_networks import get_pages
-                    from modules.modelloader import download_civit_preview, download_civit_meta
                     res = []
+                    i = 0
+                    t0 = time.time()
+                    candidates = []
                     for page in get_pages():
                         if type(title) == str:
                             if page.title != title:
@@ -514,40 +554,15 @@ def create_ui():
                         if page.name == 'style':
                             continue
                         for item in page.list_items():
-                            meta = os.path.splitext(item['filename'])[0] + '.json'
-                            has_meta = os.path.isfile(meta) and os.stat(meta).st_size > 0
-                            if ('card-no-preview.png' in item['preview'] or not has_meta) and os.path.isfile(item['filename']):
-                                sha = item.get('hash', None)
-                                found = False
-                                if sha is not None and len(sha) > 0:
-                                    r = req(f'https://civitai.com/api/v1/model-versions/by-hash/{sha}')
-                                    log.debug(f'CivitAI search: name="{item["name"]}" hash={sha} status={r.status_code}')
-                                    if r.status_code == 200:
-                                        d = r.json()
-                                        res.append(download_civit_meta(item['filename'], d['modelId']))
-                                        if d.get('images') is not None:
-                                            for i in d['images']:
-                                                preview_url = i['url']
-                                                img_res = download_civit_preview(item['filename'], preview_url)
-                                                res.append(img_res)
-                                                if 'error' not in img_res:
-                                                    found = True
-                                                    break
-                                if not found and civit_previews_rehash and os.stat(item['filename']).st_size < (1024 * 1024 * 1024):
-                                    sha = modules.hashes.calculate_sha256(item['filename'], quiet=True)[:10]
-                                    r = req(f'https://civitai.com/api/v1/model-versions/by-hash/{sha}')
-                                    log.debug(f'CivitAI search: name="{item["name"]}" hash={sha} status={r.status_code}')
-                                    if r.status_code == 200:
-                                        d = r.json()
-                                        res.append(download_civit_meta(item['filename'], d['modelId']))
-                                        if d.get('images') is not None:
-                                            for i in d['images']:
-                                                preview_url = i['url']
-                                                img_res = download_civit_preview(item['filename'], preview_url)
-                                                res.append(img_res)
-                                                if 'error' not in img_res:
-                                                    found = True
-                                                    break
+                            i += 1
+                            candidates.append(item)
+                            # atomic_civit_search_metadata(item, res, rehash)
+                    import concurrent
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                        for fn in candidates:
+                            executor.submit(atomic_civit_search_metadata, fn, res, rehash)
+                    t1 = time.time()
+                    log.debug(f'CivitAI search metadata: items={i} time={t1-t0:.2f}')
                     txt = '<br>'.join([r for r in res if len(r) > 0])
                     return txt
 
