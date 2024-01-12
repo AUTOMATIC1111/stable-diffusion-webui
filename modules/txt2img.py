@@ -77,7 +77,7 @@ def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, g
     subseed = all_subseeds[-gallery_index_from_end if gallery_index_from_end < len(all_seeds) + 1 else 0]
     p.seed = seed
     p.subseed = subseed
-
+    p.override_settings['save_images_before_highres_fix'] = False
     with closing(p):
         processed = modules.scripts.scripts_txt2img.run(p, *p.script_args)
 
