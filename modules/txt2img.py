@@ -88,18 +88,13 @@ def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, g
 
     new_gallery = []
     for i, image in enumerate(gallery):
-        fake_image = Image.new(mode="RGB", size=(1, 1))
-
         if i == gallery_index:
-            already_saved_as = getattr(processed.images[0], 'already_saved_as', None)
-            if already_saved_as is not None:
-                fake_image.already_saved_as = already_saved_as
-            else:
-                fake_image = processed.images[0]
+            geninfo["infotexts"][gallery_index: gallery_index+1] = processed.infotexts
+            new_gallery.extend(processed.images)
         else:
+            fake_image = Image.new(mode="RGB", size=(1, 1))
             fake_image.already_saved_as = image["name"]
-
-        new_gallery.append(fake_image)
+            new_gallery.append(fake_image)
 
     geninfo["infotexts"][gallery_index] = processed.info
 
