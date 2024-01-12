@@ -1032,8 +1032,14 @@ def train_auto(
     else:
         pic_nums = len(contents) / 2
 
+    if pic_nums == 0:
+        raise ValueError("No data: the empty dataset could be due to failure in correctly identifying the person, "
+                        "presence of multiple individuals in the image, low recognition accuracy, "
+                        "or non-human subjects")
+
     max_repeats = 30
-    repeats_n = min(int(20 * max_repeats / pic_nums), max_repeats)
+    min_repeats = 15
+    repeats_n = max(min(int(20 * max_repeats / pic_nums), max_repeats), min_repeats)
     # repeats_n = 30
     # 2.tagger反推
     if use_wd:

@@ -64,14 +64,26 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
             return [0.5, 0.55, 0.6, 0.6]
         return [0.55, 0.6, 0.6, 0.6]
 
+    def _get_init_images(self, t: Task):
+        images = (t.get('init_img') or "").split(',')
+        n_iter = t.get('n_iter') or 1
+        batch_size = t.get('batch_size') or 1
+        if len(images) < batch_size*n_iter:
+            images += [images[0]]*(batch_size*n_iter-len(images))
+        else:
+            images = random.sample(images, batch_size*n_iter)
+        return images
+
     def _build_i2i_tasks(self, t: Task):
         tasks = []
 
         denoising_strengths = self._denoising_strengths(t)
+        init_images = self._get_init_images(t)
         for i, denoising_strength in enumerate(denoising_strengths):
             t['denoising_strength'] = 0.1
             t['n_iter'] = 1
             t['batch_size'] = 1
+            t["init_img"] = init_images[i] if len(init_images) > i else init_images[0]
             t['alwayson_scripts'] = {
                 ADetailer: {
                     'args': [{
