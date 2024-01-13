@@ -66,7 +66,7 @@ def get_prompt_schedule(prompt, steps):
     temp = []
     schedule = prompt_parser.get_learned_conditioning_prompt_schedules([prompt], steps)[0]
     if all(x == schedule[0] for x in schedule):
-        return [prompt], False
+        return [schedule[0][1]], False
     for chunk in schedule:
         for s in range(steps):
             if len(temp) < s + 1 <= chunk[0]:
