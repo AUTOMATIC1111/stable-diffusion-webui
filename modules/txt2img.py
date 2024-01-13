@@ -3,7 +3,7 @@ from contextlib import closing
 
 import modules.scripts
 from modules import processing, infotext_utils
-from modules.infotext_utils import create_override_settings_dict
+from modules.infotext_utils import create_override_settings_dict, parse_generation_parameters
 from modules.shared import opts
 import modules.shared as shared
 from modules.ui import plaintext_to_html
@@ -66,18 +66,16 @@ def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, g
     p.n_iter = 1
 
     geninfo = json.loads(generation_info)
-    all_seeds = geninfo["all_seeds"]
-    all_subseeds = geninfo["all_subseeds"]
 
     image_info = gallery[gallery_index] if 0 <= gallery_index < len(gallery) else gallery[0]
     p.firstpass_image = infotext_utils.image_from_url_text(image_info)
 
-    gallery_index_from_end = len(gallery) - gallery_index
-    seed = all_seeds[-gallery_index_from_end if gallery_index_from_end < len(all_seeds) + 1 else 0]
-    subseed = all_subseeds[-gallery_index_from_end if gallery_index_from_end < len(all_seeds) + 1 else 0]
-    p.seed = seed
-    p.subseed = subseed
+    parameters = parse_generation_parameters(geninfo.get('infotexts')[gallery_index])
+    p.seed = parameters.get('Seed', -1)
+    p.subseed = parameters.get('Variation seed', -1)
+
     p.override_settings['save_images_before_highres_fix'] = False
+
     with closing(p):
         processed = modules.scripts.scripts_txt2img.run(p, *p.script_args)
 
