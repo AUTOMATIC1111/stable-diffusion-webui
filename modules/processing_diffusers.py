@@ -104,14 +104,12 @@ def process_diffusers(p: StableDiffusionProcessing):
         if kwargs.get('latents', None) is None:
             return kwargs
         kwargs = correction_callback(p, timestep, kwargs)
-        if p.scheduled_prompt and hasattr(kwargs, 'prompt_embeds') and hasattr(kwargs, 'negative_prompt_embeds'):
+        if p.scheduled_prompt and 'prompt_embeds' in kwargs and 'negative_prompt_embeds' in kwargs:
             try:
                 i = (step + 1) % len(p.prompt_embeds)
-                kwargs["prompt_embeds"] = p.prompt_embeds[i][0:1].repeat(1, kwargs["prompt_embeds"].shape[0], 1).view(
-                      kwargs["prompt_embeds"].shape[0], kwargs["prompt_embeds"].shape[1], -1)
+                kwargs["prompt_embeds"] = p.prompt_embeds[i][0:1].expand(kwargs["prompt_embeds"].shape)
                 j = (step + 1) % len(p.negative_embeds)
-                kwargs["negative_prompt_embeds"] = p.negative_embeds[j][0:1].repeat(1, kwargs["negative_prompt_embeds"].shape[0], 1).view(
-                      kwargs["negative_prompt_embeds"].shape[0], kwargs["negative_prompt_embeds"].shape[1], -1)
+                kwargs["negative_prompt_embeds"] = p.negative_embeds[j][0:1].expand(kwargs["negative_prompt_embeds"].shape)
             except Exception as e:
                 shared.log.debug(f"Callback: {e}")
         shared.state.current_latent = kwargs['latents']

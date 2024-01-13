@@ -85,6 +85,10 @@ def encode_prompts(pipe, p, prompts: list, negative_prompts: list, steps: int,
         positive_schedule, scheduled = get_prompt_schedule(prompts[0], steps)
         negative_schedule, neg_scheduled = get_prompt_schedule(negative_prompts[0], steps)
         p.scheduled_prompt = scheduled or neg_scheduled
+        p.prompt_embeds = []
+        p.positive_pooleds = []
+        p.negative_embeds = []
+        p.negative_pooleds = []
 
         cache = {}
         for i in range(max(len(positive_schedule), len(negative_schedule))):
