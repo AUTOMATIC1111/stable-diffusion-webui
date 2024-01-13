@@ -955,15 +955,15 @@ footer {
     color: white;
 }
 
-.extra-network-pane .copy-path-button:before {
+.extra-network-pane .copy-path-button::before {
     content: "⎘";
 }
 
-.extra-network-pane .metadata-button:before{
+.extra-network-pane .metadata-button::before{
     content: "🛈";
 }
 
-.extra-network-pane .edit-button:before{
+.extra-network-pane .edit-button::before{
     content: "🛠";
 }
 
@@ -1188,102 +1188,253 @@ body.resizing .resize-handle {
     border-left: 1px dashed var(--border-color-primary);
 }
 
-.extra-network-pane .card-minimal {
-    display: inline-flex;
-    flex-grow: 1;
-    position: relative;
+/* ========================= */
+.extra-network-pane {
+    display: flex;
+}
+
+.extra-network-pane .extra-network-cards {
+    display: block;
+}
+
+.extra-network-pane .extra-network-tree {
+    display: block;
+    font-size: 1rem;
+    min-width: 25%;
+    border: 1px solid var(--block-border-color);
     overflow: hidden;
+}
+
+.extra-network-tree .action-list--tree {
     cursor: pointer;
-    font-size: 1rem;
-    font-weight: bold;
-    line-break: anywhere;
-}
-
-/* Pushes buttons to right */
-.extra-network-pane .card-minimal .name {
-    flex-grow: 1;
-}
-
-.folder-container {
-    margin-left: 1.5em !important;
-}
-
-.file-item,
-.folder-item,
-.folder-item-summary {
-    padding-left: 0.05rem;
-    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
     user-select: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Remove auto indentation from tree. Will be overridden later. */
+.extra-network-tree .action-list--subgroup {
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: 0.6rem 0 0 var(--body-background-fill) inset,
+                0.8rem 0 0 var(--neutral-800) inset;
+}
+
+/* Set indentation for each depth of tree. */
+.extra-network-tree .action-list--subgroup > .action-list-item {
+    margin-left: 0.4rem !important;
+    padding-left: 0.4rem !important;
+}
+
+/* Styles for tree <ul> elements. */
+.extra-network-tree .action-list {
+
+}
+
+/* Styles for tree <li> elements. */
+.extra-network-tree .action-list-item {
+    list-style: none;
+    position: relative;
+    background-color: transparent;
+}
+
+/* Directory <ul> */
+.extra-network-tree .action-list-content[expanded=false]+.action-list--subgroup {
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    opacity: 0;
+}
+
+.extra-network-tree .action-list-content[expanded=true]+.action-list--subgroup {
+    height: auto;
+    overflow: visible;
+    visibility: visible;
+    opacity: 1;
+}
+
+/* File <li> */
+.extra-network-tree .action-list-item--subitem {
+}
+
+/* <li> containing <ul> */
+.extra-network-tree .action-list-item--has-subitem {
+}
+
+/* BUTTON ELEMENTS */
+/* <button> */
+.extra-network-tree .action-list-content {
+    position: relative;
+    display: grid;
+    width: 100%;
+    padding: 6px 8px;
     font-size: 1rem;
+    text-align: left;
+    user-select: none;
+    background-color: transparent;
+    border: none;
+    transition: background 33.333ms linear;
+    grid-template-rows: min-content;
+    grid-template-areas: "leading-action leading-visual label trailing-visual spacer trailing-action";
+    grid-template-columns: min-content min-content minmax(0, auto) min-content 1fr min-content;
+    grid-gap: 0.1em;
+    align-items: start;
+    flex-grow: 1;
+    flex-basis: 100%;
 }
 
-.extra-network-pane .extra-network-tree .folder-item-summary:hover,
-.extra-network-pane .extra-network-tree .file-item:hover {
-    -webkit-transition: all 0.1s ease-in-out;
-	transition: all 0.1s ease-in-out;
-    background-color: var(--neutral-200);
-}
-
-.dark .extra-network-pane .extra-network-tree .folder-item-summary:hover,
-.dark .extra-network-pane .extra-network-tree .file-item:hover {
+.dark .extra-network-tree button.action-list-content:hover {
     -webkit-transition: all 0.05s ease-in-out;
 	transition: all 0.05s ease-in-out;
     background-color: var(--neutral-800);
 }
 
-/* prevents clicking/collapsing of details tags when disabled attribute is used*/
-.extra-network-pane .extra-network-tree details[disabled] summary {
-    pointer-events: none;
-    user-select: none;
+.dark .extra-network-tree button.action-list-content[selected] {
+    background-color: var(--neutral-700);
 }
 
-.extra-network-pane .extra-network-tree details.folder-item > summary {
-    list-style-type: '📁';
-    text-overflow: ellipsis;
-}
-
-.extra-network-pane .extra-network-tree details.folder-item[open] > summary {
-    list-style-type: '📂';
-    text-overflow: ellipsis;
-}
-
-.extra-network-pane .extra-network-tree ul.folder-container {
-    list-style: none;
-    font-size: 1rem;
-    text-overflow: ellipsis;
-}
-
-.extra-network-pane .extra-network-tree li.file-item {
-    display: flex;
-    position: relative;
-    align-items: center;
-}
-
-.extra-network-pane .extra-network-tree li.file-item::before {
-    content: '📄';
-    font-size: 0.85rem;
-    vertical-align: middle;
-}
-
-.extra-network-pane {
-    display: flex;
-}
-
-.extra-network-pane .extra-network-tree {
-    font-size: 1rem;
-    min-width: 25%;
-    max-width: 25%;
-    border: 1px solid var(--block-border-color);
-}
-.extra-network-pane .extra-network-cards {
-    flex-grow: 1;
-    border: 1px solid var(--block-border-color);
-}
-
-.dark .extra-network-tree .folder-item-summary.selected{
-    background-color: var(--neutral-800);
-}
-
-.extra-network-tree .folder-item-summary.selected {
+.extra-network-tree button.action-list-content:hover {
+    -webkit-transition: all 0.05s ease-in-out;
+	transition: all 0.05s ease-in-out;
     background-color: var(--neutral-200);
+}
+
+.extra-network-tree button.action-list-content[selected] {
+    background-color: var(--neutral-300);
+}
+
+/* Buttons for directories. */
+.extra-network-tree .action-list-content-dir {
+
+}
+
+/* Buttons for files. */
+.extra-network-tree .action-list-content-file {
+    margin-left: 2em;
+}
+
+/* Text for button. */
+.extra-network-tree .action-list-item-label {
+    position: relative;
+    line-height: 1.25em;
+    color: var(--button-secondary-text-color);
+    grid-area: label;
+    padding-left: 0.5em;
+}
+
+/* Text for button truncated. */
+.extra-network-tree .action-list-item-label--truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Icon for button. */
+.extra-network-tree .action-list-item-visual {
+    min-height: 1em;
+    color: var(--button-secondary-text-color);
+    pointer-events: none;
+    align-items: right;
+}
+
+/* Icon for button when it is before label. */
+.extra-network-tree .action-list-item-visual--leading {
+    grid-area: leading-visual;
+}
+
+/* Icon for button when it is after label. */
+.extra-network-tree .action-list-item-visual--trailing {
+    grid-area: trailing-visual;
+}
+
+/* Dropdown arrow for button. */
+.extra-network-tree .action-list-item-action--leading {
+    margin-right: 1em;
+}
+
+/* Define the animation for the arrow when it is clicked. */
+.extra-network-tree .action-list-content-dir[expanded=false] .action-list-item-action {
+    -ms-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+    transition: transform 0.2s;
+}
+
+.extra-network-tree .action-list-content-dir[expanded=true] .action-list-item-action {
+    -ms-transform: rotate(90deg);
+    -webkit-transform: rotate(90deg);
+    transform: rotate(90deg);
+    transition: transform 0.2s;
+}
+
+.action-list-item-action-chevron {
+    display: inline-block;
+    padding: 0.3em;
+    box-shadow: 0.1em 0.1em 0 0px var(--neutral-200) inset;
+    transform: rotate(135deg);
+}
+
+.extra-network-tree .action-list-item-action--leading {
+    grid-area: leading-action;
+}
+
+/* Dropdown arrow for button when it is after label.  UNUSED? */
+.extra-network-tree .action-list-item-action--trailing {
+    grid-area: trailing-action;
+}
+
+.extra-network-tree .action-list-item-action .button-row {
+    display: flex;
+    flex-grow: 1;
+}
+
+.extra-network-tree .action-list-content .button-row {
+    display: inline-flex;
+    visibility: hidden !important;
+    color: white;
+}
+
+.extra-network-tree .action-list-content:hover .button-row {
+    visibility: visible;
+}
+
+/* Add icon to left side of <input> */
+.extra-network-tree .action-list-search::before {
+    content: "🔎︎";
+    position: absolute;
+    margin: 0.5em;
+    font-size: 1em;
+    color: var(--input-placeholder-color);
+}
+
+.extra-network-tree .action-list-search {
+    position: relative;
+    margin: 0.5em;
+}
+
+.extra-network-tree .action-list-search .action-list-search-text {
+    border: 1px solid var(--button-secondary-border-color);
+    border-radius: 0.5em;
+    color: var(--button-secondary-text-color);
+    background-color: transparent;
+    width: 100%;
+    padding-left: 2em;
+    line-height: 1em;
+}
+
+/* <input> clear button (x on right side) styling */
+.extra-network-tree .action-list-search .action-list-search-text::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    height: 1em;
+    width: 1em;
+    mask-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>');
+    mask-repeat: no-repeat;
+    mask-position: center center;
+    mask-size: 100%;
+    background-color: var(--input-placeholder-color);
 }

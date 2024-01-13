@@ -16,88 +16,110 @@ function toggleCss(key, css, enable) {
 }
 
 function setupExtraNetworksForTab(tabname) {
-    gradioApp().querySelector('#' + tabname + '_extra_tabs').classList.add('extra-networks');
+    var this_tab = gradioApp().querySelector('#' + tabname + '_extra_tabs');
+    this_tab.classList.add('extra-networks');
 
-    var tabs = gradioApp().querySelector('#' + tabname + '_extra_tabs > div');
-    var searchDiv = gradioApp().getElementById(tabname + '_extra_search');
-    var search = searchDiv.querySelector('textarea');
-    var sort = gradioApp().getElementById(tabname + '_extra_sort');
-    var sortOrder = gradioApp().getElementById(tabname + '_extra_sortorder');
-    var refresh = gradioApp().getElementById(tabname + '_extra_refresh');
-    var promptContainer = gradioApp().querySelector('.prompt-container-compact#' + tabname + '_prompt_container');
-    var negativePrompt = gradioApp().querySelector('#' + tabname + '_neg_prompt');
+    function registerPrompt(tabname, id) {
+        var textarea = gradioApp().querySelector("#" + id + " > label > textarea");
 
-    tabs.appendChild(searchDiv);
-    tabs.appendChild(sort);
-    tabs.appendChild(sortOrder);
-    tabs.appendChild(refresh);
-
-    var applyFilter = function() {
-        var searchTerm = search.value.toLowerCase();
-
-        gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card').forEach(function(elem) {
-            var searchOnly = elem.querySelector('.search_only');
-
-            var text = Array.prototype.map.call(elem.querySelectorAll('.search_terms'), function(t) { return t.textContent.toLowerCase() }).join(" ");
-
-            var visible = text.indexOf(searchTerm) != -1;
-
-            if (searchOnly && searchTerm.length < 4) {
-                visible = false;
-            }
-
-            elem.style.display = visible ? "" : "none";
-        });
-
-        applySort();
-    };
-
-    var applySort = function() {
-        var cards = gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card');
-
-        var reverse = sortOrder.classList.contains("sortReverse");
-        var sortKey = sort.querySelector("input").value.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim() || "name";
-        sortKey = "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1);
-        var sortKeyStore = sortKey + "-" + (reverse ? "Descending" : "Ascending") + "-" + cards.length;
-
-        if (sortKeyStore == sort.dataset.sortkey) {
-            return;
+        if (!activePromptTextarea[tabname]) {
+            activePromptTextarea[tabname] = textarea;
         }
-        sort.dataset.sortkey = sortKeyStore;
 
-        cards.forEach(function(card) {
-            card.originalParentElement = card.parentElement;
+        textarea.addEventListener("focus", function() {
+            activePromptTextarea[tabname] = textarea;
         });
-        var sortedCards = Array.from(cards);
-        sortedCards.sort(function(cardA, cardB) {
-            var a = cardA.dataset[sortKey];
-            var b = cardB.dataset[sortKey];
-            if (!isNaN(a) && !isNaN(b)) {
-                return parseInt(a) - parseInt(b);
+    }
+    
+    this_tab.querySelectorAll(":scope > [id^='" + tabname + "_']").forEach(function(elem) {
+        var tab_id = elem.getAttribute("id");
+
+        var tabs = gradioApp().querySelector('#' + tabname + '_extra_tabs > div');
+        var searchDiv = gradioApp().QuerySelector("#" + tab_id + "_extra_search");
+        console.log("HERE:", tab_id + "_extra_search", searchDiv);
+        var search = searchDiv.value;
+        var sort = gradioApp().getElementById(tabname + '_extra_sort');
+        var sortOrder = gradioApp().getElementById(tabname + '_extra_sortorder');
+        var refresh = gradioApp().getElementById(tabname + '_extra_refresh');
+        var promptContainer = gradioApp().querySelector('.prompt-container-compact#' + tabname + '_prompt_container');
+        var negativePrompt = gradioApp().querySelector('#' + tabname + '_neg_prompt');
+        tabs.appendChild(searchDiv);
+        tabs.appendChild(sort);
+        tabs.appendChild(sortOrder);
+        tabs.appendChild(refresh);
+        var applyFilter = function() {
+            var searchTerm = search.value.toLowerCase();
+    
+            gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card').forEach(function(elem) {
+                var searchOnly = elem.querySelector('.search_only');
+    
+                var text = Array.prototype.map.call(elem.querySelectorAll('.search_terms'), function(t) { return t.textContent.toLowerCase() }).join(" ");
+    
+                var visible = text.indexOf(searchTerm) != -1;
+    
+                if (searchOnly && searchTerm.length < 4) {
+                    visible = false;
+                }
+    
+                elem.style.display = visible ? "" : "none";
+            });
+    
+            applySort();
+        };
+    
+        var applySort = function() {
+            var cards = gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card');
+    
+            var reverse = sortOrder.classList.contains("sortReverse");
+            var sortKey = sort.querySelector("input").value.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim() || "name";
+            sortKey = "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1);
+            var sortKeyStore = sortKey + "-" + (reverse ? "Descending" : "Ascending") + "-" + cards.length;
+    
+            if (sortKeyStore == sort.dataset.sortkey) {
+                return;
             }
+            sort.dataset.sortkey = sortKeyStore;
+    
+            cards.forEach(function(card) {
+                card.originalParentElement = card.parentElement;
+            });
+            var sortedCards = Array.from(cards);
+            sortedCards.sort(function(cardA, cardB) {
+                var a = cardA.dataset[sortKey];
+                var b = cardB.dataset[sortKey];
+                if (!isNaN(a) && !isNaN(b)) {
+                    return parseInt(a) - parseInt(b);
+                }
+    
+                return (a < b ? -1 : (a > b ? 1 : 0));
+            });
+            if (reverse) {
+                sortedCards.reverse();
+            }
+            cards.forEach(function(card) {
+                card.remove();
+            });
+            sortedCards.forEach(function(card) {
+                card.originalParentElement.appendChild(card);
+            });
+        };
+    
+        search.addEventListener("input", applyFilter);
+        sortOrder.addEventListener("click", function() {
+            sortOrder.classList.toggle("sortReverse");
+            applySort();
+        });
+        applyFilter();
+    
+        extraNetworksApplySort[tab_id] = applySort;
+        extraNetworksApplyFilter[tab_id] = applyFilter;
 
-            return (a < b ? -1 : (a > b ? 1 : 0));
-        });
-        if (reverse) {
-            sortedCards.reverse();
-        }
-        cards.forEach(function(card) {
-            card.remove();
-        });
-        sortedCards.forEach(function(card) {
-            card.originalParentElement.appendChild(card);
-        });
-    };
-
-    search.addEventListener("input", applyFilter);
-    sortOrder.addEventListener("click", function() {
-        sortOrder.classList.toggle("sortReverse");
-        applySort();
+        registerPrompt(tab_id, tab_id + "_prompt");
+        registerPrompt(tab_id, tab_id + "_neg_prompt");
     });
-    applyFilter();
 
-    extraNetworksApplySort[tabname] = applySort;
-    extraNetworksApplyFilter[tabname] = applyFilter;
+    
+    
 }
 
 function extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt) {
@@ -136,12 +158,12 @@ function clearSearch(tabname) {
 
 function extraNetworksUnrelatedTabSelected(tabname) { // called from python when user selects an unrelated tab (generate)
     extraNetworksMovePromptToTab(tabname, '', false, false);
-    clearSearch(tabname);
+    //clearSearch(tabname);
 }
 
 function extraNetworksTabSelected(tabname, id, showPrompt, showNegativePrompt) { // called from python when user selects an extra networks tab
     extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt);
-    clearSearch(tabname);
+    //clearSearch(tabname);
 }
 
 function applyExtraNetworkFilter(tabname) {
@@ -159,23 +181,6 @@ var activePromptTextarea = {};
 function setupExtraNetworks() {
     setupExtraNetworksForTab('txt2img');
     setupExtraNetworksForTab('img2img');
-
-    function registerPrompt(tabname, id) {
-        var textarea = gradioApp().querySelector("#" + id + " > label > textarea");
-
-        if (!activePromptTextarea[tabname]) {
-            activePromptTextarea[tabname] = textarea;
-        }
-
-        textarea.addEventListener("focus", function() {
-            activePromptTextarea[tabname] = textarea;
-        });
-    }
-
-    registerPrompt('txt2img', 'txt2img_prompt');
-    registerPrompt('txt2img', 'txt2img_neg_prompt');
-    registerPrompt('img2img', 'img2img_prompt');
-    registerPrompt('img2img', 'img2img_neg_prompt');
 }
 
 onUiLoaded(setupExtraNetworks);
@@ -260,6 +265,106 @@ function saveCardPreview(event, tabname, filename) {
 
     event.stopPropagation();
     event.preventDefault();
+}
+
+function extraNetworksTreeProcessFileClick(event, btn, tabname, tab_id) {
+    /**
+     * Processes `onclick` events when user clicks on files in tree.
+     * 
+     * @param event     The generated event.
+     * @param btn       The clicked `action-list-item` button.
+     * @param tabname   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
+     * @param tab_id    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc. 
+     */
+    var par = btn.parentElement;
+    var search_id = tabname + "_" + tab_id + "_extra_search";
+    var type = par.getAttribute("data-tree-entry-type");
+    var path = par.getAttribute("data-path");
+}
+
+function extraNetworksTreeProcessDirectoryClick(event, btn) {
+    /**
+     * Processes `onclick` events when user clicks on directories in tree.
+     * 
+     * Here is how the tree reacts to clicks for various states:
+     * unselected unopened directory: Diretory is selected and expanded.
+     * unselected opened directory: Directory is selected.
+     * selected opened directory: Directory is collapsed and deselected.
+     * chevron is clicked: Directory is expanded or collapsed. Selected state unchanged.
+     * 
+     * @param event     The generated event.
+     * @param btn       The clicked `action-list-item` button.
+     */
+    var ul = btn.nextElementSibling;
+    // This is the actual target that the user clicked on within the target button.
+    // We use this to detect if the chevron was clicked.
+    var true_targ = event.target;
+
+    function _expand_or_collapse(_ul, _btn) {
+        // Expands <ul> if it is collapsed, collapses otherwise. Updates button attributes.
+        if (_ul.hasAttribute("data-hidden")) {
+            _ul.removeAttribute("data-hidden");
+            _btn.setAttribute("expanded", "true");
+        } else {
+            _ul.setAttribute("data-hidden", "");
+            _btn.setAttribute("expanded", "false");
+        }
+    }
+
+    function _remove_selected_from_all() {
+        // Removes the `selected` attribute from all buttons.
+        var sels = document.querySelectorAll("button.action-list-content");
+        [...sels].forEach(el => {
+            el.removeAttribute("selected");
+        })
+    }
+
+    function _select_button(_btn) {
+        // Removes `selected` attribute from all buttons then adds to passed button.
+        _remove_selected_from_all();
+        _btn.setAttribute("selected", "");
+    }
+
+    // If user clicks on the chevron, then we do not select the folder.
+    if (true_targ.matches(".action-list-item-action--leading, .action-list-item-action-chevron")) {
+        _expand_or_collapse(ul, btn);
+    } else {
+        // User clicked anywhere else on the button.
+        if (btn.hasAttribute("selected") && !ul.hasAttribute("data-hidden")) {
+            // If folder is select and open, collapse and deselect button.
+            _expand_or_collapse(ul, btn);
+            btn.removeAttribute("selected");
+        } else if (!(!btn.hasAttribute("selected") && !ul.hasAttribute("data-hidden"))) {
+            // If folder is open and not selected, then we don't collapse; just select.
+            // NOTE: Double inversion sucks but it is the clearest way to show the branching here.
+            _expand_or_collapse(ul, btn);
+            _select_button(btn);
+        } else {
+            // All other cases, just select the button.
+            _select_button(btn);
+        }
+        
+    }
+}
+
+function extraNetworksTreeOnClick(event, tabname, tab_id) {
+    /**
+     * Handles `onclick` events for buttons within an `extra-network-tree .action-list--tree`.
+     * 
+     * Determines whether the clicked button in the tree is for a file entry or a directory
+     * then calls the appropriate function.
+     * 
+     * @param event     The generated event.
+     * @param tabname   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
+     * @param tab_id    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
+     */
+    var btn = event.currentTarget;
+    var par = btn.parentElement;
+    if (par.getAttribute("data-tree-entry-type") === "file") {
+        extraNetworksTreeProcessFileClick(event, btn, tabname, tab_id);
+    } else {
+        extraNetworksTreeProcessDirectoryClick(event, btn);
+    }
 }
 
 function extraNetworksFolderClick(event, tabs_id) {
@@ -434,3 +539,10 @@ window.addEventListener("keydown", function(event) {
         closePopup();
     }
 });
+
+function testprint(e) {
+    console.log(e);
+}
+
+const testinput = gradioApp().querySelector("#txt2img_lora_extra_search");
+testinput.addEventListener("input", testprint);

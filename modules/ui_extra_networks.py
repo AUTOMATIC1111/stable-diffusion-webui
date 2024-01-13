@@ -19,6 +19,90 @@ extra_pages = []
 allowed_dirs = set()
 default_allowed_preview_extensions = ["png", "jpg", "jpeg", "webp", "gif"]
 
+tree_tpl = (
+    "<div class='action-list-search'>"
+    "<input "
+    "id='{tabname}_{tab_id}_extra_search' "
+    "class='action-list-search-text' "
+    "type='search' "
+    "placeholder='Filter files'"
+    ">"
+    "</div>"
+    "<ul class='action-list action-list--tree'>"
+    "{content}"
+    "</ul>"
+)
+
+tree_ul_tpl = (
+    "<ul class='action-list action-list--subgroup' data-hidden>"
+    "{content}"
+    "</ul>"
+)
+
+tree_li_dir_tpl = (
+    "<li "
+    "class='action-list-item action-list-item--has-subitem' "
+    "data-path='{path}' "
+    "data-tree-entry-type='dir'>"
+    "{content}"
+    "</li>"
+)
+tree_li_file_tpl = (
+    "<li "
+    "id='file-tree-item-{hash}' "
+    "class='action-list-item action-list-item--subitem' "
+    "data-path='{path}' "
+    "data-tree-entry-type='file'>"
+    "{content}"
+    "</li>"
+)
+
+tree_btn_dir_tpl = (
+    "<button "
+    "class='action-list-content action-list-content-dir' "
+    "type='button' "
+    "expanded='false' "
+    "onclick='extraNetworksTreeOnClick(event, \"{tabname}\", \"{tab_id}\")'>"
+    "<span class='action-list-item-action action-list-item-action--leading'>"
+    "<i class='action-list-item-action-chevron'></i>"
+    "</span>"
+    "<span class='action-list-item-visual action-list-item-visual--leading'>🗀</span>"
+    "<span class='action-list-item-label action-list-item-label--truncate'>{label}</span>"
+    "</button>"
+)
+
+tree_btn_file_action_buttons_tpl = (
+    "<div "
+    "class='copy-path-button card-button' "
+    "title='Copy path to clipboard' "
+    "onclick='extraNetworksCopyCardPath(event, {path})' "
+    "data-clipboard-text={path}>"
+    "</div>"
+    "<div "
+    "class='metadata-button card-button' "
+    "title='Show internal metadata' "
+    "onclick='extraNetworksRequestMetadata(event, {tab_id}, {filename})'>"
+    "</div>"
+    "<div "
+    "class='edit-button card-button' "
+    "title='Edit metadata' "
+    "onclick='extraNetworksEditUserMetadata(event, {tabname}, {tab_id}, {filename})'>"
+    "</div>"
+)
+
+tree_btn_file_tpl = (
+    "<span data-filterable-item-text hidden>{filter}</span>"
+    "<button "
+    "class='action-list-content action-list-content-file' "
+    "type='button' "
+    "onclick='extraNetworksTreeOnClick(event, \"{tabname}\", \"{tab_id}\")'>"
+    "<span class='action-list-item-visual action-list-item-visual--leading'>🗎</span>"
+    "<span class='action-list-item-label action-list-item-label--truncate'>{label}</span>"
+    "<span class='action-list-item-action action-list-item-action--trailing'>{buttons}</span>"
+    "</button>"
+)
+
+
 @functools.cache
 def allowed_preview_extensions_with_extra(extra_extensions=None):
     return set(default_allowed_preview_extensions) | set(extra_extensions or [])
@@ -160,6 +244,7 @@ class ExtraNetworksPage:
         self.extra_networks_pane_template = shared.html("extra-networks-pane.html")
         self.card_page_template = shared.html("extra-networks-card.html")
         self.card_page_minimal_template = shared.html("extra-networks-card-minimal.html")
+        self.tree_button_template = shared.html("extra-networks-tree-button.html")
         self.allow_prompt = True
         self.allow_negative_prompt = False
         self.metadata = {}
@@ -279,7 +364,9 @@ class ExtraNetworksPage:
             "search_terms": search_terms_html,
             "sort_keys": sort_keys,
             "style": f"'display: none; {height}{width}; font-size: {shared.opts.extra_networks_card_text_scale*100}%'",
-            "tabname": quote_js(tabname),
+            "tabname": tabname,
+            "tab_id": self.id_page,
+
         }
 
         if template:
@@ -306,55 +393,81 @@ class ExtraNetworksPage:
         if not tree:
             return res
 
-        file_template = "<li class='file-item'>{card}</li>"
-        dir_template = (
-            "<details {attributes} class='folder-item'>"
-            "<summary class='folder-item-summary' data-path='{data_path}' "
-            "onclick='extraNetworksFolderClick(event, \"{tabname}_extra_search\");'>"
-            "{folder_name}"
-            "</summary>"
-            "<ul class='folder-container'>{content}</ul>"
-            "</details>"
-        )
-
         def _build_tree(data: Optional[dict[str, ExtraNetworksItem]] = None) -> str:
             """Recursively builds HTML for a tree."""
             _res = ""
             if not data:
-                return "<li style='list-style-type: \"⚠️\";'>DIRECTORY IS EMPTY</li>"
+                return (
+                    "<details open disabled class='folder-item-empty'>"
+                    "<summary class='folder-item-summary-empty'>Directory is empty</summary>"
+                    "</details>"
+                )
 
             for k, v in sorted(data.items(), key=lambda x: shared.natural_sort_key(x[0])):
                 if isinstance(v, (ExtraNetworksItem,)):
-                    item_html = self.create_item_html(tabname, v.item, self.card_page_minimal_template)
-                    _res += file_template.format(**{"card": item_html})
-                else:
-                    _res += dir_template.format(
+                    _action_buttons = tree_btn_file_action_buttons_tpl.format(
                         **{
-                            "attributes": "",
-                            "tabname": tabname,
-                            "folder_name": os.path.basename(k),
-                            "data_path": k,
-                            "content": _build_tree(v),
+                            "path": quote_js(k),
+                            "filename": quote_js(v.item["name"]),
+                            "tabname": quote_js(tabname),
+                            "tab_id": quote_js(self.id_page),
                         }
                     )
+                    _btn = tree_btn_file_tpl.format(
+                        **{
+                            "label": v.item["name"],
+                            "filter": v.item["search_terms"],
+                            "tabname": tabname,
+                            "tab_id": self.id_page,
+                            "buttons": _action_buttons,
+                        }
+                    )
+                    _li = tree_li_file_tpl.format(
+                        **{
+                            "hash": v.item["shorthash"],
+                            "path": k,
+                            "type": "file",
+                            #"content": _btn,
+                            "content": self.create_item_html(tabname, v.item, self.tree_button_template),
+                        }
+                    )
+                    _res += _li
+                    #item_html = self.create_item_html(tabname, v.item, self.card_page_minimal_template)
+                    #_res += file_template.format(**{"card": item_html})
+                else:
+                    _btn = tree_btn_dir_tpl.format(
+                        **{
+                            "label": os.path.basename(k),
+                            "tabname": tabname,
+                            "tab_id": self.id_page,
+                        }
+                    )
+                    _ul = tree_ul_tpl.format(**{"content": _build_tree(v)})
+                    _li = tree_li_dir_tpl.format(**{"content": _btn + _ul, "path": k})
+                    _res += _li
             return _res
 
         # Add each root directory to the tree.
         for k, v in sorted(tree.items(), key=lambda x: shared.natural_sort_key(x[0])):
             # If root is empty, append the "disabled" attribute to the template details tag.
-            res += "<ul class='folder-container'>"
-            res += dir_template.format(
+            btn = tree_btn_dir_tpl.format(
                 **{
-                    "attributes": "open" if v else "open",
+                    "label": os.path.basename(k),
                     "tabname": tabname,
-                    "folder_name": os.path.basename(k),
-                    "data_path": k,
-                    "content": _build_tree(v),
+                    "tab_id": self.id_page,
                 }
             )
-            res += "</ul>"
-        res += "</ul>"
-        return res
+            ul = tree_ul_tpl.format(**{"content": _build_tree(v)})
+            li = tree_li_dir_tpl.format(**{"content": btn + ul, "path": k})
+            res += li
+
+        return tree_tpl.format(
+            **{
+                "content": res,
+                "tabname": tabname,
+                "tab_id": self.id_page,
+            }
+        )
 
     def create_card_view_html(self, tabname):
         res = ""
@@ -375,7 +488,7 @@ class ExtraNetworksPage:
 
         tree_view_html = self.create_tree_view_html(tabname)
         card_view_html = self.create_card_view_html(tabname)
-        network_type_id = self.name.replace(" ", "_")
+        network_type_id = self.id_page
 
         return self.extra_networks_pane_template.format(
             **{
@@ -506,7 +619,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             ui.pages.append(page_elem)
             page_elem.change(
                 fn=lambda: None,
-                _js=f"function(){{applyExtraNetworkFilter({tabname}_extra_search); return []}}",
+                _js=f"function(){{applyExtraNetworkFilter({tabname}_{page.id_page}_extra_search); return []}}",
                 inputs=[],
                 outputs=[],
             )
@@ -517,13 +630,11 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
             related_tabs.append(tab)
 
-    edit_search = gr.Textbox('', show_label=False, elem_id=f"{tabname}_extra_search", elem_classes="search", placeholder="Search...", visible=False, interactive=True)
     dropdown_sort = gr.Dropdown(choices=['Path', 'Name', 'Date Created', 'Date Modified', ], value=shared.opts.extra_networks_card_order_field, elem_id=tabname+"_extra_sort", elem_classes="sort", multiselect=False, visible=False, show_label=False, interactive=True, label=tabname+"_extra_sort_order")
     button_sortorder = ToolButton(switch_values_symbol, elem_id=tabname+"_extra_sortorder", elem_classes=["sortorder"] + ([] if shared.opts.extra_networks_card_order == "Ascending" else ["sortReverse"]), visible=False, tooltip="Invert sort order")
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh", visible=False)
 
     tab_controls = [
-        edit_search,
         dropdown_sort,
         button_sortorder,
         button_refresh,
