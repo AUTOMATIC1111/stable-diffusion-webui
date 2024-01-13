@@ -24,6 +24,7 @@ from modules.control.proc.segment_anything import SamDetector
 from modules.control.proc.zoe import ZoeDetector
 from modules.control.proc.marigold import MarigoldDetector
 from modules.control.proc.dpt import DPTDetector
+from modules.control.proc.glpn import GLPNDetector
 
 
 models = {}
@@ -54,6 +55,7 @@ config = {
     'MLSD': {'class': MLSDdetector, 'checkpoint': True, 'params': {'thr_v': 0.1, 'thr_d': 0.1}},
     'Shuffle': {'class': ContentShuffleDetector, 'checkpoint': False, 'params': {}},
     'DPT Depth Hybrid': {'class': DPTDetector, 'checkpoint': False, 'params': {}},
+    'GLPN Depth': {'class': GLPNDetector, 'checkpoint': False, 'params': {}},
     # 'Midas Depth Large': {'class': MidasDetector, 'checkpoint': True, 'params': {'bg_th': 0.1, 'depth_and_normal': False}, 'load_config': {'pretrained_model_or_path': 'Intel/dpt-large', 'model_type': "dpt_large", 'filename': ''}},
     # 'Zoe Depth Zoe': {'class': ZoeDetector, 'checkpoint': True, 'params': {}},
     # 'Zoe Depth NK': {'class': ZoeDetector, 'checkpoint': True, 'params': {}, 'load_config': {'pretrained_model_or_path': 'halffried/gyre_zoedepth', 'filename': 'ZoeD_M12_NK.safetensors', 'model_type': "zoedepth_nk"}},
