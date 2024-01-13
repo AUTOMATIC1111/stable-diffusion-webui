@@ -173,7 +173,7 @@ if cmd_opts.backend is not None: # override with args
     backend = Backend.DIFFUSERS if cmd_opts.backend.lower() == 'diffusers' else Backend.ORIGINAL
 if cmd_opts.use_openvino: # override for openvino
     backend = Backend.DIFFUSERS
-    from modules.intel.openvino import get_device_list as get_openvino_device_list
+    from modules.intel.openvino import get_device_list as get_openvino_device_list # pylint: disable=ungrouped-imports
 
 
 class OptionInfo:
@@ -462,12 +462,12 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
     "font_color": OptionInfo("#FFFFFF", "Font color", ui_components.FormColorPicker, {}),
 
     "save_sep_options": OptionInfo("<h2>Intermediate Image Saving</h2>", "", gr.HTML),
-    "save_init_img": OptionInfo(False, "Save img2img init images"),
-    "save_images_before_highres_fix": OptionInfo(False, "Save image before applying hires"),
-    "save_images_before_refiner": OptionInfo(False, "Save image before running refiner"),
-    "save_images_before_face_restoration": OptionInfo(False, "Save image before doing face restoration"),
-    "save_images_before_color_correction": OptionInfo(False, "Save image before applying color correction"),
-    "save_mask": OptionInfo(False, "Save the inpainting greyscale mask"),
+    "save_init_img": OptionInfo(False, "Save init images"),
+    "save_images_before_highres_fix": OptionInfo(False, "Save image before hires"),
+    "save_images_before_refiner": OptionInfo(False, "Save image before refiner"),
+    "save_images_before_face_restoration": OptionInfo(False, "Save image before face restoration"),
+    "save_images_before_color_correction": OptionInfo(False, "Save image before color correction"),
+    "save_mask": OptionInfo(False, "Save inpainting mask"),
     "save_mask_composite": OptionInfo(False, "Save inpainting masked composite"),
 }))
 

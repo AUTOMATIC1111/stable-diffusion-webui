@@ -61,15 +61,23 @@ function getCardDetails(...args) {
 }
 
 function readCardTags(el, tags) {
+  const replaceOutsideBrackets = (input, target, replacement) => input.split(/(<[^>]*>|\{[^}]*\})/g).map((part, i) => {
+    if (i % 2 === 0) return part.split(target).join(replacement); // Only replace in the parts that are not inside brackets (which are at even indices)
+    return part;
+  }).join('');
+
   const clickTag = (e, tag) => {
     e.preventDefault();
     e.stopPropagation();
     const textarea = activePromptTextarea[getENActiveTab()];
-    if (textarea.value.indexOf(` ${tag}`) !== -1) textarea.value = textarea.value.replace(` ${tag}`, '');
-    else if (textarea.value.indexOf(`${tag} `) !== -1) textarea.value = textarea.value.replace(` ${tag} `, '');
-    else textarea.value += ` ${tag}`;
+    let new_prompt = textarea.value;
+    new_prompt = replaceOutsideBrackets(new_prompt, ` ${tag}`, ''); // try to remove tag
+    new_prompt = replaceOutsideBrackets(new_prompt, `${tag} `, '');
+    if (new_prompt === textarea.value) new_prompt += ` ${tag}`; // if not removed, then append it
+    textarea.value = new_prompt;
     updateInput(textarea);
   };
+
   if (tags.length === 0) return;
   const cardTags = tags.split('|');
   if (!cardTags || cardTags.length === 0) return;

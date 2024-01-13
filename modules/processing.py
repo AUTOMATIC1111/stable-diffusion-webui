@@ -55,8 +55,12 @@ def setup_color_correction(image):
 
 
 def apply_color_correction(correction, original_image):
-    shared.log.debug(f"Applying color correction: correction={correction} image={original_image}")
-    image = Image.fromarray(cv2.cvtColor(exposure.match_histograms(cv2.cvtColor(np.asarray(original_image), cv2.COLOR_RGB2LAB), correction, channel_axis=2), cv2.COLOR_LAB2RGB).astype("uint8"))
+    shared.log.debug(f"Applying color correction: correction={correction.shape} image={original_image}")
+    np_image = np.asarray(original_image)
+    np_recolor = cv2.cvtColor(np_image, cv2.COLOR_RGB2LAB)
+    np_match = exposure.match_histograms(np_recolor, correction, channel_axis=2)
+    np_output = cv2.cvtColor(np_match, cv2.COLOR_LAB2RGB)
+    image = Image.fromarray(np_output.astype("uint8"))
     image = blendLayers(image, original_image, BlendType.LUMINOSITY)
     return image
 
