@@ -125,7 +125,7 @@ However,
     improves compatibilty and performance  
     fixes random memory leaks  
   - remove IPEX / Torch 2.0 specific hijacks  
-  - add `IPEX_SDPA_SLICE_TRIGGER_RATE` and `IPEX_ATTENTION_SLICE_RATE` env variables  
+  - add `IPEX_SDPA_SLICE_TRIGGER_RATE`, `IPEX_ATTENTION_SLICE_RATE` and `IPEX_FORCE_ATTENTION_SLICE` env variables  
   - fix lock-ups at very high resolutions  
 - **OpenVINO**, thanks @disty0  
   - **4-bit support with NNCF**  
