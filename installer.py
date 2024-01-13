@@ -435,8 +435,9 @@ def check_torch():
         if "linux" in sys.platform:
             torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.1.0a0 torchvision==0.16.0a0 intel-extension-for-pytorch==2.1.10+xpu --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/')
             os.environ.setdefault('TENSORFLOW_PACKAGE', 'tensorflow==2.14.0 intel-extension-for-tensorflow[xpu]==2.14.0.1')
-            install(os.environ.get('MKL_PACKAGE', 'mkl==2024.0.0'), 'mkl')
-            install(os.environ.get('DPCPP_PACKAGE', 'mkl-dpcpp==2024.0.0'), 'mkl-dpcpp')
+            if os.environ.get('DISABLE_VENV_LIBS', None) is None:
+                install(os.environ.get('MKL_PACKAGE', 'mkl==2024.0.0'), 'mkl')
+                install(os.environ.get('DPCPP_PACKAGE', 'mkl-dpcpp==2024.0.0'), 'mkl-dpcpp')
         else:
             if sys.version_info[1] == 11:
                 pytorch_pip = 'https://github.com/Nuullll/intel-extension-for-pytorch/releases/download/v2.1.10%2Bxpu/torch-2.1.0a0+cxx11.abi-cp311-cp311-win_amd64.whl'
@@ -450,8 +451,9 @@ def check_torch():
                 pytorch_pip = 'torch==2.1.0a0'
                 torchvision_pip = 'torchvision==0.16.0a0'
                 ipex_pip = 'intel-extension-for-pytorch==2.1.10+xpu --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/'
-                install(os.environ.get('MKL_PACKAGE', 'mkl==2024.0.0'), 'mkl')
-                install(os.environ.get('DPCPP_PACKAGE', 'mkl-dpcpp==2024.0.0'), 'mkl-dpcpp')
+                if os.environ.get('DISABLE_VENV_LIBS', None) is None:
+                    install(os.environ.get('MKL_PACKAGE', 'mkl==2024.0.0'), 'mkl')
+                    install(os.environ.get('DPCPP_PACKAGE', 'mkl-dpcpp==2024.0.0'), 'mkl-dpcpp')
             torch_command = os.environ.get('TORCH_COMMAND', f'{pytorch_pip} {torchvision_pip} {ipex_pip}')
         install(os.environ.get('OPENVINO_PACKAGE', 'openvino==2023.2.0'), 'openvino', ignore=True)
         install('nncf==2.7.0', 'nncf', ignore=True)
