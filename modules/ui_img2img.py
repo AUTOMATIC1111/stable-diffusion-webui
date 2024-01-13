@@ -135,18 +135,13 @@ def create_ui():
                     # with FormGroup(elem_id="inpaint_controls", visible=False) as inpaint_controls:
                     with gr.Accordion(open=True, label="Mask", elem_classes=["small-accordion"], elem_id="img2img_mask_group") as inpaint_controls:
                         with FormRow():
-                            mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
-                            mask_alpha = gr.Slider(label="Mask transparency", visible=False, elem_id="img2img_mask_alpha")
+                            mask_blur = gr.Slider(label='Blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
+                            inpaint_full_res_padding = gr.Slider(label='Padding', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
+                            mask_alpha = gr.Slider(label="Alpha", minimum=0.0, maximum=1.0, step=0.05, value=1.0, elem_id="img2img_mask_alpha")
                         with FormRow():
-                            with gr.Column():
-                                inpainting_mask_invert = gr.Radio(label='Mask mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
-                            with gr.Column():
-                                inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'noise', 'nothing'], value='original', type="index", elem_id="img2img_inpainting_fill")
-                        with FormRow():
-                            with gr.Column():
-                                inpaint_full_res = gr.Radio(label="Inpaint area", choices=["Whole picture", "Only masked"], type="index", value="Whole picture", elem_id="img2img_inpaint_full_res")
-                            with gr.Column():
-                                inpaint_full_res_padding = gr.Slider(label='Masked padding', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
+                            inpainting_mask_invert = gr.Radio(label='Mode', choices=['masked', 'inverse'], value='masked', type="index", elem_id="img2img_mask_mode")
+                            inpaint_full_res = gr.Radio(label="Inpaint area", choices=["full", "masked"], type="index", value="full", elem_id="img2img_inpaint_full_res")
+                            inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'noise', 'nothing'], value='original', type="index", elem_id="img2img_inpainting_fill", visible=shared.backend == shared.Backend.ORIGINAL)
 
                         def select_img2img_tab(tab):
                             return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3)
