@@ -274,22 +274,23 @@ class OnnxRawPipeline(OnnxPipelineBase):
                 log.info(f"\nProcessing {submodel}")
 
                 with open(os.path.join(sd_configs_path, "olive", 'sdxl' if self._is_sdxl else 'sd', f"{submodel}.json"), "r") as config_file:
-                    olive_config = json.load(config_file)
-                pass_key = f"optimize_{shared.opts.onnx_execution_provider}"
+                    olive_config: Dict[str, Dict[str, Dict]] = json.load(config_file)
+
                 for flow in olive_config["pass_flows"]:
                     for i in range(len(flow)):
-                        if flow[i] == "optimize":
-                            flow[i] = pass_key
+                        flow[i] = flow[i].replace("AutoExecutionProvider", shared.opts.onnx_execution_provider)
                 olive_config["input_model"]["config"]["model_path"] = os.path.abspath(os.path.join(in_dir, submodel, "model.onnx"))
                 olive_config["engine"]["execution_providers"] = [shared.opts.onnx_execution_provider]
-                if pass_key in olive_config["passes"]:
-                    float16 = shared.opts.olive_float16 and not (submodel == "vae_encoder" and shared.opts.olive_vae_encoder_float32)
-                    olive_config["passes"][pass_key]["config"]["float16"] = float16
-                    if shared.opts.onnx_execution_provider == ExecutionProvider.CUDA or shared.opts.onnx_execution_provider == ExecutionProvider.ROCm:
-                        if version.parse(ort.__version__) < version.parse("1.17.0"):
-                            olive_config["passes"][pass_key]["config"]["optimization_options"] = {"enable_skip_group_norm": False}
-                        if float16:
-                            olive_config["passes"][pass_key]["config"]["keep_io_types"] = False
+
+                for pass_key in olive_config["passes"]:
+                    if olive_config["passes"][pass_key]["type"] == "OrtTransformersOptimization":
+                        float16 = shared.opts.olive_float16 and not (submodel == "vae_encoder" and shared.opts.olive_vae_encoder_float32)
+                        olive_config["passes"][pass_key]["config"]["float16"] = float16
+                        if shared.opts.onnx_execution_provider == ExecutionProvider.CUDA or shared.opts.onnx_execution_provider == ExecutionProvider.ROCm:
+                            if version.parse(ort.__version__) < version.parse("1.17.0"):
+                                olive_config["passes"][pass_key]["config"]["optimization_options"] = {"enable_skip_group_norm": False}
+                            if float16:
+                                olive_config["passes"][pass_key]["config"]["keep_io_types"] = False
 
                 run(olive_config)
 

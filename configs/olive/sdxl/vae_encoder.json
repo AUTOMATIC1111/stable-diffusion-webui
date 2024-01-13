@@ -110,7 +110,7 @@
       }
     }
   },
-  "pass_flows": [["optimize"]],
+  "pass_flows": [["optimize_AutoExecutionProvider"]],
   "engine": {
     "search_strategy": {
       "execution_order": "joint",
