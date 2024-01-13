@@ -63,7 +63,7 @@ def correction(p, timestep, latent):
         p.extra_generation_params["HDR center"] = f'{p.hdr_channel_shift}/{p.hdr_full_shift}'
         latent = center_tensor(latent, channel_shift=p.hdr_channel_shift, full_shift=p.hdr_full_shift)
     if timestep > 1 and timestep < 100 and p.hdr_maximize:
-        p.extra_generation_params["HDR max"] = f'{p.hdr_max_center}/p.hdr_max_boundry'
+        p.extra_generation_params["HDR max"] = f'{p.hdr_max_center}/{p.hdr_max_boundry}'
         latent = center_tensor(latent, channel_shift=p.hdr_max_center, full_shift=1.0)
         latent = maximize_tensor(latent, boundary=p.hdr_max_boundry)
     return latent
