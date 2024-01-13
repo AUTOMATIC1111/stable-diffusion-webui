@@ -570,7 +570,7 @@ def create_ui():
                         with gr.Row():
                             civit_search_text = gr.Textbox('', label='Search models', placeholder='keyword')
                             civit_search_tag = gr.Textbox('', label='', placeholder='tags')
-                            civit_search_btn = ToolButton(value="🔍", label="Search", interactive=False)
+                            civit_search_btn = ToolButton(value="🔍", label="Search", interactive=True)
                         with gr.Row():
                             civit_search_res = gr.HTML('')
                 with gr.Row():
