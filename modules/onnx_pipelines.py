@@ -146,7 +146,10 @@ class OnnxRawPipeline(OnnxPipelineBase):
 
         try:
             from olive.workflows import run
-            from olive.model import ONNXModel
+            try:
+                from olive.model import ONNXModel
+            except ImportError:
+                from olive.model import ONNXModelHandler as ONNXModel
 
             shutil.rmtree("cache", ignore_errors=True)
             shutil.rmtree("footprints", ignore_errors=True)
@@ -252,7 +255,10 @@ class OnnxRawPipeline(OnnxPipelineBase):
 
         try:
             from olive.workflows import run
-            from olive.model import ONNXModel
+            try:
+                from olive.model import ONNXModel
+            except ImportError:
+                from olive.model import ONNXModelHandler as ONNXModel
 
             shutil.rmtree("cache", ignore_errors=True)
             shutil.rmtree("footprints", ignore_errors=True)
