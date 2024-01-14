@@ -3,7 +3,7 @@ from PIL import Image
 import gradio as gr
 import numpy as np
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call
-from modules import shared, ui_common, ui_sections, generation_parameters_copypaste
+from modules import timer, shared, ui_common, ui_sections, generation_parameters_copypaste
 from modules.ui_components import FormRow, FormGroup
 
 
@@ -45,6 +45,7 @@ def create_ui():
         with FormRow(variant='compact', elem_id="img2img_extra_networks", visible=False) as extra_networks_ui:
             from modules import ui_extra_networks
             extra_networks_ui_img2img = ui_extra_networks.create_ui(extra_networks_ui, img2img_extra_networks_button, 'img2img', skip_indexing=shared.opts.extra_network_skip_indexing)
+            timer.startup.record('ui-en')
 
         with FormRow(elem_id="img2img_interface", equal_height=False):
             with gr.Column(variant='compact', elem_id="img2img_settings"):

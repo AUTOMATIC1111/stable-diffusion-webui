@@ -22,11 +22,11 @@ class Timer:
         self.total += e + extra_time
 
     def summary(self, min_time=0.05):
-        res = f"{self.total:.2f}"
+        res = f"{self.total:.2f} "
         additions = [x for x in self.records.items() if x[1] >= min_time]
         if not additions:
             return res
-        res += " { " + " ".join([f"{category}={time_taken:.2f}" for category, time_taken in additions]) + " }"
+        res += " ".join([f"{category}={time_taken:.2f}" for category, time_taken in additions])
         return res
 
     def reset(self):

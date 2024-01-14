@@ -141,10 +141,9 @@ def create_ui(startup_timer = None):
         timer.startup.record("ui-extras")
 
     with gr.Blocks(analytics_enabled=False) as train_interface:
-        if shared.backend == shared.Backend.ORIGINAL:
-            from modules import ui_train
-            ui_train.create_ui()
-            timer.startup.record("ui-train")
+        from modules import ui_train
+        ui_train.create_ui()
+        timer.startup.record("ui-train")
 
     with gr.Blocks(analytics_enabled=False) as models_interface:
         from modules import ui_models

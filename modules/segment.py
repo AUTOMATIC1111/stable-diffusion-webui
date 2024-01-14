@@ -21,6 +21,7 @@ MODELS = {
     'Facebook SAM ViT Huge': 'facebook/sam-vit-huge',
     'SlimSAM Uniform': 'Zigeng/SlimSAM-uniform-50',
 }
+COLORMAP = ['autumn', 'bone', 'jet', 'winter', 'rainbow', 'ocean', 'summer', 'spring', 'cool', 'hsv', 'pink', 'hot', 'parula', 'magma', 'inferno', 'plasma', 'viridis', 'cividis', 'twilight', 'shifted', 'turbo', 'deepgreen']
 cache_dir = 'models/control/segment'
 loaded_model = None
 model: SamModel = None
@@ -49,43 +50,75 @@ def init(selected_model: str, input_image: gr.Image):
 
 
 # run as auto-mask with all possible masks
-def run_segment(selected_model: str, input_image: gr.Image):
+def run_segment(selected_model: str, input_image: gr.Image, points_per_batch=64, pred_iou_thresh=0.75, stability_score_thresh=0.85, crops_nms_thresh=0.5, crop_overlap_ratio=0.3, topK=25, colormap='jet', erode=0, dilate=0):
     if not init(selected_model, input_image):
-        return input_image
+        return gr.update(), None
     input_mask = input_image.get('mask', None) or Image.new('L', input_image.get('image', None).size, 255)
+    input_mask = input_mask.convert('L')
     input_image = input_image.get('image', None)
     generator: MaskGenerationPipeline = MaskGenerationPipeline(model=model, image_processor=processor, device=devices.device)
     with devices.inference_context():
         outputs = generator(
             input_image,
-            points_per_batch=64,
-            pred_iou_thresh=0.75,
-            stability_score_thresh=0.95,
-            crops_nms_thresh=0.7,
-            crop_overlap_ratio=0.3,
+            points_per_batch=points_per_batch,
+            pred_iou_thresh=pred_iou_thresh,
+            stability_score_thresh=stability_score_thresh,
+            crops_nms_thresh=crops_nms_thresh,
+            crop_overlap_ratio=crop_overlap_ratio,
         )
     combined_mask = np.zeros(input_mask.size, dtype='uint8')
-    for i, mask in enumerate(outputs['masks']):
-        mask = mask.astype('uint8') * i * 10
+    input_mask = np.array(input_mask) // 255
+    input_mask_size = np.count_nonzero(input_mask)
+    print('HERE', input_mask.shape, input_mask_size)
+    i = 1
+    for mask in outputs['masks']:
+        mask = mask.astype('uint8')
+        mask_size = np.count_nonzero(mask)
+        if mask_size == 0:
+            continue
+        overlap = 0
+        if input_mask_size > 0:
+            overlap = cv2.bitwise_and(mask, input_mask)
+            overlap = np.count_nonzero(overlap)
+            if overlap == 0:
+                continue
+        # TODO erode,dilate
+        if erode > 0:
+            mask = cv2.erode(mask, np.ones((erode, erode), np.uint8), iterations=2) # remove noise
+        if dilate > 0:
+            mask = cv2.dilate(mask, np.ones((dilate, dilate), np.uint8), iterations=2) # expand area
+        mask = (topK + 1 - i) * mask * (255 // topK) # set grayscale intensity so we can recolor
         combined_mask = combined_mask + mask
-        total_size = np.prod(mask.shape)
-        area_size = np.count_nonzero(mask)
-        shared.log.debug(f'Segment mask: i={i} area={area_size/total_size:.2f} score={outputs["scores"][i].item():.2f}')
-        if i > 25:
+        i += 1
+        if i > topK:
             break
-    combined_mask = cv2.applyColorMap(combined_mask, cv2.COLORMAP_JET)
-    combined_image = cv2.addWeighted(np.array(input_image), 0.6, combined_mask, 0.4, 0)
+    mask_size = np.count_nonzero(combined_mask)
+    total_size = np.prod(combined_mask.shape)
+    area_size = np.count_nonzero(combined_mask)
+    shared.log.debug(f'Segment mask: size={input_image.width}x{input_image.height} input={input_mask_size}px masked={mask_size}px area={area_size/total_size:.2f}')
+    colored_mask = cv2.applyColorMap(combined_mask, COLORMAP.index(colormap)) # recolor mask
+    combined_image = cv2.addWeighted(np.array(input_image), 0.6, colored_mask, 0.4, 0)
+    _thres, binary_mask = cv2.threshold(combined_mask, 1, 255, cv2.THRESH_BINARY_INV) # create mask
+    binary_mask = np.invert(binary_mask)
+
+    binary_mask = Image.fromarray(binary_mask)
     combined_mask = Image.fromarray(combined_mask)
-    combined_image = Image.fromarray(combined_image)
+    colored_mask = Image.fromarray(colored_mask)
+    overlay_image = Image.fromarray(combined_image)
+
+    # TODO return type
+    binary_mask.save('/tmp/mask-binary.png')
     combined_mask.save('/tmp/mask-combined.png')
-    combined_image.save('/tmp/mask-combined-image.png')
+    combined_mask.save('/tmp/mask-colored.png')
+    overlay_image.save('/tmp/mask-overlay.png')
+    return input_image, overlay_image
 
 
 # run with sam model directly needing set of points
 def run_segment_points(selected_model: str, input_image: gr.Image):
     if not init(selected_model, input_image):
         return input_image
-    input_mask = input_image.get('mask', None) or Image.new('L', input_image.get('image', None).size, 0)
+    # input_mask = input_image.get('mask', None) or Image.new('L', input_image.get('image', None).size, 0)
     input_image = input_image.get('image', None)
     with devices.inference_context():
         inputs = processor(
@@ -118,7 +151,7 @@ def run_segment_points(selected_model: str, input_image: gr.Image):
         output_masks.append(mask)
 
 
-def create_segment_ui(input_image: gr.Image):
+def create_segment_ui(input_image: gr.Image, preview_image: gr.Image):
     selected = gr.Dropdown(label="Segment", choices=MODELS.keys(), value='None')
-    selected.change(fn=run_segment, inputs=[selected, input_image], outputs=[])
+    selected.change(fn=run_segment, inputs=[selected, input_image], outputs=[input_image, preview_image])
     return selected

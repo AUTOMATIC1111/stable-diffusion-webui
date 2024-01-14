@@ -353,7 +353,7 @@ def create_ui(_blocks: gr.Blocks=None):
             with gr.Row(variant='compact', elem_id="control_extra_networks", visible=False) as extra_networks_ui:
                 from modules import timer, ui_extra_networks
                 extra_networks_ui = ui_extra_networks.create_ui(extra_networks_ui, btn_extra, 'control', skip_indexing=shared.opts.extra_network_skip_indexing)
-                timer.startup.record('ui-extra-networks')
+                timer.startup.record('ui-en')
 
             with gr.Row(elem_id='control_status'):
                 result_txt = gr.HTML(elem_classes=['control-result'], elem_id='control-result')
@@ -368,8 +368,6 @@ def create_ui(_blocks: gr.Blocks=None):
                             input_resize = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="select", height=gr_height, visible=False, image_mode='RGB', elem_id='control_input_resize')
                             input_inpaint = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="sketch", height=gr_height, visible=False, image_mode='RGB', elem_id='control_input_inpaint', brush_radius=64, mask_opacity=0.6)
                             interrogate_clip, interrogate_booru = ui_sections.create_interrogate_buttons('control')
-                            # with gr.Row():
-                            #    segment_ui = segment.create_segment_ui(input_inpaint)
                             with gr.Row():
                                 input_buttons = [gr.Button('Select', visible=True, interactive=False), gr.Button('Inpaint', visible=True, interactive=True), gr.Button('Outpaint', visible=True, interactive=True)]
                         with gr.Tab('Video', id='in-video') as tab_video:
@@ -403,6 +401,10 @@ def create_ui(_blocks: gr.Blocks=None):
                     with gr.Tabs(elem_classes=['control-tabs'], elem_id='control-tab-preview'):
                         with gr.Tab('Preview', id='preview-image') as tab_image:
                             preview_process = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=False, height=gr_height, visible=True)
+
+            # TODO segment as accordian
+            # with gr.Row():
+            #    segment_ui = segment.create_segment_ui(input_inpaint, preview_process)
 
             with gr.Tabs(elem_id='control-tabs') as _tabs_control_type:
 

@@ -122,7 +122,7 @@ def initialize():
     ui_extra_networks.register_pages()
     extra_networks.initialize()
     extra_networks.register_default_extra_networks()
-    timer.startup.record("extra-networks")
+    timer.startup.record("networks")
 
     if cmd_opts.tls_keyfile is not None and cmd_opts.tls_certfile is not None:
         try:
@@ -311,7 +311,6 @@ def webui(restart=False):
     if cmd_opts.profile:
         for k, v in modules.script_callbacks.callback_map.items():
             shared.log.debug(f'Registered callbacks: {k}={len(v)} {[c.script for c in v]}')
-    log.info(f"Startup time: {timer.startup.summary()}")
     debug = log.trace if os.environ.get('SD_SCRIPT_DEBUG', None) is not None else lambda *args, **kwargs: None
     debug('Trace: SCRIPTS')
     for m in modules.scripts.scripts_data:
@@ -319,8 +318,9 @@ def webui(restart=False):
     debug('Loaded postprocessing scripts:')
     for m in modules.scripts.postprocessing_scripts_data:
         debug(f'  {m}')
-    timer.startup.reset()
     modules.script_callbacks.print_timers()
+    log.info(f"Startup time: {timer.startup.summary()}")
+    timer.startup.reset()
 
     if not restart:
         # override all loggers to use the same handlers as the main logger
