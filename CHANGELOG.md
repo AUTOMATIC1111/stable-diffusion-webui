@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-12
+## Update for 2023-01-13
 
 Another release with a lot more functionality in new Control module and FaceID & IPAdapter modules  
 Plus welcome additions to UI performance and accessibility and flexibility of deployment  
@@ -143,6 +143,7 @@ However,
 - **fixes**  
   - ipadapter: allow changing of model/image on-the-fly  
   - ipadapter: fix fallback of cross-attention on unload  
+  - prompt scheduler, thanks @AI-Casanova
   - python: fix python 3.9 compatibility  
   - sdxl: fix positive prompt embeds
   - img2img: clip and blip interrogate  
