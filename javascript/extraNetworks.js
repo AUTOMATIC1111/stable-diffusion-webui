@@ -49,37 +49,39 @@ function setupExtraNetworksForTab(tabname) {
 
         var applyFilter = function() {
             var searchTerm = search.value.toLowerCase();
-    
+
             gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card').forEach(function(elem) {
                 var searchOnly = elem.querySelector('.search_only');
-    
-                var text = Array.prototype.map.call(elem.querySelectorAll('.search_terms'), function(t) { return t.textContent.toLowerCase() }).join(" ");
-    
+
+                var text = Array.prototype.map.call(elem.querySelectorAll('.search_terms'), function(t) {
+                    return t.textContent.toLowerCase();
+                }).join(" ");
+
                 var visible = text.indexOf(searchTerm) != -1;
-    
+
                 if (searchOnly && searchTerm.length < 4) {
                     visible = false;
                 }
-    
+
                 elem.style.display = visible ? "" : "none";
             });
-    
+
             applySort();
         };
-    
+
         var applySort = function() {
             var cards = gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card');
-    
+
             var reverse = sortOrder.classList.contains("sortReverse");
             var sortKey = sort.querySelector("input").value.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim() || "name";
             sortKey = "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1);
             var sortKeyStore = sortKey + "-" + (reverse ? "Descending" : "Ascending") + "-" + cards.length;
-    
+
             if (sortKeyStore == sort.dataset.sortkey) {
                 return;
             }
             sort.dataset.sortkey = sortKeyStore;
-    
+
             cards.forEach(function(card) {
                 card.originalParentElement = card.parentElement;
             });
@@ -90,7 +92,7 @@ function setupExtraNetworksForTab(tabname) {
                 if (!isNaN(a) && !isNaN(b)) {
                     return parseInt(a) - parseInt(b);
                 }
-    
+
                 return (a < b ? -1 : (a > b ? 1 : 0));
             });
             if (reverse) {
@@ -103,14 +105,14 @@ function setupExtraNetworksForTab(tabname) {
                 card.originalParentElement.appendChild(card);
             });
         };
-    
+
         search.addEventListener("input", applyFilter);
         sortOrder.addEventListener("click", function() {
             sortOrder.classList.toggle("sortReverse");
             applySort();
         });
         applyFilter();
-    
+
         extraNetworksApplySort[tab_id] = applySort;
         extraNetworksApplyFilter[tab_id] = applyFilter;
     });
@@ -263,11 +265,11 @@ function saveCardPreview(event, tabname, filename) {
 function extraNetworksTreeProcessFileClick(event, btn, tabname, tab_id) {
     /**
      * Processes `onclick` events when user clicks on files in tree.
-     * 
+     *
      * @param event     The generated event.
      * @param btn       The clicked `action-list-item` button.
      * @param tabname   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
-     * @param tab_id    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc. 
+     * @param tab_id    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
      */
     var par = btn.parentElement;
     var search_id = tabname + "_" + tab_id + "_extra_search";
@@ -278,13 +280,13 @@ function extraNetworksTreeProcessFileClick(event, btn, tabname, tab_id) {
 function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
     /**
      * Processes `onclick` events when user clicks on directories in tree.
-     * 
+     *
      * Here is how the tree reacts to clicks for various states:
      * unselected unopened directory: Diretory is selected and expanded.
      * unselected opened directory: Directory is selected.
      * selected opened directory: Directory is collapsed and deselected.
      * chevron is clicked: Directory is expanded or collapsed. Selected state unchanged.
-     * 
+     *
      * @param event     The generated event.
      * @param btn       The clicked `action-list-item` button.
      * @param tabname   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
@@ -311,7 +313,7 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
         var sels = document.querySelectorAll("button.action-list-content");
         [...sels].forEach(el => {
             el.removeAttribute("selected");
-        })
+        });
     }
 
     function _select_button(_btn) {
@@ -322,12 +324,12 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
 
     function _update_search(_tabname, _tab_id, _search_text) {
         // Update search input with select button's path.
-        search_input_elem = gradioApp().querySelector("#" + tabname + "_" + tab_id + "_extra_search");
+        var search_input_elem = gradioApp().querySelector("#" + tabname + "_" + tab_id + "_extra_search");
         search_input_elem.value = _search_text;
         updateInput(search_input_elem);
     }
 
-    
+
     // If user clicks on the chevron, then we do not select the folder.
     if (true_targ.matches(".action-list-item-action--leading, .action-list-item-action-chevron")) {
         _expand_or_collapse(ul, btn);
@@ -355,10 +357,10 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
 function extraNetworksTreeOnClick(event, tabname, tab_id) {
     /**
      * Handles `onclick` events for buttons within an `extra-network-tree .action-list--tree`.
-     * 
+     *
      * Determines whether the clicked button in the tree is for a file entry or a directory
      * then calls the appropriate function.
-     * 
+     *
      * @param event     The generated event.
      * @param tabname   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
      * @param tab_id    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
@@ -520,10 +522,10 @@ window.addEventListener("keydown", function(event) {
  * before we can actually run the `setupExtraNetworks` function.
  * The `onUiLoaded` function actually runs before all of our extra network tabs are
  * finished generating. Thus we needed this new method.
- * 
+ *
  */
 
-var uiAfterScriptsCallbacks = []
+var uiAfterScriptsCallbacks = [];
 var uiAfterScriptsTimeout = null;
 var executedAfterScripts = false;
 
