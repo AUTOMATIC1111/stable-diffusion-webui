@@ -16,9 +16,6 @@ function toggleCss(key, css, enable) {
 }
 
 function setupExtraNetworksForTab(tabname) {
-    var this_tab = gradioApp().querySelector('#' + tabname + '_extra_tabs');
-    this_tab.classList.add('extra-networks');
-
     function registerPrompt(tabname, id) {
         var textarea = gradioApp().querySelector("#" + id + " > label > textarea");
 
@@ -30,23 +27,26 @@ function setupExtraNetworksForTab(tabname) {
             activePromptTextarea[tabname] = textarea;
         });
     }
-    
+
+    var this_tab = gradioApp().querySelector('#' + tabname + '_extra_tabs');
+    this_tab.classList.add('extra-networks');
     this_tab.querySelectorAll(":scope > [id^='" + tabname + "_']").forEach(function(elem) {
         var tab_id = elem.getAttribute("id");
+        var search = gradioApp().querySelector("#" + tab_id + "_extra_search");
+        if (!search) {
+            return; // `continue` doesn't work in `forEach` loops. This is equivalent.
+        }
 
         var tabs = gradioApp().querySelector('#' + tabname + '_extra_tabs > div');
-        var searchDiv = gradioApp().QuerySelector("#" + tab_id + "_extra_search");
-        console.log("HERE:", tab_id + "_extra_search", searchDiv);
-        var search = searchDiv.value;
         var sort = gradioApp().getElementById(tabname + '_extra_sort');
         var sortOrder = gradioApp().getElementById(tabname + '_extra_sortorder');
         var refresh = gradioApp().getElementById(tabname + '_extra_refresh');
         var promptContainer = gradioApp().querySelector('.prompt-container-compact#' + tabname + '_prompt_container');
         var negativePrompt = gradioApp().querySelector('#' + tabname + '_neg_prompt');
-        tabs.appendChild(searchDiv);
         tabs.appendChild(sort);
         tabs.appendChild(sortOrder);
         tabs.appendChild(refresh);
+
         var applyFilter = function() {
             var searchTerm = search.value.toLowerCase();
     
@@ -113,13 +113,10 @@ function setupExtraNetworksForTab(tabname) {
     
         extraNetworksApplySort[tab_id] = applySort;
         extraNetworksApplyFilter[tab_id] = applyFilter;
-
-        registerPrompt(tab_id, tab_id + "_prompt");
-        registerPrompt(tab_id, tab_id + "_neg_prompt");
     });
 
-    
-    
+    registerPrompt(tabname, tabname + "_prompt");
+    registerPrompt(tabname, tabname + "_neg_prompt");
 }
 
 function extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt) {
@@ -158,12 +155,10 @@ function clearSearch(tabname) {
 
 function extraNetworksUnrelatedTabSelected(tabname) { // called from python when user selects an unrelated tab (generate)
     extraNetworksMovePromptToTab(tabname, '', false, false);
-    //clearSearch(tabname);
 }
 
 function extraNetworksTabSelected(tabname, id, showPrompt, showNegativePrompt) { // called from python when user selects an extra networks tab
     extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt);
-    //clearSearch(tabname);
 }
 
 function applyExtraNetworkFilter(tabname) {
@@ -182,8 +177,6 @@ function setupExtraNetworks() {
     setupExtraNetworksForTab('txt2img');
     setupExtraNetworksForTab('img2img');
 }
-
-onUiLoaded(setupExtraNetworks);
 
 var re_extranet = /<([^:^>]+:[^:]+):[\d.]+>(.*)/;
 var re_extranet_g = /<([^:^>]+:[^:]+):[\d.]+>/g;
@@ -282,7 +275,7 @@ function extraNetworksTreeProcessFileClick(event, btn, tabname, tab_id) {
     var path = par.getAttribute("data-path");
 }
 
-function extraNetworksTreeProcessDirectoryClick(event, btn) {
+function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
     /**
      * Processes `onclick` events when user clicks on directories in tree.
      * 
@@ -294,6 +287,8 @@ function extraNetworksTreeProcessDirectoryClick(event, btn) {
      * 
      * @param event     The generated event.
      * @param btn       The clicked `action-list-item` button.
+     * @param tabname   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
+     * @param tab_id    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
      */
     var ul = btn.nextElementSibling;
     // This is the actual target that the user clicked on within the target button.
@@ -325,6 +320,14 @@ function extraNetworksTreeProcessDirectoryClick(event, btn) {
         _btn.setAttribute("selected", "");
     }
 
+    function _update_search(_tabname, _tab_id, _search_text) {
+        // Update search input with select button's path.
+        search_input_elem = gradioApp().querySelector("#" + tabname + "_" + tab_id + "_extra_search");
+        search_input_elem.value = _search_text;
+        updateInput(search_input_elem);
+    }
+
+    
     // If user clicks on the chevron, then we do not select the folder.
     if (true_targ.matches(".action-list-item-action--leading, .action-list-item-action-chevron")) {
         _expand_or_collapse(ul, btn);
@@ -334,16 +337,18 @@ function extraNetworksTreeProcessDirectoryClick(event, btn) {
             // If folder is select and open, collapse and deselect button.
             _expand_or_collapse(ul, btn);
             btn.removeAttribute("selected");
+            _update_search(tabname, tab_id, "");
         } else if (!(!btn.hasAttribute("selected") && !ul.hasAttribute("data-hidden"))) {
             // If folder is open and not selected, then we don't collapse; just select.
             // NOTE: Double inversion sucks but it is the clearest way to show the branching here.
             _expand_or_collapse(ul, btn);
-            _select_button(btn);
+            _select_button(btn, tabname, tab_id);
+            _update_search(tabname, tab_id, btn.parentElement.getAttribute("data-path"));
         } else {
             // All other cases, just select the button.
-            _select_button(btn);
+            _select_button(btn, tabname, tab_id);
+            _update_search(tabname, tab_id, btn.parentElement.getAttribute("data-path"));
         }
-        
     }
 }
 
@@ -363,39 +368,8 @@ function extraNetworksTreeOnClick(event, tabname, tab_id) {
     if (par.getAttribute("data-tree-entry-type") === "file") {
         extraNetworksTreeProcessFileClick(event, btn, tabname, tab_id);
     } else {
-        extraNetworksTreeProcessDirectoryClick(event, btn);
+        extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id);
     }
-}
-
-function extraNetworksFolderClick(event, tabs_id) {
-    // If folder is open but not selected, we don't want to collapse it. Instead
-    // we override the removal of the "open" attribute so that the folder is
-    // only selected but remains open. Since this is a toggle event, removing
-    // the "open" attribute instead forces the event to add it back which keeps it open.
-    if (event.target.parentElement.open && !event.target.classList.contains("selected")) {
-        // before event handler removes "open"
-        event.target.parentElement.removeAttribute("open");
-    }
-
-    var els = document.querySelectorAll(".folder-item-summary.selected");
-    [...els].forEach(el => {
-        el.classList.remove("selected");
-    });
-    event.target.classList.add("selected");
-
-    var searchTextArea = gradioApp().querySelector("#" + tabs_id + ' > label > textarea');
-    var text = event.target.classList.contains("search-all") ? "" : event.target.getAttribute("data-path");
-    searchTextArea.value = text;
-    updateInput(searchTextArea);
-}
-
-function extraNetworksSearchButton(tabs_id, event) {
-    var searchTextarea = gradioApp().querySelector("#" + tabs_id + ' > label > textarea');
-    var button = event.target;
-    var text = button.classList.contains("search-all") ? "" : button.textContent.trim();
-
-    searchTextarea.value = text;
-    updateInput(searchTextarea);
 }
 
 var globalPopup = null;
@@ -540,9 +514,35 @@ window.addEventListener("keydown", function(event) {
     }
 });
 
-function testprint(e) {
-    console.log(e);
+/**
+ * Setup custom loading for this script.
+ * We need to wait for all of our HTML to be generated in the extra networks tabs
+ * before we can actually run the `setupExtraNetworks` function.
+ * The `onUiLoaded` function actually runs before all of our extra network tabs are
+ * finished generating. Thus we needed this new method.
+ * 
+ */
+
+var uiAfterScriptsCallbacks = []
+var uiAfterScriptsTimeout = null;
+var executedAfterScripts = false;
+
+function scheduleAfterScriptsCallbacks() {
+    clearTimeout(uiAfterScriptsTimeout);
+    uiAfterScriptsTimeout = setTimeout(function() {
+        executeCallbacks(uiAfterScriptsCallbacks);
+    }, 200);
 }
 
-const testinput = gradioApp().querySelector("#txt2img_lora_extra_search");
-testinput.addEventListener("input", testprint);
+document.addEventListener("DOMContentLoaded", function() {
+    var mutationObserver = new MutationObserver(function(m) {
+        if (!executedAfterScripts &&
+            gradioApp().querySelectorAll("[id$='_extra_search']").length == 8) {
+            executedAfterScripts = true;
+            scheduleAfterScriptsCallbacks();
+        }
+    });
+    mutationObserver.observe(gradioApp(), {childList: true, subtree: true});
+});
+
+uiAfterScriptsCallbacks.push(setupExtraNetworks);
