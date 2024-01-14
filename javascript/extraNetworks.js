@@ -132,7 +132,7 @@ async function filterExtraNetworksForTab(searchTerm) {
         if (elem.dataset.name) text += `${elem.dataset.name} `;
         if (elem.dataset.title) text += `${elem.dataset.title} `;
         if (elem.dataset.tags) text += `${elem.dataset.title} `;
-        text = text.toLowerCase().replace('models--', 'diffusers').replace('\\', '/');
+        text = text.toLowerCase().replace('models--', 'diffusers').replaceAll('\\', '/');
         if (text.indexOf(searchTerm) === -1) {
           elem.style.display = 'none';
         } else {
@@ -143,7 +143,7 @@ async function filterExtraNetworksForTab(searchTerm) {
     });
   }
   const t1 = performance.now();
-  if (found > 0) log(`filterExtraNetworks: text=${searchTerm} items=${items} match=${found} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
+  if (searchTerm !== '') log(`filterExtraNetworks: text=${searchTerm} items=${items} match=${found} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
   else log(`filterExtraNetworks: text=all items=${items} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
 }
 
