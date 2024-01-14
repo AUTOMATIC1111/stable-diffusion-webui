@@ -152,7 +152,7 @@ def pad_to_same_length(pipe, embeds):
         empty_embed = pipe.encode_prompt("", device, 1, False)
     max_token_count = max([embed.shape[1] for embed in embeds])
     repeats = max_token_count - min([embed.shape[1] for embed in embeds])
-    empty_batched = empty_embed[0].to(embeds[0].device).expand(embeds[0].shape[0], repeats, -1)
+    empty_batched = empty_embed[0].to(embeds[0].device).repeat(embeds[0].shape[0], repeats // empty_embed[0].shape[1], 1)
     for i, embed in enumerate(embeds):
         if embed.shape[1] < max_token_count:
             embed = torch.cat([embed, empty_batched], dim=1)
