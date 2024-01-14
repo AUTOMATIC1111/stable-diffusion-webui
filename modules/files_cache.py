@@ -1,10 +1,11 @@
-from os import scandir
-import os.path as path
-from typing import Dict, List, Union, Callable, Optional, Iterator
-from dataclasses import dataclass, field
-from installer import print_dict
-from collections import UserDict
 import itertools
+import os.path as path
+from collections import UserDict
+from dataclasses import dataclass, field
+from os import scandir
+from typing import Callable, Dict, Iterator, List, Optional, Union
+
+from installer import print_dict
 
 WasDirty = bool
 DidDelete = bool
@@ -26,7 +27,7 @@ DirectoryPathIterator = Iterator[DirectoryPath]
 
 class Directory:
     ...
-    
+
 DirectoryList = List[Directory]
 DirectoryIterator = Iterator[Directory]
 DirectoryCollection = Dict[DirectoryPath, Directory]
@@ -46,7 +47,7 @@ def real_path(directory_path:DirectoryPath) -> DirectoryPath | None:
 
 
 @dataclass(slots=True,frozen=True)
-class Directory(Directory):
+class Directory(Directory): # pylint: disable=E0102
 
 
     path: DirectoryPath = field(default_factory=str)
@@ -67,7 +68,7 @@ class Directory(Directory):
         object.__setattr__(directory, 'files', dict_object.get('files'))
         object.__setattr__(directory, 'directories', dict_object.get('directories'))
         return directory
-    
+
 
     def clear(self) -> None:
         self._update(Directory.from_dict({
@@ -76,14 +77,14 @@ class Directory(Directory):
             'files': [],
             'directories': []
         }))
-    
+
 
     def update(self, source_directory: Directory) -> Directory:
         if source_directory is not self:
             self._update(source_directory)
         return self
-    
-    
+
+
     def _update(self, source:Directory) -> None:
         assert not source.path or source.path == self.path, f'When updating a directory, the paths must match.  Attemped to update Directory `{self.path}` with `{source.path}`'
         for dead_path in self.directories:
@@ -92,7 +93,7 @@ class Directory(Directory):
         self.directories[:] = source.directories
         self.files[:] = source.files
         object.__setattr__(self, 'mtime', source.mtime)
-    
+
 
     def __str__(self) -> str:
         return str(print_dict(self, path=self.path, mtime=self.mtime, files=len(self.files), directories=len(self.directories)))
@@ -101,7 +102,7 @@ class Directory(Directory):
     @property
     def exists(self) -> DirectoryExists:
         return self.path and path.exists(self.path)
-    
+
 
     @property
     def is_directory(self) -> IsDirectory:
@@ -111,7 +112,7 @@ class Directory(Directory):
     @property
     def live_mtime(self) -> MTime:
         return path.getmtime(self.path) if self.is_directory else 0
-    
+
 
     @property
     def is_stale(self) -> CachedDirectoryIsStale:
@@ -161,7 +162,7 @@ def get_directory(directory_or_path: DirectoryPath, /, fetch:bool=True) -> Direc
             return directory_or_path
         else:
             directory_or_path = directory_or_path.path
-    global cache_folders
+    global cache_folders # pylint: disable=W0602
     directory_or_path = real_path(directory_or_path)
     if not cache_folders.get(directory_or_path, None):
         if fetch:
@@ -247,14 +248,14 @@ def walk(top, onerror:Callable=None, /, recurse:RecursiveType=True, cached=True)
 
 
 def delete_cached_directory(directory_path:DirectoryPath) -> DidDelete:
-    global cache_folders
+    global cache_folders # pylint: disable=W0602
     if directory_path in cache_folders:
         del cache_folders[directory_path]
 
 
 def is_directory(dir_path:DirectoryPath) -> IsDirectory:
     return dir_path and path.exists(dir_path) and path.isdir(dir_path)
-    
+
 
 def directory_mtime(directory_path:DirectoryPath, /, recursive:RecursiveType=True) -> MTime:
     return float(max(0, *[directory.mtime for directory in get_directories(directory_path, recursive=recursive)]))
@@ -263,7 +264,7 @@ def directory_mtime(directory_path:DirectoryPath, /, recursive:RecursiveType=Tru
 def unique_directories(directories:DirectoryPathList, /, recursive:RecursiveType=True) -> DirectoryPathIterator:
     '''Ensure no empty, or duplicates'''
     '''If we are going recursive, then directories that are children of other directories are redundant'''
-    directories = list(sorted(unique_paths(directories), reverse=True))
+    directories = sorted(unique_paths(directories), reverse=True)
     #shared.log.debug(f'Directories: {directories}')
     while directories:
         directory = directories.pop()
@@ -272,6 +273,7 @@ def unique_directories(directories:DirectoryPathList, /, recursive:RecursiveType
         if not recursive:
             continue
         _directory = path.join(directory, '')
+        child_directory = None
         while directories and directories[-1].startswith(_directory):
             if not callable(recursive) or not child_directory:
                 #shared.log.debug(f'removing `{directories[-1]}` ... {_directory}')
@@ -287,12 +289,9 @@ def unique_directories(directories:DirectoryPathList, /, recursive:RecursiveType
                 else:
                     for sub_directory in child_directory.split(path.sep):
                         next_directory = path.join(next_directory, sub_directory)
-                        try:
-                            if recursive(next_directory):
-                                _remove_directory = path.join(next_directory, '')
-                                break
-                        except Exception:
-                            raise # I had thougths about suppressing the excepton, but it's probably better to not.
+                        if recursive(next_directory):
+                            _remove_directory = path.join(next_directory, '')
+                            break
                 while _remove_directory and directories:
                     _d = directories.pop()
                     #shared.log.info(f'Doing the while thing: {_remove_directory} - {_d}')
@@ -302,14 +301,14 @@ def unique_directories(directories:DirectoryPathList, /, recursive:RecursiveType
 
 def unique_paths(directory_paths:DirectoryPathList) -> DirectoryPathIterator:
     return (
-        key 
-        for key 
-        in { 
-            real_directory_path: True 
-            for real_directory_path 
+        key
+        for key
+        in {
+            real_directory_path: True
+            for real_directory_path
             in filter(bool, [
-                real_path(directory_path) 
-                for directory_path 
+                real_path(directory_path)
+                for directory_path
                 in filter(bool, directory_paths)
             ])
         }
@@ -320,7 +319,7 @@ def get_directories(*directory_paths: DirectoryPathList, fetch:bool=True, recurs
     return filter(
         bool,
         (
-            get_directory(directory_path, fetch=fetch) 
+            get_directory(directory_path, fetch=fetch)
             for directory_path in unique_directories(
                 directory_paths, recursive=recursive
             )
@@ -331,22 +330,22 @@ def get_directories(*directory_paths: DirectoryPathList, fetch:bool=True, recurs
 def directory_files(*directories_or_paths: DirectoryPathList|DirectoryList, recursive: RecursiveType=True) -> FilePathIterator:
     return itertools.chain.from_iterable(
         itertools.chain(
-            directory_object.files, 
+            directory_object.files,
             []
             if not recursive
             else itertools.chain.from_iterable(
                 directory_files(directory, recursive=recursive)
                 for directory
                 in filter(
-                    bool, 
+                    bool,
                     map(
-                        get_directory, 
+                        get_directory,
                         filter(
                             (
                                 ( bool if recursive else False )
-                                if not callable(recursive) 
+                                if not callable(recursive)
                                 else recursive
-                            ), 
+                            ),
                             directory_object.directories
                         )
                     )
@@ -386,7 +385,7 @@ def filter_files(file_paths: FilePathList, ext_filter: Optional[ExtensionList]=N
 def list_files(*directory_paths:DirectoryPathList, ext_filter: Optional[ExtensionList]=None, ext_blacklist: Optional[ExtensionList]=None, recursive:RecursiveType=True) -> FilePathIterator:
     return filter_files(itertools.chain.from_iterable(
         directory_files(directory, recursive=recursive)
-        for directory 
+        for directory
         in get_directories(
             *directory_paths, recursive=recursive
         )

@@ -456,7 +456,7 @@ def list_available_networks():
                 available_network_hash_lookup[entry.shorthash] = entry
         except OSError as e:  # should catch FileNotFoundError and PermissionError etc.
             shared.log.error(f"Failed to load network {name} from {filename} {e}")
-            
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=shared.max_workers) as executor:
         for fn in files_cache.list_files(*directories, ext_filter=[".pt", ".ckpt", ".safetensors"]):
             executor.submit(add_network, fn)

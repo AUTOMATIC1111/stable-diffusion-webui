@@ -47,12 +47,12 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
 
     def list_items(self):
         if sd_models.model_data.sd_model is None:
-            self.embeddings = [ 
-                Embedding(vec=0, name=os.path.basename(embedding_path), filename=embedding_path) 
-                for embedding_path 
+            self.embeddings = [
+                Embedding(vec=0, name=os.path.basename(embedding_path), filename=embedding_path)
+                for embedding_path
                 in files_cache.list_files(
-                    shared.opts.embeddings_dir, 
-                    ext_filter=['.pt', '.safetensors'], 
+                    shared.opts.embeddings_dir,
+                    ext_filter=['.pt', '.safetensors'],
                     recursive=files_cache.not_hidden
                 )
             ]
