@@ -6,6 +6,7 @@ import os
 import shutil
 import sys
 import importlib.util
+import importlib.metadata
 import platform
 import json
 from functools import lru_cache
@@ -64,7 +65,7 @@ Use --skip-python-version-check to suppress this warning.
 @lru_cache()
 def commit_hash():
     try:
-        return subprocess.check_output([git, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
+        return subprocess.check_output([git, "-C", script_path, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
     except Exception:
         return "<none>"
 
@@ -72,7 +73,7 @@ def commit_hash():
 @lru_cache()
 def git_tag():
     try:
-        return subprocess.check_output([git, "describe", "--tags"], shell=False, encoding='utf8').strip()
+        return subprocess.check_output([git, "-C", script_path, "describe", "--tags"], shell=False, encoding='utf8').strip()
     except Exception:
         try:
 
@@ -119,11 +120,16 @@ def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_
 
 def is_installed(package):
     try:
-        spec = importlib.util.find_spec(package)
-    except ModuleNotFoundError:
-        return False
+        dist = importlib.metadata.distribution(package)
+    except importlib.metadata.PackageNotFoundError:
+        try:
+            spec = importlib.util.find_spec(package)
+        except ModuleNotFoundError:
+            return False
 
-    return spec is not None
+        return spec is not None
+
+    return dist is not None
 
 
 def repo_dir(name):
@@ -310,6 +316,26 @@ def requirements_met(requirements_file):
 def prepare_environment():
     torch_index_url = os.environ.get('TORCH_INDEX_URL', "https://download.pytorch.org/whl/cu118")
     torch_command = os.environ.get('TORCH_COMMAND', f"pip install torch==2.0.1 torchvision==0.15.2 --extra-index-url {torch_index_url}")
+    if args.use_ipex:
+        if platform.system() == "Windows":
+            # The "Nuullll/intel-extension-for-pytorch" wheels were built from IPEX source for Intel Arc GPU: https://github.com/intel/intel-extension-for-pytorch/tree/xpu-main
+            # This is NOT an Intel official release so please use it at your own risk!!
+            # See https://github.com/Nuullll/intel-extension-for-pytorch/releases/tag/v2.0.110%2Bxpu-master%2Bdll-bundle for details.
+            #
+            # Strengths (over official IPEX 2.0.110 windows release):
+            #   - AOT build (for Arc GPU only) to eliminate JIT compilation overhead: https://github.com/intel/intel-extension-for-pytorch/issues/399
+            #   - Bundles minimal oneAPI 2023.2 dependencies into the python wheels, so users don't need to install oneAPI for the whole system.
+            #   - Provides a compatible torchvision wheel: https://github.com/intel/intel-extension-for-pytorch/issues/465
+            # Limitation:
+            #   - Only works for python 3.10
+            url_prefix = "https://github.com/Nuullll/intel-extension-for-pytorch/releases/download/v2.0.110%2Bxpu-master%2Bdll-bundle"
+            torch_command = os.environ.get('TORCH_COMMAND', f"pip install {url_prefix}/torch-2.0.0a0+gite9ebda2-cp310-cp310-win_amd64.whl {url_prefix}/torchvision-0.15.2a0+fa99a53-cp310-cp310-win_amd64.whl {url_prefix}/intel_extension_for_pytorch-2.0.110+gitc6ea20b-cp310-cp310-win_amd64.whl")
+        else:
+            # Using official IPEX release for linux since it's already an AOT build.
+            # However, users still have to install oneAPI toolkit and activate oneAPI environment manually.
+            # See https://intel.github.io/intel-extension-for-pytorch/index.html#installation for details.
+            torch_index_url = os.environ.get('TORCH_INDEX_URL', "https://pytorch-extension.intel.com/release-whl/stable/xpu/us/")
+            torch_command = os.environ.get('TORCH_COMMAND', f"pip install torch==2.0.0a0 intel-extension-for-pytorch==2.0.110+gitba7f6c1 --extra-index-url {torch_index_url}")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
 
     xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.20')
@@ -352,6 +378,8 @@ def prepare_environment():
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
         startup_timer.record("install torch")
 
+    if args.use_ipex:
+        args.skip_torch_cuda_test = True
     if not args.skip_torch_cuda_test and not check_run_python("import torch; assert torch.cuda.is_available()"):
         raise RuntimeError(
             'Torch is not able to use GPU; '
@@ -441,7 +469,7 @@ def dump_sysinfo():
     import datetime
 
     text = sysinfo.get()
-    filename = f"sysinfo-{datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M')}.txt"
+    filename = f"sysinfo-{datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M')}.json"
 
     with open(filename, "w", encoding="utf8") as file:
         file.write(text)
