@@ -24,7 +24,7 @@ def patch(key, obj, field, replacement, add_if_not_exists:bool = False):
 
     if not hasattr(obj, field) and not add_if_not_exists:
         raise AttributeError(f"type {type(obj)} '{type.__name__}' has no attribute '{field}'")
-    
+
     original_func = getattr(obj, field, None)
     originals[key][patch_key] = original_func
 

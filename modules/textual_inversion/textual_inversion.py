@@ -1,22 +1,39 @@
-import os
-import html
 import csv
+import html
+import os
 import time
 from collections import namedtuple
-import torch
-from tqdm import tqdm
-import safetensors.torch
+from typing import List, Optional, Union
+
 import numpy as np
+import safetensors.torch
+import torch
 from PIL import Image, PngImagePlugin
 from torch.utils.tensorboard import SummaryWriter
-from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_hijack_checkpoint, errors
+from tqdm import tqdm
+
 import modules.textual_inversion.dataset
-from modules.textual_inversion.learn_schedule import LearnRateScheduler
-from modules.textual_inversion.image_embedding import embedding_to_b64, embedding_from_b64, insert_image_data_embed, extract_image_data_embed, caption_image_overlay
-from modules.textual_inversion.ti_logging import save_settings_to_file
-from modules.modelloader import directory_files, extension_filter, directory_mtime
-from typing import List, Optional, Union
 import modules.textual_inversion.loaders
+from modules import (
+    devices,
+    errors,
+    images,
+    processing,
+    sd_hijack,
+    sd_hijack_checkpoint,
+    sd_models,
+    shared,
+)
+from modules.modelloader import directory_files, directory_mtime, extension_filter
+from modules.textual_inversion.image_embedding import (
+    caption_image_overlay,
+    embedding_from_b64,
+    embedding_to_b64,
+    extract_image_data_embed,
+    insert_image_data_embed,
+)
+from modules.textual_inversion.learn_schedule import LearnRateScheduler
+from modules.textual_inversion.ti_logging import save_settings_to_file
 
 TokenToAdd = namedtuple("TokenToAdd", ["clip_l", "clip_g"])
 
@@ -137,9 +154,9 @@ class EmbeddingDatabase:
             return 0
         vec = shared.sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
         return vec.shape[1]
-    
+
     def load_diffusers_embedding(
-        self, 
+        self,
         filename: Union[str, List[str]],
         path: Optional[Union[str, List[str]]] = None,
     ):
@@ -170,16 +187,16 @@ class EmbeddingDatabase:
                     model_type = 'UNDEFINED'
                 try:
                     unk_token_id = tokenizer.convert_tokens_to_ids(tokenizer.unk_token)
-                    for filename, path in filename_paths:
-                        if path is None:
-                            path = filename
-                            filename = os.path.basename(path)
-                        fn, ext = os.path.splitext(filename)
+                    for _filename, _path in filename_paths:
+                        if _path is None:
+                            _path = _filename
+                            _filename = os.path.basename(_path)
+                        fn, ext = os.path.splitext(_filename)
                         name = os.path.basename(fn)
-                        embedding = Embedding(vec=None, name=name, filename=path)
+                        embedding = Embedding(vec=None, name=name, filename=_path)
                         try:
                             ext  = ext.upper()
-                            _, _ext = os.path.splitext(path)
+                            _, _ext = os.path.splitext(_path)
                             _ext = _ext.upper()
                             if ext != _ext:
                                 raise ValueError(f'filename and path extensions do not match: `{ext}` != `{_ext}`')
@@ -188,7 +205,7 @@ class EmbeddingDatabase:
                             if name in tokenizer.get_vocab() or f"{name}_1" in tokenizer.get_vocab():
                                 raise ValueError(f'token already exists in the tokenizer vocabulary: `{name}`')
                             embeddings_to_load.append(embedding)
-                        except Exception as e:
+                        except Exception:
                             skipped_embeddings.append(embedding)
                             continue
                         embeddings_to_load = sorted(embeddings_to_load, key=lambda e: exts.index(os.path.splitext(e.filename)[1].upper()))
@@ -211,9 +228,9 @@ class EmbeddingDatabase:
                         try:
                             name = embedding.name
                             if name in tokenizer_vocab:
-                                raise Exception(f'token `{name}` already in Model Vocabulary')
+                                raise UserWarning(f'token `{name}` already in Model Vocabulary')
                             if name in tokens_to_add or name in loaded_embeddings:
-                                raise Exception('duplicate Embedding Token')
+                                raise UserWarning('duplicate Embedding Token')
                             embeddings_dict = {}
                             _, ext = os.path.splitext(embedding.filename)
                             ext = ext.upper()
@@ -237,20 +254,18 @@ class EmbeddingDatabase:
                                             embeddings_dict['clip_l'].append(vec)
                                 """
                             else:
-                                raise Exception(f'extension {ext} not supported')
-                                continue
+                                raise NotImplementedError(f'extension {ext} not supported')
                             if 'clip_l' not in embeddings_dict:
-                                raise ValueError(f'Invalid Embedding, dict missing required key `clip_l`')
+                                raise ValueError('Invalid Embedding, dict missing required key `clip_l`')
                             if 'clip_g' in embeddings_dict:
                                 embedding_type = 'SD-XL'
                             else:
                                 embedding_type = 'SD'
                             if embedding_type != model_type:
                                 raise ValueError(f'Unable to load `{embedding_type}` Embedding into `{model_type}` Model')
-                            did_add = False
                             _tokens_to_add = {}
                             for i in range(len(embeddings_dict["clip_l"])):
-                                if (len(clip_l.get_input_embeddings().weight.data[0]) == len(embeddings_dict["clip_l"][i])):
+                                if len(clip_l.get_input_embeddings().weight.data[0]) == len(embeddings_dict["clip_l"][i]):
                                     token = name if i == 0 else f"{name}_{i}"
                                     if token in tokenizer_vocab:
                                         raise RuntimeError(f'Multi-Vector Embedding would add pre-existing Token in Vocabulary: {token}')
@@ -264,14 +279,12 @@ class EmbeddingDatabase:
                                 raise ValueError('no valid tokens to add')
                             tokens_to_add.update(_tokens_to_add)
                             loaded_embeddings[name] = embedding
-                        except Exception as e:
+                        except Exception:
                             continue
                     if len(tokens_to_add) > 0:
-                        _tokenizer_len = len(tokenizer)
-                        num_added = tokenizer.add_tokens([k for k in tokens_to_add.keys()])
                         clip_l.resize_token_embeddings(len(tokenizer))
                         if model_type == 'SD-XL':
-                            tokenizer_2.add_tokens([k for k in tokens_to_add.keys()]) # type: ignore
+                            tokenizer_2.add_tokens(list(tokens_to_add.keys())) # type: ignore
                             clip_g.resize_token_embeddings(len(tokenizer)) # type: ignore
                         for token, data in tokens_to_add.items():
                             token_id = tokenizer.convert_tokens_to_ids(token)
@@ -280,8 +293,8 @@ class EmbeddingDatabase:
                                 if model_type == 'SD-XL':
                                     clip_g.get_input_embeddings().weight.data[token_id] = data.clip_g # type: ignore
                 except Exception as e:
-                    errors.display(e, f'Embedding Load Failure')
-        for name, embedding in loaded_embeddings.items():
+                    errors.display(e, 'Embedding Load Failure')
+        for embedding in loaded_embeddings.values():
             if not embedding:
                 continue
             self.register_embedding(embedding, shared.sd_model)
@@ -293,7 +306,7 @@ class EmbeddingDatabase:
                 continue
             self.skipped_embeddings[embedding.name] = embedding
         return len(self.word_embeddings) - _loaded_pre
-        
+
     def load_from_file(self, path, filename):
         name, ext = os.path.splitext(filename)
         ext = ext.upper()
