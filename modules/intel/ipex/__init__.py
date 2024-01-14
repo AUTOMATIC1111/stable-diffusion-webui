@@ -159,7 +159,7 @@ def ipex_init(): # pylint: disable=too-many-statements
         torch.cuda.utilization = lambda *args, **kwargs: 0
 
         ipex_hijacks()
-        if not torch.xpu.has_fp64_dtype():
+        if not torch.xpu.has_fp64_dtype() or os.environ.get('IPEX_FORCE_ATTENTION_SLICE', None) is not None:
             try:
                 from .diffusers import ipex_diffusers
                 ipex_diffusers()

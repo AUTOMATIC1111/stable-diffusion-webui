@@ -124,6 +124,7 @@ However,
   - rewrite ipex hijacks without CondFunc  
     improves compatibilty and performance  
     fixes random memory leaks  
+  - out of the box support for Intel Data Center GPU Max Series  
   - remove IPEX / Torch 2.0 specific hijacks  
   - add `IPEX_SDPA_SLICE_TRIGGER_RATE`, `IPEX_ATTENTION_SLICE_RATE` and `IPEX_FORCE_ATTENTION_SLICE` env variables  
   - disable 1024x1024 workaround if the GPU supports 64 bit  
