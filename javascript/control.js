@@ -10,7 +10,7 @@ function controlInputMode(inputMode, ...args) {
   return [inputMode, ...args];
 }
 
-function setupControlUI() {
+async function setupControlUI() {
   const tabs = ['input', 'output', 'preview'];
   for (const tab of tabs) {
     const btn = gradioApp().getElementById(`control-${tab}-button`);

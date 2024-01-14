@@ -133,9 +133,9 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0, tit
 
     def get_font(fontsize):
         try:
-            return ImageFont.truetype(shared.opts.font or 'javascript/roboto.ttf', fontsize)
+            return ImageFont.truetype(shared.opts.font or 'javascript/notosans-nerdfont-regular.ttf', fontsize)
         except Exception:
-            return ImageFont.truetype('javascript/roboto.ttf', fontsize)
+            return ImageFont.truetype('javascript/notosans-nerdfont-regular.ttf', fontsize)
 
     def draw_texts(drawing: ImageDraw, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
         for line in lines:
@@ -504,7 +504,7 @@ def get_next_sequence_number(path, basename):
     prefix_length = len(basename)
     if not os.path.isdir(path):
         return 0
-    for p in shared.listdir(path):
+    for p in os.listdir(path):
         if p.startswith(basename):
             parts = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
             try:

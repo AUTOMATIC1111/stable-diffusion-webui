@@ -5,6 +5,7 @@ from modules import shared, theme
 from modules.paths import script_path, data_path
 import modules.scripts
 
+
 def webpath(fn):
     if fn.startswith(script_path):
         web_path = os.path.relpath(fn, script_path).replace('\\', '/')

@@ -18,6 +18,7 @@
     "max-len": [1, 275, 3],
     "camelcase":"off",
     "default-case":"off",
+    "no-await-in-loop":"off",
     "no-bitwise":"off",
     "no-confusing-arrow":"off",
     "no-console":"off",
@@ -71,6 +72,8 @@
     "restartReload": "readonly",
     "updateInput": "readonly",
     "toggleCompact": "readonly",
+    "setFontSize": "readonly",
+    "setTheme": "readonly",
     // settings.js
     "registerDragDrop": "readonly",
     //extraNetworks.js

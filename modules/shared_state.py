@@ -106,7 +106,7 @@ class State:
             self.do_set_current_image()
 
     def do_set_current_image(self):
-        if self.current_latent is None or self.api:
+        if self.current_latent is None:
             return
         from modules.shared import opts
         import modules.sd_samplers # pylint: disable=W0621

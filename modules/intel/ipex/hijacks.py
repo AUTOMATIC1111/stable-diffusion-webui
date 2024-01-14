@@ -1,3 +1,4 @@
+import os
 from functools import wraps
 from contextlib import nullcontext
 import torch
@@ -60,7 +61,7 @@ def from_numpy(ndarray):
     else:
         return original_from_numpy(ndarray)
 
-if torch.xpu.has_fp64_dtype():
+if torch.xpu.has_fp64_dtype() and os.environ.get('IPEX_FORCE_ATTENTION_SLICE', None) is None:
     original_torch_bmm = torch.bmm
     original_scaled_dot_product_attention = torch.nn.functional.scaled_dot_product_attention
 else:

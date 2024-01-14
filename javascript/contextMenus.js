@@ -85,7 +85,7 @@ const appendContextMenuOption = initResponse[0];
 const removeContextMenuOption = initResponse[1];
 const addContextMenuEventListener = initResponse[2];
 
-function initContextMenu() {
+async function initContextMenu() {
   const generateForever = (genbuttonid, interruptbuttonid) => {
     if (window.generateOnRepeatInterval) {
       log('generateForever: cancel');

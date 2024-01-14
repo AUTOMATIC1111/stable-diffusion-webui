@@ -61,7 +61,7 @@ def single_sample_to_image(sample, approximation=None):
 
     try:
         if x_sample.dtype == torch.bfloat16:
-           x_sample.to(torch.float16)
+            x_sample.to(torch.float16)
         transform = T.ToPILImage()
         image = transform(x_sample)
     except Exception as e:

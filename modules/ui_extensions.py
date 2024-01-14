@@ -1,5 +1,5 @@
+import os
 import json
-import os.path
 import shutil
 import errno
 import html
@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 import git
 import gradio as gr
 from modules import extensions, shared, paths, errors
-from modules.call_queue import wrap_gradio_gpu_call
 
 
 extensions_index = "https://vladmandic.github.io/sd-data/pages/extensions.json"
@@ -438,7 +437,7 @@ def create_ui():
                 info = gr.HTML('')
                 extensions_table = gr.HTML(create_html(search_text.value, sort_column.value))
                 check.click(
-                    fn=wrap_gradio_gpu_call(check_updates, extra_outputs=[gr.update()]),
+                    fn=modules.ui.wrap_gradio_call(check_updates, extra_outputs=[gr.update()]),
                     _js="extensions_check",
                     inputs=[info, extensions_disabled_list, search_text, sort_column],
                     outputs=[extensions_table, info],

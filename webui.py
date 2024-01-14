@@ -13,14 +13,14 @@ import torch # pylint: disable=wrong-import-order
 from modules import timer, errors, paths # pylint: disable=unused-import
 from installer import log, git_commit, custom_excepthook
 import ldm.modules.encoders.modules # pylint: disable=W0611,C0411,E0401
-from modules import shared, extensions, extra_networks, ui_tempdir, ui_extra_networks, modelloader # pylint: disable=ungrouped-imports
+from modules import shared, extensions, ui_tempdir, modelloader # pylint: disable=ungrouped-imports
+from modules import extra_networks, ui_extra_networks # pylint: disable=ungrouped-imports
 from modules.paths import create_paths
 from modules.call_queue import queue_lock, wrap_queued_call, wrap_gradio_gpu_call # pylint: disable=W0611,C0411,C0412
 import modules.devices
 import modules.sd_samplers
 import modules.lowvram
 import modules.scripts
-import modules.sd_hijack
 import modules.sd_models
 import modules.sd_vae
 import modules.progress
@@ -57,6 +57,10 @@ fastapi_args = {
         "deepLinking": False,
     }
 }
+
+import modules.sd_hijack
+timer.startup.record("ldm")
+
 modules.loader.initialized = True
 
 
@@ -108,7 +112,6 @@ def initialize():
 
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
-    # shared.opts.onchange("gradio_theme", shared.reload_gradio_theme)
     timer.startup.record("onchange")
 
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
@@ -119,7 +122,7 @@ def initialize():
     ui_extra_networks.register_pages()
     extra_networks.initialize()
     extra_networks.register_default_extra_networks()
-    timer.startup.record("extra-networks")
+    timer.startup.record("networks")
 
     if cmd_opts.tls_keyfile is not None and cmd_opts.tls_certfile is not None:
         try:
@@ -148,7 +151,9 @@ def initialize():
 
 
 def load_model():
-    if opts.sd_checkpoint_autoload and (shared.cmd_opts.ckpt is not None and shared.cmd_opts.ckpt.lower() != 'none'):
+    if not opts.sd_checkpoint_autoload or (shared.cmd_opts.ckpt is not None and shared.cmd_opts.ckpt.lower() != 'none'):
+        log.debug('Model auto load disabled')
+    else:
         shared.state.begin('load')
         thread_model = Thread(target=lambda: shared.sd_model)
         thread_model.start()
@@ -157,8 +162,6 @@ def load_model():
         shared.state.end()
         thread_model.join()
         thread_refiner.join()
-    else:
-        log.debug('Model auto load disabled')
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(op='model')), call=False)
     shared.opts.onchange("sd_model_refiner", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(op='refiner')), call=False)
     shared.opts.onchange("sd_model_dict", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(op='dict')), call=False)
@@ -308,15 +311,15 @@ def webui(restart=False):
     if cmd_opts.profile:
         for k, v in modules.script_callbacks.callback_map.items():
             shared.log.debug(f'Registered callbacks: {k}={len(v)} {[c.script for c in v]}')
-    log.info(f"Startup time: {timer.startup.summary()}")
     debug = log.trace if os.environ.get('SD_SCRIPT_DEBUG', None) is not None else lambda *args, **kwargs: None
     debug('Trace: SCRIPTS')
-    debug('Loaded scripts:')
     for m in modules.scripts.scripts_data:
         debug(f'  {m}')
     debug('Loaded postprocessing scripts:')
     for m in modules.scripts.postprocessing_scripts_data:
         debug(f'  {m}')
+    modules.script_callbacks.print_timers()
+    log.info(f"Startup time: {timer.startup.summary()}")
     timer.startup.reset()
 
     if not restart:

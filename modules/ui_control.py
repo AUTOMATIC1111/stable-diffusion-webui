@@ -2,7 +2,6 @@ import os
 import time
 import gradio as gr
 import matplotlib.pyplot as plt
-import numpy as np
 from PIL import Image
 from modules.control import unit
 from modules.control import processors # patrickvonplaten controlnet_aux
@@ -11,9 +10,8 @@ from modules.control.units import xs # vislearn ControlNet-XS
 from modules.control.units import lite # vislearn ControlNet-XS
 from modules.control.units import t2iadapter # TencentARC T2I-Adapter
 from modules.control.units import reference # reference pipeline
-from modules.control.units import ipadapter # reference pipeline
-from modules import errors, shared, progress, sd_samplers, ui_components, ui_symbols, ui_common, ui_sections, generation_parameters_copypaste, call_queue
-from modules.ui_components import FormRow, FormGroup
+from scripts import ipadapter # pylint: disable=no-name-in-module
+from modules import errors, shared, progress, sd_samplers, ui_components, ui_symbols, ui_common, ui_sections, generation_parameters_copypaste, call_queue, scripts, masking # pylint: disable=ungrouped-imports
 
 
 gr_height = 512
@@ -29,12 +27,13 @@ busy = False # used to synchronize select_input and generate_click
 
 def initialize():
     from modules import devices
-    shared.log.debug(f'Control initialize: models={shared.opts.control_dir}')
+    shared.log.debug(f'UI initialize: control models={shared.opts.control_dir}')
     controlnet.cache_dir = os.path.join(shared.opts.control_dir, 'controlnet')
     xs.cache_dir = os.path.join(shared.opts.control_dir, 'xs')
     lite.cache_dir = os.path.join(shared.opts.control_dir, 'lite')
     t2iadapter.cache_dir = os.path.join(shared.opts.control_dir, 'adapter')
     processors.cache_dir = os.path.join(shared.opts.control_dir, 'processor')
+    masking.cache_dir   = os.path.join(shared.opts.control_dir, 'segment')
     unit.default_device = devices.device
     unit.default_dtype = devices.dtype
     os.makedirs(shared.opts.control_dir, exist_ok=True)
@@ -43,6 +42,9 @@ def initialize():
     os.makedirs(lite.cache_dir, exist_ok=True)
     os.makedirs(t2iadapter.cache_dir, exist_ok=True)
     os.makedirs(processors.cache_dir, exist_ok=True)
+    os.makedirs(masking.cache_dir, exist_ok=True)
+    scripts.scripts_current = scripts.scripts_control
+    scripts.scripts_current.initialize_scripts(is_img2img=True)
 
 
 def return_controls(res):
@@ -68,9 +70,7 @@ def generate_click(job_id: str, active_tab: str, *args):
     while busy:
         time.sleep(0.01)
     from modules.control.run import control_run
-    shared.log.debug(f'Control: tab={active_tab} job={job_id} args={args}')
-    if active_tab not in ['controlnet', 'xs', 'adapter', 'reference', 'lite']:
-        return None, None, None, None, f'Control: Unknown mode: {active_tab} args={args}'
+    shared.log.debug(f'Control: tab="{active_tab}" job={job_id} args={args}')
     shared.state.begin('control')
     progress.add_task_to_queue(job_id)
     with call_queue.queue_lock:
@@ -117,35 +117,7 @@ def get_video(filepath: str):
         return msg
 
 
-def select_mask(image: Image.Image, negative: bool = False):
-    if image is None:
-        return image
-    image_mask = image.convert("L")
-    if negative:
-        image_mask = image_mask.point(lambda x: 255 if x < 4 else 0)
-    else:
-        image_mask = image_mask.point(lambda x: 255 if x > 127 else 0)
-    return image_mask
-
-
-def expand_mask(image: Image.Image, expand: int = 64):
-    import cv2
-    if image is None:
-        return image
-    pil_mask = image.convert("L")
-    np_mask = np.array(pil_mask)
-    erode, dilate, threshold = 3, 8, 4
-    if threshold > 0:
-        _thres, np_mask = cv2.threshold(np_mask, threshold, 255, cv2.THRESH_BINARY_INV) # create mask
-    if erode > 0:
-        np_mask = cv2.erode(np_mask, np.ones((erode, erode), np.uint8), iterations=expand//dilate) # remove noise
-    if dilate > 0:
-        np_mask = cv2.dilate(np_mask, np.ones((dilate, dilate), np.uint8), iterations=expand//dilate) # expand area
-    image_mask = Image.fromarray(np_mask.astype(np.uint8))
-    return image_mask
-
-
-def select_input(input_mode, input_image, selected_init, init_type, input_resize, input_inpaint, input_video, input_batch, input_folder, _mask_blur, mask_overlap):
+def select_input(input_mode, input_image, selected_init, init_type, input_resize, input_inpaint, input_video, input_batch, input_folder):
     global busy, input_source, input_init, input_mask # pylint: disable=global-statement
     busy = True
     if input_mode == 'Select':
@@ -173,14 +145,14 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
     # control inputs
     if isinstance(selected_input, Image.Image): # image via upload -> image
         if input_mode == 'Outpaint':
-            input_mask = expand_mask(image=selected_input, expand=mask_overlap)
+            input_mask = masking.run_mask(input_image=selected_input, input_mask=None, return_type='grayscale')
         input_source = [selected_input]
         input_type = 'PIL.Image'
         shared.log.debug(f'Control input: type={input_type} input={input_source}')
         status = f'Control input | Image | Size {selected_input.width}x{selected_input.height} | Mode {selected_input.mode}'
         res = [gr.Tabs.update(selected='out-gallery'), status]
     elif isinstance(selected_input, dict): # inpaint -> dict image+mask
-        input_mask = select_mask(image=selected_input['mask'], negative=False)
+        input_mask = masking.run_mask(input_image=selected_input['image'], input_mask=selected_input['mask'], return_type='grayscale')
         selected_input = selected_input['image']
         input_source = [selected_input]
         input_type = 'PIL.Image'
@@ -218,7 +190,7 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
     elif init_type == 2: # Separate init image
         if isinstance(selected_init, Image.Image): # image via upload -> image
             if input_mode == 'Outpaint':
-                input_mask = expand_mask(image=selected_init, expand=mask_overlap)
+                input_mask = masking.run_mask(input_image=selected_init, input_mask=None, return_type='grayscale')
             input_source = [selected_init]
             input_init = [selected_init]
             input_type = 'PIL.Image'
@@ -226,7 +198,7 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
             status = f'Control input | Image | Size {selected_init.width}x{selected_init.height} | Mode {selected_init.mode}'
             res = [gr.Tabs.update(selected='out-gallery'), status]
         elif isinstance(selected_init, dict): # inpaint -> dict image+mask
-            input_mask = select_mask(image=selected_init['mask'])
+            input_mask = masking.run_mask(input_image=selected_init['image'], input_mask=selected_init['mask'], return_type='grayscale')
             input_init = selected_init['image']
             input_source = [selected_init]
             input_type = 'PIL.Image'
@@ -296,28 +268,24 @@ def transfer_input(dst):
 
 def create_ui(_blocks: gr.Blocks=None):
     initialize()
+
     if shared.backend == shared.Backend.ORIGINAL:
         with gr.Blocks(analytics_enabled = False) as control_ui:
             pass
         return [(control_ui, 'Control', 'control')]
 
     with gr.Blocks(analytics_enabled = False) as control_ui:
-        prompt, styles, negative, btn_generate, _btn_interrogate, _btn_deepbooru, btn_paste, btn_extra, prompt_counter, btn_prompt_counter, negative_counter, btn_negative_counter  = ui_sections.create_toprow(is_img2img=False, id_part='control')
-        with FormGroup(elem_id="control_interface", equal_height=False):
+        prompt, styles, negative, btn_generate, btn_paste, btn_extra, prompt_counter, btn_prompt_counter, negative_counter, btn_negative_counter  = ui_sections.create_toprow(is_img2img=False, id_part='control')
+        with gr.Group(elem_id="control_interface", equal_height=False):
             with gr.Row(elem_id='control_settings'):
 
                 with gr.Accordion(open=False, label="Input", elem_id="control_input", elem_classes=["small-accordion"]):
-                    with gr.Row():
-                        show_ip = gr.Checkbox(label="Enable IP adapter", value=False, elem_id="control_show_ip")
                     with gr.Row():
                         show_preview = gr.Checkbox(label="Show preview", value=True, elem_id="control_show_preview")
                     with gr.Row():
                         input_type = gr.Radio(label="Input type", choices=['Control only', 'Init image same as control', 'Separate init image'], value='Control only', type='index', elem_id='control_input_type')
                     with gr.Row():
                         denoising_strength = gr.Slider(minimum=0.01, maximum=1.0, step=0.01, label='Denoising strength', value=0.50, elem_id="control_denoising_strength")
-                    with gr.Row():
-                        mask_blur = gr.Slider(minimum=0, maximum=100, step=1, label='Blur', value=8, elem_id="control_mask_blur")
-                        mask_overlap = gr.Slider(minimum=0, maximum=100, step=1, label='Overlap', value=64, elem_id="control_mask_overlap")
 
                 with gr.Accordion(open=False, label="Size", elem_id="control_size", elem_classes=["small-accordion"]):
                     with gr.Tabs():
@@ -331,7 +299,11 @@ def create_ui(_blocks: gr.Blocks=None):
                     steps, sampler_index = ui_sections.create_sampler_and_steps_selection(sd_samplers.samplers, "control")
 
                 batch_count, batch_size = ui_sections.create_batch_inputs('control')
+
                 seed, _reuse_seed, subseed, _reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = ui_sections.create_seed_inputs('control', reuse_visible=False)
+
+                masking.create_segment_ui()
+
                 cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry = ui_sections.create_advanced_inputs('control')
 
                 with gr.Accordion(open=False, label="Video", elem_id="control_video", elem_classes=["small-accordion"]):
@@ -346,12 +318,16 @@ def create_ui(_blocks: gr.Blocks=None):
                         video_interpolate = gr.Slider(label='Interpolate frames', minimum=0, maximum=24, step=1, value=0, visible=False)
                     video_type.change(fn=video_type_change, inputs=[video_type], outputs=[video_duration, video_loop, video_pad, video_interpolate])
 
+                with gr.Accordion(open=False, label="Extensions", elem_id="control_extensions", elem_classes=["small-accordion"]):
+                    input_script_args = scripts.scripts_current.setup_ui(parent='control', accordion=False)
+
+            with gr.Row():
                 override_settings = ui_common.create_override_inputs('control')
 
-            with FormRow(variant='compact', elem_id="control_extra_networks", visible=False) as extra_networks_ui:
+            with gr.Row(variant='compact', elem_id="control_extra_networks", visible=False) as extra_networks_ui:
                 from modules import timer, ui_extra_networks
                 extra_networks_ui = ui_extra_networks.create_ui(extra_networks_ui, btn_extra, 'control', skip_indexing=shared.opts.extra_network_skip_indexing)
-                timer.startup.record('ui-extra-networks')
+                timer.startup.record('ui-en')
 
             with gr.Row(elem_id='control_status'):
                 result_txt = gr.HTML(elem_classes=['control-result'], elem_id='control-result')
@@ -364,7 +340,8 @@ def create_ui(_blocks: gr.Blocks=None):
                             input_mode = gr.Label(value='select', visible=False)
                             input_image = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="editor", height=gr_height, visible=True, image_mode='RGB', elem_id='control_input_select')
                             input_resize = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="select", height=gr_height, visible=False, image_mode='RGB', elem_id='control_input_resize')
-                            input_inpaint = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="sketch", height=gr_height, visible=False, image_mode='RGB', elem_id='control_input_inpaint', brush_radius=64, mask_opacity=0.6)
+                            input_inpaint = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="sketch", height=gr_height, visible=False, image_mode='RGB', elem_id='control_input_inpaint', brush_radius=32, mask_opacity=0.6)
+                            interrogate_clip, interrogate_booru = ui_sections.create_interrogate_buttons('control')
                             with gr.Row():
                                 input_buttons = [gr.Button('Select', visible=True, interactive=False), gr.Button('Inpaint', visible=True, interactive=True), gr.Button('Outpaint', visible=True, interactive=True)]
                         with gr.Tab('Video', id='in-video') as tab_video:
@@ -384,22 +361,11 @@ def create_ui(_blocks: gr.Blocks=None):
                             init_batch = gr.File(label="Input", show_label=False, file_count='multiple', file_types=['image'], type='file', interactive=True, height=gr_height)
                         with gr.Tab('Folder', id='init-folder') as tab_folder_init:
                             init_folder = gr.File(label="Input", show_label=False, file_count='directory', file_types=['image'], type='file', interactive=True, height=gr_height)
-                with gr.Column(scale=9, elem_id='control-init-column', visible=False) as column_ip:
-                    gr.HTML('<span id="control-init-button">IP Adapter</p>')
-                    with gr.Tabs(elem_classes=['control-tabs'], elem_id='control-tab-ip'):
-                        with gr.Tab('Image', id='init-image') as tab_image_init:
-                            ip_image = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="editor", height=gr_height)
-                            with gr.Row():
-                                ip_adapter = gr.Dropdown(label='Adapter', choices=ipadapter.ADAPTERS, value='none')
-                                ip_scale = gr.Slider(label='Scale', minimum=0.0, maximum=1.0, step=0.01, value=0.5)
-                            with gr.Row():
-                                ip_type = gr.Radio(label="Input type", choices=['Init image same as control', 'Separate init image'], value='Init image same as control', type='index', elem_id='control_ip_type')
-                            ip_image.change(fn=lambda x: gr.update(value='Init image same as control' if x is None else 'Separate init image'), inputs=[ip_image], outputs=[ip_type])
                 with gr.Column(scale=9, elem_id='control-output-column', visible=True) as _column_output:
                     gr.HTML('<span id="control-output-button">Output</p>')
                     with gr.Tabs(elem_classes=['control-tabs'], elem_id='control-tab-output') as output_tabs:
                         with gr.Tab('Gallery', id='out-gallery'):
-                            output_gallery, _output_gen_info, _output_html_info, _output_html_info_formatted, _output_html_log = ui_common.create_output_panel("control", preview=True)
+                            output_gallery, _output_gen_info, _output_html_info, _output_html_info_formatted, _output_html_log = ui_common.create_output_panel("control", preview=True, prompt=prompt)
                         with gr.Tab('Image', id='out-image'):
                             output_image = gr.Image(label="Input", show_label=False, type="pil", interactive=False, tool="editor", height=gr_height)
                         with gr.Tab('Video', id='out-video'):
@@ -421,7 +387,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         num_controlnet_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
                     controlnet_ui_units = [] # list of hidable accordions
                     for i in range(max_units):
-                        with gr.Accordion(f'Control unit {i+1}', visible= i < num_controlnet_units.value, elem_classes='control-unit') as unit_ui:
+                        with gr.Accordion(f'ControlNet unit {i+1}', visible= i < num_controlnet_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
                                 enabled_cb = gr.Checkbox(value= i==0, label="")
                                 process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
@@ -457,7 +423,16 @@ def create_ui(_blocks: gr.Blocks=None):
                             units[-1].enabled = True # enable first unit in group
                     num_controlnet_units.change(fn=display_units, inputs=[num_controlnet_units], outputs=controlnet_ui_units)
 
-                with gr.Tab('Adapter') as _tab_adapter:
+                with gr.Tab('IP Adapter') as _tab_ipadapter:
+                    with gr.Row():
+                        with gr.Column():
+                            gr.HTML('<a href="https://github.com/TencentARC/T2I-Adapter">T2I-Adapter</a>')
+                            ip_adapter = gr.Dropdown(label='Adapter', choices=ipadapter.ADAPTERS, value='none')
+                            ip_scale = gr.Slider(label='Scale', minimum=0.0, maximum=1.0, step=0.01, value=0.5)
+                        with gr.Column():
+                            ip_image = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="editor", height=256, width=256)
+
+                with gr.Tab('T2I Adapter') as _tab_t2iadapter:
                     gr.HTML('<a href="https://github.com/TencentARC/T2I-Adapter">T2I-Adapter</a>')
                     with gr.Row():
                         extra_controls = [
@@ -466,7 +441,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         num_adapter_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
                     adapter_ui_units = [] # list of hidable accordions
                     for i in range(max_units):
-                        with gr.Accordion(f'Adapter unit {i+1}', visible= i < num_adapter_units.value, elem_classes='control-unit') as unit_ui:
+                        with gr.Accordion(f'T2I-Adapter unit {i+1}', visible= i < num_adapter_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
                                 enabled_cb = gr.Checkbox(value= i == 0, label="Enabled")
                                 process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
@@ -507,7 +482,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         num_controlnet_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
                     controlnetxs_ui_units = [] # list of hidable accordions
                     for i in range(max_units):
-                        with gr.Accordion(f'Control unit {i+1}', visible= i < num_controlnet_units.value, elem_classes='control-unit') as unit_ui:
+                        with gr.Accordion(f'ControlNet-XS unit {i+1}', visible= i < num_controlnet_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
                                 enabled_cb = gr.Checkbox(value= i==0, label="")
                                 process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
@@ -551,7 +526,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         num_lite_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
                     lite_ui_units = [] # list of hidable accordions
                     for i in range(max_units):
-                        with gr.Accordion(f'Control unit {i+1}', visible= i < num_lite_units.value, elem_classes='control-unit') as unit_ui:
+                        with gr.Accordion(f'Control-LLLite unit {i+1}', visible= i < num_lite_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
                                 enabled_cb = gr.Checkbox(value= i == 0, label="Enabled")
                                 process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
@@ -673,12 +648,13 @@ def create_ui(_blocks: gr.Blocks=None):
                     btn.click(fn=transfer_input, inputs=[btn], outputs=[input_image, input_resize, input_inpaint] + input_buttons)
 
                 show_preview.change(fn=lambda x: gr.update(visible=x), inputs=[show_preview], outputs=[column_preview])
-                show_ip.change(fn=lambda x: gr.update(visible=x), inputs=[show_ip], outputs=[column_ip])
                 input_type.change(fn=lambda x: gr.update(visible=x == 2), inputs=[input_type], outputs=[column_init])
                 btn_prompt_counter.click(fn=call_queue.wrap_queued_call(ui_common.update_token_counter), inputs=[prompt, steps], outputs=[prompt_counter])
                 btn_negative_counter.click(fn=call_queue.wrap_queued_call(ui_common.update_token_counter), inputs=[negative, steps], outputs=[negative_counter])
+                interrogate_clip.click(fn=ui_common.interrogate_clip, inputs=[input_image], outputs=[prompt])
+                interrogate_booru.click(fn=ui_common.interrogate_booru, inputs=[input_image], outputs=[prompt])
 
-                select_fields = [input_mode, input_image, init_image, input_type, input_resize, input_inpaint, input_video, input_batch, input_folder, mask_blur, mask_overlap]
+                select_fields = [input_mode, input_image, init_image, input_type, input_resize, input_inpaint, input_video, input_batch, input_folder]
                 select_output = [output_tabs, result_txt]
                 select_dict = dict(
                     fn=select_input,
@@ -705,9 +681,9 @@ def create_ui(_blocks: gr.Blocks=None):
                     cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry,
                     resize_mode_before, resize_name_before, width_before, height_before, scale_by_before, selected_scale_tab_before,
                     resize_mode_after, resize_name_after, width_after, height_after, scale_by_after, selected_scale_tab_after,
-                    denoising_strength, batch_count, batch_size, mask_blur, mask_overlap,
+                    denoising_strength, batch_count, batch_size,
                     video_skip_frames, video_type, video_duration, video_loop, video_pad, video_interpolate,
-                    ip_adapter, ip_scale, ip_image, ip_type,
+                    ip_adapter, ip_scale, ip_image,
                 ]
                 output_fields = [
                     preview_process,
@@ -719,7 +695,7 @@ def create_ui(_blocks: gr.Blocks=None):
                 control_dict = dict(
                     fn=generate_click,
                     _js="submit_control",
-                    inputs=[tabs_state, tabs_state] + input_fields,
+                    inputs=[tabs_state, tabs_state] + input_fields + input_script_args,
                     outputs=output_fields,
                     show_progress=True,
                 )
@@ -730,6 +706,8 @@ def create_ui(_blocks: gr.Blocks=None):
                 generation_parameters_copypaste.add_paste_fields("control", input_image, paste_fields, override_settings)
                 bindings = generation_parameters_copypaste.ParamBinding(paste_button=btn_paste, tabname="control", source_text_component=prompt, source_image_component=output_gallery)
                 generation_parameters_copypaste.register_paste_params_button(bindings)
+                masking.bind_controls(input_inpaint, preview_process)
+
 
                 if os.environ.get('SD_CONTROL_DEBUG', None) is not None: # debug only
                     from modules.control.test import test_processors, test_controlnets, test_adapters, test_xs, test_lite

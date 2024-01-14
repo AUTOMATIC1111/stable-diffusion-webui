@@ -33,7 +33,7 @@
 
 html { font-size: var(--font-size); }
 body, button, input, select, textarea { font-family: var(--font);}
-button { font-size: 1.2rem; max-width: 400px; }
+button { max-width: 400px; }
 img { background-color: var(--background-color); }
 input[type=range] { height: var(--line-sm); appearance: none; margin-top: 0; min-width: 160px; background-color: var(--background-color); width: 100%; background: transparent; }
 input[type=range]::-webkit-slider-runnable-track, input[type=range]::-moz-range-track { width: 100%; height: 6px; cursor: pointer; background: var(--primary-400); border-radius: var(--radius-lg); border: 0px solid #222222; }
@@ -70,7 +70,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .py-6 { padding-bottom: 0; }
 .tabs { background-color: var(--background-color); }
 .block.token-counter span { background-color: var(--input-background-fill) !important; box-shadow: 2px 2px 2px #111; border: none !important; font-size: 0.8rem; }
-.tab-nav { zoom: 120%; margin-top: 10px; margin-bottom: 10px; border-bottom: 2px solid var(--highlight-color) !important; padding-bottom: 2px; }
+.tab-nav { zoom: 110%; margin-top: 10px; margin-bottom: 10px; border-bottom: 2px solid var(--highlight-color) !important; padding-bottom: 2px; }
 div.tab-nav button.selected {background-color: var(--button-primary-background-fill);}
 #settings div.tab-nav button.selected {background-color: var(--background-color); color: var(--primary-800); font-weight: bold;}
 .label-wrap { background-color: #292b30; /* extension tab color*/ padding: 16px 8px 8px 8px; border-radius: var(--radius-lg); padding-left: 8px !important; }
@@ -95,7 +95,7 @@ button.selected {background: var(--button-primary-background-fill);}
 .image-buttons { gap: 10px !important; justify-content: center; }
 .image-buttons > button { max-width: 160px; }
 .tooltip { background: var(--primary-800); color: white; border: none; border-radius: var(--radius-lg) }
-#system_row > button, #settings_row > button, #config_row > button { max-width: 190px; }
+#system_row > button, #settings_row > button, #config_row > button { max-width: 10em; }
 
 /* gradio elements overrides */
 #div.gradio-container { overflow-x: hidden; }

@@ -61,15 +61,23 @@ function getCardDetails(...args) {
 }
 
 function readCardTags(el, tags) {
+  const replaceOutsideBrackets = (input, target, replacement) => input.split(/(<[^>]*>|\{[^}]*\})/g).map((part, i) => {
+    if (i % 2 === 0) return part.split(target).join(replacement); // Only replace in the parts that are not inside brackets (which are at even indices)
+    return part;
+  }).join('');
+
   const clickTag = (e, tag) => {
     e.preventDefault();
     e.stopPropagation();
     const textarea = activePromptTextarea[getENActiveTab()];
-    if (textarea.value.indexOf(` ${tag}`) !== -1) textarea.value = textarea.value.replace(` ${tag}`, '');
-    else if (textarea.value.indexOf(`${tag} `) !== -1) textarea.value = textarea.value.replace(` ${tag} `, '');
-    else textarea.value += ` ${tag}`;
+    let new_prompt = textarea.value;
+    new_prompt = replaceOutsideBrackets(new_prompt, ` ${tag}`, ''); // try to remove tag
+    new_prompt = replaceOutsideBrackets(new_prompt, `${tag} `, '');
+    if (new_prompt === textarea.value) new_prompt += ` ${tag}`; // if not removed, then append it
+    textarea.value = new_prompt;
     updateInput(textarea);
   };
+
   if (tags.length === 0) return;
   const cardTags = tags.split('|');
   if (!cardTags || cardTags.length === 0) return;
@@ -119,8 +127,12 @@ async function filterExtraNetworksForTab(searchTerm) {
       if (searchTerm === '') {
         elem.style.display = '';
       } else {
-        let text = elem.dataset.search.toLowerCase();
-        text = text.toLowerCase().replace('models--', 'Diffusers').replace('\\', '/');
+        let text = '';
+        if (elem.dataset.filename) text += `${elem.dataset.filename} `;
+        if (elem.dataset.name) text += `${elem.dataset.name} `;
+        if (elem.dataset.title) text += `${elem.dataset.title} `;
+        if (elem.dataset.tags) text += `${elem.dataset.title} `;
+        text = text.toLowerCase().replace('models--', 'diffusers').replaceAll('\\', '/');
         if (text.indexOf(searchTerm) === -1) {
           elem.style.display = 'none';
         } else {
@@ -131,7 +143,7 @@ async function filterExtraNetworksForTab(searchTerm) {
     });
   }
   const t1 = performance.now();
-  if (found > 0) log(`filterExtraNetworks: text=${searchTerm} items=${items} match=${found} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
+  if (searchTerm !== '') log(`filterExtraNetworks: text=${searchTerm} items=${items} match=${found} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
   else log(`filterExtraNetworks: text=all items=${items} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
 }
 
@@ -180,8 +192,8 @@ function sortExtraNetworks() {
     if (num === 0) return 'sort: no cards';
     cards.sort((a, b) => { // eslint-disable-line no-loop-func
       switch (sortVal) {
-        case 0: return a.dataset.search ? a.dataset.search.localeCompare(b.dataset.search) : 0;
-        case 1: return b.dataset.search ? b.dataset.search.localeCompare(a.dataset.search) : 0;
+        case 0: return a.dataset.name ? a.dataset.name.localeCompare(b.dataset.name) : 0;
+        case 1: return b.dataset.name ? b.dataset.name.localeCompare(a.dataset.name) : 0;
         case 2: return a.dataset.mtime && !isNaN(a.dataset.mtime) ? parseFloat(b.dataset.mtime) - parseFloat(a.dataset.mtime) : 0;
         case 3: return b.dataset.mtime && !isNaN(b.dataset.mtime) ? parseFloat(a.dataset.mtime) - parseFloat(b.dataset.mtime) : 0;
         case 4: return a.dataset.size && !isNaN(a.dataset.size) ? parseFloat(b.dataset.size) - parseFloat(a.dataset.size) : 0;
@@ -398,7 +410,7 @@ function setupExtraNetworksForTab(tabname) {
   intersectionObserver.observe(en); // monitor visibility of
 }
 
-function setupExtraNetworks() {
+async function setupExtraNetworks() {
   setupExtraNetworksForTab('txt2img');
   setupExtraNetworksForTab('img2img');
   setupExtraNetworksForTab('control');

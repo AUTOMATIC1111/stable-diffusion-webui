@@ -250,7 +250,7 @@ class UiLoadsave:
         with gr.Row(elem_id="config_row"):
             self.ui_defaults_apply = gr.Button(value='Set new defaults', elem_id="ui_defaults_apply", variant="primary")
             self.ui_defaults_submenu = gr.Button(value='Set menu states', elem_id="ui_submenu_apply", variant="primary")
-            self.ui_defaults_restore = gr.Button(value='Restore system defaults', elem_id="ui_defaults_restore", variant="primary")
+            self.ui_defaults_restore = gr.Button(value='Restore defaults', elem_id="ui_defaults_restore", variant="primary")
             self.ui_defaults_view = gr.Button(value='Refresh changes', elem_id="ui_defaults_view", variant="secondary")
         self.ui_defaults_review = gr.HTML("", elem_id="ui_defaults_review")
 

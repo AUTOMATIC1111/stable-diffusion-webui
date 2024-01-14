@@ -5,19 +5,22 @@ helper methods that creates HTTP session with managed connection pool
 provides async HTTP get/post methods and several helper methods
 """
 
+import io
 import os
 import sys
 import ssl
+import base64
 import asyncio
 import logging
 import aiohttp
 import requests
 import urllib3
+from PIL import Image
 from util import Map, log
 from rich import print # pylint: disable=redefined-builtin
 
 
-sd_url = os.environ.get('SDAPI_URL', "http://127.0.0.1:7860") # automatic1111 api url root
+sd_url = os.environ.get('SDAPI_URL', "http://127.0.0.1:7860") # api url root
 sd_username = os.environ.get('SDAPI_USR', None)
 sd_password = os.environ.get('SDAPI_PWD', None)
 
@@ -157,7 +160,12 @@ def interruptsync():
 
 
 async def progress():
-    res = await get('/sdapi/v1/progress?skip_current_image=true')
+    res = await get('/sdapi/v1/progress?skip_current_image=false')
+    try:
+        if res is not None and res.get('current_image', None) is not None:
+            res.current_image = Image.open(io.BytesIO(base64.b64decode(res['current_image'])))
+    except Exception:
+        pass
     log.debug({ 'progress': res })
     return res
 

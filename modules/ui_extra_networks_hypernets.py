@@ -21,7 +21,6 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
                     "preview": self.find_preview(path),
                     "description": self.find_description(path),
                     "info": self.find_info(path),
-                    "search_term": self.search_terms_from_path(name),
                     "prompt": json.dumps(f"<hypernet:{os.path.basename(name)}:{shared.opts.extra_networks_default_multiplier}>"),
                     "local_preview": f"{os.path.splitext(path)[0]}.{shared.opts.samples_format}",
                     "mtime": os.path.getmtime(path),

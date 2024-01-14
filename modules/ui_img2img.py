@@ -3,7 +3,7 @@ from PIL import Image
 import gradio as gr
 import numpy as np
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call
-from modules import shared, ui_common, ui_sections, generation_parameters_copypaste
+from modules import timer, shared, ui_common, ui_sections, generation_parameters_copypaste
 from modules.ui_components import FormRow, FormGroup
 
 
@@ -20,7 +20,7 @@ def process_interrogate(interrogation_function, mode, ii_input_files, ii_input_d
             if not os.path.isdir(ii_input_dir):
                 shared.log.error(f"Interrogate: Input directory not found: {ii_input_dir}")
                 return [gr.update(), None]
-            images = shared.listdir(ii_input_dir)
+            images = os.listdir(ii_input_dir)
         if ii_output_dir != "":
             os.makedirs(ii_output_dir, exist_ok=True)
         else:
@@ -33,31 +33,19 @@ def process_interrogate(interrogation_function, mode, ii_input_files, ii_input_d
     return [gr.update(), None]
 
 
-def interrogate(image):
-    if image is None:
-        shared.log.error("Interrogate: no image selected")
-        return gr.update()
-    prompt = shared.interrogator.interrogate(image.convert("RGB"))
-    return gr.update() if prompt is None else prompt
-
-
-def interrogate_deepbooru(image):
-    from modules import deepbooru
-    prompt = deepbooru.model.tag(image)
-    return gr.update() if prompt is None else prompt
-
-
 def create_ui():
+    shared.log.debug('UI initialize: img2img')
     import modules.img2img # pylint: disable=redefined-outer-name
     modules.scripts.scripts_current = modules.scripts.scripts_img2img
     modules.scripts.scripts_img2img.initialize_scripts(is_img2img=True)
     with gr.Blocks(analytics_enabled=False) as _img2img_interface:
-        img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, submit, img2img_interrogate, img2img_deepbooru, img2img_paste, img2img_extra_networks_button, img2img_token_counter, img2img_token_button, img2img_negative_token_counter, img2img_negative_token_button = ui_sections.create_toprow(is_img2img=True, id_part="img2img")
+        img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, submit, img2img_paste, img2img_extra_networks_button, img2img_token_counter, img2img_token_button, img2img_negative_token_counter, img2img_negative_token_button = ui_sections.create_toprow(is_img2img=True, id_part="img2img")
         img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="binary", visible=False)
 
         with FormRow(variant='compact', elem_id="img2img_extra_networks", visible=False) as extra_networks_ui:
             from modules import ui_extra_networks
             extra_networks_ui_img2img = ui_extra_networks.create_ui(extra_networks_ui, img2img_extra_networks_button, 'img2img', skip_indexing=shared.opts.extra_network_skip_indexing)
+            timer.startup.record('ui-en')
 
         with FormRow(elem_id="img2img_interface", equal_height=False):
             with gr.Column(variant='compact', elem_id="img2img_settings"):
@@ -69,7 +57,7 @@ def create_ui():
 
                 def add_copy_image_controls(tab_name, elem):
                     with gr.Row(variant="compact", elem_id=f"img2img_copy_to_{tab_name}"):
-                        for title, name in zip(['➠ Image', '➠ Sketch', '➠ Inpaint', '➠ Inpaint sketch'], ['img2img', 'sketch', 'inpaint', 'inpaint_sketch']):
+                        for title, name in zip(['➠ Image', '➠ Sketch', '➠ Inpaint', '➠ Composite'], ['img2img', 'sketch', 'inpaint', 'inpaint_sketch']):
                             if name == tab_name:
                                 gr.Button(title, interactive=False)
                                 copy_image_destinations[name] = elem
@@ -81,6 +69,7 @@ def create_ui():
                     img2img_selected_tab = gr.State(0) # pylint: disable=abstract-class-instantiated
                     with gr.TabItem('Image', id='img2img', elem_id="img2img_img2img_tab") as tab_img2img:
                         init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA", height=512)
+                        interrogate_clip, interrogate_booru = ui_sections.create_interrogate_buttons('img2img')
                         add_copy_image_controls('img2img', init_img)
 
                     with gr.TabItem('Sketch', id='img2img_sketch', elem_id="img2img_img2img_sketch_tab") as tab_sketch:
@@ -91,7 +80,7 @@ def create_ui():
                         init_img_with_mask = gr.Image(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA", height=512)
                         add_copy_image_controls('inpaint', init_img_with_mask)
 
-                    with gr.TabItem('Inpaint sketch', id='inpaint_sketch', elem_id="img2img_inpaint_sketch_tab") as tab_inpaint_color:
+                    with gr.TabItem('Composite', id='inpaint_sketch', elem_id="img2img_inpaint_sketch_tab") as tab_inpaint_color:
                         inpaint_color_sketch = gr.Image(label="Color sketch inpainting", show_label=False, elem_id="inpaint_sketch", source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA", height=512)
                         inpaint_color_sketch_orig = gr.State(None) # pylint: disable=abstract-class-instantiated
                         add_copy_image_controls('inpaint_sketch', inpaint_color_sketch)
@@ -106,7 +95,7 @@ def create_ui():
 
                         inpaint_color_sketch.change(update_orig, [inpaint_color_sketch, inpaint_color_sketch_orig], inpaint_color_sketch_orig)
 
-                    with gr.TabItem('Inpaint upload', id='inpaint_upload', elem_id="img2img_inpaint_upload_tab") as tab_inpaint_upload:
+                    with gr.TabItem('Upload', id='inpaint_upload', elem_id="img2img_inpaint_upload_tab") as tab_inpaint_upload:
                         init_img_inpaint = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil", elem_id="img_inpaint_base")
                         init_mask_inpaint = gr.Image(label="Mask", source="upload", interactive=True, type="pil", elem_id="img_inpaint_mask")
 
@@ -147,18 +136,13 @@ def create_ui():
                     # with FormGroup(elem_id="inpaint_controls", visible=False) as inpaint_controls:
                     with gr.Accordion(open=True, label="Mask", elem_classes=["small-accordion"], elem_id="img2img_mask_group") as inpaint_controls:
                         with FormRow():
-                            mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
-                            mask_alpha = gr.Slider(label="Mask transparency", visible=False, elem_id="img2img_mask_alpha")
+                            mask_blur = gr.Slider(label='Blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
+                            inpaint_full_res_padding = gr.Slider(label='Padding', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
+                            mask_alpha = gr.Slider(label="Alpha", minimum=0.0, maximum=1.0, step=0.05, value=1.0, elem_id="img2img_mask_alpha")
                         with FormRow():
-                            with gr.Column():
-                                inpainting_mask_invert = gr.Radio(label='Mask mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
-                            with gr.Column():
-                                inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'noise', 'nothing'], value='original', type="index", elem_id="img2img_inpainting_fill")
-                        with FormRow():
-                            with gr.Column():
-                                inpaint_full_res = gr.Radio(label="Inpaint area", choices=["Whole picture", "Only masked"], type="index", value="Whole picture", elem_id="img2img_inpaint_full_res")
-                            with gr.Column():
-                                inpaint_full_res_padding = gr.Slider(label='Masked padding', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
+                            inpainting_mask_invert = gr.Radio(label='Mode', choices=['masked', 'inverse'], value='masked', type="index", elem_id="img2img_mask_mode")
+                            inpaint_full_res = gr.Radio(label="Inpaint area", choices=["full", "masked"], type="index", value="full", elem_id="img2img_inpaint_full_res")
+                            inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'noise', 'nothing'], value='original', type="index", elem_id="img2img_inpainting_fill", visible=shared.backend == shared.Backend.ORIGINAL)
 
                         def select_img2img_tab(tab):
                             return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3)
@@ -169,9 +153,9 @@ def create_ui():
                 override_settings = ui_common.create_override_inputs('img2img')
 
                 with FormGroup(elem_id="img2img_script_container"):
-                    img2img_script_inputs = modules.scripts.scripts_img2img.setup_ui()
+                    img2img_script_inputs = modules.scripts.scripts_img2img.setup_ui(parent='img2img', accordion=True)
 
-            img2img_gallery, img2img_generation_info, img2img_html_info, _img2img_html_info_formatted, img2img_html_log = ui_common.create_output_panel("img2img")
+            img2img_gallery, img2img_generation_info, img2img_html_info, _img2img_html_info_formatted, img2img_html_log = ui_common.create_output_panel("img2img", prompt=None)
 
             ui_common.connect_reuse_seed(seed, reuse_seed, img2img_generation_info, is_subseed=False)
             ui_common.connect_reuse_seed(subseed, reuse_subseed, img2img_generation_info, is_subseed=True)
@@ -241,8 +225,8 @@ def create_ui():
                 ],
                 outputs=[img2img_prompt, dummy_component],
             )
-            img2img_interrogate.click(fn=lambda *args: process_interrogate(interrogate, *args), **interrogate_args)
-            img2img_deepbooru.click(fn=lambda *args: process_interrogate(interrogate_deepbooru, *args), **interrogate_args)
+            interrogate_clip.click(fn=lambda *args: process_interrogate(ui_common.interrogate_clip, *args), **interrogate_args)
+            interrogate_booru.click(fn=lambda *args: process_interrogate(ui_common.interrogate_booru, *args), **interrogate_args)
 
             img2img_token_button.click(fn=wrap_queued_call(ui_common.update_token_counter), inputs=[img2img_prompt, steps], outputs=[img2img_token_counter])
             img2img_negative_token_button.click(fn=wrap_queued_call(ui_common.update_token_counter), inputs=[img2img_negative_prompt, steps], outputs=[img2img_negative_token_counter])

@@ -105,7 +105,7 @@
   {"id":"","label":"User interface defaults","localized":"유저 인터페이스 기본값","hint":"Review and set current values as default values for the user interface"},
   {"id":"","label":"View changes","localized":"변경 사항 확인","hint":"기본값과 현재 값 간의 변경 사항을 확인한다."},
   {"id":"","label":"Set new defaults","localized":"새 기본값 설정","hint":"현재 UI 설정을 기본값으로 저장한다."},
-  {"id":"","label":"Restore system defaults","localized":"시스템 기본값 복원","hint":"유저 인터페이스 기본값을 복원한다."}
+  {"id":"","label":"Restore defaults","localized":"시스템 기본값 복원","hint":"유저 인터페이스 기본값을 복원한다."}
 ],
 "txt2img tab": [
   {"id":"","label":"Sampling method","localized":"샘플링 방법(샘플러)","hint":"이미지 생성 시 사용할 알고리즘을 지정한다."},

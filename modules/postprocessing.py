@@ -17,6 +17,7 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
     image_ext = []
     outputs = []
     params = {}
+    infotext = ''
     if extras_mode == 1:
         for img in image_folder:
             if isinstance(img, Image.Image):
@@ -38,16 +39,17 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
     elif extras_mode == 2:
         assert not shared.cmd_opts.hide_ui_dir_config, '--hide-ui-dir-config option must be disabled'
         assert input_dir, 'input directory not selected'
-        image_list = shared.listdir(input_dir)
+        image_list = os.listdir(input_dir)
         for filename in image_list:
+            fn = os.path.join(input_dir, filename)
             try:
-                image = Image.open(filename)
+                image = Image.open(fn)
             except Exception as e:
-                shared.log.error(f'Failed to open image: file="{filename}" {e}')
+                shared.log.error(f'Failed to open image: file="{fn}" {e}')
                 continue
-            image_fullnames.append(filename)
+            image_fullnames.append(fn)
             image_data.append(image)
-            image_names.append(filename)
+            image_names.append(fn)
             image_ext.append(None)
         shared.log.debug(f'Process: mode=folder inputs={input_dir} files={len(image_list)} images={len(image_data)}')
     else:
@@ -70,10 +72,6 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
         shared.state.textinfo = name
         pp = scripts_postprocessing.PostprocessedImage(image.convert("RGB"))
         scripts.scripts_postproc.run(pp, args)
-        if opts.use_original_name_batch and name is not None:
-            basename = os.path.splitext(os.path.basename(name))[0]
-        else:
-            basename = ''
         geninfo, items = images.read_info_from_image(image)
         params = generation_parameters_copypaste.parse_generation_parameters(geninfo)
         for k, v in items.items():
@@ -84,7 +82,11 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
         pp.image.info["postprocessing"] = infotext
         processed_images.append(pp.image)
         if save_output:
-            images.save_image(pp.image, path=outpath, basename=basename, seed=None, prompt=None, extension=ext or opts.samples_format, info=infotext, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=pp.image.info, forced_filename=None)
+            if opts.use_original_name_batch and name is not None:
+                forced_filename = os.path.splitext(os.path.basename(name))[0]
+                images.save_image(pp.image, path=outpath, extension=ext or opts.samples_format, info=infotext, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=pp.image.info, forced_filename=forced_filename)
+            else:
+                images.save_image(pp.image, path=outpath, extension=ext or opts.samples_format, info=infotext, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=pp.image.info)
         if extras_mode != 2 or show_extras_results:
             outputs.append(pp.image)
         image.close()

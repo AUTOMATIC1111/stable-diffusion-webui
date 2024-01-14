@@ -65,14 +65,19 @@ def setup_middleware(app: FastAPI, cmd_opts):
     def handle_exception(req: Request, e: Exception):
         err = {
             "error": type(e).__name__,
+            "code": vars(e).get('status_code', 500),
             "detail": vars(e).get('detail', ''),
             "body": vars(e).get('body', ''),
             "errors": str(e),
         }
+        log.error(f"API error: {req.method}: {req.url} {err}")
         if not isinstance(e, HTTPException) and err['error'] != 'TypeError': # do not print backtrace on known httpexceptions
-            log.error(f"API error: {req.method}: {req.url} {err}")
             errors.display(e, 'HTTP API', [anyio, fastapi, uvicorn, starlette])
-        return JSONResponse(status_code=vars(e).get('status_code', 500), content=jsonable_encoder(err))
+        elif err['code'] == 404 or err['code'] == 401:
+            pass
+        else:
+            log.debug(e, exc_info=True) # print stack trace
+        return JSONResponse(status_code=err['code'], content=jsonable_encoder(err))
 
     @app.exception_handler(HTTPException)
     async def http_exception_handler(req: Request, e: HTTPException):

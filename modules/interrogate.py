@@ -5,6 +5,7 @@ from pathlib import Path
 import re
 import torch
 import torch.hub # pylint: disable=ungrouped-imports
+from PIL import Image
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 from modules import devices, paths, shared, lowvram, modelloader, errors
@@ -166,6 +167,11 @@ class InterrogateModels:
                 lowvram.send_everything_to_cpu()
                 devices.torch_gc()
             self.load()
+            if isinstance(pil_image, list):
+                pil_image = pil_image[0]
+            if isinstance(pil_image, dict) and 'name' in pil_image:
+                pil_image = Image.open(pil_image['name'])
+            pil_image = pil_image.convert("RGB")
             caption = self.generate_caption(pil_image)
             self.send_blip_to_ram()
             devices.torch_gc()

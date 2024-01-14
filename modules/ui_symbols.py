@@ -21,6 +21,10 @@ info = 'ℹ' # noqa
 reset = '🔄'
 upload = '⬆️'
 preview = '🔍'
+mark_diag = '※'
+mark_flag = '⁜'
+int_clip = '✎'
+int_blip = '✐'
 """
 refresh = '🔄'
 close = '🛗'

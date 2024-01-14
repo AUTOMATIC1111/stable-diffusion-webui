@@ -2,15 +2,12 @@ import os
 import base64
 from io import BytesIO
 import gradio as gr
-import open_clip
 import torch
 from PIL import Image
 from pydantic import BaseModel, Field # pylint: disable=no-name-in-module
-from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
-from clip_interrogator import Config, Interrogator
 import modules.generation_parameters_copypaste as parameters_copypaste
-from modules import devices, lowvram, shared, paths
+from modules import devices, lowvram, shared, paths, ui_common
 
 
 ci = None
@@ -33,6 +30,7 @@ class BatchWriter:
 
 
 def load(clip_model_name):
+    from clip_interrogator import Config, Interrogator
     global ci # pylint: disable=global-statement
     if ci is None:
         config = Config(device=devices.get_optimal_device(), cache_path=os.path.join(paths.models_path, 'Interrogator'), clip_model_name=clip_model_name, quiet=True)
@@ -109,6 +107,7 @@ def image_to_prompt(image, mode, clip_model_name):
 
 
 def get_models():
+    import open_clip
     return ['/'.join(x) for x in open_clip.list_pretrained()]
 
 
@@ -119,7 +118,7 @@ def batch_process(batch_files, batch_folder, batch_str, mode, clip_model, write)
     if batch_folder is not None:
         files += [f.name for f in batch_folder]
     if batch_str is not None and len(batch_str) > 0 and os.path.exists(batch_str) and os.path.isdir(batch_str):
-        files += [os.path.join(batch_str, f) for f in shared.listdir(batch_str) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))]
+        files += [os.path.join(batch_str, f) for f in os.listdir(batch_str) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))]
     if len(files) == 0:
         shared.log.error('Interrogate batch no images')
         return ''
@@ -213,7 +212,9 @@ def create_ui():
                     batch_btn = gr.Button("Interrogate", variant='primary')
         with gr.Column():
             with gr.Row():
-                clip_model = gr.Dropdown(get_models(), value='ViT-L-14/openai', label='CLIP Model')
+                # clip_model = gr.Dropdown(get_models(), value='ViT-L-14/openai', label='CLIP Model')
+                clip_model = gr.Dropdown([], value='ViT-L-14/openai', label='CLIP Model')
+                ui_common.create_refresh_button(clip_model, get_models, lambda: {"choices": get_models()}, 'refresh_interrogate_models')
             with gr.Row():
                 mode = gr.Radio(['best', 'fast', 'classic', 'caption', 'negative'], label='Mode', value='best')
         interrogate_btn.click(image_to_prompt, inputs=[image, mode, clip_model], outputs=prompt)
@@ -232,7 +233,7 @@ def decode_base64_to_image(encoding):
         raise HTTPException(status_code=500, detail="Invalid encoded image") from e
 
 
-def mount_interrogator_api(_: gr.Blocks, app: FastAPI): # TODO redesign interrogator api
+def mount_interrogator_api(_: gr.Blocks, app): # TODO redesign interrogator api
 
     class InterrogatorAnalyzeRequest(BaseModel):
         image: str = Field(default="", title="Image", description="Image to work on, must be a Base64 string containing the image's data.")
@@ -243,6 +244,7 @@ def mount_interrogator_api(_: gr.Blocks, app: FastAPI): # TODO redesign interrog
 
     @app.get("/interrogator/models")
     async def api_get_models():
+        import open_clip
         return ["/".join(x) for x in open_clip.list_pretrained()]
 
     @app.post("/interrogator/prompt")
