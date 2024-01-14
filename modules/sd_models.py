@@ -797,9 +797,14 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             err1 = None
             err2 = None
             err3 = None
+            if 'ONNX' in shared.opts.diffusers_pipeline:
+                pipeline = shared_items.get_pipelines().get(shared.opts.diffusers_pipeline, None)
+                if pipeline is not None:
+                    sd_model = pipeline.from_pretrained(checkpoint_info.path)
             try: # try autopipeline first, best choice but not all pipelines are available
-                sd_model = diffusers.AutoPipelineForText2Image.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
-                sd_model.model_type = sd_model.__class__.__name__
+                if sd_model is None:
+                    sd_model = diffusers.AutoPipelineForText2Image.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+                    sd_model.model_type = sd_model.__class__.__name__
             except Exception as e:
                 err1 = e
                 # shared.log.error(f'AutoPipeline: {e}')
