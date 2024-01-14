@@ -1,7 +1,7 @@
 import os
 import torch
 import diffusers
-from typing import Type, Callable, Dict, Any
+from typing import Type, Callable, TypeVar, Dict, Any
 from transformers.models.clip.modeling_clip import CLIPTextModel, CLIPTextModelWithProjection
 
 
@@ -35,7 +35,10 @@ class ENVStore:
     def __delattr__(self, name: str) -> None:
         if name not in self.__class__.__annotations__:
             return
-        os.environ.pop(f"SDNEXT_OLIVE_{name}")
+        key = f"SDNEXT_OLIVE_{name}"
+        if key not in os.environ:
+            return
+        os.environ.pop(key)
 
 
 class OliveOptimizerConfig(ENVStore):
@@ -43,8 +46,8 @@ class OliveOptimizerConfig(ENVStore):
 
     is_sdxl: bool
 
-    vae_id: str
-    vae_subfolder: str
+    vae: str
+    vae_sdxl_fp16_fix: bool
 
     width: int
     height: int
@@ -80,6 +83,15 @@ def get_loader_arguments():
     return {}
 
 
+T = TypeVar("T")
+def from_pretrained(cls: Type[T], pretrained_model_name_or_path: os.PathLike, *args, **kwargs) -> T:
+    pretrained_model_name_or_path = str(pretrained_model_name_or_path)
+    if pretrained_model_name_or_path.endswith(".onnx"):
+        cls = diffusers.OnnxRuntimeModel
+        pretrained_model_name_or_path = os.path.dirname(pretrained_model_name_or_path)
+    return cls.from_pretrained(pretrained_model_name_or_path, *args, **kwargs, **get_loader_arguments())
+
+
 # -------------------------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
@@ -111,7 +123,7 @@ def text_encoder_inputs(_, torch_dtype):
 
 
 def text_encoder_load(model_name):
-    model = CLIPTextModel.from_pretrained(model_name, subfolder="text_encoder", **get_loader_arguments())
+    model = from_pretrained(CLIPTextModel, model_name, subfolder="text_encoder")
     return model
 
 
@@ -136,7 +148,7 @@ def text_encoder_2_inputs(_, torch_dtype):
 
 
 def text_encoder_2_load(model_name):
-    model = CLIPTextModelWithProjection.from_pretrained(model_name, subfolder="text_encoder_2", **get_loader_arguments())
+    model = from_pretrained(CLIPTextModelWithProjection, model_name, subfolder="text_encoder_2")
     return model
 
 
@@ -199,7 +211,7 @@ def unet_inputs(_, torch_dtype, is_conversion_inputs=False):
 
 
 def unet_load(model_name):
-    model = diffusers.UNet2DConditionModel.from_pretrained(model_name, subfolder="unet", **get_loader_arguments())
+    model = from_pretrained(diffusers.UNet2DConditionModel, model_name, subfolder="unet")
     return model
 
 
@@ -225,11 +237,18 @@ def vae_encoder_inputs(_, torch_dtype):
 
 def vae_encoder_load(model_name):
     subfolder = "vae_encoder" if os.path.isdir(os.path.join(model_name, "vae_encoder")) else "vae"
-    if config.vae_id is not None:
-        model_name = config.vae_id
-        subfolder = config.vae_subfolder
-    model = diffusers.AutoencoderKL.from_pretrained(model_name, subfolder=subfolder, **get_loader_arguments())
+
+    if config.vae_sdxl_fp16_fix:
+        model_name = "madebyollin/sdxl-vae-fp16-fix"
+        subfolder = ""
+
+    if config.vae is None:
+        model = from_pretrained(diffusers.AutoencoderKL, model_name, subfolder=subfolder)
+    else:
+        model = diffusers.AutoencoderKL.from_single_file(config.vae)
+
     model.forward = lambda sample, return_dict: model.encode(sample, return_dict)[0].sample()
+
     return model
 
 
@@ -255,11 +274,18 @@ def vae_decoder_inputs(_, torch_dtype):
 
 def vae_decoder_load(model_name):
     subfolder = "vae_decoder" if os.path.isdir(os.path.join(model_name, "vae_decoder")) else "vae"
-    if config.vae_id is not None:
-        model_name = config.vae_id
-        subfolder = config.vae_subfolder
-    model = diffusers.AutoencoderKL.from_pretrained(model_name, subfolder=subfolder, **get_loader_arguments())
+
+    if config.vae_sdxl_fp16_fix:
+        model_name = "madebyollin/sdxl-vae-fp16-fix"
+        subfolder = ""
+
+    if config.vae is None:
+        model = from_pretrained(diffusers.AutoencoderKL, model_name, subfolder=subfolder)
+    else:
+        model = diffusers.AutoencoderKL.from_single_file(config.vae)
+
     model.forward = model.decode
+
     return model
 
 

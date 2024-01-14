@@ -15,13 +15,18 @@ from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 from diffusers.image_processor import VaeImageProcessor, PipelineImageInput
 from installer import log
 from modules import shared
-from modules.paths import sd_configs_path
+from modules.paths import sd_configs_path, models_path
 from modules.sd_models import CheckpointInfo
 from modules.processing import StableDiffusionProcessing
 from modules.olive import config
 from modules.onnx import DynamicSessionOptions, OnnxFakeModule, submodels_sd, submodels_sdxl, submodels_sdxl_refiner
 from modules.onnx_utils import extract_device, move_inference_session, check_diffusers_cache, check_pipeline_sdxl, check_cache_onnx, load_init_dict, load_submodel, load_submodels, patch_kwargs, load_pipeline, get_base_constructor
 from modules.onnx_ep import ExecutionProvider, EP_TO_NAME, get_provider
+
+
+SUBMODELS_SD = ("text_encoder", "unet", "vae_encoder", "vae_decoder",)
+SUBMODELS_SDXL = ("text_encoder", "text_encoder_2", "unet", "vae_encoder", "vae_decoder",)
+SUBMODELS_SDXL_REFINER = ("text_encoder_2", "unet", "vae_encoder", "vae_decoder",)
 
 
 class OnnxPipelineBase(OnnxFakeModule, diffusers.DiffusionPipeline, metaclass=ABCMeta):
@@ -40,7 +45,7 @@ class OnnxPipelineBase(OnnxFakeModule, diffusers.DiffusionPipeline, metaclass=AB
         expected_modules, _ = self._get_signature_keys(self)
         for name in expected_modules:
             if not hasattr(self, name):
-                log.warn(f"Pipeline does not have module '{name}'.")
+                log.warning(f"Pipeline does not have module '{name}'.")
                 continue
 
             module = getattr(self, name)
@@ -89,7 +94,6 @@ class OnnxRawPipeline(OnnxPipelineBase):
     original_filename: str
 
     constructor: Type[OnnxPipelineBase]
-    submodels: List[str]
     init_dict: Dict[str, Tuple[str]] = {}
 
     scheduler: Any = None # for Img2Img
@@ -116,8 +120,8 @@ class OnnxRawPipeline(OnnxPipelineBase):
                 del pipeline
                 self.init_dict = load_init_dict(constructor, path)
             except Exception:
-                log.error(f'Failed to load ONNX pipeline: is_sdxl={self._is_sdxl}')
-                log.warn('Model load failed. Please check Diffusers pipeline in Compute Settings.')
+                log.error(f'ONNX: Failed to load ONNX pipeline: is_sdxl={self._is_sdxl}')
+                log.warning('ONNX: You cannot load this model using the pipeline you selected. Please check Diffusers pipeline in Compute Settings.')
                 return
         if "vae" in self.init_dict:
             del self.init_dict["vae"]
@@ -134,7 +138,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
         pipeline.scheduler = self.scheduler
         return pipeline
 
-    def convert(self, in_dir: os.PathLike):
+    def convert(self, submodels: List[str], in_dir: os.PathLike):
         if not shared.cmd_opts.debug:
             ort.set_default_logger_severity(3)
 
@@ -144,105 +148,98 @@ class OnnxRawPipeline(OnnxPipelineBase):
         if os.path.isdir(out_dir): # if model is ONNX format or had already converted.
             return out_dir
 
+        from olive.workflows import run
         try:
-            from olive.workflows import run
-            try:
-                from olive.model import ONNXModel
-            except ImportError:
-                from olive.model import ONNXModelHandler as ONNXModel
+            from olive.model import ONNXModel
+        except ImportError:
+            from olive.model import ONNXModelHandler as ONNXModel
 
-            shutil.rmtree("cache", ignore_errors=True)
-            shutil.rmtree("footprints", ignore_errors=True)
+        shutil.rmtree("cache", ignore_errors=True)
+        shutil.rmtree("footprints", ignore_errors=True)
 
-            if shared.opts.onnx_cache_converted:
-                shutil.copytree(
-                    in_dir, out_dir, ignore=shutil.ignore_patterns("weights.pb", "*.onnx", "*.safetensors", "*.ckpt")
-                )
+        if shared.opts.onnx_cache_converted:
+            shutil.copytree(
+                in_dir, out_dir, ignore=shutil.ignore_patterns("weights.pb", "*.onnx", "*.safetensors", "*.ckpt")
+            )
 
-            converted_model_paths = {}
+        converted_model_paths = {}
 
-            for submodel in self.submodels:
-                log.info(f"\nConverting {submodel}")
+        for submodel in submodels:
+            log.info(f"\nConverting {submodel}")
 
-                with open(os.path.join(sd_configs_path, "onnx", f"{'sdxl' if self._is_sdxl else 'sd'}_{submodel}.json"), "r") as config_file:
-                    conversion_config = json.load(config_file)
-                conversion_config["input_model"]["config"]["model_path"] = os.path.abspath(in_dir)
-                conversion_config["engine"]["execution_providers"] = [shared.opts.onnx_execution_provider]
+            with open(os.path.join(sd_configs_path, "onnx", f"{'sdxl' if self._is_sdxl else 'sd'}_{submodel}.json"), "r") as config_file:
+                conversion_config = json.load(config_file)
+            conversion_config["input_model"]["config"]["model_path"] = os.path.abspath(in_dir)
+            conversion_config["engine"]["execution_providers"] = [shared.opts.onnx_execution_provider]
 
-                run(conversion_config)
+            run(conversion_config)
 
-                with open(os.path.join("footprints", f"{submodel}_{EP_TO_NAME[shared.opts.onnx_execution_provider]}_footprints.json"), "r") as footprint_file:
-                    footprints = json.load(footprint_file)
-                conversion_footprint = None
-                for _, footprint in footprints.items():
-                    if footprint["from_pass"] == "OnnxConversion":
-                        conversion_footprint = footprint
+            with open(os.path.join("footprints", f"{submodel}_{EP_TO_NAME[shared.opts.onnx_execution_provider]}_footprints.json"), "r") as footprint_file:
+                footprints = json.load(footprint_file)
+            conversion_footprint = None
+            for _, footprint in footprints.items():
+                if footprint["from_pass"] == "OnnxConversion":
+                    conversion_footprint = footprint
 
-                assert conversion_footprint, "Failed to convert model"
+            assert conversion_footprint, "Failed to convert model"
 
-                converted_model_paths[submodel] = ONNXModel(
-                    **conversion_footprint["model_config"]["config"]
-                ).model_path
+            converted_model_paths[submodel] = ONNXModel(
+                **conversion_footprint["model_config"]["config"]
+            ).model_path
 
-                log.info(f"Converted {submodel}")
+            log.info(f"Converted {submodel}")
 
-            for submodel in self.submodels:
-                src_path = converted_model_paths[submodel]
-                src_parent = os.path.dirname(src_path)
-                dst_parent = os.path.join(out_dir, submodel)
-                dst_path = os.path.join(dst_parent, "model.onnx")
-                if not os.path.isdir(dst_parent):
-                    os.mkdir(dst_parent)
-                shutil.copyfile(src_path, dst_path)
+        for submodel in submodels:
+            src_path = converted_model_paths[submodel]
+            src_parent = os.path.dirname(src_path)
+            dst_parent = os.path.join(out_dir, submodel)
+            dst_path = os.path.join(dst_parent, "model.onnx")
+            if not os.path.isdir(dst_parent):
+                os.mkdir(dst_parent)
+            shutil.copyfile(src_path, dst_path)
 
-                data_src_path = os.path.join(src_parent, (os.path.basename(src_path) + ".data"))
-                if os.path.isfile(data_src_path):
-                    data_dst_path = os.path.join(dst_parent, (os.path.basename(dst_path) + ".data"))
-                    shutil.copyfile(data_src_path, data_dst_path)
+            data_src_path = os.path.join(src_parent, (os.path.basename(src_path) + ".data"))
+            if os.path.isfile(data_src_path):
+                data_dst_path = os.path.join(dst_parent, (os.path.basename(dst_path) + ".data"))
+                shutil.copyfile(data_src_path, data_dst_path)
 
-                weights_src_path = os.path.join(src_parent, "weights.pb")
-                if os.path.isfile(weights_src_path):
-                    weights_dst_path = os.path.join(dst_parent, "weights.pb")
-                    shutil.copyfile(weights_src_path, weights_dst_path)
-            del converted_model_paths
+            weights_src_path = os.path.join(src_parent, "weights.pb")
+            if os.path.isfile(weights_src_path):
+                weights_dst_path = os.path.join(dst_parent, "weights.pb")
+                shutil.copyfile(weights_src_path, weights_dst_path)
+        del converted_model_paths
 
-            kwargs = {}
+        kwargs = {}
 
-            init_dict = self.init_dict.copy()
-            for submodel in self.submodels:
-                kwargs[submodel] = diffusers.OnnxRuntimeModel.load_model(
-                    os.path.join(out_dir, submodel, "model.onnx"),
-                    provider=get_provider(),
-                ) if self._is_sdxl else diffusers.OnnxRuntimeModel.from_pretrained(
-                    os.path.join(out_dir, submodel),
-                    provider=get_provider(),
-                )
-                if submodel in init_dict:
-                    del init_dict[submodel] # already loaded as OnnxRuntimeModel.
-            kwargs.update(load_submodels(in_dir, self._is_sdxl, init_dict)) # load others.
-            constructor = get_base_constructor(self.constructor, self.is_refiner)
-            kwargs = patch_kwargs(constructor, kwargs)
+        init_dict = self.init_dict.copy()
+        for submodel in submodels:
+            kwargs[submodel] = diffusers.OnnxRuntimeModel.load_model(
+                os.path.join(out_dir, submodel, "model.onnx"),
+                provider=get_provider(),
+            ) if self._is_sdxl else diffusers.OnnxRuntimeModel.from_pretrained(
+                os.path.join(out_dir, submodel),
+                provider=get_provider(),
+            )
+            if submodel in init_dict:
+                del init_dict[submodel] # already loaded as OnnxRuntimeModel.
+        kwargs.update(load_submodels(in_dir, self._is_sdxl, init_dict)) # load others.
+        constructor = get_base_constructor(self.constructor, self.is_refiner)
+        kwargs = patch_kwargs(constructor, kwargs)
 
-            pipeline = constructor(**kwargs)
-            model_index = json.loads(pipeline.to_json_string())
-            del pipeline
+        pipeline = constructor(**kwargs)
+        model_index = json.loads(pipeline.to_json_string())
+        del pipeline
 
-            for k, v in init_dict.items(): # copy missing submodels. (ORTStableDiffusionXLPipeline)
-                if k not in model_index:
-                    model_index[k] = v
+        for k, v in init_dict.items(): # copy missing submodels. (ORTStableDiffusionXLPipeline)
+            if k not in model_index:
+                model_index[k] = v
 
-            with open(os.path.join(out_dir, "model_index.json"), 'w') as file:
-                json.dump(model_index, file)
+        with open(os.path.join(out_dir, "model_index.json"), 'w') as file:
+            json.dump(model_index, file)
 
-            return out_dir
-        except Exception as e:
-            log.error(f"Failed to convert model '{self.original_filename}'.")
-            log.error(e) # for test.
-            shutil.rmtree(shared.opts.onnx_temp_dir, ignore_errors=True)
-            shutil.rmtree(out_dir, ignore_errors=True)
-            return None
+        return out_dir
 
-    def optimize(self, in_dir: os.PathLike):
+    def run_olive(self, submodels: List[str], in_dir: os.PathLike):
         if not shared.cmd_opts.debug:
             ort.set_default_logger_severity(4)
 
@@ -253,129 +250,121 @@ class OnnxRawPipeline(OnnxPipelineBase):
         if not shared.opts.olive_cache_optimized:
             out_dir = shared.opts.onnx_temp_dir
 
+        from olive.workflows import run
         try:
-            from olive.workflows import run
-            try:
-                from olive.model import ONNXModel
-            except ImportError:
-                from olive.model import ONNXModelHandler as ONNXModel
+            from olive.model import ONNXModel
+        except ImportError:
+            from olive.model import ONNXModelHandler as ONNXModel
 
-            shutil.rmtree("cache", ignore_errors=True)
-            shutil.rmtree("footprints", ignore_errors=True)
+        shutil.rmtree("cache", ignore_errors=True)
+        shutil.rmtree("footprints", ignore_errors=True)
 
-            if shared.opts.olive_cache_optimized:
-                shutil.copytree(
-                    in_dir, out_dir, ignore=shutil.ignore_patterns("weights.pb", "*.onnx", "*.safetensors", "*.ckpt")
-                )
+        if shared.opts.olive_cache_optimized:
+            shutil.copytree(
+                in_dir, out_dir, ignore=shutil.ignore_patterns("weights.pb", "*.onnx", "*.safetensors", "*.ckpt")
+            )
 
-            optimized_model_paths = {}
+        optimized_model_paths = {}
 
-            for submodel in self.submodels:
-                log.info(f"\nProcessing {submodel}")
+        for submodel in submodels:
+            log.info(f"\nProcessing {submodel}")
 
-                with open(os.path.join(sd_configs_path, "olive", 'sdxl' if self._is_sdxl else 'sd', f"{submodel}.json"), "r") as config_file:
-                    olive_config: Dict[str, Dict[str, Dict]] = json.load(config_file)
+            with open(os.path.join(sd_configs_path, "olive", 'sdxl' if self._is_sdxl else 'sd', f"{submodel}.json"), "r") as config_file:
+                olive_config: Dict[str, Dict[str, Dict]] = json.load(config_file)
 
-                for flow in olive_config["pass_flows"]:
-                    for i in range(len(flow)):
-                        flow[i] = flow[i].replace("AutoExecutionProvider", shared.opts.onnx_execution_provider)
-                olive_config["input_model"]["config"]["model_path"] = os.path.abspath(os.path.join(in_dir, submodel, "model.onnx"))
-                olive_config["engine"]["execution_providers"] = [shared.opts.onnx_execution_provider]
+            for flow in olive_config["pass_flows"]:
+                for i in range(len(flow)):
+                    flow[i] = flow[i].replace("AutoExecutionProvider", shared.opts.onnx_execution_provider)
+            olive_config["input_model"]["config"]["model_path"] = os.path.abspath(os.path.join(in_dir, submodel, "model.onnx"))
+            olive_config["engine"]["execution_providers"] = [shared.opts.onnx_execution_provider]
 
-                for pass_key in olive_config["passes"]:
-                    if olive_config["passes"][pass_key]["type"] == "OrtTransformersOptimization":
-                        float16 = shared.opts.olive_float16 and not (submodel == "vae_encoder" and shared.opts.olive_vae_encoder_float32)
-                        olive_config["passes"][pass_key]["config"]["float16"] = float16
-                        if shared.opts.onnx_execution_provider == ExecutionProvider.CUDA or shared.opts.onnx_execution_provider == ExecutionProvider.ROCm:
-                            if version.parse(ort.__version__) < version.parse("1.17.0"):
-                                olive_config["passes"][pass_key]["config"]["optimization_options"] = {"enable_skip_group_norm": False}
-                            if float16:
-                                olive_config["passes"][pass_key]["config"]["keep_io_types"] = False
+            for pass_key in olive_config["passes"]:
+                if olive_config["passes"][pass_key]["type"] == "OrtTransformersOptimization":
+                    float16 = shared.opts.olive_float16 and not (submodel == "vae_encoder" and shared.opts.olive_vae_encoder_float32)
+                    olive_config["passes"][pass_key]["config"]["float16"] = float16
+                    if shared.opts.onnx_execution_provider == ExecutionProvider.CUDA or shared.opts.onnx_execution_provider == ExecutionProvider.ROCm:
+                        if version.parse(ort.__version__) < version.parse("1.17.0"):
+                            olive_config["passes"][pass_key]["config"]["optimization_options"] = {"enable_skip_group_norm": False}
+                        if float16:
+                            olive_config["passes"][pass_key]["config"]["keep_io_types"] = False
 
-                run(olive_config)
+            run(olive_config)
 
-                with open(os.path.join("footprints", f"{submodel}_{EP_TO_NAME[shared.opts.onnx_execution_provider]}_footprints.json"), "r") as footprint_file:
-                    footprints = json.load(footprint_file)
-                processor_final_pass_footprint = None
-                for _, footprint in footprints.items():
-                    if footprint["from_pass"] == olive_config["passes"][olive_config["pass_flows"][-1][-1]]["type"]:
-                        processor_final_pass_footprint = footprint
+            with open(os.path.join("footprints", f"{submodel}_{EP_TO_NAME[shared.opts.onnx_execution_provider]}_footprints.json"), "r") as footprint_file:
+                footprints = json.load(footprint_file)
+            processor_final_pass_footprint = None
+            for _, footprint in footprints.items():
+                if footprint["from_pass"] == olive_config["passes"][olive_config["pass_flows"][-1][-1]]["type"]:
+                    processor_final_pass_footprint = footprint
 
-                assert processor_final_pass_footprint, "Failed to optimize model"
+            assert processor_final_pass_footprint, "Failed to optimize model"
 
-                optimized_model_paths[submodel] = ONNXModel(
-                    **processor_final_pass_footprint["model_config"]["config"]
-                ).model_path
+            optimized_model_paths[submodel] = ONNXModel(
+                **processor_final_pass_footprint["model_config"]["config"]
+            ).model_path
 
-                log.info(f"Processed {submodel}")
+            log.info(f"Processed {submodel}")
 
-            for submodel in self.submodels:
-                src_path = optimized_model_paths[submodel]
-                src_parent = os.path.dirname(src_path)
-                dst_parent = os.path.join(out_dir, submodel)
-                dst_path = os.path.join(dst_parent, "model.onnx")
-                if not os.path.isdir(dst_parent):
-                    os.mkdir(dst_parent)
-                shutil.copyfile(src_path, dst_path)
+        for submodel in submodels:
+            src_path = optimized_model_paths[submodel]
+            src_parent = os.path.dirname(src_path)
+            dst_parent = os.path.join(out_dir, submodel)
+            dst_path = os.path.join(dst_parent, "model.onnx")
+            if not os.path.isdir(dst_parent):
+                os.mkdir(dst_parent)
+            shutil.copyfile(src_path, dst_path)
 
-                data_src_path = os.path.join(src_parent, (os.path.basename(src_path) + ".data"))
-                if os.path.isfile(data_src_path):
-                    data_dst_path = os.path.join(dst_parent, (os.path.basename(dst_path) + ".data"))
-                    shutil.copyfile(data_src_path, data_dst_path)
+            data_src_path = os.path.join(src_parent, (os.path.basename(src_path) + ".data"))
+            if os.path.isfile(data_src_path):
+                data_dst_path = os.path.join(dst_parent, (os.path.basename(dst_path) + ".data"))
+                shutil.copyfile(data_src_path, data_dst_path)
 
-                weights_src_path = os.path.join(src_parent, "weights.pb")
-                if os.path.isfile(weights_src_path):
-                    weights_dst_path = os.path.join(dst_parent, "weights.pb")
-                    shutil.copyfile(weights_src_path, weights_dst_path)
-            del optimized_model_paths
+            weights_src_path = os.path.join(src_parent, "weights.pb")
+            if os.path.isfile(weights_src_path):
+                weights_dst_path = os.path.join(dst_parent, "weights.pb")
+                shutil.copyfile(weights_src_path, weights_dst_path)
+        del optimized_model_paths
 
-            kwargs = {}
+        kwargs = {}
 
-            init_dict = self.init_dict.copy()
-            for submodel in self.submodels:
-                kwargs[submodel] = diffusers.OnnxRuntimeModel.load_model(
-                    os.path.join(out_dir, submodel, "model.onnx"),
-                    provider=get_provider(),
-                ) if self._is_sdxl else diffusers.OnnxRuntimeModel.from_pretrained(
-                    os.path.join(out_dir, submodel),
-                    provider=get_provider(),
-                )
-                if submodel in init_dict:
-                    del init_dict[submodel] # already loaded as OnnxRuntimeModel.
-            kwargs.update(load_submodels(in_dir, self._is_sdxl, init_dict)) # load others.
-            constructor = get_base_constructor(self.constructor, self.is_refiner)
-            kwargs = patch_kwargs(constructor, kwargs)
+        init_dict = self.init_dict.copy()
+        for submodel in submodels:
+            kwargs[submodel] = diffusers.OnnxRuntimeModel.load_model(
+                os.path.join(out_dir, submodel, "model.onnx"),
+                provider=get_provider(),
+            ) if self._is_sdxl else diffusers.OnnxRuntimeModel.from_pretrained(
+                os.path.join(out_dir, submodel),
+                provider=get_provider(),
+            )
+            if submodel in init_dict:
+                del init_dict[submodel] # already loaded as OnnxRuntimeModel.
+        kwargs.update(load_submodels(in_dir, self._is_sdxl, init_dict)) # load others.
+        constructor = get_base_constructor(self.constructor, self.is_refiner)
+        kwargs = patch_kwargs(constructor, kwargs)
 
-            pipeline = constructor(**kwargs)
-            model_index = json.loads(pipeline.to_json_string())
-            del pipeline
+        pipeline = constructor(**kwargs)
+        model_index = json.loads(pipeline.to_json_string())
+        del pipeline
 
-            for k, v in init_dict.items(): # copy missing submodels. (ORTStableDiffusionXLPipeline)
-                if k not in model_index:
-                    model_index[k] = v
+        for k, v in init_dict.items(): # copy missing submodels. (ORTStableDiffusionXLPipeline)
+            if k not in model_index:
+                model_index[k] = v
 
-            with open(os.path.join(out_dir, "model_index.json"), 'w') as file:
-                json.dump(model_index, file)
+        with open(os.path.join(out_dir, "model_index.json"), 'w') as file:
+            json.dump(model_index, file)
 
-            return out_dir
-        except Exception as e:
-            log.error(f"Failed to optimize model '{self.original_filename}'.")
-            log.error(e) # for test.
-            shutil.rmtree(shared.opts.onnx_temp_dir, ignore_errors=True)
-            shutil.rmtree(out_dir, ignore_errors=True)
-            return None
+        return out_dir
 
     def preprocess(self, p: StableDiffusionProcessing):
-        in_dir = self.path if os.path.isdir(self.path) else shared.opts.onnx_temp_dir
         disable_classifier_free_guidance = p.cfg_scale < 0.01
 
         config.from_diffusers_cache = self.from_diffusers_cache
-        if self._is_sdxl and not shared.opts.diffusers_vae_upcast:
-            log.info("ONNX: VAE override set: id=madebyollin/sdxl-vae-fp16-fix, subfolder=")
-            config.vae_id = "madebyollin/sdxl-vae-fp16-fix"
-            config.vae_subfolder = ""
-
         config.is_sdxl = self._is_sdxl
+
+        config.vae = os.path.join(models_path, "VAE", shared.opts.sd_vae)
+        if not os.path.isfile(config.vae):
+            del config.vae
+        config.vae_sdxl_fp16_fix = self._is_sdxl and not shared.opts.diffusers_vae_upcast
 
         config.width = p.width
         config.height = p.height
@@ -389,39 +378,66 @@ class OnnxRawPipeline(OnnxPipelineBase):
             config.time_ids_size = 5
 
         if not disable_classifier_free_guidance and "turbo" in str(self.path).lower():
-            log.warning("It looks like you are trying to run a Turbo model with CFG Scale, which will lead to 'size mismatch' or 'unexpected parameter' error.")
+            log.warning("ONNX: It looks like you are trying to run a Turbo model with CFG Scale, which will lead to 'size mismatch' or 'unexpected parameter' error.")
+
+        try:
+            converted_dir = self.convert(
+                (SUBMODELS_SDXL_REFINER if self.is_refiner else SUBMODELS_SDXL) if self._is_sdxl else SUBMODELS_SD,
+                self.path if os.path.isdir(self.path) else shared.opts.onnx_temp_dir
+            )
+        except Exception:
+            log.error(f'ONNX: Failed to convert model: model={self.original_filename}')
+            shutil.rmtree(shared.opts.onnx_temp_dir, ignore_errors=True)
+            shutil.rmtree(os.path.join(shared.opts.onnx_cached_models_path, self.original_filename), ignore_errors=True)
+            return
 
         kwargs = {
             "provider": get_provider(),
         }
-
-        converted_dir = self.convert(in_dir)
-        if converted_dir is None:
-            log.error('Failed to convert model.')
-            return
         out_dir = converted_dir
 
-        if shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "olive-ai":
+        submodels_for_olive = []
+
+        if shared.opts.cuda_compile_backend == "olive-ai":
+            if "Text Encoder" in shared.opts.cuda_compile:
+                if not self.is_refiner:
+                    submodels_for_olive.append("text_encoder")
+                if self._is_sdxl:
+                    submodels_for_olive.append("text_encoder_2")
+            if "Model" in shared.opts.cuda_compile:
+                submodels_for_olive.append("unet")
+            if "VAE" in shared.opts.cuda_compile:
+                submodels_for_olive.append("vae_encoder")
+                submodels_for_olive.append("vae_decoder")
+
+        if len(submodels_for_olive) == 0:
+            log.warning("Olive: Skipping olive run.")
+        else:
             log.warning("Olive implementation is experimental. It contains potentially an issue and is subject to change at any time.")
+
+            in_dir = converted_dir
+
             if p.width != p.height:
-                log.warning("Olive: different width and height are detected. The quality of the result is not guaranteed.")
+                log.warning("Olive: Different width and height are detected. The quality of the result is not guaranteed.")
+
             if shared.opts.olive_static_dims:
                 sess_options = DynamicSessionOptions()
-                sess_options_config = {
+                sess_options.enable_static_dims({
                     "is_sdxl": self._is_sdxl,
                     "is_refiner": self.is_refiner,
 
                     "hidden_batch_size": p.batch_size if disable_classifier_free_guidance else p.batch_size * 2,
                     "height": p.height,
                     "width": p.width,
-                }
-                sess_options.enable_static_dims(sess_options_config)
+                })
                 kwargs["sess_options"] = sess_options
-            optimized_dir = self.optimize(converted_dir)
-            if optimized_dir is None:
-                log.error('Olive: failed to optimize pipeline. The generation will fall back to unoptimized one.')
-                return self.derive_properties(load_pipeline(self.constructor, converted_dir, **kwargs))
-            out_dir = optimized_dir
+
+            try:
+                out_dir = self.run_olive(submodels_for_olive, in_dir)
+            except Exception:
+                log.error(f"Olive: Failed to run olive passes: model='{self.original_filename}'.")
+                shutil.rmtree(shared.opts.onnx_temp_dir, ignore_errors=True)
+                shutil.rmtree(os.path.join(shared.opts.onnx_cached_models_path, self.original_filename), ignore_errors=True)
 
         pipeline = self.derive_properties(load_pipeline(self.constructor, out_dir, **kwargs))
 

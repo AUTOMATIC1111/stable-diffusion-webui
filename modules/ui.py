@@ -368,6 +368,13 @@ def create_ui(startup_timer = None):
     interfaces += [(interrogate_interface, "Interrogate", "interrogate")]
     interfaces += [(train_interface, "Train", "train")]
     interfaces += [(models_interface, "Models", "models")]
+    if shared.opts.onnx_show_menu:
+        with gr.Blocks(analytics_enabled=False) as onnx_interface:
+            if shared.backend == shared.Backend.DIFFUSERS:
+                from modules import ui_onnx
+                ui_onnx.create_ui()
+                timer.startup.record("ui-onnx")
+        interfaces += [(onnx_interface, "ONNX", "onnx")]
     interfaces += script_callbacks.ui_tabs_callback()
     interfaces += [(settings_interface, "System", "system")]
 

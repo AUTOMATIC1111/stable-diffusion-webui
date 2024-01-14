@@ -19,7 +19,6 @@ def create_ui():
     from modules.paths import sd_configs_path
     from modules.onnx_ep import ExecutionProvider, install_execution_provider
     from modules.onnx_utils import check_diffusers_cache
-    from modules.olive import config as olive_config
 
     with gr.Blocks(analytics_enabled=False) as ui:
         with gr.Row():
@@ -47,25 +46,6 @@ def create_ui():
                     gr.Markdown("**Warning! If you are trying to reinstall, it may not work due to permission issue.**")
 
                     ep_install.click(fn=install_execution_provider, inputs=ep_checkbox)
-
-                with gr.TabItem("Override VAE", id="force_vae"):
-                    gr.Markdown("Ignore baked-in vae and replace it with what you want.")
-
-                    onnx_vae_id = gr.Textbox(label="Huggingface VAE ID", info="Leave empty for default (baked-in vae).", value="")
-                    onnx_vae_subfolder = gr.Textbox(label="VAE subfolder", info="Leave empty for root. Default: vae", value="vae")
-                    onnx_vae_apply_button = gr.Button(value="Apply")
-
-                    def onnx_vae_apply(id: str, subfolder: str):
-                        olive_config.vae_id = id
-                        olive_config.vae_subfolder = subfolder
-                        if id == "":
-                            log.info("ONNX: VAE override unset.")
-                            del olive_config.vae_id
-                            olive_config.vae_subfolder = "vae"
-                        else:
-                            log.info(f"ONNX: VAE override set: id={id}, subfolder={subfolder}")
-
-                    onnx_vae_apply_button.click(fn=onnx_vae_apply, inputs=[onnx_vae_id, onnx_vae_subfolder,])
 
             if opts.cuda_compile_backend == "olive-ai":
                 import olive.passes as olive_passes
