@@ -1290,15 +1290,18 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         if self.image_mask is not None:
             if type(self.image_mask) == list:
                 self.image_mask = self.image_mask[0]
-            self.image_mask = create_binary_mask(self.image_mask)
-            if self.inpainting_mask_invert:
-                self.image_mask = ImageOps.invert(self.image_mask)
-            if self.mask_blur > 0:
-                np_mask = np.array(self.image_mask)
-                kernel_size = 2 * int(2.5 * self.mask_blur + 0.5) + 1
-                np_mask = cv2.GaussianBlur(np_mask, (kernel_size, 1), self.mask_blur)
-                np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), self.mask_blur)
-                self.image_mask = Image.fromarray(np_mask)
+            if shared.backend == shared.Backend.ORIGINAL:
+                self.image_mask = create_binary_mask(self.image_mask)
+                if self.inpainting_mask_invert:
+                    self.image_mask = ImageOps.invert(self.image_mask)
+                if self.mask_blur > 0:
+                    np_mask = np.array(self.image_mask)
+                    kernel_size = 2 * int(2.5 * self.mask_blur + 0.5) + 1
+                    np_mask = cv2.GaussianBlur(np_mask, (kernel_size, 1), self.mask_blur)
+                    np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), self.mask_blur)
+                    self.image_mask = Image.fromarray(np_mask)
+            else:
+                self.image_mask = modules.masking.run_mask(input_image=self.init_images, input_mask=self.image_mask, return_type='grayscale', mask_blur=self.mask_blur, mask_padding=self.inpaint_full_res_padding, segment_enable=False)
             if self.inpaint_full_res:
                 self.mask_for_overlay = self.image_mask
                 mask = self.image_mask.convert('L')

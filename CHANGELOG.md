@@ -1,20 +1,21 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-13
+## Update for 2023-01-14
 
 Another release with a lot more functionality in new Control module and FaceID & IPAdapter modules  
 Plus welcome additions to UI performance and accessibility and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
 
-However, 
-
 - **Control**:
   - add **inpaint** support  
     applies to both *img2img* and *controlnet* workflows  
-    *note*: set blur to level you desire  
   - add **outpaint** support  
     applies to both *img2img* and *controlnet* workflows  
     *note*: increase denoising strength since outpainted area is blank by default  
+  - new **mask** module  
+    - granular blur (gaussian), errode (reduce or remove noise) and dilate (pad or expand) with **live preview**  
+    - *optional* **auto-segmentation** (e.g. segment-anything) using ml models  
+      auto segmentation will automatically expand masked area to segments that include current user mask  
   - allow **resize** both *before* and *after* generate operation  
     this allows for workflows such as: *image -> upscale or downscale -> generate -> upscale or downscale -> output*  
     providing more flexibility and than standard hires workflow  
