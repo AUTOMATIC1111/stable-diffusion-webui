@@ -365,9 +365,27 @@ def process_diffusers(p: StableDiffusionProcessing):
             sampler = sd_samplers.all_samplers_map.get(sampler_selection, None)
             if sampler is None:
                 sampler = sd_samplers.all_samplers_map.get("UniPC")
-            sd_samplers.create_sampler(sampler.name, sd_model)
-            # TODO extra_generation_params add sampler options
-            # p.extra_generation_params['Sampler options'] = ''
+            sampler = sd_samplers.create_sampler(sampler.name, sd_model)
+            sampler_options = []
+            if sampler.config.get('use_karras_sigmas', False):
+                sampler_options.append('karras')
+            if sampler.config.get('rescale_betas_zero_snr', False):
+                sampler_options.append('rescale beta')
+            if sampler.config.get('thresholding', False):
+                sampler_options.append('dynamic thresholding')
+            if 'algorithm_type' in sampler.config:
+                sampler_options.append(sampler.config['algorithm_type'])
+            if shared.opts.schedulers_prediction_type != 'default':
+                sampler_options.append(shared.opts.schedulers_prediction_type)
+            if shared.opts.schedulers_beta_schedule != 'default':
+                sampler_options.append(shared.opts.schedulers_beta_schedule)
+            if 'beta_start' in sampler.config and (shared.opts.schedulers_beta_start > 0 or shared.opts.schedulers_beta_end > 0):
+                sampler_options.append(f'beta {shared.opts.schedulers_beta_start}-{shared.opts.schedulers_beta_end}')
+            if 'solver_order' in sampler.config:
+                sampler_options.append(f'order {shared.opts.schedulers_solver_order}')
+            if 'lower_order_final' in sampler.config:
+                sampler_options.append('low order')
+            p.extra_generation_params['Sampler options'] = '/'.join(sampler_options)
 
     def update_pipeline(sd_model, p: StableDiffusionProcessing):
         if p.sag_scale > 0 and is_txt2img():

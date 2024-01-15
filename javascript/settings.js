@@ -84,7 +84,8 @@ function markIfModified(setting_name, value) {
   tab_nav_indicator.classList.toggle('saved', saved.size > 0);
   if (changed_items.size > 0) tab_nav_indicator.title += `click to reset ${changed_items.size} unapplied changes in this tab\n`;
   if (saved.size > 0) tab_nav_indicator.title += `${saved.size} custom values\n${unsaved.size} default values}`;
-  // elem.scrollIntoView({ behavior: 'smooth', block: 'center' }); // TODO why is scroll happening on every change if all pages are visible?
+  // TODO why is scroll happening on every change if all pages are visible?
+  // elem.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 onAfterUiUpdate(async () => {

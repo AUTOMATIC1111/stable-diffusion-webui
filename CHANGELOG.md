@@ -157,6 +157,7 @@ And it also includes fixes for all reported issues so far
   - api: return current image in progress api if requested  
   - api: sanitize response object  
   - api: cleanup error logging  
+  - sampler: add sampler options info to metadata
   - sampler: guard against invalid sampler index  
   - sampler: add img2img_extra_noise option
   - config: reset default cfg scale to 6.0  
@@ -1680,7 +1681,6 @@ note: if you previously had command line optimizations such as --no-half, those 
 - improve html loading order
 - remove some `asserts` causing runtime errors and replace with user-friendly messages
 - update README.md
-- update TODO.md
 
 ## Update for 2023-04-17
 

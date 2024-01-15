@@ -13,7 +13,6 @@ var fakeTextSelectorInterceptor = createTextSelectionInterceptor(true);
 var Transform = require('./lib/transform.js');
 var makeSvgController = require('./lib/svgController.js');
 var makeDomController = require('./lib/domController.js');
-
 var defaultZoomSpeed = 1;
 var defaultDoubleTapZoomSpeed = 1.75;
 var doubleTapSpeedInMS = 300;
@@ -28,9 +27,7 @@ module.exports = createPanZoom;
  */
 function createPanZoom(domElement, options) {
   options = options || {};
-
   var panController = options.controller;
-
   if (!panController) {
     if (makeSvgController.canAttach(domElement)) {
       panController = makeSvgController(domElement, options);
@@ -38,7 +35,6 @@ function createPanZoom(domElement, options) {
       panController = makeDomController(domElement, options);
     }
   }
-
   if (!panController) {
     throw new Error(
       'Cannot create panzoom for the current type of dom element'
@@ -48,16 +44,12 @@ function createPanZoom(domElement, options) {
   // just to avoid GC pressure, every time we do intermediate transform
   // we return this object. For internal use only. Never give it back to the consumer of this library
   var storedCTMResult = { x: 0, y: 0 };
-
   var isDirty = false;
   var transform = new Transform();
-
   if (panController.initTransform) {
     panController.initTransform(transform);
   }
-
   var filterKey = typeof options.filterKey === 'function' ? options.filterKey : noop;
-  // TODO: likely need to unite pinchSpeed with zoomSpeed
   var pinchSpeed = typeof options.pinchSpeed === 'number' ? options.pinchSpeed : 1;
   var bounds = options.bounds;
   var maxZoom = typeof options.maxZoom === 'number' ? options.maxZoom : Number.POSITIVE_INFINITY;
@@ -169,7 +161,6 @@ function createPanZoom(domElement, options) {
   }
 
   function showRectangle(rect) {
-    // TODO: this duplicates autocenter. I think autocenter should go.
     var clientRect = owner.getBoundingClientRect();
     var size = transformToScreen(clientRect.width, clientRect.height);
 
@@ -237,7 +228,6 @@ function createPanZoom(domElement, options) {
   }
 
   function getTransformModel() {
-    // TODO: should this be read only?
     return transform;
   }
 
@@ -405,7 +395,6 @@ function createPanZoom(domElement, options) {
     transform.x = size.x - ratio * (size.x - transform.x);
     transform.y = size.y - ratio * (size.y - transform.y);
 
-    // TODO: https://github.com/anvaka/panzoom/issues/112
     if (bounds && boundsPadding === 1 && minZoom === 1) {
       transform.scale *= ratio;
       keepTransformInsideBounds();
@@ -429,7 +418,6 @@ function createPanZoom(domElement, options) {
     if (!parent)
       throw new Error('ui element is required to be within the scene');
 
-    // TODO: should i use controller's screen CTM?
     var clientRect = ui.getBoundingClientRect();
     var cx = clientRect.left + clientRect.width / 2;
     var cy = clientRect.top + clientRect.height / 2;
@@ -500,13 +488,10 @@ function createPanZoom(domElement, options) {
       window.cancelAnimationFrame(frameAnimation);
       frameAnimation = 0;
     }
-
     smoothScroll.cancel();
-
     releaseDocumentMouse();
     releaseTouches();
     textSelection.release();
-
     triggerPanEnd();
   }
 
@@ -516,10 +501,7 @@ function createPanZoom(domElement, options) {
 
   function applyTransform() {
     isDirty = false;
-
-    // TODO: Should I allow to cancel this?
     panController.applyTransform(transform);
-
     triggerEvent('transform');
     frameAnimation = 0;
   }
@@ -559,8 +541,6 @@ function createPanZoom(domElement, options) {
       var moveSpeedRatio = 0.05;
       var dx = offset * moveSpeedRatio * x;
       var dy = offset * moveSpeedRatio * y;
-
-      // TODO: currently we do not animate this. It could be better to have animation
       internalMoveBy(dx, dy);
     }
 
@@ -594,7 +574,6 @@ function createPanZoom(domElement, options) {
   }
 
   function beforeTouch(e) {
-    // TODO: Need to unify this filtering names. E.g. use `beforeTouch`
     if (options.onTouch && !options.onTouch(e)) {
       // if they return `false` from onTouch, we don't want to stop
       // events propagation. Fixes https://github.com/anvaka/panzoom/issues/12
@@ -606,7 +585,6 @@ function createPanZoom(domElement, options) {
   }
 
   function beforeDoubleClick(e) {
-    // TODO: Need to unify this filtering names. E.g. use `beforeDoubleClick``
     if (options.onDoubleClick && !options.onDoubleClick(e)) {
       // if they return `false` from onTouch, we don't want to stop
       // events propagation. Fixes https://github.com/anvaka/panzoom/issues/46
@@ -723,7 +701,6 @@ function createPanZoom(domElement, options) {
     beforeDoubleClick(e);
     var offset = getOffsetXY(e);
     if (transformOrigin) {
-      // TODO: looks like this is duplicated in the file.
       // Need to refactor
       offset = getTransformOriginOffset();
     }
@@ -1755,7 +1732,6 @@ module.exports = addWheelListener;
 // But also expose "advanced" api with unsubscribe:
 module.exports.addWheelListener = addWheelListener;
 module.exports.removeWheelListener = removeWheelListener;
-
 
 function addWheelListener(element, listener, useCapture) {
   element.addEventListener('wheel', listener, useCapture);
