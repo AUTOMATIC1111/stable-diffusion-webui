@@ -3,8 +3,7 @@ Lightweight IP-Adapter applied to existing pipeline in Diffusers
 - Downloads image_encoder or first usage (2.5GB)
 - Introduced via: https://github.com/huggingface/diffusers/pull/5713
 - IP adapters: https://huggingface.co/h94/IP-Adapter
-TODO:
-- Additional IP addapters
+TODO ipadapter items:
 - SD/SDXL autodetect
 """
 

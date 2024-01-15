@@ -429,8 +429,9 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                                 p.image_mask = mask
                                 p.inpaint_full_res = False
                                 p.init_images = [input_image]
+                                # TODO implement mask_overlap enable once fixed in diffusers
                                 # if mask_overlap > 0:
-                                #    p.task_args['padding_mask_crop'] = mask_overlap # TODO enable once fixed in diffusers
+                                #    p.task_args['padding_mask_crop'] = mask_overlap
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING)
                             elif processed_image is not None:
                                 p.init_images = [processed_image]
@@ -447,8 +448,9 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                                 p.task_args['strength'] = denoising_strength
                                 p.image_mask = mask
                                 p.inpaint_full_res = False
+                                # TODO implement mask_overlap enable once fixed in diffusers
                                 # if mask_overlap > 0:
-                                #    p.task_args['padding_mask_crop'] = mask_overlap # TODO enable once fixed in diffusers
+                                #    p.task_args['padding_mask_crop'] = mask_overlap
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING) # only controlnet supports inpaint
                             elif 'control_image' in p.task_args:
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE) # only controlnet supports img2img

@@ -173,7 +173,6 @@ class ControlNetLLLite(torch.nn.Module): # pylint: disable=abstract-method
                 mapped_block, mapped_number = map_down_lllite_to_unet[int(block)]
                 b = model.down_blocks[mapped_block].attentions[int(mapped_number)].transformer_blocks[int(block_number)]
             elif root == 'output':
-                # TODO: Map up unet blocks to lite blocks
                 print(f'Not implemented: {root}')
             else:
                 b = model.mid_block.attentions[0].transformer_blocks[int(block_number)]

@@ -97,6 +97,7 @@ def fill(image, mask):
 [docs](https://huggingface.co/docs/transformers/v4.36.1/en/model_doc/sam#overview)
 TODO:
 - PerSAM
+- REMBG
 - https://huggingface.co/docs/transformers/tasks/semantic_segmentation
 - transformers.pipeline.MaskGenerationPipeline: https://huggingface.co/models?pipeline_tag=mask-generation
 - transformers.pipeline.ImageSegmentationPipeline: https://huggingface.co/models?pipeline_tag=image-segmentation

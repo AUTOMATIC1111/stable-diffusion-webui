@@ -1,7 +1,7 @@
 """
 Lightweight AnimateDiff implementation in Diffusers
 Docs: <https://huggingface.co/docs/diffusers/api/pipelines/animatediff>
-TODO:
+TODO animatediff items:
 - SDXL
 - Custom models
 - Custom LORAs

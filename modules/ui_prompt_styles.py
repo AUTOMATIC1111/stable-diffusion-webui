@@ -1,4 +1,4 @@
-# TODO: a1111 compatibility item, not used
+# a1111 compatibility item, not used
 
 import gradio as gr
 from modules import shared, styles
