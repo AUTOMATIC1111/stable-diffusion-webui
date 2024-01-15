@@ -1,14 +1,14 @@
-<div class='card' style={style} onclick={card_clicked} data-name="{name}" {sort_keys}>
+<div class='container' style={style} onclick={handleCardClick} data-card="{cardId}" {additional_attributes}>
 	{background_image}
-	<div class="button-row">
+	<div class="button-group">
 		{metadata_button}
-		{edit_button}
+		{customize_button}
 	</div>
-	<div class='actions'>
-		<div class='additional'>
-			<span style="display:none" class='search_term{search_only}'>{search_term}</span>
+	<div class='interactions'>
+		<div class='extra-info'>
+			<span style="display:none" class='search-data{search_exclusive}'>{search_data}</span>
 		</div>
-		<span class='name'>{name}</span>
-		<span class='description'>{description}</span>
+		<span class='title'>{title}</span>
+		<span class='details'>{details}</span>
 	</div>
 </div>
