@@ -2,8 +2,8 @@
 
 ## Update for 2023-01-15
 
-Another release with a lot more functionality in new Control module and FaceID & IPAdapter modules  
-Plus welcome additions to UI performance and accessibility and flexibility of deployment  
+Another release with a lot more functionality in the **Control** module and **FaceID/FaceSwap** & **PAdapter** modules  
+Plus welcome additions to **UI performance, usability and accessibility** and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
 
 - **Control**:
@@ -48,11 +48,14 @@ And it also includes fixes for all reported issues so far
   - fix batch/folder/video modes  
   - fix processor switching within same unit  
   - fix pipeline switching between different modes  
-- [FaceID](https://huggingface.co/h94/IP-Adapter-FaceID)  
+- [FaceID/FaceSwap](https://huggingface.co/h94/IP-Adapter-FaceID)  
   - full implementation for *SD15* and *SD-XL*, to use simply select from *Scripts*  
     **Base** (93MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-H-14* (2.5GB) as image encoder  
     **SXDL** (1022MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-bigG-14* (3.7GB) as image encoder  
     **Plus** (150MB) uses *InsightFace* to generate face embeds and *CLIP-ViT-H-14-laion2B* (3.8GB) as image encoder  
+  - **FaceSwap**  
+    you can use just faceid or just faceswap or both at the same time  
+    faceid guides image generation given the input image while face swap performs face swapping at the end of generation  
   - *note*: all models are downloaded on first use  
   - enable use via api, thanks @trojaner
 - [IPAdapter](https://huggingface.co/h94/IP-Adapter)  

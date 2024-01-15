@@ -863,7 +863,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
         p.scripts.process(p)
 
-
     def get_conds_with_caching(function, required_prompts, steps, cache):
         if cache[0] is not None and (required_prompts, steps) == cache[0]:
             return cache[1]
