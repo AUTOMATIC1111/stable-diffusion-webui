@@ -32,7 +32,7 @@ def dump_cache():
         with cache_lock:
             cache_filename_tmp = cache_filename + "-"
             with open(cache_filename_tmp, "w", encoding="utf8") as file:
-                json.dump(cache_data, file, indent=4)
+                json.dump(cache_data, file, indent=4, ensure_ascii=False)
 
             os.replace(cache_filename_tmp, cache_filename)
 
