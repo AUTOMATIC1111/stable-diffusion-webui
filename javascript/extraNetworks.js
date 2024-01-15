@@ -267,7 +267,7 @@ function extraNetworksTreeProcessFileClick(event, btn, tabname, tab_id) {
      * Processes `onclick` events when user clicks on files in tree.
      *
      * @param event     The generated event.
-     * @param btn       The clicked `action-list-item` button.
+     * @param btn       The clicked `tree-list-item` button.
      * @param tabname   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
      * @param tab_id    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
      */
@@ -288,7 +288,7 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
      * chevron is clicked: Directory is expanded or collapsed. Selected state unchanged.
      *
      * @param event     The generated event.
-     * @param btn       The clicked `action-list-item` button.
+     * @param btn       The clicked `tree-list-item` button.
      * @param tabname   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
      * @param tab_id    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
      */
@@ -310,7 +310,7 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
 
     function _remove_selected_from_all() {
         // Removes the `selected` attribute from all buttons.
-        var sels = document.querySelectorAll("button.action-list-content");
+        var sels = document.querySelectorAll("button.tree-list-content");
         [...sels].forEach(el => {
             el.removeAttribute("selected");
         });
@@ -331,7 +331,7 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
 
 
     // If user clicks on the chevron, then we do not select the folder.
-    if (true_targ.matches(".action-list-item-action--leading, .action-list-item-action-chevron")) {
+    if (true_targ.matches(".tree-list-item-action--leading, .tree-list-item-action-chevron")) {
         _expand_or_collapse(ul, btn);
     } else {
         // User clicked anywhere else on the button.
@@ -356,7 +356,7 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
 
 function extraNetworksTreeOnClick(event, tabname, tab_id) {
     /**
-     * Handles `onclick` events for buttons within an `extra-network-tree .action-list--tree`.
+     * Handles `onclick` events for buttons within an `extra-network-tree .tree-list--tree`.
      *
      * Determines whether the clicked button in the tree is for a file entry or a directory
      * then calls the appropriate function.

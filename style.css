@@ -929,7 +929,7 @@ footer {
     margin-left: 0.5em;
 }
 
-.extra-network-pane :is(.card, .card-minimal) .button-row{
+.extra-network-pane .card .button-row{
     display: inline-flex;
     visibility: hidden;
     color: white;
@@ -941,13 +941,7 @@ footer {
     z-index: 1;
 }
 
-.extra-network-pane .card-minimal .button-row {
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-    align-items: center;
-}
-
-.extra-network-pane :is(.card:hover, .card-minimal:hover) .button-row{
+.extra-network-pane .card:hover .button-row{
     visibility: visible;
 }
 
@@ -1110,9 +1104,6 @@ div.block.gradio-box.edit-user-metadata {
     margin-top: 1.5em;
 }
 
-
-
-
 div.block.gradio-box.popup-dialog, .popup-dialog {
     width: 56em;
     background: var(--body-background-fill);
@@ -1205,7 +1196,7 @@ body.resizing .resize-handle {
     overflow: hidden;
 }
 
-.extra-network-tree .action-list--tree {
+.extra-network-tree .tree-list--tree {
     cursor: pointer;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -1213,43 +1204,42 @@ body.resizing .resize-handle {
     user-select: none;
     margin: 0;
     padding: 0;
+    margin-left: 0.25rem;
 }
 
 /* Remove auto indentation from tree. Will be overridden later. */
-.extra-network-tree .action-list--subgroup {
+.extra-network-tree .tree-list--subgroup {
     margin: 0 !important;
     padding: 0 !important;
-    box-shadow: 0.6rem 0 0 var(--body-background-fill) inset,
-                0.8rem 0 0 var(--neutral-800) inset;
+    box-shadow: 0.5rem 0 0 var(--body-background-fill) inset,
+                0.7rem 0 0 var(--neutral-800) inset;
 }
 
 /* Set indentation for each depth of tree. */
-.extra-network-tree .action-list--subgroup > .action-list-item {
+.extra-network-tree .tree-list--subgroup > .tree-list-item {
     margin-left: 0.4rem !important;
     padding-left: 0.4rem !important;
 }
 
 /* Styles for tree <ul> elements. */
-.extra-network-tree .action-list {
-
-}
+.extra-network-tree .tree-list {}
 
 /* Styles for tree <li> elements. */
-.extra-network-tree .action-list-item {
+.extra-network-tree .tree-list-item {
     list-style: none;
     position: relative;
     background-color: transparent;
 }
 
-/* Directory <ul> */
-.extra-network-tree .action-list-content[expanded=false]+.action-list--subgroup {
+/* Directory <ul> visibility based on expanded attribute. */
+.extra-network-tree .tree-list-content[expanded=false]+.tree-list--subgroup {
     height: 0;
     overflow: hidden;
     visibility: hidden;
     opacity: 0;
 }
 
-.extra-network-tree .action-list-content[expanded=true]+.action-list--subgroup {
+.extra-network-tree .tree-list-content[expanded=true]+.tree-list--subgroup {
     height: auto;
     overflow: visible;
     visibility: visible;
@@ -1257,20 +1247,25 @@ body.resizing .resize-handle {
 }
 
 /* File <li> */
-.extra-network-tree .action-list-item--subitem {
+.extra-network-tree .tree-list-item--subitem {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
 }
 
 /* <li> containing <ul> */
-.extra-network-tree .action-list-item--has-subitem {
-}
+.extra-network-tree .tree-list-item--has-subitem {}
 
 /* BUTTON ELEMENTS */
 /* <button> */
-.extra-network-tree .action-list-content {
+.extra-network-tree .tree-list-content {
     position: relative;
     display: grid;
     width: 100%;
-    padding: 6px 8px;
+    padding: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
     font-size: 1rem;
     text-align: left;
     user-select: none;
@@ -1278,160 +1273,164 @@ body.resizing .resize-handle {
     border: none;
     transition: background 33.333ms linear;
     grid-template-rows: min-content;
-    grid-template-areas: "leading-action leading-visual label trailing-visual spacer trailing-action";
-    grid-template-columns: min-content min-content minmax(0, auto) min-content 1fr min-content;
-    grid-gap: 0.1em;
+    grid-template-areas: "leading-action leading-visual label trailing-visual trailing-action";
+    grid-template-columns: min-content min-content minmax(0, auto) min-content min-content;
+    grid-gap: 0.1rem;
     align-items: start;
     flex-grow: 1;
     flex-basis: 100%;
 }
+/* Buttons for directories. */
+.extra-network-tree .tree-list-content-dir {}   
 
-.dark .extra-network-tree button.action-list-content:hover {
+/* Buttons for files. */
+.extra-network-tree .tree-list-item--has-subitem .tree-list--subgroup > li:first-child {
+    padding-top: 0.5rem !important;
+}
+
+.dark .extra-network-tree button.tree-list-content:hover {
     -webkit-transition: all 0.05s ease-in-out;
 	transition: all 0.05s ease-in-out;
     background-color: var(--neutral-800);
 }
 
-.dark .extra-network-tree button.action-list-content[selected] {
+.dark .extra-network-tree button.tree-list-content[selected] {
     background-color: var(--neutral-700);
 }
 
-.extra-network-tree button.action-list-content:hover {
+.extra-network-tree button.tree-list-content:hover {
     -webkit-transition: all 0.05s ease-in-out;
 	transition: all 0.05s ease-in-out;
     background-color: var(--neutral-200);
 }
 
-.extra-network-tree button.action-list-content[selected] {
+.extra-network-tree button.tree-list-content[selected] {
     background-color: var(--neutral-300);
 }
 
-/* Buttons for directories. */
-.extra-network-tree .action-list-content-dir {
-
-}
-
-/* Buttons for files. */
-.extra-network-tree .action-list-content-file {
-    margin-left: 2em;
-}
-
 /* Text for button. */
-.extra-network-tree .action-list-item-label {
+.extra-network-tree .tree-list-item-label {
     position: relative;
-    line-height: 1.25em;
+    line-height: 1.25rem;
     color: var(--button-secondary-text-color);
     grid-area: label;
-    padding-left: 0.5em;
+    padding-left: 0.5rem;
 }
 
 /* Text for button truncated. */
-.extra-network-tree .action-list-item-label--truncate {
+.extra-network-tree .tree-list-item-label--truncate {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 /* Icon for button. */
-.extra-network-tree .action-list-item-visual {
-    min-height: 1em;
+.extra-network-tree .tree-list-item-visual {
+    min-height: 1rem;
     color: var(--button-secondary-text-color);
     pointer-events: none;
     align-items: right;
 }
 
 /* Icon for button when it is before label. */
-.extra-network-tree .action-list-item-visual--leading {
+.extra-network-tree .tree-list-item-visual--leading {
     grid-area: leading-visual;
+    width: 1rem;
+    text-align: right;
 }
 
 /* Icon for button when it is after label. */
-.extra-network-tree .action-list-item-visual--trailing {
+.extra-network-tree .tree-list-item-visual--trailing {
     grid-area: trailing-visual;
+    width: 1rem;
+    text-align: right;
 }
 
 /* Dropdown arrow for button. */
-.extra-network-tree .action-list-item-action--leading {
-    margin-right: 1em;
+.extra-network-tree .tree-list-item-action--leading {
+    margin-right: 0.2rem;
+    margin-left: 0.2rem;
+}
+
+.extra-network-tree .tree-list-content-file .tree-list-item-action--leading {
+    visibility: hidden;
 }
 
 /* Define the animation for the arrow when it is clicked. */
-.extra-network-tree .action-list-content-dir[expanded=false] .action-list-item-action {
-    -ms-transform: rotate(0deg);
-    -webkit-transform: rotate(0deg);
-    transform: rotate(0deg);
+.extra-network-tree .tree-list-content-dir[expanded=false] .tree-list-item-action-chevron {
+    -ms-transform: rotate(135deg);
+    -webkit-transform: rotate(135deg);
+    transform: rotate(135deg);
     transition: transform 0.2s;
 }
 
-.extra-network-tree .action-list-content-dir[expanded=true] .action-list-item-action {
-    -ms-transform: rotate(90deg);
-    -webkit-transform: rotate(90deg);
-    transform: rotate(90deg);
+.extra-network-tree .tree-list-content-dir[expanded=true] .tree-list-item-action-chevron {
+    -ms-transform: rotate(225deg);
+    -webkit-transform: rotate(225deg);
+    transform: rotate(225deg);
     transition: transform 0.2s;
 }
 
-.action-list-item-action-chevron {
-    display: inline-block;
-    padding: 0.3em;
-    box-shadow: 0.1em 0.1em 0 0px var(--neutral-200) inset;
+.tree-list-item-action-chevron {
+    display: inline-flex;
+    /* Uses box shadow to generate a pseudo chevron `>` icon. */
+    padding: 0.3rem;
+    box-shadow: 0.1rem 0.1rem 0 0 var(--neutral-200) inset;
     transform: rotate(135deg);
 }
 
-.extra-network-tree .action-list-item-action--leading {
+
+.extra-network-tree .tree-list-item-action--leading {
     grid-area: leading-action;
 }
 
-/* Dropdown arrow for button when it is after label.  UNUSED? */
-.extra-network-tree .action-list-item-action--trailing {
+.extra-network-tree .tree-list-item-action--trailing {
     grid-area: trailing-action;
-}
-
-.extra-network-tree .action-list-item-action .button-row {
-    display: flex;
-    flex-grow: 1;
-}
-
-.extra-network-tree .action-list-content .button-row {
     display: inline-flex;
-    visibility: hidden !important;
-    color: white;
 }
 
-.extra-network-tree .action-list-content:hover .button-row {
+.extra-network-tree .tree-list-content .button-row {
+    display: inline-flex;
+    visibility: hidden;
+    color: var(--button-secondary-text-color);
+
+}
+
+.extra-network-tree .tree-list-content:hover .button-row {
     visibility: visible;
 }
 
 /* Add icon to left side of <input> */
-.extra-network-tree .action-list-search::before {
+.extra-network-tree .tree-list-search::before {
     content: "🔎︎";
     position: absolute;
-    margin: 0.5em;
-    font-size: 1em;
+    margin: 0.5rem;
+    font-size: 1rem;
     color: var(--input-placeholder-color);
 }
 
-.extra-network-tree .action-list-search {
+.extra-network-tree .tree-list-search {
     position: relative;
-    margin: 0.5em;
+    margin: 0.5rem;
 }
 
-.extra-network-tree .action-list-search .action-list-search-text {
+.extra-network-tree .tree-list-search .tree-list-search-text {
     border: 1px solid var(--button-secondary-border-color);
-    border-radius: 0.5em;
+    border-radius: 0.5rem;
     color: var(--button-secondary-text-color);
     background-color: transparent;
     width: 100%;
-    padding-left: 2em;
-    line-height: 1em;
+    padding-left: 2rem;
+    line-height: 1rem;
 }
 
 /* <input> clear button (x on right side) styling */
-.extra-network-tree .action-list-search .action-list-search-text::-webkit-search-cancel-button {
+.extra-network-tree .tree-list-search .tree-list-search-text::-webkit-search-cancel-button {
     -webkit-appearance: none;
     appearance: none;
     cursor: pointer;
-    height: 1em;
-    width: 1em;
+    height: 1rem;
+    width: 1rem;
     mask-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>');
     mask-repeat: no-repeat;
     mask-position: center center;
