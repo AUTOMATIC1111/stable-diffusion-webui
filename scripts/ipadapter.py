@@ -51,7 +51,7 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name, scale, im
         return False
     if shared.backend != shared.Backend.DIFFUSERS:
         shared.log.warning('IP adapter: not in diffusers mode')
-        return
+        return False
     if image is None and adapter != 'none':
         shared.log.error('IP adapter: no image provided')
         adapter = 'none' # unload adapter if previously loaded as it will cause runtime errors
@@ -59,9 +59,13 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name, scale, im
         if hasattr(pipe, 'set_ip_adapter_scale'):
             pipe.set_ip_adapter_scale(0)
         if loaded is not None:
-            shared.log.debug('IP adapter: unload attention processor')
-            pipe.unet.config.encoder_hid_dim_type = None
             loaded = None
+            try:
+                if pipe.unet.config.encoder_hid_dim_type == 'ip_image_proj':
+                    shared.log.debug('IP adapter: unload attention processor')
+                    pipe.unet.config.encoder_hid_dim_type = None
+            except Exception:
+                pass
         return False
     if not hasattr(pipe, 'load_ip_adapter'):
         import diffusers
