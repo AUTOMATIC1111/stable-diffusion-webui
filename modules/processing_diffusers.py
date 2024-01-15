@@ -17,6 +17,7 @@ import modules.prompt_parser_diffusers as prompt_parser_diffusers
 from modules.sd_hijack_hypertile import hypertile_set
 from modules.processing_correction import correction_callback
 from modules.processing_vae import vae_encode, vae_decode
+from modules.masking import run_mask
 
 
 debug = shared.log.trace if os.environ.get('SD_DIFFUSERS_DEBUG', None) is not None else lambda *args, **kwargs: None
@@ -104,14 +105,12 @@ def process_diffusers(p: StableDiffusionProcessing):
         if kwargs.get('latents', None) is None:
             return kwargs
         kwargs = correction_callback(p, timestep, kwargs)
-        if p.scheduled_prompt and hasattr(kwargs, 'prompt_embeds') and hasattr(kwargs, 'negative_prompt_embeds'):
+        if p.scheduled_prompt and 'prompt_embeds' in kwargs and 'negative_prompt_embeds' in kwargs:
             try:
                 i = (step + 1) % len(p.prompt_embeds)
-                kwargs["prompt_embeds"] = p.prompt_embeds[i][0:1].repeat(1, kwargs["prompt_embeds"].shape[0], 1).view(
-                      kwargs["prompt_embeds"].shape[0], kwargs["prompt_embeds"].shape[1], -1)
+                kwargs["prompt_embeds"] = p.prompt_embeds[i][0:1].expand(kwargs["prompt_embeds"].shape)
                 j = (step + 1) % len(p.negative_embeds)
-                kwargs["negative_prompt_embeds"] = p.negative_embeds[j][0:1].repeat(1, kwargs["negative_prompt_embeds"].shape[0], 1).view(
-                      kwargs["negative_prompt_embeds"].shape[0], kwargs["negative_prompt_embeds"].shape[1], -1)
+                kwargs["negative_prompt_embeds"] = p.negative_embeds[j][0:1].expand(kwargs["negative_prompt_embeds"].shape)
             except Exception as e:
                 shared.log.debug(f"Callback: {e}")
         shared.state.current_latent = kwargs['latents']
@@ -169,9 +168,10 @@ def process_diffusers(p: StableDiffusionProcessing):
         elif (sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INPAINTING or is_img2img_model) and len(getattr(p, 'init_images' ,[])) > 0:
             p.ops.append('inpaint')
             if p.task_args.get('mask_image', None) is not None: # provided as override by a module
-                p.mask = shared.sd_model.mask_processor.blur(p.task_args['mask_image'], blur_factor=p.mask_blur) if p.mask_blur > 0 else p.task_args['mask_image']
+                # p.mask = shared.sd_model.mask_processor.blur(p.task_args['mask_image'], blur_factor=p.mask_blur) if p.mask_blur > 0 else p.task_args['mask_image']
+                p.mask = run_mask(input_image=p.init_images, input_mask=p.task_args['mask_image'], return_type='grayscale')
             elif getattr(p, 'image_mask', None) is not None: # standard
-                p.mask = p.image_mask
+                p.mask = run_mask(input_image=p.init_images, input_mask=p.image_mask, return_type='grayscale')
             elif getattr(p, 'mask', None) is not None: # backward compatibility
                 pass
             else: # fallback
@@ -217,8 +217,7 @@ def process_diffusers(p: StableDiffusionProcessing):
         parser = 'Fixed attention'
         if shared.opts.prompt_attention != 'Fixed attention' and 'StableDiffusion' in model.__class__.__name__:
             try:
-                prompt_parser_diffusers.encode_prompts(model, p, prompts, negative_prompts, kwargs.get("num_inference_steps", 1), 0, kwargs.pop("clip_skip", None))
-                # prompt_embed, pooled, negative_embed, negative_pooled = , , , ,
+                prompt_parser_diffusers.encode_prompts(model, p, prompts, negative_prompts, kwargs.get("num_inference_steps", 1), kwargs.pop("clip_skip", None))
                 parser = shared.opts.prompt_attention
             except Exception as e:
                 shared.log.error(f'Prompt parser encode: {e}')

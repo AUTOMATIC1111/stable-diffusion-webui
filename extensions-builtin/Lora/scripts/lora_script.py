@@ -1,5 +1,4 @@
 import re
-from fastapi import FastAPI
 import networks
 import lora # noqa:F401 # pylint: disable=unused-import
 from network import NetworkOnDisk
@@ -26,7 +25,7 @@ def create_lora_json(obj: NetworkOnDisk):
     }
 
 
-def api_networks(_, app: FastAPI):
+def api_networks(_, app):
     @app.get("/sdapi/v1/loras")
     async def get_loras():
         return [create_lora_json(obj) for obj in networks.available_networks.values()]

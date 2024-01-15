@@ -80,7 +80,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                 hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry,
                 resize_mode_before, resize_name_before, width_before, height_before, scale_by_before, selected_scale_tab_before,
                 resize_mode_after, resize_name_after, width_after, height_after, scale_by_after, selected_scale_tab_after,
-                denoising_strength, batch_count, batch_size, mask_blur, mask_overlap,
+                denoising_strength, batch_count, batch_size,
                 video_skip_frames, video_type, video_duration, video_loop, video_pad, video_interpolate,
                 ip_adapter, ip_scale, ip_image,
                 *input_script_args
@@ -135,7 +135,6 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
         denoising_strength = denoising_strength,
         n_iter = batch_count,
         batch_size = batch_size,
-        mask_blur=mask_blur,
         outpath_samples=shared.opts.outdir_samples or shared.opts.outdir_control_samples,
         outpath_grids=shared.opts.outdir_grids or shared.opts.outdir_control_grids,
     )

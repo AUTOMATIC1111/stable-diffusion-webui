@@ -21,7 +21,6 @@ import modules.ui_symbols as symbols
 
 
 allowed_dirs = []
-dir_timestamps = {}
 refresh_time = 0
 extra_pages = shared.extra_networks
 debug = shared.log.trace if os.environ.get('SD_EN_DEBUG', None) is not None else lambda *args, **kwargs: None
@@ -148,9 +147,6 @@ class ExtraNetworksPage:
         mtime = os.path.getmtime(filename)
         preview = f"./sd_extra_networks/thumb?filename={quoted_filename}&mtime={mtime}"
         return preview
-
-    def search_terms_from_path(self, filename):
-        return filename.replace('\\', '/')
 
     def is_empty(self, folder):
         return any(files_cache.list_files(folder, ext_filter=['.ckpt', '.safetensors', '.pt', '.json']))

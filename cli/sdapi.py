@@ -20,7 +20,7 @@ from util import Map, log
 from rich import print # pylint: disable=redefined-builtin
 
 
-sd_url = os.environ.get('SDAPI_URL', "http://127.0.0.1:7860") # automatic1111 api url root
+sd_url = os.environ.get('SDAPI_URL', "http://127.0.0.1:7860") # api url root
 sd_username = os.environ.get('SDAPI_USR', None)
 sd_password = os.environ.get('SDAPI_PWD', None)
 

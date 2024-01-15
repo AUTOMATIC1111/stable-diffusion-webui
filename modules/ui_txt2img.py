@@ -29,7 +29,7 @@ def create_ui():
         with FormRow(variant='compact', elem_id="txt2img_extra_networks", visible=False) as extra_networks_ui:
             from modules import ui_extra_networks
             extra_networks_ui = ui_extra_networks.create_ui(extra_networks_ui, txt2img_extra_networks_button, 'txt2img', skip_indexing=shared.opts.extra_network_skip_indexing)
-            timer.startup.record('ui-extra-networks')
+            timer.startup.record('ui-en')
 
         with gr.Row(elem_id="txt2img_interface", equal_height=False):
             with gr.Column(variant='compact', elem_id="txt2img_settings"):

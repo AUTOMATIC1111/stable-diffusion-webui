@@ -149,6 +149,7 @@ class SlicedAttnProcessor: # pylint: disable=too-few-public-methods
 
                         hidden_states[start_idx:end_idx, start_idx_2:end_idx_2] = attn_slice
                         del attn_slice
+                torch.xpu.synchronize(query.device)
             else:
                 query_slice = query[start_idx:end_idx]
                 key_slice = key[start_idx:end_idx]
@@ -283,6 +284,7 @@ class AttnProcessor:
 
                     hidden_states[start_idx:end_idx] = attn_slice
                     del attn_slice
+            torch.xpu.synchronize(query.device)
         else:
             attention_probs = attn.get_attention_scores(query, key, attention_mask)
             hidden_states = torch.bmm(attention_probs, value)

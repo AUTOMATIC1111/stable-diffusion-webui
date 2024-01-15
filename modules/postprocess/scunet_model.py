@@ -1,4 +1,4 @@
-import PIL.Image
+from PIL import Image
 import numpy as np
 import torch
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
@@ -68,7 +68,7 @@ class UpscalerSCUNet(Upscaler):
         output = E.div_(W)
         return output
 
-    def do_upscale(self, img: PIL.Image.Image, selected_file):
+    def do_upscale(self, img: Image.Image, selected_file):
         devices.torch_gc()
         model = self.load_model(selected_file)
         if model is None:
@@ -90,7 +90,7 @@ class UpscalerSCUNet(Upscaler):
         devices.torch_gc()
         output = np_output.transpose((1, 2, 0))  # CHW to HWC
         output = output[:, :, ::-1]  # BGR to RGB
-        img = PIL.Image.fromarray((output * 255).astype(np.uint8))
+        img = Image.fromarray((output * 255).astype(np.uint8))
         if opts.upscaler_unload and selected_file in self.models:
             del self.models[selected_file]
             log.debug(f"Upscaler unloaded: type={self.name} model={selected_file}")

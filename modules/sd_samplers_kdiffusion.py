@@ -10,6 +10,7 @@ import modules.shared as shared
 from modules.script_callbacks import CFGDenoiserParams, cfg_denoiser_callback
 from modules.script_callbacks import CFGDenoisedParams, cfg_denoised_callback
 from modules.script_callbacks import AfterCFGCallbackParams, cfg_after_cfg_callback
+from modules.script_callbacks import ExtraNoiseParams, extra_noise_callback
 
 
 # deal with k-diffusion imports
@@ -329,6 +330,13 @@ class KDiffusionSampler:
         sigmas = self.get_sigmas(p, steps)
         sigma_sched = sigmas[steps - t_enc - 1:]
         xi = x + noise * sigma_sched[0]
+        if shared.opts.img2img_extra_noise > 0:
+            p.extra_generation_params["Extra noise"] = shared.opts.img2img_extra_noise
+            extra_noise_params = ExtraNoiseParams(noise, x, xi)
+            extra_noise_callback(extra_noise_params)
+            noise = extra_noise_params.noise
+            xi += noise * shared.opts.img2img_extra_noise
+
         extra_params_kwargs = self.initialize(p)
         parameters = inspect.signature(self.func).parameters
         if 'sigma_min' in parameters:

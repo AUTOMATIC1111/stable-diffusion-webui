@@ -7,6 +7,7 @@ let img2img_textarea;
 const wait_time = 800;
 const token_timeouts = {};
 let uiLoaded = false;
+window.args_to_array = Array.from; // Compatibility with e.g. extensions that may expect this to be around
 
 function rememberGallerySelection(name) {
   // dummy
@@ -64,7 +65,20 @@ function extract_image_from_gallery(gallery) {
   return [gallery[index]];
 }
 
-window.args_to_array = Array.from; // Compatibility with e.g. extensions that may expect this to be around
+async function setTheme(val, old) {
+  if (!old) return;
+  const links = Array.from(document.getElementsByTagName('link')).filter((l) => l.href.includes(old));
+  for (const link of links) {
+    const href = link.href.replace(old, val);
+    const res = await fetch(href);
+    if (res.ok) {
+      log('setTheme:', old, val);
+      link.href = link.href.replace(old, val);
+    } else {
+      log('setTheme: CSS not found', val);
+    }
+  }
+}
 
 function setFontSize(val) {
   const size = val || opts.font_size;

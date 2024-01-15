@@ -13,8 +13,6 @@ import numpy as np
 import cv2
 from PIL import Image, ImageOps
 from skimage import exposure
-from ldm.data.util import AddMiDaS
-from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
 from installer import git_commit
@@ -30,7 +28,6 @@ import modules.extra_networks
 import modules.face_restoration
 import modules.images as images
 import modules.styles
-import modules.sd_hijack
 import modules.sd_hijack_freeu
 import modules.sd_samplers
 import modules.sd_samplers_common
@@ -41,6 +38,9 @@ import modules.taesd.sd_vae_taesd
 import modules.generation_parameters_copypaste
 from modules.sd_hijack_hypertile import context_hypertile_vae, context_hypertile_unet, hypertile_set
 
+
+if shared.backend == shared.Backend.ORIGINAL:
+    import modules.sd_hijack
 
 opt_C = 4
 opt_f = 8
@@ -55,8 +55,12 @@ def setup_color_correction(image):
 
 
 def apply_color_correction(correction, original_image):
-    shared.log.debug(f"Applying color correction: correction={correction} image={original_image}")
-    image = Image.fromarray(cv2.cvtColor(exposure.match_histograms(cv2.cvtColor(np.asarray(original_image), cv2.COLOR_RGB2LAB), correction, channel_axis=2), cv2.COLOR_LAB2RGB).astype("uint8"))
+    shared.log.debug(f"Applying color correction: correction={correction.shape} image={original_image}")
+    np_image = np.asarray(original_image)
+    np_recolor = cv2.cvtColor(np_image, cv2.COLOR_RGB2LAB)
+    np_match = exposure.match_histograms(np_recolor, correction, channel_axis=2)
+    np_output = cv2.cvtColor(np_match, cv2.COLOR_LAB2RGB)
+    image = Image.fromarray(np_output.astype("uint8"))
     image = blendLayers(image, original_image, BlendType.LUMINOSITY)
     return image
 
@@ -161,7 +165,7 @@ class StableDiffusionProcessing:
         self.image_cfg_scale = image_cfg_scale
         self.diffusers_guidance_rescale = diffusers_guidance_rescale
         self.sag_scale = sag_scale
-        if devices.backend == "ipex" and width == 1024 and height == 1024 and os.environ.get('DISABLE_IPEX_1024_WA', None) is None:
+        if devices.backend == "ipex" and width == 1024 and height == 1024 and not torch.xpu.has_fp64_dtype() and os.environ.get('DISABLE_IPEX_1024_WA', None) is None:
             width = 1080
             height = 1080
         self.width: int = width
@@ -289,6 +293,7 @@ class StableDiffusionProcessing:
 
     def depth2img_image_conditioning(self, source_image):
         # Use the AddMiDaS helper to Format our source image to suit the MiDaS model
+        from ldm.data.util import AddMiDaS
         transformer = AddMiDaS(model_type="dpt_hybrid")
         transformed = transformer({"jpg": rearrange(source_image[0], "c h w -> h w c")})
         midas_in = torch.from_numpy(transformed["midas_in"][None, ...]).to(device=shared.device)
@@ -352,6 +357,7 @@ class StableDiffusionProcessing:
         return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
 
     def img2img_image_conditioning(self, source_image, latent_image, image_mask=None):
+        from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
         source_image = devices.cond_cast_float(source_image)
         # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
         # identify itself with a field common to all models. The conditioning_key is also hybrid.
@@ -1058,7 +1064,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     def __init__(self, enable_hr: bool = False, denoising_strength: float = 0.75, firstphase_width: int = 0, firstphase_height: int = 0, hr_scale: float = 2.0, hr_force: bool = False, hr_upscaler: str = None, hr_second_pass_steps: int = 0, hr_resize_x: int = 0, hr_resize_y: int = 0, refiner_steps: int = 5, refiner_start: float = 0, refiner_prompt: str = '', refiner_negative: str = '', **kwargs):
 
         super().__init__(**kwargs)
-        if devices.backend == "ipex" and os.environ.get('DISABLE_IPEX_1024_WA', None) is None:
+        if devices.backend == "ipex" and not torch.xpu.has_fp64_dtype() and os.environ.get('DISABLE_IPEX_1024_WA', None) is None:
             width_curse = bool(hr_resize_x == 1024 and self.height * (hr_resize_x / self.width) == 1024)
             height_curse = bool(hr_resize_y == 1024 and self.width * (hr_resize_y / self.height) == 1024)
             if (width_curse != height_curse) or (height_curse and width_curse):
@@ -1284,15 +1290,18 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         if self.image_mask is not None:
             if type(self.image_mask) == list:
                 self.image_mask = self.image_mask[0]
-            self.image_mask = create_binary_mask(self.image_mask)
-            if self.inpainting_mask_invert:
-                self.image_mask = ImageOps.invert(self.image_mask)
-            if self.mask_blur > 0:
-                np_mask = np.array(self.image_mask)
-                kernel_size = 2 * int(2.5 * self.mask_blur + 0.5) + 1
-                np_mask = cv2.GaussianBlur(np_mask, (kernel_size, 1), self.mask_blur)
-                np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), self.mask_blur)
-                self.image_mask = Image.fromarray(np_mask)
+            if shared.backend == shared.Backend.ORIGINAL:
+                self.image_mask = create_binary_mask(self.image_mask)
+                if self.inpainting_mask_invert:
+                    self.image_mask = ImageOps.invert(self.image_mask)
+                if self.mask_blur > 0:
+                    np_mask = np.array(self.image_mask)
+                    kernel_size = 2 * int(2.5 * self.mask_blur + 0.5) + 1
+                    np_mask = cv2.GaussianBlur(np_mask, (kernel_size, 1), self.mask_blur)
+                    np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), self.mask_blur)
+                    self.image_mask = Image.fromarray(np_mask)
+            else:
+                self.image_mask = modules.masking.run_mask(input_image=self.init_images, input_mask=self.image_mask, return_type='grayscale', mask_blur=self.mask_blur, mask_padding=self.inpaint_full_res_padding, segment_enable=False)
             if self.inpaint_full_res:
                 self.mask_for_overlay = self.image_mask
                 mask = self.image_mask.convert('L')

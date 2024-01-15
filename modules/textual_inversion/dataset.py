@@ -3,7 +3,6 @@ import re
 import random
 from collections import defaultdict
 import numpy as np
-import PIL
 import torch
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader, Sampler
@@ -57,7 +56,7 @@ class PersonalizedBase(Dataset):
                     alpha_channel = image.getchannel('A')
                 image = image.convert('RGB')
                 if not varsize:
-                    image = image.resize((width, height), PIL.Image.BICUBIC)
+                    image = image.resize((width, height), Image.Resampling.BICUBIC)
             except Exception:
                 continue
 

@@ -70,10 +70,6 @@ class Shared(sys.modules[__name__].__class__):
         modules.sd_models.model_data.set_sd_refiner(value)
 
     @property
-    def backend(self):
-        return shared.Backend.ORIGINAL if not shared.cmd_opts.use_openvino and shared.opts.data['sd_backend'] == 'original' else shared.Backend.DIFFUSERS
-
-    @property
     def sd_model_type(self):
         try:
             import modules.sd_models # pylint: disable=W0621

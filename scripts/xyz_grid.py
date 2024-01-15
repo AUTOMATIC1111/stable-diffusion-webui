@@ -405,10 +405,7 @@ class SharedSettingsStackHelper(object):
             sd_vae.reload_vae_weights()
 
 
-re_range = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\(([+-]\d+)\s*\))?\s*")
-re_range_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\(([+-]\d+(?:.\d*)?)\s*\))?\s*")
-re_range_count = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\[(\d+)\s*])?\s*")
-re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\[(\d+(?:.\d*)?)\s*])?\s*")
+re_range = re.compile(r'([-+]?[0-9]*\.?[0-9]+)-([-+]?[0-9]*\.?[0-9]+):?([0-9]+)?')
 
 class Script(scripts.Script):
     current_axis_options = []
@@ -541,38 +538,30 @@ class Script(scripts.Script):
                 valslist_ext = []
                 for val in valslist:
                     m = re_range.fullmatch(val)
-                    mc = re_range_count.fullmatch(val)
                     if m is not None:
-                        start = int(m.group(1))
-                        end = int(m.group(2))+1
-                        step = int(m.group(3)) if m.group(3) is not None else 1
-                        valslist_ext += list(range(start, end, step))
-                    elif mc is not None:
-                        start = int(mc.group(1))
-                        end   = int(mc.group(2))
-                        num   = int(mc.group(3)) if mc.group(3) is not None else 1
-                        valslist_ext += [int(x) for x in np.linspace(start=start, stop=end, num=num).tolist()]
+                        start_val = int(m.group(1)) if m.group(1) is not None else val
+                        end_val = int(m.group(2)) if m.group(2) is not None else val
+                        num = int(m.group(3)) if m.group(3) is not None else int(end_val-start_val)
+                        valslist_ext += [int(x) for x in np.linspace(start=start_val, stop=end_val, num=max(2, num)).tolist()]
+                        shared.log.debug(f'XYZ grid range: start={start_val} end={end_val} num={max(2, num)} list={valslist}')
                     else:
-                        valslist_ext.append(val)
-                valslist = valslist_ext
+                        valslist_ext.append(int(val))
+                valslist.clear()
+                valslist = [x for x in valslist_ext if x not in valslist]
             elif opt.type == float:
                 valslist_ext = []
                 for val in valslist:
-                    m = re_range_float.fullmatch(val)
-                    mc = re_range_count_float.fullmatch(val)
+                    m = re_range.fullmatch(val)
                     if m is not None:
-                        start = float(m.group(1))
-                        end = float(m.group(2))
-                        step = float(m.group(3)) if m.group(3) is not None else 1
-                        valslist_ext += np.arange(start, end + step, step).tolist()
-                    elif mc is not None:
-                        start = float(mc.group(1))
-                        end   = float(mc.group(2))
-                        num   = int(mc.group(3)) if mc.group(3) is not None else 1
-                        valslist_ext += np.linspace(start=start, stop=end, num=num).tolist()
+                        start_val = float(m.group(1)) if m.group(1) is not None else val
+                        end_val = float(m.group(2)) if m.group(2) is not None else val
+                        num = int(m.group(3)) if m.group(3) is not None else int(end_val-start_val)
+                        valslist_ext += [round(float(x), 2) for x in np.linspace(start=start_val, stop=end_val, num=max(2, num)).tolist()]
+                        shared.log.debug(f'XYZ grid range: start={start_val} end={end_val} num={max(2, num)} list={valslist}')
                     else:
-                        valslist_ext.append(val)
-                valslist = valslist_ext
+                        valslist_ext.append(float(val))
+                valslist.clear()
+                valslist = [x for x in valslist_ext if x not in valslist]
             elif opt.type == str_permutations: # pylint: disable=comparison-with-callable
                 valslist = list(permutations(valslist))
             valslist = [opt.type(x) for x in valslist]

@@ -1,7 +1,6 @@
 import os
 import copy
 from abc import abstractmethod
-import PIL
 from PIL import Image
 import modules.shared
 from modules import modelloader
@@ -86,10 +85,10 @@ class Upscaler:
         return scalers
 
     @abstractmethod
-    def do_upscale(self, img: PIL.Image, selected_model: str):
+    def do_upscale(self, img: Image, selected_model: str):
         return img
 
-    def upscale(self, img: PIL.Image, scale, selected_model: str = None):
+    def upscale(self, img: Image, scale, selected_model: str = None):
         orig_state = copy.deepcopy(modules.shared.state)
         modules.shared.state.begin('upscale')
         self.scale = scale
@@ -199,7 +198,7 @@ class UpscalerNearest(Upscaler):
 
 def compile_upscaler(model, name=""):
     try:
-        if modules.shared.opts.ipex_optimize_upscaler:
+        if modules.shared.opts.ipex_optimize and "Upscaler" in modules.shared.opts.ipex_optimize:
             import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
             from modules.devices import dtype as devices_dtype
             model.training = False
@@ -208,7 +207,7 @@ def compile_upscaler(model, name=""):
     except Exception as err:
         modules.shared.log.warning(f"Upscaler IPEX Optimize not supported: {err}")
     try:
-        if modules.shared.opts.cuda_compile_upscaler and modules.shared.opts.cuda_compile_backend != 'none':
+        if "Upscaler" in modules.shared.opts.cuda_compile and modules.shared.opts.cuda_compile_backend != 'none':
             modules.shared.log.info(f"Upscaler Compiling: {name} mode={modules.shared.opts.cuda_compile_backend}")
             import logging
             import torch._dynamo # pylint: disable=unused-import,redefined-outer-name

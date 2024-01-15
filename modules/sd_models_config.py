@@ -2,7 +2,7 @@ import os
 
 import torch
 
-from modules import paths, sd_disable_initialization, devices
+from modules import paths, devices
 
 sd_repo_configs_path = 'configs'
 config_default = paths.sd_default_config
@@ -21,6 +21,7 @@ def is_using_v_parameterization_for_sd2(state_dict):
     """
     Detects whether unet in state_dict is using v-parameterization. Returns True if it is. You're welcome.
     """
+    from modules import sd_disable_initialization
     import ldm.modules.diffusionmodules.openaimodel
 
     device = devices.cpu

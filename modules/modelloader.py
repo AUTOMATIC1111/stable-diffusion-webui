@@ -4,7 +4,7 @@ import shutil
 import importlib
 from typing import Dict
 from urllib.parse import urlparse
-import PIL.Image as Image
+from PIL import Image
 import rich.progress as p
 from modules import shared, errors
 from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone
@@ -264,8 +264,6 @@ def find_diffuser(name: str):
     repo = [r for r in diffuser_repos if name == r['name'] or name == r['friendly'] or name == r['path']]
     if len(repo) > 0:
         return repo['name']
-    if shared.cmd_opts.no_download:
-        return None
     import huggingface_hub as hf
     hf_api = hf.HfApi()
     hf_filter = hf.ModelFilter(

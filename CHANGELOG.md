@@ -1,18 +1,22 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-07
+## Update for 2023-01-14
 
-Following-up on a major release, here is a lot more functionality in new Control module and FaceID & IPAdapter modules  
-Plus welcome additions to UI accessibility and flexibility of deployment  
+Another release with a lot more functionality in new Control module and FaceID & IPAdapter modules  
+Plus welcome additions to UI performance and accessibility and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
 
 - **Control**:
   - add **inpaint** support  
     applies to both *img2img* and *controlnet* workflows  
-    *note*: set blur to level you desire  
   - add **outpaint** support  
     applies to both *img2img* and *controlnet* workflows  
     *note*: increase denoising strength since outpainted area is blank by default  
+  - new **mask** module  
+    - granular blur (gaussian), errode (reduce or remove noise) and dilate (pad or expand)  
+    - optional **live preview**  
+    - optional **auto-segmentation** (e.g. segment-anything) using ml models  
+      *note*: auto segmentation will automatically expand user-masked area to segments that include current user mask  
   - allow **resize** both *before* and *after* generate operation  
     this allows for workflows such as: *image -> upscale or downscale -> generate -> upscale or downscale -> output*  
     providing more flexibility and than standard hires workflow  
@@ -41,6 +45,7 @@ And it also includes fixes for all reported issues so far
   - fix video color mode  
   - fix correct image mode  
   - fix batch/folder/video modes  
+  - fix processor switching within same unit  
   - fix pipeline switching between different modes  
 - [FaceID](https://huggingface.co/h94/IP-Adapter-FaceID)  
   - full implementation for *SD15* and *SD-XL*, to use simply select from *Scripts*  
@@ -56,20 +61,39 @@ And it also includes fixes for all reported issues so far
   - enable use via api, thanks @trojaner
 - **Improvements**  
   - **ui**  
-    - globally configurable font size  
+    - check version and **update** SD.Next via UI  
+      simply go to: settings -> update
+    - globally configurable **font size**  
       will dynamically rescale ui depending on settings -> user interface  
+    - built-in **themes** can be changed on-the-fly  
+      this does not work with gradio-default themes as css is created by gradio itself  
     - modularized blip/booru interrogate  
-      now appears as toolbuttons on image/gallery output
+      now appears as toolbuttons on image/gallery output  
+    - faster browser page load  
+    - cleanup hints  
+    - cleanup settings  
   - **server startup**: performance  
+    - reduced module imports  
+      ldm support is now only loaded when running in backend=original  
     - faster extension load  
     - faster json parsing  
     - faster lora indexing  
+    - lazy load optional imports  
+  - **extra networks**  
+    - 4x faster civitai metadata and previews lookup  
+    - better display and selection of tags & trigger words  
+    - better search  
+    - reduce html overhead  
   - **offline deployment**: allow deployment without git clone  
     for example, you can now deploy a zip of the sdnext folder  
   - **latent upscale**: updated latent upscalers (some are new)  
     *nearest, nearest-exact, area, bilinear, bicubic, bilinear-antialias, bicubic-antialias*
-  - **xyz grid**: continue on error  
-    now you can use xyz grid with different params and test which ones work and which dont  
+  - **xyz grid**
+    - range control  
+      example: `5.0-6.0:3` will generate 3 images with values `5.0,5.5,6.0`  
+      example: `10-20:4` will generate 4 images with values `10,13,16,20`  
+    - continue on error  
+      now you can use xyz grid with different params and test which ones work and which dont  
   - **hypertile**  
     - enable vae tiling  
     - add autodetect optimial value  
@@ -85,7 +109,7 @@ And it also includes fixes for all reported issues so far
   - major internal ui module refactoring  
     this may cause compatibility issues if an extension is doing a direct import from `ui.py`  
     in which case, report it so i can add a compatibility layer  
-- **Compile**
+- **compile**
   - new option: **fused projections**  
     pretty much free 5% performance boost for compatible models  
     enable in settings -> compute settings  
@@ -102,31 +126,42 @@ And it also includes fixes for all reported issues so far
   - rewrite ipex hijacks without CondFunc  
     improves compatibilty and performance  
     fixes random memory leaks  
+  - out of the box support for Intel Data Center GPU Max Series  
   - remove IPEX / Torch 2.0 specific hijacks  
-  - add `IPEX_SDPA_SLICE_TRIGGER_RATE` and `IPEX_ATTENTION_SLICE_RATE` env variables  
+  - add `IPEX_SDPA_SLICE_TRIGGER_RATE`, `IPEX_ATTENTION_SLICE_RATE` and `IPEX_FORCE_ATTENTION_SLICE` env variables  
+  - disable 1024x1024 workaround if the GPU supports 64 bit  
+  - fix lock-ups at very high resolutions  
 - **OpenVINO**, thanks @disty0  
   - **4-bit support with NNCF**  
     enable *Compress Model weights with NNCF* from *Compute Settings* and set a 4-bit NNCF mode  
     4-bit and 8-bit with OpenVINO is CPU only for now  
   - experimental support for *Text Encoder* compiling  
     OpenVINO is faster than IPEX now  
+  - add device selection to `Compute Settings`  
+    selecting multiple devices will use `HETERO` device  
+  - remove `OPENVINO_TORCH_BACKEND_DEVICE` env variable  
   - reduce system memory usage after compile  
   - fix cache loading with multiple models  
-- **Fixes**  
+- **fixes**  
   - ipadapter: allow changing of model/image on-the-fly  
   - ipadapter: fix fallback of cross-attention on unload  
+  - prompt scheduler, thanks @AI-Casanova
   - python: fix python 3.9 compatibility  
   - sdxl: fix positive prompt embeds
   - img2img: clip and blip interrogate  
   - img2img: sampler selection offset  
   - api: return current image in progress api if requested  
   - api: sanitize response object  
+  - api: cleanup error logging  
   - sampler: guard against invalid sampler index  
+  - sampler: add img2img_extra_noise option
   - config: reset default cfg scale to 6.0  
   - processing: correct display metadata  
+  - processing: fix batch file names  
   - live preview: fix when using `bfloat16`
   - upscale: fix ldsr
   - cli: fix cmd args parsing  
+  - global crlf->lf switch  
 
 ## Update for 2023-12-29
 

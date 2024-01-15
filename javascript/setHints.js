@@ -6,7 +6,7 @@ const localeData = {
   el: null,
 };
 
-function tooltipCreate() {
+async function tooltipCreate() {
   localeData.el = document.createElement('div');
   localeData.el.className = 'tooltip';
   localeData.el.id = 'tooltip-container';
