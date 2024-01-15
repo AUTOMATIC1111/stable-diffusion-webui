@@ -178,7 +178,11 @@ class Script(scripts.Script):
         ip_model_dict['faceid_embeds'] = face_embeds
 
         # run generate
-        images = ip_model.generate(**ip_model_dict)
+        images = []
+        for _i in range(p.n_iter):
+            res = ip_model.generate(**ip_model_dict)
+            if isinstance(res, list):
+                images += res
 
         if not cache:
             ip_model = None
