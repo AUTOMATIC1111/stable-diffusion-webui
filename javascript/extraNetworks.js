@@ -37,15 +37,20 @@ function setupExtraNetworksForTab(tabname) {
             return; // `continue` doesn't work in `forEach` loops. This is equivalent.
         }
 
-        var tabs = gradioApp().querySelector('#' + tabname + '_extra_tabs > div');
-        var sort = gradioApp().getElementById(tabname + '_extra_sort');
-        var sortOrder = gradioApp().getElementById(tabname + '_extra_sortorder');
-        var refresh = gradioApp().getElementById(tabname + '_extra_refresh');
-        var promptContainer = gradioApp().querySelector('.prompt-container-compact#' + tabname + '_prompt_container');
-        var negativePrompt = gradioApp().querySelector('#' + tabname + '_neg_prompt');
-        tabs.appendChild(sort);
-        tabs.appendChild(sortOrder);
-        tabs.appendChild(refresh);
+        var sort = gradioApp().querySelector("#" + tab_id + "_extra_sort");
+        if (!sort) {
+            return; // `continue` doesn't work in `forEach` loops. This is equivalent.
+        }
+
+        var sort_dir = gradioApp().querySelector("#" + tab_id + "_extra_sort_dir");
+        if (!sort_dir) {
+            return; // `continue` doesn't work in `forEach` loops. This is equivalent.
+        }
+
+        var refresh = gradioApp().querySelector("#" + tab_id + "_extra_refresh");
+        if (!refresh) {
+            return; // `continue` doesn't work in `forEach` loops. This is equivalent.
+        }
 
         var applyFilter = function() {
             var searchTerm = search.value.toLowerCase();
@@ -72,8 +77,8 @@ function setupExtraNetworksForTab(tabname) {
         var applySort = function() {
             var cards = gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card');
 
-            var reverse = sortOrder.classList.contains("sortReverse");
-            var sortKey = sort.querySelector("input").value.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim() || "name";
+            var reverse = sort_dir.dataset.sortdir == "Descending";
+            var sortKey = sort.dataset.sortmode.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim() || "name";
             sortKey = "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1);
             var sortKeyStore = sortKey + "-" + (reverse ? "Descending" : "Ascending") + "-" + cards.length;
 
@@ -107,10 +112,7 @@ function setupExtraNetworksForTab(tabname) {
         };
 
         search.addEventListener("input", applyFilter);
-        sortOrder.addEventListener("click", function() {
-            sortOrder.classList.toggle("sortReverse");
-            applySort();
-        });
+        applySort();
         applyFilter();
 
         extraNetworksApplySort[tab_id] = applySort;
@@ -274,7 +276,7 @@ function extraNetworksTreeProcessFileClick(event, btn, tabname, tab_id) {
     var par = btn.parentElement;
     var search_id = tabname + "_" + tab_id + "_extra_search";
     var type = par.getAttribute("data-tree-entry-type");
-    var path = par.getAttribute("data-path");
+    var path = btn.getAttribute("data-path");
 }
 
 function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
@@ -310,7 +312,7 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
 
     function _remove_selected_from_all() {
         // Removes the `selected` attribute from all buttons.
-        var sels = document.querySelectorAll("button.tree-list-content");
+        var sels = document.querySelectorAll("div.tree-list-content");
         [...sels].forEach(el => {
             el.removeAttribute("selected");
         });
@@ -345,11 +347,11 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
             // NOTE: Double inversion sucks but it is the clearest way to show the branching here.
             _expand_or_collapse(ul, btn);
             _select_button(btn, tabname, tab_id);
-            _update_search(tabname, tab_id, btn.parentElement.getAttribute("data-path"));
+            _update_search(tabname, tab_id, btn.getAttribute("data-path"));
         } else {
             // All other cases, just select the button.
             _select_button(btn, tabname, tab_id);
-            _update_search(tabname, tab_id, btn.parentElement.getAttribute("data-path"));
+            _update_search(tabname, tab_id, btn.getAttribute("data-path"));
         }
     }
 }
@@ -372,6 +374,48 @@ function extraNetworksTreeOnClick(event, tabname, tab_id) {
     } else {
         extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id);
     }
+}
+
+function extraNetworksTreeSortOnClick(event, tabname, tab_id) {
+    var curr_mode = event.currentTarget.dataset.sortmode;
+    var el_sort_dir = gradioApp().querySelector("#" + tabname + "_" + tab_id + "_extra_sort_dir");
+    var sort_dir = el_sort_dir.dataset.sortdir;
+    if (curr_mode == "path") {
+        event.currentTarget.dataset.sortmode = "name";
+        event.currentTarget.dataset.sortkey = "sortName-" + sort_dir + "-640";
+        event.currentTarget.setAttribute("title", "Sort by filename");
+    } else if (curr_mode == "name") {
+        event.currentTarget.dataset.sortmode = "date_created";
+        event.currentTarget.dataset.sortkey = "sortDate_created-" + sort_dir + "-640";
+        event.currentTarget.setAttribute("title", "Sort by date created");
+    } else if (curr_mode == "date_created") {
+        event.currentTarget.dataset.sortmode = "date_modified";
+        event.currentTarget.dataset.sortkey = "sortDate_modified-" + sort_dir + "-640";
+        event.currentTarget.setAttribute("title", "Sort by date modified");
+    } else {
+        event.currentTarget.dataset.sortmode = "path";
+        event.currentTarget.dataset.sortkey = "sortPath-" + sort_dir + "-640";
+        event.currentTarget.setAttribute("title", "Sort by path");
+    }
+    applyExtraNetworkSort(tabname + "_" + tab_id);
+}
+
+function extraNetworksTreeSortDirOnClick(event, tabname, tab_id) {
+    var curr_dir = event.currentTarget.getAttribute("data-sortdir");
+    if (curr_dir == "Ascending") {
+        event.currentTarget.dataset.sortdir = "Descending";
+        event.currentTarget.setAttribute("title", "Sort descending");
+    } else {
+        event.currentTarget.dataset.sortdir = "Ascending";
+        event.currentTarget.setAttribute("title", "Sort ascending");
+    }
+    applyExtraNetworkSort(tabname + "_" + tab_id);
+}
+
+function extraNetworksTreeRefreshOnClick(event, tabname, tab_id) {
+    console.log("refresh clicked");
+    var btn_refresh_internal = gradioApp().getElementById(tabname + "_extra_refresh_internal");
+    btn_refresh_internal.dispatchEvent(new Event("click"));
 }
 
 var globalPopup = null;

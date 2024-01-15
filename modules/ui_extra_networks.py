@@ -19,50 +19,6 @@ extra_pages = []
 allowed_dirs = set()
 default_allowed_preview_extensions = ["png", "jpg", "jpeg", "webp", "gif"]
 
-tree_tpl = (
-    "<div class='tree-list-search'>"
-    "<input "
-    "id='{tabname}_{tab_id}_extra_search' "
-    "class='tree-list-search-text' "
-    "type='search' "
-    "placeholder='Filter files'"
-    ">"
-    "</div>"
-    "<ul class='tree-list tree-list--tree'>"
-    "{content}"
-    "</ul>"
-)
-
-tree_ul_tpl = (
-    "<ul class='tree-list tree-list--subgroup' data-hidden>"
-    "{content}"
-    "</ul>"
-)
-
-tree_li_dir_tpl = (
-    "<li "
-    "class='tree-list-item tree-list-item--has-subitem' "
-    "data-path='{path}' "
-    "data-tree-entry-type='dir'>"
-    "{content}"
-    "</li>"
-)
-tree_li_file_tpl = (
-    "<li "
-    "id='file-tree-item-{hash}' "
-    "class='tree-list-item tree-list-item--subitem' "
-    "data-path='{path}' "
-    "data-tree-entry-type='file'>"
-    "{content}"
-    "</li>"
-)
-
-action_list_item_action_leading = (
-    "<span class='tree-list-item-action tree-list-item-action--leading'>"
-    "<i class='tree-list-item-action-chevron'></i>"
-    "</span>"
-)
-
 @functools.cache
 def allowed_preview_extensions_with_extra(extra_extensions=None):
     return set(default_allowed_preview_extensions) | set(extra_extensions or [])
@@ -201,9 +157,13 @@ class ExtraNetworksPage:
         self.title = title
         self.name = title.lower()
         self.id_page = self.name.replace(" ", "_")
-        self.extra_networks_pane_template = shared.html("extra-networks-pane.html")
-        self.card_page_template = shared.html("extra-networks-card.html")
-        self.tree_button_template = shared.html("extra-networks-tree-button.html")
+        self.pane_tpl = shared.html("extra-networks-pane.html")
+        self.tree_tpl = shared.html("extra-networks-tree.html")
+        self.card_tpl = shared.html("extra-networks-card.html")
+        self.btn_tree_tpl = shared.html("extra-networks-tree-button.html")
+        self.btn_copy_path_tpl = shared.html("extra-networks-copy-path-button.html")
+        self.btn_metadata_tpl = shared.html("extra-networks-metadata-button.html")
+        self.btn_edit_item_tpl = shared.html("extra-networks-edit-item-button.html")
         self.allow_prompt = True
         self.allow_negative_prompt = False
         self.metadata = {}
@@ -268,12 +228,8 @@ class ExtraNetworksPage:
         
         onclick = item.get("onclick", None)
         if onclick is None:
-            print("HERE")
-            print("TABNAME:", tabname)
-            print("PROMPT:", item["prompt"])
-            print("NEG_PROMPT:", item.get("negative_prompt", ""))
-            print("ALLOW_NEG:", self.allow_negative_prompt)
-            onclick_js_tpl = "cardClicked('{tabname}', '{prompt}', '{neg_prompt}', '{allow_neg}');"
+            # Don't quote prompt/neg_prompt since they are stored as js strings already.
+            onclick_js_tpl = "cardClicked('{tabname}', {prompt}, {neg_prompt}, '{allow_neg}');"
             onclick = onclick_js_tpl.format(
                 **{
                     "tabname": tabname,
@@ -284,15 +240,23 @@ class ExtraNetworksPage:
             )
             onclick = html.escape(onclick)
         
-        
-        copy_path_button = f"<div class='copy-path-button card-button' title='Copy path to clipboard' onclick='extraNetworksCopyCardPath(event, {quote_js(item['filename'])})' data-clipboard-text='{quote_js(item['filename'])}'></div>"
-
-        metadata_button = ""
+        btn_copy_path = self.btn_copy_path_tpl.format(**{"filename": item["filename"]})
+        btn_metadata = ""
         metadata = item.get("metadata")
         if metadata:
-            metadata_button = f"<div class='metadata-button card-button' title='Show internal metadata' onclick='extraNetworksRequestMetadata(event, {quote_js(self.id_page)}, {quote_js(html.escape(item['name']))})'></div>"
-
-        edit_button = f"<div class='edit-button card-button' title='Edit metadata' onclick='extraNetworksEditUserMetadata(event, {quote_js(tabname)}, {quote_js(self.id_page)}, {quote_js(html.escape(item['name']))})'></div>"
+            btn_metadata = self.btn_metadata_tpl.format(
+                **{
+                    "page_id": self.id_page,
+                    "name": html.escape(item["name"]),
+                }
+            )
+        btn_edit_item = self.btn_edit_item_tpl.format(
+            **{
+                "tabname": tabname,
+                "page_id": self.id_page,
+                "name": html.escape(item["name"]),
+            }
+        )
 
         local_path = ""
         filename = item.get("filename", "")
@@ -334,11 +298,11 @@ class ExtraNetworksPage:
         args = {
             "background_image": background_image,
             "card_clicked": onclick,
-            "copy_path_button": copy_path_button,
+            "copy_path_button": btn_copy_path,
             "description": (item.get("description") or "" if shared.opts.extra_networks_card_show_desc else ""),
-            "edit_button": edit_button,
+            "edit_button": btn_edit_item,
             "local_preview": quote_js(item["local_preview"]),
-            "metadata_button": metadata_button,
+            "metadata_button": btn_metadata,
             "name": html.escape(item["name"]),
             "prompt": item.get("prompt", None),
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {quote_js(tabname)}, {quote_js(item["local_preview"])})""") + '"',
@@ -354,6 +318,57 @@ class ExtraNetworksPage:
             return template.format(**args)
         else:
             return args
+
+    def create_tree_dir_item_html(self, tabname: str, dir_path: str, content: Optional[str] = None) -> Optional[str]:
+        if not content:
+            return None
+
+        btn = self.btn_tree_tpl.format(
+            **{
+                "search_terms": "",
+                "subclass": "tree-list-content-dir",
+                "tabname": tabname,
+                "tab_id": self.id_page,
+                "onclick_extra": "",
+                "data_path": dir_path,
+                "data_hash": "",
+                "action_list_item_action_leading": "<i class='tree-list-item-action-chevron'></i>",
+                "action_list_item_visual_leading": "🗀",
+                "action_list_item_label": os.path.basename(dir_path),
+                "action_list_item_visual_trailing": "",
+                "action_list_item_action_trailing": "",
+            }
+        )
+        ul = f"<ul class='tree-list tree-list--subgroup' data-hidden>{content}</ul>"
+        return f"<li class='tree-list-item tree-list-item--has-subitem' data-tree-entry-type='dir'>{btn + ul}</li>"
+
+    def create_tree_file_item_html(self, tabname: str, item_name: str, item: dict) -> str:
+        item_html_args = self.create_item_html(tabname, item)
+        action_buttons = "".join(
+            [
+                item_html_args["copy_path_button"],
+                item_html_args["metadata_button"],
+                item_html_args["edit_button"],
+            ]
+        )
+        action_buttons = f"<div class=\"button-row\">{action_buttons}</div>"
+        btn = self.btn_tree_tpl.format(
+            **{
+                "search_terms": "",
+                "subclass": "tree-list-content-file",
+                "tabname": tabname,
+                "tab_id": self.id_page,
+                "onclick_extra": item_html_args["card_clicked"],
+                "data_path": item_name,
+                "data_hash": item["shorthash"],
+                "action_list_item_action_leading": "<i class='tree-list-item-action-chevron'></i>",
+                "action_list_item_visual_leading": "🗎",
+                "action_list_item_label": item["name"],
+                "action_list_item_visual_trailing": "",
+                "action_list_item_action_trailing": action_buttons,
+            }
+        )
+        return f"<li class='tree-list-item tree-list-item--subitem' data-tree-entry-type='file'>{btn}</li>"
 
     def create_tree_view_html(self, tabname: str) -> str:
         """Generates HTML for displaying folders in a tree view.
@@ -385,57 +400,9 @@ class ExtraNetworksPage:
 
             for k, v in sorted(data.items(), key=lambda x: shared.natural_sort_key(x[0])):
                 if isinstance(v, (ExtraNetworksItem,)):
-                    _item_html_args = self.create_item_html(tabname, v.item)
-                    _action_buttons = "".join(
-                        [
-                            _item_html_args["copy_path_button"],
-                            _item_html_args["metadata_button"],
-                            _item_html_args["edit_button"],
-                        ]
-                    )
-                    _action_buttons = f"<div class=\"button-row\">{_action_buttons}</div>"
-                    _btn = self.tree_button_template.format(
-                        **{
-                            "search_terms": "",
-                            "subclass": "tree-list-content-file",
-                            "tabname": tabname,
-                            "tab_id": self.id_page,
-                            "onclick_extra": _item_html_args["card_clicked"],
-                            "action_list_item_action_leading": action_list_item_action_leading,
-                            "action_list_item_visual_leading": "🗎",
-                            "action_list_item_label": v.item["name"],
-                            "action_list_item_visual_trailing": "",
-                            "action_list_item_action_trailing": _action_buttons,
-                        }
-                    )
-
-                    _li = tree_li_file_tpl.format(
-                        **{
-                            "hash": v.item["shorthash"],
-                            "path": k,
-                            "type": "file",
-                            "content": _btn,
-                        }
-                    )
-                    _file_li.append(_li)
+                    _file_li.append(self.create_tree_file_item_html(tabname, k, v.item))
                 else:
-                    _btn = self.tree_button_template.format(
-                        **{
-                            "search_terms": "",
-                            "subclass": "tree-list-content-dir",
-                            "tabname": tabname,
-                            "tab_id": self.id_page,
-                            "onclick_extra": "",
-                            "action_list_item_action_leading": action_list_item_action_leading,
-                            "action_list_item_visual_leading": "🗀",
-                            "action_list_item_label": os.path.basename(k),
-                            "action_list_item_visual_trailing": "",
-                            "action_list_item_action_trailing": "",
-                        }
-                    )
-                    _ul = tree_ul_tpl.format(**{"content": _build_tree(v)})
-                    _li = tree_li_dir_tpl.format(**{"content": _btn + _ul, "path": k})
-                    _dir_li.append(_li)
+                    _dir_li.append(self.create_tree_dir_item_html(tabname, k, _build_tree(v)))
 
             # Directories should always be displayed before files.
             return "".join(_dir_li) + "".join(_file_li)
@@ -443,31 +410,15 @@ class ExtraNetworksPage:
         # Add each root directory to the tree.
         for k, v in sorted(tree.items(), key=lambda x: shared.natural_sort_key(x[0])):
             # If root is empty, append the "disabled" attribute to the template details tag.
-            btn = self.tree_button_template.format(
-                **{
-                    "search_terms": "",
-                    "subclass": "tree-list-content-dir",
-                    "tabname": tabname,
-                    "tab_id": self.id_page,
-                    "onclick_extra": "",
-                    "action_list_item_action_leading": action_list_item_action_leading,
-                    "action_list_item_visual_leading": "🗀",
-                    "action_list_item_label": os.path.basename(k),
-                    "action_list_item_visual_trailing": "",
-                    "action_list_item_action_trailing": "",
-                }
-            )
-            subtree = _build_tree(v)
-            if subtree:
-                ul = tree_ul_tpl.format(**{"content": _build_tree(v)})
-                li = tree_li_dir_tpl.format(**{"content": btn + ul, "path": k})
-                res += li
+            item_html = self.create_tree_dir_item_html(tabname, k, _build_tree(v))
+            if item_html:
+                res += item_html
 
-        return tree_tpl.format(
+        return self.tree_tpl.format(
             **{
-                "content": res,
                 "tabname": tabname,
                 "tab_id": self.id_page,
+                "tree": f"<ul class='tree-list tree-list--tree'>{res}</ul>"
             }
         )
 
@@ -475,8 +426,7 @@ class ExtraNetworksPage:
         res = ""
         self.items = {x["name"]: x for x in self.list_items()}
         for item in self.items.values():
-            print("HEEEERRE:", item)
-            res += self.create_item_html(tabname, item, self.card_page_template)
+            res += self.create_item_html(tabname, item, self.card_tpl)
 
         if res == "":
             dirs = "".join([f"<li>{x}</li>" for x in self.allowed_directories_for_previews()])
@@ -493,7 +443,7 @@ class ExtraNetworksPage:
         card_view_html = self.create_card_view_html(tabname)
         network_type_id = self.id_page
 
-        return self.extra_networks_pane_template.format(
+        return self.pane_tpl.format(
             **{
                 "tabname": tabname,
                 "network_type_id": network_type_id,
@@ -612,6 +562,8 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
     related_tabs = []
 
+    button_refresh = gr.Button("Refresh", elem_id=tabname+"_extra_refresh_internal", visible=False)
+
     for page in ui.stored_extra_pages:
         with gr.Tab(page.title, elem_id=f"{tabname}_{page.id_page}", elem_classes=["extra-page"]) as tab:
             with gr.Column(elem_id=f"{tabname}_{page.id_page}_prompts", elem_classes=["extra-page-prompts"]):
@@ -633,50 +585,8 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
             related_tabs.append(tab)
 
-    dropdown_sort = gr.Dropdown(choices=['Path', 'Name', 'Date Created', 'Date Modified', ], value=shared.opts.extra_networks_card_order_field, elem_id=tabname+"_extra_sort", elem_classes="sort", multiselect=False, visible=False, show_label=False, interactive=True, label=tabname+"_extra_sort_order")
-    button_sortorder = ToolButton(switch_values_symbol, elem_id=tabname+"_extra_sortorder", elem_classes=["sortorder"] + ([] if shared.opts.extra_networks_card_order == "Ascending" else ["sortReverse"]), visible=False, tooltip="Invert sort order")
-    button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh", visible=False)
-
-    tab_controls = [
-        dropdown_sort,
-        button_sortorder,
-        button_refresh,
-    ]
-
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
-
-    for tab in unrelated_tabs:
-        tab.select(
-            fn=lambda: [gr.update(visible=False) for _ in tab_controls],
-            _js=f"function(){{ extraNetworksUnrelatedTabSelected('{tabname}'); }}",
-            inputs=[],
-            outputs=tab_controls,
-            show_progress=False,
-        )
-
-    for page, tab in zip(ui.stored_extra_pages, related_tabs):
-        allow_prompt = "true" if page.allow_prompt else "false"
-        allow_negative_prompt = "true" if page.allow_negative_prompt else "false"
-
-        jscode = (
-            "extraNetworksTabSelected("
-            f"'{tabname}', "
-            f"'{tabname}_{page.id_page}_prompts', "
-            f"'{allow_prompt}', "
-            f"'{allow_negative_prompt}'"
-            ");"
-        )
-
-        tab.select(
-            fn=lambda: [gr.update(visible=True) for _ in tab_controls],
-            _js="function(){ " + jscode + " }",
-            inputs=[],
-            outputs=tab_controls,
-            show_progress=False,
-        )
-
-    dropdown_sort.change(fn=lambda: None, _js="function(){ applyExtraNetworkSort('" + tabname + "'); }")
 
     def create_html():
         ui.pages_contents = [pg.create_html(ui.tabname) for pg in ui.stored_extra_pages]
@@ -693,6 +603,8 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
         return ui.pages_contents
 
     interface.load(fn=pages_html, inputs=[], outputs=ui.pages)
+    # NOTE: Event is manually fired in extraNetworks.js:extraNetworksTreeRefreshOnClick()
+    # button is unused and hidden at all times. Only used in order to fire this event.
     button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
 
     return ui
