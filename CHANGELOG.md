@@ -17,6 +17,7 @@ And it also includes fixes for all reported issues so far
     - optional **live preview**  
     - optional **auto-segmentation** (e.g. segment-anything) using ml models  
       *note*: auto segmentation will automatically expand user-masked area to segments that include current user mask  
+    - can be combined with control processors in which case mask is applied before processor  
   - allow **resize** both *before* and *after* generate operation  
     this allows for workflows such as: *image -> upscale or downscale -> generate -> upscale or downscale -> output*  
     providing more flexibility and than standard hires workflow  

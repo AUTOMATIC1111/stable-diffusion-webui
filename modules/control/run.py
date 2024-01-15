@@ -15,7 +15,7 @@ from modules.control.units import lite # Kohya ControlLLLite
 from modules.control.units import t2iadapter # TencentARC T2I-Adapter
 from modules.control.units import reference # ControlNet-Reference
 from scripts import ipadapter # pylint: disable=no-name-in-module
-from modules import devices, shared, errors, processing, images, sd_models, scripts # pylint: disable=ungrouped-imports
+from modules import devices, shared, errors, processing, images, sd_models, scripts, masking # pylint: disable=ungrouped-imports
 
 
 debug = shared.log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
@@ -363,45 +363,21 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
 
                     # process
                     if input_image is None:
-                        p.image = None
-                        processed_image = None
+                        p.image = []
                         debug(f'Control: process=None image={p.image} mask={mask}')
-                    elif mask is not None and not has_models:
-                        processed_image = mask
-                        debug(f'Control: process=None image={p.image} mask={mask}')
-                    elif len(active_process) == 0 and unit_type == 'reference':
-                        p.ref_image = p.override or input_image
-                        p.task_args['ref_image'] = p.ref_image
-                        debug(f'Control: process=None image={p.ref_image}')
-                        if p.ref_image is None:
-                            msg = 'Control: attempting reference mode but image is none'
-                            shared.log.error(msg)
-                            restore_pipeline()
-                            return msg
-                        processed_image = p.ref_image
-                    elif len(active_process) == 1:
-                        image_mode = 'L' if unit_type == 'adapter' and len(active_model) > 0 and ('Canny' in active_model[0].model_id or 'Sketch' in active_model[0].model_id) else 'RGB'
-                        p.image = active_process[0](input_image, image_mode)
-                        p.task_args['image'] = p.image
-                        p.extra_generation_params["Control process"] = active_process[0].processor_id
-                        debug(f'Control: process={active_process[0].processor_id} image={p.image}')
-                        if p.image is None:
-                            msg = 'Control: attempting process but output is none'
-                            shared.log.error(msg)
-                            restore_pipeline()
-                            return msg
-                        processed_image = p.image
-                    else:
-                        if len(active_process) > 0:
-                            p.image = []
-                            for i, process in enumerate(active_process): # list[image]
-                                image_mode = 'L' if unit_type == 'adapter' and len(active_model) > i and ('Canny' in active_model[i].model_id or 'Sketch' in active_model[i].model_id) else 'RGB'
-                                p.image.append(process(input_image, image_mode))
-                        else:
-                            p.image = [input_image]
+                    elif len(active_process) == 0:
+                        p.image = [masking.run_mask(input_image=input_image, input_mask=mask, return_type='masked') if mask is not None else input_image]
+                    elif len(active_process) > 0:
+                        p.image = []
+                        masked_image = masking.run_mask(input_image=input_image, input_mask=mask, return_type='masked') if mask is not None else input_image
+                        for i, process in enumerate(active_process): # list[image]
+                            image_mode = 'L' if unit_type == 'adapter' and len(active_model) > i and ('Canny' in active_model[i].model_id or 'Sketch' in active_model[i].model_id) else 'RGB' # t2iadapter canny and sketch work in grayscale only
+                            debug(f'Control: process={[process.processor_id for p in active_process]} i={i} image={p.image}')
+                            p.image.append(process(masked_image, image_mode))
+
+                    if len(p.image) > 0:
                         p.task_args['image'] = p.image
                         p.extra_generation_params["Control process"] = [p.processor_id for p in active_process]
-                        debug(f'Control: process={[p.processor_id for p in active_process]} image={p.image}')
                         if any(img is None for img in p.image):
                             msg = 'Control: attempting process but output is none'
                             shared.log.error(msg)
@@ -410,8 +386,20 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         processed_image = [np.array(i) for i in p.image]
                         processed_image = util.blend(processed_image) # blend all processed images into one
                         processed_image = Image.fromarray(processed_image)
+                    else:
+                        processed_image = input_image
 
-                    if unit_type == 'controlnet' and input_type == 1: # Init image same as control
+                    if unit_type == 'reference':
+                        p.ref_image = p.override or input_image
+                        p.task_args.pop('image', None)
+                        p.task_args['ref_image'] = p.ref_image
+                        debug(f'Control: process=None image={p.ref_image}')
+                        if p.ref_image is None:
+                            msg = 'Control: attempting reference mode but image is none'
+                            shared.log.error(msg)
+                            restore_pipeline()
+                            return msg
+                    elif unit_type == 'controlnet' and input_type == 1: # Init image same as control
                         p.task_args['image'] = input_image
                         p.task_args['control_image'] = p.image
                         p.task_args['strength'] = p.denoising_strength

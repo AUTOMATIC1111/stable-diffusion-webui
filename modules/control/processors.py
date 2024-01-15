@@ -235,5 +235,10 @@ class Processor():
             image_process = image_process.convert(mode)
         return image_process
 
-    def preview(self, image_input: Image):
-        return self.__call__(image_input)
+    def preview(self):
+        import modules.ui_control
+        input_image = modules.ui_control.input_source
+        if isinstance(input_image, list):
+            input_image = input_image[0]
+        if isinstance(input_image, Image.Image):
+            return self.__call__(input_image)

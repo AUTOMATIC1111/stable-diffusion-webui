@@ -242,6 +242,7 @@ def run_mask(input_image: gr.Image, input_mask: gr.Image = None, return_type: st
         mask = input_mask * 255
     else:
         mask = run_segment(input_image, input_mask)
+    mask = cv2.resize(mask, (input_image.width, input_image.height), interpolation=cv2.INTER_LINEAR)
 
     if mask is None:
         shared.log.error('Segment error: no mask')
@@ -276,9 +277,6 @@ def run_mask(input_image: gr.Image, input_mask: gr.Image = None, return_type: st
     mask_size = np.count_nonzero(mask)
     total_size = np.prod(mask.shape)
     area_size = np.count_nonzero(mask)
-    colored_mask = cv2.applyColorMap(mask, COLORMAP.index(opts.seg_colormap)) # recolor mask
-    combined_image = cv2.addWeighted(np.array(input_image), opts.weight_original, colored_mask, opts.weight_mask, 0)
-    binary_mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1] # otsu uses mean instead of threshold
     t1 = time.time()
 
     return_type = return_type or opts.preview_type
@@ -286,12 +284,22 @@ def run_mask(input_image: gr.Image, input_mask: gr.Image = None, return_type: st
     if return_type == 'none':
         return input_mask
     elif return_type == 'binary':
+        binary_mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1] # otsu uses mean instead of threshold
         return Image.fromarray(binary_mask)
+    elif return_type == 'masked':
+        orig = np.array(input_image)
+        mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
+        masked_image = cv2.bitwise_and(orig, mask)
+        return Image.fromarray(masked_image)
     elif return_type == 'grayscale':
         return Image.fromarray(mask)
     elif return_type == 'color':
+        colored_mask = cv2.applyColorMap(mask, COLORMAP.index(opts.seg_colormap)) # recolor mask
         return Image.fromarray(colored_mask)
     elif return_type == 'composite':
+        colored_mask = cv2.applyColorMap(mask, COLORMAP.index(opts.seg_colormap)) # recolor mask
+        orig = np.array(input_image)
+        combined_image = cv2.addWeighted(orig, opts.weight_original, colored_mask, opts.weight_mask, 0)
         return Image.fromarray(combined_image)
     return input_mask
 
@@ -340,7 +348,7 @@ def create_segment_ui():
             controls.append(gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='IOU', value=0.5, visible=False))
             controls.append(gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='NMS', value=0.5, visible=False))
         with gr.Row():
-            controls.append(gr.Dropdown(label="Preview", choices=['none', 'binary', 'grayscale', 'color', 'composite'], value='composite'))
+            controls.append(gr.Dropdown(label="Preview", choices=['none', 'masked', 'binary', 'grayscale', 'color', 'composite'], value='composite'))
             controls.append(gr.Dropdown(label="Colormap", choices=COLORMAP, value='pink'))
 
         selected_model.change(fn=init_model, inputs=[selected_model], outputs=[selected_model])

@@ -404,7 +404,6 @@ def create_ui(_blocks: gr.Blocks=None):
                         units.append(unit.Unit(
                             unit_type = 'controlnet',
                             result_txt = result_txt,
-                            image_input = input_image,
                             enabled_cb = enabled_cb,
                             reset_btn = reset_btn,
                             process_id = process_id,
@@ -456,7 +455,6 @@ def create_ui(_blocks: gr.Blocks=None):
                         units.append(unit.Unit(
                             unit_type = 'adapter',
                             result_txt = result_txt,
-                            image_input = input_image,
                             enabled_cb = enabled_cb,
                             reset_btn = reset_btn,
                             process_id = process_id,
@@ -499,7 +497,6 @@ def create_ui(_blocks: gr.Blocks=None):
                         units.append(unit.Unit(
                             unit_type = 'xs',
                             result_txt = result_txt,
-                            image_input = input_image,
                             enabled_cb = enabled_cb,
                             reset_btn = reset_btn,
                             process_id = process_id,
@@ -541,7 +538,6 @@ def create_ui(_blocks: gr.Blocks=None):
                         units.append(unit.Unit(
                             unit_type = 'lite',
                             result_txt = result_txt,
-                            image_input = input_image,
                             enabled_cb = enabled_cb,
                             reset_btn = reset_btn,
                             process_id = process_id,
@@ -580,7 +576,6 @@ def create_ui(_blocks: gr.Blocks=None):
                         units.append(unit.Unit(
                             unit_type = 'reference',
                             result_txt = result_txt,
-                            image_input = input_image,
                             enabled_cb = enabled_cb,
                             reset_btn = reset_btn,
                             process_id = process_id,
@@ -666,11 +661,12 @@ def create_ui(_blocks: gr.Blocks=None):
                 )
                 prompt.submit(**select_dict)
                 btn_generate.click(**select_dict)
-                for ctrl in [input_image, input_video, input_batch, input_folder, init_image, init_video, init_batch, init_folder, tab_image, tab_video, tab_batch, tab_folder, tab_image_init, tab_video_init, tab_batch_init, tab_folder_init]:
+                for ctrl in [input_image, input_resize, input_video, input_batch, input_folder, init_image, init_video, init_batch, init_folder, tab_image, tab_video, tab_batch, tab_folder, tab_image_init, tab_video_init, tab_batch_init, tab_folder_init]:
                     if hasattr(ctrl, 'change'):
                         ctrl.change(**select_dict)
-                    elif hasattr(ctrl, 'select'):
-                        ctrl.select(**select_dict)
+                for ctrl in [input_inpaint]: # gradio image mode inpaint triggeres endless loop on change event
+                    if hasattr(ctrl, 'upload'):
+                        ctrl.upload(**select_dict)
 
                 tabs_state = gr.Text(value='none', visible=False)
                 input_fields = [

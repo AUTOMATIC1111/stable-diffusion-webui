@@ -9,7 +9,7 @@ from installer import log as installer_log, setup_logging
 
 setup_logging()
 log = installer_log
-console = Console(log_time=True, log_time_format='%H:%M:%S-%f', theme=Theme({
+console = Console(log_time=True, tab_size=4, log_time_format='%H:%M:%S-%f', soft_wrap=True, safe_box=True, theme=Theme({
     "traceback.border": "black",
     "traceback.border.syntax_error": "black",
     "inspect.value.border": "black",
@@ -37,7 +37,7 @@ def print_error_explanation(message):
 
 def display(e: Exception, task, suppress=[]): # noqa: B006
     log.error(f"{task or 'error'}: {type(e).__name__}")
-    console.print_exception(show_locals=False, max_frames=10, extra_lines=1, suppress=suppress, theme="ansi_dark", word_wrap=False, width=min([console.width, 200]))
+    console.print_exception(show_locals=False, max_frames=10, extra_lines=1, suppress=suppress, theme="ansi_dark", word_wrap=False, width=console.width)
 
 
 def display_once(e: Exception, task):
