@@ -222,10 +222,8 @@ class Script(scripts.Script):
             shared.log.error('FaceID: no faces found')
             return None
         for i, face in enumerate(faces):
-            shared.log.debug(f'FaceID face: i={i} score={face.det_score:.2f} gender={"female" if face.gender==0 else "male"} age={face.age} bbox={face.bbox}')
-            p.extra_generation_params[f"FaceID {i} score"] = f'{face.det_score:.2f}'
-            p.extra_generation_params[f"FaceID {i} gender"] = "female" if face.gender==0 else "male"
-            p.extra_generation_params[f"FaceID {i} age"] = face.age
+            shared.log.debug(f'FaceID face: i={i+1} score={face.det_score:.2f} gender={"female" if face.gender==0 else "male"} age={face.age} bbox={face.bbox}')
+            p.extra_generation_params[f"FaceID {i+1}"] = f'{face.det_score:.2f} {"female" if face.gender==0 else "male"} {face.age}y'
 
         images = []
         if 'FaceID' in mode:
