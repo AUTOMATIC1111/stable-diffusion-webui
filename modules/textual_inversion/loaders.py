@@ -110,6 +110,7 @@ def load_textual_inversion(
 
     # 7.2 Add Tokens to the Tokenizer
     tokens_to_add = list(token_data)
+    tokenizer.add_tokens(tokens_to_add)
     tokenizer_size = len(tokenizer)
 
     # 7.3 Increase token embedding matrix
@@ -122,7 +123,7 @@ def load_textual_inversion(
     # 7.4 Load token and embedding
     for token_id, load_token in zip(tokenizer.convert_tokens_to_ids(tokens_to_add), tokens_to_add):
         if token_id <= unk_token_id:
-            raise RuntimeError(f'Processed Shape-Token `{load_token}` does not resolve to a new Token ID')
+            raise RuntimeError(f'Processed Shape-Token `{load_token}` does not resolve to a new Token ID: {token_id} <= {unk_token_id} ({tokenizer.unk_token})')
         embedding = token_data[load_token][0]
         path = token_data[load_token][1]
         input_embeddings.data[token_id] = embedding
@@ -136,5 +137,5 @@ def load_textual_inversion(
     elif is_sequential_cpu_offload:
         self.enable_sequential_cpu_offload()
 
-    return list(loaded_model_names_or_paths) if number_of_models != 1 else None
+    return loaded_model_names_or_paths.keys() if number_of_models != 1 else None
     # / Unsafe Code >
