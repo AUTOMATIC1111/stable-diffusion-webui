@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-14
+## Update for 2023-01-15
 
 Another release with a lot more functionality in new Control module and FaceID & IPAdapter modules  
 Plus welcome additions to UI performance and accessibility and flexibility of deployment  

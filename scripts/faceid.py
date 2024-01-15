@@ -179,10 +179,13 @@ class Script(scripts.Script):
 
         # run generate
         images = []
+
+        ip_model.set_scale(scale)
         for _i in range(p.n_iter):
             res = ip_model.generate(**ip_model_dict)
             if isinstance(res, list):
                 images += res
+        ip_model.set_scale(0)
 
         if not cache:
             ip_model = None
