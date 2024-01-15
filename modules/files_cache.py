@@ -177,7 +177,7 @@ def get_directory(directory_or_path: DirectoryPath, /, fetch:bool=True) -> Direc
 def fetch_directory(directory_path: DirectoryPath) -> Directory | None:
     directory: Directory
     for directory in _walk(directory_path, lambda e, path: delete_cached_directory(path), recurse=False):
-        return directory
+        return directory # The return is intentional, we get a generator, we only need the one
     return None
 
 
@@ -264,11 +264,10 @@ def directory_mtime(directory_path:DirectoryPath, /, recursive:RecursiveType=Tru
 def unique_directories(directories:DirectoryPathList, /, recursive:RecursiveType=True) -> DirectoryPathIterator:
     '''Ensure no empty, or duplicates'''
     '''If we are going recursive, then directories that are children of other directories are redundant'''
+    ''' @todo this is incredibly inneficient.  the hit is small, but it is ugly, no? '''
     directories = sorted(unique_paths(directories), reverse=True)
-    #shared.log.debug(f'Directories: {directories}')
     while directories:
         directory = directories.pop()
-        #shared.log.debug(f'yeilding: {directory}')
         yield directory
         if not recursive:
             continue
@@ -276,13 +275,10 @@ def unique_directories(directories:DirectoryPathList, /, recursive:RecursiveType
         child_directory = None
         while directories and directories[-1].startswith(_directory):
             if not callable(recursive) or not child_directory:
-                #shared.log.debug(f'removing `{directories[-1]}` ... {_directory}')
                 directories.pop()
                 continue
             child_directory = directories[-1][len(directory):]
-            #shared.log.debug(f'Checking: {directories[-1]} -> {_directory}')
             if child_directory:
-                #shared.log(f'working with {child_directory} -> {directory}')
                 next_directory = _directory
                 if not callable(recursive):
                     _remove_directory = next_directory
@@ -294,36 +290,35 @@ def unique_directories(directories:DirectoryPathList, /, recursive:RecursiveType
                             break
                 while _remove_directory and directories:
                     _d = directories.pop()
-                    #shared.log.info(f'Doing the while thing: {_remove_directory} - {_d}')
                     if not directories[-1].startswith(_remove_directory):
                         del _remove_directory
 
 
 def unique_paths(directory_paths:DirectoryPathList) -> DirectoryPathIterator:
-    return (
-        key
-        for key
-        in {
-            real_directory_path: True
-            for real_directory_path
-            in filter(bool, [
-                real_path(directory_path)
-                for directory_path
-                in filter(bool, directory_paths)
-            ])
-        }
+    realpaths = (
+        real_path(directory_path)
+        for directory_path
+        in filter(bool, directory_paths)
     )
+    return {
+        real_directory_path: True
+        for real_directory_path
+        in filter(bool, realpaths)
+    }.keys()
 
 
 def get_directories(*directory_paths: DirectoryPathList, fetch:bool=True, recursive:RecursiveType=True) -> DirectoryCollection:
+    directory_paths = unique_directories(
+        directory_paths, recursive=recursive
+    )
+    directories = (
+        get_directory(directory_path, fetch=fetch)
+        for directory_path
+        in directory_paths
+    )
     return filter(
         bool,
-        (
-            get_directory(directory_path, fetch=fetch)
-            for directory_path in unique_directories(
-                directory_paths, recursive=recursive
-            )
-        )
+        directories
     )
 
 
@@ -378,7 +373,6 @@ def not_hidden(filepath: FilePath) -> IsHidden:
 
 
 def filter_files(file_paths: FilePathList, ext_filter: Optional[ExtensionList]=None, ext_blacklist: Optional[ExtensionList]=None) -> FilePathIterator:
-    #print(f'File Paths: {list(file_paths)}')
     return filter(extension_filter(ext_filter, ext_blacklist), file_paths)
 
 
