@@ -265,6 +265,7 @@ class Api:
         if hasattr(request, "face_id") and request.face_id and not request.script_name and (not request.alwayson_scripts or "FaceID" not in request.alwayson_scripts.keys()):
             request.script_name = "FaceID"
             request.script_args = [
+                request.face_id.mode,
                 request.face_id.model,
                 request.face_id.scale,
                 request.face_id.image,

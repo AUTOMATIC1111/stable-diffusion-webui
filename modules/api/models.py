@@ -99,7 +99,8 @@ class IPAdapterItem(BaseModel):
 
 
 class FaceIDItem(BaseModel):
-    model: str = Field(title="Model", default="FaceID Base",description="The FaceID model to use.")
+    mode: list[str] = Field(title="Mode", default=["FaceID"], description="The mode to use (available values: FaceID, FaceSwap).")
+    model: str = Field(title="Model", default="FaceID Base", description="The FaceID model to use.")
     image: str = Field(title="Image", default="", description="Source face image, must be a base64 string containing the image's data.")
     scale: float = Field(title="Scale", default=1, gt=0, le=1, description="Scale of the source face, must be between 0 and 1.")
     structure: float = Field(title="Structure", default=1, gt=0, le=1, description="Structure to use, must be between 0 and 1.")
