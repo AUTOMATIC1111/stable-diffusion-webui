@@ -346,7 +346,7 @@ function setupExtraNetworksForTab(tabname) {
     searchTimer = setTimeout(async () => {
       await filterExtraNetworksForTab(txtSearchValue.value.toLowerCase());
       searchTimer = null;
-    }, 50);
+    }, 100);
   });
 
   // card hover
