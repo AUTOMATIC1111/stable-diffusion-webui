@@ -343,10 +343,10 @@ function setupExtraNetworksForTab(tabname) {
   let searchTimer = null;
   txtSearchValue.addEventListener('input', (evt) => {
     if (searchTimer) clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => {
-      filterExtraNetworksForTab(txtSearchValue.value.toLowerCase());
+    searchTimer = setTimeout(async () => {
+      await filterExtraNetworksForTab(txtSearchValue.value.toLowerCase());
       searchTimer = null;
-    }, 150);
+    }, 50);
   });
 
   // card hover

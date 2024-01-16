@@ -2,22 +2,34 @@
 
 ## Update for 2023-01-15
 
-Another release with a lot more functionality in the **Control** module and **FaceID/FaceSwap** & **PAdapter** modules  
+Another big release, highlights being:  
+- A lot more functionality in the **Control** module:
+  - Inpaint and outpaint support, flexible resizing options, optional hires  
+  - More processors and models  
+  - Full support for scripts and extensions  
+- Fully baked **FaceID** / **FaceSwap** & **IPAdapter** modules  
+- Brand new intelligent masking, manual or automatic using ML models and with live previews  
+
 Plus welcome additions to **UI performance, usability and accessibility** and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
 
-- **Control**:
+- **Control**:  
   - add **inpaint** support  
     applies to both *img2img* and *controlnet* workflows  
   - add **outpaint** support  
     applies to both *img2img* and *controlnet* workflows  
     *note*: increase denoising strength since outpainted area is blank by default  
   - new **mask** module  
-    - granular blur (gaussian), errode (reduce or remove noise) and dilate (pad or expand)  
+    - granular blur (gaussian), erode (reduce or remove noise) and dilate (pad or expand)  
     - optional **live preview**  
-    - optional **auto-segmentation** (e.g. segment-anything) using ml models  
+    - optional **auto-segmentation** using ml models  
+      auto-segmentation can be done using **segment-anything** models or **rembg** models  
       *note*: auto segmentation will automatically expand user-masked area to segments that include current user mask  
-    - can be combined with control processors in which case mask is applied before processor  
+    - optional **auto-mask**  
+      if you don't provide mask or mask is empty, you can instead use auto-mask to automatically generate mask  
+      this is especially useful if you want to use advanced masking on batch or video inputs and don't want to manually mask each image  
+      *note*: such auto-created mask is also subject to all other selected settings such as auto-segmentation, blur, erode and dilate  
+    - masking can be combined with control processors in which case mask is applied before processor  
   - allow **resize** both *before* and *after* generate operation  
     this allows for workflows such as: *image -> upscale or downscale -> generate -> upscale or downscale -> output*  
     providing more flexibility and than standard hires workflow  
@@ -25,8 +37,8 @@ And it also includes fixes for all reported issues so far
   - implicit **hires**  
     since hires is only used for txt2img, control reuses existing resize functionality
     any image size is used as txt2img target size  
-    but if resize scale is also set its used to additionally upscale image after initial txt2img and for hires pass
-  - add support for **scripts** and **extensions**
+    but if resize scale is also set its used to additionally upscale image after initial txt2img and for hires pass  
+  - add support for **scripts** and **extensions**  
     you can now combine control workflow with your favorite script or extension  
     *note* extensions that are hard-coded for txt2img or img2img tabs may not work until they are updated  
   - add **marigold** depth map processor  
