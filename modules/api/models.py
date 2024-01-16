@@ -104,7 +104,7 @@ class FaceIDItem(BaseModel):
     image: str = Field(title="Image", default="", description="Source face image, must be a base64 string containing the image's data.")
     scale: float = Field(title="Scale", default=1, ge=0, le=2, description="Scale of the source face, must be between 0.0 and 2.0.")
     structure: float = Field(title="Structure", default=1, ge=0, le=1, description="Structure to use, must be between 0.0 and 1.0.")
-    rank: float = Field(title="Rank", default=128, ge=4, le=256, description="Rank to use, must be between 4 and 256.")
+    rank: int = Field(title="Rank", default=128, ge=4, le=256, description="Rank to use, must be between 4 and 256.")
     override_sampler: bool = Field(title="Override Sampler", default=True, description="Should the sampler be overriden?")
     tokens: int = Field(title="Tokens", default=4, ge=1, le=16, description="Amount of tokens to use, must be between 1 and 16.")
     cache_model: bool = Field(title="Cache", default=True, description="Should the model be cached?")
