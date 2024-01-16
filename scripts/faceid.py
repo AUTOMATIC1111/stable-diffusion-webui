@@ -102,15 +102,12 @@ def face_id(p: processing.StableDiffusionProcessing, faces, image, model, overri
 
     # main generate dict
     ip_model_dict = {
-        'prompt': p.all_prompts[0],
-        'negative_prompt': p.all_negative_prompts[0],
         'num_samples': p.batch_size,
         'width': p.width,
         'height': p.height,
         'num_inference_steps': p.steps,
         'scale': scale,
         'guidance_scale': p.cfg_scale,
-        'seed': int(p.all_seeds[0]),
         'faceid_embeds': face_embeds.shape,
     }
 
@@ -128,7 +125,15 @@ def face_id(p: processing.StableDiffusionProcessing, faces, image, model, overri
     # run generate
     images = []
     ip_model.set_scale(scale)
-    for _i in range(p.n_iter):
+    for i in range(p.n_iter):
+        # Update prompts and seed for each iteration
+        ip_model_dict.update(
+            {
+                'prompt': p.all_prompts[i],
+                'negative_prompt': p.all_negative_prompts[i],
+                'seed': int(p.all_seeds[i]),
+            }
+        )
         res = ip_model.generate(**ip_model_dict)
         if isinstance(res, list):
             images += res
