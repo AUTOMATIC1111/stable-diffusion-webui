@@ -107,7 +107,7 @@ def save_files(js_data, images, do_make_zip, index):
     if os.path.exists(logfile_path):
         update_logfile(logfile_path, fields)
 
-    with open(os.path.join(shared.opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
+    with open(logfile_path, "a", encoding="utf8", newline='') as file:
         at_start = file.tell() == 0
         writer = csv.writer(file)
         if at_start:
