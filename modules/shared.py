@@ -648,7 +648,6 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_sep2": OptionInfo("<h2>Extra networks general</h2>", "", gr.HTML),
     "extra_network_skip_indexing": OptionInfo(False, "Build info on first access", gr.Checkbox),
     "extra_networks_default_multiplier": OptionInfo(1.0, "Default multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    "extra_networks_regex_search": OptionInfo(False, "Use more advanced patterns (regex) for searching (slower)", gr.Checkbox),
     "extra_networks_sep3": OptionInfo("<h2>Extra networks settings</h2>", "", gr.HTML),
     "extra_networks_styles": OptionInfo(True, "Show built-in styles"),
     "lora_preferred_name": OptionInfo("filename", "LoRA preffered name", gr.Radio, {"choices": ["filename", "alias"]}),

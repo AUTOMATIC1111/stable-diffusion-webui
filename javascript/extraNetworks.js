@@ -132,11 +132,19 @@ async function filterExtraNetworksForTab(searchTerm) {
         elem.style.display = '';
       });
     } else {
-      // If we are using regex search (non-default)
-      if (window.opts.extra_networks_regex_search == true) {
-        // Construct a regex from the searchTerm, case insensitive
-        // The regex can be invalid, but then it will error out of this function, so the performance will be missing, but an error will be logged to console
+
+      // Do not account for case or whitespace
+      searchTerm = searchTerm.toLowerCase().trim();
+
+      // If the searchTerm starts with "r#", then we are using regex search
+      if (searchTerm.startsWith('r#')) {
+        searchTerm = searchTerm.substring(2);
+
+        // Insensitive regex search based on the searchTerm
+
+        // The regex can be invalid -> then it will error out of this function, so the timing log will be missing, instead the error will be logged to console
         const re = new RegExp(searchTerm, 'i');
+
         cards.forEach((elem) => {
           // Construct the search text, which is the concatenation of all data elements with a prefix to make it unique
           // This combined text allows to exclude search terms for example by using negative lookahead
@@ -148,7 +156,11 @@ async function filterExtraNetworksForTab(searchTerm) {
           }
         });
       } else {
-        // By default just search if the search term exists anywhere in the data element
+        // If we are not using regex search, we still use an extended syntax to allow for searching for multiple keywords, or also excluding keywords
+        // Keywords are separated by |, and keywords that should be excluded are prefixed with -
+        let searchList = searchTerm.split('|').filter((s) => s !== '' && !s.startsWith('-')).map((s) => s.trim());
+        let excludeList = searchTerm.split('|').filter((s) => s !== '' && s.trim().startsWith('-')).map((s) => s.trim().substring(1).trim());
+
         cards.forEach((elem) => {
           let text = '';
           if (elem.dataset.filename) text += `${elem.dataset.filename} `;
@@ -156,20 +168,24 @@ async function filterExtraNetworksForTab(searchTerm) {
           if (elem.dataset.title) text += `${elem.dataset.title} `;
           if (elem.dataset.tags) text += `${elem.dataset.tags} `;
           text = text.toLowerCase().replace('models--', 'diffusers').replaceAll('\\', '/');
-          if (text.indexOf(searchTerm) === -1) {
-            elem.style.display = 'none';
-          } else {
+
+          if (
+            (searchList.some((searchTerm) => text.includes(searchTerm)) || searchList.length === 0) && !excludeList.some((searchTerm) => text.includes(searchTerm))
+          ) {
             elem.style.display = '';
             found += 1;
+          } else {
+            elem.style.display = 'none';
           }
 
         });
       }
+
     }
   }
   const t1 = performance.now();
-  if (searchTerm !== '') log(`filterExtraNetworks: text=${searchTerm} items=${items} match=${found} time=${Math.round(1000 * (t1 - t0)) / 1000000} type=${window.opts.extra_networks_regex_search ? 'regex' : 'default'}`);
-  else log(`filterExtraNetworks: text=all items=${items} time=${Math.round(1000 * (t1 - t0)) / 1000000} type=${window.opts.extra_networks_regex_search ? 'regex' : 'default'}`);
+  if (searchTerm !== '') log(`filterExtraNetworks: text=${searchTerm} items=${items} match=${found} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
+  else log(`filterExtraNetworks: text=all items=${items} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
 }
 
 function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
@@ -255,23 +271,7 @@ function extraNetworksSearchButton(event) {
   if (button.classList.contains('search-all')) {
     searchTextarea.value = '';
   } else {
-    // If we are using regex search, then we need to construct a search string for the regex, otherwise we just use the text of the button
-    if (opts.extra_networks_regex_search) {
-      // The contained path will be a path, so for our regex we will replace either frontslash or backslash with either frontslash or backslash
-      // And we will escape special symbols (which can be in folder names) 
-      let text = button.textContent.trim();
-      // Replace / and \ with [\/\\]
-      text = text.replaceAll(/[\/\\]/g, '[\/\\\\]');
-      // Escape special symbols
-      text = text.replaceAll(/([.*+?^=!:${}()|\[\]\/\\])/g, '\\$1');
-      // The escape just now also escaped the [\/\\], so we need to reverse that change
-      // This could already be accounted for in the first regex, however this is faster and easier to understand for people unfamiliar with regex
-      text = text.replaceAll('\\[\\/\\\\\\\\\\]', '[\\/\\\\]');
-      searchTextarea.value = text;
-
-    } else {
-      searchTextarea.value = `${button.textContent.trim()}/`;
-    }
+    searchTextarea.value = `${button.textContent.trim()}/`;
   }
   updateInput(searchTextarea);
 }
