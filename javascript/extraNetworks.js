@@ -403,7 +403,7 @@ function setupExtraNetworksForTab(tabname) {
         gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset';
       }
     } else {
-      en.style.width = 0;
+      if (window.opts.extra_networks_card_cover === 'sidebar') en.style.width = 0;
       gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset';
     }
   });
