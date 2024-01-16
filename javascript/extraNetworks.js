@@ -122,29 +122,54 @@ async function filterExtraNetworksForTab(searchTerm) {
   const pages = allPages.filter((el) => el.id.toLowerCase().includes(pagename.toLowerCase()));
   for (const pg of pages) {
     const cards = Array.from(pg.querySelectorAll('.card') || []);
-    cards.forEach((elem) => {
-      items += 1;
-      if (searchTerm === '') {
+
+    // We will always have as many items as cards
+    items += cards.length;
+
+    // Reset the results to show all cards if the search term is empty
+    if (searchTerm === '') {
+      cards.forEach((elem) => {
         elem.style.display = '';
+      });
+    } else {
+      // If we are using regex search (non-default)
+      if (window.opts.extra_networks_regex_search == true) {
+        // Construct a regex from the searchTerm, case insensitive
+        // The regex can be invalid, but then it will error out of this function, so the performance will be missing, but an error will be logged to console
+        const re = new RegExp(searchTerm, 'i');
+        cards.forEach((elem) => {
+          // Construct the search text, which is the concatenation of all data elements with a prefix to make it unique
+          // This combined text allows to exclude search terms for example by using negative lookahead
+          if (re.test(`filename: ${elem.dataset.filename}|name: ${elem.dataset.name}|title: ${elem.dataset.title}|tags: ${elem.dataset.tags}`)) {
+            elem.style.display = '';
+            found += 1;
+          } else {
+            elem.style.display = 'none';
+          }
+        });
       } else {
-        let text = '';
-        if (elem.dataset.filename) text += `${elem.dataset.filename} `;
-        if (elem.dataset.name) text += `${elem.dataset.name} `;
-        if (elem.dataset.title) text += `${elem.dataset.title} `;
-        if (elem.dataset.tags) text += `${elem.dataset.title} `;
-        text = text.toLowerCase().replace('models--', 'diffusers').replaceAll('\\', '/');
-        if (text.indexOf(searchTerm) === -1) {
-          elem.style.display = 'none';
-        } else {
-          elem.style.display = '';
-          found += 1;
-        }
+        // By default just search if the search term exists anywhere in the data element
+        cards.forEach((elem) => {
+          let text = '';
+          if (elem.dataset.filename) text += `${elem.dataset.filename} `;
+          if (elem.dataset.name) text += `${elem.dataset.name} `;
+          if (elem.dataset.title) text += `${elem.dataset.title} `;
+          if (elem.dataset.tags) text += `${elem.dataset.tags} `;
+          text = text.toLowerCase().replace('models--', 'diffusers').replaceAll('\\', '/');
+          if (text.indexOf(searchTerm) === -1) {
+            elem.style.display = 'none';
+          } else {
+            elem.style.display = '';
+            found += 1;
+          }
+
+        });
       }
-    });
+    }
   }
   const t1 = performance.now();
-  if (searchTerm !== '') log(`filterExtraNetworks: text=${searchTerm} items=${items} match=${found} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
-  else log(`filterExtraNetworks: text=all items=${items} time=${Math.round(1000 * (t1 - t0)) / 1000000}`);
+  if (searchTerm !== '') log(`filterExtraNetworks: text=${searchTerm} items=${items} match=${found} time=${Math.round(1000 * (t1 - t0)) / 1000000} type=${window.opts.extra_networks_regex_search ? 'regex' : 'default'}`);
+  else log(`filterExtraNetworks: text=all items=${items} time=${Math.round(1000 * (t1 - t0)) / 1000000} type=${window.opts.extra_networks_regex_search ? 'regex' : 'default'}`);
 }
 
 function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
@@ -226,8 +251,28 @@ function extraNetworksSearchButton(event) {
   const tabname = getENActiveTab();
   const searchTextarea = gradioApp().querySelector(`#${tabname}_extra_search textarea`);
   const button = event.target;
-  const text = button.classList.contains('search-all') ? '' : `${button.textContent.trim()}/`;
-  searchTextarea.value = text;
+
+  if (button.classList.contains('search-all')) {
+    searchTextarea.value = '';
+  } else {
+    // If we are using regex search, then we need to construct a search string for the regex, otherwise we just use the text of the button
+    if (opts.extra_networks_regex_search) {
+      // The contained path will be a path, so for our regex we will replace either frontslash or backslash with either frontslash or backslash
+      // And we will escape special symbols (which can be in folder names) 
+      let text = button.textContent.trim();
+      // Replace / and \ with [\/\\]
+      text = text.replaceAll(/[\/\\]/g, '[\/\\\\]');
+      // Escape special symbols
+      text = text.replaceAll(/([.*+?^=!:${}()|\[\]\/\\])/g, '\\$1');
+      // The escape just now also escaped the [\/\\], so we need to reverse that change
+      // This could already be accounted for in the first regex, however this is faster and easier to understand for people unfamiliar with regex
+      text = text.replaceAll('\\[\\/\\\\\\\\\\]', '[\\/\\\\]');
+      searchTextarea.value = text;
+
+    } else {
+      searchTextarea.value = `${button.textContent.trim()}/`;
+    }
+  }
   updateInput(searchTextarea);
 }
 
