@@ -76,7 +76,7 @@ def save_files(js_data, images, do_make_zip, index):
 
             p.batch_index = image_index-1
 
-            parameters = parameters_copypaste.parse_generation_parameters(data["infotexts"][image_index])
+            parameters = parameters_copypaste.parse_generation_parameters(data["infotexts"][image_index], [])
             parsed_infotexts.append(parameters)
             fullfn, txt_fullfn = modules.images.save_image(image, path, "", seed=parameters['Seed'], prompt=parameters['Prompt'], extension=extension, info=p.infotexts[image_index], grid=is_grid, p=p, save_to_dirs=save_to_dirs)
 

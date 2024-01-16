@@ -88,7 +88,7 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
         try:
             gen_info = json.loads(gen_info_string)
             infotext = gen_info.get('infotexts')[index]
-            gen_parameters = infotext_utils.parse_generation_parameters(infotext)
+            gen_parameters = infotext_utils.parse_generation_parameters(infotext, [])
             res = int(gen_parameters.get('Variation seed' if is_subseed else 'Seed', -1))
         except Exception:
             if gen_info_string:
