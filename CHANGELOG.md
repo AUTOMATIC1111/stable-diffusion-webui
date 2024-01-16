@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-15
+## Update for 2023-01-16
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
@@ -78,8 +78,10 @@ And it also includes fixes for all reported issues so far
   - enable use via api, thanks @trojaner
 - [PhotoMaker](https://github.com/TencentARC/PhotoMaker)  
   - for *SD-XL* only  
+  - simply select from *scripts*  
   - new model from TenencentARC using similar concept as IPAdapter, but with different implementation and  
     allowing full concept swaps between input images and generated images using trigger words  
+  - note: trigger word must match exactly one term in prompt for model to work  
 - **Improvements**  
   - **ui**  
     - check version and **update** SD.Next via UI  
