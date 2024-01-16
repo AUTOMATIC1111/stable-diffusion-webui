@@ -213,6 +213,8 @@ class ImageOutput:
                         shutil.rmtree(self.output_dir)
                     except:
                         pass
+                if len(high_keys) != len(low_keys):
+                    raise OSError("upload image failed.")
 
                 return ImageKeys(high_keys, low_keys)
 
