@@ -155,7 +155,14 @@ class ExtraNetworksPage:
     def __init__(self, title):
         self.title = title
         self.name = title.lower()
-        self.id_page = self.name.replace(" ", "_")
+        # This is the actual name of the extra networks tab (not txt2img/img2img).
+        self.extra_networks_tabname = self.name.replace(" ", "_")
+        self.allow_prompt = True
+        self.allow_negative_prompt = False
+        self.metadata = {}
+        self.items = {}
+        self.lister = util.MassFileLister()
+        # HTML Templates
         self.pane_tpl = shared.html("extra-networks-pane.html")
         self.tree_tpl = shared.html("extra-networks-tree.html")
         self.card_tpl = shared.html("extra-networks-card.html")
@@ -163,11 +170,6 @@ class ExtraNetworksPage:
         self.btn_copy_path_tpl = shared.html("extra-networks-copy-path-button.html")
         self.btn_metadata_tpl = shared.html("extra-networks-metadata-button.html")
         self.btn_edit_item_tpl = shared.html("extra-networks-edit-item-button.html")
-        self.allow_prompt = True
-        self.allow_negative_prompt = False
-        self.metadata = {}
-        self.items = {}
-        self.lister = util.MassFileLister()
 
     def refresh(self):
         pass
@@ -202,15 +204,17 @@ class ExtraNetworksPage:
         item: dict,
         template: Optional[str] = None,
     ) -> Union[str, dict]:
-        """Generates HTML for a single ExtraNetworks Item
+        """Generates HTML for a single ExtraNetworks Item.
 
         Args:
             tabname: The name of the active tab.
             item: Dictionary containing item information.
+            template: Optional template string to use.
 
         Returns:
-            HTML string generated for this item.
-            Can be empty if the item is not meant to be shown.
+            If a template is passed: HTML string generated for this item.
+                Can be empty if the item is not meant to be shown.
+            If no template is passed: A dictionary containing the generated item's attributes.
         """
         metadata = item.get("metadata")
         if metadata:
@@ -244,14 +248,14 @@ class ExtraNetworksPage:
         if metadata:
             btn_metadata = self.btn_metadata_tpl.format(
                 **{
-                    "page_id": self.id_page,
+                    "extra_networks_tabname": self.extra_networks_tabname,
                     "name": html.escape(item["name"]),
                 }
             )
         btn_edit_item = self.btn_edit_item_tpl.format(
             **{
                 "tabname": tabname,
-                "page_id": self.id_page,
+                "extra_networks_tabname": self.extra_networks_tabname,
                 "name": html.escape(item["name"]),
             }
         )
@@ -307,9 +311,9 @@ class ExtraNetworksPage:
             "search_only": " search_only" if search_only else "",
             "search_terms": search_terms_html,
             "sort_keys": sort_keys,
-            "style": f"'display: none; {height}{width}; font-size: {shared.opts.extra_networks_card_text_scale*100}%'",
+            "style": f"display: none; {height}{width}; font-size: {shared.opts.extra_networks_card_text_scale*100}%",
             "tabname": tabname,
-            "tab_id": self.id_page,
+            "extra_networks_tabname": self.extra_networks_tabname,
         }
 
         if template:
@@ -317,7 +321,32 @@ class ExtraNetworksPage:
         else:
             return args
 
-    def create_tree_dir_item_html(self, tabname: str, dir_path: str, content: Optional[str] = None) -> Optional[str]:
+    def create_tree_dir_item_html(
+        self,
+        tabname: str,
+        dir_path: str,
+        content: Optional[str] = None,
+    ) -> Optional[str]:
+        """Generates HTML for a directory item in the tree.
+
+        The generated HTML is of the format:
+        ```html
+        <li class="tree-list-item tree-list-item--has-subitem">
+            <div class="tree-list-content tree-list-content-dir"></div>
+            <ul class="tree-list tree-list--subgroup">
+                {content}
+            </ul>
+        </li>
+        ```
+
+        Args:
+            tabname: The name of the active tab.
+            dir_path: Path to the directory for this item.
+            content: Optional HTML string that will be wrapped by this <ul>.
+
+        Returns:
+            HTML formatted string.
+        """
         if not content:
             return None
 
@@ -326,7 +355,7 @@ class ExtraNetworksPage:
                 "search_terms": "",
                 "subclass": "tree-list-content-dir",
                 "tabname": tabname,
-                "tab_id": self.id_page,
+                "extra_networks_tabname": self.extra_networks_tabname,
                 "onclick_extra": "",
                 "data_path": dir_path,
                 "data_hash": "",
@@ -337,10 +366,32 @@ class ExtraNetworksPage:
                 "action_list_item_action_trailing": "",
             }
         )
-        ul = f"<ul class='tree-list tree-list--subgroup' data-hidden>{content}</ul>"
-        return f"<li class='tree-list-item tree-list-item--has-subitem' data-tree-entry-type='dir'>{btn + ul}</li>"
+        ul = f"<ul class='tree-list tree-list--subgroup' hidden>{content}</ul>"
+        return (
+            "<li class='tree-list-item tree-list-item--has-subitem' data-tree-entry-type='dir'>"
+            f"{btn + ul}"
+            "</li>"
+        )
 
-    def create_tree_file_item_html(self, tabname: str, item_name: str, item: dict) -> str:
+    def create_tree_file_item_html(self, tabname: str, file_path: str, item: dict) -> str:
+        """Generates HTML for a file item in the tree.
+
+        The generated HTML is of the format:
+        ```html
+        <li class="tree-list-item tree-list-item--subitem">
+            <span data-filterable-item-text hidden></span>
+            <div class="tree-list-content tree-list-content-file"></div>
+        </li>
+        ```
+
+        Args:
+            tabname: The name of the active tab.
+            file_path: The path to the file for this item.
+            item: Dictionary containing the item information.
+
+        Returns:
+            HTML formatted string.
+        """
         item_html_args = self.create_item_html(tabname, item)
         action_buttons = "".join(
             [
@@ -355,9 +406,9 @@ class ExtraNetworksPage:
                 "search_terms": "",
                 "subclass": "tree-list-content-file",
                 "tabname": tabname,
-                "tab_id": self.id_page,
+                "extra_networks_tabname": self.extra_networks_tabname,
                 "onclick_extra": item_html_args["card_clicked"],
-                "data_path": item_name,
+                "data_path": file_path,
                 "data_hash": item["shorthash"],
                 "action_list_item_action_leading": "<i class='tree-list-item-action-chevron'></i>",
                 "action_list_item_visual_leading": "🗎",
@@ -366,10 +417,16 @@ class ExtraNetworksPage:
                 "action_list_item_action_trailing": action_buttons,
             }
         )
-        return f"<li class='tree-list-item tree-list-item--subitem' data-tree-entry-type='file'>{btn}</li>"
+        return (
+            "<li class='tree-list-item tree-list-item--subitem' data-tree-entry-type='file'>"
+            f"{btn}"
+            "</li>"
+        )
 
     def create_tree_view_html(self, tabname: str) -> str:
         """Generates HTML for displaying folders in a tree view.
+
+        The generated HTML uses `extra-networks-tree.html` as a template.
 
         Args:
             tabname: The name of the active tab.
@@ -379,7 +436,7 @@ class ExtraNetworksPage:
         """
         res = ""
 
-        # Generate HTML for the tree.
+        # Setup the tree dictionary.
         roots = self.allowed_directories_for_previews()
         tree_items = {v["filename"]: ExtraNetworksItem(v) for v in self.items.values()}
         tree = get_tree([os.path.abspath(x) for x in roots], items=tree_items)
@@ -388,7 +445,17 @@ class ExtraNetworksPage:
             return res
 
         def _build_tree(data: Optional[dict[str, ExtraNetworksItem]] = None) -> Optional[str]:
-            """Recursively builds HTML for a tree."""
+            """Recursively builds HTML for a tree.
+
+            Args:
+                data: Dictionary representing a directory tree. Can be NoneType.
+                    Data keys should be absolute paths from the root and values
+                    should be subdirectory trees or an ExtraNetworksItem.
+
+            Returns:
+                If data is not None: HTML string
+                Else: None
+            """
             if not data:
                 return None
 
@@ -402,25 +469,36 @@ class ExtraNetworksPage:
                 else:
                     _dir_li.append(self.create_tree_dir_item_html(tabname, k, _build_tree(v)))
 
-            # Directories should always be displayed before files.
+            # Directories should always be displayed before files so we order them here.
             return "".join(_dir_li) + "".join(_file_li)
 
         # Add each root directory to the tree.
         for k, v in sorted(tree.items(), key=lambda x: shared.natural_sort_key(x[0])):
-            # If root is empty, append the "disabled" attribute to the template details tag.
             item_html = self.create_tree_dir_item_html(tabname, k, _build_tree(v))
-            if item_html:
+            # Only add non-empty entries to the tree.
+            if item_html is not None:
                 res += item_html
 
         return self.tree_tpl.format(
             **{
                 "tabname": tabname,
-                "tab_id": self.id_page,
+                "extra_networks_tabname": self.extra_networks_tabname,
                 "tree": f"<ul class='tree-list tree-list--tree'>{res}</ul>"
             }
         )
 
-    def create_card_view_html(self, tabname):
+    def create_card_view_html(self, tabname: str) -> str:
+        """Generates HTML for the network Card View section for a tab.
+
+        This HTML goes into the `extra-networks-pane.html` <div> with
+        `id='{tabname}_{extra_networks_tabname}_cards`.
+
+        Args:
+            tabname: The name of the active tab.
+
+        Returns:
+            HTML formatted string.
+        """
         res = ""
         self.items = {x["name"]: x for x in self.list_items()}
         for item in self.items.values():
@@ -433,20 +511,26 @@ class ExtraNetworksPage:
         return res
 
     def create_html(self, tabname):
+        """Generates an HTML string for the current pane.
+
+        The generated HTML uses `extra-networks-pane.html` as a template.
+
+        Args:
+            tabname: The name of the active tab.
+
+        Returns:
+            HTML formatted string.
+        """
         self.lister.reset()
         self.metadata = {}
         self.items = {x["name"]: x for x in self.list_items()}
 
-        tree_view_html = self.create_tree_view_html(tabname)
-        card_view_html = self.create_card_view_html(tabname)
-        network_type_id = self.id_page
-
         return self.pane_tpl.format(
             **{
                 "tabname": tabname,
-                "network_type_id": network_type_id,
-                "tree_html": tree_view_html,
-                "items_html": card_view_html,
+                "extra_networks_tabname": self.extra_networks_tabname,
+                "tree_html": self.create_tree_view_html(tabname),
+                "items_html": self.create_card_view_html(tabname),
             }
         )
 
@@ -561,16 +645,16 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
     button_refresh = gr.Button("Refresh", elem_id=tabname+"_extra_refresh_internal", visible=False)
 
     for page in ui.stored_extra_pages:
-        with gr.Tab(page.title, elem_id=f"{tabname}_{page.id_page}", elem_classes=["extra-page"]) as tab:
-            with gr.Column(elem_id=f"{tabname}_{page.id_page}_prompts", elem_classes=["extra-page-prompts"]):
+        with gr.Tab(page.title, elem_id=f"{tabname}_{page.extra_networks_tabname}", elem_classes=["extra-page"]) as tab:
+            with gr.Column(elem_id=f"{tabname}_{page.extra_networks_tabname}_prompts", elem_classes=["extra-page-prompts"]):
                 pass
 
-            elem_id = f"{tabname}_{page.id_page}_cards_html"
+            elem_id = f"{tabname}_{page.extra_networks_tabname}_cards_html"
             page_elem = gr.HTML('Loading...', elem_id=elem_id)
             ui.pages.append(page_elem)
             page_elem.change(
                 fn=lambda: None,
-                _js=f"function(){{applyExtraNetworkFilter({tabname}_{page.id_page}_extra_search); return []}}",
+                _js=f"function(){{applyExtraNetworkFilter({tabname}_{page.extra_networks_tabname}_extra_search); return []}}",
                 inputs=[],
                 outputs=[],
             )

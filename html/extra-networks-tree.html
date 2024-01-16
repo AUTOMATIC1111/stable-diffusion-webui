@@ -2,36 +2,36 @@
     <div class="tree-list-controls">
         <div class="tree-list-search">
             <input
-                id="{tabname}_{tab_id}_extra_search"
+                id="{tabname}_{extra_networks_tabname}_extra_search"
                 class="tree-list-search-text"
                 type="search"
                 placeholder="Filter files"
             >
         </div>
         <div 
-            id="{tabname}_{tab_id}_extra_sort"
+            id="{tabname}_{extra_networks_tabname}_extra_sort"
             class="tree-list-sort"
             data-sortmode="path"
             data-sortkey="sortPath-Ascending-640"
             title="Sort by path"
-            onclick="extraNetworksTreeSortOnClick(event, '{tabname}', '{tab_id}');"
+            onclick="extraNetworksTreeSortOnClick(event, '{tabname}', '{extra_networks_tabname}');"
         >
             <i class="tree-list-sort-icon"></i>
         </div>
         <div
-            id="{tabname}_{tab_id}_extra_sort_dir"
+            id="{tabname}_{extra_networks_tabname}_extra_sort_dir"
             class="tree-list-sort-dir"
             data-sortdir="Ascending"
             title="Sort ascending"
-            onclick="extraNetworksTreeSortDirOnClick(event, '{tabname}', '{tab_id}');"
+            onclick="extraNetworksTreeSortDirOnClick(event, '{tabname}', '{extra_networks_tabname}');"
         >
             <i class="tree-list-sort-dir-icon"></i>
         </div>
         <div
-            id="{tabname}_{tab_id}_extra_refresh"
+            id="{tabname}_{extra_networks_tabname}_extra_refresh"
             class="tree-list-refresh"
             title="Refresh page"
-            onclick="extraNetworksTreeRefreshOnClick(event, '{tabname}', '{tab_id}');"
+            onclick="extraNetworksTreeRefreshOnClick(event, '{tabname}', '{extra_networks_tabname}');"
         >
             <i class="tree-list-refresh-icon"></i>
         </div>

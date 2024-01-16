@@ -879,13 +879,6 @@ footer {
     margin-bottom: 1em;
 }
 
-.extra-network-pane{
-    height: calc(100vh - 24rem);
-    overflow: clip scroll;
-    resize: vertical;
-    min-height: 52rem;
-}
-
 .extra-networks > div.tab-nav{
     min-height: 3.4rem;
 }
@@ -1182,23 +1175,63 @@ body.resizing .resize-handle {
 /* ========================= */
 .extra-network-pane {
     display: flex;
-}
-
-.extra-network-pane .extra-network-cards {
-    display: block;
+    height: calc(100vh - 24rem);
+    resize: vertical;
+    min-height: 52rem;
 }
 
 .extra-network-pane .extra-network-tree {
-    display: block;
+    flex: 1;
+    flex-direction: column;
+    display: flex;
     font-size: 1rem;
-    min-width: 25%;
     border: 1px solid var(--block-border-color);
+}
+
+.extra-network-pane .extra-network-cards {
+    flex: 3;
+    overflow: clip auto !important;
+    border: 1px solid var(--block-border-color);
+}
+
+.extra-network-pane .extra-network-tree .tree-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    width: 100%;
     overflow: hidden;
 }
 
-.extra-network-tree .tree-list {
-    margin: 0 0.25rem;
-    padding: 0;
+.extra-network-pane .extra-network-tree .tree-list .tree-list-container {
+    flex: 1;
+    overflow: clip auto !important;
+    width: 100%;
+}
+
+
+.extra-network-pane .extra-network-cards::-webkit-scrollbar,
+.extra-network-pane .tree-list-container::-webkit-scrollbar {
+    background-color: transparent;
+    width: 16px;
+}
+
+.extra-network-pane .extra-network-cards::-webkit-scrollbar-track,
+.extra-network-pane .tree-list-container::-webkit-scrollbar-track {
+    background-color: transparent;
+    background-clip: content-box;
+}
+
+.extra-network-pane .extra-network-cards::-webkit-scrollbar-thumb,
+.extra-network-pane .tree-list-container::-webkit-scrollbar-thumb {
+    background-color: var(--border-color-primary);
+    border-radius: 16px;
+    border: 4px solid var(--background-fill-primary);
+}
+
+.extra-network-pane .extra-network-cards::-webkit-scrollbar-button,
+.extra-network-pane .tree-list-container::-webkit-scrollbar-button {
+    display: none;
 }
 
 .extra-network-tree .tree-list .tree-list-controls {
@@ -1244,17 +1277,15 @@ body.resizing .resize-handle {
     background-color: transparent;
 }
 
-/* Directory <ul> visibility based on expanded attribute. */
-.extra-network-tree .tree-list-content[expanded=false]+.tree-list--subgroup {
+/* Directory <ul> visibility based on data-expanded attribute. */
+.extra-network-tree .tree-list-content+.tree-list--subgroup {
     height: 0;
-    overflow: hidden;
     visibility: hidden;
     opacity: 0;
 }
 
-.extra-network-tree .tree-list-content[expanded=true]+.tree-list--subgroup {
+.extra-network-tree .tree-list-content[data-expanded]+.tree-list--subgroup {
     height: auto;
-    overflow: visible;
     visibility: visible;
     opacity: 1;
 }
@@ -1307,7 +1338,7 @@ body.resizing .resize-handle {
     background-color: var(--neutral-800);
 }
 
-.dark .extra-network-tree div.tree-list-content[selected] {
+.dark .extra-network-tree div.tree-list-content[data-selected] {
     background-color: var(--neutral-700);
 }
 
@@ -1317,20 +1348,20 @@ body.resizing .resize-handle {
     background-color: var(--neutral-200);
 }
 
-.extra-network-tree div.tree-list-content[selected] {
+.extra-network-tree div.tree-list-content[data-selected] {
     background-color: var(--neutral-300);
 }
 
 /* ==== CHEVRON ICON ACTIONS ==== */
 /* Define the animation for the arrow when it is clicked. */
-.extra-network-tree .tree-list-content-dir[expanded=false] .tree-list-item-action-chevron {
+.extra-network-tree .tree-list-content-dir .tree-list-item-action-chevron {
     -ms-transform: rotate(135deg);
     -webkit-transform: rotate(135deg);
     transform: rotate(135deg);
     transition: transform 0.2s;
 }
 
-.extra-network-tree .tree-list-content-dir[expanded=true] .tree-list-item-action-chevron {
+.extra-network-tree .tree-list-content-dir[data-expanded] .tree-list-item-action-chevron {
     -ms-transform: rotate(225deg);
     -webkit-transform: rotate(225deg);
     transform: rotate(225deg);

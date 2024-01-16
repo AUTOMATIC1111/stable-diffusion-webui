@@ -31,25 +31,15 @@ function setupExtraNetworksForTab(tabname) {
     var this_tab = gradioApp().querySelector('#' + tabname + '_extra_tabs');
     this_tab.classList.add('extra-networks');
     this_tab.querySelectorAll(":scope > [id^='" + tabname + "_']").forEach(function(elem) {
-        var tab_id = elem.getAttribute("id");
-        var search = gradioApp().querySelector("#" + tab_id + "_extra_search");
-        if (!search) {
-            return; // `continue` doesn't work in `forEach` loops. This is equivalent.
-        }
+        var extra_networks_tabname = elem.id;
+        var search = gradioApp().querySelector("#" + extra_networks_tabname + "_extra_search");
+        var sort_mode = gradioApp().querySelector("#" + extra_networks_tabname + "_extra_sort");
+        var sort_dir = gradioApp().querySelector("#" + extra_networks_tabname + "_extra_sort_dir");
+        var refresh = gradioApp().querySelector("#" + extra_networks_tabname + "_extra_refresh");
 
-        var sort = gradioApp().querySelector("#" + tab_id + "_extra_sort");
-        if (!sort) {
-            return; // `continue` doesn't work in `forEach` loops. This is equivalent.
-        }
-
-        var sort_dir = gradioApp().querySelector("#" + tab_id + "_extra_sort_dir");
-        if (!sort_dir) {
-            return; // `continue` doesn't work in `forEach` loops. This is equivalent.
-        }
-
-        var refresh = gradioApp().querySelector("#" + tab_id + "_extra_refresh");
-        if (!refresh) {
-            return; // `continue` doesn't work in `forEach` loops. This is equivalent.
+        // If any of the buttons above don't exist, we want to skip this iteration of the loop.
+        if (!search || !sort_mode || !sort_dir || !refresh) {
+            return; // `return` is equivalent of `continue` but for forEach loops.
         }
 
         var applyFilter = function() {
@@ -78,14 +68,14 @@ function setupExtraNetworksForTab(tabname) {
             var cards = gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card');
 
             var reverse = sort_dir.dataset.sortdir == "Descending";
-            var sortKey = sort.dataset.sortmode.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim() || "name";
+            var sortKey = sort_mode.dataset.sortmode.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim() || "name";
             sortKey = "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1);
             var sortKeyStore = sortKey + "-" + (reverse ? "Descending" : "Ascending") + "-" + cards.length;
 
-            if (sortKeyStore == sort.dataset.sortkey) {
+            if (sortKeyStore == sort_mode.dataset.sortkey) {
                 return;
             }
-            sort.dataset.sortkey = sortKeyStore;
+            sort_mode.dataset.sortkey = sortKeyStore;
 
             cards.forEach(function(card) {
                 card.originalParentElement = card.parentElement;
@@ -115,8 +105,8 @@ function setupExtraNetworksForTab(tabname) {
         applySort();
         applyFilter();
 
-        extraNetworksApplySort[tab_id] = applySort;
-        extraNetworksApplyFilter[tab_id] = applyFilter;
+        extraNetworksApplySort[extra_networks_tabname] = applySort;
+        extraNetworksApplyFilter[extra_networks_tabname] = applyFilter;
     });
 
     registerPrompt(tabname, tabname + "_prompt");
@@ -146,14 +136,6 @@ function extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePromp
     if (elem) {
         elem.classList.toggle('extra-page-prompts-active', showNegativePrompt || showPrompt);
     }
-}
-
-function clearSearch(tabname) {
-    // Clear search box.
-    var tab_id = tabname + "_extra_search";
-    var searchTextarea = gradioApp().querySelector("#" + tab_id + ' > label > textarea');
-    searchTextarea.value = "";
-    updateInput(searchTextarea);
 }
 
 
@@ -264,22 +246,20 @@ function saveCardPreview(event, tabname, filename) {
     event.preventDefault();
 }
 
-function extraNetworksTreeProcessFileClick(event, btn, tabname, tab_id) {
+function extraNetworksTreeProcessFileClick(event, btn, tabname, extra_networks_tabname) {
     /**
      * Processes `onclick` events when user clicks on files in tree.
      *
-     * @param event     The generated event.
-     * @param btn       The clicked `tree-list-item` button.
-     * @param tabname   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
-     * @param tab_id    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
+     * @param event                     The generated event.
+     * @param btn                       The clicked `tree-list-item` button.
+     * @param tabname                   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
+     * @param extra_networks_tabname    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
      */
-    var par = btn.parentElement;
-    var search_id = tabname + "_" + tab_id + "_extra_search";
-    var type = par.getAttribute("data-tree-entry-type");
-    var path = btn.getAttribute("data-path");
+    // NOTE: Currently unused.
+    return;
 }
 
-function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
+function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, extra_networks_tabname) {
     /**
      * Processes `onclick` events when user clicks on directories in tree.
      *
@@ -289,10 +269,10 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
      * selected opened directory: Directory is collapsed and deselected.
      * chevron is clicked: Directory is expanded or collapsed. Selected state unchanged.
      *
-     * @param event     The generated event.
-     * @param btn       The clicked `tree-list-item` button.
-     * @param tabname   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
-     * @param tab_id    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
+     * @param event                     The generated event.
+     * @param btn                       The clicked `tree-list-item` button.
+     * @param tabname                   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
+     * @param extra_networks_tabname    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
      */
     var ul = btn.nextElementSibling;
     // This is the actual target that the user clicked on within the target button.
@@ -301,12 +281,12 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
 
     function _expand_or_collapse(_ul, _btn) {
         // Expands <ul> if it is collapsed, collapses otherwise. Updates button attributes.
-        if (_ul.hasAttribute("data-hidden")) {
-            _ul.removeAttribute("data-hidden");
-            _btn.setAttribute("expanded", "true");
+        if (_ul.hasAttribute("hidden")) {
+            _ul.removeAttribute("hidden");
+            _btn.dataset.expanded = "";
         } else {
-            _ul.setAttribute("data-hidden", "");
-            _btn.setAttribute("expanded", "false");
+            _ul.setAttribute("hidden", "");
+            delete _btn.dataset.expanded;
         }
     }
 
@@ -314,19 +294,19 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
         // Removes the `selected` attribute from all buttons.
         var sels = document.querySelectorAll("div.tree-list-content");
         [...sels].forEach(el => {
-            el.removeAttribute("selected");
+            delete el.dataset.selected;
         });
     }
 
     function _select_button(_btn) {
-        // Removes `selected` attribute from all buttons then adds to passed button.
+        // Removes `data-selected` attribute from all buttons then adds to passed button.
         _remove_selected_from_all();
-        _btn.setAttribute("selected", "");
+        _btn.dataset.selected = "";
     }
 
-    function _update_search(_tabname, _tab_id, _search_text) {
+    function _update_search(_tabname, _extra_networks_tabname, _search_text) {
         // Update search input with select button's path.
-        var search_input_elem = gradioApp().querySelector("#" + tabname + "_" + tab_id + "_extra_search");
+        var search_input_elem = gradioApp().querySelector("#" + tabname + "_" + extra_networks_tabname + "_extra_search");
         search_input_elem.value = _search_text;
         updateInput(search_input_elem);
     }
@@ -337,48 +317,58 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id) {
         _expand_or_collapse(ul, btn);
     } else {
         // User clicked anywhere else on the button.
-        if (btn.hasAttribute("selected") && !ul.hasAttribute("data-hidden")) {
+        if ("selected" in btn.dataset && !(ul.hasAttribute("hidden"))) {
             // If folder is select and open, collapse and deselect button.
             _expand_or_collapse(ul, btn);
-            btn.removeAttribute("selected");
-            _update_search(tabname, tab_id, "");
-        } else if (!(!btn.hasAttribute("selected") && !ul.hasAttribute("data-hidden"))) {
+            delete btn.dataset.selected;
+            _update_search(tabname, extra_networks_tabname, "");
+        } else if (!(!("selected" in btn.dataset) && !(ul.hasAttribute("hidden")))) {
             // If folder is open and not selected, then we don't collapse; just select.
             // NOTE: Double inversion sucks but it is the clearest way to show the branching here.
             _expand_or_collapse(ul, btn);
-            _select_button(btn, tabname, tab_id);
-            _update_search(tabname, tab_id, btn.getAttribute("data-path"));
+            _select_button(btn, tabname, extra_networks_tabname);
+            _update_search(tabname, extra_networks_tabname, btn.dataset.path);
         } else {
             // All other cases, just select the button.
-            _select_button(btn, tabname, tab_id);
-            _update_search(tabname, tab_id, btn.getAttribute("data-path"));
+            _select_button(btn, tabname, extra_networks_tabname);
+            _update_search(tabname, extra_networks_tabname, btn.dataset.path);
         }
     }
 }
 
-function extraNetworksTreeOnClick(event, tabname, tab_id) {
+function extraNetworksTreeOnClick(event, tabname, extra_networks_tabname) {
     /**
      * Handles `onclick` events for buttons within an `extra-network-tree .tree-list--tree`.
      *
      * Determines whether the clicked button in the tree is for a file entry or a directory
      * then calls the appropriate function.
      *
-     * @param event     The generated event.
-     * @param tabname   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
-     * @param tab_id    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
+     * @param event                     The generated event.
+     * @param tabname                   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
+     * @param extra_networks_tabname    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
      */
     var btn = event.currentTarget;
     var par = btn.parentElement;
-    if (par.getAttribute("data-tree-entry-type") === "file") {
-        extraNetworksTreeProcessFileClick(event, btn, tabname, tab_id);
+    if (par.dataset.treeEntryType === "file") {
+        extraNetworksTreeProcessFileClick(event, btn, tabname, extra_networks_tabname);
     } else {
-        extraNetworksTreeProcessDirectoryClick(event, btn, tabname, tab_id);
+        extraNetworksTreeProcessDirectoryClick(event, btn, tabname, extra_networks_tabname);
     }
 }
 
-function extraNetworksTreeSortOnClick(event, tabname, tab_id) {
+function extraNetworksTreeSortOnClick(event, tabname, extra_networks_tabname) {
+    /**
+     * Handles `onclick` events for the Sort Mode button.
+     *
+     * Modifies the data attributes of the Sort Mode button to cycle between
+     * various sorting modes.
+     *
+     * @param event                     The generated event.
+     * @param tabname                   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
+     * @param extra_networks_tabname    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
+     */
     var curr_mode = event.currentTarget.dataset.sortmode;
-    var el_sort_dir = gradioApp().querySelector("#" + tabname + "_" + tab_id + "_extra_sort_dir");
+    var el_sort_dir = gradioApp().querySelector("#" + tabname + "_" + extra_networks_tabname + "_extra_sort_dir");
     var sort_dir = el_sort_dir.dataset.sortdir;
     if (curr_mode == "path") {
         event.currentTarget.dataset.sortmode = "name";
@@ -397,23 +387,43 @@ function extraNetworksTreeSortOnClick(event, tabname, tab_id) {
         event.currentTarget.dataset.sortkey = "sortPath-" + sort_dir + "-640";
         event.currentTarget.setAttribute("title", "Sort by path");
     }
-    applyExtraNetworkSort(tabname + "_" + tab_id);
+    applyExtraNetworkSort(tabname + "_" + extra_networks_tabname);
 }
 
-function extraNetworksTreeSortDirOnClick(event, tabname, tab_id) {
-    var curr_dir = event.currentTarget.getAttribute("data-sortdir");
-    if (curr_dir == "Ascending") {
+function extraNetworksTreeSortDirOnClick(event, tabname, extra_networks_tabname) {
+    /**
+     * Handles `onclick` events for the Sort Direction button.
+     *
+     * Modifies the data attributes of the Sort Direction button to cycle between
+     * ascending and descending sort directions.
+     *
+     * @param event                     The generated event.
+     * @param tabname                   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
+     * @param extra_networks_tabname    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
+     */
+    if (event.currentTarget.dataset.sortdir == "Ascending") {
         event.currentTarget.dataset.sortdir = "Descending";
         event.currentTarget.setAttribute("title", "Sort descending");
     } else {
         event.currentTarget.dataset.sortdir = "Ascending";
         event.currentTarget.setAttribute("title", "Sort ascending");
     }
-    applyExtraNetworkSort(tabname + "_" + tab_id);
+    applyExtraNetworkSort(tabname + "_" + extra_networks_tabname);
 }
 
-function extraNetworksTreeRefreshOnClick(event, tabname, tab_id) {
-    console.log("refresh clicked");
+function extraNetworksTreeRefreshOnClick(event, tabname, extra_networks_tabname) {
+    /**
+     * Handles `onclick` events for the Refresh Page button.
+     *
+     * In order to actually call the python functions in `ui_extra_networks.py`
+     * to refresh the page, we created an empty gradio button in that file with an
+     * event handler that refreshes the page. So what this function here does
+     * is it manually raises a `click` event on that button.
+     *
+     * @param event                     The generated event.
+     * @param tabname                   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
+     * @param extra_networks_tabname    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
+     */
     var btn_refresh_internal = gradioApp().getElementById(tabname + "_extra_refresh_internal");
     btn_refresh_internal.dispatchEvent(new Event("click"));
 }
