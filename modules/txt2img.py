@@ -70,7 +70,7 @@ def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, g
     image_info = gallery[gallery_index] if 0 <= gallery_index < len(gallery) else gallery[0]
     p.firstpass_image = infotext_utils.image_from_url_text(image_info)
 
-    parameters = parse_generation_parameters(geninfo.get('infotexts')[gallery_index])
+    parameters = parse_generation_parameters(geninfo.get('infotexts')[gallery_index], [])
     p.seed = parameters.get('Seed', -1)
     p.subseed = parameters.get('Variation seed', -1)
 
