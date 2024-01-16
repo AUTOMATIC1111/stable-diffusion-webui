@@ -27,7 +27,6 @@ from handlers.utils import init_script_args, get_selectable_script, init_default
 from copy import deepcopy
 from typing import List, Union, Dict, Set, Tuple
 
-
 # conversion_action={"线稿":'line',"黑白":'black_white',"色块":'color','草图':'sketch','蜡笔':'crayon'}
 
 # rendition_style={"彩铅":'color_pencil',"浮世绘":'ukiyo',"山水画":'landscape',"极简水彩":'min_watercolor',"炫彩":'dazzle_color',"油画":'oil_paint'}
@@ -56,40 +55,40 @@ def size_control(width, height):
 
 def get_multidiffusion_args():
     onepress_multidiffusion_args = {'Tiled-Diffusion': {'args':
-                                                        [{'batch_size': 1, 'causal_layers': False,
-                                                          'control_tensor_cpu': False, 'controls':
-                                                          [{'blend_mode': 'Background', 'enable': False,
-                                                            'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
-                                                            'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
-                                                            'y': 0.4},
-                                                           {'blend_mode': 'Background', 'enable': False,
-                                                            'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
-                                                            'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
-                                                            'y': 0.4},
-                                                           {'blend_mode': 'Background', 'enable': False,
-                                                            'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
-                                                            'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
-                                                            'y': 0.4},
-                                                           {'blend_mode': 'Background', 'enable': False,
-                                                            'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
-                                                            'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
-                                                            'y': 0.4},
-                                                           {'blend_mode': 'Background', 'enable': False,
-                                                            'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
-                                                            'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
-                                                            'y': 0.4},
-                                                           {'blend_mode': 'Background', 'enable': False,
-                                                            'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
-                                                            'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
-                                                            'y': 0.4},
-                                                           {'blend_mode': 'Background', 'enable': False,
-                                                            'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
-                                                            'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
-                                                            'y': 0.4},
-                                                           {'blend_mode': 'Background', 'enable': False,
-                                                            'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
-                                                            'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
-                                                            'y': 0.4}],
+                                                            [{'batch_size': 1, 'causal_layers': False,
+                                                              'control_tensor_cpu': False, 'controls':
+                                                                  [{'blend_mode': 'Background', 'enable': False,
+                                                                    'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
+                                                                    'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
+                                                                    'y': 0.4},
+                                                                   {'blend_mode': 'Background', 'enable': False,
+                                                                    'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
+                                                                    'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
+                                                                    'y': 0.4},
+                                                                   {'blend_mode': 'Background', 'enable': False,
+                                                                    'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
+                                                                    'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
+                                                                    'y': 0.4},
+                                                                   {'blend_mode': 'Background', 'enable': False,
+                                                                    'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
+                                                                    'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
+                                                                    'y': 0.4},
+                                                                   {'blend_mode': 'Background', 'enable': False,
+                                                                    'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
+                                                                    'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
+                                                                    'y': 0.4},
+                                                                   {'blend_mode': 'Background', 'enable': False,
+                                                                    'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
+                                                                    'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
+                                                                    'y': 0.4},
+                                                                   {'blend_mode': 'Background', 'enable': False,
+                                                                    'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
+                                                                    'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
+                                                                    'y': 0.4},
+                                                                   {'blend_mode': 'Background', 'enable': False,
+                                                                    'feather_ratio': 0.2, 'h': 0.2, 'neg_prompt': '',
+                                                                    'prompt': '', 'seed': -1, 'w': 0.2, 'x': 0.4,
+                                                                    'y': 0.4}],
 
                                                               'draw_background': False, 'enable_bbox_control': False,
                                                               'enabled': True, 'image_height': 1024,
@@ -144,8 +143,7 @@ def get_cn_args():
     return onepress_cn_args
 
 
-def change_cn_args(module, model,  weight=1, image=None, guidance_start=0, guidance_end=1):
-
+def change_cn_args(module, model, weight=1, image=None, guidance_start=0, guidance_end=1):
     cn_args = get_cn_args()
     cn_args['enabled'] = True
     cn_args['module'] = module  # 预处理器
@@ -188,6 +186,7 @@ class OnePressTaskType(Txt2ImgTask):
     Conversion = 1  # 图片上色：
     Rendition = 2  # 风格转换
     ImgToGif = 3  # 静态图片转动图
+    ArtWord = 4  # 艺术字
 
 
 class ConversionTask(Txt2ImgTask):
@@ -484,6 +483,94 @@ class ImgtoGifTask(Txt2ImgTask):
         return full_task, is_img2img
 
 
+class ArtWordTask(Txt2ImgTask):
+    def __init__(self,
+                 type: str,  # 功能类型
+                 base_model_path: str,  # 模型路径
+                 model_hash: str,  # 模型hash值
+                 width: int,  # 宽
+                 height: int,  # 高
+                 prompt: str,  # 图片的正向提示词
+                 image: str,  # 原图路径
+                 denoising_strength: float = 0.7,
+                 lora_models: typing.Sequence[str] = None,  # lora
+                 batch_size: int = 1,  # 结果数量
+                 roop: bool = False,  # 换脸
+                 is_fast: bool = False  # 极速模式
+                 ):
+        self.type = type
+        self.base_model_path = base_model_path
+        self.model_hash = model_hash
+        self.loras = lora_models
+        self.prompt = prompt
+        self.denoising_strength = denoising_strength
+        self.width = width if width != 0 else 512
+        self.height = height if height != 0 else 512
+        self.image = image
+        self.roop = roop
+        self.batch_size = batch_size if batch_size != 0 else 1
+        self.is_fast = is_fast
+
+    @classmethod
+    def exec_task(cls, task: Task):
+
+        t = ArtWordTask(
+            task['type'],  # 艺术字，文生图，图生图
+            task['base_model_path'],
+            task['model_hash'],
+            task['width'],
+            task['height'],
+            task.get('prompt', ""),
+            task.get('image', None),  # 图生图的底图，艺术字的垫图
+            task.get('denoising_strength', 0.7),  # 图生图的重绘幅度，艺术字的控制强度
+            task.get('lora_models', None),
+            task.get('batch_size', 1),
+            task.get('roop', False),  # 是否换脸
+            task.get('is_fast', False))  # 极速模式
+
+        extra_args = deepcopy(task['extra_args'])
+        task.pop("extra_args")
+        full_task = deepcopy(task)
+        full_task.update(extra_args)
+        full_task['batch_size'] = t.batch_size
+        full_task['is_fast'] = t.is_fast
+
+        # 艺术字：文生图+controlnet模型,強度控制control的权重
+        if t.type == 'artword':
+            if 'ControlNet' in full_task['alwayson_scripts']:
+                length = len(full_task['alwayson_scripts']['ControlNet']['args'])
+                for i in range(0, length):
+                    full_task['alwayson_scripts']['ControlNet']['args'][i]['image']['image'] = t.image
+                    full_task['alwayson_scripts']['ControlNet']['args'][i]['enabled'] = True
+                full_task['alwayson_scripts']['ControlNet']['args'][0]['weight'] = t.denoising_strength
+        # 图生图:强度控制重绘幅度
+        is_img2img = False
+        if t.type == 'img2img':
+            is_img2img, full_task['init_img'] = True, t.image
+            full_task['denoising_strength'] = t.denoising_strength
+        # NOTE 如果是极速模式，就改动相应的采样器 提示词后面添加lora，采样步数 cfg ，lcm的lora加上(要判断是否是xl模型)
+        if t.is_fast:
+            if extra_args['is_xl']:
+                full_task['lora_models'].append(
+                    'sd-web/resources/LCM/lcm-lora-xl.safetensors')
+                full_task['prompt'] += ',<lora:lcm-lora-xl:1.0>'
+            else:
+                full_task['lora_models'].append(
+                    'sd-web/resources/LCM/lcm-lora-sd15.safetensors')
+                full_task['prompt'] += ',<lora:lcm-lora-sd15:1.0>'
+            full_task['steps'] = 8
+            full_task['cfg_scale'] = 1.3
+            full_task['sampler_name'] = 'LCM-Alpha'
+
+        # Lora
+        if full_task['lora_models'] == ['']:
+            full_task['lora_models'] = None
+        if full_task['embeddings'] == ['']:
+            full_task['embeddings'] = None
+
+        return full_task, is_img2img
+
+
 class OnePressTaskHandler(Txt2ImgTaskHandler):
     def __init__(self):
         super(OnePressTaskHandler, self).__init__()
@@ -498,6 +585,8 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
             yield from self._exec_rendition(task)
         if task.minor_type == OnePressTaskType.ImgToGif:
             yield from self._exec_img2gif(task)
+        if task.minor_type == OnePressTaskType.ArtWord:
+            yield from self._exec_artword(task)
 
     def _build_gen_canny_i2i_args(self, t, processed: Processed):
         denoising_strength = 0.5
@@ -732,6 +821,67 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         shared.state.end()
         process_args.close()
         logger.info("step 2, upload images...")
+        progress.status = TaskStatus.Uploading
+        yield progress
+        images = save_processed_images(processed,
+                                       process_args.outpath_samples,
+                                       process_args.outpath_grids,
+                                       process_args.outpath_scripts,
+                                       task.id,
+                                       inspect=process_args.kwargs.get("need_audit", False))
+        logger.info("step 3 > ok")
+        progress = TaskProgress.new_finish(task, images)
+        progress.update_seed(processed.all_seeds, processed.all_subseeds)
+        yield progress
+
+    def _exec_artword(self, task: Task) -> typing.Iterable[TaskProgress]:
+        logger.info("one press artword func starting...")
+        full_task, is_img2img = ArtWordTask.exec_task(task)
+
+        # 适配xl
+        logger.info("download model...")
+        local_model_paths = self._get_local_checkpoint(full_task)
+        base_model_path = local_model_paths if not isinstance(
+            local_model_paths, tuple) else local_model_paths[0]
+        refiner_checkpoint = None if not isinstance(
+            local_model_paths, tuple) else local_model_paths[1]
+
+        load_sd_model_weights(base_model_path, full_task.model_hash)
+        progress = TaskProgress.new_ready(
+            full_task, f'model loaded, run t2i...')
+        yield progress
+
+        # 更新图生图模式，xl模式
+        process_args = self._build_txt2img_arg(
+            progress, refiner_checkpoint) if not is_img2img else self._build_img2img_arg(progress, refiner_checkpoint)
+
+        self._set_little_models(process_args)
+        progress.status = TaskStatus.Running
+        progress.task_desc = f'onepress task({task.id}) running'
+        yield progress
+        logger.info("step 1, artword...")
+        shared.state.begin()
+        processed = process_images(process_args)
+        # processed.images = processed.images[1:task['batch_size']+1]
+        logger.info("step 1 > ok")
+
+        # 如果需要换人脸
+        if task['roop']:
+            logger.info("step 2, roop...")
+            roop_result = []
+            for i, img in enumerate(processed.images):
+                source_img = get_tmp_local_path(task['image'])
+                source_img = Image.open(source_img).convert('RGB')
+                target_img = img  #
+                # source_img: Image.Image, target_img: Image.Image,
+                roop_result.append(
+                    RenditionTask.exec_roop(source_img, target_img))
+            processed.images = roop_result
+            logger.info("step 2 > ok")
+
+        shared.state.end()
+        process_args.close()
+        logger.info("step 3, upload images...")
         progress.status = TaskStatus.Uploading
         yield progress
         images = save_processed_images(processed,
