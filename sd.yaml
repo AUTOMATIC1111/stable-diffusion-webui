@@ -1,0 +1,40 @@
+edition: 1.0.0
+name: my-framework-app
+access: default
+services:
+  framework:
+    component: fc
+    props:
+      region: cn-hangzhou
+      service:
+        name: serverless-devs-application
+      function:
+        name: stable-diffusion-webui-48wy
+        description: Initialize
+        runtime: custom
+        environmentVariables:
+          LD_LIBRARY_PATH: >-
+            /code:/code/lib:/usr/local/lib:/opt/lib:/opt/php8.1/lib:/opt/php8.0/lib:/opt/php7.2/lib
+        memorySize: 128
+        cpu: 0.05
+        timeout: 60
+        codeUri: ./
+        diskSize: 512
+        caPort: 9000
+        customRuntimeConfig:
+          command:
+            - node
+          args:
+            - index.js
+      triggers:
+        - name: httpTrigger
+          type: http
+          config:
+            authType: anonymous
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - HEAD
+              - PATCH
