@@ -1012,6 +1012,10 @@ def switch_diffuser_pipe(pipeline, cls):
 
 
 def set_diffuser_pipe(pipe, new_pipe_type):
+    if get_diffusers_task(pipe) == new_pipe_type:
+        shared.log.debug(f'Pipeline class change skip: {new_pipe_type}')
+        return pipe
+
     sd_checkpoint_info = getattr(pipe, "sd_checkpoint_info", None)
     sd_model_checkpoint = getattr(pipe, "sd_model_checkpoint", None)
     sd_model_hash = getattr(pipe, "sd_model_hash", None)
@@ -1032,7 +1036,7 @@ def set_diffuser_pipe(pipe, new_pipe_type):
         elif new_pipe_type == DiffusersTaskType.INPAINTING:
             new_pipe = diffusers.AutoPipelineForInpainting.from_pipe(pipe)
     except Exception as e: # pylint: disable=unused-variable
-        shared.log.warning(f'Failed to change: type={new_pipe_type} pipeline={pipe.__class__.__name__} {e}')
+        shared.log.warning(f'Pipeline class change failed: type={new_pipe_type} pipeline={pipe.__class__.__name__} {e}')
         return pipe
 
     if pipe.__class__ == new_pipe.__class__:

@@ -7,8 +7,9 @@ Another big release, highlights being:
   - Inpaint and outpaint support, flexible resizing options, optional hires  
   - More processors and models  
   - Full support for scripts and extensions  
-- Fully baked **FaceID** / **FaceSwap** & **IPAdapter** modules  
-- Brand new intelligent masking, manual or automatic using ML models and with live previews  
+- Fully baked-in **FaceID**, **FaceSwap** and **PhotoMaker** modules
+- Much enhanced **IPAdapter** modules  
+- Brand new **intelligent masking**, manual or automatic using ML models and with live previews  
 
 Plus welcome additions to **UI performance, usability and accessibility** and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
@@ -75,6 +76,10 @@ And it also includes fixes for all reported issues so far
     **SD15**: Base, Base ViT-G, Light, Plus, Plus Face, Full Face  
     **SDXL**: Base SXDL, Base ViT-H SXDL, Plus ViT-H SXDL, Plus Face ViT-H SXDL  
   - enable use via api, thanks @trojaner
+- [PhotoMaker](https://github.com/TencentARC/PhotoMaker)  
+  - for *SD-XL* only  
+  - new model from TenencentARC using similar concept as IPAdapter, but with different implementation and  
+    allowing full concept swaps between input images and generated images using trigger words  
 - **Improvements**  
   - **ui**  
     - check version and **update** SD.Next via UI  
