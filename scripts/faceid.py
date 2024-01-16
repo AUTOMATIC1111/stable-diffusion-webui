@@ -6,7 +6,7 @@ import gradio as gr
 import diffusers
 import huggingface_hub as hf
 from PIL import Image
-from modules import scripts, processing, shared, devices
+from modules import scripts, processing, shared, devices, images
 
 
 MODELS = {
@@ -123,10 +123,9 @@ def face_id(p: processing.StableDiffusionProcessing, faces, image, model, overri
     ip_model_dict['faceid_embeds'] = face_embeds
 
     # run generate
-    images = []
+    processed_images = []
     ip_model.set_scale(scale)
     for i in range(p.n_iter):
-        # Update prompts and seed for each iteration
         ip_model_dict.update(
             {
                 'prompt': p.all_prompts[i],
@@ -136,7 +135,7 @@ def face_id(p: processing.StableDiffusionProcessing, faces, image, model, overri
         )
         res = ip_model.generate(**ip_model_dict)
         if isinstance(res, list):
-            images += res
+            processed_images += res
     ip_model.set_scale(0)
 
     if not cache:
@@ -145,7 +144,7 @@ def face_id(p: processing.StableDiffusionProcessing, faces, image, model, overri
     devices.torch_gc()
 
     p.extra_generation_params["IP Adapter"] = f'{basename}:{scale}'
-    return images
+    return processed_images
 
 
 def face_swap(p: processing.StableDiffusionProcessing, image, source_face):
@@ -184,7 +183,7 @@ class Script(scripts.Script):
             override = gr.Checkbox(label='Override sampler', value=True)
             cache = gr.Checkbox(label='Cache model', value=True)
         with gr.Row(visible=True):
-            scale = gr.Slider(label='Strength', minimum=0.0, maximum=1.0, step=0.01, value=1.0)
+            scale = gr.Slider(label='Strength', minimum=0.0, maximum=2.0, step=0.01, value=1.0)
             structure = gr.Slider(label='Structure', minimum=0.0, maximum=1.0, step=0.01, value=1.0)
         with gr.Row(visible=False):
             rank = gr.Slider(label='Rank', minimum=4, maximum=256, step=4, value=128)
@@ -230,25 +229,43 @@ class Script(scripts.Script):
             shared.log.debug(f'FaceID face: i={i+1} score={face.det_score:.2f} gender={"female" if face.gender==0 else "male"} age={face.age} bbox={face.bbox}')
             p.extra_generation_params[f"FaceID {i+1}"] = f'{face.det_score:.2f} {"female" if face.gender==0 else "male"} {face.age}y'
 
-        images = []
+        processed_images = []
         if 'FaceID' in mode:
-            images = face_id(p, faces, np_image, model, override, tokens, rank, cache, scale, structure) # run faceid pipeline
+            processed_images = face_id(p, faces, np_image, model, override, tokens, rank, cache, scale, structure) # run faceid pipeline
             processed = processing.Processed(
                 p,
-                images_list=images,
+                images_list=processed_images,
                 seed=p.seed,
                 subseed=p.subseed,
                 index_of_first_image=0,
             )
+            if 'FaceSwap' not in mode:
+                if shared.opts.samples_save and not p.do_not_save_samples:
+                    for i, image in enumerate(processed.images):
+                        info = processing.create_infotext(p, index=i)
+                        images.save_image(image, path=p.outpath_samples, seed=p.all_seeds[i], prompt=p.all_prompts[i], info=info, p=p)
+            else:
+                if shared.opts.save_images_before_face_restoration and not p.do_not_save_samples:
+                    for i, image in enumerate(processed.images):
+                        info = processing.create_infotext(p, index=i)
+                        images.save_image(image, path=p.outpath_samples, seed=p.all_seeds[i], prompt=p.all_prompts[i], info=info, p=p, suffix="-before-face-swap")
+
         else:
             processed = processing.process_images(p) # run normal pipeline
-            images = processed.images
+            processed_images = processed.images
+
         if 'FaceSwap' in mode: # replace faces as postprocess
             processed.images = []
-            for batch_image in images:
+            for batch_image in processed_images:
                 swapped_image = face_swap(p, batch_image, source_face=faces[0])
                 processed.images.append(swapped_image)
 
+            if shared.opts.samples_save and not p.do_not_save_samples:
+                for i, image in enumerate(processed.images):
+                    info = processing.create_infotext(p, index=i)
+                    images.save_image(image, path=p.outpath_samples, seed=p.all_seeds[i], prompt=p.all_prompts[i], info=info, p=p)
+
         processed.info = processed.infotext(p, 0)
         processed.infotexts = [processed.info]
+
         return processed

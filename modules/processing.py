@@ -969,7 +969,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     x_sample = validate_sample(x_sample)
                     image = Image.fromarray(x_sample)
                 if p.restore_faces:
-                    if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_face_restoration:
+                    if not p.do_not_save_samples and shared.opts.save_images_before_face_restoration:
                         orig = p.restore_faces
                         p.restore_faces = False
                         info = infotext(i)
@@ -983,7 +983,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     p.scripts.postprocess_image(p, pp)
                     image = pp.image
                 if p.color_corrections is not None and i < len(p.color_corrections):
-                    if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_color_correction:
+                    if not p.do_not_save_samples and shared.opts.save_images_before_color_correction:
                         orig = p.color_corrections
                         p.color_corrections = None
                         info = infotext(i)
