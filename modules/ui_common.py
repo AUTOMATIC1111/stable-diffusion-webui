@@ -36,6 +36,29 @@ def plaintext_to_html(text, classname=None):
     return f"<p class='{classname}'>{content}</p>" if classname else f"<p>{content}</p>"
 
 
+def update_logfile(logfile_path, fields):
+    import csv
+
+    with open(logfile_path, "r", encoding="utf8", newline="") as file:
+        reader = csv.reader(file)
+        rows = list(reader)
+
+    # blank file: leave it as is
+    if not rows:
+        return
+
+    rows[0] = fields
+
+    # append new fields to each row as empty values
+    for row in rows[1:]:
+        while len(row) < len(fields):
+            row.append("")
+
+    with open(logfile_path, "w", encoding="utf8", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerows(rows)
+
+
 def save_files(js_data, images, do_make_zip, index):
     import csv
     filenames = []
@@ -64,11 +87,31 @@ def save_files(js_data, images, do_make_zip, index):
 
     os.makedirs(shared.opts.outdir_save, exist_ok=True)
 
+    fields = [
+        "prompt",
+        "seed",
+        "width",
+        "height",
+        "sampler",
+        "cfgs",
+        "steps",
+        "filename",
+        "negative_prompt",
+        "sd_model_name",
+        "sd_model_hash",
+    ]
+    logfile_path = os.path.join(shared.opts.outdir_save, "log.csv")
+
+    # NOTE: ensure csv integrity when fields are added by
+    # updating headers and padding with delimeters where needed
+    if os.path.exists(logfile_path):
+        update_logfile(logfile_path, fields)
+
     with open(os.path.join(shared.opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
         at_start = file.tell() == 0
         writer = csv.writer(file)
         if at_start:
-            writer.writerow(["prompt", "seed", "width", "height", "sampler", "cfgs", "steps", "filename", "negative_prompt"])
+            writer.writerow(fields)
 
         for image_index, filedata in enumerate(images, start_index):
             image = image_from_url_text(filedata)
@@ -86,7 +129,7 @@ def save_files(js_data, images, do_make_zip, index):
                 filenames.append(os.path.basename(txt_fullfn))
                 fullfns.append(txt_fullfn)
 
-        writer.writerow([data["prompt"], data["seed"], data["width"], data["height"], data["sampler_name"], data["cfg_scale"], data["steps"], filenames[0], data["negative_prompt"]])
+        writer.writerow([data["prompt"], data["seed"], data["width"], data["height"], data["sampler_name"], data["cfg_scale"], data["steps"], filenames[0], data["negative_prompt"], data["sd_model_name"], data["sd_model_hash"]])
 
     # Make Zip
     if do_make_zip:
