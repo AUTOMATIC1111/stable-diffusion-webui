@@ -31,11 +31,12 @@ function setupExtraNetworksForTab(tabname) {
     var this_tab = gradioApp().querySelector('#' + tabname + '_extra_tabs');
     this_tab.classList.add('extra-networks');
     this_tab.querySelectorAll(":scope > [id^='" + tabname + "_']").forEach(function(elem) {
-        var extra_networks_tabname = elem.id;
-        var search = gradioApp().querySelector("#" + extra_networks_tabname + "_extra_search");
-        var sort_mode = gradioApp().querySelector("#" + extra_networks_tabname + "_extra_sort");
-        var sort_dir = gradioApp().querySelector("#" + extra_networks_tabname + "_extra_sort_dir");
-        var refresh = gradioApp().querySelector("#" + extra_networks_tabname + "_extra_refresh");
+        // tabname_full = {tabname}_{extra_networks_tabname}
+        var tabname_full = elem.id;
+        var search = gradioApp().querySelector("#" + tabname_full + "_extra_search");
+        var sort_mode = gradioApp().querySelector("#" + tabname_full + "_extra_sort");
+        var sort_dir = gradioApp().querySelector("#" + tabname_full + "_extra_sort_dir");
+        var refresh = gradioApp().querySelector("#" + tabname_full + "_extra_refresh");
 
         // If any of the buttons above don't exist, we want to skip this iteration of the loop.
         if (!search || !sort_mode || !sort_dir || !refresh) {
@@ -44,16 +45,13 @@ function setupExtraNetworksForTab(tabname) {
 
         var applyFilter = function() {
             var searchTerm = search.value.toLowerCase();
-
             gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card').forEach(function(elem) {
                 var searchOnly = elem.querySelector('.search_only');
-
                 var text = Array.prototype.map.call(elem.querySelectorAll('.search_terms'), function(t) {
                     return t.textContent.toLowerCase();
                 }).join(" ");
 
                 var visible = text.indexOf(searchTerm) != -1;
-
                 if (searchOnly && searchTerm.length < 4) {
                     visible = false;
                 }
@@ -66,7 +64,6 @@ function setupExtraNetworksForTab(tabname) {
 
         var applySort = function() {
             var cards = gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card');
-
             var reverse = sort_dir.dataset.sortdir == "Descending";
             var sortKey = sort_mode.dataset.sortmode.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim() || "name";
             sortKey = "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1);
@@ -104,9 +101,8 @@ function setupExtraNetworksForTab(tabname) {
         search.addEventListener("input", applyFilter);
         applySort();
         applyFilter();
-
-        extraNetworksApplySort[extra_networks_tabname] = applySort;
-        extraNetworksApplyFilter[extra_networks_tabname] = applyFilter;
+        extraNetworksApplySort[tabname_full] = applySort;
+        extraNetworksApplyFilter[tabname_full] = applyFilter;
     });
 
     registerPrompt(tabname, tabname + "_prompt");
@@ -147,12 +143,12 @@ function extraNetworksTabSelected(tabname, id, showPrompt, showNegativePrompt) {
     extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt);
 }
 
-function applyExtraNetworkFilter(tabname) {
-    setTimeout(extraNetworksApplyFilter[tabname], 1);
+function applyExtraNetworkFilter(tabname_full) {
+    setTimeout(extraNetworksApplyFilter[tabname_full], 1);
 }
 
-function applyExtraNetworkSort(tabname) {
-    setTimeout(extraNetworksApplySort[tabname], 1);
+function applyExtraNetworkSort(tabname_full) {
+    setTimeout(extraNetworksApplySort[tabname_full], 1);
 }
 
 var extraNetworksApplyFilter = {};

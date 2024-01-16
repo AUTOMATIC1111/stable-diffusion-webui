@@ -237,7 +237,7 @@ class ExtraNetworksPage:
                     "tabname": tabname,
                     "prompt": item["prompt"],
                     "neg_prompt": item.get("negative_prompt", ""),
-                    "allow_neg": "true" if self.allow_negative_prompt else "false"
+                    "allow_neg": str(self.allow_negative_prompt).lower(),
                 }
             )
             onclick = html.escape(onclick)
@@ -291,7 +291,7 @@ class ExtraNetworksPage:
             search_terms_html += search_term_template.format(
                 **{
                     "style": "display: none;",
-                    "class": "search_terms" + (" search_only" if search_only else ""),
+                    "class": f"search_terms{' search_only' if search_only else ''}",
                     "search_term": search_term,
                 }
             )
@@ -307,7 +307,7 @@ class ExtraNetworksPage:
             "metadata_button": btn_metadata,
             "name": html.escape(item["name"]),
             "prompt": item.get("prompt", None),
-            "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {quote_js(tabname)}, {quote_js(item["local_preview"])})""") + '"',
+            "save_card_preview": html.escape(f"return saveCardPreview(event, '{tabname}', '{item['local_preview']}');"),
             "search_only": " search_only" if search_only else "",
             "search_terms": search_terms_html,
             "sort_keys": sort_keys,
@@ -369,7 +369,7 @@ class ExtraNetworksPage:
         ul = f"<ul class='tree-list tree-list--subgroup' hidden>{content}</ul>"
         return (
             "<li class='tree-list-item tree-list-item--has-subitem' data-tree-entry-type='dir'>"
-            f"{btn + ul}"
+            f"{btn}{ul}"
             "</li>"
         )
 
@@ -561,7 +561,7 @@ class ExtraNetworksPage:
         Find a preview PNG for a given path (without extension) and call link_preview on it.
         """
 
-        potential_files = sum([[path + "." + ext, path + ".preview." + ext] for ext in allowed_preview_extensions()], [])
+        potential_files = sum([[f"{path}.{ext}", f"{path}.preview.{ext}"] for ext in allowed_preview_extensions()], [])
 
         for file in potential_files:
             if self.lister.exists(file):
@@ -642,7 +642,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
     related_tabs = []
 
-    button_refresh = gr.Button("Refresh", elem_id=tabname+"_extra_refresh_internal", visible=False)
+    button_refresh = gr.Button("Refresh", elem_id=f"{tabname}_extra_refresh_internal", visible=False)
 
     for page in ui.stored_extra_pages:
         with gr.Tab(page.title, elem_id=f"{tabname}_{page.extra_networks_tabname}", elem_classes=["extra-page"]) as tab:
@@ -652,24 +652,25 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             elem_id = f"{tabname}_{page.extra_networks_tabname}_cards_html"
             page_elem = gr.HTML('Loading...', elem_id=elem_id)
             ui.pages.append(page_elem)
-            page_elem.change(
-                fn=lambda: None,
-                _js=f"function(){{applyExtraNetworkFilter({tabname}_{page.extra_networks_tabname}_extra_search); return []}}",
-                inputs=[],
-                outputs=[],
-            )
-
             editor = page.create_user_metadata_editor(ui, tabname)
             editor.create_ui()
             ui.user_metadata_editors.append(editor)
-
             related_tabs.append(tab)
 
-    ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
-    ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
+    ui.button_save_preview = gr.Button('Save preview', elem_id=f"{tabname}_save_preview", visible=False)
+    ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=f"{tabname}_preview_filename", visible=False)
 
     for tab in unrelated_tabs:
-        tab.select(fn=None, _js='function(){ extraNetworksUrelatedTabSelected("' + tabname + '"); }', inputs=[], outputs=[], show_progress=False)
+        tab.select(fn=None, _js=f"function(){{extraNetworksUnrelatedTabSelected('{tabname}');}}", inputs=[], outputs=[], show_progress=False)
+
+    for page, tab in zip(ui.stored_extra_pages, related_tabs):
+        jscode = (
+            "function(){{"
+            f"extraNetworksTabSelected('{tabname}', '{tabname}_{page.extra_networks_tabname}_prompts', {str(page.allow_prompt).lower()}, {str(page.allow_negative_prompt).lower()});"
+            f"applyExtraNetworkFilter('{tabname}_{page.extra_networks_tabname}');"
+            "}}"
+        )
+        tab.select(fn=None, _js=jscode, inputs=[], outputs=[], show_progress=False)
 
     def create_html():
         ui.pages_contents = [pg.create_html(ui.tabname) for pg in ui.stored_extra_pages]

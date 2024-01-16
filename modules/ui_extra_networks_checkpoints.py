@@ -2,7 +2,6 @@ import html
 import os
 
 from modules import shared, ui_extra_networks, sd_models
-from modules.ui_extra_networks import quote_js
 from modules.ui_extra_networks_checkpoints_user_metadata import CheckpointUserMetadataEditor
 
 
@@ -31,7 +30,7 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
             "preview": self.find_preview(path),
             "description": self.find_description(path),
             "search_terms": search_terms,
-            "onclick": '"' + html.escape(f"""return selectCheckpoint({quote_js(name)})""") + '"',
+            "onclick": html.escape(f"return selectCheckpoint('{name}');"),
             "local_preview": f"{path}.{shared.opts.samples_format}",
             "metadata": checkpoint.metadata,
             "sort_keys": {'default': index, **self.get_sort_keys(checkpoint.filename)},
