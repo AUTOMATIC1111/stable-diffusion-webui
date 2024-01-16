@@ -158,8 +158,13 @@ async function filterExtraNetworksForTab(searchTerm) {
       } else {
         // If we are not using regex search, we still use an extended syntax to allow for searching for multiple keywords, or also excluding keywords
         // Keywords are separated by |, and keywords that should be excluded are prefixed with -
-        let searchList = searchTerm.split('|').filter((s) => s !== '' && !s.startsWith('-')).map((s) => s.trim());
-        let excludeList = searchTerm.split('|').filter((s) => s !== '' && s.trim().startsWith('-')).map((s) => s.trim().substring(1).trim());
+        const searchList = searchTerm.split('|').filter((s) => s !== '' && !s.startsWith('-')).map((s) => s.trim());
+        const excludeList = searchTerm.split('|').filter((s) => s !== '' && s.trim().startsWith('-')).map((s) => s.trim().substring(1).trim());
+
+        // In addition, both the searchList, and exclude List can be separated by &, which means that all keywords in the searchList must be present, and none of the excludeList 
+        // So we construct an array of arrays, which we will then use to filter the cards
+        const searchListAll = searchList.map((s) => s.split('&').map((s) => s.trim()));
+        const excludeListAll = excludeList.map((s) => s.split('&').map((s) => s.trim()));
 
         cards.forEach((elem) => {
           let text = '';
@@ -170,7 +175,13 @@ async function filterExtraNetworksForTab(searchTerm) {
           text = text.toLowerCase().replace('models--', 'diffusers').replaceAll('\\', '/');
 
           if (
-            (searchList.some((searchTerm) => text.includes(searchTerm)) || searchList.length === 0) && !excludeList.some((searchTerm) => text.includes(searchTerm))
+            // In searchListAll we have a list of lists, in the sublist, every keyword must be present
+            // In the top level list, at least one sublist must be present
+            searchListAll.some((searchList) => searchList.every((searchTerm) => text.includes(searchTerm)))
+            &&
+            // In excludeListAll we have a list of lists, in the sublist, the keywords may not appear together
+            // In the top level list, none of the sublists must be present
+            !excludeListAll.some((excludeList) => excludeList.every((excludeTerm) => text.includes(excludeTerm)))
           ) {
             elem.style.display = '';
             found += 1;
