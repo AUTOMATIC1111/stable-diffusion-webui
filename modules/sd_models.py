@@ -1013,7 +1013,6 @@ def switch_diffuser_pipe(pipeline, cls):
 
 def set_diffuser_pipe(pipe, new_pipe_type):
     if get_diffusers_task(pipe) == new_pipe_type:
-        shared.log.debug(f'Pipeline class change skip: {new_pipe_type}')
         return pipe
 
     sd_checkpoint_info = getattr(pipe, "sd_checkpoint_info", None)
