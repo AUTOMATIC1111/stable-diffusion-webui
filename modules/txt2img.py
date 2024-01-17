@@ -64,6 +64,7 @@ def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, g
     p.enable_hr = True
     p.batch_size = 1
     p.n_iter = 1
+    p.txt2img_upscale = True
 
     geninfo = json.loads(generation_info)
 
