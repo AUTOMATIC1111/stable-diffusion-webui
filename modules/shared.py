@@ -505,7 +505,7 @@ options_templates.update(options_section(('ui', "User Interface"), {
     "motd": OptionInfo(True, "Show MOTD"),
     "gradio_theme": OptionInfo("black-teal", "UI theme", gr.Dropdown, lambda: {"choices": theme.list_themes()}, refresh=theme.refresh_themes),
     "theme_style": OptionInfo("Auto", "Theme mode", gr.Radio, {"choices": ["Auto", "Dark", "Light"]}),
-    "font_size": OptionInfo(16, "Font size", gr.Slider, {"minimum": 8, "maximum": 32, "step": 1, "visible": True}),
+    "font_size": OptionInfo(14, "Font size", gr.Slider, {"minimum": 8, "maximum": 32, "step": 1, "visible": True}),
     "tooltips": OptionInfo("UI Tooltips", "UI tooltips", gr.Radio, {"choices": ["None", "Browser default", "UI tooltips"], "visible": False}),
     "gallery_height": OptionInfo("", "Gallery height", gr.Textbox),
     "compact_view": OptionInfo(False, "Compact view"),
