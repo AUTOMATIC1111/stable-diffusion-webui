@@ -735,7 +735,6 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         "requires_safety_checker": False,
         "load_safety_checker": False,
         "load_connected_pipeline": True,
-        # TODO: use_safetensors cant enable for all checkpoints just yet
     }
     if shared.opts.diffusers_model_load_variant == 'default':
         if devices.dtype == torch.float16:
@@ -1013,6 +1012,10 @@ def switch_diffuser_pipe(pipeline, cls):
 
 
 def set_diffuser_pipe(pipe, new_pipe_type):
+    if get_diffusers_task(pipe) == new_pipe_type:
+        shared.log.debug(f'Pipeline class change skip: {new_pipe_type}')
+        return pipe
+
     sd_checkpoint_info = getattr(pipe, "sd_checkpoint_info", None)
     sd_model_checkpoint = getattr(pipe, "sd_model_checkpoint", None)
     sd_model_hash = getattr(pipe, "sd_model_hash", None)
@@ -1033,7 +1036,7 @@ def set_diffuser_pipe(pipe, new_pipe_type):
         elif new_pipe_type == DiffusersTaskType.INPAINTING:
             new_pipe = diffusers.AutoPipelineForInpainting.from_pipe(pipe)
     except Exception as e: # pylint: disable=unused-variable
-        shared.log.warning(f'Failed to change: type={new_pipe_type} pipeline={pipe.__class__.__name__} {e}')
+        shared.log.warning(f'Pipeline class change failed: type={new_pipe_type} pipeline={pipe.__class__.__name__} {e}')
         return pipe
 
     if pipe.__class__ == new_pipe.__class__:
@@ -1209,7 +1212,8 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
             unload_model_weights(op=op)
             sd_model = None
     timer = Timer()
-    state_dict = get_checkpoint_state_dict(checkpoint_info, timer) if shared.backend == shared.Backend.ORIGINAL else None  # TODO Revist after Diffusers enables state_dict loading
+    # TODO implement caching after diffusers implement state_dict loading
+    state_dict = get_checkpoint_state_dict(checkpoint_info, timer) if shared.backend == shared.Backend.ORIGINAL else None
     checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
     timer.record("config")
     if sd_model is None or checkpoint_config != getattr(sd_model, 'used_config', None):

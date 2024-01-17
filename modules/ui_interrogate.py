@@ -233,7 +233,8 @@ def decode_base64_to_image(encoding):
         raise HTTPException(status_code=500, detail="Invalid encoded image") from e
 
 
-def mount_interrogator_api(_: gr.Blocks, app): # TODO redesign interrogator api
+# TODO redesign interrogator api
+def mount_interrogator_api(_: gr.Blocks, app):
 
     class InterrogatorAnalyzeRequest(BaseModel):
         image: str = Field(default="", title="Image", description="Image to work on, must be a Base64 string containing the image's data.")

@@ -29,7 +29,6 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
                  preview_btn = None,
                  model_id = None,
                  model_strength = None,
-                 image_input = None,
                  preview_process = None,
                  image_upload = None,
                  image_preview = None,
@@ -50,7 +49,6 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
         self.adapter: t2iadapter.Adapter = None
         self.controlnet: Union[controlnet.ControlNet, xs.ControlNetXS] = None
         # map to input image
-        self.input: Image = image_input
         self.override: Image = None
         # global settings but passed per-unit
         self.factor = 1.0
@@ -161,7 +159,7 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
         if reset_btn is not None:
             reset_btn.click(fn=reset, inputs=[], outputs=[enabled_cb, model_id, process_id, model_strength])
         if preview_btn is not None:
-            preview_btn.click(fn=self.process.preview, inputs=[self.input], outputs=[preview_process]) # return list of images for gallery
+            preview_btn.click(fn=self.process.preview, inputs=[], outputs=[preview_process]) # return list of images for gallery
         if image_upload is not None:
             image_upload.upload(fn=upload_image, inputs=[image_upload], outputs=[image_preview]) # return list of images for gallery
         if control_start is not None and control_end is not None:

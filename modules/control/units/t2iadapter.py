@@ -114,7 +114,7 @@ class AdapterPipeline():
         if pipeline is None:
             log.error(f'Control {what} pipeline: model not loaded')
             return
-        if isinstance(adapter, list) and len(adapter) > 1: # TODO use MultiAdapter
+        if isinstance(adapter, list) and len(adapter) > 1:
             adapter = MultiAdapter(adapter)
         adapter.to(device=pipeline.device, dtype=pipeline.dtype)
         if detect.is_sdxl(pipeline):

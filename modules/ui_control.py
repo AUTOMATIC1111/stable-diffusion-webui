@@ -145,29 +145,25 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
     # control inputs
     if isinstance(selected_input, Image.Image): # image via upload -> image
         if input_mode == 'Outpaint':
-            input_mask = masking.run_mask(input_image=selected_input, input_mask=None, return_type='grayscale')
+            input_mask = masking.run_mask(input_image=selected_input, input_mask=None, return_type='Grayscale')
         input_source = [selected_input]
         input_type = 'PIL.Image'
-        shared.log.debug(f'Control input: type={input_type} input={input_source}')
         status = f'Control input | Image | Size {selected_input.width}x{selected_input.height} | Mode {selected_input.mode}'
         res = [gr.Tabs.update(selected='out-gallery'), status]
     elif isinstance(selected_input, dict): # inpaint -> dict image+mask
-        input_mask = masking.run_mask(input_image=selected_input['image'], input_mask=selected_input['mask'], return_type='grayscale')
+        input_mask = masking.run_mask(input_image=selected_input['image'], input_mask=selected_input['mask'], return_type='Grayscale')
         selected_input = selected_input['image']
         input_source = [selected_input]
         input_type = 'PIL.Image'
-        shared.log.debug(f'Control input: type={input_type} input={input_source} mask={input_mask}')
         status = f'Control input | Image | Size {selected_input.width}x{selected_input.height} | Mode {selected_input.mode}'
         res = [gr.Tabs.update(selected='out-gallery'), status]
     elif isinstance(selected_input, gr.components.image.Image): # not likely
         input_source = [selected_input.value]
         input_type = 'gr.Image'
-        shared.log.debug(f'Control input: type={input_type} input={input_source}')
         res = [gr.Tabs.update(selected='out-gallery'), status]
     elif isinstance(selected_input, str): # video via upload > tmp filepath to video
         input_source = selected_input
         input_type = 'gr.Video'
-        shared.log.debug(f'Control input: type={input_type} input={input_source}')
         status = get_video(input_source)
         res = [gr.Tabs.update(selected='out-video'), status]
     elif isinstance(selected_input, list): # batch or folder via upload -> list of tmp filepaths
@@ -178,10 +174,10 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
             input_type = 'files'
             input_source = selected_input
         status = f'Control input | Images | Files {len(input_source)}'
-        shared.log.debug(f'Control input: type={input_type} input={input_source}')
         res = [gr.Tabs.update(selected='out-gallery'), status]
     else: # unknown
         input_source = None
+    shared.log.debug(f'Control input: type={input_type} input={input_source}')
     # init inputs: optional
     if init_type == 0: # Control only
         input_init = None
@@ -190,30 +186,26 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
     elif init_type == 2: # Separate init image
         if isinstance(selected_init, Image.Image): # image via upload -> image
             if input_mode == 'Outpaint':
-                input_mask = masking.run_mask(input_image=selected_init, input_mask=None, return_type='grayscale')
+                input_mask = masking.run_mask(input_image=selected_init, input_mask=None, return_type='Grayscale')
             input_source = [selected_init]
             input_init = [selected_init]
             input_type = 'PIL.Image'
-            shared.log.debug(f'Control input: type={input_type} input={input_source}')
             status = f'Control input | Image | Size {selected_init.width}x{selected_init.height} | Mode {selected_init.mode}'
             res = [gr.Tabs.update(selected='out-gallery'), status]
         elif isinstance(selected_init, dict): # inpaint -> dict image+mask
-            input_mask = masking.run_mask(input_image=selected_init['image'], input_mask=selected_init['mask'], return_type='grayscale')
+            input_mask = masking.run_mask(input_image=selected_init['image'], input_mask=selected_init['mask'], return_type='Grayscale')
             input_init = selected_init['image']
             input_source = [selected_init]
             input_type = 'PIL.Image'
-            shared.log.debug(f'Control input: type={input_type} input={input_source} mask={input_mask}')
             status = f'Control input | Image | Size {selected_init.width}x{selected_init.height} | Mode {selected_input.mode}'
             res = [gr.Tabs.update(selected='out-gallery'), status]
         elif isinstance(selected_init, gr.components.image.Image): # not likely
             input_init = [selected_init.value]
             input_type = 'gr.Image'
-            shared.log.debug(f'Control input: type={input_type} input={input_init}')
             res = [gr.Tabs.update(selected='out-gallery'), status]
         elif isinstance(selected_init, str): # video via upload > tmp filepath to video
             input_init = selected_init
             input_type = 'gr.Video'
-            shared.log.debug(f'Control input: type={input_type} input={input_init}')
             status = get_video(input_init)
             res = [gr.Tabs.update(selected='out-video'), status]
         elif isinstance(selected_init, list): # batch or folder via upload -> list of tmp filepaths
@@ -224,7 +216,6 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
                 input_type = 'files'
                 input_init = selected_init
             status = f'Control input | Images | Files {len(input_init)}'
-            shared.log.debug(f'Control input: type={input_type} input={input_init} mode={input_mode}')
             res = [gr.Tabs.update(selected='out-gallery'), status]
         else: # unknown
             input_init = None
@@ -404,7 +395,6 @@ def create_ui(_blocks: gr.Blocks=None):
                         units.append(unit.Unit(
                             unit_type = 'controlnet',
                             result_txt = result_txt,
-                            image_input = input_image,
                             enabled_cb = enabled_cb,
                             reset_btn = reset_btn,
                             process_id = process_id,
@@ -456,7 +446,6 @@ def create_ui(_blocks: gr.Blocks=None):
                         units.append(unit.Unit(
                             unit_type = 'adapter',
                             result_txt = result_txt,
-                            image_input = input_image,
                             enabled_cb = enabled_cb,
                             reset_btn = reset_btn,
                             process_id = process_id,
@@ -499,7 +488,6 @@ def create_ui(_blocks: gr.Blocks=None):
                         units.append(unit.Unit(
                             unit_type = 'xs',
                             result_txt = result_txt,
-                            image_input = input_image,
                             enabled_cb = enabled_cb,
                             reset_btn = reset_btn,
                             process_id = process_id,
@@ -541,7 +529,6 @@ def create_ui(_blocks: gr.Blocks=None):
                         units.append(unit.Unit(
                             unit_type = 'lite',
                             result_txt = result_txt,
-                            image_input = input_image,
                             enabled_cb = enabled_cb,
                             reset_btn = reset_btn,
                             process_id = process_id,
@@ -580,7 +567,6 @@ def create_ui(_blocks: gr.Blocks=None):
                         units.append(unit.Unit(
                             unit_type = 'reference',
                             result_txt = result_txt,
-                            image_input = input_image,
                             enabled_cb = enabled_cb,
                             reset_btn = reset_btn,
                             process_id = process_id,
@@ -666,11 +652,12 @@ def create_ui(_blocks: gr.Blocks=None):
                 )
                 prompt.submit(**select_dict)
                 btn_generate.click(**select_dict)
-                for ctrl in [input_image, input_video, input_batch, input_folder, init_image, init_video, init_batch, init_folder, tab_image, tab_video, tab_batch, tab_folder, tab_image_init, tab_video_init, tab_batch_init, tab_folder_init]:
+                for ctrl in [input_image, input_resize, input_video, input_batch, input_folder, init_image, init_video, init_batch, init_folder, tab_image, tab_video, tab_batch, tab_folder, tab_image_init, tab_video_init, tab_batch_init, tab_folder_init]:
                     if hasattr(ctrl, 'change'):
                         ctrl.change(**select_dict)
-                    elif hasattr(ctrl, 'select'):
-                        ctrl.select(**select_dict)
+                for ctrl in [input_inpaint]: # gradio image mode inpaint triggeres endless loop on change event
+                    if hasattr(ctrl, 'upload'):
+                        ctrl.upload(**select_dict)
 
                 tabs_state = gr.Text(value='none', visible=False)
                 input_fields = [
@@ -706,7 +693,7 @@ def create_ui(_blocks: gr.Blocks=None):
                 generation_parameters_copypaste.add_paste_fields("control", input_image, paste_fields, override_settings)
                 bindings = generation_parameters_copypaste.ParamBinding(paste_button=btn_paste, tabname="control", source_text_component=prompt, source_image_component=output_gallery)
                 generation_parameters_copypaste.register_paste_params_button(bindings)
-                masking.bind_controls(input_inpaint, preview_process)
+                masking.bind_controls([input_image, input_inpaint, input_resize], preview_process)
 
 
                 if os.environ.get('SD_CONTROL_DEBUG', None) is not None: # debug only

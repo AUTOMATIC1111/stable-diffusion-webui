@@ -1,22 +1,36 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-14
+## Update for 2023-01-16
 
-Another release with a lot more functionality in new Control module and FaceID & IPAdapter modules  
-Plus welcome additions to UI performance and accessibility and flexibility of deployment  
+Another big release, highlights being:  
+- A lot more functionality in the **Control** module:
+  - Inpaint and outpaint support, flexible resizing options, optional hires  
+  - More processors and models  
+  - Full support for scripts and extensions  
+- Fully baked-in **FaceID**, **FaceSwap** and **PhotoMaker** modules
+- Much enhanced **IPAdapter** modules  
+- Brand new **intelligent masking**, manual or automatic using ML models and with live previews  
+
+Plus welcome additions to **UI performance, usability and accessibility** and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
 
-- **Control**:
+- **Control**:  
   - add **inpaint** support  
     applies to both *img2img* and *controlnet* workflows  
   - add **outpaint** support  
     applies to both *img2img* and *controlnet* workflows  
     *note*: increase denoising strength since outpainted area is blank by default  
   - new **mask** module  
-    - granular blur (gaussian), errode (reduce or remove noise) and dilate (pad or expand)  
+    - granular blur (gaussian), erode (reduce or remove noise) and dilate (pad or expand)  
     - optional **live preview**  
-    - optional **auto-segmentation** (e.g. segment-anything) using ml models  
+    - optional **auto-segmentation** using ml models  
+      auto-segmentation can be done using **segment-anything** models or **rembg** models  
       *note*: auto segmentation will automatically expand user-masked area to segments that include current user mask  
+    - optional **auto-mask**  
+      if you don't provide mask or mask is empty, you can instead use auto-mask to automatically generate mask  
+      this is especially useful if you want to use advanced masking on batch or video inputs and don't want to manually mask each image  
+      *note*: such auto-created mask is also subject to all other selected settings such as auto-segmentation, blur, erode and dilate  
+    - masking can be combined with control processors in which case mask is applied before processor  
   - allow **resize** both *before* and *after* generate operation  
     this allows for workflows such as: *image -> upscale or downscale -> generate -> upscale or downscale -> output*  
     providing more flexibility and than standard hires workflow  
@@ -24,8 +38,8 @@ And it also includes fixes for all reported issues so far
   - implicit **hires**  
     since hires is only used for txt2img, control reuses existing resize functionality
     any image size is used as txt2img target size  
-    but if resize scale is also set its used to additionally upscale image after initial txt2img and for hires pass
-  - add support for **scripts** and **extensions**
+    but if resize scale is also set its used to additionally upscale image after initial txt2img and for hires pass  
+  - add support for **scripts** and **extensions**  
     you can now combine control workflow with your favorite script or extension  
     *note* extensions that are hard-coded for txt2img or img2img tabs may not work until they are updated  
   - add **marigold** depth map processor  
@@ -47,11 +61,14 @@ And it also includes fixes for all reported issues so far
   - fix batch/folder/video modes  
   - fix processor switching within same unit  
   - fix pipeline switching between different modes  
-- [FaceID](https://huggingface.co/h94/IP-Adapter-FaceID)  
+- [FaceID/FaceSwap](https://huggingface.co/h94/IP-Adapter-FaceID)  
   - full implementation for *SD15* and *SD-XL*, to use simply select from *Scripts*  
     **Base** (93MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-H-14* (2.5GB) as image encoder  
     **SXDL** (1022MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-bigG-14* (3.7GB) as image encoder  
     **Plus** (150MB) uses *InsightFace* to generate face embeds and *CLIP-ViT-H-14-laion2B* (3.8GB) as image encoder  
+  - **FaceSwap**  
+    you can use just faceid or just faceswap or both at the same time  
+    faceid guides image generation given the input image while face swap performs face swapping at the end of generation  
   - *note*: all models are downloaded on first use  
   - enable use via api, thanks @trojaner
 - [IPAdapter](https://huggingface.co/h94/IP-Adapter)  
@@ -59,6 +76,12 @@ And it also includes fixes for all reported issues so far
     **SD15**: Base, Base ViT-G, Light, Plus, Plus Face, Full Face  
     **SDXL**: Base SXDL, Base ViT-H SXDL, Plus ViT-H SXDL, Plus Face ViT-H SXDL  
   - enable use via api, thanks @trojaner
+- [PhotoMaker](https://github.com/TencentARC/PhotoMaker)  
+  - for *SD-XL* only  
+  - simply select from *scripts*  
+  - new model from TenencentARC using similar concept as IPAdapter, but with different implementation and  
+    allowing full concept swaps between input images and generated images using trigger words  
+  - note: trigger word must match exactly one term in prompt for model to work  
 - **Improvements**  
   - **ui**  
     - check version and **update** SD.Next via UI  
@@ -153,6 +176,7 @@ And it also includes fixes for all reported issues so far
   - api: return current image in progress api if requested  
   - api: sanitize response object  
   - api: cleanup error logging  
+  - sampler: add sampler options info to metadata
   - sampler: guard against invalid sampler index  
   - sampler: add img2img_extra_noise option
   - config: reset default cfg scale to 6.0  
@@ -1676,7 +1700,6 @@ note: if you previously had command line optimizations such as --no-half, those 
 - improve html loading order
 - remove some `asserts` causing runtime errors and replace with user-friendly messages
 - update README.md
-- update TODO.md
 
 ## Update for 2023-04-17
 

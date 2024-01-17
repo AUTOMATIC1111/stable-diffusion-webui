@@ -3,8 +3,7 @@ Lightweight IP-Adapter applied to existing pipeline in Diffusers
 - Downloads image_encoder or first usage (2.5GB)
 - Introduced via: https://github.com/huggingface/diffusers/pull/5713
 - IP adapters: https://huggingface.co/h94/IP-Adapter
-TODO:
-- Additional IP addapters
+TODO ipadapter items:
 - SD/SDXL autodetect
 """
 
@@ -51,7 +50,7 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name, scale, im
         return False
     if shared.backend != shared.Backend.DIFFUSERS:
         shared.log.warning('IP adapter: not in diffusers mode')
-        return
+        return False
     if image is None and adapter != 'none':
         shared.log.error('IP adapter: no image provided')
         adapter = 'none' # unload adapter if previously loaded as it will cause runtime errors
@@ -59,9 +58,13 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name, scale, im
         if hasattr(pipe, 'set_ip_adapter_scale'):
             pipe.set_ip_adapter_scale(0)
         if loaded is not None:
-            shared.log.debug('IP adapter: unload attention processor')
-            pipe.unet.config.encoder_hid_dim_type = None
             loaded = None
+            try:
+                if pipe.unet.config.encoder_hid_dim_type == 'ip_image_proj':
+                    shared.log.debug('IP adapter: unload attention processor')
+                    pipe.unet.config.encoder_hid_dim_type = None
+            except Exception:
+                pass
         return False
     if not hasattr(pipe, 'load_ip_adapter'):
         import diffusers
@@ -125,7 +128,7 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name, scale, im
 
     if isinstance(image, str):
         from modules.api.api import decode_base64_to_image
-        image = decode_base64_to_image(image)
+        image = decode_base64_to_image(image).convert("RGB")
 
     p.task_args['ip_adapter_image'] = p.batch_size * [image]
     p.extra_generation_params["IP Adapter"] = f'{adapter}:{scale}'
