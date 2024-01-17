@@ -132,7 +132,6 @@ async function filterExtraNetworksForTab(searchTerm) {
         elem.style.display = '';
       });
     } else {
-
       // Do not account for case or whitespace
       searchTerm = searchTerm.toLowerCase().trim();
 
@@ -148,7 +147,7 @@ async function filterExtraNetworksForTab(searchTerm) {
         cards.forEach((elem) => {
           // Construct the search text, which is the concatenation of all data elements with a prefix to make it unique
           // This combined text allows to exclude search terms for example by using negative lookahead
-          if (re.test(`filename: ${elem.dataset.filename}|name: ${elem.dataset.name}|title: ${elem.dataset.title}|tags: ${elem.dataset.tags}`)) {
+          if (re.test(`${elem.dataset.filename}|${elem.dataset.name}|${elem.dataset.tags}`)) {
             elem.style.display = '';
             found += 1;
           } else {
@@ -160,38 +159,31 @@ async function filterExtraNetworksForTab(searchTerm) {
         // Keywords are separated by |, and keywords that should be excluded are prefixed with -
         const searchList = searchTerm.split('|').filter((s) => s !== '' && !s.startsWith('-')).map((s) => s.trim());
         const excludeList = searchTerm.split('|').filter((s) => s !== '' && s.trim().startsWith('-')).map((s) => s.trim().substring(1).trim());
-
-        // In addition, both the searchList, and exclude List can be separated by &, which means that all keywords in the searchList must be present, and none of the excludeList 
+        // In addition, both the searchList, and exclude List can be separated by &, which means that all keywords in the searchList must be present, and none of the excludeList
         // So we construct an array of arrays, which we will then use to filter the cards
-        const searchListAll = searchList.map((s) => s.split('&').map((s) => s.trim()));
-        const excludeListAll = excludeList.map((s) => s.split('&').map((s) => s.trim()));
+        const searchListAll = searchList.map((s) => s.split('&').map((t) => t.trim()));
+        const excludeListAll = excludeList.map((s) => s.split('&').map((t) => t.trim()));
 
         cards.forEach((elem) => {
           let text = '';
-          if (elem.dataset.filename) text += `${elem.dataset.filename} `;
-          if (elem.dataset.name) text += `${elem.dataset.name} `;
-          if (elem.dataset.title) text += `${elem.dataset.title} `;
-          if (elem.dataset.tags) text += `${elem.dataset.tags} `;
+          if (elem.dataset.filename) text += `filename:${elem.dataset.filename} `;
+          if (elem.dataset.name) text += `name:${elem.dataset.name} `;
+          if (elem.dataset.tags) text += `tags:${elem.dataset.tags} `;
           text = text.toLowerCase().replace('models--', 'diffusers').replaceAll('\\', '/');
-
           if (
             // In searchListAll we have a list of lists, in the sublist, every keyword must be present
             // In the top level list, at least one sublist must be present
-            searchListAll.some((searchList) => searchList.every((searchTerm) => text.includes(searchTerm)))
-            &&
             // In excludeListAll we have a list of lists, in the sublist, the keywords may not appear together
             // In the top level list, none of the sublists must be present
-            !excludeListAll.some((excludeList) => excludeList.every((excludeTerm) => text.includes(excludeTerm)))
+            searchListAll.some((sl) => sl.every((st) => text.includes(st))) && !excludeListAll.some((el) => el.every((et) => text.includes(et)))
           ) {
             elem.style.display = '';
             found += 1;
           } else {
             elem.style.display = 'none';
           }
-
         });
       }
-
     }
   }
   const t1 = performance.now();

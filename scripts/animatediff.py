@@ -171,6 +171,8 @@ class Script(scripts.Script):
             shared.sd_model.load_lora_weights(lora, adapter_name=lora)
             shared.sd_model.set_adapters([lora], adapter_weights=[strength])
             p.extra_generation_params['AnimateDiff Lora'] = f'{lora}:{strength}'
+        if hasattr(shared.sd_model, 'enable_free_init'):
+            shared.sd_model.enable_free_init(num_iters=3, use_fast_sampling=False, method="butterworth", order=4, spatial_stop_frequency=0.25, temporal_stop_frequency=0.25)
         p.extra_generation_params['AnimateDiff'] = loaded_adapter
         p.do_not_save_grid = True
         if 'animatediff' not in p.ops:

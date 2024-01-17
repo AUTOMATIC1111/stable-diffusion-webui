@@ -1,5 +1,24 @@
 # Change Log for SD.Next
 
+## TODO for Dev merge
+
+BLOCKERS:
+- pending docs
+
+OPTIONAL:
+- pending `diffusers==0.26.0`
+- animatediff `enable_free_init` [pr](https://github.com/huggingface/diffusers/pull/6315)
+- pipeline `diffusers_sag_scale` [pr](https://github.com/huggingface/diffusers/issues/6443)
+- wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)
+- adetailer [fix](https://github.com/Bing-su/adetailer/issues/466)
+- rebasin [issue](https://github.com/vladmandic/automatic/issues/2608)
+- control api
+- photomaker api
+- interrogate api
+- remb api
+- masking api
+- preprocess api
+
 ## Update for 2023-01-17
 
 Another big release, highlights being:  
