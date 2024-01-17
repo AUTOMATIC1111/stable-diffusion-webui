@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-01-16
+## Update for 2023-01-17
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
@@ -105,7 +105,9 @@ And it also includes fixes for all reported issues so far
   - **extra networks**  
     - 4x faster civitai metadata and previews lookup  
     - better display and selection of tags & trigger words  
-    - better search  
+    - better search, including searching for multiple keywords or using full regex  
+      see wiki page for more details on syntax  
+      thanks @NetroScript  
     - reduce html overhead  
   - **offline deployment**: allow deployment without git clone  
     for example, you can now deploy a zip of the sdnext folder  
