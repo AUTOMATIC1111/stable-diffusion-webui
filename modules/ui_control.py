@@ -145,13 +145,13 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
     # control inputs
     if isinstance(selected_input, Image.Image): # image via upload -> image
         if input_mode == 'Outpaint':
-            input_mask = masking.run_mask(input_image=selected_input, input_mask=None, return_type='grayscale')
+            input_mask = masking.run_mask(input_image=selected_input, input_mask=None, return_type='Grayscale')
         input_source = [selected_input]
         input_type = 'PIL.Image'
         status = f'Control input | Image | Size {selected_input.width}x{selected_input.height} | Mode {selected_input.mode}'
         res = [gr.Tabs.update(selected='out-gallery'), status]
     elif isinstance(selected_input, dict): # inpaint -> dict image+mask
-        input_mask = masking.run_mask(input_image=selected_input['image'], input_mask=selected_input['mask'], return_type='grayscale')
+        input_mask = masking.run_mask(input_image=selected_input['image'], input_mask=selected_input['mask'], return_type='Grayscale')
         selected_input = selected_input['image']
         input_source = [selected_input]
         input_type = 'PIL.Image'
@@ -186,14 +186,14 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
     elif init_type == 2: # Separate init image
         if isinstance(selected_init, Image.Image): # image via upload -> image
             if input_mode == 'Outpaint':
-                input_mask = masking.run_mask(input_image=selected_init, input_mask=None, return_type='grayscale')
+                input_mask = masking.run_mask(input_image=selected_init, input_mask=None, return_type='Grayscale')
             input_source = [selected_init]
             input_init = [selected_init]
             input_type = 'PIL.Image'
             status = f'Control input | Image | Size {selected_init.width}x{selected_init.height} | Mode {selected_init.mode}'
             res = [gr.Tabs.update(selected='out-gallery'), status]
         elif isinstance(selected_init, dict): # inpaint -> dict image+mask
-            input_mask = masking.run_mask(input_image=selected_init['image'], input_mask=selected_init['mask'], return_type='grayscale')
+            input_mask = masking.run_mask(input_image=selected_init['image'], input_mask=selected_init['mask'], return_type='Grayscale')
             input_init = selected_init['image']
             input_source = [selected_init]
             input_type = 'PIL.Image'

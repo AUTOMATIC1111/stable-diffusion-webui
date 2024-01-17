@@ -366,10 +366,10 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         p.image = []
                         debug(f'Control: process=None image={p.image} mask={mask}')
                     elif len(active_process) == 0:
-                        p.image = [masking.run_mask(input_image=input_image, input_mask=mask, return_type='masked') if mask is not None else input_image]
+                        p.image = [masking.run_mask(input_image=input_image, input_mask=mask, return_type='Masked') if mask is not None else input_image]
                     elif len(active_process) > 0:
                         p.image = []
-                        masked_image = masking.run_mask(input_image=input_image, input_mask=mask, return_type='masked') if mask is not None else input_image
+                        masked_image = masking.run_mask(input_image=input_image, input_mask=mask, return_type='Masked') if mask is not None else input_image
                         for i, process in enumerate(active_process): # list[image]
                             image_mode = 'L' if unit_type == 'adapter' and len(active_model) > i and ('Canny' in active_model[i].model_id or 'Sketch' in active_model[i].model_id) else 'RGB' # t2iadapter canny and sketch work in grayscale only
                             debug(f'Control: process={[process.processor_id for p in active_process]} i={i} image={p.image}')

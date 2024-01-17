@@ -1301,7 +1301,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                     self.image_mask = Image.fromarray(np_mask)
             else:
                 if hasattr(self, 'init_images'):
-                    self.image_mask = modules.masking.run_mask(input_image=self.init_images, input_mask=self.image_mask, return_type='grayscale', mask_blur=self.mask_blur, mask_padding=self.inpaint_full_res_padding, segment_enable=False)
+                    self.image_mask = modules.masking.run_mask(input_image=self.init_images, input_mask=self.image_mask, return_type='Grayscale', mask_blur=self.mask_blur, mask_padding=self.inpaint_full_res_padding, segment_enable=False)
             if self.inpaint_full_res:
                 self.mask_for_overlay = self.image_mask
                 mask = self.image_mask.convert('L')

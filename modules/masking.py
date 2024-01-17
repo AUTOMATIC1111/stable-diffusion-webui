@@ -387,6 +387,8 @@ def run_mask(input_image: gr.Image, input_mask: gr.Image = None, return_type: st
         orig = np.array(input_image)
         combined_image = cv2.addWeighted(orig, opts.weight_original, colored_mask, opts.weight_mask, 0)
         return Image.fromarray(combined_image)
+    else:
+        shared.log.error(f'Segment unknown return type: {return_type}')
     return input_mask
 
 

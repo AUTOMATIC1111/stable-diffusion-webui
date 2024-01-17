@@ -169,9 +169,9 @@ def process_diffusers(p: StableDiffusionProcessing):
             p.ops.append('inpaint')
             if p.task_args.get('mask_image', None) is not None: # provided as override by a module
                 # p.mask = shared.sd_model.mask_processor.blur(p.task_args['mask_image'], blur_factor=p.mask_blur) if p.mask_blur > 0 else p.task_args['mask_image']
-                p.mask = run_mask(input_image=p.init_images, input_mask=p.task_args['mask_image'], return_type='grayscale')
+                p.mask = run_mask(input_image=p.init_images, input_mask=p.task_args['mask_image'], return_type='Grayscale')
             elif getattr(p, 'image_mask', None) is not None: # standard
-                p.mask = run_mask(input_image=p.init_images, input_mask=p.image_mask, return_type='grayscale')
+                p.mask = run_mask(input_image=p.init_images, input_mask=p.image_mask, return_type='Grayscale')
             elif getattr(p, 'mask', None) is not None: # backward compatibility
                 pass
             else: # fallback
