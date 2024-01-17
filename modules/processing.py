@@ -863,7 +863,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
         p.scripts.process(p)
 
-
     def get_conds_with_caching(function, required_prompts, steps, cache):
         if cache[0] is not None and (required_prompts, steps) == cache[0]:
             return cache[1]
@@ -970,7 +969,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     x_sample = validate_sample(x_sample)
                     image = Image.fromarray(x_sample)
                 if p.restore_faces:
-                    if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_face_restoration:
+                    if not p.do_not_save_samples and shared.opts.save_images_before_face_restoration:
                         orig = p.restore_faces
                         p.restore_faces = False
                         info = infotext(i)
@@ -984,7 +983,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     p.scripts.postprocess_image(p, pp)
                     image = pp.image
                 if p.color_corrections is not None and i < len(p.color_corrections):
-                    if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_color_correction:
+                    if not p.do_not_save_samples and shared.opts.save_images_before_color_correction:
                         orig = p.color_corrections
                         p.color_corrections = None
                         info = infotext(i)
@@ -1301,7 +1300,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                     np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), self.mask_blur)
                     self.image_mask = Image.fromarray(np_mask)
             else:
-                self.image_mask = modules.masking.run_mask(input_image=self.init_images, input_mask=self.image_mask, return_type='grayscale', mask_blur=self.mask_blur, mask_padding=self.inpaint_full_res_padding, segment_enable=False)
+                if hasattr(self, 'init_images'):
+                    self.image_mask = modules.masking.run_mask(input_image=self.init_images, input_mask=self.image_mask, return_type='Grayscale', mask_blur=self.mask_blur, mask_padding=self.inpaint_full_res_padding, segment_enable=False)
             if self.inpaint_full_res:
                 self.mask_for_overlay = self.image_mask
                 mask = self.image_mask.convert('L')

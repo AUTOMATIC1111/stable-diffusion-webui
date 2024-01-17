@@ -31,7 +31,7 @@ def find_models():
     files = [f for f in files if f.endswith('.safetensors')]
     downloaded_models = {}
     for f in files:
-        basename = os.path.splitext(f)[0]
+        basename = os.path.splitext(os.path.relpath(f, path))[0]
         downloaded_models[basename] = os.path.join(path, f)
     all_models.update(downloaded_models)
     return downloaded_models
