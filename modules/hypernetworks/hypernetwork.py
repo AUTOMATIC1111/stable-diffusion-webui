@@ -11,7 +11,7 @@ from torch import einsum
 from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_normal_, kaiming_uniform_, zeros_
 from einops import rearrange, repeat
 from ldm.util import default
-from modules import devices, processing, sd_models, shared, hashes, errors
+from modules import devices, processing, sd_models, shared, hashes, errors, files_cache
 import modules.textual_inversion.dataset
 from modules.textual_inversion import textual_inversion, ti_logging
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
@@ -282,18 +282,16 @@ class Hypernetwork:
 
 
 def list_hypernetworks(path):
-    res = {}
-    def list_folder(folder):
-        for filename in os.listdir(folder):
-            fn = os.path.join(folder, filename)
-            if os.path.isfile(fn) and fn.lower().endswith(".pt"):
-                name = os.path.splitext(os.path.basename(fn))[0]
-                res[name] = fn
-            elif os.path.isdir(fn) and not fn.startswith('.'):
-                list_folder(fn)
-
-    list_folder(path)
-    return res
+    hypernetworks = {
+        os.path.splitext(os.path.basename(hypernetwork_path))[0]: hypernetwork_path
+        for hypernetwork_path
+        in files_cache.list_files(
+            path,
+            ext_filter=['.pt'],
+            recursive=files_cache.not_hidden
+        )
+    }
+    return hypernetworks
 
 
 def load_hypernetwork(name):

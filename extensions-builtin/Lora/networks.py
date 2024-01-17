@@ -16,7 +16,7 @@ import network_glora
 import lora_convert
 import torch
 import diffusers.models.lora
-from modules import shared, devices, sd_models, sd_models_compile, errors, scripts
+from modules import shared, devices, sd_models, sd_models_compile, errors, scripts, files_cache
 
 
 debug = os.environ.get('SD_LORA_DEBUG', None) is not None
@@ -435,20 +435,20 @@ def network_MultiheadAttention_load_state_dict(self, *args, **kwargs):
 
 
 def list_available_networks():
+    global available_networks, available_network_aliases, forbidden_network_aliases, available_network_hash_lookup
     available_networks.clear()
     available_network_aliases.clear()
     forbidden_network_aliases.clear()
     available_network_hash_lookup.clear()
     forbidden_network_aliases.update({"none": 1, "Addams": 1})
     os.makedirs(shared.cmd_opts.lora_dir, exist_ok=True)
-    candidates = []
+    directories = []
     if os.path.exists(shared.cmd_opts.lora_dir):
-        candidates += list(shared.walk_files(shared.cmd_opts.lora_dir, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
+        directories.append(shared.cmd_opts.lora_dir)
     else:
         shared.log.warning('LoRA directory not found: path="{shared.cmd_opts.lora_dir}"')
     if os.path.exists(shared.cmd_opts.lyco_dir):
-        candidates += list(shared.walk_files(shared.cmd_opts.lyco_dir, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
-
+        directories.append(shared.cmd_opts.lyco_dir)
     def add_network(filename):
         if os.path.isdir(filename):
             return
@@ -466,8 +466,9 @@ def list_available_networks():
             shared.log.error(f"Failed to load network {name} from {filename} {e}")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=shared.max_workers) as executor:
-        for fn in candidates:
+        for fn in files_cache.list_files(*directories, ext_filter=[".pt", ".ckpt", ".safetensors"]):
             executor.submit(add_network, fn)
+    print(f'Lora/LyCORIS Networks: networks={len(available_networks)} directories={directories}')
 
 
 def infotext_pasted(infotext, params): # pylint: disable=W0613

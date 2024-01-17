@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 import git
-from modules import shared, errors
+from modules import shared, errors, files_cache
 from modules.paths import extensions_dir, extensions_builtin_dir
 
 

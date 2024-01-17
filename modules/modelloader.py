@@ -9,52 +9,10 @@ import rich.progress as p
 from modules import shared, errors
 from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone
 from modules.paths import script_path, models_path
+from modules.files_cache import list_files, unique_directories
+from installer import print_dict
 
 diffuser_repos = []
-
-
-def walk(top, onerror:callable=None):
-    # A near-exact copy of `os.path.walk()`, trimmed slightly. Probably not nessesary for most people's collections, but makes a difference on really large datasets.
-    nondirs = []
-    walk_dirs = []
-    try:
-        scandir_it = os.scandir(top)
-    except OSError as error:
-        if onerror is not None:
-            onerror(error, top)
-        return
-    with scandir_it:
-        while True:
-            try:
-                try:
-                    entry = next(scandir_it)
-                except StopIteration:
-                    break
-            except OSError as error:
-                if onerror is not None:
-                    onerror(error, top)
-                return
-            try:
-                is_dir = entry.is_dir()
-            except OSError:
-                is_dir = False
-            if not is_dir:
-                nondirs.append(entry.name)
-            else:
-                try:
-                    if entry.is_symlink() and not os.path.exists(entry.path):
-                        raise NotADirectoryError('Broken Symlink')
-                    walk_dirs.append(entry.path)
-                except OSError as error:
-                    if onerror is not None:
-                        onerror(error, entry.path)
-    # Recurse into sub-directories
-    for new_path in walk_dirs:
-        if os.path.basename(new_path).startswith('models--'):
-            continue
-        yield from walk(new_path, onerror)
-    # Yield after recursion if going bottom up
-    yield top, nondirs
 
 
 def download_civit_meta(model_path: str, model_id):
@@ -358,93 +316,6 @@ def load_civitai(model: str, url: str):
             return None
 
 
-cache_folders = {}
-cache_last = 0
-cache_time = 1
-
-
-def directory_updated(path:str, *, recursive:bool=True) -> bool: # pylint: disable=redefined-builtin
-    try:
-        path = os.path.abspath(path)
-        if path not in cache_folders:
-            return True
-        if cache_last > (time.time() - cache_time):
-            return False
-        if not (os.path.exists(path) and os.path.isdir(path) and os.path.getmtime(path) == cache_folders[path][0]):
-            return True
-        if recursive:
-            for folder in cache_folders:
-                if folder.startswith(path) and folder != path and not (os.path.exists(folder) and os.path.isdir(folder) and os.path.getmtime(folder) == cache_folders[folder][0]):
-                    return True
-    except Exception as e:
-        shared.log.error(f"Filesystem Error: {e.__class__.__name__}({e})")
-        return True
-    return False
-
-
-def directory_list(path:str, *, recursive:bool=True) -> dict[str,tuple[float,list[str]]]: # pylint: disable=redefined-builtin
-    path = os.path.abspath(path)
-    res = {}
-    if not os.path.exists(path):
-        return res
-    if directory_updated(path, recursive=recursive):
-        for folder in list(cache_folders):
-            del cache_folders[folder]
-            if os.path.exists(folder) or os.path.isdir(folder):
-                continue
-        for folder, files in walk(path, lambda e, path: shared.log.debug(f"FS walk error: {e} {path}")):
-            if not os.path.exists(folder):
-                continue
-            try:
-                mtime = os.path.getmtime(folder)
-                if folder not in cache_folders or mtime != cache_folders[folder][0]:
-                    cache_folders[folder] = (mtime, [os.path.join(folder, fn) for fn in files])
-            except Exception as e:
-                shared.log.error(f"Filesystem Error: {e.__class__.__name__}({e})")
-                del cache_folders[folder]
-    for folder in cache_folders:
-        if folder == path or (recursive and folder.startswith(path)):
-            res[folder] = cache_folders[folder]
-            if not recursive:
-                break
-    return res
-
-
-def directory_mtime(path:str, *, recursive:bool=True) -> float: # pylint: disable=redefined-builtin
-    return float(max(0, *[mtime for mtime, _ in directory_list(path, recursive=recursive).values()]))
-
-
-def directories_file_paths(directories:dict) -> list[str]:
-    return sum([dat[1] for dat in directories.values()],[])
-
-
-def directories_unique(directories:list[str], *, recursive:bool=True) -> list[str]:
-    '''Ensure no empty, or duplicates'''
-    directories = { os.path.abspath(path): True for path in directories if path }.keys()
-    if recursive:
-        '''If we are going recursive, then directories that are children of other directories are redundant'''
-        directories = [path for path in directories if not any(d != path and path.startswith(os.path.join(d,'')) for d in directories)]
-    return directories
-
-
-def unique_paths(paths:list[str]) -> list[str]:
-    return { fp: True for fp in paths }.keys()
-
-
-def directory_files(*directories:list[str], recursive:bool=True) -> list[str]:
-    return unique_paths(sum([[*directories_file_paths(directory_list(d, recursive=recursive))] for d in directories_unique(directories, recursive=recursive)],[]))
-
-
-def extension_filter(ext_filter=None, ext_blacklist=None):
-    if ext_filter:
-        ext_filter = [*map(str.upper, ext_filter)]
-    if ext_blacklist:
-        ext_blacklist = [*map(str.upper, ext_blacklist)]
-    def filter(fp:str): # pylint: disable=redefined-builtin
-        return (not ext_filter or any(fp.upper().endswith(ew) for ew in ext_filter)) and (not ext_blacklist or not any(fp.upper().endswith(ew) for ew in ext_blacklist))
-    return filter
-
-
 def download_url_to_file(url: str, dst: str):
     # based on torch.hub.download_url_to_file
     import uuid
@@ -513,10 +384,10 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
     @param ext_filter: An optional list of filename extensions to filter by
     @return: A list of paths containing the desired model(s)
     """
-    places = directories_unique([model_path, command_path])
+    places = [model_path, command_path]
     output = []
     try:
-        output:list = [*filter(extension_filter(ext_filter, ext_blacklist), directory_files(*places))]
+        output:list = [*list_files(*places, ext_filter=ext_filter, ext_blacklist=ext_blacklist)]
         if model_url is not None and len(output) == 0:
             if download_name is not None:
                 dl = load_file_from_url(model_url, model_dir=places[0], progress=True, file_name=download_name)
@@ -524,7 +395,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
             else:
                 output.append(model_url)
     except Exception as e:
-        shared.log.error(f"Error listing models: {places} {e}")
+        errors.display(e,f"Error listing models: {unique_directories(places)}")
     return output
 
 
