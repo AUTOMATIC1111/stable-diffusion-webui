@@ -221,12 +221,14 @@ class PhotoMakerStableDiffusionXLPipeline(StableDiffusionXLPipeline):
     ):
         device = device or self._execution_device
 
+        """
         if prompt is not None and isinstance(prompt, str):
             batch_size = 1
         elif prompt is not None and isinstance(prompt, list):
             batch_size = len(prompt)
         else:
             batch_size = prompt_embeds.shape[0]
+        """
 
         # Find the token id of the trigger word
         image_token_id = self.tokenizer_2.convert_tokens_to_ids(self.trigger_word)
