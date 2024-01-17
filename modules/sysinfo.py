@@ -34,6 +34,7 @@ environment_whitelist = {
     "BLIP_COMMIT_HASH",
     "COMMANDLINE_ARGS",
     "IGNORE_CMD_ARGS_ERRORS",
+    "SKIP_LAUNCH_GIT_CLONE",
 }
 
 
