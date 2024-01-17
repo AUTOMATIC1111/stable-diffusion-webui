@@ -1,3 +1,4 @@
+from typing import List, Optional, Union
 import csv
 import html
 import os
@@ -14,11 +15,10 @@ import modules.textual_inversion.loaders
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from modules.textual_inversion.image_embedding import embedding_to_b64, embedding_from_b64, insert_image_data_embed, extract_image_data_embed, caption_image_overlay
 from modules.textual_inversion.ti_logging import save_settings_to_file
-from typing import List, Optional, Union
 from modules.modelloader import directory_files, directory_mtime, extension_filter
 
-TokenToAdd = namedtuple("TokenToAdd", ["clip_l", "clip_g"])
 
+TokenToAdd = namedtuple("TokenToAdd", ["clip_l", "clip_g"])
 TextualInversionTemplate = namedtuple("TextualInversionTemplate", ["name", "path"])
 textual_inversion_templates = {}
 
