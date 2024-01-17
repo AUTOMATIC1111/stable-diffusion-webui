@@ -18,7 +18,7 @@ def load_module(path):
         pr = cProfile.Profile()
         pr.enable()
     try:
-        if '/sd-extension-' in path: # safe extensions without stdout intercept
+        if '/sd-extension-' in path or '/Lora' in path: # safe extensions without stdout intercept
             module_spec.loader.exec_module(module)
         else:
             if debug:

@@ -435,7 +435,6 @@ def network_MultiheadAttention_load_state_dict(self, *args, **kwargs):
 
 
 def list_available_networks():
-    global available_networks, available_network_aliases, forbidden_network_aliases, available_network_hash_lookup
     available_networks.clear()
     available_network_aliases.clear()
     forbidden_network_aliases.clear()
@@ -447,7 +446,7 @@ def list_available_networks():
         directories.append(shared.cmd_opts.lora_dir)
     else:
         shared.log.warning('LoRA directory not found: path="{shared.cmd_opts.lora_dir}"')
-    if os.path.exists(shared.cmd_opts.lyco_dir):
+    if os.path.exists(shared.cmd_opts.lyco_dir) and shared.cmd_opts.lyco_dir != shared.cmd_opts.lora_dir:
         directories.append(shared.cmd_opts.lyco_dir)
     def add_network(filename):
         if os.path.isdir(filename):
@@ -468,7 +467,7 @@ def list_available_networks():
     with concurrent.futures.ThreadPoolExecutor(max_workers=shared.max_workers) as executor:
         for fn in files_cache.list_files(*directories, ext_filter=[".pt", ".ckpt", ".safetensors"]):
             executor.submit(add_network, fn)
-    print(f'Lora/LyCORIS Networks: networks={len(available_networks)} directories={directories}')
+    shared.log.info(f'LoRA networks: available={len(available_networks)} folders={len(forbidden_network_aliases)}')
 
 
 def infotext_pasted(infotext, params): # pylint: disable=W0613

@@ -136,9 +136,12 @@ def timer(t0: float, script, callback: str):
 
 
 def print_timers():
+    long_callbacks = []
     for k, v in timers.items():
         if v > 0.05:
-            errors.log.debug(f'Script: time={v:.2f} {k}')
+            long_callbacks.append(f'{k}={v:.2f}')
+    if len(long_callbacks) > 0:
+        errors.log.debug(f'Script callback init time: {" ".join(long_callbacks)}')
 
 
 def clear_callbacks():

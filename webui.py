@@ -105,7 +105,7 @@ def initialize():
     t_timer, t_total = modules.scripts.load_scripts()
     timer.startup.record("extensions")
     timer.startup.records["extensions"] = t_total # scripts can reset the time
-    log.info(f'Extensions time: {t_timer.summary()}')
+    log.info(f'Extensions init time: {t_timer.summary()}')
 
     modelloader.load_upscalers()
     timer.startup.record("upscalers")

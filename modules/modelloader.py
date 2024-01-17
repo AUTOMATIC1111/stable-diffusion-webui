@@ -10,7 +10,7 @@ from modules import shared, errors
 from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone
 from modules.paths import script_path, models_path
 from modules.files_cache import list_files, unique_directories
-from installer import print_dict
+
 
 diffuser_repos = []
 
@@ -209,6 +209,9 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
 
 
 def load_diffusers_models(model_path: str, command_path: str = None, clear=True):
+    excluded_models = [
+        'PhotoMaker', 'inswapper_128', 'IP-Adapter'
+    ]
     t0 = time.time()
     places = []
     places.append(model_path)
@@ -232,6 +235,8 @@ def load_diffusers_models(model_path: str, command_path: str = None, clear=True)
             """
             for folder in os.listdir(place):
                 try:
+                    if any([x in folder for x in excluded_models]): # noqa:C419
+                        continue
                     if "--" not in folder:
                         continue
                     if folder.endswith("-prior"):
