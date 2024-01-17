@@ -36,10 +36,12 @@ def get_installed(ext) -> extensions.Extension:
 def list_extensions():
     global extensions_list # pylint: disable=global-statement
     fn = os.path.join(paths.script_path, "html", "extensions.json")
-    extensions_list = shared.readfile(fn) or []
+    extensions_list = shared.readfile(fn, silent=True) or []
     if type(extensions_list) != list:
         shared.log.warning(f'Invalid extensions list: file={fn}')
         extensions_list = []
+    if len(extensions_list) == 0:
+        shared.log.info('Extension list is empty: refresh required')
     found = []
     for ext in extensions.extensions:
         ext.read_info()
