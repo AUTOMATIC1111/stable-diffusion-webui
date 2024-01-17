@@ -1,10 +1,10 @@
+import os
 import io
 import re
 import time
 import json
 import html
 import base64
-import os.path
 import urllib.parse
 import threading
 from datetime import datetime
@@ -155,12 +155,11 @@ class ExtraNetworksPage:
         debug(f'EN create-thumb: {self.name}')
         created = 0
         for f in self.missing_thumbs:
-            if not os.path.exists(f):
+            if os.path.join('models', 'Reference') in f or not os.path.exists(f):
                 continue
-            fn, _ext = os.path.splitext(f)
-            fn = fn.replace('.preview', '')
+            fn = os.path.splitext(f)[0].replace('.preview', '')
             fn = f'{fn}.thumb.jpg'
-            if os.path.exists(fn):
+            if os.path.exists(fn): # thumbnail already exists
                 continue
             img = None
             try:
@@ -296,17 +295,19 @@ class ExtraNetworksPage:
         exts = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
         if path is None:
             return 'html/card-no-preview.png'
+        if os.path.join('models', 'Reference') in path:
+            return path
         if shared.opts.diffusers_dir in path:
             path = os.path.relpath(path, shared.opts.diffusers_dir)
-            ref = os.path.join('models', 'Reference')
-            fn = os.path.join(ref, path.replace('models--', '').replace('\\', '/').split('/')[0])
-            files = list(files_cache.list_files(ref, ext_filter=exts, recursive=False))
+            reference_path = os.path.abspath(os.path.join('models', 'Reference'))
+            fn = os.path.join(reference_path, path.replace('models--', '').replace('\\', '/').split('/')[0])
+            files = list(files_cache.list_files(reference_path, ext_filter=exts, recursive=False))
         else:
             files = list(files_cache.list_files(os.path.dirname(path), ext_filter=exts, recursive=False))
             fn = os.path.splitext(path)[0]
         for file in [f'{fn}{mid}{ext}' for ext in exts for mid in ['.thumb.', '.', '.preview.']]:
             if file in files:
-                if 'Reference' not in file and '.thumb.' not in file:
+                if '.thumb.' not in file:
                     self.missing_thumbs.append(file)
                 return file
         return 'html/card-no-preview.png'

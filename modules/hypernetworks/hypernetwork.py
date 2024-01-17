@@ -19,6 +19,7 @@ from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
 optimizer_dict = {optim_name : cls_obj for optim_name, cls_obj in inspect.getmembers(torch.optim, inspect.isclass) if optim_name != "Optimizer"}
 
+
 class HypernetworkModule(torch.nn.Module):
     activation_dict = {
         "linear": torch.nn.Identity,

@@ -104,6 +104,8 @@ And it also includes fixes for all reported issues so far
     - lazy load optional imports  
     - batch embedding load, thanks @midcoastal  
       10x+ faster embeddings load for large number of embeddings, now works for 1000+ embeddings  
+    - file and folder list caching, thanks @midcoastal
+      if you have a lot of files and and/or are using slower or non-local storage, this speeds up file access a lot  
   - **extra networks**  
     - 4x faster civitai metadata and previews lookup  
     - better display and selection of tags & trigger words  
