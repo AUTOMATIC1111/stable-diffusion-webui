@@ -71,7 +71,7 @@ def progressapi(req: ProgressRequest):
     current = step_y * batch_x + step_x
     total = step_y * batch_y
     progress = min(1, abs(current / total) if total > 0 else 0)
-    elapsed = time.time() - shared.state.time_start
+    elapsed = time.time() - shared.state.time_start if shared.state.time_start is not None else 0
     predicted = elapsed / progress if progress > 0 else None
     eta = predicted - elapsed if predicted is not None else None
     # shared.log.debug(f'Progress: step={step_x}:{step_y} batch={batch_x}:{batch_y} current={current} total={total} progress={progress} elapsed={elapsed} eta={eta}')
