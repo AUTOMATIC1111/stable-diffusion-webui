@@ -1,14 +1,14 @@
-<div class='container' style={style} onclick={handleCardClick} data-card="{cardId}" {additional_attributes}>
-	{background_image}
-	<div class="button-group">
-		{metadata_button}
-		{customize_button}
+<div class='container' style={updatedStyle} onclick={handleModifiedCardClick} data-card="{modifiedCardId}" {updated_attributes}>
+	{updated_background_image}
+	<div class="new-button-group">
+		{new_metadata_button}
+		{new_customize_button}
 	</div>
-	<div class='interactions'>
-		<div class='extra-info'>
-			<span style="display:none" class='search-data{search_exclusive}'>{search_data}</span>
+	<div class='modified-interactions'>
+		<div class='updated-extra-info'>
+			<span style="display:none" class='new-search-data{updated_search_exclusive}'>{updated_search_data}</span>
 		</div>
-		<span class='title'>{title}</span>
-		<span class='details'>{details}</span>
+		<span class='modified-title'>{modified_title}</span>
+		<span class='modified-details'>{modified_details}</span>
 	</div>
 </div>
