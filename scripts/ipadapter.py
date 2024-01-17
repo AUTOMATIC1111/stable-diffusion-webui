@@ -128,7 +128,7 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name, scale, im
 
     if isinstance(image, str):
         from modules.api.api import decode_base64_to_image
-        image = decode_base64_to_image(image)
+        image = decode_base64_to_image(image).convert("RGB")
 
     p.task_args['ip_adapter_image'] = p.batch_size * [image]
     p.extra_generation_params["IP Adapter"] = f'{adapter}:{scale}'

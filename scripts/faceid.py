@@ -218,7 +218,7 @@ class Script(scripts.Script):
 
         if isinstance(image, str):
             from modules.api.api import decode_base64_to_image
-            image = decode_base64_to_image(image)
+            image = decode_base64_to_image(image).convert("RGB")
 
         np_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
         faces = app.get(np_image)
