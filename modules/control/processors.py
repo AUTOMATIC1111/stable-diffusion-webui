@@ -1,5 +1,6 @@
 import os
 import time
+import numpy as np
 from PIL import Image
 from modules.shared import log
 from modules.errors import display
@@ -219,11 +220,15 @@ class Processor():
             t0 = time.time()
             kwargs = config.get(self.processor_id, {}).get('params', None)
             if self.resize:
-                image_resized = image_input.resize((512, 512))
+                image_resized = image_input.resize((512, 512), Image.Resampling.LANCZOS)
             else:
                 image_resized = image_input
             with devices.inference_context():
                 image_process = self.model(image_resized, **kwargs)
+            if isinstance(image_process, np.ndarray):
+                if np.max(image_process) < 2:
+                    image_process = (255.0 * image_process).astype(np.uint8)
+                image_process = Image.fromarray(image_process, 'L')
             if self.resize and image_process.size != image_input.size:
                 image_process = image_process.resize(image_input.size, Image.Resampling.LANCZOS)
             t1 = time.time()

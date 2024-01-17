@@ -177,7 +177,7 @@ def img2img(id_task: str, mode: int,
         image = inpaint_color_sketch
         orig = inpaint_color_sketch_orig or inpaint_color_sketch
         pred = np.any(np.array(image) != np.array(orig), axis=-1)
-        mask = Image.fromarray(pred.astype(np.uint8) * 255, "L")
+        mask = Image.fromarray((255.0 * pred).astype(np.uint8), "L")
         mask = ImageEnhance.Brightness(mask).enhance(mask_alpha)
         blur = ImageFilter.GaussianBlur(mask_blur)
         image = Image.composite(image.filter(blur), orig, mask.filter(blur))

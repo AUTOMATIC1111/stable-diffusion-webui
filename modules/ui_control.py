@@ -416,7 +416,7 @@ def create_ui(_blocks: gr.Blocks=None):
                 with gr.Tab('IP Adapter') as _tab_ipadapter:
                     with gr.Row():
                         with gr.Column():
-                            gr.HTML('<a href="https://github.com/TencentARC/T2I-Adapter">T2I-Adapter</a>')
+                            gr.HTML('<a href="https://github.com/tencent-ailab/IP-Adapter">IP-Adapter</a>')
                             ip_adapter = gr.Dropdown(label='Adapter', choices=ipadapter.ADAPTERS, value='none')
                             ip_scale = gr.Slider(label='Scale', minimum=0.0, maximum=1.0, step=0.01, value=0.5)
                         with gr.Column():

@@ -38,10 +38,8 @@ class MarigoldDetector:
             batch_size=1,
             show_progress_bar=True,
         )
-        depth_map = res.depth_np
-        depth_colored = res.depth_colored
-
+        depth_map = res.depth_colored if color_map != 'None' else res.depth_np
         if output_type == "pil":
-            depth_map = Image.fromarray(depth_map)
-
-        return depth_colored if color_map != 'None' else depth_map
+            return Image.fromarray(depth_map)
+        else:
+            return depth_map
