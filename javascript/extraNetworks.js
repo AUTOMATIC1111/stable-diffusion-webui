@@ -147,7 +147,7 @@ async function filterExtraNetworksForTab(searchTerm) {
         cards.forEach((elem) => {
           // Construct the search text, which is the concatenation of all data elements with a prefix to make it unique
           // This combined text allows to exclude search terms for example by using negative lookahead
-          if (re.test(`${elem.dataset.filename}|${elem.dataset.name}|${elem.dataset.tags}`)) {
+          if (re.test(`filename: ${elem.dataset.filename}|name: ${elem.dataset.name}|tags: ${elem.dataset.tags}`)) {
             elem.style.display = '';
             found += 1;
           } else {
@@ -166,9 +166,9 @@ async function filterExtraNetworksForTab(searchTerm) {
 
         cards.forEach((elem) => {
           let text = '';
-          if (elem.dataset.filename) text += `filename:${elem.dataset.filename} `;
-          if (elem.dataset.name) text += `name:${elem.dataset.name} `;
-          if (elem.dataset.tags) text += `tags:${elem.dataset.tags} `;
+          if (elem.dataset.filename) text += `${elem.dataset.filename} `;
+          if (elem.dataset.name) text += `${elem.dataset.name} `;
+          if (elem.dataset.tags) text += `${elem.dataset.tags} `;
           text = text.toLowerCase().replace('models--', 'diffusers').replaceAll('\\', '/');
           if (
             // In searchListAll we have a list of lists, in the sublist, every keyword must be present
