@@ -102,6 +102,8 @@ And it also includes fixes for all reported issues so far
     - faster json parsing  
     - faster lora indexing  
     - lazy load optional imports  
+    - batch embedding load, thanks @midcoastal  
+      10x+ faster embeddings load for large number of embeddings, now works for 1000+ embeddings  
   - **extra networks**  
     - 4x faster civitai metadata and previews lookup  
     - better display and selection of tags & trigger words  

@@ -1,23 +1,18 @@
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
-
 import torch
-from diffusers.loaders.textual_inversion import (
-    TextualInversionLoaderMixin,
-    load_textual_inversion_state_dicts,
-    logger,
-    nn,
-)
-
+from torch import nn
+from diffusers.loaders.textual_inversion import TextualInversionLoaderMixin, load_textual_inversion_state_dicts
 from modules import shared
 from modules.patches import patch_method
 
+
 if TYPE_CHECKING:
     from transformers import PreTrainedModel, PreTrainedTokenizer
-
 try:
     from accelerate.hooks import AlignDevicesHook, CpuOffload, remove_hook_from_module
 except Exception:
     pass
+
 
 @patch_method(TextualInversionLoaderMixin)
 def load_textual_inversion(
@@ -28,12 +23,10 @@ def load_textual_inversion(
     text_encoder: Optional["PreTrainedModel"] = None,
     **kwargs, # pylint: disable=W0613
 ):
-
     # 1. Set correct tokenizer and text encoder
     tokenizer: PreTrainedTokenizer = tokenizer or getattr(self, "tokenizer", None)
     text_encoder: PreTrainedModel  = text_encoder or getattr(self, "text_encoder", None)
     loaded_model_names_or_paths = {}
-
     assert tokenizer and text_encoder, 'Can not resolve `tokenizer` or `text_encoder`'
 
     # 2. Normalize inputs
@@ -99,9 +92,7 @@ def load_textual_inversion(
             if hasattr(component, "_hf_hook"):
                 is_model_cpu_offload = isinstance(getattr(component, "_hf_hook"), CpuOffload)  # noqa: B009
                 is_sequential_cpu_offload = isinstance(getattr(component, "_hf_hook"), AlignDevicesHook)  # noqa: B009
-                logger.info(
-                    "Accelerate hooks detected. Since you have called `load_textual_inversion()`, the previous hooks will be first removed. Then the textual inversion parameters will be loaded and the hooks will be applied again."
-                )
+                shared.log.debug("Accelerate hooks detected. Since you have called `load_textual_inversion()`, the previous hooks will be first removed. Then the textual inversion parameters will be loaded and the hooks will be applied again.")
                 remove_hook_from_module(component, recurse=is_sequential_cpu_offload)
 
     # 7.2 save expected device and dtype

@@ -1,3 +1,4 @@
+from typing import List, Optional, Union
 import csv
 import html
 import os
@@ -17,8 +18,8 @@ from modules.textual_inversion.ti_logging import save_settings_to_file
 from typing import List, Optional, Union
 from modules.files_cache import directory_files, directory_mtime, extension_filter
 
-TokenToAdd = namedtuple("TokenToAdd", ["clip_l", "clip_g"])
 
+TokenToAdd = namedtuple("TokenToAdd", ["clip_l", "clip_g"])
 TextualInversionTemplate = namedtuple("TextualInversionTemplate", ["name", "path"])
 textual_inversion_templates = {}
 
