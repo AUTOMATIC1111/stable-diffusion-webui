@@ -27,8 +27,8 @@ And it also includes fixes for all reported issues so far
       auto-segmentation can be done using **segment-anything** models or **rembg** models  
       *note*: auto segmentation will automatically expand user-masked area to segments that include current user mask  
     - optional **auto-mask**  
-      if you don't provide mask or mask is empty, you can instead use auto-mask to automatically generate mask  
-      this is especially useful if you want to use advanced masking on batch or video inputs and don't want to manually mask each image  
+      if you dont provide mask or mask is empty, you can instead use auto-mask to automatically generate mask  
+      this is especially useful if you want to use advanced masking on batch or video inputs and dont want to manually mask each image  
       *note*: such auto-created mask is also subject to all other selected settings such as auto-segmentation, blur, erode and dilate  
     - masking can be combined with control processors in which case mask is applied before processor  
   - allow **resize** both *before* and *after* generate operation  
@@ -193,7 +193,7 @@ And it also includes fixes for all reported issues so far
 
 ## Update for 2023-12-29
 
-To wrap up this amazing year, we're releasing a new version of [SD.Next](https://github.com/vladmandic/automatic), this one is absolutely massive!  
+To wrap up this amazing year, were releasing a new version of [SD.Next](https://github.com/vladmandic/automatic), this one is absolutely massive!  
 
 ### Highlights  
 
@@ -212,7 +212,7 @@ To wrap up this amazing year, we're releasing a new version of [SD.Next](https:/
   with all model types available for single click download & load (networks -> reference)  
 - Performance optimizations!
   For comparisment of different processing options and compile backends, see [Wiki](https://github.com/vladmandic/automatic/wiki/Benchmark)  
-  As a highlight, we're reaching **~100 it/s** (no tricks, this is with full features enabled and end-to-end on a standard nVidia RTX4090)  
+  As a highlight, were reaching **~100 it/s** (no tricks, this is with full features enabled and end-to-end on a standard nVidia RTX4090)  
 - New [custom pipelines](https://github.com/vladmandic/automatic/blob/dev/scripts/example.py) framework for quickly porting any new pipeline  
 
 And others improvements in areas such as: Upscaling (up to 8x now with 40+ available upscalers), Inpainting (better quality), Prompt scheduling, new Sampler options, new LoRA types, additional UI themes, better HDR processing, built-in Video interpolation, parallel Batch processing, etc.  
