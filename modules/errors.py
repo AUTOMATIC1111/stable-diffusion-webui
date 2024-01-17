@@ -125,7 +125,11 @@ Use --skip-version-check commandline argument to disable this check.
     if shared.xformers_available:
         import xformers
 
-        if version.parse(xformers.__version__) < version.parse(expected_xformers_version):
+        xformers_version = xformers.__version__
+        if '+' in xformers_version:
+            xformers_version = xformers_version.split('+')[0]
+
+        if version.parse(xformers_version) < version.parse(expected_xformers_version):
             print_error_explanation(f"""
 You are running xformers {xformers.__version__}.
 The program is tested to work with xformers {expected_xformers_version}.
