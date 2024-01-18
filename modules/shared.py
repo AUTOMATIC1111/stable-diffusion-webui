@@ -401,6 +401,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_vae_load_variant": OptionInfo("default", "Preferred VAE variant", gr.Radio, {"choices": ['default', 'fp32', 'fp16']}),
     "custom_diffusers_pipeline": OptionInfo('', 'Load custom Diffusers pipeline'),
     "diffusers_eval": OptionInfo(True, "Force model eval"),
+    "diffusers_to_gpu": OptionInfo(False, "Load model directly to GPU"),
     "disable_accelerate": OptionInfo(False, "Disable accelerate"),
     "diffusers_force_zeros": OptionInfo(True, "Force zeros for prompts when empty"),
     "diffusers_aesthetics_score": OptionInfo(False, "Require aesthetics score"),

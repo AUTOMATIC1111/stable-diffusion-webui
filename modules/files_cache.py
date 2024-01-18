@@ -33,7 +33,7 @@ ExtensionList = list[str]
 RecursiveType = Union[bool,Callable]
 
 
-def real_path(directory_path:DirectoryPath) -> DirectoryPath | None:
+def real_path(directory_path:DirectoryPath) -> Union[DirectoryPath, None]:
     try:
         return path.abspath(path.expanduser(directory_path))
     except Exception:
@@ -41,7 +41,7 @@ def real_path(directory_path:DirectoryPath) -> DirectoryPath | None:
     return None
 
 
-@dataclass(slots=True,frozen=True)
+@dataclass(frozen=True)
 class Directory(Directory): # pylint: disable=E0102
     path: DirectoryPath = field(default_factory=str)
     mtime: float = field(default_factory=float, init=False)
@@ -139,7 +139,7 @@ def clean_directory(directory: Directory, /, recursive: RecursiveType=False) -> 
     return is_clean
 
 
-def get_directory(directory_or_path: DirectoryPath, /, fetch:bool=True) -> Directory | None:
+def get_directory(directory_or_path: DirectoryPath, /, fetch:bool=True) -> Union[Directory, None]:
     if isinstance(directory_or_path, Directory):
         if directory_or_path.is_directory:
             return directory_or_path
@@ -157,7 +157,7 @@ def get_directory(directory_or_path: DirectoryPath, /, fetch:bool=True) -> Direc
     return cache_folders[directory_or_path] if directory_or_path in cache_folders else None
 
 
-def fetch_directory(directory_path: DirectoryPath) -> Directory | None:
+def fetch_directory(directory_path: DirectoryPath) -> Union[Directory, None]:
     directory: Directory
     for directory in _walk(directory_path, lambda e, path: delete_cached_directory(path), recurse=False):
         return directory # The return is intentional, we get a generator, we only need the one
@@ -289,7 +289,7 @@ def get_directories(*directory_paths: DirectoryPathList, fetch:bool=True, recurs
     return filter(bool, directories)
 
 
-def directory_files(*directories_or_paths: DirectoryPathList|DirectoryList, recursive: RecursiveType=True) -> FilePathIterator:
+def directory_files(*directories_or_paths: Union[DirectoryPathList, DirectoryList], recursive: RecursiveType=True) -> FilePathIterator:
     return itertools.chain.from_iterable(
         itertools.chain(
             directory_object.files,

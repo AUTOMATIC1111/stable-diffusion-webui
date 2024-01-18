@@ -19,7 +19,7 @@ OPTIONAL:
 - masking api
 - preprocess api
 
-## Update for 2023-01-17
+## Update for 2023-01-18
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
@@ -121,7 +121,7 @@ And it also includes fixes for all reported issues so far
     - faster json parsing  
     - faster lora indexing  
     - lazy load optional imports  
-    - batch embedding load, thanks @midcoastal  
+    - batch embedding load, thanks @midcoastal and @AI-Casanova  
       10x+ faster embeddings load for large number of embeddings, now works for 1000+ embeddings  
     - file and folder list caching, thanks @midcoastal
       if you have a lot of files and and/or are using slower or non-local storage, this speeds up file access a lot  
@@ -136,6 +136,9 @@ And it also includes fixes for all reported issues so far
     for example, you can now deploy a zip of the sdnext folder  
   - **latent upscale**: updated latent upscalers (some are new)  
     *nearest, nearest-exact, area, bilinear, bicubic, bilinear-antialias, bicubic-antialias*
+  - **model load to gpu**  
+    new option in settings->diffusers allowing models to be loaded directly to GPU while keeping RAM free  
+    this option is not compatible with any kind of model offloading as model is expected to stay in GPU  
   - **xyz grid**
     - range control  
       example: `5.0-6.0:3` will generate 3 images with values `5.0,5.5,6.0`  
@@ -153,10 +156,6 @@ And it also includes fixes for all reported issues so far
   - **memory**: add ram usage monitoring in addition to gpu memory usage monitoring  
   - **vae**: enable taesd batch decode  
     enable/disable with settings -> diffusers > vae slicing  
-  - updated core requirements  
-  - major internal ui module refactoring  
-    this may cause compatibility issues if an extension is doing a direct import from `ui.py`  
-    in which case, report it so i can add a compatibility layer  
 - **compile**
   - new option: **fused projections**  
     pretty much free 5% performance boost for compatible models  
@@ -211,6 +210,11 @@ And it also includes fixes for all reported issues so far
   - upscale: fix ldsr
   - cli: fix cmd args parsing  
   - global crlf->lf switch  
+- **other**
+  - updated core requirements  
+  - major internal ui module refactoring  
+    this may cause compatibility issues if an extension is doing a direct import from `ui.py`  
+    in which case, report it so we can add a compatibility layer  
 
 ## Update for 2023-12-29
 

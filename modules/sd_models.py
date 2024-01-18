@@ -747,10 +747,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     if shared.opts.diffusers_pipeline == 'Custom Diffusers Pipeline' and len(shared.opts.custom_diffusers_pipeline) > 0:
         shared.log.debug(f'Diffusers custom pipeline: {shared.opts.custom_diffusers_pipeline}')
         diffusers_load_config['custom_pipeline'] = shared.opts.custom_diffusers_pipeline
-
     # if 'LCM' in checkpoint_info.path:
         #    diffusers_load_config['custom_pipeline'] = 'latent_consistency_txt2img'
-
     if shared.opts.data.get('sd_model_checkpoint', '') == 'model.ckpt' or shared.opts.data.get('sd_model_checkpoint', '') == '':
         shared.opts.data['sd_model_checkpoint'] = "runwayml/stable-diffusion-v1-5"
 
@@ -849,7 +847,14 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     if shared.opts.disable_accelerate:
                         from diffusers.utils import import_utils
                         import_utils._accelerate_available = False # pylint: disable=protected-access
+                    import modules.sd_hijack_accelerate
+                    if shared.opts.diffusers_to_gpu:
+                        modules.sd_hijack_accelerate.hijack_accelerate()
+                    else:
+                        modules.sd_hijack_accelerate.restore_accelerate()
                     sd_model = pipeline.from_single_file(checkpoint_info.path, **diffusers_load_config)
+                    if shared.opts.diffusers_to_gpu:
+                        shared.log.debug(f'Model load: move={modules.sd_hijack_accelerate.tensor_to_timer:.2f}')
                     if sd_model is not None and hasattr(sd_model, 'unet') and hasattr(sd_model.unet, 'config') and 'inpainting' in checkpoint_info.path.lower():
                         shared.log.debug('Model patch: type=inpaint')
                         sd_model.unet.config.in_channels = 9
@@ -1190,7 +1195,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         shared.log.debug(f'Model dict: existing={sd_model is not None} target={checkpoint_info.filename} info={info}')
     else:
         model_data.sd_dict = 'None'
-        shared.log.debug(f'Load model weights: existing={sd_model is not None} target={checkpoint_info.filename} info={info}')
+        shared.log.debug(f'Load model: existing={sd_model is not None} target={checkpoint_info.filename} info={info}')
     if sd_model is None:
         sd_model = model_data.sd_model if op == 'model' or op == 'dict' else model_data.sd_refiner
     if sd_model is None:  # previous model load failed
