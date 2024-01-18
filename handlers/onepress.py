@@ -596,7 +596,7 @@ class LaternFairTask(Txt2ImgTask):
     def exec_task(cls, task: Task):
         t = LaternFairTask(
             task['image'],
-            task['backgroud_image'],
+            task['background_image'],
             task['args'],
             task.get("rate_width", 2),
             task.get("rate_height", 5),
@@ -604,7 +604,7 @@ class LaternFairTask(Txt2ImgTask):
         )
         extra_args = deepcopy(task['args'])
         task.pop("args")
-        task.pop("backgroud_image")
+        task.pop("background_image")
         task.pop("image")
         full_task = deepcopy(task)
         full_task.update(extra_args)
