@@ -169,8 +169,8 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text, isNeg) {
     var m = text.match(isNeg ? re_extranet_neg : re_extranet);
     var replaced = false;
     var newTextareaText;
+    var extraTextBeforeNet = opts.extra_networks_add_text_separator;
     if (m) {
-        var extraTextBeforeNet = opts.extra_networks_add_text_separator;
         var extraTextAfterNet = m[2];
         var partToSearch = m[1];
         var foundAtPosition = -1;
@@ -183,7 +183,6 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text, isNeg) {
             }
             return found;
         });
-
         if (foundAtPosition >= 0) {
             if (extraTextAfterNet && newTextareaText.substr(foundAtPosition, extraTextAfterNet.length) == extraTextAfterNet) {
                 newTextareaText = newTextareaText.substr(0, foundAtPosition) + newTextareaText.substr(foundAtPosition + extraTextAfterNet.length);
@@ -193,13 +192,8 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text, isNeg) {
             }
         }
     } else {
-        newTextareaText = textarea.value.replaceAll(new RegExp(text, "g"), function(found) {
-            if (found == text) {
-                replaced = true;
-                return "";
-            }
-            return found;
-        });
+        newTextareaText = textarea.value.replaceAll(new RegExp(`((?:${extraTextBeforeNet})?${text})`, "g"), "");
+        replaced = (newTextareaText != textarea.value);
     }
 
     if (replaced) {
@@ -211,7 +205,6 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text, isNeg) {
 }
 
 function updatePromptArea(text, textArea, isNeg) {
-
     if (!tryToRemoveExtraNetworkFromPrompt(textArea, text, isNeg)) {
         textArea.value = textArea.value + opts.extra_networks_add_text_separator + text;
     }

@@ -236,7 +236,7 @@ class ExtraNetworksPage:
                 **{
                     "tabname": tabname,
                     "prompt": item["prompt"],
-                    "neg_prompt": item.get("negative_prompt", ""),
+                    "neg_prompt": item.get("negative_prompt", "''"),
                     "allow_neg": str(self.allow_negative_prompt).lower(),
                 }
             )
