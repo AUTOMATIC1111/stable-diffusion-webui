@@ -1,12 +1,10 @@
 import os
-import sys
 
-from modules import modelloader, devices
+from modules import modelloader, errors
 from modules.shared import cmd_opts, opts
 from modules.upscaler import Upscaler, UpscalerData
 from modules.upscaler_utils import upscale_with_model
 
-from icecream import ic
 
 class UpscalerDAT(Upscaler):
     def __init__(self, user_path):
@@ -24,13 +22,13 @@ class UpscalerDAT(Upscaler):
             if model.name in opts.dat_enabled_models:
                 self.scalers.append(model)
 
-    def do_upscale(self, img, selected_model):
+    def do_upscale(self, img, path):
         try:
-            info = self.load_model(selected_model)
-        except Exception as e:
+            info = self.load_model(path)
+        except Exception:
             errors.report(f"Unable to load DAT model {path}", exc_info=True)
             return img
-        
+
         model_descriptor = modelloader.load_spandrel_model(
             info.local_data_path,
             device=self.device,
