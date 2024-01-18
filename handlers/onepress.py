@@ -1055,6 +1055,9 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
 
         processed.images.insert(processed.index_of_end_image,txt2img_backgroud_image)
         processed.index_of_end_image+=1
+
+        processed.all_seeds += [1]
+        processed.all_subseeds += [1]                 
         logger.info("step 3 > ok")
 
         logger.info("step 4, upload images...")
