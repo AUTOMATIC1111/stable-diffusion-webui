@@ -1052,7 +1052,9 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         txt2img_seg_image = LaternFairTask.exec_seg(file_path)
         blur_image = LaternFairTask.canny_blur(txt2img_seg_image, border_size)
         txt2img_backgroud_image = LaternFairTask.exec_add_back(blur_image, backgroud_image, rate_width, rate_height)
-        processed.images.append(txt2img_backgroud_image)
+
+        processed.images.insert(processed.index_of_end_image,txt2img_backgroud_image)
+        processed.index_of_end_image+=1
         logger.info("step 3 > ok")
 
         logger.info("step 4, upload images...")
