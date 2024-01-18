@@ -67,7 +67,13 @@
   {"id":"","label":"Styles","localized":"","hint":"Additional styles to be applied on selected generation paramters"},
   {"id":"","label":"Lora","localized":"","hint":"LoRA: Low-Rank Adaptation. Fine-tuned model that is applied on top of a loaded model"},
   {"id":"","label":"Embedding","localized":"","hint":"Textual inversion embedding is a trained embedded information about the subject"},
-  {"id":"","label":"Hypernetwork","localized":"","hint":"Small trained neural network that modifies behavior of the loaded model"}
+  {"id":"","label":"Hypernetwork","localized":"","hint":"Small trained neural network that modifies behavior of the loaded model"},
+  {"id":"","label":"UI disable variable aspect ratio","localized":"","hint":"When disabled, all thumbnails appear as squared images"},
+  {"id":"","label":"Build info on first access","localized":"","hint":"Prevents server from building EN page on server startup and instead build it when requested"},
+  {"id":"","label":"Show built-in styles","localized":"","hint":"Show or hide build-it styles"},
+  {"id":"","label":"LoRA use alternative loading method","localized":"","hint":"Alternative method uses diffusers built-in LoRA capabilities instead of native SD.Next implementation (may reduce LoRA compatibiltiy)"},
+  {"id":"","label":"LoRA use merge when using alternative method","localized":"","hint":"When loading LoRAs, immediately merge weights with underlying model instead of applying them on-the-fly"},
+  {"id":"","label":"LoRA memory cache","localized":"","hint":"How many LoRAs to keep in network for future use before requireing reloading from storage"}
 ],
 "gallery buttons": [
   {"id":"","label":"show","localized":"","hint":"Show image location"},
