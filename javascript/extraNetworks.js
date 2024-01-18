@@ -55,8 +55,11 @@ function setupExtraNetworksForTab(tabname) {
                 if (searchOnly && searchTerm.length < 4) {
                     visible = false;
                 }
-
-                elem.style.display = visible ? "" : "none";
+                if (visible) {
+                    elem.classList.remove("hidden");
+                } else {
+                    elem.classList.add("hidden");
+                }
             });
 
             applySort();

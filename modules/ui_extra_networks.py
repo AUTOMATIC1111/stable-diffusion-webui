@@ -216,22 +216,17 @@ class ExtraNetworksPage:
                 Can be empty if the item is not meant to be shown.
             If no template is passed: A dictionary containing the generated item's attributes.
         """
-        metadata = item.get("metadata")
-        if metadata:
-            self.metadata[item["name"]] = metadata
-
-        if "user_metadata" not in item:
-            self.read_user_metadata(item)
-
         preview = item.get("preview", None)
-        height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
-        width = f"width: {shared.opts.extra_networks_card_width}px;" if shared.opts.extra_networks_card_width else ''
+        style_height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
+        style_width = f"width: {shared.opts.extra_networks_card_width}px;" if shared.opts.extra_networks_card_width else ''
+        style_font_size = f"font-size: {shared.opts.extra_networks_card_text_scale*100}%;"
+        card_style = style_height + style_width + style_font_size
         background_image = f'<img src="{html.escape(preview)}" class="preview" loading="lazy">' if preview else ''
 
         onclick = item.get("onclick", None)
         if onclick is None:
             # Don't quote prompt/neg_prompt since they are stored as js strings already.
-            onclick_js_tpl = "cardClicked('{tabname}', {prompt}, {neg_prompt}, '{allow_neg}');"
+            onclick_js_tpl = "cardClicked('{tabname}', {prompt}, {neg_prompt}, {allow_neg});"
             onclick = onclick_js_tpl.format(
                 **{
                     "tabname": tabname,
@@ -286,11 +281,10 @@ class ExtraNetworksPage:
         ).strip()
 
         search_terms_html = ""
-        search_term_template = "<span style='{style}' class='{class}'>{search_term}</span>"
+        search_term_template = "<span class='hidden {class}'>{search_term}</span>"
         for search_term in item.get("search_terms", []):
             search_terms_html += search_term_template.format(
                 **{
-                    "style": "display: none;",
                     "class": f"search_terms{' search_only' if search_only else ''}",
                     "search_term": search_term,
                 }
@@ -301,7 +295,7 @@ class ExtraNetworksPage:
             "background_image": background_image,
             "card_clicked": onclick,
             "copy_path_button": btn_copy_path,
-            "description": (item.get("description") or "" if shared.opts.extra_networks_card_show_desc else ""),
+            "description": (item.get("description", "") or "" if shared.opts.extra_networks_card_show_desc else ""),
             "edit_button": btn_edit_item,
             "local_preview": quote_js(item["local_preview"]),
             "metadata_button": btn_metadata,
@@ -311,7 +305,7 @@ class ExtraNetworksPage:
             "search_only": " search_only" if search_only else "",
             "search_terms": search_terms_html,
             "sort_keys": sort_keys,
-            "style": f"display: none; {height}{width}; font-size: {shared.opts.extra_networks_card_text_scale*100}%",
+            "style": card_style,
             "tabname": tabname,
             "extra_networks_tabname": self.extra_networks_tabname,
         }
@@ -500,7 +494,6 @@ class ExtraNetworksPage:
             HTML formatted string.
         """
         res = ""
-        self.items = {x["name"]: x for x in self.list_items()}
         for item in self.items.values():
             res += self.create_item_html(tabname, item, self.card_tpl)
 
@@ -524,6 +517,14 @@ class ExtraNetworksPage:
         self.lister.reset()
         self.metadata = {}
         self.items = {x["name"]: x for x in self.list_items()}
+        # Populate the instance metadata for each item.
+        for item in self.items.values():
+            metadata = item.get("metadata")
+            if metadata:
+                self.metadata[item["name"]] = metadata
+
+            if "user_metadata" not in item:
+                self.read_user_metadata(item)
 
         return self.pane_tpl.format(
             **{
