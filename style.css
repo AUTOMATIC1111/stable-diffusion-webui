@@ -28,7 +28,7 @@ div.gradio-container{
 }
 
 .hidden{
-    display: none;
+    display: none !important;
 }
 
 .compact{
