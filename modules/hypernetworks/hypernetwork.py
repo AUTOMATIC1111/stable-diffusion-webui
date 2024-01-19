@@ -286,11 +286,7 @@ def list_hypernetworks(path):
     hypernetworks = {
         os.path.splitext(os.path.basename(hypernetwork_path))[0]: hypernetwork_path
         for hypernetwork_path
-        in files_cache.list_files(
-            path,
-            ext_filter=['.pt'],
-            recursive=files_cache.not_hidden
-        )
+        in files_cache.list_files(path, ext_filter=['.pt'], recursive=files_cache.not_hidden)
     }
     return hypernetworks
 

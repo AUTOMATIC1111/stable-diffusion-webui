@@ -6,6 +6,7 @@ import csv
 import json
 import time
 from installer import log
+from modules import files_cache
 
 
 class Style():
@@ -125,9 +126,9 @@ class StyleDatabase:
         def list_folder(folder):
             import concurrent
             future_items = {}
+            candidates = list(files_cache.list_files(folder, ext_filter=['.json'], recursive=files_cache.not_hidden))
             with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-                for filename in os.listdir(folder):
-                    fn = os.path.abspath(os.path.join(folder, filename))
+                for fn in candidates:
                     if os.path.isfile(fn) and fn.lower().endswith(".json"):
                         future_items[executor.submit(self.load_style, fn, None)] = fn
                         # self.load_style(fn)
@@ -220,18 +221,3 @@ class StyleDatabase:
                 except Exception:
                     log.error(f'Styles error: file="{legacy_file}" row={row}')
             log.info(f'Load legacy styles: file="{legacy_file}" loaded={num} created={len(list(self.styles))}')
-
-    """
-    def save_csv(self, path: str) -> None:
-        import tempfile
-        basedir = os.path.dirname(path)
-        if basedir is not None and len(basedir) > 0:
-            os.makedirs(basedir, exist_ok=True)
-        fd, temp_path = tempfile.mkstemp(".csv")
-        with os.fdopen(fd, "w", encoding="utf-8-sig", newline='') as file:
-            writer = csv.DictWriter(file, fieldnames=Style._fields)
-            writer.writeheader()
-            writer.writerows(style._asdict() for k, style in self.styles.items())
-            log.debug(f'Saved legacy styles: {path} {len(self.styles.keys())}')
-        shutil.move(temp_path, path)
-    """

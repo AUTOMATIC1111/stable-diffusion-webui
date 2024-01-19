@@ -11,7 +11,6 @@ OPTIONAL:
 - pipeline `diffusers_sag_scale` [pr](https://github.com/huggingface/diffusers/issues/6443)
 - wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)
 - adetailer [fix](https://github.com/Bing-su/adetailer/issues/466)
-- rebasin [issue](https://github.com/vladmandic/automatic/issues/2608)
 - control api
 - photomaker api
 - interrogate api
@@ -19,7 +18,7 @@ OPTIONAL:
 - masking api
 - preprocess api
 
-## Update for 2023-01-18
+## Update for 2023-01-19
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
@@ -128,6 +127,8 @@ And it also includes fixes for all reported issues so far
   - **extra networks**  
     - 4x faster civitai metadata and previews lookup  
     - better display and selection of tags & trigger words  
+      if hashes are calculated, trigger words will only be displayed for actual model version  
+    - better matching of previews  
     - better search, including searching for multiple keywords or using full regex  
       see wiki page for more details on syntax  
       thanks @NetroScript  
@@ -192,6 +193,7 @@ And it also includes fixes for all reported issues so far
 - **fixes**  
   - ipadapter: allow changing of model/image on-the-fly  
   - ipadapter: fix fallback of cross-attention on unload  
+  - rebasin iterations, thanks @AI-Casanova
   - prompt scheduler, thanks @AI-Casanova
   - python: fix python 3.9 compatibility  
   - sdxl: fix positive prompt embeds

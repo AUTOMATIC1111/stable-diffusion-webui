@@ -1,6 +1,5 @@
 import json
 import os
-import concurrent
 from modules import shared, sd_hijack, sd_models, ui_extra_networks, files_cache
 from modules.textual_inversion.textual_inversion import Embedding
 
@@ -22,7 +21,6 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
     def create_item(self, embedding: Embedding):
         record = None
         try:
-            path, _ext = os.path.splitext(embedding.filename)
             tags = {}
             if embedding.tag is not None:
                 tags[embedding.tag]=1
@@ -31,9 +29,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
                 "type": 'Embedding',
                 "name": name,
                 "filename": embedding.filename,
-                "preview": self.find_preview(embedding.filename),
                 "prompt": json.dumps(f" {os.path.splitext(embedding.name)[0]}"),
-                "local_preview": f"{path}.{shared.opts.samples_format}",
                 "tags": tags,
                 "mtime": os.path.getmtime(embedding.filename),
                 "size": os.path.getsize(embedding.filename),
@@ -46,14 +42,11 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
 
     def list_items(self):
         if sd_models.model_data.sd_model is None:
+            candidates = list(files_cache.list_files(shared.opts.embeddings_dir, ext_filter=['.pt', '.safetensors'], recursive=files_cache.not_hidden))
             self.embeddings = [
                 Embedding(vec=0, name=os.path.basename(embedding_path), filename=embedding_path)
                 for embedding_path
-                in files_cache.list_files(
-                    shared.opts.embeddings_dir,
-                    ext_filter=['.pt', '.safetensors'],
-                    recursive=files_cache.not_hidden
-                )
+                in candidates
             ]
         elif shared.backend == shared.Backend.ORIGINAL:
             self.embeddings = list(sd_hijack.model_hijack.embedding_db.word_embeddings.values())
@@ -63,12 +56,9 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
             self.embeddings = []
         self.embeddings = sorted(self.embeddings, key=lambda emb: emb.filename)
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=shared.max_workers) as executor:
-            future_items = {executor.submit(self.create_item, net): net for net in self.embeddings}
-            for future in concurrent.futures.as_completed(future_items):
-                item = future.result()
-                if item is not None:
-                    yield item
+        items = [self.create_item(embedding) for embedding in self.embeddings]
+        self.update_all_previews(items)
+        return items
 
     def allowed_directories_for_previews(self):
         return list(sd_hijack.model_hijack.embedding_db.embedding_dirs)

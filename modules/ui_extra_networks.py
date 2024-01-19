@@ -119,6 +119,7 @@ class ExtraNetworksPage:
         self.list_time = 0
         self.info_time = 0
         self.desc_time = 0
+        self.preview_time = 0
         self.dirs = {}
         self.view = shared.opts.extra_networks_view
         self.card = card_full if shared.opts.extra_networks_view == 'gallery' else card_list
@@ -210,7 +211,7 @@ class ExtraNetworksPage:
         if skip:
             return f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'></div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>Extra network page not ready<br>Click refresh to try again</div>"
         subdirs = {}
-        allowed_folders = [os.path.abspath(x) for x in self.allowed_directories_for_previews()]
+        allowed_folders = [os.path.abspath(x) for x in self.allowed_directories_for_previews() if os.path.exists(x)]
         for parentdir, dirs in {d: files_cache.walk(d, cached=True, recurse=files_cache.not_hidden) for d in allowed_folders}.items():
             for tgt in dirs:
                 tgt = tgt.path
@@ -252,7 +253,7 @@ class ExtraNetworksPage:
             self.html = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
         else:
             return ''
-        shared.log.debug(f"Extra networks: page='{self.name}' items={len(self.items)} subfolders={len(subdirs)} tab={tabname} folders={self.allowed_directories_for_previews()} list={self.list_time:.2f} desc={self.desc_time:.2f} info={self.info_time:.2f} workers={shared.max_workers}")
+        shared.log.debug(f"Extra networks: page='{self.name}' items={len(self.items)} subfolders={len(subdirs)} tab={tabname} folders={self.allowed_directories_for_previews()} list={self.list_time:.2f} thumb={self.preview_time:.2f} desc={self.desc_time:.2f} info={self.info_time:.2f} workers={shared.max_workers}")
         if len(self.missing_thumbs) > 0:
             threading.Thread(target=self.create_thumb).start()
         return self.html
@@ -292,19 +293,19 @@ class ExtraNetworksPage:
             return ""
 
     def find_preview_file(self, path):
-        exts = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
         if path is None:
             return 'html/card-no-preview.png'
         if os.path.join('models', 'Reference') in path:
             return path
+        exts = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
         if shared.opts.diffusers_dir in path:
             path = os.path.relpath(path, shared.opts.diffusers_dir)
             reference_path = os.path.abspath(os.path.join('models', 'Reference'))
             fn = os.path.join(reference_path, path.replace('models--', '').replace('\\', '/').split('/')[0])
             files = list(files_cache.list_files(reference_path, ext_filter=exts, recursive=False))
         else:
-            files = list(files_cache.list_files(os.path.dirname(path), ext_filter=exts, recursive=False))
             fn = os.path.splitext(path)[0]
+            files = list(files_cache.list_files(os.path.dirname(path), ext_filter=exts, recursive=False))
         for file in [f'{fn}{mid}{ext}' for ext in exts for mid in ['.thumb.', '.', '.preview.']]:
             if file in files:
                 if '.thumb.' not in file:
@@ -312,9 +313,40 @@ class ExtraNetworksPage:
                 return file
         return 'html/card-no-preview.png'
 
-    def find_preview(self, path):
-        preview_file = self.find_preview_file(path)
+    def find_preview(self, filename):
+        t0 = time.time()
+        preview_file = self.find_preview_file(filename)
+        self.preview_time += time.time() - t0
         return self.link_preview(preview_file)
+
+    def update_all_previews(self, items):
+        t0 = time.time()
+        reference_path = os.path.abspath(os.path.join('models', 'Reference'))
+        possible_paths = list(set([os.path.dirname(item['filename']) for item in items] + [reference_path]))
+        exts = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
+        all_previews = list(files_cache.list_files(*possible_paths, ext_filter=exts, recursive=False))
+        for item in items:
+            if item.get('preview', None) is not None:
+                continue
+            base = os.path.splitext(item['filename'])[0]
+            if item.get('local_preview', None) is None:
+                item['local_preview'] = f'{base}.{shared.opts.samples_format}'
+            if shared.opts.diffusers_dir in base:
+                match = re.search(r"models--([^/]+)/", base)
+                base = os.path.join(reference_path, match[1])
+                model_path = os.path.join(shared.opts.diffusers_dir, match[0])
+                item['local_preview'] = f'{os.path.join(model_path, match[1])}.{shared.opts.samples_format}'
+                all_previews += list(files_cache.list_files(model_path, ext_filter=exts, recursive=False))
+            for file in [f'{base}{mid}{ext}' for ext in exts for mid in ['.thumb.', '.', '.preview.']]:
+                if file in all_previews:
+                    if '.thumb.' not in file:
+                        self.missing_thumbs.append(file)
+                    item['preview'] = self.link_preview(file)
+                    break
+            if item.get('preview', None) is None:
+                item['preview'] = self.link_preview('html/card-no-preview.png')
+        self.preview_time += time.time() - t0
+
 
     def find_description(self, path, info=None):
         t0 = time.time()

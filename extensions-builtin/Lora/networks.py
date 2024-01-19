@@ -464,8 +464,9 @@ def list_available_networks():
         except OSError as e:  # should catch FileNotFoundError and PermissionError etc.
             shared.log.error(f"Failed to load network {name} from {filename} {e}")
 
+    candidates = list(files_cache.list_files(*directories, ext_filter=[".pt", ".ckpt", ".safetensors"]))
     with concurrent.futures.ThreadPoolExecutor(max_workers=shared.max_workers) as executor:
-        for fn in files_cache.list_files(*directories, ext_filter=[".pt", ".ckpt", ".safetensors"]):
+        for fn in candidates:
             executor.submit(add_network, fn)
     shared.log.info(f'LoRA networks: available={len(available_networks)} folders={len(forbidden_network_aliases)}')
 

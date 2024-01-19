@@ -6,10 +6,9 @@ from typing import Dict
 from urllib.parse import urlparse
 from PIL import Image
 import rich.progress as p
-from modules import shared, errors
+from modules import shared, errors, files_cache
 from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone
 from modules.paths import script_path, models_path
-from modules.files_cache import list_files, unique_directories
 
 
 diffuser_repos = []
@@ -389,10 +388,10 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
     @param ext_filter: An optional list of filename extensions to filter by
     @return: A list of paths containing the desired model(s)
     """
-    places = [model_path, command_path]
+    places = list(set([model_path, command_path]))
     output = []
     try:
-        output:list = [*list_files(*places, ext_filter=ext_filter, ext_blacklist=ext_blacklist)]
+        output:list = [*files_cache.list_files(*places, ext_filter=ext_filter, ext_blacklist=ext_blacklist)]
         if model_url is not None and len(output) == 0:
             if download_name is not None:
                 dl = load_file_from_url(model_url, model_dir=places[0], progress=True, file_name=download_name)
@@ -400,7 +399,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
             else:
                 output.append(model_url)
     except Exception as e:
-        errors.display(e,f"Error listing models: {unique_directories(places)}")
+        errors.display(e,f"Error listing models: {files_cache.unique_directories(places)}")
     return output
 
 

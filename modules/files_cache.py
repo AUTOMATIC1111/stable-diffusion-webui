@@ -1,41 +1,29 @@
 import itertools
-import os.path as path
+import os
 from collections import UserDict
 from dataclasses import dataclass, field
-from os import scandir
 from typing import Callable, Dict, Iterator, List, Optional, Union
+from installer import print_dict, log
 
-from installer import print_dict
 
-class Directory:
+class Directory: # forward declaration
     ...
 
-WasDirty = bool
-DidDelete = bool
-IsDirectory = bool
-DirectoryExists = bool
-IsDirectory = bool
-IsDirty = bool
-CachedDirectoryIsStale = bool
-MTime = float
-IsHidden = bool
-FilePath = str
-FilePathList = List[FilePath]
-FilePathIterator = Iterator[FilePath]
-DirectoryPath = str
-DirectoryPathList = List[DirectoryPath]
-DirectoryPathIterator = Iterator[DirectoryPath]
+FilePathList = List[str]
+FilePathIterator = Iterator[str]
+DirectoryPathList = List[str]
+DirectoryPathIterator = Iterator[str]
 DirectoryList = List[Directory]
 DirectoryIterator = Iterator[Directory]
-DirectoryCollection = Dict[DirectoryPath, Directory]
+DirectoryCollection = Dict[str, Directory]
 ExtensionFilter = Callable
 ExtensionList = list[str]
 RecursiveType = Union[bool,Callable]
 
 
-def real_path(directory_path:DirectoryPath) -> Union[DirectoryPath, None]:
+def real_path(directory_path:str) -> Union[str, None]:
     try:
-        return path.abspath(path.expanduser(directory_path))
+        return os.path.abspath(os.path.expanduser(directory_path))
     except Exception:
         pass
     return None
@@ -43,7 +31,7 @@ def real_path(directory_path:DirectoryPath) -> Union[DirectoryPath, None]:
 
 @dataclass(frozen=True)
 class Directory(Directory): # pylint: disable=E0102
-    path: DirectoryPath = field(default_factory=str)
+    path: str = field(default_factory=str)
     mtime: float = field(default_factory=float, init=False)
     files: FilePathList = field(default_factory=list)
     directories: DirectoryPathList = field(default_factory=list)
@@ -86,20 +74,22 @@ class Directory(Directory): # pylint: disable=E0102
         return str(print_dict(self, path=self.path, mtime=self.mtime, files=len(self.files), directories=len(self.directories))) # pylint: disable=unexpected-keyword-arg
 
     @property
-    def exists(self) -> DirectoryExists:
-        return self.path and path.exists(self.path)
+    def exists(self) -> bool:
+        return self.path and os.path.exists(self.path)
 
     @property
-    def is_directory(self) -> IsDirectory:
-        return self.exists and path.isdir(self.path)
+    def is_directory(self) -> bool:
+        return self.exists and os.path.isdir(self.path)
 
     @property
-    def live_mtime(self) -> MTime:
-        return path.getmtime(self.path) if self.is_directory else 0
+    def live_mtime(self) -> float:
+        return os.path.getmtime(self.path) if self.is_directory else 0
 
     @property
-    def is_stale(self) -> CachedDirectoryIsStale:
+    def is_stale(self) -> bool:
         return not self.is_directory or self.mtime != self.live_mtime
+
+
 
 
 class DirectoryCache(UserDict, DirectoryCollection):
@@ -139,13 +129,12 @@ def clean_directory(directory: Directory, /, recursive: RecursiveType=False) -> 
     return is_clean
 
 
-def get_directory(directory_or_path: DirectoryPath, /, fetch:bool=True) -> Union[Directory, None]:
+def get_directory(directory_or_path: str, /, fetch:bool=True) -> Union[Directory, None]:
     if isinstance(directory_or_path, Directory):
         if directory_or_path.is_directory:
             return directory_or_path
         else:
             directory_or_path = directory_or_path.path
-    global cache_folders # pylint: disable=W0602
     directory_or_path = real_path(directory_or_path)
     if not cache_folders.get(directory_or_path, None):
         if fetch:
@@ -157,91 +146,72 @@ def get_directory(directory_or_path: DirectoryPath, /, fetch:bool=True) -> Union
     return cache_folders[directory_or_path] if directory_or_path in cache_folders else None
 
 
-def fetch_directory(directory_path: DirectoryPath) -> Union[Directory, None]:
+def fetch_directory(directory_path: str) -> Union[Directory, None]:
     directory: Directory
-    for directory in _walk(directory_path, lambda e, path: delete_cached_directory(path), recurse=False):
+    for directory in _walk(directory_path, recurse=False):
         return directory # The return is intentional, we get a generator, we only need the one
     return None
 
 
-def _walk(top, onerror:Callable=None, /, recurse:RecursiveType=True) -> Directory:
-    # A near-exact copy of `path.walk()`, trimmed slightly. Probably not nessesary for most people's collections, but makes a difference on really large datasets.
+def _walk(top, recurse:RecursiveType=True) -> Directory:
+    # reimplemented `path.walk()`
     nondirs = []
     walk_dirs = []
     try:
-        scandir_it = scandir(top)
-    except OSError as error:
-        if callable(onerror):
-            onerror(error, top)
+        scandir_it = os.scandir(top)
+        entry = next(scandir_it)
+    except OSError:
         return
     with scandir_it:
-        while True:
-            try:
-                try:
-                    entry = next(scandir_it)
-                except StopIteration:
-                    break
-            except OSError as error:
-                if callable(onerror):
-                    onerror(error, top)
-                return
-            try:
-                is_dir = entry.is_dir()
-            except OSError:
-                is_dir = False
-            if not is_dir:
+        while entry:
+            if not entry.is_dir():
                 nondirs.append(entry.path)
             else:
-                try:
-                    if entry.is_symlink() and not path.exists(entry.path):
-                        raise NotADirectoryError('Broken Symlink')
+                if entry.is_symlink() and not os.path.exists(entry.path):
+                    log.error(f'Files broken symlink: {entry.path}')
+                else:
                     walk_dirs.append(entry.path)
-                except OSError as error:
-                    if callable(onerror):
-                        onerror(error, entry.path)
+            try:
+                entry = next(scandir_it)
+            except Exception:
+                entry = None
     yield Directory(top, nondirs, walk_dirs)
     if recurse:
-        # Recurse into sub-directories
         for new_path in walk_dirs:
-            if path.basename(new_path).startswith('models--'):
-                continue
             if callable(recurse) and not recurse(new_path):
                 continue
-            yield from _walk(new_path, onerror, recurse=recurse)
+            yield from _walk(new_path, recurse=recurse)
 
 
-def _cached_walk(top, onerror:Callable=None, /, recurse:RecursiveType=True) -> Directory:
+def _cached_walk(top, recurse:RecursiveType=True) -> Directory:
     top = get_directory(top)
     if not top:
         return
     yield top
     if recurse:
         for child_directory in top.directories:
-            if path.basename(child_directory).startswith('models--'):
+            if os.path.basename(child_directory).startswith('models--'):
                 continue
             if callable(recurse) and not recurse(child_directory):
                 continue
-            yield from _cached_walk(child_directory, onerror, recurse=recurse)
+            yield from _cached_walk(child_directory, recurse=recurse)
 
 
-def walk(top, onerror:Callable=None, /, recurse:RecursiveType=True, cached=True) -> Directory:
-    if cached:
-        yield from _cached_walk(top, onerror, recurse=recurse)
-    else:
-        yield from _walk(top, onerror, recurse=recurse)
+def walk(top, recurse:RecursiveType=True, cached=True) -> Directory:
+    yield from _cached_walk(top, recurse=recurse) if cached else _walk(top, recurse=recurse)
 
 
-def delete_cached_directory(directory_path:DirectoryPath) -> DidDelete:
+def delete_cached_directory(directory_path:str) -> bool:
     global cache_folders # pylint: disable=W0602
     if directory_path in cache_folders:
         del cache_folders[directory_path]
 
 
-def is_directory(dir_path:DirectoryPath) -> IsDirectory:
-    return dir_path and path.exists(dir_path) and path.isdir(dir_path)
+def is_directory(dir_path:str) -> bool:
+    return dir_path and os.path.exists(dir_path) and os.path.isdir(dir_path)
 
 
-def directory_mtime(directory_path:DirectoryPath, /, recursive:RecursiveType=True) -> MTime:
+def directory_mtime(directory_path:str, /, recursive:RecursiveType=True) -> float:
     return float(max(0, *[directory.mtime for directory in get_directories(directory_path, recursive=recursive)]))
 
 
@@ -255,7 +225,7 @@ def unique_directories(directories:DirectoryPathList, /, recursive:RecursiveType
         yield directory
         if not recursive:
             continue
-        _directory = path.join(directory, '')
+        _directory = os.path.join(directory, '')
         child_directory = None
         while directories and directories[-1].startswith(_directory):
             if not callable(recursive) or not child_directory:
@@ -267,10 +237,10 @@ def unique_directories(directories:DirectoryPathList, /, recursive:RecursiveType
                 if not callable(recursive):
                     _remove_directory = next_directory
                 else:
-                    for sub_directory in child_directory.split(path.sep):
-                        next_directory = path.join(next_directory, sub_directory)
+                    for sub_directory in child_directory.split(os.path.sep):
+                        next_directory = os.path.join(next_directory, sub_directory)
                         if recursive(next_directory):
-                            _remove_directory = path.join(next_directory, '')
+                            _remove_directory = os.path.join(next_directory, '')
                             break
                 while _remove_directory and directories:
                     _d = directories.pop()
@@ -319,8 +289,8 @@ def extension_filter(ext_filter: Optional[ExtensionList]=None, ext_blacklist: Op
     return filter_functon
 
 
-def not_hidden(filepath: FilePath) -> IsHidden:
-    return not path.basename(filepath).startswith('.')
+def not_hidden(filepath: str) -> bool:
+    return not os.path.basename(filepath).startswith('.')
 
 
 def filter_files(file_paths: FilePathList, ext_filter: Optional[ExtensionList]=None, ext_blacklist: Optional[ExtensionList]=None) -> FilePathIterator:
@@ -330,8 +300,7 @@ def filter_files(file_paths: FilePathList, ext_filter: Optional[ExtensionList]=N
 def list_files(*directory_paths:DirectoryPathList, ext_filter: Optional[ExtensionList]=None, ext_blacklist: Optional[ExtensionList]=None, recursive:RecursiveType=True) -> FilePathIterator:
     return filter_files(itertools.chain.from_iterable(
         directory_files(directory, recursive=recursive)
-        for directory
-        in get_directories(*directory_paths, recursive=recursive)
+        for directory in get_directories(*directory_paths, recursive=recursive)
     ), ext_filter, ext_blacklist)
 
 
