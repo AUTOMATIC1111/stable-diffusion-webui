@@ -62,17 +62,16 @@ class TaskHandler:
                 self._set_task_status(p)
                 progress_callback(p)
                 system_exit(free, total, coercive=not ok)
-            except RuntimeError as runtimeErr:
+            except (RuntimeError, torch.cuda.CudaError) as runtimeErr:
                 trace = traceback.format_exc()
                 msg = str(runtimeErr)
-                logger.exception('unhandle err')
+                logger.exception('unhandle runtime err')
                 p = TaskProgress.new_failed(task, msg, trace)
                 self._set_task_status(p)
                 progress_callback(p)
-                if not torch_gc():
-                    free, total = vram_mon.cuda_mem_get_info()
-                    system_exit(free, total, coercive=True)
-
+                free, total = vram_mon.cuda_mem_get_info()
+                time.sleep(15)
+                system_exit(free, total, coercive=True)
             except Exception as ex:
                 trace = traceback.format_exc()
                 msg = str(ex)
