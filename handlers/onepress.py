@@ -26,6 +26,10 @@ from handlers.utils import init_script_args, get_selectable_script, init_default
     load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path
 from copy import deepcopy
 from typing import List, Union, Dict, Set, Tuple
+import requests
+from retry import retry
+from io import BytesIO
+import tempfile
 
 # conversion_action={"线稿":'line',"黑白":'black_white',"色块":'color','草图':'sketch','蜡笔':'crayon'}
 
@@ -187,6 +191,7 @@ class OnePressTaskType(Txt2ImgTask):
     Rendition = 2  # 风格转换
     ImgToGif = 3  # 静态图片转动图
     ArtWord = 4  # 艺术字
+    LaternFair = 5  # 灯会变身
 
 
 class ConversionTask(Txt2ImgTask):
@@ -571,6 +576,110 @@ class ArtWordTask(Txt2ImgTask):
         return full_task, is_img2img
 
 
+class LaternFairTask(Txt2ImgTask):
+    def __init__(self,
+                 image: str,  # 功能类型
+                 backgroud_image: str,
+                 args: dict(),  # 极速模式
+                 rate_width: float = 2,
+                 rate_height: float = 5,
+                 border_size: int = 160,
+                 resize_width:int=0,
+                 resize_height:int=0,
+                 ):
+        self.image = image
+        self.backgroud_image = backgroud_image
+        self.args = args
+        self.rate_width = rate_width
+        self.rate_height = rate_height
+        self.border_size = border_size
+        self.resize_width=resize_width
+        self.resize_height=resize_height
+    @classmethod
+    def exec_task(cls, task: Task):
+        t = LaternFairTask(
+            task['image'],
+            task['background_image'],
+            task['args'],
+            task.get("rate_width", 2),
+            task.get("rate_height", 5),
+            task.get("border_size", 160),
+            task.get("resize_width", 0),
+            task.get("resize_height", 0),
+        )
+        extra_args = deepcopy(task['args'])
+        task.pop("args")
+        task.pop("background_image")
+        task.pop("image")
+        full_task = deepcopy(task)
+        full_task.update(extra_args)
+        source_img = get_tmp_local_path(t.image)
+        backgroud_image = get_tmp_local_path(t.backgroud_image)
+        return full_task, source_img, backgroud_image, t.rate_width, t.rate_height, t.border_size,t.resize_width,t.resize_height
+
+    @classmethod
+    @retry(tries=10, delay=5, backoff=2, max_delay=5)
+    def exec_seg(cls, img_path):
+        logger.info(f"pixian seg progress......")
+        url = 'https://api.pixian.ai/api/v2/remove-background'
+        response = requests.post(url,
+                                 files={'image': open(img_path, 'rb')},
+                                 headers={
+                                     'Authorization': 'Basic cHhhMmF2bGo3ODMzcjZhOjY1NmFlMnAzdDhiNm1vbTFhM2t1dnAxZ2ZzODEwcTMzNzk4MzEydWhnOTFoaGh0ZzZjZnY='
+                                 })
+        if response.status_code == requests.codes.ok:
+            stream = BytesIO(response.content)
+            res = Image.open(stream)
+            return res
+        else:
+            logger.error(f"pixian seg Error:, {response.status_code}, {response.text}")
+            raise Exception("pixian api get failed")
+
+    # 图片加背景图片:
+    @classmethod
+    def exec_add_back(cls, imq, back_path=None, rate_width=2, rate_height=5,resize_width=0,resize_height=0):
+        logger.info(f"add background progress......")
+        if not isinstance(imq, Image.Image):
+            imq = Image.open(imq)
+        width, height = imq.size
+        if back_path:
+            if not isinstance(back_path, Image.Image):
+                img = Image.open(back_path)
+            if resize_width!=0 and  resize_height!=0:
+                imq=imq.resize((resize_width,resize_height))
+            r, g, b, a = imq.split()
+            width, height = imq.size
+            width_b, height_b = img.size
+            img.paste(imq, (
+                int((width_b - width) // rate_width), int(height_b // rate_height), int(width + (width_b - width) // rate_width),
+                int(height + height_b // rate_height)), mask=a)  # 居中贴背景
+        else:
+            img = 255 * np.ones((height, width, 3), np.uint8)
+            img = Image.fromarray(img)
+            r, g, b, a = imq.split()
+            width_b, height_b = img.size
+            img.paste(imq, (0, 0, width_b, height_b), mask=a)
+        return img
+
+    # 边缘模糊
+    @classmethod
+    def canny_blur(cls, image: Image.Image, border_size=160):
+        # 获取图像大小
+        width, height = image.size
+        # 创建一个新的透明图像
+        result = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+        # 设置边框透明度渐变
+        for y in range(height):
+            for x in range(width):
+                r, g, b, a = image.getpixel((x, y))
+                if x < border_size or x >= width - border_size or y < border_size or y >= height - border_size:
+                    alpha = int((min(x, y, width - x - 1, height - y - 1) / border_size) * a)  # 根据距离边框的距离计算透明度
+                    result.putpixel((x, y), (r, g, b, alpha))
+                else:
+                    result.putpixel((x, y), (r, g, b, a))
+        return result
+
+
 class OnePressTaskHandler(Txt2ImgTaskHandler):
     def __init__(self):
         super(OnePressTaskHandler, self).__init__()
@@ -587,6 +696,8 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
             yield from self._exec_img2gif(task)
         if task.minor_type == OnePressTaskType.ArtWord:
             yield from self._exec_artword(task)
+        if task.minor_type == OnePressTaskType.LaternFair:
+            yield from self._exec_laternfair(task)
 
     def _build_gen_canny_i2i_args(self, t, processed: Processed):
         denoising_strength = 0.5
@@ -891,6 +1002,82 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
                                        task.id,
                                        inspect=process_args.kwargs.get("need_audit", False))
         logger.info("step 3 > ok")
+        progress = TaskProgress.new_finish(task, images)
+        progress.update_seed(processed.all_seeds, processed.all_subseeds)
+        yield progress
+
+    def _exec_laternfair(self, task: Task) -> typing.Iterable[TaskProgress]:
+        full_task, user_image, backgroud_image, rate_width, rate_height, border_size ,resize_width,resize_height= LaternFairTask.exec_task(task)
+        # 适配xl
+        logger.info("download model...")
+        local_model_paths = self._get_local_checkpoint(full_task)
+        base_model_path = local_model_paths if not isinstance(
+            local_model_paths, tuple) else local_model_paths[0]
+        refiner_checkpoint = None if not isinstance(
+            local_model_paths, tuple) else local_model_paths[1]
+        load_sd_model_weights(base_model_path, full_task.model_hash)
+        progress = TaskProgress.new_ready(
+            full_task, f'model loaded, run laternfairtask...')
+        yield progress
+
+        logger.info("step 1, seg...")
+        progress.status = TaskStatus.Running
+        progress.task_desc = f'laternfairtask task({task.id}) running'
+        # 抠图操作
+        seg_image = LaternFairTask.exec_seg(user_image)
+        # 添加白色背景
+        white_image = LaternFairTask.exec_add_back(seg_image)
+        logger.info("step 1 > ok")
+
+        process_args = self._build_txt2img_arg(progress)
+        # 重新赋值controlnet参数
+        args_from, args_to = 0, 0
+        for script in process_args.scripts.scripts:
+            if script.title() == "ControlNet":
+                args_from = script.args_from
+                args_to = script.args_to
+        all_cn_args = deepcopy(process_args.script_args_value[args_from: args_to])
+        for index, cn_arg in enumerate(process_args.script_args_value[args_from: args_to]):
+            if isinstance(cn_arg, Dict):
+                tmp_cn_args = deepcopy(cn_arg)
+                tmp_cn_args['image']['image'] = np.array(white_image)
+                all_cn_args[index] = tmp_cn_args
+        process_args.script_args_value[args_from: args_to] = all_cn_args
+        logger.info("step 2, txt2img...")
+        shared.state.begin()
+        yield progress
+        processed = process_images(process_args)
+        shared.state.end()
+        process_args.close()
+
+        logger.info("step 3, mosaic background main picture...")
+        # 拿到结果图后,抠图，边缘模糊，加背景
+        txt2img_image = processed.images[0]
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
+        file_path = temp_file.name
+        txt2img_image.save(file_path)
+
+        txt2img_seg_image = LaternFairTask.exec_seg(file_path)
+        blur_image = LaternFairTask.canny_blur(txt2img_seg_image, border_size)
+        txt2img_backgroud_image = LaternFairTask.exec_add_back(blur_image, backgroud_image, rate_width, rate_height,resize_width,resize_height)
+
+        processed.images.insert(processed.index_of_end_image,txt2img_backgroud_image)
+        processed.index_of_end_image+=1
+
+        processed.all_seeds += [1]
+        processed.all_subseeds += [1]                 
+        logger.info("step 3 > ok")
+
+        logger.info("step 4, upload images...")
+        progress.status = TaskStatus.Uploading
+        yield progress
+        images = save_processed_images(processed,
+                                       process_args.outpath_samples,
+                                       process_args.outpath_grids,
+                                       process_args.outpath_scripts,
+                                       task.id,
+                                       inspect=process_args.kwargs.get("need_audit", False))
+
         progress = TaskProgress.new_finish(task, images)
         progress.update_seed(processed.all_seeds, processed.all_subseeds)
         yield progress
