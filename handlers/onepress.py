@@ -1020,21 +1020,20 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
             local_model_paths, tuple) else local_model_paths[1]
         load_sd_model_weights(base_model_path, full_task.model_hash)
         progress = TaskProgress.new_ready(
-            full_task, f'model loaded, run laternfairtask...')
+            full_task, f'model loaded, run laternfairtask...',eta_relative=70)
         yield progress
-
+       
         logger.info("step 1, seg...")
+        progress.fixed_eta=random.randint(12, 15) # 加上后面抠图和贴背景的时间
+        process_args = self._build_txt2img_arg(progress)
         progress.status = TaskStatus.Running
-        progress.eta_relative = 120
-        progress.fixed_eta = 30
         progress.task_desc = f'laternfairtask task({task.id}) running'
-        # 抠图操作
+        yield progress
+                
         seg_image = LaternFairTask.exec_seg(user_image)
         # 添加白色背景
         white_image = LaternFairTask.exec_add_back(seg_image)
         logger.info("step 1 > ok")
-
-        process_args = self._build_txt2img_arg(progress)
         # 重新赋值controlnet参数
         args_from, args_to = 0, 0
         for script in process_args.scripts.scripts:
@@ -1050,12 +1049,12 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         process_args.script_args_value[args_from: args_to] = all_cn_args
         logger.info("step 2, txt2img...")
         shared.state.begin()
-        yield progress
         processed = process_images(process_args)
         shared.state.end()
         process_args.close()
 
         logger.info("step 3, mosaic background main picture...")
+
         # 拿到结果图后,抠图，边缘模糊，加背景
         txt2img_image = processed.images[0]
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
@@ -1065,7 +1064,7 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         txt2img_seg_image = LaternFairTask.exec_seg(file_path)
         blur_image = LaternFairTask.canny_blur(txt2img_seg_image, border_size)
         txt2img_backgroud_image = LaternFairTask.exec_add_back(blur_image, backgroud_image,
-                                                               int(rate_width), int(rate_height),
+                                                               rate_width, rate_height,
                                                                resize_width, resize_height)
 
         processed.images.insert(processed.index_of_end_image, txt2img_backgroud_image)
@@ -1076,6 +1075,7 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         logger.info("step 3 > ok")
 
         logger.info("step 4, upload images...")
+        progress.eta_relative=5
         progress.status = TaskStatus.Uploading
         yield progress
         images = save_processed_images(processed,
@@ -1088,3 +1088,4 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         progress = TaskProgress.new_finish(task, images)
         progress.update_seed(processed.all_seeds, processed.all_subseeds)
         yield progress
+        
