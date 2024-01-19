@@ -8,6 +8,22 @@ Web ui interacts with installed extensions in the following way:
 - extension's scripts in the `scripts` directory are executed as if they were just usual user scripts, except:
   - `sys.path` is extended to include the extension directory, so you can import anything in it without worrying. **HOWEVER, please either use a unique file name, or put your files in a uniquely-named folder, as the module will be cached to the global Python module tree by the name you used to import, and create surprises for other components that happen to use the same name.**
   - you can use `scripts.basedir()` to get the current extension's directory (since user can name it anything he wants)
+  - - note: `scripts.basedir()` must be used druing extension import stage,<br>if during other time it will return `webui root`.<details><summary><code>click to see scripts.basedir() usage example</code></summary><p>
+      > stable-diffusion-webui\extensions\example_extension_dir\scripts\example.py
+      ```py
+      from modules import scripts
+      current_extension_directory = scripts.basedir()  # 'stable-diffusion-webui\extensions\example_extension_dir'
+      # save it here for later use
+      class ExampleScript(scripts.Script):
+          def title(self):
+              return 'Example script'
+          def show(self, is_img2img):
+              scripts.basedir()  # 'B:\GitHub\stable-diffusion-webui'
+              return scripts.AlwaysVisible
+      ```
+      </p>
+      </details> 
+
 - extension's javascript files in the `javascript` directory are added to the page
 - extension's localization files in the `localizations` directory are added to settings; if there are two localizations with same name, they are not merged, one replaces another.
 - extension's `style.css` file is added to the page
