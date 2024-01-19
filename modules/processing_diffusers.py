@@ -389,9 +389,14 @@ def process_diffusers(p: StableDiffusionProcessing):
 
     def update_pipeline(sd_model, p: StableDiffusionProcessing):
         if p.sag_scale > 0 and is_txt2img():
-            sd_model = sd_models.switch_diffuser_pipe(sd_model, diffusers.StableDiffusionSAGPipeline)
-            p.extra_generation_params["SAG scale"] = p.sag_scale
-            p.task_args['sag_scale'] = p.sag_scale
+            update_sampler(shared.sd_model)
+            supported = ['DDIMScheduler', 'PNDMScheduler', 'DDPMScheduler', 'DEISMultistepScheduler', 'UniPCMultistepScheduler', 'DPMSolverMultistepScheduler', 'DPMSolverSinlgestepScheduler']
+            if sd_model.scheduler.__class__.__name__ in supported:
+                sd_model = sd_models.switch_diffuser_pipe(sd_model, diffusers.StableDiffusionSAGPipeline)
+                p.extra_generation_params["SAG scale"] = p.sag_scale
+                p.task_args['sag_scale'] = p.sag_scale
+            else:
+                shared.log.warning(f'SAG incompatible scheduler: current={sd_model.scheduler.__class__.__name__} supported={supported}')
         return sd_model
 
     if len(getattr(p, 'init_images', [])) > 0:

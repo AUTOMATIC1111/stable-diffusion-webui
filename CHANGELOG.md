@@ -8,9 +8,7 @@ BLOCKERS:
 OPTIONAL:
 - pending `diffusers==0.26.0`
 - animatediff `enable_free_init` [pr](https://github.com/huggingface/diffusers/pull/6315)
-- pipeline `diffusers_sag_scale` [pr](https://github.com/huggingface/diffusers/issues/6443)
 - wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)
-- adetailer [fix](https://github.com/Bing-su/adetailer/issues/466)
 - control api
 - photomaker api
 - interrogate api
@@ -100,6 +98,10 @@ And it also includes fixes for all reported issues so far
   - new model from TenencentARC using similar concept as IPAdapter, but with different implementation and  
     allowing full concept swaps between input images and generated images using trigger words  
   - note: trigger word must match exactly one term in prompt for model to work  
+- [Self-attention guidance](https://github.com/SusungHong/Self-Attention-Guidance)  
+  - simply select scale in advanced menu  
+  - can drastically improve image coherence as well as reduce artifacts  
+  - note: only compatible with some schedulers  
 - **Improvements**  
   - **ui**  
     - check version and **update** SD.Next via UI  
