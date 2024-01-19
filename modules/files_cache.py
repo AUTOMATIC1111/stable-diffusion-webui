@@ -3,7 +3,7 @@ import os
 from collections import UserDict
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Iterator, List, Optional, Union
-from installer import print_dict, log
+from installer import log
 
 
 class Directory: # forward declaration
@@ -69,9 +69,6 @@ class Directory(Directory): # pylint: disable=E0102
         self.directories[:] = source.directories
         self.files[:] = source.files
         object.__setattr__(self, 'mtime', source.mtime)
-
-    def __str__(self) -> str:
-        return str(print_dict(self, path=self.path, mtime=self.mtime, files=len(self.files), directories=len(self.directories))) # pylint: disable=unexpected-keyword-arg
 
     @property
     def exists(self) -> bool:
@@ -159,11 +156,14 @@ def _walk(top, recurse:RecursiveType=True) -> Directory:
     walk_dirs = []
     try:
         scandir_it = os.scandir(top)
-        entry = next(scandir_it)
     except OSError:
         return
     with scandir_it:
-        while entry:
+        while True:
+            try:
+                entry = next(scandir_it)
+            except StopIteration:
+                break
             if not entry.is_dir():
                 nondirs.append(entry.path)
             else:
@@ -171,10 +171,6 @@ def _walk(top, recurse:RecursiveType=True) -> Directory:
                     log.error(f'Files broken symlink: {entry.path}')
                 else:
                     walk_dirs.append(entry.path)
-            try:
-                entry = next(scandir_it)
-            except Exception:
-                entry = None
     yield Directory(top, nondirs, walk_dirs)
     if recurse:
         for new_path in walk_dirs:
