@@ -99,7 +99,6 @@ def merge_models(
     merge_mode: str,
     precision: str = "fp16",
     weights_clip: bool = False,
-    re_basin: bool = False,
     device: torch.device = None,
     work_device: torch.device = None,
     prune: bool = False,
@@ -109,7 +108,7 @@ def merge_models(
     thetas = load_thetas(models, prune, device, precision)
     # log.info(f'Merge start: models={models.values()} precision={precision} clip={weights_clip} rebasin={re_basin} prune={prune} threads={threads}')
     weight_matcher = WeightClass(thetas["model_a"], **kwargs)
-    if re_basin:
+    if kwargs.get("re_basin", False):
         merged = rebasin_merge(
             thetas,
             weight_matcher,
@@ -246,7 +245,7 @@ def rebasin_merge(
         perm_spec = sdunet_permutation_spec()
 
     for it in range(iterations):
-        log_vram(f"rebasin: iteration={it}")
+        log_vram(f"rebasin: iteration={it+1}")
         weight_matcher.set_it(it)
 
         # normal block merge we already know and love

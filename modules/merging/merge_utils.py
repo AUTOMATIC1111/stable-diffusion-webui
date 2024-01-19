@@ -37,7 +37,7 @@ class WeightClass:
         self.NUM_MID_BLOCK = 1
         self.NUM_OUTPUT_BLOCKS = 12 if not self.SDXL else 9
         self.NUM_TOTAL_BLOCKS = self.NUM_INPUT_BLOCKS + self.NUM_MID_BLOCK + self.NUM_OUTPUT_BLOCKS
-        self.iterations = kwargs.get("iterations", 1)
+        self.iterations = kwargs.get("re_basin_iterations", 1)
         self.it = 0
         self.re_basin = kwargs.get("re_basin", False)
         self.ratioDict = {}
@@ -63,9 +63,9 @@ class WeightClass:
 
     def __call__(self, key, it=0):
         current_bases = {}
-        if self.ratioDict.get("alpha", None):
+        if "alpha" in self.ratioDict:
             current_bases["alpha"] = self.step_weights_and_bases(self.ratioDict["alpha"])
-        if self.ratioDict.get("beta", None):
+        if "beta" in self.ratioDict:
             current_bases["beta"] = self.step_weights_and_bases(self.ratioDict["beta"])
 
         weight_index = 0
