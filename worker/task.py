@@ -201,6 +201,7 @@ class TaskProgress(SerializationObj):
         self._result = None
         self.task_progress = 0
         self.eta_relative = 60
+        self.fixed_eta = 0
         self.train = TrainTaskInfo()
         self.preview = None
         self.start_time = time.time()
