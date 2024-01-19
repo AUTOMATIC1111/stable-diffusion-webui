@@ -1,7 +1,10 @@
 > the following information is about the image filename and subdirectory name, not the `Paths for saving \ Output directories`
-### By default, the Web UI saves images in the output directories and output archive with a filename structure of
+### By default when Images filename pattern is blank, the Web UI saves images in the output directories and output archive with a filename structure of
 
-Images: `[number]-[seed]-[prompt_spaces]`
+Images: `[number]-[seed]` or `[number]-[seed]-[prompt_spaces]`
+
+> the `[number]-` prefix is automatically added when [Add number to filename when saving](#add--remove-number-to-filename-when-saving) is enabled (default), it itself is not a [Pattern](#patterns).
+
 ```
 01234-987654321-((masterpiece)), ((best quality)), ((illustration)), extremely detailed,style girl.png
 ```
