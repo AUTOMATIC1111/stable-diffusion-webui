@@ -7,8 +7,8 @@ BLOCKERS:
 
 OPTIONAL:
 - pending `diffusers==0.26.0`
-- animatediff `enable_free_init` [pr](https://github.com/huggingface/diffusers/pull/6315)
 - wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)
+- animatediff image2video [pr](https://github.com/huggingface/diffusers/pull/6509)
 - control api
 - photomaker api
 - interrogate api
@@ -102,6 +102,9 @@ And it also includes fixes for all reported issues so far
   - simply select scale in advanced menu  
   - can drastically improve image coherence as well as reduce artifacts  
   - note: only compatible with some schedulers  
+- [FreeInit](https://tianxingwu.github.io/pages/FreeInit/) for **AnimateDiff**
+  - greatly improves temporal consistency of generated outputs  
+  - all options are available in animateddiff script  
 - **Improvements**  
   - **ui**  
     - check version and **update** SD.Next via UI  
