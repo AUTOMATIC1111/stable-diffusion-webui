@@ -584,8 +584,8 @@ class LaternFairTask(Txt2ImgTask):
                  rate_width: float = 2,
                  rate_height: float = 5,
                  border_size: int = 160,
-                 resize_width:int=0,
-                 resize_height:int=0,
+                 resize_width: int = 0,
+                 resize_height: int = 0,
                  ):
         self.image = image
         self.backgroud_image = backgroud_image
@@ -593,8 +593,9 @@ class LaternFairTask(Txt2ImgTask):
         self.rate_width = rate_width
         self.rate_height = rate_height
         self.border_size = border_size
-        self.resize_width=resize_width
-        self.resize_height=resize_height
+        self.resize_width = resize_width
+        self.resize_height = resize_height
+
     @classmethod
     def exec_task(cls, task: Task):
         t = LaternFairTask(
@@ -615,7 +616,7 @@ class LaternFairTask(Txt2ImgTask):
         full_task.update(extra_args)
         source_img = get_tmp_local_path(t.image)
         backgroud_image = get_tmp_local_path(t.backgroud_image)
-        return full_task, source_img, backgroud_image, t.rate_width, t.rate_height, t.border_size,t.resize_width,t.resize_height
+        return full_task, source_img, backgroud_image, t.rate_width, t.rate_height, t.border_size, t.resize_width, t.resize_height
 
     @classmethod
     @retry(tries=10, delay=5, backoff=2, max_delay=5)
@@ -637,7 +638,7 @@ class LaternFairTask(Txt2ImgTask):
 
     # 图片加背景图片:
     @classmethod
-    def exec_add_back(cls, imq, back_path=None, rate_width=2, rate_height=5,resize_width=0,resize_height=0):
+    def exec_add_back(cls, imq, back_path=None, rate_width=2, rate_height=5, resize_width=0, resize_height=0):
         logger.info(f"add background progress......")
         if not isinstance(imq, Image.Image):
             imq = Image.open(imq)
@@ -645,13 +646,14 @@ class LaternFairTask(Txt2ImgTask):
         if back_path:
             if not isinstance(back_path, Image.Image):
                 img = Image.open(back_path)
-            if resize_width!=0 and  resize_height!=0:
-                imq=imq.resize((resize_width,resize_height))
+            if resize_width != 0 and resize_height != 0:
+                imq = imq.resize((resize_width, resize_height))
             r, g, b, a = imq.split()
             width, height = imq.size
             width_b, height_b = img.size
             img.paste(imq, (
-                int((width_b - width) // rate_width), int(height_b // rate_height), int(width + (width_b - width) // rate_width),
+                int((width_b - width) // rate_width), int(height_b // rate_height),
+                int(width + (width_b - width) // rate_width),
                 int(height + height_b // rate_height)), mask=a)  # 居中贴背景
         else:
             img = 255 * np.ones((height, width, 3), np.uint8)
@@ -1007,7 +1009,8 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         yield progress
 
     def _exec_laternfair(self, task: Task) -> typing.Iterable[TaskProgress]:
-        full_task, user_image, backgroud_image, rate_width, rate_height, border_size ,resize_width,resize_height= LaternFairTask.exec_task(task)
+        full_task, user_image, backgroud_image, rate_width, rate_height, border_size, resize_width, resize_height = LaternFairTask.exec_task(
+            task)
         # 适配xl
         logger.info("download model...")
         local_model_paths = self._get_local_checkpoint(full_task)
@@ -1022,6 +1025,8 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
 
         logger.info("step 1, seg...")
         progress.status = TaskStatus.Running
+        progress.eta_relative = 120
+        progress.fixed_eta = 30
         progress.task_desc = f'laternfairtask task({task.id}) running'
         # 抠图操作
         seg_image = LaternFairTask.exec_seg(user_image)
@@ -1059,13 +1064,15 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
 
         txt2img_seg_image = LaternFairTask.exec_seg(file_path)
         blur_image = LaternFairTask.canny_blur(txt2img_seg_image, border_size)
-        txt2img_backgroud_image = LaternFairTask.exec_add_back(blur_image, backgroud_image, rate_width, rate_height,resize_width,resize_height)
+        txt2img_backgroud_image = LaternFairTask.exec_add_back(blur_image, backgroud_image,
+                                                               int(rate_width), int(rate_height),
+                                                               resize_width, resize_height)
 
-        processed.images.insert(processed.index_of_end_image,txt2img_backgroud_image)
-        processed.index_of_end_image+=1
+        processed.images.insert(processed.index_of_end_image, txt2img_backgroud_image)
+        processed.index_of_end_image += 1
 
         processed.all_seeds += [1]
-        processed.all_subseeds += [1]                 
+        processed.all_subseeds += [1]
         logger.info("step 3 > ok")
 
         logger.info("step 4, upload images...")

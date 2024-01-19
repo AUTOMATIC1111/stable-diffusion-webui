@@ -677,7 +677,7 @@ class Img2ImgTaskHandler(TaskHandler):
         time_since_start = time.time() - shared.state.time_start
         eta = (time_since_start / p)
         progress.task_progress = current_progress
-        progress.eta_relative = int(eta - time_since_start)
+        progress.eta_relative = int(eta - time_since_start) + getattr(self, "fixed_eta", 0)
         # print(f"-> progress: {progress.task_progress}, real:{p}\n")
 
         shared.state.set_current_image()
