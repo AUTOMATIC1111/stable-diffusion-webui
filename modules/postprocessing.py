@@ -62,8 +62,6 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
         else:
             image_data = image_placeholder
 
-        shared.state.assign_current_image(image_data)
-
         parameters, existing_pnginfo = images.read_info_from_image(image_data)
         if parameters:
             existing_pnginfo["parameters"] = parameters
@@ -91,6 +89,8 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
             if opts.enable_pnginfo:
                 pp.image.info = existing_pnginfo
                 pp.image.info["postprocessing"] = infotext
+
+            shared.state.assign_current_image(pp.image)
 
             if save_output:
                 fullfn, _ = images.save_image(pp.image, path=outpath, basename=basename, extension=opts.samples_format, info=infotext, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=forced_filename, suffix=suffix)
