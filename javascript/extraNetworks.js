@@ -348,7 +348,7 @@ function extraNetworksTreeOnClick(event, tabname, extra_networks_tabname) {
     }
 }
 
-function extraNetworksTreeSortOnClick(event, tabname, extra_networks_tabname) {
+function extraNetworksControlSortOnClick(event, tabname, extra_networks_tabname) {
     /**
      * Handles `onclick` events for the Sort Mode button.
      *
@@ -382,7 +382,7 @@ function extraNetworksTreeSortOnClick(event, tabname, extra_networks_tabname) {
     applyExtraNetworkSort(tabname + "_" + extra_networks_tabname);
 }
 
-function extraNetworksTreeSortDirOnClick(event, tabname, extra_networks_tabname) {
+function extraNetworksControlSortDirOnClick(event, tabname, extra_networks_tabname) {
     /**
      * Handles `onclick` events for the Sort Direction button.
      *
@@ -403,7 +403,21 @@ function extraNetworksTreeSortDirOnClick(event, tabname, extra_networks_tabname)
     applyExtraNetworkSort(tabname + "_" + extra_networks_tabname);
 }
 
-function extraNetworksTreeRefreshOnClick(event, tabname, extra_networks_tabname) {
+function extraNetworksControlTreeViewOnClick(event, tabname, extra_networks_tabname) {
+    /**
+     * Handles `onclick` events for the Tree View button.
+     *
+     * Toggles the tree view in the extra networks pane.
+     *
+     * @param event                     The generated event.
+     * @param tabname                   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
+     * @param extra_networks_tabname    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
+     */
+    gradioApp().getElementById(tabname + "_" + extra_networks_tabname + "_tree").classList.toggle("hidden");
+    event.currentTarget.classList.toggle("extra-network-control--enabled");
+}
+
+function extraNetworksControlRefreshOnClick(event, tabname, extra_networks_tabname) {
     /**
      * Handles `onclick` events for the Refresh Page button.
      *

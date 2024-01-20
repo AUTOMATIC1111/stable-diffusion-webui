@@ -526,10 +526,17 @@ class ExtraNetworksPage:
             if "user_metadata" not in item:
                 self.read_user_metadata(item)
 
+        data_sortdir = shared.opts.extra_networks_card_order
+        data_sortmode = shared.opts.extra_networks_card_order_field.lower().replace("sort", "").replace(" ", "_").rstrip("_").strip()
+        data_sortkey = f"{data_sortmode}-{data_sortdir}-{len(self.items)}"
+
         return self.pane_tpl.format(
             **{
                 "tabname": tabname,
                 "extra_networks_tabname": self.extra_networks_tabname,
+                "data_sortmode": data_sortmode,
+                "data_sortkey": data_sortkey,
+                "data_sortdir": data_sortdir,
                 "tree_html": self.create_tree_view_html(tabname),
                 "items_html": self.create_card_view_html(tabname),
             }
