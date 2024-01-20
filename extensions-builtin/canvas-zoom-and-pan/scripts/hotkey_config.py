@@ -5,7 +5,7 @@ shared.options_templates.update(shared.options_section(('canvas_hotkey', "Canvas
     "canvas_hotkey_zoom": shared.OptionInfo("Alt", "Zoom canvas", gr.Radio, {"choices": ["Shift","Ctrl", "Alt"]}).info("If you choose 'Shift' you cannot scroll horizontally, 'Alt' can cause a little trouble in firefox"),
     "canvas_hotkey_adjust": shared.OptionInfo("Ctrl", "Adjust brush size", gr.Radio, {"choices": ["Shift","Ctrl", "Alt"]}).info("If you choose 'Shift' you cannot scroll horizontally, 'Alt' can cause a little trouble in firefox"),
     "canvas_hotkey_shrink_brush": shared.OptionInfo("Q", "Shrink the brush size"),
-	"canvas_hotkey_grow_brush": shared.OptionInfo("W", "Enlarge the brush size"),
+    "canvas_hotkey_grow_brush": shared.OptionInfo("W", "Enlarge the brush size"),
     "canvas_hotkey_move": shared.OptionInfo("F", "Moving the canvas").info("To work correctly in firefox, turn off 'Automatically search the page text when typing' in the browser settings"),
     "canvas_hotkey_fullscreen": shared.OptionInfo("S", "Fullscreen Mode, maximizes the picture so that it fits into the screen and stretches it to its full width "),
     "canvas_hotkey_reset": shared.OptionInfo("R", "Reset zoom and canvas positon"),
