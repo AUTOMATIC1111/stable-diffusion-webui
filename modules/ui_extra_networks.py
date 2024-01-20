@@ -529,6 +529,11 @@ class ExtraNetworksPage:
         data_sortdir = shared.opts.extra_networks_card_order
         data_sortmode = shared.opts.extra_networks_card_order_field.lower().replace("sort", "").replace(" ", "_").rstrip("_").strip()
         data_sortkey = f"{data_sortmode}-{data_sortdir}-{len(self.items)}"
+        tree_view_btn_extra_class = ""
+        tree_view_div_extra_class = "hidden"
+        if shared.opts.extra_networks_tree_view_default_enabled:
+            tree_view_btn_extra_class = "extra-network-control--enabled"
+            tree_view_div_extra_class = ""
 
         return self.pane_tpl.format(
             **{
@@ -537,6 +542,8 @@ class ExtraNetworksPage:
                 "data_sortmode": data_sortmode,
                 "data_sortkey": data_sortkey,
                 "data_sortdir": data_sortdir,
+                "tree_view_btn_extra_class": tree_view_btn_extra_class,
+                "tree_view_div_extra_class": tree_view_div_extra_class,
                 "tree_html": self.create_tree_view_html(tabname),
                 "items_html": self.create_card_view_html(tabname),
             }

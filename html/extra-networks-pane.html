@@ -29,7 +29,7 @@
         </div>
         <div
             id="{tabname}_{extra_networks_tabname}_extra_tree_view"
-            class="extra-network-control--tree-view extra-network-control--enabled"
+            class="extra-network-control--tree-view {tree_view_btn_extra_class}"
             title="Enable Tree View"
             onclick="extraNetworksControlTreeViewOnClick(event, '{tabname}', '{extra_networks_tabname}');"
         >
@@ -45,7 +45,7 @@
         </div>
     </div>
     <div class="extra-network-pane-content">
-        <div id='{tabname}_{extra_networks_tabname}_tree' class='extra-network-tree'>
+        <div id='{tabname}_{extra_networks_tabname}_tree' class='extra-network-tree {tree_view_div_extra_class}'>
             {tree_html}
         </div>
         <div id='{tabname}_{extra_networks_tabname}_cards' class='extra-network-cards'>
