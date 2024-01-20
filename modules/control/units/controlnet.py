@@ -11,22 +11,36 @@ what = 'ControlNet'
 debug = log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
 debug('Trace: CONTROL')
 predefined_sd15 = {
-    'Canny FP32': "lllyasviel/control_v11p_sd15_canny",
-    'Depth FP32': "lllyasviel/control_v11f1p_sd15_depth",
-    'HED FP32': "lllyasviel/sd-controlnet-hed",
-    'IP2P FP32': "lllyasviel/control_v11e_sd15_ip2p",
-    'LineArt FP32': "lllyasviel/control_v11p_sd15_lineart",
-    'LineArt Anime FP32': "lllyasviel/control_v11p_sd15s2_lineart_anime",
-    'MLDS FP32': "lllyasviel/control_v11p_sd15_mlsd",
-    'NormalBae FP32': "lllyasviel/control_v11p_sd15_normalbae",
-    'OpenPose FP32': "lllyasviel/control_v11p_sd15_openpose",
-    'Scribble FP32': "lllyasviel/control_v11p_sd15_scribble",
-    'Segment FP32': "lllyasviel/control_v11p_sd15_seg",
-    'Shuffle FP32': "lllyasviel/control_v11e_sd15_shuffle",
-    'SoftEdge FP32': "lllyasviel/control_v11p_sd15_softedge",
-    'TemporalNet FP32': "CiaraRowles/TemporalNet",
-    'Tile FP32': "lllyasviel/control_v11f1e_sd15_tile",
-    'Canny FP16': 'kamaltdin/controlnet1-1_safetensors_with_yaml/controlnet11Models_canny.safetensors',
+    'Canny': "lllyasviel/control_v11p_sd15_canny",
+    'Depth': "lllyasviel/control_v11f1p_sd15_depth",
+    'HED': "lllyasviel/sd-controlnet-hed",
+    'IP2P': "lllyasviel/control_v11e_sd15_ip2p",
+    'LineArt': "lllyasviel/control_v11p_sd15_lineart",
+    'LineArt Anime': "lllyasviel/control_v11p_sd15s2_lineart_anime",
+    'MLDS': "lllyasviel/control_v11p_sd15_mlsd",
+    'NormalBae': "lllyasviel/control_v11p_sd15_normalbae",
+    'OpenPose': "lllyasviel/control_v11p_sd15_openpose",
+    'Scribble': "lllyasviel/control_v11p_sd15_scribble",
+    'Segment': "lllyasviel/control_v11p_sd15_seg",
+    'Shuffle': "lllyasviel/control_v11e_sd15_shuffle",
+    'SoftEdge': "lllyasviel/control_v11p_sd15_softedge",
+    'Tile': "lllyasviel/control_v11f1e_sd15_tile",
+    'Canny FP16': 'Aptronym/SDNext/ControlNet11/controlnet11Models_canny.safetensors',
+    'Inpaint FP16': 'Aptronym/SDNext/ControlNet11/controlnet11Models_inpaint.safetensors',
+    'LineArt Anime FP16': 'Aptronym/SDNext/ControlNet11/controlnet11Models_animeline.safetensors',
+    'LineArt FP16': 'Aptronym/SDNext/ControlNet11/controlnet11Models_lineart.safetensors',
+    'MLSD FP16': 'Aptronym/SDNext/ControlNet11/controlnet11Models_mlsd.safetensors',
+    'NormalBae FP16': 'Aptronym/SDNext/ControlNet11/controlnet11Models_normal.safetensors',
+    'OpenPose FP16': 'Aptronym/SDNext/ControlNet11/controlnet11Models_openpose.safetensors',
+    'Pix2Pix FP16': 'Aptronym/SDNext/ControlNet11/controlnet11Models_pix2pix.safetensors',
+    'Scribble FP16': 'Aptronym/SDNext/ControlNet11/controlnet11Models_scribble.safetensors',
+    'Segment FP16': 'Aptronym/SDNext/ControlNet11/controlnet11Models_seg.safetensors',
+    'Shuffle FP16': 'Aptronym/SDNext/ControlNet11/controlnet11Models_shuffle.safetensors',
+    'SoftEdge FP16': 'Aptronym/SDNext/ControlNet11/controlnet11Models_softedge.safetensors',
+    'Tile FP16': 'Aptronym/SDNext/ControlNet11/controlnet11Models_tileE.safetensors',
+    'CiaraRowles TemporalNet': "CiaraRowles/TemporalNet",
+    'Ciaochaos Recolor': 'ioclab/control_v1p_sd15_brightness',
+    'Ciaochaos Illumination': 'ioclab/control_v1u_sd15_illumination/illumination20000.safetensors',
 }
 predefined_sdxl = {
     'Canny Small XL': 'diffusers/controlnet-canny-sdxl-1.0-small',
@@ -35,6 +49,14 @@ predefined_sdxl = {
     'Depth Zoe XL': 'diffusers/controlnet-zoe-depth-sdxl-1.0',
     'Depth Mid XL': 'diffusers/controlnet-depth-sdxl-1.0-mid',
     'OpenPose XL': 'thibaud/controlnet-openpose-sdxl-1.0',
+    # 'StabilityAI Canny R128': 'stabilityai/control-lora/control-LoRAs-rank128/control-lora-canny-rank128.safetensors',
+    # 'StabilityAI Depth R128': 'stabilityai/control-lora/control-LoRAs-rank128/control-lora-depth-rank128.safetensors',
+    # 'StabilityAI Recolor R128': 'stabilityai/control-lora/control-LoRAs-rank128/control-lora-recolor-rank128.safetensors',
+    # 'StabilityAI Sketch R128': 'stabilityai/control-lora/control-LoRAs-rank128/control-lora-sketch-rank128-metadata.safetensors',
+    # 'StabilityAI Canny R256': 'stabilityai/control-lora/control-LoRAs-rank256/control-lora-canny-rank256.safetensors',
+    # 'StabilityAI Depth R256': 'stabilityai/control-lora/control-LoRAs-rank256/control-lora-depth-rank256.safetensors',
+    # 'StabilityAI Recolor R256': 'stabilityai/control-lora/control-LoRAs-rank256/control-lora-recolor-rank256.safetensors',
+    # 'StabilityAI Sketch R256': 'stabilityai/control-lora/control-LoRAs-rank256/control-lora-sketch-rank256.safetensors',
 }
 models = {}
 all_models = {}
@@ -64,9 +86,9 @@ def list_models(refresh=False):
     if modules.shared.sd_model_type == 'none':
         models = ['None']
     elif modules.shared.sd_model_type == 'sdxl':
-        models = ['None'] + sorted(predefined_sdxl) + sorted(find_models())
+        models = ['None'] + list(predefined_sdxl) + sorted(find_models())
     elif modules.shared.sd_model_type == 'sd':
-        models = ['None'] + sorted(predefined_sd15) + sorted(find_models())
+        models = ['None'] + list(predefined_sd15) + sorted(find_models())
     else:
         log.warning(f'Control {what} model list failed: unknown model type')
         models = ['None'] + sorted(predefined_sd15) + sorted(predefined_sdxl) + sorted(find_models())
@@ -97,7 +119,9 @@ class ControlNet():
         yaml_path = None
         if not os.path.exists(model_path):
             import huggingface_hub as hf
-            repo_id, filename = os.path.dirname(model_path), os.path.basename(name)
+            parts = model_path.split('/')
+            repo_id = f'{parts[0]}/{parts[1]}'
+            filename = os.path.splitext('/'.join(parts[2:]))[0]
             model_path = hf.hf_hub_download(repo_id=repo_id, filename=f'{filename}.safetensors', cache_dir=cache_dir)
             try:
                 yaml_path = hf.hf_hub_download(repo_id=repo_id, filename=f'{filename}.yaml', cache_dir=cache_dir)
@@ -107,7 +131,6 @@ class ControlNet():
             yaml_path = f'{name}.yaml'
         if yaml_path is not None:
             self.load_config['original_config_file '] = yaml_path
-        print('HERE', self.load_config)
         self.model = ControlNetModel.from_single_file(model_path, **self.load_config)
 
     def load(self, model_id: str = None) -> str:

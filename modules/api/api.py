@@ -173,7 +173,7 @@ class Api:
 
     def session_start(self, req: Request, agent: Optional[str] = None):
         token = req.cookies.get("access-token") or req.cookies.get("access-token-unsecure")
-        user = self.app.tokens.get(token)
+        user = self.app.tokens.get(token) if hasattr(self.app, 'tokens') else None
         shared.log.info(f'Browser session: user={user} client={req.client.host} agent={agent}')
         return {}
 
@@ -261,7 +261,7 @@ class Api:
                     p.per_script_args[alwayson_script.title()] = request.alwayson_scripts[alwayson_script_name]["args"]
         return script_args
 
-    def prepare_img_gen_request(self, request, img_gen_type: str):
+    def prepare_img_gen_request(self, request, img_gen_type: str): # pylint: disable=unused-argument
         if hasattr(request, "face_id") and request.face_id and not request.script_name and (not request.alwayson_scripts or "FaceID" not in request.alwayson_scripts.keys()):
             request.script_name = "FaceID"
             request.script_args = [

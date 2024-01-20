@@ -47,7 +47,7 @@ def setup_middleware(app: FastAPI, cmd_opts):
                 if '/sdapi/v1/log' in endpoint:
                     return res
                 log.info('API {user} {code} {prot}/{ver} {method} {endpoint} {cli} {duration}'.format( # pylint: disable=consider-using-f-string, logging-format-interpolation
-                    user = app.tokens.get(token),
+                    user = app.tokens.get(token) if hasattr(app, 'tokens') else None,
                     code = res.status_code,
                     ver = req.scope.get('http_version', '0.0'),
                     cli = req.scope.get('client', ('0:0.0.0', 0))[0],

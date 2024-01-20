@@ -1292,8 +1292,12 @@ def unload_model_weights(op='model'):
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
             elif not (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx"):
                 disable_offload(model_data.sd_model)
-                model_data.sd_model.to('meta')
+                try:
+                    model_data.sd_model.to('meta')
+                except Exception:
+                    pass
             model_data.sd_model = None
+            devices.torch_gc(force=True)
             shared.log.debug(f'Unload weights {op}: {memory_stats()}')
     else:
         if model_data.sd_refiner:
@@ -1305,8 +1309,8 @@ def unload_model_weights(op='model'):
                 disable_offload(model_data.sd_model)
                 model_data.sd_refiner.to('meta')
             model_data.sd_refiner = None
+            devices.torch_gc(force=True)
             shared.log.debug(f'Unload weights {op}: {memory_stats()}')
-    devices.torch_gc(force=True)
 
 
 def apply_token_merging(sd_model, token_merging_ratio=0):

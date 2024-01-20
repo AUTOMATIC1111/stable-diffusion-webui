@@ -16,16 +16,17 @@ OPTIONAL:
 - masking api
 - preprocess api
 
-## Update for 2023-01-19
+## Update for 2023-01-20
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
   - Inpaint and outpaint support, flexible resizing options, optional hires  
-  - More processors and models  
+  - Built-in support for many new processors and models which are auto-downloaded on first use  
   - Full support for scripts and extensions  
 - Fully baked-in **FaceID**, **FaceSwap** and **PhotoMaker** modules
 - Much enhanced **IPAdapter** modules  
-- Brand new **intelligent masking**, manual or automatic using ML models and with live previews  
+- Brand new **intelligent masking**, manual or automatic  
+  Using ML models (object removal, background removal, segmentation, etc.) and with live previews  
 
 Plus welcome additions to **UI performance, usability and accessibility** and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
@@ -47,6 +48,8 @@ And it also includes fixes for all reported issues so far
       this is especially useful if you want to use advanced masking on batch or video inputs and dont want to manually mask each image  
       *note*: such auto-created mask is also subject to all other selected settings such as auto-segmentation, blur, erode and dilate  
     - masking can be combined with control processors in which case mask is applied before processor  
+  - support for many additional controlnet models  
+    now built-in models include 30+ SD15 models and 15+ SDXL models  
   - allow **resize** both *before* and *after* generate operation  
     this allows for workflows such as: *image -> upscale or downscale -> generate -> upscale or downscale -> output*  
     providing more flexibility and than standard hires workflow  
@@ -71,6 +74,7 @@ And it also includes fixes for all reported issues so far
   - move ip-adapter implementation to control tabs  
   - resize by now applies to input image or frame individually  
     allows for processing where input images are of different sizes  
+  - support controlnets with non-default yaml config files
   - fix input image size  
   - fix video color mode  
   - fix correct image mode  
@@ -207,6 +211,7 @@ And it also includes fixes for all reported issues so far
   - api: return current image in progress api if requested  
   - api: sanitize response object  
   - api: cleanup error logging  
+  - api: fix api-only errors  
   - sampler: add sampler options info to metadata
   - sampler: guard against invalid sampler index  
   - sampler: add img2img_extra_noise option
@@ -217,6 +222,7 @@ And it also includes fixes for all reported issues so far
   - upscale: fix ldsr
   - cli: fix cmd args parsing  
   - global crlf->lf switch  
+  - model type switch if there is loaded submodels  
 - **other**
   - updated core requirements  
   - major internal ui module refactoring  
