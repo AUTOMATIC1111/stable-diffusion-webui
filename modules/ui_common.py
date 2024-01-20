@@ -38,6 +38,7 @@ def plaintext_to_html(text, classname=None):
 
 
 def update_logfile(logfile_path, fields):
+    """Update a logfile from old format to new format to maintain CSV integrity."""
     with open(logfile_path, "r", encoding="utf8", newline="") as file:
         reader = csv.reader(file)
         rows = list(reader)
