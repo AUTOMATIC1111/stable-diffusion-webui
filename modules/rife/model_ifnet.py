@@ -82,7 +82,7 @@ class IFNet(nn.Module):
         # self.contextnet = Contextnet()
         # self.unet = Unet()
 
-    def forward( self, x, timestep=0.5, scale_list=[8, 4, 2, 1], training=False, fastmode=True, ensemble=False): # pylint: disable=dangerous-default-value # noqa: B006
+    def forward( self, x, timestep=0.5, scale_list=[8, 4, 2, 1], training=False, fastmode=True, ensemble=False): # pylint: disable=dangerous-default-value, unused-argument # noqa: B006
         if training is False:
             channel = x.shape[1] // 2
             img0 = x[:, :channel]
@@ -122,13 +122,4 @@ class IFNet(nn.Module):
             merged.append((warped_img0, warped_img1))
         mask_list[3] = torch.sigmoid(mask_list[3])
         merged[3] = merged[3][0] * mask_list[3] + merged[3][1] * (1 - mask_list[3])
-        if not fastmode:
-            print('contextnet is removed')
-            '''
-            c0 = self.contextnet(img0, flow[:, :2])
-            c1 = self.contextnet(img1, flow[:, 2:4])
-            tmp = self.unet(img0, img1, warped_img0, warped_img1, mask, flow, c0, c1)
-            res = tmp[:, :3] * 2 - 1
-            merged[3] = torch.clamp(merged[3] + res, 0, 1)
-            '''
         return flow_list, mask_list[3], merged

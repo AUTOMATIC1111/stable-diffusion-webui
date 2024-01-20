@@ -1235,7 +1235,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
-    def __init__(self, init_images: list = None, resize_mode: int = 0, resize_name: str = 'None', denoising_strength: float = 0.3, image_cfg_scale: float = None, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, scale_by: float = 1, refiner_steps: int = 5, refiner_start: float = 0, refiner_prompt: str = '', refiner_negative: str = '', **kwargs):
+    def __init__(self, init_images: list = None, resize_mode: int = 0, resize_name: str = 'None', denoising_strength: float = 0.3, image_cfg_scale: float = None, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = False, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, scale_by: float = 1, refiner_steps: int = 5, refiner_start: float = 0, refiner_prompt: str = '', refiner_negative: str = '', **kwargs):
         super().__init__(**kwargs)
         self.init_images = init_images
         self.resize_mode: int = resize_mode
@@ -1289,7 +1289,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         if self.image_mask is not None:
             if type(self.image_mask) == list:
                 self.image_mask = self.image_mask[0]
-            if shared.backend == shared.Backend.ORIGINAL:
+            if shared.backend == shared.Backend.ORIGINAL: # original way of processing mask
                 self.image_mask = create_binary_mask(self.image_mask)
                 if self.inpainting_mask_invert:
                     self.image_mask = ImageOps.invert(self.image_mask)
@@ -1302,16 +1302,16 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             else:
                 if hasattr(self, 'init_images'):
                     self.image_mask = modules.masking.run_mask(input_image=self.init_images, input_mask=self.image_mask, return_type='Grayscale', mask_blur=self.mask_blur, mask_padding=self.inpaint_full_res_padding, segment_enable=False)
-            if self.inpaint_full_res:
+            if self.inpaint_full_res: # mask only inpaint
                 self.mask_for_overlay = self.image_mask
                 mask = self.image_mask.convert('L')
                 crop_region = modules.masking.get_crop_region(np.array(mask), self.inpaint_full_res_padding)
                 crop_region = modules.masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
                 x1, y1, x2, y2 = crop_region
-                mask = mask.crop(crop_region)
-                self.image_mask = images.resize_image(2, mask, self.width, self.height)
+                crop_mask = mask.crop(crop_region)
+                self.image_mask = images.resize_image(2, crop_mask, self.width, self.height)
                 self.paste_to = (x1, y1, x2-x1, y2-y1)
-            else:
+            else: # full image inpaint
                 self.image_mask = images.resize_image(self.resize_mode, self.image_mask, self.width, self.height)
                 np_mask = np.array(self.image_mask)
                 np_mask = np.clip((np_mask.astype(np.float32)) * 2, 0, 255).astype(np.uint8)
@@ -1338,6 +1338,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if shared.opts.save_init_img:
                 images.save_image(img, path=shared.opts.outdir_init_images, basename=None, forced_filename=self.init_img_hash, suffix="-init-image")
             image = images.flatten(img, shared.opts.img2img_background_color)
+            if self.width is None or self.height is None:
+                self.width, self.height = image.width, image.height
             if crop_region is None and self.resize_mode != 4 and self.resize_mode > 0:
                 if image.width != self.width or image.height != self.height:
                     image = images.resize_image(self.resize_mode, image, self.width, self.height, self.resize_name)

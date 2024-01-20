@@ -715,6 +715,7 @@ class Options:
                 self.data_labels[key].onchange()
             except Exception as e:
                 log.error(f'Error in onchange callback: {key} {value} {e}')
+                errors.display(e, 'Error in onchange callback')
                 setattr(self, key, oldval)
                 return False
         return True

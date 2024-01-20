@@ -234,7 +234,6 @@ def create_resize_inputs(tab, images, scale_visible=True, mode=None, accordion=T
                                     res_switch_btn = ToolButton(value=ui_symbols.switch, elem_id=f"{tab}_res_switch_btn")
                                     res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
                                     detect_image_size_btn = ToolButton(value=ui_symbols.detect, elem_id=f"{tab}_detect_image_size_btn")
-                                    print('HERE', tab)
                                     detect_image_size_btn.click(fn=lambda w, h, _: (w or gr.update(), h or gr.update()), _js=f'currentImageResolution{tab}', inputs=[dummy_component, dummy_component, dummy_component], outputs=[width, height], show_progress=False)
 
                     with gr.Tab(label="Scale") as tab_scale_by:

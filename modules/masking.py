@@ -129,7 +129,9 @@ btn_segment = None
 controls = []
 opts = SimpleNamespace(**{
     'auto_mask': 'None',
+    'mask_only': False,
     'mask_blur': 0.01,
+    'mask_padding': 0,
     'mask_erode': 0.01,
     'mask_dilate': 0.01,
     'seg_iou_thresh': 0.5,
@@ -324,6 +326,9 @@ def run_mask(input_image: gr.Image, input_mask: gr.Image = None, return_type: st
         opts.mask_blur = mask_blur / min(input_image.width, input_image.height)
     if mask_padding is not None:
         opts.mask_dilate = mask_padding / min(input_image.width, input_image.height)
+        opts.mask_padding = mask_padding
+    else:
+        opts.mask_padding = int(opts.mask_dilate * input_image.height / 4) + 1
 
     if loaded_model is None or not segment_enable:
         mask = input_mask
@@ -407,15 +412,16 @@ def run_mask_live(input_image: gr.Image):
 def create_segment_ui():
     def update_opts(*args):
         opts.seg_live = args[0]
-        opts.mask_blur = args[1]
-        opts.mask_erode = args[2]
-        opts.mask_dilate = args[3]
-        opts.auto_mask = args[4]
-        opts.seg_score_thresh = args[5]
-        opts.seg_iou_thresh = args[6]
-        opts.seg_nms_thresh = args[7]
-        opts.preview_type = args[8]
-        opts.seg_colormap = args[9]
+        opts.mask_only = args[1]
+        opts.mask_blur = args[2]
+        opts.mask_erode = args[3]
+        opts.mask_dilate = args[4]
+        opts.auto_mask = args[5]
+        opts.seg_score_thresh = args[6]
+        opts.seg_iou_thresh = args[7]
+        opts.seg_nms_thresh = args[8]
+        opts.preview_type = args[9]
+        opts.seg_colormap = args[10]
 
     global btn_segment # pylint: disable=global-statement
     with gr.Accordion(open=False, label="Mask", elem_id="control_mask", elem_classes=["small-accordion"]):
@@ -423,6 +429,8 @@ def create_segment_ui():
         with gr.Row():
             controls.append(gr.Checkbox(label="Live update", value=True))
             btn_segment = ui_components.ToolButton(value=ui_symbols.refresh, visible=True)
+        with gr.Row():
+            controls.append(gr.Checkbox(label="Inpaint masked only", value=False))
         with gr.Row():
             controls.append(gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Blur', value=0.01, elem_id="control_mask_blur"))
             controls.append(gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Erode', value=0.01, elem_id="control_mask_erode"))

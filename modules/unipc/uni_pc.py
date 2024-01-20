@@ -1,5 +1,4 @@
 import torch
-import torch.nn.functional as F
 import math
 import time
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
@@ -565,7 +564,6 @@ class UniPC:
             A_p = C_inv_p
 
         if use_corrector:
-            #print('using corrector')
             C_inv = torch.linalg.inv(C)
             A_c = C_inv
 
@@ -692,7 +690,6 @@ class UniPC:
             D1s = None
 
         if use_corrector:
-            #print('using corrector')
             # for order 1, we use a simplified version
             if order == 1:
                 rhos_c = torch.tensor([0.5], device=b.device)
@@ -782,9 +779,7 @@ class UniPC:
                             step_order = min(order, steps + 1 - step)
                         else:
                             step_order = order
-                        #print('this step order:', step_order)
                         if step == steps:
-                            #print('do not run corrector at the last step')
                             use_corrector = False
                         else:
                             use_corrector = True

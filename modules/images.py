@@ -210,7 +210,7 @@ def draw_prompt_matrix(im, width, height, all_prompts, margin=0):
 
 
 def resize_image(resize_mode, im, width, height, upscaler_name=None, output_type='image'):
-    shared.log.debug(f'Image resize: mode={resize_mode} resolution={width}x{height} upscaler={upscaler_name} function={sys._getframe(1).f_code.co_name}') # pylint: disable=protected-access
+    shared.log.debug(f'Image resize: input={im} mode={resize_mode} target={width}x{height} upscaler={upscaler_name} function={sys._getframe(1).f_code.co_name}') # pylint: disable=protected-access
     """
     Resizes an image with the specified resize_mode, width, and height.
     Args:
@@ -266,8 +266,8 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None, output_type
         res = Image.new(im.mode, (width, height))
         res.paste(resized, box=(width // 2 - src_w // 2, height // 2 - src_h // 2))
     else:
-        ratio = width / height
-        src_ratio = im.width / im.height
+        ratio = round(width / height, 1)
+        src_ratio = round(im.width / im.height, 1)
         src_w = width if ratio < src_ratio else im.width * height // im.height
         src_h = height if ratio >= src_ratio else im.height * width // im.width
         resized = resize(im, src_w, src_h)
@@ -275,12 +275,14 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None, output_type
         res.paste(resized, box=(width // 2 - src_w // 2, height // 2 - src_h // 2))
         if ratio < src_ratio:
             fill_height = height // 2 - src_h // 2
-            res.paste(resized.resize((width, fill_height), box=(0, 0, width, 0)), box=(0, 0))
-            res.paste(resized.resize((width, fill_height), box=(0, resized.height, width, resized.height)), box=(0, fill_height + src_h))
+            if width > 0 and fill_height > 0:
+                res.paste(resized.resize((width, fill_height), box=(0, 0, width, 0)), box=(0, 0))
+                res.paste(resized.resize((width, fill_height), box=(0, resized.height, width, resized.height)), box=(0, fill_height + src_h))
         elif ratio > src_ratio:
             fill_width = width // 2 - src_w // 2
-            res.paste(resized.resize((fill_width, height), box=(0, 0, 0, height)), box=(0, 0))
-            res.paste(resized.resize((fill_width, height), box=(resized.width, 0, resized.width, height)), box=(fill_width + src_w, 0))
+            if height > 0 and fill_width > 0:
+                res.paste(resized.resize((fill_width, height), box=(0, 0, 0, height)), box=(0, 0))
+                res.paste(resized.resize((fill_width, height), box=(resized.width, 0, resized.width, height)), box=(fill_width + src_w, 0))
     if output_type == 'np':
         return np.array(res)
     return res

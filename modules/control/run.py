@@ -135,6 +135,9 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
         denoising_strength = denoising_strength,
         n_iter = batch_count,
         batch_size = batch_size,
+        inpaint_full_res = masking.opts.mask_only,
+        inpaint_full_res_padding = masking.opts.mask_padding,
+        inpainting_fill = 1,
         outpath_samples=shared.opts.outdir_samples or shared.opts.outdir_control_samples,
         outpath_grids=shared.opts.outdir_grids or shared.opts.outdir_control_grids,
     )
@@ -366,7 +369,8 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         p.image = []
                         debug(f'Control: process=None image={p.image} mask={mask}')
                     elif len(active_process) == 0:
-                        p.image = [masking.run_mask(input_image=input_image, input_mask=mask, return_type='Masked') if mask is not None else input_image]
+                        # p.image = [masking.run_mask(input_image=input_image, input_mask=mask, return_type='Masked') if mask is not None else input_image]
+                        pass
                     elif len(active_process) > 0:
                         p.image = []
                         masked_image = masking.run_mask(input_image=input_image, input_mask=mask, return_type='Masked') if mask is not None else input_image
@@ -375,8 +379,8 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                             debug(f'Control: process={[process.processor_id for p in active_process]} i={i} image={p.image}')
                             p.image.append(process(masked_image, image_mode))
 
-                    if len(p.image) > 0:
-                        p.task_args['image'] = p.image
+                    if p.image is not None and len(p.image) > 0:
+                        p.init_images = p.image
                         p.extra_generation_params["Control process"] = [p.processor_id for p in active_process]
                         if any(img is None for img in p.image):
                             msg = 'Control: attempting process but output is none'
@@ -400,7 +404,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                             restore_pipeline()
                             return msg
                     elif unit_type == 'controlnet' and input_type == 1: # Init image same as control
-                        p.task_args['image'] = input_image
+                        p.init_images = input_image
                         p.task_args['control_image'] = p.image
                         p.task_args['strength'] = p.denoising_strength
                     elif unit_type == 'controlnet' and input_type == 2: # Separate init image
@@ -408,9 +412,9 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         p.task_args['strength'] = p.denoising_strength
                         if init_image is None:
                             shared.log.warning('Control: separate init image not provided')
-                            p.task_args['image'] = input_image
+                            p.init_images = input_image
                         else:
-                            p.task_args['image'] = init_image
+                            p.init_images = init_image
 
                     if is_generator:
                         image_txt = f'{processed_image.width}x{processed_image.height}' if processed_image is not None else 'None'
@@ -420,18 +424,12 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                     t2 += time.time() - t2
 
                     # prepare pipeline
-                    if hasattr(p, 'init_images'):
-                        del p.init_images # control never uses init_image as-is
                     if pipe is not None:
                         if not has_models and (unit_type == 'controlnet' or unit_type == 'adapter' or unit_type == 'xs' or unit_type == 'lite'): # run in txt2img/img2img/inpaint mode
                             if mask is not None:
                                 p.task_args['strength'] = denoising_strength
                                 p.image_mask = mask
-                                p.inpaint_full_res = False
                                 p.init_images = [input_image]
-                                # TODO implement mask_overlap enable once fixed in diffusers
-                                # if mask_overlap > 0:
-                                #    p.task_args['padding_mask_crop'] = mask_overlap
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING)
                             elif processed_image is not None:
                                 p.init_images = [processed_image]
@@ -447,17 +445,17 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                             if mask is not None:
                                 p.task_args['strength'] = denoising_strength
                                 p.image_mask = mask
-                                p.inpaint_full_res = False
-                                # TODO implement mask_overlap enable once fixed in diffusers
-                                # if mask_overlap > 0:
-                                #    p.task_args['padding_mask_crop'] = mask_overlap
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING) # only controlnet supports inpaint
                             elif 'control_image' in p.task_args:
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE) # only controlnet supports img2img
                             else:
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
+                                if p.init_images is not None:
+                                    p.task_args['image'] = p.init_images # need to set explicitly for txt2img
                             if unit_type == 'lite':
                                 instance.apply(selected_models, p.image, use_conditioning)
+                        if p.init_images is None:
+                            del p.init_images
 
                     # ip adapter
                     if ipadapter.apply(shared.sd_model, p, ip_adapter, ip_scale, ip_image or input_image):
