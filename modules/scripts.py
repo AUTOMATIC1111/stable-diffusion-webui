@@ -262,6 +262,15 @@ class Script:
 
         pass
 
+    def postprocess_image_after_composite(self, p, pp: PostprocessImageArgs, *args):
+        """
+        Called for every image after it has been generated.
+        Same as postprocess_image but after inpaint_full_res composite
+        So that it operates on the full image instead of the inpaint_full_res crop region.
+        """
+
+        pass
+
     def postprocess(self, p, processed, *args):
         """
         This function is called after processing ends for AlwaysVisible scripts.
@@ -855,6 +864,14 @@ class ScriptRunner:
                 script.postprocess_maskoverlay(p, ppmo, *script_args)
             except Exception:
                 errors.report(f"Error running postprocess_image: {script.filename}", exc_info=True)
+
+    def postprocess_image_after_composite(self, p, pp: PostprocessImageArgs):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.postprocess_image_after_composite(p, pp, *script_args)
+            except Exception:
+                errors.report(f"Error running postprocess_image_after_composite: {script.filename}", exc_info=True)
 
     def before_component(self, component, **kwargs):
         for callback, script in self.on_before_component_elem_id.get(kwargs.get("elem_id"), []):

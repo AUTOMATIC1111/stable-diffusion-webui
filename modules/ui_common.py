@@ -63,8 +63,9 @@ def save_files(js_data, images, do_make_zip, index):
     import csv
     filenames = []
     fullfns = []
+    parsed_infotexts = []
 
-    #quick dictionary to class object conversion. Its necessary due apply_filename_pattern requiring it
+    # quick dictionary to class object conversion. Its necessary due apply_filename_pattern requiring it
     class MyObject:
         def __init__(self, d=None):
             if d is not None:
@@ -72,16 +73,14 @@ def save_files(js_data, images, do_make_zip, index):
                     setattr(self, key, value)
 
     data = json.loads(js_data)
-
     p = MyObject(data)
+
     path = shared.opts.outdir_save
     save_to_dirs = shared.opts.use_save_to_dirs_for_ui
     extension: str = shared.opts.samples_format
     start_index = 0
-    only_one = False
 
     if index > -1 and shared.opts.save_selected_only and (index >= data["index_of_first_image"]):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only
-        only_one = True
         images = [images[index]]
         start_index = index
 
@@ -117,10 +116,12 @@ def save_files(js_data, images, do_make_zip, index):
             image = image_from_url_text(filedata)
 
             is_grid = image_index < p.index_of_first_image
-            i = 0 if is_grid else (image_index - p.index_of_first_image)
 
             p.batch_index = image_index-1
-            fullfn, txt_fullfn = modules.images.save_image(image, path, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], extension=extension, info=p.infotexts[image_index], grid=is_grid, p=p, save_to_dirs=save_to_dirs)
+
+            parameters = parameters_copypaste.parse_generation_parameters(data["infotexts"][image_index], [])
+            parsed_infotexts.append(parameters)
+            fullfn, txt_fullfn = modules.images.save_image(image, path, "", seed=parameters['Seed'], prompt=parameters['Prompt'], extension=extension, info=p.infotexts[image_index], grid=is_grid, p=p, save_to_dirs=save_to_dirs)
 
             filename = os.path.relpath(fullfn, path)
             filenames.append(filename)
@@ -129,12 +130,12 @@ def save_files(js_data, images, do_make_zip, index):
                 filenames.append(os.path.basename(txt_fullfn))
                 fullfns.append(txt_fullfn)
 
-        writer.writerow([data["prompt"], data["seed"], data["width"], data["height"], data["sampler_name"], data["cfg_scale"], data["steps"], filenames[0], data["negative_prompt"], data["sd_model_name"], data["sd_model_hash"]])
+        writer.writerow([parsed_infotexts[0]['Prompt'], parsed_infotexts[0]['Seed'], data["width"], data["height"], data["sampler_name"], data["cfg_scale"], data["steps"], filenames[0], parsed_infotexts[0]['Negative prompt']])
 
     # Make Zip
     if do_make_zip:
-        zip_fileseed = p.all_seeds[index-1] if only_one else p.all_seeds[0]
-        namegen = modules.images.FilenameGenerator(p, zip_fileseed, p.all_prompts[0], image, True)
+        p.all_seeds = [parameters['Seed'] for parameters in parsed_infotexts]
+        namegen = modules.images.FilenameGenerator(p, parsed_infotexts[0]['Seed'], parsed_infotexts[0]['Prompt'], image, True)
         zip_filename = namegen.apply(shared.opts.grid_zip_filename_pattern or "[datetime]_[[model_name]]_[seed]-[seed_last]")
         zip_filepath = os.path.join(path, f"{zip_filename}.zip")
 

@@ -164,7 +164,11 @@ def manual_cast_forward(target_dtype):
 
 @contextlib.contextmanager
 def manual_cast(target_dtype):
+    applied = False
     for module_type in patch_module_list:
+        if hasattr(module_type, "org_forward"):
+            continue
+        applied = True
         org_forward = module_type.forward
         if module_type == torch.nn.MultiheadAttention and has_xpu():
             module_type.forward = manual_cast_forward(torch.float32)
@@ -174,8 +178,11 @@ def manual_cast(target_dtype):
     try:
         yield None
     finally:
-        for module_type in patch_module_list:
-            module_type.forward = module_type.org_forward
+        if applied:
+            for module_type in patch_module_list:
+                if hasattr(module_type, "org_forward"):
+                    module_type.forward = module_type.org_forward
+                    delattr(module_type, "org_forward")
 
 
 def autocast(disable=False):

@@ -230,7 +230,7 @@ def restore_old_hires_fix_params(res):
     res['Hires resize-2'] = height
 
 
-def parse_generation_parameters(x: str):
+def parse_generation_parameters(x: str, skip_fields: list[str] | None = None):
     """parses generation parameters string, the one you see in text field under the picture in UI:
 ```
 girl with an artist's beret, determined, blue eyes, desert scene, computer monitors, heavy makeup, by Alphonse Mucha and Charlie Bowater, ((eyeshadow)), (coquettish), detailed, intricate
@@ -240,6 +240,8 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
     returns a dict with field values
     """
+    if skip_fields is None:
+        skip_fields = shared.opts.infotext_skip_pasting
 
     res = {}
 
@@ -356,8 +358,8 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
     infotext_versions.backcompat(res)
 
-    skip = set(shared.opts.infotext_skip_pasting)
-    res = {k: v for k, v in res.items() if k not in skip}
+    for key in skip_fields:
+        res.pop(key, None)
 
     return res
 

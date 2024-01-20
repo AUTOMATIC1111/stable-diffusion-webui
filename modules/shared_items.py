@@ -8,6 +8,11 @@ def realesrgan_models_names():
     return [x.name for x in modules.realesrgan_model.get_realesrgan_models(None)]
 
 
+def dat_models_names():
+    import modules.dat_model
+    return [x.name for x in modules.dat_model.get_dat_models(None)]
+
+
 def postprocessing_scripts():
     import modules.scripts
 

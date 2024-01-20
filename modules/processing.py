@@ -1029,6 +1029,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
                 image = apply_overlay(image, p.paste_to, overlay_image)
 
+                if p.scripts is not None:
+                    pp = scripts.PostprocessImageArgs(image)
+                    p.scripts.postprocess_image_after_composite(p, pp)
+                    image = pp.image
+
                 if save_samples:
                     images.save_image(image, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p)
 
@@ -1227,8 +1232,11 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             if not state.processing_has_refined_job_count:
                 if state.job_count == -1:
                     state.job_count = self.n_iter
-
-                shared.total_tqdm.updateTotal((self.steps + (self.hr_second_pass_steps or self.steps)) * state.job_count)
+                if getattr(self, 'txt2img_upscale', False):
+                    total_steps = (self.hr_second_pass_steps or self.steps) * state.job_count
+                else:
+                    total_steps = (self.steps + (self.hr_second_pass_steps or self.steps)) * state.job_count
+                shared.total_tqdm.updateTotal(total_steps)
                 state.job_count = state.job_count * 2
                 state.processing_has_refined_job_count = True
 

@@ -107,8 +107,9 @@ class Toprow:
             )
 
             def interrupt_function():
-                if shared.state.job_count > 1 and shared.opts.interrupt_after_current:
+                if not shared.state.stopping_generation and shared.state.job_count > 1 and shared.opts.interrupt_after_current:
                     shared.state.stop_generating()
+                    gr.Info("Generation will stop after finishing this image, click again to stop immediately.")
                 else:
                     shared.state.interrupt()
 
