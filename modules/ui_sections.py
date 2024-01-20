@@ -234,7 +234,8 @@ def create_resize_inputs(tab, images, scale_visible=True, mode=None, accordion=T
                                     res_switch_btn = ToolButton(value=ui_symbols.switch, elem_id=f"{tab}_res_switch_btn")
                                     res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
                                     detect_image_size_btn = ToolButton(value=ui_symbols.detect, elem_id=f"{tab}_detect_image_size_btn")
-                                    detect_image_size_btn.click(fn=lambda w, h, _: (w or gr.update(), h or gr.update()), _js="currentImg2imgSourceResolution", inputs=[dummy_component, dummy_component, dummy_component], outputs=[width, height], show_progress=False)
+                                    print('HERE', tab)
+                                    detect_image_size_btn.click(fn=lambda w, h, _: (w or gr.update(), h or gr.update()), _js=f'currentImageResolution{tab}', inputs=[dummy_component, dummy_component, dummy_component], outputs=[width, height], show_progress=False)
 
                     with gr.Tab(label="Scale") as tab_scale_by:
                         scale_by = gr.Slider(minimum=0.05, maximum=8.0, step=0.05, label="Scale", value=1.0, elem_id=f"{tab}_scale")
@@ -243,8 +244,7 @@ def create_resize_inputs(tab, images, scale_visible=True, mode=None, accordion=T
                                 scale_by_html = gr.HTML(resize_from_to_html(0, 0, 0.0), elem_id=f"{tab}_scale_resolution_preview")
                                 gr.Slider(label="Unused", elem_id=f"{tab}_unused_scale_by_slider")
                                 button_update_resize_to = gr.Button(visible=False, elem_id=f"{tab}_update_resize_to")
-
-                            on_change_args = dict(fn=resize_from_to_html, _js="currentImg2imgSourceResolution", inputs=[dummy_component, dummy_component, scale_by], outputs=scale_by_html, show_progress=False)
+                            on_change_args = dict(fn=resize_from_to_html, _js=f'currentImageResolution{tab}', inputs=[dummy_component, dummy_component, scale_by], outputs=scale_by_html, show_progress=False)
                             scale_by.release(**on_change_args)
                             button_update_resize_to.click(**on_change_args)
 

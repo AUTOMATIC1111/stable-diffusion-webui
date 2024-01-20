@@ -102,7 +102,7 @@ def get_value_for_setting(key):
     value = getattr(opts, key)
     info = opts.data_labels[key]
     args = info.component_args() if callable(info.component_args) else info.component_args or {}
-    args = {k: v for k, v in args.items() if k not in {'precision'}}
+    args = {k: v for k, v in args.items() if k not in {'precision', 'multiselect'}}
     return gr.update(value=value, **args)
 
 

@@ -419,8 +419,13 @@ function selectReference(name) {
   gradioApp().getElementById('change_reference').click();
 }
 
-function currentImg2imgSourceResolution(_a, _b, scaleBy) {
+function currentImageResolutionimg2img(_a, _b, scaleBy) {
   const img = gradioApp().querySelector('#mode_img2img > div[style="display: block;"] img');
+  return img ? [img.naturalWidth, img.naturalHeight, scaleBy] : [0, 0, scaleBy];
+}
+
+function currentImageResolutioncontrol(_a, _b, scaleBy) {
+  const img = gradioApp().querySelector('#control-tab-input > div[style="display: block;"] img');
   return img ? [img.naturalWidth, img.naturalHeight, scaleBy] : [0, 0, scaleBy];
 }
 
