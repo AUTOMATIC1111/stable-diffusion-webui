@@ -55,7 +55,7 @@ class FormColorPicker(FormComponent, gr.ColorPicker): # unused
         return "colorpicker"
 
 
-class DropdownMulti(FormComponent, gr.Dropdown): # TODO
+class DropdownMulti(FormComponent, gr.Dropdown): # unused
     """Same as gr.Dropdown but always multiselect"""
     def __init__(self, **kwargs):
         super().__init__(multiselect=True, **kwargs)
