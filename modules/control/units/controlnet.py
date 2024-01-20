@@ -11,21 +11,22 @@ what = 'ControlNet'
 debug = log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
 debug('Trace: CONTROL')
 predefined_sd15 = {
-    'OpenPose': "lllyasviel/control_v11p_sd15_openpose",
-    'Canny': "lllyasviel/control_v11p_sd15_canny",
-    'MLDS': "lllyasviel/control_v11p_sd15_mlsd",
-    'Scribble': "lllyasviel/control_v11p_sd15_scribble",
-    'SoftEdge': "lllyasviel/control_v11p_sd15_softedge",
-    'Segment': "lllyasviel/control_v11p_sd15_seg",
-    'Depth': "lllyasviel/control_v11f1p_sd15_depth",
-    'NormalBae': "lllyasviel/control_v11p_sd15_normalbae",
-    'LineArt': "lllyasviel/control_v11p_sd15_lineart",
-    'LineArt Anime': "lllyasviel/control_v11p_sd15s2_lineart_anime",
-    'Shuffle': "lllyasviel/control_v11e_sd15_shuffle",
-    'IP2P': "lllyasviel/control_v11e_sd15_ip2p",
-    'HED': "lllyasviel/sd-controlnet-hed",
-    'Tile': "lllyasviel/control_v11f1e_sd15_tile",
-    'TemporalNet': "CiaraRowles/TemporalNet",
+    'Canny FP32': "lllyasviel/control_v11p_sd15_canny",
+    'Depth FP32': "lllyasviel/control_v11f1p_sd15_depth",
+    'HED FP32': "lllyasviel/sd-controlnet-hed",
+    'IP2P FP32': "lllyasviel/control_v11e_sd15_ip2p",
+    'LineArt FP32': "lllyasviel/control_v11p_sd15_lineart",
+    'LineArt Anime FP32': "lllyasviel/control_v11p_sd15s2_lineart_anime",
+    'MLDS FP32': "lllyasviel/control_v11p_sd15_mlsd",
+    'NormalBae FP32': "lllyasviel/control_v11p_sd15_normalbae",
+    'OpenPose FP32': "lllyasviel/control_v11p_sd15_openpose",
+    'Scribble FP32': "lllyasviel/control_v11p_sd15_scribble",
+    'Segment FP32': "lllyasviel/control_v11p_sd15_seg",
+    'Shuffle FP32': "lllyasviel/control_v11e_sd15_shuffle",
+    'SoftEdge FP32': "lllyasviel/control_v11p_sd15_softedge",
+    'TemporalNet FP32': "CiaraRowles/TemporalNet",
+    'Tile FP32': "lllyasviel/control_v11f1e_sd15_tile",
+    'Canny FP16': 'kamaltdin/controlnet1-1_safetensors_with_yaml/controlnet11Models_canny.safetensors',
 }
 predefined_sdxl = {
     'Canny Small XL': 'diffusers/controlnet-canny-sdxl-1.0-small',
@@ -91,6 +92,24 @@ class ControlNet():
         self.model = None
         self.model_id = None
 
+    def load_safetensors(self, model_path):
+        name = os.path.splitext(model_path)[0]
+        yaml_path = None
+        if not os.path.exists(model_path):
+            import huggingface_hub as hf
+            repo_id, filename = os.path.dirname(model_path), os.path.basename(name)
+            model_path = hf.hf_hub_download(repo_id=repo_id, filename=f'{filename}.safetensors', cache_dir=cache_dir)
+            try:
+                yaml_path = hf.hf_hub_download(repo_id=repo_id, filename=f'{filename}.yaml', cache_dir=cache_dir)
+            except Exception:
+                pass # no yaml file
+        elif os.path.exists(name + '.yaml'):
+            yaml_path = f'{name}.yaml'
+        if yaml_path is not None:
+            self.load_config['original_config_file '] = yaml_path
+        print('HERE', self.load_config)
+        self.model = ControlNetModel.from_single_file(model_path, **self.load_config)
+
     def load(self, model_id: str = None) -> str:
         try:
             t0 = time.time()
@@ -106,7 +125,7 @@ class ControlNet():
                 return
             log.debug(f'Control {what} model loading: id="{model_id}" path="{model_path}"')
             if model_path.endswith('.safetensors'):
-                self.model = ControlNetModel.from_single_file(model_path, **self.load_config)
+                self.load_safetensors(model_path)
             else:
                 self.model = ControlNetModel.from_pretrained(model_path, **self.load_config)
             if self.device is not None:
