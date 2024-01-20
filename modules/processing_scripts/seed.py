@@ -6,6 +6,7 @@ from modules import scripts, ui, errors
 from modules.infotext_utils import PasteField
 from modules.shared import cmd_opts
 from modules.ui_components import ToolButton
+from modules import infotext_utils
 
 
 class ScriptSeed(scripts.ScriptBuiltinUI):
@@ -77,7 +78,6 @@ class ScriptSeed(scripts.ScriptBuiltinUI):
             p.seed_resize_from_h = seed_resize_from_h
 
 
-
 def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: gr.Textbox, is_subseed):
     """ Connects a 'reuse (sub)seed' button's click event so that it copies last used
         (sub)seed value from generation info the to the seed field. If copying subseed and subseed strength
@@ -85,21 +85,14 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
 
     def copy_seed(gen_info_string: str, index):
         res = -1
-
         try:
             gen_info = json.loads(gen_info_string)
-            index -= gen_info.get('index_of_first_image', 0)
-
-            if is_subseed and gen_info.get('subseed_strength', 0) > 0:
-                all_subseeds = gen_info.get('all_subseeds', [-1])
-                res = all_subseeds[index if 0 <= index < len(all_subseeds) else 0]
-            else:
-                all_seeds = gen_info.get('all_seeds', [-1])
-                res = all_seeds[index if 0 <= index < len(all_seeds) else 0]
-
-        except json.decoder.JSONDecodeError:
+            infotext = gen_info.get('infotexts')[index]
+            gen_parameters = infotext_utils.parse_generation_parameters(infotext, [])
+            res = int(gen_parameters.get('Variation seed' if is_subseed else 'Seed', -1))
+        except Exception:
             if gen_info_string:
-                errors.report(f"Error parsing JSON generation info: {gen_info_string}")
+                errors.report(f"Error retrieving seed from generation info: {gen_info_string}", exc_info=True)
 
         return [res, gr.update()]
 
