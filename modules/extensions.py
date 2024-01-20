@@ -224,13 +224,16 @@ def list_extensions():
 
     # check for requirements
     for extension in extensions:
+        if not extension.enabled:
+            continue
+
         for req in extension.metadata.requires:
             required_extension = loaded_extensions.get(req)
             if required_extension is None:
                 errors.report(f'Extension "{extension.name}" requires "{req}" which is not installed.', exc_info=False)
                 continue
 
-            if not extension.enabled:
+            if not required_extension.enabled:
                 errors.report(f'Extension "{extension.name}" requires "{required_extension.name}" which is disabled.', exc_info=False)
                 continue
 
