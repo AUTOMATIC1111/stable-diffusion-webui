@@ -1,3 +1,4 @@
+import csv
 import dataclasses
 import json
 import html
@@ -37,14 +38,16 @@ def plaintext_to_html(text, classname=None):
 
 
 def update_logfile(logfile_path, fields):
-    import csv
-
     with open(logfile_path, "r", encoding="utf8", newline="") as file:
         reader = csv.reader(file)
         rows = list(reader)
 
     # blank file: leave it as is
     if not rows:
+        return
+
+    # file is already synced, do nothing
+    if len(rows[0]) == len(fields):
         return
 
     rows[0] = fields
@@ -60,7 +63,6 @@ def update_logfile(logfile_path, fields):
 
 
 def save_files(js_data, images, do_make_zip, index):
-    import csv
     filenames = []
     fullfns = []
     parsed_infotexts = []
