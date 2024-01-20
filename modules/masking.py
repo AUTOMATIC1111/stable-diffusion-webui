@@ -3,40 +3,15 @@ from PIL import Image, ImageFilter, ImageOps
 
 def get_crop_region(mask, pad=0):
     """finds a rectangular region that contains all masked ares in an image. Returns (x1, y1, x2, y2) coordinates of the rectangle.
-    For example, if a user has painted the top-right part of a 512x512 image", the result may be (256, 0, 512, 256)"""
-
-    h, w = mask.shape
-
-    crop_left = 0
-    for i in range(w):
-        if not (mask[:, i] == 0).all():
-            break
-        crop_left += 1
-
-    crop_right = 0
-    for i in reversed(range(w)):
-        if not (mask[:, i] == 0).all():
-            break
-        crop_right += 1
-
-    crop_top = 0
-    for i in range(h):
-        if not (mask[i] == 0).all():
-            break
-        crop_top += 1
-
-    crop_bottom = 0
-    for i in reversed(range(h)):
-        if not (mask[i] == 0).all():
-            break
-        crop_bottom += 1
-
-    return (
-        int(max(crop_left-pad, 0)),
-        int(max(crop_top-pad, 0)),
-        int(min(w - crop_right + pad, w)),
-        int(min(h - crop_bottom + pad, h))
-    )
+    For example, if a user has painted the top-right part of a 512x512 image, the result may be (256, 0, 512, 256)"""
+    mask_img = mask if isinstance(mask, Image.Image) else Image.fromarray(mask)
+    box = mask_img.getbbox()
+    if box:
+        x1, y1, x2, y2 = box
+    else:  # when no box is found
+        x1, y1 = mask_img.size
+        x2 = y2 = 0
+    return max(x1 - pad, 0), max(y1 - pad, 0), min(x2 + pad, mask_img.size[0]), min(y2 + pad, mask_img.size[1])
 
 
 def expand_crop_region(crop_region, processing_width, processing_height, image_width, image_height):
