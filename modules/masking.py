@@ -125,7 +125,9 @@ generator: MaskGenerationPipeline = None
 debug = shared.log.trace if os.environ.get('SD_MASK_DEBUG', None) is not None else lambda *args, **kwargs: None
 debug('Trace: MASK')
 busy = False
-btn_segment = None
+btn_mask = None
+btn_lama = None
+lama_model = None
 controls = []
 opts = SimpleNamespace(**{
     'auto_mask': 'None',
@@ -316,6 +318,8 @@ def run_mask(input_image: gr.Image, input_mask: gr.Image = None, return_type: st
     if isinstance(input_image, dict):
         input_mask = input_image.get('mask', None)
         input_image = input_image.get('image', None)
+    if input_image is None:
+        return input_mask
 
     t0 = time.time()
     input_mask = get_mask(input_image, input_mask) # perform optional auto-masking
@@ -397,6 +401,21 @@ def run_mask(input_image: gr.Image, input_mask: gr.Image = None, return_type: st
     return input_mask
 
 
+def run_lama(input_image: gr.Image, input_mask: gr.Image = None):
+    global lama_model # pylint: disable=global-statement
+    if isinstance(input_image, dict):
+        input_mask = input_image.get('mask', None)
+        input_image = input_image.get('image', None)
+    if input_image is None:
+        return None
+    input_mask = run_mask(input_image, input_mask, return_type='Grayscale')
+    if lama_model is None:
+        from modules.lama import SimpleLama
+        lama_model = SimpleLama()
+    result = lama_model(input_image, input_mask)
+    return result
+
+
 def run_mask_live(input_image: gr.Image):
     global busy # pylint: disable=global-statement
     if opts.seg_live:
@@ -423,12 +442,13 @@ def create_segment_ui():
         opts.preview_type = args[9]
         opts.seg_colormap = args[10]
 
-    global btn_segment # pylint: disable=global-statement
+    global btn_mask, btn_lama # pylint: disable=global-statement
     with gr.Accordion(open=False, label="Mask", elem_id="control_mask", elem_classes=["small-accordion"]):
         controls.clear()
         with gr.Row():
             controls.append(gr.Checkbox(label="Live update", value=True))
-            btn_segment = ui_components.ToolButton(value=ui_symbols.refresh, visible=True)
+            btn_mask = ui_components.ToolButton(value=ui_symbols.refresh, visible=True)
+            btn_lama = ui_components.ToolButton(value=ui_symbols.image, visible=True)
         with gr.Row():
             controls.append(gr.Checkbox(label="Inpaint masked only", value=False))
         with gr.Row():
@@ -451,9 +471,10 @@ def create_segment_ui():
             control.change(fn=update_opts, inputs=controls, outputs=[])
 
 
-def bind_controls(image_controls: List[gr.Image], preview_image: gr.Image):
+def bind_controls(image_controls: List[gr.Image], preview_image: gr.Image, output_image: gr.Image):
     for image_control in image_controls:
-        btn_segment.click(run_mask, inputs=[image_control], outputs=[preview_image])
+        btn_mask.click(run_mask, inputs=[image_control], outputs=[preview_image])
+        btn_lama.click(run_lama, inputs=[image_control], outputs=[output_image])
         image_control.edit(fn=run_mask_live, inputs=[image_control], outputs=[preview_image])
         for control in controls:
             control.change(fn=run_mask_live, inputs=[image_control], outputs=[preview_image])

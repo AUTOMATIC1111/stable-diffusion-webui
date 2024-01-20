@@ -47,6 +47,9 @@ And it also includes fixes for all reported issues so far
       if you dont provide mask or mask is empty, you can instead use auto-mask to automatically generate mask  
       this is especially useful if you want to use advanced masking on batch or video inputs and dont want to manually mask each image  
       *note*: such auto-created mask is also subject to all other selected settings such as auto-segmentation, blur, erode and dilate  
+    - optional **object removal** using LaMA model  
+      remove selected objects from images with a single click  
+      works best when combined with auto-segmentation to remove smaller objects  
     - masking can be combined with control processors in which case mask is applied before processor  
   - support for many additional controlnet models  
     now built-in models include 30+ SD15 models and 15+ SDXL models  

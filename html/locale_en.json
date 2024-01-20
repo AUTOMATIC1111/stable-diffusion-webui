@@ -20,6 +20,7 @@
   {"id":"","label":"☲","localized":"","hint":"Change view type"},
   {"id":"","label":"📐","localized":"","hint":"Measure"},
   {"id":"","label":"🔍","localized":"","hint":"Search"},
+  {"id":"","label":"🖼️","localized":"","hint":"LaMa remove selected object from image"},
   {"id":"","label":"🖼️","localized":"","hint":"Show preview"},
   {"id":"","label":"✎","localized":"","hint":"Interrogate image using BLIP model"},
   {"id":"","label":"✐","localized":"","hint":"Interrogate image using DeepBooru model"}

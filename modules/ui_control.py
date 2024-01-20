@@ -135,7 +135,9 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
     else:
         selected_input = None
     if selected_input is None:
+        input_source = None
         busy = False
+        debug('Control clear input')
         return [gr.Tabs.update(), '']
     debug(f'Control select input: source={selected_input} init={selected_init} type={init_type} mode={input_mode}')
     input_type = type(selected_input)
@@ -655,6 +657,8 @@ def create_ui(_blocks: gr.Blocks=None):
                 for ctrl in [input_image, input_resize, input_video, input_batch, input_folder, init_image, init_video, init_batch, init_folder, tab_image, tab_video, tab_batch, tab_folder, tab_image_init, tab_video_init, tab_batch_init, tab_folder_init]:
                     if hasattr(ctrl, 'change'):
                         ctrl.change(**select_dict)
+                    if hasattr(ctrl, 'clear'):
+                        ctrl.clear(**select_dict)
                 for ctrl in [input_inpaint]: # gradio image mode inpaint triggeres endless loop on change event
                     if hasattr(ctrl, 'upload'):
                         ctrl.upload(**select_dict)
@@ -693,7 +697,7 @@ def create_ui(_blocks: gr.Blocks=None):
                 generation_parameters_copypaste.add_paste_fields("control", input_image, paste_fields, override_settings)
                 bindings = generation_parameters_copypaste.ParamBinding(paste_button=btn_paste, tabname="control", source_text_component=prompt, source_image_component=output_gallery)
                 generation_parameters_copypaste.register_paste_params_button(bindings)
-                masking.bind_controls([input_image, input_inpaint, input_resize], preview_process)
+                masking.bind_controls([input_image, input_inpaint, input_resize], preview_process, output_image)
 
 
                 if os.environ.get('SD_CONTROL_DEBUG', None) is not None: # debug only
