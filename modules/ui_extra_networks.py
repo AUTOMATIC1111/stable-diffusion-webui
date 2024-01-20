@@ -377,8 +377,10 @@ class ExtraNetworksPage:
         return f.text
 
     def find_info(self, path):
-        fn = os.path.splitext(path)[0] + '.json'
         data = {}
+        if shared.cmd_opts.no_metadata:
+            return data
+        fn = os.path.splitext(path)[0] + '.json'
         if os.path.exists(fn):
             t0 = time.time()
             data = shared.readfile(fn, silent=True)
@@ -575,15 +577,10 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             global refresh_time # pylint: disable=global-statement
             refresh_time = time.time()
         if not skip_indexing:
-            threads = []
-            for page in get_pages():
-                if os.environ.get('SD_EN_DEBUG', None) is not None:
-                    threads.append(threading.Thread(target=page.create_items, args=[ui.tabname]))
-                    threads[-1].start()
-                else:
-                    page.create_items(ui.tabname)
-            for thread in threads:
-                thread.join()
+            import concurrent
+            with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
+                for page in get_pages():
+                    executor.submit(page.create_items, page)
         for page in get_pages():
             page.create_page(ui.tabname, skip_indexing)
             with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab") as tab:
