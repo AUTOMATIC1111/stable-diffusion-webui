@@ -9,6 +9,7 @@ from modules.ui_components import ToolButton
 from modules.ui_common import create_refresh_button
 from modules.call_queue import wrap_gradio_gpu_call
 from modules.shared import opts, log, req, readfile, max_workers
+import modules.ui_symbols
 import modules.errors
 import modules.hashes
 from modules.merging import merge_methods
@@ -384,7 +385,7 @@ def create_ui():
                     gr.HTML('<h2>Search for models</h2>Select a model from the search results to download<br><br>')
                     with gr.Row():
                         hf_search_text = gr.Textbox('', label='Search models', placeholder='search huggingface models')
-                        hf_search_btn = ToolButton(value="🔍", label="Search")
+                        hf_search_btn = ToolButton(value=modules.ui_symbols.search, label="Search")
                     with gr.Row():
                         with gr.Column(scale=2):
                             with gr.Row():
@@ -585,7 +586,7 @@ def create_ui():
                         with gr.Row():
                             civit_search_text = gr.Textbox('', label='Search models', placeholder='keyword')
                             civit_search_tag = gr.Textbox('', label='', placeholder='tags')
-                            civit_search_btn = ToolButton(value="🔍", label="Search", interactive=True)
+                            civit_search_btn = ToolButton(value=modules.ui_symbols.search, label="Search", interactive=True)
                         with gr.Row():
                             civit_search_res = gr.HTML('')
                 with gr.Row():
