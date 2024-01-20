@@ -5,7 +5,7 @@ import modules.infotext_utils as parameters_copypaste
 
 def create_ui():
     dummy_component = gr.Label(visible=False)
-    tab_index = gr.State(value=0)
+    tab_index = gr.Number(value=0, visible=False)
 
     with gr.Row(equal_height=False, variant='compact'):
         with gr.Column(variant='compact'):
