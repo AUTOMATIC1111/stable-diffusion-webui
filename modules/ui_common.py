@@ -132,7 +132,7 @@ def save_files(js_data, images, do_make_zip, index):
                 filenames.append(os.path.basename(txt_fullfn))
                 fullfns.append(txt_fullfn)
 
-        writer.writerow([parsed_infotexts[0]['Prompt'], parsed_infotexts[0]['Seed'], data["width"], data["height"], data["sampler_name"], data["cfg_scale"], data["steps"], filenames[0], parsed_infotexts[0]['Negative prompt']])
+        writer.writerow([parsed_infotexts[0]['Prompt'], parsed_infotexts[0]['Seed'], data["width"], data["height"], data["sampler_name"], data["cfg_scale"], data["steps"], filenames[0], parsed_infotexts[0]['Negative prompt'], data["sd_model_name"], data["sd_model_hash"]])
 
     # Make Zip
     if do_make_zip:
