@@ -15,7 +15,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
     order = 1000
 
     def ui(self):
-        selected_tab = gr.State(value=0)
+        selected_tab = gr.Number(value=0, visible=False)
 
         with gr.Column():
             with FormRow():
