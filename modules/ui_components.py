@@ -20,42 +20,42 @@ class ToolButton(FormComponent, gr.Button):
         return "button"
 
 
-class FormRow(FormComponent, gr.Row):
+class FormRow(FormComponent, gr.Row): # unused
     """Same as gr.Row but fits inside gradio forms"""
 
     def get_block_name(self):
         return "row"
 
 
-class FormColumn(FormComponent, gr.Column):
+class FormColumn(FormComponent, gr.Column): # unused
     """Same as gr.Column but fits inside gradio forms"""
 
     def get_block_name(self):
         return "column"
 
 
-class FormGroup(FormComponent, gr.Group):
+class FormGroup(FormComponent, gr.Group): # unused
     """Same as gr.Row but fits inside gradio forms"""
 
     def get_block_name(self):
         return "group"
 
 
-class FormHTML(FormComponent, gr.HTML):
+class FormHTML(FormComponent, gr.HTML): # unused
     """Same as gr.HTML but fits inside gradio forms"""
 
     def get_block_name(self):
         return "html"
 
 
-class FormColorPicker(FormComponent, gr.ColorPicker):
+class FormColorPicker(FormComponent, gr.ColorPicker): # unused
     """Same as gr.ColorPicker but fits inside gradio forms"""
 
     def get_block_name(self):
         return "colorpicker"
 
 
-class DropdownMulti(FormComponent, gr.Dropdown):
+class DropdownMulti(FormComponent, gr.Dropdown): # TODO
     """Same as gr.Dropdown but always multiselect"""
     def __init__(self, **kwargs):
         super().__init__(multiselect=True, **kwargs)
@@ -64,7 +64,7 @@ class DropdownMulti(FormComponent, gr.Dropdown):
         return "dropdown"
 
 
-class DropdownEditable(FormComponent, gr.Dropdown):
+class DropdownEditable(FormComponent, gr.Dropdown): # unused
     """Same as gr.Dropdown but allows editing value"""
     def __init__(self, **kwargs):
         super().__init__(allow_custom_value=True, **kwargs)
@@ -73,7 +73,7 @@ class DropdownEditable(FormComponent, gr.Dropdown):
         return "dropdown"
 
 
-class InputAccordion(gr.Checkbox):
+class InputAccordion(gr.Checkbox): # unused
     """A gr.Accordion that can be used as an input - returns True if open, False if closed.
     Actaully just a hidden checkbox, but creates an accordion that follows and is followed by the state of the checkbox.
     """
@@ -119,7 +119,7 @@ class InputAccordion(gr.Checkbox):
         return "checkbox"
 
 
-class ResizeHandleRow(gr.Row):
+class ResizeHandleRow(gr.Row): # unusued
     """Same as gr.Row but fits inside gradio forms"""
 
     def __init__(self, **kwargs):

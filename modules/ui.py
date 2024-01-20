@@ -5,7 +5,6 @@ import gradio.routes
 import gradio.utils
 from modules.call_queue import wrap_gradio_call
 from modules import timer, gr_hijack, shared, theme, sd_models, script_callbacks, modelloader, ui_common, ui_loadsave, ui_symbols, ui_javascript, generation_parameters_copypaste
-from modules.ui_components import FormRow
 from modules.paths import script_path, data_path # pylint: disable=unused-import
 from modules.dml import directml_override_opts
 import modules.scripts
@@ -185,11 +184,11 @@ def create_ui(startup_timer = None):
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, **args)
                 ui_common.create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
             else:
-                with FormRow():
+                with gr.Row():
                     res = comp(label=info.label, value=fun(), elem_id=elem_id, **args)
                     ui_common.create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
         elif info.folder is not None:
-            with FormRow():
+            with gr.Row():
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, elem_classes="folder-selector", **args)
                 # ui_common.create_browse_button(res, f"folder_{key}")
         else:

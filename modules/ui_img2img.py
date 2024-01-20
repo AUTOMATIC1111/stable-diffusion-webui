@@ -4,7 +4,6 @@ import gradio as gr
 import numpy as np
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call
 from modules import timer, shared, ui_common, ui_sections, generation_parameters_copypaste
-from modules.ui_components import FormRow, FormGroup
 
 
 def process_interrogate(interrogation_function, mode, ii_input_files, ii_input_dir, ii_output_dir, *ii_singles):
@@ -42,12 +41,12 @@ def create_ui():
         img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, submit, img2img_paste, img2img_extra_networks_button, img2img_token_counter, img2img_token_button, img2img_negative_token_counter, img2img_negative_token_button = ui_sections.create_toprow(is_img2img=True, id_part="img2img")
         img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="binary", visible=False)
 
-        with FormRow(variant='compact', elem_id="img2img_extra_networks", visible=False) as extra_networks_ui:
+        with gr.Row(variant='compact', elem_id="img2img_extra_networks", visible=False) as extra_networks_ui:
             from modules import ui_extra_networks
             extra_networks_ui_img2img = ui_extra_networks.create_ui(extra_networks_ui, img2img_extra_networks_button, 'img2img', skip_indexing=shared.opts.extra_network_skip_indexing)
             timer.startup.record('ui-en')
 
-        with FormRow(elem_id="img2img_interface", equal_height=False):
+        with gr.Row(elem_id="img2img_interface", equal_height=False):
             with gr.Column(variant='compact', elem_id="img2img_settings"):
                 copy_image_buttons = []
                 copy_image_destinations = {}
@@ -119,7 +118,7 @@ def create_ui():
                     button.click(fn=copy_image, inputs=[elem], outputs=[copy_image_destinations[name]])
                     button.click(fn=lambda: None, _js=f"switch_to_{name.replace(' ', '_')}", inputs=[], outputs=[])
 
-                with FormGroup(elem_classes="settings-accordion"):
+                with gr.Group(elem_classes="settings-accordion"):
 
                     steps, sampler_index = ui_sections.create_sampler_inputs('img2img')
                     resize_mode, resize_name, width, height, scale_by, selected_scale_tab = ui_sections.create_resize_inputs('img2img', [init_img, sketch])
@@ -127,19 +126,19 @@ def create_ui():
                     seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = ui_sections.create_seed_inputs('img2img')
 
                     with gr.Accordion(open=False, label="Denoise", elem_classes=["small-accordion"], elem_id="img2img_denoise_group"):
-                        with FormRow():
+                        with gr.Row():
                             denoising_strength = gr.Slider(minimum=0.0, maximum=0.99, step=0.01, label='Denoising strength', value=0.50, elem_id="img2img_denoising_strength")
                             refiner_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise start', value=0.0, elem_id="img2img_refiner_start")
 
                     cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry = ui_sections.create_advanced_inputs('img2img')
 
-                    # with FormGroup(elem_id="inpaint_controls", visible=False) as inpaint_controls:
+                    # with gr.Group(elem_id="inpaint_controls", visible=False) as inpaint_controls:
                     with gr.Accordion(open=True, label="Mask", elem_classes=["small-accordion"], elem_id="img2img_mask_group") as inpaint_controls:
-                        with FormRow():
+                        with gr.Row():
                             mask_blur = gr.Slider(label='Blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
                             inpaint_full_res_padding = gr.Slider(label='Padding', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
                             mask_alpha = gr.Slider(label="Alpha", minimum=0.0, maximum=1.0, step=0.05, value=1.0, elem_id="img2img_mask_alpha")
-                        with FormRow():
+                        with gr.Row():
                             inpainting_mask_invert = gr.Radio(label='Mode', choices=['masked', 'inverse'], value='masked', type="index", elem_id="img2img_mask_mode")
                             inpaint_full_res = gr.Radio(label="Inpaint area", choices=["full", "masked"], type="index", value="full", elem_id="img2img_inpaint_full_res")
                             inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'noise', 'nothing'], value='original', type="index", elem_id="img2img_inpainting_fill", visible=shared.backend == shared.Backend.ORIGINAL)
@@ -152,7 +151,7 @@ def create_ui():
 
                 override_settings = ui_common.create_override_inputs('img2img')
 
-                with FormGroup(elem_id="img2img_script_container"):
+                with gr.Group(elem_id="img2img_script_container"):
                     img2img_script_inputs = modules.scripts.scripts_img2img.setup_ui(parent='img2img', accordion=True)
 
             img2img_gallery, img2img_generation_info, img2img_html_info, _img2img_html_info_formatted, img2img_html_log = ui_common.create_output_panel("img2img", prompt=None)

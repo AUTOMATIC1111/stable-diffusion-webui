@@ -9,7 +9,7 @@ import gradio as gr
 from modules import call_queue, shared, prompt_parser
 from modules import generation_parameters_copypaste
 from modules import ui_sections
-from modules.ui_components import FormRow, ToolButton
+from modules.ui_components import ToolButton
 import modules.ui_symbols as symbols
 import modules.images
 import modules.script_callbacks
@@ -314,7 +314,7 @@ def create_browse_button(browse_component, elem_id):
 
 
 def create_override_inputs(tab): # pylint: disable=unused-argument
-    with FormRow(elem_id=f"{tab}_override_settings_row"):
+    with gr.Row(elem_id=f"{tab}_override_settings_row"):
         override_settings = gr.Dropdown([], value=None, label="Override settings", visible=False, elem_id=f"{tab}_override_settings", multiselect=True)
         override_settings.change(fn=lambda x: gr.Dropdown.update(visible=len(x) > 0), inputs=[override_settings], outputs=[override_settings])
     return override_settings

@@ -3,7 +3,6 @@ import numpy as np
 import gradio as gr
 from modules import scripts_postprocessing
 from modules.postprocess import gfpgan_model
-from modules.ui_components import FormRow
 
 
 class ScriptPostprocessingGfpGan(scripts_postprocessing.ScriptPostprocessing):
@@ -11,7 +10,7 @@ class ScriptPostprocessingGfpGan(scripts_postprocessing.ScriptPostprocessing):
     order = 2000
 
     def ui(self):
-        with FormRow():
+        with gr.Row():
             gfpgan_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Strength", value=0, elem_id="extras_gfpgan_visibility")
         return { "gfpgan_visibility": gfpgan_visibility }
 

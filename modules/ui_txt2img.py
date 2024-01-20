@@ -1,7 +1,7 @@
 import gradio as gr
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call
 from modules import timer, shared, ui_common, ui_symbols, ui_sections, generation_parameters_copypaste
-from modules.ui_components import FormRow, FormGroup, ToolButton
+from modules.ui_components import ToolButton
 
 
 def calc_resolution_hires(width, height, hr_scale, hr_resize_x, hr_resize_y, hr_upscaler):
@@ -26,7 +26,7 @@ def create_ui():
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="binary", visible=False)
         txt_prompt_img.change(fn=modules.images.image_data, inputs=[txt_prompt_img], outputs=[txt2img_prompt, txt_prompt_img])
 
-        with FormRow(variant='compact', elem_id="txt2img_extra_networks", visible=False) as extra_networks_ui:
+        with gr.Row(variant='compact', elem_id="txt2img_extra_networks", visible=False) as extra_networks_ui:
             from modules import ui_extra_networks
             extra_networks_ui = ui_extra_networks.create_ui(extra_networks_ui, txt2img_extra_networks_button, 'txt2img', skip_indexing=shared.opts.extra_network_skip_indexing)
             timer.startup.record('ui-en')
@@ -34,13 +34,13 @@ def create_ui():
         with gr.Row(elem_id="txt2img_interface", equal_height=False):
             with gr.Column(variant='compact', elem_id="txt2img_settings"):
 
-                with FormRow():
+                with gr.Row():
                     width = gr.Slider(minimum=64, maximum=4096, step=8, label="Width", value=512, elem_id="txt2img_width")
                     height = gr.Slider(minimum=64, maximum=4096, step=8, label="Height", value=512, elem_id="txt2img_height")
                     res_switch_btn = ToolButton(value=ui_symbols.switch, elem_id="txt2img_res_switch_btn", label="Switch dims")
                     res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
 
-                with FormGroup(elem_classes="settings-accordion"):
+                with gr.Group(elem_classes="settings-accordion"):
 
                     steps, sampler_index = ui_sections.create_sampler_inputs('txt2img')
                     batch_count, batch_size = ui_sections.create_batch_inputs('txt2img')

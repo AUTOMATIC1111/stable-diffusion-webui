@@ -1,7 +1,7 @@
 from PIL import Image
 import gradio as gr
 from modules import scripts_postprocessing, shared
-from modules.ui_components import FormRow, ToolButton
+from modules.ui_components import ToolButton
 import modules.ui_symbols as symbols
 
 
@@ -13,23 +13,23 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
         selected_tab = gr.State(value=0) # pylint: disable=abstract-class-instantiated
 
         with gr.Column():
-            with FormRow(elem_id="extras_upscale"):
+            with gr.Row(elem_id="extras_upscale"):
                 with gr.Tabs(elem_id="extras_resize_mode"):
                     with gr.TabItem('Scale by', elem_id="extras_scale_by_tab") as tab_scale_by:
                         upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=2.0, elem_id="extras_upscaling_resize")
 
                     with gr.TabItem('Scale to', elem_id="extras_scale_to_tab") as tab_scale_to:
-                        with FormRow():
+                        with gr.Row():
                             with gr.Row(elem_id="upscaling_column_size"):
                                 upscaling_resize_w = gr.Slider(minimum=64, maximum=4096, step=8, label="Width", value=512, elem_id="extras_upscaling_resize_w")
                                 upscaling_resize_h = gr.Slider(minimum=64, maximum=4096, step=8, label="Height", value=512, elem_id="extras_upscaling_resize_h")
                                 upscaling_res_switch_btn = ToolButton(value=symbols.switch, elem_id="upscaling_res_switch_btn")
                                 upscaling_crop = gr.Checkbox(label='Crop to fit', value=True, elem_id="extras_upscaling_crop")
 
-            with FormRow():
+            with gr.Row():
                 extras_upscaler_1 = gr.Dropdown(label='Upscaler', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
 
-            with FormRow():
+            with gr.Row():
                 extras_upscaler_2 = gr.Dropdown(label='Secondary Upscaler', elem_id="extras_upscaler_2", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
                 extras_upscaler_2_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Upscaler 2 visibility", value=0.0, elem_id="extras_upscaler_2_visibility")
 
@@ -95,7 +95,7 @@ class ScriptPostprocessingUpscaleSimple(ScriptPostprocessingUpscale):
     order = 900
 
     def ui(self):
-        with FormRow():
+        with gr.Row():
             upscaler_name = gr.Dropdown(label='Upscaler', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
             upscale_by = gr.Slider(minimum=0.05, maximum=8.0, step=0.05, label="Upscale by", value=2)
         return {

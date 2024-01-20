@@ -1,7 +1,6 @@
 import os
 import gradio as gr
 from modules import script_callbacks, shared
-from modules.ui_components import FormRow
 from modules.ui_common import create_refresh_button
 from modules.ui_sections import create_sampler_inputs
 from modules.call_queue import wrap_gradio_gpu_call
@@ -158,7 +157,7 @@ def create_ui():
                             return sorted(textual_inversion.textual_inversion_templates)
 
                         gr.HTML('<h2>Select existing embedding to continue training or create a new one</h2>')
-                        with FormRow():
+                        with gr.Row():
                             with gr.Column():
                                 with gr.Row():
                                     ti_name = gr.Dropdown(label='Select embedding', choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
@@ -174,7 +173,7 @@ def create_ui():
                         with gr.Box():
                             gr.HTML('<h2>Training parameters</h2>')
                             ti_learn_rate = gr.Textbox(label='Embedding Learning rate', placeholder="Embedding Learning rate", value="0.005")
-                            with FormRow():
+                            with gr.Row():
                                 ti_clip_grad_mode = gr.Dropdown(value="disabled", label="Gradient Clipping", choices=["disabled", "value", "norm"])
                                 ti_clip_grad_value = gr.Number(label="Gradient clip value", value=0.1)
                             ti_batch_size = gr.Number(label='Batch size', value=1, precision=0)
@@ -184,7 +183,7 @@ def create_ui():
                         with gr.Box():
                             gr.HTML('<h2>Training images</h2>')
                             ti_dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
-                            with FormRow():
+                            with gr.Row():
                                 ti_varsize = gr.Checkbox(label="Do not resize images", value=False)
                                 ti_width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512)
                                 ti_height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512)
@@ -192,7 +191,7 @@ def create_ui():
 
                         with gr.Box():
                             gr.HTML('<h2>Dataset processing</h2>')
-                            with FormRow():
+                            with gr.Row():
                                 ti_template = gr.Dropdown(label='Prompt template', value="style_filewords.txt", choices=get_textual_inversion_template_names())
                                 create_refresh_button(ti_template, textual_inversion.list_textual_inversion_templates, lambda: {"choices": get_textual_inversion_template_names()}, "refrsh_train_template_file")
                             ti_shuffle = gr.Checkbox(label="Shuffle tags", value=False)
@@ -201,7 +200,7 @@ def create_ui():
 
                         with gr.Box():
                             gr.HTML('<h2>Training outputs</h2>')
-                            with FormRow():
+                            with gr.Row():
                                 ti_create_every = gr.Number(label='Create interim images', value=500, precision=0)
                                 ti_save_every = gr.Number(label='Create interim embeddings', value=500, precision=0)
                             ti_save_image_with_stored_embedding = gr.Checkbox(label='Save images with embedding in PNG chunks', value=True)
@@ -266,9 +265,9 @@ def create_ui():
                     with gr.Tab(label="Train hypernetwork", id="train_hypernetwork_tab") as tab_hn:
                         tab_hn.select(fn=lambda: train_tab_change('hn'), inputs=[], outputs=[action_pp, action_ti, action_hn])
                         gr.HTML('<h2>Select existing hypernetwork to continue training or create a new one</h2>')
-                        with FormRow():
+                        with gr.Row():
                             with gr.Column():
-                                with FormRow():
+                                with gr.Row():
                                     hn_name = gr.Dropdown(label='Hypernetwork', choices=sorted(shared.hypernetworks))
                                     create_refresh_button(hn_name, shared.reload_hypernetworks, lambda: {"choices": sorted(shared.hypernetworks)}, "refresh_train_hypernetwork_name")
                             with gr.Column():
@@ -288,7 +287,7 @@ def create_ui():
                         with gr.Box():
                             gr.HTML('<h2>Training parameters</h2>')
                             hn_learn_rate = gr.Textbox(label='Hypernetwork Learning rate', placeholder="Hypernetwork Learning rate", value="0.00001")
-                            with FormRow():
+                            with gr.Row():
                                 hn_clip_grad_mode = gr.Dropdown(value="disabled", label="Gradient Clipping", choices=["disabled", "value", "norm"])
                                 hn_clip_grad_value = gr.Number(label="Gradient clip value", value=0.1)
                             hn_batch_size = gr.Number(label='Batch size', value=1, precision=0)
@@ -298,7 +297,7 @@ def create_ui():
                         with gr.Box():
                             gr.HTML('<h2>Training images</h2>')
                             hn_dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
-                            with FormRow():
+                            with gr.Row():
                                 hn_varsize = gr.Checkbox(label="Do not resize images", value=False)
                                 hn_width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512)
                                 hn_height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512)
@@ -306,7 +305,7 @@ def create_ui():
 
                         with gr.Box():
                             gr.HTML('<h2>Dataset processing</h2>')
-                            with FormRow():
+                            with gr.Row():
                                 hn_template = gr.Dropdown(label='Prompt template', value="style_filewords.txt", choices=get_textual_inversion_template_names())
                                 create_refresh_button(hn_template, textual_inversion.list_textual_inversion_templates, lambda: {"choices": get_textual_inversion_template_names()}, "refrsh_train_template_file")
                             hn_shuffle_tags = gr.Checkbox(label="Shuffle tags by ',' when creating prompts.", value=False)
@@ -315,7 +314,7 @@ def create_ui():
 
                         with gr.Box():
                             gr.HTML('<h2>Training outputs</h2>')
-                            with FormRow():
+                            with gr.Row():
                                 hn_create_every = gr.Number(label='Create interim images', value=500, precision=0)
                                 hn_save_every = gr.Number(label='Create interim hypernetworks', value=500, precision=0)
                             hn_preview_from_txt2img = gr.Checkbox(label='Use current settings for previews', value=False)
