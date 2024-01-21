@@ -16,7 +16,7 @@ OPTIONAL:
 - masking api
 - preprocess api
 
-## Update for 2023-01-20
+## Update for 2023-01-21
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
@@ -30,6 +30,8 @@ Another big release, highlights being:
 
 Plus welcome additions to **UI performance, usability and accessibility** and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
+
+As of this release, default backend is set to **diffusers** as its more feature rich than **original** and supports many additional models
 
 - **Control**:  
   - add **inpaint** support  
@@ -120,6 +122,7 @@ And it also includes fixes for all reported issues so far
       will dynamically rescale ui depending on settings -> user interface  
     - built-in **themes** can be changed on-the-fly  
       this does not work with gradio-default themes as css is created by gradio itself  
+    - two new **themes**: *simple-dark* and *simple-light*  
     - modularized blip/booru interrogate  
       now appears as toolbuttons on image/gallery output  
     - faster browser page load  

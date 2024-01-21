@@ -165,7 +165,7 @@ def writefile(data, filename, mode='w', silent=False, atomic=False):
 
 
 # early select backend
-default_backend = 'original'
+default_backend = 'diffusers'
 early_opts = readfile(cmd_opts.config, silent=True)
 early_backend = early_opts.get('sd_backend', default_backend)
 backend = Backend.DIFFUSERS if early_backend.lower() == 'diffusers' else Backend.ORIGINAL
