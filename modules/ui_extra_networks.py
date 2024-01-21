@@ -164,7 +164,6 @@ class ExtraNetworksPage:
         self.lister = util.MassFileLister()
         # HTML Templates
         self.pane_tpl = shared.html("extra-networks-pane.html")
-        self.tree_tpl = shared.html("extra-networks-tree.html")
         self.card_tpl = shared.html("extra-networks-card.html")
         self.btn_tree_tpl = shared.html("extra-networks-tree-button.html")
         self.btn_copy_path_tpl = shared.html("extra-networks-copy-path-button.html")
@@ -420,8 +419,6 @@ class ExtraNetworksPage:
     def create_tree_view_html(self, tabname: str) -> str:
         """Generates HTML for displaying folders in a tree view.
 
-        The generated HTML uses `extra-networks-tree.html` as a template.
-
         Args:
             tabname: The name of the active tab.
 
@@ -473,13 +470,7 @@ class ExtraNetworksPage:
             if item_html is not None:
                 res += item_html
 
-        return self.tree_tpl.format(
-            **{
-                "tabname": tabname,
-                "extra_networks_tabname": self.extra_networks_tabname,
-                "tree": f"<ul class='tree-list tree-list--tree'>{res}</ul>"
-            }
-        )
+        return f"<ul class='tree-list tree-list--tree'>{res}</ul>"
 
     def create_card_view_html(self, tabname: str) -> str:
         """Generates HTML for the network Card View section for a tab.
