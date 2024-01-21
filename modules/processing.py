@@ -1728,7 +1728,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         devices.torch_gc()
 
         return samples
-    
+
 
     def sample_hr_pass(self, samples, decoded_samples, seeds, subseeds, subseed_strength, prompts):
         if shared.state.interrupted:
