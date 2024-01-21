@@ -23,7 +23,7 @@
   --background-fill-primary: var(--neutral-700);
   --input-padding: 4px;
   --input-background-fill: var(--neutral-800);
-  --input-shadow: 2px 2px 2px 2px var(--background-color);
+  --input-shadow: none;
   --button-secondary-text-color: white;
   --button-secondary-background-fill: linear-gradient(to bottom right, var(--neutral-400), var(--neutral-700));
   --button-secondary-background-fill-hover: linear-gradient(to bottom right, var(--neutral-700), var(--neutral-400));
@@ -60,9 +60,9 @@ fieldset .gr-block.gr-box, label.block span { padding: 0; margin-top: -4px; }
 .border-2 { border-width: 0; }
 .border-b-2 { border-bottom-width: 2px; border-color: var(--highlight-color) !important; padding-bottom: 2px; margin-bottom: 8px; }
 .bg-white { color: lightyellow; background-color: var(--inactive-color); }
-.gr-box { border-radius: var(--radius-sm) !important; background-color: #111111 !important; box-shadow: 2px 2px 3px #111111; border-width: 0; padding: 4px; margin: 12px 0px 12px 0px }
-.gr-button { font-weight: normal; box-shadow: 2px 2px 3px #111111; font-size: 0.8rem; min-width: 32px; min-height: 32px; padding: 3px; margin: 3px; }
-.gr-check-radio { background-color: var(--inactive-color); border-width: 0; border-radius: var(--radius-lg); box-shadow: 2px 2px 3px #111111; }
+.gr-box { border-radius: var(--radius-sm) !important; background-color: #111111 !important; box-shadow: none; border-width: 0; padding: 4px; margin: 12px 0px 12px 0px }
+.gr-button { font-weight: normal; box-shadow: none; font-size: 0.8rem; min-width: 32px; min-height: 32px; padding: 3px; margin: 3px; }
+.gr-check-radio { background-color: var(--inactive-color); border-width: 0; border-radius: var(--radius-lg); box-shadow: none; }
 .gr-check-radio:checked { background-color: var(--highlight-color); }
 .gr-compact { background-color: var(--background-color); }
 .gr-form { border-width: 0; }
@@ -105,7 +105,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #div.gradio-container { overflow-x: hidden; }
 #img2img_label_copy_to_img2img { font-weight: normal; }
 
-#txt2img_prompt, #txt2img_neg_prompt, #img2img_prompt, #img2img_neg_prompt, #control_prompt, #control_neg_prompt { background-color: var(--background-color); box-shadow: 4px 4px 4px 0px #303030  !important; }
+#txt2img_prompt, #txt2img_neg_prompt, #img2img_prompt, #img2img_neg_prompt, #control_prompt, #control_neg_prompt { background-color: var(--background-color); box-shadow: none !important; }
 #txt2img_prompt > label > textarea, #txt2img_neg_prompt > label > textarea, #img2img_prompt > label > textarea, #img2img_neg_prompt > label > textarea, #control_prompt > label > textarea, #control_neg_prompt > label > textarea { font-size: 1.0em; line-height: 1.4em; }
 #txt2img_styles, #img2img_styles, #control_styles { padding: 0; }
 #txt2img_styles_refresh, #img2img_styles_refresh, #control_styles_refresh { padding: 0; margin-top: 1em; }
@@ -182,7 +182,7 @@ textarea[rows="1"] { height: 33px !important; width: 99% !important; padding: 8p
   --input-border-color-hover: var(--input-border-color);
   --input_border_width: None;
   --input-placeholder-color: var(--neutral-500);
-  --input-shadow-focus: 2px 2px 2px 2px #111111;
+  --input-shadow-focus: none;
   --loader_color: None;
   --slider_color: None;
   --stat-background-fill: linear-gradient(to right, var(--primary-400), var(--primary-600));
@@ -290,9 +290,9 @@ textarea[rows="1"] { height: 33px !important; width: 99% !important; padding: 8p
   --button-large-radius: var(--radius-lg);
   --button-large-text-size: var(--text-lg);
   --button-large-text-weight: 400;
-  --button-shadow: 4px 4px 4px 0px #303030;
-  --button-shadow-active: 1px 1px 4px 0px #555555;
-  --button-shadow-hover: 1px 1px 4px 0px #555555;
+  --button-shadow: none;
+  --button-shadow-active: none;
+  --button-shadow-hover: none;
   --button-small-padding: var(--spacing-sm) calc(2 * var(--spacing-sm));
   --button-small-radius: var(--radius-lg);
   --button-small-text-size: var(--text-md);
