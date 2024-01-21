@@ -68,3 +68,49 @@ Custom order
 ![UI-item-order-3](images/UI-item-order-3.png)
 
 </details>
+
+## UI Element dafault value and range limit step size
+
+<details><summary>Customizing UI element values</summary>
+
+Webui allows the user to chenge the default vaule of UI elements, elements dropdown / radio menus `checkbox` slider input boxes.
+
+1. Adjust the UI to your desire default valuse settings
+2. Go to `Setting > Defaults`.
+3. CLick `View changes` you will be presented with a list of element values that you have changed.
+4. Confirm if you're happy with these changes and if so click `Apply`.
+5. the settings will be saved to `ui-config.json` and will be used as default vaules after the next `Reload UI` or `Restart` (not F5 webpage reload).
+
+---
+
+Advanced adjustments such as like change the maximum range of a slide, can also be done by editing the corresponding values in `ui-config.json`, you have to edit the file manually as there currently is no in UI method of changing these values.
+
+finding the correct value to change might be difficult, but you can locate the correct value bye utilizing the `View changes` on `Setting > Defaults`.
+
+for example if you wish to increase the maximum limit of the Image Width slider for txt2img.
+1. reload your web page, let's make sure all element values are at their default values.
+2. On txt2img tab change Image Width slider to any value that is not the default.
+3. Go to `Setting > Defaults` CLick `View changes` then you should see one entry like so.
+
+| Path | Old value | New Value |
+| --- | --- | --- | 
+| txt2img/Width/value | 512 | 1024 |
+
+4. Note down the Path `txt2img/Width` without the type `value`.
+5. open you `ui-config.json` and search for `txt2img/Width`.
+6. you will find other value under the same path like so:
+```json
+    "txt2img/Width/visible": true,
+    "txt2img/Width/value": 512,
+    "txt2img/Width/minimum": 64,
+    "txt2img/Width/maximum": 2048,
+    "txt2img/Width/step": 8,
+```
+7. you can adjust `"txt2img/Width/maximum": 2048,` to `"txt2img/Width/maximum": 4096,` to raze the maximum range limit of the slider.
+8. save `ui-config.json` and `Reload UI` or `Restart` webui the slider should be updated with the new range.
+
+> Caution: recommended to make a backup before changing, especially if you're editing the file manually, the file can get corrupted if they syntax is incorrect.
+
+> note: some values have hidden limitations.<br>for example stable diffusion image resolution needed to be a multiple of 8, so even though you can customize the slider `step`` size to any value it is unwise to do so as it can cause unexpected errors
+
+</details>
