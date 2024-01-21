@@ -25,6 +25,7 @@ def get_version():
     ver = ver.splitlines()[0]
     version.chash, version.current = ver.split(' ')
 
+    i.git('fetch')
     ver = i.git(f'log origin/{version.branch} --pretty=format:"%h %ad" -1 --date=short')
     ver = ver.splitlines()[0]
     version.lhash, version.latest = ver.split(' ')
