@@ -2,7 +2,7 @@
 :root { --left-column: 500px; }
 a { font-weight: bold; cursor: pointer; }
 h2 { margin-top: 1em !important; font-size: var(--text-xxl) !important; }
-footer { display: none; }
+footer { display: none; margin-top: 0 !important;}
 table { overflow-x: auto !important; overflow-y: auto !important; }
 td { border-bottom: none !important; padding: 0.1em 0.5em !important; }
 tr { border-bottom: none !important; padding: 0.1em 0.5em !important; }
@@ -73,7 +73,10 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 .performance p { display: inline-block; color: var(--body-text-color-subdued) !important }
 .performance .time { margin-right: 0; }
 .thumbnails { background: var(--body-background-fill); }
-#control_gallery { height: 564px; }
+.control-image { height: calc(100vw/3) !important; }
+#control_results { margin: 0; padding: 0; }
+#control_gallery { height: calc(100vw/3 + 60px); }
+#txt2img_gallery, #img2img_gallery { height: 50vh; }
 #control-result { padding: 0.5em; }
 #control-inputs { margin-top: 1em; }
 #txt2img_prompt_container, #img2img_prompt_container, #control_prompt_container { margin-right: var(--layout-gap) }
@@ -85,10 +88,10 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 #txt2img_generate_line2>button, #img2img_generate_line2>button, #extras_generate_box>button, #control_generate_line2>button, #txt2img_tools>button, #img2img_tools>button, #control_tools>button { height: 2em; line-height: 0; font-size: var(--text-md);
   min-width: unset; display: block !important; }
 #txt2img_prompt, #txt2img_neg_prompt, #img2img_prompt, #img2img_neg_prompt, #control_prompt, #control_neg_prompt { display: contents; }
-#txt2img_generate_box, #img2img_generate_box { min-width: unset; width: 48%; }
+#txt2img_generate_box, #img2img_generate_box { min-width: unset; width: 66%; }
 #control_generate_box { min-width: unset; width: 100%; }
 #txt2img_actions_column, #img2img_actions_column, #control_actions { flex-flow: wrap; justify-content: space-between; }
-#txt2img_enqueue_wrapper, #img2img_enqueue_wrapper, #control_enqueue_wrapper { min-width: unset !important; width: 48%; }
+#txt2img_enqueue_wrapper, #img2img_enqueue_wrapper, #control_enqueue_wrapper { min-width: unset !important; width: 32%; }
 .interrogate-clip { position: absolute; right: 3em; top: -2.7em; max-width: fit-content; }
 .interrogate-blip { position: absolute; right: 1em; top: -2.7em; max-width: fit-content; }
 .interrogate-col{ min-width: 0 !important; max-width: fit-content; margin-right: var(--spacing-xxl); }
