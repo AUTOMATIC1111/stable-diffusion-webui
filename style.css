@@ -1179,20 +1179,20 @@ body.resizing .resize-handle {
     resize: vertical;
     min-height: 52rem;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .extra-network-pane .extra-network-pane-content {
     display: flex;
     flex: 1;
-    flex-direction: row;
+    overflow: hidden;
 }
 
 .extra-network-pane .extra-network-tree {
     flex: 1;
-    flex-direction: column;
-    display: flex;
     font-size: 1rem;
     border: 1px solid var(--block-border-color);
+    overflow: clip auto !important;
 }
 
 .extra-network-pane .extra-network-cards {
@@ -1210,34 +1210,28 @@ body.resizing .resize-handle {
     overflow: hidden;
 }
 
-.extra-network-pane .extra-network-tree .tree-list .tree-list-container {
-    flex: 1;
-    overflow: clip auto !important;
-    width: 100%;
-}
-
 
 .extra-network-pane .extra-network-cards::-webkit-scrollbar,
-.extra-network-pane .tree-list-container::-webkit-scrollbar {
+.extra-network-pane .extra-network-tree::-webkit-scrollbar {
     background-color: transparent;
     width: 16px;
 }
 
 .extra-network-pane .extra-network-cards::-webkit-scrollbar-track,
-.extra-network-pane .tree-list-container::-webkit-scrollbar-track {
+.extra-network-pane .extra-network-tree::-webkit-scrollbar-track {
     background-color: transparent;
     background-clip: content-box;
 }
 
 .extra-network-pane .extra-network-cards::-webkit-scrollbar-thumb,
-.extra-network-pane .tree-list-container::-webkit-scrollbar-thumb {
+.extra-network-pane .extra-network-tree::-webkit-scrollbar-thumb {
     background-color: var(--border-color-primary);
     border-radius: 16px;
     border: 4px solid var(--background-fill-primary);
 }
 
 .extra-network-pane .extra-network-cards::-webkit-scrollbar-button,
-.extra-network-pane .tree-list-container::-webkit-scrollbar-button {
+.extra-network-pane .extra-network-tree::-webkit-scrollbar-button {
     display: none;
 }
 
