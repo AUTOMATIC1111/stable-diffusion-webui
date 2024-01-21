@@ -194,6 +194,8 @@ class ExtraNetworksPage:
         except Exception as e:
             self.items = []
             shared.log.error(f'Extra networks error listing items: class={self.__class__.__name__} tab={tabname} {e}')
+            if os.environ.get('SD_EN_DEBUG', None):
+                errors.display(e, f'Extra networks error listing items: class={self.__class__.__name__} tab={tabname}')
         for item in self.items:
             if item is None:
                 continue
@@ -332,7 +334,7 @@ class ExtraNetworksPage:
             if item.get('local_preview', None) is None:
                 item['local_preview'] = f'{base}.{shared.opts.samples_format}'
             if shared.opts.diffusers_dir in base:
-                match = re.search(r"models--([^/]+)/", base)
+                match = re.search(r"models--([^/^\\]+)[/\\]", base)
                 base = os.path.join(reference_path, match[1])
                 model_path = os.path.join(shared.opts.diffusers_dir, match[0])
                 item['local_preview'] = f'{os.path.join(model_path, match[1])}.{shared.opts.samples_format}'
