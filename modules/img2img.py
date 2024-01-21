@@ -146,7 +146,7 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
     return batch_results
 
 
-def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_name: str, mask_blur: int, mask_alpha: float, inpainting_fill: int, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, denoising_strength: float, selected_scale_tab: int, height: int, width: int, scale_by: float, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, override_settings_texts, img2img_batch_use_png_info: bool, img2img_batch_png_info_props: list, img2img_batch_png_info_dir: str, request: gr.Request, *args):
+def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_name: str, mask_blur: int, mask_alpha: float, inpainting_fill: int, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, denoising_strength: float, selected_scale_tab: int, height: int, width: int, scale_by: float, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, override_settings_texts, img2img_batch_use_png_info: bool, img2img_batch_png_info_props: list, img2img_batch_png_info_dir: str, enable_hr: bool, hr_denoising_strength: float, hr_scale: float, hr_upscaler: str, hr_second_pass_steps: int, hr_resize_x: int, hr_resize_y: int, hr_checkpoint_name: str, hr_sampler_name: str, hr_prompt: str, hr_negative_prompt, request: gr.Request, *args):
     override_settings = create_override_settings_dict(override_settings_texts)
 
     is_batch = mode == 5
@@ -212,6 +212,17 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         inpaint_full_res_padding=inpaint_full_res_padding,
         inpainting_mask_invert=inpainting_mask_invert,
         override_settings=override_settings,
+        enable_hr=enable_hr,
+        hr_denoising_strength=hr_denoising_strength,
+        hr_scale=hr_scale,
+        hr_upscaler=hr_upscaler,
+        hr_second_pass_steps=hr_second_pass_steps,
+        hr_resize_x=hr_resize_x,
+        hr_resize_y=hr_resize_y,
+        hr_checkpoint_name=None if hr_checkpoint_name == 'Use same checkpoint' else hr_checkpoint_name,
+        hr_sampler_name=None if hr_sampler_name == 'Use same sampler' else hr_sampler_name,
+        hr_prompt=hr_prompt,
+        hr_negative_prompt=hr_negative_prompt,
     )
 
     p.scripts = modules.scripts.scripts_img2img

@@ -666,6 +666,35 @@ def create_ui():
 
                     elif category == "accordions":
                         with gr.Row(elem_id="img2img_accordions", elem_classes="accordions"):
+
+                            with InputAccordion(False, label="Hires. fix", elem_id="img2img_hr") as enable_hr:
+                                with enable_hr.extra():
+                                    hr_final_resolution = FormHTML(value="", elem_id="img2img_hr_finalres", label="Upscaled resolution", interactive=False, min_width=0)
+
+                                with FormRow(elem_id="img2img_hires_fix_row1", variant="compact"):
+                                    hr_upscaler = gr.Dropdown(label="Upscaler", elem_id="img2img_hr_upscaler", choices=[*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]], value=shared.latent_upscale_default_mode)
+                                    hr_second_pass_steps = gr.Slider(minimum=0, maximum=150, step=1, label='Hires steps', value=0, elem_id="img2img_hires_steps")
+                                    hr_denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7, elem_id="img2img_denoising_strength")
+
+                                with FormRow(elem_id="img2img_hires_fix_row2", variant="compact"):
+                                    hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=2.0, elem_id="img2img_hr_scale")
+                                    hr_resize_x = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize width to", value=0, elem_id="img2img_hr_resize_x")
+                                    hr_resize_y = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize height to", value=0, elem_id="img2img_hr_resize_y")
+
+                                with FormRow(elem_id="img2img_hires_fix_row3", variant="compact", visible=opts.hires_fix_show_sampler) as hr_sampler_container:
+
+                                    hr_checkpoint_name = gr.Dropdown(label='Hires checkpoint', elem_id="hr_checkpoint", choices=["Use same checkpoint"] + modules.sd_models.checkpoint_tiles(use_short=True), value="Use same checkpoint")
+                                    create_refresh_button(hr_checkpoint_name, modules.sd_models.list_models, lambda: {"choices": ["Use same checkpoint"] + modules.sd_models.checkpoint_tiles(use_short=True)}, "hr_checkpoint_refresh")
+
+                                    hr_sampler_name = gr.Dropdown(label='Hires sampling method', elem_id="hr_sampler", choices=["Use same sampler"] + sd_samplers.visible_sampler_names(), value="Use same sampler")
+
+                                with FormRow(elem_id="img2img_hires_fix_row4", variant="compact", visible=opts.hires_fix_show_prompts) as hr_prompts_container:
+                                    with gr.Column(scale=80):
+                                        with gr.Row():
+                                            hr_prompt = gr.Textbox(label="Hires prompt", elem_id="hires_prompt", show_label=False, lines=3, placeholder="Prompt for hires fix pass.\nLeave empty to use the same prompt as in first pass.", elem_classes=["prompt"])
+                                    with gr.Column(scale=80):
+                                        with gr.Row():
+                                            hr_negative_prompt = gr.Textbox(label="Hires negative prompt", elem_id="hires_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt for hires fix pass.\nLeave empty to use the same negative prompt as in first pass.", elem_classes=["prompt"])
                             scripts.scripts_img2img.setup_ui_for_section(category)
 
                     elif category == "batch":
@@ -720,6 +749,25 @@ def create_ui():
                     outputs=[inpaint_controls, mask_alpha],
                 )
 
+            hr_resolution_preview_inputs = [enable_hr, width, height, hr_scale, hr_resize_x, hr_resize_y]
+
+            for component in hr_resolution_preview_inputs:
+                event = component.release if isinstance(component, gr.Slider) else component.change
+
+                event(
+                    fn=calc_resolution_hires,
+                    inputs=hr_resolution_preview_inputs,
+                    outputs=[hr_final_resolution],
+                    show_progress=False,
+                )
+                event(
+                    None,
+                    _js="onCalcResolutionHires",
+                    inputs=hr_resolution_preview_inputs,
+                    outputs=[],
+                    show_progress=False,
+                )
+
             output_panel = create_output_panel("img2img", opts.outdir_img2img_samples, toprow)
 
             img2img_args = dict(
@@ -763,6 +811,17 @@ def create_ui():
                     img2img_batch_use_png_info,
                     img2img_batch_png_info_props,
                     img2img_batch_png_info_dir,
+                    enable_hr,
+                    hr_denoising_strength,
+                    hr_scale,
+                    hr_upscaler,
+                    hr_second_pass_steps,
+                    hr_resize_x,
+                    hr_resize_y,
+                    hr_checkpoint_name,
+                    hr_sampler_name,
+                    hr_prompt,
+                    hr_negative_prompt,
                 ] + custom_inputs,
                 outputs=[
                     output_panel.gallery,
