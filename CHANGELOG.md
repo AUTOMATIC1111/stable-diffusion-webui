@@ -128,6 +128,9 @@ As of this release, default backend is set to **diffusers** as its more feature 
     - faster browser page load  
     - cleanup hints  
     - cleanup settings  
+  - **server**
+    - all move/offload options are disable by default for optimal performance  
+      enable manually if low on vram  
   - **server startup**: performance  
     - reduced module imports  
       ldm support is now only loaded when running in backend=original  
