@@ -255,6 +255,8 @@ def run_rembg(input_image: Image, input_mask: np.ndarray):
         mask = cv2.cvtColor(input_mask, cv2.COLOR_RGB2GRAY)
     binary_input = cv2.threshold(input_mask, 127, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
     binary_output = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+    if binary_input.shape != binary_output.shape:
+        binary_output = cv2.resize(binary_output, binary_input.shape[:2], interpolation=cv2.INTER_LINEAR)
     binary_overlap = cv2.bitwise_and(binary_input, binary_output)
     input_size = np.count_nonzero(binary_input)
     overlap_size = np.count_nonzero(binary_overlap)

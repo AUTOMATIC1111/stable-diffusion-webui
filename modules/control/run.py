@@ -260,12 +260,16 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
     else: # run in txt2img/img2img mode
         if len(active_strength) > 0:
             p.strength = active_strength[0]
+        pipe = shared.sd_model
+        instance = None
+        """
         try:
             pipe = diffusers.AutoPipelineForText2Image.from_pipe(shared.sd_model) # use set_diffuser_pipe
         except Exception as e:
             shared.log.warning(f'Control pipeline create: {e}')
             pipe = shared.sd_model
-        instance = None
+        """
+
 
     debug(f'Control pipeline: class={pipe.__class__} args={vars(p)}')
     t1, t2, t3 = time.time(), 0, 0
