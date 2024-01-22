@@ -386,7 +386,10 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
     for key in info_json_keys:
         if key in res:
-            res[key] = info_json_loads(res[key])
+            try:
+                res[key] = info_json_loads(res[key])
+            except Exception:
+                print(f'Error parsing "{key}: {res[key]}"')
 
     infotext_versions.backcompat(res)
 
