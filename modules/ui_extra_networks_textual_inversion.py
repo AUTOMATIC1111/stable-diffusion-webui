@@ -18,13 +18,16 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
             return
 
         path, ext = os.path.splitext(embedding.filename)
+        search_terms = [self.search_terms_from_path(embedding.filename)]
+        if embedding.hash:
+            search_terms.append(embedding.hash)
         return {
             "name": name,
             "filename": embedding.filename,
             "shorthash": embedding.shorthash,
             "preview": self.find_preview(path),
             "description": self.find_description(path),
-            "search_term": self.search_terms_from_path(embedding.filename) + " " + (embedding.hash or ""),
+            "search_terms": search_terms,
             "prompt": quote_js(embedding.name),
             "local_preview": f"{path}.preview.{shared.opts.samples_format}",
             "sort_keys": {'default': index, **self.get_sort_keys(embedding.filename)},
