@@ -24,7 +24,7 @@ info_json_keys = set()
 
 def info_json_dumps(data):
     """encode data into json string, but swap single and double quotes to reduce escaping issues"""
-    return json.dumps(data, ensure_ascii=False).translate(quote_swap)
+    return json.dumps(data, ensure_ascii=False, separators=(',', ':')).translate(quote_swap)
 
 
 def info_json_loads(info_json):
