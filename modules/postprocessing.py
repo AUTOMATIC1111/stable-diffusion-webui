@@ -84,7 +84,7 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
                 basename = ''
                 forced_filename = None
 
-            infotext = ", ".join([k if k == v else f'{k}: {infotext_utils.quote(v)}' for k, v in pp.info.items() if v is not None])
+            infotext = infotext_utils.build_infotext(pp.info)
 
             if opts.enable_pnginfo:
                 pp.image.info = existing_pnginfo
