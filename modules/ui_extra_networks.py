@@ -672,7 +672,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
     for page, tab in zip(ui.stored_extra_pages, related_tabs):
         jscode = (
             "function(){{"
-            f"extraNetworksTabSelected('{tabname}', '{tabname}_{page.extra_networks_tabname}_prompts', {str(page.allow_prompt).lower()}, {str(page.allow_negative_prompt).lower()});"
+            f"extraNetworksTabSelected('{tabname}', '{tabname}_{page.extra_networks_tabname}_prompts', {str(page.allow_prompt).lower()}, {str(page.allow_negative_prompt).lower()}, '{tabname}_{page.extra_networks_tabname}');"
             f"applyExtraNetworkFilter('{tabname}_{page.extra_networks_tabname}');"
             "}}"
         )

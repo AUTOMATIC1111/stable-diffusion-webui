@@ -28,8 +28,13 @@ function setupExtraNetworksForTab(tabname) {
         });
     }
 
+    var tabnav = gradioApp().querySelector('#' + tabname + '_extra_tabs > div.tab-nav');
+    var controlsDiv = document.createElement('DIV');
+    controlsDiv.classList.add('extra-networks-controls-div');
+    tabnav.appendChild(controlsDiv);
+    tabnav.insertBefore(controlsDiv, null);
+
     var this_tab = gradioApp().querySelector('#' + tabname + '_extra_tabs');
-    this_tab.classList.add('extra-networks');
     this_tab.querySelectorAll(":scope > [id^='" + tabname + "_']").forEach(function(elem) {
         // tabname_full = {tabname}_{extra_networks_tabname}
         var tabname_full = elem.id;
@@ -106,6 +111,9 @@ function setupExtraNetworksForTab(tabname) {
         applyFilter();
         extraNetworksApplySort[tabname_full] = applySort;
         extraNetworksApplyFilter[tabname_full] = applyFilter;
+
+        var controls = gradioApp().querySelector("#" + tabname_full + "_controls");
+        controlsDiv.insertBefore(controls, null);
     });
 
     registerPrompt(tabname, tabname + "_prompt");
@@ -138,12 +146,24 @@ function extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePromp
 }
 
 
-function extraNetworksUnrelatedTabSelected(tabname) { // called from python when user selects an unrelated tab (generate)
-    extraNetworksMovePromptToTab(tabname, '', false, false);
+function extraNetworksShowControlsForPage(tabname, tabname_full){
+    gradioApp().querySelectorAll('#' + tabname + '_extra_tabs .extra-networks-controls-div > div').forEach(function(elem) {
+        targetId = tabname_full + "_controls"
+        elem.style.display = elem.id == targetId ? "" : "none";
+    });
 }
 
-function extraNetworksTabSelected(tabname, id, showPrompt, showNegativePrompt) { // called from python when user selects an extra networks tab
+
+function extraNetworksUnrelatedTabSelected(tabname) { // called from python when user selects an unrelated tab (generate)
+    extraNetworksMovePromptToTab(tabname, '', false, false);
+
+    extraNetworksShowControlsForPage(tabname, null);
+}
+
+function extraNetworksTabSelected(tabname, id, showPrompt, showNegativePrompt, tabname_full) { // called from python when user selects an extra networks tab
     extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt);
+
+    extraNetworksShowControlsForPage(tabname, tabname_full);
 }
 
 function applyExtraNetworkFilter(tabname_full) {

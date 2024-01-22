@@ -266,7 +266,7 @@ def create_ui():
 
         dummy_component = gr.Label(visible=False)
 
-        extra_tabs = gr.Tabs(elem_id="txt2img_extra_tabs")
+        extra_tabs = gr.Tabs(elem_id="txt2img_extra_tabs", elem_classes=["extra-networks"])
         extra_tabs.__enter__()
 
         with gr.Tab("Generation", id="txt2img_generation") as txt2img_generation_tab, ResizeHandleRow(equal_height=False):
@@ -499,7 +499,7 @@ def create_ui():
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         toprow = ui_toprow.Toprow(is_img2img=True, is_compact=shared.opts.compact_prompt_box)
 
-        extra_tabs = gr.Tabs(elem_id="img2img_extra_tabs")
+        extra_tabs = gr.Tabs(elem_id="img2img_extra_tabs", elem_classes=["extra-networks"])
         extra_tabs.__enter__()
 
         with gr.Tab("Generation", id="img2img_generation") as img2img_generation_tab, ResizeHandleRow(equal_height=False):
