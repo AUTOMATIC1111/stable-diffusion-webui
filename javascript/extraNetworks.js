@@ -146,9 +146,9 @@ function extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePromp
 }
 
 
-function extraNetworksShowControlsForPage(tabname, tabname_full){
+function extraNetworksShowControlsForPage(tabname, tabname_full) {
     gradioApp().querySelectorAll('#' + tabname + '_extra_tabs .extra-networks-controls-div > div').forEach(function(elem) {
-        targetId = tabname_full + "_controls"
+        var targetId = tabname_full + "_controls";
         elem.style.display = elem.id == targetId ? "" : "none";
     });
 }
