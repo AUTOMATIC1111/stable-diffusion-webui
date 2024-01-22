@@ -928,7 +928,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                         images.save_image(image_without_cc, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p, suffix="-before-color-correction")
                     image = apply_color_correction(p.color_corrections[i], image)
 
-                image = apply_overlay(image, p.paste_to, i, p.overlay_images)
+                # Removed till we have a UI option for it. Nobody would miss this line.
+                #image = apply_overlay(image, p.paste_to, i, p.overlay_images)
 
                 if save_samples:
                     images.save_image(image, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p)
