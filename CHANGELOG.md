@@ -155,9 +155,9 @@ As of this release, default backend is set to **diffusers** as its more feature 
       see wiki page for more details on syntax  
       thanks @NetroScript  
     - reduce html overhead  
-  - **model compression**, thanks @Disty0
+  - **model compression**, thanks @Disty0  
     - using built-in NNCF model compression, you can reduce the size of your models significantly  
-      example: up to 3.4GB of VRAM saved for SD-XL model!
+      example: up to 3.4GB of VRAM saved for SD-XL model!  
     - see [wiki](https://github.com/vladmandic/automatic/wiki/Model-Compression-with-NNCF) for details  
   - **offline deployment**: allow deployment without git clone  
     for example, you can now deploy a zip of the sdnext folder  
