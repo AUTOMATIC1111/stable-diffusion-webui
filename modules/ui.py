@@ -4,7 +4,7 @@ import gradio as gr
 import gradio.routes
 import gradio.utils
 from modules.call_queue import wrap_gradio_call
-from modules import timer, gr_hijack, shared, theme, sd_models, script_callbacks, modelloader, ui_common, ui_loadsave, ui_symbols, ui_javascript, generation_parameters_copypaste
+from modules import timer, gr_hijack, shared, theme, sd_models, script_callbacks, modelloader, ui_common, ui_loadsave, ui_symbols, ui_javascript, generation_parameters_copypaste, call_queue
 from modules.paths import script_path, data_path # pylint: disable=unused-import
 from modules.dml import directml_override_opts
 import modules.scripts
@@ -28,6 +28,7 @@ extra_networks_symbol = ui_symbols.networks
 apply_style_symbol = ui_symbols.apply
 save_style_symbol = ui_symbols.save
 paste_function = None
+wrap_queued_call = call_queue.wrap_queued_call
 gr_hijack.init()
 
 
