@@ -440,6 +440,14 @@ def check_torch():
             # ROCm 5.5 is oldest for PyTorch 2.1
             torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision --index-url https://download.pytorch.org/whl/rocm5.5')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
+        if rocm_ver is not None:
+            install(os.environ.get('ONNXRUNTIME_PACKAGE', get_onnxruntime_source_for_rocm(arr)), "onnxruntime-training built with ROCm", ignore=True)
+            try:
+                import onnxruntime
+                if "ROCMExecutionProvider" not in onnxruntime.get_available_providers():
+                    log.warn('Failed to automatically install onxnruntime package for ROCm. Please manually install it if you need.')
+            except Exception:
+                pass
     elif allow_ipex and (args.use_ipex or shutil.which('sycl-ls') is not None or shutil.which('sycl-ls.exe') is not None or os.environ.get('ONEAPI_ROOT') is not None or os.path.exists('/opt/intel/oneapi') or os.path.exists("C:/Program Files (x86)/Intel/oneAPI") or os.path.exists("C:/oneAPI")):
         args.use_ipex = True # pylint: disable=attribute-defined-outside-init
         log.info('Intel OneAPI Toolkit detected')
@@ -831,6 +839,24 @@ def get_version():
         except Exception:
             version = { 'app': 'sd.next', 'version': 'unknown' }
     return version
+
+
+def get_onnxruntime_source_for_rocm(rocm_ver):
+    ort_version = "1.16.3"
+
+    try:
+        import onnxruntime
+        ort_version = onnxruntime.__version__
+    except ImportError:
+        pass
+
+    cp_str = f"{sys.version_info.major}{sys.version_info.minor}"
+
+    if rocm_ver is None:
+        command = subprocess.run('hipconfig --version', shell=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        rocm_ver = command.stdout.decode(encoding="utf8", errors="ignore").split('.')
+
+    return f"https://download.onnxruntime.ai/onnxruntime_training-{ort_version}%2Brocm{rocm_ver[0]}{rocm_ver[1]}-cp{cp_str}-cp{cp_str}-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
 
 
 # check version of the main repo and optionally upgrade it

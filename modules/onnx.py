@@ -141,7 +141,11 @@ def initialize():
     if initialized:
         return
 
-    from modules import onnx_pipelines as pipelines
+    from modules import onnx_pipelines as pipelines, devices
+    from modules.onnx_ep import ExecutionProvider, TORCH_DEVICE_TO_EP
+
+    if devices.backend == "rocm":
+        TORCH_DEVICE_TO_EP["cuda"] = ExecutionProvider.ROCm
 
     # OnnxRuntimeModel Hijack.
     OnnxRuntimeModel.__module__ = 'diffusers'

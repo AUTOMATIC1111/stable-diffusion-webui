@@ -10,6 +10,7 @@ class ExecutionProvider(str, Enum):
     DirectML = "DmlExecutionProvider"
     CUDA = "CUDAExecutionProvider"
     ROCm = "ROCMExecutionProvider"
+    MIGraphX = "MIGraphXExecutionProvider"
     OpenVINO = "OpenVINOExecutionProvider"
 
 
@@ -19,6 +20,7 @@ EP_TO_NAME = {
     ExecutionProvider.DirectML: "gpu-dml",
     ExecutionProvider.CUDA: "gpu-cuda", # test required
     ExecutionProvider.ROCm: "gpu-rocm", # test required
+    ExecutionProvider.MIGraphX: "gpu-migraphx", # test required
     ExecutionProvider.OpenVINO: "gpu-openvino??", # test required
 }
 TORCH_DEVICE_TO_EP = {
@@ -42,7 +44,7 @@ def get_default_execution_provider() -> ExecutionProvider:
         if ExecutionProvider.ROCm in available_execution_providers:
             return ExecutionProvider.ROCm
         else:
-            log.warning("Currently, there's no pypi release for onnxruntime-rocm. Please download and install .whl file from https://download.onnxruntime.ai/")
+            return ExecutionProvider.CPU
     elif devices.backend == "ipex" or devices.backend == "openvino":
         return ExecutionProvider.OpenVINO
     return ExecutionProvider.CPU
@@ -59,8 +61,6 @@ def get_execution_provider_options():
         if ExecutionProvider.ROCm in available_execution_providers:
             execution_provider_options["tunable_op_enable"] = 1
             execution_provider_options["tunable_op_tuning_enable"] = 1
-        else:
-            log.warning("Currently, there's no pypi release for onnxruntime-rocm. Please download and install .whl file from https://download.onnxruntime.ai/ The inference will be fall back to CPU.")
     elif opts.onnx_execution_provider == ExecutionProvider.OpenVINO:
         from modules.intel.openvino import get_device as get_raw_openvino_device
         raw_openvino_device = get_raw_openvino_device()
@@ -79,7 +79,7 @@ def get_provider() -> Tuple:
 
 
 def install_execution_provider(ep: ExecutionProvider):
-    from installer import pip, uninstall, installed
+    from installer import pip, uninstall, installed, get_onnxruntime_source_for_rocm
 
     if installed("onnxruntime"):
         uninstall("onnxruntime")
@@ -103,12 +103,7 @@ def install_execution_provider(ep: ExecutionProvider):
             log.warn("ROCMExecutionProvider is not supported on Windows.")
             return
 
-        try:
-            major, minor = sys.version_info
-            cp_str = f"{major}{minor}"
-            packages.append(f"https://download.onnxruntime.ai/onnxruntime_training-1.16.3%2Brocm56-cp{cp_str}-cp{cp_str}-manylinux_2_17_x86_64.manylinux2014_x86_64.whl")
-        except Exception:
-            log.warn("Failed to install onnxruntime for ROCm.")
+        packages.append(get_onnxruntime_source_for_rocm())
     elif ep == ExecutionProvider.OpenVINO:
         if installed("openvino"):
             uninstall("openvino")
