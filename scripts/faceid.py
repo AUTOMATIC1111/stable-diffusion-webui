@@ -9,6 +9,7 @@ from PIL import Image
 from modules import scripts, processing, shared, devices, images
 
 
+debug = shared.log.trace if os.environ.get('SD_FACEID_DEBUG', None) is not None else lambda *args, **kwargs: None
 MODELS = {
     'FaceID Base': 'h94/IP-Adapter-FaceID/ip-adapter-faceid_sd15.bin',
     'FaceID Plus': 'h94/IP-Adapter-FaceID/ip-adapter-faceid-plus_sd15.bin',
@@ -133,6 +134,7 @@ def face_id(p: processing.StableDiffusionProcessing, faces, image, model, overri
                 'seed': int(p.all_seeds[i]),
             }
         )
+        debug(f'FaceID: {ip_model_dict}')
         res = ip_model.generate(**ip_model_dict)
         if isinstance(res, list):
             processed_images += res
