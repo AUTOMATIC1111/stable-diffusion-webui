@@ -139,7 +139,7 @@ def create_ui():
                             inpaint_full_res_padding = gr.Slider(label='Padding', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
                             mask_alpha = gr.Slider(label="Alpha", minimum=0.0, maximum=1.0, step=0.05, value=1.0, elem_id="img2img_mask_alpha")
                         with gr.Row():
-                            inpainting_mask_invert = gr.Radio(label='Mode', choices=['masked', 'inverse'], value='masked', type="index", elem_id="img2img_mask_mode")
+                            inpainting_mask_invert = gr.Radio(label='Mode', choices=['masked', 'invert'], value='masked', type="index", elem_id="img2img_mask_mode")
                             inpaint_full_res = gr.Radio(label="Inpaint area", choices=["full", "masked"], type="index", value="full", elem_id="img2img_inpaint_full_res")
                             inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'noise', 'nothing'], value='original', type="index", elem_id="img2img_inpainting_fill", visible=shared.backend == shared.Backend.ORIGINAL)
 

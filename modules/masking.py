@@ -148,6 +148,7 @@ opts = SimpleNamespace(**{
     'weight_original': 0.5,
     'weight_mask': 0.5,
     'kernel_iterations': 1,
+    'invert': False
 })
 
 
@@ -312,7 +313,7 @@ def get_mask(input_image: gr.Image, input_mask: gr.Image):
         return output_mask
 
 
-def run_mask(input_image: gr.Image, input_mask: gr.Image = None, return_type: str = None, mask_blur: int = None, mask_padding: int = None, segment_enable=True):
+def run_mask(input_image: gr.Image, input_mask: gr.Image = None, return_type: str = None, mask_blur: int = None, mask_padding: int = None, segment_enable=True, invert=False):
     if input_image is None:
         return input_mask
     if isinstance(input_image, list):
@@ -369,6 +370,8 @@ def run_mask(input_image: gr.Image, input_mask: gr.Image = None, return_type: st
             debug(f'Segment blur={opts.mask_blur} x={sigmax} y={sigmay} mask={mask.shape}')
         except Exception as e:
             shared.log.error(f'Segment blur: {e}')
+    if invert or opts.invert:
+        mask = np.invert(mask)
 
     mask_size = np.count_nonzero(mask)
     total_size = np.prod(mask.shape)
@@ -434,15 +437,16 @@ def create_segment_ui():
     def update_opts(*args):
         opts.seg_live = args[0]
         opts.mask_only = args[1]
-        opts.mask_blur = args[2]
-        opts.mask_erode = args[3]
-        opts.mask_dilate = args[4]
-        opts.auto_mask = args[5]
-        opts.seg_score_thresh = args[6]
-        opts.seg_iou_thresh = args[7]
-        opts.seg_nms_thresh = args[8]
-        opts.preview_type = args[9]
-        opts.seg_colormap = args[10]
+        opts.invert = args[2]
+        opts.mask_blur = args[3]
+        opts.mask_erode = args[4]
+        opts.mask_dilate = args[5]
+        opts.auto_mask = args[6]
+        opts.seg_score_thresh = args[7]
+        opts.seg_iou_thresh = args[8]
+        opts.seg_nms_thresh = args[9]
+        opts.preview_type = args[10]
+        opts.seg_colormap = args[11]
 
     global btn_mask, btn_lama # pylint: disable=global-statement
     with gr.Accordion(open=False, label="Mask", elem_id="control_mask", elem_classes=["small-accordion"]):
@@ -453,6 +457,7 @@ def create_segment_ui():
             btn_lama = ui_components.ToolButton(value=ui_symbols.image, visible=True)
         with gr.Row():
             controls.append(gr.Checkbox(label="Inpaint masked only", value=False))
+            controls.append(gr.Checkbox(label="Invert mask", value=False))
         with gr.Row():
             controls.append(gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Blur', value=0.01, elem_id="control_mask_blur"))
             controls.append(gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Erode', value=0.01, elem_id="control_mask_erode"))
