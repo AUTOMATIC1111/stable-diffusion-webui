@@ -3,6 +3,7 @@ from functools import wraps
 from contextlib import nullcontext
 import torch
 import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
+import numpy as np
 from modules import devices
 
 # pylint: disable=protected-access, missing-function-docstring, line-too-long, unnecessary-lambda, no-else-return
@@ -60,6 +61,17 @@ def from_numpy(ndarray):
         return original_from_numpy(ndarray.astype('float32'))
     else:
         return original_from_numpy(ndarray)
+
+original_as_tensor = torch.as_tensor
+@wraps(torch.as_tensor)
+def as_tensor(data, dtype=None, device=None):
+    if check_device(device):
+        device = return_xpu(device)
+    if isinstance(data, np.ndarray) and data.dtype == float and not (
+        (isinstance(device, torch.device) and device.type == "cpu") or (isinstance(device, str) and "cpu" in device)):
+        return original_as_tensor(data, dtype=torch.float32, device=device)
+    else:
+        return original_as_tensor(data, dtype=dtype, device=device)
 
 if torch.xpu.has_fp64_dtype() and os.environ.get('IPEX_FORCE_ATTENTION_SLICE', None) is None:
     original_torch_bmm = torch.bmm
@@ -275,3 +287,4 @@ def ipex_hijacks():
     torch.cat = torch_cat
     if not torch.xpu.has_fp64_dtype():
         torch.from_numpy = from_numpy
+        torch.as_tensor = as_tensor
