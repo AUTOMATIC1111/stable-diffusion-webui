@@ -61,8 +61,8 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
                 pass
             return False
         if is_like_me():
-            return [0.5, 0.55, 0.6, 0.6]
-        return [0.55, 0.6, 0.6, 0.6]
+            return [0.5, 0.5, 0.55, 0.55]
+        return [0.5, 0.55, 0.55, 0.6]
 
     def _get_init_images(self, t: Task):
         images = (t.get('init_img') or "").split(',')
@@ -76,6 +76,8 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
 
     def _build_i2i_tasks(self, t: Task):
         tasks = []
+        t['prompt'] = t['prompt'] or "(((best quality))),(((ultra detailed))), "
+        t['negative_prompt'] = t['negative_prompt'] or "(worst quality:2), (low quality:2), (normal quality:2), "
 
         denoising_strengths = self._denoising_strengths(t)
         init_images = self._get_init_images(t)
