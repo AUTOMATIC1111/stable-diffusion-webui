@@ -76,8 +76,8 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
 
     def _build_i2i_tasks(self, t: Task):
         tasks = []
-        t['prompt'] = t['prompt'] or "(((best quality))),(((ultra detailed))), "
-        t['negative_prompt'] = t['negative_prompt'] or "(worst quality:2), (low quality:2), (normal quality:2), "
+        t['prompt'] = "(((best quality))),(((ultra detailed))), " + t['prompt']
+        t['negative_prompt'] = "(worst quality:2), (low quality:2), (normal quality:2), " +  t['negative_prompt']
 
         denoising_strengths = self._denoising_strengths(t)
         init_images = self._get_init_images(t)
