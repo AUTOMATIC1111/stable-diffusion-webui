@@ -609,28 +609,33 @@ class LaternFairTask(Txt2ImgTask):
             task.get("resize_height", 0),
         )
         extra_args = deepcopy(task['args'])
-        task.pop("args")
-        task.pop("background_image")
-        task.pop("image")
         full_task = deepcopy(task)
+        full_task.pop("args")
+        full_task.pop("background_image")
+        full_task.pop("image")
         full_task.update(extra_args)
         source_img = get_tmp_local_path(t.image)
         backgroud_image = get_tmp_local_path(t.backgroud_image)
         return full_task, source_img, backgroud_image, t.rate_width, t.rate_height, t.border_size, t.resize_width, t.resize_height
 
     @classmethod
-    @retry(tries=10, delay=5, backoff=2, max_delay=5)
+    @retry(tries=5, delay=5, backoff=2, max_delay=5)
     def exec_seg(cls, img_path):
+
         logger.info(f"pixian seg progress......")
         url = 'https://api.pixian.ai/api/v2/remove-background'
         response = requests.post(url,
                                  files={'image': open(img_path, 'rb')},
                                  headers={
                                      'Authorization': 'Basic cHhhMmF2bGo3ODMzcjZhOjY1NmFlMnAzdDhiNm1vbTFhM2t1dnAxZ2ZzODEwcTMzNzk4MzEydWhnOTFoaGh0ZzZjZnY='
-                                 })
+                                 },timeout=15)
+        logger.info("seg post process....")
         if response.status_code == requests.codes.ok:
+            logger.info("seg write....")
             stream = BytesIO(response.content)
+            logger.info("open  start....")
             res = Image.open(stream)
+            logger.info("open  end....")
             return res
         else:
             logger.error(f"pixian seg Error:, {response.status_code}, {response.text}")
@@ -1012,24 +1017,34 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         full_task, user_image, backgroud_image, rate_width, rate_height, border_size, resize_width, resize_height = LaternFairTask.exec_task(
             task)
         # 适配xl
-        logger.info("download model...")
+        logger.info("laternfair download model...")
         local_model_paths = self._get_local_checkpoint(full_task)
         base_model_path = local_model_paths if not isinstance(
             local_model_paths, tuple) else local_model_paths[0]
         refiner_checkpoint = None if not isinstance(
             local_model_paths, tuple) else local_model_paths[1]
+
+        logger.info(f"laternfair loaded base model {full_task.model_hash} ....")
         load_sd_model_weights(base_model_path, full_task.model_hash)
+
         progress = TaskProgress.new_ready(
             full_task, f'model loaded, run laternfairtask...',eta_relative=70)
         yield progress
-       
-        logger.info("step 1, seg...")
+
         progress.fixed_eta=random.randint(12, 15) # 加上后面抠图和贴背景的时间
+
         process_args = self._build_txt2img_arg(progress)
+
+        logger.info("laternfair loaded lora model ....")
+        self._set_little_models(process_args) # 加载lora
+
         progress.status = TaskStatus.Running
+
+
         progress.task_desc = f'laternfairtask task({task.id}) running'
         yield progress
-                
+
+        logger.info("step 1, seg...")
         seg_image = LaternFairTask.exec_seg(user_image)
         # 添加白色背景
         white_image = LaternFairTask.exec_add_back(seg_image)
