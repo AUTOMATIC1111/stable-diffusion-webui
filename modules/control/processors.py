@@ -14,7 +14,6 @@ from modules.control.proc.lineart_anime import LineartAnimeDetector
 from modules.control.proc.pidi import PidiNetDetector
 from modules.control.proc.mediapipe_face import MediapipeFaceDetector
 from modules.control.proc.shuffle import ContentShuffleDetector
-
 from modules.control.proc.leres import LeresDetector
 from modules.control.proc.midas import MidasDetector
 from modules.control.proc.mlsd import MLSDdetector
@@ -26,6 +25,7 @@ from modules.control.proc.zoe import ZoeDetector
 from modules.control.proc.marigold import MarigoldDetector
 from modules.control.proc.dpt import DPTDetector
 from modules.control.proc.glpn import GLPNDetector
+from modules.control.proc.depth_anything import DepthAnythingDetector
 
 
 models = {}
@@ -57,6 +57,7 @@ config = {
     'Shuffle': {'class': ContentShuffleDetector, 'checkpoint': False, 'params': {}},
     'DPT Depth Hybrid': {'class': DPTDetector, 'checkpoint': False, 'params': {}},
     'GLPN Depth': {'class': GLPNDetector, 'checkpoint': False, 'params': {}},
+    'Depth Anything': {'class': DepthAnythingDetector, 'checkpoint': True, 'load_config': {'pretrained_model_or_path': 'LiheYoung/depth_anything_vitl14' }, 'params': { 'color_map': 'inferno' }},
     # 'Midas Depth Large': {'class': MidasDetector, 'checkpoint': True, 'params': {'bg_th': 0.1, 'depth_and_normal': False}, 'load_config': {'pretrained_model_or_path': 'Intel/dpt-large', 'model_type': "dpt_large", 'filename': ''}},
     # 'Zoe Depth Zoe': {'class': ZoeDetector, 'checkpoint': True, 'params': {}},
     # 'Zoe Depth NK': {'class': ZoeDetector, 'checkpoint': True, 'params': {}, 'load_config': {'pretrained_model_or_path': 'halffried/gyre_zoedepth', 'filename': 'ZoeD_M12_NK.safetensors', 'model_type': "zoedepth_nk"}},
@@ -116,6 +117,7 @@ def update_settings(*settings):
     update(['Marigold Depth', 'params', 'color_map'], settings[24])
     update(['Marigold Depth', 'params', 'denoising_steps'], settings[25])
     update(['Marigold Depth', 'params', 'ensemble_size'], settings[26])
+    update(['Depth Anything', 'params', 'color_map'], settings[27])
 
 
 class Processor():

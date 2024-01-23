@@ -628,6 +628,8 @@ def create_ui(_blocks: gr.Blocks=None):
                             settings.append(gr.Dropdown(label="Color map", choices=['None'] + plt.colormaps(), value='None'))
                             settings.append(gr.Slider(label="Denoising steps", minimum=1, maximum=99, step=1, value=10))
                             settings.append(gr.Slider(label="Ensemble size", minimum=1, maximum=99, step=1, value=10))
+                        with gr.Accordion('Depth Anything', open=True, elem_classes=['processor-settings']):
+                            settings.append(gr.Dropdown(label="Color map", choices=['inferno'] + masking.COLORMAP, value='inferno'))
                         for setting in settings:
                             setting.change(fn=processors.update_settings, inputs=settings, outputs=[])
 

@@ -388,7 +388,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
     @param ext_filter: An optional list of filename extensions to filter by
     @return: A list of paths containing the desired model(s)
     """
-    places = list(set([model_path, command_path]))
+    places = list(set([model_path, command_path])) # noqa:C405
     output = []
     try:
         output:list = [*files_cache.list_files(*places, ext_filter=ext_filter, ext_blacklist=ext_blacklist)]
