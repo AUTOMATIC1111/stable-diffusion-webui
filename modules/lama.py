@@ -87,6 +87,12 @@ class SimpleLama:
         self.model.to(self.device)
 
     def __call__(self, image: Image.Image | np.ndarray, mask: Image.Image | np.ndarray):
+        if image is None:
+            log.warning('LaMa: image is none')
+            return None
+        if mask is None:
+            mask = Image.new('L', image.size, 0)
+            return None
         image, mask = prepare_img_and_mask(image, mask, self.device)
         with devices.inference_context():
             inpainted = self.model(image, mask)

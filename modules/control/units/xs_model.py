@@ -26,16 +26,15 @@ from diffusers.models.attention_processor import USE_PEFT_BACKEND, AttentionProc
 from diffusers.models.autoencoders import AutoencoderKL
 from diffusers.models.lora import LoRACompatibleConv
 from diffusers.models.modeling_utils import ModelMixin
-from diffusers.models.unet_2d_blocks import (
-    CrossAttnDownBlock2D,
-    CrossAttnUpBlock2D,
-    DownBlock2D,
-    Downsample2D,
-    ResnetBlock2D,
-    Transformer2DModel,
-    UpBlock2D,
-    Upsample2D,
-)
+try:
+    from diffusers.models.unet_2d_blocks import CrossAttnDownBlock2D, CrossAttnUpBlock2D, DownBlock2D, Downsample2D, ResnetBlock2D, Transformer2DModel, UpBlock2D, Upsample2D
+except Exception:
+    pass
+try:
+    from diffusers.models.unets.unet_2d_blocks import CrossAttnDownBlock2D, CrossAttnUpBlock2D, DownBlock2D, Downsample2D, ResnetBlock2D, Transformer2DModel, UpBlock2D, Upsample2D
+except Exception:
+    pass
+
 from diffusers.models.unet_2d_condition import UNet2DConditionModel
 from diffusers.utils import BaseOutput, logging
 

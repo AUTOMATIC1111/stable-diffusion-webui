@@ -13,6 +13,7 @@ OPTIONAL:
 - style aligned [pr](https://github.com/huggingface/diffusers/pull/6489)
 - mixture tiling [pr](https://github.com/huggingface/diffusers/tree/main/examples/community#stable-diffusion-mixture-tiling)
 - depth anything [repo](https://depth-anything.github.io/)
+- instaflow [pr](https://github.com/huggingface/diffusers/pull/6057)[repo](https://github.com/gnobitab/RectifiedFlow)
 - control api
 - photomaker api
 - interrogate api
@@ -20,7 +21,7 @@ OPTIONAL:
 - masking api
 - preprocess api
 
-## Update for 2023-01-22
+## Update for 2023-01-23
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
@@ -70,6 +71,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - add support for **scripts** and **extensions**  
     you can now combine control workflow with your favorite script or extension  
     *note* extensions that are hard-coded for txt2img or img2img tabs may not work until they are updated  
+  - add **depth-anything** depth map processor and trained controlnet  
   - add **marigold** depth map processor  
     this is state-of-the-art depth estimation model, but its quite heavy on resources  
   - add **openpose xl** controlnet  
@@ -104,7 +106,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - additional models for *SD15* and *SD-XL*, to use simply select from *Scripts*:  
     **SD15**: Base, Base ViT-G, Light, Plus, Plus Face, Full Face  
     **SDXL**: Base SXDL, Base ViT-H SXDL, Plus ViT-H SXDL, Plus Face ViT-H SXDL  
-  - enable use via api, thanks @trojaner
+  - enable use via api, thanks @trojaner  
 - [PhotoMaker](https://github.com/TencentARC/PhotoMaker)  
   - for *SD-XL* only  
   - simply select from *scripts*  

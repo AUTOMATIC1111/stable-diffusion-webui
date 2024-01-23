@@ -25,6 +25,7 @@ predefined_sd15 = {
     'Shuffle': "lllyasviel/control_v11e_sd15_shuffle",
     'SoftEdge': "lllyasviel/control_v11p_sd15_softedge",
     'Tile': "lllyasviel/control_v11f1e_sd15_tile",
+    'Depth Anything': 'vladmandic/depth-anything',
     'Canny FP16': 'Aptronym/SDNext/ControlNet11/controlnet11Models_canny.safetensors',
     'Inpaint FP16': 'Aptronym/SDNext/ControlNet11/controlnet11Models_inpaint.safetensors',
     'LineArt Anime FP16': 'Aptronym/SDNext/ControlNet11/controlnet11Models_animeline.safetensors',
@@ -116,21 +117,29 @@ class ControlNet():
 
     def load_safetensors(self, model_path):
         name = os.path.splitext(model_path)[0]
-        yaml_path = None
+        config_path = None
         if not os.path.exists(model_path):
             import huggingface_hub as hf
             parts = model_path.split('/')
             repo_id = f'{parts[0]}/{parts[1]}'
             filename = os.path.splitext('/'.join(parts[2:]))[0]
             model_path = hf.hf_hub_download(repo_id=repo_id, filename=f'{filename}.safetensors', cache_dir=cache_dir)
-            try:
-                yaml_path = hf.hf_hub_download(repo_id=repo_id, filename=f'{filename}.yaml', cache_dir=cache_dir)
-            except Exception:
-                pass # no yaml file
+            if config_path is None:
+                try:
+                    config_path = hf.hf_hub_download(repo_id=repo_id, filename=f'{filename}.yaml', cache_dir=cache_dir)
+                except Exception:
+                    pass # no yaml file
+            if config_path is None:
+                try:
+                    config_path = hf.hf_hub_download(repo_id=repo_id, filename=f'{filename}.json', cache_dir=cache_dir)
+                except Exception:
+                    pass # no yaml file
         elif os.path.exists(name + '.yaml'):
-            yaml_path = f'{name}.yaml'
-        if yaml_path is not None:
-            self.load_config['original_config_file '] = yaml_path
+            config_path = f'{name}.yaml'
+        elif os.path.exists(name + '.json'):
+            config_path = f'{name}.json'
+        if config_path is not None:
+            self.load_config['original_config_file '] = config_path
         self.model = ControlNetModel.from_single_file(model_path, **self.load_config)
 
     def load(self, model_id: str = None) -> str:

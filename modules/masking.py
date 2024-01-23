@@ -217,6 +217,8 @@ def run_segment(input_image: gr.Image, input_mask: np.ndarray):
             continue
         overlap = 0
         if input_mask_size > 0:
+            if mask.shape != input_mask.shape:
+                mask = cv2.resize(mask, (input_mask.shape[1], input_mask.shape[0]), interpolation=cv2.INTER_CUBIC)
             overlap = cv2.bitwise_and(mask, input_mask)
             overlap = np.count_nonzero(overlap)
             if overlap == 0:
