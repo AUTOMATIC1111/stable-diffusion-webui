@@ -1005,7 +1005,13 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     image = pp.image
 
                 mask_for_overlay = getattr(p, "mask_for_overlay", None)
-                overlay_image = p.overlay_images[i] if getattr(p, "overlay_images", None) is not None and i < len(p.overlay_images) else None
+
+                if not shared.opts.overlay_inpaint:
+                    overlay_image = None
+                elif getattr(p, "overlay_images", None) is not None and i < len(p.overlay_images):
+                    overlay_image = p.overlay_images[i]
+                else:
+                    overlay_image = None
 
                 if p.scripts is not None:
                     ppmo = scripts.PostProcessMaskOverlayArgs(i, mask_for_overlay, overlay_image)
