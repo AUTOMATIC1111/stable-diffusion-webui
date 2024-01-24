@@ -46,8 +46,9 @@ def nn_approximation(sample): # Approximate NN
         shared.log.debug(f'Load VAE decode approximate: model="{model_path}"')
     try:
         in_sample = sample.to(devices.device).unsqueeze(0)
+        sd_vae_approx_model.to(devices.device, devices.dtype)
         x_sample = sd_vae_approx_model(in_sample)
-        x_sample = x_sample[0]
+        x_sample = x_sample[0].detach().cpu()
         return x_sample
     except Exception as e:
         shared.log.error(f'Decode approximate: {e}')
