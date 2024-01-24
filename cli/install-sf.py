@@ -67,7 +67,7 @@ def install_stable_fast():
         print(f'StableFast unsupported CUDA: {cuda_ver} required {cuda_supported}')
         print('Installing from source...')
         url = 'git+https://github.com/chengzeyi/stable-fast.git@main#egg=stable-fast'
-    elif sf_ver is not None:
+    elif sf_ver is None:
         print('StableFast cannot determine version')
         print('Installing from source...')
         url = 'git+https://github.com/chengzeyi/stable-fast.git@main#egg=stable-fast'

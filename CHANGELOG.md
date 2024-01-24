@@ -182,6 +182,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
     - `sdapi.py` allow manual api invoke  
       example: `python cli/sdapi.py /sdapi/v1/sd-models`  
     - `image-exif.py` improve metadata parsing  
+    - `install-sf` helper script to automatically find best available stable-fast package for the platform  
   - **memory**: add ram usage monitoring in addition to gpu memory usage monitoring  
   - **vae**: enable taesd batch decode  
     enable/disable with settings -> diffusers > vae slicing  
@@ -239,6 +240,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - processing: fix batch file names  
   - live preview: fix when using `bfloat16`
   - upscale: fix ldsr
+  - better sdxl model detection
   - cli: fix cmd args parsing  
   - global crlf->lf switch  
   - model type switch if there is loaded submodels  
