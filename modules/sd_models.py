@@ -577,7 +577,10 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
                     warn(f'Model detected as Segmind Vega model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion XL'
             else:
-                guess = 'Stable Diffusion'
+                if 'XL' in f.upper():
+                    guess = 'Stable Diffusion XL'
+                else:
+                    guess = 'Stable Diffusion'
             # guess by name
             """
             if 'LCM_' in f.upper() or 'LCM-' in f.upper() or '_LCM' in f.upper() or '-LCM' in f.upper():
