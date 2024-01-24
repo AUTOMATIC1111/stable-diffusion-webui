@@ -145,6 +145,11 @@ class TaskExecutor(Thread):
 
         return True
 
+    def _get_persist_model_hashes(self):
+        rds = self.receiver.get_redis_cli()
+        hashes = rds.lrange('persist_models', 0, -1)
+        return hashes
+
     def _get_task(self):
         while self.is_alive() and not self.receiver.closed and not self.__stop:
             with self.not_busy:
@@ -154,7 +159,8 @@ class TaskExecutor(Thread):
                             if random.randint(1, 10) < 3:
                                 # 释放磁盘空间
                                 safety_clean_tmp()
-                                tidy_model_caches(models_path)
+                                model_hashes = self._get_persist_model_hashes()
+                                tidy_model_caches(models_path, persist_model_hashes=model_hashes)
                             logger.info(f"====>>> preload task:{task.id}")
                             self.queue.put(task)
                             logger.info(f"====>>> push task:{task.id}")

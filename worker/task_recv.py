@@ -687,6 +687,9 @@ class TaskReceiver:
             task_id: score
         })
 
+    def get_redis_cli(self):
+        return self.redis_pool.get_connection()
+
     def close(self):
         if self.closed:
             return

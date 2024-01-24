@@ -64,10 +64,14 @@ def release_disk_with_free_mb(folder: str, expect_free: float, on_removing: typi
             continue
 
 
-def tidy_model_caches(models_dir, expire_days: int = 14):
+def tidy_model_caches(models_dir, expire_days: int = 14, persist_model_hashes: typing.Sequence = None):
     ckpt_dir = os.path.join(models_dir, 'Stable-diffusion')
     lora_dir = os.path.join(models_dir, 'Lora')
     lycor_dir = os.path.join(models_dir, 'LyCORIS')
+
+    persist_model_hashes = persist_model_hashes or []
+    persist_model_hash_map = dict((x, 1) for x in persist_model_hashes)
+    persist_model_hash_map.update({'v1-5-pruned-emaonly': 1})
 
     def clean_timeout_files(expire_days):
         dirnames = [
@@ -93,6 +97,13 @@ def tidy_model_caches(models_dir, expire_days: int = 14):
                     except:
                         logger.exception(f'cannot remove file:{full}')
 
+    def on_remove(x):
+        basename, _ = os.path.splitext(os.path.basename(x))
+        ok = basename not in persist_model_hash_map
+        if not ok:
+            print(f"[clean model] dont remove model:{x}")
+        return ok
+
     if platform.system() == 'Windows':
         clean_timeout_files(expire_days)
 
@@ -104,11 +115,10 @@ def tidy_model_caches(models_dir, expire_days: int = 14):
         if used_percent > 0.85:
             # models可能是一个挂载点
             free = ((used + avail) * 0.2) // 1024
-            release_disk_with_free_mb(
-                ckpt_dir, free, lambda x: os.path.basename(x) != "v1-5-pruned-emaonly.safetensors")
+            release_disk_with_free_mb(ckpt_dir, free, on_remove)
             free = ((used + avail) * 0.1) // 1024
-            release_disk_with_free_mb(lora_dir, free)
-            release_disk_with_free_mb(lycor_dir, free)
+            release_disk_with_free_mb(lora_dir, free, on_remove)
+            release_disk_with_free_mb(lycor_dir, free, on_remove)
         elif used_percent > 0.5:
             expire_days = expire_days // 2 if expire_days > 2 else expire_days
             clean_timeout_files(expire_days)
