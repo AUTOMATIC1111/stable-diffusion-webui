@@ -24,6 +24,7 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
         return {
             "name": checkpoint.name_for_extra,
             "filename": checkpoint.filename,
+            "model_path": name,
             "shorthash": checkpoint.shorthash,
             "preview": self.find_preview(path),
             "description": self.find_description(path),
