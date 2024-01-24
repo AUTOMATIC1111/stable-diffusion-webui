@@ -211,9 +211,10 @@ As of this release, default backend is set to **diffusers** as its more feature 
 - **OpenVINO**, thanks @disty0  
   - **4-bit support with NNCF**  
     enable *Compress Model weights with NNCF* from *Compute Settings* and set a 4-bit NNCF mode  
-    4-bit and 8-bit with OpenVINO is CPU only for now  
+    select both CPU and GPU from the device selection if you want to use 4-bit or 8-bit modes on GPU  
   - experimental support for *Text Encoder* compiling  
     OpenVINO is faster than IPEX now  
+  - update to OpenVINO 2023.3.0  
   - add device selection to `Compute Settings`  
     selecting multiple devices will use `HETERO` device  
   - remove `OPENVINO_TORCH_BACKEND_DEVICE` env variable  
