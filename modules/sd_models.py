@@ -556,7 +556,7 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
                 if op == 'model':
                     warn(f'Model detected as SD-XL refiner model, but attempting to load a base model: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion XL'
-            elif (size >= 6611 and size <= 6619) or (size >= 6771 and size <= 6779): # 6617, HassakuXL is 6776
+            elif (size >= 6611 and size <= 7220): # 6617, HassakuXL is 6776, monkrenRealisticINT_v10 is 7217
                 if shared.backend == shared.Backend.ORIGINAL:
                     warn(f'Model detected as SD-XL base model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Stable Diffusion XL'
