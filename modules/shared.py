@@ -34,6 +34,7 @@ url = 'https://github.com/vladmandic/automatic'
 cmd_opts, _ = parser.parse_known_args()
 hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
 xformers_available = False
+locking_available = True
 clip_model = None
 interrogator = modules.interrogate.InterrogateModels("interrogate")
 sd_upscalers = []
@@ -86,16 +87,23 @@ if not hasattr(cmd_opts, "use_openvino"):
 
 
 def readfile(filename, silent=False, lock=False):
+    global locking_available # pylint: disable=global-statement
     data = {}
     lock_file = None
     locked = False
+    if lock and locking_available:
+        try:
+            lock_file = fasteners.InterProcessReaderWriterLock(f"{filename}.lock", logger=log)
+            locked = lock_file.acquire_read_lock(blocking=True, timeout=3)
+        except Exception as e:
+            lock_file = None
+            locking_available = False
+            log.error(f'File read lock: file="{filename}" {e}')
+            locked = False
     try:
         # if not os.path.exists(filename):
         #    return {}
         t0 = time.time()
-        if lock:
-            lock_file = fasteners.InterProcessReaderWriterLock(f"{filename}.lock", logger=log)
-            locked = lock_file.acquire_read_lock(blocking=True, timeout=3)
         with open(filename, "rb") as file:
             b = file.read()
             data = orjson.loads(b) # pylint: disable=no-member
@@ -116,10 +124,10 @@ def readfile(filename, silent=False, lock=False):
 
 
 def writefile(data, filename, mode='w', silent=False, atomic=False):
-    lock = None
+    lock_file = None
     locked = False
     import tempfile
-
+    global locking_available # pylint: disable=global-statement
 
     def default(obj):
         log.error(f"Saving: {filename} not a valid object: {obj}")
@@ -140,8 +148,17 @@ def writefile(data, filename, mode='w', silent=False, atomic=False):
             output = json.dumps(simple, indent=2, default=default)
         else:
             raise ValueError('not a valid object')
-        lock = fasteners.InterProcessReaderWriterLock(f"{filename}.lock", logger=log)
-        locked = lock.acquire_write_lock(blocking=True, timeout=3)
+    except Exception as e:
+        log.error(f'Saving failed: file="{filename}" {e}')
+        return
+    try:
+        lock_file = fasteners.InterProcessReaderWriterLock(f"{filename}.lock", logger=log) if locking_available else None
+        locked = lock_file.acquire_write_lock(blocking=True, timeout=3) if lock_file is not None else False
+    except Exception as e:
+        locking_available = False
+        log.error(f'File write lock: file="{filename}" {e}')
+        locked = False
+    try:
         if atomic:
             with tempfile.NamedTemporaryFile(mode=mode, encoding="utf8", delete=False, dir=os.path.dirname(filename)) as f:
                 f.write(output)
@@ -155,11 +172,10 @@ def writefile(data, filename, mode='w', silent=False, atomic=False):
         if not silent:
             log.debug(f'Save: file="{filename}" json={len(data)} bytes={len(output)} time={t1-t0:.3f}')
     except Exception as e:
-        log.error(f'Saving failed: {filename} {e}')
-        errors.display(e, 'Saving failed')
+        log.error(f'Saving failed: file="{filename}" {e}')
     finally:
-        if lock is not None:
-            lock.release_read_lock()
+        if lock_file is not None:
+            lock_file.release_read_lock()
         if locked and os.path.exists(f"{filename}.lock"):
             os.remove(f"{filename}.lock")
 
