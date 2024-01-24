@@ -62,7 +62,7 @@ def apply_styles_to_extra(p, style: Style):
                 v = type(orig)(v)
             setattr(p, k, v)
             fields.append(f'{k}={v}')
-    log.info(f'Applying style: name="{style.name}" extra={fields}')
+    log.debug(f'Applying style: name="{style.name}" extra={fields}')
 
 
 class StyleDatabase:

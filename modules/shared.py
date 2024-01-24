@@ -93,7 +93,8 @@ def readfile(filename, silent=False, lock=False):
     locked = False
     if lock and locking_available:
         try:
-            lock_file = fasteners.InterProcessReaderWriterLock(f"{filename}.lock", logger=log)
+            lock_file = fasteners.InterProcessReaderWriterLock(f"{filename}.lock")
+            lock_file.logger.disabled = True
             locked = lock_file.acquire_read_lock(blocking=True, timeout=3)
         except Exception as e:
             lock_file = None
@@ -115,25 +116,24 @@ def readfile(filename, silent=False, lock=False):
     except Exception as e:
         if not silent:
             log.error(f'Reading failed: {filename} {e}')
-    finally:
-        try:
-            if lock_file is not None:
-                lock_file.release_read_lock()
-            if locked and os.path.exists(f"{filename}.lock"):
-                os.remove(f"{filename}.lock")
-        except Exception:
-            pass
+    try:
+        if locking_available and lock_file is not None:
+            lock_file.release_read_lock()
+        if locked and os.path.exists(f"{filename}.lock"):
+            os.remove(f"{filename}.lock")
+    except Exception:
+        locking_available = False
     return data
 
 
 def writefile(data, filename, mode='w', silent=False, atomic=False):
-    lock_file = None
-    locked = False
     import tempfile
     global locking_available # pylint: disable=global-statement
+    lock_file = None
+    locked = False
 
     def default(obj):
-        log.error(f"Saving: {filename} not a valid object: {obj}")
+        log.error(f'Saving: file="{filename}" not a valid object: {obj}')
         return str(obj)
 
     try:
@@ -155,10 +155,13 @@ def writefile(data, filename, mode='w', silent=False, atomic=False):
         log.error(f'Saving failed: file="{filename}" {e}')
         return
     try:
-        lock_file = fasteners.InterProcessReaderWriterLock(f"{filename}.lock", logger=log) if locking_available else None
-        locked = lock_file.acquire_write_lock(blocking=True, timeout=3) if lock_file is not None else False
+        if locking_available:
+            lock_file = fasteners.InterProcessReaderWriterLock(f"{filename}.lock") if locking_available else None
+            lock_file.logger.disabled = True
+            locked = lock_file.acquire_write_lock(blocking=True, timeout=3) if lock_file is not None else False
     except Exception as e:
         locking_available = False
+        lock_file = None
         log.error(f'File write lock: file="{filename}" {e}')
         locked = False
     try:
@@ -176,14 +179,14 @@ def writefile(data, filename, mode='w', silent=False, atomic=False):
             log.debug(f'Save: file="{filename}" json={len(data)} bytes={len(output)} time={t1-t0:.3f}')
     except Exception as e:
         log.error(f'Saving failed: file="{filename}" {e}')
-    finally:
-        try:
-            if lock_file is not None:
-                lock_file.release_read_lock()
-            if locked and os.path.exists(f"{filename}.lock"):
-                os.remove(f"{filename}.lock")
-        except Exception:
-            pass
+    try:
+        if locking_available and lock_file is not None:
+            lock_file.release_write_lock()
+        if locked and os.path.exists(f"{filename}.lock"):
+            os.remove(f"{filename}.lock")
+    except Exception:
+        print('HERE4')
+        locking_available = False
 
 
 # early select backend

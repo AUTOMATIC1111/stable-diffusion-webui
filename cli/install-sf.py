@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 import os
+import re
 import sys
 
-ver = '1.0.1.dev20240109'
 torch_supported = ['211', '212']
 cuda_supported = ['cu118', 'cu121']
 python_supported = ['39', '310', '311']
 repo_url = 'https://github.com/chengzeyi/stable-fast'
+api_url = 'https://api.github.com/repos/chengzeyi/stable-fast/releases/tags/nightly'
 path_url = '/releases/download/nightly'
 
 
@@ -16,6 +17,29 @@ def install_pip(arg: str):
     print(f'Running: {cmd}')
     result = subprocess.run(cmd, shell=True, check=False, env=os.environ)
     return result.returncode == 0
+
+
+def get_nightly():
+    import requests
+    r = requests.get(api_url, timeout=10)
+    if r.status_code != 200:
+        print('Failed to get nightly version')
+        return None
+    json = r.json()
+    assets = json.get('assets', [])
+    if len(assets) == 0:
+        print('Failed to get nightly version')
+        return None
+    asset = assets[0].get('name', '')
+    pattern = r"-(.+?)\+"
+    match = re.search(pattern, asset)
+    if match:
+        ver = match.group(1)
+        print(f'Nightly version: {ver}')
+        return ver
+    else:
+        print('Failed to get nightly version')
+        return None
 
 
 def install_stable_fast():
@@ -33,6 +57,7 @@ def install_stable_fast():
 
     torch_ver, cuda_ver = torch.__version__.split('+')
     torch_ver = torch_ver.replace('.', '')
+    sf_ver = get_nightly()
 
     if torch_ver not in torch_supported:
         print(f'StableFast unsupported torch: {torch_ver} required {torch_supported}')
@@ -42,9 +67,13 @@ def install_stable_fast():
         print(f'StableFast unsupported CUDA: {cuda_ver} required {cuda_supported}')
         print('Installing from source...')
         url = 'git+https://github.com/chengzeyi/stable-fast.git@main#egg=stable-fast'
+    elif sf_ver is not None:
+        print('StableFast cannot determine version')
+        print('Installing from source...')
+        url = 'git+https://github.com/chengzeyi/stable-fast.git@main#egg=stable-fast'
     else:
         print('Installing wheel...')
-        file_url = f'stable_fast-{ver}+torch{torch_ver}{cuda_ver}-cp{python_ver}-cp{python_ver}-{bin_url}'
+        file_url = f'stable_fast-{sf_ver}+torch{torch_ver}{cuda_ver}-cp{python_ver}-cp{python_ver}-{bin_url}'
         url = f'{repo_url}/{path_url}/{file_url}'
 
     ok = install_pip(url)

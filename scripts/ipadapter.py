@@ -87,8 +87,8 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name, scale, im
         return False
 
     # load image encoder used by ip adapter
-    if getattr(pipe, 'image_encoder', None) is None or image_encoder_name != clip_repo + '/' + subfolder:
-        if image_encoder is None or image_encoder_type != shared.sd_model_type or checkpoint != shared.opts.sd_model_checkpoint or image_encoder_name != clip_repo + '/' + subfolder:
+    if getattr(pipe, 'image_encoder', None) is None or image_encoder_name != clip_repo + '/' + subfolder or image_encoder is None:
+        if image_encoder_type != shared.sd_model_type or checkpoint != shared.opts.sd_model_checkpoint or image_encoder_name != clip_repo + '/' + subfolder:
             if shared.sd_model_type != 'sd' and shared.sd_model_type != 'sdxl':
                 shared.log.error(f'IP adapter: unsupported model type: {shared.sd_model_type}')
                 return False
@@ -108,7 +108,7 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name, scale, im
 
     # main code
     # subfolder = 'models' if 'sd15' in adapter else 'sdxl_models'
-    if adapter != loaded or getattr(pipe.unet.config, 'encoder_hid_dim_type', None) is None or checkpoint != shared.opts.sd_model_checkpoint:
+    if adapter != loaded or getattr(pipe.unet.config, 'encoder_hid_dim_type', None) is None or checkpoint != shared.opts.sd_model_checkpoint or pipe.image_encoder is None:
         t0 = time.time()
         if loaded is not None:
             shared.log.debug('IP adapter: reset attention processor')

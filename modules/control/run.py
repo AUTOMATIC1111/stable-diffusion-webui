@@ -458,11 +458,11 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE) # only controlnet supports img2img
                             else:
                                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
-                                if p.init_images is not None:
+                                if hasattr(p, 'init_images') and p.init_images is not None:
                                     p.task_args['image'] = p.init_images # need to set explicitly for txt2img
                             if unit_type == 'lite':
                                 instance.apply(selected_models, p.image, use_conditioning)
-                        if p.init_images is None:
+                        if hasattr(p, 'init_images') and p.init_images is None:
                             del p.init_images
 
                     # ip adapter
