@@ -116,10 +116,13 @@ def readfile(filename, silent=False, lock=False):
         if not silent:
             log.error(f'Reading failed: {filename} {e}')
     finally:
-        if lock_file is not None:
-            lock_file.release_read_lock()
-        if locked and os.path.exists(f"{filename}.lock"):
-            os.remove(f"{filename}.lock")
+        try:
+            if lock_file is not None:
+                lock_file.release_read_lock()
+            if locked and os.path.exists(f"{filename}.lock"):
+                os.remove(f"{filename}.lock")
+        except Exception:
+            pass
     return data
 
 
@@ -174,10 +177,13 @@ def writefile(data, filename, mode='w', silent=False, atomic=False):
     except Exception as e:
         log.error(f'Saving failed: file="{filename}" {e}')
     finally:
-        if lock_file is not None:
-            lock_file.release_read_lock()
-        if locked and os.path.exists(f"{filename}.lock"):
-            os.remove(f"{filename}.lock")
+        try:
+            if lock_file is not None:
+                lock_file.release_read_lock()
+            if locked and os.path.exists(f"{filename}.lock"):
+                os.remove(f"{filename}.lock")
+        except Exception:
+            pass
 
 
 # early select backend
