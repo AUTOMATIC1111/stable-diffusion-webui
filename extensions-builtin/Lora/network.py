@@ -90,16 +90,17 @@ class NetworkModule:
         self.scale = weights.w["scale"].item() if "scale" in weights.w else None
 
     def multiplier(self):
+        unet_multiplier = 3 * [self.network.unet_multiplier] if not isinstance(self.network.unet_multiplier, list) else self.network.unet_multiplier
         if 'transformer' in self.sd_key[:20]:
             return self.network.te_multiplier
         if "down_blocks" in self.sd_key:
-            return self.network.unet_multiplier[0]
+            return unet_multiplier[0]
         if "mid_block" in self.sd_key:
-            return self.network.unet_multiplier[1]
+            return unet_multiplier[1]
         if "up_blocks" in self.sd_key:
-            return self.network.unet_multiplier[2]
+            return unet_multiplier[2]
         else:
-            return self.network.unet_multiplier[0]
+            return unet_multiplier[0]
 
     def calc_scale(self):
         if self.scale is not None:
