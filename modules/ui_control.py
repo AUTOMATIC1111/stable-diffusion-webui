@@ -47,6 +47,25 @@ def initialize():
     scripts.scripts_current.initialize_scripts(is_img2img=True)
 
 
+def interrogate_clip():
+    prompt = None
+    try:
+        prompt = shared.interrogator.interrogate(input_source[0])
+    except Exception:
+        pass
+    return gr.update() if prompt is None else prompt
+
+
+def interrogate_booru():
+    prompt = None
+    try:
+        from modules import deepbooru
+        prompt = deepbooru.model.tag(input_source[0])
+    except Exception:
+        pass
+    return gr.update() if prompt is None else prompt
+
+
 def return_controls(res):
     # return preview, image, video, gallery, text
     debug(f'Control received: type={type(res)} {res}')
@@ -334,7 +353,7 @@ def create_ui(_blocks: gr.Blocks=None):
                             input_image = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="editor", height=gr_height, visible=True, image_mode='RGB', elem_id='control_input_select', elem_classes=['control-image'])
                             input_resize = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="select", height=gr_height, visible=False, image_mode='RGB', elem_id='control_input_resize', elem_classes=['control-image'])
                             input_inpaint = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="sketch", height=gr_height, visible=False, image_mode='RGB', elem_id='control_input_inpaint', brush_radius=32, mask_opacity=0.6, elem_classes=['control-image'])
-                            interrogate_clip, interrogate_booru = ui_sections.create_interrogate_buttons('control')
+                            btn_interrogate_clip, btn_interrogate_booru = ui_sections.create_interrogate_buttons('control')
                             with gr.Row():
                                 input_buttons = [gr.Button('Select', visible=True, interactive=False), gr.Button('Inpaint', visible=True, interactive=True), gr.Button('Outpaint', visible=True, interactive=True)]
                         with gr.Tab('Video', id='in-video') as tab_video:
@@ -641,8 +660,8 @@ def create_ui(_blocks: gr.Blocks=None):
                 input_type.change(fn=lambda x: gr.update(visible=x == 2), inputs=[input_type], outputs=[column_init])
                 btn_prompt_counter.click(fn=call_queue.wrap_queued_call(ui_common.update_token_counter), inputs=[prompt, steps], outputs=[prompt_counter])
                 btn_negative_counter.click(fn=call_queue.wrap_queued_call(ui_common.update_token_counter), inputs=[negative, steps], outputs=[negative_counter])
-                interrogate_clip.click(fn=ui_common.interrogate_clip, inputs=[input_image], outputs=[prompt])
-                interrogate_booru.click(fn=ui_common.interrogate_booru, inputs=[input_image], outputs=[prompt])
+                btn_interrogate_clip.click(fn=interrogate_clip, inputs=[], outputs=[prompt])
+                btn_interrogate_booru.click(fn=interrogate_booru, inputs=[], outputs=[prompt])
 
                 select_fields = [input_mode, input_image, init_image, input_type, input_resize, input_inpaint, input_video, input_batch, input_folder]
                 select_output = [output_tabs, result_txt]
