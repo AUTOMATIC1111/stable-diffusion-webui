@@ -383,12 +383,6 @@ def create_ui(startup_timer = None):
     interfaces += [(extensions_interface, "Extensions", "extensions")]
     timer.startup.record("ui-extensions")
 
-    if shared.opts.diffusers_pipeline.startswith("ONNX"):
-        from modules import ui_onnx
-
-        onnx_interface = ui_onnx.create_ui()
-        interfaces += [(onnx_interface, "ONNX", "onnx")]
-
     shared.tab_names = []
     for _interface, label, _ifid in interfaces:
         shared.tab_names.append(label)
@@ -418,7 +412,6 @@ def create_ui(startup_timer = None):
                 loadsave.add_block(interface, ifid)
             loadsave.add_component(f"webui/Tabs@{tabs.elem_id}", tabs)
             loadsave.setup_ui()
-
         if opts.notification_audio_enable and os.path.exists(os.path.join(script_path, opts.notification_audio_path)):
             gr.Audio(interactive=False, value=os.path.join(script_path, opts.notification_audio_path), elem_id="audio_notification", visible=False)
 
