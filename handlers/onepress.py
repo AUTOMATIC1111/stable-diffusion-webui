@@ -31,6 +31,8 @@ from retry import retry
 from io import BytesIO
 import tempfile
 
+from timeout_decorator import timeout
+
 # conversion_action={"线稿":'line',"黑白":'black_white',"色块":'color','草图':'sketch','蜡笔':'crayon'}
 
 # rendition_style={"彩铅":'color_pencil',"浮世绘":'ukiyo',"山水画":'landscape',"极简水彩":'min_watercolor',"炫彩":'dazzle_color',"油画":'oil_paint'}
@@ -586,6 +588,7 @@ class LaternFairTask(Txt2ImgTask):
                  border_size: int = 160,
                  resize_width: int = 0,
                  resize_height: int = 0,
+                 background_image_vertical: str = None
                  ):
         self.image = image
         self.backgroud_image = backgroud_image
@@ -595,6 +598,7 @@ class LaternFairTask(Txt2ImgTask):
         self.border_size = border_size
         self.resize_width = resize_width
         self.resize_height = resize_height
+        self.background_image_vertical = background_image_vertical
 
     @classmethod
     def exec_task(cls, task: Task):
@@ -607,6 +611,7 @@ class LaternFairTask(Txt2ImgTask):
             task.get("border_size", 160),
             task.get("resize_width", 0),
             task.get("resize_height", 0),
+            task.get("background_image_vertical", None)
         )
         extra_args = deepcopy(task['args'])
         full_task = deepcopy(task)
@@ -614,58 +619,107 @@ class LaternFairTask(Txt2ImgTask):
         full_task.pop("background_image")
         full_task.pop("image")
         full_task.update(extra_args)
-        source_img = get_tmp_local_path(t.image)
-        backgroud_image = get_tmp_local_path(t.backgroud_image)
-        return full_task, source_img, backgroud_image, t.rate_width, t.rate_height, t.border_size, t.resize_width, t.resize_height
-
-    @classmethod
-    @retry(tries=5, delay=5, backoff=2, max_delay=5)
-    def exec_seg(cls, img_path):
-
-        logger.info(f"pixian seg progress......")
-        url = 'https://api.pixian.ai/api/v2/remove-background'
-        response = requests.post(url,
-                                 files={'image': open(img_path, 'rb')},
-                                 headers={
-                                     'Authorization': 'Basic cHhhMmF2bGo3ODMzcjZhOjY1NmFlMnAzdDhiNm1vbTFhM2t1dnAxZ2ZzODEwcTMzNzk4MzEydWhnOTFoaGh0ZzZjZnY='
-                                 },timeout=15)
-        logger.info("seg post process....")
-        if response.status_code == requests.codes.ok:
-            logger.info("seg write....")
-            stream = BytesIO(response.content)
-            logger.info("open  start....")
-            res = Image.open(stream)
-            logger.info("open  end....")
-            return res
+        # 分割一下backgroud_image
+        if t.background_image_vertical is None:
+            images_background = t.backgroud_image.split(',')
+            backgroud_image_H = images_background[0]
+            if len(images_background) > 1:
+                backgroud_image_V = random.choice(images_background[1:])
+            else:
+                backgroud_image_V = None
         else:
-            logger.error(f"pixian seg Error:, {response.status_code}, {response.text}")
-            raise Exception("pixian api get failed")
+            backgroud_image_V = t.background_image_vertical
 
-    # 图片加背景图片:
+        source_img = get_tmp_local_path(t.image)
+        backgroud_image_H = get_tmp_local_path(backgroud_image_H)
+        backgroud_image_V = get_tmp_local_path(backgroud_image_V) if backgroud_image_V is not None else None
+        return full_task, source_img, backgroud_image_V, backgroud_image_H, t.rate_width, t.border_size, t.resize_width
+
     @classmethod
-    def exec_add_back(cls, imq, back_path=None, rate_width=2, rate_height=5, resize_width=0, resize_height=0):
+    @retry(tries=10, delay=1, backoff=1, max_delay=3)
+    def exec_seg(cls, img_path):
+        @timeout(15)
+        def time_control(img_path):
+            logger.info(f"pixian seg progress......")
+            url = 'https://api.pixian.ai/api/v2/remove-background'
+            response = requests.post(url,
+                                     files={'image': open(img_path, 'rb')},
+                                     headers={
+                                         'Authorization': 'Basic cHhhMmF2bGo3ODMzcjZhOjY1NmFlMnAzdDhiNm1vbTFhM2t1dnAxZ2ZzODEwcTMzNzk4MzEydWhnOTFoaGh0ZzZjZnY='
+                                     }, timeout=15)
+            logger.info("seg post process....")
+            if response.status_code == requests.codes.ok:
+                logger.info("seg write....")
+                stream = BytesIO(response.content)
+                logger.info("open  start....")
+                res = Image.open(stream)
+                logger.info("open  end....")
+                return res
+            else:
+                logger.error(f"pixian seg Error:, {response.status_code}, {response.text}")
+                raise Exception("pixian api get failed")
+
+        return time_control(img_path)
+
+    # 图片加背景图片:贴空白背景，贴竖图背景，贴横图背景
+    @classmethod
+    def exec_add_back(cls, imq, back_path_V=None, back_path_H=None, rate_width=0.25, scale=1):
         logger.info(f"add background progress......")
+        # 生成图的尺寸是：1152*864
         if not isinstance(imq, Image.Image):
             imq = Image.open(imq)
-        width, height = imq.size
-        if back_path:
-            if not isinstance(back_path, Image.Image):
-                img = Image.open(back_path)
-            if resize_width != 0 and resize_height != 0:
-                imq = imq.resize((resize_width, resize_height))
+        # 如果是横图背景(2048x1152,调大小并且居左/中/右+尺寸)
+        if back_path_H is not None:
+            if not isinstance(back_path_H, Image.Image):
+                img = Image.open(back_path_H)
+            else:
+                img = back_path_H
+            imq = imq.resize((int(imq.size[0] * scale), int(imq.size[1] * scale)))
             r, g, b, a = imq.split()
             width, height = imq.size
             width_b, height_b = img.size
-            img.paste(imq, (
-                int((width_b - width) // rate_width), int(height_b // rate_height),
-                int(width + (width_b - width) // rate_width),
-                int(height + height_b // rate_height)), mask=a)  # 居中贴背景
-        else:
-            img = 255 * np.ones((height, width, 3), np.uint8)
-            img = Image.fromarray(img)
-            r, g, b, a = imq.split()
+            if width_b * rate_width > width_b - width:
+                img.paste(imq, (int(width_b - width), height_b - height, width_b,
+                                height_b), mask=a)  # 贴背景
+            else:
+                img.paste(imq, (int(width_b * rate_width), height_b - height, width + int(width_b * rate_width),
+                                height_b), mask=a)  # 贴背景
+            return img
+        # 如果是竖图背景（裁剪到768*1152，贴到背景上）
+        elif back_path_V is not None:
+            if not isinstance(back_path_V, Image.Image):
+                img = Image.open(back_path_V)
+            else:
+                img = back_path_V
+            # 裁剪了再贴
             width_b, height_b = img.size
-            img.paste(imq, (0, 0, width_b, height_b), mask=a)
+            width, height = imq.size
+            # 如果超了 就截取最右边
+            if width * rate_width > width - width_b:
+                imq = imq.crop((int(width - width_b), height - 1152, width, height))
+            else:
+                print((int(width * rate_width), height - 1152, 768 + int(width * rate_width), height))
+                imq = imq.crop((int(width * rate_width), height - 1152, 768 + int(width * rate_width), height))
+            r, g, b, a = imq.split()
+            width, height = imq.size
+            print(width, height)
+            img.paste(imq, (0, height_b - height, width_b, height_b), mask=a)
+            return img
+        else:
+            # 白背景的贴合：根据背景的位置,得到往左/右延展的白色背景底图，底图的大小是背景的一半（864, 1152）,宽度可以调整一下
+            img = 255 * np.ones((864, 1152, 3), np.uint8)
+            img = Image.fromarray(img)
+            width_b, height_b = img.size
+            imq = imq.resize((576, 768))
+            r, g, b, a = imq.split()
+            width, height = imq.size
+            # 贴在右边：如果超了，就以超的边缘为准
+            if width_b * rate_width > width_b - width:
+                img.paste(imq, (int(width_b - width), height_b - height, width_b, height_b),
+                          mask=a)  # 贴背景
+            else:
+                img.paste(imq, (int(width_b * rate_width), height_b - height, width + int(width_b * rate_width),
+                                height_b), mask=a)  # 贴背景
         return img
 
     # 边缘模糊
@@ -1014,7 +1068,8 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         yield progress
 
     def _exec_laternfair(self, task: Task) -> typing.Iterable[TaskProgress]:
-        full_task, user_image, backgroud_image, rate_width, rate_height, border_size, resize_width, resize_height = LaternFairTask.exec_task(
+
+        full_task, user_image, backgroud_image_V, backgroud_image_H, rate_width, border_size, scale = LaternFairTask.exec_task(
             task)
         # 适配xl
         logger.info("laternfair download model...")
@@ -1028,18 +1083,17 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         load_sd_model_weights(base_model_path, full_task.model_hash)
 
         progress = TaskProgress.new_ready(
-            full_task, f'model loaded, run laternfairtask...',eta_relative=70)
+            full_task, f'model loaded, run laternfairtask...', eta_relative=70)
         yield progress
 
-        progress.fixed_eta=random.randint(12, 15) # 加上后面抠图和贴背景的时间
+        progress.fixed_eta = random.randint(12, 15)  # 加上后面抠图和贴背景的时间
 
         process_args = self._build_txt2img_arg(progress)
 
         logger.info("laternfair loaded lora model ....")
-        self._set_little_models(process_args) # 加载lora
+        self._set_little_models(process_args)  # 加载lora
 
         progress.status = TaskStatus.Running
-
 
         progress.task_desc = f'laternfairtask task({task.id}) running'
         yield progress
@@ -1047,7 +1101,7 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         logger.info("step 1, seg...")
         seg_image = LaternFairTask.exec_seg(user_image)
         # 添加白色背景
-        white_image = LaternFairTask.exec_add_back(seg_image)
+        white_image = LaternFairTask.exec_add_back(seg_image, rate_width=rate_width, scale=scale)
         logger.info("step 1 > ok")
         # 重新赋值controlnet参数
         args_from, args_to = 0, 0
@@ -1078,19 +1132,23 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
 
         txt2img_seg_image = LaternFairTask.exec_seg(file_path)
         blur_image = LaternFairTask.canny_blur(txt2img_seg_image, border_size)
-        txt2img_backgroud_image = LaternFairTask.exec_add_back(blur_image, backgroud_image,
-                                                               rate_width, rate_height,
-                                                               resize_width, resize_height)
-
-        processed.images.insert(processed.index_of_end_image, txt2img_backgroud_image)
+        # 添加横图背景
+        txt2img_backgroud_image_H = LaternFairTask.exec_add_back(blur_image, back_path_V=None,
+                                                                 back_path_H=backgroud_image_H, rate_width=rate_width,
+                                                                 scale=scale)
+        # 添加竖图背景
+        txt2img_backgroud_image_V = LaternFairTask.exec_add_back(blur_image, back_path_V=backgroud_image_V,
+                                                                 back_path_H=None, rate_width=rate_width, scale=scale)
+        processed.images.insert(processed.index_of_end_image, txt2img_backgroud_image_H)
         processed.index_of_end_image += 1
-
         processed.all_seeds += [1]
         processed.all_subseeds += [1]
+        processed.images[1] = txt2img_backgroud_image_V
+
         logger.info("step 3 > ok")
 
         logger.info("step 4, upload images...")
-        progress.eta_relative=5
+        progress.eta_relative = 5
         progress.status = TaskStatus.Uploading
         yield progress
         images = save_processed_images(processed,
@@ -1103,4 +1161,3 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         progress = TaskProgress.new_finish(task, images)
         progress.update_seed(processed.all_seeds, processed.all_subseeds)
         yield progress
-        
