@@ -629,6 +629,11 @@ options_templates.update(options_section(('postprocessing', "Postprocessing"), {
     "upscaler_tile_overlap": OptionInfo(8, "Upscaler tile overlap", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),
 }))
 
+options_templates.update(options_section(('control', "Control"), {
+    "control_move_processor": OptionInfo(False, "Processor move to CPU after use"),
+    "control_unload_processor": OptionInfo(False, "Processor unload after use"),
+}))
+
 options_templates.update(options_section(('training', "Training"), {
     "unload_models_when_training": OptionInfo(False, "Move VAE and CLIP to RAM when training"),
     "pin_memory": OptionInfo(True, "Pin training dataset to memory"),

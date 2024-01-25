@@ -131,12 +131,13 @@ class Processor():
         if processor_id is not None:
             self.load()
 
-    def reset(self):
+    def reset(self, processor_id: str = None):
         if self.model is not None:
             log.debug(f'Control Processor unloaded: id="{self.processor_id}"')
         self.model = None
-        self.processor_id = None
+        self.processor_id = processor_id
         self.override = None
+        devices.torch_gc()
         self.load_config = { 'cache_dir': cache_dir }
 
     def config(self, processor_id = None):
@@ -204,20 +205,22 @@ class Processor():
             return f'Processor load filed: {processor_id}'
 
     def __call__(self, image_input: Image, mode: str = 'RGB'):
+        if self.processor_id is None or self.processor_id == 'None':
+            return image_input
         if self.override is not None:
             image_input = self.override
         image_process = image_input
         if image_input is None:
             log.error('Control Processor: no input')
             return image_process
-        if self.model is None:
-            # log.error('Control Processor: model not loaded')
-            return image_process
         if config[self.processor_id].get('dirty', False):
             processor_id = self.processor_id
             config[processor_id].pop('dirty')
             self.reset()
             self.load(processor_id)
+        if self.model is None:
+            # log.error('Control Processor: model not loaded')
+            return image_process
         try:
             t0 = time.time()
             kwargs = config.get(self.processor_id, {}).get('params', None)

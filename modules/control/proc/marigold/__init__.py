@@ -1,6 +1,7 @@
 from PIL import Image
 from modules.control.util import HWC3, resize_image
 from modules import devices
+from modules.shared import opts
 from .marigold_pipeline import MarigoldPipeline
 
 
@@ -39,6 +40,8 @@ class MarigoldDetector:
             show_progress_bar=True,
         )
         depth_map = res.depth_colored if color_map != 'None' else res.depth_np
+        if opts.control_move_processor:
+            self.model.to('cpu')
         if output_type == "pil":
             return Image.fromarray(depth_map)
         else:

@@ -17,19 +17,13 @@ class CannyDetector:
             output_type = output_type or "pil"
         else:
             output_type = output_type or "np"
-
         input_image = HWC3(input_image)
         input_image = resize_image(input_image, detect_resolution)
-
         detected_map = cv2.Canny(input_image, low_threshold, high_threshold)
         detected_map = HWC3(detected_map)
-
         img = resize_image(input_image, image_resolution)
         H, W, _C = img.shape
-
         detected_map = cv2.resize(detected_map, (W, H), interpolation=cv2.INTER_LINEAR)
-
         if output_type == "pil":
             detected_map = Image.fromarray(detected_map)
-
         return detected_map

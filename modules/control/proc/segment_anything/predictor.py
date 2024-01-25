@@ -4,13 +4,10 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import Optional, Tuple
 import numpy as np
 import torch
-
 from .modeling import Sam
-
-from typing import Optional, Tuple
-
 from .utils.transforms import ResizeLongestSide
 
 

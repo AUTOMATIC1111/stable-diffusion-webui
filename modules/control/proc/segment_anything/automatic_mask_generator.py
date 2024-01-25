@@ -4,12 +4,10 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import torch
 from torchvision.ops.boxes import batched_nms, box_area  # type: ignore
-
-from typing import Any, Dict, List, Optional, Tuple
-
 from .modeling import Sam
 from .predictor import SamPredictor
 from .utils.amg import (
@@ -114,12 +112,6 @@ class SamAutomaticMaskGenerator:
             "uncompressed_rle",
             "coco_rle",
         ], f"Unknown output_mode {output_mode}."
-        if output_mode == "coco_rle":
-            from pycocotools import mask as mask_utils  # type: ignore
-
-        if min_mask_region_area > 0:
-            import cv2  # type: ignore
-
         self.predictor = SamPredictor(model)
         self.points_per_batch = points_per_batch
         self.pred_iou_thresh = pred_iou_thresh

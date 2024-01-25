@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 from PIL import Image
 from modules import devices, masking
+from modules.shared import opts
 
 
 class DepthAnythingDetector:
@@ -54,6 +55,8 @@ class DepthAnythingDetector:
         image = torch.from_numpy(image).unsqueeze(0).to(devices.device)
         with devices.inference_context():
             depth = self.model(image)
+        if opts.control_move_processor:
+            self.model.to('cpu')
         depth = F.interpolate(depth[None], (h, w), mode="bilinear", align_corners=False)[0, 0]
         depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
         depth = depth.cpu().numpy().astype(np.uint8)

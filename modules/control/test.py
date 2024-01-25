@@ -21,7 +21,8 @@ def test_processors(image):
             processor_id = f'{processor_id} error'
         else:
             output = processor(image)
-            processor.reset()
+            if shared.opts.control_unload_processor:
+                processor.reset()
         if output.size != image.size:
             output = output.resize(image.size, Image.Resampling.LANCZOS)
         if output.mode != image.mode:

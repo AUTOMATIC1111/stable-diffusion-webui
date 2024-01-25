@@ -32,7 +32,6 @@ def draw_pose(pose, H, W):
 class DWposeDetector:
     def __init__(self, det_config=None, det_ckpt=None, pose_config=None, pose_ckpt=None, device="cpu"):
         from .wholebody import Wholebody
-
         self.pose_estimation = Wholebody(det_config, det_ckpt, pose_config, pose_ckpt, device)
 
     def to(self, device):
@@ -62,29 +61,19 @@ class DWposeDetector:
                     score[i][j] = int(18*i+j)
                 else:
                     score[i][j] = -1
-
         un_visible = subset < min_confidence
         candidate[un_visible] = -1
-
         _foot = candidate[:,18:24]
-
         faces = candidate[:,24:92]
-
         hands = candidate[:,92:113]
         hands = np.vstack([hands, candidate[:,113:]])
-
         bodies = dict(candidate=body, subset=score)
         pose = dict(bodies=bodies, hands=hands, faces=faces)
-
         detected_map = draw_pose(pose, H, W)
         detected_map = HWC3(detected_map)
-
         img = resize_image(input_image, image_resolution)
         H, W, _C = img.shape
-
         detected_map = cv2.resize(detected_map, (W, H), interpolation=cv2.INTER_LINEAR)
-
         if output_type == "pil":
             detected_map = Image.fromarray(detected_map)
-
         return detected_map

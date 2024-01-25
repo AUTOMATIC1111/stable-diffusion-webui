@@ -3,24 +3,29 @@ import numpy as np
 import torch
 from transformers import AutoImageProcessor, DPTForDepthEstimation
 from modules import devices
+from modules.shared import opts
 
 
 image_processor: AutoImageProcessor = None
-dpt_model: DPTForDepthEstimation = None
 
 
 class DPTDetector:
-    def __call__(self, input_image=None):
-        global image_processor, dpt_model # pylint: disable=global-statement
-        from modules.control.processors import cache_dir
-        if image_processor is None:
-            image_processor = AutoImageProcessor.from_pretrained("Intel/dpt-large", cache_dir=cache_dir)
-        if dpt_model is None:
-            dpt_model = DPTForDepthEstimation.from_pretrained("Intel/dpt-large", cache_dir=cache_dir)
+    def __init__(self, model=None, processor=None):
+        self.model = model
+        self.processor = processor
 
+    def __call__(self, input_image=None):
+        from modules.control.processors import cache_dir
+        if self.processor is None:
+            self.processor = AutoImageProcessor.from_pretrained("Intel/dpt-large", cache_dir=cache_dir)
+        if self.model is None:
+            self.model = DPTForDepthEstimation.from_pretrained("Intel/dpt-large", cache_dir=cache_dir)
+
+        self.model.to(devices.device)
         with devices.inference_context():
-            inputs = image_processor(images=input_image, return_tensors="pt")
-            outputs = dpt_model(**inputs)
+            inputs = self.processor(images=input_image, return_tensors="pt")
+            inputs.to(devices.device)
+            outputs = self.model(**inputs)
             predicted_depth = outputs.predicted_depth
             prediction = torch.nn.functional.interpolate(
                 predicted_depth.unsqueeze(1),
@@ -30,6 +35,8 @@ class DPTDetector:
             )
             output = prediction.squeeze().cpu().numpy()
             formatted = (output * 255 / np.max(output)).astype("uint8")
-            depth = Image.fromarray(formatted)
-            depth = depth.convert('RGB')
-            return depth
+        if opts.control_move_processor:
+            self.model.to('cpu')
+        depth = Image.fromarray(formatted)
+        depth = depth.convert('RGB')
+        return depth

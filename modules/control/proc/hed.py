@@ -6,15 +6,14 @@
 # and in this way it works better for gradio's RGB protocol
 
 import os
-import warnings
-
 import cv2
 import numpy as np
 import torch
 from einops import rearrange
 from huggingface_hub import hf_hub_download
 from PIL import Image
-
+from modules import devices
+from modules.shared import opts
 from modules.control.util import HWC3, nms, resize_image, safe_step
 
 
@@ -57,49 +56,37 @@ class ControlNetHED_Apache2(torch.nn.Module): # pylint: disable=abstract-method
         return projection1, projection2, projection3, projection4, projection5
 
 class HEDdetector:
-    def __init__(self, netNetwork):
-        self.netNetwork = netNetwork
+    def __init__(self, model):
+        self.model = model
 
     @classmethod
     def from_pretrained(cls, pretrained_model_or_path, filename=None, cache_dir=None):
         filename = filename or "ControlNetHED.pth"
-
         if os.path.isdir(pretrained_model_or_path):
             model_path = os.path.join(pretrained_model_or_path, filename)
         else:
             model_path = hf_hub_download(pretrained_model_or_path, filename, cache_dir=cache_dir)
-
-        netNetwork = ControlNetHED_Apache2()
-        netNetwork.load_state_dict(torch.load(model_path, map_location='cpu'))
-        netNetwork.float().eval()
-
-        return cls(netNetwork)
+        model = ControlNetHED_Apache2()
+        model.load_state_dict(torch.load(model_path, map_location='cpu'))
+        model.float().eval()
+        return cls(model)
 
     def to(self, device):
-        self.netNetwork.to(device)
+        self.model.to(device)
         return self
 
     def __call__(self, input_image, detect_resolution=512, image_resolution=512, safe=False, output_type="pil", scribble=False, **kwargs):
-        if "return_pil" in kwargs:
-            warnings.warn("return_pil is deprecated. Use output_type instead.", DeprecationWarning)
-            output_type = "pil" if kwargs["return_pil"] else "np"
-        if type(output_type) is bool:
-            warnings.warn("Passing `True` or `False` to `output_type` is deprecated and will raise an error in future versions")
-            if output_type:
-                output_type = "pil"
-
-        device = next(iter(self.netNetwork.parameters())).device
+        self.model.to(devices.device)
+        device = next(iter(self.model.parameters())).device
         if not isinstance(input_image, np.ndarray):
             input_image = np.array(input_image, dtype=np.uint8)
-
         input_image = HWC3(input_image)
         input_image = resize_image(input_image, detect_resolution)
-
         assert input_image.ndim == 3
         H, W, _C = input_image.shape
         image_hed = torch.from_numpy(input_image.copy()).float().to(device)
         image_hed = rearrange(image_hed, 'h w c -> 1 c h w')
-        edges = self.netNetwork(image_hed)
+        edges = self.model(image_hed)
         edges = [e.detach().cpu().numpy().astype(np.float32)[0, 0] for e in edges]
         edges = [cv2.resize(e, (W, H), interpolation=cv2.INTER_LINEAR) for e in edges]
         edges = np.stack(edges, axis=2)
@@ -107,22 +94,18 @@ class HEDdetector:
         if safe:
             edge = safe_step(edge)
         edge = (edge * 255.0).clip(0, 255).astype(np.uint8)
-
         detected_map = edge
         detected_map = HWC3(detected_map)
-
         img = resize_image(input_image, image_resolution)
         H, W, _C = img.shape
-
         detected_map = cv2.resize(detected_map, (W, H), interpolation=cv2.INTER_LINEAR)
-
         if scribble:
             detected_map = nms(detected_map, 127, 3.0)
             detected_map = cv2.GaussianBlur(detected_map, (0, 0), 3.0)
             detected_map[detected_map > 4] = 255
             detected_map[detected_map < 255] = 0
-
+        if opts.control_move_processor:
+            self.model.to('cpu')
         if output_type == "pil":
             detected_map = Image.fromarray(detected_map)
-
         return detected_map

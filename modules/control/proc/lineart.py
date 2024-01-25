@@ -1,6 +1,4 @@
 import os
-import warnings
-
 import cv2
 import numpy as np
 import torch
@@ -8,9 +6,9 @@ import torch.nn as nn
 from einops import rearrange
 from huggingface_hub import hf_hub_download
 from PIL import Image
-
+from modules import devices
+from modules.shared import opts
 from modules.control.util import HWC3, resize_image
-
 norm_layer = nn.InstanceNorm2d
 
 
@@ -124,21 +122,12 @@ class LineartDetector:
         return self
 
     def __call__(self, input_image, coarse=False, detect_resolution=512, image_resolution=512, output_type="pil", **kwargs):
-        if "return_pil" in kwargs:
-            warnings.warn("return_pil is deprecated. Use output_type instead.", DeprecationWarning)
-            output_type = "pil" if kwargs["return_pil"] else "np"
-        if type(output_type) is bool:
-            warnings.warn("Passing `True` or `False` to `output_type` is deprecated and will raise an error in future versions")
-            if output_type:
-                output_type = "pil"
-
+        self.model.to(devices.device)
         device = next(iter(self.model.parameters())).device
         if not isinstance(input_image, np.ndarray):
             input_image = np.array(input_image, dtype=np.uint8)
-
         input_image = HWC3(input_image)
         input_image = resize_image(input_image, detect_resolution)
-
         model = self.model_coarse if coarse else self.model
         assert input_image.ndim == 3
         image = input_image
@@ -146,21 +135,16 @@ class LineartDetector:
         image = image / 255.0
         image = rearrange(image, 'h w c -> 1 c h w')
         line = model(image)[0][0]
-
         line = line.cpu().numpy()
         line = (line * 255.0).clip(0, 255).astype(np.uint8)
-
         detected_map = line
-
         detected_map = HWC3(detected_map)
-
         img = resize_image(input_image, image_resolution)
         H, W, _C = img.shape
-
         detected_map = cv2.resize(detected_map, (W, H), interpolation=cv2.INTER_LINEAR)
         detected_map = 255 - detected_map
-
+        if opts.control_move_processor:
+            self.model.to('cpu')
         if output_type == "pil":
             detected_map = Image.fromarray(detected_map)
-
         return detected_map

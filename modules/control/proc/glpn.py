@@ -3,24 +3,26 @@ import numpy as np
 import torch
 from transformers import AutoImageProcessor, GLPNForDepthEstimation
 from modules import devices
-
-
-image_processor: AutoImageProcessor = None
-glpn_model: GLPNForDepthEstimation = None
+from modules.shared import opts
 
 
 class GLPNDetector:
-    def __call__(self, input_image=None):
-        global image_processor, glpn_model # pylint: disable=global-statement
-        from modules.control.processors import cache_dir
-        if image_processor is None:
-            image_processor = AutoImageProcessor.from_pretrained("vinvino02/glpn-kitti", cache_dir=cache_dir)
-        if glpn_model is None:
-            glpn_model = GLPNForDepthEstimation.from_pretrained("vinvino02/glpn-kitti", cache_dir=cache_dir)
+    def __init__(self, model=None, processor=None):
+        self.model = model
+        self.processor = processor
 
+    def __call__(self, input_image=None):
+        from modules.control.processors import cache_dir
+        if self.processor is None:
+            self.processor = AutoImageProcessor.from_pretrained("vinvino02/glpn-kitti", cache_dir=cache_dir)
+        if self.model is None:
+            self.model = GLPNForDepthEstimation.from_pretrained("vinvino02/glpn-kitti", cache_dir=cache_dir)
+
+        self.model.to(devices.device)
         with devices.inference_context():
-            inputs = image_processor(images=input_image, return_tensors="pt")
-            outputs = glpn_model(**inputs)
+            inputs = self.processor(images=input_image, return_tensors="pt")
+            inputs.to(devices.device)
+            outputs = self.model(**inputs)
             predicted_depth = outputs.predicted_depth
             prediction = torch.nn.functional.interpolate(
                 predicted_depth.unsqueeze(1),
@@ -30,6 +32,8 @@ class GLPNDetector:
             )
             output = prediction.squeeze().cpu().numpy()
             formatted = 255 - (output * 255 / np.max(output)).astype("uint8")
-            depth = Image.fromarray(formatted)
-            depth = depth.convert('RGB')
-            return depth
+        if opts.control_move_processor:
+            self.model.to('cpu')
+        depth = Image.fromarray(formatted)
+        depth = depth.convert('RGB')
+        return depth

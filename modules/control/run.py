@@ -4,7 +4,6 @@ import math
 from typing import List, Union
 import cv2
 import numpy as np
-import diffusers
 from PIL import Image
 from modules.control import util
 from modules.control import unit
@@ -384,8 +383,12 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         masked_image = masking.run_mask(input_image=input_image, input_mask=mask, return_type='Masked') if mask is not None else input_image
                         for i, process in enumerate(active_process): # list[image]
                             image_mode = 'L' if unit_type == 'adapter' and len(active_model) > i and ('Canny' in active_model[i].model_id or 'Sketch' in active_model[i].model_id) else 'RGB' # t2iadapter canny and sketch work in grayscale only
-                            debug(f'Control: process={[process.processor_id for p in active_process]} i={i} image={p.image}')
-                            p.image.append(process(masked_image, image_mode))
+                            debug(f'Control: process="{process.processor_id}" i={i} image={p.image}')
+                            processed_image = process(masked_image, image_mode)
+                            p.image.append(processed_image)
+                            if shared.opts.control_unload_processor:
+                                processors.config[process.processor_id]['dirty'] = True # to force reload
+                                process.model = None
 
                     if p.image is not None and len(p.image) > 0:
                         p.init_images = p.image
