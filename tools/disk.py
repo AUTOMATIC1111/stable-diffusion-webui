@@ -70,7 +70,10 @@ def tidy_model_caches(models_dir, expire_days: int = 14, persist_model_hashes: t
     lycor_dir = os.path.join(models_dir, 'LyCORIS')
 
     persist_model_hashes = persist_model_hashes or []
-    persist_model_hash_map = dict((x, 1) for x in persist_model_hashes)
+    persist_model_hash_map = {}
+    for item in persist_model_hashes:
+        key = item.decode() if isinstance(item, bytes) else item
+        persist_model_hash_map[key] = 1
     persist_model_hash_map.update({'v1-5-pruned-emaonly': 1})
 
     def clean_timeout_files(expire_days):

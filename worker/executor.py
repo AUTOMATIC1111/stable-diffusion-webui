@@ -90,7 +90,7 @@ class TaskExecutor(Thread):
                 if not task:
                     continue
 
-                logger.info(f"====>>> receive task:{task. desc()}")
+                logger.info(f"====>>> receive task:{task.desc()}")
                 logger.info(f"====>>> model history:{self.recorder.history()}")
 
                 handler = self.get_handler(task)
@@ -146,8 +146,11 @@ class TaskExecutor(Thread):
         return True
 
     def _get_persist_model_hashes(self):
-        rds = self.receiver.get_redis_cli()
-        hashes = rds.lrange('persist_models', 0, -1)
+        try:
+            rds = self.receiver.get_redis_cli()
+            hashes = rds.lrange('persist_models', 0, -1)
+        except:
+            return None
         return hashes
 
     def _get_task(self):
@@ -156,7 +159,7 @@ class TaskExecutor(Thread):
                 if not self.queue.full():
                     try:
                         for task in self.receiver.task_iter():
-                            if random.randint(1, 10) < 3:
+                            if random.randint(0, 10) < 5:
                                 # 释放磁盘空间
                                 safety_clean_tmp()
                                 model_hashes = self._get_persist_model_hashes()
@@ -206,4 +209,3 @@ class TaskExecutor(Thread):
     def start(self) -> None:
         super(TaskExecutor, self).start()
         self.exec_task()
-
