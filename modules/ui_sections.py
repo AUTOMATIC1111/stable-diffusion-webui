@@ -11,7 +11,7 @@ def create_toprow(is_img2img: bool = False, id_part: str = None):
 
 
     def parse_style(styles):
-        return styles.split('|')
+        return styles.split('|') if styles is not None else None
 
     if id_part is None:
         id_part = "img2img" if is_img2img else "txt2img"

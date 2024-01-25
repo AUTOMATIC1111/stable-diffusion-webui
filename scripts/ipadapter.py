@@ -152,4 +152,6 @@ class Script(scripts.Script):
         return [adapter, scale, image]
 
     def process(self, p: processing.StableDiffusionProcessing, adapter_name, scale, image): # pylint: disable=arguments-differ
+        if shared.backend != shared.Backend.DIFFUSERS:
+            return
         apply(shared.sd_model, p, adapter_name, scale, image)

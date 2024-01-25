@@ -21,7 +21,7 @@ OPTIONAL:
 - masking api
 - preprocess api
 
-## Update for 2023-01-24
+## Update for 2023-01-25
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
@@ -229,6 +229,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - sdxl: fix positive prompt embeds
   - img2img: clip and blip interrogate  
   - img2img: sampler selection offset  
+  - img2img: support variable aspect ratio without explicit resize  
   - api: return current image in progress api if requested  
   - api: sanitize response object  
   - api: cleanup error logging  
@@ -241,6 +242,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - processing: fix batch file names  
   - live preview: fix when using `bfloat16`
   - upscale: fix ldsr
+  - model merge: unbalanced models where not all keys are present, thanks @AI-Casanova
   - better sdxl model detection
   - cli: fix cmd args parsing  
   - global crlf->lf switch  

@@ -3,7 +3,6 @@ import gradio as gr
 import huggingface_hub as hf
 from PIL import Image
 from modules import shared, processing, sd_models, scripts
-from scripts.photomaker_model import PhotoMakerStableDiffusionXLPipeline # pylint: disable=no-name-in-module
 
 
 class Script(scripts.Script):
@@ -49,6 +48,8 @@ class Script(scripts.Script):
 
     # Run pipeline
     def run(self, p: processing.StableDiffusionProcessing, trigger, strength, start, images): # pylint: disable=arguments-differ
+        from scripts.photomaker_model import PhotoMakerStableDiffusionXLPipeline # pylint: disable=no-name-in-module
+
         # prepare pipeline
         input_images = self.load_images(images)
         if len(input_images) == 0:

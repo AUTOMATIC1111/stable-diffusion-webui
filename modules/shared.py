@@ -185,7 +185,6 @@ def writefile(data, filename, mode='w', silent=False, atomic=False):
         if locked and os.path.exists(f"{filename}.lock"):
             os.remove(f"{filename}.lock")
     except Exception:
-        print('HERE4')
         locking_available = False
 
 
