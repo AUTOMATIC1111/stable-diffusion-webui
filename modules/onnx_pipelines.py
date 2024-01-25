@@ -28,6 +28,22 @@ SUBMODELS_SD = ("text_encoder", "unet", "vae_encoder", "vae_decoder",)
 SUBMODELS_SDXL = ("text_encoder", "text_encoder_2", "unet", "vae_encoder", "vae_decoder",)
 SUBMODELS_SDXL_REFINER = ("text_encoder_2", "unet", "vae_encoder", "vae_decoder",)
 
+CONVERSION_PASS = {
+    "type": "OnnxConversion",
+    "config": {
+        "target_opset": 14,
+    },
+}
+CONVERSION_PASS_UNET = {
+    "type": "OnnxConversion",
+    "config": {
+        "target_opset": 14,
+        "save_as_external_data": True,
+        "all_tensors_to_one_file": True,
+        "external_data_name": "weights.pb",
+    },
+}
+
 
 class OnnxPipelineBase(OnnxFakeModule, diffusers.DiffusionPipeline, metaclass=ABCMeta):
     model_type: str
@@ -167,9 +183,13 @@ class OnnxRawPipeline(OnnxPipelineBase):
         for submodel in submodels:
             log.info(f"\nConverting {submodel}")
 
-            with open(os.path.join(sd_configs_path, "onnx", f"{'sdxl' if self._is_sdxl else 'sd'}_{submodel}.json"), "r") as config_file:
+            with open(os.path.join(sd_configs_path, "olive", 'sdxl' if self._is_sdxl else 'sd', f"{submodel}.json"), "r") as config_file:
                 conversion_config = json.load(config_file)
             conversion_config["input_model"]["config"]["model_path"] = os.path.abspath(in_dir)
+            conversion_config["passes"] = {
+                "_conversion": CONVERSION_PASS_UNET if submodel == "unet" else CONVERSION_PASS,
+            }
+            conversion_config["pass_flows"] = [["_conversion"]]
             conversion_config["engine"]["execution_providers"] = [shared.opts.onnx_execution_provider]
 
             run(conversion_config)
