@@ -126,6 +126,7 @@ def txt2img_image_conditioning(sd_model, x, width, height):
 
 
 def get_sampler_name(sampler_index: int, img: bool = False) -> str:
+    sampler_index = sampler_index or 0
     if len(modules.sd_samplers.samplers) > sampler_index:
         sampler_name = modules.sd_samplers.samplers[sampler_index].name
     else:
