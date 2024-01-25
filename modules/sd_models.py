@@ -1090,7 +1090,7 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     feature_extractor = getattr(pipe, "feature_extractor", None)
 
     # skip specific pipelines
-    if pipe.__class__.__name__ == 'StableDiffusionReferencePipeline' or pipe.__class__.__name__ == 'StableDiffusionAdapterPipeline':
+    if pipe.__class__.__name__ == 'StableDiffusionReferencePipeline' or pipe.__class__.__name__ == 'StableDiffusionAdapterPipeline' or 'Onnx' in pipe.__class__.__name__:
         return pipe
 
     try:
