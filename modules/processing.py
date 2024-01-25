@@ -863,6 +863,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     if p.scripts is not None and isinstance(p.scripts, modules.scripts.ScriptRunner):
         p.scripts.process(p)
 
+    if shared.backend == shared.Backend.DIFFUSERS:
+        from scripts import ipadapter # pylint: disable=no-name-in-module
+        ipadapter.apply(shared.sd_model, p)
+
     def get_conds_with_caching(function, required_prompts, steps, cache):
         if cache[0] is not None and (required_prompts, steps) == cache[0]:
             return cache[1]

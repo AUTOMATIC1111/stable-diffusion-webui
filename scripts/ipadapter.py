@@ -33,11 +33,12 @@ ADAPTERS = {
 }
 
 
-def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name, scale, image): # pylint: disable=arguments-differ
+def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name='None', scale=1.0, image=None): # pylint: disable=arguments-differ
     # overrides
-    adapter = ADAPTERS.get(adapter_name, None)
     if hasattr(p, 'ip_adapter_name'):
-        adapter = p.ip_adapter_name
+        adapter = ADAPTERS.get(p.ip_adapter_name, None)
+    else:
+        adapter = ADAPTERS.get(adapter_name, None)
     if hasattr(p, 'ip_adapter_scale'):
         scale = p.ip_adapter_scale
     if hasattr(p, 'ip_adapter_image'):
@@ -154,4 +155,7 @@ class Script(scripts.Script):
     def process(self, p: processing.StableDiffusionProcessing, adapter_name, scale, image): # pylint: disable=arguments-differ
         if shared.backend != shared.Backend.DIFFUSERS:
             return
-        apply(shared.sd_model, p, adapter_name, scale, image)
+        p.ip_adapter_name = adapter_name
+        p.ip_adapter_scale = scale
+        p.ip_adapter_image = image
+        # apply(shared.sd_model, p, adapter_name, scale, image) # called directly from processing.process_images_inner
