@@ -163,7 +163,6 @@ class TaskExecutor(Thread):
                                 # 释放磁盘空间
                                 safety_clean_tmp()
                                 model_hashes = self._get_persist_model_hashes()
-                                logger.debug(f"### clean model ### ===>>> persist model hashes:{model_hashes}")
                                 tidy_model_caches(models_path, persist_model_hashes=model_hashes)
                             logger.info(f"====>>> preload task:{task.id}")
                             self.queue.put(task)

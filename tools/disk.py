@@ -75,6 +75,7 @@ def tidy_model_caches(models_dir, expire_days: int = 14, persist_model_hashes: t
         key = item.decode() if isinstance(item, bytes) else item
         persist_model_hash_map[key] = 1
     persist_model_hash_map.update({'v1-5-pruned-emaonly': 1})
+    logger.debug(f"### clean model ### ===>>> persist model hashes:{persist_model_hash_map.keys()}")
 
     def clean_timeout_files(expire_days):
         dirnames = [
