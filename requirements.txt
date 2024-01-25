@@ -31,4 +31,8 @@ tomesd
 torch
 torchdiffeq
 torchsde
+
+gdown
+insightface==0.7.3
 transformers==4.30.2
+diffusers==0.22.1

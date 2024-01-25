@@ -3,6 +3,34 @@ A browser interface based on Gradio library for Stable Diffusion.
 
 ![](screenshot.png)
 
+## Installation by Vincent (25 Jan 2024)
+In addition to WebUI, I wanted to customize it for the server and make the installation process a lot easier by using scripts to install on many machines. IP-Face-Adapter extension is added to extension folder as a git submodule.
+
+In the current settings, only revAnimated_v122EOL.safetensors stable diffusion models (./models/Stable-diffusion), blindbox_v1_mix.safetensors (./models/Lora), and ip-adapter-faceid-plus_sd15.bin (used for IP-Face-Adapter, put in ./extensions/sd-webui-controlnet/models) are included. If you wanna add more stable diffusion models, or Lora models or IP-Face-Adapter models, you should include a download link and where to download them in [scripts/get_models.py](scripts/get_models.py).
+
+### Install
+First, clone it:
+```bash
+git clone --recursive https://github.com/vincent-dl/stable-diffusion-webui.git
+```
+
+To use this repo, make sure you have python3.10. In Ubuntu 20, python3.10 are not available via `apt install`. You can get python3.10 for this project by using anaconda
+```bash
+conda create --name stable-diffusion python=3.10
+```
+
+After having python 3.10 installed, activate it and run this command and it will automatically download stable diffusion, lora, extensions models along with pip packages:
+```bash
+python3 launch.py --api
+```
+
+After that, you can test the backend server by running the sample [python api scripts](./python_scripts/api.py). However, you should keep in mind that, the first run may be slow because the server needs to download some more dependecies such as missing models.
+
+```bash
+python3 python_scripts/api.py
+```
+
+
 ## Features
 [Detailed feature showcase with images](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features):
 - Original txt2img and img2img modes
