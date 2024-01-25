@@ -636,9 +636,9 @@ class LaternFairTask(Txt2ImgTask):
         return full_task, source_img, backgroud_image_V, backgroud_image_H, t.rate_width, t.border_size, t.resize_width
 
     @classmethod
-    @retry(tries=10, delay=1, backoff=1, max_delay=3)
+    @retry(tries=3, delay=1, backoff=1, max_delay=3)
     def exec_seg(cls, img_path):
-        @timeout(15)
+        @timeout(60)
         def time_control(img_path):
             logger.info(f"pixian seg progress......")
             url = 'https://api.pixian.ai/api/v2/remove-background'
@@ -646,7 +646,7 @@ class LaternFairTask(Txt2ImgTask):
                                      files={'image': open(img_path, 'rb')},
                                      headers={
                                          'Authorization': 'Basic cHhhMmF2bGo3ODMzcjZhOjY1NmFlMnAzdDhiNm1vbTFhM2t1dnAxZ2ZzODEwcTMzNzk4MzEydWhnOTFoaGh0ZzZjZnY='
-                                     }, timeout=15)
+                                     }, timeout=60)
             logger.info("seg post process....")
             if response.status_code == requests.codes.ok:
                 logger.info("seg write....")
