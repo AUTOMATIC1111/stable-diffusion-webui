@@ -162,14 +162,14 @@ class EmbeddingDatabase:
             if not isinstance(filename, list)
             else filename
         )
-        exts = [".SAFETENSORS", ".PT"]
+        exts = [".SAFETENSORS", '.BIN', '.PT', '.PNG', '.WEBP', '.JXL', '.AVIF']  # SDXL only uses safetensors
         filename_paths = zip(filenames, len(filenames) * [path] if (isinstance(path, str) or path is None) else path)
         model_type = None
 
         if clip_g is None and tokenizer_2 is None:
             model_type = 'SD'
         elif clip_g and tokenizer_2:
-            model_type = 'SD-XL'
+            model_type = 'SDXL'
         else:
             model_type = 'UNDEFINED'
         try:
@@ -213,17 +213,17 @@ class EmbeddingDatabase:
                         with safetensors.torch.safe_open(embedding.filename, framework="pt") as f: # type: ignore
                             for k in f.keys():
                                 embeddings_dict[k] = f.get_tensor(k)
-                    else:
-                        raise NotImplementedError(f'extension {ext} not supported')
+                    else:  # fallback for sd1.5 pt embeddings
+                        embeddings_dict["clip_l"] = self.load_from_file(embedding.filename, embedding.filename)
                     if 'clip_l' not in embeddings_dict:
                         raise ValueError('Invalid Embedding, dict missing required key `clip_l`')
                     if 'clip_g' in embeddings_dict:
-                        embedding_type = 'SD-XL'
+                        embedding_type = 'SDXL'
                     else:
                         embedding_type = 'SD'
 
                     if embedding_type != model_type:
-                        raise ValueError(f'Unable to load `{embedding_type}` Embedding into `{model_type}` Model')
+                        raise ValueError(f'Unable to load {embedding_type} Embedding "{embedding.name}" into {model_type} Model')
                     _tokens_to_add = {}
                     for i in range(len(embeddings_dict["clip_l"])):
                         if len(clip_l.get_input_embeddings().weight.data[0]) == len(embeddings_dict["clip_l"][i]):
@@ -246,14 +246,14 @@ class EmbeddingDatabase:
             if len(tokens_to_add) > 0:
                 tokenizer.add_tokens(list(tokens_to_add.keys()))
                 clip_l.resize_token_embeddings(len(tokenizer))
-                if model_type == 'SD-XL':
+                if model_type == 'SDXL':
                     tokenizer_2.add_tokens(list(tokens_to_add.keys())) # type: ignore
                     clip_g.resize_token_embeddings(len(tokenizer_2)) # type: ignore
                 for token, data in tokens_to_add.items():
                     token_id = tokenizer.convert_tokens_to_ids(token)
                     if token_id > unk_token_id:
                         clip_l.get_input_embeddings().weight.data[token_id] = data.clip_l
-                        if model_type == 'SD-XL':
+                        if model_type == 'SDXL':
                             clip_g.get_input_embeddings().weight.data[token_id] = data.clip_g # type: ignore
         except Exception as e:
             errors.display(e, 'Embedding Load Failure')
@@ -270,16 +270,13 @@ class EmbeddingDatabase:
                 continue
             self.skipped_embeddings[embedding.name] = embedding
         debug(f"TI Loading: Text Encoder total embeddings={shared.sd_model.text_encoder.get_input_embeddings().weight.data.shape[0]}")
-        if model_type == 'SD-XL':
+        if model_type == 'SDXL':
             debug(f"TI Loading: Text Encoder 2 total embeddings={shared.sd_model.text_encoder_2.get_input_embeddings().weight.data.shape[0]}")
         return len(self.word_embeddings) - _loaded_pre
 
     def load_from_file(self, path, filename):
         name, ext = os.path.splitext(filename)
         ext = ext.upper()
-        if shared.backend == shared.Backend.DIFFUSERS:
-            self.load_diffusers_embedding(filename, path)
-            return
 
         if ext in ['.PNG', '.WEBP', '.JXL', '.AVIF']:
             if '.preview' in filename.lower():
@@ -314,6 +311,9 @@ class EmbeddingDatabase:
                 emb = emb.unsqueeze(0)
         else:
             raise RuntimeError(f"Couldn't identify {filename} as textual inversion embedding")
+
+        if shared.backend == shared.Backend.DIFFUSERS:
+            return emb
 
         vec = emb.detach().to(devices.device, dtype=torch.float32)
         # name = data.get('name', name)
