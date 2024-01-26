@@ -58,7 +58,7 @@ class UpscalerSwinIR(Upscaler):
                     else:
                         model.load_state_dict(pretrained_model, strict=True)
                     shared.log.info(f"Upscaler loaded: type={self.name} model={info.local_data_path} param={param}")
-                    model = compile_upscaler(model, name=self.name)
+                    model = compile_upscaler(model)
                     self.models[info.local_data_path] = model
                     return model
                 except Exception as e:
@@ -69,7 +69,7 @@ class UpscalerSwinIR(Upscaler):
         model = self.load_model(selected_model)
         if model is None:
             return img
-        model = model.to(shared.device, dtype=devices.dtype)
+        model = model.to(devices.device, dtype=devices.dtype)
         img = upscale(img, model)
         if shared.opts.upscaler_unload and selected_model in self.models:
             del self.models[selected_model]
@@ -92,7 +92,7 @@ def upscale(
     img = img[:, :, ::-1]
     img = np.moveaxis(img, 2, 0) / 255
     img = torch.from_numpy(img).float()
-    img = img.unsqueeze(0).to(shared.device, dtype=devices.dtype)
+    img = img.unsqueeze(0).to(devices.device, dtype=devices.dtype)
     with torch.no_grad(), devices.autocast():
         _, _, h_old, w_old = img.size()
         h_pad = (h_old // window_size + 1) * window_size - h_old
@@ -119,8 +119,8 @@ def inference(img, model, tile, tile_overlap, window_size, scale):
     stride = tile - tile_overlap
     h_idx_list = list(range(0, h - tile, stride)) + [h - tile]
     w_idx_list = list(range(0, w - tile, stride)) + [w - tile]
-    E = torch.zeros(b, c, h * sf, w * sf, dtype=devices.dtype, device=shared.device).type_as(img)
-    W = torch.zeros_like(E, dtype=devices.dtype, device=shared.device)
+    E = torch.zeros(b, c, h * sf, w * sf, dtype=devices.dtype, device=devices.device).type_as(img)
+    W = torch.zeros_like(E, dtype=devices.dtype, device=devices.device)
 
     with Progress(TextColumn('[cyan]{task.description}'), BarColumn(), TaskProgressColumn(), TimeRemainingColumn(), TimeElapsedColumn(), console=shared.console) as progress:
         task = progress.add_task(description="Upscaling Initializing", total=len(h_idx_list) * len(w_idx_list))

@@ -154,7 +154,7 @@ class UpscalerESRGAN(Upscaler):
             model = arch.SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=num_conv, upscale=4, act_type='prelu')
             model.load_state_dict(state_dict)
             model.eval()
-            model = compile_upscaler(model, name=self.name)
+            model = compile_upscaler(model)
             self.models[info.local_data_path] = model
             return self.models[info.local_data_path]
 
@@ -169,7 +169,7 @@ class UpscalerESRGAN(Upscaler):
         model = arch.RRDBNet(in_nc=in_nc, out_nc=out_nc, nf=nf, nb=nb, upscale=mscale, plus=plus)
         model.load_state_dict(state_dict)
         model.eval()
-        model = compile_upscaler(model, name=self.name)
+        model = compile_upscaler(model)
         self.models[info.local_data_path] = model
         return self.models[info.local_data_path]
 

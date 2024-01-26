@@ -8,6 +8,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
+from modules import devices
 from modules.shared import log, console
 from modules.upscaler import compile_upscaler
 
@@ -54,7 +55,7 @@ class RealESRGANer():
             self.device = torch.device(
                 f'cuda:{gpu_id}' if torch.cuda.is_available() else 'cpu') if device is None else device
         else:
-            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') if device is None else device
+            self.device = devices.device if device is None else device
 
         if isinstance(model_path, list):
             # dni
@@ -78,8 +79,8 @@ class RealESRGANer():
         model.eval()
         if self.half:
             model = model.half()
-        model = compile_upscaler(model, name=self.name)
         self.model = model.to(self.device)
+        self.model = compile_upscaler(self.model)
 
     def dni(self, net_a, net_b, dni_weight, key='params', loc='cpu'):
         """Deep network interpolation.

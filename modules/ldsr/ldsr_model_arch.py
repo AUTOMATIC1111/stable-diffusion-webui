@@ -35,14 +35,14 @@ class LDSR:
             config.model.target = "ldm.models.diffusion.ddpm.LatentDiffusionV1"
             model: torch.nn.Module = instantiate_from_config(config.model)
             model.load_state_dict(sd, strict=False)
-            model = model.to(shared.device)
+            model = model.to(devices.device)
             if half_attention:
                 model = model.half()
             if shared.cmd_opts.opt_channelslast:
                 model = model.to(memory_format=torch.channels_last)
             sd_hijack.model_hijack.hijack(model) # apply optimization
             model.eval()
-            model = compile_upscaler(model, name=self.modelPath)
+            model = compile_upscaler(model)
             cached_ldsr_model = model
         return {"model": model}
 
@@ -151,7 +151,7 @@ def get_cond(selected_path):
     c = rearrange(c, '1 c h w -> 1 h w c')
     c = 2. * c - 1.
 
-    c = c.to(shared.device)
+    c = c.to(devices.device)
     example["LR_image"] = c
     example["image"] = c_up
 

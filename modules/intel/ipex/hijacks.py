@@ -99,6 +99,8 @@ def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.
         key = key.to(dtype=query.dtype)
     if query.dtype != value.dtype:
         value = value.to(dtype=query.dtype)
+    if attn_mask is not None and query.dtype != attn_mask.dtype:
+        attn_mask = attn_mask.to(dtype=query.dtype)
     return original_scaled_dot_product_attention(query, key, value, attn_mask=attn_mask, dropout_p=dropout_p, is_causal=is_causal)
 
 # A1111 FP16

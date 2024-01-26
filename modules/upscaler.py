@@ -1,9 +1,11 @@
 import os
 import copy
+import time
+import logging
 from abc import abstractmethod
 from PIL import Image
-import modules.shared
-from modules import modelloader
+from modules import devices, modelloader, shared
+from installer import setup_logging
 
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.Resampling.LANCZOS)
@@ -26,22 +28,22 @@ class Upscaler:
     def __init__(self, create_dirs=True):
         global models # pylint: disable=global-statement
         if models is None:
-            models = modules.shared.readfile('html/upscalers.json')
+            models = shared.readfile('html/upscalers.json')
         self.mod_pad_h = None
-        self.tile_size = modules.shared.opts.upscaler_tile_size
-        self.tile_pad = modules.shared.opts.upscaler_tile_overlap
-        self.device = modules.shared.device
+        self.tile_size = shared.opts.upscaler_tile_size
+        self.tile_pad = shared.opts.upscaler_tile_overlap
+        self.device = shared.device
         self.img = None
         self.output = None
         self.scale = 1
-        self.half = not modules.shared.cmd_opts.no_half
+        self.half = not shared.cmd_opts.no_half
         self.pre_pad = 0
         self.mod_scale = None
         self.model_download_path = None
         if self.user_path is not None and len(self.user_path) > 0 and not os.path.exists(self.user_path):
-            modules.shared.log.info(f'Upscaler create: folder="{self.user_path}"')
+            shared.log.info(f'Upscaler create: folder="{self.user_path}"')
         if self.model_path is None and self.name:
-            self.model_path = os.path.join(modules.shared.models_path, self.name)
+            self.model_path = os.path.join(shared.models_path, self.name)
         if self.model_path and create_dirs:
             os.makedirs(self.model_path, exist_ok=True)
         try:
@@ -64,7 +66,7 @@ class Upscaler:
                 scaler.custom = True
                 scalers.append(scaler)
                 loaded.append(file_name)
-                modules.shared.log.debug(f'Upscaler type={self.name} folder="{folder}" model="{model_name}" path="{file_name}"')
+                shared.log.debug(f'Upscaler type={self.name} folder="{folder}" model="{model_name}" path="{file_name}"')
 
     def find_scalers(self):
         scalers = []
@@ -78,7 +80,7 @@ class Upscaler:
                 scaler = UpscalerData(name=f'{k} {model[0]}', path=model_path, upscaler=self)
                 scalers.append(scaler)
                 loaded.append(model_path)
-                # modules.shared.log.debug(f'Upscaler type={self.name} folder="{self.user_path}" model="{model[0]}" path="{model_path}"')
+                # shared.log.debug(f'Upscaler type={self.name} folder="{self.user_path}" model="{model[0]}" path="{model_path}"')
         if not os.path.exists(self.user_path):
             return scalers
         self.find_folder(self.user_path, scalers, loaded)
@@ -89,8 +91,8 @@ class Upscaler:
         return img
 
     def upscale(self, img: Image, scale, selected_model: str = None):
-        orig_state = copy.deepcopy(modules.shared.state)
-        modules.shared.state.begin('upscale')
+        orig_state = copy.deepcopy(shared.state)
+        shared.state.begin('upscale')
         self.scale = scale
         dest_w = int(img.width * scale)
         dest_h = int(img.height * scale)
@@ -103,8 +105,8 @@ class Upscaler:
                 break
         if img.width != dest_w or img.height != dest_h:
             img = img.resize((int(dest_w), int(dest_h)), resample=LANCZOS)
-        modules.shared.state.end()
-        modules.shared.state = orig_state
+        shared.state.end()
+        shared.state = orig_state
         return img
 
     @abstractmethod
@@ -115,7 +117,7 @@ class Upscaler:
         return modelloader.load_models(model_path=self.model_path, model_url=self.model_url, command_path=self.user_path)
 
     def update_status(self, prompt):
-        modules.shared.log.info(f'Upscaler: type={self.name} model="{prompt}"')
+        shared.log.info(f'Upscaler: type={self.name} model="{prompt}"')
 
     def find_model(self, path):
         info = None
@@ -124,13 +126,13 @@ class Upscaler:
                 info = scaler
                 break
         if info is None:
-            modules.shared.log.error(f'Upscaler cannot match model: type={self.name} model="{path}"')
+            shared.log.error(f'Upscaler cannot match model: type={self.name} model="{path}"')
             return None
         if info.local_data_path.startswith("http"):
             from modules.modelloader import load_file_from_url
             info.local_data_path = load_file_from_url(url=info.data_path, model_dir=self.model_download_path, progress=True)
         if not os.path.isfile(info.local_data_path):
-            modules.shared.log.error(f'Upscaler cannot find model: type={self.name} model="{info.local_data_path}"')
+            shared.log.error(f'Upscaler cannot find model: type={self.name} model="{info.local_data_path}"')
             return None
         return info
 
@@ -196,35 +198,53 @@ class UpscalerNearest(Upscaler):
         self.name = "Nearest"
         self.scalers = [UpscalerData("Nearest", None, self)]
 
-def compile_upscaler(model, name=""):
+def compile_upscaler(model):
     try:
-        if modules.shared.opts.ipex_optimize and "Upscaler" in modules.shared.opts.ipex_optimize:
+        if shared.opts.ipex_optimize and "Upscaler" in shared.opts.ipex_optimize:
+            t0 = time.time()
             import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-            from modules.devices import dtype as devices_dtype
+            model.eval()
             model.training = False
-            model = ipex.optimize(model, dtype=devices_dtype, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
-            modules.shared.log.info("Applied Upscaler IPEX Optimize.")
-    except Exception as err:
-        modules.shared.log.warning(f"Upscaler IPEX Optimize not supported: {err}")
-    try:
-        if "Upscaler" in modules.shared.opts.cuda_compile and modules.shared.opts.cuda_compile_backend != 'none':
-            modules.shared.log.info(f"Upscaler Compiling: {name} mode={modules.shared.opts.cuda_compile_backend}")
-            import logging
-            import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
+            model = ipex.optimize(model, dtype=devices.dtype, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+            t1 = time.time()
+            shared.log.info(f"Upscaler IPEX Optimize: time={t1-t0:.2f}")
+    except Exception as e:
+        shared.log.warning(f"Upscaler IPEX Optimize: error: {e}")
 
-            if modules.shared.opts.cuda_compile_backend == "openvino_fx":
+    try:
+        if "Upscaler" in shared.opts.cuda_compile and shared.opts.cuda_compile_backend != 'none':
+            import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
+            torch._dynamo.reset() # pylint: disable=protected-access
+            shared.log.debug(f"Upscaler compile available backends: {torch._dynamo.list_backends()}") # pylint: disable=protected-access
+
+            if shared.opts.cuda_compile_backend == "openvino_fx":
                 from modules.intel.openvino import openvino_fx # pylint: disable=unused-import
                 torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
 
-            log_level = logging.WARNING if modules.shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
+            log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
             if hasattr(torch, '_logging'):
                 torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
+            torch._dynamo.config.verbose = shared.opts.cuda_compile_verbose # pylint: disable=protected-access
+            torch._dynamo.config.suppress_errors = shared.opts.cuda_compile_errors # pylint: disable=protected-access
 
-            torch._dynamo.config.verbose = modules.shared.opts.cuda_compile_verbose # pylint: disable=protected-access
-            torch._dynamo.config.suppress_errors = modules.shared.opts.cuda_compile_errors # pylint: disable=protected-access
-            model = torch.compile(model, mode=modules.shared.opts.cuda_compile_mode, backend=modules.shared.opts.cuda_compile_backend, fullgraph=modules.shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
+            try:
+                torch._inductor.config.conv_1x1_as_mm = True # pylint: disable=protected-access
+                torch._inductor.config.coordinate_descent_tuning = True # pylint: disable=protected-access
+                torch._inductor.config.epilogue_fusion = False # pylint: disable=protected-access
+                torch._inductor.config.coordinate_descent_check_all_directions = True # pylint: disable=protected-access
+                torch._inductor.config.use_mixed_mm = True # pylint: disable=protected-access
+                # torch._inductor.config.force_fuse_int_mm_with_mul = True # pylint: disable=protected-access
+            except Exception as e:
+                shared.log.error(f"Torch inductor config error: {e}")
 
-            modules.shared.log.info("Upscaler: Complilation done.")
-    except Exception as err:
-        modules.shared.log.warning(f"Model compile not supported: {err}")
+            t0 = time.time()
+
+            model = torch.compile(model, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
+
+            setup_logging() # compile messes with logging so reset is needed
+
+            t1 = time.time()
+            shared.log.info(f"Upscaler compile: time={t1-t0:.2f}")
+    except Exception as e:
+        shared.log.warning(f"Upscaler compile error: {e}")
     return model

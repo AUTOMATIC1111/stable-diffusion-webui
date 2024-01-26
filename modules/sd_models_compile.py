@@ -29,27 +29,33 @@ def ipex_optimize(sd_model):
         import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
         if "Model" in shared.opts.ipex_optimize:
             if hasattr(sd_model, 'unet'):
+                sd_model.unet.eval()
                 sd_model.unet.training = False
                 sd_model.unet = ipex.optimize(sd_model.unet, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
             elif hasattr(sd_model, 'transformer'):
+                sd_model.transformer.eval()
                 sd_model.transformer.training = False
                 sd_model.transformer = ipex.optimize(sd_model.transformer, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
             else:
                 shared.log.warning('IPEX Optimize enabled but model has no Unet or Transformer')
         if "VAE" in shared.opts.ipex_optimize:
             if hasattr(sd_model, 'vae'):
+                sd_model.vae.eval()
                 sd_model.vae.training = False
                 sd_model.vae = ipex.optimize(sd_model.vae, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
             elif hasattr(sd_model, 'movq'):
+                sd_model.movq.eval()
                 sd_model.movq.training = False
                 sd_model.movq = ipex.optimize(sd_model.movq, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
             else:
                 shared.log.warning('Compress VAE Weights enabled but model has no VAE')
         if "Text Encoder" in shared.opts.ipex_optimize:
             if hasattr(sd_model, 'text_encoder'):
+                sd_model.text_encoder.eval()
                 sd_model.text_encoder.training = False
                 sd_model.text_encoder = ipex.optimize(sd_model.text_encoder, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
                 if hasattr(sd_model, 'text_encoder_2'):
+                    sd_model.text_encoder_2.eval()
                     sd_model.text_encoder_2.training = False
                     sd_model.text_encoder_2 = ipex.optimize(sd_model.text_encoder_2, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
             else:

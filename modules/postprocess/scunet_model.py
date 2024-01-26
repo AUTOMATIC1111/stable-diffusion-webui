@@ -4,7 +4,7 @@ import torch
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
 from modules import devices
 from modules.postprocess.scunet_model_arch import SCUNet as net
-from modules.shared import opts, log, console, device
+from modules.shared import opts, log, console
 from modules.upscaler import Upscaler, compile_upscaler
 
 
@@ -30,8 +30,8 @@ class UpscalerSCUNet(Upscaler):
             log.info(f"Upscaler loaded: type={self.name} model={info.local_data_path}")
             for _, v in model.named_parameters():
                 v.requires_grad = False
-            model = model.to(device)
-            model = compile_upscaler(model, name=self.name)
+            model = model.to(devices.device)
+            model = compile_upscaler(model)
             self.models[info.local_data_path] = model
         return model
 
@@ -49,8 +49,8 @@ class UpscalerSCUNet(Upscaler):
         stride = tile - tile_overlap
         h_idx_list = list(range(0, h - tile, stride)) + [h - tile]
         w_idx_list = list(range(0, w - tile, stride)) + [w - tile]
-        E = torch.zeros(1, 3, h * sf, w * sf, dtype=img.dtype, device=device)
-        W = torch.zeros_like(E, dtype=devices.dtype, device=device)
+        E = torch.zeros(1, 3, h * sf, w * sf, dtype=img.dtype, device=devices.device)
+        W = torch.zeros_like(E, dtype=devices.dtype, device=devices.device)
         with Progress(TextColumn('[cyan]{task.description}'), BarColumn(), TaskProgressColumn(), TimeRemainingColumn(), TimeElapsedColumn(), console=console) as progress:
             task = progress.add_task(description="Upscaling", total=len(h_idx_list) * len(w_idx_list))
             for h_idx in h_idx_list:
@@ -78,7 +78,7 @@ class UpscalerSCUNet(Upscaler):
         np_img = np.array(img)
         np_img = np_img[:, :, ::-1]  # RGB to BGR
         np_img = np_img.transpose((2, 0, 1)) / 255  # HWC to CHW
-        torch_img = torch.from_numpy(np_img).float().unsqueeze(0).to(device)  # type: ignore
+        torch_img = torch.from_numpy(np_img).float().unsqueeze(0).to(devices.device)  # type: ignore
         if tile > h or tile > w:
             _img = torch.zeros(1, 3, max(h, tile), max(w, tile), dtype=torch_img.dtype, device=torch_img.device)
             _img[:, :, :h, :w] = torch_img # pad image
