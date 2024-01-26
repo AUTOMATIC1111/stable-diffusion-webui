@@ -198,6 +198,8 @@ class Options:
         try:
             with open(filename, "r", encoding="utf8") as file:
                 self.data = json.load(file)
+        except FileNotFoundError:
+            self.data = {}
         except Exception:
             errors.report(f'\nCould not load settings\nThe config file "{filename}" is likely corrupted\nIt has been moved to the "tmp/config.json"\nReverting config to default\n\n''', exc_info=True)
             os.replace(filename, os.path.join(script_path, "tmp", "config.json"))
