@@ -233,11 +233,7 @@ def openvino_compile(gm: GraphModule, *example_inputs, model_hash_str: str = Non
         om.inputs[idx].get_node().set_element_type(dtype_mapping[input_data.dtype])
         om.inputs[idx].get_node().set_partial_shape(PartialShape(list(input_data.shape)))
     om.validate_nodes_and_infer_types()
-    if shared.opts.nncf_compress_weights and not dont_use_nncf:
-        if dont_use_4bit_nncf or shared.opts.nncf_compress_weights_mode == "INT8":
-            om = nncf.compress_weights(om)
-        else:
-            om = nncf.compress_weights(om, mode=getattr(nncf.CompressWeightsMode, shared.opts.nncf_compress_weights_mode), group_size=8, ratio=shared.opts.nncf_compress_weights_raito)
+
     if shared.opts.nncf_quantize and not dont_use_quant:
         new_inputs = []
         for idx, _ in enumerate(example_inputs):
@@ -249,6 +245,13 @@ def openvino_compile(gm: GraphModule, *example_inputs, model_hash_str: str = Non
             nncf.quantize(om, nncf.Dataset(new_inputs), mode=getattr(nncf.QuantizationMode, shared.opts.nncf_quant_mode),
                 advanced_parameters=nncf.quantization.advanced_parameters.AdvancedQuantizationParameters(
                 overflow_fix=nncf.quantization.advanced_parameters.OverflowFix.DISABLE, backend_params=None))
+
+    if shared.opts.nncf_compress_weights and not dont_use_nncf:
+        if dont_use_4bit_nncf or shared.opts.nncf_compress_weights_mode == "INT8":
+            om = nncf.compress_weights(om)
+        else:
+            om = nncf.compress_weights(om, mode=getattr(nncf.CompressWeightsMode, shared.opts.nncf_compress_weights_mode), group_size=8, ratio=shared.opts.nncf_compress_weights_raito)
+
 
     if model_hash_str is not None:
         core.set_property({'CACHE_DIR': cache_root + '/blob'})
@@ -282,11 +285,7 @@ def openvino_compile_cached_model(cached_model_path, *example_inputs):
         om.inputs[idx].get_node().set_element_type(dtype_mapping[input_data.dtype])
         om.inputs[idx].get_node().set_partial_shape(PartialShape(list(input_data.shape)))
     om.validate_nodes_and_infer_types()
-    if shared.opts.nncf_compress_weights and not dont_use_nncf:
-        if dont_use_4bit_nncf or shared.opts.nncf_compress_weights_mode == "INT8":
-            om = nncf.compress_weights(om)
-        else:
-            om = nncf.compress_weights(om, mode=getattr(nncf.CompressWeightsMode, shared.opts.nncf_compress_weights_mode), group_size=8, ratio=shared.opts.nncf_compress_weights_raito)
+
     if shared.opts.nncf_quantize and not dont_use_quant:
         new_inputs = []
         for idx, _ in enumerate(example_inputs):
@@ -298,6 +297,12 @@ def openvino_compile_cached_model(cached_model_path, *example_inputs):
             nncf.quantize(om, nncf.Dataset(new_inputs), mode=getattr(nncf.QuantizationMode, shared.opts.nncf_quant_mode),
                 advanced_parameters=nncf.quantization.advanced_parameters.AdvancedQuantizationParameters(
                 overflow_fix=nncf.quantization.advanced_parameters.OverflowFix.DISABLE, backend_params=None))
+
+    if shared.opts.nncf_compress_weights and not dont_use_nncf:
+        if dont_use_4bit_nncf or shared.opts.nncf_compress_weights_mode == "INT8":
+            om = nncf.compress_weights(om)
+        else:
+            om = nncf.compress_weights(om, mode=getattr(nncf.CompressWeightsMode, shared.opts.nncf_compress_weights_mode), group_size=8, ratio=shared.opts.nncf_compress_weights_raito)
 
     core.set_property({'CACHE_DIR': shared.opts.openvino_cache_path + '/blob'})
     dont_use_nncf = False
