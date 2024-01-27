@@ -544,7 +544,7 @@ def create_ui():
                                 add_copy_image_controls('sketch', sketch)
 
                             with gr.TabItem('Inpaint', id='inpaint', elem_id="img2img_inpaint_tab") as tab_inpaint:
-                                init_img_with_mask = gr.ImageEditor(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", brush=Brush(colors=["opts.img2img_inpaint_mask_brush_color"], color_mode="fixed"), interactive=True, type="pil", image_mode="RGBA")
+                                init_img_with_mask = gr.ImageEditor(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", brush=Brush(colors=[opts.img2img_inpaint_mask_brush_color], color_mode="fixed"), interactive=True, type="pil", image_mode="RGBA")
                                 add_copy_image_controls('inpaint', init_img_with_mask)
 
                             with gr.TabItem('Inpaint sketch', id='inpaint_sketch', elem_id="img2img_inpaint_sketch_tab") as tab_inpaint_color:
@@ -579,6 +579,9 @@ def create_ui():
                         def copy_image(img):
                             if isinstance(img, dict) and 'image' in img:
                                 return img['image']
+
+                            if isinstance(img, dict) and 'composite' in img:
+                                return img['composite']
 
                             return img
 
@@ -694,12 +697,6 @@ def create_ui():
 
                     if category not in {"accordions"}:
                         scripts.scripts_img2img.setup_ui_for_section(category)
-
-            # the code below is meant to update the resolution label after the image in the image selection UI has changed.
-            # as it is now the event keeps firing continuously for inpaint edits, which ruins the page with constant requests.
-            # I assume this must be a gradio bug and for now we'll just do it for non-inpaint inputs.
-            for component in [init_img, sketch]:
-                component.change(fn=lambda: None, _js="updateImg2imgResizeToTextAfterChangingImage", inputs=[], outputs=[], show_progress=False)
 
             def select_img2img_tab(tab):
                 return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
