@@ -26,38 +26,33 @@ class CompiledModelState:
 def ipex_optimize(sd_model):
     try:
         t0 = time.time()
-        import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
+
+        def ipex_optimize_model(model):
+            import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
+            model.eval()
+            model.training = False
+            model = ipex.optimize(model, dtype=devices.dtype, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+            return model
+
         if "Model" in shared.opts.ipex_optimize:
             if hasattr(sd_model, 'unet'):
-                sd_model.unet.eval()
-                sd_model.unet.training = False
-                sd_model.unet = ipex.optimize(sd_model.unet, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+                sd_model.unet = ipex_optimize_model(sd_model.unet)
             elif hasattr(sd_model, 'transformer'):
-                sd_model.transformer.eval()
-                sd_model.transformer.training = False
-                sd_model.transformer = ipex.optimize(sd_model.transformer, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+                sd_model.transformer = ipex_optimize_model(sd_model.transformer)
             else:
                 shared.log.warning('IPEX Optimize enabled but model has no Unet or Transformer')
         if "VAE" in shared.opts.ipex_optimize:
             if hasattr(sd_model, 'vae'):
-                sd_model.vae.eval()
-                sd_model.vae.training = False
-                sd_model.vae = ipex.optimize(sd_model.vae, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+                sd_model.vae = ipex_optimize_model(sd_model.vae)
             elif hasattr(sd_model, 'movq'):
-                sd_model.movq.eval()
-                sd_model.movq.training = False
-                sd_model.movq = ipex.optimize(sd_model.movq, dtype=devices.dtype_vae, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+                sd_model.movq = ipex_optimize_model(sd_model.movq)
             else:
                 shared.log.warning('Compress VAE Weights enabled but model has no VAE')
         if "Text Encoder" in shared.opts.ipex_optimize:
             if hasattr(sd_model, 'text_encoder'):
-                sd_model.text_encoder.eval()
-                sd_model.text_encoder.training = False
-                sd_model.text_encoder = ipex.optimize(sd_model.text_encoder, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+                sd_model.text_encoder = ipex_optimize_model(sd_model.text_encoder)
                 if hasattr(sd_model, 'text_encoder_2'):
-                    sd_model.text_encoder_2.eval()
-                    sd_model.text_encoder_2.training = False
-                    sd_model.text_encoder_2 = ipex.optimize(sd_model.text_encoder_2, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+                    sd_model.text_encoder_2 = ipex_optimize_model(sd_model.text_encoder_2)
             else:
                 shared.log.warning('IPEX Optimize Text Encoder Weights enabled but model has no Text Encoder')
         t1 = time.time()
@@ -65,6 +60,7 @@ def ipex_optimize(sd_model):
         return sd_model
     except Exception as e:
         shared.log.warning(f"IPEX Optimize: error: {e}")
+
 
 def nncf_compress_weights(sd_model):
     try:

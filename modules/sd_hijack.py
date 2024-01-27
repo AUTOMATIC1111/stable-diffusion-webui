@@ -178,8 +178,9 @@ class StableDiffusionModelHijack:
         if "Model" in shared.opts.ipex_optimize and shared.backend == shared.Backend.ORIGINAL:
             try:
                 import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
+                m.model.eval()
                 m.model.training = False
-                m.model = ipex.optimize(m.model, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+                m.model = ipex.optimize(m.model, dtype=devices.dtype, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
                 shared.log.info("Applied IPEX Optimize.")
             except Exception as err:
                 shared.log.warning(f"IPEX Optimize not supported: {err}")
