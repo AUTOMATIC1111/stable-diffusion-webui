@@ -12,6 +12,7 @@ from modules.paths import script_path, models_path
 
 
 diffuser_repos = []
+debug = shared.log.trace if os.environ.get('SD_DOWNLOAD_DEBUG', None) is not None else lambda *args, **kwargs: None
 
 
 def download_civit_meta(model_path: str, model_id):
@@ -166,31 +167,35 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         download_config["mirror"] = mirror
     if custom_pipeline is not None and len(custom_pipeline) > 0:
         download_config["custom_pipeline"] = custom_pipeline
-    shared.log.debug(f"Diffusers downloading: {hub_id} args={download_config}")
+    shared.log.debug(f'Diffusers downloading: id="{hub_id}" args={download_config}')
+    token = token or shared.opts.huggingface_token
     if token is not None and len(token) > 2:
         shared.log.debug(f"Diffusers authentication: {token}")
         hf.login(token)
     pipeline_dir = None
 
-    ok = True
+    ok = False
     err = None
-    try:
-        pipeline_dir = DiffusionPipeline.download(hub_id, **download_config)
-    except Exception as e:
-        err = e
-        ok = False
-        # shared.log.warning(f"Diffusers download error: {hub_id} {e}")
+    if not ok:
+        try:
+            pipeline_dir = DiffusionPipeline.download(hub_id, **download_config)
+            ok = True
+        except Exception as e:
+            err = e
+            ok = False
+            debug(f"Diffusers download error: {hub_id} {e}")
     if not ok and 'Repository Not Found' not in str(err):
         try:
-            download_config.pop('load_connected_pipeline')
-            download_config.pop('variant')
+            download_config.pop('load_connected_pipeline', None)
+            download_config.pop('variant', None)
             pipeline_dir = hf.snapshot_download(hub_id, **download_config)
-        except Exception:
-            # shared.log.warning(f"Diffusers download error: {hub_id} {e}")
-            pass
-
+        except Exception as e:
+            debug(f"Diffusers download error: {hub_id} {e}")
+            if 'gated' in str(e):
+                shared.log.error(f'Diffusers download error: id="{hub_id}" model access requires login')
+                return None
     if pipeline_dir is None:
-        shared.log.error(f"Diffusers download error: {hub_id} {err}")
+        shared.log.error(f'Diffusers download error: id="{hub_id}" {err}')
         return None
     try:
         model_info_dict = hf.model_info(hub_id).cardData if pipeline_dir is not None else None
