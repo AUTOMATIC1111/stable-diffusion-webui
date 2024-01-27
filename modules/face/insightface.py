@@ -25,15 +25,17 @@ def get_app(mp_name):
         root_dir = os.path.join(opts.diffusers_dir, 'models--vladmandic--insightface-faceanalysis')
         local_dir = os.path.join(root_dir, 'models')
         extract_dir = os.path.join(local_dir, mp_name)
-        model_path = hf.hf_hub_download(
-            repo_id='vladmandic/insightface-faceanalysis',
-            filename=f'{mp_name}.zip',
-            local_dir_use_symlinks=False,
-            cache_dir=opts.diffusers_dir,
-            local_dir=local_dir
-        )
+        model_path = os.path.join(local_dir, f'{mp_name}.zip')
+        if not os.path.exists(model_path):
+            model_path = hf.hf_hub_download(
+                repo_id='vladmandic/insightface-faceanalysis',
+                filename=f'{mp_name}.zip',
+                local_dir_use_symlinks=False,
+                cache_dir=opts.diffusers_dir,
+                local_dir=local_dir
+            )
         if not os.path.exists(extract_dir):
-            log.debug(f"InsightFace extract: folder={extract_dir}")
+            log.debug(f'InsightFace extract: folder="{extract_dir}"')
             os.makedirs(extract_dir)
             with zipfile.ZipFile(model_path) as zf:
                 zf.extractall(local_dir)
