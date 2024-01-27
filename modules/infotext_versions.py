@@ -31,8 +31,11 @@ def backcompat(d):
     if ver is None:
         return
 
-    if ver < v160:
+    if ver < v160 and '[' in d.get('Prompt', ''):
         d["Old prompt editing timelines"] = True
+
+    if ver < v160 and d.get('Sampler', '') in ('DDIM', 'PLMS'):
+        d["Pad conds v0"] = True
 
     if ver < v170_tsnr:
         d["Downcast alphas_cumprod"] = True
