@@ -740,14 +740,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         "load_safety_checker": False,
         "load_connected_pipeline": True,
     }
-    if shared.opts.diffusers_model_load_variant == 'default':
-        if devices.dtype == torch.float16:
-            diffusers_load_config['variant'] = 'fp16'
-    elif shared.opts.diffusers_model_load_variant == 'fp32':
-        pass
-    else:
+    if shared.opts.diffusers_model_load_variant != 'default':
         diffusers_load_config['variant'] = shared.opts.diffusers_model_load_variant
-
     if shared.opts.diffusers_pipeline == 'Custom Diffusers Pipeline' and len(shared.opts.custom_diffusers_pipeline) > 0:
         shared.log.debug(f'Diffusers custom pipeline: {shared.opts.custom_diffusers_pipeline}')
         diffusers_load_config['custom_pipeline'] = shared.opts.custom_diffusers_pipeline
