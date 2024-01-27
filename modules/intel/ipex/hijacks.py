@@ -29,16 +29,15 @@ def return_xpu(device):
 
 
 # Autocast
-original_autocast = torch.autocast
-@wraps(torch.autocast)
-def ipex_autocast(*args, **kwargs):
-    if len(args) > 0 and (args[0] == "cuda" or args[0] == "xpu"):
-        if "dtype" in kwargs:
-            return original_autocast("xpu", *args[1:], **kwargs)
-        else:
-            return original_autocast("xpu", *args[1:], dtype=devices.dtype, **kwargs)
+original_autocast_init = torch.amp.autocast_mode.autocast.__init__
+@wraps(torch.amp.autocast_mode.autocast.__init__)
+def autocast_init(self, device_type, dtype=None, enabled=True, cache_enabled=None):
+    if device_type == "cuda" or device_type == "xpu":
+        if dtype is None:
+            dtype = devices.dtype
+        return original_autocast_init(self, device_type="xpu", dtype=dtype, enabled=enabled, cache_enabled=cache_enabled)
     else:
-        return original_autocast(*args, **kwargs)
+        return original_autocast_init(self, device_type=device_type, dtype=dtype, enabled=enabled, cache_enabled=cache_enabled)
 
 # Latent Antialias CPU Offload:
 original_interpolate = torch.nn.functional.interpolate
@@ -275,7 +274,7 @@ def ipex_hijacks():
     torch.backends.cuda.sdp_kernel = return_null_context
     torch.nn.DataParallel = DummyDataParallel
     torch.UntypedStorage.is_cuda = is_cuda
-    torch.autocast = ipex_autocast
+    torch.amp.autocast_mode.autocast.__init__ = autocast_init
 
     torch.nn.functional.scaled_dot_product_attention = scaled_dot_product_attention
     torch.nn.functional.group_norm = functional_group_norm

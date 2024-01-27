@@ -125,9 +125,13 @@ def ipex_init(): # pylint: disable=too-many-statements
 
         # AMP:
         torch.cuda.amp = torch.xpu.amp
+        torch.is_autocast_enabled = torch.xpu.is_autocast_xpu_enabled
+        torch.get_autocast_gpu_dtype = torch.xpu.get_autocast_xpu_dtype
+
         if not hasattr(torch.cuda.amp, "common"):
             torch.cuda.amp.common = contextlib.nullcontext()
         torch.cuda.amp.common.amp_definitely_not_available = lambda: False
+
         try:
             torch.cuda.amp.GradScaler = torch.xpu.amp.GradScaler
         except Exception: # pylint: disable=broad-exception-caught
