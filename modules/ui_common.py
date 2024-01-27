@@ -197,7 +197,7 @@ Requested path was: {f}
 
         with gr.Column(variant='panel', elem_id=f"{tabname}_results_panel"):
             with gr.Group(elem_id=f"{tabname}_gallery_container"):
-                res.gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery", columns=4, preview=True, height=shared.opts.gallery_height or None)
+                res.gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery", columns=4, preview=True, height=shared.opts.gallery_height or None, interactive=False)
 
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
                 open_folder_button = ToolButton(folder_symbol, elem_id=f'{tabname}_open_folder', visible=not shared.cmd_opts.hide_ui_dir_config, tooltip="Open images output directory.")
