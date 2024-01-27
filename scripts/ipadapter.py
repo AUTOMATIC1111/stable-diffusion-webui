@@ -37,6 +37,7 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name='None', sc
     # overrides
     if hasattr(p, 'ip_adapter_name'):
         adapter = ADAPTERS.get(p.ip_adapter_name, None)
+        adapter_name = p.ip_adapter_name
     else:
         adapter = ADAPTERS.get(adapter_name, None)
     if hasattr(p, 'ip_adapter_scale'):
@@ -95,7 +96,7 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name='None', sc
                 return False
             try:
                 from transformers import CLIPVisionModelWithProjection
-                shared.log.debug(f'IP adapter: load image encoder: {clip_repo}/{subfolder}')
+                shared.log.debug(f'IP adapter load: image encoder="{clip_repo}/{subfolder}"')
                 image_encoder = CLIPVisionModelWithProjection.from_pretrained(clip_repo, subfolder=subfolder, torch_dtype=devices.dtype, cache_dir=shared.opts.diffusers_dir, use_safetensors=True).to(devices.device)
                 image_encoder_type = shared.sd_model_type
                 image_encoder_name = clip_repo + '/' + subfolder
@@ -104,7 +105,7 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name='None', sc
                 return
     if getattr(pipe, 'feature_extractor', None) is None:
         from transformers import CLIPImageProcessor
-        shared.log.debug('IP adapter: load feature extractor')
+        shared.log.debug('IP adapter load: feature extractor')
         pipe.feature_extractor = CLIPImageProcessor()
 
     # main code
