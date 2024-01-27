@@ -662,7 +662,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             editor = page.create_user_metadata_editor(ui, tabname)
             editor.create_ui()
             ui.user_metadata_editors.append(editor)
-            
+
             related_tabs.append(tab)
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=f"{tabname}_save_preview", visible=False)
