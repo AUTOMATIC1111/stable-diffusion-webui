@@ -223,7 +223,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - fix lock-ups at very high resolutions  
 - **OpenVINO**, thanks @disty0  
   - **quantization support with NNCF**  
-    run 8 bit directly on your GPU without autocast  
+    run 8 bit directly without autocast  
     enable *OpenVINO Quantize Models with NNCF* from *Compute Settings*  
   - **4-bit support with NNCF**  
     enable *Compress Model weights with NNCF* from *Compute Settings* and set a 4-bit NNCF mode  
