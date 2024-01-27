@@ -432,6 +432,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_force_zeros": OptionInfo(False, "Force zeros for prompts when empty", gr.Checkbox, {"visible": False}),
     "diffusers_aesthetics_score": OptionInfo(False, "Require aesthetics score"),
     "diffusers_pooled": OptionInfo("default", "Diffusers SDXL pooled embeds", gr.Radio, {"choices": ['default', 'weighted']}),
+    "diffusers_convert_embed": OptionInfo(False, "Auto-convert SD 1.5 Embeddings to SDXL ", gr.Checkbox, {"visible": True}),
     "huggingface_token": OptionInfo('', 'HuggingFace token'),
 }))
 

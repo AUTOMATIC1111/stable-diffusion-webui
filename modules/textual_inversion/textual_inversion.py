@@ -99,6 +99,23 @@ class DirWithTextualInversionEmbeddings:
         self.mtime = directory_mtime(self.path)
 
 
+def convert_embedding(tensor, text_encoder, text_encoder_2):
+    with torch.no_grad():
+        vectors = []
+        clip_l_embeds = text_encoder.get_input_embeddings().weight.data.clone().to(device=devices.device)
+        tensor = tensor.to(device=devices.device)
+        for vec in tensor:
+            values, indices = torch.max(torch.nan_to_num(torch.cosine_similarity(vec.unsqueeze(0), clip_l_embeds)), 0)
+            if values < 0.707:  # Arbitrary similarity to cutoff, here 45 degrees
+                indices *= 0  # Use SDXL padding vector 0
+            vectors.append(indices)
+        vectors = torch.stack(vectors)
+        print(vectors)
+        output = text_encoder_2.get_input_embeddings().weight.data[vectors]
+        print(output.shape)
+    return output
+
+
 class EmbeddingDatabase:
     def __init__(self):
         self.ids_lookup = {}
@@ -217,6 +234,8 @@ class EmbeddingDatabase:
                         embeddings_dict["clip_l"] = self.load_from_file(embedding.filename, embedding.filename)
                     if 'clip_l' not in embeddings_dict:
                         raise ValueError('Invalid Embedding, dict missing required key `clip_l`')
+                    if 'clip_g' not in embeddings_dict and model_type == "SDXL" and shared.opts.diffusers_convert_embed:
+                        embeddings_dict["clip_g"] = convert_embedding(embeddings_dict["clip_l"], clip_l, clip_g)
                     if 'clip_g' in embeddings_dict:
                         embedding_type = 'SDXL'
                     else:
