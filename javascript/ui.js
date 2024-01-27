@@ -142,6 +142,14 @@ function submit() {
     return res;
 }
 
+function submit_txt2img_upscale() {
+    var res = submit(...arguments);
+
+    res[2] = selected_gallery_index();
+
+    return res;
+}
+
 function submit_img2img() {
     showSubmitButtons('img2img', false);
 
@@ -205,9 +213,33 @@ function restoreProgressImg2img() {
 }
 
 
+/**
+ * Configure the width and height elements on `tabname` to accept
+ * pasting of resolutions in the form of "width x height".
+ */
+function setupResolutionPasting(tabname) {
+    var width = gradioApp().querySelector(`#${tabname}_width input[type=number]`);
+    var height = gradioApp().querySelector(`#${tabname}_height input[type=number]`);
+    for (const el of [width, height]) {
+        el.addEventListener('paste', function(event) {
+            var pasteData = event.clipboardData.getData('text/plain');
+            var parsed = pasteData.match(/^\s*(\d+)\D+(\d+)\s*$/);
+            if (parsed) {
+                width.value = parsed[1];
+                height.value = parsed[2];
+                updateInput(width);
+                updateInput(height);
+                event.preventDefault();
+            }
+        });
+    }
+}
+
 onUiLoaded(function() {
     showRestoreProgressButton('txt2img', localGet("txt2img_task_id"));
     showRestoreProgressButton('img2img', localGet("img2img_task_id"));
+    setupResolutionPasting('txt2img');
+    setupResolutionPasting('img2img');
 });
 
 

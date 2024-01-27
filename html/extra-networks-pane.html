@@ -1,0 +1,55 @@
+<div id='{tabname}_{extra_networks_tabname}_pane' class='extra-network-pane'>
+    <div class="extra-network-control" id="{tabname}_{extra_networks_tabname}_controls" style="display:none" >
+        <div class="extra-network-control--search">
+            <input
+                id="{tabname}_{extra_networks_tabname}_extra_search"
+                class="extra-network-control--search-text"
+                type="search"
+                placeholder="Filter files"
+            >
+        </div>
+        <div 
+            id="{tabname}_{extra_networks_tabname}_extra_sort"
+            class="extra-network-control--sort"
+            data-sortmode="{data_sortmode}"
+            data-sortkey="{data_sortkey}"
+            title="Sort by path"
+            onclick="extraNetworksControlSortOnClick(event, '{tabname}', '{extra_networks_tabname}');"
+        >
+            <i class="extra-network-control--sort-icon"></i>
+        </div>
+        <div
+            id="{tabname}_{extra_networks_tabname}_extra_sort_dir"
+            class="extra-network-control--sort-dir"
+            data-sortdir="{data_sortdir}"
+            title="Sort ascending"
+            onclick="extraNetworksControlSortDirOnClick(event, '{tabname}', '{extra_networks_tabname}');"
+        >
+            <i class="extra-network-control--sort-dir-icon"></i>
+        </div>
+        <div
+            id="{tabname}_{extra_networks_tabname}_extra_tree_view"
+            class="extra-network-control--tree-view {tree_view_btn_extra_class}"
+            title="Enable Tree View"
+            onclick="extraNetworksControlTreeViewOnClick(event, '{tabname}', '{extra_networks_tabname}');"
+        >
+            <i class="extra-network-control--tree-view-icon"></i>
+        </div>
+        <div
+            id="{tabname}_{extra_networks_tabname}_extra_refresh"
+            class="extra-network-control--refresh"
+            title="Refresh page"
+            onclick="extraNetworksControlRefreshOnClick(event, '{tabname}', '{extra_networks_tabname}');"
+        >
+            <i class="extra-network-control--refresh-icon"></i>
+        </div>
+    </div>
+    <div class="extra-network-pane-content">
+        <div id='{tabname}_{extra_networks_tabname}_tree' class='extra-network-tree {tree_view_div_extra_class}'>
+            {tree_html}
+        </div>
+        <div id='{tabname}_{extra_networks_tabname}_cards' class='extra-network-cards'>
+            {items_html}
+        </div>
+    </div>
+</div>

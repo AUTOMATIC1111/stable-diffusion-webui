@@ -4,7 +4,7 @@ import gradio as gr
 
 class ScriptPostprocessingCeption(scripts_postprocessing.ScriptPostprocessing):
     name = "Caption"
-    order = 4000
+    order = 4040
 
     def ui(self):
         with ui_components.InputAccordion(False, label="Caption") as enable:

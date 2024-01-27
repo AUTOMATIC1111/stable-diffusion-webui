@@ -1,20 +1,15 @@
+import logging
 import sys
-import platform
 
-import numpy as np
 import torch
 from PIL import Image
-from tqdm import tqdm
 
-from modules import modelloader, devices, script_callbacks, shared
-from modules.shared import opts, state
-from swinir_model_arch import SwinIR
-from swinir_model_arch_v2 import Swin2SR
+from modules import devices, modelloader, script_callbacks, shared, upscaler_utils
 from modules.upscaler import Upscaler, UpscalerData
 
 SWINIR_MODEL_URL = "https://github.com/JingyunLiang/SwinIR/releases/download/v0.0/003_realSR_BSRGAN_DFOWMFC_s64w8_SwinIR-L_x4_GAN.pth"
 
-device_swinir = devices.get_device_for('swinir')
+logger = logging.getLogger(__name__)
 
 
 class UpscalerSwinIR(Upscaler):
@@ -37,26 +32,28 @@ class UpscalerSwinIR(Upscaler):
             scalers.append(model_data)
         self.scalers = scalers
 
-    def do_upscale(self, img, model_file):
-        use_compile = hasattr(opts, 'SWIN_torch_compile') and opts.SWIN_torch_compile \
-            and int(torch.__version__.split('.')[0]) >= 2 and platform.system() != "Windows"
-        current_config = (model_file, opts.SWIN_tile)
+    def do_upscale(self, img: Image.Image, model_file: str) -> Image.Image:
+        current_config = (model_file, shared.opts.SWIN_tile)
 
-        if use_compile and self._cached_model_config == current_config:
+        if self._cached_model_config == current_config:
             model = self._cached_model
         else:
-            self._cached_model = None
             try:
                 model = self.load_model(model_file)
             except Exception as e:
                 print(f"Failed loading SwinIR model {model_file}: {e}", file=sys.stderr)
                 return img
-            model = model.to(device_swinir, dtype=devices.dtype)
-            if use_compile:
-                model = torch.compile(model)
-                self._cached_model = model
-                self._cached_model_config = current_config
-        img = upscale(img, model)
+            self._cached_model = model
+            self._cached_model_config = current_config
+
+        img = upscaler_utils.upscale_2(
+            img,
+            model,
+            tile_size=shared.opts.SWIN_tile,
+            tile_overlap=shared.opts.SWIN_tile_overlap,
+            scale=model.scale,
+            desc="SwinIR",
+        )
         devices.torch_gc()
         return img
 
@@ -69,115 +66,22 @@ class UpscalerSwinIR(Upscaler):
             )
         else:
             filename = path
-        if filename.endswith(".v2.pth"):
-            model = Swin2SR(
-                upscale=scale,
-                in_chans=3,
-                img_size=64,
-                window_size=8,
-                img_range=1.0,
-                depths=[6, 6, 6, 6, 6, 6],
-                embed_dim=180,
-                num_heads=[6, 6, 6, 6, 6, 6],
-                mlp_ratio=2,
-                upsampler="nearest+conv",
-                resi_connection="1conv",
-            )
-            params = None
-        else:
-            model = SwinIR(
-                upscale=scale,
-                in_chans=3,
-                img_size=64,
-                window_size=8,
-                img_range=1.0,
-                depths=[6, 6, 6, 6, 6, 6, 6, 6, 6],
-                embed_dim=240,
-                num_heads=[8, 8, 8, 8, 8, 8, 8, 8, 8],
-                mlp_ratio=2,
-                upsampler="nearest+conv",
-                resi_connection="3conv",
-            )
-            params = "params_ema"
 
-        pretrained_model = torch.load(filename)
-        if params is not None:
-            model.load_state_dict(pretrained_model[params], strict=True)
-        else:
-            model.load_state_dict(pretrained_model, strict=True)
-        return model
+        model_descriptor = modelloader.load_spandrel_model(
+            filename,
+            device=self._get_device(),
+            prefer_half=(devices.dtype == torch.float16),
+            expected_architecture="SwinIR",
+        )
+        if getattr(shared.opts, 'SWIN_torch_compile', False):
+            try:
+                model_descriptor.model.compile()
+            except Exception:
+                logger.warning("Failed to compile SwinIR model, fallback to JIT", exc_info=True)
+        return model_descriptor
 
-
-def upscale(
-        img,
-        model,
-        tile=None,
-        tile_overlap=None,
-        window_size=8,
-        scale=4,
-):
-    tile = tile or opts.SWIN_tile
-    tile_overlap = tile_overlap or opts.SWIN_tile_overlap
-
-
-    img = np.array(img)
-    img = img[:, :, ::-1]
-    img = np.moveaxis(img, 2, 0) / 255
-    img = torch.from_numpy(img).float()
-    img = img.unsqueeze(0).to(device_swinir, dtype=devices.dtype)
-    with torch.no_grad(), devices.autocast():
-        _, _, h_old, w_old = img.size()
-        h_pad = (h_old // window_size + 1) * window_size - h_old
-        w_pad = (w_old // window_size + 1) * window_size - w_old
-        img = torch.cat([img, torch.flip(img, [2])], 2)[:, :, : h_old + h_pad, :]
-        img = torch.cat([img, torch.flip(img, [3])], 3)[:, :, :, : w_old + w_pad]
-        output = inference(img, model, tile, tile_overlap, window_size, scale)
-        output = output[..., : h_old * scale, : w_old * scale]
-        output = output.data.squeeze().float().cpu().clamp_(0, 1).numpy()
-        if output.ndim == 3:
-            output = np.transpose(
-                output[[2, 1, 0], :, :], (1, 2, 0)
-            )  # CHW-RGB to HCW-BGR
-        output = (output * 255.0).round().astype(np.uint8)  # float32 to uint8
-        return Image.fromarray(output, "RGB")
-
-
-def inference(img, model, tile, tile_overlap, window_size, scale):
-    # test the image tile by tile
-    b, c, h, w = img.size()
-    tile = min(tile, h, w)
-    assert tile % window_size == 0, "tile size should be a multiple of window_size"
-    sf = scale
-
-    stride = tile - tile_overlap
-    h_idx_list = list(range(0, h - tile, stride)) + [h - tile]
-    w_idx_list = list(range(0, w - tile, stride)) + [w - tile]
-    E = torch.zeros(b, c, h * sf, w * sf, dtype=devices.dtype, device=device_swinir).type_as(img)
-    W = torch.zeros_like(E, dtype=devices.dtype, device=device_swinir)
-
-    with tqdm(total=len(h_idx_list) * len(w_idx_list), desc="SwinIR tiles") as pbar:
-        for h_idx in h_idx_list:
-            if state.interrupted or state.skipped:
-                break
-
-            for w_idx in w_idx_list:
-                if state.interrupted or state.skipped:
-                    break
-
-                in_patch = img[..., h_idx: h_idx + tile, w_idx: w_idx + tile]
-                out_patch = model(in_patch)
-                out_patch_mask = torch.ones_like(out_patch)
-
-                E[
-                ..., h_idx * sf: (h_idx + tile) * sf, w_idx * sf: (w_idx + tile) * sf
-                ].add_(out_patch)
-                W[
-                ..., h_idx * sf: (h_idx + tile) * sf, w_idx * sf: (w_idx + tile) * sf
-                ].add_(out_patch_mask)
-                pbar.update(1)
-    output = E.div_(W)
-
-    return output
+    def _get_device(self):
+        return devices.get_device_for('swinir')
 
 
 def on_ui_settings():
@@ -185,8 +89,7 @@ def on_ui_settings():
 
     shared.opts.add_option("SWIN_tile", shared.OptionInfo(192, "Tile size for all SwinIR.", gr.Slider, {"minimum": 16, "maximum": 512, "step": 16}, section=('upscaling', "Upscaling")))
     shared.opts.add_option("SWIN_tile_overlap", shared.OptionInfo(8, "Tile overlap, in pixels for SwinIR. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}, section=('upscaling', "Upscaling")))
-    if int(torch.__version__.split('.')[0]) >= 2 and platform.system() != "Windows":    # torch.compile() require pytorch 2.0 or above, and not on Windows
-        shared.opts.add_option("SWIN_torch_compile", shared.OptionInfo(False, "Use torch.compile to accelerate SwinIR.", gr.Checkbox, {"interactive": True}, section=('upscaling', "Upscaling")).info("Takes longer on first run"))
+    shared.opts.add_option("SWIN_torch_compile", shared.OptionInfo(False, "Use torch.compile to accelerate SwinIR.", gr.Checkbox, {"interactive": True}, section=('upscaling', "Upscaling")).info("Takes longer on first run"))
 
 
 script_callbacks.on_ui_settings(on_ui_settings)

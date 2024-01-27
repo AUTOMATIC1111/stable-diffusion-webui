@@ -6,7 +6,7 @@ import gradio as gr
 
 class ScriptPostprocessingCreateFlippedCopies(scripts_postprocessing.ScriptPostprocessing):
     name = "Create flipped copies"
-    order = 4000
+    order = 4030
 
     def ui(self):
         with ui_components.InputAccordion(False, label="Create flipped copies") as enable:

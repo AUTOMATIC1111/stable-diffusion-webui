@@ -12,6 +12,7 @@ log = logging.getLogger(__name__)
 class State:
     skipped = False
     interrupted = False
+    stopping_generation = False
     job = ""
     job_no = 0
     job_count = 0
@@ -79,6 +80,10 @@ class State:
         self.interrupted = True
         log.info("Received interrupt request")
 
+    def stop_generating(self):
+        self.stopping_generation = True
+        log.info("Received stop generating request")
+
     def nextjob(self):
         if shared.opts.live_previews_enable and shared.opts.show_progress_every_n_steps == -1:
             self.do_set_current_image()
@@ -91,6 +96,7 @@ class State:
         obj = {
             "skipped": self.skipped,
             "interrupted": self.interrupted,
+            "stopping_generation": self.stopping_generation,
             "job": self.job,
             "job_count": self.job_count,
             "job_timestamp": self.job_timestamp,
@@ -114,6 +120,7 @@ class State:
         self.id_live_preview = 0
         self.skipped = False
         self.interrupted = False
+        self.stopping_generation = False
         self.textinfo = None
         self.job = job
         devices.torch_gc()

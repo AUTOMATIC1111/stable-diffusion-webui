@@ -2,11 +2,11 @@ import os
 
 from PIL import Image
 
-from modules import shared, images, devices, scripts, scripts_postprocessing, ui_common, generation_parameters_copypaste
+from modules import shared, images, devices, scripts, scripts_postprocessing, ui_common, infotext_utils
 from modules.shared import opts
 
 
-def run_postprocessing(id_task, extras_mode, image, image_folder, input_dir, output_dir, show_extras_results, *args, save_output: bool = True):
+def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, show_extras_results, *args, save_output: bool = True):
     devices.torch_gc()
 
     shared.state.begin(job="extras")
@@ -65,8 +65,6 @@ def run_postprocessing(id_task, extras_mode, image, image_folder, input_dir, out
         else:
             image_data = image_placeholder
 
-        shared.state.assign_current_image(image_data)
-
         parameters, existing_pnginfo = images.read_info_from_image(image_data)
         if parameters:
             existing_pnginfo["parameters"] = parameters
@@ -89,22 +87,25 @@ def run_postprocessing(id_task, extras_mode, image, image_folder, input_dir, out
                 basename = ''
                 forced_filename = None
 
-            infotext = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in pp.info.items() if v is not None])
+            infotext = ", ".join([k if k == v else f'{k}: {infotext_utils.quote(v)}' for k, v in pp.info.items() if v is not None])
 
             if opts.enable_pnginfo:
                 pp.image.info = existing_pnginfo
                 pp.image.info["postprocessing"] = infotext
+
+            shared.state.assign_current_image(pp.image)
 
             if save_output:
                 fullfn, _ = images.save_image(pp.image, path=outpath, basename=basename, extension=opts.samples_format, info=infotext, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=forced_filename, suffix=suffix)
 
                 if pp.caption:
                     caption_filename = os.path.splitext(fullfn)[0] + ".txt"
-                    if os.path.isfile(caption_filename):
+                    existing_caption = ""
+                    try:
                         with open(caption_filename, encoding="utf8") as file:
                             existing_caption = file.read().strip()
-                    else:
-                        existing_caption = ""
+                    except FileNotFoundError:
+                        pass
 
                     action = shared.opts.postprocessing_existing_caption_action
                     if action == 'Prepend' and existing_caption:
@@ -129,6 +130,10 @@ def run_postprocessing(id_task, extras_mode, image, image_folder, input_dir, out
     devices.torch_gc()
     shared.state.end()
     return outputs, ui_common.plaintext_to_html(infotext), ''
+
+
+def run_postprocessing_webui(id_task, *args, **kwargs):
+    return run_postprocessing(*args, **kwargs)
 
 
 def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool, save_output: bool = True):

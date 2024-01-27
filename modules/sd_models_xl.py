@@ -6,6 +6,7 @@ import sgm.models.diffusion
 import sgm.modules.diffusionmodules.denoiser_scaling
 import sgm.modules.diffusionmodules.discretizer
 from modules import devices, shared, prompt_parser
+from modules import torch_utils
 
 
 def get_learned_conditioning(self: sgm.models.diffusion.DiffusionEngine, batch: prompt_parser.SdConditioning | list[str]):
@@ -34,6 +35,12 @@ def get_learned_conditioning(self: sgm.models.diffusion.DiffusionEngine, batch: 
 
 
 def apply_model(self: sgm.models.diffusion.DiffusionEngine, x, t, cond):
+    sd = self.model.state_dict()
+    diffusion_model_input = sd.get('diffusion_model.input_blocks.0.0.weight', None)
+    if diffusion_model_input is not None:
+        if diffusion_model_input.shape[1] == 9:
+            x = torch.cat([x] + cond['c_concat'], dim=1)
+
     return self.model(x, t, cond)
 
 
@@ -84,7 +91,7 @@ sgm.modules.GeneralConditioner.get_target_prompt_token_count = get_target_prompt
 def extend_sdxl(model):
     """this adds a bunch of parameters to make SDXL model look a bit more like SD1.5 to the rest of the codebase."""
 
-    dtype = next(model.model.diffusion_model.parameters()).dtype
+    dtype = torch_utils.get_param(model.model.diffusion_model).dtype
     model.model.diffusion_model.dtype = dtype
     model.model.conditioning_key = 'crossattn'
     model.cond_stage_key = 'txt'
@@ -93,7 +100,7 @@ def extend_sdxl(model):
     model.parameterization = "v" if isinstance(model.denoiser.scaling, sgm.modules.diffusionmodules.denoiser_scaling.VScaling) else "eps"
 
     discretization = sgm.modules.diffusionmodules.discretizer.LegacyDDPMDiscretization()
-    model.alphas_cumprod = torch.asarray(discretization.alphas_cumprod, device=devices.device, dtype=dtype)
+    model.alphas_cumprod = torch.asarray(discretization.alphas_cumprod, device=devices.device, dtype=torch.float32)
 
     model.conditioner.wrapped = torch.nn.Module()
 

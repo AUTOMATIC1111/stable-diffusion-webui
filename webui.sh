@@ -133,7 +133,7 @@ case "$gpu_info" in
             if [[ $(bc <<< "$pyv <= 3.10") -eq 1 ]] 
             then
                 # Navi users will still use torch 1.13 because 2.0 does not seem to work.
-                export TORCH_COMMAND="pip install torch==1.13.1+rocm5.2 torchvision==0.14.1+rocm5.2 --index-url https://download.pytorch.org/whl/rocm5.2"
+                export TORCH_COMMAND="pip install --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/rocm5.6"
             else
                 printf "\e[1m\e[31mERROR: RX 5000 series GPUs must be using at max python 3.10, aborting...\e[0m"
                 exit 1
@@ -143,8 +143,7 @@ case "$gpu_info" in
     *"Navi 2"*) export HSA_OVERRIDE_GFX_VERSION=10.3.0
     ;;
     *"Navi 3"*) [[ -z "${TORCH_COMMAND}" ]] && \
-         export TORCH_COMMAND="pip install torch torchvision --index-url https://download.pytorch.org/whl/test/rocm5.6"
-        # Navi 3 needs at least 5.5 which is only on the torch 2.1.0 release candidates right now
+         export TORCH_COMMAND="pip install --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/rocm5.7"
     ;;
     *"Renoir"*) export HSA_OVERRIDE_GFX_VERSION=9.0.0
         printf "\n%s\n" "${delimiter}"
@@ -223,13 +222,30 @@ fi
 # Try using TCMalloc on Linux
 prepare_tcmalloc() {
     if [[ "${OSTYPE}" == "linux"* ]] && [[ -z "${NO_TCMALLOC}" ]] && [[ -z "${LD_PRELOAD}" ]]; then
-        TCMALLOC="$(PATH=/sbin:$PATH ldconfig -p | grep -Po "libtcmalloc(_minimal|)\.so\.\d" | head -n 1)"
-        if [[ ! -z "${TCMALLOC}" ]]; then
-            echo "Using TCMalloc: ${TCMALLOC}"
-            export LD_PRELOAD="${TCMALLOC}"
-        else
-            printf "\e[1m\e[31mCannot locate TCMalloc (improves CPU memory usage)\e[0m\n"
-        fi
+        # Define Tcmalloc Libs arrays
+        TCMALLOC_LIBS=("libtcmalloc(_minimal|)\.so\.\d" "libtcmalloc\.so\.\d")
+
+        # Traversal array
+        for lib in "${TCMALLOC_LIBS[@]}"
+        do
+          #Determine which type of tcmalloc library the library supports
+          TCMALLOC="$(PATH=/usr/sbin:$PATH ldconfig -p | grep -P $lib | head -n 1)"
+          TC_INFO=(${TCMALLOC//=>/})
+          if [[ ! -z "${TC_INFO}" ]]; then
+              echo "Using TCMalloc: ${TC_INFO}"
+              #Determine if the library is linked to libptthread and resolve undefined symbol: ptthread_Key_Create
+              if ldd ${TC_INFO[2]} | grep -q 'libpthread'; then
+                echo "$TC_INFO is linked with libpthread,execute LD_PRELOAD=${TC_INFO}"
+                export LD_PRELOAD="${TC_INFO}"
+                break
+              else
+                echo "$TC_INFO is not linked with libpthreadand will trigger undefined symbol: ptthread_Key_Create error"
+              fi
+          else
+              printf "\e[1m\e[31mCannot locate TCMalloc (improves CPU memory usage)\e[0m\n"
+          fi
+        done
+
     fi
 }
 
