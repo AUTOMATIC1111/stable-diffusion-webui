@@ -432,7 +432,6 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_force_zeros": OptionInfo(False, "Force zeros for prompts when empty", gr.Checkbox, {"visible": False}),
     "diffusers_aesthetics_score": OptionInfo(False, "Require aesthetics score"),
     "diffusers_pooled": OptionInfo("default", "Diffusers SDXL pooled embeds", gr.Radio, {"choices": ['default', 'weighted']}),
-    "diffusers_convert_embed": OptionInfo(False, "Auto-convert SD 1.5 Embeddings to SDXL ", gr.Checkbox, {"visible": True}),
     "huggingface_token": OptionInfo('', 'HuggingFace token'),
 }))
 
@@ -681,6 +680,7 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_sep2": OptionInfo("<h2>Extra networks general</h2>", "", gr.HTML),
     "extra_network_skip_indexing": OptionInfo(False, "Build info on first access", gr.Checkbox),
     "extra_networks_default_multiplier": OptionInfo(1.0, "Default multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    "diffusers_convert_embed": OptionInfo(False, "Auto-convert SD 1.5 embeddings to SDXL ", gr.Checkbox, {"visible": backend==Backend.DIFFUSERS}),
     "extra_networks_sep3": OptionInfo("<h2>Extra networks settings</h2>", "", gr.HTML),
     "extra_networks_styles": OptionInfo(True, "Show built-in styles"),
     "lora_preferred_name": OptionInfo("filename", "LoRA preffered name", gr.Radio, {"choices": ["filename", "alias"]}),

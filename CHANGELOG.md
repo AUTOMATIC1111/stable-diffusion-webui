@@ -31,8 +31,9 @@ Another big release, highlights being:
 - Complete **Face** module  
   implements all variations of **FaceID**, **FaceSwap** and latest **PhotoMaker** and **InstantID**  
 - Much enhanced **IPAdapter** modules  
-- Brand new **intelligent masking**, manual or automatic  
-  Using ML models (object removal, background removal, segmentation, etc.) and with live previews  
+- Brand new **Intelligent masking**, manual or automatic  
+  Using ML models (*LAMA* object removal, *REMBG* background removal, *SAM* segmentation, etc.) and with live previews  
+  Granular blur, erode and dilate controls  
 
 Plus welcome additions to **UI performance, usability and accessibility** and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
@@ -175,6 +176,10 @@ As of this release, default backend is set to **diffusers** as its more feature 
     - using built-in NNCF model compression, you can reduce the size of your models significantly  
       example: up to 3.4GB of VRAM saved for SD-XL model!  
     - see [wiki](https://github.com/vladmandic/automatic/wiki/Model-Compression-with-NNCF) for details  
+  - **embeddings**  
+    you can now use sd 1.5 embeddings with your sd-xl models!, thanks @AI-Casanova  
+    conversion is done on-the-fly, is completely transparent and result is an approximation of embedding  
+    to enable: settings->extra networks->auto-convert embeddings  
   - **offline deployment**: allow deployment without git clone  
     for example, you can now deploy a zip of the sdnext folder  
   - **latent upscale**: updated latent upscalers (some are new)  
