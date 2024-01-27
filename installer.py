@@ -18,6 +18,7 @@ class Dot(dict): # dot notation access to dictionary attributes
 
 version = None
 log = logging.getLogger("sd")
+debug = log.debug if os.environ.get('SD_INSTALL_DEBUG', None) is not None else lambda *args, **kwargs: None
 log_file = os.path.join(os.path.dirname(__file__), 'sdnext.log')
 log_rolled = False
 first_call = True
@@ -45,7 +46,10 @@ args = Dot({
     'ignore': False,
 })
 git_commit = "unknown"
-
+submodules_commit = {
+    'sd-webui-controlnet': 'ecd33eb',
+    'stable-diffusion-webui-images-browser': '27fe4a7'
+}
 
 # setup console and file logging
 def setup_logging():
@@ -125,6 +129,7 @@ def setup_logging():
     logging.getLogger("ControlNet").handlers = log.handlers
     logging.getLogger("lycoris").handlers = log.handlers
     # logging.getLogger("DeepSpeed").handlers = log.handlers
+
 
 def get_logfile():
     log_size = os.path.getsize(log_file) if os.path.exists(log_file) else 0
@@ -213,6 +218,7 @@ def pip(arg: str, ignore: bool = False, quiet: bool = False):
     if len(result.stderr) > 0:
         txt += ('\n' if len(txt) > 0 else '') + result.stderr.decode(encoding="utf8", errors="ignore")
     txt = txt.strip()
+    debug(f'Install pip: {txt}')
     if result.returncode != 0 and not ignore:
         global errors # pylint: disable=global-statement
         errors += 1
@@ -279,13 +285,22 @@ def update(folder, current_branch = False, rebase = True):
         pass
     arg = '--rebase --force' if rebase else ''
     if current_branch:
+        print('HERE1')
         res = git(f'pull {arg}', folder)
+        debug(f'Install update: folder={folder} args={arg} {res}')
         return res
     b = branch(folder)
     if branch is None:
+        print('HERE2')
         res = git(f'pull {arg}', folder)
+        debug(f'Install update: folder={folder} branch={b} args={arg} {res}')
     else:
         res = git(f'pull origin {b} {arg}', folder)
+        debug(f'Install update: folder={folder} branch={b} args={arg} {res}')
+    commit = submodules_commit.get(os.path.basename(folder), None)
+    if commit is not None:
+        res = git(f'checkout {commit}', folder)
+        debug(f'Install update: folder={folder} branch={b} args={arg} commit={commit} {res}')
     return res
 
 
@@ -297,7 +312,8 @@ def clone(url, folder, commithash=None):
         else:
             current_hash = git('rev-parse HEAD', folder).strip()
             if current_hash != commithash:
-                git('fetch', folder)
+                res = git('fetch', folder)
+                debug(f'Install clone: {res}')
                 git(f'checkout {commithash}', folder)
                 return
     else:

@@ -161,6 +161,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
       10x+ faster embeddings load for large number of embeddings, now works for 1000+ embeddings  
     - file and folder list caching, thanks @midcoastal
       if you have a lot of files and and/or are using slower or non-local storage, this speeds up file access a lot  
+    - add `SD_INSTALL_DEBUG` env variable to trace all `git` and `pip` operations
   - **extra networks**  
     - 4x faster civitai metadata and previews lookup  
     - better display and selection of tags & trigger words  
@@ -264,7 +265,9 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - global crlf->lf switch  
   - model type switch if there is loaded submodels  
   - cleanup samplers use of compute devices, thanks @Disty0  
-- **other**
+- **other**  
+  - extensions `sd-webui-controlnet` is locked to commit `ecd33eb` due to breaking changes  
+  - extension `stable-diffusion-webui-images-browser` is locked to commit `27fe4a7` due to breaking changes  
   - updated core requirements  
   - major internal ui module refactoring  
     this may cause compatibility issues if an extension is doing a direct import from `ui.py`  
