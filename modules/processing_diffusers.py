@@ -189,6 +189,16 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
                 'width': p.width if hasattr(p, 'width') else None,
                 'height': p.height if hasattr(p, 'height') else None,
             }
+        if model.__class__.__name__ == 'BlipDiffusionPipeline':
+            if len(getattr(p, 'init_images', [])) == 0:
+                shared.log.error('BLiP diffusion requires init image')
+                return task_args
+            task_args = {
+                'reference_image': p.init_images[0],
+                'source_subject_category': getattr(p, 'negative_prompt', '').split()[-1],
+                'target_subject_category': getattr(p, 'prompt', '').split()[-1],
+                'output_type': 'pil',
+            }
         debug(f'Diffusers task specific args: {task_args}')
         return task_args
 

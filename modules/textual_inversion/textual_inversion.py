@@ -269,7 +269,10 @@ class EmbeddingDatabase:
             if loaded_embeddings.get(embedding.name, None) == embedding:
                 continue
             self.skipped_embeddings[embedding.name] = embedding
-        debug(f"TI Loading: Text Encoder total embeddings={shared.sd_model.text_encoder.get_input_embeddings().weight.data.shape[0]}")
+        try:
+            debug(f"TI Loading: Text Encoder total embeddings={shared.sd_model.text_encoder.get_input_embeddings().weight.data.shape[0]}")
+        except Exception:
+            pass
         if model_type == 'SDXL':
             debug(f"TI Loading: Text Encoder 2 total embeddings={shared.sd_model.text_encoder_2.get_input_embeddings().weight.data.shape[0]}")
         return len(self.word_embeddings) - _loaded_pre
