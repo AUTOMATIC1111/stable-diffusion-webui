@@ -110,9 +110,7 @@ def convert_embedding(tensor, text_encoder, text_encoder_2):
                 indices *= 0  # Use SDXL padding vector 0
             vectors.append(indices)
         vectors = torch.stack(vectors)
-        print(vectors)
         output = text_encoder_2.get_input_embeddings().weight.data[vectors]
-        print(output.shape)
     return output
 
 
