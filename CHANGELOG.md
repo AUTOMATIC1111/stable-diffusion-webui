@@ -21,14 +21,15 @@ OPTIONAL:
 - masking api
 - preprocess api
 
-## Update for 2023-01-25
+## Update for 2023-01-27
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
   - Inpaint and outpaint support, flexible resizing options, optional hires  
   - Built-in support for many new processors and models which are auto-downloaded on first use  
   - Full support for scripts and extensions  
-- Fully baked-in **FaceID**, **FaceSwap** and **PhotoMaker** modules
+- Complete **Face** module  
+  implements all variations of **FaceID**, **FaceSwap** and latest **PhotoMaker** and **InstantID**  
 - Much enhanced **IPAdapter** modules  
 - Brand new **intelligent masking**, manual or automatic  
   Using ML models (object removal, background removal, segmentation, etc.) and with live previews  
@@ -92,27 +93,34 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - fix batch/folder/video modes  
   - fix processor switching within same unit  
   - fix pipeline switching between different modes  
-- [FaceID/FaceSwap](https://huggingface.co/h94/IP-Adapter-FaceID)  
-  - full implementation for *SD15* and *SD-XL*, to use simply select from *Scripts*  
-    **Base** (93MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-H-14* (2.5GB) as image encoder  
-    **SXDL** (1022MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-bigG-14* (3.7GB) as image encoder  
-    **Plus** (150MB) uses *InsightFace* to generate face embeds and *CLIP-ViT-H-14-laion2B* (3.8GB) as image encoder  
-  - **FaceSwap**  
-    you can use just faceid or just faceswap or both at the same time  
-    faceid guides image generation given the input image while face swap performs face swapping at the end of generation  
-  - *note*: all models are downloaded on first use  
-  - enable use via api, thanks @trojaner
+- **Face** module  
+  implements all variations of **FaceID**, **FaceSwap** and latest **PhotoMaker** and **InstantID**  
+  simply select from scripts and choose your favorite method and model  
+  *note*: all models are auto-downloaded on first use  
+  - [FaceID](https://huggingface.co/h94/IP-Adapter-FaceID)  
+    - faceid guides image generation given the input image  
+    - full implementation for *SD15* and *SD-XL*, to use simply select from *Scripts*  
+      **Base** (93MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-H-14* (2.5GB) as image encoder  
+      **Plus** (150MB) uses *InsightFace* to generate face embeds and *CLIP-ViT-H-14-laion2B* (3.8GB) as image encoder  
+      **SXDL** (1022MB) uses *InsightFace* to generate face embeds and *OpenCLIP-ViT-bigG-14* (3.7GB) as image encoder  
+  - [FaceSwap](https://github.com/deepinsight/insightface/blob/master/examples/in_swapper/README.md)  
+    - face swap performs face swapping at the end of generation  
+    - based on InsightFace in-swapper  
+  - [PhotoMaker](https://github.com/TencentARC/PhotoMaker)  
+    - for *SD-XL* only  
+    - new model from TenencentARC using similar concept as IPAdapter, but with different implementation and  
+      allowing full concept swaps between input images and generated images using trigger words  
+    - note: trigger word must match exactly one term in prompt for model to work  
+  - [InstantID](https://github.com/InstantID/InstantID)  
+    - for *SD-XL* only  
+    - based on custom trained ip-adapter and controlnet combined concepts  
+    - note: controlnet appears to be heavily watermarked  
+  - enable use via api, thanks @trojaner  
 - [IPAdapter](https://huggingface.co/h94/IP-Adapter)  
   - additional models for *SD15* and *SD-XL*, to use simply select from *Scripts*:  
     **SD15**: Base, Base ViT-G, Light, Plus, Plus Face, Full Face  
     **SDXL**: Base SXDL, Base ViT-H SXDL, Plus ViT-H SXDL, Plus Face ViT-H SXDL  
   - enable use via api, thanks @trojaner  
-- [PhotoMaker](https://github.com/TencentARC/PhotoMaker)  
-  - for *SD-XL* only  
-  - simply select from *scripts*  
-  - new model from TenencentARC using similar concept as IPAdapter, but with different implementation and  
-    allowing full concept swaps between input images and generated images using trigger words  
-  - note: trigger word must match exactly one term in prompt for model to work  
 - [Self-attention guidance](https://github.com/SusungHong/Self-Attention-Guidance)  
   - simply select scale in advanced menu  
   - can drastically improve image coherence as well as reduce artifacts  
@@ -250,6 +258,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - cli: fix cmd args parsing  
   - global crlf->lf switch  
   - model type switch if there is loaded submodels  
+  - cleanup samplers use of compute devices, thanks @Disty0  
 - **other**
   - updated core requirements  
   - major internal ui module refactoring  

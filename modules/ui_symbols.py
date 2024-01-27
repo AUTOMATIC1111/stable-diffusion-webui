@@ -27,6 +27,7 @@ mark_diag = '※'
 mark_flag = '⁜'
 int_clip = '✎'
 int_blip = '✐'
+bullet = '⃝'
 """
 refresh = '🔄'
 close = '🛗'

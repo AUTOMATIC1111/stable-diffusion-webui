@@ -297,6 +297,8 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             clean['negative_prompt_embeds'] = clean['negative_prompt_embeds'].shape if torch.is_tensor(clean['negative_prompt_embeds']) else type(clean['negative_prompt_embeds'])
         if 'negative_pooled_prompt_embeds' in clean:
             clean['negative_pooled_prompt_embeds'] = clean['negative_pooled_prompt_embeds'].shape if torch.is_tensor(clean['negative_pooled_prompt_embeds']) else type(clean['negative_pooled_prompt_embeds'])
+        if 'image_embeds' in clean:
+            clean['image_embeds'] = clean['image_embeds'].shape if torch.is_tensor(clean['image_embeds']) else type(clean['image_embeds'])
         clean['generator'] = generator_device
         clean['parser'] = parser
         shared.log.debug(f'Diffuser pipeline: {model.__class__.__name__} task={sd_models.get_diffusers_task(model)} set={clean}')

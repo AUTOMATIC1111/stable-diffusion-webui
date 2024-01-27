@@ -247,7 +247,7 @@ def load_scripts():
     scripts_data.clear()
     postprocessing_scripts_data.clear()
     script_callbacks.clear_callbacks()
-    scripts_list = list_scripts("scripts", ".py")
+    scripts_list = list_scripts('scripts', '.py') + list_scripts(os.path.join('modules', 'face'), '.py')
     syspath = sys.path
 
     def register_scripts_from_module(module, scriptfile):

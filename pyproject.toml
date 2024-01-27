@@ -42,6 +42,7 @@ exclude = [
   "modules/control/proc/normalbae/nets/submodules/efficientnet_repo/geffnet",
   "modules/control/units/*_model.py",
   "modules/control/units/*_pipe.py",
+  "modules/pipelines/*.py",
 ]
 ignore = [
 	"A003", # Class attirbute shadowing builtin

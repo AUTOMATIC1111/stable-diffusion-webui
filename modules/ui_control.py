@@ -10,7 +10,6 @@ from modules.control.units import xs # vislearn ControlNet-XS
 from modules.control.units import lite # vislearn ControlNet-XS
 from modules.control.units import t2iadapter # TencentARC T2I-Adapter
 from modules.control.units import reference # reference pipeline
-from scripts import ipadapter # pylint: disable=no-name-in-module
 from modules import errors, shared, progress, sd_samplers, ui_components, ui_symbols, ui_common, ui_sections, generation_parameters_copypaste, call_queue, scripts, masking # pylint: disable=ungrouped-imports
 
 
@@ -438,7 +437,8 @@ def create_ui(_blocks: gr.Blocks=None):
                     with gr.Row():
                         with gr.Column():
                             gr.HTML('<a href="https://github.com/tencent-ailab/IP-Adapter">IP-Adapter</a>')
-                            ip_adapter = gr.Dropdown(label='Adapter', choices=ipadapter.ADAPTERS, value='none')
+                            from scripts.ipadapter import ADAPTERS # pylint: disable=no-name-in-module
+                            ip_adapter = gr.Dropdown(label='Adapter', choices=ADAPTERS, value='none')
                             ip_scale = gr.Slider(label='Scale', minimum=0.0, maximum=1.0, step=0.01, value=0.5)
                         with gr.Column():
                             ip_image = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="editor", height=256, width=256)

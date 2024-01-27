@@ -533,7 +533,7 @@ class PhotoMakerStableDiffusionXLPipeline(StableDiffusionXLPipeline):
             self.upcast_vae()
             latents = latents.to(next(iter(self.vae.post_quant_conv.parameters())).dtype)
 
-        if not output_type == "latent":
+        if output_type != "latent":
             image = self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False)[0]
         else:
             image = latents
