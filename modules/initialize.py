@@ -143,13 +143,17 @@ def initialize_rest(*, reload_script_modules=False):
         its optimization may be None because the list of optimizaers has neet been filled
         by that time, so we apply optimization again.
         """
+        from modules import devices
+        # Work around due to bug in torch_npu, revert me after fixed, @see https://gitee.com/ascend/pytorch/issues/I8KECW?from=project-issue
+        if devices.npu_specific.has_npu:
+            import torch
+            torch.npu.set_device(0)
 
         shared.sd_model  # noqa: B018
 
         if sd_hijack.current_optimizer is None:
             sd_hijack.apply_optimizations()
 
-        from modules import devices
         devices.first_time_calculation()
     if not shared.cmd_opts.skip_load_model_at_start:
         Thread(target=load_model).start()

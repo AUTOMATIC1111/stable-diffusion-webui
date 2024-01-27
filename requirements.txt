@@ -5,6 +5,8 @@ accelerate
 basicsr
 blendmodes
 clean-fid
+cloudpickle
+decorator
 einops
 fastapi>=0.90.1
 gfpgan
@@ -26,9 +28,11 @@ resize-right
 
 safetensors
 scikit-image>=0.19
+synr==0.5.0
 timm
 tomesd
 torch
 torchdiffeq
 torchsde
+tornado
 transformers==4.30.2
