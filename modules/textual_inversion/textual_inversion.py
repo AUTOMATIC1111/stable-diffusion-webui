@@ -154,7 +154,7 @@ class EmbeddingDatabase:
         tokenizer_2 = getattr(pipe, 'tokenizer_2', None)
         clip_l = getattr(pipe, 'text_encoder',   None) # clip_l
         clip_g = getattr(pipe, 'text_encoder_2', None) # clip_g
-        if clip_l is None and tokenizer is None:
+        if clip_l is None or tokenizer is None:
             return 0
 
         filenames = (

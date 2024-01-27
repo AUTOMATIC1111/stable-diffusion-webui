@@ -129,7 +129,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - greatly improves temporal consistency of generated outputs  
   - all options are available in animateddiff script  
 - [SalesForce BlipDiffusion](https://huggingface.co/docs/diffusers/api/pipelines/blip_diffusion)
-  - model can be used to replace anything in an image
+  - model can be used to place subject in a different context  
   - requires input image  
   - last word in prompt and negative prompt will be used as source and target subjects
   - sampler must be set to default before loading the model  
