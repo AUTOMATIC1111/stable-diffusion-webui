@@ -50,7 +50,7 @@ fastapi_args = {
     "title": "SD.Next",
     "description": "SD.Next",
     "docs_url": "/docs" if cmd_opts.docs else None,
-    "redocs_url": "/redocs" if cmd_opts.docs else None,
+    "redoc_url": "/redocs" if cmd_opts.docs else None,
     "swagger_ui_parameters": {
         "displayOperationId": True,
         "showCommonExtensions": True,
@@ -269,6 +269,7 @@ def start_ui():
     shared.log.info(f'Local URL: {local_url}')
     if cmd_opts.docs:
         shared.log.info(f'API Docs: {local_url[:-1]}/docs') # pylint: disable=unsubscriptable-object
+        shared.log.info(f'API ReDocs: {local_url[:-1]}/redocs') # pylint: disable=unsubscriptable-object
     if share_url is not None:
         shared.log.info(f'Share URL: {share_url}')
     shared.log.debug(f'Gradio functions: registered={len(shared.demo.fns)}')
