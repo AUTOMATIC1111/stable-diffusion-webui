@@ -31,7 +31,7 @@ import modules.upscaler
 import modules.textual_inversion.textual_inversion
 import modules.hypernetworks.hypernetwork
 import modules.script_callbacks
-from modules.middleware import setup_middleware
+from modules.api.middleware import setup_middleware
 from modules.shared import cmd_opts, opts
 
 
@@ -284,7 +284,7 @@ def start_ui():
     timer.startup.record("launch")
 
     modules.progress.setup_progress_api(app)
-    create_api(app)
+    shared.api = create_api(app)
     timer.startup.record("api")
 
     ui_extra_networks.init_api(app)
@@ -347,12 +347,12 @@ def api_only():
     from fastapi import FastAPI
     app = FastAPI(**fastapi_args)
     setup_middleware(app, cmd_opts)
-    api = create_api(app)
-    api.wants_restart = False
+    shared.api = create_api(app)
+    shared.api.wants_restart = False
     modules.script_callbacks.app_started_callback(None, app)
     modules.sd_models.write_metadata()
     log.info(f"Startup time: {timer.startup.summary()}")
-    server = api.launch()
+    server = shared.api.launch()
     return server
 
 

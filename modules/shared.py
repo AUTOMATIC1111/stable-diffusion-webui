@@ -27,6 +27,7 @@ from installer import log as central_logger # pylint: disable=E0611
 
 errors.install([gr])
 demo: gr.Blocks = None
+api = None
 log = central_logger
 progress_print_out = sys.stdout
 parser = cmd_args.parser

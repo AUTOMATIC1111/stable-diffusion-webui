@@ -91,14 +91,81 @@ class PydanticModelGenerator:
         DynamicModel.__config__.allow_mutation = True
         return DynamicModel
 
+### item classes
 
-class IPAdapterItem(BaseModel):
+class ItemSampler(BaseModel):
+    name: str = Field(title="Name")
+    aliases: List[str] = Field(title="Aliases")
+    options: Dict[str, str] = Field(title="Options")
+
+class ItemVae(BaseModel):
+    model_name: str = Field(title="Model Name")
+    filename: str = Field(title="Filename")
+
+class ItemUpscaler(BaseModel):
+    name: str = Field(title="Name")
+    model_name: Optional[str] = Field(title="Model Name")
+    model_path: Optional[str] = Field(title="Path")
+    model_url: Optional[str] = Field(title="URL")
+    scale: Optional[float] = Field(title="Scale")
+
+class ItemModel(BaseModel):
+    title: str = Field(title="Title")
+    model_name: str = Field(title="Model Name")
+    filename: str = Field(title="Filename")
+    type: str = Field(title="Model type")
+    sha256: Optional[str] = Field(title="SHA256 hash")
+    hash: Optional[str] = Field(title="Short hash")
+    config: Optional[str] = Field(title="Config file")
+
+class ItemHypernetwork(BaseModel):
+    name: str = Field(title="Name")
+    path: Optional[str] = Field(title="Path")
+
+class ItemFaceRestorer(BaseModel):
+    name: str = Field(title="Name")
+    cmd_dir: Optional[str] = Field(title="Path")
+
+class ItemGAN(BaseModel):
+    name: str = Field(title="Name")
+    path: Optional[str] = Field(title="Path")
+    scale: Optional[int] = Field(title="Scale")
+
+class ItemStyle(BaseModel):
+    name: str = Field(title="Name")
+    prompt: Optional[str] = Field(title="Prompt")
+    negative_prompt: Optional[str] = Field(title="Negative Prompt")
+    extra: Optional[str] = Field(title="Extra")
+    filename: Optional[str] = Field(title="Filename")
+    preview: Optional[str] = Field(title="Preview")
+
+class ItemExtraNetwork(BaseModel):
+    name: str = Field(title="Name")
+    type: str = Field(title="Type")
+    title: Optional[str] = Field(title="Title")
+    fullname: Optional[str] = Field(title="Fullname")
+    filename: Optional[str] = Field(title="Filename")
+    hash: Optional[str] = Field(title="Hash")
+    preview: Optional[str] = Field(title="Preview image URL")
+
+class ItemArtist(BaseModel):
+    name: str = Field(title="Name")
+    score: float = Field(title="Score")
+    category: str = Field(title="Category")
+
+class ItemEmbedding(BaseModel):
+    step: Optional[int] = Field(title="Step", description="The number of steps that were used to train this embedding, if available")
+    sd_checkpoint: Optional[str] = Field(title="SD Checkpoint", description="The hash of the checkpoint this embedding was trained on, if available")
+    sd_checkpoint_name: Optional[str] = Field(title="SD Checkpoint Name", description="The name of the checkpoint this embedding was trained on, if available. Note that this is the name that was used by the trainer; for a stable identifier, use `sd_checkpoint` instead")
+    shape: int = Field(title="Shape", description="The length of each individual vector in the embedding")
+    vectors: int = Field(title="Vectors", description="The number of vectors in the embedding")
+
+class ItemIPAdapter(BaseModel):
     adapter: str = Field(title="Adapter", default="Base", description="Adapter to use")
     image: str = Field(title="Image", default="", description="Adapter image, must be a base64 string containing the image's data.")
     scale: float = Field(title="Scale", default=0.5, gt=0, le=1, description="Scale of the adapter image, must be between 0 and 1.")
 
-
-class FaceIDItem(BaseModel):
+class ItemFaceID(BaseModel):
     mode: list[str] = Field(title="Mode", default=["FaceID"], description="The mode to use (available values: FaceID, FaceSwap).")
     model: str = Field(title="Model", default="FaceID Base", description="The FaceID model to use.")
     image: str = Field(title="Image", default="", description="Source face image, must be a base64 string containing the image's data.")
@@ -109,8 +176,32 @@ class FaceIDItem(BaseModel):
     tokens: int = Field(title="Tokens", default=4, ge=1, le=16, description="Amount of tokens to use, must be between 1 and 16.")
     cache_model: bool = Field(title="Cache", default=True, description="Should the model be cached?")
 
+class ScriptArg(BaseModel):
+    label: str = Field(default=None, title="Label", description="Name of the argument in UI")
+    value: Optional[Any] = Field(default=None, title="Value", description="Default value of the argument")
+    minimum: Optional[Any] = Field(default=None, title="Minimum", description="Minimum allowed value for the argumentin UI")
+    maximum: Optional[Any] = Field(default=None, title="Minimum", description="Maximum allowed value for the argumentin UI")
+    step: Optional[Any] = Field(default=None, title="Minimum", description="Step for changing value of the argumentin UI")
+    choices: Optional[Any] = Field(default=None, title="Choices", description="Possible values for the argument")
 
-StableDiffusionTxt2ImgProcessingAPI = PydanticModelGenerator(
+class ItemScript(BaseModel):
+    name: str = Field(default=None, title="Name", description="Script name")
+    is_alwayson: bool = Field(default=None, title="IsAlwayson", description="Flag specifying whether this script is an alwayson script")
+    is_img2img: bool = Field(default=None, title="IsImg2img", description="Flag specifying whether this script is an img2img script")
+    args: List[ScriptArg] = Field(title="Arguments", description="List of script's arguments")
+
+class ItemExtension(BaseModel):
+    name: str = Field(title="Name", description="Extension name")
+    remote: str = Field(title="Remote", description="Extension Repository URL")
+    branch: str = Field(title="Branch", description="Extension Repository Branch")
+    commit_hash: str = Field(title="Commit Hash", description="Extension Repository Commit Hash")
+    version: str = Field(title="Version", description="Extension Version")
+    commit_date: str = Field(title="Commit Date", description="Extension Repository Commit Date")
+    enabled: bool = Field(title="Enabled", description="Flag specifying whether this extension is enabled")
+
+### request/response classes
+
+ReqTxt2Img = PydanticModelGenerator(
     "StableDiffusionProcessingTxt2Img",
     StableDiffusionProcessingTxt2Img,
     [
@@ -120,12 +211,17 @@ StableDiffusionTxt2ImgProcessingAPI = PydanticModelGenerator(
         {"key": "send_images", "type": bool, "default": True},
         {"key": "save_images", "type": bool, "default": False},
         {"key": "alwayson_scripts", "type": dict, "default": {}},
-        {"key": "ip_adapter", "type": Optional[IPAdapterItem], "default": None, "exclude": True},
-        {"key": "face_id", "type": Optional[FaceIDItem], "default": None, "exclude": True},
+        {"key": "ip_adapter", "type": Optional[ItemIPAdapter], "default": None, "exclude": True},
+        {"key": "face_id", "type": Optional[ItemFaceID], "default": None, "exclude": True},
     ]
 ).generate_model()
 
-StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
+class ResTxt2Img(BaseModel):
+    images: List[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
+    parameters: dict
+    info: str
+
+ReqImg2Img = PydanticModelGenerator(
     "StableDiffusionProcessingImg2Img",
     StableDiffusionProcessingImg2Img,
     [
@@ -139,22 +235,21 @@ StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
         {"key": "send_images", "type": bool, "default": True},
         {"key": "save_images", "type": bool, "default": False},
         {"key": "alwayson_scripts", "type": dict, "default": {}},
-        {"key": "ip_adapter", "type": Optional[IPAdapterItem], "default": None, "exclude": True},
-        {"key": "face_id", "type": Optional[FaceIDItem], "default": None, "exclude": True},
+        {"key": "ip_adapter", "type": Optional[ItemIPAdapter], "default": None, "exclude": True},
+        {"key": "face_id", "type": Optional[ItemFaceID], "default": None, "exclude": True},
     ]
 ).generate_model()
 
-class TextToImageResponse(BaseModel):
+class ResImg2Img(BaseModel):
     images: List[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
     parameters: dict
     info: str
 
-class ImageToImageResponse(BaseModel):
-    images: List[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
-    parameters: dict
-    info: str
+class FileData(BaseModel):
+    data: str = Field(title="File data", description="Base64 representation of the file")
+    name: str = Field(title="File name")
 
-class ExtrasBaseRequest(BaseModel):
+class ReqProcess(BaseModel):
     resize_mode: float = Field(default=0, title="Resize Mode", description="Sets the resize mode: 0 to upscale by upscaling_resize amount, 1 to upscale up to upscaling_resize_h x upscaling_resize_w.")
     show_extras_results: bool = Field(default=True, title="Show results", description="Should the backend return the generated image?")
     gfpgan_visibility: float = Field(default=0, title="GFPGAN Visibility", ge=0, le=1, allow_inf_nan=False, description="Sets the visibility of GFPGAN, values should be between 0 and 1.")
@@ -169,61 +264,62 @@ class ExtrasBaseRequest(BaseModel):
     extras_upscaler_2_visibility: float = Field(default=0, title="Secondary upscaler visibility", ge=0, le=1, allow_inf_nan=False, description="Sets the visibility of secondary upscaler, values should be between 0 and 1.")
     upscale_first: bool = Field(default=False, title="Upscale first", description="Should the upscaler run before restoring faces?")
 
-class ExtraBaseResponse(BaseModel):
+class ResProcess(BaseModel):
     html_info: str = Field(title="HTML info", description="A series of HTML tags containing the process info.")
 
-class ExtrasSingleImageRequest(ExtrasBaseRequest):
+class ReqProcessImage(ReqProcess):
     image: str = Field(default="", title="Image", description="Image to work on, must be a Base64 string containing the image's data.")
 
-class ExtrasSingleImageResponse(ExtraBaseResponse):
+class ResProcessImage(ResProcess):
     image: str = Field(default=None, title="Image", description="The generated image in base64 format.")
 
-class FileData(BaseModel):
-    data: str = Field(title="File data", description="Base64 representation of the file")
-    name: str = Field(title="File name")
-
-class ExtrasBatchImagesRequest(ExtrasBaseRequest):
+class ReqProcessBatch(ReqProcess):
     imageList: List[FileData] = Field(title="Images", description="List of images to work on. Must be Base64 strings")
 
-class ExtrasBatchImagesResponse(ExtraBaseResponse):
+class ResProcessBatch(ResProcess):
     images: List[str] = Field(title="Images", description="The generated images in base64 format.")
 
-class PNGInfoRequest(BaseModel):
+class ReqImageInfo(BaseModel):
     image: str = Field(title="Image", description="The base64 encoded PNG image")
 
-class PNGInfoResponse(BaseModel):
+class ResImageInfo(BaseModel):
     info: str = Field(title="Image info", description="A string with the parameters used to generate the image")
     items: dict = Field(title="Items", description="A dictionary containing all the other fields the image had")
     parameters: dict = Field(title="Parameters", description="A dictionary with parsed generation info fields")
 
-class LogRequest(BaseModel):
+class ReqLog(BaseModel):
     lines: int = Field(default=100, title="Lines", description="How many lines to return")
     clear: bool = Field(default=False, title="Clear", description="Should the log be cleared after returning the lines?")
 
-class ProgressRequest(BaseModel):
+class ReqProgress(BaseModel):
     skip_current_image: bool = Field(default=False, title="Skip current image", description="Skip current image serialization")
 
-class ProgressResponse(BaseModel):
+class ResProgress(BaseModel):
     progress: float = Field(title="Progress", description="The progress with a range of 0 to 1")
     eta_relative: float = Field(title="ETA in secs")
     state: dict = Field(title="State", description="The current state snapshot")
     current_image: str = Field(default=None, title="Current image", description="The current image in base64 format. opts.show_progress_every_n_steps is required for this to work.")
     textinfo: str = Field(default=None, title="Info text", description="Info text used by WebUI.")
 
-class InterrogateRequest(BaseModel):
+class ReqInterrogate(BaseModel):
     image: str = Field(default="", title="Image", description="Image to work on, must be a Base64 string containing the image's data.")
     model: str = Field(default="clip", title="Model", description="The interrogate model used.")
 
-class InterrogateResponse(BaseModel):
-    caption: str = Field(default=None, title="Caption", description="The generated caption for the image.")
+class ResInterrogate(BaseModel):
+    caption: Optional[str] = Field(default=None, title="Caption", description="The generated caption for the image.")
+    medium: Optional[str] = Field(default=None, title="Medium", description="Image medium.")
+    artist: Optional[str] = Field(default=None, title="Medium", description="Image artist.")
+    movement: Optional[str] = Field(default=None, title="Medium", description="Image movement.")
+    trending: Optional[str] = Field(default=None, title="Medium", description="Image trending.")
+    flavor: Optional[str] = Field(default=None, title="Medium", description="Image flavor.")
 
-class TrainResponse(BaseModel):
+class ResTrain(BaseModel):
     info: str = Field(title="Train info", description="Response string from train embedding or hypernetwork task.")
 
-class CreateResponse(BaseModel):
+class ResCreate(BaseModel):
     info: str = Field(title="Create info", description="Response string from create embedding or hypernetwork task.")
 
-class PreprocessResponse(BaseModel):
+class ResPreprocess(BaseModel):
     info: str = Field(title="Preprocess info", description="Response string from preprocessing task.")
 
 fields = {}
@@ -251,109 +347,15 @@ for key in _options:
 
 FlagsModel = create_model("Flags", **flags)
 
-class SamplerItem(BaseModel):
-    name: str = Field(title="Name")
-    aliases: List[str] = Field(title="Aliases")
-    options: Dict[str, str] = Field(title="Options")
+class ResEmbeddings(BaseModel):
+    loaded: Dict[str, ItemEmbedding] = Field(title="Loaded", description="Embeddings loaded for the current model")
+    skipped: Dict[str, ItemEmbedding] = Field(title="Skipped", description="Embeddings skipped for the current model (likely due to architecture incompatibility)")
 
-class SDVaeItem(BaseModel):
-    model_name: str = Field(title="Model Name")
-    filename: str = Field(title="Filename")
-
-class UpscalerItem(BaseModel):
-    name: str = Field(title="Name")
-    model_name: Optional[str] = Field(title="Model Name")
-    model_path: Optional[str] = Field(title="Path")
-    model_url: Optional[str] = Field(title="URL")
-    scale: Optional[float] = Field(title="Scale")
-
-class SDModelItem(BaseModel):
-    title: str = Field(title="Title")
-    model_name: str = Field(title="Model Name")
-    filename: str = Field(title="Filename")
-    type: str = Field(title="Model type")
-    sha256: Optional[str] = Field(title="SHA256 hash")
-    hash: Optional[str] = Field(title="Short hash")
-    config: Optional[str] = Field(title="Config file")
-
-class HypernetworkItem(BaseModel):
-    name: str = Field(title="Name")
-    path: Optional[str] = Field(title="Path")
-
-class FaceRestorerItem(BaseModel):
-    name: str = Field(title="Name")
-    cmd_dir: Optional[str] = Field(title="Path")
-
-class RealesrganItem(BaseModel):
-    name: str = Field(title="Name")
-    path: Optional[str] = Field(title="Path")
-    scale: Optional[int] = Field(title="Scale")
-
-class StyleItem(BaseModel):
-    name: str = Field(title="Name")
-    prompt: Optional[str] = Field(title="Prompt")
-    negative_prompt: Optional[str] = Field(title="Negative Prompt")
-    extra: Optional[str] = Field(title="Extra")
-    filename: Optional[str] = Field(title="Filename")
-    preview: Optional[str] = Field(title="Preview")
-
-class ExtraNetworkItem(BaseModel):
-    name: str = Field(title="Name")
-    type: str = Field(title="Type")
-    title: Optional[str] = Field(title="Title")
-    fullname: Optional[str] = Field(title="Fullname")
-    filename: Optional[str] = Field(title="Filename")
-    hash: Optional[str] = Field(title="Hash")
-    preview: Optional[str] = Field(title="Preview image URL")
-    # description: Optional[str] = Field(title="Description")
-    # info: Optional[str] = Field(title="Information")
-    # metadata: Optional[Any] = Field(title="Metadata")
-    # local: Optional[str] = Field(title="Local")
-
-class ArtistItem(BaseModel):
-    name: str = Field(title="Name")
-    score: float = Field(title="Score")
-    category: str = Field(title="Category")
-
-class EmbeddingItem(BaseModel):
-    step: Optional[int] = Field(title="Step", description="The number of steps that were used to train this embedding, if available")
-    sd_checkpoint: Optional[str] = Field(title="SD Checkpoint", description="The hash of the checkpoint this embedding was trained on, if available")
-    sd_checkpoint_name: Optional[str] = Field(title="SD Checkpoint Name", description="The name of the checkpoint this embedding was trained on, if available. Note that this is the name that was used by the trainer; for a stable identifier, use `sd_checkpoint` instead")
-    shape: int = Field(title="Shape", description="The length of each individual vector in the embedding")
-    vectors: int = Field(title="Vectors", description="The number of vectors in the embedding")
-
-class EmbeddingsResponse(BaseModel):
-    loaded: Dict[str, EmbeddingItem] = Field(title="Loaded", description="Embeddings loaded for the current model")
-    skipped: Dict[str, EmbeddingItem] = Field(title="Skipped", description="Embeddings skipped for the current model (likely due to architecture incompatibility)")
-
-class MemoryResponse(BaseModel):
+class ResMemory(BaseModel):
     ram: dict = Field(title="RAM", description="System memory stats")
     cuda: dict = Field(title="CUDA", description="nVidia CUDA memory stats")
 
-class ScriptsList(BaseModel):
+class ResScripts(BaseModel):
     txt2img: list = Field(default=None, title="Txt2img", description="Titles of scripts (txt2img)")
     img2img: list = Field(default=None, title="Img2img", description="Titles of scripts (img2img)")
     control: list = Field(default=None, title="Control", description="Titles of scripts (control)")
-
-class ScriptArg(BaseModel):
-    label: str = Field(default=None, title="Label", description="Name of the argument in UI")
-    value: Optional[Any] = Field(default=None, title="Value", description="Default value of the argument")
-    minimum: Optional[Any] = Field(default=None, title="Minimum", description="Minimum allowed value for the argumentin UI")
-    maximum: Optional[Any] = Field(default=None, title="Minimum", description="Maximum allowed value for the argumentin UI")
-    step: Optional[Any] = Field(default=None, title="Minimum", description="Step for changing value of the argumentin UI")
-    choices: Optional[Any] = Field(default=None, title="Choices", description="Possible values for the argument")
-
-class ScriptInfo(BaseModel):
-    name: str = Field(default=None, title="Name", description="Script name")
-    is_alwayson: bool = Field(default=None, title="IsAlwayson", description="Flag specifying whether this script is an alwayson script")
-    is_img2img: bool = Field(default=None, title="IsImg2img", description="Flag specifying whether this script is an img2img script")
-    args: List[ScriptArg] = Field(title="Arguments", description="List of script's arguments")
-
-class ExtensionItem(BaseModel):
-    name: str = Field(title="Name", description="Extension name")
-    remote: str = Field(title="Remote", description="Extension Repository URL")
-    branch: str = Field(title="Branch", description="Extension Repository Branch")
-    commit_hash: str = Field(title="Commit Hash", description="Extension Repository Commit Hash")
-    version: str = Field(title="Version", description="Extension Version")
-    commit_date: str = Field(title="Commit Date", description="Extension Repository Commit Date")
-    enabled: bool = Field(title="Enabled", description="Flag specifying whether this extension is enabled")

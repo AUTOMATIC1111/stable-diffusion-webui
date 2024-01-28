@@ -8,20 +8,16 @@ BLOCKERS:
 OPTIONAL:
 - pending `diffusers==0.26.0`
 - wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)
-- animatediff image2video [pr](https://github.com/huggingface/diffusers/pull/6509)
 - tiledvae [pr](https://github.com/huggingface/diffusers/pull/1441)
 - style aligned [pr](https://github.com/huggingface/diffusers/pull/6489)
 - mixture tiling [pr](https://github.com/huggingface/diffusers/tree/main/examples/community#stable-diffusion-mixture-tiling)
-- depth anything [repo](https://depth-anything.github.io/)
 - instaflow [pr](https://github.com/huggingface/diffusers/pull/6057)[repo](https://github.com/gnobitab/RectifiedFlow)
 - control api
-- photomaker api
-- interrogate api
-- remb api
+- face api
 - masking api
 - preprocess api
 
-## Update for 2023-01-27
+## Update for 2023-01-28
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
@@ -276,6 +272,9 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - updated core requirements  
   - major internal ui module refactoring  
     this may cause compatibility issues if an extension is doing a direct import from `ui.py`  
+    in which case, report it so we can add a compatibility layer  
+  - major public api refactoring  
+    this may cause compatibility issues if an extension is doing a direct import from `api.py` or `models.py`  
     in which case, report it so we can add a compatibility layer  
 
 ## Update for 2023-12-29

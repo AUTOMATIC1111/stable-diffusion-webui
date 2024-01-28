@@ -48,7 +48,7 @@ args = Dot({
 git_commit = "unknown"
 submodules_commit = {
     'sd-webui-controlnet': 'ecd33eb',
-    'stable-diffusion-webui-images-browser': '27fe4a7',
+    # 'stable-diffusion-webui-images-browser': '27fe4a7',
 }
 
 # setup console and file logging
