@@ -428,7 +428,7 @@ class ScriptRunner:
                         setattr(arg_info, field, v)
                 api_args.append(arg_info)
 
-            script.api_info = api_models.ScriptInfo(
+            script.api_info = api_models.ItemScript(
                 name=script.name,
                 is_img2img=script.is_img2img,
                 is_alwayson=script.alwayson,

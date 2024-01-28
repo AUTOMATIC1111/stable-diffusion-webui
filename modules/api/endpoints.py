@@ -71,28 +71,28 @@ def get_interrogate():
     from modules.ui_interrogate import get_models
     return ['clip', 'deepdanbooru'] + get_models()
 
-def post_interrogate(req: models.InterrogateRequest):
+def post_interrogate(req: models.ReqInterrogate):
     if req.image is None or len(req.image) < 64:
         raise HTTPException(status_code=404, detail="Image not found")
     image = helpers.decode_base64_to_image(req.image)
     image = image.convert('RGB')
     if req.model == "clip":
         caption = shared.interrogator.interrogate(image)
-        return models.InterrogateResponse(caption)
+        return models.ResInterrogate(caption)
     elif req.model == "deepdanbooru":
         from mobules import deepbooru
         caption = deepbooru.model.tag(image)
-        return models.InterrogateResponse(caption)
+        return models.ResInterrogate(caption)
     else:
         from modules.ui_interrogate import interrogate_image, analyze_image, get_models
         if req.model not in get_models():
             raise HTTPException(status_code=404, detail="Model not found")
         caption = interrogate_image(image, model=req.model, mode=req.mode)
         if not req.analyze:
-            return models.InterrogateResponse(caption)
+            return models.ResInterrogate(caption)
         else:
             medium, artist, movement, trending, flavor = analyze_image(image, model=req.model)
-            return models.InterrogateResponse(caption, medium, artist, movement, trending, flavor)
+            return models.ResInterrogate(caption, medium, artist, movement, trending, flavor)
 
 def post_unload_checkpoint():
     from modules import sd_models
@@ -130,13 +130,13 @@ def get_extensions_list():
             })
     return ext_list
 
-def post_pnginfo(req: models.PNGInfoRequest):
+def post_pnginfo(req: models.ReqImageInfo):
     from modules import images, script_callbacks, generation_parameters_copypaste
     if not req.image.strip():
-        return models.PNGInfoResponse(info="")
+        return models.ResImageInfo(info="")
     image = helpers.decode_base64_to_image(req.image.strip())
     if image is None:
-        return models.PNGInfoResponse(info="")
+        return models.ResImageInfo(info="")
     geninfo, items = images.read_info_from_image(image)
     if geninfo is None:
         geninfo = ""
@@ -144,4 +144,4 @@ def post_pnginfo(req: models.PNGInfoRequest):
         del items['parameters']
     params = generation_parameters_copypaste.parse_generation_parameters(geninfo)
     script_callbacks.infotext_pasted_callback(geninfo, params)
-    return models.PNGInfoResponse(info=geninfo, items=items, parameters=params)
+    return models.ResImageInfo(info=geninfo, items=items, parameters=params)

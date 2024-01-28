@@ -29,8 +29,10 @@ async function setupControlUI() {
   const intersectionObserver = new IntersectionObserver((entries) => {
     if (entries[0].intersectionRatio > 0) {
       const tab = gradioApp().querySelector('#control-tabs > .tab-nav > .selected')?.innerText.toLowerCase() || ''; // selected tab name
-      const btn = gradioApp().getElementById(`refresh_${tab}_models`);
-      if (btn) btn.click();
+      for (let i = 0; i < 10; i += 1) {
+        const btn = gradioApp().getElementById(`refresh_${tab}_models_${i}`);
+        if (btn) btn.click();
+      }
     }
   });
   intersectionObserver.observe(el); // monitor visibility of tab

@@ -24,7 +24,7 @@ def get_motd():
             motd += res.text
     return motd
 
-def get_log_buffer(req: models.LogRequest = Depends()):
+def get_log_buffer(req: models.ReqLog = Depends()):
     lines = shared.log.buffer[:req.lines] if req.lines > 0 else shared.log.buffer.copy()
     if req.clear:
         shared.log.buffer.clear()
@@ -53,10 +53,10 @@ def set_config(req: Dict[str, Any]):
 def get_cmd_flags():
     return vars(shared.cmd_opts)
 
-def get_progress(req: models.ProgressRequest = Depends()):
+def get_progress(req: models.ReqProgress = Depends()):
     import time
     if shared.state.job_count == 0:
-        return models.ProgressResponse(progress=0, eta_relative=0, state=shared.state.dict(), textinfo=shared.state.textinfo)
+        return models.ResProgress(progress=0, eta_relative=0, state=shared.state.dict(), textinfo=shared.state.textinfo)
     shared.state.do_set_current_image()
     current_image = None
     if shared.state.current_image and not req.skip_current_image:
@@ -70,7 +70,7 @@ def get_progress(req: models.ProgressRequest = Depends()):
     progress = current / total if current > 0 and total > 0 else 0
     time_since_start = time.time() - shared.state.time_start
     eta_relative = (time_since_start / progress) - time_since_start if progress > 0 else 0
-    res = models.ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image, textinfo=shared.state.textinfo)
+    res = models.ResProgress(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image, textinfo=shared.state.textinfo)
     return res
 
 def post_interrupt():
@@ -113,4 +113,4 @@ def get_memory():
             cuda = { 'error': 'unavailable' }
     except Exception as err:
         cuda = { 'error': f'{err}' }
-    return models.MemoryResponse(ram = ram, cuda = cuda)
+    return models.ResMemory(ram = ram, cuda = cuda)

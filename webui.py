@@ -174,8 +174,6 @@ def create_api(app):
     log.debug('Creating API')
     from modules.api.api import Api
     api = Api(app, queue_lock)
-    from modules.api.nvml import nvml_api
-    nvml_api(api)
     return api
 
 

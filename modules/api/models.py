@@ -215,6 +215,7 @@ ReqTxt2Img = PydanticModelGenerator(
         {"key": "face_id", "type": Optional[ItemFaceID], "default": None, "exclude": True},
     ]
 ).generate_model()
+StableDiffusionTxt2ImgProcessingAPI = ReqTxt2Img
 
 class ResTxt2Img(BaseModel):
     images: List[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
@@ -239,6 +240,7 @@ ReqImg2Img = PydanticModelGenerator(
         {"key": "face_id", "type": Optional[ItemFaceID], "default": None, "exclude": True},
     ]
 ).generate_model()
+StableDiffusionImg2ImgProcessingAPI = ReqImg2Img
 
 class ResImg2Img(BaseModel):
     images: List[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
@@ -359,3 +361,13 @@ class ResScripts(BaseModel):
     txt2img: list = Field(default=None, title="Txt2img", description="Titles of scripts (txt2img)")
     img2img: list = Field(default=None, title="Img2img", description="Titles of scripts (img2img)")
     control: list = Field(default=None, title="Control", description="Titles of scripts (control)")
+
+class ResNVML(BaseModel): # definition of http response
+    name: str = Field(title="Name")
+    version: dict = Field(title="Version")
+    pci: dict = Field(title="Version")
+    memory: dict = Field(title="Version")
+    clock: dict = Field(title="Version")
+    load: dict = Field(title="Version")
+    power: list = []
+    state: str = Field(title="State")

@@ -1,8 +1,3 @@
-from typing import List
-from fastapi import FastAPI
-from pydantic import BaseModel, Field # pylint: disable=no-name-in-module
-
-
 try:
     import pynvml as nv
     nvml_ok = True
@@ -10,17 +5,6 @@ except ImportError:
     nvml_ok = False
 
 nvml_initialized = False
-
-
-class NVMLRes(BaseModel): # definition of http response
-    name: str = Field(title="Name")
-    version: dict = Field(title="Version")
-    pci: dict = Field(title="Version")
-    memory: dict = Field(title="Version")
-    clock: dict = Field(title="Version")
-    load: dict = Field(title="Version")
-    power: list = []
-    state: str = Field(title="State")
 
 
 def get_reason(val):
@@ -91,7 +75,3 @@ def get_nvml():
         # log.debug(f'nvml failed: {e}')
         nvml_ok = False
         return []
-
-
-def nvml_api(app: FastAPI):
-    app.add_api_route("/sdapi/v1/nvml", get_nvml, methods=["GET"], response_model=List[NVMLRes])
