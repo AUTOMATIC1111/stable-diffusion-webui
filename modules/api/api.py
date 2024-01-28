@@ -10,6 +10,8 @@ from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusion
 
 
 errors.install()
+decode_base64_to_image = helpers.decode_base64_to_image
+encode_pil_to_base64 = helpers.encode_pil_to_base64
 
 
 class Api:

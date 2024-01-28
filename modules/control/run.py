@@ -13,8 +13,7 @@ from modules.control.units import xs # VisLearn ControlNet-XS
 from modules.control.units import lite # Kohya ControlLLLite
 from modules.control.units import t2iadapter # TencentARC T2I-Adapter
 from modules.control.units import reference # ControlNet-Reference
-from scripts import ipadapter # pylint: disable=no-name-in-module
-from modules import devices, shared, errors, processing, images, sd_models, scripts, masking # pylint: disable=ungrouped-imports
+from modules import devices, shared, errors, processing, images, sd_models, scripts, masking, ipadapter # pylint: disable=ungrouped-imports
 
 
 debug = shared.log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None

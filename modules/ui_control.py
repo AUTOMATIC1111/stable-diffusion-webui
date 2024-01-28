@@ -10,7 +10,7 @@ from modules.control.units import xs # vislearn ControlNet-XS
 from modules.control.units import lite # vislearn ControlNet-XS
 from modules.control.units import t2iadapter # TencentARC T2I-Adapter
 from modules.control.units import reference # reference pipeline
-from modules import errors, shared, progress, sd_samplers, ui_components, ui_symbols, ui_common, ui_sections, generation_parameters_copypaste, call_queue, scripts, masking # pylint: disable=ungrouped-imports
+from modules import errors, shared, progress, sd_samplers, ui_components, ui_symbols, ui_common, ui_sections, generation_parameters_copypaste, call_queue, scripts, masking, ipadapter # pylint: disable=ungrouped-imports
 
 
 gr_height = None
@@ -437,8 +437,7 @@ def create_ui(_blocks: gr.Blocks=None):
                     with gr.Row():
                         with gr.Column():
                             gr.HTML('<a href="https://github.com/tencent-ailab/IP-Adapter">IP-Adapter</a>')
-                            from scripts.ipadapter import ADAPTERS # pylint: disable=no-name-in-module
-                            ip_adapter = gr.Dropdown(label='Adapter', choices=ADAPTERS, value='none')
+                            ip_adapter_name = gr.Dropdown(label='Adapter', choices=ipadapter.ADAPTERS, value='none')
                             ip_scale = gr.Slider(label='Scale', minimum=0.0, maximum=1.0, step=0.01, value=0.5)
                         with gr.Column():
                             ip_image = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="editor", height=256, width=256)
@@ -695,7 +694,7 @@ def create_ui(_blocks: gr.Blocks=None):
                     resize_mode_after, resize_name_after, width_after, height_after, scale_by_after, selected_scale_tab_after,
                     denoising_strength, batch_count, batch_size,
                     video_skip_frames, video_type, video_duration, video_loop, video_pad, video_interpolate,
-                    ip_adapter, ip_scale, ip_image,
+                    ip_adapter_name, ip_scale, ip_image,
                 ]
                 output_fields = [
                     preview_process,

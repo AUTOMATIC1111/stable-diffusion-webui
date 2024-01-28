@@ -397,7 +397,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             update_sampler(shared.sd_model)
             supported = ['DDIMScheduler', 'PNDMScheduler', 'DDPMScheduler', 'DEISMultistepScheduler', 'UniPCMultistepScheduler', 'DPMSolverMultistepScheduler', 'DPMSolverSinlgestepScheduler']
             if sd_model.scheduler.__class__.__name__ in supported:
-                sd_model = sd_models.switch_diffuser_pipe(sd_model, diffusers.StableDiffusionSAGPipeline)
+                sd_model = sd_models.switch_pipe(sd_model, diffusers.StableDiffusionSAGPipeline)
                 p.extra_generation_params["SAG scale"] = p.sag_scale
                 p.task_args['sag_scale'] = p.sag_scale
             else:
@@ -640,6 +640,9 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
     # final decode since there is no refiner
     if not is_refiner_enabled():
         if output is not None:
+            if isinstance(output, dict):
+                from types import SimpleNamespace
+                output = SimpleNamespace(**output)
             if not hasattr(output, 'images') and hasattr(output, 'frames'):
                 shared.log.debug(f'Generated: frames={len(output.frames[0])}')
                 output.images = output.frames[0]

@@ -8,7 +8,6 @@ BLOCKERS:
 OPTIONAL:
 - pending `diffusers==0.26.0`
 - wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)
-- tiledvae [pr](https://github.com/huggingface/diffusers/pull/1441)
 - style aligned [pr](https://github.com/huggingface/diffusers/pull/6489)
 - mixture tiling [pr](https://github.com/huggingface/diffusers/tree/main/examples/community#stable-diffusion-mixture-tiling)
 - instaflow [pr](https://github.com/huggingface/diffusers/pull/6057)[repo](https://github.com/gnobitab/RectifiedFlow)
@@ -271,6 +270,10 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - extensions `sd-webui-controlnet` is locked to commit `ecd33eb` due to breaking changes  
   - extension `stable-diffusion-webui-images-browser` is locked to commit `27fe4a7` due to breaking changes  
   - updated core requirements  
+  - fully dynamic pipelines  
+    pipeline switch is now done on-the-fly and does not require manual initialization of individual components  
+    this allows for quick implementation of new pipelines  
+    see `modules/sd_models.py:switch_pipe` for details  
   - major internal ui module refactoring  
     this may cause compatibility issues if an extension is doing a direct import from `ui.py`  
     in which case, report it so we can add a compatibility layer  

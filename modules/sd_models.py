@@ -4,6 +4,7 @@ import sys
 import json
 import time
 import copy
+import inspect
 import logging
 import contextlib
 import collections
@@ -722,7 +723,6 @@ def set_diffuser_options(sd_model, vae = None, op: str = 'model'):
 
 
 def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'): # pylint: disable=unused-argument
-    import torch # pylint: disable=reimported,redefined-outer-name
     if shared.cmd_opts.profile:
         import cProfile
         pr = cProfile.Profile()
@@ -973,12 +973,40 @@ def get_diffusers_task(pipe: diffusers.DiffusionPipeline) -> DiffusersTaskType:
         return DiffusersTaskType.TEXT_2_IMAGE
 
 
-def switch_diffuser_pipe(pipeline, cls):
+def switch_pipe(cls: diffusers.DiffusionPipeline, pipeline: diffusers.DiffusionPipeline = None, args = {}): # noqa:B006
+    """
+    args:
+    - cls: can be pipeline class or a string from custom pipelines
+      for example: diffusers.StableDiffusionPipeline or 'mixture_tiling'
+    - pipeline: source model to be used, if not provided currently loaded model is used
+    - args: any additional components to load into the pipeline
+      for example: { 'vae': None }
+    """
     try:
+        if isinstance(cls, str):
+            shared.log.debug(f'Pipeline switch: custom={cls}')
+            cls = diffusers.utils.get_class_from_dynamic_module(cls, module_file='pipeline.py')
+        if pipeline is None:
+            pipeline = shared.sd_model
         new_pipe = None
+        signature = inspect.signature(cls.__init__, follow_wrapped=True, eval_str=True)
+        possible = signature.parameters.keys()
         if isinstance(pipeline, cls):
             return pipeline
-        elif isinstance(pipeline, diffusers.StableDiffusionXLPipeline):
+        pipe_dict = {}
+        components_used = []
+        components_skipped = []
+        switch_mode = 'none'
+        if hasattr(pipeline, '_internal_dict'):
+            for item in pipeline._internal_dict.keys(): # pylint: disable=protected-access
+                if item in possible:
+                    pipe_dict[item] = getattr(pipeline, item, None)
+                    components_used.append(item)
+                else:
+                    components_skipped.append(item)
+            new_pipe = cls(**pipe_dict)
+            switch_mode = 'auto'
+        elif 'tokenizer_2' in possible and hasattr(pipeline, 'tokenizer_2'):
             new_pipe = cls(
                 vae=pipeline.vae,
                 text_encoder=pipeline.text_encoder,
@@ -989,7 +1017,8 @@ def switch_diffuser_pipe(pipeline, cls):
                 scheduler=pipeline.scheduler,
                 feature_extractor=getattr(pipeline, 'feature_extractor', None),
             ).to(pipeline.device)
-        elif isinstance(pipeline, diffusers.StableDiffusionPipeline):
+            switch_mode = 'sdxl'
+        elif 'tokenizer' in possible and hasattr(pipeline, 'tokenizer'):
             new_pipe = cls(
                 vae=pipeline.vae,
                 text_encoder=pipeline.text_encoder,
@@ -1000,17 +1029,30 @@ def switch_diffuser_pipe(pipeline, cls):
                 requires_safety_checker=False,
                 safety_checker=None,
             ).to(pipeline.device)
+            switch_mode = 'sd'
         else:
             shared.log.error(f'Pipeline switch error: {pipeline.__class__.__name__} unrecognized')
             return pipeline
         if new_pipe is not None:
+            for k, v in args.items():
+                if k in possible:
+                    setattr(new_pipe, k, v)
+                    components_used.append(k)
+                else:
+                    shared.log.warning(f'Pipeline switch skipping unknown: component={k}')
+                    components_skipped.append(k)
+        if new_pipe is not None:
             copy_diffuser_options(new_pipe, pipeline)
-            shared.log.debug(f'Pipeline switch: from={pipeline.__class__.__name__} to={new_pipe.__class__.__name__}')
+            if switch_mode == 'auto':
+                shared.log.debug(f'Pipeline switch: from={pipeline.__class__.__name__} to={new_pipe.__class__.__name__} components={components_used} skipped={components_skipped}')
+            else:
+                shared.log.debug(f'Pipeline switch: from={pipeline.__class__.__name__} to={new_pipe.__class__.__name__} mode={switch_mode}')
             return new_pipe
         else:
             shared.log.error(f'Pipeline switch error: from={pipeline.__class__.__name__} to={cls.__name__} empty pipeline')
     except Exception as e:
         shared.log.error(f'Pipeline switch error: from={pipeline.__class__.__name__} to={cls.__name__} {e}')
+        errors.display(e, 'Pipeline switch')
     return pipeline
 
 
