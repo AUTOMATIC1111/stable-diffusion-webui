@@ -14,7 +14,7 @@ from modules import errors, shared, progress, sd_samplers, ui_components, ui_sym
 
 
 gr_height = None
-max_units = 5
+max_units = shared.opts.control_max_units
 units: list[unit.Unit] = [] # main state variable
 input_source = None
 input_init = None

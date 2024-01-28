@@ -634,6 +634,7 @@ options_templates.update(options_section(('postprocessing', "Postprocessing"), {
 }))
 
 options_templates.update(options_section(('control', "Control"), {
+    "control_max_units": OptionInfo(3, "Maximum number of units", gr.Slider, {"minimum": 1, "maximum": 10, "step": 1}),
     "control_move_processor": OptionInfo(False, "Processor move to CPU after use"),
     "control_unload_processor": OptionInfo(False, "Processor unload after use"),
 }))
