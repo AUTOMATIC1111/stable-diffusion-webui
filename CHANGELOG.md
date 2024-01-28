@@ -256,6 +256,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - sampler: guard against invalid sampler index  
   - sampler: add img2img_extra_noise option
   - config: reset default cfg scale to 6.0  
+  - hdr: fix math, thanks @AI-Casanova
   - processing: correct display metadata  
   - processing: fix batch file names  
   - live preview: fix when using `bfloat16`
