@@ -25,8 +25,8 @@ class Upscaler:
 
     def __init__(self, create_dirs=False):
         self.mod_pad_h = None
-        self.tile_size = modules.shared.opts.ESRGAN_tile
-        self.tile_pad = modules.shared.opts.ESRGAN_tile_overlap
+        self.tile_size = None
+        self.tile_pad = None
         self.device = modules.shared.device
         self.img = None
         self.output = None

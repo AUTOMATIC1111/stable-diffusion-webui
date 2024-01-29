@@ -1,6 +1,6 @@
 import os
 from modules import modelloader, devices, errors
-from modules.shared import opts
+from modules.shared import opts, cmd_opts
 from modules.upscaler import Upscaler, UpscalerData
 from modules.upscaler_utils import upscale_with_model
 
@@ -34,6 +34,7 @@ class UpscalerSRFormer(Upscaler):
         return modelloader.load_spandrel_model(
             filename,
             device=('cpu' if devices.device_srformer.type == 'mps' else None),
+            prefer_half=(not cmd_opts.no_half and not cmd_opts.upcast_sampling),
             expected_architecture='SRFormer',
         )
 

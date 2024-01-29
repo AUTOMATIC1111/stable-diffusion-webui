@@ -142,7 +142,7 @@ def load_spandrel_model(
     path: str | os.PathLike,
     *,
     device: str | torch.device | None,
-    prefer_half: bool = False,
+    prefer_half: bool = None,
     dtype: str | torch.dtype | None = None,
     expected_architecture: str | None = None,
 ) -> spandrel.ModelDescriptor:
@@ -152,18 +152,24 @@ def load_spandrel_model(
         logger.warning(
             f"Model {path!r} is not a {expected_architecture!r} model (got {model_descriptor.architecture!r})",
         )
-    half = False
+    float16 = False
+    bfloat16 = False
     if prefer_half:
         if model_descriptor.supports_half:
             model_descriptor.model.half()
-            half = True
+            float16 = True
+            logger.info("Model %s converted to float16 precision", path)
+        #elif model_descriptor.supports_bfloat16:
+        #    model_descriptor.model.bfloat16()
+        #    bfloat16 = True
+        #    logger.info("Model %s converted to bfloat16 precision", path)
         else:
             logger.info("Model %s does not support half precision, ignoring --half", path)
     if dtype:
         model_descriptor.model.to(dtype=dtype)
     model_descriptor.model.eval()
     logger.debug(
-        "Loaded %s from %s (device=%s, half=%s, dtype=%s)",
-        model_descriptor, path, device, half, dtype,
+        "Loaded %s from %s (device=%s, float16=%s, bfloat16=%s, dtype=%s)",
+        model_descriptor, path, device, float16, bfloat16, dtype,
     )
     return model_descriptor
