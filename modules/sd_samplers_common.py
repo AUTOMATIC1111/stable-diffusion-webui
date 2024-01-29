@@ -43,6 +43,13 @@ def single_sample_to_image(sample, approximation=None):
         return Image.new(mode="RGB", size=(512, 512))
     if len(sample.shape) == 4 and sample.shape[0]: # likely animatediff latent
         sample = sample.permute(1, 0, 2, 3)[0]
+    if shared.backend == shared.Backend.DIFFUSERS: # [-x,x] to [-5,5]
+        sample_max = torch.max(sample)
+        if sample_max > 5:
+            sample = sample * (5 / sample_max)
+        sample_min = torch.min(sample)
+        if sample_min < -5:
+            sample = sample * (5 / abs(sample_min))
     if approximation == 0: # Simple
         x_sample = sd_vae_approx.cheap_approximation(sample) * 0.5 + 0.5
     elif approximation == 1: # Approximate
