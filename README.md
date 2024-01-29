@@ -209,6 +209,16 @@ General goals:
 - Up-to-Date
   - Keep code up to date with latest advanced in text-to-image generation
 
+### Star History
+
+<a href="https://star-history.com/#vladmandic/automatic&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=vladmandic/automatic&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=vladmandic/automatic&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=vladmandic/automatic&type=Date" />
+  </picture>
+</a>
+
 ## Credits
 
 - Main credit goes to [Automatic1111 WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
