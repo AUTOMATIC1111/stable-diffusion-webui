@@ -27,7 +27,7 @@ button { font-size: var(--text-lg) !important; }
 .gradio-button.secondary-down { background: var(--button-secondary-background-fill); color: var(--button-secondary-text-color); }
 .gradio-button.secondary-down, .gradio-button.secondary-down:hover { box-shadow: 1px 1px 1px rgba(0,0,0,0.25) inset, 0px 0px 3px rgba(0,0,0,0.15) inset; }
 .gradio-button.secondary-down:hover { background: var(--button-secondary-background-fill-hover); color: var(--button-secondary-text-color-hover); }
-.gradio-button.tool { max-width: min-content; min-width: min-content !important; align-self: end; font-size: 20px !important; color: var(--body-text-color) !important; margin-top: auto; margin-bottom: var(--spacing-md); align-self: center; }
+.gradio-button.tool { max-width: min-content; min-width: min-content !important; align-self: end; font-size: 20px !important; color: var(--body-text-color) !important; align-self: center; }
 .gradio-checkbox { margin: 0.75em 1.5em 0 0; align-self: center; }
 .gradio-column { min-width: min(160px, 100%) !important; }
 .gradio-container { max-width: unset !important; padding: var(--block-label-padding) !important; }

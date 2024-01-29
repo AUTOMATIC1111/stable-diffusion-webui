@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 from modules.shared import log
 from modules.errors import display
-from modules import devices
+from modules import devices, images
 
 from modules.control.proc.hed import HEDdetector
 from modules.control.proc.canny import CannyDetector
@@ -33,6 +33,8 @@ cache_dir = 'models/control/processors'
 debug = log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
 debug('Trace: CONTROL')
 config = {
+    # placeholder
+    'None': {},
     # pose models
     'OpenPose': {'class': OpenposeDetector, 'checkpoint': True, 'params': {'include_body': True, 'include_hand': False, 'include_face': False}},
     'DWPose': {'class': DWposeDetector, 'checkpoint': False, 'model': 'Tiny', 'params': {'min_confidence': 0.3}},
@@ -68,7 +70,7 @@ def list_models(refresh=False):
     global models # pylint: disable=global-statement
     if not refresh and len(models) > 0:
         return models
-    models = ['None'] + list(config)
+    models = list(config)
     debug(f'Control list processors: path={cache_dir} models={models}')
     return models
 
@@ -124,7 +126,7 @@ class Processor():
     def __init__(self, processor_id: str = None, resize = True):
         self.model = None
         self.processor_id = None
-        self.override = None
+        # self.override = None
         self.resize = resize
         self.reset()
         self.config(processor_id)
@@ -133,7 +135,7 @@ class Processor():
 
     def reset(self, processor_id: str = None):
         if self.model is not None:
-            log.debug(f'Control Processor unloaded: id="{self.processor_id}"')
+            debug(f'Control Processor unloaded: id="{self.processor_id}"')
         self.model = None
         self.processor_id = processor_id
         self.override = None
@@ -204,14 +206,20 @@ class Processor():
             display(e, 'Control Processor load')
             return f'Processor load filed: {processor_id}'
 
-    def __call__(self, image_input: Image, mode: str = 'RGB'):
+    def __call__(self, image_input: Image, mode: str = 'RGB', resize_mode: int = 0, resize_name: str = 'None', scale_tab: int = 1, scale_by: float = 1.0):
         if self.processor_id is None or self.processor_id == 'None':
             return image_input
         if self.override is not None:
+            debug(f'Control Processor: id="{self.processor_id}" override={self.override}')
             image_input = self.override
+            if resize_mode != 0 and resize_name != 'None':
+                if scale_tab == 1:
+                    width_before, height_before = int(image_input.width * scale_by), int(image_input.height * scale_by)
+                debug(f'Control resize: op=before image={image_input} width={width_before} height={height_before} mode={resize_mode} name={resize_name}')
+                image_input = images.resize_image(resize_mode, image_input, width_before, height_before, resize_name)
         image_process = image_input
         if image_input is None:
-            log.error('Control Processor: no input')
+            # log.error('Control Processor: no input')
             return image_process
         if config[self.processor_id].get('dirty', False):
             processor_id = self.processor_id
@@ -250,5 +258,5 @@ class Processor():
         input_image = modules.ui_control.input_source
         if isinstance(input_image, list):
             input_image = input_image[0]
-        if isinstance(input_image, Image.Image):
-            return self.__call__(input_image)
+        debug('Control process preview')
+        return self.__call__(input_image)

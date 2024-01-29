@@ -74,7 +74,7 @@ class ControlLLLite():
 
     def reset(self):
         if self.model is not None:
-            log.debug(f'Control {what} model unloaded')
+            debug(f'Control {what} model unloaded')
         self.model = None
         self.model_id = None
 

@@ -155,7 +155,7 @@ def select_input(input_mode, input_image, selected_init, init_type, input_resize
     if selected_input is None:
         input_source = None
         busy = False
-        debug('Control clear input')
+        debug('Control input: none')
         return [gr.Tabs.update(), '']
     debug(f'Control select input: source={selected_input} init={selected_init} type={init_type} mode={input_mode}')
     input_type = type(selected_input)
@@ -410,7 +410,7 @@ def create_ui(_blocks: gr.Blocks=None):
                                 reset_btn = ui_components.ToolButton(value=ui_symbols.reset)
                                 image_upload = gr.UploadButton(label=ui_symbols.upload, file_types=['image'], elem_classes=['form', 'gradio-button', 'tool'])
                                 process_btn= ui_components.ToolButton(value=ui_symbols.preview)
-                                image_preview = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=False, height=128, width=128, visible=False)
+                                image_preview = gr.Image(label="Input", type="pil", source="upload", height=128, width=128, visible=False, interactive=True, show_label=False, show_download_button=False, container=False)
                         controlnet_ui_units.append(unit_ui)
                         units.append(unit.Unit(
                             unit_type = 'controlnet',

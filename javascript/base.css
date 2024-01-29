@@ -1,5 +1,5 @@
 /* toolbutton */
-.gradio-button.tool { max-width: min-content; min-width: min-content !important; align-self: end; font-size: 1.4em; color: var(--body-text-color) !important; margin-bottom: var(--spacing-md); }
+.gradio-button.tool { max-width: min-content; min-width: min-content !important; align-self: end; font-size: 1.4em; color: var(--body-text-color) !important; }
 
 /* token counters */
 .block.token-counter{ position: absolute; display: inline-block; right: 0; min-width: 0 !important; width: auto; z-index: 100; top: 0; }

@@ -376,33 +376,33 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         p.height = input_image.height
                         debug(f'Control: input image={input_image}')
 
-                    # process
-                    if input_image is None:
-                        p.image = []
-                        debug(f'Control: process=None image={p.image} mask={mask}')
-                    elif len(active_process) == 0:
-                        # p.image = [masking.run_mask(input_image=input_image, input_mask=mask, return_type='Masked') if mask is not None else input_image]
-                        pass
-                    elif len(active_process) > 0:
-                        p.image = []
-                        masked_image = masking.run_mask(input_image=input_image, input_mask=mask, return_type='Masked') if mask is not None else input_image
-                        for i, process in enumerate(active_process): # list[image]
-                            image_mode = 'L' if unit_type == 'adapter' and len(active_model) > i and ('Canny' in active_model[i].model_id or 'Sketch' in active_model[i].model_id) else 'RGB' # t2iadapter canny and sketch work in grayscale only
-                            debug(f'Control: process="{process.processor_id}" i={i} image={p.image}')
-                            processed_image = process(masked_image, image_mode)
+                    p.image = []
+                    masked_image = masking.run_mask(input_image=input_image, input_mask=mask, return_type='Masked') if mask is not None else input_image
+                    for i, process in enumerate(active_process): # list[image]
+                        image_mode = 'L' if unit_type == 'adapter' and len(active_model) > i and ('Canny' in active_model[i].model_id or 'Sketch' in active_model[i].model_id) else 'RGB' # t2iadapter canny and sketch work in grayscale only
+                        debug(f'Control: i={i+1} process="{process.processor_id}" input={masked_image} override={process.override}')
+                        processed_image = process(
+                            image_input=masked_image,
+                            mode=image_mode,
+                            resize_mode=resize_mode_before,
+                            resize_name=resize_name_before,
+                            scale_tab=selected_scale_tab_before,
+                            scale_by=scale_by_before,
+                        )
+                        if processed_image is not None:
                             p.image.append(processed_image)
-                            if shared.opts.control_unload_processor:
-                                processors.config[process.processor_id]['dirty'] = True # to force reload
-                                process.model = None
+                        if shared.opts.control_unload_processor:
+                            processors.config[process.processor_id]['dirty'] = True # to force reload
+                            process.model = None
 
-                    if p.image is not None and len(p.image) > 0:
-                        p.init_images = p.image
+                    if len(p.image) > 0:
                         p.extra_generation_params["Control process"] = [p.processor_id for p in active_process]
                         if any(img is None for img in p.image):
                             msg = 'Control: attempting process but output is none'
-                            shared.log.error(msg)
+                            shared.log.error(f'{msg}: {p.image}')
                             restore_pipeline()
                             return msg
+                        p.init_images = p.image
                         processed_image = [np.array(i) for i in p.image]
                         processed_image = util.blend(processed_image) # blend all processed images into one
                         processed_image = Image.fromarray(processed_image)
