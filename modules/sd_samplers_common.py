@@ -1,3 +1,4 @@
+import threading
 from collections import namedtuple
 import torch
 import torchvision.transforms as T
@@ -9,6 +10,7 @@ import modules.taesd.sd_vae_taesd as sd_vae_taesd
 SamplerData = namedtuple('SamplerData', ['name', 'constructor', 'aliases', 'options'])
 approximation_indexes = { "Simple": 0, "Approximate": 1, "TAESD": 2, "Full VAE": 3 }
 warned = False
+queue_lock = threading.Lock()
 
 
 def warn_once(message):
@@ -31,48 +33,49 @@ def setup_img2img_steps(p, steps=None):
 
 
 def single_sample_to_image(sample, approximation=None):
-    if approximation is None:
-        approximation = approximation_indexes.get(shared.opts.show_progress_type, None)
+    with queue_lock:
         if approximation is None:
-            warn_once('Unknown decode type')
-            approximation = 0
-    # normal sample is [4,64,64]
-    if sample.dtype == torch.bfloat16:
-        sample = sample.to(torch.float16)
-    if len(sample.shape) > 4: # likely unknown video latent (e.g. svd)
-        return Image.new(mode="RGB", size=(512, 512))
-    if len(sample.shape) == 4 and sample.shape[0]: # likely animatediff latent
-        sample = sample.permute(1, 0, 2, 3)[0]
-    if shared.backend == shared.Backend.DIFFUSERS: # [-x,x] to [-5,5]
-        sample_max = torch.max(sample)
-        if sample_max > 5:
-            sample = sample * (5 / sample_max)
-        sample_min = torch.min(sample)
-        if sample_min < -5:
-            sample = sample * (5 / abs(sample_min))
-    if approximation == 0: # Simple
-        x_sample = sd_vae_approx.cheap_approximation(sample) * 0.5 + 0.5
-    elif approximation == 1: # Approximate
-        x_sample = sd_vae_approx.nn_approximation(sample) * 0.5 + 0.5
-        if shared.sd_model_type == "sdxl":
-            x_sample = x_sample[[2,1,0], :, :] # BGR to RGB
-    elif approximation == 2: # TAESD
-        x_sample = sd_vae_taesd.decode(sample)
-        x_sample = (1.0 + x_sample) / 2.0 # preview requires smaller range
-    elif approximation == 3: # Full VAE
-        x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0] * 0.5 + 0.5
-    else:
-        warn_once(f"Unknown latent decode type: {approximation}")
-        return Image.new(mode="RGB", size=(512, 512))
-    try:
-        if x_sample.dtype == torch.bfloat16:
-            x_sample.to(torch.float16)
-        transform = T.ToPILImage()
-        image = transform(x_sample)
-    except Exception as e:
-        warn_once(f'live preview: {e}')
-        image = Image.new(mode="RGB", size=(512, 512))
-    return image
+            approximation = approximation_indexes.get(shared.opts.show_progress_type, None)
+            if approximation is None:
+                warn_once('Unknown decode type')
+                approximation = 0
+        # normal sample is [4,64,64]
+        if sample.dtype == torch.bfloat16:
+            sample = sample.to(torch.float16)
+        if len(sample.shape) > 4: # likely unknown video latent (e.g. svd)
+            return Image.new(mode="RGB", size=(512, 512))
+        if len(sample.shape) == 4 and sample.shape[0]: # likely animatediff latent
+            sample = sample.permute(1, 0, 2, 3)[0]
+        if shared.backend == shared.Backend.DIFFUSERS: # [-x,x] to [-5,5]
+            sample_max = torch.max(sample)
+            if sample_max > 5:
+                sample = sample * (5 / sample_max)
+            sample_min = torch.min(sample)
+            if sample_min < -5:
+                sample = sample * (5 / abs(sample_min))
+        if approximation == 0: # Simple
+            x_sample = sd_vae_approx.cheap_approximation(sample) * 0.5 + 0.5
+        elif approximation == 1: # Approximate
+            x_sample = sd_vae_approx.nn_approximation(sample) * 0.5 + 0.5
+            if shared.sd_model_type == "sdxl":
+                x_sample = x_sample[[2,1,0], :, :] # BGR to RGB
+        elif approximation == 2: # TAESD
+            x_sample = sd_vae_taesd.decode(sample)
+            x_sample = (1.0 + x_sample) / 2.0 # preview requires smaller range
+        elif approximation == 3: # Full VAE
+            x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0] * 0.5 + 0.5
+        else:
+            warn_once(f"Unknown latent decode type: {approximation}")
+            return Image.new(mode="RGB", size=(512, 512))
+        try:
+            if x_sample.dtype == torch.bfloat16:
+                x_sample.to(torch.float16)
+            transform = T.ToPILImage()
+            image = transform(x_sample)
+        except Exception as e:
+            warn_once(f'live preview: {e}')
+            image = Image.new(mode="RGB", size=(512, 512))
+        return image
 
 
 def sample_to_image(samples, index=0, approximation=None):

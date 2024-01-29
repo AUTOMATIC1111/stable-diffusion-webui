@@ -82,7 +82,9 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - move ip-adapter implementation to control tabs  
   - resize by now applies to input image or frame individually  
     allows for processing where input images are of different sizes  
-  - support controlnets with non-default yaml config files
+  - support controlnets with non-default yaml config files  
+  - implement resize modes for override images  
+  - allow any selection of units  
   - fix input image size  
   - fix video color mode  
   - fix correct image mode  
@@ -259,7 +261,8 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - hdr: fix math, thanks @AI-Casanova
   - processing: correct display metadata  
   - processing: fix batch file names  
-  - live preview: fix when using `bfloat16`
+  - live preview: fix when using `bfloat16`  
+  - live preview: add thread locking  
   - upscale: fix ldsr
   - model merge: unbalanced models where not all keys are present, thanks @AI-Casanova
   - better sdxl model detection
