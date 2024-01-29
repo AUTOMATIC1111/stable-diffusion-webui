@@ -166,7 +166,7 @@ class ItemIPAdapter(BaseModel):
     scale: float = Field(title="Scale", default=0.5, gt=0, le=1, description="Scale of the adapter image, must be between 0 and 1.")
 
 class ItemFace(BaseModel):
-    mode: str = Field(title="Mode", default=["FaceID"], description="The mode to use (available values: FaceID, FaceSwap, PhotoMaker, InstantID).")
+    mode: str = Field(title="Mode", default="FaceID", description="The mode to use (available values: FaceID, FaceSwap, PhotoMaker, InstantID).")
     source_images: list[str] = Field(title="Source Images", description="Source face images, must be base64 encoded containing the image's data.")
     ip_model: str = Field(title="IPAdapter Model", default="FaceID Base", description="The IPAdapter model to use.")
     ip_override_sampler: bool = Field(title="IPAdapter Override Sampler", default=True, description="Should the sampler be overriden?")

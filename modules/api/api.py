@@ -106,8 +106,8 @@ class Api:
         return {}
 
     def prepare_img_gen_request(self, request):
-        if hasattr(request, "face") and request.face and not request.script_name and (not request.alwayson_scripts or "Face" not in request.alwayson_scripts.keys()):
-            request.script_name = "Face"
+        if hasattr(request, "face") and request.face and not request.script_name and (not request.alwayson_scripts or "face" not in request.alwayson_scripts.keys()):
+            request.script_name = "face"
             request.script_args = [
                 request.face.mode,
                 request.face.source_images,

@@ -200,8 +200,6 @@ def list_scripts(scriptdirname, extension):
     base = os.path.join(paths.script_path, scriptdirname)
     if os.path.exists(base):
         for filename in sorted(os.listdir(base)):
-            if filename.startswith('_') and not cmd_opts.experimental:
-                continue
             tmp_list.append(ScriptFile(paths.script_path, filename, os.path.join(base, filename), '50'))
     for ext in extensions.active():
         tmp_list += ext.list_files(scriptdirname, extension)
