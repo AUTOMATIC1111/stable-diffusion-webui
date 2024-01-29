@@ -30,7 +30,6 @@ def encode_pil_to_base64(image):
         return ''
     buffered = io.BytesIO()
     image_format = Image.registered_extensions()[f'.{shared.opts.samples_format}']
-    print('HERE', shared.opts.samples_format, image_format)
     image.save(buffered, format=image_format)
     b64 = base64.b64encode(buffered.getvalue())
     return b64

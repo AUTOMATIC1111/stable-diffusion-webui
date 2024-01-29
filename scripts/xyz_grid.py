@@ -86,6 +86,8 @@ def apply_checkpoint(p, x, xs):
 def apply_refiner(p, x, xs):
     if x == shared.opts.sd_model_refiner:
         return
+    if x == 'None':
+        return
     info = sd_models.get_closet_checkpoint_match(x)
     if info is None:
         shared.log.warning(f"XYZ grid: apply refiner unknown checkpoint: {x}")
