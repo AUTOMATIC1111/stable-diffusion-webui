@@ -565,6 +565,9 @@ def fix_seed(p):
 
 
 def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=None, all_subseeds=None, comments=None, iteration=0, position_in_batch=0, index=None, all_negative_prompts=None):
+    if p is None:
+        shared.log.warning('Processing info: no data')
+        return ''
     if not hasattr(shared.sd_model, 'sd_checkpoint_info'):
         return ''
     if index is None:
