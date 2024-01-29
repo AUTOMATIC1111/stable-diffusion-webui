@@ -22,7 +22,7 @@ def get_scripts_list():
     t2ilist = [script.name for script in scripts.scripts_txt2img.scripts if script.name is not None]
     i2ilist = [script.name for script in scripts.scripts_img2img.scripts if script.name is not None]
     control = [script.name for script in scripts.scripts_control.scripts if script.name is not None]
-    return models.ScriptsList(txt2img = t2ilist, img2img = i2ilist, control = control)
+    return models.ResScripts(txt2img = t2ilist, img2img = i2ilist, control = control)
 
 def get_script_info(script_name: Optional[str] = None):
     res = []
