@@ -238,6 +238,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - reduce system memory usage after compile  
   - fix cache loading with multiple models  
 - **fixes**  
+  - civitai model download: enable downloads of embeddings
   - ipadapter: allow changing of model/image on-the-fly  
   - ipadapter: fix fallback of cross-attention on unload  
   - rebasin iterations, thanks @AI-Casanova

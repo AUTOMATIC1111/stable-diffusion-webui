@@ -417,13 +417,19 @@ def create_ui():
 
                 def civit_search_model(name, tag, model_type):
                     # types = 'LORA' if model_type == 'LoRA' else 'Checkpoint'
-                    url = 'https://civitai.com/api/v1/models?limit=25&&Sort=Newest'
+                    url = 'https://civitai.com/api/v1/models?limit=25&Sort=Newest'
+                    if model_type == 'SD 1.5' or model_type == 'SD XL':
+                        url += '&types=Checkpoint'
+                    elif model_type == 'LoRA':
+                        url += '&types=LORA'
+                    elif model_type == 'Embedding':
+                        url += '&types=TextualInversion'
                     if name is not None and len(name) > 0:
                         url += f'&query={name}'
                     if tag is not None and len(tag) > 0:
                         url += f'&tag={tag}'
                     r = req(url)
-                    log.debug(f'CivitAI search: name="{name}" tag={tag or "none"} status={r.status_code}')
+                    log.debug(f'CivitAI search: name="{name}" tag={tag or "none"} url="{url}" status={r.status_code}')
                     if r.status_code != 200:
                         return [], [], []
                     body = r.json()
@@ -434,16 +440,21 @@ def create_ui():
                         found = 0
                         if model_type == 'LoRA' and model['type'] in ['LORA', 'LoCon']:
                             found += 1
-                        for variant in model['modelVersions']:
-                            if model_type == 'SD 1.5':
-                                if 'SD 1.' in variant['baseModel']:
-                                    found += 1
-                            if model_type == 'SD XL':
-                                if 'SDXL' in variant['baseModel']:
-                                    found += 1
-                            else:
-                                if 'SD 1.' not in variant['baseModel'] and 'SDXL' not in variant['baseModel']:
-                                    found += 1
+                        elif model_type == 'Embedding' and model['type'] == 'TextualInversion':
+                            found += 1
+                        elif model_type.startswith('SD') and model['type'] == 'Checkpoint':
+                            for variant in model['modelVersions']:
+                                if model_type == 'SD 1.5':
+                                    if 'SD 1.' in variant['baseModel']:
+                                        found += 1
+                                if model_type == 'SD XL':
+                                    if 'SDXL' in variant['baseModel']:
+                                        found += 1
+                                else:
+                                    if 'SD 1.' not in variant['baseModel'] and 'SDXL' not in variant['baseModel']:
+                                        found += 1
+                        elif model_type == 'Other':
+                            found += 1
                         if found > 0:
                             data1.append([
                                 model['id'],
@@ -581,7 +592,7 @@ def create_ui():
                     gr.HTML('<h2>Search for models</h2>')
                 with gr.Row():
                     with gr.Column(scale=1):
-                        civit_model_type = gr.Dropdown(label='Model type', choices=['SD 1.5', 'SD XL', 'LoRA', 'Other'], value='LoRA')
+                        civit_model_type = gr.Dropdown(label='Model type', choices=['SD 1.5', 'SD XL', 'LoRA', 'Embedding', 'Other'], value='LoRA')
                     with gr.Column(scale=15):
                         with gr.Row():
                             civit_search_text = gr.Textbox('', label='Search models', placeholder='keyword')

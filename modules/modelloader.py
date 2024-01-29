@@ -80,11 +80,14 @@ def download_civit_model_thread(model_name, model_url, model_path, model_type, p
     if model_type == 'LoRA':
         model_file = os.path.join(shared.opts.lora_dir, model_path, model_name)
         temp_file = os.path.join(shared.opts.lora_dir, model_path, temp_file)
+    elif model_type == 'Embedding':
+        model_file = os.path.join(shared.opts.embeddings_dir, model_path, model_name)
+        temp_file = os.path.join(shared.opts.embeddings_dir, model_path, temp_file)
     else:
         model_file = os.path.join(shared.opts.ckpt_dir, model_path, model_name)
         temp_file = os.path.join(shared.opts.ckpt_dir, model_path, temp_file)
 
-    res = f'CivitAI download: name={model_name} url={model_url} path={model_path} temp={temp_file}'
+    res = f'CivitAI download: name="{model_name}" url="{model_url}" path="{model_path}" temp="{temp_file}"'
     if os.path.isfile(model_file):
         res += ' already exists'
         shared.log.warning(res)
@@ -101,7 +104,7 @@ def download_civit_model_thread(model_name, model_url, model_path, model_type, p
 
     r = shared.req(model_url, headers=headers, stream=True)
     total_size = int(r.headers.get('content-length', 0))
-    res += f' size={round((starting_pos + total_size)/1024/1024)}Mb'
+    res += f' size={round((starting_pos + total_size)/1024/1024, 2)}Mb'
     shared.log.info(res)
     shared.state.begin('civitai')
     block_size = 16384 # 16KB blocks
@@ -117,7 +120,7 @@ def download_civit_model_thread(model_name, model_url, model_path, model_type, p
                     written = written + len(data)
                     f.write(data)
                     download_pbar.update(task, description="Download", completed=written)
-            if written < 1024 * 1024: # min threshold
+            if written < 1024: # min threshold
                 os.remove(temp_file)
                 raise ValueError(f'removed invalid download: bytes={written}')
             if preview is not None:
