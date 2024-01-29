@@ -37,7 +37,7 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
                  result_txt = None,
                  extra_controls: list = [], # noqa B006
         ):
-        self.enabled = enabled or False
+        self.enabled = enabled or True
         self.type = unit_type
         self.strength = strength or 1.0
         self.start = start or 0

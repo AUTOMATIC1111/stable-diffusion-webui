@@ -148,15 +148,20 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
         del p.height
 
     t0 = time.time()
+    num_units = 0
     for u in units:
-        if not u.enabled or u.type != unit_type:
+        if u.type != unit_type:
+            continue
+        num_units += 1
+        debug(f'Control unit: i={num_units} type={u.type} enabled={u.enabled}')
+        if not u.enabled:
             continue
         if unit_type == 'adapter' and u.adapter.model is not None:
             active_process.append(u.process)
             active_model.append(u.adapter)
             active_strength.append(float(u.strength))
             p.adapter_conditioning_factor = u.factor
-            shared.log.debug(f'Control T2I-Adapter unit: process={u.process.processor_id} model={u.adapter.model_id} strength={u.strength} factor={u.factor}')
+            shared.log.debug(f'Control T2I-Adapter unit: i={num_units} process={u.process.processor_id} model={u.adapter.model_id} strength={u.strength} factor={u.factor}')
         elif unit_type == 'controlnet' and u.controlnet.model is not None:
             active_process.append(u.process)
             active_model.append(u.controlnet)
@@ -164,19 +169,19 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
             active_start.append(float(u.start))
             active_end.append(float(u.end))
             p.guess_mode = u.guess
-            shared.log.debug(f'Control ControlNet unit: process={u.process.processor_id} model={u.controlnet.model_id} strength={u.strength} guess={u.guess} start={u.start} end={u.end}')
+            shared.log.debug(f'Control ControlNet unit: i={num_units} process={u.process.processor_id} model={u.controlnet.model_id} strength={u.strength} guess={u.guess} start={u.start} end={u.end}')
         elif unit_type == 'xs' and u.controlnet.model is not None:
             active_process.append(u.process)
             active_model.append(u.controlnet)
             active_strength.append(float(u.strength))
             active_start.append(float(u.start))
             active_end.append(float(u.end))
-            shared.log.debug(f'Control ControlNet-XS unit: process={u.process.processor_id} model={u.controlnet.model_id} strength={u.strength} guess={u.guess} start={u.start} end={u.end}')
+            shared.log.debug(f'Control ControlNet-XS unit: i={num_units} process={u.process.processor_id} model={u.controlnet.model_id} strength={u.strength} guess={u.guess} start={u.start} end={u.end}')
         elif unit_type == 'lite' and u.controlnet.model is not None:
             active_process.append(u.process)
             active_model.append(u.controlnet)
             active_strength.append(float(u.strength))
-            shared.log.debug(f'Control ControlNet-XS unit: process={u.process.processor_id} model={u.controlnet.model_id} strength={u.strength} guess={u.guess} start={u.start} end={u.end}')
+            shared.log.debug(f'Control ControlNet-XS unit: i={num_units} process={u.process.processor_id} model={u.controlnet.model_id} strength={u.strength} guess={u.guess} start={u.start} end={u.end}')
         elif unit_type == 'reference':
             p.override = u.override
             p.attention = u.attention
@@ -186,9 +191,10 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
             shared.log.debug('Control Reference unit')
         else:
             active_process.append(u.process)
-            # active_model.append(model)
+            shared.log.debug(f'Control process unit: i={num_units} process={u.process.processor_id}')
             active_strength.append(float(u.strength))
     p.ops.append('control')
+    debug(f'Control active: process={len(active_process)} model={len(active_model)}')
 
     has_models = False
     selected_models: List[Union[controlnet.ControlNetModel, xs.ControlNetXSModel, t2iadapter.AdapterModel]] = None
