@@ -95,6 +95,7 @@ class Script(scripts.Script):
             shared.log.error('Face: base model not supported')
             return None
 
+        input_images = input_images.copy()
         for i, image in enumerate(input_images):
             if isinstance(image, str):
                 from modules.api.api import decode_base64_to_image
