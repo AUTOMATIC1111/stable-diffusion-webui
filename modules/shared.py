@@ -530,7 +530,7 @@ options_templates.update(options_section(('saving-paths', "Image Naming & Paths"
     "outdir_control_grids": OptionInfo("outputs/grids", 'Folder for control grids', component_args=hide_dirs, folder=True),
 }))
 
-options_templates.update(options_section(('ui', "User Interface"), {
+options_templates.update(options_section(('ui', "User Interface Options"), {
     "motd": OptionInfo(True, "Show MOTD"),
     "gradio_theme": OptionInfo("black-teal", "UI theme", gr.Dropdown, lambda: {"choices": theme.list_themes()}, refresh=theme.refresh_themes),
     "theme_style": OptionInfo("Auto", "Theme mode", gr.Radio, {"choices": ["Auto", "Dark", "Light"]}),
