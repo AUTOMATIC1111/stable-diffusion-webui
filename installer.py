@@ -47,7 +47,7 @@ args = Dot({
 })
 git_commit = "unknown"
 submodules_commit = {
-    'sd-webui-controlnet': 'ecd33eb',
+    # 'sd-webui-controlnet': 'ecd33eb',
     # 'stable-diffusion-webui-images-browser': '27fe4a7',
 }
 
@@ -285,13 +285,11 @@ def update(folder, current_branch = False, rebase = True):
         pass
     arg = '--rebase --force' if rebase else ''
     if current_branch:
-        print('HERE1')
         res = git(f'pull {arg}', folder)
         debug(f'Install update: folder={folder} args={arg} {res}')
         return res
     b = branch(folder)
     if branch is None:
-        print('HERE2')
         res = git(f'pull {arg}', folder)
         debug(f'Install update: folder={folder} branch={b} args={arg} {res}')
     else:
