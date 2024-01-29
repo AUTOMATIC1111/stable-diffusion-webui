@@ -170,6 +170,19 @@
   {"id":"sett_reload_sd_model","label":"Reload checkpoint","localized":"","hint":"Reload currently selected model checkpoint"}
 ],
 "settings sections": [
+  {"id":"","label":"execution & models","localized":"","hint":"Settings related to execution backend, models, and prompt attention"},
+  {"id":"","label":"Compute Settings","localized":"","hint":"Settings related to precision, cross attention, model compilation, and optimizations for computing platforms"},
+  {"id":"","label":"Diffusers Settings","localized":"","hint":"Settings related to Diffusers backend"},
+  {"id":"","label":"System Paths","localized":"","hint":"Settings related to location of various model directories"},
+  {"id":"","label":"Image Options","localized":"","hint":"Settings related to image format, metadata, and image grids"},
+  {"id":"","label":"image naming & paths","localized":"","hint":"Settings related to image filenames, and output directories"},
+  {"id":"","label":"User Interface Options","localized":"","hint":"Settings related to user interface themes, and Quicksettings list"},
+  {"id":"","label":"Live Previews","localized":"","hint":"Settings related to live previews, audio notification, and log view"},
+  {"id":"","label":"Sampler Settings","localized":"","hint":"Settings related to sampler selection and configuration, and diffuser specific sampler configuration"},
+  {"id":"","label":"Postprocessing","localized":"","hint":"Settings related to post image generation processing, face restoration, and upscaling"},
+  {"id":"","label":"Training","localized":"","hint":"Settings related to model training configuration and directories"},
+  {"id":"","label":"Interrogate","localized":"","hint":"Settings related to interrogation configuration"},
+  {"id":"","label":"Extra Networks","localized":"","hint":"Settings related to extra networks user interface, extra networks multiplier defaults, and configuration"},
   {"id":"","label":"Licenses","localized":"","hint":"View licenses of all additional included libraries"},
   {"id":"","label":"Show all pages","localized":"","hint":"Show all settings pages"}
 ],
@@ -280,6 +293,7 @@
 "scripts": [
   {"id":"","label":"X values","localized":"","hint":"Separate values for X axis using commas"},
   {"id":"","label":"Y values","localized":"","hint":"Separate values for Y axis using commas"},
+  {"id":"","label":"Z values","localized":"","hint":"Separate values for Z axis using commas"},
   {"id":"","label":"Override `Sampling method` to Euler","localized":"","hint":"(this method is built for it)"},
   {"id":"","label":"Loops","localized":"","hint":"How many times to process an image. Each output is used as the input of the next loop. If set to 1, behavior will be as if this script were not used"},
   {"id":"","label":"Final denoising strength","localized":"","hint":"The denoising strength for the final loop of each image in the batch"},
