@@ -254,6 +254,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - api: sanitize response object  
   - api: cleanup error logging  
   - api: fix api-only errors  
+  - api: fix image to base64
   - refiner: fix use of sd15 model as refiners in second pass  
   - sampler: add sampler options info to metadata
   - sampler: guard against invalid sampler index  

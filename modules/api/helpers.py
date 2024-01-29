@@ -4,7 +4,7 @@ from PIL import Image, PngImagePlugin
 import piexif
 import piexif.helper
 from fastapi.exceptions import HTTPException
-from modules import shared, images
+from modules import shared
 
 
 def decode_base64_to_image(encoding):
@@ -19,10 +19,22 @@ def decode_base64_to_image(encoding):
 
 
 def encode_pil_to_base64(image):
+    """
     with io.BytesIO() as output_bytes:
         images.save_image(image, output_bytes, shared.opts.samples_format)
         bytes_data = output_bytes.getvalue()
     return base64.b64encode(bytes_data)
+    """
+    if not isinstance(image, Image.Image):
+        shared.log.error('API cannot encode image: not a PIL image')
+        return ''
+    buffered = io.BytesIO()
+    image_format = Image.registered_extensions()[f'.{shared.opts.samples_format}']
+    print('HERE', shared.opts.samples_format, image_format)
+    image.save(buffered, format=image_format)
+    b64 = base64.b64encode(buffered.getvalue())
+    return b64
+
 
 def upscaler_to_index(name: str):
     try:
