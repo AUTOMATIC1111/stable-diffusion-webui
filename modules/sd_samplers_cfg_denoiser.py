@@ -94,7 +94,7 @@ class CFGDenoiser(torch.nn.Module):
 
     def pad_cond_uncond(self, cond, uncond):
         empty = shared.sd_model.cond_stage_model_empty_prompt
-        num_repeats = (cond.shape[1] - cond.shape[1]) // empty.shape[1]
+        num_repeats = (cond.shape[1] - uncond.shape[1]) // empty.shape[1]
 
         if num_repeats < 0:
             cond = pad_cond(cond, -num_repeats, empty)
