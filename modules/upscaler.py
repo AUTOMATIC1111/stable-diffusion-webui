@@ -57,7 +57,10 @@ class Upscaler:
         dest_h = int((img.height * scale) // 8 * 8)
 
         for _ in range(3):
-            if img.width >= dest_w and img.height >= dest_h:
+            # Do not break the loop prior to do_upscale when img and dest are the same size.
+            # This is required for 1x scale post-processing models to produce an output image.
+            # FIXME: Only allow this behavior when a 1x scale model is selected.
+            if img.width > dest_w and img.height > dest_h:
                 break
 
             shape = (img.width, img.height)
@@ -65,6 +68,9 @@ class Upscaler:
             img = self.do_upscale(img, selected_model)
 
             if shape == (img.width, img.height):
+                break
+
+            if img.width >= dest_w and img.height >= dest_h:
                 break
 
         if img.width != dest_w or img.height != dest_h:
