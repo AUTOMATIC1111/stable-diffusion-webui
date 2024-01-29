@@ -33,10 +33,7 @@ async function setupControlUI() {
         const name = tab.innerText.toLowerCase();
         for (let i = 0; i < 10; i += 1) {
           const btn = gradioApp().getElementById(`refresh_${name}_models_${i}`);
-          if (btn) {
-            btn.click();
-            console.log('HERE', `refresh_${name}_models_${i}`);
-          }
+          if (btn) btn.click();
         }
       }
     }

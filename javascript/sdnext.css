@@ -145,10 +145,6 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 .livePreview img { position: absolute; object-fit: contain; width: 100%; height: 100%; }
 .dark .livePreview { background-color: rgb(17 24 39 / var(--tw-bg-opacity)); }
 .popup-metadata { color: white; background: #0000; display: inline-block; white-space: pre-wrap; font-size: var(--text-xxs); }
-.global-popup{ display: flex; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(20, 20, 20, 0.95);}
-.global-popup-close:before { content: "×"; }
-.global-popup-close{ position: fixed; right: 0.5em; top: 0; cursor: pointer; color: white; font-size: 32pt; }
-.global-popup-inner{ display: inline-block; margin: auto; padding: 2em; }
 
 /* fullpage image viewer */
 #lightboxModal{ display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(20, 20, 20, 0.75); backdrop-filter: blur(6px);

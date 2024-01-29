@@ -16,7 +16,7 @@ OPTIONAL:
 - masking api
 - preprocess api
 
-## Update for 2023-01-28
+## Update for 2023-01-29
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
@@ -141,7 +141,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
     - modularized blip/booru interrogate  
       now appears as toolbuttons on image/gallery output  
     - faster browser page load  
-    - cleanup hints  
+    - cleanup hints, thanks @brknsoul  
     - cleanup settings  
   - **server**
     - all move/offload options are disable by default for optimal performance  
