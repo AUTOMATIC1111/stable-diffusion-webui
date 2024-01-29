@@ -123,6 +123,7 @@ callback_map = dict(
     callbacks_infotext_pasted=[],
     callbacks_script_unloaded=[],
     callbacks_before_ui=[],
+    callbacks_after_ui=[],
     callbacks_on_reload=[],
 )
 
@@ -359,6 +360,16 @@ def before_ui_callback():
             report_exception(e, c, 'before_ui')
 
 
+def after_ui_callback():
+    for c in reversed(callback_map['callbacks_after_ui']):
+        try:
+            t0 = time.time()
+            c.callback()
+            timer(t0, c.script, 'after_ui')
+        except Exception as e:
+            report_exception(e, c, 'after_ui')
+
+
 def add_callback(callbacks, fun):
     # stack = [x for x in inspect.stack(0) if x.filename != __file__]
     # filename = stack[0].filename if len(stack) > 0 else 'unknown file'
@@ -536,3 +547,8 @@ def on_script_unloaded(callback):
 def on_before_ui(callback):
     """register a function to be called before the UI is created."""
     add_callback(callback_map['callbacks_before_ui'], callback)
+
+
+def on_after_ui(callback):
+    """register a function to be called before the UI is created."""
+    add_callback(callback_map['callbacks_after_ui'], callback)

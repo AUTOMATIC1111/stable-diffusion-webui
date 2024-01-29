@@ -304,6 +304,7 @@ def webui(restart=False):
 
     start_common()
     start_ui()
+    modules.script_callbacks.after_ui_callback()
     modules.sd_models.write_metadata()
     load_model()
     shared.opts.save(shared.config_filename)
