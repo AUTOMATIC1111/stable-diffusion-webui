@@ -4,7 +4,6 @@ from functools import lru_cache
 
 import torch
 from modules import errors, shared
-from modules import torch_utils
 
 if sys.platform == "darwin":
     from modules import mac_specific
