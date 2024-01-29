@@ -5,7 +5,7 @@ import time
 from collections import namedtuple
 import gradio as gr
 from modules import paths, script_callbacks, extensions, script_loading, scripts_postprocessing, errors, timer
-from installer import log
+from installer import log, args as cmd_opts
 
 
 AlwaysVisible = object()
@@ -200,6 +200,8 @@ def list_scripts(scriptdirname, extension):
     base = os.path.join(paths.script_path, scriptdirname)
     if os.path.exists(base):
         for filename in sorted(os.listdir(base)):
+            if filename.startswith('_') and not cmd_opts.experimental:
+                continue
             tmp_list.append(ScriptFile(paths.script_path, filename, os.path.join(base, filename), '50'))
     for ext in extensions.active():
         tmp_list += ext.list_files(scriptdirname, extension)

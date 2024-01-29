@@ -119,6 +119,10 @@ As of this release, default backend is set to **diffusers** as its more feature 
     **SD15**: Base, Base ViT-G, Light, Plus, Plus Face, Full Face  
     **SDXL**: Base SXDL, Base ViT-H SXDL, Plus ViT-H SXDL, Plus Face ViT-H SXDL  
   - enable use via api, thanks @trojaner  
+- [Mixture Tiling](https://arxiv.org/abs/2302.02412)  
+  - uses multiple prompts to guide different parts of the grid during diffusion process  
+  - can be used ot create complex scenes with multiple subjects  
+  - simply select from scripts  
 - [Self-attention guidance](https://github.com/SusungHong/Self-Attention-Guidance)  
   - simply select scale in advanced menu  
   - can drastically improve image coherence as well as reduce artifacts  
