@@ -24,8 +24,8 @@ def initialize():
         pass
 
     from modules import devices
-    devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_esrgan, devices.device_codeformer = \
-        (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'esrgan', 'codeformer'])
+    devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_esrgan, devices.device_hat, devices.device_dat, devices.device_srformer, devices.device_grl, devices.device_omnisr, devices.device_span, devices.device_compact, devices.device_codeformer = \
+        (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'esrgan', 'hat', 'dat', 'srformer', 'grl', 'omnisr', 'span', 'compact', 'codeformer'])
 
     devices.dtype = torch.float32 if cmd_opts.no_half else torch.float16
     devices.dtype_vae = torch.float32 if cmd_opts.no_half or cmd_opts.no_half_vae else torch.float16
