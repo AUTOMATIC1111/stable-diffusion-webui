@@ -165,16 +165,21 @@ class ItemIPAdapter(BaseModel):
     image: str = Field(title="Image", default="", description="Adapter image, must be a base64 string containing the image's data.")
     scale: float = Field(title="Scale", default=0.5, gt=0, le=1, description="Scale of the adapter image, must be between 0 and 1.")
 
-class ItemFaceID(BaseModel):
-    mode: list[str] = Field(title="Mode", default=["FaceID"], description="The mode to use (available values: FaceID, FaceSwap).")
-    model: str = Field(title="Model", default="FaceID Base", description="The FaceID model to use.")
-    image: str = Field(title="Image", default="", description="Source face image, must be a base64 string containing the image's data.")
-    scale: float = Field(title="Scale", default=1, ge=0, le=2, description="Scale of the source face, must be between 0.0 and 2.0.")
-    structure: float = Field(title="Structure", default=1, ge=0, le=1, description="Structure to use, must be between 0.0 and 1.0.")
-    rank: int = Field(title="Rank", default=128, ge=4, le=256, description="Rank to use, must be between 4 and 256.")
-    override_sampler: bool = Field(title="Override Sampler", default=True, description="Should the sampler be overriden?")
-    tokens: int = Field(title="Tokens", default=4, ge=1, le=16, description="Amount of tokens to use, must be between 1 and 16.")
-    cache_model: bool = Field(title="Cache", default=True, description="Should the model be cached?")
+class ItemFace(BaseModel):
+    mode: str = Field(title="Mode", default=["FaceID"], description="The mode to use (available values: FaceID, FaceSwap, PhotoMaker, InstantID).")
+    source_images: list[str] = Field(title="Source Images", description="Source face images, must be base64 encoded containing the image's data.")
+    ip_model: str = Field(title="IPAdapter Model", default="FaceID Base", description="The IPAdapter model to use.")
+    ip_override_sampler: bool = Field(title="IPAdapter Override Sampler", default=True, description="Should the sampler be overriden?")
+    ip_cache_model: bool = Field(title="IPAdapter Cache", default=True, description="Should the IPAdapter model be cached?")
+    ip_strength: float = Field(title="IPAdapter Strength", default=1, ge=0, le=2, description="IPAdapter strength of the source images, must be between 0.0 and 2.0.")
+    ip_structure: float = Field(title="IPAdapter Structure", default=1, ge=0, le=1, description="IPAdapter structure to use, must be between 0.0 and 1.0.")
+    id_strength: float = Field(title="InstantID Strength", default=1, ge=0, le=2, description="InstantID Strength of the source images, must be between 0.0 and 2.0.")
+    id_conditioning: float = Field(title="InstantID Condition", default=0.5, ge=0, le=2, description="InstantID control amount, must be between 0.0 and 2.0.")
+    id_cache: bool = Field(title="InstantID Cache", default=True, description="Should the InstantID model be cached?")
+    pm_trigger: str = Field(title="PhotoMaker Trigger", default="person", description="PhotoMaker trigger word to use.")
+    pm_strength: float = Field(title="PhotoMaker Strength", default=1, ge=0, le=2, description="PhotoMaker strength to use, must be between 0.0 and 2.0.")
+    pm_start: float = Field(title="PhotoMaker Start", default=0.5, ge=0, le=1, description="PhotoMaker start value, must be between 0.0 and 1.0.")
+    fs_cache: bool = Field(title="FaceSwap Cache", default=True, description="Should the FaceSwap model be cached?")
 
 class ScriptArg(BaseModel):
     label: str = Field(default=None, title="Label", description="Name of the argument in UI")
@@ -212,7 +217,7 @@ ReqTxt2Img = PydanticModelGenerator(
         {"key": "save_images", "type": bool, "default": False},
         {"key": "alwayson_scripts", "type": dict, "default": {}},
         {"key": "ip_adapter", "type": Optional[ItemIPAdapter], "default": None, "exclude": True},
-        {"key": "face_id", "type": Optional[ItemFaceID], "default": None, "exclude": True},
+        {"key": "face", "type": Optional[ItemFace], "default": None, "exclude": True},
     ]
 ).generate_model()
 StableDiffusionTxt2ImgProcessingAPI = ReqTxt2Img

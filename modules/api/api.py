@@ -106,20 +106,25 @@ class Api:
         return {}
 
     def prepare_img_gen_request(self, request):
-        if hasattr(request, "face_id") and request.face_id and not request.script_name and (not request.alwayson_scripts or "FaceID" not in request.alwayson_scripts.keys()):
-            request.script_name = "FaceID"
+        if hasattr(request, "face") and request.face and not request.script_name and (not request.alwayson_scripts or "Face" not in request.alwayson_scripts.keys()):
+            request.script_name = "Face"
             request.script_args = [
-                request.face_id.mode,
-                request.face_id.model,
-                request.face_id.scale,
-                request.face_id.image,
-                request.face_id.override_sampler,
-                request.face_id.rank,
-                request.face_id.tokens,
-                request.face_id.structure,
-                request.face_id.cache_model
+                request.face.mode,
+                request.face.source_images,
+                request.face.ip_model,
+                request.face.ip_override_sampler,
+                request.face.ip_cache_model,
+                request.face.ip_strength,
+                request.face.ip_structure,
+                request.face.id_strength,
+                request.face.id_conditioning,
+                request.face.id_cache,
+                request.face.pm_trigger,
+                request.face.pm_strength,
+                request.face.pm_start,
+                request.face.fs_cache
             ]
-            del request.face_id
+            del request.face
 
         if hasattr(request, "ip_adapter") and request.ip_adapter and request.script_name != "IP Adapter" and (not request.alwayson_scripts or "IP Adapter" not in request.alwayson_scripts.keys()):
             request.alwayson_scripts = {} if request.alwayson_scripts is None else request.alwayson_scripts
@@ -170,7 +175,7 @@ class Api:
         args = vars(populate)
         args.pop('script_name', None)
         args.pop('script_args', None) # will refeed them to the pipeline directly after initializing them
-        args.pop('face_id', None)
+        args.pop('face', None)
         args.pop('ip_adapter', None)
         args.pop('alwayson_scripts', None)
         send_images = args.pop('send_images', True)
