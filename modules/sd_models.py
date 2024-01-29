@@ -824,8 +824,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 return
             try:
                 if model_type.startswith('Stable Diffusion'):
-                    diffusers_load_config['force_zeros_for_empty_prompt '] = shared.opts.diffusers_force_zeros
-                    diffusers_load_config['requires_aesthetics_score'] = shared.opts.diffusers_aesthetics_score
+                    if shared.opts.diffusers_force_zeros:
+                        diffusers_load_config['force_zeros_for_empty_prompt '] = shared.opts.diffusers_force_zeros
+                    if shared.opts.diffusers_aesthetics_score:
+                        diffusers_load_config['requires_aesthetics_score'] = shared.opts.diffusers_aesthetics_score
                     if 'inpainting' in checkpoint_info.path.lower():
                         diffusers_load_config['config_files'] = {
                             'v1': 'configs/v1-inpainting-inference.yaml',

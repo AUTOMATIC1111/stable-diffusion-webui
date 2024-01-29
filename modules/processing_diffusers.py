@@ -618,7 +618,8 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             )
             shared.state.sampling_steps = refiner_args['num_inference_steps']
             try:
-                shared.sd_refiner.register_to_config(requires_aesthetics_score=shared.opts.diffusers_aesthetics_score)
+                if 'requires_aesthetics_score' in shared.sd_refiner.config:
+                    shared.sd_refiner.register_to_config(requires_aesthetics_score=shared.opts.diffusers_aesthetics_score)
                 refiner_output = shared.sd_refiner(**refiner_args) # pylint: disable=not-callable
                 openvino_post_compile(op="refiner")
             except AssertionError as e:
