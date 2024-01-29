@@ -43,7 +43,7 @@ def nn_approximation(sample): # Approximate NN
         sd_vae_approx_model.load_state_dict(approx_weights)
         sd_vae_approx_model.eval()
         sd_vae_approx_model.to(devices.device, sample.dtype)
-        shared.log.debug(f'Load VAE decode approximate: model="{model_path}"')
+        shared.log.debug(f'VAE load: type=approximate model={model_path}')
     try:
         in_sample = sample.to(devices.device).unsqueeze(0)
         sd_vae_approx_model.to(devices.device, devices.dtype)
@@ -51,7 +51,7 @@ def nn_approximation(sample): # Approximate NN
         x_sample = x_sample[0].detach().cpu()
         return x_sample
     except Exception as e:
-        shared.log.error(f'Decode approximate: {e}')
+        shared.log.error(f'VAE decode approximate: {e}')
         return sample
 
 
@@ -77,5 +77,5 @@ def cheap_approximation(sample): # Approximate simple
         x_sample = nn.functional.conv2d(sample, weights, bias) # pylint: disable=not-callable
         return x_sample
     except Exception as e:
-        shared.log.error(f'Decode simple: {e}')
+        shared.log.error(f'VAE decode simple: {e}')
         return sample

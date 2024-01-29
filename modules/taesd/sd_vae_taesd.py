@@ -15,10 +15,10 @@ def download_model(model_path):
     model_name = os.path.basename(model_path)
     model_url = f'https://github.com/madebyollin/taesd/raw/main/{model_name}'
     if not os.path.exists(model_path):
-        os.makedirs(os.path.dirname(model_path), exist_ok=True)
-        from modules.shared import log
-        log.info(f'Downloading TAESD decoder: {model_path}')
         import torch
+        from modules.shared import log
+        os.makedirs(os.path.dirname(model_path), exist_ok=True)
+        log.info(f'Downloading TAESD decoder: {model_path}')
         torch.hub.download_url_to_file(model_url, model_path)
 
 
@@ -56,20 +56,25 @@ def decode(latents):
         download_model(model_path)
         if os.path.exists(model_path):
             taesd_models[f'{model_class}-decoder'] = TAESD(decoder_path=model_path, encoder_path=None)
+            shared.log.debug(f'VAE load: type=taesd model={model_path}')
             vae = taesd_models[f'{model_class}-decoder']
             vae.to(devices.device, devices.dtype_vae)
     latents.to(devices.device, devices.dtype_vae)
-    if len(latents.shape) == 3:
-        latents = latents.unsqueeze(0)
-        image = vae.decoder(latents).clamp(0, 1).detach()
-        image = 2.0 * image - 1.0 # typical normalized range except for preview which runs denormalization
-        return image[0]
-    elif len(latents.shape) == 4:
-        image = vae.decoder(latents).clamp(0, 1).detach()
-        image = 2.0 * image - 1.0 # typical normalized range except for preview which runs denormalization
-        return image
-    else:
-        shared.log.error(f'TAESD decode unsupported latent type: {latents.shape}')
+    try:
+        if len(latents.shape) == 3:
+            latents = latents.unsqueeze(0)
+            image = vae.decoder(latents).clamp(0, 1).detach()
+            image = 2.0 * image - 1.0 # typical normalized range except for preview which runs denormalization
+            return image[0]
+        elif len(latents.shape) == 4:
+            image = vae.decoder(latents).clamp(0, 1).detach()
+            image = 2.0 * image - 1.0 # typical normalized range except for preview which runs denormalization
+            return image
+        else:
+            shared.log.error(f'TAESD decode unsupported latent type: {latents.shape}')
+            return latents
+    except Exception as e:
+        shared.log.error(f'VAE decode taesd: {e}')
         return latents
 
 
@@ -86,6 +91,7 @@ def encode(image):
         model_path = os.path.join(paths.models_path, "TAESD", f"tae{model_class}_encoder.pth")
         download_model(model_path)
         if os.path.exists(model_path):
+            shared.log.debug(f'VAE load: type=taesd model={model_path}')
             taesd_models[f'{model_class}-encoder'] = TAESD(encoder_path=model_path, decoder_path=None)
             vae = taesd_models[f'{model_class}-encoder']
             vae.to(devices.device, devices.dtype_vae)

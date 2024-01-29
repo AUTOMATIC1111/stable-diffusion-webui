@@ -14,7 +14,7 @@ warned = False
 def warn_once(message):
     global warned # pylint: disable=global-statement
     if not warned:
-        shared.log.warning(message)
+        shared.log.warning(f'VAE: {message}')
         warned = True
 
 
@@ -34,9 +34,8 @@ def single_sample_to_image(sample, approximation=None):
     if approximation is None:
         approximation = approximation_indexes.get(shared.opts.show_progress_type, None)
         if approximation is None:
-            warn_once('Unknown decode type, please reset preview method')
+            warn_once('Unknown decode type')
             approximation = 0
-
     # normal sample is [4,64,64]
     if sample.dtype == torch.bfloat16:
         sample = sample.to(torch.float16)
@@ -58,14 +57,13 @@ def single_sample_to_image(sample, approximation=None):
     else:
         warn_once(f"Unknown latent decode type: {approximation}")
         return Image.new(mode="RGB", size=(512, 512))
-
     try:
         if x_sample.dtype == torch.bfloat16:
             x_sample.to(torch.float16)
         transform = T.ToPILImage()
         image = transform(x_sample)
     except Exception as e:
-        warn_once(f'Live preview: {e}')
+        warn_once(f'live preview: {e}')
         image = Image.new(mode="RGB", size=(512, 512))
     return image
 
