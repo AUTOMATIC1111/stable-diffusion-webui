@@ -102,7 +102,8 @@ class Script(scripts.Script):
 
         processed = None
         for i, image in enumerate(input_images):
-            input_images[i] = Image.open(image['name'])
+            if not isinstance(image, Image.Image):
+                input_images[i] = Image.open(image['name'])
         source_image = input_images[0]
 
         if mode == 'FaceID': # faceid runs as ipadapter in its own pipeline
