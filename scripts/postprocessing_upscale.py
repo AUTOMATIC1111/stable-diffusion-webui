@@ -29,7 +29,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
                                 upscaling_resize_w = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="extras_upscaling_resize_w")
                                 upscaling_resize_h = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="extras_upscaling_resize_h")
                             with gr.Column(elem_id="upscaling_dimensions_row", scale=1, elem_classes="dimensions-tools"):
-                                upscaling_res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="upscaling_res_switch_btn")
+                                upscaling_res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="upscaling_res_switch_btn", tooltip="Switch width/height")
                                 upscaling_crop = gr.Checkbox(label='Crop to fit', value=True, elem_id="extras_upscaling_crop")
 
             with FormRow():
@@ -81,6 +81,14 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
 
         return image
 
+    def process_firstpass(self, pp: scripts_postprocessing.PostprocessedImage, upscale_mode=1, upscale_by=2.0, upscale_to_width=None, upscale_to_height=None, upscale_crop=False, upscaler_1_name=None, upscaler_2_name=None, upscaler_2_visibility=0.0):
+        if upscale_mode == 1:
+            pp.shared.target_width = upscale_to_width
+            pp.shared.target_height = upscale_to_height
+        else:
+            pp.shared.target_width = int(pp.image.width * upscale_by)
+            pp.shared.target_height = int(pp.image.height * upscale_by)
+
     def process(self, pp: scripts_postprocessing.PostprocessedImage, upscale_mode=1, upscale_by=2.0, upscale_to_width=None, upscale_to_height=None, upscale_crop=False, upscaler_1_name=None, upscaler_2_name=None, upscaler_2_visibility=0.0):
         if upscaler_1_name == "None":
             upscaler_1_name = None
@@ -125,6 +133,10 @@ class ScriptPostprocessingUpscaleSimple(ScriptPostprocessingUpscale):
             "upscale_by": upscale_by,
             "upscaler_name": upscaler_name,
         }
+
+    def process_firstpass(self, pp: scripts_postprocessing.PostprocessedImage, upscale_by=2.0, upscaler_name=None):
+        pp.shared.target_width = int(pp.image.width * upscale_by)
+        pp.shared.target_height = int(pp.image.height * upscale_by)
 
     def process(self, pp: scripts_postprocessing.PostprocessedImage, upscale_by=2.0, upscaler_name=None):
         if upscaler_name is None or upscaler_name == "None":

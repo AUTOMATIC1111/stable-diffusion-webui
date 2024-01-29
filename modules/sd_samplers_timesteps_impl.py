@@ -11,7 +11,7 @@ from modules.models.diffusion.uni_pc import uni_pc
 def ddim(model, x, timesteps, extra_args=None, callback=None, disable=None, eta=0.0):
     alphas_cumprod = model.inner_model.inner_model.alphas_cumprod
     alphas = alphas_cumprod[timesteps]
-    alphas_prev = alphas_cumprod[torch.nn.functional.pad(timesteps[:-1], pad=(1, 0))].to(torch.float64 if x.device.type != 'mps' else torch.float32)
+    alphas_prev = alphas_cumprod[torch.nn.functional.pad(timesteps[:-1], pad=(1, 0))].to(torch.float64 if x.device.type != 'mps' and x.device.type != 'xpu' else torch.float32)
     sqrt_one_minus_alphas = torch.sqrt(1 - alphas)
     sigmas = eta * np.sqrt((1 - alphas_prev.cpu().numpy()) / (1 - alphas.cpu()) * (1 - alphas.cpu() / alphas_prev.cpu().numpy()))
 
@@ -43,7 +43,7 @@ def ddim(model, x, timesteps, extra_args=None, callback=None, disable=None, eta=
 def plms(model, x, timesteps, extra_args=None, callback=None, disable=None):
     alphas_cumprod = model.inner_model.inner_model.alphas_cumprod
     alphas = alphas_cumprod[timesteps]
-    alphas_prev = alphas_cumprod[torch.nn.functional.pad(timesteps[:-1], pad=(1, 0))].to(torch.float64 if x.device.type != 'mps' else torch.float32)
+    alphas_prev = alphas_cumprod[torch.nn.functional.pad(timesteps[:-1], pad=(1, 0))].to(torch.float64 if x.device.type != 'mps' and x.device.type != 'xpu' else torch.float32)
     sqrt_one_minus_alphas = torch.sqrt(1 - alphas)
 
     extra_args = {} if extra_args is None else extra_args

@@ -1,7 +1,6 @@
 import json
 import os
 import sys
-import traceback
 
 import platform
 import hashlib
@@ -84,7 +83,7 @@ def get_dict():
         "Checksum": checksum_token,
         "Commandline": get_argv(),
         "Torch env info": get_torch_sysinfo(),
-        "Exceptions": get_exceptions(),
+        "Exceptions": errors.get_exceptions(),
         "CPU": {
             "model": platform.processor(),
             "count logical": psutil.cpu_count(logical=True),
@@ -102,21 +101,6 @@ def get_dict():
     }
 
     return res
-
-
-def format_traceback(tb):
-    return [[f"{x.filename}, line {x.lineno}, {x.name}", x.line] for x in traceback.extract_tb(tb)]
-
-
-def format_exception(e, tb):
-    return {"exception": str(e), "traceback": format_traceback(tb)}
-
-
-def get_exceptions():
-    try:
-        return list(reversed(errors.exception_records))
-    except Exception as e:
-        return str(e)
 
 
 def get_environment():

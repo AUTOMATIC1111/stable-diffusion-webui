@@ -88,9 +88,10 @@ A browser interface based on Gradio library for Stable Diffusion.
 - [Alt-Diffusion](https://arxiv.org/abs/2211.06679) support - see [wiki](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#alt-diffusion) for instructions
 - Now without any bad letters!
 - Load checkpoints in safetensors format
-- Eased resolution restriction: generated image's dimension must be a multiple of 8 rather than 64
+- Eased resolution restriction: generated image's dimensions must be a multiple of 8 rather than 64
 - Now with a license!
 - Reorder elements in the UI from settings screen
+- [Segmind Stable Diffusion](https://huggingface.co/segmind/SSD-1B) support
 
 ## Installation and Running
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for:
@@ -103,7 +104,7 @@ Alternatively, use online services (like Google Colab):
 - [List of Online Services](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Online-Services)
 
 ### Installation on Windows 10/11 with NVidia-GPUs using release package
-1. Download `sd.webui.zip` from [v1.0.0-pre](https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases/tag/v1.0.0-pre) and extract it's contents.
+1. Download `sd.webui.zip` from [v1.0.0-pre](https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases/tag/v1.0.0-pre) and extract its contents.
 2. Run `update.bat`.
 3. Run `run.bat`.
 > For more details see [Install-and-Run-on-NVidia-GPUs](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs)
@@ -120,7 +121,9 @@ Alternatively, use online services (like Google Colab):
 # Debian-based:
 sudo apt install wget git python3 python3-venv libgl1 libglib2.0-0
 # Red Hat-based:
-sudo dnf install wget git python3
+sudo dnf install wget git python3 gperftools-libs libglvnd-glx 
+# openSUSE-based:
+sudo zypper install wget git python3 libtcmalloc4 libglvnd
 # Arch-based:
 sudo pacman -S wget git python3
 ```
@@ -146,7 +149,7 @@ For the purposes of getting Google and other search engines to crawl the wiki, h
 ## Credits
 Licenses for borrowed code can be found in `Settings -> Licenses` screen, and also in `html/licenses.html` file.
 
-- Stable Diffusion - https://github.com/CompVis/stable-diffusion, https://github.com/CompVis/taming-transformers
+- Stable Diffusion - https://github.com/Stability-AI/stablediffusion, https://github.com/CompVis/taming-transformers
 - k-diffusion - https://github.com/crowsonkb/k-diffusion.git
 - GFPGAN - https://github.com/TencentARC/GFPGAN.git
 - CodeFormer - https://github.com/sczhou/CodeFormer
@@ -173,5 +176,6 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - TAESD - Ollin Boer Bohan - https://github.com/madebyollin/taesd
 - LyCORIS - KohakuBlueleaf
 - Restart sampling - lambertae - https://github.com/Newbeeer/diffusion_restart_sampling
+- Hypertile - tfernd - https://github.com/tfernd/HyperTile
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)
