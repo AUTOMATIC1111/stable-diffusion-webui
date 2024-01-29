@@ -170,8 +170,9 @@
   {"id":"sett_reload_sd_model","label":"Reload checkpoint","localized":"","hint":"Reload currently selected model checkpoint"}
 ],
 "settings sections": [
-  {"id":"","label":"execution & models","localized":"","hint":"Settings related to execution backend, models, and prompt attention"},
+  {"id":"","label":"Execution & Models","localized":"","hint":"Settings related to execution backend, models, and prompt attention"},
   {"id":"","label":"Compute Settings","localized":"","hint":"Settings related to precision, cross attention, model compilation, and optimizations for computing platforms"},
+  {"id":"","label":"Inference Settings","localized":"","hint":"Settings related image inference, token merging, FreeU, and Hypertile"},
   {"id":"","label":"Diffusers Settings","localized":"","hint":"Settings related to Diffusers backend"},
   {"id":"","label":"System Paths","localized":"","hint":"Settings related to location of various model directories"},
   {"id":"","label":"Image Options","localized":"","hint":"Settings related to image format, metadata, and image grids"},
@@ -180,6 +181,7 @@
   {"id":"","label":"Live Previews","localized":"","hint":"Settings related to live previews, audio notification, and log view"},
   {"id":"","label":"Sampler Settings","localized":"","hint":"Settings related to sampler selection and configuration, and diffuser specific sampler configuration"},
   {"id":"","label":"Postprocessing","localized":"","hint":"Settings related to post image generation processing, face restoration, and upscaling"},
+  {"id":"","label":"Control Options","localized":"","hint":"Settings related the Control tab"},
   {"id":"","label":"Training","localized":"","hint":"Settings related to model training configuration and directories"},
   {"id":"","label":"Interrogate","localized":"","hint":"Settings related to interrogation configuration"},
   {"id":"","label":"Extra Networks","localized":"","hint":"Settings related to extra networks user interface, extra networks multiplier defaults, and configuration"},
