@@ -242,7 +242,7 @@ ReqImg2Img = PydanticModelGenerator(
         {"key": "save_images", "type": bool, "default": False},
         {"key": "alwayson_scripts", "type": dict, "default": {}},
         {"key": "ip_adapter", "type": Optional[ItemIPAdapter], "default": None, "exclude": True},
-        {"key": "face_id", "type": Optional[ItemFaceID], "default": None, "exclude": True},
+        {"key": "face_id", "type": Optional[ItemFace], "default": None, "exclude": True},
     ]
 ).generate_model()
 StableDiffusionImg2ImgProcessingAPI = ReqImg2Img
