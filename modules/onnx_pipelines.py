@@ -45,7 +45,7 @@ CONVERSION_PASS_UNET = {
 }
 
 
-class OnnxPipelineBase(TorchCompatibleModule, diffusers.DiffusionPipeline, metaclass=ABCMeta):
+class PipelineBase(TorchCompatibleModule, diffusers.DiffusionPipeline, metaclass=ABCMeta):
     model_type: str
     sd_model_hash: str
     sd_checkpoint_info: CheckpointInfo
@@ -101,7 +101,7 @@ class OnnxPipelineBase(TorchCompatibleModule, diffusers.DiffusionPipeline, metac
         return cls.from_single_file(pretrained_model_name_or_path)
 
 
-class OnnxRawPipeline(OnnxPipelineBase):
+class OnnxRawPipeline(PipelineBase):
     config = {}
     _is_sdxl: bool
     is_refiner: bool
@@ -109,12 +109,12 @@ class OnnxRawPipeline(OnnxPipelineBase):
     path: os.PathLike
     original_filename: str
 
-    constructor: Type[OnnxPipelineBase]
+    constructor: Type[PipelineBase]
     init_dict: Dict[str, Tuple[str]] = {}
 
     scheduler: Any = None # for Img2Img
 
-    def __init__(self, constructor: Type[OnnxPipelineBase], path: os.PathLike):
+    def __init__(self, constructor: Type[PipelineBase], path: os.PathLike):
         self._is_sdxl = check_pipeline_sdxl(constructor)
         self.from_diffusers_cache = check_diffusers_cache(path)
         self.path = path
@@ -512,7 +512,7 @@ def prepare_latents(
     return latents
 
 
-class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline, OnnxPipelineBase):
+class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline, PipelineBase):
     __module__ = 'diffusers'
     __name__ = 'OnnxStableDiffusionPipeline'
 
@@ -672,7 +672,7 @@ class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline, OnnxPip
         return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
 
 
-class OnnxStableDiffusionImg2ImgPipeline(diffusers.OnnxStableDiffusionImg2ImgPipeline, OnnxPipelineBase):
+class OnnxStableDiffusionImg2ImgPipeline(diffusers.OnnxStableDiffusionImg2ImgPipeline, PipelineBase):
     __module__ = 'diffusers'
     __name__ = 'OnnxStableDiffusionImg2ImgPipeline'
 
@@ -862,7 +862,7 @@ class OnnxStableDiffusionImg2ImgPipeline(diffusers.OnnxStableDiffusionImg2ImgPip
         return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
 
 
-class OnnxStableDiffusionInpaintPipeline(diffusers.OnnxStableDiffusionInpaintPipeline, OnnxPipelineBase):
+class OnnxStableDiffusionInpaintPipeline(diffusers.OnnxStableDiffusionInpaintPipeline, PipelineBase):
     __module__ = 'diffusers'
     __name__ = 'OnnxStableDiffusionInpaintPipeline'
 
@@ -1074,7 +1074,7 @@ class OnnxStableDiffusionInpaintPipeline(diffusers.OnnxStableDiffusionInpaintPip
         return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
 
 
-class OnnxStableDiffusionXLPipeline(OnnxPipelineBase, optimum.onnxruntime.ORTStableDiffusionXLPipeline):
+class OnnxStableDiffusionXLPipeline(PipelineBase, optimum.onnxruntime.ORTStableDiffusionXLPipeline):
     __module__ = 'optimum.onnxruntime.modeling_diffusion'
     __name__ = 'ORTStableDiffusionXLPipeline'
 
@@ -1100,7 +1100,7 @@ class OnnxStableDiffusionXLPipeline(OnnxPipelineBase, optimum.onnxruntime.ORTSta
         return prepare_latents(self.scheduler.init_noise_sigma, batch_size, height, width, dtype, generator, latents, num_channels_latents, self.vae_scale_factor)
 
 
-class OnnxStableDiffusionXLImg2ImgPipeline(OnnxPipelineBase, optimum.onnxruntime.ORTStableDiffusionXLImg2ImgPipeline):
+class OnnxStableDiffusionXLImg2ImgPipeline(PipelineBase, optimum.onnxruntime.ORTStableDiffusionXLImg2ImgPipeline):
     __module__ = 'optimum.onnxruntime.modeling_diffusion'
     __name__ = 'ORTStableDiffusionXLImg2ImgPipeline'
 
