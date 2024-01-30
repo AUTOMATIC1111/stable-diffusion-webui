@@ -1,13 +1,10 @@
+from typing import Any, Dict, Optional
 import torch
 import diffusers
 import onnxruntime as ort
-from typing import Any, Dict, Optional
 
 
 initialized = False
-submodels_sd = ("text_encoder", "unet", "vae_encoder", "vae_decoder",)
-submodels_sdxl = ("text_encoder", "text_encoder_2", "unet", "vae_encoder", "vae_decoder",)
-submodels_sdxl_refiner = ("text_encoder_2", "unet", "vae_encoder", "vae_decoder",)
 
 
 class DynamicSessionOptions(ort.SessionOptions):
@@ -46,27 +43,27 @@ class DynamicSessionOptions(ort.SessionOptions):
         return sess_options
 
 
-class OnnxFakeModule:
+class TorchCompatibleModule:
     device = torch.device("cpu")
     dtype = torch.float32
 
-    def to(self, *args, **kwargs):
+    def to(self, *_, **__):
         return self
 
-    def type(self, *args, **kwargs):
+    def type(self, *_, **__):
         return self
 
 
-class OnnxTemporalModel(OnnxFakeModule):
+class TemporalModule(TorchCompatibleModule):
     """
     Replace the models which are not able to be moved to CPU.
     """
-    previous_provider: Any
+    provider: Any
     path: str
     sess_options: ort.SessionOptions
 
-    def __init__(self, previous_provider: Any, path: str, sess_options: ort.SessionOptions):
-        self.previous_provider = previous_provider
+    def __init__(self, provider: Any, path: str, sess_options: ort.SessionOptions):
+        self.provider = provider
         self.path = path
         self.sess_options = sess_options
 
@@ -77,12 +74,12 @@ class OnnxTemporalModel(OnnxFakeModule):
         if device is not None and device.type != "cpu":
             from modules.onnx_ep import TORCH_DEVICE_TO_EP
 
-            provider = TORCH_DEVICE_TO_EP[device.type] if device.type in TORCH_DEVICE_TO_EP else self.previous_provider
+            provider = TORCH_DEVICE_TO_EP[device.type] if device.type in TORCH_DEVICE_TO_EP else self.provider
             return OnnxRuntimeModel.load_model(self.path, provider, DynamicSessionOptions.from_sess_options(self.sess_options))
         return self
 
 
-class OnnxRuntimeModel(OnnxFakeModule, diffusers.OnnxRuntimeModel):
+class OnnxRuntimeModel(TorchCompatibleModule, diffusers.OnnxRuntimeModel):
     config = {} # dummy
 
     def named_modules(self): # dummy

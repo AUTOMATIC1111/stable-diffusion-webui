@@ -18,7 +18,7 @@ def extract_device(args: List, kwargs: Dict):
 
 
 def move_inference_session(session: ort.InferenceSession, device: torch.device):
-    from modules.onnx import DynamicSessionOptions, OnnxTemporalModel
+    from modules.onnx import DynamicSessionOptions, TemporalModule
     from modules.onnx_ep import TORCH_DEVICE_TO_EP
 
     previous_provider = session._providers
@@ -29,15 +29,15 @@ def move_inference_session(session: ort.InferenceSession, device: torch.device):
         try:
             return diffusers.OnnxRuntimeModel.load_model(path, provider, DynamicSessionOptions.from_sess_options(session._sess_options))
         except Exception:
-            return OnnxTemporalModel(previous_provider, path, session._sess_options)
+            return TemporalModule(previous_provider, path, session._sess_options)
 
 
 def load_init_dict(cls: Type[diffusers.DiffusionPipeline], path: os.PathLike):
     merged: Dict[str, Any] = {}
     extracted = cls.extract_init_dict(diffusers.DiffusionPipeline.load_config(path))
 
-    for dict in extracted:
-        merged.update(dict)
+    for item in extracted:
+        merged.update(item)
 
     merged = merged.items()
     R: Dict[str, Tuple[str]] = {}
@@ -71,7 +71,7 @@ def check_cache_onnx(path: os.PathLike) -> bool:
 
     init_dict = None
 
-    with open(init_dict_path, "r") as file:
+    with open(init_dict_path, "r", encoding="utf-8") as file:
         init_dict = file.read()
 
     if "OnnxRuntimeModel" not in init_dict:

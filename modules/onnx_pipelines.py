@@ -1,15 +1,15 @@
 import os
 import json
-import torch
 import shutil
 import inspect
+from abc import ABCMeta
+from typing import Union, Optional, Callable, Type, Tuple, List, Any, Dict
 from packaging import version
+import torch
 import numpy as np
 import diffusers
 import onnxruntime as ort
 import optimum.onnxruntime
-from abc import ABCMeta
-from typing import Union, Optional, Callable, Type, Tuple, List, Any, Dict
 from diffusers.pipelines.onnx_utils import ORT_TO_NP_TYPE
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 from diffusers.image_processor import VaeImageProcessor, PipelineImageInput
@@ -19,7 +19,7 @@ from modules.paths import sd_configs_path, models_path
 from modules.sd_models import CheckpointInfo
 from modules.processing import StableDiffusionProcessing
 from modules.olive import config
-from modules.onnx import DynamicSessionOptions, OnnxFakeModule, submodels_sd, submodels_sdxl, submodels_sdxl_refiner
+from modules.onnx import DynamicSessionOptions, TorchCompatibleModule
 from modules.onnx_utils import extract_device, move_inference_session, check_diffusers_cache, check_pipeline_sdxl, check_cache_onnx, load_init_dict, load_submodel, load_submodels, patch_kwargs, load_pipeline, get_base_constructor
 from modules.onnx_ep import ExecutionProvider, EP_TO_NAME, get_provider
 
@@ -45,7 +45,7 @@ CONVERSION_PASS_UNET = {
 }
 
 
-class OnnxPipelineBase(OnnxFakeModule, diffusers.DiffusionPipeline, metaclass=ABCMeta):
+class OnnxPipelineBase(TorchCompatibleModule, diffusers.DiffusionPipeline, metaclass=ABCMeta):
     model_type: str
     sd_model_hash: str
     sd_checkpoint_info: CheckpointInfo
@@ -145,7 +145,6 @@ class OnnxRawPipeline(OnnxPipelineBase):
         self.is_refiner = self._is_sdxl and "Img2Img" not in constructor.__name__ and "Img2Img" in diffusers.DiffusionPipeline.load_config(path)["_class_name"]
         self.constructor = OnnxStableDiffusionXLImg2ImgPipeline if self.is_refiner else constructor
         self.model_type = self.constructor.__name__
-        self.submodels = (submodels_sdxl_refiner if self.is_refiner else submodels_sdxl) if self._is_sdxl else submodels_sd
 
     def derive_properties(self, pipeline: diffusers.DiffusionPipeline):
         pipeline.sd_model_hash = self.sd_model_hash
@@ -183,7 +182,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
         for submodel in submodels:
             log.info(f"\nConverting {submodel}")
 
-            with open(os.path.join(sd_configs_path, "olive", 'sdxl' if self._is_sdxl else 'sd', f"{submodel}.json"), "r") as config_file:
+            with open(os.path.join(sd_configs_path, "olive", 'sdxl' if self._is_sdxl else 'sd', f"{submodel}.json"), "r", encoding="utf-8") as config_file:
                 conversion_config = json.load(config_file)
             conversion_config["input_model"]["config"]["model_path"] = os.path.abspath(in_dir)
             conversion_config["passes"] = {
@@ -194,7 +193,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
 
             run(conversion_config)
 
-            with open(os.path.join("footprints", f"{submodel}_{EP_TO_NAME[shared.opts.onnx_execution_provider]}_footprints.json"), "r") as footprint_file:
+            with open(os.path.join("footprints", f"{submodel}_{EP_TO_NAME[shared.opts.onnx_execution_provider]}_footprints.json"), "r", encoding="utf-8") as footprint_file:
                 footprints = json.load(footprint_file)
             conversion_footprint = None
             for _, footprint in footprints.items():
@@ -254,7 +253,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
             if k not in model_index:
                 model_index[k] = v
 
-        with open(os.path.join(out_dir, "model_index.json"), 'w') as file:
+        with open(os.path.join(out_dir, "model_index.json"), 'w', encoding="utf-8") as file:
             json.dump(model_index, file)
 
         return out_dir
@@ -289,7 +288,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
         for submodel in submodels:
             log.info(f"\nProcessing {submodel}")
 
-            with open(os.path.join(sd_configs_path, "olive", 'sdxl' if self._is_sdxl else 'sd', f"{submodel}.json"), "r") as config_file:
+            with open(os.path.join(sd_configs_path, "olive", 'sdxl' if self._is_sdxl else 'sd', f"{submodel}.json"), "r", encoding="utf-8") as config_file:
                 olive_config: Dict[str, Dict[str, Dict]] = json.load(config_file)
 
             for flow in olive_config["pass_flows"]:
@@ -310,7 +309,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
 
             run(olive_config)
 
-            with open(os.path.join("footprints", f"{submodel}_{EP_TO_NAME[shared.opts.onnx_execution_provider]}_footprints.json"), "r") as footprint_file:
+            with open(os.path.join("footprints", f"{submodel}_{EP_TO_NAME[shared.opts.onnx_execution_provider]}_footprints.json"), "r", encoding="utf-8") as footprint_file:
                 footprints = json.load(footprint_file)
             processor_final_pass_footprint = None
             for _, footprint in footprints.items():
@@ -370,7 +369,7 @@ class OnnxRawPipeline(OnnxPipelineBase):
             if k not in model_index:
                 model_index[k] = v
 
-        with open(os.path.join(out_dir, "model_index.json"), 'w') as file:
+        with open(os.path.join(out_dir, "model_index.json"), 'w', encoding="utf-8") as file:
             json.dump(model_index, file)
 
         return out_dir
@@ -638,7 +637,7 @@ class OnnxStableDiffusionPipeline(diffusers.OnnxStableDiffusionPipeline, OnnxPip
 
         has_nsfw_concept = None
 
-        if not output_type == "latent":
+        if output_type != "latent":
             # image = self.vae_decoder(latent_sample=latents)[0]
             # it seems likes there is a strange result for using half-precision vae decoder if batchsize>1
             image = np.concatenate(
@@ -826,7 +825,7 @@ class OnnxStableDiffusionImg2ImgPipeline(diffusers.OnnxStableDiffusionImg2ImgPip
 
         has_nsfw_concept = None
 
-        if not output_type == "latent":
+        if output_type != "latent":
             # image = self.vae_decoder(latent_sample=latents)[0]
             # it seems likes there is a strange result for using half-precision vae decoder if batchsize>1
             image = np.concatenate(
@@ -1040,7 +1039,7 @@ class OnnxStableDiffusionInpaintPipeline(diffusers.OnnxStableDiffusionInpaintPip
 
         has_nsfw_concept = None
 
-        if not output_type == "latent":
+        if output_type != "latent":
             # image = self.vae_decoder(latent_sample=latents)[0]
             # it seems likes there is a strange result for using half-precision vae decoder if batchsize>1
             image = np.concatenate(

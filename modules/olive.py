@@ -1,7 +1,7 @@
 import os
+from typing import Type, Callable, TypeVar, Dict, Any
 import torch
 import diffusers
-from typing import Type, Callable, TypeVar, Dict, Any
 from transformers.models.clip.modeling_clip import CLIPTextModel, CLIPTextModelWithProjection
 
 
@@ -62,10 +62,14 @@ config = OliveOptimizerConfig()
 
 def get_variant():
     from modules.shared import opts
+
     if opts.diffusers_model_load_variant == 'default':
         from modules import devices
+
         if devices.dtype == torch.float16:
             return 'fp16'
+
+        return None
     elif opts.diffusers_model_load_variant == 'fp32':
         return None
     else:
@@ -114,7 +118,7 @@ class RandomDataLoader:
 # -----------------------------------------------------------------------------
 
 
-def text_encoder_inputs(_, torch_dtype):
+def text_encoder_inputs(batchsize, torch_dtype):
     input_ids = torch.zeros((config.batch_size, 77), dtype=torch_dtype)
     return {
         "input_ids": input_ids,
@@ -131,7 +135,7 @@ def text_encoder_conversion_inputs(model):
     return text_encoder_inputs(1, torch.int32)
 
 
-def text_encoder_data_loader(data_dir, _, *args, **kwargs):
+def text_encoder_data_loader(data_dir, batchsize, *_, **__):
     return RandomDataLoader(text_encoder_inputs, config.batch_size, torch.int32)
 
 
@@ -140,7 +144,7 @@ def text_encoder_data_loader(data_dir, _, *args, **kwargs):
 # -----------------------------------------------------------------------------
 
 
-def text_encoder_2_inputs(_, torch_dtype):
+def text_encoder_2_inputs(batchsize, torch_dtype):
     return {
         "input_ids": torch.zeros((config.batch_size, 77), dtype=torch_dtype),
         "output_hidden_states": True,
@@ -156,7 +160,7 @@ def text_encoder_2_conversion_inputs(model):
     return text_encoder_2_inputs(1, torch.int64)
 
 
-def text_encoder_2_data_loader(data_dir, _, *args, **kwargs):
+def text_encoder_2_data_loader(data_dir, batchsize, *_, **__):
     return RandomDataLoader(text_encoder_2_inputs, config.batch_size, torch.int64)
 
 
@@ -165,7 +169,7 @@ def text_encoder_2_data_loader(data_dir, _, *args, **kwargs):
 # -----------------------------------------------------------------------------
 
 
-def unet_inputs(_, torch_dtype, is_conversion_inputs=False):
+def unet_inputs(batchsize, torch_dtype, is_conversion_inputs=False):
     if config.is_sdxl:
         inputs = {
             "sample": torch.rand((2 * config.batch_size, 4, config.height // 8, config.width // 8), dtype=torch_dtype),
@@ -219,7 +223,7 @@ def unet_conversion_inputs(model):
     return tuple(unet_inputs(1, torch.float32, True).values())
 
 
-def unet_data_loader(data_dir, _, *args, **kwargs):
+def unet_data_loader(data_dir, batchsize, *_, **__):
     return RandomDataLoader(unet_inputs, config.batch_size, torch.float16)
 
 
@@ -228,7 +232,7 @@ def unet_data_loader(data_dir, _, *args, **kwargs):
 # -----------------------------------------------------------------------------
 
 
-def vae_encoder_inputs(_, torch_dtype):
+def vae_encoder_inputs(batchsize, torch_dtype):
     return {
         "sample": torch.rand((config.batch_size, 3, config.height, config.width), dtype=torch_dtype),
         "return_dict": False,
@@ -256,7 +260,7 @@ def vae_encoder_conversion_inputs(model):
     return tuple(vae_encoder_inputs(1, torch.float32).values())
 
 
-def vae_encoder_data_loader(data_dir, _, *args, **kwargs):
+def vae_encoder_data_loader(data_dir, batchsize, *_, **__):
     return RandomDataLoader(vae_encoder_inputs, config.batch_size, torch.float16)
 
 
@@ -265,7 +269,7 @@ def vae_encoder_data_loader(data_dir, _, *args, **kwargs):
 # -----------------------------------------------------------------------------
 
 
-def vae_decoder_inputs(_, torch_dtype):
+def vae_decoder_inputs(batchsize, torch_dtype):
     return {
         "latent_sample": torch.rand((config.batch_size, 4, config.height // 8, config.width // 8), dtype=torch_dtype),
         "return_dict": False,
@@ -293,5 +297,5 @@ def vae_decoder_conversion_inputs(model):
     return tuple(vae_decoder_inputs(1, torch.float32).values())
 
 
-def vae_decoder_data_loader(data_dir, _, *args, **kwargs):
+def vae_decoder_data_loader(data_dir, batchsize, *_, **__):
     return RandomDataLoader(vae_decoder_inputs, config.batch_size, torch.float16)

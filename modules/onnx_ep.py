@@ -100,10 +100,10 @@ def install_execution_provider(ep: ExecutionProvider):
         packages.append("onnxruntime-gpu")
     elif ep == ExecutionProvider.ROCm:
         if "linux" not in sys.platform:
-            log.warn("ROCMExecutionProvider is not supported on Windows.")
+            log.warning("ROCMExecutionProvider is not supported on Windows.")
             return
 
-        packages.append(get_onnxruntime_source_for_rocm())
+        packages.append(get_onnxruntime_source_for_rocm(None))
     elif ep == ExecutionProvider.OpenVINO:
         if installed("openvino"):
             uninstall("openvino")
