@@ -1008,7 +1008,7 @@ def switch_pipe(cls: diffusers.DiffusionPipeline, pipeline: diffusers.DiffusionP
                 else:
                     components_skipped.append(item)
             for item in possible:
-                if item == 'self': # skip
+                if item in ['self', 'args', 'kwargs']: # skip
                     continue
                 if signature.parameters[item].default != inspect._empty: # has default value so we dont have to worry about it # pylint: disable=protected-access
                     continue
