@@ -1,4 +1,5 @@
 import os
+import json
 import importlib
 from typing import Type, Tuple, Union, List, Dict, Any
 import torch
@@ -18,37 +19,18 @@ def extract_device(args: List, kwargs: Dict):
 
 
 def move_inference_session(session: ort.InferenceSession, device: torch.device):
-    from modules.onnx import DynamicSessionOptions, TemporalModule
-    from modules.onnx_ep import TORCH_DEVICE_TO_EP
+    from . import DynamicSessionOptions, TemporalModule
+    from .execution_providers import TORCH_DEVICE_TO_EP
 
-    previous_provider = session._providers
+    previous_provider = session._providers # pylint: disable=protected-access
     provider = TORCH_DEVICE_TO_EP[device.type] if device.type in TORCH_DEVICE_TO_EP else previous_provider
-    path = session._model_path
+    path = session._model_path # pylint: disable=protected-access
 
     if provider is not None:
         try:
-            return diffusers.OnnxRuntimeModel.load_model(path, provider, DynamicSessionOptions.from_sess_options(session._sess_options))
+            return diffusers.OnnxRuntimeModel.load_model(path, provider, DynamicSessionOptions.from_sess_options(session._sess_options)) # pylint: disable=protected-access
         except Exception:
-            return TemporalModule(previous_provider, path, session._sess_options)
-
-
-def load_init_dict(cls: Type[diffusers.DiffusionPipeline], path: os.PathLike):
-    merged: Dict[str, Any] = {}
-    extracted = cls.extract_init_dict(diffusers.DiffusionPipeline.load_config(path))
-
-    for item in extracted:
-        merged.update(item)
-
-    merged = merged.items()
-    R: Dict[str, Tuple[str]] = {}
-
-    for k, v in merged:
-        if isinstance(v, list):
-            if k not in cls.__init__.__annotations__:
-                continue
-            R[k] = v
-
-    return R
+            return TemporalModule(previous_provider, path, session._sess_options) # pylint: disable=protected-access
 
 
 def check_diffusers_cache(path: os.PathLike):
@@ -78,6 +60,25 @@ def check_cache_onnx(path: os.PathLike) -> bool:
         return False
 
     return True
+
+
+def load_init_dict(cls: Type[diffusers.DiffusionPipeline], path: os.PathLike):
+    merged: Dict[str, Any] = {}
+    extracted = cls.extract_init_dict(diffusers.DiffusionPipeline.load_config(path))
+
+    for item in extracted:
+        merged.update(item)
+
+    merged = merged.items()
+    R: Dict[str, Tuple[str]] = {}
+
+    for k, v in merged:
+        if isinstance(v, list):
+            if k not in cls.__init__.__annotations__:
+                continue
+            R[k] = v
+
+    return R
 
 
 def load_submodel(path: os.PathLike, is_sdxl: bool, submodel_name: str, item: List[Union[str, None]], **kwargs_ort):
@@ -117,6 +118,13 @@ def load_submodels(path: os.PathLike, is_sdxl: bool, init_dict: Dict[str, Type],
     return loaded
 
 
+def load_pipeline(cls: Type[diffusers.DiffusionPipeline], path: os.PathLike, **kwargs_ort) -> diffusers.DiffusionPipeline:
+    if os.path.isdir(path):
+        return cls(**patch_kwargs(cls, load_submodels(path, check_pipeline_sdxl(cls), load_init_dict(cls, path), **kwargs_ort)))
+    else:
+        return cls.from_single_file(path)
+
+
 def patch_kwargs(cls: Type[diffusers.DiffusionPipeline], kwargs: Dict) -> Dict:
     if cls == diffusers.OnnxStableDiffusionPipeline or cls == diffusers.OnnxStableDiffusionImg2ImgPipeline or cls == diffusers.OnnxStableDiffusionInpaintPipeline:
         kwargs["safety_checker"] = None
@@ -128,13 +136,6 @@ def patch_kwargs(cls: Type[diffusers.DiffusionPipeline], kwargs: Dict) -> Dict:
     return kwargs
 
 
-def load_pipeline(cls: Type[diffusers.DiffusionPipeline], path: os.PathLike, **kwargs_ort) -> diffusers.DiffusionPipeline:
-    if os.path.isdir(path):
-        return cls(**patch_kwargs(cls, load_submodels(path, check_pipeline_sdxl(cls), load_init_dict(cls, path), **kwargs_ort)))
-    else:
-        return cls.from_single_file(path)
-
-
 def get_base_constructor(cls: Type[diffusers.DiffusionPipeline], is_refiner: bool):
     if cls == diffusers.OnnxStableDiffusionImg2ImgPipeline or cls == diffusers.OnnxStableDiffusionInpaintPipeline:
         return diffusers.OnnxStableDiffusionPipeline
@@ -143,3 +144,15 @@ def get_base_constructor(cls: Type[diffusers.DiffusionPipeline], is_refiner: boo
         return diffusers.OnnxStableDiffusionXLPipeline
 
     return cls
+
+
+def get_io_config(submodel: str, is_sdxl: bool):
+    from modules.paths import sd_configs_path
+
+    with open(os.path.join(sd_configs_path, "olive", 'sdxl' if is_sdxl else 'sd', f"{submodel}.json"), "r", encoding="utf-8") as config_file:
+        io_config: Dict[str, Any] = json.load(config_file)["input_model"]["config"]["io_config"]
+
+    for axe in io_config["dynamic_axes"]:
+        io_config["dynamic_axes"][axe] = { int(k): v for k, v in io_config["dynamic_axes"][axe].items() }
+
+    return io_config

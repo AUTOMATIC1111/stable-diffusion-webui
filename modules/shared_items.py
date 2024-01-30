@@ -27,7 +27,7 @@ def list_crossattention():
 def get_pipelines():
     import diffusers
     from installer import log
-    from modules.onnx import initialize as initialize_onnx_pipelines
+    from modules.onnx_impl import initialize as initialize_onnx_pipelines
 
     initialize_onnx_pipelines()
 

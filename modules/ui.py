@@ -7,6 +7,7 @@ from modules.call_queue import wrap_gradio_call
 from modules import timer, gr_hijack, shared, theme, sd_models, script_callbacks, modelloader, ui_common, ui_loadsave, ui_symbols, ui_javascript, generation_parameters_copypaste, call_queue
 from modules.paths import script_path, data_path # pylint: disable=unused-import
 from modules.dml import directml_override_opts
+from modules.onnx_impl.olive_dep import install_olive
 import modules.scripts
 import modules.errors
 
@@ -234,6 +235,8 @@ def create_ui(startup_timer = None):
                 continue
             if opts.set(key, value):
                 changed.append(key)
+        if shared.opts.cuda_compile_backend == "olive-ai":
+            install_olive()
         if cmd_opts.use_directml:
             directml_override_opts()
         if cmd_opts.use_openvino:
@@ -260,6 +263,8 @@ def create_ui(startup_timer = None):
             return gr.update(visible=True), opts.dumpjson()
         if not opts.set(key, value):
             return gr.update(value=getattr(opts, key)), opts.dumpjson()
+        if key == "cuda_compile_backend" and value == "olive-ai":
+            install_olive()
         if cmd_opts.use_directml:
             directml_override_opts()
         opts.save(shared.config_filename)
@@ -371,7 +376,7 @@ def create_ui(startup_timer = None):
     if shared.opts.onnx_show_menu:
         with gr.Blocks(analytics_enabled=False) as onnx_interface:
             if shared.backend == shared.Backend.DIFFUSERS:
-                from modules import ui_onnx
+                from modules.onnx_impl import ui as ui_onnx
                 ui_onnx.create_ui()
                 timer.startup.record("ui-onnx")
         interfaces += [(onnx_interface, "ONNX", "onnx")]

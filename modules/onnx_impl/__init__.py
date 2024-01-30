@@ -68,11 +68,11 @@ class TemporalModule(TorchCompatibleModule):
         self.sess_options = sess_options
 
     def to(self, *args, **kwargs):
-        from modules.onnx_utils import extract_device
+        from .utils import extract_device
 
         device = extract_device(args, kwargs)
         if device is not None and device.type != "cpu":
-            from modules.onnx_ep import TORCH_DEVICE_TO_EP
+            from .execution_providers import TORCH_DEVICE_TO_EP
 
             provider = TORCH_DEVICE_TO_EP[device.type] if device.type in TORCH_DEVICE_TO_EP else self.provider
             return OnnxRuntimeModel.load_model(self.path, provider, DynamicSessionOptions.from_sess_options(self.sess_options))
@@ -86,7 +86,7 @@ class OnnxRuntimeModel(TorchCompatibleModule, diffusers.OnnxRuntimeModel):
         return ()
 
     def to(self, *args, **kwargs):
-        from modules.onnx_utils import extract_device, move_inference_session
+        from modules.onnx_impl.utils import extract_device, move_inference_session
 
         device = extract_device(args, kwargs)
         if device is not None:
@@ -133,13 +133,14 @@ def preprocess_pipeline(p, refiner_enabled: bool):
 
 
 def initialize():
-    global initialized
+    global initialized # pylint: disable=global-statement
 
     if initialized:
         return
 
-    from modules import onnx_pipelines as pipelines, devices
-    from modules.onnx_ep import ExecutionProvider, TORCH_DEVICE_TO_EP
+    from modules import devices
+    from . import pipelines
+    from .execution_providers import ExecutionProvider, TORCH_DEVICE_TO_EP
 
     if devices.backend == "rocm":
         TORCH_DEVICE_TO_EP["cuda"] = ExecutionProvider.ROCm

@@ -7,7 +7,7 @@ import torch
 import torchvision.transforms.functional as TF
 import diffusers
 from modules import shared, devices, processing, sd_samplers, sd_models, images, errors, masking, prompt_parser_diffusers, sd_hijack_hypertile, processing_correction, processing_vae
-from modules.onnx import preprocess_pipeline as onnx_preprocess_pipeline
+from modules.onnx_impl import preprocess_pipeline as preprocess_onnx_pipeline
 
 
 debug = shared.log.trace if os.environ.get('SD_DIFFUSERS_DEBUG', None) is not None else lambda *args, **kwargs: None
@@ -399,6 +399,8 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
                 p.task_args['sag_scale'] = p.sag_scale
             else:
                 shared.log.warning(f'SAG incompatible scheduler: current={sd_model.scheduler.__class__.__name__} supported={supported}')
+        if shared.opts.cuda_compile_backend == "olive-ai":
+            sd_model = preprocess_onnx_pipeline(p, is_refiner_enabled())
         return sd_model
 
     if len(getattr(p, 'init_images', [])) > 0:
@@ -538,7 +540,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             if (latent_scale_mode is not None or p.hr_force) and p.denoising_strength > 0:
                 p.ops.append('hires')
                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
-                onnx_preprocess_pipeline(p, is_refiner_enabled())
+                preprocess_onnx_pipeline(p, is_refiner_enabled())
                 recompile_model(hires=True)
                 update_sampler(shared.sd_model, second_pass=True)
                 hires_args = set_pipeline_args(

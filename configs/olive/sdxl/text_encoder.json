@@ -4,7 +4,7 @@
     "config": {
       "model_path": "",
       "model_loader": "text_encoder_load",
-      "model_script": "modules/olive.py",
+      "model_script": "modules/olive_script.py",
       "io_config": {
         "input_names": ["input_ids", "output_hidden_states"],
         "output_names": [
@@ -62,7 +62,7 @@
           "type": "latency",
           "sub_types": [{ "name": "avg" }],
           "user_config": {
-            "user_script": "modules/olive.py",
+            "user_script": "modules/olive_script.py",
             "dataloader_func": "text_encoder_data_loader",
             "batch_size": 1
           }

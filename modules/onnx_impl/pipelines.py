@@ -2,9 +2,11 @@ import os
 import json
 import shutil
 import inspect
+import tempfile
 from abc import ABCMeta
 from typing import Union, Optional, Callable, Type, Tuple, List, Any, Dict
 from packaging import version
+import onnx
 import torch
 import numpy as np
 import diffusers
@@ -18,31 +20,15 @@ from modules import shared
 from modules.paths import sd_configs_path, models_path
 from modules.sd_models import CheckpointInfo
 from modules.processing import StableDiffusionProcessing
-from modules.olive import config
-from modules.onnx import DynamicSessionOptions, TorchCompatibleModule
-from modules.onnx_utils import extract_device, move_inference_session, check_diffusers_cache, check_pipeline_sdxl, check_cache_onnx, load_init_dict, load_submodel, load_submodels, patch_kwargs, load_pipeline, get_base_constructor
-from modules.onnx_ep import ExecutionProvider, EP_TO_NAME, get_provider
+from modules.olive_script import config
+from . import DynamicSessionOptions, TorchCompatibleModule
+from .utils import extract_device, move_inference_session, check_diffusers_cache, check_pipeline_sdxl, check_cache_onnx, load_init_dict, load_submodel, load_submodels, patch_kwargs, load_pipeline, get_base_constructor, get_io_config
+from .execution_providers import ExecutionProvider, EP_TO_NAME, get_provider
 
 
 SUBMODELS_SD = ("text_encoder", "unet", "vae_encoder", "vae_decoder",)
 SUBMODELS_SDXL = ("text_encoder", "text_encoder_2", "unet", "vae_encoder", "vae_decoder",)
 SUBMODELS_SDXL_REFINER = ("text_encoder_2", "unet", "vae_encoder", "vae_decoder",)
-
-CONVERSION_PASS = {
-    "type": "OnnxConversion",
-    "config": {
-        "target_opset": 14,
-    },
-}
-CONVERSION_PASS_UNET = {
-    "type": "OnnxConversion",
-    "config": {
-        "target_opset": 14,
-        "save_as_external_data": True,
-        "all_tensors_to_one_file": True,
-        "external_data_name": "weights.pb",
-    },
-}
 
 
 class PipelineBase(TorchCompatibleModule, diffusers.DiffusionPipeline, metaclass=ABCMeta):
@@ -51,7 +37,7 @@ class PipelineBase(TorchCompatibleModule, diffusers.DiffusionPipeline, metaclass
     sd_checkpoint_info: CheckpointInfo
     sd_model_checkpoint: str
 
-    def __init__(self):
+    def __init__(self): # pylint: disable=super-init-not-called
         self.model_type = self.__class__.__name__
 
     def to(self, *args, **kwargs):
@@ -66,7 +52,7 @@ class PipelineBase(TorchCompatibleModule, diffusers.DiffusionPipeline, metaclass
 
             module = getattr(self, name)
 
-            if isinstance(module, optimum.onnxruntime.modeling_diffusion._ORTDiffusionModelPart):
+            if isinstance(module, optimum.onnxruntime.modeling_diffusion._ORTDiffusionModelPart): # pylint: disable=protected-access
                 device = extract_device(args, kwargs)
                 if device is None:
                     return self
@@ -83,7 +69,7 @@ class PipelineBase(TorchCompatibleModule, diffusers.DiffusionPipeline, metaclass
         return self
 
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path, **_):
+    def from_pretrained(cls, pretrained_model_name_or_path, **_): # pylint: disable=arguments-differ
         return OnnxRawPipeline(
             cls,
             pretrained_model_name_or_path,
@@ -114,7 +100,7 @@ class OnnxRawPipeline(PipelineBase):
 
     scheduler: Any = None # for Img2Img
 
-    def __init__(self, constructor: Type[PipelineBase], path: os.PathLike):
+    def __init__(self, constructor: Type[PipelineBase], path: os.PathLike): # pylint: disable=super-init-not-called
         self._is_sdxl = check_pipeline_sdxl(constructor)
         self.from_diffusers_cache = check_diffusers_cache(path)
         self.path = path
@@ -154,20 +140,11 @@ class OnnxRawPipeline(PipelineBase):
         return pipeline
 
     def convert(self, submodels: List[str], in_dir: os.PathLike):
-        if not shared.cmd_opts.debug:
-            ort.set_default_logger_severity(3)
-
         out_dir = os.path.join(shared.opts.onnx_cached_models_path, self.original_filename)
         if (self.from_diffusers_cache and check_cache_onnx(self.path)):
             return self.path
         if os.path.isdir(out_dir): # if model is ONNX format or had already converted.
             return out_dir
-
-        from olive.workflows import run
-        try:
-            from olive.model import ONNXModel
-        except ImportError:
-            from olive.model import ONNXModelHandler as ONNXModel
 
         shutil.rmtree("cache", ignore_errors=True)
         shutil.rmtree("footprints", ignore_errors=True)
@@ -177,56 +154,34 @@ class OnnxRawPipeline(PipelineBase):
                 in_dir, out_dir, ignore=shutil.ignore_patterns("weights.pb", "*.onnx", "*.safetensors", "*.ckpt")
             )
 
-        converted_model_paths = {}
+        from modules import olive_script as olv
 
         for submodel in submodels:
-            log.info(f"\nConverting {submodel}")
+            destination = os.path.join(out_dir, submodel)
 
-            with open(os.path.join(sd_configs_path, "olive", 'sdxl' if self._is_sdxl else 'sd', f"{submodel}.json"), "r", encoding="utf-8") as config_file:
-                conversion_config = json.load(config_file)
-            conversion_config["input_model"]["config"]["model_path"] = os.path.abspath(in_dir)
-            conversion_config["passes"] = {
-                "_conversion": CONVERSION_PASS_UNET if submodel == "unet" else CONVERSION_PASS,
-            }
-            conversion_config["pass_flows"] = [["_conversion"]]
-            conversion_config["engine"]["execution_providers"] = [shared.opts.onnx_execution_provider]
+            if not os.path.isdir(destination):
+                os.mkdir(destination)
 
-            run(conversion_config)
-
-            with open(os.path.join("footprints", f"{submodel}_{EP_TO_NAME[shared.opts.onnx_execution_provider]}_footprints.json"), "r", encoding="utf-8") as footprint_file:
-                footprints = json.load(footprint_file)
-            conversion_footprint = None
-            for _, footprint in footprints.items():
-                if footprint["from_pass"] == "OnnxConversion":
-                    conversion_footprint = footprint
-
-            assert conversion_footprint, "Failed to convert model"
-
-            converted_model_paths[submodel] = ONNXModel(
-                **conversion_footprint["model_config"]["config"]
-            ).model_path
-
-            log.info(f"Converted {submodel}")
-
-        for submodel in submodels:
-            src_path = converted_model_paths[submodel]
-            src_parent = os.path.dirname(src_path)
-            dst_parent = os.path.join(out_dir, submodel)
-            dst_path = os.path.join(dst_parent, "model.onnx")
-            if not os.path.isdir(dst_parent):
-                os.mkdir(dst_parent)
-            shutil.copyfile(src_path, dst_path)
-
-            data_src_path = os.path.join(src_parent, (os.path.basename(src_path) + ".data"))
-            if os.path.isfile(data_src_path):
-                data_dst_path = os.path.join(dst_parent, (os.path.basename(dst_path) + ".data"))
-                shutil.copyfile(data_src_path, data_dst_path)
-
-            weights_src_path = os.path.join(src_parent, "weights.pb")
-            if os.path.isfile(weights_src_path):
-                weights_dst_path = os.path.join(dst_parent, "weights.pb")
-                shutil.copyfile(weights_src_path, weights_dst_path)
-        del converted_model_paths
+            model = getattr(olv, f"{submodel}_load")(in_dir)
+            sample = getattr(olv, f"{submodel}_conversion_inputs")(None)
+            with tempfile.TemporaryDirectory(prefix="onnx_conversion") as temp_dir:
+                temp_path = os.path.join(temp_dir, "model.onnx")
+                torch.onnx.export(
+                    model,
+                    sample,
+                    temp_path,
+                    opset_version=14,
+                    **get_io_config(submodel, self._is_sdxl),
+                )
+                model = onnx.load(temp_path)
+            onnx.save_model(
+                model,
+                os.path.join(destination, "model.onnx"),
+                save_as_external_data=submodel == "unet",
+                all_tensors_to_one_file=True,
+                location="weights.pb",
+            )
+            log.info(f"ONNX: Successfully exported converted model: submodel={submodel}")
 
         kwargs = {}
 
@@ -269,11 +224,11 @@ class OnnxRawPipeline(PipelineBase):
         if not shared.opts.olive_cache_optimized:
             out_dir = shared.opts.onnx_temp_dir
 
-        from olive.workflows import run
+        from olive.workflows import run # pylint: disable=no-name-in-module
         try:
-            from olive.model import ONNXModel
+            from olive.model import ONNXModel # olive-ai==0.4.0
         except ImportError:
-            from olive.model import ONNXModelHandler as ONNXModel
+            from olive.model import ONNXModelHandler as ONNXModel # olive-ai==0.5.0
 
         shutil.rmtree("cache", ignore_errors=True)
         shutil.rmtree("footprints", ignore_errors=True)
@@ -322,7 +277,7 @@ class OnnxRawPipeline(PipelineBase):
                 **processor_final_pass_footprint["model_config"]["config"]
             ).model_path
 
-            log.info(f"Processed {submodel}")
+            log.info(f"Olive: Successfully processed model: submodel={submodel}")
 
         for submodel in submodels:
             src_path = optimized_model_paths[submodel]

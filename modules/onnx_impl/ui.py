@@ -17,8 +17,8 @@ def create_ui():
     from modules.shared import log, opts, cmd_opts, refresh_checkpoints
     from modules.sd_models import checkpoint_tiles, get_closet_checkpoint_match
     from modules.paths import sd_configs_path
-    from modules.onnx_ep import ExecutionProvider, install_execution_provider
-    from modules.onnx_utils import check_diffusers_cache
+    from .execution_providers import ExecutionProvider, install_execution_provider
+    from .utils import check_diffusers_cache
 
     with gr.Blocks(analytics_enabled=False) as ui:
         with gr.Row():
@@ -145,7 +145,7 @@ def create_ui():
 
                                         sd_pass_config_components[submodel] = {}
 
-                                        with open(os.path.join(sd_config_path, submodel), "r") as file:
+                                        with open(os.path.join(sd_config_path, submodel), "r", encoding="utf-8") as file:
                                             config = json.load(file)
                                         sd_configs[submodel] = config
 
@@ -170,7 +170,7 @@ def create_ui():
                                                             return listener
 
 
-                                                        for config_key, v in getattr(olive_passes, config_dict["type"], olive_passes.Pass)._default_config(accelerator).items():
+                                                        for config_key, v in getattr(olive_passes, config_dict["type"], olive_passes.Pass)._default_config(accelerator).items(): # pylint: disable=protected-access
                                                             component = None
 
                                                             if v.type_ == bool:
@@ -185,11 +185,11 @@ def create_ui():
                                                                 sd_pass_config_components[submodel][pass_name][config_key] = component
                                                                 component.change(fn=create_pass_config_change_listener(submodel, pass_name, config_key), inputs=component)
 
-                                                        pass_type.change(fn=sd_create_change_listener(submodel, "passes", config_key, "type"), inputs=pass_type)
+                                                        pass_type.change(fn=sd_create_change_listener(submodel, "passes", config_key, "type"), inputs=pass_type) # pylint: disable=undefined-loop-variable
 
                                 def sd_save():
                                     for k, v in sd_configs.items():
-                                        with open(os.path.join(sd_config_path, k), "w") as file:
+                                        with open(os.path.join(sd_config_path, k), "w", encoding="utf-8") as file:
                                             json.dump(v, file)
                                     log.info("Olive: config for SD was saved.")
 
@@ -213,7 +213,7 @@ def create_ui():
 
                                         sdxl_pass_config_components[submodel] = {}
 
-                                        with open(os.path.join(sdxl_config_path, submodel), "r") as file:
+                                        with open(os.path.join(sdxl_config_path, submodel), "r", encoding="utf-8") as file:
                                             config = json.load(file)
                                         sdxl_configs[submodel] = config
 
@@ -232,13 +232,13 @@ def create_ui():
                                                         pass_type = gr.Dropdown(label="Type", value=sdxl_configs[submodel]["passes"][pass_name]["type"], choices=(x.__name__ for x in tuple(olive_passes.REGISTRY.values())))
 
 
-                                                        def create_pass_config_change_listener(submodel, pass_name, config_key):
+                                                        def create_pass_config_change_listener(submodel, pass_name, config_key): # pylint: disable=function-redefined
                                                             def listener(value):
                                                                 sdxl_configs[submodel]["passes"][pass_name]["config"][config_key] = value
                                                             return listener
 
 
-                                                        for config_key, v in getattr(olive_passes, config_dict["type"], olive_passes.Pass)._default_config(accelerator).items():
+                                                        for config_key, v in getattr(olive_passes, config_dict["type"], olive_passes.Pass)._default_config(accelerator).items(): # pylint: disable=protected-access
                                                             component = None
 
                                                             if v.type_ == bool:
@@ -257,7 +257,7 @@ def create_ui():
 
                                 def sdxl_save():
                                     for k, v in sdxl_configs.items():
-                                        with open(os.path.join(sdxl_config_path, k), "w") as file:
+                                        with open(os.path.join(sdxl_config_path, k), "w", encoding="utf-8") as file:
                                             json.dump(v, file)
                                     log.info("Olive: config for SDXL was saved.")
 
