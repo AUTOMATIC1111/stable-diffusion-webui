@@ -769,7 +769,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     finally:
         if not shared.opts.cuda_compile:
             sd_models.apply_token_merging(p.sd_model, 0)
+
         script_callbacks.after_process_callback(p)
+
         if p.override_settings_restore_afterwards: # restore opts to original state
             for k, v in stored_opts.items():
                 setattr(shared.opts, k, v)
@@ -1193,7 +1195,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 if shared.opts.sd_vae_sliced_encode and len(decoded_samples) > 1:
                     samples = torch.stack([self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(torch.unsqueeze(resized_sample, 0)))[0] for resized_sample in resized_samples])
                 else:
-                    # TODO add TEASD support
                     samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(resized_samples))
                 image_conditioning = self.img2img_image_conditioning(resized_samples, samples)
             else:

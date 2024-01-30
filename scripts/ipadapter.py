@@ -12,16 +12,19 @@ class Script(scripts.Script):
     def ui(self, _is_img2img):
         with gr.Accordion('IP Adapter', open=False, elem_id='ipadapter'):
             with gr.Row():
-                adapter = gr.Dropdown(label='Adapter', choices=list(ipadapter.ADAPTERS), value='none')
+                enabled = gr.Checkbox(label='Enabled', value=False)
+            with gr.Row():
+                adapter = gr.Dropdown(label='Adapter', choices=list(ipadapter.ADAPTERS), value='None')
                 scale = gr.Slider(label='Scale', minimum=0.0, maximum=1.0, step=0.01, value=0.5)
             with gr.Row():
                 image = gr.Image(image_mode='RGB', label='Image', source='upload', type='pil', width=512)
-        return [adapter, scale, image]
+        return [enabled, adapter, scale, image]
 
-    def process(self, p: processing.StableDiffusionProcessing, adapter_name, scale, image): # pylint: disable=arguments-differ
+    def process(self, p: processing.StableDiffusionProcessing, enabled, adapter_name, scale, image): # pylint: disable=arguments-differ
         if shared.backend != shared.Backend.DIFFUSERS:
             return
-        p.ip_adapter_name = adapter_name
-        p.ip_adapter_scale = scale
-        p.ip_adapter_image = image
-        # apply(shared.sd_model, p, adapter_name, scale, image) # called directly from processing.process_images_inner
+        if enabled:
+            p.ip_adapter_name = adapter_name
+            p.ip_adapter_scale = scale
+            p.ip_adapter_image = image
+            # ipadapter.apply(shared.sd_model, p, adapter_name, scale, image) # called directly from processing.process_images_inner

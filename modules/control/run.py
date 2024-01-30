@@ -5,15 +5,15 @@ from typing import List, Union
 import cv2
 import numpy as np
 from PIL import Image
-from modules.control import util
-from modules.control import unit
-from modules.control import processors
+from modules.control import util # helper functions
+from modules.control import unit # control units
+from modules.control import processors # image preprocessors
 from modules.control.units import controlnet # lllyasviel ControlNet
 from modules.control.units import xs # VisLearn ControlNet-XS
 from modules.control.units import lite # Kohya ControlLLLite
 from modules.control.units import t2iadapter # TencentARC T2I-Adapter
 from modules.control.units import reference # ControlNet-Reference
-from modules import devices, shared, errors, processing, images, sd_models, scripts, masking, ipadapter # pylint: disable=ungrouped-imports
+from modules import devices, shared, errors, processing, images, sd_models, scripts, masking
 
 
 debug = shared.log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
@@ -45,6 +45,9 @@ class ControlProcessing(processing.StableDiffusionProcessingImg2Img):
         self.attention = 'Attention'
         self.fidelity = 0.5
         self.override = None
+        self.ip_adapter_name = None
+        self.ip_adapter_scale = 1.0
+        self.ip_adapter_image = None
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts): # abstract
         pass
@@ -498,10 +501,10 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         if hasattr(p, 'init_images') and p.init_images is None:
                             del p.init_images
 
-                    # ip adapter
-                    if ipadapter.apply(shared.sd_model, p, ip_adapter, ip_scale, ip_image or input_image):
-                        original_pipeline.feature_extractor = shared.sd_model.feature_extractor
-                        original_pipeline.image_encoder = shared.sd_model.image_encoder
+                    # ip adapter apply is run in processing.process_images
+                    p.ip_adapter_name = ip_adapter
+                    p.ip_adapter_scale = ip_scale
+                    p.ip_adapter_image = ip_image or input_image
 
                     # pipeline
                     output = None

@@ -227,7 +227,7 @@ def create_ui(_blocks: gr.Blocks=None):
                     with gr.Row():
                         with gr.Column():
                             gr.HTML('<a href="https://github.com/tencent-ailab/IP-Adapter">IP-Adapter</a>')
-                            ip_adapter_name = gr.Dropdown(label='Adapter', choices=ipadapter.ADAPTERS, value='none')
+                            ip_adapter_name = gr.Dropdown(label='Adapter', choices=ipadapter.ADAPTERS, value='None')
                             ip_scale = gr.Slider(label='Scale', minimum=0.0, maximum=1.0, step=0.01, value=0.5)
                         with gr.Column():
                             ip_image = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=True, tool="editor", height=256, width=256)
