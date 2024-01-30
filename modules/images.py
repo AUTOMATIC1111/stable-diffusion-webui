@@ -805,18 +805,18 @@ def image_data(data):
     err2 = None
     try:
         image = Image.open(io.BytesIO(data))
-        errors.log.debug(f'Decoded object: image={image}')
-        textinfo, _ = read_info_from_image(image)
-        return textinfo, None
+        info, _ = read_info_from_image(image)
+        errors.log.debug(f'Decoded object: image={image} metadata={info}')
+        return info, None
     except Exception as e:
         err1 = e
     try:
         if len(data) > 1024 * 10:
             errors.log.warning(f'Error decoding object: data too long: {len(data)}')
             return gr.update(), None
-        text = data.decode('utf8')
-        errors.log.debug(f'Decoded object: size={len(text)}')
-        return text, None
+        info = data.decode('utf8')
+        errors.log.debug(f'Decoded object: data={len(data)} metadata={info}')
+        return info, None
     except Exception as e:
         err2 = e
     errors.log.error(f'Error decoding object: {err1 or err2}')

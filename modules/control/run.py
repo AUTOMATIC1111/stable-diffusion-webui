@@ -383,6 +383,14 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
 
                     processed_images = []
                     masked_image = masking.run_mask(input_image=input_image, input_mask=mask, return_type='Masked') if mask is not None else input_image
+                    if mask is not None:
+                        p.extra_generation_params["Mask only"] = masking.opts.mask_only if masking.opts.mask_only else None
+                        p.extra_generation_params["Mask auto"] = masking.opts.auto_mask if masking.opts.auto_mask != 'None' else None
+                        p.extra_generation_params["Mask invert"] = masking.opts.invert if masking.opts.invert else None
+                        p.extra_generation_params["Mask blur"] = masking.opts.mask_blur if masking.opts.mask_blur > 0 else None
+                        p.extra_generation_params["Mask erode"] = masking.opts.mask_erode if masking.opts.mask_erode > 0 else None
+                        p.extra_generation_params["Mask dilate"] = masking.opts.mask_dilate if masking.opts.mask_dilate > 0 else None
+                        p.extra_generation_params["Mask model"] = masking.opts.model if masking.opts.model is not None else None
                     for i, process in enumerate(active_process): # list[image]
                         image_mode = 'L' if unit_type == 'adapter' and len(active_model) > i and ('Canny' in active_model[i].model_id or 'Sketch' in active_model[i].model_id) else 'RGB' # t2iadapter canny and sketch work in grayscale only
                         debug(f'Control: i={i+1} process="{process.processor_id}" input={masked_image} override={process.override}')

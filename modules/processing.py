@@ -646,15 +646,14 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts=None, all_seeds=No
     if 'img2img' in p.ops or 'inpaint' in p.ops:
         args["Init image size"] = f"{getattr(p, 'init_img_width', 0)}x{getattr(p, 'init_img_height', 0)}"
         args["Init image hash"] = getattr(p, 'init_img_hash', None)
-        args["Mask weight"] = getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None
         args['Resize scale'] = getattr(p, 'scale_by', None)
-        args["Mask blur"] = p.mask_blur if getattr(p, 'mask', None) is not None and getattr(p, 'mask_blur', 0) > 0 else None
+        args["Mask weight"] = getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None
         args["Denoising strength"] = getattr(p, 'denoising_strength', None)
         if args["Size"] is None:
             args["Size"] = args["Init image size"]
         # lookup by index
         if getattr(p, 'resize_mode', None) is not None:
-            args['Resize mode'] = shared.resize_modes[p.resize_mode]
+            args['Resize mode'] = shared.resize_modes[p.resize_mode] if shared.resize_modes[p.resize_mode] != 'None' else None
     if 'face' in p.ops:
         args["Face restoration"] = shared.opts.face_restoration_model
     if 'color' in p.ops:

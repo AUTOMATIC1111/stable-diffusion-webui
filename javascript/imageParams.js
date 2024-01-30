@@ -8,7 +8,12 @@ async function initDragDrop() {
     const target = e.composedPath()[0];
     if (!target.placeholder) return;
     if (target.placeholder.indexOf('Prompt') === -1) return;
-    const promptTarget = get_tab_index('tabs') === 1 ? 'img2img_prompt_image' : 'txt2img_prompt_image';
+    const tab = get_tab_index('tabs');
+    let promptTarget = '';
+    if (tab === 0) promptTarget = 'txt2img_prompt_image';
+    else if (tab === 1) promptTarget = 'img2img_prompt_image';
+    else if (tab === 2) promptTarget = 'control_prompt_image';
+    else return;
     const imgParent = gradioApp().getElementById(promptTarget);
     const fileInput = imgParent.querySelector('input[type="file"]');
     if (!imgParent || !fileInput) return;

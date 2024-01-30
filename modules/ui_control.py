@@ -2,7 +2,6 @@ import os
 import time
 import gradio as gr
 import matplotlib.pyplot as plt
-from PIL import Image
 from modules.control import unit
 from modules.control import processors # patrickvonplaten controlnet_aux
 from modules.control.units import controlnet # lllyasviel ControlNet
@@ -10,59 +9,15 @@ from modules.control.units import xs # vislearn ControlNet-XS
 from modules.control.units import lite # vislearn ControlNet-XS
 from modules.control.units import t2iadapter # TencentARC T2I-Adapter
 from modules.control.units import reference # reference pipeline
-from modules import errors, shared, progress, sd_samplers, ui_components, ui_symbols, ui_common, ui_sections, generation_parameters_copypaste, call_queue, scripts, masking, ipadapter # pylint: disable=ungrouped-imports
+from modules import errors, shared, progress, sd_samplers, ui_components, ui_symbols, ui_common, ui_sections, generation_parameters_copypaste, call_queue, scripts, masking, ipadapter, images # pylint: disable=ungrouped-imports
+from modules import ui_control_helpers as helpers
 
 
 gr_height = None
 max_units = shared.opts.control_max_units
 units: list[unit.Unit] = [] # main state variable
-input_source = None
-input_init = None
-input_mask = None
 debug = shared.log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
 debug('Trace: CONTROL')
-busy = False # used to synchronize select_input and generate_click
-
-
-def initialize():
-    from modules import devices
-    shared.log.debug(f'UI initialize: control models={shared.opts.control_dir}')
-    controlnet.cache_dir = os.path.join(shared.opts.control_dir, 'controlnet')
-    xs.cache_dir = os.path.join(shared.opts.control_dir, 'xs')
-    lite.cache_dir = os.path.join(shared.opts.control_dir, 'lite')
-    t2iadapter.cache_dir = os.path.join(shared.opts.control_dir, 'adapter')
-    processors.cache_dir = os.path.join(shared.opts.control_dir, 'processor')
-    masking.cache_dir   = os.path.join(shared.opts.control_dir, 'segment')
-    unit.default_device = devices.device
-    unit.default_dtype = devices.dtype
-    os.makedirs(shared.opts.control_dir, exist_ok=True)
-    os.makedirs(controlnet.cache_dir, exist_ok=True)
-    os.makedirs(xs.cache_dir, exist_ok=True)
-    os.makedirs(lite.cache_dir, exist_ok=True)
-    os.makedirs(t2iadapter.cache_dir, exist_ok=True)
-    os.makedirs(processors.cache_dir, exist_ok=True)
-    os.makedirs(masking.cache_dir, exist_ok=True)
-    scripts.scripts_current = scripts.scripts_control
-    scripts.scripts_current.initialize_scripts(is_img2img=True)
-
-
-def interrogate_clip():
-    prompt = None
-    try:
-        prompt = shared.interrogator.interrogate(input_source[0])
-    except Exception:
-        pass
-    return gr.update() if prompt is None else prompt
-
-
-def interrogate_booru():
-    prompt = None
-    try:
-        from modules import deepbooru
-        prompt = deepbooru.model.tag(input_source[0])
-    except Exception:
-        pass
-    return gr.update() if prompt is None else prompt
 
 
 def return_controls(res):
@@ -85,7 +40,7 @@ def return_controls(res):
 
 
 def generate_click(job_id: str, active_tab: str, *args):
-    while busy:
+    while helpers.busy:
         time.sleep(0.01)
     from modules.control.run import control_run
     debug(f'Control: tab="{active_tab}" job={job_id} args={args}')
@@ -96,7 +51,7 @@ def generate_click(job_id: str, active_tab: str, *args):
         shared.mem_mon.reset()
         progress.start_task(job_id)
         try:
-            for results in control_run(units, input_source, input_init, input_mask, active_tab, True, *args):
+            for results in control_run(units, helpers.input_source, helpers.input_init, helpers.input_mask, active_tab, True, *args):
                 progress.record_results(job_id, results)
                 yield return_controls(results)
         except Exception as e:
@@ -107,178 +62,8 @@ def generate_click(job_id: str, active_tab: str, *args):
     shared.state.end()
 
 
-def display_units(num_units):
-    return (num_units * [gr.update(visible=True)]) + ((max_units - num_units) * [gr.update(visible=False)])
-
-
-def get_video(filepath: str):
-    try:
-        import cv2
-        from modules.control.util import decode_fourcc
-        video = cv2.VideoCapture(filepath)
-        if not video.isOpened():
-            msg = f'Control: video open failed: path="{filepath}"'
-            shared.log.error(msg)
-            return msg
-        frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-        fps = video.get(cv2.CAP_PROP_FPS)
-        duration = float(frames) / fps
-        w, h = int(video.get(cv2.CAP_PROP_FRAME_WIDTH)), int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        codec = decode_fourcc(video.get(cv2.CAP_PROP_FOURCC))
-        video.release()
-        shared.log.debug(f'Control: input video: path={filepath} frames={frames} fps={fps} size={w}x{h} codec={codec}')
-        msg = f'Control input | Video | Size {w}x{h} | Frames {frames} | FPS {fps:.2f} | Duration {duration:.2f} | Codec {codec}'
-        return msg
-    except Exception as e:
-        msg = f'Control: video open failed: path={filepath} {e}'
-        shared.log.error(msg)
-        return msg
-
-
-def select_input(input_mode, input_image, selected_init, init_type, input_resize, input_inpaint, input_video, input_batch, input_folder):
-    global busy, input_source, input_init, input_mask # pylint: disable=global-statement
-    busy = True
-    if input_mode == 'Select':
-        selected_input = input_image
-    elif input_mode == 'Outpaint':
-        selected_input = input_resize
-    elif input_mode == 'Inpaint':
-        selected_input = input_inpaint
-    elif input_mode == 'Video':
-        selected_input = input_video
-    elif input_mode == 'Batch':
-        selected_input = input_batch
-    elif input_mode == 'Folder':
-        selected_input = input_folder
-    else:
-        selected_input = None
-    if selected_input is None:
-        input_source = None
-        busy = False
-        debug('Control input: none')
-        return [gr.Tabs.update(), '']
-    debug(f'Control select input: source={selected_input} init={selected_init} type={init_type} mode={input_mode}')
-    input_type = type(selected_input)
-    input_mask = None
-    status = 'Control input | Unknown'
-    res = [gr.Tabs.update(selected='out-gallery'), status]
-    # control inputs
-    if isinstance(selected_input, Image.Image): # image via upload -> image
-        if input_mode == 'Outpaint':
-            input_mask = masking.run_mask(input_image=selected_input, input_mask=None, return_type='Grayscale')
-        input_source = [selected_input]
-        input_type = 'PIL.Image'
-        status = f'Control input | Image | Size {selected_input.width}x{selected_input.height} | Mode {selected_input.mode}'
-        res = [gr.Tabs.update(selected='out-gallery'), status]
-    elif isinstance(selected_input, dict): # inpaint -> dict image+mask
-        input_mask = masking.run_mask(input_image=selected_input['image'], input_mask=selected_input['mask'], return_type='Grayscale')
-        selected_input = selected_input['image']
-        input_source = [selected_input]
-        input_type = 'PIL.Image'
-        status = f'Control input | Image | Size {selected_input.width}x{selected_input.height} | Mode {selected_input.mode}'
-        res = [gr.Tabs.update(selected='out-gallery'), status]
-    elif isinstance(selected_input, gr.components.image.Image): # not likely
-        input_source = [selected_input.value]
-        input_type = 'gr.Image'
-        res = [gr.Tabs.update(selected='out-gallery'), status]
-    elif isinstance(selected_input, str): # video via upload > tmp filepath to video
-        input_source = selected_input
-        input_type = 'gr.Video'
-        status = get_video(input_source)
-        res = [gr.Tabs.update(selected='out-video'), status]
-    elif isinstance(selected_input, list): # batch or folder via upload -> list of tmp filepaths
-        if hasattr(selected_input[0], 'name'):
-            input_type = 'tempfiles'
-            input_source = [f.name for f in selected_input] # tempfile
-        else:
-            input_type = 'files'
-            input_source = selected_input
-        status = f'Control input | Images | Files {len(input_source)}'
-        res = [gr.Tabs.update(selected='out-gallery'), status]
-    else: # unknown
-        input_source = None
-    shared.log.debug(f'Control input: type={input_type} input={input_source}')
-    # init inputs: optional
-    if init_type == 0: # Control only
-        input_init = None
-    elif init_type == 1: # Init image same as control assigned during runtime
-        input_init = None
-    elif init_type == 2: # Separate init image
-        if isinstance(selected_init, Image.Image): # image via upload -> image
-            if input_mode == 'Outpaint':
-                input_mask = masking.run_mask(input_image=selected_init, input_mask=None, return_type='Grayscale')
-            input_source = [selected_init]
-            input_init = [selected_init]
-            input_type = 'PIL.Image'
-            status = f'Control input | Image | Size {selected_init.width}x{selected_init.height} | Mode {selected_init.mode}'
-            res = [gr.Tabs.update(selected='out-gallery'), status]
-        elif isinstance(selected_init, dict): # inpaint -> dict image+mask
-            input_mask = masking.run_mask(input_image=selected_init['image'], input_mask=selected_init['mask'], return_type='Grayscale')
-            input_init = selected_init['image']
-            input_source = [selected_init]
-            input_type = 'PIL.Image'
-            status = f'Control input | Image | Size {selected_init.width}x{selected_init.height} | Mode {selected_input.mode}'
-            res = [gr.Tabs.update(selected='out-gallery'), status]
-        elif isinstance(selected_init, gr.components.image.Image): # not likely
-            input_init = [selected_init.value]
-            input_type = 'gr.Image'
-            res = [gr.Tabs.update(selected='out-gallery'), status]
-        elif isinstance(selected_init, str): # video via upload > tmp filepath to video
-            input_init = selected_init
-            input_type = 'gr.Video'
-            status = get_video(input_init)
-            res = [gr.Tabs.update(selected='out-video'), status]
-        elif isinstance(selected_init, list): # batch or folder via upload -> list of tmp filepaths
-            if hasattr(selected_init[0], 'name'):
-                input_type = 'tempfiles'
-                input_init = [f.name for f in selected_init] # tempfile
-            else:
-                input_type = 'files'
-                input_init = selected_init
-            status = f'Control input | Images | Files {len(input_init)}'
-            res = [gr.Tabs.update(selected='out-gallery'), status]
-        else: # unknown
-            input_init = None
-    debug(f'Control select input: source={input_source} init={input_init} mode={input_mode}')
-    busy = False
-    return res
-
-
-def video_type_change(video_type):
-    return [
-        gr.update(visible=video_type != 'None'),
-        gr.update(visible=video_type == 'GIF' or video_type == 'PNG'),
-        gr.update(visible=video_type == 'MP4'),
-        gr.update(visible=video_type == 'MP4'),
-    ]
-
-
-def copy_input(mode_from, mode_to, input_image, input_resize, input_inpaint):
-    debug(f'Control transfter input: from={mode_from} to={mode_to} image={input_image} resize={input_resize} inpaint={input_inpaint}')
-    def getimg(ctrl):
-        if ctrl is None:
-            return None
-        return ctrl.get('image', None) if isinstance(ctrl, dict) else ctrl
-
-    if mode_from == mode_to:
-        return [gr.update(), gr.update(), gr.update()]
-    elif mode_to == 'Select':
-        return [getimg(input_resize) if mode_from == 'Outpaint' else getimg(input_inpaint), None, None]
-    elif mode_to == 'Inpaint':
-        return [None, None, getimg(input_image) if mode_from == 'Select' else getimg(input_resize)]
-    elif mode_to == 'Outpaint':
-        return [None, getimg(input_image) if mode_from == 'Select' else getimg(input_inpaint), None]
-    else:
-        shared.log.error(f'Control transfer unknown input: from={mode_from} to={mode_to}')
-        return [gr.update(), gr.update(), gr.update()]
-
-
-def transfer_input(dst):
-    return [gr.update(visible=dst=='Select'), gr.update(visible=dst=='Outpaint'), gr.update(visible=dst=='Inpaint'), gr.update(interactive=dst!='Select'), gr.update(interactive=dst!='Inpaint'), gr.update(interactive=dst!='Outpaint')]
-
-
 def create_ui(_blocks: gr.Blocks=None):
-    initialize()
+    helpers.initialize()
 
     if shared.backend == shared.Backend.ORIGINAL:
         with gr.Blocks(analytics_enabled = False) as control_ui:
@@ -287,6 +72,9 @@ def create_ui(_blocks: gr.Blocks=None):
 
     with gr.Blocks(analytics_enabled = False) as control_ui:
         prompt, styles, negative, btn_generate, btn_paste, btn_extra, prompt_counter, btn_prompt_counter, negative_counter, btn_negative_counter  = ui_sections.create_toprow(is_img2img=False, id_part='control')
+        txt_prompt_img = gr.File(label="", elem_id="control_prompt_image", file_count="single", type="binary", visible=False)
+        txt_prompt_img.change(fn=images.image_data, inputs=[txt_prompt_img], outputs=[prompt, txt_prompt_img])
+
         with gr.Group(elem_id="control_interface", equal_height=False):
             with gr.Row(elem_id='control_settings'):
 
@@ -313,7 +101,7 @@ def create_ui(_blocks: gr.Blocks=None):
 
                 seed, _reuse_seed, subseed, _reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = ui_sections.create_seed_inputs('control', reuse_visible=False)
 
-                masking.create_segment_ui()
+                mask_controls = masking.create_segment_ui()
 
                 cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry = ui_sections.create_advanced_inputs('control')
 
@@ -327,7 +115,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         video_loop = gr.Checkbox(label='Loop', value=True, visible=False)
                         video_pad = gr.Slider(label='Pad frames', minimum=0, maximum=24, step=1, value=1, visible=False)
                         video_interpolate = gr.Slider(label='Interpolate frames', minimum=0, maximum=24, step=1, value=0, visible=False)
-                    video_type.change(fn=video_type_change, inputs=[video_type], outputs=[video_duration, video_loop, video_pad, video_interpolate])
+                    video_type.change(fn=helpers.video_type_change, inputs=[video_type], outputs=[video_duration, video_loop, video_pad, video_interpolate])
 
                 with gr.Accordion(open=False, label="Extensions", elem_id="control_extensions", elem_classes=["small-accordion"]):
                     input_script_args = scripts.scripts_current.setup_ui(parent='control', accordion=False)
@@ -433,7 +221,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         )
                         if i == 0:
                             units[-1].enabled = True # enable first unit in group
-                    num_controlnet_units.change(fn=display_units, inputs=[num_controlnet_units], outputs=controlnet_ui_units)
+                    num_controlnet_units.change(fn=helpers.display_units, inputs=[num_controlnet_units], outputs=controlnet_ui_units)
 
                 with gr.Tab('IP Adapter') as _tab_ipadapter:
                     with gr.Row():
@@ -484,7 +272,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         )
                         if i == 0:
                             units[-1].enabled = True # enable first unit in group
-                    num_adapter_units.change(fn=display_units, inputs=[num_adapter_units], outputs=adapter_ui_units)
+                    num_adapter_units.change(fn=helpers.display_units, inputs=[num_adapter_units], outputs=adapter_ui_units)
 
                 with gr.Tab('XS') as _tab_controlnetxs:
                     gr.HTML('<a href="https://vislearn.github.io/ControlNet-XS/">ControlNet XS</a>')
@@ -530,7 +318,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         )
                         if i == 0:
                             units[-1].enabled = True # enable first unit in group
-                    num_controlnet_units.change(fn=display_units, inputs=[num_controlnet_units], outputs=controlnetxs_ui_units)
+                    num_controlnet_units.change(fn=helpers.display_units, inputs=[num_controlnet_units], outputs=controlnetxs_ui_units)
 
                 with gr.Tab('Lite') as _tab_lite:
                     gr.HTML('<a href="https://huggingface.co/kohya-ss/controlnet-lllite">Control LLLite</a>')
@@ -571,7 +359,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         )
                         if i == 0:
                             units[-1].enabled = True # enable first unit in group
-                    num_lite_units.change(fn=display_units, inputs=[num_lite_units], outputs=lite_ui_units)
+                    num_lite_units.change(fn=helpers.display_units, inputs=[num_lite_units], outputs=lite_ui_units)
 
                 with gr.Tab('Reference') as _tab_reference:
                     gr.HTML('<a href="https://github.com/Mikubill/sd-webui-controlnet/discussions/1236">ControlNet reference-only control</a>')
@@ -662,20 +450,20 @@ def create_ui(_blocks: gr.Blocks=None):
                             setting.change(fn=processors.update_settings, inputs=settings, outputs=[])
 
                 for btn in input_buttons:
-                    btn.click(fn=copy_input, inputs=[input_mode, btn, input_image, input_resize, input_inpaint], outputs=[input_image, input_resize, input_inpaint], _js='controlInputMode')
-                    btn.click(fn=transfer_input, inputs=[btn], outputs=[input_image, input_resize, input_inpaint] + input_buttons)
+                    btn.click(fn=helpers.copy_input, inputs=[input_mode, btn, input_image, input_resize, input_inpaint], outputs=[input_image, input_resize, input_inpaint], _js='controlInputMode')
+                    btn.click(fn=helpers.transfer_input, inputs=[btn], outputs=[input_image, input_resize, input_inpaint] + input_buttons)
 
                 show_preview.change(fn=lambda x: gr.update(visible=x), inputs=[show_preview], outputs=[column_preview])
                 input_type.change(fn=lambda x: gr.update(visible=x == 2), inputs=[input_type], outputs=[column_init])
                 btn_prompt_counter.click(fn=call_queue.wrap_queued_call(ui_common.update_token_counter), inputs=[prompt, steps], outputs=[prompt_counter])
                 btn_negative_counter.click(fn=call_queue.wrap_queued_call(ui_common.update_token_counter), inputs=[negative, steps], outputs=[negative_counter])
-                btn_interrogate_clip.click(fn=interrogate_clip, inputs=[], outputs=[prompt])
-                btn_interrogate_booru.click(fn=interrogate_booru, inputs=[], outputs=[prompt])
+                btn_interrogate_clip.click(fn=helpers.interrogate_clip, inputs=[], outputs=[prompt])
+                btn_interrogate_booru.click(fn=helpers.interrogate_booru, inputs=[], outputs=[prompt])
 
                 select_fields = [input_mode, input_image, init_image, input_type, input_resize, input_inpaint, input_video, input_batch, input_folder]
                 select_output = [output_tabs, result_txt]
                 select_dict = dict(
-                    fn=select_input,
+                    fn=helpers.select_input,
                     _js="controlInputMode",
                     inputs=select_fields,
                     outputs=select_output,
@@ -723,7 +511,46 @@ def create_ui(_blocks: gr.Blocks=None):
                 prompt.submit(**control_dict)
                 btn_generate.click(**control_dict)
 
-                paste_fields = [] # TODO paste fields
+                paste_fields = [
+                    # prompt
+                    (prompt, "Prompt"),
+                    (negative, "Negative prompt"),
+                    # input
+                    (denoising_strength, "Denoising strength"),
+                    # resize # TODO resize params
+                    (width_before, "Size-1"),
+                    (height_before, "Size-2"),
+                    (resize_mode_before, "Resize mode"),
+                    (scale_by_before, "Resize scale"),
+                    # sampler
+                    (sampler_index, "Sampler"),
+                    (steps, "Steps"),
+                    # batch
+                    (batch_count, "Batch-1"),
+                    (batch_size, "Batch-2"),
+                    # seed
+                    (seed, "Seed"),
+                    # mask
+                    (mask_controls[1], "Mask only"),
+                    (mask_controls[2], "Mask invert"),
+                    (mask_controls[3], "Mask blur"),
+                    (mask_controls[4], "Mask erode"),
+                    (mask_controls[5], "Mask dilate"),
+                    (mask_controls[6], "Mask auto"),
+                    # advanced
+                    (cfg_scale, "CFG scale"),
+                    (clip_skip, "Clip skip"),
+                    (image_cfg_scale, "Image CFG scale"),
+                    (diffusers_guidance_rescale, "CFG rescale"),
+                    (full_quality, "Full quality"),
+                    (restore_faces, "Face restoration"),
+                    (tiling, "Tiling"),
+                    # second pass # TODO second pass params
+                    # hidden
+                    (seed_resize_from_w, "Seed resize from-1"),
+                    (seed_resize_from_h, "Seed resize from-2"),
+                    *scripts.scripts_control.infotext_fields
+                ]
                 generation_parameters_copypaste.add_paste_fields("control", input_image, paste_fields, override_settings)
                 bindings = generation_parameters_copypaste.ParamBinding(paste_button=btn_paste, tabname="control", source_text_component=prompt, source_image_component=output_gallery)
                 generation_parameters_copypaste.register_paste_params_button(bindings)

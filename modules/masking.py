@@ -121,7 +121,6 @@ MODELS = {
 }
 COLORMAP = ['autumn', 'bone', 'jet', 'winter', 'rainbow', 'ocean', 'summer', 'spring', 'cool', 'hsv', 'pink', 'hot', 'parula', 'magma', 'inferno', 'plasma', 'viridis', 'cividis', 'twilight', 'shifted', 'turbo', 'deepgreen']
 cache_dir = 'models/control/segment'
-loaded_model = None
 generator: MaskGenerationPipeline = None
 debug = shared.log.trace if os.environ.get('SD_MASK_DEBUG', None) is not None else lambda *args, **kwargs: None
 debug('Trace: MASK')
@@ -131,6 +130,7 @@ btn_lama = None
 lama_model = None
 controls = []
 opts = SimpleNamespace(**{
+    'model': None,
     'auto_mask': 'None',
     'mask_only': False,
     'mask_blur': 0.01,
@@ -154,21 +154,21 @@ opts = SimpleNamespace(**{
 
 
 def init_model(selected_model: str):
-    global busy, loaded_model, generator # pylint: disable=global-statement
+    global busy, generator # pylint: disable=global-statement
     model_path = MODELS[selected_model]
     if model_path is None: # none
         if generator is not None:
             shared.log.debug('Segment unloading model')
-        loaded_model = None
+        opts.model = None
         generator = None
         devices.torch_gc()
         return selected_model
     if 'Rembg' in selected_model: # rembg
-        loaded_model = model_path
+        opts.model = model_path
         generator = None
         devices.torch_gc()
         return selected_model
-    if loaded_model != selected_model or generator is None: # sam pipeline
+    if opts.model != selected_model or generator is None: # sam pipeline
         busy = True
         t0 = time.time()
         shared.log.debug(f'Segment loading: model={selected_model} path={model_path}')
@@ -183,7 +183,7 @@ def init_model(selected_model: str):
         )
         devices.torch_gc()
         shared.log.debug(f'Segment loaded: model={selected_model} path={model_path} time={time.time()-t0:.2f}s')
-        loaded_model = selected_model
+        opts.model = selected_model
         busy = False
     return selected_model
 
@@ -250,7 +250,7 @@ def run_rembg(input_image: Image, input_mask: np.ndarray):
         'alpha_matting_foreground_threshold': 240,
         'alpha_matting_background_threshold': 10,
         'alpha_matting_erode_size': int(opts.mask_erode * 40),
-        'session': rembg.new_session(loaded_model),
+        'session': rembg.new_session(opts.model),
     }
     mask = rembg.remove(**args)
     mask = np.array(mask)
@@ -339,7 +339,7 @@ def run_mask(input_image: gr.Image, input_mask: gr.Image = None, return_type: st
     else:
         opts.mask_padding = int(opts.mask_dilate * input_image.height / 4) + 1
 
-    if loaded_model is None or not segment_enable:
+    if opts.model is None or not segment_enable:
         mask = input_mask
     elif generator is None:
         mask = run_rembg(input_image, input_mask)
@@ -347,6 +347,7 @@ def run_mask(input_image: gr.Image, input_mask: gr.Image = None, return_type: st
         mask = run_segment(input_image, input_mask)
     mask = cv2.resize(mask, (input_image.width, input_image.height), interpolation=cv2.INTER_LINEAR)
 
+    debug(f'Mask opts: {opts}')
     debug(f'Segment mask: mask={mask.shape}')
     if opts.mask_erode > 0:
         try:
@@ -483,6 +484,7 @@ def create_segment_ui():
         selected_model.change(fn=init_model, inputs=[selected_model], outputs=[selected_model])
         for control in controls:
             control.change(fn=update_opts, inputs=controls, outputs=[])
+        return controls
 
 
 def bind_controls(image_controls: List[gr.Image], preview_image: gr.Image, output_image: gr.Image):

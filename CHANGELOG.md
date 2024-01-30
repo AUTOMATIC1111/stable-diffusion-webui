@@ -9,10 +9,8 @@ OPTIONAL:
 - pending `diffusers==0.26.0`
 - wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)
 - style aligned [pr](https://github.com/huggingface/diffusers/pull/6489)
-- mixture tiling [pr](https://github.com/huggingface/diffusers/tree/main/examples/community#stable-diffusion-mixture-tiling)
 - instaflow [pr](https://github.com/huggingface/diffusers/pull/6057)[repo](https://github.com/gnobitab/RectifiedFlow)
 - control api
-- control params paste
 - masking api
 - preprocess api
 
