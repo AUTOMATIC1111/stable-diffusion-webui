@@ -17,6 +17,7 @@ debug_steps('Trace: STEPS')
 
 def process_diffusers(p: processing.StableDiffusionProcessing):
     debug(f'Process diffusers args: {vars(p)}')
+    orig_pipeline = shared.sd_model
     results = []
 
     def is_txt2img():
@@ -409,6 +410,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             p.init_images.append(p.init_images[-1])
 
     if shared.state.interrupted or shared.state.skipped:
+        shared.sd_model = orig_pipeline
         return results
 
     if shared.opts.diffusers_move_base and not getattr(shared.sd_model, 'has_accelerate', False):
@@ -520,6 +522,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
 
     shared.state.nextjob()
     if shared.state.interrupted or shared.state.skipped:
+        shared.sd_model = orig_pipeline
         return results
 
     # optional hires pass
@@ -583,6 +586,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         update_sampler(shared.sd_refiner, second_pass=True)
 
         if shared.state.interrupted or shared.state.skipped:
+            shared.sd_model = orig_pipeline
             return results
 
         if shared.opts.diffusers_move_refiner and not getattr(shared.sd_refiner, 'has_accelerate', False):
@@ -656,4 +660,5 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             shared.log.warning('Processing returned no results')
             results = []
 
+    shared.sd_model = orig_pipeline
     return results
