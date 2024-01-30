@@ -22,8 +22,6 @@ API_NOT_ALLOWED = [
 ]
 
 class ModelDef(BaseModel):
-    """Assistance Class for Pydantic Dynamic Model Generation"""
-
     field: str
     field_alias: str
     field_type: Any
@@ -32,12 +30,6 @@ class ModelDef(BaseModel):
 
 
 class PydanticModelGenerator:
-    """
-    Takes in created classes and stubs them out in a way FastAPI/Pydantic is happy about:
-    source_data is a snapshot of the default values produced by the class
-    params are the names of the actual keys required by __init__
-    """
-
     def __init__(
         self,
         model_name: str = None,
@@ -81,10 +73,6 @@ class PydanticModelGenerator:
                 field_exclude=fld["exclude"] if "exclude" in fld else False))
 
     def generate_model(self):
-        """
-        Creates a pydantic BaseModel
-        from the json and overrides provided at initialization
-        """
         model_fields = { d.field: (d.field_type, Field(default=d.field_value, alias=d.field_alias, exclude=d.field_exclude)) for d in self._model_def }
         DynamicModel = create_model(self._model_name, **model_fields)
         DynamicModel.__config__.allow_population_by_field_name = True
@@ -376,3 +364,8 @@ class ResNVML(BaseModel): # definition of http response
     load: dict = Field(title="Version")
     power: list = []
     state: str = Field(title="State")
+
+
+# compatibility items
+StableDiffusionTxt2ImgProcessingAPI = ResTxt2Img
+StableDiffusionImg2ImgProcessingAPI = ResImg2Img

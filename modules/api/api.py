@@ -10,9 +10,6 @@ from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusion
 
 
 errors.install()
-decode_base64_to_image = helpers.decode_base64_to_image
-encode_pil_to_base64 = helpers.encode_pil_to_base64
-validate_sampler_name = helpers.validate_sampler_name
 
 
 class Api:
@@ -287,3 +284,9 @@ class Api:
         http_server.start()
         shared.log.info(f'API server: Uvicorn options={config}')
         return http_server
+
+
+# compatibility items
+decode_base64_to_image = helpers.decode_base64_to_image
+encode_pil_to_base64 = helpers.encode_pil_to_base64
+validate_sampler_name = helpers.validate_sampler_name
