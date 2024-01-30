@@ -998,6 +998,7 @@ def switch_pipe(cls: diffusers.DiffusionPipeline, pipeline: diffusers.DiffusionP
         pipe_dict = {}
         components_used = []
         components_skipped = []
+        components_missing = []
         switch_mode = 'none'
         if hasattr(pipeline, '_internal_dict'):
             for item in pipeline._internal_dict.keys(): # pylint: disable=protected-access
@@ -1006,6 +1007,15 @@ def switch_pipe(cls: diffusers.DiffusionPipeline, pipeline: diffusers.DiffusionP
                     components_used.append(item)
                 else:
                     components_skipped.append(item)
+            for item in possible:
+                if item == 'self': # skip
+                    continue
+                if signature.parameters[item].default != inspect._empty: # has default value so we dont have to worry about it # pylint: disable=protected-access
+                    continue
+                if item not in components_used:
+                    shared.log.warning(f'Pipeling switch: missing component={item} type={signature.parameters[item].annotation}')
+                    pipe_dict[item] = None # try but not likely to work
+                    components_missing.append(item)
             new_pipe = cls(**pipe_dict)
             switch_mode = 'auto'
         elif 'tokenizer_2' in possible and hasattr(pipeline, 'tokenizer_2'):
@@ -1046,7 +1056,7 @@ def switch_pipe(cls: diffusers.DiffusionPipeline, pipeline: diffusers.DiffusionP
         if new_pipe is not None:
             copy_diffuser_options(new_pipe, pipeline)
             if switch_mode == 'auto':
-                shared.log.debug(f'Pipeline switch: from={pipeline.__class__.__name__} to={new_pipe.__class__.__name__} components={components_used} skipped={components_skipped}')
+                shared.log.debug(f'Pipeline switch: from={pipeline.__class__.__name__} to={new_pipe.__class__.__name__} components={components_used} skipped={components_skipped} missing={components_missing}')
             else:
                 shared.log.debug(f'Pipeline switch: from={pipeline.__class__.__name__} to={new_pipe.__class__.__name__} mode={switch_mode}')
             return new_pipe

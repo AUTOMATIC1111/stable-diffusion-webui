@@ -57,7 +57,14 @@ class Script(scripts.Script):
         orig_dtype = devices.dtype
         orig_prompt_attention = shared.opts.prompt_attention
         # create pipeline
+        if shared.sd_model_type != 'sd':
+            shared.log.error(f'Mixture tiling: incorrect base model: {shared.sd_model.__class__.__name__}')
+            return
         shared.sd_model = sd_models.switch_pipe('mixture_tiling', shared.sd_model)
+        if shared.sd_model.__class__.__name__ != 'StableDiffusionTilingPipeline': # switch failed
+            shared.log.error(f'Mixture tiling: not a tiling pipeline: {shared.sd_model.__class__.__name__}')
+            shared.sd_model = orig_pipeline
+            return
         sd_models.set_diffuser_options(shared.sd_model)
         shared.opts.data['prompt_attention'] = 'Fixed attention' # this pipeline is not compatible with embeds
         shared.sd_model.to(torch.float32) # this pipeline unet is not compatible with fp16
@@ -70,13 +77,6 @@ class Script(scripts.Script):
                 x_prompts.append(prompts[y * x_size + x])
             y_prompts.append(x_prompts)
         p.task_args['prompt'] = y_prompts
-        """
-        p.task_args['prompt'] = [[
-                "old house in the countryside during sunset",
-                "windy dirt road during sunset with mountains in the background",
-                "old rusty giant robot in the countryside during sunset"
-            ]]
-        """
         p.task_args['seed'] = p.seed
         p.task_args['tile_width'] = p.height
         p.task_args['tile_height'] = p.width

@@ -31,8 +31,19 @@ ADAPTERS = {
     'Plus Face ViT-H SXDL': 'ip-adapter-plus-face_sdxl_vit-h.safetensors',
 }
 
+def unapply(pipe): # pylint: disable=arguments-differ
+    try:
+        if pipe.unet.config.encoder_hid_dim_type == 'ip_image_proj':
+            # shared.log.debug('IP adapter: unload attention processor')
+            # pipe.unet.config.encoder_hid_dim_type = None
+            pipe.unet.encoder_hid_proj = None
+            pipe.config.encoder_hid_dim_type = None
+            pipe.unet.set_default_attn_processor()
+    except Exception:
+        pass
 
-def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name='None', scale=1.0, image=None): # pylint: disable=arguments-differ
+
+def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name='None', scale=1.0, image=None):
     # overrides
     if hasattr(p, 'ip_adapter_name'):
         adapter = ADAPTERS.get(p.ip_adapter_name, None)
@@ -44,6 +55,7 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name='None', sc
     if hasattr(p, 'ip_adapter_image'):
         image = p.ip_adapter_image
     if adapter is None:
+        unapply(pipe)
         return False
     # init code
     global loaded, checkpoint, image_encoder, image_encoder_type, image_encoder_name # pylint: disable=global-statement
@@ -60,12 +72,7 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name='None', sc
             pipe.set_ip_adapter_scale(0)
         if loaded is not None:
             loaded = None
-            try:
-                if pipe.unet.config.encoder_hid_dim_type == 'ip_image_proj':
-                    shared.log.debug('IP adapter: unload attention processor')
-                    pipe.unet.config.encoder_hid_dim_type = None
-            except Exception:
-                pass
+            unapply(pipe)
         return False
     if not hasattr(pipe, 'load_ip_adapter'):
         import diffusers
