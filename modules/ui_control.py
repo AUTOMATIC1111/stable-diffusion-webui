@@ -398,9 +398,10 @@ def create_ui(_blocks: gr.Blocks=None):
                         num_controlnet_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
                     controlnet_ui_units = [] # list of hidable accordions
                     for i in range(max_units):
+                        enabled = True if i==0 else False
                         with gr.Accordion(f'ControlNet unit {i+1}', visible= i < num_controlnet_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
-                                enabled_cb = gr.Checkbox(value=True, label="")
+                                enabled_cb = gr.Checkbox(enabled, container=False, show_label=False)
                                 process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
                                 model_id = gr.Dropdown(label="ControlNet", choices=controlnet.list_models(), value='None')
                                 ui_common.create_refresh_button(model_id, controlnet.list_models, lambda: {"choices": controlnet.list_models(refresh=True)}, f'refresh_controlnet_models_{i}')
@@ -414,6 +415,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         controlnet_ui_units.append(unit_ui)
                         units.append(unit.Unit(
                             unit_type = 'controlnet',
+                            enabled = enabled,
                             result_txt = result_txt,
                             enabled_cb = enabled_cb,
                             reset_btn = reset_btn,
@@ -451,9 +453,10 @@ def create_ui(_blocks: gr.Blocks=None):
                         num_adapter_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
                     adapter_ui_units = [] # list of hidable accordions
                     for i in range(max_units):
+                        enabled = True if i==0 else False
                         with gr.Accordion(f'T2I-Adapter unit {i+1}', visible= i < num_adapter_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
-                                enabled_cb = gr.Checkbox(value=True, label="Enabled")
+                                enabled_cb = gr.Checkbox(enabled, container=False, show_label=False)
                                 process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
                                 model_id = gr.Dropdown(label="Adapter", choices=t2iadapter.list_models(), value='None')
                                 ui_common.create_refresh_button(model_id, t2iadapter.list_models, lambda: {"choices": t2iadapter.list_models(refresh=True)}, f'refresh_adapter_models_{i}')
@@ -465,6 +468,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         adapter_ui_units.append(unit_ui)
                         units.append(unit.Unit(
                             unit_type = 'adapter',
+                            enabled = enabled,
                             result_txt = result_txt,
                             enabled_cb = enabled_cb,
                             reset_btn = reset_btn,
@@ -491,9 +495,10 @@ def create_ui(_blocks: gr.Blocks=None):
                         num_controlnet_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
                     controlnetxs_ui_units = [] # list of hidable accordions
                     for i in range(max_units):
+                        enabled = True if i==0 else False
                         with gr.Accordion(f'ControlNet-XS unit {i+1}', visible= i < num_controlnet_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
-                                enabled_cb = gr.Checkbox(value=True, label="")
+                                enabled_cb = gr.Checkbox(enabled, container=False, show_label=False)
                                 process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
                                 model_id = gr.Dropdown(label="ControlNet-XS", choices=xs.list_models(), value='None')
                                 ui_common.create_refresh_button(model_id, xs.list_models, lambda: {"choices": xs.list_models(refresh=True)}, f'refresh_xs_models_{i}')
@@ -507,6 +512,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         controlnetxs_ui_units.append(unit_ui)
                         units.append(unit.Unit(
                             unit_type = 'xs',
+                            enabled = enabled,
                             result_txt = result_txt,
                             enabled_cb = enabled_cb,
                             reset_btn = reset_btn,
@@ -534,9 +540,10 @@ def create_ui(_blocks: gr.Blocks=None):
                         num_lite_units = gr.Slider(label="Units", minimum=1, maximum=max_units, step=1, value=1, scale=1)
                     lite_ui_units = [] # list of hidable accordions
                     for i in range(max_units):
+                        enabled = True if i==0 else False
                         with gr.Accordion(f'Control-LLLite unit {i+1}', visible= i < num_lite_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
-                                enabled_cb = gr.Checkbox(value=True, label="Enabled")
+                                enabled_cb = gr.Checkbox(enabled, container=False, show_label=False)
                                 process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
                                 model_id = gr.Dropdown(label="Model", choices=lite.list_models(), value='None')
                                 ui_common.create_refresh_button(model_id, lite.list_models, lambda: {"choices": lite.list_models(refresh=True)}, f'refresh_lite_models_{i}')
@@ -548,6 +555,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         lite_ui_units.append(unit_ui)
                         units.append(unit.Unit(
                             unit_type = 'lite',
+                            enabled = enabled,
                             result_txt = result_txt,
                             enabled_cb = enabled_cb,
                             reset_btn = reset_btn,
@@ -575,9 +583,10 @@ def create_ui(_blocks: gr.Blocks=None):
                             gr.Slider(label="Reference adain weight", minimum=0.0, maximum=2.0, step=0.05, value=1.0, interactive=True),
                         ]
                     for i in range(1): # can only have one reference unit
+                        enabled = True if i==0 else False
                         with gr.Accordion(f'Reference unit {i+1}', visible=True, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
-                                enabled_cb = gr.Checkbox(value=True, label="Enabled", visible=False)
+                                enabled_cb = gr.Checkbox(enabled, container=False, show_label=False)
                                 model_id = gr.Dropdown(label="Reference", choices=reference.list_models(), value='Reference', visible=False)
                                 model_strength = gr.Slider(label="Strength", minimum=0.01, maximum=1.0, step=0.01, value=1.0, visible=False)
                                 reset_btn = ui_components.ToolButton(value=ui_symbols.reset)
@@ -586,6 +595,7 @@ def create_ui(_blocks: gr.Blocks=None):
                                 process_btn= ui_components.ToolButton(value=ui_symbols.preview)
                         units.append(unit.Unit(
                             unit_type = 'reference',
+                            enabled = enabled,
                             result_txt = result_txt,
                             enabled_cb = enabled_cb,
                             reset_btn = reset_btn,

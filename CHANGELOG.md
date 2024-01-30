@@ -12,11 +12,11 @@ OPTIONAL:
 - mixture tiling [pr](https://github.com/huggingface/diffusers/tree/main/examples/community#stable-diffusion-mixture-tiling)
 - instaflow [pr](https://github.com/huggingface/diffusers/pull/6057)[repo](https://github.com/gnobitab/RectifiedFlow)
 - control api
-- face api
+- control params paste
 - masking api
 - preprocess api
 
-## Update for 2023-01-29
+## Update for 2023-01-30
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
