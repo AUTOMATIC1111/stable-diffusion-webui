@@ -27,18 +27,25 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
     def is_refiner_enabled():
         return p.enable_hr and p.refiner_steps > 0 and p.refiner_start > 0 and p.refiner_start < 1 and shared.sd_refiner is not None
 
-    if getattr(p, 'init_images', None) is not None and len(p.init_images) > 0:
-        tgt_width, tgt_height = 8 * math.ceil(p.init_images[0].width / 8), 8 * math.ceil(p.init_images[0].height / 8)
-        if p.init_images[0].width != tgt_width or p.init_images[0].height != tgt_height:
-            shared.log.debug(f'Resizing init images: original={p.init_images[0].width}x{p.init_images[0].height} target={tgt_width}x{tgt_height}')
-            p.init_images = [images.resize_image(1, image, tgt_width, tgt_height, upscaler_name=None) for image in p.init_images]
-            p.height = tgt_height
-            p.width = tgt_width
-            hypertile_set(p)
-        if getattr(p, 'mask', None) is not None and p.mask.size != (tgt_width, tgt_height):
-            p.mask = images.resize_image(1, p.mask, tgt_width, tgt_height, upscaler_name=None)
-        if getattr(p, 'mask_for_overlay', None) is not None and p.mask_for_overlay.size != (tgt_width, tgt_height):
-            p.mask_for_overlay = images.resize_image(1, p.mask_for_overlay, tgt_width, tgt_height, upscaler_name=None)
+    def resize_images():
+        if getattr(p, 'image', None) is not None and getattr(p, 'init_images', None) is None:
+            p.init_images = [p.image]
+        if getattr(p, 'init_images', None) is not None and len(p.init_images) > 0:
+            tgt_width, tgt_height = 8 * math.ceil(p.init_images[0].width / 8), 8 * math.ceil(p.init_images[0].height / 8)
+            if p.init_images[0].size != (tgt_width, tgt_height):
+                shared.log.debug(f'Resizing init images: original={p.init_images[0].width}x{p.init_images[0].height} target={tgt_width}x{tgt_height}')
+                p.init_images = [images.resize_image(1, image, tgt_width, tgt_height, upscaler_name=None) for image in p.init_images]
+                p.height = tgt_height
+                p.width = tgt_width
+                sd_hijack_hypertile.hypertile_set(p)
+            if getattr(p, 'mask', None) is not None and p.mask.size != (tgt_width, tgt_height):
+                p.mask = images.resize_image(1, p.mask, tgt_width, tgt_height, upscaler_name=None)
+            if getattr(p, 'init_mask', None) is not None and p.init_mask.size != (tgt_width, tgt_height):
+                p.init_mask = images.resize_image(1, p.init_mask, tgt_width, tgt_height, upscaler_name=None)
+            if getattr(p, 'mask_for_overlay', None) is not None and p.mask_for_overlay.size != (tgt_width, tgt_height):
+                p.mask_for_overlay = images.resize_image(1, p.mask_for_overlay, tgt_width, tgt_height, upscaler_name=None)
+            return tgt_width, tgt_height
+        return p.width, p.height
 
     def hires_resize(latents): # input=latents output=pil
         if not torch.is_tensor(latents):
@@ -399,7 +406,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
                 p.task_args['sag_scale'] = p.sag_scale
             else:
                 shared.log.warning(f'SAG incompatible scheduler: current={sd_model.scheduler.__class__.__name__} supported={supported}')
-        if shared.opts.cuda_compile_backend == "olive-ai":
+        if sd_model.__class__.__name__ == "OnnxRawPipeline":
             sd_model = preprocess_onnx_pipeline(p, is_refiner_enabled())
         return sd_model
 
@@ -540,7 +547,8 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             if (latent_scale_mode is not None or p.hr_force) and p.denoising_strength > 0:
                 p.ops.append('hires')
                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
-                preprocess_onnx_pipeline(p, is_refiner_enabled())
+                if shared.sd_model.__class__.__name__ == "OnnxRawPipeline":
+                    shared.sd_model = preprocess_onnx_pipeline(p, is_refiner_enabled())
                 recompile_model(hires=True)
                 update_sampler(shared.sd_model, second_pass=True)
                 hires_args = set_pipeline_args(

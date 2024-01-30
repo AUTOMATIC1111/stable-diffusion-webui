@@ -152,22 +152,16 @@ def compile_stablefast(sd_model):
 
 
 def compile_torch(sd_model):
-    if shared.opts.cuda_compile_backend == "olive-ai":
-        if shared.compiled_model_state is None:
-            shared.compiled_model_state = CompiledModelState()
-        return sd_model
     try:
         import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
         torch._dynamo.reset() # pylint: disable=protected-access
         shared.log.debug(f"Model compile available backends: {torch._dynamo.list_backends()}") # pylint: disable=protected-access
         if shared.opts.cuda_compile_backend == "openvino_fx":
             optimize_openvino()
-        """
         elif shared.opts.cuda_compile_backend == "olive-ai":
             if shared.compiled_model_state is None:
                 shared.compiled_model_state = CompiledModelState()
             return sd_model
-        """
         log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
         if hasattr(torch, '_logging'):
             torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access

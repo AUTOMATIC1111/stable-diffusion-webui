@@ -417,6 +417,7 @@ def create_ui(startup_timer = None):
                 loadsave.add_block(interface, ifid)
             loadsave.add_component(f"webui/Tabs@{tabs.elem_id}", tabs)
             loadsave.setup_ui()
+
         if opts.notification_audio_enable and os.path.exists(os.path.join(script_path, opts.notification_audio_path)):
             gr.Audio(interactive=False, value=os.path.join(script_path, opts.notification_audio_path), elem_id="audio_notification", visible=False)
 

@@ -362,7 +362,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
 
     "cuda_compile_sep": OptionInfo("<h2>Model Compile</h2>", "", gr.HTML),
     "cuda_compile": OptionInfo([] if not cmd_opts.use_openvino else ["Model", "VAE", "Upscaler"], "Compile Model", gr.CheckboxGroup, {"choices": ["Model", "VAE", "Text Encoder", "Upscaler"]}),
-    "cuda_compile_backend": OptionInfo("none" if not cmd_opts.use_openvino else "openvino_fx", "Model compile backend", gr.Radio, {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx', 'stable-fast']}),
+    "cuda_compile_backend": OptionInfo("none" if not cmd_opts.use_openvino else "openvino_fx", "Model compile backend", gr.Radio, {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx', 'stable-fast', 'olive-ai']}),
     "cuda_compile_mode": OptionInfo("default", "Model compile mode", gr.Radio, {"choices": ['default', 'reduce-overhead', 'max-autotune', 'max-autotune-no-cudagraphs']}),
     "cuda_compile_fullgraph": OptionInfo(False, "Model compile fullgraph"),
     "cuda_compile_precompile": OptionInfo(False, "Model compile precompile"),
@@ -382,10 +382,11 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "nncf_compress_weights_raito": OptionInfo(1.0, "OpenVINO compress ratio for NNCF", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01, "visible": cmd_opts.use_openvino}),
     "openvino_disable_model_caching": OptionInfo(False, "OpenVINO disable model caching", gr.Checkbox, {"visible": cmd_opts.use_openvino}),
 
-    "directml_sep": OptionInfo("<h2>IPEX and DirectML</h2>", "", gr.HTML, {"visible": devices.backend == "directml"}),
+    "directml_sep": OptionInfo("<h2>DirectML</h2>", "", gr.HTML, {"visible": devices.backend == "directml"}),
     "directml_memory_provider": OptionInfo(default_memory_provider, 'DirectML memory stats provider', gr.Radio, {"choices": memory_providers, "visible": devices.backend == "directml"}),
     "directml_catch_nan": OptionInfo(False, "DirectML retry ops for NaN", gr.Checkbox, {"visible": devices.backend == "directml"}),
-    "directml_olive_sep": OptionInfo("<h2>DirectML and Olive</h2>", "", gr.HTML),
+
+    "olive_sep": OptionInfo("<h2>Olive</h2>", "", gr.HTML),
     "olive_float16": OptionInfo(True, 'Olive use FP16 on optimization (will use FP32 if unchecked)'),
     "olive_vae_encoder_float32": OptionInfo(False, 'Olive force FP32 for VAE Encoder (if Img2Img generates NaN, enable this option and remove previously optimized model)'),
     "olive_static_dims": OptionInfo(True, 'Olive use static dimensions (make inference faster with OrtTransformersOptimization)'),
@@ -438,8 +439,8 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "disable_accelerate": OptionInfo(False, "Disable accelerate"),
     "diffusers_force_zeros": OptionInfo(False, "Force zeros for prompts when empty", gr.Checkbox, {"visible": False}),
     "diffusers_aesthetics_score": OptionInfo(False, "Require aesthetics score"),
-    "diffusers_force_inpaint": OptionInfo(False, 'Diffusers force inpaint pipeline'),
-    "diffusers_pooled": OptionInfo("default", "Diffusers SDXL pooled embeds (experimental)", gr.Radio, {"choices": ['default', 'weighted']}),
+    "diffusers_pooled": OptionInfo("default", "Diffusers SDXL pooled embeds", gr.Radio, {"choices": ['default', 'weighted']}),
+
     "huggingface_token": OptionInfo('', 'HuggingFace token'),
 
     "onnx_sep": OptionInfo("<h2>ONNX Runtime</h2>", "", gr.HTML),
@@ -463,7 +464,6 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "embeddings_dir": OptionInfo(os.path.join(paths.models_path, 'embeddings'), "Folder with textual inversion embeddings", folder=True),
     "hypernetwork_dir": OptionInfo(os.path.join(paths.models_path, 'hypernetworks'), "Folder with Hypernetwork models", folder=True),
     "control_dir": OptionInfo(os.path.join(paths.models_path, 'control'), "Folder with Control models", folder=True),
-    "olive_temp_dir": OptionInfo(os.path.join(paths.models_path, 'Olive', 'temp'), "Directory for olive optimization process", folder=True),
     "codeformer_models_path": OptionInfo(os.path.join(paths.models_path, 'Codeformer'), "Folder with codeformer models", folder=True),
     "gfpgan_models_path": OptionInfo(os.path.join(paths.models_path, 'GFPGAN'), "Folder with GFPGAN models", folder=True),
     "esrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'ESRGAN'), "Folder with ESRGAN models", folder=True),
@@ -479,6 +479,7 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "openvino_cache_path": OptionInfo('cache', "Directory for OpenVINO cache", folder=True),
     "temp_dir": OptionInfo("", "Directory for temporary images; leave empty for default", folder=True),
     "clean_temp_dir_at_start": OptionInfo(True, "Cleanup non-default temporary directory when starting webui"),
+    "onnx_temp_dir": OptionInfo(os.path.join(paths.models_path, 'ONNX', 'temp'), "Directory for ONNX conversion and Olive optimization process", folder=True),
 }))
 
 options_templates.update(options_section(('saving-images', "Image Options"), {
