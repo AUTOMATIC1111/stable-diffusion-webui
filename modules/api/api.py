@@ -4,7 +4,7 @@ from secrets import compare_digest
 from fastapi import FastAPI, APIRouter, Depends, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.exceptions import HTTPException
-from modules import errors, shared, sd_samplers, scripts, ui, postprocessing
+from modules import errors, shared, scripts, ui, postprocessing
 from modules.api import models, endpoints, script, train, helpers, server, nvml
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 
@@ -12,6 +12,7 @@ from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusion
 errors.install()
 decode_base64_to_image = helpers.decode_base64_to_image
 encode_pil_to_base64 = helpers.encode_pil_to_base64
+validate_sampler_name = helpers.validate_sampler_name
 
 
 class Api:
@@ -149,12 +150,6 @@ class Api:
         if hasattr(request, "script_args") and request.script_args:
             self.sanitize_args(request.script_args)
 
-    def validate_sampler_name(self, name):
-        config = sd_samplers.all_samplers_map.get(name, None)
-        if config is None:
-            raise HTTPException(status_code=404, detail="Sampler not found")
-        return name
-
     def post_text2img(self, txt2imgreq: models.ReqTxt2Img):
         self.prepare_img_gen_request(txt2imgreq)
 
@@ -166,7 +161,7 @@ class Api:
             self.default_script_arg_txt2img = script.init_default_script_args(script_runner)
         selectable_scripts, selectable_script_idx = script.get_selectable_script(txt2imgreq.script_name, script_runner)
         populate = txt2imgreq.copy(update={  # Override __init__ params
-            "sampler_name": self.validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
+            "sampler_name": helpers.validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
             "do_not_save_samples": not txt2imgreq.save_images,
             "do_not_save_grid": not txt2imgreq.save_images,
         })
@@ -216,7 +211,7 @@ class Api:
             self.default_script_arg_img2img = script.init_default_script_args(script_runner)
         selectable_scripts, selectable_script_idx = script.get_selectable_script(img2imgreq.script_name, script_runner)
         populate = img2imgreq.copy(update={  # Override __init__ params
-            "sampler_name": self.validate_sampler_name(img2imgreq.sampler_name or img2imgreq.sampler_index),
+            "sampler_name": helpers.validate_sampler_name(img2imgreq.sampler_name or img2imgreq.sampler_index),
             "do_not_save_samples": not img2imgreq.save_images,
             "do_not_save_grid": not img2imgreq.save_images,
             "mask": mask,

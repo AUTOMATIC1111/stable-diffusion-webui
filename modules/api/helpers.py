@@ -4,7 +4,14 @@ from PIL import Image, PngImagePlugin
 import piexif
 import piexif.helper
 from fastapi.exceptions import HTTPException
-from modules import shared
+from modules import shared, sd_samplers
+
+
+def validate_sampler_name(name):
+    config = sd_samplers.all_samplers_map.get(name, None)
+    if config is None:
+        raise HTTPException(status_code=404, detail="Sampler not found")
+    return name
 
 
 def decode_base64_to_image(encoding):
