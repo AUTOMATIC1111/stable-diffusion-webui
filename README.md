@@ -183,11 +183,21 @@ SD.Next comes with several extensions pre-installed:
 - In addition to general cross-platform code, desire is to have a lead for each of the main platforms.
 This should be fully cross-platform, but we'd really love to have additional contributors and/or maintainers to join and help lead the efforts on different platforms.
 
-## Credits
+### **Credits**
 
 - Main credit goes to [Automatic1111 WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
 - Additional credits are listed in [Credits](https://github.com/AUTOMATIC1111/stable-diffusion-webui/#credits)
 - Licenses for modules are listed in [Licenses](html/licenses.html)
+
+### **Evolution**
+
+<a href="https://star-history.com/#vladmandic/automatic&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=vladmandic/automatic&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=vladmandic/automatic&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=vladmandic/automatic&type=Date" />
+  </picture>
+</a>
 
 ### **Docs**
 
