@@ -2,7 +2,7 @@ import os
 
 from PIL import Image
 
-from modules import shared, images, devices, scripts, scripts_postprocessing, ui_common, generation_parameters_copypaste
+from modules import shared, images, devices, scripts, scripts_postprocessing, ui_common, infotext_utils
 from modules.shared import opts
 
 
@@ -62,8 +62,6 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
         else:
             image_data = image_placeholder
 
-        shared.state.assign_current_image(image_data)
-
         parameters, existing_pnginfo = images.read_info_from_image(image_data)
         if parameters:
             existing_pnginfo["parameters"] = parameters
@@ -86,22 +84,25 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
                 basename = ''
                 forced_filename = None
 
-            infotext = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in pp.info.items() if v is not None])
+            infotext = ", ".join([k if k == v else f'{k}: {infotext_utils.quote(v)}' for k, v in pp.info.items() if v is not None])
 
             if opts.enable_pnginfo:
                 pp.image.info = existing_pnginfo
                 pp.image.info["postprocessing"] = infotext
+
+            shared.state.assign_current_image(pp.image)
 
             if save_output:
                 fullfn, _ = images.save_image(pp.image, path=outpath, basename=basename, extension=opts.samples_format, info=infotext, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=forced_filename, suffix=suffix)
 
                 if pp.caption:
                     caption_filename = os.path.splitext(fullfn)[0] + ".txt"
-                    if os.path.isfile(caption_filename):
+                    existing_caption = ""
+                    try:
                         with open(caption_filename, encoding="utf8") as file:
                             existing_caption = file.read().strip()
-                    else:
-                        existing_caption = ""
+                    except FileNotFoundError:
+                        pass
 
                     action = shared.opts.postprocessing_existing_caption_action
                     if action == 'Prepend' and existing_caption:

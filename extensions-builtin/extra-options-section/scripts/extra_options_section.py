@@ -1,7 +1,7 @@
 import math
 
 import gradio as gr
-from modules import scripts, shared, ui_components, ui_settings, generation_parameters_copypaste
+from modules import scripts, shared, ui_components, ui_settings, infotext_utils
 from modules.ui_components import FormColumn
 
 
@@ -25,7 +25,7 @@ class ExtraOptionsSection(scripts.Script):
         extra_options = shared.opts.extra_options_img2img if is_img2img else shared.opts.extra_options_txt2img
         elem_id_tabname = "extra_options_" + ("img2img" if is_img2img else "txt2img")
 
-        mapping = {k: v for v, k in generation_parameters_copypaste.infotext_to_setting_name_mapping}
+        mapping = {k: v for v, k in infotext_utils.infotext_to_setting_name_mapping}
 
         with gr.Blocks() as interface:
             with gr.Accordion("Options", open=False, elem_id=elem_id_tabname) if shared.opts.extra_options_accordion and extra_options else gr.Group(elem_id=elem_id_tabname):

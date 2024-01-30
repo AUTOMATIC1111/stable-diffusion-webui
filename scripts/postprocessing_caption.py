@@ -4,7 +4,7 @@ import gradio as gr
 
 class ScriptPostprocessingCeption(scripts_postprocessing.ScriptPostprocessing):
     name = "Caption"
-    order = 4000
+    order = 4040
 
     def ui(self):
         with ui_components.InputAccordion(False, label="Caption") as enable:
@@ -25,6 +25,6 @@ class ScriptPostprocessingCeption(scripts_postprocessing.ScriptPostprocessing):
             captions.append(deepbooru.model.tag(pp.image))
 
         if "BLIP" in option:
-            captions.append(shared.interrogator.generate_caption(pp.image))
+            captions.append(shared.interrogator.interrogate(pp.image.convert("RGB")))
 
         pp.caption = ", ".join([x for x in captions if x])
