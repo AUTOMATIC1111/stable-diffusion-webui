@@ -254,8 +254,8 @@ class Processor():
         return image_process
 
     def preview(self):
-        import modules.ui_control
-        input_image = modules.ui_control.input_source
+        import modules.ui_control_helpers as helpers
+        input_image = helpers.input_source
         if isinstance(input_image, list):
             input_image = input_image[0]
         debug('Control process preview')
