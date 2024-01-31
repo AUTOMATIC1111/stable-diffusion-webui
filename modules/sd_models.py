@@ -790,7 +790,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         shared.log.debug(f'Diffusers loading: path="{checkpoint_info.path}"')
         pipeline, model_type = detect_pipeline(checkpoint_info.path, op)
         if os.path.isdir(checkpoint_info.path):
-            if model_type in ['InstaFlow']: # forced pipeline
+            if model_type in ['InstaFlow'] or 'ONNX' in model_type: # forced pipeline
                 sd_model = pipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
             else:
                 err1, err2, err3 = None, None, None
@@ -1082,7 +1082,7 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     feature_extractor = getattr(pipe, "feature_extractor", None)
 
     # skip specific pipelines
-    if pipe.__class__.__name__ == 'StableDiffusionReferencePipeline' or pipe.__class__.__name__ == 'StableDiffusionAdapterPipeline':
+    if pipe.__class__.__name__ == 'StableDiffusionReferencePipeline' or pipe.__class__.__name__ == 'StableDiffusionAdapterPipeline' or 'Onnx' in pipe.__class__.__name__:
         return pipe
 
     try:
