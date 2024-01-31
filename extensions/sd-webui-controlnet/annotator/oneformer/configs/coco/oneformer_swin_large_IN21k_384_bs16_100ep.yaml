@@ -1,0 +1,25 @@
+_BASE_: oneformer_R50_bs16_50ep.yaml
+MODEL:
+  BACKBONE:
+    NAME: "D2SwinTransformer"
+  SWIN:
+    EMBED_DIM: 192
+    DEPTHS: [2, 2, 18, 2]
+    NUM_HEADS: [6, 12, 24, 48]
+    WINDOW_SIZE: 12
+    APE: False
+    DROP_PATH_RATE: 0.3
+    PATCH_NORM: True
+    PRETRAIN_IMG_SIZE: 384
+  WEIGHTS: "swin_large_patch4_window12_384_22k.pkl"
+  PIXEL_MEAN: [123.675, 116.280, 103.530]
+  PIXEL_STD: [58.395, 57.120, 57.375]
+  ONE_FORMER:
+    NUM_OBJECT_QUERIES: 150
+SOLVER:
+  STEPS: (655556, 735184)
+  MAX_ITER: 737500
+  AMP:
+    ENABLED: False
+TEST:
+  DETECTIONS_PER_IMAGE: 150

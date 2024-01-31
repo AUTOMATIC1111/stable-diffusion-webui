@@ -1,0 +1,6 @@
+{
+  "resnet50_caffe": "detectron/resnet50_caffe",
+  "resnet50_caffe_bgr": "detectron2/resnet50_caffe_bgr",
+  "resnet101_caffe": "detectron/resnet101_caffe",
+  "resnet101_caffe_bgr": "detectron2/resnet101_caffe_bgr"
+}

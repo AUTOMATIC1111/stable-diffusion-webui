@@ -1,0 +1,19 @@
+<launch>
+    <arg name="input_topic" default="image_topic"/>
+    <arg name="output_topic" default="midas_topic"/>
+    <arg name="model_name" default="model-small-traced.pt"/>
+    <arg name="out_orig_size" default="true"/>
+    <arg name="net_width" default="256"/>
+    <arg name="net_height" default="256"/>
+    <arg name="logging" default="false"/>
+
+    <node pkg="midas_cpp" type="midas_cpp" name="midas_cpp" output="log" respawn="true">
+        <param name="input_topic" value="$(arg input_topic)"/>
+        <param name="output_topic" value="$(arg output_topic)"/>
+        <param name="model_name" value="$(arg model_name)"/>
+        <param name="out_orig_size" value="$(arg out_orig_size)"/>
+        <param name="net_width" value="$(arg net_width)"/>
+        <param name="net_height" value="$(arg net_height)"/>
+        <param name="logging" value="$(arg logging)"/>
+    </node>
+</launch>

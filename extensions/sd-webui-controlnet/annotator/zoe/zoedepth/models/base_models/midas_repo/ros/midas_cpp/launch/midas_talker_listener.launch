@@ -1,0 +1,23 @@
+<launch>
+    <arg name="use_camera" default="false"/>
+    <arg name="input_video_file" default="test.mp4"/>
+
+    <arg name="show_output" default="true"/>
+    <arg name="save_output" default="false"/>
+    <arg name="output_video_file" default="result.mp4"/>
+
+    <node pkg="midas_cpp" type="talker.py" name="talker" output="log" respawn="true">
+        <param name="use_camera" value="$(arg use_camera)"/>
+        <param name="input_video_file" value="$(arg input_video_file)"/>
+    </node>
+
+    <node pkg="midas_cpp" type="listener.py" name="listener" output="log" respawn="true">
+        <param name="show_output" value="$(arg show_output)"/>
+        <param name="save_output" value="$(arg save_output)"/>
+        <param name="output_video_file" value="$(arg output_video_file)"/>
+    </node>
+
+    <node pkg="midas_cpp" type="listener_original.py" name="listener_original" output="log" respawn="true">
+        <param name="show_output" value="$(arg show_output)"/>
+    </node>
+</launch>

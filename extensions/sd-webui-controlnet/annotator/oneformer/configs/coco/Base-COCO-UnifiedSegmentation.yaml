@@ -1,0 +1,54 @@
+MODEL:
+  BACKBONE:
+    FREEZE_AT: 0
+    NAME: "build_resnet_backbone"
+  WEIGHTS: "detectron2://ImageNetPretrained/torchvision/R-50.pkl"
+  PIXEL_MEAN: [123.675, 116.280, 103.530]
+  PIXEL_STD: [58.395, 57.120, 57.375]
+  RESNETS:
+    DEPTH: 50
+    STEM_TYPE: "basic"  # not used
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: False
+    OUT_FEATURES: ["res2", "res3", "res4", "res5"]
+    # NORM: "SyncBN"
+    RES5_MULTI_GRID: [1, 1, 1]  # not used
+DATASETS:
+  TRAIN: ("coco_2017_train_panoptic_with_sem_seg",)
+  TEST_PANOPTIC: ("coco_2017_val_panoptic_with_sem_seg",)  # to evaluate instance and semantic performance as well
+  TEST_INSTANCE: ("coco_2017_val",)
+  TEST_SEMANTIC: ("coco_2017_val_panoptic_with_sem_seg",)
+SOLVER:
+  IMS_PER_BATCH: 16
+  BASE_LR: 0.0001
+  STEPS: (327778, 355092)
+  MAX_ITER: 368750
+  WARMUP_FACTOR: 1.0
+  WARMUP_ITERS: 10
+  WEIGHT_DECAY: 0.05
+  OPTIMIZER: "ADAMW"
+  BACKBONE_MULTIPLIER: 0.1
+  CLIP_GRADIENTS:
+    ENABLED: True
+    CLIP_TYPE: "full_model"
+    CLIP_VALUE: 0.01
+    NORM_TYPE: 2.0
+  AMP:
+    ENABLED: True
+INPUT:
+  IMAGE_SIZE: 1024
+  MIN_SCALE: 0.1
+  MAX_SCALE: 2.0
+  FORMAT: "RGB"
+  DATASET_MAPPER_NAME: "coco_unified_lsj"
+  MAX_SEQ_LEN: 77
+  TASK_SEQ_LEN: 77
+  TASK_PROB: 
+    SEMANTIC: 0.33
+    INSTANCE: 0.66
+TEST:
+  EVAL_PERIOD: 5000
+DATALOADER:
+  FILTER_EMPTY_ANNOTATIONS: True
+  NUM_WORKERS: 4
+VERSION: 2

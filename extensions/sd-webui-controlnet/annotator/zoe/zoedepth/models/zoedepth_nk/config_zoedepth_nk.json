@@ -1,0 +1,67 @@
+{
+    "model": {
+        "name": "ZoeDepthNK",
+        "version_name": "v1",
+        "bin_conf" : [
+            {
+                "name": "nyu",
+                "n_bins": 64,
+                "min_depth": 1e-3,
+                "max_depth": 10.0
+            },
+            {
+                "name": "kitti",
+                "n_bins": 64,
+                "min_depth": 1e-3,
+                "max_depth": 80.0
+            }
+        ], 
+        "bin_embedding_dim": 128,
+        "bin_centers_type": "softplus",
+        "n_attractors":[16, 8, 4, 1],
+        "attractor_alpha": 1000,
+        "attractor_gamma": 2,
+        "attractor_kind" : "mean",
+        "attractor_type" : "inv",
+        "min_temp": 0.0212,
+        "max_temp": 50.0, 
+        "memory_efficient": true, 
+        "midas_model_type" : "DPT_BEiT_L_384",
+        "img_size": [384, 512]
+    },
+
+    "train": {
+        "train_midas": true,
+        "use_pretrained_midas": true,
+        "trainer": "zoedepth_nk",
+        "epochs": 5,
+        "bs": 16,
+        "optim_kwargs": {"lr": 0.0002512, "wd": 0.01},
+        "sched_kwargs": {"div_factor": 1, "final_div_factor": 10000, "pct_start": 0.7, "three_phase":false, "cycle_momentum": true},
+        "same_lr": false,
+        "w_si": 1,
+        "w_domain": 100,
+        "avoid_boundary": false,
+        "random_crop": false,
+        "input_width": 640,
+        "input_height": 480,
+        "w_grad": 0,
+        "w_reg": 0,
+        "midas_lr_factor": 10,
+        "encoder_lr_factor":10,
+        "pos_enc_lr_factor":10
+    },
+
+    "infer": {
+        "train_midas": false,
+        "pretrained_resource": "url::https://github.com/isl-org/ZoeDepth/releases/download/v1.0/ZoeD_M12_NK.pt",
+        "use_pretrained_midas": false,
+        "force_keep_ar": true
+    },
+    
+    "eval": {
+        "train_midas": false,
+        "pretrained_resource": "url::https://github.com/isl-org/ZoeDepth/releases/download/v1.0/ZoeD_M12_NK.pt",
+        "use_pretrained_midas": false
+    }
+}

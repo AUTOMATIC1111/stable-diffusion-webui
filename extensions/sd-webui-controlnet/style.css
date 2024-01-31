@@ -1,0 +1,182 @@
+.cnet-modal {
+    display: none;
+    /* Hidden by default */
+    position: fixed;
+    /* Stay in place */
+    z-index: 2147483647;
+    /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%;
+    /* Full width */
+    height: 100%;
+    /* Full height */
+    overflow: auto;
+    /* Enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.4);
+    /* Black with opacity */
+    max-width: none !important;
+    /* Fix sizing with SD.Next (vladmandic/automatic#2594) */
+}
+
+.cnet-modal-content {
+    position: relative;
+    background-color: var(--background-fill-primary);
+    margin: 5vh auto;
+    /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 95%;
+    height: 90vh;
+    /* Could be more or less, depending on screen size */
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    animation-name: animatetop;
+    animation-duration: 0.4s;
+    max-width: none !important;
+    /* Fix sizing with SD.Next (vladmandic/automatic#2594) */
+}
+
+.cnet-modal-content iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.cnet-modal-content.alert {
+    padding: var(--size-5);
+}
+
+.cnet-modal-content.alert ul {
+    list-style-type: none;
+}
+
+.cnet-modal-close {
+    color: white !important;
+    right: 0.25em;
+    top: 0;
+    cursor: pointer;
+    position: absolute;
+    font-size: 56px;
+    font-weight: bold;
+}
+
+@keyframes animatetop {
+    from {
+        top: -300px;
+        opacity: 0
+    }
+
+    to {
+        top: 0;
+        opacity: 1
+    }
+}
+
+.cnet-generated-image-control-group,
+.cnet-upload-pose {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+
+    position: absolute;
+    right: var(--size-2);
+    bottom: var(--size-2);
+}
+
+/* Gradio button style */
+.cnet-download-pose a,
+.cnet-close-preview,
+.cnet-edit-pose,
+.cnet-upload-pose,
+.cnet-photopea-child-trigger {
+    font-size: x-small !important;
+    font-weight: bold !important;
+    padding: 2px !important;
+    box-shadow: var(--shadow-drop);
+    border: 1px solid var(--button-secondary-border-color);
+    border-radius: var(--radius-sm);
+    background: var(--background-fill-primary);
+    height: var(--size-5);
+    color: var(--block-label-text-color) !important;
+    display: flex;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.cnet-download-pose:hover a,
+.cnet-close-preview:hover a,
+.cnet-edit-pose:hover,
+.cnet-upload-pose:hover,
+.cnet-photopea-child-trigger:hover {
+    color: var(--block-label-text-color) !important;
+}
+
+.cnet-unit-active {
+    color: green !important;
+    font-weight: bold !important;
+}
+
+.dark .cnet-unit-active {
+    color: greenyellow !important;
+}
+
+.cnet-badge {
+    display: inline-block;
+    padding: 0.25em 0.75em;
+    font-size: 0.75em;
+    font-weight: bold;
+    color: white;
+    border-radius: 0.5em;
+    text-align: center;
+    vertical-align: middle;
+    margin-left: var(--size-2);
+}
+
+.cnet-badge.primary {
+    background-color: green;
+}
+
+.cnet-a1111-badge {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+}
+
+.cnet-disabled-radio {
+    opacity: 50%;
+}
+
+.controlnet_row {
+    margin-top: 10px !important;
+}
+
+/* JSON pose upload button styling */
+.cnet-upload-pose input[type=file] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Photopea integration styles */
+.photopea-button-group {
+    position: absolute;
+    top: -30px; /* 20px modal padding + 10px margin */
+}
+
+.photopea-button {
+    font-size: 3rem;
+    font-weight: bold;
+    padding: 2px !important;
+    margin: 2px !important;
+    box-shadow: var(--shadow-drop);
+    border: 1px solid var(--button-secondary-border-color);
+    border-radius: var(--radius-sm);
+    background: var(--background-fill-primary);
+    color: var(--block-label-text-color);
+}

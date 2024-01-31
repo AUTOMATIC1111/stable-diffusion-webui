@@ -1,0 +1,157 @@
+run_title: b18_ffc075_batch8x15
+training_model:
+  kind: default
+  visualize_each_iters: 1000
+  concat_mask: true
+  store_discr_outputs_for_vis: true
+losses:
+  l1:
+    weight_missing: 0
+    weight_known: 10
+  perceptual:
+    weight: 0
+  adversarial:
+    kind: r1
+    weight: 10
+    gp_coef: 0.001
+    mask_as_fake_target: true
+    allow_scale_mask: true
+  feature_matching:
+    weight: 100
+  resnet_pl:
+    weight: 30
+    weights_path: ${env:TORCH_HOME}
+
+optimizers:
+  generator:
+    kind: adam
+    lr: 0.001
+  discriminator:
+    kind: adam
+    lr: 0.0001
+visualizer:
+  key_order:
+  - image
+  - predicted_image
+  - discr_output_fake
+  - discr_output_real
+  - inpainted
+  rescale_keys:
+  - discr_output_fake
+  - discr_output_real
+  kind: directory
+  outdir: /group-volume/User-Driven-Content-Generation/r.suvorov/inpainting/experiments/r.suvorov_2021-04-30_14-41-12_train_simple_pix2pix2_gap_sdpl_novgg_large_b18_ffc075_batch8x15/samples
+location:
+  data_root_dir: /group-volume/User-Driven-Content-Generation/datasets/inpainting_data_root_large
+  out_root_dir: /group-volume/User-Driven-Content-Generation/${env:USER}/inpainting/experiments
+  tb_dir: /group-volume/User-Driven-Content-Generation/${env:USER}/inpainting/tb_logs
+data:
+  batch_size: 15
+  val_batch_size: 2
+  num_workers: 3
+  train:
+    indir: ${location.data_root_dir}/train
+    out_size: 256
+    mask_gen_kwargs:
+      irregular_proba: 1
+      irregular_kwargs:
+        max_angle: 4
+        max_len: 200
+        max_width: 100
+        max_times: 5
+        min_times: 1
+      box_proba: 1
+      box_kwargs:
+        margin: 10
+        bbox_min_size: 30
+        bbox_max_size: 150
+        max_times: 3
+        min_times: 1
+      segm_proba: 0
+      segm_kwargs:
+        confidence_threshold: 0.5
+        max_object_area: 0.5
+        min_mask_area: 0.07
+        downsample_levels: 6
+        num_variants_per_mask: 1
+        rigidness_mode: 1
+        max_foreground_coverage: 0.3
+        max_foreground_intersection: 0.7
+        max_mask_intersection: 0.1
+        max_hidden_area: 0.1
+        max_scale_change: 0.25
+        horizontal_flip: true
+        max_vertical_shift: 0.2
+        position_shuffle: true
+    transform_variant: distortions
+    dataloader_kwargs:
+      batch_size: ${data.batch_size}
+      shuffle: true
+      num_workers: ${data.num_workers}
+  val:
+    indir: ${location.data_root_dir}/val
+    img_suffix: .png
+    dataloader_kwargs:
+      batch_size: ${data.val_batch_size}
+      shuffle: false
+      num_workers: ${data.num_workers}
+  visual_test:
+    indir: ${location.data_root_dir}/korean_test
+    img_suffix: _input.png
+    pad_out_to_modulo: 32
+    dataloader_kwargs:
+      batch_size: 1
+      shuffle: false
+      num_workers: ${data.num_workers}
+generator:
+  kind: ffc_resnet
+  input_nc: 4
+  output_nc: 3
+  ngf: 64
+  n_downsampling: 3
+  n_blocks: 18
+  add_out_act: sigmoid
+  init_conv_kwargs:
+    ratio_gin: 0
+    ratio_gout: 0
+    enable_lfu: false
+  downsample_conv_kwargs:
+    ratio_gin: ${generator.init_conv_kwargs.ratio_gout}
+    ratio_gout: ${generator.downsample_conv_kwargs.ratio_gin}
+    enable_lfu: false
+  resnet_conv_kwargs:
+    ratio_gin: 0.75
+    ratio_gout: ${generator.resnet_conv_kwargs.ratio_gin}
+    enable_lfu: false
+discriminator:
+  kind: pix2pixhd_nlayer
+  input_nc: 3
+  ndf: 64
+  n_layers: 4
+evaluator:
+  kind: default
+  inpainted_key: inpainted
+  integral_kind: ssim_fid100_f1
+trainer:
+  kwargs:
+    gpus: -1
+    accelerator: ddp
+    max_epochs: 200
+    gradient_clip_val: 1
+    log_gpu_memory: None
+    limit_train_batches: 25000
+    val_check_interval: ${trainer.kwargs.limit_train_batches}
+    log_every_n_steps: 1000
+    precision: 32
+    terminate_on_nan: false
+    check_val_every_n_epoch: 1
+    num_sanity_val_steps: 8
+    limit_val_batches: 1000
+    replace_sampler_ddp: false
+  checkpoint_kwargs:
+    verbose: true
+    save_top_k: 5
+    save_last: true
+    period: 1
+    monitor: val_ssim_fid100_f1_total_mean
+    mode: max
