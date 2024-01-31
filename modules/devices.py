@@ -3,7 +3,7 @@ import contextlib
 from functools import lru_cache
 
 import torch
-from modules import errors, shared
+from modules import errors, shared, npu_specific
 
 if sys.platform == "darwin":
     from modules import mac_specific
@@ -57,6 +57,9 @@ def get_optimal_device_name():
     if has_xpu():
         return xpu_specific.get_xpu_device_string()
 
+    if npu_specific.has_npu:
+        return npu_specific.get_npu_device_string()
+
     return "cpu"
 
 
@@ -83,6 +86,16 @@ def torch_gc():
 
     if has_xpu():
         xpu_specific.torch_xpu_gc()
+
+    if npu_specific.has_npu:
+        torch_npu_set_device()
+        npu_specific.torch_npu_gc()
+
+
+def torch_npu_set_device():
+    # Work around due to bug in torch_npu, revert me after fixed, @see https://gitee.com/ascend/pytorch/issues/I8KECW?from=project-issue
+    if npu_specific.has_npu:
+        torch.npu.set_device(0)
 
 
 def enable_tf32():
@@ -256,4 +269,3 @@ def first_time_calculation():
     x = torch.zeros((1, 1, 3, 3)).to(device, dtype)
     conv2d = torch.nn.Conv2d(1, 1, (3, 3)).to(device, dtype)
     conv2d(x)
-
