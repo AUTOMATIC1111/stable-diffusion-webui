@@ -150,10 +150,7 @@ class EmbeddingDatabase:
         return embedding
 
     def get_expected_shape(self):
-        # workaround
-        if devices.npu_specific.has_npu:
-            import torch
-            torch.npu.set_device(0)
+        devices.torch_npu_set_device()
         vec = shared.sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
         return vec.shape[1]
 

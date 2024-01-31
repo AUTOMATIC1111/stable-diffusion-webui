@@ -143,10 +143,7 @@ def initialize_rest(*, reload_script_modules=False):
         by that time, so we apply optimization again.
         """
         from modules import devices
-        # Work around due to bug in torch_npu, revert me after fixed, @see https://gitee.com/ascend/pytorch/issues/I8KECW?from=project-issue
-        if devices.npu_specific.has_npu:
-            import torch
-            torch.npu.set_device(0)
+        devices.torch_npu_set_device()
 
         shared.sd_model  # noqa: B018
 

@@ -88,7 +88,14 @@ def torch_gc():
         xpu_specific.torch_xpu_gc()
 
     if npu_specific.has_npu:
+        torch_npu_set_device()
         npu_specific.torch_npu_gc()
+
+
+def torch_npu_set_device():
+    # Work around due to bug in torch_npu, revert me after fixed, @see https://gitee.com/ascend/pytorch/issues/I8KECW?from=project-issue
+    if npu_specific.has_npu:
+        torch.npu.set_device(0)
 
 
 def enable_tf32():
