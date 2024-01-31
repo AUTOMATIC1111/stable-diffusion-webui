@@ -30,6 +30,7 @@ import requests
 from retry import retry
 from io import BytesIO
 import tempfile
+from handlers.rmf.inference import rmf_seg
 
 from timeout_decorator import timeout
 
@@ -636,9 +637,9 @@ class LaternFairTask(Txt2ImgTask):
         return full_task, source_img, backgroud_image_V, backgroud_image_H, t.rate_width, t.border_size, t.resize_width
 
     @classmethod
-    @retry(tries=3, delay=1, backoff=1, max_delay=3)
+    @retry(tries=2, delay=1, backoff=1, max_delay=3)
     def exec_seg(cls, img_path):
-        @timeout(60)
+        @timeout(30)
         def time_control(img_path):
             logger.info(f"pixian seg progress......")
             url = 'https://api.pixian.ai/api/v2/remove-background'
@@ -646,7 +647,7 @@ class LaternFairTask(Txt2ImgTask):
                                      files={'image': open(img_path, 'rb')},
                                      headers={
                                          'Authorization': 'Basic cHhhMmF2bGo3ODMzcjZhOjY1NmFlMnAzdDhiNm1vbTFhM2t1dnAxZ2ZzODEwcTMzNzk4MzEydWhnOTFoaGh0ZzZjZnY='
-                                     }, timeout=60)
+                                     }, timeout=30)
             logger.info("seg post process....")
             if response.status_code == requests.codes.ok:
                 logger.info("seg write....")
@@ -657,6 +658,7 @@ class LaternFairTask(Txt2ImgTask):
                 return res
             else:
                 logger.error(f"pixian seg Error:, {response.status_code}, {response.text}")
+
                 raise Exception("pixian api get failed")
 
         return time_control(img_path)
@@ -710,6 +712,8 @@ class LaternFairTask(Txt2ImgTask):
             img = 255 * np.ones((864, 1152, 3), np.uint8)
             img = Image.fromarray(img)
             width_b, height_b = img.size
+            ta = max(imq.size[0] / 576, imq.size[1] / 768)
+            imq = LaternFairTask.pad_image_to_size(imq, (int(576 * ta), int(768 * ta)))
             imq = imq.resize((576, 768))
             r, g, b, a = imq.split()
             width, height = imq.size
@@ -739,6 +743,27 @@ class LaternFairTask(Txt2ImgTask):
                 else:
                     result.putpixel((x, y), (r, g, b, a))
         return result
+
+    @classmethod
+    def pad_image_to_size(cls, image, target_size):
+        width, height = image.size
+        target_width, target_height = target_size
+
+        if width >= target_width and height >= target_height:
+            return image  # 图像已经大于或等于目标尺寸，无需补全
+
+        # 计算需要补全的宽度和高度
+        pad_width = max(target_width - width, 0)
+        pad_height = max(target_height - height, 0)
+
+        # 计算补全的边距
+        left = pad_width // 2
+        top = pad_height // 2
+        # 创建一个新的画布，并将图像粘贴到居中靠下位置
+        padded_image = Image.new('RGBA', target_size, (0, 0, 0, 0))
+        padded_image.paste(image, (left, target_height - height, width + left, target_height))
+
+        return padded_image
 
 
 class OnePressTaskHandler(Txt2ImgTaskHandler):
@@ -1099,7 +1124,11 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         yield progress
 
         logger.info("step 1, seg...")
-        seg_image = LaternFairTask.exec_seg(user_image)
+        # 备选方案：rmf抠图
+        try:
+            seg_image = LaternFairTask.exec_seg(user_image)
+        except:
+            seg_image = rmf_seg(user_image)
         # 添加白色背景
         white_image = LaternFairTask.exec_add_back(seg_image, rate_width=rate_width, scale=scale)
         logger.info("step 1 > ok")
@@ -1129,8 +1158,12 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
         file_path = temp_file.name
         txt2img_image.save(file_path)
+        # 备选方案：rmf抠图
+        try:
+            txt2img_seg_image = LaternFairTask.exec_seg(file_path)
+        except:
+            txt2img_seg_image = rmf_seg(file_path)
 
-        txt2img_seg_image = LaternFairTask.exec_seg(file_path)
         blur_image = LaternFairTask.canny_blur(txt2img_seg_image, border_size)
         # 添加横图背景
         txt2img_backgroud_image_H = LaternFairTask.exec_add_back(blur_image, back_path_V=None,
