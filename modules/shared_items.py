@@ -63,8 +63,6 @@ def get_pipelines():
     except Exception:
         pipelines['InstaFlow'] = getattr(diffusers, 'StableDiffusionPipeline', None)
 
-    if not is_olive_available:
-        del pipelines['ONNX Stable Diffusion with Olive']
     for k, v in pipelines.items():
         if k != 'Autodetect' and v is None:
             log.error(f'Not available: pipeline={k} diffusers={diffusers.__version__} path={diffusers.__file__}')
