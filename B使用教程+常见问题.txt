@@ -1,0 +1,30 @@
+【新手快速入门】
+全套入门教程：https://www.bilibili.com/read/cv22159609
+快速入门生成图片：https://www.bilibili.com/read/cv22661198
+模型安装使用教程：https://www.bilibili.com/read/cv21362202
+2023年4月模型分享：https://www.bilibili.com/video/BV1em4y1z7Dg
+
+【常用网站】
+AI 作图知识库(教程): https://guide.novelai.dev/
+标签超市(解析组合): https://tags.novelai.dev/
+原图提取标签: https://spell.novelai.dev/
+
+【细致教程】
+入门参数设置基础：https://guide.novelai.dev/guide/configuration/param-basic
+常见安装问题: https://guide.novelai.dev/s/troubleshooting/install
+常见跑图问题: https://guide.novelai.dev/s/troubleshooting/generate
+怎么写提示词？ https://guide.novelai.dev/advanced/prompt-engineering/
+怎么训练模型？ https://guide.novelai.dev/advanced/finetuning/
+最新消息: https://guide.novelai.dev/newsfeed
+
+【问题速查】
+- CUDA out of memory： 炸显存 换启动参数 换显卡
+- DefaultCPUAllocator: 炸内存 加虚拟内存 加内存条
+- CUDA driver initialization failed: 装CUDA驱动
+
+- Training models with lowvram not possible: 这点显存还想炼丹？
+- WinError 5: 建议重装电脑，或者等下一个整合包
+
+【训练配置要求】
+训练 embedding、hypernetwork 6G显存，使用384分辨率 8G以上可以使用512分辨率
+训练 dreambooth 最少12G显存

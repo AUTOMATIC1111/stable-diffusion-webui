@@ -1,0 +1,12 @@
+Looking in indexes: https://mirror.baidu.com/pypi/simple
+Looking in links: https://mirror.sjtu.edu.cn/pytorch-wheels/torch_stable.html, https://mirrors.aliyun.com/pytorch-wheels/torch_stable.html, https://www.modelscope.cn/api/v1/studio/hanamizukiai/resolver/gradio/pypi-index/index.html
+Requirement already satisfied: opencv-python in e:\aigc3\sd-webui-aki-v4\py310\lib\site-packages (4.7.0.72)
+Collecting opencv-python
+  Downloading https://mirror.baidu.com/pypi/packages/c7/ec/9dabb6a9abfdebb3c45b0cc52dec901caafef2b2c7e7d6a839ed86d81e91/opencv_python-4.9.0.80-cp37-abi3-win_amd64.whl (38.6 MB)
+Requirement already satisfied: numpy>=1.21.2 in e:\aigc3\sd-webui-aki-v4\py310\lib\site-packages (from opencv-python) (1.23.5)
+Installing collected packages: opencv-python
+  Attempting uninstall: opencv-python
+    Found existing installation: opencv-python 4.7.0.72
+    Uninstalling opencv-python-4.7.0.72:
+      Successfully uninstalled opencv-python-4.7.0.72
+Successfully installed opencv-python-4.9.0.80
