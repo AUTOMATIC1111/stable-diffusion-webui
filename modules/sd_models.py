@@ -789,42 +789,34 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
 
         shared.log.debug(f'Diffusers loading: path="{checkpoint_info.path}"')
         pipeline, model_type = detect_pipeline(checkpoint_info.path, op)
-        if 'ONNX' in shared.opts.diffusers_pipeline and os.path.isdir(checkpoint_info.path):
-            pipeline = shared_items.get_pipelines().get(shared.opts.diffusers_pipeline, None)
-            if pipeline is not None:
-                sd_model = pipeline.from_pretrained(checkpoint_info.path)
-        elif os.path.isdir(checkpoint_info.path):
-            err1 = None
-            err2 = None
-            err3 = None
-            if 'ONNX' in shared.opts.diffusers_pipeline:
-                pipeline = shared_items.get_pipelines().get(shared.opts.diffusers_pipeline, None)
-                if pipeline is not None:
-                    sd_model = pipeline.from_pretrained(checkpoint_info.path)
-            try: # try autopipeline first, best choice but not all pipelines are available
-                if sd_model is None:
+        if os.path.isdir(checkpoint_info.path):
+            if model_type in ['InstaFlow']: # forced pipeline
+                sd_model = pipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+            else:
+                err1, err2, err3 = None, None, None
+                try: # 1 - autopipeline, best choice but not all pipelines are available
                     sd_model = diffusers.AutoPipelineForText2Image.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
                     sd_model.model_type = sd_model.__class__.__name__
-            except Exception as e:
-                err1 = e
-                # shared.log.error(f'AutoPipeline: {e}')
-            try: # try diffusion pipeline next second-best choice, works for most non-linked pipelines
-                if err1 is not None:
-                    sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
-                    sd_model.model_type = sd_model.__class__.__name__
-            except Exception as e:
-                err2 = e
-                # shared.log.error(f'DiffusionPipeline: {e}')
-            try: # try basic pipeline next just in case
-                if err2 is not None:
-                    sd_model = diffusers.StableDiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
-                    sd_model.model_type = sd_model.__class__.__name__
-            except Exception as e:
-                err3 = e # ignore last error
-                shared.log.error(f'StableDiffusionPipeline: {e}')
-            if err3 is not None:
-                shared.log.error(f'Failed loading {op}: {checkpoint_info.path} auto={err1} diffusion={err2}')
-                return
+                except Exception as e:
+                    err1 = e
+                    # shared.log.error(f'AutoPipeline: {e}')
+                try: # 2 - diffusion pipeline, works for most non-linked pipelines
+                    if err1 is not None:
+                        sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+                        sd_model.model_type = sd_model.__class__.__name__
+                except Exception as e:
+                    err2 = e
+                    # shared.log.error(f'DiffusionPipeline: {e}')
+                try: # 3 - try basic pipeline just in case
+                    if err2 is not None:
+                        sd_model = diffusers.StableDiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+                        sd_model.model_type = sd_model.__class__.__name__
+                except Exception as e:
+                    err3 = e # ignore last error
+                    shared.log.error(f'StableDiffusionPipeline: {e}')
+                if err3 is not None:
+                    shared.log.error(f'Failed loading {op}: {checkpoint_info.path} auto={err1} diffusion={err2}')
+                    return
         elif os.path.isfile(checkpoint_info.path) and checkpoint_info.path.lower().endswith('.safetensors'):
             # diffusers_load_config["local_files_only"] = True
             diffusers_load_config["extract_ema"] = shared.opts.diffusers_extract_ema
@@ -1090,7 +1082,7 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     feature_extractor = getattr(pipe, "feature_extractor", None)
 
     # skip specific pipelines
-    if pipe.__class__.__name__ == 'StableDiffusionReferencePipeline' or pipe.__class__.__name__ == 'StableDiffusionAdapterPipeline' or 'Onnx' in pipe.__class__.__name__:
+    if pipe.__class__.__name__ == 'StableDiffusionReferencePipeline' or pipe.__class__.__name__ == 'StableDiffusionAdapterPipeline':
         return pipe
 
     try:

@@ -3,6 +3,7 @@ import time
 import math
 import inspect
 import typing
+import numpy as np
 import torch
 import torchvision.transforms.functional as TF
 import diffusers
@@ -475,7 +476,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         return max(1, int(steps))
 
     shared.sd_model = update_pipeline(shared.sd_model, p)
-    onnx_preprocess_pipeline(p, is_refiner_enabled())
+    preprocess_onnx_pipeline(p, is_refiner_enabled())
     base_args = set_pipeline_args(
         model=shared.sd_model,
         prompts=p.prompts,
