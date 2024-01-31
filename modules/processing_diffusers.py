@@ -409,6 +409,8 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
                 shared.log.warning(f'SAG incompatible scheduler: current={sd_model.scheduler.__class__.__name__} supported={supported}')
         if sd_model.__class__.__name__ == "OnnxRawPipeline":
             sd_model = preprocess_onnx_pipeline(p, is_refiner_enabled())
+            nonlocal orig_pipeline
+            orig_pipeline = sd_model # processed ONNX pipeline should not be replaced with original pipeline.
         return sd_model
 
     if len(getattr(p, 'init_images', [])) > 0:
