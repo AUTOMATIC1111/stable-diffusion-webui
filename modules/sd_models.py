@@ -536,52 +536,48 @@ def change_backend():
 
 
 def detect_pipeline(f: str, op: str = 'model', warning=True):
-    if not f.endswith('.safetensors'):
-        return None, None
     guess = shared.opts.diffusers_pipeline
     warn = shared.log.warning if warning else lambda *args, **kwargs: None
+    size = 0
     if guess == 'Autodetect':
         try:
+            guess = 'Stable Diffusion XL' if 'XL' in f.upper() else 'Stable Diffusion'
             # guess by size
-            size = round(os.path.getsize(f) / 1024 / 1024)
-            if size < 128:
-                warn(f'Model size smaller than expected: {f} size={size} MB')
-            elif (size >= 316 and size <= 324) or (size >= 156 and size <= 164): # 320 or 160
-                warn(f'Model detected as VAE model, but attempting to load as model: {op}={f} size={size} MB')
-                guess = 'VAE'
-            elif size >= 5351 and size <= 5359: # 5353
-                guess = 'Stable Diffusion' # SD v2
-            elif size >= 5791 and size <= 5799: # 5795
-                if shared.backend == shared.Backend.ORIGINAL:
-                    warn(f'Model detected as SD-XL refiner model, but attempting to load using backend=original: {op}={f} size={size} MB')
-                if op == 'model':
-                    warn(f'Model detected as SD-XL refiner model, but attempting to load a base model: {op}={f} size={size} MB')
-                guess = 'Stable Diffusion XL'
-            elif (size >= 6611 and size <= 7220): # 6617, HassakuXL is 6776, monkrenRealisticINT_v10 is 7217
-                if shared.backend == shared.Backend.ORIGINAL:
-                    warn(f'Model detected as SD-XL base model, but attempting to load using backend=original: {op}={f} size={size} MB')
-                guess = 'Stable Diffusion XL'
-            elif size >= 3361 and size <= 3369: # 3368
-                if shared.backend == shared.Backend.ORIGINAL:
-                    warn(f'Model detected as SD upscale model, but attempting to load using backend=original: {op}={f} size={size} MB')
-                guess = 'Stable Diffusion Upscale'
-            elif size >= 4891 and size <= 4899: # 4897
-                if shared.backend == shared.Backend.ORIGINAL:
-                    warn(f'Model detected as SD XL inpaint model, but attempting to load using backend=original: {op}={f} size={size} MB')
-                guess = 'Stable Diffusion XL Inpaint'
-            elif size >= 9791 and size <= 9799: # 9794
-                if shared.backend == shared.Backend.ORIGINAL:
-                    warn(f'Model detected as SD XL instruct pix2pix model, but attempting to load using backend=original: {op}={f} size={size} MB')
-                guess = 'Stable Diffusion XL Instruct'
-            elif size > 3138 and size < 3142: #3140
-                if shared.backend == shared.Backend.ORIGINAL:
-                    warn(f'Model detected as Segmind Vega model, but attempting to load using backend=original: {op}={f} size={size} MB')
-                guess = 'Stable Diffusion XL'
-            else:
-                if 'XL' in f.upper():
+            if os.path.isfile(f) and f.endswith('.safetensors'):
+                size = round(os.path.getsize(f) / 1024 / 1024)
+                if size < 128:
+                    warn(f'Model size smaller than expected: {f} size={size} MB')
+                elif (size >= 316 and size <= 324) or (size >= 156 and size <= 164): # 320 or 160
+                    warn(f'Model detected as VAE model, but attempting to load as model: {op}={f} size={size} MB')
+                    guess = 'VAE'
+                elif size >= 5351 and size <= 5359: # 5353
+                    guess = 'Stable Diffusion' # SD v2
+                elif size >= 5791 and size <= 5799: # 5795
+                    if shared.backend == shared.Backend.ORIGINAL:
+                        warn(f'Model detected as SD-XL refiner model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    if op == 'model':
+                        warn(f'Model detected as SD-XL refiner model, but attempting to load a base model: {op}={f} size={size} MB')
                     guess = 'Stable Diffusion XL'
-                else:
-                    guess = 'Stable Diffusion'
+                elif (size >= 6611 and size <= 7220): # 6617, HassakuXL is 6776, monkrenRealisticINT_v10 is 7217
+                    if shared.backend == shared.Backend.ORIGINAL:
+                        warn(f'Model detected as SD-XL base model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    guess = 'Stable Diffusion XL'
+                elif size >= 3361 and size <= 3369: # 3368
+                    if shared.backend == shared.Backend.ORIGINAL:
+                        warn(f'Model detected as SD upscale model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    guess = 'Stable Diffusion Upscale'
+                elif size >= 4891 and size <= 4899: # 4897
+                    if shared.backend == shared.Backend.ORIGINAL:
+                        warn(f'Model detected as SD XL inpaint model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    guess = 'Stable Diffusion XL Inpaint'
+                elif size >= 9791 and size <= 9799: # 9794
+                    if shared.backend == shared.Backend.ORIGINAL:
+                        warn(f'Model detected as SD XL instruct pix2pix model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    guess = 'Stable Diffusion XL Instruct'
+                elif size > 3138 and size < 3142: #3140
+                    if shared.backend == shared.Backend.ORIGINAL:
+                        warn(f'Model detected as Segmind Vega model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                    guess = 'Stable Diffusion XL'
             # guess by name
             """
             if 'LCM_' in f.upper() or 'LCM-' in f.upper() or '_LCM' in f.upper() or '-LCM' in f.upper():
@@ -589,6 +585,10 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
                     warn(f'Model detected as LCM model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Latent Consistency Model'
             """
+            if 'instaflow' in f:
+                if shared.backend == shared.Backend.ORIGINAL:
+                    warn(f'Model detected as InstaFlow model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                guess = 'InstaFlow'
             if 'PixArt' in f:
                 if shared.backend == shared.Backend.ORIGINAL:
                     warn(f'Model detected as PixArt Alpha model, but attempting to load using backend=original: {op}={f} size={size} MB')
@@ -788,37 +788,38 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 diffusers_load_config["vae"] = vae
 
         shared.log.debug(f'Diffusers loading: path="{checkpoint_info.path}"')
+        pipeline, model_type = detect_pipeline(checkpoint_info.path, op)
         if os.path.isdir(checkpoint_info.path):
-            err1 = None
-            err2 = None
-            err3 = None
-            try: # try autopipeline first, best choice but not all pipelines are available
-                sd_model = diffusers.AutoPipelineForText2Image.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
-                sd_model.model_type = sd_model.__class__.__name__
-            except Exception as e:
-                err1 = e
-                # shared.log.error(f'AutoPipeline: {e}')
-            try: # try diffusion pipeline next second-best choice, works for most non-linked pipelines
-                if err1 is not None:
-                    sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+            if model_type in ['InstaFlow']: # forced pipeline
+                sd_model = pipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+            else:
+                err1, err2, err3 = None, None, None
+                try: # 1 - autopipeline, best choice but not all pipelines are available
+                    sd_model = diffusers.AutoPipelineForText2Image.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
                     sd_model.model_type = sd_model.__class__.__name__
-            except Exception as e:
-                err2 = e
-                # shared.log.error(f'DiffusionPipeline: {e}')
-            try: # try basic pipeline next just in case
-                if err2 is not None:
-                    sd_model = diffusers.StableDiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
-                    sd_model.model_type = sd_model.__class__.__name__
-            except Exception as e:
-                err3 = e # ignore last error
-                shared.log.error(f'StableDiffusionPipeline: {e}')
-            if err3 is not None:
-                shared.log.error(f'Failed loading {op}: {checkpoint_info.path} auto={err1} diffusion={err2}')
-                return
+                except Exception as e:
+                    err1 = e
+                    # shared.log.error(f'AutoPipeline: {e}')
+                try: # 2 - diffusion pipeline, works for most non-linked pipelines
+                    if err1 is not None:
+                        sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+                        sd_model.model_type = sd_model.__class__.__name__
+                except Exception as e:
+                    err2 = e
+                    # shared.log.error(f'DiffusionPipeline: {e}')
+                try: # 3 - try basic pipeline just in case
+                    if err2 is not None:
+                        sd_model = diffusers.StableDiffusionPipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+                        sd_model.model_type = sd_model.__class__.__name__
+                except Exception as e:
+                    err3 = e # ignore last error
+                    shared.log.error(f'StableDiffusionPipeline: {e}')
+                if err3 is not None:
+                    shared.log.error(f'Failed loading {op}: {checkpoint_info.path} auto={err1} diffusion={err2}')
+                    return
         elif os.path.isfile(checkpoint_info.path) and checkpoint_info.path.lower().endswith('.safetensors'):
             # diffusers_load_config["local_files_only"] = True
             diffusers_load_config["extract_ema"] = shared.opts.diffusers_extract_ema
-            pipeline, model_type = detect_pipeline(checkpoint_info.path, op)
             if pipeline is None:
                 shared.log.error(f'Diffusers {op} pipeline not initialized: {shared.opts.diffusers_pipeline}')
                 return

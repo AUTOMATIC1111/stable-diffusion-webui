@@ -145,7 +145,7 @@ class ExtraNetworksPage:
 
     def link_preview(self, filename):
         quoted_filename = urllib.parse.quote(filename.replace('\\', '/'))
-        mtime = os.path.getmtime(filename)
+        mtime = os.path.getmtime(filename) if os.path.exists(filename) else 0
         preview = f"./sd_extra_networks/thumb?filename={quoted_filename}&mtime={mtime}"
         return preview
 
@@ -582,7 +582,7 @@ def create_ui(container, button_parent, tabname, skip_indexing = False):
             import concurrent
             with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
                 for page in get_pages():
-                    executor.submit(page.create_items, page)
+                    executor.submit(page.create_items, ui.tabname)
         for page in get_pages():
             page.create_page(ui.tabname, skip_indexing)
             with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab") as tab:

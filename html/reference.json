@@ -168,5 +168,10 @@
     "path": "salesforce/blipdiffusion",
     "desc": "BLIP-Diffusion, a new subject-driven image generation model that supports multimodal control which consumes inputs of subject images and text prompts. Unlike other subject-driven generation models, BLIP-Diffusion introduces a new multimodal encoder which is pre-trained to provide subject representation.",
     "preview": "salesforce--blipdiffusion.jpg"
+  },
+  "InstaFlow 0.9B": {
+    "path": "XCLiu/instaflow_0_9B_from_sd_1_5",
+    "desc": "InstaFlow is an ultra-fast, one-step image generator that achieves image quality close to Stable Diffusion. This efficiency is made possible through a recent Rectified Flow technique, which trains probability flows with straight trajectories, hence inherently requiring only a single step for fast inference.",
+    "preview": "XCLiu--instaflow_0_9B_from_sd_1_5.jpg"
   }
 }

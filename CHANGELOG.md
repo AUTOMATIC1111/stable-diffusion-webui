@@ -8,13 +8,11 @@ BLOCKERS:
 OPTIONAL:
 - pending `diffusers==0.26.0`
 - wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)
-- style aligned [pr](https://github.com/huggingface/diffusers/pull/6489)
-- instaflow [pr](https://github.com/huggingface/diffusers/pull/6057)[repo](https://github.com/gnobitab/RectifiedFlow)
 - control api
 - masking api
 - preprocess api
 
-## Update for 2023-01-30
+## Update for 2023-01-31
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
@@ -133,6 +131,10 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - requires input image  
   - last word in prompt and negative prompt will be used as source and target subjects
   - sampler must be set to default before loading the model  
+- [InstaFlow](https://github.com/gnobitab/InstaFlow)  
+  - another take on super-fast image generation in a single step  
+  - set sampler:default steps:1
+  - load from networks -> models -> reference
 - **Improvements**  
   - **ui**  
     - check version and **update** SD.Next via UI  
@@ -183,6 +185,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
     for example, you can now deploy a zip of the sdnext folder  
   - **latent upscale**: updated latent upscalers (some are new)  
     *nearest, nearest-exact, area, bilinear, bicubic, bilinear-antialias, bicubic-antialias*
+  - **scheduler**: added `SA Solver`  
   - **model load to gpu**  
     new option in settings->diffusers allowing models to be loaded directly to GPU while keeping RAM free  
     this option is not compatible with any kind of model offloading as model is expected to stay in GPU  

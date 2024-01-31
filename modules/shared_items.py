@@ -47,6 +47,7 @@ def get_pipelines():
         'Kandinsky 3': getattr(diffusers, 'Kandinsky3Pipeline', None),
         'DeepFloyd IF': getattr(diffusers, 'IFPipeline', None),
         'Custom Diffusers Pipeline': getattr(diffusers, 'DiffusionPipeline', None),
+        'InstaFlow': diffusers.utils.get_class_from_dynamic_module('instaflow_one_step', module_file='pipeline.py')
         # Segmind SSD-1B, Segmind Tiny
     }
     for k, v in pipelines.items():

@@ -442,7 +442,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         else:
             steps = p.steps
         debug_steps(f'Steps: type=base input={p.steps} output={steps} task={sd_models.get_diffusers_task(shared.sd_model)} refiner={use_refiner_start} denoise={p.denoising_strength} model={shared.sd_model_type}')
-        return max(2, int(steps))
+        return max(1, int(steps))
 
     def calculate_hires_steps():
         if p.hr_second_pass_steps > 0:
@@ -452,7 +452,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         else:
             steps = 0
         debug_steps(f'Steps: type=hires input={p.hr_second_pass_steps} output={steps} denoise={p.denoising_strength} model={shared.sd_model_type}')
-        return max(2, int(steps))
+        return max(1, int(steps))
 
     def calculate_refiner_steps():
         if "StableDiffusionXL" in shared.sd_refiner.__class__.__name__:
@@ -467,7 +467,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             #steps = p.refiner_steps # SD 1.5 with denoise strenght
             steps = (p.refiner_steps * 1.25) + 1
         debug_steps(f'Steps: type=refiner input={p.refiner_steps} output={steps} start={p.refiner_start} denoise={p.denoising_strength}')
-        return max(2, int(steps))
+        return max(1, int(steps))
 
     shared.sd_model = update_pipeline(shared.sd_model, p)
     base_args = set_pipeline_args(

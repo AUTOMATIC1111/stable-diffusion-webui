@@ -64,6 +64,8 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
         return record
 
     def list_items(self):
+        import sys
+        shared.log.debug(f'List items: function={sys._getframe(1).f_code.co_name}') # pylint: disable=protected-access
         # items = [self.create_item(cp) for cp in list(sd_models.checkpoints_list)] + list(self.list_reference())
         items = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=shared.max_workers) as executor:
