@@ -53,7 +53,6 @@ def get_pipelines():
         pipelines['InstaFlow'] = diffusers.utils.get_class_from_dynamic_module('instaflow_one_step', module_file='pipeline.py')
     except Exception:
         pipelines['InstaFlow'] = getattr(diffusers, 'StableDiffusionPipeline', None)
-        pass
 
     for k, v in pipelines.items():
         if k != 'Autodetect' and v is None:
