@@ -1,0 +1,260 @@
+{
+    "cc89": {
+        "realisticVisionV60B1_v51VAE": [
+            {
+                "filepath": "realisticVisionV60B1_v51VAE_f4744654_cc89_sample=1x4x64x64+2x4x64x64+8x4x96x96-timesteps=1+2+8-encoder_hidden_states=1x77x768+2x77x768+8x154x768.trt",
+                "config": {
+                    "profile": {
+                        "sample": [
+                            [
+                                1,
+                                4,
+                                64,
+                                64
+                            ],
+                            [
+                                2,
+                                4,
+                                64,
+                                64
+                            ],
+                            [
+                                8,
+                                4,
+                                96,
+                                96
+                            ]
+                        ],
+                        "timesteps": [
+                            [
+                                1
+                            ],
+                            [
+                                2
+                            ],
+                            [
+                                8
+                            ]
+                        ],
+                        "encoder_hidden_states": [
+                            [
+                                1,
+                                77,
+                                768
+                            ],
+                            [
+                                2,
+                                77,
+                                768
+                            ],
+                            [
+                                8,
+                                154,
+                                768
+                            ]
+                        ]
+                    },
+                    "static_shapes": false,
+                    "fp32": false,
+                    "inpaint": false,
+                    "refit": true,
+                    "lora": false,
+                    "vram": 0,
+                    "unet_hidden_dim": 4
+                }
+            }
+        ],
+        "edgeOfRealism_eorV20Fp16BakedVAE": [
+            {
+                "filepath": "edgeOfRealism_eorV20Fp16BakedVAE_3ed5de15_cc89_sample=1x4x64x64+2x4x64x64+8x4x96x96-timesteps=1+2+8-encoder_hidden_states=1x77x768+2x77x768+8x154x768.trt",
+                "config": {
+                    "profile": {
+                        "sample": [
+                            [
+                                1,
+                                4,
+                                64,
+                                64
+                            ],
+                            [
+                                2,
+                                4,
+                                64,
+                                64
+                            ],
+                            [
+                                8,
+                                4,
+                                96,
+                                96
+                            ]
+                        ],
+                        "timesteps": [
+                            [
+                                1
+                            ],
+                            [
+                                2
+                            ],
+                            [
+                                8
+                            ]
+                        ],
+                        "encoder_hidden_states": [
+                            [
+                                1,
+                                77,
+                                768
+                            ],
+                            [
+                                2,
+                                77,
+                                768
+                            ],
+                            [
+                                8,
+                                154,
+                                768
+                            ]
+                        ]
+                    },
+                    "static_shapes": false,
+                    "fp32": false,
+                    "inpaint": false,
+                    "refit": true,
+                    "lora": false,
+                    "vram": 0,
+                    "unet_hidden_dim": 4
+                }
+            }
+        ],
+        "dreamshaper_8": [
+            {
+                "filepath": "dreamshaper_8_9d40847d_cc89_sample=1x4x64x64+2x4x64x64+8x4x96x96-timesteps=1+2+8-encoder_hidden_states=1x77x768+2x77x768+8x154x768.trt",
+                "config": {
+                    "profile": {
+                        "sample": [
+                            [
+                                1,
+                                4,
+                                64,
+                                64
+                            ],
+                            [
+                                2,
+                                4,
+                                64,
+                                64
+                            ],
+                            [
+                                8,
+                                4,
+                                96,
+                                96
+                            ]
+                        ],
+                        "timesteps": [
+                            [
+                                1
+                            ],
+                            [
+                                2
+                            ],
+                            [
+                                8
+                            ]
+                        ],
+                        "encoder_hidden_states": [
+                            [
+                                1,
+                                77,
+                                768
+                            ],
+                            [
+                                2,
+                                77,
+                                768
+                            ],
+                            [
+                                8,
+                                154,
+                                768
+                            ]
+                        ]
+                    },
+                    "static_shapes": false,
+                    "fp32": false,
+                    "inpaint": false,
+                    "refit": true,
+                    "lora": false,
+                    "vram": 0,
+                    "unet_hidden_dim": 4
+                }
+            }
+        ],
+        "toonime_v10Baked": [
+            {
+                "filepath": "toonime_v10Baked_eae204dd_cc89_sample=1x4x64x64+2x4x64x64+8x4x96x96-timesteps=1+2+8-encoder_hidden_states=1x77x768+2x77x768+8x154x768.trt",
+                "config": {
+                    "profile": {
+                        "sample": [
+                            [
+                                1,
+                                4,
+                                64,
+                                64
+                            ],
+                            [
+                                2,
+                                4,
+                                64,
+                                64
+                            ],
+                            [
+                                8,
+                                4,
+                                96,
+                                96
+                            ]
+                        ],
+                        "timesteps": [
+                            [
+                                1
+                            ],
+                            [
+                                2
+                            ],
+                            [
+                                8
+                            ]
+                        ],
+                        "encoder_hidden_states": [
+                            [
+                                1,
+                                77,
+                                768
+                            ],
+                            [
+                                2,
+                                77,
+                                768
+                            ],
+                            [
+                                8,
+                                154,
+                                768
+                            ]
+                        ]
+                    },
+                    "static_shapes": false,
+                    "fp32": false,
+                    "inpaint": false,
+                    "refit": true,
+                    "lora": false,
+                    "vram": 0,
+                    "unet_hidden_dim": 4
+                }
+            }
+        ]
+    }
+}
