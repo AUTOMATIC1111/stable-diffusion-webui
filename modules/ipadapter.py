@@ -68,6 +68,7 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name='None', sc
         adapter = 'none' # unload adapter if previously loaded as it will cause runtime errors
     if adapter == 'none':
         unapply(pipe)
+        return False
     if not hasattr(pipe, 'load_ip_adapter'):
         shared.log.error(f'IP adapter: pipeline not supported: {pipe.__class__.__name__}')
         return False
