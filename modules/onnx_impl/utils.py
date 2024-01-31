@@ -19,6 +19,11 @@ def extract_device(args: List, kwargs: Dict):
 
 
 def move_inference_session(session: ort.InferenceSession, device: torch.device):
+    from modules.devices import device as default_device
+
+    if default_device.type == "cpu": # CPU-only torch without any other external ops overriding. This transfer will be led to mistake.
+        return session
+
     from . import DynamicSessionOptions, TemporalModule
     from .execution_providers import TORCH_DEVICE_TO_EP
 
