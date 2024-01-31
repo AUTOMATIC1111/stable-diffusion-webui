@@ -534,13 +534,13 @@ def atomically_save_image():
         if shared.opts.image_watermark_enabled:
             image = set_watermark(image, shared.opts.image_watermark)
         size = os.path.getsize(fn) if os.path.exists(fn) else 0
-        shared.log.debug(f'Saving: image="{fn}" type={image_format} resolution={image.width}x{image.height} size={size}')
+        shared.log.info(f'Saving: image="{fn}" type={image_format} resolution={image.width}x{image.height} size={size}')
         # additional metadata saved in files
         if shared.opts.save_txt and len(exifinfo) > 0:
             try:
                 with open(filename_txt, "w", encoding="utf8") as file:
                     file.write(f"{exifinfo}\n")
-                shared.log.debug(f'Saving: text="{filename_txt}" len={len(exifinfo)}')
+                shared.log.info(f'Saving: text="{filename_txt}" len={len(exifinfo)}')
             except Exception as e:
                 shared.log.warning(f'Image description save failed: {filename_txt} {e}')
         # actual save
@@ -589,7 +589,7 @@ def atomically_save_image():
             entry = { 'id': idx, 'filename': filename, 'time': datetime.datetime.now().isoformat(), 'info': exifinfo }
             entries.append(entry)
             shared.writefile(entries, fn, mode='w', silent=True)
-            shared.log.debug(f'Saving: json="{fn}" records={len(entries)}')
+            shared.log.info(f'Saving: json="{fn}" records={len(entries)}')
         save_queue.task_done()
 
 
