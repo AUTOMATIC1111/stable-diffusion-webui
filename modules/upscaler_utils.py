@@ -6,7 +6,7 @@ import torch
 import tqdm
 from PIL import Image
 
-from modules import images, shared, torch_utils
+from modules import devices, images, shared, torch_utils
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,8 @@ def upscale_pil_patch(model, img: Image.Image) -> Image.Image:
     with torch.no_grad():
         tensor = pil_image_to_torch_bgr(img).unsqueeze(0)  # add batch dimension
         tensor = tensor.to(device=param.device, dtype=param.dtype)
-        return torch_bgr_to_pil_image(model(tensor))
+        with devices.without_autocast():
+            return torch_bgr_to_pil_image(model(tensor))
 
 
 def upscale_with_model(
