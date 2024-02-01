@@ -401,7 +401,7 @@ onUiLoaded(async() => {
             toggleOverlap("off");
             fullScreenMode = false;
 
-            const closeBtn = targetElement.querySelector("button[aria-label='Remove Image']");
+            const closeBtn = targetElement.querySelector("button[aria-label='Clear canvas']");
             if (closeBtn) {
                 closeBtn.addEventListener("click", resetZoom);
             }
@@ -479,9 +479,10 @@ onUiLoaded(async() => {
 
         // Reset zoom when uploading a new image
         const fileInput = gradioApp().querySelector(
-            `${elemId} input[type="file"][accept="image/*"].svelte-116rqfv`
+            `${elemId} .upload-container input[type="file"][accept="image/*"]`
         );
         fileInput.addEventListener("click", resetZoom);
+        
 
         // Update the zoom level and pan position of the target element based on the values of the zoomLevel, panX and panY variables
         function updateZoom(newZoomLevel, mouseX, mouseY) {
@@ -603,6 +604,8 @@ onUiLoaded(async() => {
             const canvas = gradioApp().querySelector(
                 `${elemId} canvas[key="interface"]`
             );
+
+            // print(canvas)
 
             if (!canvas) return;
 
