@@ -70,6 +70,12 @@ onUiLoaded(async() => {
         }
     }
 
+    // // Hack to make the cursor always be the same size
+    function fixCursorSize(){
+        window.scrollBy(0, 1);
+    }
+    
+
     // Detect whether the element has a horizontal scroll bar
     function hasHorizontalScrollbar(element) {
         return element.scrollWidth > element.clientWidth;
@@ -245,7 +251,7 @@ onUiLoaded(async() => {
         elemData[elemId] = {
             zoom: 1,
             panX: 0,
-            panY: 0
+            panY: 0,
         };
         let fullScreenMode = false;
 
@@ -335,7 +341,7 @@ onUiLoaded(async() => {
             elemData[elemId] = {
                 zoomLevel: 1,
                 panX: 0,
-                panY: 0
+                panY: 0,
             };
 
             if (isExtension) {
@@ -359,6 +365,7 @@ onUiLoaded(async() => {
             }
 
             targetElement.style.width = "";
+            fixCursorSize()
         }
 
         // Toggle the zIndex of the target element between two values, allowing it to overlap or be overlapped by other elements
@@ -430,6 +437,11 @@ onUiLoaded(async() => {
                 targetElement.style.overflow = "visible";
             }
 
+            console.log("ZoomUpdated")
+
+            // Hack to make the cursor always be the same size
+            fixCursorSize()
+
             return newZoomLevel;
         }
 
@@ -485,6 +497,7 @@ onUiLoaded(async() => {
                 targetElement.style.overflow = "visible";
             }
 
+            fixCursorSize()
             if (fullScreenMode) {
                 resetZoom();
                 fullScreenMode = false;
@@ -764,14 +777,18 @@ onUiLoaded(async() => {
 
         // This is done because the original cursor is tied to the size of the kanvas, it can not be changed, so I came up with a hack that creates an exact copy that works properly
 
-        function copySpecificStyles(sourceElement, targetElement) {
-        // List of CSS property names that we want to clone.
-            const stylesToCopy = ['top', 'left', 'width', 'height', "opacity"];
-
-            // For each style in our list, copy it from sourceElement to targetElement.
+        function copySpecificStyles(sourceElement, targetElement, zoomLevel = 1) {
+            const stylesToCopy = ['top', 'left', 'width', 'height'];
+    
             stylesToCopy.forEach(styleName => {
                 if (sourceElement.style[styleName]) {
-                    targetElement.style[styleName] = sourceElement.style[styleName];
+                    // Convert style value to number and multiply by zoomLevel.
+                    let adjustedStyleValue = parseFloat(sourceElement.style[styleName]) / zoomLevel;
+    
+                    // Set the adjusted style value back to target element's style.
+                    // Important: this will work fine for top and left styles as they are usually in px.
+                    // But be careful with other units like em or % that might need different handling.
+                    targetElement.style[styleName] = `${adjustedStyleValue}px`;
                 }
             });
         }
@@ -820,12 +837,22 @@ onUiLoaded(async() => {
         }
 
         const canvasAreaEventsHandler = e => {
+
+            canvasCursors.forEach(cursor => cursor.style.display = "none");
+
+            paintCursorCopy.style.display = "block";
+            eraserCursorCopy.style.display = "block";
+
             if (!activeCursor) return;
 
             const cursorNum = eraseButton.classList.contains("active") ? 1 : 0;
 
-            // Update the styles of the currently active cursor
-            copySpecificStyles(canvasCursors[cursorNum], activeCursor);
+            if(elemData[elemId].zoomLevel != 1){
+                copySpecificStyles(canvasCursors[cursorNum], activeCursor, elemData[elemId].zoomLevel);
+            } else {
+                // Update the styles of the currently active cursor
+                copySpecificStyles(canvasCursors[cursorNum], activeCursor);    
+            }
 
             let offsetXAdjusted = e.offsetX;
             let offsetYAdjusted = e.offsetY;
@@ -837,17 +864,15 @@ onUiLoaded(async() => {
 
         const canvasAreaLeaveHandler = () => {
             if (activeCursor) {
+                activeCursor.style.opacity = 0
                 activeCursor.style.display = "none";
-                // Hide the cursor when mouse leaves.
-                activeCursor.style.opacity = 0;
             }
         };
 
         const canvasAreaEnterHandler = () => {
             if (activeCursor) {
+                activeCursor.style.opacity = 1
                 activeCursor.style.display = "block";
-                // Show the cursor when mouse enters.
-                activeCursor.style.opacity = 1;
             }
         };
 
@@ -860,7 +885,6 @@ onUiLoaded(async() => {
 
         // Additional listener for handling zoom or other transformations which might affect visual representation
         targetElement.addEventListener("wheel", canvasAreaEventsHandler);
-
     }
 
     applyZoomAndPan(elementIDs.sketch, false);
