@@ -175,18 +175,24 @@ def initialize():
 
 
 def initialize_olive():
+    global run_olive_workflow # pylint: disable=global-statement
     from installer import installed, log
-
     if not installed("olive-ai"):
         return
-
-    global run_olive_workflow # pylint: disable=global-statement
-
+    import sys
+    import importlib
+    orig_sys_path = sys.path
     try:
-        from olive.workflows import run as run_olive_workflow # pylint: disable=redefined-outer-name
+        spec = importlib.util.find_spec('onnxruntime.transformers')
+        sys.path = [d for d in spec.submodule_search_locations + sys.path if sys.path[1] not in d]
+        from onnxruntime.transformers import convert_generation # pylint: disable=unused-import
+        spec = importlib.util.find_spec('olive')
+        sys.path = spec.submodule_search_locations + sys.path
+        run_olive_workflow = importlib.import_module('olive.workflows').run
     except Exception as e:
         run_olive_workflow = None
         log.error(f'Olive: Failed to load olive-ai: {e}')
+    sys.path = orig_sys_path
 
 
 def install_olive():

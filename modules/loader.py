@@ -22,6 +22,7 @@ try:
     errors.log.debug(f'Load IPEX=={ipex.__version__}')
 except Exception:
     pass
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
 import torchvision # pylint: disable=W0611,C0411
@@ -35,6 +36,10 @@ if ".dev" in torch.__version__ or "+git" in torch.__version__:
     torch.__long_version__ = torch.__version__
     torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
 timer.startup.record("torch")
+
+from modules.onnx_impl import initialize_olive # pylint: disable=ungrouped-imports
+initialize_olive()
+timer.startup.record("olive")
 
 from fastapi import FastAPI # pylint: disable=W0611,C0411
 import gradio # pylint: disable=W0611,C0411

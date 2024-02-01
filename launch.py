@@ -186,8 +186,6 @@ if __name__ == "__main__":
     except Exception:
         pass
     installer.read_options()
-    from modules.onnx_impl import initialize_olive
-    initialize_olive()
     if args.skip_all:
         args.quick = True
     installer.check_python()
