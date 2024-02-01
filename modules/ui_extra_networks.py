@@ -135,7 +135,7 @@ def get_single_card(page: str = "", tabname: str = "", name: str = ""):
         item = page.items.get(name)
 
     page.read_user_metadata(item)
-    item_html = page.create_item_html(tabname, item)
+    item_html = page.create_item_html(tabname, item, shared.html("extra-networks-card.html"))
 
     return JSONResponse({"html": item_html})
 
