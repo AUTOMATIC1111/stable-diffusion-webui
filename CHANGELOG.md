@@ -12,7 +12,7 @@ OPTIONAL:
 - masking api
 - preprocess api
 
-## Update for 2023-01-31
+## Update for 2023-02-01
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
@@ -25,13 +25,13 @@ Another big release, highlights being:
 - Brand new **Intelligent masking**, manual or automatic  
   Using ML models (*LAMA* object removal, *REMBG* background removal, *SAM* segmentation, etc.) and with live previews  
   Granular blur, erode and dilate controls  
-- Massive work integrating latest advances with **OpenVINO**, **IPEX** and **Olive**  
+- Massive work integrating latest advances with [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVINO), [IPEX](https://github.com/vladmandic/automatic/wiki/Intel-ARC) and [ONNX Olive](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime-&-Olive)
 - New models and pipelines: *Mixture Tiling, SAG, InstaFlow, BlipDiffusion*  
 
 Plus welcome additions to **UI performance, usability and accessibility** and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
 
-As of this release, default backend is set to **diffusers** as its more feature rich than **original** and supports many additional models
+As of this release, default backend is set to **diffusers** as its more feature rich than **original** and supports many additional models  
 
 - **Control**:  
   - add **inpaint** support  
@@ -149,7 +149,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
     - modularized blip/booru interrogate  
       now appears as toolbuttons on image/gallery output  
     - faster browser page load  
-    - cleanup hints, thanks @brknsoul  
+    - update hints, thanks @brknsoul  
     - cleanup settings  
   - **server**
     - all move/offload options are disable by default for optimal performance  
@@ -197,6 +197,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
       example: `10-20:4` will generate 4 images with values `10,13,16,20`  
     - continue on error  
       now you can use xyz grid with different params and test which ones work and which dont  
+    - correct font scaling, thanks @nCoderGit  
   - **hypertile**  
     - enable vae tiling  
     - add autodetect optimial value  
@@ -223,6 +224,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
     > pip install -U git+https://github.com/pytorch-labs/ao  
   - new option: **compile text encoder** (experimental)  
 - **IPEX**, thanks @disty0  
+  - see [wiki](https://github.com/vladmandic/automatic/wiki/Intel-ARC) for details  
   - rewrite ipex hijacks without CondFunc  
     improves compatibilty and performance  
     fixes random memory leaks  
@@ -232,6 +234,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - disable 1024x1024 workaround if the GPU supports 64 bit  
   - fix lock-ups at very high resolutions  
 - **OpenVINO**, thanks @disty0  
+  - see [wiki](https://github.com/vladmandic/automatic/wiki/OpenVINO) for details  
   - **quantization support with NNCF**  
     run 8 bit directly without autocast  
     enable *OpenVINO Quantize Models with NNCF* from *Compute Settings*  
@@ -247,7 +250,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - reduce system memory usage after compile  
   - fix cache loading with multiple models  
 - **Olive** support, thanks @lshqqytiger
-  - fully merged in in [wiki](https://github.com/vladmandic/automatic/wiki/ONNX-Olive)  , see wiki for details, thanks @lshqqytiger  
+  - fully merged in in [wiki](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime-&-Olive), see wiki for details  
   - as a highlight, 4-5 it/s using DirectML on AMD GPU translates to 23-25 it/s using ONNX/Olive!  
 - **fixes**  
   - civitai model download: enable downloads of embeddings
