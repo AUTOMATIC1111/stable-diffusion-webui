@@ -1045,9 +1045,9 @@ class OnnxStableDiffusionXLPipeline(PipelineBase, optimum.onnxruntime.ORTStableD
         vae_encoder: Optional[ort.InferenceSession] = None,
         text_encoder_2: Optional[ort.InferenceSession] = None,
         tokenizer_2: Any = None,
-        use_io_binding: bool | None = None,
+        use_io_binding: Optional[bool] = None,
         model_save_dir = None,
-        add_watermarker: bool | None = None
+        add_watermarker: Optional[bool] = None
     ):
         super(optimum.onnxruntime.ORTStableDiffusionXLPipeline, self).__init__(vae_decoder, text_encoder, unet, config, tokenizer, scheduler, feature_extractor, vae_encoder, text_encoder_2, tokenizer_2, use_io_binding, model_save_dir, add_watermarker)
 
@@ -1071,9 +1071,9 @@ class OnnxStableDiffusionXLImg2ImgPipeline(PipelineBase, optimum.onnxruntime.ORT
         vae_encoder: Optional[ort.InferenceSession] = None,
         text_encoder_2: Optional[ort.InferenceSession] = None,
         tokenizer_2: Any = None,
-        use_io_binding: bool | None = None,
+        use_io_binding: Optional[bool] = None,
         model_save_dir = None,
-        add_watermarker: bool | None = None
+        add_watermarker: Optional[bool] = None
     ):
         super(optimum.onnxruntime.ORTStableDiffusionXLImg2ImgPipeline, self).__init__(vae_decoder, text_encoder, unet, config, tokenizer, scheduler, feature_extractor, vae_encoder, text_encoder_2, tokenizer_2, use_io_binding, model_save_dir, add_watermarker)
 
