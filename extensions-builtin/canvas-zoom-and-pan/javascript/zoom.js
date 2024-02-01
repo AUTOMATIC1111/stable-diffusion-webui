@@ -395,7 +395,7 @@ onUiLoaded(async() => {
             targetElement.style.transform = `scale(${elemData[elemId].zoomLevel}) translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px)`;
 
             const canvas = gradioApp().querySelector(
-                `${elemId} canvas[key="interface"]`
+                `${elemId} canvas`
             );
 
             toggleOverlap("off");
@@ -456,10 +456,10 @@ onUiLoaded(async() => {
         ) {
             const input =
                 gradioApp().querySelector(
-                    `${elemId} input[aria-label='Brush radius']`
+                    `${elemId} input[type='range']`
                 ) ||
                 gradioApp().querySelector(
-                    `${elemId} button[aria-label="Use brush"]`
+                    `${elemId} button[aria-label="Size button"]`
                 );
 
             if (input) {
@@ -602,7 +602,7 @@ onUiLoaded(async() => {
         // Fullscreen mode
         function fitToScreen() {
             const canvas = gradioApp().querySelector(
-                `${elemId} canvas[key="interface"]`
+                `${elemId} canvas`
             );
 
             // print(canvas)
@@ -724,7 +724,7 @@ onUiLoaded(async() => {
 
         targetElement.isExpanded = false;
         function autoExpand() {
-            const canvas = document.querySelector(`${elemId} canvas[key="interface"]`);
+            const canvas = document.querySelector(`${elemId} canvas`);
             if (canvas) {
                 if (hasHorizontalScrollbar(targetElement) && targetElement.isExpanded === false) {
                     targetElement.style.visibility = "hidden";
