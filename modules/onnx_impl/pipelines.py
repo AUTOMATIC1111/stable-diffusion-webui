@@ -21,7 +21,7 @@ from modules.paths import sd_configs_path, models_path
 from modules.sd_models import CheckpointInfo
 from modules.processing import StableDiffusionProcessing
 from modules.olive_script import config
-from . import DynamicSessionOptions, TorchCompatibleModule
+from . import DynamicSessionOptions, TorchCompatibleModule, run_olive_workflow
 from .utils import extract_device, move_inference_session, check_diffusers_cache, check_pipeline_sdxl, check_cache_onnx, load_init_dict, load_submodel, load_submodels, patch_kwargs, load_pipeline, get_base_constructor, get_io_config
 from .execution_providers import ExecutionProvider, EP_TO_NAME, get_provider
 
@@ -224,7 +224,6 @@ class OnnxRawPipeline(PipelineBase):
         if not shared.opts.olive_cache_optimized:
             out_dir = shared.opts.onnx_temp_dir
 
-        from olive.workflows import run # pylint: disable=no-name-in-module
         try:
             from olive.model import ONNXModel # olive-ai==0.4.0
         except ImportError:
@@ -262,7 +261,7 @@ class OnnxRawPipeline(PipelineBase):
                         if float16:
                             olive_config["passes"][pass_key]["config"]["keep_io_types"] = False
 
-            run(olive_config)
+            run_olive_workflow(olive_config)
 
             with open(os.path.join("footprints", f"{submodel}_{EP_TO_NAME[shared.opts.onnx_execution_provider]}_footprints.json"), "r", encoding="utf-8") as footprint_file:
                 footprints = json.load(footprint_file)
@@ -371,47 +370,50 @@ class OnnxRawPipeline(PipelineBase):
         out_dir = converted_dir
 
         if shared.opts.cuda_compile_backend == "olive-ai":
-            submodels_for_olive = []
-
-            if "Text Encoder" in shared.opts.cuda_compile:
-                if not self.is_refiner:
-                    submodels_for_olive.append("text_encoder")
-                if self._is_sdxl:
-                    submodels_for_olive.append("text_encoder_2")
-            if "Model" in shared.opts.cuda_compile:
-                submodels_for_olive.append("unet")
-            if "VAE" in shared.opts.cuda_compile:
-                submodels_for_olive.append("vae_encoder")
-                submodels_for_olive.append("vae_decoder")
-
-            if len(submodels_for_olive) == 0:
-                log.warning("Olive: Skipping olive run.")
+            if run_olive_workflow is None:
+                log.warning('Olive: Skipping model compilation because olive-ai was loaded unsuccessfully.')
             else:
-                log.warning("Olive implementation is experimental. It contains potentially an issue and is subject to change at any time.")
+                submodels_for_olive = []
 
-                in_dir = converted_dir
+                if "Text Encoder" in shared.opts.cuda_compile:
+                    if not self.is_refiner:
+                        submodels_for_olive.append("text_encoder")
+                    if self._is_sdxl:
+                        submodels_for_olive.append("text_encoder_2")
+                if "Model" in shared.opts.cuda_compile:
+                    submodels_for_olive.append("unet")
+                if "VAE" in shared.opts.cuda_compile:
+                    submodels_for_olive.append("vae_encoder")
+                    submodels_for_olive.append("vae_decoder")
 
-                if p.width != p.height:
-                    log.warning("Olive: Different width and height are detected. The quality of the result is not guaranteed.")
+                if len(submodels_for_olive) == 0:
+                    log.warning("Olive: Skipping olive run.")
+                else:
+                    log.warning("Olive implementation is experimental. It contains potentially an issue and is subject to change at any time.")
 
-                if shared.opts.olive_static_dims:
-                    sess_options = DynamicSessionOptions()
-                    sess_options.enable_static_dims({
-                        "is_sdxl": self._is_sdxl,
-                        "is_refiner": self.is_refiner,
+                    in_dir = converted_dir
 
-                        "hidden_batch_size": p.batch_size if disable_classifier_free_guidance else p.batch_size * 2,
-                        "height": p.height,
-                        "width": p.width,
-                    })
-                    kwargs["sess_options"] = sess_options
+                    if p.width != p.height:
+                        log.warning("Olive: Different width and height are detected. The quality of the result is not guaranteed.")
 
-                try:
-                    out_dir = self.run_olive(submodels_for_olive, in_dir)
-                except Exception as e:
-                    log.error(f"Olive: Failed to run olive passes: model='{self.original_filename}', error={e}")
-                    shutil.rmtree(shared.opts.onnx_temp_dir, ignore_errors=True)
-                    shutil.rmtree(os.path.join(shared.opts.onnx_cached_models_path, self.original_filename), ignore_errors=True)
+                    if shared.opts.olive_static_dims:
+                        sess_options = DynamicSessionOptions()
+                        sess_options.enable_static_dims({
+                            "is_sdxl": self._is_sdxl,
+                            "is_refiner": self.is_refiner,
+
+                            "hidden_batch_size": p.batch_size if disable_classifier_free_guidance else p.batch_size * 2,
+                            "height": p.height,
+                            "width": p.width,
+                        })
+                        kwargs["sess_options"] = sess_options
+
+                    try:
+                        out_dir = self.run_olive(submodels_for_olive, in_dir)
+                    except Exception as e:
+                        log.error(f"Olive: Failed to run olive passes: model='{self.original_filename}', error={e}")
+                        shutil.rmtree(shared.opts.onnx_temp_dir, ignore_errors=True)
+                        shutil.rmtree(os.path.join(shared.opts.onnx_cached_models_path, self.original_filename), ignore_errors=True)
 
         pipeline = self.derive_properties(load_pipeline(self.constructor, out_dir, **kwargs))
 

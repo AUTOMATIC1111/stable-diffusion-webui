@@ -5,6 +5,7 @@ import onnxruntime as ort
 
 
 initialized = False
+run_olive_workflow = None
 
 
 class DynamicSessionOptions(ort.SessionOptions):
@@ -171,3 +172,34 @@ def initialize():
     diffusers.ORTStableDiffusionXLImg2ImgPipeline = diffusers.OnnxStableDiffusionXLImg2ImgPipeline
 
     initialized = True
+
+
+def initialize_olive():
+    from installer import installed, log
+
+    if not installed("olive-ai"):
+        return
+
+    global run_olive_workflow # pylint: disable=global-statement
+
+    try:
+        from olive.workflows import run as run_olive_workflow # pylint: disable=redefined-outer-name
+    except Exception as e:
+        run_olive_workflow = None
+        log.error(f'Olive: Failed to load olive-ai: {e}')
+
+
+def install_olive():
+    from installer import installed, install, log
+
+    if installed("olive-ai"):
+        return
+
+    try:
+        log.info('Installing Olive')
+        install('olive-ai', 'olive-ai', ignore=True)
+        import olive.workflows # pylint: disable=unused-import
+    except Exception as e:
+        log.error(f'Olive: Failed to load olive-ai: {e}')
+    else:
+        log.info('Olive: Please restart webui session.')

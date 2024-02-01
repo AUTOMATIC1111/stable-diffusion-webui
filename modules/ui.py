@@ -7,7 +7,7 @@ from modules.call_queue import wrap_gradio_call
 from modules import timer, gr_hijack, shared, theme, sd_models, script_callbacks, modelloader, ui_common, ui_loadsave, ui_symbols, ui_javascript, generation_parameters_copypaste, call_queue
 from modules.paths import script_path, data_path # pylint: disable=unused-import
 from modules.dml import directml_override_opts
-from modules.onnx_impl.olive_dep import install_olive
+from modules.onnx_impl import install_olive
 import modules.scripts
 import modules.errors
 

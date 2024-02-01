@@ -23,14 +23,6 @@ python = sys.executable # used by some extensions to run python
 skip_install = False # parsed by some extensions
 
 
-def init_olive():
-    try:
-        import olive.workflows # pylint: disable=unused-import
-        installer.log.debug('Load olive')
-    except Exception as e:
-        installer.log.error(f'Failed to load olive: {e}')
-
-
 def init_args():
     global parser, args # pylint: disable=global-statement
     import modules.cmd_args
@@ -194,7 +186,8 @@ if __name__ == "__main__":
     except Exception:
         pass
     installer.read_options()
-    init_olive()
+    from modules.onnx_impl import initialize_olive
+    initialize_olive()
     if args.skip_all:
         args.quick = True
     installer.check_python()
