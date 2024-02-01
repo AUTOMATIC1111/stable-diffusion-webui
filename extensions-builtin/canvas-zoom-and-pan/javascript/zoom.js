@@ -16,6 +16,20 @@ onUiLoaded(async() => {
     // Helper functions
     // Get active tab
 
+    function debounce(func, wait) {
+        let timeout;
+    
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+    
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
     /**
      * Waits for an element to be present in the DOM.
      */
@@ -289,6 +303,11 @@ onUiLoaded(async() => {
             panY: 0
         };
         let fullScreenMode = false;
+
+        // Remove border, cause bags
+
+        const canvasBorder = targetElement.querySelector(".border")
+        canvasBorder.style.display = "none"
 
         // Create tooltip
         function createTooltip() {
@@ -854,6 +873,7 @@ onUiLoaded(async() => {
             elemData[elemId].panY += movementY * panSpeed;
 
             // Delayed redraw of an element
+            const canvas = targetElement.querySelector("canvas")
             requestAnimationFrame(() => {
                 targetElement.style.transform = `translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px) scale(${elemData[elemId].zoomLevel})`;
                 toggleOverlap("on");
@@ -912,6 +932,105 @@ onUiLoaded(async() => {
 
         gradioApp().addEventListener("mousemove", handleMoveByKey);
 
+        
+    // Cursor manipulation script for a painting application.
+    // The purpose of this code is to create custom cursors (for painting and erasing)
+    // that can change depending on which button the user presses.
+    // When the mouse moves over the canvas, the appropriate custom cursor also moves,
+    // replicating its appearance dynamically based on various CSS properties.
+
+    // This is done because the original cursor is tied to the size of the kanvas, it can not be changed, so I came up with a hack that creates an exact copy that works properly
+
+    function copySpecificStyles(sourceElement, targetElement) {
+        // List of CSS property names that we want to clone.
+        const stylesToCopy = ['top', 'left', 'width', 'height',"opacity"];
+
+        // For each style in our list, copy it from sourceElement to targetElement.
+        stylesToCopy.forEach(styleName => {
+            if (sourceElement.style[styleName]) {
+                targetElement.style[styleName] = sourceElement.style[styleName];
+            }
+        });
+        }
+
+    const eraseButton = targetElement.querySelector(`button[aria-label='Erase button']`);
+    const paintButton = targetElement.querySelector(`button[aria-label='Draw button']`);
+
+    const canvasCursors = targetElement.querySelectorAll("span.svelte-btgkrd");
+    const paintCursorCopy = canvasCursors[0].cloneNode(true);
+    const eraserCursorCopy = canvasCursors[1].cloneNode(true);
+
+    canvasCursors.forEach(cursor => cursor.style.display = "none");
+
+    targetElement.appendChild(paintCursorCopy);
+    paintCursorCopy.style.display = "none";
+
+    targetElement.appendChild(eraserCursorCopy);
+    eraserCursorCopy.style.display = "none";
+
+    let activeCursor;
+
+    paintButton.addEventListener('click', () => {
+        activateTool(paintButton, eraseButton, paintCursorCopy);
+    });
+
+    eraseButton.addEventListener('click', () => {
+        activateTool(eraseButton, paintButton, eraserCursorCopy);
+    });
+
+    function activateTool(activeButton, inactiveButton, activeCursorCopy) {
+        activeButton.classList.add("active");
+        inactiveButton.classList.remove("active");
+
+        if (activeCursor){
+            activeCursor.style.display = "none";
+        }
+
+        activeCursor = activeCursorCopy;
+        activeCursor.style.display = "block";
+    }
+
+    const canvasAreaEventsHandler = e => {
+        if (!activeCursor) return;
+
+        const cursorNum = eraseButton.classList.contains("active") ? 1 : 0;
+
+       // Update the styles of the currently active cursor
+       copySpecificStyles(canvasCursors[cursorNum], activeCursor);
+
+       let offsetXAdjusted = e.offsetX;
+       let offsetYAdjusted = e.offsetY;
+
+       // Position the cursor based on the current mouse coordinates within target element.
+       activeCursor.style.transform =
+           `translate(${offsetXAdjusted}px, ${offsetYAdjusted}px)`;
+    };
+
+    const canvasAreaLeaveHandler = () => {
+       if (activeCursor) {
+           activeCursor.style.display = "none";
+           // Hide the cursor when mouse leaves.
+           activeCursor.style.opacity = 0;
+       }
+    }
+
+    const canvasAreaEnterHandler= () => {
+       if (activeCursor) {
+            activeCursor.style.display = "block";
+            // Show the cursor when mouse enters.
+            activeCursor.style.opacity = 1;
+        }
+    }
+
+    const canvasArea = targetElement.querySelector("canvas");
+
+    // Attach event listeners to the target element and canvas area
+    targetElement.addEventListener("mousemove", canvasAreaEventsHandler);
+    canvasArea.addEventListener("mouseout", canvasAreaLeaveHandler);
+    canvasArea.addEventListener("mouseenter", canvasAreaEnterHandler);
+
+    // Additional listener for handling zoom or other transformations which might affect visual representation
+    targetElement.addEventListener("wheel", canvasAreaEventsHandler);
 
     }
 
@@ -946,27 +1065,26 @@ onUiLoaded(async() => {
     window.applyZoomAndPanIntegration = applyZoomAndPanIntegration; // for any extension
 
 
-    const img2imgArean = document.querySelector("#img2img_settings")
-    img2imgArean.addEventListener("mousemove",(e) => {
-        const tabId = getTabId(elements)
-
-
-        // Check for tooltip
-        if (tabId == "#img2img_sketch" ||tabId == "#inpaint_sketch" || tabId == "#img2maskimg" ) {
-            const zoomTooltip = document.querySelector(`${tabId} .canvas-tooltip`)
-
-            // If tooltip removed we again add zoom functionality
-            if(!zoomTooltip) {
-                console.log("added")
-                applyZoomAndPan(tabId,false)
-            } else {
-                console.log("Not added")
-            }
-
+    const img2imgArea = document.querySelector("#img2img_settings")
+    const checkForTooltip = (e) => {
+        const tabId = getTabId(elements); // Make sure that the item is passed correctly to determine the tabId
+    
+        if (tabId === "#img2img_sketch" || tabId === "#inpaint_sketch" || tabId === "#img2maskimg") {
+            const zoomTooltip = document.querySelector(`${tabId} .canvas-tooltip`);
+    
+            if (!zoomTooltip) {
+                applyZoomAndPan(tabId,false);
+                // resetZoom()
+            } 
         }
+    };
+    
+    // Wrapping your function through debounce to reduce the number of calls
+    const debouncedCheckForTooltip = debounce(checkForTooltip, 20);
+    
+    // Assigning an event handler
+    img2imgArea.addEventListener("mousemove", debouncedCheckForTooltip);
 
-        
-    })
     /*
         The function `applyZoomAndPanIntegration` takes two arguments:
 
