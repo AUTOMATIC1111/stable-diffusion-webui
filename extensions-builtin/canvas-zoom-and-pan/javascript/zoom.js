@@ -437,8 +437,6 @@ onUiLoaded(async() => {
                 targetElement.style.overflow = "visible";
             }
 
-            console.log("ZoomUpdated")
-
             // Hack to make the cursor always be the same size
             fixCursorSize()
 
@@ -833,15 +831,13 @@ onUiLoaded(async() => {
             }
 
             activeCursor = activeCursorCopy;
-            activeCursor.style.display = "block";
+            // activeCursor.style.display = "none";
+            activeCursor.style.position = "absolute"
         }
 
         const canvasAreaEventsHandler = e => {
 
             canvasCursors.forEach(cursor => cursor.style.display = "none");
-
-            paintCursorCopy.style.display = "block";
-            eraserCursorCopy.style.display = "block";
 
             if (!activeCursor) return;
 
