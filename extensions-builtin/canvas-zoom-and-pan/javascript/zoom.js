@@ -945,6 +945,28 @@ onUiLoaded(async() => {
 
     window.applyZoomAndPanIntegration = applyZoomAndPanIntegration; // for any extension
 
+
+    const img2imgArean = document.querySelector("#img2img_settings")
+    img2imgArean.addEventListener("mousemove",(e) => {
+        const tabId = getTabId(elements)
+
+
+        // Check for tooltip
+        if (tabId == "#img2img_sketch" ||tabId == "#inpaint_sketch" || tabId == "#img2maskimg" ) {
+            const zoomTooltip = document.querySelector(`${tabId} .canvas-tooltip`)
+
+            // If tooltip removed we again add zoom functionality
+            if(!zoomTooltip) {
+                console.log("added")
+                applyZoomAndPan(tabId,false)
+            } else {
+                console.log("Not added")
+            }
+
+        }
+
+        
+    })
     /*
         The function `applyZoomAndPanIntegration` takes two arguments:
 
