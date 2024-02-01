@@ -1,6 +1,5 @@
 import os
 import time
-import math
 from typing import List, Union
 import cv2
 import numpy as np
@@ -14,55 +13,13 @@ from modules.control.units import lite # Kohya ControlLLLite
 from modules.control.units import t2iadapter # TencentARC T2I-Adapter
 from modules.control.units import reference # ControlNet-Reference
 from modules import devices, shared, errors, processing, images, sd_models, scripts, masking
+from modules.processing_class import StableDiffusionProcessingControl
 
 
 debug = shared.log.trace if os.environ.get('SD_CONTROL_DEBUG', None) is not None else lambda *args, **kwargs: None
 debug('Trace: CONTROL')
 pipe = None
 original_pipeline = None
-
-
-class ControlProcessing(processing.StableDiffusionProcessingImg2Img):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.strength = None
-        self.adapter_conditioning_scale = None
-        self.adapter_conditioning_factor = None
-        self.guess_mode = None
-        self.controlnet_conditioning_scale = None
-        self.control_guidance_start = None
-        self.control_guidance_end = None
-        self.reference_attn = None
-        self.reference_adain = None
-        self.attention_auto_machine_weight = None
-        self.gn_auto_machine_weight = None
-        self.style_fidelity = None
-        self.ref_image = None
-        self.image = None
-        self.query_weight = None
-        self.adain_weight = None
-        self.adapter_conditioning_factor = 1.0
-        self.attention = 'Attention'
-        self.fidelity = 0.5
-        self.override = None
-        self.ip_adapter_name = None
-        self.ip_adapter_scale = 1.0
-        self.ip_adapter_image = None
-
-    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts): # abstract
-        pass
-
-    def init_hr(self):
-        if self.resize_name == 'None' or self.scale_by == 1.0:
-            return
-        self.is_hr_pass = True
-        self.hr_force = True
-        self.hr_upscaler = self.resize_name
-        self.hr_upscale_to_x, self.hr_upscale_to_y = int(self.width * self.scale_by), int(self.height * self.scale_by)
-        self.hr_upscale_to_x, self.hr_upscale_to_y = 8 * math.ceil(self.hr_upscale_to_x / 8), 8 * math.ceil(self.hr_upscale_to_y / 8)
-        # hypertile_set(self, hr=True)
-        shared.state.job_count = 2 * self.n_iter
-        shared.log.debug(f'Control hires: upscaler="{self.hr_upscaler}" upscale={self.scale_by} size={self.hr_upscale_to_x}x{self.hr_upscale_to_y}')
 
 
 def restore_pipeline():
@@ -100,7 +57,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
     if mask is not None and input_type == 0:
         input_type = 1 # inpaint always requires control_image
 
-    p = ControlProcessing(
+    p = StableDiffusionProcessingControl(
         prompt = prompt,
         negative_prompt = negative,
         styles = styles,

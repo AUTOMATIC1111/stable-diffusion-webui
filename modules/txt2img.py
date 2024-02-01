@@ -1,6 +1,5 @@
 import os
-import modules.scripts
-from modules import shared, processing
+from modules import shared, processing, scripts
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.ui import plaintext_to_html
 
@@ -82,9 +81,9 @@ def txt2img(id_task,
         hdr_maximize=hdr_maximize, hdr_max_center=hdr_max_center, hdr_max_boundry=hdr_max_boundry,
         override_settings=override_settings,
     )
-    p.scripts = modules.scripts.scripts_txt2img
+    p.scripts = scripts.scripts_txt2img
     p.script_args = args
-    processed = modules.scripts.scripts_txt2img.run(p, *args)
+    processed = scripts.scripts_txt2img.run(p, *args)
     if processed is None:
         processed = processing.process_images(p)
     p.close()

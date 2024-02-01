@@ -33,12 +33,10 @@ button { font-size: var(--text-lg) !important; }
 .gradio-container { max-width: unset !important; padding: var(--block-label-padding) !important; }
 .gradio-container .prose a, .gradio-container .prose a:visited{ color: unset; text-decoration: none; }
 .gradio-dropdown { margin-right: var(--spacing-sm) !important; min-width:160px; max-width:fit-content }
-.gradio-dropdown ul.options { z-index: 1000; min-width: fit-content; max-height: 33vh !important; white-space: nowrap; }
+.gradio-dropdown ul.options { z-index: 1000; min-width: fit-content; max-height: 50vh !important; white-space: nowrap; }
 .gradio-dropdown ul.options li.item { padding: var(--spacing-xs); }
 .gradio-dropdown ul.options li.item:not(:has(.hide)) { background-color: var(--primary-500); }
-.gradio-dropdown .token { padding: var(--spacing-xs); }
-.gradio-dropdown span { margin-bottom: 0 !important; font-size: var(--text-sm); }
-.gradio-dropdown .reference { margin-bottom: var(--spacing-sm) !important; }
+.gradio-dropdown .token { padding: var(--spacing-xs) !important; }
 .gradio-html { color: var(--body-text-color); }
 .gradio-html .min { min-height: 0; }
 .gradio-html div.wrap { height: 100%; }
@@ -83,7 +81,7 @@ button.custom-button{ border-radius: var(--button-large-radius); padding: var(--
 #txt2img_footer, #img2img_footer, #control_footer { height: fit-content; display: none; }
 #txt2img_generate_box, #img2img_generate_box, #control_general_box { gap: 0.5em; flex-wrap: wrap-reverse; height: fit-content; }
 #txt2img_actions_column, #img2img_actions_column, #control_actions_column { gap: 0.3em; height: fit-content; }
-#txt2img_generate_box>button, #img2img_generate_box>button, #control_generate_box>button, #txt2img_enqueue, #img2img_enqueue { min-height: 42px; max-height: 42px; line-height: 1em; }
+#txt2img_generate_box>button, #img2img_generate_box>button, #control_generate_box>button, #txt2img_enqueue, #img2img_enqueue { min-height: 44px; max-height: 44px; line-height: 1em; }
 #txt2img_generate_line2, #img2img_generate_line2, #txt2img_tools, #img2img_tools, #control_generate_line2, #control_tools { display: flex; }
 #txt2img_generate_line2>button, #img2img_generate_line2>button, #extras_generate_box>button, #control_generate_line2>button, #txt2img_tools>button, #img2img_tools>button, #control_tools>button { height: 2em; line-height: 0; font-size: var(--text-md);
   min-width: unset; display: block !important; }

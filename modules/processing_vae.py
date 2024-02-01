@@ -2,8 +2,7 @@ import os
 import time
 import torch
 import torchvision.transforms.functional as TF
-from modules import shared, devices, sd_vae, sd_models
-import modules.taesd.sd_vae_taesd as sd_vae_taesd
+from modules import shared, devices, sd_models, sd_vae, sd_vae_taesd
 
 
 debug = shared.log.trace if os.environ.get('SD_VAE_DEBUG', None) is not None else lambda *args, **kwargs: None

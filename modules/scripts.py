@@ -5,13 +5,12 @@ import time
 from collections import namedtuple
 import gradio as gr
 from modules import paths, script_callbacks, extensions, script_loading, scripts_postprocessing, errors, timer
-from installer import log, args as cmd_opts
 
 
 AlwaysVisible = object()
 time_component = {}
 time_setup = {}
-debug = log.trace if os.environ.get('SD_SCRIPT_DEBUG', None) is not None else lambda *args, **kwargs: None
+debug = errors.log.trace if os.environ.get('SD_SCRIPT_DEBUG', None) is not None else lambda *args, **kwargs: None
 
 
 class PostprocessImageArgs:
@@ -87,6 +86,14 @@ class Script:
     def process(self, p, *args):
         """
         This function is called before processing begins for AlwaysVisible scripts.
+        You can modify the processing object (p) here, inject hooks, etc.
+        args contains all values returned by components from ui()
+        """
+        pass # pylint: disable=unnecessary-pass
+
+    def process_images(self, p, *args):
+        """
+        This function is called instead of main processing for AlwaysVisible scripts.
         You can modify the processing object (p) here, inject hooks, etc.
         args contains all values returned by components from ui()
         """
@@ -219,7 +226,7 @@ def list_scripts(scriptdirname, extension):
             if os.path.isfile(os.path.join(base, "..", ".priority")):
                 with open(os.path.join(base, "..", ".priority"), "r", encoding="utf-8") as f:
                     priority = priority + str(f.read().strip())
-                    log.debug(f'Script priority override: ${script.name}:{priority}')
+                    errors.log.debug(f'Script priority override: ${script.name}:{priority}')
             else:
                 priority = priority + script.priority
             priority_list.append(ScriptFile(script.basedir, script.filename, script.path, priority))
@@ -306,7 +313,7 @@ class ScriptSummary:
         if total == 0:
             return
         scripts = [f'{k}:{v}' for k, v in self.time.items() if v > 0]
-        log.debug(f'Script: op={self.op} total={total} scripts={scripts}')
+        errors.log.debug(f'Script: op={self.op} total={total} scripts={scripts}')
 
 
 class ScriptRunner:
@@ -352,7 +359,7 @@ class ScriptRunner:
                     self.scripts.append(script)
                     self.selectable_scripts.append(script)
             except Exception as e:
-                log.error(f'Script initialize: {path} {e}')
+                errors.log.error(f'Script initialize: {path} {e}')
 
     """
     def create_script_ui(self, script):
@@ -418,7 +425,7 @@ class ScriptRunner:
             for control in controls:
                 debug(f'Script control: parent={script.parent} script="{script.name}" label="{control.label}" type={control} id={control.elem_id}')
                 if not isinstance(control, gr.components.IOComponent):
-                    log.error(f'Invalid script control: "{script.filename}" control={control}')
+                    errors.log.error(f'Invalid script control: "{script.filename}" control={control}')
                     continue
                 control.custom_script_source = os.path.basename(script.filename)
                 arg_info = api_models.ScriptArg(label=control.label or "")
@@ -521,6 +528,19 @@ class ScriptRunner:
                 errors.display(e, f'Running script process: {script.filename}')
             s.record(script.title())
         s.report()
+
+    def process_images(self, p, **kwargs):
+        s = ScriptSummary('process_images')
+        processed = None
+        for script in self.alwayson_scripts:
+            try:
+                args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
+                processed = script.process_images(p, *args, **kwargs)
+            except Exception as e:
+                errors.display(e, f'Running script process images: {script.filename}')
+            s.record(script.title())
+        s.report()
+        return processed
 
     def before_process_batch(self, p, **kwargs):
         s = ScriptSummary('before-process-batch')

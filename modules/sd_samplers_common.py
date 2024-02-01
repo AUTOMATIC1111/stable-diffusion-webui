@@ -3,8 +3,7 @@ from collections import namedtuple
 import torch
 import torchvision.transforms as T
 from PIL import Image
-from modules import devices, processing, images, sd_vae_approx, sd_samplers, shared
-import modules.taesd.sd_vae_taesd as sd_vae_taesd
+from modules import shared, devices, processing, images, sd_vae_approx, sd_vae_taesd, sd_samplers
 
 
 SamplerData = namedtuple('SamplerData', ['name', 'constructor', 'aliases', 'options'])
