@@ -785,10 +785,14 @@ onUiLoaded(async() => {
 
         canvasCursors.forEach(cursor => cursor.style.display = "none");
 
-        targetElement.appendChild(paintCursorCopy);
+        canvasCursors[0].parentNode.insertBefore(paintCursorCopy, canvasCursors[0].nextSibling);
+        canvasCursors[1].parentNode.insertBefore(eraserCursorCopy, canvasCursors[1].nextSibling);
+
+
+        // targetElement.appendChild(paintCursorCopy);
         paintCursorCopy.style.display = "none";
 
-        targetElement.appendChild(eraserCursorCopy);
+        // targetElement.appendChild(eraserCursorCopy);
         eraserCursorCopy.style.display = "none";
 
         let activeCursor;
@@ -804,6 +808,8 @@ onUiLoaded(async() => {
         function activateTool(activeButton, inactiveButton, activeCursorCopy) {
             activeButton.classList.add("active");
             inactiveButton.classList.remove("active");
+
+            // canvasCursors.forEach(cursor => cursor.style.display = "none");
 
             if (activeCursor) {
                 activeCursor.style.display = "none";
