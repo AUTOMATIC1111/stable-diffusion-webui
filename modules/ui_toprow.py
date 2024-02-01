@@ -17,6 +17,7 @@ class Toprow:
     button_deepbooru = None
 
     interrupt = None
+    interrupting = None
     skip = None
     submit = None
 
@@ -98,13 +99,8 @@ class Toprow:
 
             self.interrupt = gr.Button('Interrupt', elem_id=f"{self.id_part}_interrupt", elem_classes="generate-box-interrupt", tooltip="End generation immediately or after completing current batch")
             self.skip = gr.Button('Skip', elem_id=f"{self.id_part}_skip", elem_classes="generate-box-skip", tooltip="Stop generation of current batch and continues onto next batch")
+            self.interrupting = gr.Button('Interrupting...', elem_id=f"{self.id_part}_interrupting", elem_classes="generate-box-interrupting", tooltip="Interrupting generation...")
             self.submit = gr.Button('Generate', elem_id=f"{self.id_part}_generate", variant='primary', tooltip="Right click generate forever menu")
-
-            self.skip.click(
-                fn=lambda: shared.state.skip(),
-                inputs=[],
-                outputs=[],
-            )
 
             def interrupt_function():
                 if not shared.state.stopping_generation and shared.state.job_count > 1 and shared.opts.interrupt_after_current:
@@ -113,11 +109,9 @@ class Toprow:
                 else:
                     shared.state.interrupt()
 
-            self.interrupt.click(
-                fn=interrupt_function,
-                inputs=[],
-                outputs=[],
-            )
+            self.skip.click(fn=shared.state.skip)
+            self.interrupt.click(fn=interrupt_function, _js='function(){ showSubmitInterruptingPlaceholder("' + self.id_part + '"); }')
+            self.interrupting.click(fn=interrupt_function)
 
     def create_tools_row(self):
         with gr.Row(elem_id=f"{self.id_part}_tools"):
