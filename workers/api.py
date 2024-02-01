@@ -33,7 +33,7 @@ def decode_and_save_base64(base64_str, save_path):
         file.write(base64.b64decode(base64_str))
 
 
-def call_api(api_endpoint, **payload):
+def call_api(webui_server_url,api_endpoint, **payload):
     data = json.dumps(payload).encode("utf-8")
     request = urllib.request.Request(
         f"{webui_server_url}/{api_endpoint}",
@@ -124,17 +124,17 @@ def payloader(
     return payload
 
 
-if __name__ == "__main__":
-    init_images = [
-        encode_file_to_base64(image_file),
-    ]
+# if __name__ == "__main__":
+#     init_images = [
+#         encode_file_to_base64(image_file),
+#     ]
 
-    prompt = "<lora:ip-adapter-faceid-plus_sd15_lora:0.7>, <lora:blindbox_v1_mix:0.7>, (masterpiece), (best quality), (ultra-detailed), (full body:1.25), 1boy, chibi, toy figurine, spider man, (beautiful detailed face), (beautiful detailed eyes), standing straight, gym rat, gym background"
-    negative_prompt = "(low quality:1.3), (worst quality:1.3)"
-    payload = payloader(
-        image_file="./IMG_9887.jpg",
-        prompt=prompt,
-        negative_prompt=negative_prompt
-    )
+#     prompt = "<lora:ip-adapter-faceid-plus_sd15_lora:0.7>, <lora:blindbox_v1_mix:0.7>, (masterpiece), (best quality), (ultra-detailed), (full body:1.25), 1boy, chibi, toy figurine, spider man, (beautiful detailed face), (beautiful detailed eyes), standing straight, gym rat, gym background"
+#     negative_prompt = "(low quality:1.3), (worst quality:1.3)"
+#     payload = payloader(
+#         image_file="./IMG_9887.jpg",
+#         prompt=prompt,
+#         negative_prompt=negative_prompt
+#     )
 
-    call_txt2img_api(**payload)
+#     call_txt2img_api(**payload)
