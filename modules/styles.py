@@ -1,4 +1,5 @@
 from pathlib import Path
+from modules import errors
 import csv
 import os
 import typing
@@ -128,19 +129,22 @@ class StyleDatabase:
                 self.load_from_csv(styles_file)
 
     def load_from_csv(self, path: str | Path):
-        with open(path, "r", encoding="utf-8-sig", newline="") as file:
-            reader = csv.DictReader(file, skipinitialspace=True)
-            for row in reader:
-                # Ignore empty rows or rows starting with a comment
-                if not row or row["name"].startswith("#"):
-                    continue
-                # Support loading old CSV format with "name, text"-columns
-                prompt = row["prompt"] if "prompt" in row else row["text"]
-                negative_prompt = row.get("negative_prompt", "")
-                # Add style to database
-                self.styles[row["name"]] = PromptStyle(
-                    row["name"], prompt, negative_prompt, str(path)
-                )
+        try:
+            with open(path, "r", encoding="utf-8-sig", newline="") as file:
+                reader = csv.DictReader(file, skipinitialspace=True)
+                for row in reader:
+                    # Ignore empty rows or rows starting with a comment
+                    if not row or row["name"].startswith("#"):
+                        continue
+                    # Support loading old CSV format with "name, text"-columns
+                    prompt = row["prompt"] if "prompt" in row else row["text"]
+                    negative_prompt = row.get("negative_prompt", "")
+                    # Add style to database
+                    self.styles[row["name"]] = PromptStyle(
+                        row["name"], prompt, negative_prompt, str(path)
+                    )
+        except Exception:
+            errors.report(f'Error loading styles from {path}: ', exc_info=True)
 
     def get_style_paths(self) -> set:
         """Returns a set of all distinct paths of files that styles are loaded from."""
