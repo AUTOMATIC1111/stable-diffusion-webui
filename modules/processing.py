@@ -27,6 +27,7 @@ old_hires_fix_first_pass_dimensions = processing_helpers.old_hires_fix_first_pas
 validate_sample = processing_helpers.validate_sample
 get_sampler_name = processing_helpers.get_sampler_name
 images_tensor_to_samples = processing_helpers.images_tensor_to_samples
+fix_seed = processing_helpers.fix_seed
 
 
 class Processed:
