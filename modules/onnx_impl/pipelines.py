@@ -359,8 +359,8 @@ class OnnxRawPipeline(PipelineBase):
                 (SUBMODELS_SDXL_REFINER if self.is_refiner else SUBMODELS_SDXL) if self._is_sdxl else SUBMODELS_SD,
                 self.path if os.path.isdir(self.path) else shared.opts.onnx_temp_dir
             )
-        except Exception:
-            log.error(f'ONNX: Failed to convert model: model={self.original_filename}')
+        except Exception as e:
+            log.error(f"ONNX: Failed to convert model: model='{self.original_filename}', error={e}")
             shutil.rmtree(shared.opts.onnx_temp_dir, ignore_errors=True)
             shutil.rmtree(os.path.join(shared.opts.onnx_cached_models_path, self.original_filename), ignore_errors=True)
             return
@@ -408,8 +408,8 @@ class OnnxRawPipeline(PipelineBase):
 
                 try:
                     out_dir = self.run_olive(submodels_for_olive, in_dir)
-                except Exception:
-                    log.error(f"Olive: Failed to run olive passes: model='{self.original_filename}'.")
+                except Exception as e:
+                    log.error(f"Olive: Failed to run olive passes: model='{self.original_filename}', error={e}")
                     shutil.rmtree(shared.opts.onnx_temp_dir, ignore_errors=True)
                     shutil.rmtree(os.path.join(shared.opts.onnx_cached_models_path, self.original_filename), ignore_errors=True)
 
