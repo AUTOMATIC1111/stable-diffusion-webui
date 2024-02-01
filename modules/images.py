@@ -141,7 +141,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0, tit
         for line in lines:
             font = initial_fnt
             fontsize = initial_fontsize
-            while drawing.multiline_textbbox((0,0), text=line.text, font=font)[0] > line.allowed_width and fontsize > 0:
+            while drawing.multiline_textbbox((0,0), text=line.text, font=font)[2] > line.allowed_width and fontsize > 0:
                 fontsize -= 1
                 font = get_font(fontsize)
             drawing.multiline_text((draw_x, draw_y + line.size[1] / 2), line.text, font=font, fill=shared.opts.font_color if line.is_active else color_inactive, anchor="mm", align="center")
@@ -534,13 +534,13 @@ def atomically_save_image():
         if shared.opts.image_watermark_enabled:
             image = set_watermark(image, shared.opts.image_watermark)
         size = os.path.getsize(fn) if os.path.exists(fn) else 0
-        shared.log.debug(f'Saving: image="{fn}" type={image_format} resolution={image.width}x{image.height} size={size}')
+        shared.log.info(f'Saving: image="{fn}" type={image_format} resolution={image.width}x{image.height} size={size}')
         # additional metadata saved in files
         if shared.opts.save_txt and len(exifinfo) > 0:
             try:
                 with open(filename_txt, "w", encoding="utf8") as file:
                     file.write(f"{exifinfo}\n")
-                shared.log.debug(f'Saving: text="{filename_txt}" len={len(exifinfo)}')
+                shared.log.info(f'Saving: text="{filename_txt}" len={len(exifinfo)}')
             except Exception as e:
                 shared.log.warning(f'Image description save failed: {filename_txt} {e}')
         # actual save
@@ -589,7 +589,7 @@ def atomically_save_image():
             entry = { 'id': idx, 'filename': filename, 'time': datetime.datetime.now().isoformat(), 'info': exifinfo }
             entries.append(entry)
             shared.writefile(entries, fn, mode='w', silent=True)
-            shared.log.debug(f'Saving: json="{fn}" records={len(entries)}')
+            shared.log.info(f'Saving: json="{fn}" records={len(entries)}')
         save_queue.task_done()
 
 

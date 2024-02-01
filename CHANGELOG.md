@@ -25,6 +25,8 @@ Another big release, highlights being:
 - Brand new **Intelligent masking**, manual or automatic  
   Using ML models (*LAMA* object removal, *REMBG* background removal, *SAM* segmentation, etc.) and with live previews  
   Granular blur, erode and dilate controls  
+- Massive work integrating latest advances with **OpenVINO**, **IPEX** and **Olive**  
+- New models and pipelines: *Mixture Tiling, SAG, InstaFlow, BlipDiffusion*  
 
 Plus welcome additions to **UI performance, usability and accessibility** and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
@@ -126,15 +128,15 @@ As of this release, default backend is set to **diffusers** as its more feature 
 - [FreeInit](https://tianxingwu.github.io/pages/FreeInit/) for **AnimateDiff**
   - greatly improves temporal consistency of generated outputs  
   - all options are available in animateddiff script  
-- [SalesForce BlipDiffusion](https://huggingface.co/docs/diffusers/api/pipelines/blip_diffusion)
+- [SalesForce BlipDiffusion](https://huggingface.co/docs/diffusers/api/pipelines/blip_diffusion)  
   - model can be used to place subject in a different context  
   - requires input image  
-  - last word in prompt and negative prompt will be used as source and target subjects
+  - last word in prompt and negative prompt will be used as source and target subjects  
   - sampler must be set to default before loading the model  
 - [InstaFlow](https://github.com/gnobitab/InstaFlow)  
   - another take on super-fast image generation in a single step  
-  - set sampler:default steps:1
-  - load from networks -> models -> reference
+  - set *sampler:default, steps:1, cfg-scale:0*  
+  - load from networks -> models -> reference  
 - **Improvements**  
   - **ui**  
     - check version and **update** SD.Next via UI  
@@ -244,6 +246,9 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - remove `OPENVINO_TORCH_BACKEND_DEVICE` env variable  
   - reduce system memory usage after compile  
   - fix cache loading with multiple models  
+- **Olive** support, thanks @lshqqytiger
+  - fully merged in in [wiki](https://github.com/vladmandic/automatic/wiki/ONNX-Olive)  , see wiki for details, thanks @lshqqytiger  
+  - as a highlight, 4-5 it/s using DirectML on AMD GPU translates to 23-25 it/s using ONNX/Olive!  
 - **fixes**  
   - civitai model download: enable downloads of embeddings
   - ipadapter: allow changing of model/image on-the-fly  

@@ -56,12 +56,9 @@ def get_pipelines():
         'ONNX Stable Diffusion XL': getattr(diffusers, 'OnnxStableDiffusionXLPipeline', None),
         'ONNX Stable Diffusion XL Img2Img': getattr(diffusers, 'OnnxStableDiffusionXLImg2ImgPipeline', None),
         'Custom Diffusers Pipeline': getattr(diffusers, 'DiffusionPipeline', None),
+        'InstaFlow': getattr(diffusers, 'StableDiffusionPipeline', None) # dynamically redefined and loaded in sd_models.load_diffuser
         # Segmind SSD-1B, Segmind Tiny
     }
-    try:
-        pipelines['InstaFlow'] = diffusers.utils.get_class_from_dynamic_module('instaflow_one_step', module_file='pipeline.py')
-    except Exception:
-        pipelines['InstaFlow'] = getattr(diffusers, 'StableDiffusionPipeline', None)
 
     for k, v in pipelines.items():
         if k != 'Autodetect' and v is None:
