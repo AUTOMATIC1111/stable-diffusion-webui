@@ -1,3 +1,4 @@
+import os
 from typing import Any, Dict, Optional
 import torch
 import diffusers
@@ -142,8 +143,13 @@ def initialize():
         return
 
     from modules import devices
+    from modules.paths import models_path
     from . import pipelines
     from .execution_providers import ExecutionProvider, TORCH_DEVICE_TO_EP
+
+    onnx_dir = os.path.join(models_path, "ONNX")
+    if not os.path.isdir(onnx_dir):
+        os.mkdir(onnx_dir)
 
     if devices.backend == "rocm":
         TORCH_DEVICE_TO_EP["cuda"] = ExecutionProvider.ROCm

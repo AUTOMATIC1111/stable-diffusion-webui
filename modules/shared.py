@@ -16,6 +16,7 @@ from rich.console import Console
 from modules import errors, shared_items, shared_state, cmd_args, theme
 from modules.paths import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 from modules.dml import memory_providers, default_memory_provider, directml_do_hijack
+from modules.onnx_impl import initialize as initialize_onnx
 from modules.onnx_impl.execution_providers import available_execution_providers, get_default_execution_provider
 import modules.interrogate
 import modules.memmon
@@ -906,6 +907,7 @@ mem_mon = modules.memmon.MemUsageMonitor("MemMon", devices.device)
 max_workers = 4
 if devices.backend == "directml":
     directml_do_hijack()
+initialize_onnx()
 
 
 class TotalTQDM: # compatibility with previous global-tqdm
