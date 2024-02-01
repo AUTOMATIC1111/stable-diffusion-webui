@@ -10,14 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout-code
-        uses: actions/checkout@v3
+        uses: actions/checkout@main
       - name: update-readme
-        uses: JamesIves/github-sponsors-readme-action@v1
+        uses: JamesIves/github-sponsors-readme-action@v1.3.1
         with:
           token: ${{ secrets.PAT }}
           file: 'README.md'
       - name: deploy-readme
-        uses: JamesIves/github-pages-deploy-action@v4
+        uses: JamesIves/github-pages-deploy-action@v4.5.0
         with:
           branch: master
           folder: '.'

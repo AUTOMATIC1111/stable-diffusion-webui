@@ -9,9 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout-code
-        uses: actions/checkout@v3
+        uses: actions/checkout@main
       - name: setup-python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@main
         with:
           python-version: 3.10.6
           cache: pip
