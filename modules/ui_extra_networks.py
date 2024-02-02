@@ -134,7 +134,7 @@ def get_single_card(page: str = "", tabname: str = "", name: str = ""):
         errors.display(e, "creating item for extra network")
         item = page.items.get(name)
 
-    page.read_user_metadata(item)
+    page.read_user_metadata(item, use_cache=False)
     item_html = page.create_item_html(tabname, item, shared.html("extra-networks-card.html"))
 
     return JSONResponse({"html": item_html})
@@ -173,9 +173,9 @@ class ExtraNetworksPage:
     def refresh(self):
         pass
 
-    def read_user_metadata(self, item):
+    def read_user_metadata(self, item, use_cache=True):
         filename = item.get("filename", None)
-        metadata = extra_networks.get_user_metadata(filename, lister=self.lister)
+        metadata = extra_networks.get_user_metadata(filename, lister=self.lister if use_cache else None)
 
         desc = metadata.get("description", None)
         if desc is not None:
