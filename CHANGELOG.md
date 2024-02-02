@@ -1,15 +1,16 @@
 # Change Log for SD.Next
 
+## Future
+
+- wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)  
+- control api  
+- masking api  
+- preprocess api  
+
 ## TODO for Dev merge
 
-BLOCKERS:
-- pending docs
-
-OPTIONAL:
-- wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)
-- control api
-- masking api
-- preprocess api
+- updated docs  
+- control fixes  
 
 ## Update for 2023-02-02
 
@@ -23,9 +24,10 @@ Another big release, highlights being:
 - Much enhanced **IPAdapter** modules  
 - Brand new **Intelligent masking**, manual or automatic  
   Using ML models (*LAMA* object removal, *REMBG* background removal, *SAM* segmentation, etc.) and with live previews  
-  Granular blur, erode and dilate controls  
+  With granular blur, erode and dilate controls  
 - Massive work integrating latest advances with [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVINO), [IPEX](https://github.com/vladmandic/automatic/wiki/Intel-ARC) and [ONNX Olive](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime-&-Olive)
-- New models and pipelines: *Mixture Tiling, SAG, InstaFlow, BlipDiffusion*  
+- **New models** and pipelines: *Mixture Tiling*, *SAG*, *InstaFlow*, *BlipDiffusion*  
+- Full control over brightness, sharpness and color during generate process directly in latent space  
 
 Plus welcome additions to **UI performance, usability and accessibility** and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
@@ -223,6 +225,10 @@ As of this release, default backend is set to **diffusers** as its more feature 
     > pip install -U --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu121  
     > pip install -U git+https://github.com/pytorch-labs/ao  
   - new option: **compile text encoder** (experimental)  
+- **correction**  
+  - new section in generate, allows for image corrections during generataion directly in latent space  
+  - adds *brightness*, *sharpness* and *color* controls, thanks @AI-Casanova
+  - replaces old **hdr** section
 - **IPEX**, thanks @disty0  
   - see [wiki](https://github.com/vladmandic/automatic/wiki/Intel-ARC) for details  
   - rewrite ipex hijacks without CondFunc  
