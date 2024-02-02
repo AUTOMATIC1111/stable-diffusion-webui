@@ -55,7 +55,7 @@ antlr4-python3-runtime==4.9.3
 requests==2.31.0
 tqdm==4.66.1
 accelerate==0.26.1
-opencv-contrib-python-headless==4.8.1.78
+opencv-contrib-python-headless==4.9.0.80
 diffusers==0.26.1
 einops==0.4.1
 gradio==3.43.2

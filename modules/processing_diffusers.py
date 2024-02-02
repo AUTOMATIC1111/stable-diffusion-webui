@@ -77,7 +77,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             except Exception as e:
                 shared.log.debug(f"Callback: {e}")
         if step == int(pipe.num_timesteps * p.cfg_end) and 'prompt_embeds' in kwargs and 'negative_prompt_embeds' in kwargs:
-            pipe._guidance_scale = 0.0
+            pipe._guidance_scale = 0.0 # pylint: disable=protected-access
             for key in {"prompt_embeds", "negative_prompt_embeds", "add_text_embeds", "add_time_ids"} & set(kwargs):
                 kwargs[key] = kwargs[key].chunk(2)[-1]
         shared.state.current_latent = kwargs['latents']
@@ -211,7 +211,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         elif 'callback_on_step_end_tensor_inputs' in possible:
             args['callback_on_step_end'] = diffusers_callback
             if 'prompt_embeds' in possible and 'negative_prompt_embeds' in possible:
-                args['callback_on_step_end_tensor_inputs'] = model._callback_tensor_inputs
+                args['callback_on_step_end_tensor_inputs'] = model._callback_tensor_inputs # pylint: disable=protected-access
             else:
                 args['callback_on_step_end_tensor_inputs'] = ['latents']
         for arg in kwargs:
@@ -265,10 +265,12 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         clean['generator'] = generator_device
         clean['parser'] = parser
         shared.log.debug(f'Diffuser pipeline: {model.__class__.__name__} task={sd_models.get_diffusers_task(model)} set={clean}')
-        if p.hdr_clamp or p.hdr_center or p.hdr_maximize:
+        if p.hdr_clamp or p.hdr_maximize or p.hdr_brightness != 0 or p.hdr_color != 0 or p.hdr_sharpen != 0:
             txt = 'HDR:'
+            txt += f' Brightness={p.hdr_brightness}' if p.hdr_brightness != 0 else ' Brightness off'
+            txt += f' Color={p.hdr_color}' if p.hdr_color != 0 else ' Color off'
+            txt += f' Sharpen={p.hdr_sharpen}' if p.hdr_sharpen != 0 else ' Sharpen off'
             txt += f' Clamp threshold={p.hdr_threshold} boundary={p.hdr_boundary}' if p.hdr_clamp else ' Clamp off'
-            txt += f' Center channel-shift={p.hdr_color_correction} full-shift={p.hdr_brightness}' if p.hdr_center else ' Center off'
             txt += f' Maximize boundary={p.hdr_max_boundry} center={p.hdr_max_center}' if p.hdr_maximize else ' Maximize off'
             shared.log.debug(txt)
         # components = [{ k: getattr(v, 'device', None) } for k, v in model.components.items()]
