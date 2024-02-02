@@ -1,5 +1,6 @@
 import os
 from typing import Any, Dict, Optional
+import numpy as np
 import torch
 import diffusers
 import onnxruntime as ort
@@ -97,6 +98,52 @@ class OnnxRuntimeModel(TorchCompatibleModule, diffusers.OnnxRuntimeModel):
         return self
 
 
+class VAEConfig:
+    DEFAULTS = {
+        "scaling_factor": 0.18215,
+    }
+
+    config: Dict
+
+    def __init__(self, config: Dict):
+        self.config = config
+
+    def __getattr__(self, key):
+        return self.config.get(key, VAEConfig.DEFAULTS[key])
+
+
+class VAE(TorchCompatibleModule):
+    pipeline: Any
+
+    def __init__(self, pipeline: Any):
+        self.pipeline = pipeline
+
+    @property
+    def config(self):
+        return VAEConfig(self.pipeline.vae_decoder.config)
+
+    def encode(self, latent_sample: torch.Tensor, return_dict: bool): # pylint: disable=unused-argument
+        latents_np = latent_sample.cpu().numpy()
+        return [
+            torch.from_numpy(np.concatenate(
+                [self.pipeline.vae_encoder(latent_sample=latents_np[i : i + 1])[0] for i in range(latents_np.shape[0])]
+            )).to(latent_sample.device)
+        ]
+
+    def decode(self, latent_sample: torch.Tensor, return_dict: bool): # pylint: disable=unused-argument
+        latents_np = latent_sample.cpu().numpy()
+        return [
+            torch.from_numpy(np.concatenate(
+                [self.pipeline.vae_decoder(latent_sample=latents_np[i : i + 1])[0] for i in range(latents_np.shape[0])]
+            )).to(latent_sample.device)
+        ]
+
+    def to(self, *args, **kwargs):
+        self.pipeline.vae_encoder = self.pipeline.vae_encoder.to(*args, **kwargs)
+        self.pipeline.vae_decoder = self.pipeline.vae_decoder.to(*args, **kwargs)
+        return self
+
+
 def preprocess_pipeline(p, refiner_enabled: bool):
     from modules import shared, sd_models
 
@@ -144,7 +191,6 @@ def initialize():
 
     from modules import devices
     from modules.paths import models_path
-    from . import pipelines
     from .execution_providers import ExecutionProvider, TORCH_DEVICE_TO_EP
 
     onnx_dir = os.path.join(models_path, "ONNX")
@@ -154,23 +200,32 @@ def initialize():
     if devices.backend == "rocm":
         TORCH_DEVICE_TO_EP["cuda"] = ExecutionProvider.ROCm
 
+    from .pipelines.onnx_stable_diffusion_pipeline import OnnxStableDiffusionPipeline
+    from .pipelines.onnx_stable_diffusion_img2img_pipeline import OnnxStableDiffusionImg2ImgPipeline
+    from .pipelines.onnx_stable_diffusion_inpaint_pipeline import OnnxStableDiffusionInpaintPipeline
+    from .pipelines.onnx_stable_diffusion_upscale_pipeline import OnnxStableDiffusionUpscalePipeline
+    from .pipelines.onnx_stable_diffusion_xl_pipeline import OnnxStableDiffusionXLPipeline
+    from .pipelines.onnx_stable_diffusion_xl_img2img_pipeline import OnnxStableDiffusionXLImg2ImgPipeline
+
     # OnnxRuntimeModel Hijack.
     OnnxRuntimeModel.__module__ = 'diffusers'
     diffusers.OnnxRuntimeModel = OnnxRuntimeModel
 
-    diffusers.OnnxStableDiffusionPipeline = pipelines.OnnxStableDiffusionPipeline
+    diffusers.OnnxStableDiffusionPipeline = OnnxStableDiffusionPipeline
     diffusers.pipelines.auto_pipeline.AUTO_TEXT2IMAGE_PIPELINES_MAPPING["onnx-stable-diffusion"] = diffusers.OnnxStableDiffusionPipeline
 
-    diffusers.OnnxStableDiffusionImg2ImgPipeline = pipelines.OnnxStableDiffusionImg2ImgPipeline
+    diffusers.OnnxStableDiffusionImg2ImgPipeline = OnnxStableDiffusionImg2ImgPipeline
     diffusers.pipelines.auto_pipeline.AUTO_IMAGE2IMAGE_PIPELINES_MAPPING["onnx-stable-diffusion"] = diffusers.OnnxStableDiffusionImg2ImgPipeline
 
-    diffusers.OnnxStableDiffusionInpaintPipeline = pipelines.OnnxStableDiffusionInpaintPipeline
+    diffusers.OnnxStableDiffusionInpaintPipeline = OnnxStableDiffusionInpaintPipeline
     diffusers.pipelines.auto_pipeline.AUTO_INPAINT_PIPELINES_MAPPING["onnx-stable-diffusion"] = diffusers.OnnxStableDiffusionInpaintPipeline
 
-    diffusers.OnnxStableDiffusionXLPipeline = pipelines.OnnxStableDiffusionXLPipeline
+    diffusers.OnnxStableDiffusionUpscalePipeline = OnnxStableDiffusionUpscalePipeline
+
+    diffusers.OnnxStableDiffusionXLPipeline = OnnxStableDiffusionXLPipeline
     diffusers.pipelines.auto_pipeline.AUTO_TEXT2IMAGE_PIPELINES_MAPPING["onnx-stable-diffusion-xl"] = diffusers.OnnxStableDiffusionXLPipeline
 
-    diffusers.OnnxStableDiffusionXLImg2ImgPipeline = pipelines.OnnxStableDiffusionXLImg2ImgPipeline
+    diffusers.OnnxStableDiffusionXLImg2ImgPipeline = OnnxStableDiffusionXLImg2ImgPipeline
     diffusers.pipelines.auto_pipeline.AUTO_IMAGE2IMAGE_PIPELINES_MAPPING["onnx-stable-diffusion-xl"] = diffusers.OnnxStableDiffusionXLImg2ImgPipeline
 
     # Huggingface model compatibility

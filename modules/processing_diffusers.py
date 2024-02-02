@@ -411,6 +411,8 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             else:
                 shared.log.debug(f'Generated: frames={len(output.frames[0])}')
             output.images = output.frames[0]
+        if isinstance(output.images, np.ndarray):
+            output.images = torch.from_numpy(output.images)
     except AssertionError as e:
         shared.log.info(e)
     except ValueError as e:
