@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import diffusers
 import onnxruntime as ort
+import optimum.onnxruntime
 
 
 initialized = False
@@ -51,7 +52,7 @@ class TorchCompatibleModule:
     dtype = torch.float32
 
     def to(self, *_, **__):
-        return self
+        raise NotImplementedError
 
     def type(self, *_, **__):
         return self
@@ -122,6 +123,10 @@ class VAE(TorchCompatibleModule):
     def config(self):
         return VAEConfig(self.pipeline.vae_decoder.config)
 
+    @property
+    def device(self):
+        return self.pipeline.vae_decoder.device
+
     def encode(self, latent_sample: torch.Tensor, return_dict: bool): # pylint: disable=unused-argument
         latents_np = latent_sample.cpu().numpy()
         return [
@@ -183,6 +188,11 @@ def preprocess_pipeline(p, refiner_enabled: bool):
     return shared.sd_model
 
 
+def ORTDiffusionModelPart_to(self, *args, **kwargs):
+    self.parent_model = self.parent_model.to(*args, **kwargs)
+    return self
+
+
 def initialize():
     global initialized # pylint: disable=global-statement
 
@@ -231,6 +241,8 @@ def initialize():
     # Huggingface model compatibility
     diffusers.ORTStableDiffusionXLPipeline = diffusers.OnnxStableDiffusionXLPipeline
     diffusers.ORTStableDiffusionXLImg2ImgPipeline = diffusers.OnnxStableDiffusionXLImg2ImgPipeline
+
+    optimum.onnxruntime.modeling_diffusion._ORTDiffusionModelPart.to = ORTDiffusionModelPart_to # pylint: disable=protected-access
 
     initialized = True
 

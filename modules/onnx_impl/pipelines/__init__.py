@@ -36,8 +36,8 @@ class PipelineBase(TorchCompatibleModule, diffusers.DiffusionPipeline, metaclass
         self.model_type = self.__class__.__name__
 
     def to(self, *args, **kwargs):
-        if self.__class__ == OnnxRawPipeline:
-            return super().to(*args, **kwargs)
+        if self.__class__ == OnnxRawPipeline: # cannot move pipeline which is not preprocessed.
+            return self
 
         expected_modules, _ = self._get_signature_keys(self)
         for name in expected_modules:
