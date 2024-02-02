@@ -188,9 +188,10 @@ def initialize_olive():
     import sys
     import importlib
     orig_sys_path = sys.path
+    venv_dir = os.environ.get("VENV_DIR", os.path.join(os.getcwd(), 'venv'))
     try:
         spec = importlib.util.find_spec('onnxruntime.transformers')
-        sys.path = [d for d in spec.submodule_search_locations + sys.path if sys.path[1] not in d]
+        sys.path = [d for d in spec.submodule_search_locations + sys.path if sys.path[1] not in d or venv_dir in d]
         from onnxruntime.transformers import convert_generation # pylint: disable=unused-import
         spec = importlib.util.find_spec('olive')
         sys.path = spec.submodule_search_locations + sys.path
