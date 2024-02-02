@@ -95,6 +95,7 @@ options_templates.update(options_section(('saving-to-dirs', "Saving to a directo
 
 options_templates.update(options_section(('upscaling', "Upscaling", "postprocessing"), {
     "upscaler_for_img2img": OptionInfo(None, "Upscaler for img2img", gr.Dropdown, lambda: {"choices": [x.name for x in shared.sd_upscalers]}),
+    "unload_sd_during_upscale": OptionInfo(False, "Unload SD Model from VRAM to RAM during upscale"),
     "ESRGAN_tile": OptionInfo(256, "Tile size for ESRGAN upscalers.", gr.Slider, {"minimum": 0, "maximum": 4096, "step": 16}).info("0 = no tiling"),
     "ESRGAN_tile_overlap": OptionInfo(32, "Tile overlap for ESRGAN upscalers.", gr.Slider, {"minimum": 0, "maximum": 2048, "step": 8}).info("Low values = visible seam"),
     "DAT_tile": OptionInfo(256, "Tile size for DAT upscalers.", gr.Slider, {"minimum": 0, "maximum": 4096, "step": 32}).info("0 = no tiling"),
