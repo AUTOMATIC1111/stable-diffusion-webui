@@ -139,13 +139,7 @@ class OnnxRawPipeline(PipelineBase):
         pipeline.scheduler = self.scheduler
         return pipeline
 
-    def convert(self, submodels: List[str], in_dir: os.PathLike):
-        out_dir = os.path.join(shared.opts.onnx_cached_models_path, self.original_filename)
-        if (self.from_diffusers_cache and check_cache_onnx(self.path)):
-            return self.path
-        if os.path.isdir(out_dir): # if model is ONNX format or had already converted.
-            return out_dir
-
+    def convert(self, submodels: List[str], in_dir: os.PathLike, out_dir: os.PathLike):
         shutil.rmtree("cache", ignore_errors=True)
         shutil.rmtree("footprints", ignore_errors=True)
 
@@ -211,18 +205,9 @@ class OnnxRawPipeline(PipelineBase):
         with open(os.path.join(out_dir, "model_index.json"), 'w', encoding="utf-8") as file:
             json.dump(model_index, file)
 
-        return out_dir
-
-    def run_olive(self, submodels: List[str], in_dir: os.PathLike):
+    def run_olive(self, submodels: List[str], in_dir: os.PathLike, out_dir: os.PathLike):
         if not shared.cmd_opts.debug:
             ort.set_default_logger_severity(4)
-
-        out_dir = os.path.join(shared.opts.onnx_cached_models_path, f"{self.original_filename}-{config.width}w-{config.height}h")
-        if os.path.isdir(out_dir): # already optimized (cached)
-            return out_dir
-
-        if not shared.opts.olive_cache_optimized:
-            out_dir = shared.opts.onnx_temp_dir
 
         try:
             from olive.model import ONNXModel # olive-ai==0.4.0
@@ -326,8 +311,6 @@ class OnnxRawPipeline(PipelineBase):
         with open(os.path.join(out_dir, "model_index.json"), 'w', encoding="utf-8") as file:
             json.dump(model_index, file)
 
-        return out_dir
-
     def preprocess(self, p: StableDiffusionProcessing):
         disable_classifier_free_guidance = p.cfg_scale < 0.01
 
@@ -347,27 +330,32 @@ class OnnxRawPipeline(PipelineBase):
             config.cross_attention_dim = 2048
             config.time_ids_size = 6
         else:
-            config.cross_attention_dim = 256 + p.height
+            config.cross_attention_dim = 768
             config.time_ids_size = 5
 
         if not disable_classifier_free_guidance and "turbo" in str(self.path).lower():
             log.warning("ONNX: It looks like you are trying to run a Turbo model with CFG Scale, which will lead to 'size mismatch' or 'unexpected parameter' error.")
 
-        try:
-            converted_dir = self.convert(
-                (SUBMODELS_SDXL_REFINER if self.is_refiner else SUBMODELS_SDXL) if self._is_sdxl else SUBMODELS_SD,
-                self.path if os.path.isdir(self.path) else shared.opts.onnx_temp_dir
-            )
-        except Exception as e:
-            log.error(f"ONNX: Failed to convert model: model='{self.original_filename}', error={e}")
-            shutil.rmtree(shared.opts.onnx_temp_dir, ignore_errors=True)
-            shutil.rmtree(os.path.join(shared.opts.onnx_cached_models_path, self.original_filename), ignore_errors=True)
-            return
+        out_dir = os.path.join(shared.opts.onnx_cached_models_path, self.original_filename)
+        if (self.from_diffusers_cache and check_cache_onnx(self.path)): # if model is ONNX format or had already converted, skip conversion.
+            out_dir = self.path
+        elif not os.path.isdir(out_dir):
+            try:
+                self.convert(
+                    (SUBMODELS_SDXL_REFINER if self.is_refiner else SUBMODELS_SDXL) if self._is_sdxl else SUBMODELS_SD,
+                    self.path if os.path.isdir(self.path) else shared.opts.onnx_temp_dir,
+                    out_dir,
+                )
+            except Exception as e:
+                log.error(f"ONNX: Failed to convert model: model='{self.original_filename}', error={e}")
+                shutil.rmtree(shared.opts.onnx_temp_dir, ignore_errors=True)
+                shutil.rmtree(out_dir, ignore_errors=True)
+                return
 
         kwargs = {
             "provider": get_provider(),
         }
-        out_dir = converted_dir
+        in_dir = out_dir
 
         if shared.opts.cuda_compile_backend == "olive-ai":
             if run_olive_workflow is None:
@@ -391,34 +379,37 @@ class OnnxRawPipeline(PipelineBase):
                 else:
                     log.warning("Olive implementation is experimental. It contains potentially an issue and is subject to change at any time.")
 
-                    in_dir = converted_dir
+                    out_dir = os.path.join(shared.opts.onnx_cached_models_path, f"{self.original_filename}-{config.width}w-{config.height}h")
+                    if not os.path.isdir(out_dir): # check the model is already optimized (cached)
+                        if not shared.opts.olive_cache_optimized:
+                            out_dir = shared.opts.onnx_temp_dir
 
-                    if p.width != p.height:
-                        log.warning("Olive: Different width and height are detected. The quality of the result is not guaranteed.")
+                        if p.width != p.height:
+                            log.warning("Olive: Different width and height are detected. The quality of the result is not guaranteed.")
 
-                    if shared.opts.olive_static_dims:
-                        sess_options = DynamicSessionOptions()
-                        sess_options.enable_static_dims({
-                            "is_sdxl": self._is_sdxl,
-                            "is_refiner": self.is_refiner,
+                        if shared.opts.olive_static_dims:
+                            sess_options = DynamicSessionOptions()
+                            sess_options.enable_static_dims({
+                                "is_sdxl": self._is_sdxl,
+                                "is_refiner": self.is_refiner,
 
-                            "hidden_batch_size": p.batch_size if disable_classifier_free_guidance else p.batch_size * 2,
-                            "height": p.height,
-                            "width": p.width,
-                        })
-                        kwargs["sess_options"] = sess_options
+                                "hidden_batch_size": p.batch_size if disable_classifier_free_guidance else p.batch_size * 2,
+                                "height": p.height,
+                                "width": p.width,
+                            })
+                            kwargs["sess_options"] = sess_options
 
-                    try:
-                        out_dir = self.run_olive(submodels_for_olive, in_dir)
-                    except Exception as e:
-                        log.error(f"Olive: Failed to run olive passes: model='{self.original_filename}', error={e}")
-                        shutil.rmtree(shared.opts.onnx_temp_dir, ignore_errors=True)
-                        shutil.rmtree(os.path.join(shared.opts.onnx_cached_models_path, self.original_filename), ignore_errors=True)
+                        try:
+                            self.run_olive(submodels_for_olive, in_dir, out_dir)
+                        except Exception as e:
+                            log.error(f"Olive: Failed to run olive passes: model='{self.original_filename}', error={e}")
+                            shutil.rmtree(shared.opts.onnx_temp_dir, ignore_errors=True)
+                            shutil.rmtree(out_dir, ignore_errors=True)
 
         pipeline = self.derive_properties(load_pipeline(self.constructor, out_dir, **kwargs))
 
-        if not shared.opts.onnx_cache_converted:
-            shutil.rmtree(converted_dir)
+        if not shared.opts.onnx_cache_converted and in_dir != self.path:
+            shutil.rmtree(in_dir)
         shutil.rmtree(shared.opts.onnx_temp_dir, ignore_errors=True)
 
         return pipeline
