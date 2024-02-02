@@ -70,6 +70,30 @@ onUiLoaded(async() => {
         }
     }
 
+    // // Hack to make the cursor always be the same size
+    function fixCursorSize() {
+        window.scrollBy(0, 1);
+    }
+
+    function copySpecificStyles(sourceElement, targetElement, zoomLevel = 1) {
+        const stylesToCopy = ['top', 'left', 'width', 'height'];
+
+        stylesToCopy.forEach(styleName => {
+            if (sourceElement.style[styleName]) {
+                // Convert style value to number and multiply by zoomLevel.
+                let adjustedStyleValue = parseFloat(sourceElement.style[styleName]) / zoomLevel;
+
+                // Set the adjusted style value back to target element's style.
+                // Important: this will work fine for top and left styles as they are usually in px.
+                // But be careful with other units like em or % that might need different handling.
+                targetElement.style[styleName] = `${adjustedStyleValue}px`;
+            }
+        });
+
+        targetElement.style["opacity"] = sourceElement.style["opacity"];
+    }
+
+
     // Detect whether the element has a horizontal scroll bar
     function hasHorizontalScrollbar(element) {
         return element.scrollWidth > element.clientWidth;
@@ -245,12 +269,112 @@ onUiLoaded(async() => {
         elemData[elemId] = {
             zoom: 1,
             panX: 0,
-            panY: 0
+            panY: 0,
         };
+
         let fullScreenMode = false;
 
-        // Remove border, cause bags
 
+        // Cursor manipulation script for a painting application.
+        // The purpose of this code is to create custom cursors (for painting and erasing)
+        // that can change depending on which button the user presses.
+        // When the mouse moves over the canvas, the appropriate custom cursor also moves,
+        // replicating its appearance dynamically based on various CSS properties.
+
+        // This is done because the original cursor is tied to the size of the kanvas, it can not be changed, so I came up with a hack that creates an exact copy that works properly
+
+        const eraseButton = targetElement.querySelector(`button[aria-label='Erase button']`);
+        const paintButton = targetElement.querySelector(`button[aria-label='Draw button']`);
+
+        const canvasCursors = targetElement.querySelectorAll("span.svelte-btgkrd");
+        const paintCursorCopy = canvasCursors[0].cloneNode(true);
+        const eraserCursorCopy = canvasCursors[1].cloneNode(true);
+
+        canvasCursors.forEach(cursor => cursor.style.display = "none");
+
+        canvasCursors[0].parentNode.insertBefore(paintCursorCopy, canvasCursors[0].nextSibling);
+        canvasCursors[1].parentNode.insertBefore(eraserCursorCopy, canvasCursors[1].nextSibling);
+
+
+        // targetElement.appendChild(paintCursorCopy);
+        // paintCursorCopy.style.display = "none";
+
+        // targetElement.appendChild(eraserCursorCopy);
+        // eraserCursorCopy.style.display = "none";
+
+        let activeCursor;
+
+        paintButton.addEventListener('click', () => {
+            activateTool(paintButton, eraseButton, paintCursorCopy);
+        });
+
+        eraseButton.addEventListener('click', () => {
+            activateTool(eraseButton, paintButton, eraserCursorCopy);
+        });
+
+        function activateTool(activeButton, inactiveButton, activeCursorCopy) {
+            activeButton.classList.add("active");
+            inactiveButton.classList.remove("active");
+
+            // canvasCursors.forEach(cursor => cursor.style.display = "none");
+
+            if (activeCursor) {
+                activeCursor.style.display = "none";
+            }
+
+            activeCursor = activeCursorCopy;
+            // activeCursor.style.display = "none";
+            activeCursor.style.position = "absolute";
+        }
+
+        const canvasAreaEventsHandler = e => {
+
+            canvasCursors.forEach(cursor => cursor.style.display = "none");
+
+            if (!activeCursor) return;
+
+            const cursorNum = eraseButton.classList.contains("active") ? 1 : 0;
+
+            if (elemData[elemId].zoomLevel != 1) {
+                copySpecificStyles(canvasCursors[cursorNum], activeCursor, elemData[elemId].zoomLevel);
+            } else {
+                // Update the styles of the currently active cursor
+                copySpecificStyles(canvasCursors[cursorNum], activeCursor);
+            }
+
+            let offsetXAdjusted = e.offsetX;
+            let offsetYAdjusted = e.offsetY;
+
+            // Position the cursor based on the current mouse coordinates within target element.
+            activeCursor.style.transform =
+           `translate(${offsetXAdjusted}px, ${offsetYAdjusted}px)`;
+        };
+
+        const canvasAreaLeaveHandler = () => {
+            if (activeCursor) {
+                // activeCursor.style.opacity = 0
+                activeCursor.style.display = "none";
+            }
+        };
+
+        const canvasAreaEnterHandler = () => {
+            if (activeCursor) {
+                // activeCursor.style.opacity = 1
+                activeCursor.style.display = "block";
+            }
+        };
+
+        const canvasArea = targetElement.querySelector("canvas");
+
+        // Attach event listeners to the target element and canvas area
+        targetElement.addEventListener("mousemove", canvasAreaEventsHandler);
+        canvasArea.addEventListener("mouseout", canvasAreaLeaveHandler);
+        canvasArea.addEventListener("mouseenter", canvasAreaEnterHandler);
+
+        // Additional listener for handling zoom or other transformations which might affect visual representation
+        targetElement.addEventListener("wheel", canvasAreaEventsHandler);
+
+        // Remove border, cause bags
         const canvasBorder = targetElement.querySelector(".border");
         canvasBorder.style.display = "none";
 
@@ -335,7 +459,7 @@ onUiLoaded(async() => {
             elemData[elemId] = {
                 zoomLevel: 1,
                 panX: 0,
-                panY: 0
+                panY: 0,
             };
 
             if (isExtension) {
@@ -359,6 +483,7 @@ onUiLoaded(async() => {
             }
 
             targetElement.style.width = "";
+            fixCursorSize();
         }
 
         // Toggle the zIndex of the target element between two values, allowing it to overlap or be overlapped by other elements
@@ -410,7 +535,11 @@ onUiLoaded(async() => {
         const fileInput = gradioApp().querySelector(
             `${elemId} .upload-container input[type="file"][accept="image/*"]`
         );
+
         fileInput.addEventListener("click", resetZoom);
+
+        // Create clickble area
+        const inputCanvas = targetElement.querySelector("canvas");
 
 
         // Update the zoom level and pan position of the target element based on the values of the zoomLevel, panX and panY variables
@@ -429,6 +558,9 @@ onUiLoaded(async() => {
             if (isExtension) {
                 targetElement.style.overflow = "visible";
             }
+
+            // Hack to make the cursor always be the same size
+            fixCursorSize();
 
             return newZoomLevel;
         }
@@ -485,6 +617,7 @@ onUiLoaded(async() => {
                 targetElement.style.overflow = "visible";
             }
 
+            fixCursorSize();
             if (fullScreenMode) {
                 resetZoom();
                 fullScreenMode = false;
@@ -755,112 +888,6 @@ onUiLoaded(async() => {
 
         gradioApp().addEventListener("mousemove", handleMoveByKey);
 
-
-        // Cursor manipulation script for a painting application.
-        // The purpose of this code is to create custom cursors (for painting and erasing)
-        // that can change depending on which button the user presses.
-        // When the mouse moves over the canvas, the appropriate custom cursor also moves,
-        // replicating its appearance dynamically based on various CSS properties.
-
-        // This is done because the original cursor is tied to the size of the kanvas, it can not be changed, so I came up with a hack that creates an exact copy that works properly
-
-        function copySpecificStyles(sourceElement, targetElement) {
-        // List of CSS property names that we want to clone.
-            const stylesToCopy = ['top', 'left', 'width', 'height', "opacity"];
-
-            // For each style in our list, copy it from sourceElement to targetElement.
-            stylesToCopy.forEach(styleName => {
-                if (sourceElement.style[styleName]) {
-                    targetElement.style[styleName] = sourceElement.style[styleName];
-                }
-            });
-        }
-
-        const eraseButton = targetElement.querySelector(`button[aria-label='Erase button']`);
-        const paintButton = targetElement.querySelector(`button[aria-label='Draw button']`);
-
-        const canvasCursors = targetElement.querySelectorAll("span.svelte-btgkrd");
-        const paintCursorCopy = canvasCursors[0].cloneNode(true);
-        const eraserCursorCopy = canvasCursors[1].cloneNode(true);
-
-        canvasCursors.forEach(cursor => cursor.style.display = "none");
-
-        canvasCursors[0].parentNode.insertBefore(paintCursorCopy, canvasCursors[0].nextSibling);
-        canvasCursors[1].parentNode.insertBefore(eraserCursorCopy, canvasCursors[1].nextSibling);
-
-
-        // targetElement.appendChild(paintCursorCopy);
-        paintCursorCopy.style.display = "none";
-
-        // targetElement.appendChild(eraserCursorCopy);
-        eraserCursorCopy.style.display = "none";
-
-        let activeCursor;
-
-        paintButton.addEventListener('click', () => {
-            activateTool(paintButton, eraseButton, paintCursorCopy);
-        });
-
-        eraseButton.addEventListener('click', () => {
-            activateTool(eraseButton, paintButton, eraserCursorCopy);
-        });
-
-        function activateTool(activeButton, inactiveButton, activeCursorCopy) {
-            activeButton.classList.add("active");
-            inactiveButton.classList.remove("active");
-
-            // canvasCursors.forEach(cursor => cursor.style.display = "none");
-
-            if (activeCursor) {
-                activeCursor.style.display = "none";
-            }
-
-            activeCursor = activeCursorCopy;
-            activeCursor.style.display = "block";
-        }
-
-        const canvasAreaEventsHandler = e => {
-            if (!activeCursor) return;
-
-            const cursorNum = eraseButton.classList.contains("active") ? 1 : 0;
-
-            // Update the styles of the currently active cursor
-            copySpecificStyles(canvasCursors[cursorNum], activeCursor);
-
-            let offsetXAdjusted = e.offsetX;
-            let offsetYAdjusted = e.offsetY;
-
-            // Position the cursor based on the current mouse coordinates within target element.
-            activeCursor.style.transform =
-           `translate(${offsetXAdjusted}px, ${offsetYAdjusted}px)`;
-        };
-
-        const canvasAreaLeaveHandler = () => {
-            if (activeCursor) {
-                activeCursor.style.display = "none";
-                // Hide the cursor when mouse leaves.
-                activeCursor.style.opacity = 0;
-            }
-        };
-
-        const canvasAreaEnterHandler = () => {
-            if (activeCursor) {
-                activeCursor.style.display = "block";
-                // Show the cursor when mouse enters.
-                activeCursor.style.opacity = 1;
-            }
-        };
-
-        const canvasArea = targetElement.querySelector("canvas");
-
-        // Attach event listeners to the target element and canvas area
-        targetElement.addEventListener("mousemove", canvasAreaEventsHandler);
-        canvasArea.addEventListener("mouseout", canvasAreaLeaveHandler);
-        canvasArea.addEventListener("mouseenter", canvasAreaEnterHandler);
-
-        // Additional listener for handling zoom or other transformations which might affect visual representation
-        targetElement.addEventListener("wheel", canvasAreaEventsHandler);
-
     }
 
     applyZoomAndPan(elementIDs.sketch, false);
@@ -890,7 +917,6 @@ onUiLoaded(async() => {
     };
 
     window.applyZoomAndPan = applyZoomAndPan; // Only 1 elements, argument elementID, for example applyZoomAndPan("#txt2img_controlnet_ControlNet_input_image")
-
     window.applyZoomAndPanIntegration = applyZoomAndPanIntegration; // for any extension
 
 
