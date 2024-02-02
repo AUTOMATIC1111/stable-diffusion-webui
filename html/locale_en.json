@@ -146,6 +146,17 @@
   {"id":"","label":"Resize seed from height","localized":"","hint":"Make an attempt to produce a picture similar to what would have been produced with same seed at specified resolution"},
   {"id":"","label":"Override settings","localized":"","hint":"If you read in generation parameters through 'Process Image tab' and individual generation parameters should deviate from your system settings, this box will be populated with those settings to override your system configuration for this workflow"}
 ],
+"img2img tab": [
+  {"id":"","label":"Fixed","localized":"","hint":"Resize image to target resolution. Unless height and width match, you will get incorrect aspect ratio"},
+  {"id":"","label":"Crop","localized":"","hint":"Resize the image so that entirety of target resolution is filled with the image. Crop parts that stick out"},
+  {"id":"","label":"Fill","localized":"","hint":"Resize the image so that entirety of image is inside target resolution. Fill empty space with image's colors"},
+  {"id":"","label":"Mask blur","localized":"","hint":"How much to blur the mask before processing, in pixels"},
+  {"id":"","label":"original","localized":"","hint":"keep whatever was there originally"},
+  {"id":"","label":"latent noise","localized":"","hint":"fill it with latent space noise"},
+  {"id":"","label":"latent nothing","localized":"","hint":"fill it with latent space zeroes"}
+],
+"control tab": [
+],
 "process tab": [
   {"id":"","label":"Single Image","localized":"","hint":"Process single image"},
   {"id":"","label":"Process Batch","localized":"","hint":"Process batch of images"},
@@ -159,6 +170,30 @@
   {"id":"","label":"Crop to fit","localized":"","hint":"If the dimensions of your source image (e.g. 512x510) deviate from your target dimensions (e.g. 1024x768) this function will fit your upscaled image into your target size image. Excess will be cropped"},
   {"id":"","label":"Secondary Upscaler","localized":"","hint":"Select secondary upscaler to run after initial upscaler"},
   {"id":"","label":"Upscaler 2 visibility","localized":"","hint":"Strength of the secondary upscaler"}
+],
+"models tabs": [
+  {"id":"","label":"Calculate hash for all models","localized":"","hint":"Calculates hash for all available models which may take a very long time"},
+  {"id":"","label":"Weights Clip","localized":"","hint":"Forced merged weights to be no heavier than the original model, preventing burn in and overly saturated models"},
+  {"id":"","label":"ReBasin","localized":"","hint":"Performs multiple merges with permutations in order to keep more features from both models"},
+  {"id":"","label":"Number of ReBasin Iterations","localized":"","hint":"Number of times to merge and permute the model before saving"},
+  {"id":"","label":"cpu","localized":"","hint":"Uses cpu and RAM only: slowest but least likely to OOM"},
+  {"id":"","label":"shuffle","localized":"","hint":"Loads full model in RAM and calculates on VRAM: Less speedup, suggested for SDXL merges"},
+  {"id":"","label":"cuda","localized":"","hint":"Loads models into VRAM automatically unloading current model: fastest option but unlikely to handle SDXL Models without OOM"},
+  {"id":"","label":"Base","localized":"","hint":"Text Encoder and a few unaligned keys (1 value)"},
+  {"id":"","label":"In Blocks","localized":"","hint":"Downsampling Blocks of the UNet (12 values for SD1.5, 9 values for SDXL)"},
+  {"id":"","label":"Mid Block","localized":"","hint":"Central Block of the UNet (1 value)"},
+  {"id":"","label":"Out Block","localized":"","hint":"Upsampling Blocks of the UNet (12 values for SD1.5, 9 values for SDXL)"},
+  {"id":"","label":"Preset Interpolation Ratio","localized":"","hint":"If two presets are selected, interpolate between them"}
+],
+"train tab": [
+  {"id":"","label":"Initialization text","localized":"","hint":"If the number of tokens is more than the number of vectors, some may be skipped.\nLeave the textbox empty to start with zeroed out vectors"},
+  {"id":"","label":"Select activation function of hypernetwork","localized":"","hint":"Recommended : Swish / Linear(none)"},
+  {"id":"","label":"Select Layer weights initialization","localized":"","hint":"Recommended: Kaiming for relu-like, Xavier for sigmoid-like, Normal otherwise"},
+  {"id":"","label":"Enter hypernetwork Dropout structure","localized":"","hint":"Recommended : leave empty or 0~0.35 incrementing sequence: 0, 0.05, 0.15"},
+  {"id":"","label":"Create interim images","localized":"","hint":"Save an image to log directory every N steps, 0 to disable"},
+  {"id":"","label":"Create interim embeddings","localized":"","hint":"Save a copy of embedding to log directory every N steps, 0 to disable"},
+  {"id":"","label":"Use current settings for previews","localized":"","hint":"Read parameters (prompt, etc...) from txt2img tab when making previews"},
+  {"id":"","label":"Shuffle tags","localized":"","hint":"Shuffle tags by ',' when creating prompts"}
 ],
 "settings menu": [
   {"id":"settings_submit","label":"Apply settings","localized":"","hint":"Save current settings, server restart is recommended"},
@@ -187,39 +222,6 @@
   {"id":"","label":"Extra Networks","localized":"","hint":"Settings related to extra networks user interface, extra networks multiplier defaults, and configuration"},
   {"id":"","label":"Licenses","localized":"","hint":"View licenses of all additional included libraries"},
   {"id":"","label":"Show all pages","localized":"","hint":"Show all settings pages"}
-],
-"img2img tab": [
-  {"id":"","label":"Fixed","localized":"","hint":"Resize image to target resolution. Unless height and width match, you will get incorrect aspect ratio"},
-  {"id":"","label":"Crop","localized":"","hint":"Resize the image so that entirety of target resolution is filled with the image. Crop parts that stick out"},
-  {"id":"","label":"Fill","localized":"","hint":"Resize the image so that entirety of image is inside target resolution. Fill empty space with image's colors"},
-  {"id":"","label":"Mask blur","localized":"","hint":"How much to blur the mask before processing, in pixels"},
-  {"id":"","label":"original","localized":"","hint":"keep whatever was there originally"},
-  {"id":"","label":"latent noise","localized":"","hint":"fill it with latent space noise"},
-  {"id":"","label":"latent nothing","localized":"","hint":"fill it with latent space zeroes"}
-],
-"models tabs": [
-  {"id":"","label":"Calculate hash for all models","localized":"","hint":"Calculates hash for all available models which may take a very long time"},
-  {"id":"","label":"Weights Clip","localized":"","hint":"Forced merged weights to be no heavier than the original model, preventing burn in and overly saturated models"},
-  {"id":"","label":"ReBasin","localized":"","hint":"Performs multiple merges with permutations in order to keep more features from both models"},
-  {"id":"","label":"Number of ReBasin Iterations","localized":"","hint":"Number of times to merge and permute the model before saving"},
-  {"id":"","label":"cpu","localized":"","hint":"Uses cpu and RAM only: slowest but least likely to OOM"},
-  {"id":"","label":"shuffle","localized":"","hint":"Loads full model in RAM and calculates on VRAM: Less speedup, suggested for SDXL merges"},
-  {"id":"","label":"cuda","localized":"","hint":"Loads models into VRAM automatically unloading current model: fastest option but unlikely to handle SDXL Models without OOM"},
-  {"id":"","label":"Base","localized":"","hint":"Text Encoder and a few unaligned keys (1 value)"},
-  {"id":"","label":"In Blocks","localized":"","hint":"Downsampling Blocks of the UNet (12 values for SD1.5, 9 values for SDXL)"},
-  {"id":"","label":"Mid Block","localized":"","hint":"Central Block of the UNet (1 value)"},
-  {"id":"","label":"Out Block","localized":"","hint":"Upsampling Blocks of the UNet (12 values for SD1.5, 9 values for SDXL)"},
-  {"id":"","label":"Preset Interpolation Ratio","localized":"","hint":"If two presets are selected, interpolate between them"}
-],
-"train tab": [
-  {"id":"","label":"Initialization text","localized":"","hint":"If the number of tokens is more than the number of vectors, some may be skipped.\nLeave the textbox empty to start with zeroed out vectors"},
-  {"id":"","label":"Select activation function of hypernetwork","localized":"","hint":"Recommended : Swish / Linear(none)"},
-  {"id":"","label":"Select Layer weights initialization","localized":"","hint":"Recommended: Kaiming for relu-like, Xavier for sigmoid-like, Normal otherwise"},
-  {"id":"","label":"Enter hypernetwork Dropout structure","localized":"","hint":"Recommended : leave empty or 0~0.35 incrementing sequence: 0, 0.05, 0.15"},
-  {"id":"","label":"Create interim images","localized":"","hint":"Save an image to log directory every N steps, 0 to disable"},
-  {"id":"","label":"Create interim embeddings","localized":"","hint":"Save a copy of embedding to log directory every N steps, 0 to disable"},
-  {"id":"","label":"Use current settings for previews","localized":"","hint":"Read parameters (prompt, etc...) from txt2img tab when making previews"},
-  {"id":"","label":"Shuffle tags","localized":"","hint":"Shuffle tags by ',' when creating prompts"}
 ],
 "settings": [
   {"id":"","label":"base model","localized":"","hint":"Main model used for all operations"},
