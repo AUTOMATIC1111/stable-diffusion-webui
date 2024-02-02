@@ -263,4 +263,6 @@ def img2img(id_task: str, mode: int,
             processed = processing.process_images(p)
     p.close()
     generation_info_js = processed.js() if processed is not None else ''
+    if processed is None:
+        return [], generation_info_js, '', 'Error: no images'
     return processed.images, generation_info_js, processed.info, plaintext_to_html(processed.comments)
