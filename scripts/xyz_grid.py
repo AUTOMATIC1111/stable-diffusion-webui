@@ -10,7 +10,7 @@ from io import StringIO
 from PIL import Image
 import numpy as np
 import gradio as gr
-from modules import shared, errors, scripts, images, sd_samplers, processing, processing_helpers, sd_models, sd_vae
+from modules import shared, errors, scripts, images, sd_samplers, processing, sd_models, sd_vae
 from modules.ui_components import ToolButton
 import modules.ui_symbols as symbols
 
@@ -526,7 +526,7 @@ class Script(scripts.Script):
     def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, csv_mode, draw_legend, no_fixed_seeds, no_grid, include_lone_images, include_sub_grids, margin_size): # pylint: disable=W0221
         shared.log.debug(f'xyzgrid: x_type={x_type}|x_values={x_values}|x_values_dropdown={x_values_dropdown}|y_type={y_type}|{y_values}={y_values}|{y_values_dropdown}={y_values_dropdown}|z_type={z_type}|z_values={z_values}|z_values_dropdown={z_values_dropdown}|draw_legend={draw_legend}|include_lone_images={include_lone_images}|include_sub_grids={include_sub_grids}|no_grid={no_grid}|margin_size={margin_size}')
         if not no_fixed_seeds:
-            processing_helpers.fix_seed(p)
+            processing.fix_seed(p)
         if not shared.opts.return_grid:
             p.batch_size = 1
         def process_axis(opt, vals, vals_dropdown):

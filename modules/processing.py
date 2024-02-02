@@ -20,14 +20,14 @@ apply_color_correction = processing_helpers.apply_color_correction
 setup_color_correction = processing_helpers.setup_color_correction
 txt2img_image_conditioning = processing_helpers.txt2img_image_conditioning
 img2img_image_conditioning = processing_helpers.img2img_image_conditioning
+fix_seed = processing_helpers.fix_seed
 get_fixed_seed = processing_helpers.get_fixed_seed
 create_random_tensors = processing_helpers.create_random_tensors
-decode_first_stage = processing_helpers.decode_first_stage
 old_hires_fix_first_pass_dimensions = processing_helpers.old_hires_fix_first_pass_dimensions
-validate_sample = processing_helpers.validate_sample
 get_sampler_name = processing_helpers.get_sampler_name
+validate_sample = processing_helpers.validate_sample
+decode_first_stage = processing_helpers.decode_first_stage
 images_tensor_to_samples = processing_helpers.images_tensor_to_samples
-fix_seed = processing_helpers.fix_seed
 
 
 class Processed:
