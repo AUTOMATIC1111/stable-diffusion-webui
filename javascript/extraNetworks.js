@@ -48,7 +48,7 @@ function setupExtraNetworksForTab(tabname) {
             return; // `return` is equivalent of `continue` but for forEach loops.
         }
 
-        var applyFilter = function() {
+        var applyFilter = function(force) {
             var searchTerm = search.value.toLowerCase();
             gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card').forEach(function(elem) {
                 var searchOnly = elem.querySelector('.search_only');
@@ -67,17 +67,17 @@ function setupExtraNetworksForTab(tabname) {
                 }
             });
 
-            applySort();
+            applySort(force);
         };
 
-        var applySort = function() {
+        var applySort = function(force) {
             var cards = gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card');
             var reverse = sort_dir.dataset.sortdir == "Descending";
             var sortKey = sort_mode.dataset.sortmode.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim() || "name";
             sortKey = "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1);
             var sortKeyStore = sortKey + "-" + (reverse ? "Descending" : "Ascending") + "-" + cards.length;
 
-            if (sortKeyStore == sort_mode.dataset.sortkey) {
+            if (sortKeyStore == sort_mode.dataset.sortkey && !force) {
                 return;
             }
             sort_mode.dataset.sortkey = sortKeyStore;
@@ -167,11 +167,17 @@ function extraNetworksTabSelected(tabname, id, showPrompt, showNegativePrompt, t
 }
 
 function applyExtraNetworkFilter(tabname_full) {
-    setTimeout(extraNetworksApplyFilter[tabname_full], 1);
+    var doFilter = function() {
+        extraNetworksApplyFilter[tabname_full](true);
+    };
+    setTimeout(doFilter, 1);
 }
 
 function applyExtraNetworkSort(tabname_full) {
-    setTimeout(extraNetworksApplySort[tabname_full], 1);
+    var doSort = function() {
+        extraNetworksApplySort[tabname_full](true);
+    };
+    setTimeout(doSort, 1);
 }
 
 var extraNetworksApplyFilter = {};

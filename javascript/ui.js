@@ -126,7 +126,7 @@ function setSubmitButtonsVisibility(tabname, showInterrupt, showSkip, showInterr
 }
 
 function showSubmitButtons(tabname, show) {
-    setSubmitButtonsVisibility(tabname, ! show, !show, false);
+    setSubmitButtonsVisibility(tabname, !show, !show, false);
 }
 
 function showSubmitInterruptingPlaceholder(tabname) {
