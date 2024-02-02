@@ -450,7 +450,7 @@ function extraNetworksControlRefreshOnClick(event, tabname, extra_networks_tabna
      * @param tabname                   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
      * @param extra_networks_tabname    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
      */
-    var btn_refresh_internal = gradioApp().getElementById(tabname + "_extra_refresh_internal");
+    var btn_refresh_internal = gradioApp().getElementById(tabname + "_" + extra_networks_tabname + "_extra_refresh_internal");
     btn_refresh_internal.dispatchEvent(new Event("click"));
 }
 

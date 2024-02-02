@@ -559,7 +559,7 @@ class ExtraNetworksPage:
             "date_created": int(mtime),
             "date_modified": int(ctime),
             "name": pth.name.lower(),
-            "path": str(pth.parent).lower(),
+            "path": str(pth).lower(),
         }
 
     def find_preview(self, path):
@@ -638,6 +638,7 @@ def pages_in_preferred_order(pages):
 
     return sorted(pages, key=lambda x: tab_scores[x.name])
 
+
 def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
     ui = ExtraNetworksUi()
     ui.pages = []
@@ -647,8 +648,6 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
     ui.tabname = tabname
 
     related_tabs = []
-
-    button_refresh = gr.Button("Refresh", elem_id=f"{tabname}_extra_refresh_internal", visible=False)
 
     for page in ui.stored_extra_pages:
         with gr.Tab(page.title, elem_id=f"{tabname}_{page.extra_networks_tabname}", elem_classes=["extra-page"]) as tab:
@@ -678,6 +677,15 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
         )
         tab.select(fn=None, _js=jscode, inputs=[], outputs=[], show_progress=False)
 
+        def refresh():
+            for pg in ui.stored_extra_pages:
+                pg.refresh()
+            create_html()
+            return ui.pages_contents
+
+        button_refresh = gr.Button("Refresh", elem_id=f"{tabname}_{page.extra_networks_tabname}_extra_refresh_internal", visible=False)
+        button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages).then(fn=lambda: None, _js="function(){ " + f"applyExtraNetworkFilter('{tabname}_{page.extra_networks_tabname}');" + " }")
+
     def create_html():
         ui.pages_contents = [pg.create_html(ui.tabname) for pg in ui.stored_extra_pages]
 
@@ -686,16 +694,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             create_html()
         return ui.pages_contents
 
-    def refresh():
-        for pg in ui.stored_extra_pages:
-            pg.refresh()
-        create_html()
-        return ui.pages_contents
-
     interface.load(fn=pages_html, inputs=[], outputs=ui.pages)
-    # NOTE: Event is manually fired in extraNetworks.js:extraNetworksTreeRefreshOnClick()
-    # button is unused and hidden at all times. Only used in order to fire this event.
-    button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
 
     return ui
 
