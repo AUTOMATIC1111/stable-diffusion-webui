@@ -11,10 +11,6 @@ import time
 from modules import processing, shared, devices
 
 
-image_encoder = None
-feature_extractor = None
-image_encoder_type = None
-image_encoder_name = None
 base_repo = "h94/IP-Adapter"
 ADAPTERS = {
     'None': 'none',
@@ -57,7 +53,6 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name='None', sc
         unapply(pipe)
         return False
     # init code
-    global image_encoder, image_encoder_type, image_encoder_name, feature_extractor # pylint: disable=global-statement
     if pipe is None:
         return False
     if shared.backend != shared.Backend.DIFFUSERS:
@@ -79,41 +74,37 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name='None', sc
     # which clip to use
     if 'ViT' not in adapter_name:
         clip_repo = base_repo
-        subfolder = 'models/image_encoder' if shared.sd_model_type == 'sd' else 'sdxl_models/image_encoder' # defaults per model
+        clip_subfolder = 'models/image_encoder' if shared.sd_model_type == 'sd' else 'sdxl_models/image_encoder' # defaults per model
     elif 'ViT-H' in adapter_name:
         clip_repo = base_repo
-        subfolder = 'models/image_encoder' # this is vit-h
+        clip_subfolder = 'models/image_encoder' # this is vit-h
     elif 'ViT-G' in adapter_name:
         clip_repo = base_repo
-        subfolder = 'sdxl_models/image_encoder' # this is vit-g
+        clip_subfolder = 'sdxl_models/image_encoder' # this is vit-g
     else:
         shared.log.error(f'IP adapter: unknown model type: {adapter_name}')
         return False
 
     # load feature extractor used by ip adapter
-    if feature_extractor is None:
+    if pipe.feature_extractor is None:
         from transformers import CLIPImageProcessor
         shared.log.debug('IP adapter load: feature extractor')
-        feature_extractor = CLIPImageProcessor()
+        pipe.feature_extractor = CLIPImageProcessor()
     # load image encoder used by ip adapter
-    if image_encoder is None or image_encoder_name != clip_repo + '/' + subfolder or image_encoder_type != shared.sd_model_type:
+    if pipe.image_encoder is None:
         try:
             from transformers import CLIPVisionModelWithProjection
-            shared.log.debug(f'IP adapter load: image encoder="{clip_repo}/{subfolder}"')
-            image_encoder = CLIPVisionModelWithProjection.from_pretrained(clip_repo, subfolder=subfolder, torch_dtype=devices.dtype, cache_dir=shared.opts.diffusers_dir, use_safetensors=True).to(devices.device)
-            image_encoder_type = shared.sd_model_type
-            image_encoder_name = clip_repo + '/' + subfolder
+            shared.log.debug(f'IP adapter load: image encoder="{clip_repo}/{clip_subfolder}"')
+            pipe.image_encoder = CLIPVisionModelWithProjection.from_pretrained(clip_repo, subfolder=clip_subfolder, torch_dtype=devices.dtype, cache_dir=shared.opts.diffusers_dir, use_safetensors=True)
         except Exception as e:
             shared.log.error(f'IP adapter: failed to load image encoder: {e}')
             return
+    pipe.image_encoder.to(devices.device)
 
     # main code
-    # subfolder = 'models' if 'sd15' in adapter else 'sdxl_models'
     t0 = time.time()
-    subfolder = 'models' if shared.sd_model_type == 'sd' else 'sdxl_models'
-    pipe.image_encoder = image_encoder
-    pipe.feature_extractor = feature_extractor
-    pipe.load_ip_adapter(base_repo, subfolder=subfolder, weight_name=adapter)
+    ip_subfolder = 'models' if shared.sd_model_type == 'sd' else 'sdxl_models'
+    pipe.load_ip_adapter(base_repo, subfolder=ip_subfolder, weight_name=adapter)
     pipe.set_ip_adapter_scale(scale)
     t1 = time.time()
     shared.log.info(f'IP adapter: adapter="{adapter}" scale={scale} image={image} time={t1-t0:.2f}')
