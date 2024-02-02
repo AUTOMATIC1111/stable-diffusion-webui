@@ -5,6 +5,24 @@ from PIL import Image
 from modules.control.util import HWC3, resize_image
 
 
+checked_ok = False
+
+def check_dependencies():
+    global checked_ok # pylint: disable=global-statement
+    from installer import installed, install, log
+    packages = [('mediapipe', 'mediapipe')]
+    for pkg in packages:
+        if not installed(pkg[1], reload=True, quiet=True):
+            install(pkg[0], pkg[1], ignore=False)
+    try:
+        import mediapipe as mp # pylint: disable=unused-import
+        checked_ok = True
+        return True
+    except Exception as e:
+        log.error(f'MediaPipe: {e}')
+        return False
+
+
 class MediapipeFaceDetector:
     def __call__(self,
                  input_image: Union[np.ndarray, Image.Image] = None,
@@ -14,6 +32,9 @@ class MediapipeFaceDetector:
                  detect_resolution: int = 512,
                  image_resolution: int = 512,
                  **kwargs):
+        if not checked_ok:
+            if not check_dependencies():
+                return
         from .mediapipe_face_util import generate_annotation
         if input_image is None:
             raise ValueError("input_image must be defined.")

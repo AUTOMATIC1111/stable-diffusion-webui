@@ -296,7 +296,20 @@ def load_reference(name: str):
         shared.log.debug(f'Reference model: {found[0]}')
         return True
     shared.log.debug(f'Reference download: {name}')
-    model_dir = download_diffusers_model(name, shared.opts.diffusers_dir)
+    reference_models = shared.readfile(os.path.join('html', 'reference.json'), silent=False)
+    model_opts = {}
+    for v in reference_models.values():
+        if v.get('path', '') == name:
+            model_opts = v
+            break
+    model_dir = download_diffusers_model(
+        hub_id=name,
+        cache_dir=shared.opts.diffusers_dir,
+        variant=model_opts.get('variant', None),
+        revision=model_opts.get('revision', None),
+        mirror=model_opts.get('mirror', None),
+        custom_pipeline=model_opts.get('custom_pipeline', None)
+    )
     if model_dir is None:
         shared.log.debug(f'Reference download failed: {name}')
         return False

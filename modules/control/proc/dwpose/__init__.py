@@ -6,13 +6,28 @@
 
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
-
 import cv2
 import numpy as np
 from PIL import Image
-
 from modules.control.util import HWC3, resize_image
 from .draw import draw_bodypose, draw_handpose, draw_facepose
+checked_ok = False
+
+
+def check_dependencies():
+    global checked_ok # pylint: disable=global-statement
+    from installer import installed, install, log
+    packages = [('openmim', 'openmim'), ('mmengine', 'mmengine'), ('mmcv', 'mmcv'), ('mmpose', 'mmpose'), ('mmdet', 'mmdet')]
+    for pkg in packages:
+        if not installed(pkg[1], reload=True, quiet=True):
+            install(pkg[0], pkg[1], ignore=False)
+    try:
+        import mmcv # pylint: disable=unused-import
+        checked_ok = True
+        return True
+    except Exception as e:
+        log.error(f'DWPose: {e}')
+        return False
 
 
 def draw_pose(pose, H, W):
@@ -31,6 +46,9 @@ def draw_pose(pose, H, W):
 
 class DWposeDetector:
     def __init__(self, det_config=None, det_ckpt=None, pose_config=None, pose_ckpt=None, device="cpu"):
+        if not checked_ok:
+            if not check_dependencies():
+                return
         from .wholebody import Wholebody
         self.pose_estimation = Wholebody(det_config, det_ckpt, pose_config, pose_ckpt, device)
 

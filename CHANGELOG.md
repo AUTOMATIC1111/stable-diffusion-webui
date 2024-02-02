@@ -83,6 +83,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - support controlnets with non-default yaml config files  
   - implement resize modes for override images  
   - allow any selection of units  
+  - dynamically install depenencies required by specific processors  
   - fix input image size  
   - fix video color mode  
   - fix correct image mode  
