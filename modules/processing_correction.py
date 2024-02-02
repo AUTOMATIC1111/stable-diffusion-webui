@@ -12,6 +12,21 @@ debug = shared.log.trace if os.environ.get('SD_HDR_DEBUG', None) is not None els
 debug('Trace: HDR')
 
 
+def sharpen_tensor(tensor, ratio=0):
+    if ratio == 0:
+        print("early exit...")
+        return tensor
+    kernel = torch.ones((3, 3), dtype=tensor.dtype, device=tensor.device)
+    kernel[1, 1] = 5.0
+    kernel /= kernel.sum()
+    kernel = kernel.expand(tensor.shape[-3], 1, kernel.shape[0], kernel.shape[1])
+    result_tmp = torch.nn.functional.conv2d(tensor, kernel, groups=tensor.shape[-3])
+    result = tensor.clone()
+    result[..., 1:-1, 1:-1] = result_tmp
+    output = (1.0 + ratio) * tensor + (0 - ratio) * result
+    return soft_clamp_tensor(output, threshold=0.95)
+
+
 def soft_clamp_tensor(tensor, threshold=0.8, boundary=4):
     # shrinking towards the mean; will also remove outliers
     if max(abs(tensor.max()), abs(tensor.min())) < boundary or threshold == 0:
@@ -29,11 +44,12 @@ def soft_clamp_tensor(tensor, threshold=0.8, boundary=4):
     return tensor
 
 
-def center_tensor(tensor, channel_shift=1.0, full_shift=1.0):
-    if channel_shift == 0 and full_shift == 0:
+def center_tensor(tensor, channel_shift=0.0, full_shift=0.0, offset=0.0):
+    if channel_shift == 0 and full_shift == 0 and offset == 0:
         return tensor
+    debug(f'HDR center: Before Adjustment: Full mean={tensor.mean().item()} Channel means={tensor.mean(dim=(-1, -2)).cpu().numpy()}')
     tensor -= tensor.mean(dim=(-1, -2), keepdim=True) * channel_shift
-    tensor -= tensor.mean() * full_shift
+    tensor -= tensor.mean() * full_shift - offset
     debug(f'HDR center: channel-shift={channel_shift} full-shift={full_shift}')
     debug(f'HDR center: After Adjustment: Full mean={tensor.mean().item()} Channel means={tensor.mean(dim=(-1, -2)).cpu().numpy()}')
     return tensor
@@ -55,9 +71,20 @@ def correction(p, timestep, latent):
     if timestep > 950 and p.hdr_clamp:
         p.extra_generation_params["HDR clamp"] = f'{p.hdr_threshold}/{p.hdr_boundary}'
         latent = soft_clamp_tensor(latent, threshold=p.hdr_threshold, boundary=p.hdr_boundary)
-    if timestep > 700 and p.hdr_center:
-        p.extra_generation_params["HDR center"] = f'{p.hdr_channel_shift}/{p.hdr_full_shift}'
-        latent = center_tensor(latent, channel_shift=p.hdr_channel_shift, full_shift=p.hdr_full_shift)
+    if 500 < timestep < 800 and (p.hdr_center or p.hdr_brightness):
+        p.extra_generation_params["HDR center"] = f'{p.hdr_color_correction}/{p.hdr_brightness}'
+        latent[0:1] = center_tensor(latent[0:1], full_shift=float(p.hdr_center), offset=p.hdr_brightness)  # Brightness
+        p.hdr_center = 0
+        p.hdr_brightness = 0
+    if 500 < timestep < 800 and p.hdr_color_correction != 0:
+        latent[1:] = center_tensor(latent[1:], channel_shift=p.hdr_color_correction, full_shift=0.0)  # Color
+        p.hdr_color_correction = 0
+    if timestep < p.hdr_sharpen_start and p.hdr_sharpen:
+        print(f"Sharpening... {p.hdr_sharpen_ratio}/{p.hdr_sharpen_start}")
+        p.extra_generation_params["HDR sharpen"] = f'{p.hdr_sharpen_ratio}/{p.hdr_sharpen_start}'
+        latent = sharpen_tensor(latent, ratio=p.hdr_sharpen_ratio)
+        # p.hdr_sharpen = False
+        p.hdr_sharpen_ratio *= 0.5 * 2**0.5
     if 1 < timestep < 100 and p.hdr_maximize:
         p.extra_generation_params["HDR max"] = f'{p.hdr_max_center}/{p.hdr_max_boundry}'
         latent = center_tensor(latent, channel_shift=p.hdr_max_center, full_shift=1.0)
@@ -66,7 +93,7 @@ def correction(p, timestep, latent):
 
 
 def correction_callback(p, timestep, kwargs):
-    if not p.hdr_clamp and not p.hdr_center and not p.hdr_maximize:
+    if not any([p.hdr_clamp, p.hdr_center, p.hdr_maximize, p.hdr_sharpen, p.hdr_color_correction, p.hdr_brightness]):
         return kwargs
     latents = kwargs["latents"]
     debug('')

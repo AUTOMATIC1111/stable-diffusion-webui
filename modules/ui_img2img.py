@@ -130,7 +130,8 @@ def create_ui():
                             denoising_strength = gr.Slider(minimum=0.0, maximum=0.99, step=0.01, label='Denoising strength', value=0.50, elem_id="img2img_denoising_strength")
                             refiner_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise start', value=0.0, elem_id="img2img_refiner_start")
 
-                    cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry = ui_sections.create_advanced_inputs('img2img')
+                    cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, cfg_end, full_quality, restore_faces, tiling = ui_sections.create_advanced_inputs('img2img')
+                    hdr_clamp, hdr_boundary, hdr_threshold, hdr_brightness, hdr_center, hdr_color_correction, hdr_sharpen, hdr_sharpen_ratio, hdr_sharpen_start, hdr_maximize, hdr_max_center, hdr_max_boundry = ui_sections.create_callback_inputs('img2img')
 
                     # with gr.Group(elem_id="inpaint_controls", visible=False) as inpaint_controls:
                     with gr.Accordion(open=True, label="Mask", elem_classes=["small-accordion"], elem_id="img2img_mask_group") as inpaint_controls:
@@ -179,7 +180,7 @@ def create_ui():
                 full_quality, restore_faces, tiling,
                 batch_count, batch_size,
                 cfg_scale, image_cfg_scale,
-                diffusers_guidance_rescale, sag_scale,
+                diffusers_guidance_rescale, sag_scale, cfg_end,
                 refiner_start,
                 clip_skip,
                 denoising_strength,
@@ -190,7 +191,7 @@ def create_ui():
                 resize_mode, resize_name,
                 inpaint_full_res, inpaint_full_res_padding, inpainting_mask_invert,
                 img2img_batch_files, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir,
-                hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry,
+                hdr_clamp, hdr_boundary, hdr_threshold, hdr_brightness, hdr_center, hdr_color_correction, hdr_sharpen, hdr_sharpen_ratio, hdr_sharpen_start, hdr_maximize, hdr_max_center, hdr_max_boundry,
                 override_settings,
             ]
             img2img_dict = dict(

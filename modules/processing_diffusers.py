@@ -50,8 +50,12 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
                     raise AssertionError('Interrupted...')
                 time.sleep(0.1)
 
-    def diffusers_callback(_pipe, step: int, timestep: int, kwargs: dict):
+    def diffusers_callback(pipe, step: int, timestep: int, kwargs: dict):
         shared.state.sampling_step = step
+        if shared.opts.nan_skip:
+            latents = kwargs.get('latents', None)
+            if latents is not None:
+                assert not torch.isnan(latents[..., 0, 0]).all(), f'NaN detected at step {step}: Skipping...'
         if shared.state.interrupted or shared.state.skipped:
             raise AssertionError('Interrupted...')
         if shared.state.paused:
@@ -62,7 +66,8 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
                 time.sleep(0.1)
         if kwargs.get('latents', None) is None:
             return kwargs
-        kwargs = processing_correction.correction_callback(p, timestep, kwargs)
+        if step != pipe.num_timesteps:
+            kwargs = processing_correction.correction_callback(p, timestep, kwargs)
         if p.scheduled_prompt and 'prompt_embeds' in kwargs and 'negative_prompt_embeds' in kwargs:
             try:
                 i = (step + 1) % len(p.prompt_embeds)
@@ -71,6 +76,10 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
                 kwargs["negative_prompt_embeds"] = p.negative_embeds[j][0:1].expand(kwargs["negative_prompt_embeds"].shape)
             except Exception as e:
                 shared.log.debug(f"Callback: {e}")
+        if step == int(pipe.num_timesteps * p.cfg_end) and 'prompt_embeds' in kwargs and 'negative_prompt_embeds' in kwargs:
+            pipe._guidance_scale = 0.0
+            for key in {"prompt_embeds", "negative_prompt_embeds", "add_text_embeds", "add_time_ids"} & set(kwargs):
+                kwargs[key] = kwargs[key].chunk(2)[-1]
         shared.state.current_latent = kwargs['latents']
         if shared.cmd_opts.profile and shared.profiler is not None:
             shared.profiler.step()
@@ -202,7 +211,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         elif 'callback_on_step_end_tensor_inputs' in possible:
             args['callback_on_step_end'] = diffusers_callback
             if 'prompt_embeds' in possible and 'negative_prompt_embeds' in possible:
-                args['callback_on_step_end_tensor_inputs'] = ['latents', 'prompt_embeds', 'negative_prompt_embeds']
+                args['callback_on_step_end_tensor_inputs'] = model._callback_tensor_inputs
             else:
                 args['callback_on_step_end_tensor_inputs'] = ['latents']
         for arg in kwargs:
@@ -259,7 +268,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         if p.hdr_clamp or p.hdr_center or p.hdr_maximize:
             txt = 'HDR:'
             txt += f' Clamp threshold={p.hdr_threshold} boundary={p.hdr_boundary}' if p.hdr_clamp else ' Clamp off'
-            txt += f' Center channel-shift={p.hdr_channel_shift} full-shift={p.hdr_full_shift}' if p.hdr_center else ' Center off'
+            txt += f' Center channel-shift={p.hdr_color_correction} full-shift={p.hdr_brightness}' if p.hdr_center else ' Center off'
             txt += f' Maximize boundary={p.hdr_max_boundry} center={p.hdr_max_center}' if p.hdr_maximize else ' Maximize off'
             shared.log.debug(txt)
         # components = [{ k: getattr(v, 'device', None) } for k, v in model.components.items()]

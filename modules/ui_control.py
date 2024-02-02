@@ -103,7 +103,8 @@ def create_ui(_blocks: gr.Blocks=None):
 
                 mask_controls = masking.create_segment_ui()
 
-                cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry = ui_sections.create_advanced_inputs('control')
+                cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, cfg_end, full_quality, restore_faces, tiling= ui_sections.create_advanced_inputs('control')
+                hdr_clamp, hdr_boundary, hdr_threshold, hdr_brightness, hdr_center, hdr_color_correction, hdr_sharpen, hdr_sharpen_ratio, hdr_sharpen_start, hdr_maximize, hdr_max_center, hdr_max_boundry = ui_sections.create_callback_inputs('control')
 
                 with gr.Accordion(open=False, label="Video", elem_id="control_video", elem_classes=["small-accordion"]):
                     with gr.Row():
@@ -487,7 +488,7 @@ def create_ui(_blocks: gr.Blocks=None):
                     prompt, negative, styles,
                     steps, sampler_index,
                     seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
-                    cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_center, hdr_channel_shift, hdr_full_shift, hdr_maximize, hdr_max_center, hdr_max_boundry,
+                    cfg_scale, clip_skip, image_cfg_scale, diffusers_guidance_rescale, sag_scale, cfg_end, full_quality, restore_faces, tiling, hdr_clamp, hdr_boundary, hdr_threshold, hdr_brightness, hdr_center, hdr_color_correction, hdr_sharpen, hdr_sharpen_ratio, hdr_sharpen_start, hdr_maximize, hdr_max_center, hdr_max_boundry,
                     resize_mode_before, resize_name_before, width_before, height_before, scale_by_before, selected_scale_tab_before,
                     resize_mode_after, resize_name_after, width_after, height_after, scale_by_after, selected_scale_tab_after,
                     denoising_strength, batch_count, batch_size,

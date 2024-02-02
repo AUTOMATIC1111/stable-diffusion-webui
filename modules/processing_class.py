@@ -16,7 +16,7 @@ class StableDiffusionProcessing:
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
     """
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, hr_sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, image_cfg_scale: float = None, clip_skip: int = 1, width: int = 512, height: int = 512, full_quality: bool = True, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, diffusers_guidance_rescale: float = 0.7, sag_scale: float = 0.0, resize_mode: int = 0, resize_name: str = 'None', scale_by: float = 0, selected_scale_tab: int = 0, hdr_clamp: bool = False, hdr_boundary: float = 4.0, hdr_threshold: float = 3.5, hdr_center: bool = False, hdr_channel_shift: float = 0.8, hdr_full_shift: float = 0.8, hdr_maximize: bool = False, hdr_max_center: float = 0.6, hdr_max_boundry: float = 1.0, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None): # pylint: disable=unused-argument
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, hr_sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, image_cfg_scale: float = None, clip_skip: int = 1, width: int = 512, height: int = 512, full_quality: bool = True, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, diffusers_guidance_rescale: float = 0.7, sag_scale: float = 0.0, cfg_end: float = 1, resize_mode: int = 0, resize_name: str = 'None', scale_by: float = 0, selected_scale_tab: int = 0, hdr_clamp: bool = False, hdr_boundary: float = 4.0, hdr_threshold: float = 3.5, hdr_center: bool = False, hdr_color_correction: float = 0.8, hdr_brightness: float = 0.8, hdr_sharpen: bool = False, hdr_sharpen_ratio: float = 0.0, hdr_sharpen_start: int = 500, hdr_maximize: bool = False, hdr_max_center: float = 0.6, hdr_max_boundry: float = 1.0, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None): # pylint: disable=unused-argument
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
         self.prompt: str = prompt
@@ -39,6 +39,7 @@ class StableDiffusionProcessing:
         self.image_cfg_scale = image_cfg_scale
         self.diffusers_guidance_rescale = diffusers_guidance_rescale
         self.sag_scale = sag_scale
+        self.cfg_end = cfg_end
         if devices.backend == "ipex" and width == 1024 and height == 1024 and not torch.xpu.has_fp64_dtype() and os.environ.get('DISABLE_IPEX_1024_WA', None) is None:
             width = 1080
             height = 1080
@@ -118,8 +119,11 @@ class StableDiffusionProcessing:
         self.hdr_boundary = hdr_boundary
         self.hdr_threshold = hdr_threshold
         self.hdr_center = hdr_center
-        self.hdr_channel_shift = hdr_channel_shift
-        self.hdr_full_shift = hdr_full_shift
+        self.hdr_color_correction = hdr_color_correction
+        self.hdr_brightness = hdr_brightness
+        self.hdr_sharpen = hdr_sharpen
+        self.hdr_sharpen_ratio = hdr_sharpen_ratio
+        self.hdr_sharpen_start = hdr_sharpen_start
         self.hdr_maximize = hdr_maximize
         self.hdr_max_center = hdr_max_center
         self.hdr_max_boundry = hdr_max_boundry

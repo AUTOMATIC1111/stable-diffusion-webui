@@ -345,6 +345,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "upcast_attn": OptionInfo(False, "Upcast attention layer"),
     "cuda_cast_unet": OptionInfo(False, "Fixed UNet precision"),
     "disable_nan_check": OptionInfo(True, "Disable NaN check", gr.Checkbox, {"visible": False}),
+    "nan_skip": OptionInfo(False, "Skip Generation if NaN found in latents", gr.Checkbox, {"visible": True}),
     "rollback_vae": OptionInfo(False, "Attempt VAE roll back for NaN values"),
 
     "cross_attention_sep": OptionInfo("<h2>Attention</h2>", "", gr.HTML),
