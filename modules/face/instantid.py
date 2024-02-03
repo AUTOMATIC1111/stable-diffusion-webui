@@ -34,8 +34,9 @@ def instant_id(p: processing.StableDiffusionProcessing, app, source_image, stren
     shared.log.debug(f'InstantID face: score={face.det_score:.2f} gender={"female" if face.gender==0 else "male"} age={face.age} bbox={face.bbox}')
     shared.log.debug(f'InstantID loading: model={REPO_ID}')
     face_adapter = hf.hf_hub_download(repo_id=REPO_ID, filename="ip-adapter.bin")
-    if controlnet_model is None:
+    if controlnet_model is None or not cache:
         controlnet_model = ControlNetModel.from_pretrained(REPO_ID, subfolder="ControlNetModel", torch_dtype=devices.dtype, cache_dir=shared.opts.diffusers_dir)
+        controlnet_model.to(devices.device, devices.dtype)
 
     processing.process_init(p)
 
@@ -57,12 +58,13 @@ def instant_id(p: processing.StableDiffusionProcessing, app, source_image, stren
     shared.sd_model.load_ip_adapter_instantid(face_adapter, scale=strength)
     shared.sd_model.set_ip_adapter_scale(strength)
     if not ((shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) or (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram)):
+        print('HERE1')
         shared.sd_model.to(shared.device, devices.dtype) # move pipeline if needed, but don't touch if its under automatic managment
 
     # pipeline specific args
     orig_prompt_attention = shared.opts.prompt_attention
     shared.opts.data['prompt_attention'] = 'Fixed attention' # otherwise need to deal with class_tokens_mask
-    p.task_args['prompt'] = p.prompt # override all logic
+    p.task_args['prompt'] = p.all_prompts[0] # override all logic
     p.task_args['image_embeds'] = face_emb
     p.task_args['image'] = face_kps
     p.task_args['controlnet_conditioning_scale'] = float(conditioning)

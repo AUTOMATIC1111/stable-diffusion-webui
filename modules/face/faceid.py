@@ -32,7 +32,6 @@ def face_id(p: processing.StableDiffusionProcessing, app, source_image: Image.Im
         shared.log.error(f'FaceID download failed: model={model} file={ip_ckpt}')
         return None
 
-    processing.process_init(p)
     if override:
         shared.sd_model.scheduler = diffusers.DDIMScheduler(
             num_train_timesteps=1000,

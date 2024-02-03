@@ -107,6 +107,7 @@ class Script(scripts.Script):
                 input_images[i] = Image.open(image['name'])
         source_image = input_images[0]
 
+        processing.process_init(p)
         if mode == 'FaceID': # faceid runs as ipadapter in its own pipeline
             from modules.face.faceid import face_id
             from modules.face.insightface import get_app
