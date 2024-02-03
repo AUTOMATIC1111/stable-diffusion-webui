@@ -1,8 +1,7 @@
 from typing import Union
 import time
+import diffusers.utils
 from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline
-from modules.control.proc.reference_sd15 import StableDiffusionReferencePipeline
-from modules.control.proc.reference_sdxl import StableDiffusionXLReferencePipeline
 from modules.shared import log, opts
 from modules.control.units import detect
 
@@ -25,7 +24,8 @@ class ReferencePipeline():
         if opts.diffusers_fuse_projections and hasattr(pipeline, 'unfuse_qkv_projections'):
             pipeline.unfuse_qkv_projections()
         if detect.is_sdxl(pipeline):
-            self.pipeline = StableDiffusionXLReferencePipeline(
+            cls = diffusers.utils.get_class_from_dynamic_module('stable_diffusion_xl_reference', module_file='pipeline.py')
+            self.pipeline = cls(
                 vae=pipeline.vae,
                 text_encoder=pipeline.text_encoder,
                 text_encoder_2=pipeline.text_encoder_2,
@@ -36,7 +36,8 @@ class ReferencePipeline():
                 feature_extractor=getattr(pipeline, 'feature_extractor', None),
             ).to(pipeline.device)
         elif detect.is_sd15(pipeline):
-            self.pipeline = StableDiffusionReferencePipeline(
+            cls = diffusers.utils.get_class_from_dynamic_module('stable_diffusion_reference', module_file='pipeline.py')
+            self.pipeline = cls(
                 vae=pipeline.vae,
                 text_encoder=pipeline.text_encoder,
                 tokenizer=pipeline.tokenizer,

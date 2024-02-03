@@ -8,11 +8,12 @@
 - masking api  
 - preprocess api  
 - wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)  
+- more pipelines: <https://github.com/huggingface/diffusers/blob/main/examples/community/README.md>
 
 ## TODO for Dev merge
 
 - update docs  
-- control reference mode  
+- control reference mode: <https://github.com/huggingface/diffusers/issues/6838>  
 
 ## Update for 2023-02-02
 
