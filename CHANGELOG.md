@@ -4,18 +4,22 @@
 
 - ipadapter multi image  
 - control second pass  
+- diffusers public callbacks  
+- image2video: pia and vgen pipelines  
+- wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)  
+- more pipelines: <https://github.com/huggingface/diffusers/blob/main/examples/community/README.md>  
 - control api  
 - masking api  
 - preprocess api  
-- wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)  
-- more pipelines: <https://github.com/huggingface/diffusers/blob/main/examples/community/README.md>
+- diffusers training master script  
+- remove kohya from submodules  
 
 ## TODO for Dev merge
 
 - update docs  
 - control reference mode: <https://github.com/huggingface/diffusers/issues/6838>  
 
-## Update for 2023-02-02
+## Update for 2023-02-03
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
