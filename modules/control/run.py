@@ -41,7 +41,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                 denoising_strength, batch_count, batch_size,
                 video_skip_frames, video_type, video_duration, video_loop, video_pad, video_interpolate,
                 ip_adapter, ip_scale, ip_image,
-                *input_script_args
+                *input_script_args # pylint: disable=unused-argument
         ):
     global pipe, original_pipeline # pylint: disable=global-statement
     debug(f'Control: type={unit_type} input={inputs} init={inits} type={input_type}')
@@ -403,10 +403,10 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                             return msg
                     elif unit_type == 'controlnet' and input_type == 1: # Init image same as control
                         p.init_images = input_image
-                        p.task_args['control_image'] = p.override or input_image
+                        p.task_args['control_image'] = p.override or input_image # TODO multiple units
                         p.task_args['strength'] = p.denoising_strength
                     elif unit_type == 'controlnet' and input_type == 2: # Separate init image
-                        p.task_args['control_image'] = init_image
+                        p.task_args['control_image'] = init_image # TODO multiple units
                         p.task_args['strength'] = init_image
                         if init_image is None:
                             shared.log.warning('Control: separate init image not provided')
