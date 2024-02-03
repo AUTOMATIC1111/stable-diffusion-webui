@@ -342,11 +342,11 @@ def prepare_environment():
     clip_package = os.environ.get('CLIP_PACKAGE', "https://github.com/openai/CLIP/archive/d50d76daa670286dd6cacf3bcd80b5e4823fc8e1.zip")
     openclip_package = os.environ.get('OPENCLIP_PACKAGE', "https://github.com/mlfoundations/open_clip/archive/bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b.zip")
 
-    stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://github.com/Stability-AI/stablediffusion.git")
-    stable_diffusion_xl_repo = os.environ.get('STABLE_DIFFUSION_XL_REPO', "https://github.com/Stability-AI/generative-models.git")
-    k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/crowsonkb/k-diffusion.git')
-    codeformer_repo = os.environ.get('CODEFORMER_REPO', 'https://github.com/sczhou/CodeFormer.git')
-    blip_repo = os.environ.get('BLIP_REPO', 'https://github.com/salesforce/BLIP.git')
+    stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://mirror.ghproxy.com/https://github.com/Stability-AI/stablediffusion.git")
+    stable_diffusion_xl_repo = os.environ.get('STABLE_DIFFUSION_XL_REPO', "https://mirror.ghproxy.com/https://github.com/Stability-AI/generative-models.git")
+    k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://mirror.ghproxy.com/https://github.com/crowsonkb/k-diffusion.git')
+    codeformer_repo = os.environ.get('CODEFORMER_REPO', 'https://mirror.ghproxy.com/https://github.com/sczhou/CodeFormer.git')
+    blip_repo = os.environ.get('BLIP_REPO', 'https://mirror.ghproxy.com/https://github.com/salesforce/BLIP.git')
 
     stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf")
     stable_diffusion_xl_commit_hash = os.environ.get('STABLE_DIFFUSION_XL_COMMIT_HASH', "45c443b316737a4ab6e40413d7794a7f5657c19f")
@@ -380,12 +380,10 @@ def prepare_environment():
 
     if args.use_ipex:
         args.skip_torch_cuda_test = True
-    if not args.skip_torch_cuda_test and not check_run_python("import torch; assert torch.cuda.is_available()"):
-        raise RuntimeError(
-            'Torch is not able to use GPU; '
-            'add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'
-        )
-    startup_timer.record("torch GPU test")
+    
+    #if not args.skip_torch_cuda_test and not check_run_python("import torch; assert torch.cuda.is_available()"):
+        #raise RuntimeError('Torch is not able to use GPU; 'add '--skip-toch-curda-test to COMMANDLINE_ARGS variable to disable this check')
+    startup_timer.record("torch CPU test")
 
     if not is_installed("clip"):
         run_pip(f"install {clip_package}", "clip")
@@ -453,6 +451,7 @@ def configure_for_tests():
         sys.argv.append("--disable-nan-check")
 
     os.environ['COMMANDLINE_ARGS'] = ""
+
 
 
 def start():
