@@ -44,7 +44,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                 *input_script_args
         ):
     global pipe, original_pipeline # pylint: disable=global-statement
-    debug(f'Control {unit_type}: input={inputs} init={inits} type={input_type}')
+    debug(f'Control: type={unit_type} input={inputs} init={inits} type={input_type}')
     if inputs is None or (type(inputs) is list and len(inputs) == 0):
         inputs = [None]
     output_images: List[Image.Image] = [] # output images
@@ -134,7 +134,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
             active_process.append(u.process)
             active_model.append(u.controlnet)
             active_strength.append(float(u.strength))
-            shared.log.debug(f'Control ControlNet-XS unit: i={num_units} process={u.process.processor_id} model={u.controlnet.model_id} strength={u.strength} guess={u.guess} start={u.start} end={u.end}')
+            shared.log.debug(f'Control ControlLLite unit: i={num_units} process={u.process.processor_id} model={u.controlnet.model_id} strength={u.strength} guess={u.guess} start={u.start} end={u.end}')
         elif unit_type == 'reference':
             p.override = u.override
             p.attention = u.attention
@@ -161,9 +161,9 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
             selected_models = active_model[0].model if active_model[0].model is not None else None
             p.extra_generation_params["Control model"] = (active_model[0].model_id or '') if active_model[0].model is not None else None
             has_models = selected_models is not None
-            control_conditioning = active_strength[0]
-            control_guidance_start = active_start[0]
-            control_guidance_end = active_end[0]
+            control_conditioning = active_strength[0] if len(active_strength) > 0 else 1 # strength or list[strength]
+            control_guidance_start = active_start[0] if len(active_start) > 0 else 0
+            control_guidance_end = active_end[0] if len(active_end) > 0 else 1
         else:
             selected_models = [m.model for m in active_model if m.model is not None]
             p.extra_generation_params["Control model"] = ', '.join([(m.model_id or '') for m in active_model if m.model is not None])
@@ -233,7 +233,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
         """
 
 
-    debug(f'Control pipeline: class={pipe.__class__} args={vars(p)}')
+    debug(f'Control pipeline: class={pipe.__class__.__name__} args={vars(p)}')
     t1, t2, t3 = time.time(), 0, 0
     status = True
     frame = None
@@ -369,9 +369,12 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                             shared.log.error(f'{msg}: {processed_images}')
                             restore_pipeline()
                             return msg
-                        processed_image = [np.array(i) for i in processed_images]
-                        processed_image = util.blend(processed_image) # blend all processed images into one
-                        processed_image = Image.fromarray(processed_image)
+                        if len(processed_images) > 1:
+                            processed_image = [np.array(i) for i in processed_images]
+                            processed_image = util.blend(processed_image) # blend all processed images into one
+                            processed_image = Image.fromarray(processed_image)
+                        else:
+                            processed_image = processed_images[0]
                         if isinstance(selected_models, list) and len(processed_images) == len(selected_models):
                             debug(f'Control: inputs match: input={len(processed_images)} models={len(selected_models)}')
                             p.init_images = processed_images
@@ -381,7 +384,8 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                             restore_pipeline()
                             return msg
                         elif selected_models is not None:
-                            debug('Control: single model - blending images')
+                            if len(processed_images) > 1:
+                                debug('Control: using blended image for single model')
                             p.init_images = [processed_image]
                     else:
                         debug('Control processed: using input direct')
@@ -399,16 +403,14 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                             return msg
                     elif unit_type == 'controlnet' and input_type == 1: # Init image same as control
                         p.init_images = input_image
-                        p.task_args['control_image'] = p.image
+                        p.task_args['control_image'] = p.override or input_image
                         p.task_args['strength'] = p.denoising_strength
                     elif unit_type == 'controlnet' and input_type == 2: # Separate init image
-                        p.task_args['control_image'] = p.image
-                        p.task_args['strength'] = p.denoising_strength
+                        p.task_args['control_image'] = init_image
+                        p.task_args['strength'] = init_image
                         if init_image is None:
                             shared.log.warning('Control: separate init image not provided')
-                            p.init_images = input_image
-                        else:
-                            p.init_images = init_image
+                        p.init_images = input_image if init_image is None else init_image
 
                     if is_generator:
                         image_txt = f'{processed_image.width}x{processed_image.height}' if processed_image is not None else 'None'
@@ -447,7 +449,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                                 if hasattr(p, 'init_images') and p.init_images is not None:
                                     p.task_args['image'] = p.init_images # need to set explicitly for txt2img
                             if unit_type == 'lite':
-                                instance.apply(selected_models, p.image, control_conditioning)
+                                instance.apply(selected_models, p.init_images, control_conditioning)
                         if hasattr(p, 'init_images') and p.init_images is None:
                             del p.init_images
 

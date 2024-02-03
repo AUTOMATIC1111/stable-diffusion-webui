@@ -248,7 +248,7 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None, output_type
                 if upscaler is not None:
                     im = latent(im, w, h, upscaler)
                 else:
-                    shared.log.warning(f"Could not find upscaler: {upscaler_name or '<empty string>'} using fallback: {upscaler.name}")
+                    shared.log.warning(f"Resize upscaler: invalid={upscaler_name} fallback={upscaler.name}")
         if im.width != w or im.height != h:
             im = im.resize((w, h), resample=Image.Resampling.LANCZOS)
         return im

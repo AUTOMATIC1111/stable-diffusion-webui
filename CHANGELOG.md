@@ -2,15 +2,20 @@
 
 ## Future
 
-- wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)  
+- ipadapter multi image  
+- control second pass  
 - control api  
 - masking api  
 - preprocess api  
+- wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)  
 
 ## TODO for Dev merge
 
-- updated docs  
-- control fixes  
+- update docs  
+- face apply style
+- control reference mode  
+- control init image same as control, separate init image  
+- control t2i-adapter with ip-adapter  
 
 ## Update for 2023-02-02
 
