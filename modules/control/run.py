@@ -109,7 +109,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
         debug(f'Control unit: i={num_units} type={u.type} enabled={u.enabled}')
         if not u.enabled:
             continue
-        if unit_type == 'adapter' and u.adapter.model is not None:
+        if unit_type == 't2i adapter' and u.adapter.model is not None:
             active_process.append(u.process)
             active_model.append(u.adapter)
             active_strength.append(float(u.strength))
@@ -154,7 +154,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
     control_conditioning = None
     control_guidance_start = None
     control_guidance_end = None
-    if unit_type == 'adapter' or unit_type == 'controlnet' or unit_type == 'xs' or unit_type == 'lite':
+    if unit_type == 't2i adapter' or unit_type == 'controlnet' or unit_type == 'xs' or unit_type == 'lite':
         if len(active_model) == 0:
             selected_models = None
         elif len(active_model) == 1:
@@ -176,7 +176,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
         pass
 
     debug(f'Control: run type={unit_type} models={has_models}')
-    if unit_type == 'adapter' and has_models:
+    if unit_type == 't2i adapter' and has_models:
         p.extra_generation_params["Control mode"] = 'T2I-Adapter'
         p.task_args['adapter_conditioning_scale'] = control_conditioning
         instance = t2iadapter.AdapterPipeline(selected_models, shared.sd_model)
@@ -345,7 +345,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         p.extra_generation_params["Mask dilate"] = masking.opts.mask_dilate if masking.opts.mask_dilate > 0 else None
                         p.extra_generation_params["Mask model"] = masking.opts.model if masking.opts.model is not None else None
                     for i, process in enumerate(active_process): # list[image]
-                        image_mode = 'L' if unit_type == 'adapter' and len(active_model) > i and ('Canny' in active_model[i].model_id or 'Sketch' in active_model[i].model_id) else 'RGB' # t2iadapter canny and sketch work in grayscale only
+                        image_mode = 'L' if unit_type == 't2i adapter' and len(active_model) > i and ('Canny' in active_model[i].model_id or 'Sketch' in active_model[i].model_id) else 'RGB' # t2iadapter canny and sketch work in grayscale only
                         debug(f'Control: i={i+1} process="{process.processor_id}" input={masked_image} override={process.override}')
                         processed_image = process(
                             image_input=masked_image,
@@ -421,7 +421,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
 
                     # prepare pipeline
                     if pipe is not None:
-                        if not has_models and (unit_type == 'controlnet' or unit_type == 'adapter' or unit_type == 'xs' or unit_type == 'lite'): # run in txt2img/img2img/inpaint mode
+                        if not has_models and (unit_type == 'controlnet' or unit_type == 't2i adapter' or unit_type == 'xs' or unit_type == 'lite'): # run in txt2img/img2img/inpaint mode
                             if mask is not None:
                                 p.task_args['strength'] = denoising_strength
                                 p.image_mask = mask

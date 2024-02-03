@@ -256,7 +256,7 @@ def create_ui(_blocks: gr.Blocks=None):
                                 image_preview = gr.Image(label="Input", show_label=False, type="pil", source="upload", interactive=False, height=128, width=128, visible=False)
                         adapter_ui_units.append(unit_ui)
                         units.append(unit.Unit(
-                            unit_type = 'adapter',
+                            unit_type = 't2i adapter',
                             enabled = enabled,
                             result_txt = result_txt,
                             enabled_cb = enabled_cb,

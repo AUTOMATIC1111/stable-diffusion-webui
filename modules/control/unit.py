@@ -107,7 +107,7 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
                 return gr.update(visible=False, value=None)
 
         # actual init
-        if self.type == 'adapter':
+        if self.type == 't2i adapter':
             self.adapter = t2iadapter.Adapter(device=default_device, dtype=default_dtype)
         elif self.type == 'controlnet':
             self.controlnet = controlnet.ControlNet(device=default_device, dtype=default_dtype)
@@ -124,7 +124,7 @@ class Unit(): # mashup of gradio controls and mapping to actual implementation c
             return
 
         # bind ui controls to properties if present
-        if self.type == 'adapter':
+        if self.type == 't2i adapter':
             if model_id is not None:
                 model_id.change(fn=self.adapter.load, inputs=[model_id], outputs=[result_txt], show_progress=True)
             if extra_controls is not None and len(extra_controls) > 0:

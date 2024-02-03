@@ -12,7 +12,8 @@
 ## TODO for Dev merge
 
 - update docs  
-- face apply style
+- face apply style  
+- embeddings disappear  
 - control reference mode  
 - control init image same as control, separate init image  
 - control t2i-adapter with ip-adapter  
