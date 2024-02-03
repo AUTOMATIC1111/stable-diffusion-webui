@@ -373,6 +373,9 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
     if shared.opts.diffusers_move_base and not getattr(shared.sd_model, 'has_accelerate', False):
         shared.sd_model.to(devices.device)
 
+    # recompile if a paramater chages
+    recompile_model()
+
     # pipeline type is set earlier in processing, but check for sanity
     is_control = getattr(p, 'is_control', False) is True
     has_images = len(getattr(p, 'init_images' ,[])) > 0
@@ -403,7 +406,6 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         clip_skip=p.clip_skip,
         desc='Base',
     )
-    recompile_model()
     update_sampler(shared.sd_model)
     shared.state.sampling_steps = base_args['num_inference_steps']
     p.extra_generation_params['Pipeline'] = shared.sd_model.__class__.__name__
@@ -462,10 +464,10 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             output.images = resize_hires(p, latents=output.images)
             if (latent_scale_mode is not None or p.hr_force) and p.denoising_strength > 0:
                 p.ops.append('hires')
+                recompile_model(hires=True)
                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                 if shared.sd_model.__class__.__name__ == "OnnxRawPipeline":
                     shared.sd_model = preprocess_onnx_pipeline(p, is_refiner_enabled())
-                recompile_model(hires=True)
                 update_sampler(shared.sd_model, second_pass=True)
                 hires_args = set_pipeline_args(
                     model=shared.sd_model,
