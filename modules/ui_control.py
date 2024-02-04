@@ -190,7 +190,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         enabled = True if i==0 else False
                         with gr.Accordion(f'ControlNet unit {i+1}', visible= i < num_controlnet_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
-                                enabled_cb = gr.Checkbox(enabled, container=False, show_label=False)
+                                enabled_cb = gr.Checkbox(enabled, label='', container=False, show_label=False)
                                 process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
                                 model_id = gr.Dropdown(label="ControlNet", choices=controlnet.list_models(), value='None')
                                 ui_common.create_refresh_button(model_id, controlnet.list_models, lambda: {"choices": controlnet.list_models(refresh=True)}, f'refresh_controlnet_models_{i}')
@@ -245,7 +245,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         enabled = True if i==0 else False
                         with gr.Accordion(f'T2I-Adapter unit {i+1}', visible= i < num_adapter_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
-                                enabled_cb = gr.Checkbox(enabled, container=False, show_label=False)
+                                enabled_cb = gr.Checkbox(enabled, label='', container=False, show_label=False)
                                 process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
                                 model_id = gr.Dropdown(label="Adapter", choices=t2iadapter.list_models(), value='None')
                                 ui_common.create_refresh_button(model_id, t2iadapter.list_models, lambda: {"choices": t2iadapter.list_models(refresh=True)}, f'refresh_adapter_models_{i}')
@@ -287,7 +287,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         enabled = True if i==0 else False
                         with gr.Accordion(f'ControlNet-XS unit {i+1}', visible= i < num_controlnet_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
-                                enabled_cb = gr.Checkbox(enabled, container=False, show_label=False)
+                                enabled_cb = gr.Checkbox(enabled, label='', container=False, show_label=False)
                                 process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
                                 model_id = gr.Dropdown(label="ControlNet-XS", choices=xs.list_models(), value='None')
                                 ui_common.create_refresh_button(model_id, xs.list_models, lambda: {"choices": xs.list_models(refresh=True)}, f'refresh_xs_models_{i}')
@@ -332,7 +332,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         enabled = True if i==0 else False
                         with gr.Accordion(f'Control-LLLite unit {i+1}', visible= i < num_lite_units.value, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
-                                enabled_cb = gr.Checkbox(enabled, container=False, show_label=False)
+                                enabled_cb = gr.Checkbox(enabled, label='', container=False, show_label=False)
                                 process_id = gr.Dropdown(label="Processor", choices=processors.list_models(), value='None')
                                 model_id = gr.Dropdown(label="Model", choices=lite.list_models(), value='None')
                                 ui_common.create_refresh_button(model_id, lite.list_models, lambda: {"choices": lite.list_models(refresh=True)}, f'refresh_lite_models_{i}')
@@ -375,7 +375,7 @@ def create_ui(_blocks: gr.Blocks=None):
                         enabled = True if i==0 else False
                         with gr.Accordion(f'Reference unit {i+1}', visible=True, elem_classes='control-unit') as unit_ui:
                             with gr.Row():
-                                enabled_cb = gr.Checkbox(enabled, container=False, show_label=False)
+                                enabled_cb = gr.Checkbox(enabled, label='', container=False, show_label=False)
                                 model_id = gr.Dropdown(label="Reference", choices=reference.list_models(), value='Reference', visible=False)
                                 model_strength = gr.Slider(label="Strength", minimum=0.01, maximum=1.0, step=0.01, value=1.0, visible=False)
                                 reset_btn = ui_components.ToolButton(value=ui_symbols.reset)
