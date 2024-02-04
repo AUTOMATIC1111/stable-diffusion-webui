@@ -389,9 +389,9 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "directml_catch_nan": OptionInfo(False, "DirectML retry ops for NaN", gr.Checkbox, {"visible": devices.backend == "directml"}),
 
     "olive_sep": OptionInfo("<h2>Olive</h2>", "", gr.HTML),
-    "olive_float16": OptionInfo(True, 'Olive use FP16 on optimization (will use FP32 if unchecked)'),
-    "olive_vae_encoder_float32": OptionInfo(False, 'Olive force FP32 for VAE Encoder (if Img2Img generates NaN, enable this option and remove previously optimized model)'),
-    "olive_static_dims": OptionInfo(True, 'Olive use static dimensions (make inference faster with OrtTransformersOptimization)'),
+    "olive_float16": OptionInfo(True, 'Olive use FP16 on optimization'),
+    "olive_vae_encoder_float32": OptionInfo(False, 'Olive force FP32 for VAE Encoder'),
+    "olive_static_dims": OptionInfo(True, 'Olive use static dimensions'),
     "olive_cache_optimized": OptionInfo(True, 'Olive cache optimized models'),
 }))
 
@@ -446,7 +446,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
 
     "onnx_sep": OptionInfo("<h2>ONNX Runtime</h2>", "", gr.HTML),
     "onnx_execution_provider": OptionInfo(get_default_execution_provider().value, 'Execution Provider', gr.Dropdown, lambda: {"choices": available_execution_providers }),
-    "onnx_show_menu": OptionInfo(False, 'ONNX show onnx-specific menu (restart required)'),
+    "onnx_show_menu": OptionInfo(False, 'ONNX show onnx-specific menu'),
     "onnx_cache_converted": OptionInfo(True, 'ONNX cache converted models'),
     "onnx_unload_base": OptionInfo(False, 'ONNX unload base model when processing refiner'),
 }))

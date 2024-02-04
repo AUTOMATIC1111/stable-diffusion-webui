@@ -383,6 +383,12 @@
   {"id":"","label":"Model compile suppress errors","localized":"모델 컴파일 시 오류 억제","hint":""},
   {"id":"","label":"Disable Torch memory garbage collection","localized":"Torch 메모리 정리 비활성화","hint":"이미지 생성 시 메모리 정리를 하지 않는다. CG will still run before & after model load as well when low GPU memory threshold is reached."},
   {"id":"","label":"Enable IPEX Optimize for Intel GPUs","localized":"","hint":""},
+  {"id":"","label":"DirectML memory stats provider","localized":"DirectML GPU 메모리 정보 제공자","hint":"어떻게 GPU 메모리 정보를 가져올 것인지 정한다."},
+  {"id":"","label":"DirectML retry ops for NaN","localized":"DirectML NaN 발생 시 재시도","hint":"특정 연산에서 NaN이 발생할 시 해당 연산을 같은 파라미터로 다시 시도한다. 이미지 생성이 느려지지만 NaN이나 검은 이미지가 생성되는 것을 어느 정도 방지한다."},
+  {"id":"","label":"Olive use FP16 on optimization","localized":"Olive 최적화 시 반정밀도 사용","hint":"Olive의 OrtTransformersOptimization으로 모델을 최적화할 때 반정밀도 부동소수점(FP16)을 사용한다. 비활성화 시 단정밀도 부동소수점(FP32)을 사용한다."},
+  {"id":"","label":"Olive force FP32 for VAE Encoder","localized":"Olive VAE Encoder에 단정밀도 강제","hint":"VAE Encoder에 단정밀도 부동소수점(FP32)을 강제한다. '최적화 시 반정밀도 사용'을 무시한다. Img2Img에서 NaN이나 검은 이미지가 생성된다면 캐시를 삭제하고 VAE Encoder에 단정밀도를 사용하여 다시 시도하면 해결될 수 있다."},
+  {"id":"","label":"Olive use static dimensions","localized":"Olive 차원 고정","hint":"Olive로 최적화된 모델의 추론 속도를 매우 빠르게 만든다. (OrtTransformersOptimization)"},
+  {"id":"","label":"Olive cache optimized models","localized":"Olive 최적화된 모델 저장 (캐시)","hint":"Olive로 처리한 모델들을 캐시로 저장한다. ONNX 탭에서 관리할 수 있다."},
   {"id":"","label":"Directory for temporary images; leave empty for default","localized":"임시 이미지 저장 위치 (비워 놓으면 기본값)","hint":""},
   {"id":"","label":"Cleanup non-default temporary directory when starting webui","localized":"임시 위치가 기본값이 아닌 경우 WebUI 시작 시 비우기","hint":""},
   {"id":"","label":"Path to directory with stable diffusion checkpoints","localized":"체크포인트 위치","hint":""},
@@ -574,7 +580,11 @@
   {"id":"","label":"Enable VAE tiling","localized":"VAE 타일링 활성화","hint":"Divide large images into overlapping tiles with limited VRAM. 생성 시간이 약간 늘어날 수 있다. 어텐션 슬라이싱과 함께 사용한다."},
   {"id":"","label":"Enable attention slicing","localized":"어텐션 슬라이싱 활성화","hint":"Performs attention computation in steps instead of all at once. 생성이 10% 느려지지만 메모리 사용률을 매우 크게 줄여준다."},
   {"id":"","label":"Diffusers model loading variant","localized":"","hint":""},
-  {"id":"","label":"Diffusers VAE loading variant","localized":"","hint":""}
+  {"id":"","label":"Diffusers VAE loading variant","localized":"","hint":""},
+  {"id":"","label":"Execution Provider","localized":"","hint":"ONNX Execution Provider"},
+  {"id":"","label":"ONNX show onnx-specific menu","localized":"ONNX 탭 보이기","hint":"UI에서 ONNX 탭을 볼 수 있게 한다. WebUI를 재시작하면 반영된다."},
+  {"id":"","label":"ONNX cache converted models","localized":"ONNX 모델 저장 (캐시)","hint":"ONNX 형식으로 변환된 모델을 캐시로 저장한다. ONNX 탭에서 관리할 수 있다."},
+  {"id":"","label":"ONNX unload base model when processing refiner","localized":"ONNX 리파이너를 처리하고 있을 때 base 모델을 메모리에서 해제","hint":"리파이너 모델이 변환, 최적화 또는 처리되고 있을 때 base 모델을 메모리에서 잠시 해제합니다."}
 ],
 "scripts": [
   {"id":"","label":"Script","localized":"스크립트","hint":""},
