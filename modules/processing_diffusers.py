@@ -508,19 +508,16 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             shared.log.debug('Moving to CPU: model=base')
             shared.sd_model.to(devices.cpu)
             devices.torch_gc()
-
-        update_sampler(shared.sd_refiner, second_pass=True)
-
         if shared.state.interrupted or shared.state.skipped:
             shared.sd_model = orig_pipeline
             return results
-
         if shared.opts.diffusers_move_refiner and not getattr(shared.sd_refiner, 'has_accelerate', False):
             shared.sd_refiner.to(devices.device)
         p.ops.append('refine')
         p.is_refiner_pass = True
         shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
         shared.sd_refiner = sd_models.set_diffuser_pipe(shared.sd_refiner, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
+        update_sampler(shared.sd_refiner, second_pass=True)
         for i in range(len(output.images)):
             image = output.images[i]
             noise_level = round(350 * p.denoising_strength)

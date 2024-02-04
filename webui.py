@@ -243,6 +243,10 @@ def start_ui():
 
     global local_url # pylint: disable=global-statement
     stdout = io.StringIO()
+    allowed_paths = [os.path.dirname(__file__)]
+    if cmd_opts.data_dir is not None and os.path.isdir(cmd_opts.data_dir):
+        allowed_paths.append(cmd_opts.data_dir)
+    shared.log.debug(f'Root paths: {allowed_paths}')
     with contextlib.redirect_stdout(stdout):
         app, local_url, share_url = shared.demo.launch( # app is FastAPI(Starlette) instance
             share=cmd_opts.share,
@@ -258,7 +262,7 @@ def start_ui():
             show_api=False,
             quiet=True,
             favicon_path='html/logo.ico',
-            allowed_paths=[os.path.dirname(__file__), cmd_opts.data_dir],
+            allowed_paths=allowed_paths,
             app_kwargs=fastapi_args,
             _frontend=True and cmd_opts.share,
         )

@@ -109,29 +109,32 @@ class Script(scripts.Script):
 
         processing.process_init(p)
         if mode == 'FaceID': # faceid runs as ipadapter in its own pipeline
-            from modules.face.faceid import face_id
             from modules.face.insightface import get_app
-            processed_images = face_id(p, app=get_app('buffalo_l'), source_image=source_image, model=ip_model, override=ip_override, cache=ip_cache, scale=ip_strength, structure=ip_structure) # run faceid pipeline
+            app = get_app('buffalo_l')
+            from modules.face.faceid import face_id
+            processed_images = face_id(p, app=app, source_image=source_image, model=ip_model, override=ip_override, cache=ip_cache, scale=ip_strength, structure=ip_structure) # run faceid pipeline
             processed = processing.Processed(p, images_list=processed_images, seed=p.seed, subseed=p.subseed, index_of_first_image=0) # manually created processed object
         elif mode == 'PhotoMaker': # photomaker creates pipeline and triggers original process_images
             from modules.face.photomaker import photo_maker
             processed = photo_maker(p, input_images=input_images, trigger=pm_trigger, strength=pm_strength, start=pm_start)
         elif mode == 'InstantID':
-            from modules.face.instantid import instant_id # instantid creates pipeline and triggers original process_images
             from modules.face.insightface import get_app
-            processed = instant_id(p, app=get_app('antelopev2'), source_image=source_image, strength=id_strength, conditioning=id_conditioning, cache=id_cache)
+            app=get_app('antelopev2')
+            from modules.face.instantid import instant_id # instantid creates pipeline and triggers original process_images
+            processed = instant_id(p, app=app, source_image=source_image, strength=id_strength, conditioning=id_conditioning, cache=id_cache)
 
         if processed is None: # run normal pipeline
             processed = processing.process_images(p)
 
         if mode == 'FaceSwap': # faceswap runs as postprocessing
-            from modules.face.faceswap import face_swap
             from modules.face.insightface import get_app
+            app=get_app('buffalo_l')
+            from modules.face.faceswap import face_swap
             if shared.opts.save_images_before_face_restoration and not p.do_not_save_samples:
                 for i, image in enumerate(processed.images):
                     info = processing.create_infotext(p, index=i)
                     images.save_image(image, path=p.outpath_samples, seed=p.all_seeds[i], prompt=p.all_prompts[i], info=info, p=p, suffix="-before-faceswap")
-            processed.images = face_swap(p, app=get_app('buffalo_l'), input_images=processed.images, source_image=source_image, cache=fs_cache)
+            processed.images = face_swap(p, app=app, input_images=processed.images, source_image=source_image, cache=fs_cache)
 
         processed.info = processed.infotext(p, 0)
         processed.infotexts = [processed.info]
