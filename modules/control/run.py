@@ -243,14 +243,13 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
     frames = 0
 
     original_pipeline = shared.sd_model
-    if pipe is not None:
-        shared.sd_model = pipe
-        if not ((shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) or (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram)):
-            shared.sd_model.to(shared.device)
-        shared.sd_model.to(device=devices.device, dtype=devices.dtype)
-        debug(f'Control device={devices.device} dtype={devices.dtype}')
-        sd_models.copy_diffuser_options(shared.sd_model, original_pipeline) # copy options from original pipeline
-        sd_models.set_diffuser_options(shared.sd_model)
+    shared.sd_model = pipe
+    if not ((shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) or (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram)):
+        shared.sd_model.to(shared.device)
+    shared.sd_model.to(device=devices.device, dtype=devices.dtype)
+    debug(f'Control device={devices.device} dtype={devices.dtype}')
+    sd_models.copy_diffuser_options(shared.sd_model, original_pipeline) # copy options from original pipeline
+    sd_models.set_diffuser_options(shared.sd_model)
 
     try:
         with devices.inference_context():
@@ -329,6 +328,12 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                             p.extra_generation_params["Control resize"] = f'{resize_name_before}'
                             debug(f'Control resize: op=before image={input_image} width={width_before} height={height_before} mode={resize_mode_before} name={resize_name_before}')
                             input_image = images.resize_image(resize_mode_before, input_image, width_before, height_before, resize_name_before)
+                    if input_image is not None and init_image is not None and init_image.size != input_image.size:
+                        debug(f'Control resize init: image={p.override} target={input_image}')
+                        init_image = images.resize_image(resize_mode=1, im=init_image, width=input_image.width, height=input_image.height)
+                    if input_image is not None and p.override is not None and p.override.size != input_image.size:
+                        debug(f'Control resize override: image={p.override} target={input_image}')
+                        p.override = images.resize_image(resize_mode=1, im=p.override, width=input_image.width, height=input_image.height)
                     if input_image is not None:
                         p.width = input_image.width
                         p.height = input_image.height
@@ -402,15 +407,16 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                             restore_pipeline()
                             return msg
                     elif unit_type == 'controlnet' and input_type == 1: # Init image same as control
-                        p.init_images = input_image
-                        p.task_args['control_image'] = [p.override or input_image] * len(active_model)
+                        p.task_args['control_image'] = p.init_images # switch image and control_image
+                        p.init_images = [p.override or input_image] * len(active_model)
                         p.task_args['strength'] = p.denoising_strength
                     elif unit_type == 'controlnet' and input_type == 2: # Separate init image
-                        p.task_args['control_image'] = init_image # TODO multiple units
-                        p.task_args['strength'] = p.denoising_strength
                         if init_image is None:
                             shared.log.warning('Control: separate init image not provided')
-                        p.init_images = input_image if init_image is None else init_image
+                            init_image = input_image
+                        p.task_args['control_image'] = p.init_images # switch image and control_image
+                        p.init_images = [init_image] * len(active_model)
+                        p.task_args['strength'] = p.denoising_strength
 
                     if is_generator:
                         image_txt = f'{processed_image.width}x{processed_image.height}' if processed_image is not None else 'None'
@@ -420,38 +426,37 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                     t2 += time.time() - t2
 
                     # prepare pipeline
-                    if pipe is not None:
-                        if not has_models and (unit_type == 'controlnet' or unit_type == 't2i adapter' or unit_type == 'xs' or unit_type == 'lite'): # run in txt2img/img2img/inpaint mode
-                            if mask is not None:
-                                p.task_args['strength'] = p.denoising_strength
-                                p.image_mask = mask
-                                p.init_images = [input_image]
-                                shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING)
-                            elif processed_image is not None:
-                                p.init_images = [processed_image]
-                                shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
-                            else:
-                                p.init_hr()
-                                shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
-                        elif unit_type == 'reference':
-                            p.is_control = True
+                    if not has_models and (unit_type == 'controlnet' or unit_type == 't2i adapter' or unit_type == 'xs' or unit_type == 'lite'): # run in txt2img/img2img/inpaint mode
+                        if mask is not None:
+                            p.task_args['strength'] = p.denoising_strength
+                            p.image_mask = mask
+                            p.init_images = [input_image]
+                            shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING)
+                        elif processed_image is not None:
+                            p.init_images = [processed_image]
+                            shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
+                        else:
+                            p.init_hr()
                             shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
-                        else: # actual control
-                            p.is_control = True
-                            if mask is not None:
-                                p.task_args['strength'] = denoising_strength
-                                p.image_mask = mask
-                                shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING) # only controlnet supports inpaint
-                            elif 'control_image' in p.task_args:
-                                shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE) # only controlnet supports img2img
-                            else:
-                                shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
-                                if hasattr(p, 'init_images') and p.init_images is not None:
-                                    p.task_args['image'] = p.init_images # need to set explicitly for txt2img
-                            if unit_type == 'lite':
-                                instance.apply(selected_models, p.init_images, control_conditioning)
-                        if hasattr(p, 'init_images') and p.init_images is None:
-                            del p.init_images
+                    elif unit_type == 'reference':
+                        p.is_control = True
+                        shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
+                    else: # actual control
+                        p.is_control = True
+                        if mask is not None:
+                            p.task_args['strength'] = denoising_strength
+                            p.image_mask = mask
+                            shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.INPAINTING) # only controlnet supports inpaint
+                        elif 'control_image' in p.task_args:
+                            shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE) # only controlnet supports img2img
+                        else:
+                            shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
+                            if hasattr(p, 'init_images') and p.init_images is not None:
+                                p.task_args['image'] = p.init_images # need to set explicitly for txt2img
+                        if unit_type == 'lite':
+                            instance.apply(selected_models, p.init_images, control_conditioning)
+                    if hasattr(p, 'init_images') and p.init_images is None:
+                        del p.init_images
 
                     # ip adapter apply is run in processing.process_images
                     p.ip_adapter_name = ip_adapter
