@@ -12,6 +12,7 @@ from modules import processing, shared, devices
 
 
 base_repo = "h94/IP-Adapter"
+clip_loaded = None
 ADAPTERS = {
     'None': 'none',
     'Base': 'ip-adapter_sd15.safetensors',
@@ -39,6 +40,7 @@ def unapply(pipe): # pylint: disable=arguments-differ
 
 
 def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name='None', scale=1.0, image=None):
+    global clip_loaded # pylint: disable=global-statement
     # overrides
     if hasattr(p, 'ip_adapter_name'):
         adapter = ADAPTERS.get(p.ip_adapter_name, None)
@@ -91,11 +93,12 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name='None', sc
         shared.log.debug('IP adapter load: feature extractor')
         pipe.feature_extractor = CLIPImageProcessor()
     # load image encoder used by ip adapter
-    if pipe.image_encoder is None:
+    if pipe.image_encoder is None or clip_loaded != f'{clip_repo}/{clip_subfolder}':
         try:
             from transformers import CLIPVisionModelWithProjection
             shared.log.debug(f'IP adapter load: image encoder="{clip_repo}/{clip_subfolder}"')
             pipe.image_encoder = CLIPVisionModelWithProjection.from_pretrained(clip_repo, subfolder=clip_subfolder, torch_dtype=devices.dtype, cache_dir=shared.opts.diffusers_dir, use_safetensors=True)
+            clip_loaded = f'{clip_repo}/{clip_subfolder}'
         except Exception as e:
             shared.log.error(f'IP adapter: failed to load image encoder: {e}')
             return

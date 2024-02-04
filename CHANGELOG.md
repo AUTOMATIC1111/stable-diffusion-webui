@@ -13,13 +13,14 @@
 - preprocess api  
 - diffusers training master script  
 - remove kohya from submodules  
+- bind panZoom to control input
 
 ## TODO for Dev merge
 
 - update docs  
 - control reference mode: <https://github.com/huggingface/diffusers/issues/6838>  
 
-## Update for 2023-02-03
+## Update for 2023-02-04
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
