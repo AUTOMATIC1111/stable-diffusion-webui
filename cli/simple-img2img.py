@@ -37,6 +37,7 @@ def post(endpoint: str, dct: dict = None):
     else:
         return req.json()
 
+
 def encode(f):
     image = Image.open(f)
     if image.mode == 'RGBA':
@@ -47,6 +48,7 @@ def encode(f):
         values = stream.getvalue()
         encoded = base64.b64encode(values).decode()
         return encoded
+
 
 def generate(args): # pylint: disable=redefined-outer-name
     t0 = time.time()

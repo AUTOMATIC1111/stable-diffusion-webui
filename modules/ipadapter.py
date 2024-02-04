@@ -7,6 +7,7 @@ TODO ipadapter items:
 - SD/SDXL autodetect
 """
 
+import os
 import time
 from modules import processing, shared, devices
 
@@ -110,12 +111,12 @@ def apply(pipe, p: processing.StableDiffusionProcessing, adapter_name='None', sc
     pipe.load_ip_adapter(base_repo, subfolder=ip_subfolder, weight_name=adapter)
     pipe.set_ip_adapter_scale(scale)
     t1 = time.time()
-    shared.log.info(f'IP adapter: adapter="{adapter}" scale={scale} image={image} time={t1-t0:.2f}')
+    shared.log.info(f'IP adapter: adapter="{ip_subfolder}/{adapter}" scale={scale} image={image} time={t1-t0:.2f}')
 
     if isinstance(image, str):
         from modules.api.api import decode_base64_to_image
         image = decode_base64_to_image(image).convert("RGB")
 
-    p.task_args['ip_adapter_image'] = p.batch_size * [image]
-    p.extra_generation_params["IP Adapter"] = f'{adapter}:{scale}'
+    p.task_args['ip_adapter_image'] = [image]
+    p.extra_generation_params["IP Adapter"] = f'{os.path.splitext(adapter)[0]}:{scale}'
     return True

@@ -448,8 +448,9 @@ def list_available_networks():
         shared.log.warning('LoRA directory not found: path="{shared.cmd_opts.lora_dir}"')
     if os.path.exists(shared.cmd_opts.lyco_dir) and shared.cmd_opts.lyco_dir != shared.cmd_opts.lora_dir:
         directories.append(shared.cmd_opts.lyco_dir)
+
     def add_network(filename):
-        if os.path.isdir(filename):
+        if not os.path.isfile(filename):
             return
         name = os.path.splitext(os.path.basename(filename))[0]
         try:

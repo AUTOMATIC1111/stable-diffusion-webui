@@ -8,6 +8,7 @@
 - image2video: pia and vgen pipelines  
 - wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)  
 - more pipelines: <https://github.com/huggingface/diffusers/blob/main/examples/community/README.md>  
+- segmoe: <https://github.com/segmind/segmoe>
 - control api  
 - masking api  
 - preprocess api  
@@ -277,11 +278,14 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - img2img: clip and blip interrogate  
   - img2img: sampler selection offset  
   - img2img: support variable aspect ratio without explicit resize  
+  - cli: add `simple-upscale.py` script  
+  - cli: fix cmd args parsing  
   - api: return current image in progress api if requested  
   - api: sanitize response object  
   - api: cleanup error logging  
   - api: fix api-only errors  
   - api: fix image to base64
+  - api: fix upscale  
   - refiner: fix use of sd15 model as refiners in second pass  
   - refiner: enable none as option in xyz grid  
   - sampler: add sampler options info to metadata
@@ -297,7 +301,6 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - reference: fix links to models and use safetensors where possible  
   - model merge: unbalanced models where not all keys are present, thanks @AI-Casanova
   - better sdxl model detection
-  - cli: fix cmd args parsing  
   - global crlf->lf switch  
   - model type switch if there is loaded submodels  
   - cleanup samplers use of compute devices, thanks @Disty0  

@@ -58,13 +58,13 @@ def instant_id(p: processing.StableDiffusionProcessing, app, source_image, stren
     shared.sd_model.load_ip_adapter_instantid(face_adapter, scale=strength)
     shared.sd_model.set_ip_adapter_scale(strength)
     if not ((shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) or (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram)):
-        print('HERE1')
         shared.sd_model.to(shared.device, devices.dtype) # move pipeline if needed, but don't touch if its under automatic managment
 
     # pipeline specific args
     orig_prompt_attention = shared.opts.prompt_attention
     shared.opts.data['prompt_attention'] = 'Fixed attention' # otherwise need to deal with class_tokens_mask
     p.task_args['prompt'] = p.all_prompts[0] # override all logic
+    p.task_args['negative_prompt'] = p.all_negative_prompts[0]
     p.task_args['image_embeds'] = face_emb
     p.task_args['image'] = face_kps
     p.task_args['controlnet_conditioning_scale'] = float(conditioning)
