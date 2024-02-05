@@ -85,6 +85,9 @@ def move_files_to_cache(data, block, postprocess=False):
         # postprocess, it means the component can display a URL
         # without it being served from the gradio server
         # This makes it so that the URL is not downloaded and speeds up event processing
+
+        payload.path = payload.path.rsplit('?', 1)[0]
+
         if payload.url and postprocess:
             temp_file_path = payload.url
         else:
