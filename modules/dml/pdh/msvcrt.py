@@ -1,6 +1,8 @@
-from ctypes import *
+from ctypes import CDLL, c_void_p, c_size_t
+
 
 msvcrt = CDLL("msvcrt")
+
 
 malloc = msvcrt.malloc
 malloc.restype = c_void_p

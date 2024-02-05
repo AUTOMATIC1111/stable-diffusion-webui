@@ -2,6 +2,7 @@ import torch
 from typing import Callable
 from modules.shared import log, opts
 
+
 def catch_nan(func: Callable[[], torch.Tensor]):
     if not opts.directml_catch_nan:
         return func()

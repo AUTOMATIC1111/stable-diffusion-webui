@@ -4,6 +4,7 @@ import torch
 from modules.errors import log
 from modules.sd_hijack_utils import CondFunc
 
+
 memory_providers = ["None", "atiadlxx (AMD only)"]
 default_memory_provider = "None"
 if platform.system() == "Windows":
@@ -11,6 +12,7 @@ if platform.system() == "Windows":
     default_memory_provider = "Performance Counter"
 do_nothing = lambda: None # pylint: disable=unnecessary-lambda-assignment
 do_nothing_with_self = lambda self: None # pylint: disable=unnecessary-lambda-assignment
+
 
 def _set_memory_provider():
     from modules.shared import opts, cmd_opts
@@ -34,6 +36,7 @@ def _set_memory_provider():
         from .backend import mem_get_info
         torch.dml.mem_get_info = mem_get_info
     torch.cuda.mem_get_info = torch.dml.mem_get_info
+
 
 def directml_init():
     try:
@@ -63,6 +66,7 @@ def directml_init():
         return False, e
     return True, None
 
+
 def directml_do_hijack():
     import modules.dml.hijack # pylint: disable=unused-import
     from modules.devices import device
@@ -79,16 +83,19 @@ def directml_do_hijack():
 
     _set_memory_provider()
 
+
 class OverrideItem(NamedTuple):
     value: str
     condition: Optional[Callable]
     message: Optional[str]
+
 
 opts_override_table = {
     "diffusers_generator_device": OverrideItem("CPU", None, "DirectML does not support torch Generator API"),
     "diffusers_model_cpu_offload": OverrideItem(False, None, "Diffusers model CPU offloading does not support DirectML devices"),
     "diffusers_seq_cpu_offload": OverrideItem(False, lambda opts: opts.diffusers_pipeline != "Stable Diffusion XL", "Diffusers sequential CPU offloading is available only on StableDiffusionXLPipeline with DirectML devices"),
 }
+
 
 def directml_override_opts():
     from modules import shared

@@ -1,5 +1,6 @@
 import ctypes as C
 
+
 class _ADLPMActivity(C.Structure):
     __slot__ = [
         'iActivityPercent',
@@ -13,7 +14,7 @@ class _ADLPMActivity(C.Structure):
         'iSize',
         'iVddc',
     ]
-_ADLPMActivity._fields_ = [
+_ADLPMActivity._fields_ = [ # pylint: disable=protected-access
     ('iActivityPercent', C.c_int),
     ('iCurrentBusLanes', C.c_int),
     ('iCurrentBusSpeed', C.c_int),
@@ -27,6 +28,7 @@ _ADLPMActivity._fields_ = [
 ]
 ADLPMActivity = _ADLPMActivity
 
+
 class _ADLMemoryInfo2(C.Structure):
     __slot__ = [
         'iHyperMemorySize',
@@ -36,7 +38,7 @@ class _ADLMemoryInfo2(C.Structure):
         'iVisibleMemorySize',
         'strMemoryType'
     ]
-_ADLMemoryInfo2._fields_ = [
+_ADLMemoryInfo2._fields_ = [ # pylint: disable=protected-access
     ('iHyperMemorySize', C.c_longlong),
     ('iInvisibleMemorySize', C.c_longlong),
     ('iMemoryBandwidth', C.c_longlong),
@@ -45,6 +47,7 @@ _ADLMemoryInfo2._fields_ = [
     ('strMemoryType', C.c_char * 256)
 ]
 ADLMemoryInfo2 = _ADLMemoryInfo2
+
 
 class _AdapterInfo(C.Structure):
     __slot__ = [
@@ -64,7 +67,7 @@ class _AdapterInfo(C.Structure):
         'strPNPString',
         'iOSDisplayIndex',
     ]
-_AdapterInfo._fields_ = [
+_AdapterInfo._fields_ = [ # pylint: disable=protected-access
     ('iSize', C.c_int),
     ('iAdapterIndex', C.c_int),
     ('strUDID', C.c_char * 256),

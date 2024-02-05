@@ -1,7 +1,7 @@
 from os import getpid
 from collections import defaultdict
-
 from modules.dml.pdh import HQuery, HCounter, expand_wildcard_path
+
 
 class MemoryProvider:
     hQuery: HQuery

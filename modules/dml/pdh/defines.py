@@ -1,5 +1,6 @@
-from ctypes import *
-from ctypes.wintypes import *
+from ctypes import c_int, POINTER
+from ctypes.wintypes import DWORD, WCHAR
+
 
 PDH_FUNCTION = c_int
 PDH_OK = 0x00000000

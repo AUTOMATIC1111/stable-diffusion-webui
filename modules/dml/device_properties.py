@@ -1,5 +1,6 @@
 import torch
 
+
 class DeviceProperties:
     type: str = "directml"
     name: str

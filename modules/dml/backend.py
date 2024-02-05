@@ -3,26 +3,29 @@ from typing import Optional, Callable
 import torch
 import torch_directml # pylint: disable=import-error
 import modules.dml.amp as amp
-
 from .utils import rDevice, get_device
-from .device import device
+from .device import Device
 from .Generator import Generator
 from .device_properties import DeviceProperties
+
 
 def amd_mem_get_info(device: Optional[rDevice]=None) -> tuple[int, int]:
     from .memory_amd import AMDMemoryProvider
     return AMDMemoryProvider.mem_get_info(get_device(device).index)
 
+
 def pdh_mem_get_info(device: Optional[rDevice]=None) -> tuple[int, int]:
     mem_info = DirectML.memory_provider.get_memory(get_device(device).index)
     return (mem_info["total_committed"] - mem_info["dedicated_usage"], mem_info["total_committed"])
 
-def mem_get_info(device: Optional[rDevice]=None) -> tuple[int, int]:
+
+def mem_get_info(device: Optional[rDevice]=None) -> tuple[int, int]: # pylint: disable=unused-argument
     return (8589934592, 8589934592)
+
 
 class DirectML:
     amp = amp
-    device = device
+    device = Device
     Generator = Generator
 
     context_device: Optional[torch.device] = None

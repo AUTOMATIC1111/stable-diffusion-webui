@@ -1,9 +1,10 @@
 import ctypes as C
-from .atiadlxx_apis import *
-from .atiadlxx_structures import *
-from .atiadlxx_defines import *
+from modules.dml.memory_amd.driver.atiadlxx_apis import ADL2_Main_Control_Create, ADL_Main_Memory_Alloc, ADL2_Adapter_NumberOfAdapters_Get, ADL2_Adapter_AdapterInfo_Get, ADL2_Adapter_MemoryInfo2_Get, ADL2_Adapter_DedicatedVRAMUsage_Get, ADL2_Adapter_VRAMUsage_Get
+from modules.dml.memory_amd.driver.atiadlxx_structures import ADL_CONTEXT_HANDLE, AdapterInfo, LPAdapterInfo, ADLMemoryInfo2
+from modules.dml.memory_amd.driver.atiadlxx_defines import ADL_OK
 
-class ATIADLxx(object):
+
+class ATIADLxx:
     iHyperMemorySize = 0
 
     def __init__(self):
