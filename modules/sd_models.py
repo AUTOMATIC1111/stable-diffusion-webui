@@ -726,11 +726,11 @@ def set_diffuser_options(sd_model, vae = None, op: str = 'model'):
 
 def move_model(model, device=None):
     if model is not None and not getattr(model, 'has_accelerate', False):
+        debug_move(f'Model move: to={device} class={model.__class__} function={sys._getframe(1).f_code.co_name}') # pylint: disable=protected-access
         try:
             model.to(device)
-            debug_move(f'Model move: to={device} class={model.__class__} function={sys._getframe(1).f_code.co_name}') # pylint: disable=protected-access
         except Exception as e:
-            shared.log.error(f'Model move: to={device} class={model.__class__} {e}')
+            shared.log.error(f'Model move: {e}')
         devices.torch_gc()
 
 
