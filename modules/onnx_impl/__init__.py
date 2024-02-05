@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Callable, Optional
 import numpy as np
 import torch
 import diffusers
@@ -127,21 +127,19 @@ class VAE(TorchCompatibleModule):
     def device(self):
         return self.pipeline.vae_decoder.device
 
-    def encode(self, latent_sample: torch.Tensor, return_dict: bool): # pylint: disable=unused-argument
+    def _run(self, model: Callable, latent_sample: torch.Tensor, *_, **__):
         latents_np = latent_sample.cpu().numpy()
         return [
             torch.from_numpy(np.concatenate(
-                [self.pipeline.vae_encoder(latent_sample=latents_np[i : i + 1])[0] for i in range(latents_np.shape[0])]
+                [model(latent_sample=latents_np[i : i + 1])[0] for i in range(latents_np.shape[0])]
             )).to(latent_sample.device)
         ]
 
-    def decode(self, latent_sample: torch.Tensor, return_dict: bool): # pylint: disable=unused-argument
-        latents_np = latent_sample.cpu().numpy()
-        return [
-            torch.from_numpy(np.concatenate(
-                [self.pipeline.vae_decoder(latent_sample=latents_np[i : i + 1])[0] for i in range(latents_np.shape[0])]
-            )).to(latent_sample.device)
-        ]
+    def encode(self, *args, **kwargs):
+        return self._run(self.pipeline.vae_encoder, *args, **kwargs)
+
+    def decode(self, *args, **kwargs):
+        return self._run(self.pipeline.vae_decoder, *args, **kwargs)
 
     def to(self, *args, **kwargs):
         self.pipeline.vae_encoder = self.pipeline.vae_encoder.to(*args, **kwargs)

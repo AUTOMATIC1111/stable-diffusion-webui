@@ -31,11 +31,10 @@ def move_inference_session(session: ort.InferenceSession, device: torch.device):
     provider = TORCH_DEVICE_TO_EP[device.type] if device.type in TORCH_DEVICE_TO_EP else previous_provider
     path = session._model_path # pylint: disable=protected-access
 
-    if provider is not None:
-        try:
-            return diffusers.OnnxRuntimeModel.load_model(path, provider, DynamicSessionOptions.from_sess_options(session._sess_options)) # pylint: disable=protected-access
-        except Exception:
-            return TemporalModule(previous_provider, path, session._sess_options) # pylint: disable=protected-access
+    try:
+        return diffusers.OnnxRuntimeModel.load_model(path, provider, DynamicSessionOptions.from_sess_options(session._sess_options)) # pylint: disable=protected-access
+    except Exception:
+        return TemporalModule(previous_provider, path, session._sess_options) # pylint: disable=protected-access
 
 
 def check_diffusers_cache(path: os.PathLike):
