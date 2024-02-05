@@ -5,8 +5,7 @@ https://huggingface.co/blog/TimothyAlexisVass/explaining-the-sdxl-latent-space
 
 import os
 import torch
-from modules import shared
-
+from modules import shared, sd_vae_taesd, devices
 
 debug = shared.log.trace if os.environ.get('SD_HDR_DEBUG', None) is not None else lambda *args, **kwargs: None
 debug('Trace: HDR')
@@ -67,11 +66,26 @@ def maximize_tensor(tensor, boundary=1.0):
     return tensor
 
 
+def get_color(colorstr):
+    rgb = torch.tensor(tuple(int(colorstr.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4))).to(dtype=torch.float32)
+    rgb = (rgb / 255).unsqueeze(-1).unsqueeze(-1).repeat(1, 64, 64).to(dtype=devices.dtype, device=devices.device)
+    color = sd_vae_taesd.encode(rgb).squeeze(0)[0:3, 5, 5]
+    return color
+
+
+def color_adjust(tensor, colorstr, ratio):
+    color = get_color(colorstr)
+    for i in range(3):
+        print(color[i])
+        tensor[i] = center_tensor(tensor[i], full_shift=1, offset=color[i]*(ratio/3))
+    return tensor
+
+
 def correction(p, timestep, latent):
     if timestep > 950 and p.hdr_clamp:
         p.extra_generation_params["HDR clamp"] = f'{p.hdr_threshold}/{p.hdr_boundary}'
         latent = soft_clamp_tensor(latent, threshold=p.hdr_threshold, boundary=p.hdr_boundary)
-    if 500 < timestep < 800 and (p.hdr_brightness != 0 or p.hdr_color != 0):
+    if 500 < timestep < 800 and (p.hdr_brightness != 0 or p.hdr_color != 0 or p.hdr_tint_ratio != 0):
         p.extra_generation_params["HDR center"] = f'{p.hdr_color}/{p.hdr_brightness}'
         if p.hdr_brightness != 0:
             latent[0:1] = center_tensor(latent[0:1], full_shift=float(p.hdr_mode), offset=2*p.hdr_brightness)  # Brightness
@@ -81,6 +95,9 @@ def correction(p, timestep, latent):
             latent[1:] = center_tensor(latent[1:], channel_shift=p.hdr_color, full_shift=float(p.hdr_mode))  # Color
             p.extra_generation_params["HDR color"] = f'{p.hdr_color}'
             p.hdr_color = 0
+        if p.hdr_tint_ratio != 0:
+            latent = color_adjust(latent, p.hdr_color_picker, p.hdr_tint_ratio)
+            p.hdr_tint_ratio = 0
     if timestep < 350 and p.hdr_sharpen != 0:
         p.extra_generation_params["HDR sharpen"] = f'{p.hdr_sharpen}'
         per_step_ratio = 2 ** (timestep / 250) * p.hdr_sharpen / 16
@@ -95,7 +112,7 @@ def correction(p, timestep, latent):
 
 
 def correction_callback(p, timestep, kwargs):
-    if not any([p.hdr_clamp, p.hdr_mode, p.hdr_maximize, p.hdr_sharpen, p.hdr_color, p.hdr_brightness]):
+    if not any([p.hdr_clamp, p.hdr_mode, p.hdr_maximize, p.hdr_sharpen, p.hdr_color, p.hdr_brightness, p.hdr_tint_ratio]):
         return kwargs
     latents = kwargs["latents"]
     debug('')

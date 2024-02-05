@@ -136,7 +136,11 @@ def create_correction_inputs(tab):
                 hdr_maximize = gr.Checkbox(label='HDR maximize', value=False, elem_id=f"{tab}_hdr_maximize")
                 hdr_max_center = gr.Slider(minimum=0.0, maximum=2.0, step=0.1, value=0.6,  label='Center', elem_id=f"{tab}_hdr_max_center")
                 hdr_max_boundry = gr.Slider(minimum=0.5, maximum=2.0, step=0.1, value=1.0,  label='Max Range', elem_id=f"{tab}_hdr_max_boundry")
-    return hdr_mode, hdr_brightness, hdr_color, hdr_sharpen, hdr_clamp, hdr_boundary, hdr_threshold, hdr_maximize, hdr_max_center, hdr_max_boundry
+            with gr.Row():
+                hdr_tint_ratio = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, value=0.0, label='Tint', elem_id=f"{tab}_hdr_tint_ratio")
+                hdr_color_picker = gr.ColorPicker(label="Color Replace", show_label=False, value=None, elem_id=f"{tab}_hdr_color_picker")
+        return hdr_mode, hdr_brightness, hdr_color, hdr_sharpen, hdr_clamp, hdr_boundary, hdr_threshold, hdr_maximize, hdr_max_center, hdr_max_boundry, hdr_color_picker, hdr_tint_ratio,
+
 
 def create_sampler_and_steps_selection(choices, tabname):
     def set_sampler_original_options(sampler_options, sampler_algo):

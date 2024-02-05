@@ -265,6 +265,8 @@ axis_options = [
     AxisOption("[HDR] Clamp threshold", float, apply_field("hdr_threshold")),
     AxisOption("[HDR] Maximize center shift", float, apply_field("hdr_max_center")),
     AxisOption("[HDR] Maximize boundary", float, apply_field("hdr_max_boundry")),
+    AxisOption("[HDR] Tint Color Hex", str, apply_field("hdr_color_picker")),
+    AxisOption("[HDR] Tint Ratio", float, apply_field("hdr_tint_ratio")),
     AxisOption("[ToMe] Token merging ratio (txt2img)", float, apply_override('token_merging_ratio')),
     AxisOption("[ToMe] Token merging ratio (hires)", float, apply_override('token_merging_ratio_hr')),
     AxisOption("[FreeU] 1st stage backbone factor", float, apply_setting('freeu_b1')),
