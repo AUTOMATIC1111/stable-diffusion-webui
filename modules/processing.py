@@ -227,7 +227,6 @@ def process_init(p: StableDiffusionProcessing):
 
 def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
-
     if type(p.prompt) == list:
         assert len(p.prompt) > 0
     else:

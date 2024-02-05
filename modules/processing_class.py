@@ -409,7 +409,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 self.color_corrections.append(processing_helpers.setup_color_correction(image))
             processed_images.append(image)
         self.init_images = processed_images
-        self.batch_size = len(self.init_images)
+        # self.batch_size = len(self.init_images)
         if self.overlay_images is not None:
             self.overlay_images = self.overlay_images * self.batch_size
         if self.color_corrections is not None and len(self.color_corrections) == 1:
