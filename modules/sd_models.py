@@ -730,7 +730,7 @@ def move_model(model, device=None):
             model.to(device)
             debug_move(f'Model move: to={device} class={model.__class__} function={sys._getframe(1).f_code.co_name}') # pylint: disable=protected-access
         except Exception as e:
-            shared.log.error(f'Model move: to={device} {e}')
+            shared.log.error(f'Model move: to={device} class={model.__class__} {e}')
         devices.torch_gc()
 
 

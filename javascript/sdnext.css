@@ -1,5 +1,5 @@
 @font-face { font-family: 'NotoSans'; font-display: swap; font-style: normal; font-weight: 100; src: local('NotoSans'), url('notosans-nerdfont-regular.ttf') }
-:root { --left-column: 500px; }
+:root { --left-column: 550px; }
 a { font-weight: bold; cursor: pointer; }
 h2 { margin-top: 1em !important; font-size: var(--text-xxl) !important; }
 footer { display: none; margin-top: 0 !important;}
@@ -9,6 +9,7 @@ tr { border-bottom: none !important; padding: 0.1em 0.5em !important; }
 textarea { overflow-y: auto !important; }
 span { font-size: var(--text-md) !important; }
 button { font-size: var(--text-lg) !important; }
+input[type='color'] { width: 64px; height: 32px; }
 
 /* gradio elements */
 .block .padded:not(.gradio-accordion) { padding: 0 !important; margin-right: 0; min-width: 90px !important; }
@@ -50,7 +51,7 @@ button { font-size: var(--text-lg) !important; }
 .accordion-compact { padding: 8px 0px 4px 0px !important; }
 .settings-accordion>div { flex-flow: wrap; }
 .small-accordion .form { min-width: var(--left-column) !important; max-width: max-content; }
-.small-accordion .label-wrap .icon { margin-right: 1.6em; margin-left: 0.6em; color: var(--button-primary-border-color); }
+.small-accordion .label-wrap .icon { margin-right: 1em; margin-left: 0.3em; color: var(--button-primary-border-color); }
 .small-accordion .label-wrap { padding: 16px 0px 8px 0px; margin: 0; border-top: 2px solid var(--button-secondary-border-color); }
 .small-accordion { width: fit-content !important; min-width: fit-content !important; padding-left: 0 !important; }
 .extension-script { max-width: 48vw; }
@@ -111,6 +112,7 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
   width: 22em; min-height: 1.3em; font-size: var(--text-xs); transition: opacity 0.2s ease-in; pointer-events: none; opacity: 0; z-index: 999; }
 .tooltip-show { opacity: 0.9; }
 .toolbutton-selected { background: var(--background-fill-primary) !important; }
+#txt2img_hdr_color_row > div { min-width: unset !important; max-width: unset !important; }
 
 /* settings */
 #si-sparkline-memo, #si-sparkline-load { background-color: #111; }

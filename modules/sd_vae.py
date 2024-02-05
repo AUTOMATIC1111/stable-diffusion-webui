@@ -241,8 +241,8 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
         return None
     if shared.backend == shared.Backend.ORIGINAL and (shared.cmd_opts.lowvram or shared.cmd_opts.medvram):
         lowvram.send_everything_to_cpu()
-    else:
-        sd_models.move_model(sd_model, devices.cpu)
+    # else:
+    #    sd_models.move_model(sd_model, devices.cpu)
 
     if shared.backend == shared.Backend.ORIGINAL:
         sd_hijack.model_hijack.undo_hijack(sd_model)

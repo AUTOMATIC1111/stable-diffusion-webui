@@ -9,6 +9,7 @@
 - video2video
 - wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)  
 - more pipelines: <https://github.com/huggingface/diffusers/blob/main/examples/community/README.md>  
+- segmoe lora  
 - control api  
 - masking api  
 - preprocess api  
@@ -37,7 +38,7 @@ Another big release, highlights being:
 - New models and pipelines:  
   **Segmind SegMoE**, **Mixture Tiling**, **InstaFlow**, **SAG**, **BlipDiffusion**  
 - Massive work integrating latest advances with [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVINO), [IPEX](https://github.com/vladmandic/automatic/wiki/Intel-ARC) and [ONNX Olive](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime-&-Olive)
-- Full control over brightness, sharpness and color during generate process directly in latent space  
+- Full control over brightness, sharpness and color shifts and color grading during generate process directly in latent space  
 
 Plus welcome additions to **UI performance, usability and accessibility** and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
@@ -48,7 +49,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
 - For more details on all new features see full [CHANGELOG](https://github.com/vladmandic/automatic/blob/master/CHANGELOG.md)  
 - For documentation, see [WIKI](https://github.com/vladmandic/automatic/wiki)
 
-## Update for 2023-02-04
+## Update for 2023-02-05
 
 - **Control**:  
   - add **inpaint** support  
@@ -253,6 +254,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
 - **correction**  
   - new section in generate, allows for image corrections during generataion directly in latent space  
   - adds *brightness*, *sharpness* and *color* controls, thanks @AI-Casanova
+  - adds *color grading* controls, thanks @AI-Casanova
   - replaces old **hdr** section
 - **IPEX**, thanks @disty0  
   - see [wiki](https://github.com/vladmandic/automatic/wiki/Intel-ARC) for details  

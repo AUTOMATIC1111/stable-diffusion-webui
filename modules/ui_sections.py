@@ -121,24 +121,24 @@ def create_advanced_inputs(tab):
 def create_correction_inputs(tab):
     with gr.Accordion(open=False, label="Corrections", elem_id=f"{tab}_corrections", elem_classes=["small-accordion"], visible=shared.backend == shared.Backend.DIFFUSERS):
         with gr.Group(visible=shared.backend == shared.Backend.DIFFUSERS):
-            with gr.Row():
+            with gr.Row(elem_id=f"{tab}_hdr_mode_row"):
                 hdr_mode = gr.Dropdown(label="Mode", choices=["Relative values", "Absolute values"], type="index", value="Relative values", elem_id=f"{tab}_hdr_mode", show_label=False)
                 gr.HTML('<br>')
-            with gr.Row():
+            with gr.Row(elem_id=f"{tab}_correction_row"):
                 hdr_brightness = gr.Slider(minimum=-1.0, maximum=1.0, step=0.1, value=0,  label='Brightness', elem_id=f"{tab}_hdr_brightness")
                 hdr_sharpen = gr.Slider(minimum=-1.0, maximum=1.0, step=0.1, value=0,  label='Sharpen', elem_id=f"{tab}_hdr_sharpen")
                 hdr_color = gr.Slider(minimum=0.0, maximum=4.0, step=0.1, value=0.0,  label='Color', elem_id=f"{tab}_hdr_color")
-            with gr.Row():
+            with gr.Row(elem_id=f"{tab}_hdr_clamp_row"):
                 hdr_clamp = gr.Checkbox(label='HDR clamp', value=False, elem_id=f"{tab}_hdr_clamp")
                 hdr_boundary = gr.Slider(minimum=0.0, maximum=10.0, step=0.1, value=4.0,  label='Range', elem_id=f"{tab}_hdr_boundary")
                 hdr_threshold = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, value=0.95,  label='Threshold', elem_id=f"{tab}_hdr_threshold")
-            with gr.Row():
+            with gr.Row(elem_id=f"{tab}_hdr_max_row"):
                 hdr_maximize = gr.Checkbox(label='HDR maximize', value=False, elem_id=f"{tab}_hdr_maximize")
                 hdr_max_center = gr.Slider(minimum=0.0, maximum=2.0, step=0.1, value=0.6,  label='Center', elem_id=f"{tab}_hdr_max_center")
                 hdr_max_boundry = gr.Slider(minimum=0.5, maximum=2.0, step=0.1, value=1.0,  label='Max Range', elem_id=f"{tab}_hdr_max_boundry")
-            with gr.Row():
-                hdr_tint_ratio = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, value=0.0, label='Tint', elem_id=f"{tab}_hdr_tint_ratio")
-                hdr_color_picker = gr.ColorPicker(label="Color Replace", show_label=False, value=None, elem_id=f"{tab}_hdr_color_picker")
+            with gr.Row(elem_id=f"{tab}_hdr_color_row"):
+                hdr_color_picker = gr.ColorPicker(label="Color", show_label=True, container=False, value=None, elem_id=f"{tab}_hdr_color_picker")
+                hdr_tint_ratio = gr.Slider(label='Tint', minimum=-1.0, maximum=1.0, step=0.05, value=0.0, elem_id=f"{tab}_hdr_tint_ratio")
         return hdr_mode, hdr_brightness, hdr_color, hdr_sharpen, hdr_clamp, hdr_boundary, hdr_threshold, hdr_maximize, hdr_max_center, hdr_max_boundry, hdr_color_picker, hdr_tint_ratio,
 
 

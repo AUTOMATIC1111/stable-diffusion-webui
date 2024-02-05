@@ -75,9 +75,9 @@ def get_color(colorstr):
 
 def color_adjust(tensor, colorstr, ratio):
     color = get_color(colorstr)
+    debug(f'HDR tint: str={colorstr} color={color} ratio={ratio}')
     for i in range(3):
-        print(color[i])
-        tensor[i] = center_tensor(tensor[i], full_shift=1, offset=color[i]*(ratio/3))
+        tensor[i] = center_tensor(tensor[i], full_shift=1, offset=color[i]*(ratio/2))
     return tensor
 
 
