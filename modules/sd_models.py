@@ -37,6 +37,7 @@ sd_metadata_file = os.path.join(paths.data_path, "metadata.json")
 sd_metadata = None
 sd_metadata_pending = 0
 sd_metadata_timer = 0
+debug_move = shared.log.trace if os.environ.get('SD_MOVE_DEBUG', None) is not None else lambda *args, **kwargs: None
 
 
 class CheckpointInfo:
@@ -723,6 +724,16 @@ def set_diffuser_options(sd_model, vae = None, op: str = 'model'):
         sd_model.unet.to(memory_format=torch.channels_last)
 
 
+def move_model(model, device=None):
+    if model is not None and not getattr(model, 'has_accelerate', False):
+        try:
+            model.to(device)
+            debug_move(f'Model move: to={device} class={model.__class__} function={sys._getframe(1).f_code.co_name}') # pylint: disable=protected-access
+        except Exception as e:
+            shared.log.error(f'Model move: to={device} {e}')
+        devices.torch_gc()
+
+
 def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'): # pylint: disable=unused-argument
     if shared.cmd_opts.profile:
         import cProfile
@@ -910,7 +921,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 free_vram = gpu_vram.get('total', 0) - gpu_vram.get('used', 0)
                 refiner_enough_vram = free_vram >= 7 if "StableDiffusionXL" in sd_model.__class__.__name__ else 3
                 if not shared.opts.diffusers_move_base and refiner_enough_vram:
-                    sd_model.to(devices.device)
+                    move_model(sd_model, devices.device)
                     base_sent_to_cpu=False
                 else:
                     if not refiner_enough_vram and not (shared.opts.diffusers_move_base and shared.opts.diffusers_move_refiner):
@@ -921,14 +932,12 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                             shared.opts.diffusers_move_base=True
                             shared.opts.diffusers_move_refiner=True
                     shared.log.debug('Moving base model to CPU')
-                    if model_data.sd_model is not None:
-                        model_data.sd_model.to(devices.cpu)
+                    move_model(model_data.sd_model, devices.cpu)
                     devices.torch_gc(force=True)
-                    sd_model.to(devices.device)
+                    move_model(sd_model, devices.device)
                     base_sent_to_cpu=True
-            elif not getattr(sd_model, 'has_accelerate', False):
-                sd_model.to(devices.device)
-
+            else:
+                move_model(sd_model, devices.device)
             sd_models_compile.compile_diffusers(sd_model)
 
         if sd_model is None:
@@ -944,14 +953,14 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         shared.opts.data["sd_checkpoint_hash"] = checkpoint_info.sha256
         if hasattr(sd_model, "set_progress_bar_config"):
             sd_model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining}', ncols=80, colour='#327fba')
-        if op == 'refiner' and shared.opts.diffusers_move_refiner and not getattr(sd_model, 'has_accelerate', False):
+        if op == 'refiner' and shared.opts.diffusers_move_refiner:
             shared.log.debug('Moving refiner model to CPU')
-            sd_model.to(devices.cpu)
-        elif not getattr(sd_model, 'has_accelerate', False): # In offload modes, accelerate will move models around
-            sd_model.to(devices.device)
+            move_model(sd_model, devices.cpu)
+        else:
+            move_model(sd_model, devices.device)
         if op == 'refiner' and base_sent_to_cpu:
             shared.log.debug('Moving base model back to GPU')
-            model_data.sd_model.to(devices.device)
+            move_model(model_data.sd_model, devices.device)
     except Exception as e:
         shared.log.error("Failed to load diffusers model")
         errors.display(e, "loading Diffusers model")
@@ -1226,10 +1235,10 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
     else:
         shared.log.debug(f'Model weights loaded: {memory_stats()}')
     timer.record("load")
-    if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+    if shared.backend == shared.Backend.ORIGINAL and (shared.cmd_opts.lowvram or shared.cmd_opts.medvram):
         lowvram.setup_for_low_vram(sd_model, shared.cmd_opts.medvram)
     else:
-        sd_model.to(devices.device)
+        move_model(sd_model, devices.device)
     timer.record("move")
     shared.log.debug(f'Model weights moved: {memory_stats()}')
     sd_hijack.model_hijack.hijack(sd_model)
@@ -1273,11 +1282,10 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         current_checkpoint_info = getattr(sd_model, 'sd_checkpoint_info', None)
         if current_checkpoint_info is not None and checkpoint_info is not None and current_checkpoint_info.filename == checkpoint_info.filename:
             return None
-        if not getattr(sd_model, 'has_accelerate', False):
-            if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
-                lowvram.send_everything_to_cpu()
-            else:
-                sd_model.to(devices.cpu)
+        if shared.backend == shared.Backend.ORIGINAL and (shared.cmd_opts.lowvram or shared.cmd_opts.medvram):
+            lowvram.send_everything_to_cpu()
+        else:
+            move_model(sd_model, devices.cpu)
         if (reuse_dict or shared.opts.model_reuse_dict) and not getattr(sd_model, 'has_accelerate', False):
             shared.log.info('Reusing previous model dictionary')
             sd_hijack.model_hijack.undo_hijack(sd_model)
@@ -1322,8 +1330,8 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         timer.record("hijack")
         script_callbacks.model_loaded_callback(sd_model)
         timer.record("callbacks")
-        if sd_model is not None and not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and not getattr(sd_model, 'has_accelerate', False):
-            sd_model.to(devices.device)
+        if sd_model is not None and not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
+            move_model(sd_model, devices.device)
             timer.record("device")
     shared.state.end()
     shared.state = orig_state
@@ -1357,26 +1365,23 @@ def unload_model_weights(op='model'):
         if model_data.sd_model:
             if shared.backend == shared.Backend.ORIGINAL:
                 from modules import sd_hijack
-                model_data.sd_model.to(devices.cpu)
+                move_model(model_data.sd_model, devices.cpu)
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
             elif not (shared.opts.cuda_compile and shared.opts.cuda_compile_backend == "openvino_fx"):
                 disable_offload(model_data.sd_model)
-                try:
-                    model_data.sd_model.to('meta')
-                except Exception:
-                    pass
+                move_model(model_data.sd_model, 'meta')
             model_data.sd_model = None
             devices.torch_gc(force=True)
             shared.log.debug(f'Unload weights {op}: {memory_stats()}')
-    else:
+    elif op == 'refiner':
         if model_data.sd_refiner:
             if shared.backend == shared.Backend.ORIGINAL:
                 from modules import sd_hijack
-                model_data.sd_model.to(devices.cpu)
+                move_model(model_data.sd_refiner, devices.cpu)
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_refiner)
             else:
-                disable_offload(model_data.sd_model)
-                model_data.sd_refiner.to('meta')
+                disable_offload(model_data.sd_refiner)
+                move_model(model_data.sd_refiner, 'meta')
             model_data.sd_refiner = None
             devices.torch_gc(force=True)
             shared.log.debug(f'Unload weights {op}: {memory_stats()}')

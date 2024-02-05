@@ -36,10 +36,9 @@ def full_vae_decode(latents, model):
     if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False) and hasattr(model, 'unet'):
         shared.log.debug('Moving to CPU: model=UNet')
         unet_device = model.unet.device
-        model.unet.to(devices.cpu)
-        devices.torch_gc()
+        sd_models.move_model(model.unet, devices.cpu)
     if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload and hasattr(model, 'vae'):
-        model.vae.to(devices.device)
+        sd_models.move_model(model.vae, devices.device)
     latents.to(model.vae.device)
 
     upcast = (model.vae.dtype == torch.float16) and getattr(model.vae.config, 'force_upcast', False) and hasattr(model, 'upcast_vae')
@@ -57,7 +56,7 @@ def full_vae_decode(latents, model):
             devices.torch_gc(force=True)
 
     if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False) and hasattr(model, 'unet'):
-        model.unet.to(unet_device)
+        sd_models.move_model(model.unet, unet_device)
     t1 = time.time()
     debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={upcast} images={latents.shape[0]} latents={latents.shape} time={round(t1-t0, 3)}')
     return decoded
@@ -68,13 +67,12 @@ def full_vae_encode(image, model):
     if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False) and hasattr(model, 'unet'):
         debug('Moving to CPU: model=UNet')
         unet_device = model.unet.device
-        model.unet.to(devices.cpu)
-        devices.torch_gc()
+        sd_models.move_model(model.unet, devices.cpu)
     if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload and hasattr(model, 'vae'):
-        model.vae.to(devices.device)
+        sd_models.move_model(model.vae, devices.device)
     encoded = model.vae.encode(image.to(model.vae.device, model.vae.dtype)).latent_dist.sample()
     if shared.opts.diffusers_move_unet and not getattr(model, 'has_accelerate', False) and hasattr(model, 'unet'):
-        model.unet.to(unet_device)
+        sd_models.move_model(model.unet, unet_device)
     return encoded
 
 

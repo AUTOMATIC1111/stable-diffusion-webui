@@ -1,6 +1,6 @@
 import os
 import huggingface_hub as hf
-from modules import shared, processing, sd_models
+from modules import shared, processing, sd_models, devices
 
 
 def photo_maker(p: processing.StableDiffusionProcessing, input_images, trigger, strength, start): # pylint: disable=arguments-differ
@@ -42,8 +42,8 @@ def photo_maker(p: processing.StableDiffusionProcessing, input_images, trigger, 
     )
     sd_models.copy_diffuser_options(shared.sd_model, orig_pipeline) # copy options from original pipeline
     sd_models.set_diffuser_options(shared.sd_model) # set all model options such as fp16, offload, etc.
-    if not ((shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) or (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram)):
-        shared.sd_model.to(shared.device) # move pipeline if needed, but don't touch if its under automatic managment
+    sd_models.move_model(shared.sd_model, devices.device) # move pipeline to device
+    shared.sd_model.to(dtype=devices.dtype)
 
     orig_prompt_attention = shared.opts.prompt_attention
     shared.opts.data['prompt_attention'] = 'Fixed attention' # otherwise need to deal with class_tokens_mask

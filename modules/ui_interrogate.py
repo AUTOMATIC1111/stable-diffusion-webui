@@ -76,7 +76,7 @@ def interrogate_image(image, model, mode):
     shared.state.begin()
     shared.state.job = 'interrogate'
     try:
-        if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+        if shared.backend == shared.Backend.ORIGINAL and (shared.cmd_opts.lowvram or shared.cmd_opts.medvram):
             lowvram.send_everything_to_cpu()
             devices.torch_gc()
         load_interrogator(model)
@@ -105,7 +105,7 @@ def interrogate_batch(batch_files, batch_folder, batch_str, model, mode, write):
     shared.state.job = 'batch interrogate'
     prompts = []
     try:
-        if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+        if shared.backend == shared.Backend.ORIGINAL and (shared.cmd_opts.lowvram or shared.cmd_opts.medvram):
             lowvram.send_everything_to_cpu()
             devices.torch_gc()
         load_interrogator(model)

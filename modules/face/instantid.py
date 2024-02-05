@@ -57,8 +57,8 @@ def instant_id(p: processing.StableDiffusionProcessing, app, source_image, stren
     sd_models.set_diffuser_options(shared.sd_model) # set all model options such as fp16, offload, etc.
     shared.sd_model.load_ip_adapter_instantid(face_adapter, scale=strength)
     shared.sd_model.set_ip_adapter_scale(strength)
-    if not ((shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) or (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram)):
-        shared.sd_model.to(shared.device, devices.dtype) # move pipeline if needed, but don't touch if its under automatic managment
+    sd_models.move_model(shared.sd_model, devices.device) # move pipeline to device
+    shared.sd_model.to(dtype=devices.dtype)
 
     # pipeline specific args
     orig_prompt_attention = shared.opts.prompt_attention

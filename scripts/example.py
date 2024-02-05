@@ -1,6 +1,6 @@
 import gradio as gr
 from diffusers.pipelines import StableDiffusionPipeline, StableDiffusionXLPipeline # pylint: disable=unused-import
-from modules import shared, scripts, processing, sd_models
+from modules import shared, scripts, processing, sd_models, devices
 
 """
 This is a simpler template for script for SD.Next that implements a custom pipeline
@@ -109,8 +109,8 @@ class Script(scripts.Script):
         )
         sd_models.copy_diffuser_options(shared.sd_model, orig_pipeline) # copy options from original pipeline
         sd_models.set_diffuser_options(shared.sd_model) # set all model options such as fp16, offload, etc.
-        if not ((shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) or (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram)):
-            shared.sd_model.to(shared.device) # move pipeline if needed, but don't touch if its under automatic managment
+        sd_models.move_model(shared.sd_model, devices.device) # move pipeline to device
+        shared.sd_model.to(dtype=devices.dtype)
 
         # if pipeline also needs a specific type, you can set it here, but not commonly needed
         # shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)

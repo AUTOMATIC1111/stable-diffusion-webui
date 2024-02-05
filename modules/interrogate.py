@@ -164,7 +164,7 @@ class InterrogateModels:
         res = ""
         shared.state.begin('interrogate')
         try:
-            if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+            if shared.backend == shared.Backend.ORIGINAL and (shared.cmd_opts.lowvram or shared.cmd_opts.medvram):
                 lowvram.send_everything_to_cpu()
                 devices.torch_gc()
             self.load()

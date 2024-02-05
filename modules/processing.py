@@ -302,7 +302,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if not shared.opts.keep_incomplete and shared.state.interrupted:
                 x_samples_ddim = []
 
-            if shared.cmd_opts.lowvram or shared.cmd_opts.medvram and shared.backend == shared.Backend.ORIGINAL:
+            if shared.backend == shared.Backend.ORIGINAL and (shared.cmd_opts.lowvram or shared.cmd_opts.medvram):
                 lowvram.send_everything_to_cpu()
                 devices.torch_gc()
             if p.scripts is not None and isinstance(p.scripts, scripts.ScriptRunner):

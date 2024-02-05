@@ -371,8 +371,8 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         shared.sd_model = orig_pipeline
         return results
 
-    if shared.opts.diffusers_move_base and not getattr(shared.sd_model, 'has_accelerate', False):
-        shared.sd_model.to(devices.device)
+    if shared.opts.diffusers_move_base:
+        sd_models.move_model(shared.sd_model, devices.device)
 
     # recompile if a paramater chages
     recompile_model()
@@ -505,15 +505,14 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         shared.state.job_count +=1
         if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_refiner and hasattr(shared.sd_model, 'vae'):
             save_intermediate(latents=output.images, suffix="-before-refiner")
-        if shared.opts.diffusers_move_base and not getattr(shared.sd_model, 'has_accelerate', False):
+        if shared.opts.diffusers_move_base:
             shared.log.debug('Moving to CPU: model=base')
-            shared.sd_model.to(devices.cpu)
-            devices.torch_gc()
+            sd_models.move_model(shared.sd_model, devices.cpu)
         if shared.state.interrupted or shared.state.skipped:
             shared.sd_model = orig_pipeline
             return results
-        if shared.opts.diffusers_move_refiner and not getattr(shared.sd_refiner, 'has_accelerate', False):
-            shared.sd_refiner.to(devices.device)
+        if shared.opts.diffusers_move_refiner:
+            sd_models.move_model(shared.sd_refiner, devices.device)
         p.ops.append('refine')
         p.is_refiner_pass = True
         shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
@@ -558,10 +557,9 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
                 for refiner_image in refiner_images:
                     results.append(refiner_image)
 
-        if shared.opts.diffusers_move_refiner and not getattr(shared.sd_refiner, 'has_accelerate', False):
+        if shared.opts.diffusers_move_refiner:
             shared.log.debug('Moving to CPU: model=refiner')
-            shared.sd_refiner.to(devices.cpu)
-            devices.torch_gc()
+            sd_models.move_model(shared.sd_refiner, devices.cpu)
         shared.state.job = prev_job
         shared.state.nextjob()
         p.is_refiner_pass = False

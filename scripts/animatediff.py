@@ -97,8 +97,7 @@ def set_adapter(adapter_name: str = 'None'):
         )
         orig_pipe = shared.sd_model
         shared.sd_model = new_pipe
-        if not ((shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) or (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram)):
-            shared.sd_model.to(shared.device)
+        sd_models.move_model(shared.sd_model, devices.device) # move pipeline to device
         sd_models.copy_diffuser_options(new_pipe, orig_pipe)
         sd_models.set_diffuser_options(shared.sd_model, vae=None, op='model')
         shared.log.debug(f'AnimateDiff create pipeline: adapter="{loaded_adapter}"')

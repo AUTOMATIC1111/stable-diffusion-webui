@@ -217,6 +217,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - **model load to gpu**  
     new option in settings->diffusers allowing models to be loaded directly to GPU while keeping RAM free  
     this option is not compatible with any kind of model offloading as model is expected to stay in GPU  
+    additionally, all model-moves can now be traced with env variable `SD_MOVE_DEBUG`  
   - **xyz grid**
     - range control  
       example: `5.0-6.0:3` will generate 3 images with values `5.0,5.5,6.0`  

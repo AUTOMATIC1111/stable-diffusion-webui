@@ -85,8 +85,7 @@ class Script(scripts.Script):
             motion_adapter = diffusers.MotionAdapter.from_pretrained(repo_id)
             motion_adapter.to(devices.device, devices.dtype)
             shared.sd_model = sd_models.switch_pipe(diffusers.PIAPipeline, shared.sd_model, { 'motion_adapter': motion_adapter })
-            if not ((shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) or (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram)):
-                shared.sd_model.to(devices.device, devices.dtype)
+            sd_models.move_model(shared.sd_model, devices.device) # move pipeline to device
             if num_frames > 0:
                 p.task_args['num_frames'] = num_frames
                 p.task_args['image'] = p.init_images[0]
@@ -111,8 +110,8 @@ class Script(scripts.Script):
                 sd_models.copy_diffuser_options(pipe, shared.sd_model)
                 sd_models.set_diffuser_options(pipe)
                 shared.sd_model = pipe
-                shared.sd_model.to(devices.device, torch.float32)
-                devices.torch_gc()
+                sd_models.move_model(shared.sd_model, devices.device) # move pipeline to device
+                shared.sd_model.to(dtype=torch.float32)
             if num_frames > 0:
                 p.task_args['image'] = p.init_images[0]
                 p.task_args['num_frames'] = num_frames
