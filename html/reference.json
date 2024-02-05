@@ -88,6 +88,21 @@
     "desc": "Segmind's Tiny-SD offers a compact, efficient, and distilled version of Realistic Vision 4.0 and is up to 80% faster than SD1.5",
     "preview": "segmind--tiny-sd.jpg"
   },
+  "Segmind SegMoE SD 4x2": {
+    "path": "segmind/SegMoE-SD-4x2-v0",
+    "desc": "SegMoE-SD-4x2-v0 is an untrained Segmind Mixture of Diffusion Experts Model generated using segmoe from 4 Expert SD1.5 models. SegMoE is a powerful framework for dynamically combining Stable Diffusion Models into a Mixture of Experts within minutes without training",
+    "preview": "segmind--SegMoE-SD-4x2-v0.jpg"
+  },
+  "Segmind SegMoE XL 2x1": {
+    "path": "segmind/SegMoE-2x1-v0",
+    "desc": "SegMoE-2x1-v0 is an untrained Segmind Mixture of Diffusion Experts Model generated using segmoe from 2 Expert SDXL models. SegMoE is a powerful framework for dynamically combining Stable Diffusion Models into a Mixture of Experts within minutes without training",
+    "preview": "segmind--SegMoE-2x1-v0.jpg"
+  },
+  "Segmind SegMoE XL 4x2": {
+    "path": "segmind/SegMoE-4x2-v0",
+    "desc": "SegMoE-4x2-v0 is an untrained Segmind Mixture of Diffusion Experts Model generated using segmoe from 4 Expert SDXL models. SegMoE is a powerful framework for dynamically combining Stable Diffusion Models into a Mixture of Experts within minutes without training",
+    "preview": "segmind--SegMoE-4x2-v0.jpg"
+  },
   "LCM SD-1.5 Dreamshaper 7": {
     "path": "SimianLuo/LCM_Dreamshaper_v7",
     "desc": "Latent Consistencey Models enable swift inference with minimal steps on any pre-trained LDMs, including Stable Diffusion. By distilling classifier-free guidance into the model's input, LCM can generate high-quality images in very short inference time. LCM can generate quality images in as few as 3-4 steps, making it blazingly fast.",

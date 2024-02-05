@@ -57,6 +57,7 @@ ignore = [
   "C408", # Rewrite as a literal
   "E402", # Module level import not at top of file
   "E721", # Do not compare types, use `isinstance()`
+  "E741", # Do not use variables named `l`, `O`, or `I`
   "EXE001", # Shebang present
   "F401", # Imported but unused
   "ISC003", # Implicit string concatenation

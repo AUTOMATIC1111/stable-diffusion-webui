@@ -54,7 +54,8 @@ def get_pipelines():
         'ONNX Stable Diffusion XL': getattr(diffusers, 'OnnxStableDiffusionXLPipeline', None),
         'ONNX Stable Diffusion XL Img2Img': getattr(diffusers, 'OnnxStableDiffusionXLImg2ImgPipeline', None),
         'Custom Diffusers Pipeline': getattr(diffusers, 'DiffusionPipeline', None),
-        'InstaFlow': getattr(diffusers, 'StableDiffusionPipeline', None) # dynamically redefined and loaded in sd_models.load_diffuser
+        'InstaFlow': getattr(diffusers, 'StableDiffusionPipeline', None), # dynamically redefined and loaded in sd_models.load_diffuser
+        'SegMoE': getattr(diffusers, 'StableDiffusionPipeline', None), # dynamically redefined and loaded in sd_models.load_diffuser
         # Segmind SSD-1B, Segmind Tiny
     }
 

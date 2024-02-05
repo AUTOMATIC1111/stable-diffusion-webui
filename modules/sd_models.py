@@ -586,6 +586,10 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
                 if shared.backend == shared.Backend.ORIGINAL:
                     warn(f'Model detected as InstaFlow model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'InstaFlow'
+            if 'SegMoE' in f:
+                if shared.backend == shared.Backend.ORIGINAL:
+                    warn(f'Model detected as SegMoE model, but attempting to load using backend=original: {op}={f} size={size} MB')
+                guess = 'SegMoE'
             if 'PixArt' in f:
                 if shared.backend == shared.Backend.ORIGINAL:
                     warn(f'Model detected as PixArt Alpha model, but attempting to load using backend=original: {op}={f} size={size} MB')
@@ -791,6 +795,14 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 try:
                     pipeline = diffusers.utils.get_class_from_dynamic_module('instaflow_one_step', module_file='pipeline.py')
                     sd_model = pipeline.from_pretrained(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+                except Exception as e:
+                    shared.log.error(f'Diffusers Failed loading {op}: {checkpoint_info.path} {e}')
+                    return
+            if model_type in ['SegMoE']: # forced pipeline
+                try:
+                    from modules.segmoe.segmoe_model import SegMoEPipeline
+                    sd_model = SegMoEPipeline(checkpoint_info.path, cache_dir=shared.opts.diffusers_dir, **diffusers_load_config)
+                    sd_model = sd_model.pipe # segmoe pipe does its stuff in __init__ and __call__ is the original pipeline
                 except Exception as e:
                     shared.log.error(f'Diffusers Failed loading {op}: {checkpoint_info.path} {e}')
                     return

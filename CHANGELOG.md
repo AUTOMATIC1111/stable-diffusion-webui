@@ -1,14 +1,14 @@
 # Change Log for SD.Next
 
-## Future
+## TODO Future
 
 - ipadapter multi image  
 - control second pass  
 - diffusers public callbacks  
 - image2video: pia and vgen pipelines  
+- video2video
 - wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)  
 - more pipelines: <https://github.com/huggingface/diffusers/blob/main/examples/community/README.md>  
-- segmoe: <https://github.com/segmind/segmoe>
 - control api  
 - masking api  
 - preprocess api  
@@ -21,12 +21,12 @@
 - update docs  
 - diffusers 0.26.2
 
-## Update for 2023-02-04
+## TODO Release notes
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
   - Inpaint and outpaint support, flexible resizing options, optional hires  
-  - Built-in support for many new processors and models which are auto-downloaded on first use  
+  - Built-in support for many new processors and models, all auto-downloaded on first use  
   - Full support for scripts and extensions  
 - Complete **Face** module  
   implements all variations of **FaceID**, **FaceSwap** and latest **PhotoMaker** and **InstantID**  
@@ -34,14 +34,21 @@ Another big release, highlights being:
 - Brand new **Intelligent masking**, manual or automatic  
   Using ML models (*LAMA* object removal, *REMBG* background removal, *SAM* segmentation, etc.) and with live previews  
   With granular blur, erode and dilate controls  
+- New models and pipelines:  
+  **Segmind SegMoE**, **Mixture Tiling**, **InstaFlow**, **SAG**, **BlipDiffusion**  
 - Massive work integrating latest advances with [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVINO), [IPEX](https://github.com/vladmandic/automatic/wiki/Intel-ARC) and [ONNX Olive](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime-&-Olive)
-- **New models** and pipelines: *Mixture Tiling*, *SAG*, *InstaFlow*, *BlipDiffusion*  
 - Full control over brightness, sharpness and color during generate process directly in latent space  
 
 Plus welcome additions to **UI performance, usability and accessibility** and flexibility of deployment  
 And it also includes fixes for all reported issues so far  
 
-As of this release, default backend is set to **diffusers** as its more feature rich than **original** and supports many additional models  
+As of this release, default backend is set to **diffusers** as its more feature rich than **original** and supports many additional models (original backend does remain as fully supported)  
+
+- For basic instructions, see [README](https://github.com/vladmandic/automatic/blob/master/README.md)  
+- For more details on all new features see full [CHANGELOG](https://github.com/vladmandic/automatic/blob/master/CHANGELOG.md)  
+- For documentation, see [WIKI](https://github.com/vladmandic/automatic/wiki)
+
+## Update for 2023-02-04
 
 - **Control**:  
   - add **inpaint** support  
@@ -129,6 +136,13 @@ As of this release, default backend is set to **diffusers** as its more feature 
     **SD15**: Base, Base ViT-G, Light, Plus, Plus Face, Full Face  
     **SDXL**: Base SXDL, Base ViT-H SXDL, Plus ViT-H SXDL, Plus Face ViT-H SXDL  
   - enable use via api, thanks @trojaner  
+- [Segmind SegMoE](https://github.com/segmind/segmoe)  
+  - initial support for reference models  
+    download&load via network -> models -> reference -> **SegMoE SD 4x2** (3.7GB), **SegMoE XL 2x1** (10GB), **SegMoE XL 4x2**  
+  - note: since segmoe is basically sequential mix of unets from multiple models, it can get large  
+    SD 4x2 is ~4GB, XL 2x1 is ~10GB and XL 4x2 is 18GB  
+  - support for create and load custom mixes will be added in the future  
+  - support for lora and other advanced features will be added in the future  
 - [Mixture Tiling](https://arxiv.org/abs/2302.02412)  
   - uses multiple prompts to guide different parts of the grid during diffusion process  
   - can be used ot create complex scenes with multiple subjects  

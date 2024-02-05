@@ -158,7 +158,9 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         if hasattr(model, "set_progress_bar_config"):
             model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining} ' + '\x1b[38;5;71m' + desc, ncols=80, colour='#327fba')
         args = {}
-        signature = inspect.signature(type(model).__call__)
+        if hasattr(model, 'pipe'): # recurse
+            model = model.pipe
+        signature = inspect.signature(type(model).__call__, follow_wrapped=True)
         possible = signature.parameters.keys()
         debug(f'Diffusers pipeline possible: {possible}')
         if shared.opts.diffusers_generator_device == "Unset":
@@ -201,14 +203,15 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         if 'generator' in possible and generator is not None:
             args['generator'] = generator
         if 'output_type' in possible:
-            args['output_type'] = 'np'
+            if hasattr(model, 'vae'):
+                args['output_type'] = 'np' # only set latent if model has vae
         if 'callback_steps' in possible:
             args['callback_steps'] = 1
         if 'callback' in possible:
             args['callback'] = diffusers_callback_legacy
         elif 'callback_on_step_end_tensor_inputs' in possible:
             args['callback_on_step_end'] = diffusers_callback
-            if 'prompt_embeds' in possible and 'negative_prompt_embeds' in possible:
+            if 'prompt_embeds' in possible and 'negative_prompt_embeds' in possible and hasattr(model, '_callback_tensor_inputs'):
                 args['callback_on_step_end_tensor_inputs'] = model._callback_tensor_inputs # pylint: disable=protected-access
             else:
                 args['callback_on_step_end_tensor_inputs'] = ['latents']
@@ -405,7 +408,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         desc='Base',
     )
     update_sampler(shared.sd_model)
-    shared.state.sampling_steps = base_args['num_inference_steps']
+    shared.state.sampling_steps = base_args.get('num_inference_steps', p.steps)
     p.extra_generation_params['Pipeline'] = shared.sd_model.__class__.__name__
     if shared.opts.scheduler_eta is not None and shared.opts.scheduler_eta > 0 and shared.opts.scheduler_eta < 1:
         p.extra_generation_params["Sampler Eta"] = shared.opts.scheduler_eta
