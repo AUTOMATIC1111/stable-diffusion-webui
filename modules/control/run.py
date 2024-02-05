@@ -86,6 +86,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
         batch_size = batch_size,
         inpaint_full_res = masking.opts.mask_only,
         inpaint_full_res_padding = masking.opts.mask_padding,
+        inpainting_mask_invert = 1 if masking.opts.invert else 0,
         inpainting_fill = 1,
         hdr_mode=hdr_mode, hdr_brightness=hdr_brightness, hdr_color=hdr_color, hdr_sharpen=hdr_sharpen, hdr_clamp=hdr_clamp,
         hdr_boundary=hdr_boundary, hdr_threshold=hdr_threshold, hdr_maximize=hdr_maximize, hdr_max_center=hdr_max_center, hdr_max_boundry=hdr_max_boundry,
@@ -340,7 +341,6 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         debug(f'Control: input image={input_image}')
 
                     processed_images = []
-                    masked_image = masking.run_mask(input_image=input_image, input_mask=mask, return_type='Masked') if mask is not None else input_image
                     if mask is not None:
                         p.extra_generation_params["Mask only"] = masking.opts.mask_only if masking.opts.mask_only else None
                         p.extra_generation_params["Mask auto"] = masking.opts.auto_mask if masking.opts.auto_mask != 'None' else None
@@ -349,6 +349,8 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         p.extra_generation_params["Mask erode"] = masking.opts.mask_erode if masking.opts.mask_erode > 0 else None
                         p.extra_generation_params["Mask dilate"] = masking.opts.mask_dilate if masking.opts.mask_dilate > 0 else None
                         p.extra_generation_params["Mask model"] = masking.opts.model if masking.opts.model is not None else None
+                    if len(active_process) > 0:
+                        masked_image = masking.run_mask(input_image=input_image, input_mask=mask, return_type='Masked', invert=p.inpainting_mask_invert==1) if mask is not None else input_image
                     for i, process in enumerate(active_process): # list[image]
                         image_mode = 'L' if unit_type == 't2i adapter' and len(active_model) > i and ('Canny' in active_model[i].model_id or 'Sketch' in active_model[i].model_id) else 'RGB' # t2iadapter canny and sketch work in grayscale only
                         debug(f'Control: i={i+1} process="{process.processor_id}" input={masked_image} override={process.override}')
@@ -468,7 +470,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                     if pipe is not None: # run new pipeline
                         debug(f'Control exec pipeline: task={sd_models.get_diffusers_task(pipe)} class={pipe.__class__}')
                         debug(f'Control exec pipeline: p={vars(p)}')
-                        debug(f'Control exec pipeline: args={p.task_args} image={p.task_args.get("image", None)} control={p.task_args.get("control_image", None)} mask={p.task_args.get("mask_image", None)} ref={p.task_args.get("ref_image", None)}')
+                        debug(f'Control exec pipeline: args={p.task_args} image={p.task_args.get("image", None)} control={p.task_args.get("control_image", None)} mask={p.task_args.get("mask_image", None) or p.image_mask} ref={p.task_args.get("ref_image", None)}')
                         p.scripts = scripts.scripts_control
                         p.script_args = input_script_args
                         processed = p.scripts.run(p, *input_script_args)

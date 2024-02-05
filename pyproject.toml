@@ -1,5 +1,22 @@
 [tool.ruff]
 target-version = "py39"
+exclude = [
+  "/usr/lib",
+	"extensions",
+  "extensions-builtin",
+  "modules/lora",
+  "modules/dml",
+  "modules/k-diffusion",
+  "repositories/ldm",
+  "repositories/taming",
+  "repositories/blip",
+  "repositories/codeformer",
+  "modules/control/proc/normalbae/nets/submodules/efficientnet_repo/geffnet",
+  "modules/control/units/*_model.py",
+  "modules/control/units/*_pipe.py",
+  "modules/pipelines/*.py",
+]
+[tool.ruff.lint]
 select = [
   "F",
   "E",
@@ -28,22 +45,6 @@ select = [
   # "S",
   # "PL",
 ]
-exclude = [
-  "/usr/lib",
-	"extensions",
-  "extensions-builtin",
-  "modules/lora",
-  "modules/dml",
-  "modules/k-diffusion",
-  "repositories/ldm",
-  "repositories/taming",
-  "repositories/blip",
-  "repositories/codeformer",
-  "modules/control/proc/normalbae/nets/submodules/efficientnet_repo/geffnet",
-  "modules/control/units/*_model.py",
-  "modules/control/units/*_pipe.py",
-  "modules/pipelines/*.py",
-]
 ignore = [
 	"A003", # Class attirbute shadowing builtin
 	"C901", # Function is too complex
@@ -66,7 +67,7 @@ ignore = [
   "TID252", # Relative imports from parent modules
 ]
 
-[tool.ruff.flake8-bugbear]
+[tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["fastapi.Depends", "fastapi.security.HTTPBasic"]
 
 [tool.pytest.ini_options]

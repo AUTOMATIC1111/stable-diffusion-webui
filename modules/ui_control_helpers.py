@@ -127,7 +127,8 @@ def select_input(input_mode, input_image, init_image, init_type, input_resize, i
         status = f'Control input | Image | Size {selected_input.width}x{selected_input.height} | Mode {selected_input.mode}'
         res = [gr.Tabs.update(selected='out-gallery'), status]
     elif isinstance(selected_input, dict): # inpaint -> dict image+mask
-        input_mask = masking.run_mask(input_image=selected_input['image'], input_mask=selected_input['mask'], return_type='Grayscale')
+        # input_mask = masking.run_mask(input_image=selected_input['image'], input_mask=selected_input['mask'], return_type='Grayscale')
+        input_mask = selected_input['mask']
         selected_input = selected_input['image']
         input_source = [selected_input]
         input_type = 'PIL.Image'

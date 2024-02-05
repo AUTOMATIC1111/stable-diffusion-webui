@@ -309,9 +309,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         if self.sampler_name == "PLMS":
             self.sampler_name = 'UniPC'
-        self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
-        if hasattr(self.sampler, "initialize"):
-            self.sampler.initialize(self)
+        if shared.backend == shared.Backend.ORIGINAL:
+            self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
+            if hasattr(self.sampler, "initialize"):
+                self.sampler.initialize(self)
 
         if self.image_mask is not None:
             self.ops.append('inpaint')
@@ -332,7 +333,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                     np_mask = cv2.GaussianBlur(np_mask, (kernel_size, 1), self.mask_blur)
                     np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), self.mask_blur)
                     self.image_mask = Image.fromarray(np_mask)
-            else:
+            """
+            else: # handled in processing_diffusers
                 if hasattr(self, 'init_images'):
                     self.image_mask = masking.run_mask(
                         input_image=self.init_images,
@@ -341,8 +343,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                         mask_blur=self.mask_blur,
                         mask_padding=self.inpaint_full_res_padding,
                         segment_enable=False,
-                        invert=self.inpainting_mask_invert,
+                        invert=self.inpainting_mask_invert==1,
                     )
+            """
             if self.inpaint_full_res: # mask only inpaint
                 self.mask_for_overlay = self.image_mask
                 mask = self.image_mask.convert('L')
@@ -386,16 +389,14 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                     image = images.resize_image(self.resize_mode, image, self.width, self.height, self.resize_name)
                 self.width = image.width
                 self.height = image.height
-            if self.image_mask is not None:
-                try:
-                    image_masked = Image.new('RGBa', (image.width, image.height))
-                    image_to_paste = image.convert("RGBA").convert("RGBa")
-                    image_to_mask = ImageOps.invert(self.mask_for_overlay.convert('L')) if self.mask_for_overlay is not None else None
-                    image_to_mask = image_to_mask.resize((image.width, image.height), Image.Resampling.BILINEAR) if image_to_mask is not None else None
-                    image_masked.paste(image_to_paste, mask=image_to_mask)
-                    self.overlay_images.append(image_masked.convert('RGBA'))
-                except Exception as e:
-                    shared.log.error(f"Failed to apply mask to image: {e}")
+            if self.image_mask is not None and shared.opts.mask_apply_overlay:
+                image_masked = Image.new('RGBa', (image.width, image.height))
+                image_to_paste = image.convert("RGBA").convert("RGBa")
+                image_to_mask = ImageOps.invert(self.mask_for_overlay.convert('L')) if self.mask_for_overlay is not None else None
+                image_to_mask = image_to_mask.resize((image.width, image.height), Image.Resampling.BILINEAR) if image_to_mask is not None else None
+                image_masked.paste(image_to_paste, mask=image_to_mask)
+                image_masked = image_masked.convert('RGBA')
+                self.overlay_images.append(image_masked)
             if crop_region is not None: # crop_region is not None if we are doing inpaint full res
                 image = image.crop(crop_region)
                 if image.width != self.width or image.height != self.height:

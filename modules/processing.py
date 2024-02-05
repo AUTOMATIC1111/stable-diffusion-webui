@@ -349,7 +349,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                         images.save_image(image_without_cc, path=p.outpath_samples, basename="", seed=p.seeds[i], prompt=p.prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix="-before-color-correct")
                     p.ops.append('color')
                     image = apply_color_correction(p.color_corrections[i], image)
-                image = apply_overlay(image, p.paste_to, i, p.overlay_images)
+                if shared.opts.mask_apply_overlay:
+                    image = apply_overlay(image, p.paste_to, i, p.overlay_images)
                 text = infotext(i)
                 infotexts.append(text)
                 image.info["parameters"] = text

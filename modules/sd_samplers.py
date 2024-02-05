@@ -11,7 +11,6 @@ samplers = all_samplers
 samplers_for_img2img = all_samplers
 samplers_map = {}
 loaded_config = None
-loaded_sampler = None
 
 
 def list_samplers(backend_name = shared.backend):
@@ -47,7 +46,6 @@ def visible_sampler_names():
 
 
 def create_sampler(name, model):
-    global loaded_config, loaded_sampler # pylint: disable=global-statement
     if name == 'Default' and hasattr(model, 'scheduler'):
         config = {k: v for k, v in model.scheduler.config.items() if not k.startswith('_')}
         shared.log.debug(f'Sampler default {type(model.scheduler).__name__}: {config}')
@@ -56,26 +54,22 @@ def create_sampler(name, model):
     if config is None:
         shared.log.error(f'Attempting to use unknown sampler: {name}')
         config = all_samplers[0]
-    sampler = loaded_sampler
     if shared.backend == shared.Backend.ORIGINAL:
-        if config != loaded_config:
-            sampler = config.constructor(model)
-            sampler.config = config
-            sampler.name = name
-            loaded_config = config
-            shared.log.debug(f'Sampler: sampler="{name}" config={config.options}')
+        sampler = config.constructor(model)
+        sampler.config = config
+        sampler.name = name
         sampler.initialize(p=None)
-        loaded_sampler = sampler
+        shared.log.debug(f'Sampler: sampler="{name}" config={config.options}')
+        return sampler
     elif shared.backend == shared.Backend.DIFFUSERS:
-        if config != loaded_config:
-            sampler = config.constructor(model)
-            loaded_config = config
-            if not hasattr(model, 'scheduler_config'):
-                model.scheduler_config = sampler.sampler.config.copy()
-            shared.log.debug(f'Sampler: sampler="{sampler.name}" config={sampler.config}')
-            loaded_sampler = sampler.sampler
-        model.scheduler = loaded_sampler
-    return loaded_sampler
+        sampler = config.constructor(model)
+        if not hasattr(model, 'scheduler_config'):
+            model.scheduler_config = sampler.sampler.config.copy()
+        model.scheduler = sampler.sampler
+        shared.log.debug(f'Sampler: sampler="{sampler.name}" config={sampler.config}')
+        return sampler.sampler
+    else:
+        return None
 
 
 def set_samplers():

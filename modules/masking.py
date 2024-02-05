@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 from typing import List
 import os
+import sys
 import time
 import gradio as gr
 import numpy as np
@@ -315,7 +316,9 @@ def get_mask(input_image: gr.Image, input_mask: gr.Image):
         return output_mask
 
 
-def run_mask(input_image: gr.Image, input_mask: gr.Image = None, return_type: str = None, mask_blur: int = None, mask_padding: int = None, segment_enable=True, invert=False):
+def run_mask(input_image: gr.Image, input_mask: gr.Image = None, return_type: str = None, mask_blur: int = None, mask_padding: int = None, segment_enable=True, invert=None):
+    debug(f'Run mask: function={sys._getframe(1).f_code.co_name}') # pylint: disable=protected-access
+
     if input_image is None:
         return input_mask
     if isinstance(input_image, list):
@@ -331,6 +334,8 @@ def run_mask(input_image: gr.Image, input_mask: gr.Image = None, return_type: st
     if input_mask is None:
         return None
 
+    if invert is not None:
+        opts.invert = invert
     if mask_blur is not None: # compatibility with old img2img values which have different range
         opts.mask_blur = mask_blur / min(input_image.width, input_image.height)
     if mask_padding is not None:
@@ -373,7 +378,7 @@ def run_mask(input_image: gr.Image, input_mask: gr.Image = None, return_type: st
             debug(f'Segment blur={opts.mask_blur} x={sigmax} y={sigmay} mask={mask.shape}')
         except Exception as e:
             shared.log.error(f'Segment blur: {e}')
-    if invert or opts.invert:
+    if opts.invert:
         mask = np.invert(mask)
 
     mask_size = np.count_nonzero(mask)

@@ -114,11 +114,9 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         elif (sd_models.get_diffusers_task(model) == sd_models.DiffusersTaskType.INPAINTING or is_img2img_model) and len(getattr(p, 'init_images' ,[])) > 0:
             p.ops.append('inpaint')
             if p.task_args.get('mask_image', None) is not None: # provided as override by a module
-                p.mask = masking.run_mask(input_image=p.init_images, input_mask=p.task_args['mask_image'], return_type='Grayscale')
-            if p.task_args.get('mask_image', None) is not None: # provided as override by a module
-                p.mask = masking.run_mask(input_image=p.init_images, input_mask=p.task_args['mask_image'], return_type='Grayscale')
+                p.mask = masking.run_mask(input_image=p.init_images, input_mask=p.task_args['mask_image'], return_type='Grayscale', invert=p.inpainting_mask_invert==1)
             elif getattr(p, 'image_mask', None) is not None: # standard
-                p.mask = masking.run_mask(input_image=p.init_images, input_mask=p.image_mask, return_type='Grayscale')
+                p.mask = masking.run_mask(input_image=p.init_images, input_mask=p.image_mask, return_type='Grayscale', invert=p.inpainting_mask_invert==1)
             elif getattr(p, 'mask', None) is not None: # backward compatibility
                 pass
             else: # fallback
