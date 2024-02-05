@@ -8,7 +8,7 @@ from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 from diffusers.pipelines.stable_diffusion.pipeline_onnx_stable_diffusion_upscale import preprocess
 from diffusers.image_processor import PipelineImageInput
 from modules.onnx_impl.pipelines import CallablePipelineBase
-from modules.onnx_impl.pipelines.utils import prepare_latents
+from modules.onnx_impl.pipelines.utils import prepare_latents, randn_tensor
 
 
 class OnnxStableDiffusionUpscalePipeline(diffusers.OnnxStableDiffusionUpscalePipeline, CallablePipelineBase):
@@ -102,7 +102,11 @@ class OnnxStableDiffusionUpscalePipeline(diffusers.OnnxStableDiffusionUpscalePip
 
         # 5. Add noise to image
         noise_level = np.array([noise_level]).astype(np.int64)
-        noise = generator.randn(*image.shape).astype(latents_dtype)
+        noise = randn_tensor(
+            image.shape,
+            latents_dtype,
+            generator,
+        )
 
         image = self.low_res_scheduler.add_noise(
             torch.from_numpy(image), torch.from_numpy(noise), torch.from_numpy(noise_level)

@@ -2,6 +2,7 @@ from typing import Union, List
 import numpy as np
 import torch
 
+
 def extract_generator_seed(generator: Union[torch.Generator, List[torch.Generator]]) -> List[int]:
     if isinstance(generator, list):
         generator = [g.seed() for g in generator]
@@ -10,7 +11,7 @@ def extract_generator_seed(generator: Union[torch.Generator, List[torch.Generato
     return generator
 
 
-def randn_tensor(shape, dtype, generator: Union[torch.Generator, List[torch.Generator], int, List[int]]):
+def randn_tensor(shape, dtype: np.dtype, generator: Union[torch.Generator, List[torch.Generator], int, List[int]]):
     if hasattr(generator, "seed") or (isinstance(generator, list) and hasattr(generator[0], "seed")):
         generator = extract_generator_seed(generator)
         if len(generator) == 1:
