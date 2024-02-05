@@ -19,7 +19,7 @@
 ## TODO for Dev merge
 
 - update docs  
-- control reference mode: <https://github.com/huggingface/diffusers/issues/6838>  
+- diffusers 0.26.2
 
 ## Update for 2023-02-04
 
@@ -63,6 +63,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
       remove selected objects from images with a single click  
       works best when combined with auto-segmentation to remove smaller objects  
     - masking can be combined with control processors in which case mask is applied before processor  
+    - unmasked part of can is optionally applied to final image as overlay, see settings `mask_apply_overlay`  
   - support for many additional controlnet models  
     now built-in models include 30+ SD15 models and 15+ SDXL models  
   - allow **resize** both *before* and *after* generate operation  
