@@ -214,7 +214,17 @@ class ImageOutput:
                     except:
                         pass
                 if len(high_keys) != len(low_keys):
-                    raise OSError("upload image failed.")
+                    low_number, high_number = 0, 0
+                    for k in high_keys:
+                        _, ex = os.path.splitext(k)
+                        if ex != ".gif":
+                            high_number = 1 + high_number
+                    for k in low_keys:
+                        _, ex = os.path.splitext(k)
+                        if ex != ".gif":
+                            low_number = 1 + low_number
+                    if low_number != high_number:
+                        raise OSError("upload image failed.")
 
                 return ImageKeys(high_keys, low_keys)
 
