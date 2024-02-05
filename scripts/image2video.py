@@ -85,6 +85,8 @@ class Script(scripts.Script):
             motion_adapter = diffusers.MotionAdapter.from_pretrained(repo_id)
             motion_adapter.to(devices.device, devices.dtype)
             shared.sd_model = sd_models.switch_pipe(diffusers.PIAPipeline, shared.sd_model, { 'motion_adapter': motion_adapter })
+            if not ((shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) or (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram)):
+                shared.sd_model.to(devices.device, devices.dtype)
             if num_frames > 0:
                 p.task_args['num_frames'] = num_frames
                 p.task_args['image'] = p.init_images[0]

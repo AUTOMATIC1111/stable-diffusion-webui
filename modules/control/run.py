@@ -351,6 +351,8 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         p.extra_generation_params["Mask model"] = masking.opts.model if masking.opts.model is not None else None
                     if len(active_process) > 0:
                         masked_image = masking.run_mask(input_image=input_image, input_mask=mask, return_type='Masked', invert=p.inpainting_mask_invert==1) if mask is not None else input_image
+                    else:
+                        masked_image = input_image
                     for i, process in enumerate(active_process): # list[image]
                         image_mode = 'L' if unit_type == 't2i adapter' and len(active_model) > i and ('Canny' in active_model[i].model_id or 'Sketch' in active_model[i].model_id) else 'RGB' # t2iadapter canny and sketch work in grayscale only
                         debug(f'Control: i={i+1} process="{process.processor_id}" input={masked_image} override={process.override}')
@@ -427,8 +429,11 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         yield (None, processed_image, f'Control {msg}')
                     t2 += time.time() - t2
 
-                    # prepare pipeline
-                    if not has_models and (unit_type == 'controlnet' or unit_type == 't2i adapter' or unit_type == 'xs' or unit_type == 'lite'): # run in txt2img/img2img/inpaint mode
+                    # determine txt2img, img2img, inpaint pipeline
+                    if unit_type == 'reference': # special case
+                        p.is_control = True
+                        shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
+                    elif not has_models: # run in txt2img/img2img/inpaint mode
                         if mask is not None:
                             p.task_args['strength'] = p.denoising_strength
                             p.image_mask = mask
@@ -440,10 +445,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         else:
                             p.init_hr()
                             shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
-                    elif unit_type == 'reference':
-                        p.is_control = True
-                        shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
-                    else: # actual control
+                    elif has_models: # actual control
                         p.is_control = True
                         if mask is not None:
                             p.task_args['strength'] = denoising_strength
@@ -457,7 +459,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                                 p.task_args['image'] = p.init_images # need to set explicitly for txt2img
                         if unit_type == 'lite':
                             instance.apply(selected_models, p.init_images, control_conditioning)
-                    if hasattr(p, 'init_images') and p.init_images is None:
+                    if hasattr(p, 'init_images') and p.init_images is None: # delete as its set via task_args
                         del p.init_images
 
                     # ip adapter apply is run in processing.process_images
