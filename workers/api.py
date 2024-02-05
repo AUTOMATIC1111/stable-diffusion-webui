@@ -4,10 +4,15 @@ import base64
 import json
 import time
 import os
+import argparse
 
-webui_server_url = "http://127.0.0.1:7860"
+parser = argparse.ArgumentParser()
+parser.add_argument("--port", default=7860, help="Input file path")
+args = parser.parse_args()
 
-image_file = "./IMG_9887.jpg"
+webui_server_url = f"http://127.0.0.1:{args.port}"
+
+image_file = "./tunong.jpg"
 prompt = "<lora:ip-adapter-faceid-plus_sd15_lora:0.7>, <lora:blindbox_v1_mix:0.7>, (masterpiece), (best quality), (ultra-detailed), (full body:1.25), 1boy, chibi, toy figurine, spider man, (beautiful detailed face), (beautiful detailed eyes), standing straight, gym rat, gym background"
 negative_prompt = "(low quality:1.3), (worst quality:1.3)"
 
@@ -33,7 +38,7 @@ def decode_and_save_base64(base64_str, save_path):
         file.write(base64.b64decode(base64_str))
 
 
-def call_api(webui_server_url,api_endpoint, **payload):
+def call_api(webui_server_url, api_endpoint, **payload):
     data = json.dumps(payload).encode("utf-8")
     request = urllib.request.Request(
         f"{webui_server_url}/{api_endpoint}",
@@ -44,8 +49,8 @@ def call_api(webui_server_url,api_endpoint, **payload):
     return json.loads(response.read().decode("utf-8"))
 
 
-def call_txt2img_api(**payload):
-    response = call_api("sdapi/v1/txt2img", **payload)
+def call_txt2img_api(webui_server_url, **payload):
+    response = call_api(webui_server_url, "sdapi/v1/txt2img", **payload)
     for index, image in enumerate(response.get("images")):
         save_path = os.path.join(out_dir_t2i, f"txt2img-{timestamp()}-{index}.png")
         decode_and_save_base64(image, save_path)
@@ -62,6 +67,10 @@ def payloader(
     image_file,
     prompt,
     negative_prompt,
+    batch_size=1,
+    steps=20,
+    n_iter=1,
+    seed=-1,
     sd_model_checkpoint="revAnimated_v122EOL.safetensors",
     module="ip-adapter_face_id_plus",
     model="ip-adapter-faceid-plus_sd15 [d86a490f]",
@@ -70,7 +79,7 @@ def payloader(
     resize_mode="Crop and Resize",
     width=512,
     height=512,
-    cfg_scale=7
+    cfg_scale=7,
 ):
     """
     This function takes in parameters and return prompt for the server.
@@ -78,14 +87,14 @@ def payloader(
     payload = {
         "prompt": prompt,
         "negative_prompt": negative_prompt,
-        "seed": -1,
-        "steps": 20,
+        "seed": seed,
+        "steps": steps,
         "width": width,
         "height": height,
         "cfg_scale": cfg_scale,
         "sampler_name": sampler_name,
-        "n_iter": 1,
-        "batch_size": 1,
+        "n_iter": n_iter,
+        "batch_size": batch_size,
         # "init_images": init_images,
         # example args for Refiner and ControlNet
         "alwayson_scripts": {
@@ -124,17 +133,18 @@ def payloader(
     return payload
 
 
-# if __name__ == "__main__":
-#     init_images = [
-#         encode_file_to_base64(image_file),
-#     ]
+if __name__ == "__main__":
+    init_images = [
+        encode_file_to_base64(image_file),
+    ]
 
-#     prompt = "<lora:ip-adapter-faceid-plus_sd15_lora:0.7>, <lora:blindbox_v1_mix:0.7>, (masterpiece), (best quality), (ultra-detailed), (full body:1.25), 1boy, chibi, toy figurine, spider man, (beautiful detailed face), (beautiful detailed eyes), standing straight, gym rat, gym background"
-#     negative_prompt = "(low quality:1.3), (worst quality:1.3)"
-#     payload = payloader(
-#         image_file="./IMG_9887.jpg",
-#         prompt=prompt,
-#         negative_prompt=negative_prompt
-#     )
+    prompt = "<lora:ip-adapter-faceid-plus_sd15_lora:0.7>, <lora:blindbox_v1_mix:0.7>, (masterpiece), (best quality), (ultra-detailed), (full body:1.25), 1boy, chibi, toy figurine, spider man, (beautiful detailed face), (beautiful detailed eyes), standing straight, gym rat, gym background"
+    negative_prompt = "(low quality:1.3), (worst quality:1.3)"
+    payload = payloader(
+        image_file=image_file,
+        prompt=prompt,
+        negative_prompt=negative_prompt,
+        batch_size=4,
+    )
 
-#     call_txt2img_api(**payload)
+    reponse = call_txt2img_api(webui_server_url, **payload)
