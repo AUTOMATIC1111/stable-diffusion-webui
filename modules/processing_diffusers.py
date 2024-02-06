@@ -357,8 +357,29 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
                 p.task_args['sag_scale'] = p.sag_scale
             else:
                 shared.log.warning(f'SAG incompatible scheduler: current={sd_model.scheduler.__class__.__name__} supported={supported}')
-        if sd_model.__class__.__name__ == "OnnxRawPipeline":
-            sd_model = preprocess_onnx_pipeline(p, is_refiner_enabled())
+
+        pipeline_name = sd_model.__class__.__name__
+        if shared.opts.cuda_compile_backend == "olive-ai" and pipeline_name.startswith("Onnx"):
+            compile_height = p.height
+            compile_width = p.width
+            if (shared.compiled_model_state is None or
+            shared.compiled_model_state.height != compile_height
+            or shared.compiled_model_state.width != compile_width
+            or shared.compiled_model_state.batch_size != p.batch_size):
+                shared.log.info("Olive: Parameter change detected")
+                shared.log.info("Olive: Recompiling base model")
+                sd_models.unload_model_weights(op='model')
+                sd_models.reload_model_weights(op='model')
+                if is_refiner_enabled():
+                    shared.log.info("Olive: Recompiling refiner")
+                    sd_models.unload_model_weights(op='refiner')
+                    sd_models.reload_model_weights(op='refiner')
+            shared.compiled_model_state.height = compile_height
+            shared.compiled_model_state.width = compile_width
+            shared.compiled_model_state.batch_size = p.batch_size
+            pipeline_name = shared.sd_model.__class__.__name__
+        if pipeline_name == "OnnxRawPipeline":
+            sd_model = preprocess_onnx_pipeline(p)
             nonlocal orig_pipeline
             orig_pipeline = sd_model # processed ONNX pipeline should not be replaced with original pipeline.
         return sd_model
@@ -468,7 +489,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
                 recompile_model(hires=True)
                 shared.sd_model = sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
                 if shared.sd_model.__class__.__name__ == "OnnxRawPipeline":
-                    shared.sd_model = preprocess_onnx_pipeline(p, is_refiner_enabled())
+                    shared.sd_model = preprocess_onnx_pipeline(p)
                 update_sampler(shared.sd_model, second_pass=True)
                 hires_args = set_pipeline_args(
                     model=shared.sd_model,
