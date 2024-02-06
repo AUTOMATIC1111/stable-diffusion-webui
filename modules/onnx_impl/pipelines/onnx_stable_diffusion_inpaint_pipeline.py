@@ -28,8 +28,6 @@ class OnnxStableDiffusionInpaintPipeline(diffusers.OnnxStableDiffusionInpaintPip
     ):
         super().__init__(vae_encoder, vae_decoder, text_encoder, tokenizer, unet, scheduler, safety_checker, feature_extractor, requires_safety_checker)
 
-        self.vae_scale_factor = 2 ** (len(self.vae_decoder.config.get("block_out_channels")) - 1)
-
     @torch.no_grad()
     def __call__(
         self,
@@ -97,7 +95,6 @@ class OnnxStableDiffusionInpaintPipeline(diffusers.OnnxStableDiffusionInpaintPip
             generator,
             latents,
             num_channels_latents,
-            self.vae_scale_factor,
         )
 
         scaling_factor = self.vae_decoder.config.get("scaling_factor", 0.18215)
