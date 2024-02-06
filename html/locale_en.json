@@ -117,6 +117,8 @@
   {"id":"","label":"Tiling","localized":"","hint":"Produce an image that can be tiled"},
   {"id":"","label":"full quality","localized":"","hint":"Use full quality VAE to decode latent samples"},
   {"id":"","label":"face restore","localized":"","hint":"Run processed image through additional face restoration model"},
+  {"id":"","label":"HDR Clamp","localized":"","hint":"Adjusts the level of nonsensical details by pruning values that deviate significantly from the distribution mean. It is particularly useful for enhancing generation at higher guidance scales, identifying outliers early in the process and applying mathematical adjustments based on the Range (Boundary) and Threshold settings. Think of it as setting the range within which you want your image values to be, and adjusting the threshold determines which values should be brought back into that range"},
+  {"id":"","label":"HDR Maximize","localized":"","hint":"Calculates a 'normalization factor' by dividing the maximum tensor value by the specified range multiplied by 4. This factor is then used to shift the channels within the given boundary, ensuring maximum dynamic range for subsequent processing. The objective is to optimize dynamic range for external applications like Photoshop, particularly for adjusting levels, contrast, and brightness"},
   {"id":"","label":"Enable second pass","localized":"","hint":"Use a similar process as image to image to upscale and/or add detail to the final image. Optionally uses refiner model to enhance image details."},
   {"id":"","label":"Denoising strength","localized":"","hint":"Determines how little respect the algorithm should have for image's content. At 0, nothing will change, and at 1 you'll get an unrelated image. With values below 1.0, processing will take less steps than the Sampling Steps slider specifies"},
   {"id":"","label":"Denoise start","localized":"","hint":"Override denoise strength by stating how early base model should finish and when refiner should start. Only applicable to refiner usage. If set to 0 or 1, denoising strength will be used"},
@@ -156,6 +158,10 @@
   {"id":"","label":"latent nothing","localized":"","hint":"fill it with latent space zeroes"}
 ],
 "control tab": [
+  {"id":"","label":"Guess Mode","localized":"","hint":"Removes the requirement to supply a prompt to a ControlNet. It forces Controlnet encoder to do it's 'best guess' based on the contents of the input control map."},
+  {"id":"","label":"Control Only","localized":"","hint":"This uses only the Control input below as the source for any ControlNet or IP Adapter type tasks based on any of our various options."},
+  {"id":"","label":"Init Image Same As Control","localized":"","hint":"Will additionally treat any image placed into the Control input window as a source for img2img type tasks, an image to modify for example."},
+  {"id":"","label":"Separate Init Image","localized":"","hint":"Creates an additional window next to Control input labeled Init input, so you can have a separate image for both Control operations and an init source."}
 ],
 "process tab": [
   {"id":"","label":"Single Image","localized":"","hint":"Process single image"},
