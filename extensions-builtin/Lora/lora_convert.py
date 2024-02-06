@@ -139,6 +139,28 @@ class KeyConvert:
             if sd_module is None:
                 key = key.replace("lora_te1_text_model", "transformer_text_model")
                 sd_module = shared.sd_model.network_layer_mapping.get(key, None)
+
+        # SegMoE begin
+        expert_key = key + "_experts_0"
+        expert_module = shared.sd_model.network_layer_mapping.get(expert_key, None)
+        if expert_module is not None:
+            sd_module = expert_module
+            key = expert_key
+        if sd_module is None:
+            key = key.replace("_net_", "_experts_0_net_")
+            sd_module = shared.sd_model.network_layer_mapping.get(key, None)
+        key = key if isinstance(key, list) else [key]
+        sd_module = sd_module if isinstance(sd_module, list) else [sd_module]
+        if "_experts_0" in key[0]:
+            i = expert_module = 1
+            while expert_module is not None:
+                expert_key = key[0].replace("_experts_0", f"_experts_{i}")
+                expert_module = shared.sd_model.network_layer_mapping.get(expert_key, None)
+                if expert_module is not None:
+                    key.append(expert_key)
+                    sd_module.append(expert_module)
+                    i += 1
+        # SegMoe end
         return key, sd_module
 
     def diffusers(self, key):

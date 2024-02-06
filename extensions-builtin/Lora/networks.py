@@ -122,13 +122,14 @@ def load_network(name, network_on_disk) -> network.Network:
             key_network_without_network_parts, network_part = key_network.split(".", 1)
         # if debug:
         #     shared.log.debug(f'LoRA load: name="{name}" full={key_network} network={network_part} key={key_network_without_network_parts}')
-        key, sd_module = convert(key_network_without_network_parts)
-        if sd_module is None:
+        key, sd_module = convert(key_network_without_network_parts)  # Now returns lists
+        if sd_module[0] is None:
             keys_failed_to_match[key_network] = key
             continue
-        if key not in matched_networks:
-            matched_networks[key] = network.NetworkWeights(network_key=key_network, sd_key=key, w={}, sd_module=sd_module)
-        matched_networks[key].w[network_part] = weight
+        for k, module in zip(key, sd_module):
+            if k not in matched_networks:
+                matched_networks[k] = network.NetworkWeights(network_key=key_network, sd_key=k, w={}, sd_module=module)
+            matched_networks[k].w[network_part] = weight
     for key, weights in matched_networks.items():
         net_module = None
         for nettype in module_types:
