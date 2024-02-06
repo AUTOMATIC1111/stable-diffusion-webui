@@ -13,6 +13,7 @@ import modules
 from modules import shared
 from enum import IntEnum
 from PIL import ImageOps
+from handlers.txt2img import Txt2ImgTask
 from handlers.img2img import Img2ImgTask, Img2ImgTaskHandler
 from worker.task import TaskType, TaskProgress, Task, TaskStatus
 from modules.processing import StableDiffusionProcessingImg2Img, process_images, Processed, fix_seed
@@ -22,6 +23,7 @@ from handlers.utils import init_script_args, get_selectable_script, init_default
 
 class DigitalTaskType(IntEnum):
     Img2Img = 1
+    Txt2Img = 2
 
 
 class DigitalTaskHandler(Img2ImgTaskHandler):
@@ -77,7 +79,7 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
     def _build_i2i_tasks(self, t: Task):
         tasks = []
         t['prompt'] = "(((best quality))),(((ultra detailed))), " + t['prompt']
-        t['negative_prompt'] = "(worst quality:2), (low quality:2), (normal quality:2), " +  t['negative_prompt']
+        t['negative_prompt'] = "(worst quality:2), (low quality:2), (normal quality:2), " + t['negative_prompt']
 
         denoising_strengths = self._denoising_strengths(t)
         init_images = self._get_init_images(t)
@@ -101,9 +103,66 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
 
         return tasks
 
+    def _build_t2i_tasks(self, t: Task):
+        tasks = []
+        t['prompt'] = "(((best quality))),(((ultra detailed))), " + t['prompt']
+        t['negative_prompt'] = "(worst quality:2), (low quality:2), (normal quality:2), " + t['negative_prompt']
+
+        denoising_strengths = self._denoising_strengths(t)
+        init_images = self._get_init_images(t)
+        for i, denoising_strength in enumerate(denoising_strengths):
+            t['denoising_strength'] = 0.1
+            t['n_iter'] = 1
+            t['batch_size'] = 1
+            init_img = init_images[i] if len(init_images) > i else init_images[0]
+            t['alwayson_scripts'] = {
+                ADetailer: {
+                    'args': [{
+                        'ad_model': 'face_yolov8n_v2.pt',
+                        'ad_mask_blur': 4,
+                        'ad_denoising_strength': denoising_strength,
+                        'ad_inpaint_only_masked': True,
+                        'ad_inpaint_only_masked_padding': 64
+                    }]
+                },
+                "ControlNet": {
+                    "args": [
+                        {
+                            "control_mode": "Balanced",
+                            "enabled": True,
+                            "guess_mode": False,
+                            "guidance_end": 1,
+                            "guidance_start": 0,
+                            "image": {
+                                "image": init_img,
+                                "mask": ""
+                            },
+                            "invert_image": False,
+                            "isShowModel": True,
+                            "low_vram": False,
+                            "model": "control_v11p_sd15_inpaint [ebff9138]",
+                            "module": "inpaint_only",
+                            "pixel_perfect": False,
+                            "processor_res": 512,
+                            "resize_mode": "Scale to Fit (Inner Fit)",
+                            "tempImg": None,
+                            "tempMask": None,
+                            "threshold_a": 64,
+                            "threshold_b": 64,
+                            "weight": 1
+                        }
+                    ]
+                }
+            }
+            tasks.append(Txt2ImgTask.from_task(t, self.default_script_args))
+
+        return tasks
+
     def _exec(self, task: Task) -> typing.Iterable[TaskProgress]:
         if task.minor_type == DigitalTaskType.Img2Img:
             yield from self._exec_img2img(task)
+        elif task.minor_type == DigitalTaskType.Txt2Img:
+            yield from self._exec_txt2img(task)
 
     def _exec_img2img(self, task: Task) -> typing.Iterable[TaskProgress]:
         time_start = time.time()
@@ -113,6 +172,66 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
         self._refresh_default_script_args()
         yield progress
         tasks = self._build_i2i_tasks(task)
+        # i2i
+        images = []
+        all_seeds = []
+        all_subseeds = []
+        processed = None
+        upload_files_eta_secs = 5
+
+        for i, p in enumerate(tasks):
+            if i == 0:
+                self._set_little_models(p)
+            processed = process_images(p)
+            all_seeds.extend(processed.all_seeds)
+            all_subseeds.extend(processed.all_subseeds)
+            images.append(processed.images[0])
+            progress.task_progress = min((i + 1) * 100 / len(tasks), 98)
+            # time_since_start = time.time() - time_start
+            # eta = (time_since_start / p)
+            # progress.eta_relative = int(eta - time_since_start) + upload_files_eta_secs
+            if i == 0:
+                progress.eta_relative = 60
+            else:
+                progress.calc_eta_relative(upload_files_eta_secs)
+            yield progress
+            p.close()
+
+        # 开启宫格图
+        if task.get('grid_enable', False):
+            grid = modules.images.image_grid(images, len(images))
+            images.insert(0, grid)
+            processed.index_of_first_image = 1
+            processed.index_of_end_image = len(images)
+        else:
+            processed.index_of_first_image = 0
+            processed.index_of_end_image = len(images) - 1
+        processed.images = images
+
+        progress.status = TaskStatus.Uploading
+        yield progress
+
+        images = save_processed_images(processed,
+                                       tasks[0].outpath_samples,
+                                       tasks[0].outpath_grids,
+                                       tasks[0].outpath_scripts,
+                                       task.id,
+                                       inspect=False,
+                                       forbidden_review=True)
+
+        progress = TaskProgress.new_finish(task, images)
+        progress.update_seed(all_seeds, all_subseeds)
+
+        yield progress
+
+    def _exec_txt2img(self, task: Task) -> typing.Iterable[TaskProgress]:
+        time_start = time.time()
+        base_model_path = self._get_local_checkpoint(task)
+        load_sd_model_weights(base_model_path, task.model_hash)
+        progress = TaskProgress.new_ready(task, f'model loaded, gen refine image...', 50)
+        self._refresh_default_script_args()
+        yield progress
+        tasks = self._build_t2i_tasks(task)
         # i2i
         images = []
         all_seeds = []
