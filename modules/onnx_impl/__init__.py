@@ -205,9 +205,11 @@ def initialize():
     if initialized:
         return
 
+    from installer import log
     from modules import devices
     from modules.paths import models_path
-    from .execution_providers import ExecutionProvider, TORCH_DEVICE_TO_EP
+    from modules.shared import opts
+    from .execution_providers import ExecutionProvider, TORCH_DEVICE_TO_EP, available_execution_providers
 
     onnx_dir = os.path.join(models_path, "ONNX")
     if not os.path.isdir(onnx_dir):
@@ -249,6 +251,8 @@ def initialize():
     diffusers.ORTStableDiffusionXLImg2ImgPipeline = diffusers.OnnxStableDiffusionXLImg2ImgPipeline
 
     optimum.onnxruntime.modeling_diffusion._ORTDiffusionModelPart.to = ORTDiffusionModelPart_to # pylint: disable=protected-access
+
+    log.info(f'ONNX: selected={opts.onnx_execution_provider}, available={available_execution_providers}')
 
     initialized = True
 
