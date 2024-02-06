@@ -446,7 +446,7 @@ def check_torch():
             try:
                 import onnxruntime
                 if "ROCMExecutionProvider" not in onnxruntime.get_available_providers():
-                    log.warn('Failed to automatically install onxnruntime package for ROCm. Please manually install it if you need.')
+                    log.warning('Failed to automatically install onxnruntime package for ROCm. Please manually install it if you need.')
             except Exception:
                 pass
     elif allow_ipex and (args.use_ipex or shutil.which('sycl-ls') is not None or shutil.which('sycl-ls.exe') is not None or os.environ.get('ONEAPI_ROOT') is not None or os.path.exists('/opt/intel/oneapi') or os.path.exists("C:/Program Files (x86)/Intel/oneAPI") or os.path.exists("C:/oneAPI")):

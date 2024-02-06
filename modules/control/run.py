@@ -365,7 +365,7 @@ def control_run(units: List[unit.Unit], inputs, inits, mask, unit_type: str, is_
                         )
                         if processed_image is not None:
                             processed_images.append(processed_image)
-                        if shared.opts.control_unload_processor:
+                        if shared.opts.control_unload_processor and process.processor_id is not None:
                             processors.config[process.processor_id]['dirty'] = True # to force reload
                             process.model = None
 

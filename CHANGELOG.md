@@ -15,8 +15,7 @@
 
 ## TODO for Dev merge
 
-- update docs  
-- diffusers 0.26.2
+- no blockers
 
 ## TODO Release notes
 
@@ -45,7 +44,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
 - For more details on all new features see full [CHANGELOG](https://github.com/vladmandic/automatic/blob/master/CHANGELOG.md)  
 - For documentation, see [WIKI](https://github.com/vladmandic/automatic/wiki)
 
-## Update for 2023-02-05
+## Update for 2023-02-06
 
 - Heavily updated [Wiki](https://github.com/vladmandic/automatic/wiki)  
 - **Control**:  
@@ -316,6 +315,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - live preview: fix when using `bfloat16`  
   - live preview: add thread locking  
   - upscale: fix ldsr
+  - huggingface: handle fallback model variant on load  
   - reference: fix links to models and use safetensors where possible  
   - model merge: unbalanced models where not all keys are present, thanks @AI-Casanova
   - better sdxl model detection
