@@ -1340,10 +1340,13 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
 
 
 def convert_to_faketensors(tensor):
-    fake_module = torch._subclasses.fake_tensor.FakeTensorMode(allow_non_fake_inputs=True) # pylint: disable=protected-access
-    if hasattr(tensor, "weight"):
-        tensor.weight = torch.nn.Parameter(fake_module.from_tensor(tensor.weight))
-    return tensor
+    try:
+        fake_module = torch._subclasses.fake_tensor.FakeTensorMode(allow_non_fake_inputs=True) # pylint: disable=protected-access
+        if hasattr(tensor, "weight"):
+            tensor.weight = torch.nn.Parameter(fake_module.from_tensor(tensor.weight))
+        return tensor
+    except Exception:
+        pass
 
 
 def disable_offload(sd_model):
@@ -1360,7 +1363,6 @@ def unload_model_weights(op='model'):
     if shared.compiled_model_state is not None:
         shared.compiled_model_state.compiled_cache.clear()
         shared.compiled_model_state.partitioned_modules.clear()
-        shared.compiled_model_state = None
     if op == 'model' or op == 'dict':
         if model_data.sd_model:
             if shared.backend == shared.Backend.ORIGINAL:

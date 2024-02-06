@@ -97,7 +97,7 @@ def nncf_compress_weights(sd_model):
         shared.log.warning(f"Compress Weights: error: {e}")
 
 
-def optimize_openvino():
+def optimize_openvino(sd_model):
     try:
         from modules.intel.openvino import openvino_fx # pylint: disable=unused-import
         torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
@@ -109,8 +109,10 @@ def optimize_openvino():
         shared.compiled_model_state.first_pass = True if not shared.opts.cuda_compile_precompile else False
         shared.compiled_model_state.first_pass_vae = True if not shared.opts.cuda_compile_precompile else False
         shared.compiled_model_state.first_pass_refiner = True if not shared.opts.cuda_compile_precompile else False
+        sd_model.has_accelerate = True
     except Exception as e:
         shared.log.warning(f"Model compile: task=OpenVINO: {e}")
+    return sd_model
 
 
 def compile_stablefast(sd_model):
@@ -157,7 +159,7 @@ def compile_torch(sd_model):
         torch._dynamo.reset() # pylint: disable=protected-access
         shared.log.debug(f"Model compile available backends: {torch._dynamo.list_backends()}") # pylint: disable=protected-access
         if shared.opts.cuda_compile_backend == "openvino_fx":
-            optimize_openvino()
+            sd_model = optimize_openvino(sd_model)
         elif shared.opts.cuda_compile_backend == "olive-ai":
             if shared.compiled_model_state is None:
                 shared.compiled_model_state = CompiledModelState()

@@ -282,7 +282,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
         debug(f'Diffusers pipeline args: {args}')
         return args
 
-    def recompile_model(hires=False):
+    def recompile_model(hires=False): # recompile if a parameter changes
         if shared.opts.cuda_compile and shared.opts.cuda_compile_backend != 'none':
             if shared.opts.cuda_compile_backend == "openvino_fx":
                 compile_height = p.height if not hires and hasattr(p, 'height') else p.hr_upscale_to_y
@@ -377,7 +377,7 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
     if shared.opts.diffusers_move_base:
         sd_models.move_model(shared.sd_model, devices.device)
 
-    # recompile if a paramater chages
+    # recompile if a parameter changes
     recompile_model()
 
     # pipeline type is set earlier in processing, but check for sanity

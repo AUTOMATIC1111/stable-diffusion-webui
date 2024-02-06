@@ -177,15 +177,12 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
     if recompile_model:
         backup_cuda_compile = shared.opts.cuda_compile
         backup_nncf_compress_weights = shared.opts.nncf_compress_weights
-        backup_nncf_compress_text_encoder_weights = shared.opts.nncf_compress_text_encoder_weights
         sd_models.unload_model_weights(op='model')
         shared.opts.cuda_compile = False
-        shared.opts.nncf_compress_weights = False
-        shared.opts.nncf_compress_text_encoder_weights = False
+        shared.opts.nncf_compress_weights = []
         sd_models.reload_model_weights(op='model')
         shared.opts.cuda_compile = backup_cuda_compile
         shared.opts.nncf_compress_weights = backup_nncf_compress_weights
-        shared.opts.nncf_compress_text_encoder_weights = backup_nncf_compress_text_encoder_weights
 
     loaded_networks.clear()
     for i, (network_on_disk, name) in enumerate(zip(networks_on_disk, names)):

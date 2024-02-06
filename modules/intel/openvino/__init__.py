@@ -135,7 +135,7 @@ def cached_model_name(model_hash_str, device, args, cache_root, reversed = False
             else:
                 inputs_str += "_" + str(input_data.type()) + str(input_data.size())[11:-1].replace(" ", "")
     inputs_str = sha256(inputs_str.encode('utf-8')).hexdigest()
-    file_name += inputs_str
+    file_name += "_" + inputs_str
 
     return file_name
 
@@ -436,14 +436,7 @@ def openvino_fx(subgraph, example_inputs):
         # Create a hash to be used for caching
         subgraph.apply(generate_subgraph_str)
         shared.compiled_model_state.model_hash_str = shared.compiled_model_state.model_hash_str + sha256(subgraph.code.encode('utf-8')).hexdigest()
-        model_hash_str = sha256(shared.compiled_model_state.model_hash_str.encode('utf-8')).hexdigest()
-        shared.compiled_model_state.model_hash_str = ""
-
-        if (shared.compiled_model_state.cn_model != [] and shared.compiled_model_state.partition_id == 0):
-            shared.compiled_model_state.shared.compiled_model_state.model_hash_str = model_hash_str + str(shared.compiled_model_state.cn_model)
-
-        if (shared.compiled_model_state.lora_model != []):
-            shared.compiled_model_state.model_hash_str = shared.compiled_model_state.model_hash_str + str(shared.compiled_model_state.lora_model)
+        shared.compiled_model_state.model_hash_str = sha256(shared.compiled_model_state.model_hash_str.encode('utf-8')).hexdigest()
 
         executor_parameters = {"model_hash_str": shared.compiled_model_state.model_hash_str}
         # Check if the model was fully supported and already cached
