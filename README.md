@@ -41,12 +41,6 @@ All individual features are not listed here, instead check [ChangeLog](CHANGELOG
 *Main text2image interface*:  
 ![Screenshot-Dark](html/screenshot-text2image.jpg)
 
-*Control interface*:  
-![Screenshot-Control](html/screenshot-control.jpg)
-
-*Color grading*:  
-![Screenshot-Control](html/screenshot-color.jpg)
-
 For screenshots and informations on other available themes, see [Themes Wiki](https://github.com/vladmandic/automatic/wiki/Themes)
 
 <br>
@@ -63,6 +57,19 @@ For screenshots and informations on other available themes, see [Themes Wiki](ht
   This backend and is fully compatible with most existing functionality and extensions written for *A1111 SDWebUI*  
   Supports **SD 1.x** and **SD 2.x** models  
   All other model types such as *SD-XL, LCM, PixArt, Segmind, Kandinsky, etc.* require backend **Diffusers**  
+
+## Control
+
+**SD.Next** comes with built-in control for all types of text2image, image2image, video2video and batch processing
+
+*Control interface*:  
+![Screenshot-Control](html/screenshot-control.jpg)
+
+*Control processors*:  
+![Screenshot-Process](html/screenshot-processors.jpg)
+
+*Masking*:
+![Screenshot-Mask](html/screenshot-mask.jpg)
 
 ## Model support
 
@@ -93,6 +100,13 @@ Also supported are modifiers such as:
 - **IP-Adapters** for SD 1.5 and SD-XL
 - **InstantID**, **FaceSwap**, **FaceID**, **PhotoMerge**  
 - **AnimateDiff** for SD 1.5
+
+*Color grading*:  
+![Screenshot-Color](html/screenshot-color.jpg)
+
+*InstantID*:  
+![Screenshot-InstantID](html/screenshot-instantid.jpg)
+
 
 > [!IMPORTANT]
 > - Loading any model other than standard SD 1.x / SD 2.x requires use of backend **Diffusers**  
