@@ -9,7 +9,7 @@ import torchvision.transforms.functional as TF
 import diffusers
 from modules import shared, devices, processing, sd_samplers, sd_models, images, errors, masking, prompt_parser_diffusers, sd_hijack_hypertile, processing_correction, processing_vae
 from modules.processing_helpers import resize_init_images, resize_hires, fix_prompts, calculate_base_steps, calculate_hires_steps, calculate_refiner_steps
-from modules.onnx_impl import preprocess_pipeline as preprocess_onnx_pipeline
+from modules.onnx_impl import preprocess_pipeline as preprocess_onnx_pipeline, check_parameters_changed as olive_check_parameters_changed
 
 
 debug = shared.log.trace if os.environ.get('SD_DIFFUSERS_DEBUG', None) is not None else lambda *args, **kwargs: None
@@ -358,27 +358,9 @@ def process_diffusers(p: processing.StableDiffusionProcessing):
             else:
                 shared.log.warning(f'SAG incompatible scheduler: current={sd_model.scheduler.__class__.__name__} supported={supported}')
 
-        pipeline_name = sd_model.__class__.__name__
-        if shared.opts.cuda_compile_backend == "olive-ai" and pipeline_name.startswith("Onnx"):
-            compile_height = p.height
-            compile_width = p.width
-            if (shared.compiled_model_state is None or
-            shared.compiled_model_state.height != compile_height
-            or shared.compiled_model_state.width != compile_width
-            or shared.compiled_model_state.batch_size != p.batch_size):
-                shared.log.info("Olive: Parameter change detected")
-                shared.log.info("Olive: Recompiling base model")
-                sd_models.unload_model_weights(op='model')
-                sd_models.reload_model_weights(op='model')
-                if is_refiner_enabled():
-                    shared.log.info("Olive: Recompiling refiner")
-                    sd_models.unload_model_weights(op='refiner')
-                    sd_models.reload_model_weights(op='refiner')
-            shared.compiled_model_state.height = compile_height
-            shared.compiled_model_state.width = compile_width
-            shared.compiled_model_state.batch_size = p.batch_size
-            pipeline_name = shared.sd_model.__class__.__name__
-        if pipeline_name == "OnnxRawPipeline":
+        if shared.opts.cuda_compile_backend == "olive-ai":
+            sd_model = olive_check_parameters_changed(p, is_refiner_enabled())
+        if sd_model.__class__.__name__ == "OnnxRawPipeline":
             sd_model = preprocess_onnx_pipeline(p)
             nonlocal orig_pipeline
             orig_pipeline = sd_model # processed ONNX pipeline should not be replaced with original pipeline.

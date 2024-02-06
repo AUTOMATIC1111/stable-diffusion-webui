@@ -147,6 +147,33 @@ class VAE(TorchCompatibleModule):
         return self
 
 
+def check_parameters_changed(p, refiner_enabled: bool):
+    from modules import shared, sd_models
+
+    if shared.sd_model.__class__.__name__ == "OnnxRawPipeline" or not shared.sd_model.__class__.__name__.startswith("Onnx"):
+        return shared.sd_model
+
+    compile_height = p.height
+    compile_width = p.width
+    if (shared.compiled_model_state is None or
+    shared.compiled_model_state.height != compile_height
+    or shared.compiled_model_state.width != compile_width
+    or shared.compiled_model_state.batch_size != p.batch_size):
+        shared.log.info("Olive: Parameter change detected")
+        shared.log.info("Olive: Recompiling base model")
+        sd_models.unload_model_weights(op='model')
+        sd_models.reload_model_weights(op='model')
+        if refiner_enabled:
+            shared.log.info("Olive: Recompiling refiner")
+            sd_models.unload_model_weights(op='refiner')
+            sd_models.reload_model_weights(op='refiner')
+    shared.compiled_model_state.height = compile_height
+    shared.compiled_model_state.width = compile_width
+    shared.compiled_model_state.batch_size = p.batch_size
+
+    return shared.sd_model
+
+
 def preprocess_pipeline(p):
     from modules import shared, sd_models
 
