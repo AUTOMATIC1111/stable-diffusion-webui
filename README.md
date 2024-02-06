@@ -18,7 +18,7 @@
 
 All individual features are not listed here, instead check [ChangeLog](CHANGELOG.md) for full list of changes
 - Multiple backends!  
-  ▹ **Original | Diffusers**
+  ▹ **Diffusers | Original**  
 - Multiple diffusion models!  
   ▹ **Stable Diffusion 1.5/2.1 | SD-XL | LCM | Segmind | Kandinsky | Pixart-α | Würstchen | aMUSEd | DeepFloyd IF | UniDiffusion | SD-Distilled | BLiP Diffusion | etc.**
 - Built-in Control for Text, Image, Batch and video processing!  
@@ -53,13 +53,14 @@ For screenshots and informations on other available themes, see [Themes Wiki](ht
 
 ## Backend support
 
-**SD.Next** supports two main backends: *Original* and *Diffusers*:
+**SD.Next** supports two main backends: *Diffusers* and *Original*:
 
 - **Diffusers**: Based on new [Huggingface Diffusers](https://huggingface.co/docs/diffusers/index) implementation  
   Supports *original* SD models as well as *all* models listed below  
+  This backend is set as default for new installations  
   See [wiki article](https://github.com/vladmandic/automatic/wiki/Diffusers) for more information  
 - **Original**: Based on [LDM](https://github.com/Stability-AI/stablediffusion) reference implementation and significantly expanded on by [A1111](https://github.com/AUTOMATIC1111/stable-diffusion-webui)  
-  This is the default backend and it is fully compatible with all existing functionality and extensions  
+  This backend and is fully compatible with most existing functionality and extensions written for *A1111 SDWebUI*  
   Supports **SD 1.x** and **SD 2.x** models  
   All other model types such as *SD-XL, LCM, PixArt, Segmind, Kandinsky, etc.* require backend **Diffusers**  
 
