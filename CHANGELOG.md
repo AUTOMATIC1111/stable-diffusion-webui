@@ -142,8 +142,8 @@ As of this release, default backend is set to **diffusers** as its more feature 
     download&load via network -> models -> reference -> **SegMoE SD 4x2** (3.7GB), **SegMoE XL 2x1** (10GB), **SegMoE XL 4x2**  
   - note: since segmoe is basically sequential mix of unets from multiple models, it can get large  
     SD 4x2 is ~4GB, XL 2x1 is ~10GB and XL 4x2 is 18GB  
+  - supports lora, thanks @AI-Casanova
   - support for create and load custom mixes will be added in the future  
-  - support for lora and other advanced features will be added in the future  
 - [Mixture Tiling](https://arxiv.org/abs/2302.02412)  
   - uses multiple prompts to guide different parts of the grid during diffusion process  
   - can be used ot create complex scenes with multiple subjects  

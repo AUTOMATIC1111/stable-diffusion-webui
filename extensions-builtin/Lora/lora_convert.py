@@ -160,8 +160,8 @@ class KeyConvert:
                     key.append(expert_key)
                     sd_module.append(expert_module)
                     i += 1
-        # SegMoe end
-        return [key], [sd_module]
+        # SegMoE end
+        return key, sd_module
 
     def diffusers(self, key):
         if self.is_sdxl:
@@ -193,7 +193,7 @@ class KeyConvert:
                     key.append(expert_key)
                     sd_module.append(expert_module)
                     i += 1
-        # SegMoe end
+        # SegMoE end
         if debug and sd_module is None:
             raise RuntimeError(f"LoRA key not found in network_layer_mapping: key={key} mapping={shared.sd_model.network_layer_mapping.keys()}")
         return key, sd_module

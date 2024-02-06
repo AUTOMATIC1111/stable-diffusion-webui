@@ -583,15 +583,15 @@ def detect_pipeline(f: str, op: str = 'model', warning=True):
                     warn(f'Model detected as LCM model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'Latent Consistency Model'
             """
-            if 'instaflow' in f:
+            if 'instaflow' in f.lower():
                 if shared.backend == shared.Backend.ORIGINAL:
                     warn(f'Model detected as InstaFlow model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'InstaFlow'
-            if 'SegMoE' in f:
+            if 'segmoe' in f.lower():
                 if shared.backend == shared.Backend.ORIGINAL:
                     warn(f'Model detected as SegMoE model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'SegMoE'
-            if 'PixArt' in f:
+            if 'pixart' in f.lower():
                 if shared.backend == shared.Backend.ORIGINAL:
                     warn(f'Model detected as PixArt Alpha model, but attempting to load using backend=original: {op}={f} size={size} MB')
                 guess = 'PixArt Alpha'
