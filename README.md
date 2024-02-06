@@ -38,9 +38,16 @@ All individual features are not listed here, instead check [ChangeLog](CHANGELOG
 
 <br>
 
-![Screenshot-Dark](html/xmas-default.jpg)
-![Screenshot-Control](html/xmas-control.jpg)
-![Screenshot-Light](html/light-teal.jpg)
+*Main text2image interface*:  
+![Screenshot-Dark](html/screenshot-text2image.jpg)
+
+*Control interface*:  
+![Screenshot-Control](html/screenshot-control.jpg)
+
+*Color grading*:  
+![Screenshot-Control](html/screenshot-color.jpg)
+
+For screenshots and informations on other available themes, see [Themes Wiki](https://github.com/vladmandic/automatic/wiki/Themes)
 
 <br>
 
@@ -48,13 +55,13 @@ All individual features are not listed here, instead check [ChangeLog](CHANGELOG
 
 **SD.Next** supports two main backends: *Original* and *Diffusers*:
 
+- **Diffusers**: Based on new [Huggingface Diffusers](https://huggingface.co/docs/diffusers/index) implementation  
+  Supports *original* SD models as well as *all* models listed below  
+  See [wiki article](https://github.com/vladmandic/automatic/wiki/Diffusers) for more information  
 - **Original**: Based on [LDM](https://github.com/Stability-AI/stablediffusion) reference implementation and significantly expanded on by [A1111](https://github.com/AUTOMATIC1111/stable-diffusion-webui)  
   This is the default backend and it is fully compatible with all existing functionality and extensions  
   Supports **SD 1.x** and **SD 2.x** models  
   All other model types such as *SD-XL, LCM, PixArt, Segmind, Kandinsky, etc.* require backend **Diffusers**  
-- **Diffusers**: Based on new [Huggingface Diffusers](https://huggingface.co/docs/diffusers/index) implementation  
-  Supports *original* SD models as well as *all* models listed below  
-  See [wiki article](https://github.com/vladmandic/automatic/wiki/Diffusers) for more information  
 
 ## Model support
 
@@ -67,6 +74,7 @@ Additional models will be added as they become available and there is public int
 - [aMUSEd 256](https://huggingface.co/amused/amused-256) 256 and 512
 - [Segmind Vega](https://huggingface.co/segmind/Segmind-Vega)  
 - [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)  
+- [Segmind SegMoE](https://github.com/segmind/segmoe) *SD and SD-XL*  
 - [Kandinsky](https://github.com/ai-forever/Kandinsky-2) *2.1 and 2.2 and latest 3.0*  
 - [PixArt-α XL 2](https://github.com/PixArt-alpha/PixArt-alpha) *Medium and Large*  
 - [Warp Wuerstchen](https://huggingface.co/blog/wuertschen)  
@@ -79,10 +87,11 @@ Additional models will be added as they become available and there is public int
 
 
 Also supported are modifiers such as:
-- **LCM** and **Turbo** (Adversarial Diffusion Distillation) networks
+- **LCM** and **Turbo** (*adversarial diffusion distillation*) networks
 - All **LoRA** types such as LoCon, LyCORIS, HADA, IA3, Lokr, OFT
-- **AnimateDiff** for SD 1.5
 - **IP-Adapters** for SD 1.5 and SD-XL
+- **InstantID**, **FaceSwap**, **FaceID**, **PhotoMerge**  
+- **AnimateDiff** for SD 1.5
 
 > [!IMPORTANT]
 > - Loading any model other than standard SD 1.x / SD 2.x requires use of backend **Diffusers**  
@@ -101,7 +110,7 @@ Also supported are modifiers such as:
   This includes support for AMD GPUs that are not supported by native ROCm libraries  
 - Any GPU or device compatible with **OpenVINO** libraries on both *Windows and Linux*  
 - *Apple M1/M2* on *OSX* using built-in support in Torch with **MPS** optimizations  
-- *ONNX/Olive* (experimental)  
+- *ONNX/Olive*  
 
 ## Install
 

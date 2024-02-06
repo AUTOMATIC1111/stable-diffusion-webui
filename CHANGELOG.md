@@ -2,18 +2,14 @@
 
 ## TODO Future
 
-- ipadapter multi image  
-- control second pass  
+- multi-ipadapter: https://github.com/huggingface/diffusers/pull/6573
+- control second pass: https://github.com/vladmandic/automatic/issues/2783  
 - diffusers public callbacks  
 - image2video: pia and vgen pipelines  
 - video2video
-- wuerstchen v3 [pr](https://github.com/huggingface/diffusers/pull/6487)  
-- more pipelines: <https://github.com/huggingface/diffusers/blob/main/examples/community/README.md>  
-- segmoe lora  
 - control api  
 - masking api  
 - preprocess api  
-- diffusers training master script  
 - remove kohya from submodules  
 - bind panZoom to control input
 
@@ -51,7 +47,11 @@ As of this release, default backend is set to **diffusers** as its more feature 
 
 ## Update for 2023-02-05
 
+- Heavily updated [Wiki](https://github.com/vladmandic/automatic/wiki)  
 - **Control**:  
+  - new docs:
+    - [Control overview](https://github.com/vladmandic/automatic/wiki/Control)  
+    - [Control guide](https://github.com/vladmandic/automatic/wiki/Control-Guide), thanks @Aptronymist  
   - add **inpaint** support  
     applies to both *img2img* and *controlnet* workflows  
   - add **outpaint** support  
