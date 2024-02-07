@@ -34,7 +34,7 @@ rich
 safetensors
 scipy
 tb_nightly
-tensordict
+tensordict==0.2.1
 toml
 torchdiffeq
 voluptuous
