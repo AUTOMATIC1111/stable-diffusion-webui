@@ -2,9 +2,10 @@
 
 ## Update for 2024-02-07
 
-### Highlights
+Another big release just hit the shelves!
 
-Another big release, highlights being:  
+### Highlights  
+
 - A lot more functionality in the **Control** module:
   - Inpaint and outpaint support, flexible resizing options, optional hires  
   - Built-in support for many new processors and models, all auto-downloaded on first use  
@@ -19,6 +20,7 @@ Another big release, highlights being:
   **Segmind SegMoE**, **Mixture Tiling**, **InstaFlow**, **SAG**, **BlipDiffusion**  
 - Massive work integrating latest advances with [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVINO), [IPEX](https://github.com/vladmandic/automatic/wiki/Intel-ARC) and [ONNX Olive](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime-&-Olive)
 - Full control over brightness, sharpness and color shifts and color grading during generate process directly in latent space  
+- **Documentation**! This was a big one, with a lot of new content and updates in the [WiKi](https://github.com/vladmandic/automatic/wiki)  
 
 Plus welcome additions to **UI performance, usability and accessibility** and flexibility of deployment as well as **API** improvements  
 And it also includes fixes for all reported issues so far  
