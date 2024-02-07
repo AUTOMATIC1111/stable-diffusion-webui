@@ -96,7 +96,7 @@ class NetworkModuleOFT(network.NetworkModule):
                 bi = R[i] # b_num, b_size, b_size
                 if i == 0:
                     # Apply multiplier/scale and rescale into first weight
-                    bi = bi * scale + (1 - scale) * eye 
+                    bi = bi * scale + (1 - scale) * eye
                     #if self.rescaled:
                     #    bi = bi * self.rescale
                 inp = rearrange(inp, "(c g k) ... -> (c k g) ...", g=2, k=2**i * r_b)
