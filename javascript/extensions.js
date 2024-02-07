@@ -1,5 +1,5 @@
 
-function extensions_apply(_disabled_list, _update_list, disable_all) {
+function extensions_apply(_disabled_list, _update_list, disable_all, extensions_table) {
     var disable = [];
     var update = [];
 
@@ -15,7 +15,7 @@ function extensions_apply(_disabled_list, _update_list, disable_all) {
 
     restart_reload();
 
-    return [JSON.stringify(disable), JSON.stringify(update), disable_all];
+    return [JSON.stringify(disable), JSON.stringify(update), disable_all, extensions_table];
 }
 
 function extensions_check() {

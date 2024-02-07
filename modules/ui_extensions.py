@@ -23,8 +23,9 @@ def check_access():
     assert not shared.cmd_opts.disable_extension_access, "extension access disabled because of command line flags"
 
 
-def apply_and_restart(disable_list, update_list, disable_all):
+def apply_and_restart(disable_list, update_list, disable_all, extensions_table):
     check_access()
+    assert "Loading..." not in extensions_table
 
     disabled = json.loads(disable_list)
     assert type(disabled) == list, f"wrong disable_list data for apply_and_restart: {disable_list}"
@@ -571,7 +572,7 @@ def create_ui():
                 apply.click(
                     fn=apply_and_restart,
                     _js="extensions_apply",
-                    inputs=[extensions_disabled_list, extensions_update_list, extensions_disable_all],
+                    inputs=[extensions_disabled_list, extensions_update_list, extensions_disable_all, extensions_table],
                     outputs=[],
                 )
 
