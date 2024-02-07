@@ -18,7 +18,7 @@
 
 All individual features are not listed here, instead check [ChangeLog](CHANGELOG.md) for full list of changes
 - Multiple backends!  
-  ▹ **Original | Diffusers**
+  ▹ **Diffusers | Original**  
 - Multiple diffusion models!  
   ▹ **Stable Diffusion 1.5/2.1 | SD-XL | LCM | Segmind | Kandinsky | Pixart-α | Würstchen | aMUSEd | DeepFloyd IF | UniDiffusion | SD-Distilled | BLiP Diffusion | etc.**
 - Built-in Control for Text, Image, Batch and video processing!  
@@ -38,23 +38,38 @@ All individual features are not listed here, instead check [ChangeLog](CHANGELOG
 
 <br>
 
-![Screenshot-Dark](html/xmas-default.jpg)
-![Screenshot-Control](html/xmas-control.jpg)
-![Screenshot-Light](html/light-teal.jpg)
+*Main text2image interface*:  
+![Screenshot-Dark](html/screenshot-text2image.jpg)
+
+For screenshots and informations on other available themes, see [Themes Wiki](https://github.com/vladmandic/automatic/wiki/Themes)
 
 <br>
 
 ## Backend support
 
-**SD.Next** supports two main backends: *Original* and *Diffusers*:
+**SD.Next** supports two main backends: *Diffusers* and *Original*:
 
-- **Original**: Based on [LDM](https://github.com/Stability-AI/stablediffusion) reference implementation and significantly expanded on by [A1111](https://github.com/AUTOMATIC1111/stable-diffusion-webui)  
-  This is the default backend and it is fully compatible with all existing functionality and extensions  
-  Supports **SD 1.x** and **SD 2.x** models  
-  All other model types such as *SD-XL, LCM, PixArt, Segmind, Kandinsky, etc.* require backend **Diffusers**  
 - **Diffusers**: Based on new [Huggingface Diffusers](https://huggingface.co/docs/diffusers/index) implementation  
   Supports *original* SD models as well as *all* models listed below  
+  This backend is set as default for new installations  
   See [wiki article](https://github.com/vladmandic/automatic/wiki/Diffusers) for more information  
+- **Original**: Based on [LDM](https://github.com/Stability-AI/stablediffusion) reference implementation and significantly expanded on by [A1111](https://github.com/AUTOMATIC1111/stable-diffusion-webui)  
+  This backend and is fully compatible with most existing functionality and extensions written for *A1111 SDWebUI*  
+  Supports **SD 1.x** and **SD 2.x** models  
+  All other model types such as *SD-XL, LCM, PixArt, Segmind, Kandinsky, etc.* require backend **Diffusers**  
+
+## Control
+
+**SD.Next** comes with built-in control for all types of text2image, image2image, video2video and batch processing
+
+*Control interface*:  
+![Screenshot-Control](html/screenshot-control.jpg)
+
+*Control processors*:  
+![Screenshot-Process](html/screenshot-processors.jpg)
+
+*Masking*:
+![Screenshot-Mask](html/screenshot-mask.jpg)
 
 ## Model support
 
@@ -67,6 +82,7 @@ Additional models will be added as they become available and there is public int
 - [aMUSEd 256](https://huggingface.co/amused/amused-256) 256 and 512
 - [Segmind Vega](https://huggingface.co/segmind/Segmind-Vega)  
 - [Segmind SSD-1B](https://huggingface.co/segmind/SSD-1B)  
+- [Segmind SegMoE](https://github.com/segmind/segmoe) *SD and SD-XL*  
 - [Kandinsky](https://github.com/ai-forever/Kandinsky-2) *2.1 and 2.2 and latest 3.0*  
 - [PixArt-α XL 2](https://github.com/PixArt-alpha/PixArt-alpha) *Medium and Large*  
 - [Warp Wuerstchen](https://huggingface.co/blog/wuertschen)  
@@ -79,10 +95,18 @@ Additional models will be added as they become available and there is public int
 
 
 Also supported are modifiers such as:
-- **LCM** and **Turbo** (Adversarial Diffusion Distillation) networks
+- **LCM** and **Turbo** (*adversarial diffusion distillation*) networks
 - All **LoRA** types such as LoCon, LyCORIS, HADA, IA3, Lokr, OFT
-- **AnimateDiff** for SD 1.5
 - **IP-Adapters** for SD 1.5 and SD-XL
+- **InstantID**, **FaceSwap**, **FaceID**, **PhotoMerge**  
+- **AnimateDiff** for SD 1.5
+
+*Color grading*:  
+![Screenshot-Color](html/screenshot-color.jpg)
+
+*InstantID*:  
+![Screenshot-InstantID](html/screenshot-instantid.jpg)
+
 
 > [!IMPORTANT]
 > - Loading any model other than standard SD 1.x / SD 2.x requires use of backend **Diffusers**  
@@ -101,7 +125,7 @@ Also supported are modifiers such as:
   This includes support for AMD GPUs that are not supported by native ROCm libraries  
 - Any GPU or device compatible with **OpenVINO** libraries on both *Windows and Linux*  
 - *Apple M1/M2* on *OSX* using built-in support in Torch with **MPS** optimizations  
-- *ONNX/Olive* (experimental)  
+- *ONNX/Olive*  
 
 ## Install
 
@@ -143,7 +167,6 @@ Below is partial list of all available parameters, run `webui --help` for the fu
       --docs                           Mount Gradio docs at /docs, default: False
       --no-hashing                     Disable hashing of checkpoints, default: False
       --no-metadata                    Disable reading of metadata from models, default: False
-      --no-download                    Disable download of default model, default: False
       --backend {original,diffusers}   force model pipeline type
 
     Setup options:
@@ -184,36 +207,21 @@ SD.Next comes with several extensions pre-installed:
 - In addition to general cross-platform code, desire is to have a lead for each of the main platforms.
 This should be fully cross-platform, but we'd really love to have additional contributors and/or maintainers to join and help lead the efforts on different platforms.
 
-### **Goals**
-
-This project started as a fork from [Automatic1111 WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui/) and it grew significantly since then,  
-but although it diverged considerably, any substantial features to original work is ported to this repository as well.
-
-The idea behind the fork is to enable latest technologies and advances in text-to-image generation.
-
-*Sometimes this is not the same as "as simple as possible to use".*
-
-General goals:
-
-- Multi-model
-  - Enable usage of as many as possible txt2img and img2img generative models  
-- Cross-platform
-  - Create uniform experience while automatically managing any platform specific differences
-- Performance
-  - Enable best possible performance on all platforms
-- Ease-of-Use
-  - Automatically handle all requirements, dependencies, flags regardless of platform
-  - Integrate all best options for uniform out-of-the-box experience without the need to tweak anything manually
-- Look-and-Feel
-  - Create modern, intuitive and clean UI
-- Up-to-Date
-  - Keep code up to date with latest advanced in text-to-image generation
-
-## Credits
+### **Credits**
 
 - Main credit goes to [Automatic1111 WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
 - Additional credits are listed in [Credits](https://github.com/AUTOMATIC1111/stable-diffusion-webui/#credits)
 - Licenses for modules are listed in [Licenses](html/licenses.html)
+
+### **Evolution**
+
+<a href="https://star-history.com/#vladmandic/automatic&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=vladmandic/automatic&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=vladmandic/automatic&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=vladmandic/automatic&type=Date" />
+  </picture>
+</a>
 
 ### **Docs**
 
@@ -229,7 +237,7 @@ check [ChangeLog](CHANGELOG.md) for when feature was first introduced as it will
 ### **Sponsors**
 
 <div align="center">
-<!-- sponsors --><a href="https://github.com/allangrant"><img src="https://github.com/allangrant.png" width="60px" alt="Allan Grant" /></a><a href="https://github.com/BrentOzar"><img src="https://github.com/BrentOzar.png" width="60px" alt="Brent Ozar" /></a><a href="https://github.com/inktomi"><img src="https://github.com/inktomi.png" width="60px" alt="Matthew Runo" /></a><a href="https://github.com/HELLO-WORLD-SAS"><img src="https://github.com/HELLO-WORLD-SAS.png" width="60px" alt="HELLO WORLD SAS" /></a><a href="https://github.com/4joeknight4"><img src="https://github.com/4joeknight4.png" width="60px" alt="" /></a><a href="https://github.com/SaladTechnologies"><img src="https://github.com/SaladTechnologies.png" width="60px" alt="Salad Technologies" /></a><a href="https://github.com/mantzaris"><img src="https://github.com/mantzaris.png" width="60px" alt="a.v.mantzaris" /></a><!-- sponsors -->
+<!-- sponsors --><a href="https://github.com/allangrant"><img src="https://github.com/allangrant.png" width="60px" alt="Allan Grant" /></a><a href="https://github.com/BrentOzar"><img src="https://github.com/BrentOzar.png" width="60px" alt="Brent Ozar" /></a><a href="https://github.com/inktomi"><img src="https://github.com/inktomi.png" width="60px" alt="Matthew Runo" /></a><a href="https://github.com/HELLO-WORLD-SAS"><img src="https://github.com/HELLO-WORLD-SAS.png" width="60px" alt="HELLO WORLD SAS" /></a><a href="https://github.com/4joeknight4"><img src="https://github.com/4joeknight4.png" width="60px" alt="" /></a><a href="https://github.com/SaladTechnologies"><img src="https://github.com/SaladTechnologies.png" width="60px" alt="Salad Technologies" /></a><a href="https://github.com/mantzaris"><img src="https://github.com/mantzaris.png" width="60px" alt="a.v.mantzaris" /></a><a href="https://github.com/FieldMarshallVague"><img src="https://github.com/FieldMarshallVague.png" width="60px" alt="Toby Worth" /></a><!-- sponsors -->
 </div>
 
 <br>
