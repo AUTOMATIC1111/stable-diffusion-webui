@@ -44,7 +44,7 @@ As of this release, default backend is set to **diffusers** as its more feature 
 - For more details on all new features see full [CHANGELOG](https://github.com/vladmandic/automatic/blob/master/CHANGELOG.md)  
 - For documentation, see [WIKI](https://github.com/vladmandic/automatic/wiki)
 
-## Update for 2023-02-06
+## Update for 2024-02-06
 
 - Heavily updated [Wiki](https://github.com/vladmandic/automatic/wiki)  
 - **Control**:  
