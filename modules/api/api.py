@@ -51,7 +51,6 @@ def validate_sampler_name(name):
 
 def validate_model(model_name, self):
     if model_name not in Api.get_checkpoint_list(self):
-        print(Api.get_checkpoint_list(self))
         return False
     return True
 
