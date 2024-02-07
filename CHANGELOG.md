@@ -1,23 +1,8 @@
 # Change Log for SD.Next
 
-## TODO Future
+## Update for 2024-02-07
 
-- multi-ipadapter: https://github.com/huggingface/diffusers/pull/6573
-- control second pass: https://github.com/vladmandic/automatic/issues/2783  
-- diffusers public callbacks  
-- image2video: pia and vgen pipelines  
-- video2video
-- control api  
-- masking api  
-- preprocess api  
-- remove kohya from submodules  
-- bind panZoom to control input
-
-## TODO for Dev merge
-
-- no blockers
-
-## TODO Release notes
+### Highlights
 
 Another big release, highlights being:  
 - A lot more functionality in the **Control** module:
@@ -49,7 +34,7 @@ Further details:
 - For more details on all new features see full [CHANGELOG](https://github.com/vladmandic/automatic/blob/master/CHANGELOG.md)  
 - For documentation, see [WiKi](https://github.com/vladmandic/automatic/wiki)
 
-## Update for 2024-02-07
+### Full changelog
 
 - Heavily updated [Wiki](https://github.com/vladmandic/automatic/wiki)  
 - **Control**:  
