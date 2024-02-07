@@ -57,6 +57,9 @@ class NetworkModuleOFT(network.NetworkModule):
             self.constraint = self.alpha * self.out_dim
             self.num_blocks = self.dim
             self.block_size = self.out_dim // self.dim
+        elif self.is_boft:
+            self.constraint = None
+            self.block_size, self.block_num = butterfly_factor(self.out_dim, self.dim)
         else:
             self.constraint = None
             self.block_size, self.num_blocks = factorization(self.out_dim, self.dim)
