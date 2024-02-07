@@ -11,9 +11,8 @@ def post_shutdown():
 
 def get_motd():
     import requests
-    from installer import get_version
     motd = ''
-    ver = get_version()
+    ver = shared.get_version()
     if ver.get('updated', None) is not None:
         motd = f"version <b>{ver['hash']} {ver['updated']}</b> <span style='color: var(--primary-500)'>{ver['url'].split('/')[-1]}</span><br>"
     if shared.opts.motd:
@@ -23,6 +22,14 @@ def get_motd():
             shared.log.info(f'MOTD: {msg if len(msg) > 0 else "N/A"}')
             motd += res.text
     return motd
+
+def get_version():
+    return shared.get_version()
+
+def get_platform():
+    from installer import get_platform as installer_get_platform
+    from modules.loader import get_packages as loader_get_packages
+    return { **installer_get_platform(), **loader_get_packages() }
 
 def get_log_buffer(req: models.ReqLog = Depends()):
     lines = shared.log.buffer[:req.lines] if req.lines > 0 else shared.log.buffer.copy()

@@ -35,16 +35,21 @@ Another big release, highlights being:
 - Massive work integrating latest advances with [OpenVINO](https://github.com/vladmandic/automatic/wiki/OpenVINO), [IPEX](https://github.com/vladmandic/automatic/wiki/Intel-ARC) and [ONNX Olive](https://github.com/vladmandic/automatic/wiki/ONNX-Runtime-&-Olive)
 - Full control over brightness, sharpness and color shifts and color grading during generate process directly in latent space  
 
-Plus welcome additions to **UI performance, usability and accessibility** and flexibility of deployment  
+Plus welcome additions to **UI performance, usability and accessibility** and flexibility of deployment as well as **API** improvements  
 And it also includes fixes for all reported issues so far  
 
 As of this release, default backend is set to **diffusers** as its more feature rich than **original** and supports many additional models (original backend does remain as fully supported)  
 
+Also, previous versions of **SD.Next** were tuned for balance between performance and resource usage.  
+With this release, focus is more on performance.  
+See [Benchmark](https://github.com/vladmandic/automatic/wiki/Benchmark) notes for details, but as a highlight, we are now hitting **~110-150 it/s** on a standard nVidia RTX4090 in optimal scenarios!  
+
+Further details:  
 - For basic instructions, see [README](https://github.com/vladmandic/automatic/blob/master/README.md)  
 - For more details on all new features see full [CHANGELOG](https://github.com/vladmandic/automatic/blob/master/CHANGELOG.md)  
-- For documentation, see [WIKI](https://github.com/vladmandic/automatic/wiki)
+- For documentation, see [WiKi](https://github.com/vladmandic/automatic/wiki)
 
-## Update for 2024-02-06
+## Update for 2024-02-07
 
 - Heavily updated [Wiki](https://github.com/vladmandic/automatic/wiki)  
 - **Control**:  
@@ -297,6 +302,9 @@ As of this release, default backend is set to **diffusers** as its more feature 
   - img2img: support variable aspect ratio without explicit resize  
   - cli: add `simple-upscale.py` script  
   - cli: fix cmd args parsing  
+  - cli: add `run-benchmark.py` script  
+  - api: add `/sdapi/v1/version` endpoint
+  - api: add `/sdapi/v1/platform` endpoint
   - api: return current image in progress api if requested  
   - api: sanitize response object  
   - api: cleanup error logging  

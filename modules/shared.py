@@ -430,7 +430,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_model_cpu_offload": OptionInfo(False, "Model CPU offload (--medvram)"),
     "diffusers_seq_cpu_offload": OptionInfo(False, "Sequential CPU offload (--lowvram)"),
     "diffusers_vae_upcast": OptionInfo("default", "VAE upcasting", gr.Radio, {"choices": ['default', 'true', 'false']}),
-    "diffusers_vae_slicing": OptionInfo(False, "VAE slicing"),
+    "diffusers_vae_slicing": OptionInfo(True, "VAE slicing"),
     "diffusers_vae_tiling": OptionInfo(False, "VAE tiling"),
     "diffusers_attention_slicing": OptionInfo(False, "Attention slicing"),
     "diffusers_model_load_variant": OptionInfo("default", "Preferred Model variant", gr.Radio, {"choices": ['default', 'fp32', 'fp16']}),

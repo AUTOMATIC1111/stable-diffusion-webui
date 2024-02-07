@@ -2,34 +2,21 @@
 """
 sd api txt2img benchmark
 """
+import os
 import asyncio
 import base64
 import io
 import json
 import time
+import argparse
 from PIL import Image
 import sdapi
 from util import Map, log
 
 
-options = Map({
-    'restore_faces': False,
-    'prompt': 'photo of two dice on a table',
-    'negative_prompt': 'foggy, blurry',
-    'steps': 50,
-    'batch_size': 1,
-    'n_iter': 1,
-    'seed': -1,
-    'sampler_name': 'Euler a',
-    'cfg_scale': 0,
-    'width': 512,
-    'height': 512
-})
-
-
-# batch = [1, 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128]
-batch = [1, 1, 2, 4, 8, 12, 16]
 oom = 0
+args = None
+options = None
 
 
 async def txt2img():
@@ -46,9 +33,15 @@ async def txt2img():
     else:
         return 0
     log.debug({ 'info': info })
+    if options['batch_size'] != len(data['images']):
+        log.error({ 'requested': options['batch_size'], 'received': len(data['images']) })
     for i in range(len(data['images'])):
         data['images'][i] = Image.open(io.BytesIO(base64.b64decode(data['images'][i].split(',',1)[0])))
-        log.debug({ 'image': data['images'][i].size })
+        if args.save:
+            fn = os.path.join(args.save, f'benchmark-{i}-{len(data["images"])}.png')
+            data["images"][i].save(fn)
+            log.debug({ 'save': fn })
+    log.debug({ "images": data["images"] })
     t1 = time.perf_counter()
     return t1 - t0
 
@@ -75,28 +68,30 @@ def gb(val: float):
 
 
 async def main():
-    log.info({ 'benchmark': { 'batch-sizes': batch } })
     sdapi.quiet = True
     await sdapi.session()
     await sdapi.interrupt()
+    ver = await sdapi.get("/sdapi/v1/version")
+    log.info({ 'version': ver})
+    platform = await sdapi.get("/sdapi/v1/platform")
+    log.info({ 'platform': platform })
     opts = await sdapi.get('/sdapi/v1/options')
     opts = Map(opts)
-    log.info({ 'options': {
-        'resolution': [options.width, options.height],
-        'model': opts.sd_model_checkpoint,
-        'vae': opts.sd_vae,
-        'hypernetwork': opts.sd_hypernetwork,
-        'sampler': options.sampler_name,
-        'preview': opts.show_progress_every_n_steps
-    } })
+    log.info({ 'model': opts.sd_model_checkpoint })
     cpu, gpu = memstats()
     log.info({ 'system': { 'cpu': cpu, 'gpu': gpu }})
+    batch = [1, 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256]
+    batch = [b for b in batch if b <= args.maxbatch]
+    log.info({"batch-sizes": batch})
     for i in range(len(batch)):
         if oom > 0:
             continue
         options['batch_size'] = batch[i]
+        warmup = await txt2img()
         ts = await txt2img()
-        if ts > 0:
+        if i == 0:
+            ts += warmup
+        if ts > 0.01: # cannot be faster than 10ms per run
             await asyncio.sleep(0)
             cpu, gpu = memstats()
             if i == 0:
@@ -115,6 +110,37 @@ async def main():
 
 
 if __name__ == '__main__':
+    log.info({ 'run-benchmark' })
+    parser = argparse.ArgumentParser(description = 'run-benchmark')
+    parser.add_argument("--steps", type=int, default=50, required=False, help="steps")
+    parser.add_argument("--sampler", type=str, default='Euler a', required=False, help="max batch size")
+    parser.add_argument("--prompt", type=str, default='photo of two dice on a table', required=False, help="prompt")
+    parser.add_argument("--negative", type=str, default='foggy, blurry', required=False, help="prompt")
+    parser.add_argument("--maxbatch", type=int, default=16, required=False, help="max batch size")
+    parser.add_argument("--width", type=int, default=512, required=False, help="width")
+    parser.add_argument("--height", type=int, default=512, required=False, help="height")
+    parser.add_argument('--debug', default = False, action='store_true', help = 'debug logging')
+    parser.add_argument('--taesd', default = False, action='store_true', help = 'use taesd as vae')
+    parser.add_argument("--save", type=str, default='', required=False, help="save images to folder")
+    args = parser.parse_args()
+    if args.debug:
+        log.setLevel('DEBUG')
+    options = Map(
+        {
+            "prompt": args.prompt,
+            "negative_prompt": args.negative,
+            "steps": args.steps,
+            "sampler_name": args.sampler,
+            "width": args.width,
+            "height": args.height,
+            "full_quality": not args.taesd,
+            "cfg_scale": 0,
+            "batch_size": 1,
+            "n_iter": 1,
+            "seed": -1,
+        }
+    )
+    log.info({"options": options})
     try:
         asyncio.run(main())
     except KeyboardInterrupt:

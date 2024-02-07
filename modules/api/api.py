@@ -33,6 +33,8 @@ class Api:
         self.add_api_route("/sdapi/v1/motd", server.get_motd, methods=["GET"], response_model=str)
         self.add_api_route("/sdapi/v1/log", server.get_log_buffer, methods=["GET"], response_model=List[str])
         self.add_api_route("/sdapi/v1/start", self.get_session_start, methods=["GET"])
+        self.add_api_route("/sdapi/v1/version", server.get_version, methods=["GET"])
+        self.add_api_route("/sdapi/v1/platform", server.get_platform, methods=["GET"])
         self.add_api_route("/sdapi/v1/progress", server.get_progress, methods=["GET"], response_model=models.ResProgress)
         self.add_api_route("/sdapi/v1/interrupt", server.post_interrupt, methods=["POST"])
         self.add_api_route("/sdapi/v1/skip", server.post_skip, methods=["POST"])

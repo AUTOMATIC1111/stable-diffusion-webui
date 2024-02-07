@@ -51,7 +51,15 @@ timer.startup.record("pydantic")
 
 import diffusers # pylint: disable=W0611,C0411
 timer.startup.record("diffusers")
-errors.log.info(f'Load packages: torch={getattr(torch, "__long_version__", torch.__version__)} diffusers={diffusers.__version__} gradio={gradio.__version__}')
+
+def get_packages():
+    return {
+        "torch": getattr(torch, "__long_version__", torch.__version__),
+        "diffusers": diffusers.__version__,
+        "gradio": gradio.__version__,
+    }
+
+errors.log.info(f'Load packages: {get_packages()}')
 
 try:
     import os
