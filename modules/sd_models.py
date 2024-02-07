@@ -906,6 +906,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 else:
                     shared.log.error(f'Diffusers {op} cannot load safetensor model: {checkpoint_info.path} {shared.opts.diffusers_pipeline}')
                     return
+                if debug_load:
+                    shared.log.debug(f'Model args: {diffusers_load_config}')
                 if sd_model is not None:
                     diffusers_load_config.pop('vae', None)
                     diffusers_load_config.pop('safety_checker', None)

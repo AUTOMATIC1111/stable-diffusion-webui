@@ -120,6 +120,17 @@ class GridAnnotation:
         self.size = None
 
 
+def get_font(fontsize):
+    try:
+        return ImageFont.truetype(
+            shared.opts.font or "javascript/notosans-nerdfont-regular.ttf", fontsize
+        )
+    except Exception:
+        return ImageFont.truetype(
+            "javascript/notosans-nerdfont-regular.ttf", fontsize
+        )
+
+
 def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0, title=None):
     def wrap(drawing, text, font, line_length):
         lines = ['']
@@ -130,12 +141,6 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0, tit
             else:
                 lines.append(word)
         return lines
-
-    def get_font(fontsize):
-        try:
-            return ImageFont.truetype(shared.opts.font or 'javascript/notosans-nerdfont-regular.ttf', fontsize)
-        except Exception:
-            return ImageFont.truetype('javascript/notosans-nerdfont-regular.ttf', fontsize)
 
     def draw_texts(drawing: ImageDraw, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
         for line in lines:
