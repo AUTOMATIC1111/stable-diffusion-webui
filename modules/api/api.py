@@ -465,6 +465,13 @@ class Api:
 
     def img2imgapi(self, img2imgreq: models.StableDiffusionImg2ImgProcessingAPI):
         model_name = img2imgreq.override_settings.get('sd_model_checkpoint')
+        model_loaded = validate_model(model_name, self)
+        if model_loaded == False:
+            print("Refreshing Models")
+            Api.refresh_checkpoints(self)
+        model_loaded_second_check = validate_model(model_name, self)
+        if model_loaded_second_check == False:
+            raise HTTPException(status_code=404, detail="Model not found")
 
         init_images = img2imgreq.init_images
         if init_images is None:
