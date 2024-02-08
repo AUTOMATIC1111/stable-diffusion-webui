@@ -48,6 +48,12 @@ def validate_sampler_name(name):
     return name
 
 
+def validate_model(model_name, self):
+    if model_name not in Api.get_checkpoint_list(self):
+        return False
+    return True
+
+
 def setUpscalers(req: dict):
     reqDict = vars(req)
     reqDict['extras_upscaler_1'] = reqDict.pop('upscaler_1', None)
@@ -336,6 +342,14 @@ class Api:
         return script_args
 
     def text2imgapi(self, txt2imgreq: models.StableDiffusionTxt2ImgProcessingAPI):
+        model_name = txt2imgreq.override_settings.get('sd_model_checkpoint')
+        model_loaded = validate_model(model_name, self)
+        if model_loaded == False:
+            print("Refreshing Models")
+            Api.refresh_checkpoints(self)
+        model_loaded_second_check = validate_model(model_name, self)
+        if model_loaded_second_check == False:
+            raise HTTPException(status_code=404, detail="Model not found")
         script_runner = scripts.scripts_txt2img
         if not script_runner.scripts:
             script_runner.initialize_scripts(False)
@@ -386,6 +400,14 @@ class Api:
         return models.TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
     def img2imgapi(self, img2imgreq: models.StableDiffusionImg2ImgProcessingAPI):
+        model_name = img2imgreq.override_settings.get('sd_model_checkpoint')
+        model_loaded = validate_model(model_name, self)
+        if model_loaded == False:
+            print("Refreshing Models")
+            Api.refresh_checkpoints(self)
+        model_loaded_second_check = validate_model(model_name, self)
+        if model_loaded_second_check == False:
+            raise HTTPException(status_code=404, detail="Model not found")
         init_images = img2imgreq.init_images
         if init_images is None:
             raise HTTPException(status_code=404, detail="Init image not found")
@@ -598,6 +620,9 @@ class Api:
             for upscale_mode in [*(shared.latent_upscale_modes or {})]
         ]
 
+    def get_checkpoint_list(self):
+        import modules.sd_models as sd_models
+        return [x.model_name for x in sd_models.checkpoints_list.values()]
     def get_sd_models(self):
         import modules.sd_models as sd_models
         return [{"title": x.title, "model_name": x.model_name, "hash": x.shorthash, "sha256": x.sha256, "filename": x.filename, "config": find_checkpoint_config_near_filename(x)} for x in sd_models.checkpoints_list.values()]
