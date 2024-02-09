@@ -4,6 +4,7 @@ import os
 import sys
 from functools import reduce
 import warnings
+from contextlib import ExitStack
 
 import gradio as gr
 import gradio.utils
@@ -270,7 +271,11 @@ def create_ui():
         extra_tabs.__enter__()
 
         with gr.Tab("Generation", id="txt2img_generation") as txt2img_generation_tab, ResizeHandleRow(equal_height=False):
-            with gr.Column(variant='compact', elem_id="txt2img_settings"):
+            with ExitStack() as stack:
+                if shared.opts.txt2img_settings_accordion:
+                    stack.enter_context(gr.Accordion("Open for Settings", open=False))
+                stack.enter_context(gr.Column(variant='compact', elem_id="txt2img_settings"))
+
                 scripts.scripts_txt2img.prepare_ui()
 
                 for category in ordered_ui_categories():
@@ -489,7 +494,11 @@ def create_ui():
         extra_tabs.__enter__()
 
         with gr.Tab("Generation", id="img2img_generation") as img2img_generation_tab, ResizeHandleRow(equal_height=False):
-            with gr.Column(variant='compact', elem_id="img2img_settings"):
+            with ExitStack() as stack:
+                if shared.opts.img2img_settings_accordion:
+                    stack.enter_context(gr.Accordion("Open for Settings", open=False))
+                stack.enter_context(gr.Column(variant='compact', elem_id="img2img_settings"))
+
                 copy_image_buttons = []
                 copy_image_destinations = {}
 
@@ -626,12 +635,6 @@ def create_ui():
                                     scale_by.release(**on_change_args)
                                     button_update_resize_to.click(**on_change_args)
 
-                                    # the code below is meant to update the resolution label after the image in the image selection UI has changed.
-                                    # as it is now the event keeps firing continuously for inpaint edits, which ruins the page with constant requests.
-                                    # I assume this must be a gradio bug and for now we'll just do it for non-inpaint inputs.
-                                    for component in [init_img, sketch]:
-                                        component.change(fn=lambda: None, _js="updateImg2imgResizeToTextAfterChangingImage", inputs=[], outputs=[], show_progress=False)
-
                             tab_scale_to.select(fn=lambda: 0, inputs=[], outputs=[selected_scale_tab])
                             tab_scale_by.select(fn=lambda: 1, inputs=[], outputs=[selected_scale_tab])
 
@@ -691,6 +694,12 @@ def create_ui():
 
                     if category not in {"accordions"}:
                         scripts.scripts_img2img.setup_ui_for_section(category)
+
+            # the code below is meant to update the resolution label after the image in the image selection UI has changed.
+            # as it is now the event keeps firing continuously for inpaint edits, which ruins the page with constant requests.
+            # I assume this must be a gradio bug and for now we'll just do it for non-inpaint inputs.
+            for component in [init_img, sketch]:
+                component.change(fn=lambda: None, _js="updateImg2imgResizeToTextAfterChangingImage", inputs=[], outputs=[], show_progress=False)
 
             def select_img2img_tab(tab):
                 return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
@@ -903,71 +912,6 @@ def create_ui():
                         with gr.Column():
                             create_hypernetwork = gr.Button(value="Create hypernetwork", variant='primary', elem_id="train_create_hypernetwork")
 
-                with gr.Tab(label="Preprocess images", id="preprocess_images"):
-                    process_src = gr.Textbox(label='Source directory', elem_id="train_process_src")
-                    process_dst = gr.Textbox(label='Destination directory', elem_id="train_process_dst")
-                    process_width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="train_process_width")
-                    process_height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="train_process_height")
-                    preprocess_txt_action = gr.Dropdown(label='Existing Caption txt Action', value="ignore", choices=["ignore", "copy", "prepend", "append"], elem_id="train_preprocess_txt_action")
-
-                    with gr.Row():
-                        process_keep_original_size = gr.Checkbox(label='Keep original size', elem_id="train_process_keep_original_size")
-                        process_flip = gr.Checkbox(label='Create flipped copies', elem_id="train_process_flip")
-                        process_split = gr.Checkbox(label='Split oversized images', elem_id="train_process_split")
-                        process_focal_crop = gr.Checkbox(label='Auto focal point crop', elem_id="train_process_focal_crop")
-                        process_multicrop = gr.Checkbox(label='Auto-sized crop', elem_id="train_process_multicrop")
-                        process_caption = gr.Checkbox(label='Use BLIP for caption', elem_id="train_process_caption")
-                        process_caption_deepbooru = gr.Checkbox(label='Use deepbooru for caption', visible=True, elem_id="train_process_caption_deepbooru")
-
-                    with gr.Row(visible=False) as process_split_extra_row:
-                        process_split_threshold = gr.Slider(label='Split image threshold', value=0.5, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_split_threshold")
-                        process_overlap_ratio = gr.Slider(label='Split image overlap ratio', value=0.2, minimum=0.0, maximum=0.9, step=0.05, elem_id="train_process_overlap_ratio")
-
-                    with gr.Row(visible=False) as process_focal_crop_row:
-                        process_focal_crop_face_weight = gr.Slider(label='Focal point face weight', value=0.9, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_face_weight")
-                        process_focal_crop_entropy_weight = gr.Slider(label='Focal point entropy weight', value=0.15, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_entropy_weight")
-                        process_focal_crop_edges_weight = gr.Slider(label='Focal point edges weight', value=0.5, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_edges_weight")
-                        process_focal_crop_debug = gr.Checkbox(label='Create debug image', elem_id="train_process_focal_crop_debug")
-
-                    with gr.Column(visible=False) as process_multicrop_col:
-                        gr.Markdown('Each image is center-cropped with an automatically chosen width and height.')
-                        with gr.Row():
-                            process_multicrop_mindim = gr.Slider(minimum=64, maximum=2048, step=8, label="Dimension lower bound", value=384, elem_id="train_process_multicrop_mindim")
-                            process_multicrop_maxdim = gr.Slider(minimum=64, maximum=2048, step=8, label="Dimension upper bound", value=768, elem_id="train_process_multicrop_maxdim")
-                        with gr.Row():
-                            process_multicrop_minarea = gr.Slider(minimum=64*64, maximum=2048*2048, step=1, label="Area lower bound", value=64*64, elem_id="train_process_multicrop_minarea")
-                            process_multicrop_maxarea = gr.Slider(minimum=64*64, maximum=2048*2048, step=1, label="Area upper bound", value=640*640, elem_id="train_process_multicrop_maxarea")
-                        with gr.Row():
-                            process_multicrop_objective = gr.Radio(["Maximize area", "Minimize error"], value="Maximize area", label="Resizing objective", elem_id="train_process_multicrop_objective")
-                            process_multicrop_threshold = gr.Slider(minimum=0, maximum=1, step=0.01, label="Error threshold", value=0.1, elem_id="train_process_multicrop_threshold")
-
-                    with gr.Row():
-                        with gr.Column(scale=3):
-                            gr.HTML(value="")
-
-                        with gr.Column():
-                            with gr.Row():
-                                interrupt_preprocessing = gr.Button("Interrupt", elem_id="train_interrupt_preprocessing")
-                            run_preprocess = gr.Button(value="Preprocess", variant='primary', elem_id="train_run_preprocess")
-
-                    process_split.change(
-                        fn=lambda show: gr_show(show),
-                        inputs=[process_split],
-                        outputs=[process_split_extra_row],
-                    )
-
-                    process_focal_crop.change(
-                        fn=lambda show: gr_show(show),
-                        inputs=[process_focal_crop],
-                        outputs=[process_focal_crop_row],
-                    )
-
-                    process_multicrop.change(
-                        fn=lambda show: gr_show(show),
-                        inputs=[process_multicrop],
-                        outputs=[process_multicrop_col],
-                    )
-
                 def get_textual_inversion_template_names():
                     return sorted(textual_inversion.textual_inversion_templates)
 
@@ -1068,42 +1012,6 @@ def create_ui():
             ]
         )
 
-        run_preprocess.click(
-            fn=wrap_gradio_gpu_call(textual_inversion_ui.preprocess, extra_outputs=[gr.update()]),
-            _js="start_training_textual_inversion",
-            inputs=[
-                dummy_component,
-                process_src,
-                process_dst,
-                process_width,
-                process_height,
-                preprocess_txt_action,
-                process_keep_original_size,
-                process_flip,
-                process_split,
-                process_caption,
-                process_caption_deepbooru,
-                process_split_threshold,
-                process_overlap_ratio,
-                process_focal_crop,
-                process_focal_crop_face_weight,
-                process_focal_crop_entropy_weight,
-                process_focal_crop_edges_weight,
-                process_focal_crop_debug,
-                process_multicrop,
-                process_multicrop_mindim,
-                process_multicrop_maxdim,
-                process_multicrop_minarea,
-                process_multicrop_maxarea,
-                process_multicrop_objective,
-                process_multicrop_threshold,
-            ],
-            outputs=[
-                ti_output,
-                ti_outcome,
-            ],
-        )
-
         train_embedding.click(
             fn=wrap_gradio_gpu_call(textual_inversion_ui.train_embedding, extra_outputs=[gr.update()]),
             _js="start_training_textual_inversion",
@@ -1172,12 +1080,6 @@ def create_ui():
         )
 
         interrupt_training.click(
-            fn=lambda: shared.state.interrupt(),
-            inputs=[],
-            outputs=[],
-        )
-
-        interrupt_preprocessing.click(
             fn=lambda: shared.state.interrupt(),
             inputs=[],
             outputs=[],
@@ -1299,7 +1201,7 @@ def setup_ui_api(app):
         from fastapi.responses import PlainTextResponse
 
         text = sysinfo.get()
-        filename = f"sysinfo-{datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M')}.txt"
+        filename = f"sysinfo-{datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M')}.json"
 
         return PlainTextResponse(text, headers={'Content-Disposition': f'{"attachment" if attachment else "inline"}; filename="{filename}"'})
 

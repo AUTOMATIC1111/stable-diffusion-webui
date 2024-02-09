@@ -66,6 +66,22 @@ def reload_hypernetworks():
     shared.hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
 
 
+def get_infotext_names():
+    from modules import generation_parameters_copypaste, shared
+    res = {}
+
+    for info in shared.opts.data_labels.values():
+        if info.infotext:
+            res[info.infotext] = 1
+
+    for tab_data in generation_parameters_copypaste.paste_fields.values():
+        for _, name in tab_data.get("fields") or []:
+            if isinstance(name, str):
+                res[name] = 1
+
+    return list(res)
+
+
 ui_reorder_categories_builtin_items = [
     "prompt",
     "image",

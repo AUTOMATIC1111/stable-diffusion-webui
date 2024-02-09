@@ -151,8 +151,13 @@ class ExtraNetworksPage:
                         continue
 
                     subdir = os.path.abspath(x)[len(parentdir):].replace("\\", "/")
-                    while subdir.startswith("/"):
-                        subdir = subdir[1:]
+
+                    if shared.opts.extra_networks_dir_button_function:
+                        if not subdir.startswith("/"):
+                            subdir = "/" + subdir
+                    else:
+                        while subdir.startswith("/"):
+                            subdir = subdir[1:]
 
                     is_empty = len(os.listdir(x)) == 0
                     if not is_empty and not subdir.endswith("/"):
@@ -279,6 +284,7 @@ class ExtraNetworksPage:
             "date_created": int(stat.st_ctime or 0),
             "date_modified": int(stat.st_mtime or 0),
             "name": pth.name.lower(),
+            "path": str(pth.parent).lower(),
         }
 
     def find_preview(self, path):
@@ -369,6 +375,9 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
     for page in ui.stored_extra_pages:
         with gr.Tab(page.title, elem_id=f"{tabname}_{page.id_page}", elem_classes=["extra-page"]) as tab:
+            with gr.Column(elem_id=f"{tabname}_{page.id_page}_prompts", elem_classes=["extra-page-prompts"]):
+                pass
+
             elem_id = f"{tabname}_{page.id_page}_cards_html"
             page_elem = gr.HTML('Loading...', elem_id=elem_id)
             ui.pages.append(page_elem)
@@ -382,7 +391,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             related_tabs.append(tab)
 
     edit_search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", elem_classes="search", placeholder="Search...", visible=False, interactive=True)
-    dropdown_sort = gr.Dropdown(choices=['Name', 'Date Created', 'Date Modified', ], value=shared.opts.extra_networks_card_order_field, elem_id=tabname+"_extra_sort", elem_classes="sort", multiselect=False, visible=False, show_label=False, interactive=True, label=tabname+"_extra_sort_order")
+    dropdown_sort = gr.Dropdown(choices=['Path', 'Name', 'Date Created', 'Date Modified', ], value=shared.opts.extra_networks_card_order_field, elem_id=tabname+"_extra_sort", elem_classes="sort", multiselect=False, visible=False, show_label=False, interactive=True, label=tabname+"_extra_sort_order")
     button_sortorder = ToolButton(switch_values_symbol, elem_id=tabname+"_extra_sortorder", elem_classes=["sortorder"] + ([] if shared.opts.extra_networks_card_order == "Ascending" else ["sortReverse"]), visible=False, tooltip="Invert sort order")
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh", visible=False)
     checkbox_show_dirs = gr.Checkbox(True, label='Show dirs', elem_id=tabname+"_extra_show_dirs", elem_classes="show-dirs", visible=False)
@@ -399,7 +408,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
         allow_prompt = "true" if page.allow_prompt else "false"
         allow_negative_prompt = "true" if page.allow_negative_prompt else "false"
 
-        jscode = 'extraNetworksTabSelected("' + tabname + '", "' + f"{tabname}_{page.id_page}" + '", ' + allow_prompt + ', ' + allow_negative_prompt + ');'
+        jscode = 'extraNetworksTabSelected("' + tabname + '", "' + f"{tabname}_{page.id_page}_prompts" + '", ' + allow_prompt + ', ' + allow_negative_prompt + ');'
 
         tab.select(fn=lambda: [gr.update(visible=True) for _ in tab_controls],  _js='function(){ ' + jscode + ' }', inputs=[], outputs=tab_controls, show_progress=False)
 

@@ -34,8 +34,10 @@ class Toprow:
 
     submit_box = None
 
-    def __init__(self, is_img2img, is_compact=False):
-        id_part = "img2img" if is_img2img else "txt2img"
+    def __init__(self, is_img2img, is_compact=False, id_part=None):
+        if id_part is None:
+            id_part = "img2img" if is_img2img else "txt2img"
+
         self.id_part = id_part
         self.is_img2img = is_img2img
         self.is_compact = is_compact
