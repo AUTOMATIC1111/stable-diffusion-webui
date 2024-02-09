@@ -49,9 +49,11 @@ def validate_sampler_name(name):
 
 
 def validate_model(model_name, self):
-    if model_name not in Api.get_checkpoint_list(self):
-        return False
-    return True
+    checkpoint_list = Api.get_sd_models(self)
+    for i in range(checkpoint_list):
+     if model_name == i.get("model_name"):
+        return True
+    return False
 
 
 def setUpscalers(req: dict):
@@ -620,9 +622,7 @@ class Api:
             for upscale_mode in [*(shared.latent_upscale_modes or {})]
         ]
 
-    def get_checkpoint_list(self):
-        import modules.sd_models as sd_models
-        return [x.model_name for x in sd_models.checkpoints_list.values()]
+
     def get_sd_models(self):
         import modules.sd_models as sd_models
         return [{"title": x.title, "model_name": x.model_name, "hash": x.shorthash, "sha256": x.sha256, "filename": x.filename, "config": find_checkpoint_config_near_filename(x)} for x in sd_models.checkpoints_list.values()]
