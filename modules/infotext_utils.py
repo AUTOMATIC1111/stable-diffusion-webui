@@ -18,6 +18,34 @@ re_param = re.compile(re_param_code)
 re_imagesize = re.compile(r"^(\d+)x(\d+)$")
 re_hypernet_hash = re.compile("\(([0-9a-f]+)\)$")
 type_of_gr_update = type(gr.update())
+quote_swap = str.maketrans('\'"', '"\'')
+info_json_keys = set()
+
+
+def info_json_dumps(data):
+    """encode data into json string, but swap single and double quotes to reduce escaping issues"""
+    return json.dumps(data, ensure_ascii=False, separators=(',', ':')).translate(quote_swap)
+
+
+def info_json_loads(info_json):
+    """decode json string into info data, but swap single and double quotes to reduce escaping issues"""
+    return json.loads(info_json.translate(quote_swap))
+
+
+def build_infotext(info: dict):
+    for info_json_key in info_json_keys:
+        if info_json_key in info:
+            info[info_json_key] = info_json_dumps(info[info_json_key])
+    return ", ".join([k if k == v else f'{k}: {quote(v)}' for k, v in info.items() if v is not None])
+
+
+def register_info_json(key):
+    """register an infotext key as infojson
+    after a key is registered, a json compatible data structure like dict or list can be used as a value in
+    generation_parameters and extra_generation_parameters
+    """
+    global info_json_keys
+    info_json_keys.add(key)
 
 
 class ParamBinding:
@@ -355,6 +383,13 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
     if "Cache FP16 weight for LoRA" not in res and res["FP8 weight"] != "Disable":
         res["Cache FP16 weight for LoRA"] = False
+
+    for key in info_json_keys:
+        if key in res:
+            try:
+                res[key] = info_json_loads(res[key])
+            except Exception:
+                print(f'Error parsing "{key}: {res[key]}"')
 
     infotext_versions.backcompat(res)
 

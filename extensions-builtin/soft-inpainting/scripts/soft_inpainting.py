@@ -3,6 +3,9 @@ import gradio as gr
 import math
 from modules.ui_components import InputAccordion
 import modules.scripts as scripts
+from modules import infotext_utils
+
+infotext_utils.register_info_json('Soft Inpainting')
 
 
 class SoftInpaintingSettings:
@@ -21,13 +24,14 @@ class SoftInpaintingSettings:
         self.composite_difference_contrast = composite_difference_contrast
 
     def add_generation_params(self, dest):
-        dest[enabled_gen_param_label] = True
-        dest[gen_param_labels.mask_blend_power] = self.mask_blend_power
-        dest[gen_param_labels.mask_blend_scale] = self.mask_blend_scale
-        dest[gen_param_labels.inpaint_detail_preservation] = self.inpaint_detail_preservation
-        dest[gen_param_labels.composite_mask_influence] = self.composite_mask_influence
-        dest[gen_param_labels.composite_difference_threshold] = self.composite_difference_threshold
-        dest[gen_param_labels.composite_difference_contrast] = self.composite_difference_contrast
+        dest['Soft Inpainting'] = {
+            'sb': self.mask_blend_power,
+            'ps': self.mask_blend_scale,
+            'tcb': self.inpaint_detail_preservation,
+            'mi': self.composite_mask_influence,
+            'dt': self.composite_difference_threshold,
+            'dc': self.composite_difference_contrast,
+        }
 
 
 # ------------------- Methods -------------------
@@ -625,13 +629,21 @@ class Script(scripts.Script):
                         - **High values**: Ghosting will be less common, but transitions may be very sudden.
                         """)
 
-        self.infotext_fields = [(soft_inpainting_enabled, enabled_gen_param_label),
-                                (power, gen_param_labels.mask_blend_power),
-                                (scale, gen_param_labels.mask_blend_scale),
-                                (detail, gen_param_labels.inpaint_detail_preservation),
-                                (mask_inf, gen_param_labels.composite_mask_influence),
-                                (dif_thresh, gen_param_labels.composite_difference_threshold),
-                                (dif_contr, gen_param_labels.composite_difference_contrast)]
+        def get_element_value(generation_params: dict, old_key, new_key):
+            if 'Soft Inpainting' in generation_params:
+                return generation_params['Soft Inpainting'].get(new_key, True)
+            else:
+                return generation_params.get(old_key)
+
+        self.infotext_fields = [
+            (soft_inpainting_enabled, lambda d: get_element_value(d, enabled_gen_param_label, None)),
+            (power, lambda d: get_element_value(d, gen_param_labels.mask_blend_power, 'sb')),
+            (scale, lambda d: get_element_value(d, gen_param_labels.mask_blend_scale, 'ps')),
+            (detail, lambda d: get_element_value(d, gen_param_labels.inpaint_detail_preservation, 'tcb')),
+            (mask_inf, lambda d: get_element_value(d, gen_param_labels.composite_mask_influence, 'mi')),
+            (dif_thresh, lambda d: get_element_value(d, gen_param_labels.composite_difference_threshold, 'dt')),
+            (dif_contr, lambda d: get_element_value(d, gen_param_labels.composite_difference_contrast, 'dc'))
+        ]
 
         self.paste_field_names = []
         for _, field_name in self.infotext_fields:
