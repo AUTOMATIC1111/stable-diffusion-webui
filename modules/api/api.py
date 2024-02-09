@@ -50,7 +50,6 @@ def validate_sampler_name(name):
 
 
 def validate_model(model_name, self):
-    model_name = model_name.replace(".safetensors", "")
     model_list = Api.get_sd_models(self)
     for model in model_list:
         if model_name == model.get("title"):
