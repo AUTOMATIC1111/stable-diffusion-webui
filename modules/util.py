@@ -42,7 +42,7 @@ def walk_files(path, allowed_extensions=None):
         for filename in sorted(files, key=natural_sort_key):
             if allowed_extensions is not None:
                 _, ext = os.path.splitext(filename)
-                if ext not in allowed_extensions:
+                if ext.lower() not in allowed_extensions:
                     continue
 
             if not shared.opts.list_hidden_files and ("/." in root or "\\." in root):
