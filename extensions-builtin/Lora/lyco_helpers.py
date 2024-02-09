@@ -66,29 +66,3 @@ def factorization(dimension: int, factor:int=-1) -> tuple[int, int]:
         n, m = m, n
     return m, n
 
-# from https://github.com/KohakuBlueleaf/LyCORIS/blob/dev/lycoris/modules/boft.py
-def butterfly_factor(dimension: int, factor: int = -1) -> tuple[int, int]:
-    """
-    m = 2k
-    n = 2**p
-    m*n = dim
-    """
-
-    # Find the first solution and check if it is even doable
-    m = n = 0
-    while m <= factor:
-        m += 2
-        while dimension % m != 0 and m < dimension:
-            m += 2
-        if m > factor:
-            break
-        if sum(int(i) for i in f"{dimension//m:b}") == 1:
-            n = dimension // m
-
-    if n == 0:
-        raise ValueError(
-            f"It is impossible to decompose {dimension} with factor {factor} under BOFT constrains."
-        )
-
-    #log_butterfly_factorize(dimension, factor, (dimension // n, n))
-    return dimension // n, n
