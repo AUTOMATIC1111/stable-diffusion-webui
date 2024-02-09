@@ -51,7 +51,7 @@ def validate_sampler_name(name):
 def validate_model(model_name, self):
     checkpoint_list = Api.get_sd_models(self)
     for i in checkpoint_list:
-     if model_name == i.get("model_name"):
+     if model_name == i.get("title"):
         return True
     return False
 
