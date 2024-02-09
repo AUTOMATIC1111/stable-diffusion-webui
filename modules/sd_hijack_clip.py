@@ -279,7 +279,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
         original_mean = z.mean()
         z = z * batch_multipliers.reshape(batch_multipliers.shape + (1,)).expand(z.shape)
         new_mean = z.mean()
-        
+
         if not getattr(opts, "disable_normalize_embeddings", False):
             z = z * (original_mean / new_mean)
 
