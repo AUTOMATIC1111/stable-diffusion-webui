@@ -47,7 +47,7 @@ group.add_argument("--use-cuda", default=os.environ.get("SD_USECUDA", False), ac
 group.add_argument("--use-rocm", default=os.environ.get("SD_USEROCM", False), action='store_true', help="Force use AMD ROCm backend, default: %(default)s")
 group.add_argument('--subpath', type=str, default=os.environ.get("SD_SUBPATH", None), help='Customize the URL subpath for usage with reverse proxy')
 group.add_argument('--backend', type=str, default=os.environ.get("SD_BACKEND", None), choices=['original', 'diffusers'], required=False, help='force model pipeline type')
-
+group.add_argument("--gradio-allowed-path", action='append', required=False, help="add path to gradio's allowed_paths, make it possible to serve files from it")
 
 # removed args are added here as hidden in fixed format for compatbility reasons
 group.add_argument("-f", action='store_true', help=argparse.SUPPRESS)  # allows running as root; implemented outside of webui
