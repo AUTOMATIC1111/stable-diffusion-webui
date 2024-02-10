@@ -846,6 +846,20 @@ table.popup-table .link{
     display: inline-block;
 }
 
+/* extensions tab table row hover highlight */
+
+#extensions tr:hover td,
+#config_state_extensions tr:hover td,
+#available_extensions tr:hover td {
+    background: rgba(0, 0, 0, 0.15)
+}
+
+.dark #extensions tr:hover td ,
+.dark #config_state_extensions tr:hover td ,
+.dark #available_extensions tr:hover td {
+    background: rgba(255, 255, 255, 0.15)
+}
+
 /* replace original footer with ours */
 
 footer {
