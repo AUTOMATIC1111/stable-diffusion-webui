@@ -75,11 +75,12 @@ Custom order
 
 Webui allows the user to chenge the default vaule of UI elements, elements dropdown / radio menus `checkbox` slider input boxes.
 
-1. Adjust the UI to your desire default valuse settings
-2. Go to `Setting > Defaults`.
-3. CLick `View changes` you will be presented with a list of element values that you have changed.
-4. Confirm if you're happy with these changes and if so click `Apply`.
-5. the settings will be saved to `ui-config.json` and will be used as default vaules after the next `Reload UI` or `Restart` (not F5 webpage reload).
+1. Refresh (F5) WebUI's webpage so that all UI elements are at it's default values no changes.
+2. Find the UI elements you wish to change and adjust them to your desire default valuse.
+3. Go to `Setting > Defaults`.
+4. CLick `View changes`, you will be presented with a list of element values that you have changed.
+5. Confirm if you're happy with these changes and if so click `Apply`.
+6. The new values will be saved to `ui-config.json` and will be used as default vaules after the next `Reload UI` or `Restart` (not F5 webpage refresh).
 
 ---
 
