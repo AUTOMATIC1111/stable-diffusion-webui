@@ -159,6 +159,7 @@ Below is partial list of all available parameters, run `webui --help` for the fu
       --vae VAE                        Path to VAE checkpoint to load immediately, default: None
       --data-dir DATA_DIR              Base path where all user data is stored, default:
       --models-dir MODELS_DIR          Base path where all models are stored, default: models
+      --gradio-allowed-paths OTHER_DIR Adds additional into the allowed_paths for gradio, default:
       --share                          Enable UI accessible through Gradio site, default: False
       --insecure                       Enable extensions tab regardless of other options, default: False
       --listen                         Launch web server using public IP address, default: False
