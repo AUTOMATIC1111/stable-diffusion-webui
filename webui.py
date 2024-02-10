@@ -247,8 +247,10 @@ def start_ui():
     if cmd_opts.data_dir is not None and os.path.isdir(cmd_opts.data_dir):
         allowed_paths.append(cmd_opts.data_dir)
     # Allow the use of --gradio_allowed_path in command line
-    if cmd_opts.gradio_allowed_path is not None and os.path.isdir(cmd_opts.gradio_allowed_path[0]):
-        allowed_paths.append(cmd_opts.gradio_allowed_path[0])
+    if cmd_opts.gradio_allowed_path is not None:
+        for additional_gradio_allowed_path in cmd_opts.gradio_allowed_path:
+            if os.path.isdir(additional_gradio_allowed_path):
+                allowed_paths.append(additional_gradio_allowed_path)
     shared.log.debug(f'Root paths: {allowed_paths}')
     with contextlib.redirect_stdout(stdout):
         app, local_url, share_url = shared.demo.launch( # app is FastAPI(Starlette) instance
