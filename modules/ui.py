@@ -152,6 +152,12 @@ def connect_clear_prompt(button):
 
 
 def update_token_counter(text, steps, styles, *, is_positive=True):
+    params = script_callbacks.BeforeTokenCounterParams(text, steps, styles, is_positive=is_positive)
+    script_callbacks.before_token_counter_callback(params)
+    text = params.prompt
+    steps = params.steps
+    styles = params.styles
+    is_positive = params.is_positive
 
     if shared.opts.include_styles_into_token_counters:
         apply_styles = shared.prompt_styles.apply_styles_to_prompt if is_positive else shared.prompt_styles.apply_negative_styles_to_prompt

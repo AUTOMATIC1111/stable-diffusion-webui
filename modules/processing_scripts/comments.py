@@ -1,4 +1,4 @@
-from modules import scripts, shared
+from modules import scripts, shared, script_callbacks
 import re
 
 
@@ -25,6 +25,16 @@ class ScriptStripComments(scripts.Script):
 
         p.main_prompt = strip_comments(p.main_prompt)
         p.main_negative_prompt = strip_comments(p.main_negative_prompt)
+
+
+def before_token_counter(params: script_callbacks.BeforeTokenCounterParams):
+    if not shared.opts.enable_prompt_comments:
+        return
+
+    params.prompt = strip_comments(params.prompt)
+
+
+script_callbacks.on_before_token_counter(before_token_counter)
 
 
 shared.options_templates.update(shared.options_section(('sd', "Stable Diffusion", "sd"), {
