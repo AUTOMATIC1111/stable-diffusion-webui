@@ -558,7 +558,7 @@ def setup_for_low_vram(sd_model, use_medvram):
         # install hooks for bits of third model
 
         if stream_impl is not None and stream_wrapper is not None:
-            mp = DiffSmartModelMover.register(diff_model, max_prefetch=70)
+            mp = DiffSmartModelMover.register(diff_model, vram_allowance=512, max_prefetch=70)
             mp.install()
             mp.preload()
         else:
