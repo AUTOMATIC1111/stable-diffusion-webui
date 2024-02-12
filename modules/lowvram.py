@@ -160,7 +160,9 @@ class SmartTensorMoverPatches:
         patches.undo(__name__, torch.nn.functional, "layer_norm")
 
 
-mover = SmartTensorMoverPatches()
+mover = None
+if stream_impl is not None and stream_wrapper is not None:
+    mover = SmartTensorMoverPatches()
 
 
 class ModelMover:
