@@ -8,16 +8,10 @@ cpu = torch.device("cpu")
 stream_impl = devices.get_stream_impl()
 stream_wrapper = devices.get_stream_wrapper()
 
-def device_as_key(device):
-    if isinstance(device, str):
-        if ":" in device:
-            return device
-        return f"{device}:0"
-    return f"{device.type}:{device.index or 0}"
-
 class SmartTensorMoverPatches:
     def __init__(self):
         self.memo = WeakIdKeyDictionary()
+        self.cleanup_memo = WeakIdKeyDictionary()
         self.model_mover_stream = stream_impl(device=devices.device)
 
         self.linear_original = patches.patch(__name__, torch.nn.functional, 'linear', self.create_wrapper(torch.nn.functional.linear))
@@ -29,99 +23,105 @@ class SmartTensorMoverPatches:
     def create_wrapper(self, original, type=1):
         if type == 2:
             def wrapper(input, arg1, weight, bias, *args, **kwargs):
-                dest_device = input.device
-                dest_device_key = device_as_key(dest_device)
-                # dest_dtype = input.dtype
-                current_stream = devices.get_current_stream()
-
-                new_weight = self.memo.get(weight, {})
-                new_bias = self.memo.get(bias, {})
-                if (
-                    getattr(weight, "want_smart_move", False)
-                    or dest_device_key in new_weight
-                ):
-                    weight, weight_event = self.move(
-                        weight, device=dest_device, memo=new_weight
-                    )
-                    current_stream.wait_event(weight_event)
-
-                if (
-                    getattr(bias, "want_smart_move", False)
-                    or dest_device_key in new_bias
-                ):
-                    bias, bias_event = self.move(
-                        bias, device=dest_device, memo=new_bias
-                    )
-                    current_stream.wait_event(bias_event)
-
-                return original(input, arg1, weight, bias, *args, **kwargs)
-            return wrapper
-        else:
-            def wrapper(input, weight, bias, *args, **kwargs):
-                dest_device = input.device
-                dest_device_key = device_as_key(dest_device)
-                # dest_dtype = input.dtype
+                record_cleanup_weight, record_cleanup_bias = False, False
                 current_stream = devices.get_current_stream()
 
                 if weight is not None:
-                    new_weight = self.memo.get(weight, {})
-                    if (
-                        getattr(weight, "want_smart_move", False)
-                        or dest_device_key in new_weight
-                    ):
-                        weight, weight_event = self.move(
-                            weight, device=dest_device, memo=new_weight
-                        )
+                    new_weight, weight_event = self.memo.get(weight, (None, None))
+                    if weight_event is not None:
+                        weight = new_weight
+                        record_cleanup_weight = True
                         current_stream.wait_event(weight_event)
 
                 if bias is not None:
-                    new_bias = self.memo.get(bias, {})
-                    if (
-                        getattr(bias, "want_smart_move", False)
-                        or dest_device_key in new_bias
-                    ):
-                        bias, bias_event = self.move(
-                            bias, device=dest_device, memo=new_bias
-                        )
-                        bias = bias.to(dtype=input.dtype, non_blocking=True)
+                    new_bias, bias_event = self.memo.get(bias, (None, None))
+                    if bias_event is not None:
+                        bias = new_bias
+                        record_cleanup_bias = True
                         current_stream.wait_event(bias_event)
 
-                return original(input, weight, bias, *args, **kwargs)
+                result = original(input, arg1, weight, bias, *args, **kwargs)
 
+                if record_cleanup_weight:
+                    self.cleanup_memo[weight] = current_stream.record_event()
+
+                if record_cleanup_bias:
+                    self.cleanup_memo[bias] = current_stream.record_event()
+
+                return result
+            return wrapper
+        else:
+            def wrapper(input, weight, bias, *args, **kwargs):
+                record_cleanup_weight, record_cleanup_bias = False, False
+                current_stream = devices.get_current_stream()
+
+                if weight is not None:
+                    new_weight, weight_event = self.memo.get(weight, (None, None))
+                    if weight_event is not None:
+                        weight = new_weight
+                        record_cleanup_weight = True
+                        current_stream.wait_event(weight_event)
+
+                if bias is not None:
+                    new_bias, bias_event = self.memo.get(bias, (None, None))
+                    if bias_event is not None:
+                        bias = new_bias
+                        record_cleanup_bias = True
+                        current_stream.wait_event(bias_event)
+
+                result = original(input, weight, bias, *args, **kwargs)
+
+                if record_cleanup_weight:
+                    self.cleanup_memo[weight] = current_stream.record_event()
+
+                if record_cleanup_bias:
+                    self.cleanup_memo[bias] = current_stream.record_event()
+
+                return result
             return wrapper
 
     def __contains__(self, tensor):
         return tensor in self.memo
 
-    def move(self, tensor, device=None, memo=None, forget=False):
+    def move(self, tensor, device=None):
         device = device or tensor.device
-        device_key = device_as_key(device)
-        # dtype = dtype or tensor.dtype
-        memo_tensor = memo or self.memo.get(tensor, {})
-        new_tensor = memo_tensor.get(device_key, None)
-        if new_tensor is None:
-            with stream_wrapper(stream=self.model_mover_stream):
-                new_tensor = (
-                    tensor.to(device=device, non_blocking=True),
-                    self.model_mover_stream.record_event(),
-                )
-            if not forget:
-                memo_tensor[device_key] = new_tensor
-                self.memo[tensor] = memo_tensor
-        if forget:
-            self.forget(tensor)
-        return new_tensor
+        memo_tensor, memo_event = self.memo.get(tensor, (None, None))
+
+        if memo_tensor is not None:
+            return memo_tensor, memo_event
+
+        with stream_wrapper(stream=self.model_mover_stream):
+            new_tensor = tensor.to(device=device, copy=True, non_blocking=True)
+            new_event = self.model_mover_stream.record_event()
+            self.memo[tensor] = (new_tensor, new_event)
+
+        return self.memo[tensor]
+
+    def _forget(self, tensor, tensor_on_device=None):
+        if tensor_on_device is not None:
+            tensor_used_event = self.cleanup_memo.get(tensor_on_device, None)
+            if tensor_used_event is not None:
+                self.model_mover_stream.wait_event(tensor_used_event)
+                self.cleanup_memo.pop(tensor_on_device, None)
+        del self.memo[tensor]
 
     def forget(self, tensor):
-        if tensor in self.memo:
-            del self.memo[tensor]
+        on_device_tensor = self.memo.get(tensor, None)
+        self._forget(tensor, on_device_tensor)
 
     def forget_batch(self, tensors):
         for tensor in tensors:
-            if tensor in self.memo:
-                self.forget(tensor)
+            tensor_on_device, _ = self.memo.get(tensor, (None, None))
+            if tensor_on_device is not None:
+                self._forget(tensor, tensor_on_device)
 
     def forget_all(self):
+        for tensor, (tensor_on_device, _) in self.memo.items():
+            if tensor_on_device in self.cleanup_memo:
+                self.model_mover_stream.wait_event(
+                    self.cleanup_memo[tensor_on_device]
+                )
+        self.cleanup_memo.clear()
         self.memo.clear()
 
     def close(self):
@@ -205,8 +205,12 @@ class SmartModelMover:
         self.vram_allowance_remaining = vram_allowance * 1024 * 1024
         self.max_prefetch = max_prefetch
         self.hook_handles = []
-        self.submodules_list = self.get_module_list()
-        # self.submodules_list = [k for c in submodules_list for k in self.get_childrens(c)]
+        submodules_list = self.get_module_list()
+        
+        for c in submodules_list:
+            c._apply(lambda x: x.pin_memory())
+
+        self.submodules_list = [k for c in submodules_list for k in self.get_childrens(c)]
         self.parameters_list = [[p for p in x.parameters()] for x in self.submodules_list]
         self.parameters_sizes = [sum([p.numel() * p.element_size() for p in x]) for x in self.parameters_list]
         self.online_modules = set()
@@ -232,7 +236,9 @@ class SmartModelMover:
     def drain_allowance(self, idx):
         parameters_len = len(self.parameters_list)
 
+        # no vram limitation is set
         if self.vram_allowance <= 0:
+            # fetch up to max_prefetch parameters
             while self.online_module_count < self.max_prefetch:
                 param = self.parameters_list[idx]
                 self.online_modules.add(idx)
@@ -241,21 +247,24 @@ class SmartModelMover:
                 idx = (idx + 1) % parameters_len
             return
 
+        # if there is still vram allowance, and it has not reached max_prefetch
         while self.vram_allowance_remaining > 0 and (self.max_prefetch < 1 or self.online_module_count < self.max_prefetch):
             param = self.parameters_list[idx]
+            param_size = self.parameters_sizes[idx]
 
+            # empty module or already online
             if len(param) == 0 or idx in self.online_modules:
                 self.online_modules.add(idx)
                 self.online_module_count += 1
                 idx = (idx + 1) % parameters_len
                 continue
 
-            param_size = self.parameters_sizes[idx]
+            # if the parameter size is bigger than the remaining vram allowance, and there are already online modules
             if (
                 param_size > self.vram_allowance_remaining
                 and self.online_module_count > 0
             ):
-                break
+                return
             self.vram_allowance_remaining -= param_size
             self.online_modules.add(idx)
             self.online_module_count += 1
@@ -283,6 +292,16 @@ class SmartModelMover:
     def uninstall(self):
         for handle in self.hook_handles:
             handle.remove()
+        
+        for idx in self.online_modules:
+            mover.forget_batch(self.parameters_list[idx])
+
+    def preload(self):
+        idx = 0
+        for parameters in self.drain_allowance(idx):
+            for param in parameters:
+                mover.move(param, device=devices.device)
+
 
     def _pre_forward_hook(self, module, *args, **kwargs):
         idx = self.submodules_indexer[module]
@@ -441,8 +460,16 @@ def setup_for_low_vram(sd_model, use_medvram):
         diff_model.input_blocks, diff_model.middle_block, diff_model.output_blocks, diff_model.time_embed = stored
 
         # install hooks for bits of third model
-        mover = DiffModelMover.register(diff_model, max_prefetch=5)
-        mover.install()
+        mp = DiffModelMover.register(diff_model, max_prefetch=70)
+        mp.install()
+        mp.preload()
+
+        # diff_model.time_embed.register_forward_pre_hook(send_me_to_gpu)
+        # for block in diff_model.input_blocks:
+        #     block.register_forward_pre_hook(send_me_to_gpu)
+        # diff_model.middle_block.register_forward_pre_hook(send_me_to_gpu)
+        # for block in diff_model.output_blocks:
+        #     block.register_forward_pre_hook(send_me_to_gpu)
 
 
 def is_enabled(sd_model):
