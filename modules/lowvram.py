@@ -8,20 +8,47 @@ cpu = torch.device("cpu")
 stream_impl = devices.get_stream_impl()
 stream_wrapper = devices.get_stream_wrapper()
 
+
 class SmartTensorMoverPatches:
     def __init__(self):
         self.memo = WeakIdKeyDictionary()
         self.cleanup_memo = WeakIdKeyDictionary()
         self.model_mover_stream = stream_impl(device=devices.device)
 
-        self.linear_original = patches.patch(__name__, torch.nn.functional, 'linear', self.create_wrapper(torch.nn.functional.linear))
-        self.conv2d_original = patches.patch(__name__, torch.nn.functional, 'conv2d', self.create_wrapper(torch.nn.functional.conv2d))
-        self.conv3d_original = patches.patch(__name__, torch.nn.functional, 'conv3d', self.create_wrapper(torch.nn.functional.conv3d))
-        self.group_norm_original = patches.patch(__name__, torch.nn.functional, 'group_norm', self.create_wrapper(torch.nn.functional.group_norm, type=2))
-        self.layer_norm_original = patches.patch(__name__, torch.nn.functional, 'layer_norm', self.create_wrapper(torch.nn.functional.layer_norm, type=2))
+        self.linear_original = patches.patch(
+            __name__,
+            torch.nn.functional,
+            "linear",
+            self.create_wrapper(torch.nn.functional.linear),
+        )
+        self.conv2d_original = patches.patch(
+            __name__,
+            torch.nn.functional,
+            "conv2d",
+            self.create_wrapper(torch.nn.functional.conv2d),
+        )
+        self.conv3d_original = patches.patch(
+            __name__,
+            torch.nn.functional,
+            "conv3d",
+            self.create_wrapper(torch.nn.functional.conv3d),
+        )
+        self.group_norm_original = patches.patch(
+            __name__,
+            torch.nn.functional,
+            "group_norm",
+            self.create_wrapper(torch.nn.functional.group_norm, type=2),
+        )
+        self.layer_norm_original = patches.patch(
+            __name__,
+            torch.nn.functional,
+            "layer_norm",
+            self.create_wrapper(torch.nn.functional.layer_norm, type=2),
+        )
 
     def create_wrapper(self, original, type=1):
         if type == 2:
+
             def wrapper(input, arg1, weight, bias, *args, **kwargs):
                 record_cleanup_weight, record_cleanup_bias = False, False
                 current_stream = devices.get_current_stream()
@@ -49,8 +76,10 @@ class SmartTensorMoverPatches:
                     self.cleanup_memo[bias] = current_stream.record_event()
 
                 return result
+
             return wrapper
         else:
+
             def wrapper(input, weight, bias, *args, **kwargs):
                 record_cleanup_weight, record_cleanup_bias = False, False
                 current_stream = devices.get_current_stream()
@@ -78,6 +107,7 @@ class SmartTensorMoverPatches:
                     self.cleanup_memo[bias] = current_stream.record_event()
 
                 return result
+
             return wrapper
 
     def __contains__(self, tensor):
@@ -116,20 +146,19 @@ class SmartTensorMoverPatches:
                 self._forget(tensor, tensor_on_device)
 
     def forget_all(self):
-        for tensor, (tensor_on_device, _) in self.memo.items():
+        for (tensor_on_device, _) in self.memo.values():
             if tensor_on_device in self.cleanup_memo:
-                self.model_mover_stream.wait_event(
-                    self.cleanup_memo[tensor_on_device]
-                )
+                self.model_mover_stream.wait_event(self.cleanup_memo[tensor_on_device])
         self.cleanup_memo.clear()
         self.memo.clear()
 
     def close(self):
-        patches.undo(__name__, torch.nn.functional, 'linear')
-        patches.undo(__name__, torch.nn.functional, 'conv2d')
-        patches.undo(__name__, torch.nn.functional, 'conv3d')
-        patches.undo(__name__, torch.nn.functional, 'group_norm')
-        patches.undo(__name__, torch.nn.functional, 'layer_norm')
+        patches.undo(__name__, torch.nn.functional, "linear")
+        patches.undo(__name__, torch.nn.functional, "conv2d")
+        patches.undo(__name__, torch.nn.functional, "conv3d")
+        patches.undo(__name__, torch.nn.functional, "group_norm")
+        patches.undo(__name__, torch.nn.functional, "layer_norm")
+
 
 mover = SmartTensorMoverPatches()
 
@@ -138,7 +167,7 @@ class ModelMover:
     @classmethod
     def register(cls, model, max_prefetch=1):
         instance = cls(model, max_prefetch)
-        setattr(model, 'lowvram_model_mover', instance)
+        model.lowvram_model_mover = instance
         return instance
 
     def __init__(self, model, max_prefetch=1):
@@ -146,6 +175,10 @@ class ModelMover:
         self.lookahead_distance = max_prefetch
         self.hook_handles = []
         self.submodules_list = self.get_module_list()
+
+        for c in self.submodules_list:
+            c._apply(lambda x: x.pin_memory())
+
         self.submodules_indexer = {}
         self.module_movement_events = {}
         self.default_stream = devices.get_current_stream()
@@ -159,8 +192,14 @@ class ModelMover:
 
     def install(self):
         for i in range(len(self.submodules_list)):
-            self.hook_handles.append(self.submodules_list[i].register_forward_pre_hook(self._pre_forward_hook))
-            self.hook_handles.append(self.submodules_list[i].register_forward_hook(self._post_forward_hook))
+            self.hook_handles.append(
+                self.submodules_list[i].register_forward_pre_hook(
+                    self._pre_forward_hook
+                )
+            )
+            self.hook_handles.append(
+                self.submodules_list[i].register_forward_hook(self._post_forward_hook)
+            )
 
     def uninstall(self):
         for handle in self.hook_handles:
@@ -176,13 +215,17 @@ class ModelMover:
                         # already in GPU
                         continue
                     submodule.to(devices.device, non_blocking=True)
-                    self.module_movement_events[submodule] = self.model_mover_stream.record_event()
+                    self.module_movement_events[submodule] = (
+                        self.model_mover_stream.record_event()
+                    )
 
             this_event = self.module_movement_events.get(module, None)
             if this_event is not None:
                 self.default_stream.wait_event(this_event)
             else:
-                print(f"Module {module.__name__} was not moved to GPU. Taking slow path")
+                print(
+                    f"Module {module.__name__} was not moved to GPU. Taking slow path"
+                )
                 submodule.to(devices.device, non_blocking=True)
 
     def _post_forward_hook(self, module, _1, _2):
@@ -196,7 +239,7 @@ class SmartModelMover:
     @classmethod
     def register(cls, model, vram_allowance=0, max_prefetch=10):
         instance = cls(model, vram_allowance, max_prefetch)
-        setattr(model, "lowvram_model_mover", instance)
+        model.lowvram_model_mover = instance
         return instance
 
     def __init__(self, model, vram_allowance=0, max_prefetch=10):
@@ -206,13 +249,19 @@ class SmartModelMover:
         self.max_prefetch = max_prefetch
         self.hook_handles = []
         submodules_list = self.get_module_list()
-        
+
         for c in submodules_list:
             c._apply(lambda x: x.pin_memory())
 
-        self.submodules_list = [k for c in submodules_list for k in self.get_childrens(c)]
-        self.parameters_list = [[p for p in x.parameters()] for x in self.submodules_list]
-        self.parameters_sizes = [sum([p.numel() * p.element_size() for p in x]) for x in self.parameters_list]
+        self.submodules_list = [
+            k for c in submodules_list for k in self.get_childrens(c)
+        ]
+        self.parameters_list = [
+            list(x.parameters()) for x in self.submodules_list
+        ]
+        self.parameters_sizes = [
+            sum([p.numel() * p.element_size() for p in x]) for x in self.parameters_list
+        ]
         self.online_modules = set()
         self.online_module_count = 0
         self.submodules_indexer = {}
@@ -221,14 +270,22 @@ class SmartModelMover:
             self.submodules_indexer[module] = i
 
     def test_children(self, op):
-        return op.__class__.__name__ in ['Conv2d', 'Conv3d', 'Linear', 'GroupNorm', 'LayerNorm']
+        return op.__class__.__name__ in [
+            "Conv2d",
+            "Conv3d",
+            "Linear",
+            "GroupNorm",
+            "LayerNorm",
+        ]
 
     def get_childrens(self, container):
         if isinstance(container, torch.nn.Sequential):
             # return [c for c in container]
             return [cc for c in container for cc in self.get_childrens(c)]
-        if 'children' in dir(container):
-            childrens = [cc for c in container.children() for cc in self.get_childrens(c)]
+        if "children" in dir(container):
+            childrens = [
+                cc for c in container.children() for cc in self.get_childrens(c)
+            ]
             if len(childrens) > 0:
                 return childrens
         return [container]
@@ -248,7 +305,9 @@ class SmartModelMover:
             return
 
         # if there is still vram allowance, and it has not reached max_prefetch
-        while self.vram_allowance_remaining > 0 and (self.max_prefetch < 1 or self.online_module_count < self.max_prefetch):
+        while self.vram_allowance_remaining > 0 and (
+            self.max_prefetch < 1 or self.online_module_count < self.max_prefetch
+        ):
             param = self.parameters_list[idx]
             param_size = self.parameters_sizes[idx]
 
@@ -292,7 +351,7 @@ class SmartModelMover:
     def uninstall(self):
         for handle in self.hook_handles:
             handle.remove()
-        
+
         for idx in self.online_modules:
             mover.forget_batch(self.parameters_list[idx])
 
@@ -301,7 +360,6 @@ class SmartModelMover:
         for parameters in self.drain_allowance(idx):
             for param in parameters:
                 mover.move(param, device=devices.device)
-
 
     def _pre_forward_hook(self, module, *args, **kwargs):
         idx = self.submodules_indexer[module]
@@ -316,7 +374,19 @@ class SmartModelMover:
         self.fill_allowance(idx)
 
 
-class DiffModelMover(SmartModelMover):
+class DiffModelMover(ModelMover):
+    def get_module_list(self):
+        modules = []
+        modules.append(self.model.time_embed)
+        for block in self.model.input_blocks:
+            modules.append(block)
+        modules.append(self.model.middle_block)
+        for block in self.model.output_blocks:
+            modules.append(block)
+        return modules
+
+
+class DiffSmartModelMover(SmartModelMover):
     def get_module_list(self):
         modules = []
         modules.append(self.model.time_embed)
@@ -340,7 +410,12 @@ def send_everything_to_cpu():
 
 
 def is_needed(sd_model):
-    return shared.cmd_opts.lowvram or shared.cmd_opts.medvram or shared.cmd_opts.medvram_sdxl and hasattr(sd_model, 'conditioner')
+    return (
+        shared.cmd_opts.lowvram
+        or shared.cmd_opts.medvram
+        or shared.cmd_opts.medvram_sdxl
+        and hasattr(sd_model, "conditioner")
+    )
 
 
 def apply(sd_model):
@@ -354,7 +429,7 @@ def apply(sd_model):
 
 
 def setup_for_low_vram(sd_model, use_medvram):
-    if getattr(sd_model, 'lowvram', False):
+    if getattr(sd_model, "lowvram", False):
         return
 
     sd_model.lowvram = True
@@ -396,22 +471,22 @@ def setup_for_low_vram(sd_model, use_medvram):
         return first_stage_model_decode(z)
 
     to_remain_in_cpu = [
-        (sd_model, 'first_stage_model'),
-        (sd_model, 'depth_model'),
-        (sd_model, 'embedder'),
-        (sd_model, 'model'),
-        (sd_model, 'embedder'),
+        (sd_model, "first_stage_model"),
+        (sd_model, "depth_model"),
+        (sd_model, "embedder"),
+        (sd_model, "model"),
+        (sd_model, "embedder"),
     ]
 
-    is_sdxl = hasattr(sd_model, 'conditioner')
-    is_sd2 = not is_sdxl and hasattr(sd_model.cond_stage_model, 'model')
+    is_sdxl = hasattr(sd_model, "conditioner")
+    is_sd2 = not is_sdxl and hasattr(sd_model.cond_stage_model, "model")
 
     if is_sdxl:
-        to_remain_in_cpu.append((sd_model, 'conditioner'))
+        to_remain_in_cpu.append((sd_model, "conditioner"))
     elif is_sd2:
-        to_remain_in_cpu.append((sd_model.cond_stage_model, 'model'))
+        to_remain_in_cpu.append((sd_model.cond_stage_model, "model"))
     else:
-        to_remain_in_cpu.append((sd_model.cond_stage_model, 'transformer'))
+        to_remain_in_cpu.append((sd_model.cond_stage_model, "transformer"))
 
     # remove several big modules: cond, first_stage, depth/embedder (if applicable), and unet from the model
     stored = []
@@ -432,9 +507,13 @@ def setup_for_low_vram(sd_model, use_medvram):
         sd_model.conditioner.register_forward_pre_hook(send_me_to_gpu)
     elif is_sd2:
         sd_model.cond_stage_model.model.register_forward_pre_hook(send_me_to_gpu)
-        sd_model.cond_stage_model.model.token_embedding.register_forward_pre_hook(send_me_to_gpu)
+        sd_model.cond_stage_model.model.token_embedding.register_forward_pre_hook(
+            send_me_to_gpu
+        )
         parents[sd_model.cond_stage_model.model] = sd_model.cond_stage_model
-        parents[sd_model.cond_stage_model.model.token_embedding] = sd_model.cond_stage_model
+        parents[sd_model.cond_stage_model.model.token_embedding] = (
+            sd_model.cond_stage_model
+        )
     else:
         sd_model.cond_stage_model.transformer.register_forward_pre_hook(send_me_to_gpu)
         parents[sd_model.cond_stage_model.transformer] = sd_model.cond_stage_model
@@ -454,22 +533,39 @@ def setup_for_low_vram(sd_model, use_medvram):
 
         # the third remaining model is still too big for 4 GB, so we also do the same for its submodules
         # so that only one of them is in GPU at a time
-        stored = diff_model.input_blocks, diff_model.middle_block, diff_model.output_blocks, diff_model.time_embed
-        diff_model.input_blocks, diff_model.middle_block, diff_model.output_blocks, diff_model.time_embed = None, None, None, None
+        stored = (
+            diff_model.input_blocks,
+            diff_model.middle_block,
+            diff_model.output_blocks,
+            diff_model.time_embed,
+        )
+        (
+            diff_model.input_blocks,
+            diff_model.middle_block,
+            diff_model.output_blocks,
+            diff_model.time_embed,
+        ) = (None, None, None, None)
         sd_model.model.to(devices.device)
-        diff_model.input_blocks, diff_model.middle_block, diff_model.output_blocks, diff_model.time_embed = stored
+        (
+            diff_model.input_blocks,
+            diff_model.middle_block,
+            diff_model.output_blocks,
+            diff_model.time_embed,
+        ) = stored
 
         # install hooks for bits of third model
-        mp = DiffModelMover.register(diff_model, max_prefetch=70)
-        mp.install()
-        mp.preload()
 
-        # diff_model.time_embed.register_forward_pre_hook(send_me_to_gpu)
-        # for block in diff_model.input_blocks:
-        #     block.register_forward_pre_hook(send_me_to_gpu)
-        # diff_model.middle_block.register_forward_pre_hook(send_me_to_gpu)
-        # for block in diff_model.output_blocks:
-        #     block.register_forward_pre_hook(send_me_to_gpu)
+        if stream_impl is not None and stream_wrapper is not None:
+            mp = DiffSmartModelMover.register(diff_model, max_prefetch=70)
+            mp.install()
+            mp.preload()
+        else:
+            diff_model.time_embed.register_forward_pre_hook(send_me_to_gpu)
+            for block in diff_model.input_blocks:
+                block.register_forward_pre_hook(send_me_to_gpu)
+            diff_model.middle_block.register_forward_pre_hook(send_me_to_gpu)
+            for block in diff_model.output_blocks:
+                block.register_forward_pre_hook(send_me_to_gpu)
 
 
 def is_enabled(sd_model):
