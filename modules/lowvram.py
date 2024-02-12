@@ -298,7 +298,7 @@ class SmartModelMover:
         # no vram limitation is set
         if self.vram_allowance <= 0:
             # fetch up to max_prefetch parameters
-            while self.online_module_count < self.max_prefetch:
+            while self.online_module_count < self.max_prefetch and self.online_module_count < parameters_len:
                 param = self.parameters_list[idx]
                 self.online_modules.add(idx)
                 self.online_module_count += 1
@@ -309,7 +309,7 @@ class SmartModelMover:
         # if there is still vram allowance, and it has not reached max_prefetch
         while self.vram_allowance_remaining > 0 and (
             self.max_prefetch < 1 or self.online_module_count < self.max_prefetch
-        ):
+        ) and self.online_module_count < parameters_len:
             param = self.parameters_list[idx]
             param_size = self.parameters_sizes[idx]
 
