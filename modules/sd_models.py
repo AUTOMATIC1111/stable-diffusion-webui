@@ -55,7 +55,7 @@ def load_state_dict_from_file(file_path):
 
 
 def create_cache_path(file_name):
-    default_path = f'/runpod-volume/cache/{file_name}.pth'
+    default_path = f'/runpod-volume-test/cache/{file_name}.pth'
     return default_path
 
 
