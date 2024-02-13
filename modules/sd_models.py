@@ -27,6 +27,38 @@ checkpoint_alisases = checkpoint_aliases  # for compatibility with old name
 checkpoints_loaded = collections.OrderedDict()
 
 
+def state_dict_manager(checkpoint_info, timer):
+    state_dict_path = create_cache_path(checkpoint_info.model_name)
+    t1 = Timer()
+    if os.path.exists(state_dict_path):
+        state_dict = load_state_dict_from_file(state_dict_path)
+    else:
+        state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
+        write_state_dict_to_file(state_dict, state_dict_path)
+    t1.record("Cache System")
+    checkpoint_config = sd_models_config.find_checkpoint_config(
+        state_dict, checkpoint_info)
+    t1.record("Find Checkpoint config")
+    print(f' Time Taken for Find Checkpoint config {t1.summary()}')
+    timer.record("find config")
+    return state_dict, checkpoint_config
+
+def write_state_dict_to_file(state_dict, file_path):
+    print("Saving File to cache")
+    with open(file_path, 'wb') as f:
+        torch.save(state_dict, f)
+
+
+def load_state_dict_from_file(file_path):
+    print("Loading File From cache")
+    return torch.load(file_path)
+
+
+def create_cache_path(file_name):
+    default_path = f'/runpod-volume/cache/{file_name}.pth'
+    return default_path
+
+
 def replace_key(d, key, new_key, value):
     keys = list(d.keys())
 
@@ -357,6 +389,8 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
 
     if state_dict is None:
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
+        write_state_dict_to_file(state_dict, os.path.join(
+            f"{checkpoint_info.model_name}.pth"))
 
     model.is_sdxl = hasattr(model, 'conditioner')
     model.is_sd2 = not model.is_sdxl and hasattr(model.cond_stage_model, 'model')
@@ -368,9 +402,6 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     if model.is_ssd:
         sd_hijack.model_hijack.convert_sdxl_to_ssd(model)
 
-    if shared.opts.sd_checkpoint_cache > 0:
-        # cache newly loaded model
-        checkpoints_loaded[checkpoint_info] = state_dict.copy()
 
     model.load_state_dict(state_dict, strict=False)
     timer.record("apply weights to model")
@@ -609,13 +640,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
         devices.torch_gc()
 
     timer.record("unload existing model")
-
-    if already_loaded_state_dict is not None:
-        state_dict = already_loaded_state_dict
-    else:
-        state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
-
-    checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
+    state_dict, checkpoint_config = state_dict_manager(checkpoint_info, timer)
     clip_is_included_into_sd = any(x for x in [sd1_clip_weight, sd2_clip_weight, sdxl_clip_weight, sdxl_refiner_clip_weight] if x in state_dict)
 
     timer.record("find config")
@@ -769,13 +794,7 @@ def reload_model_weights(sd_model=None, info=None):
         sd_unet.apply_unet("None")
         send_model_to_cpu(sd_model)
         sd_hijack.model_hijack.undo_hijack(sd_model)
-
-    state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
-
-    checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
-
-    timer.record("find config")
-
+    state_dict, checkpoint_config = state_dict_manager(checkpoint_info, timer)
     if sd_model is None or checkpoint_config != sd_model.used_config:
         if sd_model is not None:
             send_model_to_trash(sd_model)

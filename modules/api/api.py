@@ -49,10 +49,22 @@ def validate_sampler_name(name):
     return name
 
 
+def check_model(model_name, self):
+    model_loaded = validate_model(model_name, self)
+    if model_loaded is False:
+        print("Refreshing Models")
+        Api.refresh_checkpoints(self)
+    model_loaded_second_check = validate_model(model_name, self)
+    if model_loaded_second_check is False:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+
 def validate_model(model_name, self):
-    model_list = Api.get_sd_models(self)
-    for model in model_list:
-        if model_name == model.get("title"):
+    checkpoint_list = Api.get_sd_models(self)
+    if (len(checkpoint_list) == 0):
+        return True
+    for checkpoint in checkpoint_list:
+        if model_name == checkpoint.get("title"):
             return True
     return False
 
@@ -399,14 +411,7 @@ class Api:
 
     def text2imgapi(self, txt2imgreq: models.StableDiffusionTxt2ImgProcessingAPI):
         model_name = txt2imgreq.override_settings.get('sd_model_checkpoint')
-        model_loaded = validate_model(model_name, self)
-        if model_loaded == False:
-            print("Refreshing Models")
-            Api.refresh_checkpoints(self)
-        model_loaded_second_check = validate_model(model_name, self)
-        if model_loaded_second_check == False:
-            raise HTTPException(status_code=404, detail="Model not found")
-
+        check_model(model_name, self)
         script_runner = scripts.scripts_txt2img
         if not script_runner.scripts:
             script_runner.initialize_scripts(False)
@@ -467,14 +472,7 @@ class Api:
 
     def img2imgapi(self, img2imgreq: models.StableDiffusionImg2ImgProcessingAPI):
         model_name = img2imgreq.override_settings.get('sd_model_checkpoint')
-        model_loaded = validate_model(model_name, self)
-        if model_loaded == False:
-            print("Refreshing Models")
-            Api.refresh_checkpoints(self)
-        model_loaded_second_check = validate_model(model_name, self)
-        if model_loaded_second_check == False:
-            raise HTTPException(status_code=404, detail="Model not found")
-
+        check_model(model_name, self)
         init_images = img2imgreq.init_images
         if init_images is None:
             raise HTTPException(status_code=404, detail="Init image not found")
