@@ -30,7 +30,8 @@ checkpoints_loaded = collections.OrderedDict()
 def write_state_dict_to_file(state_dict, file_path):
     print("Saving File to cache \n")
     print(file_path)
-    torch.save(state_dict, file_path)
+    with open(file_path, 'wb') as f:
+        torch.save(state_dict, f)
 
 
 def load_state_dict_from_file(file_path):
@@ -40,7 +41,8 @@ def load_state_dict_from_file(file_path):
 
 
 def create_cache_path(file_name):
-    return os.path.join(f"{file_name}.pth")
+    default_path = f'/runpod-volume/cache/{file_name}.pth'
+    return default_path
 
 
 def replace_key(d, key, new_key, value):
@@ -788,14 +790,16 @@ def reload_model_weights(sd_model=None, info=None):
         sd_hijack.model_hijack.undo_hijack(sd_model)
 
     state_dict_path = create_cache_path(checkpoint_info.model_name)
+    t1 = Timer()
     if os.path.exists(state_dict_path):
         state_dict = load_state_dict_from_file(state_dict_path)
     else:
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
         write_state_dict_to_file(state_dict, state_dict_path)
-
+    t1.record("Cache System")
     checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
-
+    t1.record("Find Checkpoint config")
+    print(f' Time Taken for Find Checkpoint config {t1.summary()}')
     timer.record("find config")
 
     if sd_model is None or checkpoint_config != sd_model.used_config:
