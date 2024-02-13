@@ -44,8 +44,7 @@ def state_dict_manager(checkpoint_info, timer):
     return state_dict, checkpoint_config
 
 def write_state_dict_to_file(state_dict, file_path):
-    print("Saving File to cache \n")
-    print(file_path)
+    print("Saving File to cache")
     with open(file_path, 'wb') as f:
         torch.save(state_dict, f)
 
