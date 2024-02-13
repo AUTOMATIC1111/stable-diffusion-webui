@@ -50,8 +50,7 @@ def write_state_dict_to_file(state_dict, file_path):
 
 
 def load_state_dict_from_file(file_path):
-    print("Loading File From cache \n")
-    print(file_path)
+    print("Loading File From cache")
     return torch.load(file_path)
 
 
