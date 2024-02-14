@@ -55,8 +55,11 @@ def load_state_dict_from_file(file_path):
 
 
 def create_cache_path(file_name):
-    default_path = f'/runpod-volume/cache/{file_name}.pth'
-    return default_path
+    default_path = f'/stable-diffusion-webui/cache/'
+    if not os.path.exists(default_path):
+        os.makedirs(default_path)
+    file_path = f'{default_path}{file_name}.pth'
+    return file_path
 
 
 def replace_key(d, key, new_key, value):
