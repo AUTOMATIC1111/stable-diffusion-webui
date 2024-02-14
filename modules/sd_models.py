@@ -43,6 +43,7 @@ def state_dict_manager(checkpoint_info, timer):
     timer.record("find config")
     return state_dict, checkpoint_config
 
+
 def write_state_dict_to_file(state_dict, file_path):
     print("Saving File to cache")
     with open(file_path, 'wb') as f:
@@ -55,7 +56,7 @@ def load_state_dict_from_file(file_path):
 
 
 def create_cache_path(file_name):
-    default_path = f'/stable-diffusion-webui/cache/'
+    default_path = '/stable-diffusion-webui/cache/'
     if not os.path.exists(default_path):
         os.makedirs(default_path)
     file_path = f'{default_path}{file_name}.pth'
