@@ -2,6 +2,7 @@ import collections
 import os.path
 import sys
 import threading
+from functools import lru_cache
 
 import torch
 import re
@@ -50,16 +51,18 @@ def write_state_dict_to_file(state_dict, file_path):
         torch.save(state_dict, f)
 
 
+@lru_cache(maxsize=10737418240, typed=True)
 def load_state_dict_from_file(file_path):
     print("Loading File From cache")
     return torch.load(file_path)
 
 
 def create_cache_path(file_name):
-    default_path = '/stable-diffusion-webui/cache/'
+    default_path = 'cache/'
     if not os.path.exists(default_path):
         os.makedirs(default_path)
-    file_path = f'{default_path}{file_name}.pth'
+    file_path = f'{default_path}{file_name}.pt'
+    print(file_path)
     return file_path
 
 
