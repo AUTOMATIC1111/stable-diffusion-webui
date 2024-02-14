@@ -356,7 +356,8 @@ class Api:
         return script_args
 
     def text2imgapi(self, txt2imgreq: models.StableDiffusionTxt2ImgProcessingAPI):
-        if txt2imgreq.override_settings.get('sd_model_checkpoint'):
+        print(type(txt2imgreq))
+        if txt2imgreq is not None and txt2imgreq.override_settings:
             model_name = txt2imgreq.override_settings.get(
                 'sd_model_checkpoint')
             check_model(model_name, self)
@@ -410,7 +411,7 @@ class Api:
         return models.TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
     def img2imgapi(self, img2imgreq: models.StableDiffusionImg2ImgProcessingAPI):
-        if img2imgreq.override_settings.get('sd_model_checkpoint'):
+        if img2imgreq is not None and img2imgreq.override_settings:
             model_name = img2imgreq.override_settings.get(
                 'sd_model_checkpoint')
             check_model(model_name, self)
