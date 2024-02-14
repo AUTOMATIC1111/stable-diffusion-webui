@@ -27,7 +27,6 @@ categories.register_category("sd", "Stable Diffusion")
 categories.register_category("ui", "User Interface")
 categories.register_category("system", "System")
 categories.register_category("postprocessing", "Postprocessing")
-categories.register_category("training", "Training")
 
 options_templates.update(options_section(('saving-images', "Saving images/grids", "saving"), {
     "samples_save": OptionInfo(True, "Always save all generated images"),
@@ -130,21 +129,6 @@ options_templates.update(options_section(('API', "API", "system"), {
     "api_enable_requests": OptionInfo(True, "Allow http:// and https:// URLs for input images in API", restrict_api=True),
     "api_forbid_local_requests": OptionInfo(True, "Forbid URLs to local resources", restrict_api=True),
     "api_useragent": OptionInfo("", "User agent for requests", restrict_api=True),
-}))
-
-options_templates.update(options_section(('training', "Training", "training"), {
-    "unload_models_when_training": OptionInfo(False, "Move VAE and CLIP to RAM when training if possible. Saves VRAM."),
-    "pin_memory": OptionInfo(False, "Turn on pin_memory for DataLoader. Makes training slightly faster but can increase memory usage."),
-    "save_optimizer_state": OptionInfo(False, "Saves Optimizer state as separate *.optim file. Training of embedding or HN can be resumed with the matching optim file."),
-    "save_training_settings_to_txt": OptionInfo(True, "Save textual inversion and hypernet settings to a text file whenever training starts."),
-    "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
-    "dataset_filename_join_string": OptionInfo(" ", "Filename join string"),
-    "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch; used only for displaying epoch number", gr.Number, {"precision": 0}),
-    "training_write_csv_every": OptionInfo(500, "Save an csv containing the loss to log directory every N steps, 0 to disable"),
-    "training_xattention_optimizations": OptionInfo(False, "Use cross attention optimizations while training"),
-    "training_enable_tensorboard": OptionInfo(False, "Enable tensorboard logging."),
-    "training_tensorboard_save_images": OptionInfo(False, "Save generated images within tensorboard."),
-    "training_tensorboard_flush_every": OptionInfo(120, "How often, in seconds, to flush the pending tensorboard events and summaries to disk."),
 }))
 
 options_templates.update(options_section(('sd', "Stable Diffusion", "sd"), {

@@ -21,12 +21,9 @@ from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, post
 from modules.api import models
 from modules.shared import opts
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
-from modules.textual_inversion.textual_inversion import create_embedding, train_embedding
-from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
 from PIL import PngImagePlugin, Image
 from modules.sd_models_config import find_checkpoint_config_near_filename
 from modules.realesrgan_model import get_realesrgan_models
-from modules import devices
 from typing import Any
 import piexif
 import piexif.helper
@@ -233,10 +230,6 @@ class Api:
         self.add_api_route("/sdapi/v1/refresh-embeddings", self.refresh_embeddings, methods=["POST"])
         self.add_api_route("/sdapi/v1/refresh-checkpoints", self.refresh_checkpoints, methods=["POST"])
         self.add_api_route("/sdapi/v1/refresh-vae", self.refresh_vae, methods=["POST"])
-        self.add_api_route("/sdapi/v1/create/embedding", self.create_embedding, methods=["POST"], response_model=models.CreateResponse)
-        self.add_api_route("/sdapi/v1/create/hypernetwork", self.create_hypernetwork, methods=["POST"], response_model=models.CreateResponse)
-        self.add_api_route("/sdapi/v1/train/embedding", self.train_embedding, methods=["POST"], response_model=models.TrainResponse)
-        self.add_api_route("/sdapi/v1/train/hypernetwork", self.train_hypernetwork, methods=["POST"], response_model=models.TrainResponse)
         self.add_api_route("/sdapi/v1/memory", self.get_memory, methods=["GET"], response_model=models.MemoryResponse)
         self.add_api_route("/sdapi/v1/unload-checkpoint", self.unloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
@@ -759,74 +752,6 @@ class Api:
     def refresh_vae(self):
         with self.queue_lock:
             shared_items.refresh_vae_list()
-
-    def create_embedding(self, args: dict):
-        try:
-            shared.state.begin(job="create_embedding")
-            filename = create_embedding(**args) # create empty embedding
-            sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings() # reload embeddings so new one can be immediately used
-            return models.CreateResponse(info=f"create embedding filename: {filename}")
-        except AssertionError as e:
-            return models.TrainResponse(info=f"create embedding error: {e}")
-        finally:
-            shared.state.end()
-
-
-    def create_hypernetwork(self, args: dict):
-        try:
-            shared.state.begin(job="create_hypernetwork")
-            filename = create_hypernetwork(**args) # create empty embedding
-            return models.CreateResponse(info=f"create hypernetwork filename: {filename}")
-        except AssertionError as e:
-            return models.TrainResponse(info=f"create hypernetwork error: {e}")
-        finally:
-            shared.state.end()
-
-    def train_embedding(self, args: dict):
-        try:
-            shared.state.begin(job="train_embedding")
-            apply_optimizations = shared.opts.training_xattention_optimizations
-            error = None
-            filename = ''
-            if not apply_optimizations:
-                sd_hijack.undo_optimizations()
-            try:
-                embedding, filename = train_embedding(**args) # can take a long time to complete
-            except Exception as e:
-                error = e
-            finally:
-                if not apply_optimizations:
-                    sd_hijack.apply_optimizations()
-            return models.TrainResponse(info=f"train embedding complete: filename: {filename} error: {error}")
-        except Exception as msg:
-            return models.TrainResponse(info=f"train embedding error: {msg}")
-        finally:
-            shared.state.end()
-
-    def train_hypernetwork(self, args: dict):
-        try:
-            shared.state.begin(job="train_hypernetwork")
-            shared.loaded_hypernetworks = []
-            apply_optimizations = shared.opts.training_xattention_optimizations
-            error = None
-            filename = ''
-            if not apply_optimizations:
-                sd_hijack.undo_optimizations()
-            try:
-                hypernetwork, filename = train_hypernetwork(**args)
-            except Exception as e:
-                error = e
-            finally:
-                shared.sd_model.cond_stage_model.to(devices.device)
-                shared.sd_model.first_stage_model.to(devices.device)
-                if not apply_optimizations:
-                    sd_hijack.apply_optimizations()
-                shared.state.end()
-            return models.TrainResponse(info=f"train embedding complete: filename: {filename} error: {error}")
-        except Exception as exc:
-            return models.TrainResponse(info=f"train embedding error: {exc}")
-        finally:
-            shared.state.end()
 
     def get_memory(self):
         try:
