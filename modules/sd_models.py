@@ -1,4 +1,5 @@
 import collections
+from functools import lru_cache
 import os.path
 import sys
 import threading
@@ -50,13 +51,18 @@ def write_state_dict_to_file(state_dict, file_path):
         torch.save(state_dict, f)
 
 
+@lru_cache(maxsize=10737418240, typed=True)
 def load_state_dict_from_file(file_path):
     print("Loading File From cache")
     return torch.load(file_path)
 
 
 def create_cache_path(file_name):
-    default_path = '/stable-diffusion-webui/cache/'
+    cache_type = os.environ('cache')
+    if cache_type == 'runpod':
+     default_path = '/runpod-volume/cache/'
+    else:
+        default_path = '/stable-diffusion-webui/cache/'
     if not os.path.exists(default_path):
         os.makedirs(default_path)
     file_path = f'{default_path}{file_name}.pth'
