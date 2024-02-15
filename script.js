@@ -167,8 +167,10 @@ document.addEventListener('keydown', function(e) {
         const lightboxModal = document.querySelector('#lightboxModal');
         if (!globalPopup || globalPopup.style.display === 'none') {
             if (document.activeElement === lightboxModal) return;
-            interruptButton.click();
-            e.preventDefault();
+            if (interruptButton.style.display !== 'none') {
+                interruptButton.click();
+                e.preventDefault();
+            }
         }
     }
 });
