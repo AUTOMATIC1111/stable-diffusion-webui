@@ -58,7 +58,7 @@ def load_state_dict_from_file(file_path):
 
 
 def create_cache_path(file_name):
-    cache_type = os.environ('cache')
+    cache_type = os.environ.get('cache')
     if cache_type == 'runpod':
      default_path = '/runpod-volume/cache/'
     else:
