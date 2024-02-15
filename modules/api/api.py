@@ -64,6 +64,8 @@ def validate_model(model_name, self):
         return True
     for checkpoint in checkpoint_list:
         if model_name == checkpoint.get("title"):
+            shared.model_runs[checkpoint.get('model_name')] = shared.model_runs.get(
+                model_name, 0) + 1
             return True
     return False
 
@@ -356,7 +358,6 @@ class Api:
         return script_args
 
     def text2imgapi(self, txt2imgreq: models.StableDiffusionTxt2ImgProcessingAPI):
-        print(type(txt2imgreq))
         if txt2imgreq is not None and txt2imgreq.override_settings:
             model_name = txt2imgreq.override_settings.get(
                 'sd_model_checkpoint')

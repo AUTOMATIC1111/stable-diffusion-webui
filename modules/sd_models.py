@@ -2,7 +2,6 @@ import collections
 import os.path
 import sys
 import threading
-from functools import lru_cache
 
 import torch
 import re
@@ -27,14 +26,31 @@ checkpoint_aliases = {}
 checkpoint_alisases = checkpoint_aliases  # for compatibility with old name
 checkpoints_loaded = collections.OrderedDict()
 
+model_size = {}
+available_storage = 10
+
+
+def get_cache_and_sizes(directory):
+    files_and_sizes = {}
+    for filename in os.listdir(directory):
+        filepath = os.path.join(directory, filename)
+        if os.path.isfile(filepath):
+            size = os.path.getsize(filepath)
+            size_gb = size / (1024**3)
+            rounded_size_gb = int(size_gb) + (size_gb % 1 > 0)
+            files_and_sizes[filename] = rounded_size_gb
+    return files_and_sizes
 
 def state_dict_manager(checkpoint_info, timer):
-    state_dict_path = create_cache_path(checkpoint_info.model_name)
+    model_name = checkpoint_info.model_name
+    state_dict_path = create_cache_path(model_name)
     t1 = Timer()
     if os.path.exists(state_dict_path):
         state_dict = load_state_dict_from_file(state_dict_path)
     else:
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
+        state_dict_size = sys.getsizeof(state_dict)
+        print(state_dict_size)
         write_state_dict_to_file(state_dict, state_dict_path)
     t1.record("Cache System")
     checkpoint_config = sd_models_config.find_checkpoint_config(
@@ -42,27 +58,50 @@ def state_dict_manager(checkpoint_info, timer):
     t1.record("Find Checkpoint config")
     print(f' Time Taken for Find Checkpoint config {t1.summary()}')
     timer.record("find config")
+    print(shared.model_runs)
     return state_dict, checkpoint_config
 
 
+def check_cache_memory(state_dict):
+    print("Memory Checks")
+    current_cache = get_cache_and_sizes(shared.default_path)
+    total_cache_size_gb = sum(current_cache.values())
+    state_dict_size = sys.getsizeof(state_dict)
+    rounded_state_dict_size_gb = int((state_dict_size // 10) % 10)
+    print(total_cache_size_gb)
+    print(total_cache_size_gb + rounded_state_dict_size_gb)
+    if available_storage < (total_cache_size_gb + rounded_state_dict_size_gb):
+        min_element = min(shared.model_runs.items(), key=lambda x: x[1])
+        model_name_with_lowest_count = min_element[0]
+        print("Lowest count model "+model_name_with_lowest_count)
+        delete_cache_path = create_cache_path(model_name_with_lowest_count)
+        print(delete_cache_path)
+        if os.path.exists(delete_cache_path):
+            os.remove(delete_cache_path)
+            print('Deleting')
+            return False
+    return True
+
 def write_state_dict_to_file(state_dict, file_path):
+
+    cache_memory = check_cache_memory(state_dict)
+    while cache_memory is False:
+        cache_memory = check_cache_memory(state_dict)
     print("Saving File to cache")
     with open(file_path, 'wb') as f:
         torch.save(state_dict, f)
 
 
-@lru_cache(maxsize=10737418240, typed=True)
 def load_state_dict_from_file(file_path):
     print("Loading File From cache")
     return torch.load(file_path)
 
 
 def create_cache_path(file_name):
-    default_path = 'cache/'
+    default_path = shared.default_path
     if not os.path.exists(default_path):
         os.makedirs(default_path)
     file_path = f'{default_path}{file_name}.pt'
-    print(file_path)
     return file_path
 
 
