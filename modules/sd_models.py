@@ -27,7 +27,7 @@ checkpoint_alisases = checkpoint_aliases  # for compatibility with old name
 checkpoints_loaded = collections.OrderedDict()
 
 model_size = {}
-available_storage = 10
+available_storage = os.environ.get('storage', 10)
 
 
 def get_cache_and_sizes(directory):
@@ -78,7 +78,7 @@ def check_cache_memory(state_dict):
         print(delete_cache_path)
         if os.path.exists(delete_cache_path):
             os.remove(delete_cache_path)
-            print('Deleting')
+            print('Deleting cache for '+model_name_with_lowest_count)
             return False
     return True
 
