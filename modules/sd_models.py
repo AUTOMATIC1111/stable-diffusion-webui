@@ -76,6 +76,7 @@ def check_cache_memory(state_dict):
         print("Lowest count model "+model_name_with_lowest_count)
         delete_cache_path = create_cache_path(model_name_with_lowest_count)
         print(delete_cache_path)
+        shared.model_runs.pop(model_name_with_lowest_count)
         if os.path.exists(delete_cache_path):
             os.remove(delete_cache_path)
             print('Deleting cache for '+model_name_with_lowest_count)
@@ -434,9 +435,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title
 
     if state_dict is None:
-        state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
-        write_state_dict_to_file(state_dict, os.path.join(
-            f"{checkpoint_info.model_name}.pth"))
+        state_dict = state_dict_manager(checkpoint_info, timer)
 
     model.is_sdxl = hasattr(model, 'conditioner')
     model.is_sd2 = not model.is_sdxl and hasattr(model.cond_stage_model, 'model')

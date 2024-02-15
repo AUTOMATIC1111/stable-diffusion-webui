@@ -14,7 +14,7 @@ parallel_processing_allowed = True
 styles_filename = cmd_opts.styles_file
 config_filename = cmd_opts.ui_settings_file
 hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
-default_path = 'cache/'
+default_path = '/stable-diffusion-webui/cache/'
 model_runs = {}
 demo = None
 
