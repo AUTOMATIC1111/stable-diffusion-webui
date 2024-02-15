@@ -4,6 +4,10 @@ import argparse
 import os
 import sys
 import shlex
+from pathlib import Path
+
+
+normalized_filepath = lambda filepath: str(Path(filepath).resolve())
 
 commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 sys.argv += shlex.split(commandline_args)
