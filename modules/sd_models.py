@@ -51,7 +51,7 @@ def write_state_dict_to_file(state_dict, file_path):
         torch.save(state_dict, f)
 
 
-@lru_cache(maxsize=10737418240, typed=True)
+@lru_cache(maxsize=32212254720, typed=True)
 def load_state_dict_from_file(file_path):
     print("Loading File From cache")
     return torch.load(file_path)
