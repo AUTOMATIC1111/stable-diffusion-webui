@@ -4,6 +4,7 @@ from functools import lru_cache
 import os.path
 import sys
 import threading
+from fastapi.exceptions import HTTPException
 
 import torch
 import re
@@ -50,18 +51,29 @@ def state_dict_manager(checkpoint_info, timer):
     state_dict_path = create_cache_path(model_name)
     t1 = Timer()
     if model_name in shared.model_state_dicts:
+        print("Using Ram Cache")
         state_dict = copy.deepcopy(shared.model_state_dicts[model_name])
+        checkpoint_config = sd_models_config.find_checkpoint_config(
+            state_dict, checkpoint_info)
         return state_dict, checkpoint_config
     elif os.path.exists(state_dict_path):
         state_dict = load_state_dict_from_file(state_dict_path)
         if len(shared.model_state_dicts) > ram_cached_models:
-            min_element = min(shared.model_runs.items(), key=lambda x: x[1])
-            model_name_with_lowest_count = min_element[0]
+            if shared.model_runs:
+                min_element = min(shared.model_runs.items(),
+                                  key=lambda x: x[1])
+                model_name_with_lowest_count = min_element[0]
+            else:
+                model_name_with_lowest_count = shared.model_state_dicts.popitem()[
+                    0]
             shared.model_state_dicts.pop(model_name_with_lowest_count)
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
         shared.model_state_dicts[model_name] = copy.deepcopy(state_dict)
+        checkpoint_config = sd_models_config.find_checkpoint_config(
+            state_dict, checkpoint_info)
         return state_dict, checkpoint_config
     else:
+        print("Creating Cache")
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
         state_dict_size = sys.getsizeof(state_dict)
         print(state_dict_size)
@@ -77,7 +89,7 @@ def state_dict_manager(checkpoint_info, timer):
 
 
 def check_cache_memory(state_dict):
-    print("Memory Checks")
+    print("Using Local Storage cache")
     current_cache = get_current_cache_size(shared.default_path)
     total_cache_size_gb = sum(current_cache.values())
     state_dict_size = sys.getsizeof(state_dict)
@@ -85,17 +97,24 @@ def check_cache_memory(state_dict):
     print(total_cache_size_gb)
     print(total_cache_size_gb + rounded_state_dict_size_gb)
     if available_storage < (total_cache_size_gb + rounded_state_dict_size_gb):
-        min_element = min(shared.model_runs.items(), key=lambda x: x[1])
-        model_name_with_lowest_count = min_element[0]
-        print("Lowest count model "+model_name_with_lowest_count)
-        delete_cache_path = create_cache_path(model_name_with_lowest_count)
-        print(delete_cache_path)
-        shared.model_runs.pop(model_name_with_lowest_count)
-        if os.path.exists(delete_cache_path):
-            os.remove(delete_cache_path)
-            print('Deleting cache for '+model_name_with_lowest_count)
-            return False
-    return True
+        if shared.model_runs:
+            min_element = min(shared.model_runs.items(), key=lambda x: x[1])
+            model_name_with_lowest_count = min_element[0]
+            shared.model_runs.pop(model_name_with_lowest_count)
+            print("Lowest count model "+model_name_with_lowest_count)
+            delete_cache_path = create_cache_path(model_name_with_lowest_count)
+            print(delete_cache_path)
+            if os.path.exists(delete_cache_path):
+                os.remove(delete_cache_path)
+                print('Deleting cache for '+model_name_with_lowest_count)
+                return False
+            return True
+        else:
+            raise HTTPException(
+                status_code=500, detail="Error with cache inform website owners")
+
+
+
 
 
 def write_state_dict_to_file(state_dict, file_path):
