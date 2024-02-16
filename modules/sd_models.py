@@ -49,6 +49,8 @@ def get_current_cache_size(directory):
 def state_dict_manager(checkpoint_info, timer):
     model_name = checkpoint_info.model_name
     state_dict_path = create_cache_path(model_name)
+    runpod_state_dict_path = create_cache_path(
+        model_name, '/runpod-volume/cache/')
     t1 = Timer()
     if model_name in shared.model_state_dicts:
         print("Using Ram Cache")
@@ -59,6 +61,7 @@ def state_dict_manager(checkpoint_info, timer):
     elif os.path.exists(state_dict_path):
         state_dict = load_state_dict_from_file(state_dict_path)
         if len(shared.model_state_dicts) > ram_cached_models:
+            print("deleting ram cache")
             if shared.model_runs:
                 min_element = min(shared.model_runs.items(),
                                   key=lambda x: x[1])
@@ -67,18 +70,24 @@ def state_dict_manager(checkpoint_info, timer):
                 model_name_with_lowest_count = shared.model_state_dicts.popitem()[
                     0]
             shared.model_state_dicts.pop(model_name_with_lowest_count)
-        state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
         shared.model_state_dicts[model_name] = copy.deepcopy(state_dict)
         checkpoint_config = sd_models_config.find_checkpoint_config(
             state_dict, checkpoint_info)
         return state_dict, checkpoint_config
-    else:
-        print("Creating Cache")
-        state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
-        state_dict_size = sys.getsizeof(state_dict)
-        print(state_dict_size)
+    elif os.path.exists(runpod_state_dict_path):
+        state_dict = load_state_dict_from_file(runpod_state_dict_path)
+        cache_memory = check_cache_memory(state_dict)
+        while cache_memory is False:
+            cache_memory = check_cache_memory(state_dict)
         write_state_dict_to_file(state_dict, state_dict_path)
-    t1.record("Cache System")
+        checkpoint_config = sd_models_config.find_checkpoint_config(
+            state_dict, checkpoint_info)
+        return state_dict, checkpoint_config
+    else:
+        print("Creating Cache")  # 8-20 / 15 -20 / 10 - 7 8 sec
+        state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
+        write_state_dict_to_file(state_dict, state_dict_path)
+    t1.record("Create Cache time")
     checkpoint_config = sd_models_config.find_checkpoint_config(
         state_dict, checkpoint_info)
     t1.record("Find Checkpoint config")
@@ -130,8 +139,8 @@ def load_state_dict_from_file(file_path):
     return torch.load(file_path)
 
 
-def create_cache_path(file_name):
-    default_path = shared.default_path
+def create_cache_path(file_name, path=shared.default_path):
+    default_path = path
     if not os.path.exists(default_path):
         os.makedirs(default_path)
     file_path = f'{default_path}{file_name}.pt'
