@@ -1,4 +1,5 @@
 import collections
+import copy
 from functools import lru_cache
 import os.path
 import sys
@@ -28,10 +29,11 @@ checkpoint_alisases = checkpoint_aliases  # for compatibility with old name
 checkpoints_loaded = collections.OrderedDict()
 
 model_size = {}
-available_storage = os.environ.get('storage', 10)
+available_storage = int(os.environ.get('storage', 10))
+ram_cached_models = int(os.environ.get('models_cache', 10))
 
 
-def get_cache_and_sizes(directory):
+def get_current_cache_size(directory):
     files_and_sizes = {}
     for filename in os.listdir(directory):
         filepath = os.path.join(directory, filename)
@@ -47,8 +49,18 @@ def state_dict_manager(checkpoint_info, timer):
     model_name = checkpoint_info.model_name
     state_dict_path = create_cache_path(model_name)
     t1 = Timer()
-    if os.path.exists(state_dict_path):
+    if model_name in shared.model_state_dicts:
+        state_dict = copy.deepcopy(shared.model_state_dicts[model_name])
+        return state_dict, checkpoint_config
+    elif os.path.exists(state_dict_path):
         state_dict = load_state_dict_from_file(state_dict_path)
+        if len(shared.model_state_dicts) > ram_cached_models:
+            min_element = min(shared.model_runs.items(), key=lambda x: x[1])
+            model_name_with_lowest_count = min_element[0]
+            shared.model_state_dicts.pop(model_name_with_lowest_count)
+        state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
+        shared.model_state_dicts[model_name] = copy.deepcopy(state_dict)
+        return state_dict, checkpoint_config
     else:
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
         state_dict_size = sys.getsizeof(state_dict)
@@ -66,7 +78,7 @@ def state_dict_manager(checkpoint_info, timer):
 
 def check_cache_memory(state_dict):
     print("Memory Checks")
-    current_cache = get_cache_and_sizes(shared.default_path)
+    current_cache = get_current_cache_size(shared.default_path)
     total_cache_size_gb = sum(current_cache.values())
     state_dict_size = sys.getsizeof(state_dict)
     rounded_state_dict_size_gb = int((state_dict_size // 10) % 10)
@@ -87,7 +99,6 @@ def check_cache_memory(state_dict):
 
 
 def write_state_dict_to_file(state_dict, file_path):
-
     cache_memory = check_cache_memory(state_dict)
     while cache_memory is False:
         cache_memory = check_cache_memory(state_dict)
@@ -95,8 +106,6 @@ def write_state_dict_to_file(state_dict, file_path):
     with open(file_path, 'wb') as f:
         torch.save(state_dict, f)
 
-
-@lru_cache(maxsize=32212254720, typed=True)
 def load_state_dict_from_file(file_path):
     print("Loading File From cache")
     return torch.load(file_path)

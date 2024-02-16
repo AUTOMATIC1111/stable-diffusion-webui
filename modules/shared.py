@@ -16,6 +16,7 @@ config_filename = cmd_opts.ui_settings_file
 hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
 default_path = '/stable-diffusion-webui/cache/'
 model_runs = {}
+model_state_dicts = {}
 demo = None
 
 device = None
