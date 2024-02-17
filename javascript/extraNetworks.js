@@ -114,6 +114,10 @@ function setupExtraNetworksForTab(tabname) {
 
         var controls = gradioApp().querySelector("#" + tabname_full + "_controls");
         controlsDiv.insertBefore(controls, null);
+
+        if (elem.style.display != "none") {
+            extraNetworksShowControlsForPage(tabname, tabname_full);
+        }
     });
 
     registerPrompt(tabname, tabname + "_prompt");
