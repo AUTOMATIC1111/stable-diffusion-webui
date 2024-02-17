@@ -9,7 +9,7 @@ import sys
 import gradio as gr
 import subprocess as sp
 
-from modules import call_queue, shared
+from modules import call_queue, shared, ui_tempdir
 from modules.infotext_utils import image_from_url_text
 import modules.images
 from modules.ui_components import ToolButton
@@ -164,29 +164,45 @@ class OutputPanel:
 def create_output_panel(tabname, outdir, toprow=None):
     res = OutputPanel()
 
-    def open_folder(f):
+    def open_folder(f, images=None, index=None):
+        if shared.cmd_opts.hide_ui_dir_config:
+            return
+
+        try:
+            if shared.opts.button_open_image_actual_dir and 0 <= index < len(images):
+                image = images[index]
+                image_path = image["name"].rsplit('?', 1)[0]
+                image_dir = os.path.split(image_path)[0]
+                if shared.opts.button_open_image_actual_dir_temp or not ui_tempdir.is_gradio_temp_path(image_dir):
+                    f = image_dir
+        except Exception:
+            pass
+
         if not os.path.exists(f):
-            print(f'Folder "{f}" does not exist. After you create an image, the folder will be created.')
+            msg = f'Folder "{f}" does not exist. After you create an image, the folder will be created.'
+            print(msg)
+            gr.Info(msg)
             return
         elif not os.path.isdir(f):
-            print(f"""
+            msg = f"""
 WARNING
 An open_folder request was made with an argument that is not a folder.
 This could be an error or a malicious attempt to run code on your computer.
 Requested path was: {f}
-""", file=sys.stderr)
+"""
+            print(msg, file=sys.stderr)
+            gr.Warning(msg)
             return
 
-        if not shared.cmd_opts.hide_ui_dir_config:
-            path = os.path.normpath(f)
-            if platform.system() == "Windows":
-                os.startfile(path)
-            elif platform.system() == "Darwin":
-                sp.Popen(["open", path])
-            elif "microsoft-standard-WSL2" in platform.uname().release:
-                sp.Popen(["wsl-open", path])
-            else:
-                sp.Popen(["xdg-open", path])
+        path = os.path.normpath(f)
+        if platform.system() == "Windows":
+            os.startfile(path)
+        elif platform.system() == "Darwin":
+            sp.Popen(["open", path])
+        elif "microsoft-standard-WSL2" in platform.uname().release:
+            sp.Popen(["wsl-open", path])
+        else:
+            sp.Popen(["xdg-open", path])
 
     with gr.Column(elem_id=f"{tabname}_results"):
         if toprow:
@@ -213,8 +229,12 @@ Requested path was: {f}
                     res.button_upscale = ToolButton('✨', elem_id=f'{tabname}_upscale', tooltip="Create an upscaled version of the current image using hires fix settings.")
 
             open_folder_button.click(
-                fn=lambda: open_folder(shared.opts.outdir_samples or outdir),
-                inputs=[],
+                fn=lambda images, index: open_folder(shared.opts.outdir_samples or outdir, images, index),
+                _js="(y, w) => [y, selected_gallery_index()]",
+                inputs=[
+                    res.gallery,
+                    open_folder_button,  # placeholder for index
+                ],
                 outputs=[],
             )
 
