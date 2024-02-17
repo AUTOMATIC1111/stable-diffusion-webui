@@ -24,6 +24,7 @@ import numpy as np
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
 
+lock = threading.Lock()
 checkpoints_list = {}
 checkpoint_aliases = {}
 checkpoint_alisases = checkpoint_aliases  # for compatibility with old name
@@ -53,11 +54,15 @@ def state_dict_manager(checkpoint_info, timer):
         model_name, '/runpod-volume/cache/')
     t1 = Timer()
     if model_name in shared.model_state_dicts:
-        print("Using Ram Cache")
-        state_dict = copy.deepcopy(shared.model_state_dicts[model_name])
-        checkpoint_config = sd_models_config.find_checkpoint_config(
-            state_dict, checkpoint_info)
-        return state_dict, checkpoint_config
+        lock.acquire()
+        try:
+            print("Using Ram Cache")
+            state_dict = copy.deepcopy(shared.model_state_dicts[model_name])
+            checkpoint_config = sd_models_config.find_checkpoint_config(
+                state_dict, checkpoint_info)
+            return state_dict, checkpoint_config
+        finally:
+            lock.release()
     elif os.path.exists(state_dict_path):
         state_dict = load_state_dict_from_file(state_dict_path)
         if len(shared.model_state_dicts) > ram_cached_models:
@@ -69,7 +74,11 @@ def state_dict_manager(checkpoint_info, timer):
             else:
                 model_name_with_lowest_count = shared.model_state_dicts.popitem()[
                     0]
-            shared.model_state_dicts.pop(model_name_with_lowest_count)
+            lock.acquire()
+            try:
+                shared.model_state_dicts.pop(model_name_with_lowest_count)
+            finally:
+                lock.release()
         shared.model_state_dicts[model_name] = copy.deepcopy(state_dict)
         checkpoint_config = sd_models_config.find_checkpoint_config(
             state_dict, checkpoint_info)
