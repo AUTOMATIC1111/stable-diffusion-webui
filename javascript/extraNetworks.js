@@ -625,7 +625,7 @@ function scheduleAfterScriptsCallbacks() {
 document.addEventListener("DOMContentLoaded", function() {
     var mutationObserver = new MutationObserver(function(m) {
         if (!executedAfterScripts &&
-            gradioApp().querySelectorAll("[id$='_extra_search']").length == 8) {
+            gradioApp().querySelectorAll("[id$='_extra_search']").length >= 6) {
             executedAfterScripts = true;
             scheduleAfterScriptsCallbacks();
         }
