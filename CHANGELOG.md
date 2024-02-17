@@ -39,8 +39,10 @@
 * Button for refresh extensions list ([#14857](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14857))
 * Add an option to disable normalization after calculating emphasis. ([#14874](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14874))
 * When counting tokens, also include enabled styles (can be disabled in settings to revert to previous behavior)
+* Configuration for the [📂] button for image gallery ([#14947](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14947))
 
 ### Extensions and API:
+* Removed packages from requirements: basicsr, gfpgan, realesrgan; as well as their dependencies: absl-py, addict, beautifulsoup4, future, gdown, grpcio, importlib-metadata, lmdb, lpips, Markdown, platformdirs, PySocks, soupsieve, tb-nightly, tensorboard-data-server, tomli, Werkzeug, yapf, zipp, soupsieve
 * Enable task ids for API ([#14314](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14314))
 * add override_settings support for infotext API
 * rename generation_parameters_copypaste module to infotext_utils
