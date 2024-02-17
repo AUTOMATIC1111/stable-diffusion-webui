@@ -220,10 +220,10 @@ class CFGDenoiser(torch.nn.Module):
 
         self.padded_cond_uncond = False
         self.padded_cond_uncond_v0 = False
-        if shared.opts.pad_cond_uncond and tensor.shape[1] != uncond.shape[1]:
-            tensor, uncond = self.pad_cond_uncond(tensor, uncond)
-        elif shared.opts.pad_cond_uncond_v0 and tensor.shape[1] != uncond.shape[1]:
+        if shared.opts.pad_cond_uncond_v0 and tensor.shape[1] != uncond.shape[1]:
             tensor, uncond = self.pad_cond_uncond_v0(tensor, uncond)
+        elif shared.opts.pad_cond_uncond and tensor.shape[1] != uncond.shape[1]:
+            tensor, uncond = self.pad_cond_uncond(tensor, uncond)
 
         if tensor.shape[1] == uncond.shape[1] or skip_uncond:
             if is_edit_model:
