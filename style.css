@@ -222,6 +222,10 @@ input[type="checkbox"].input-accordion-checkbox{
     top: -0.75em;
 }
 
+.block.token-counter-visible{
+    display: block !important;
+}
+
 .block.token-counter span{
     background: var(--input-background-fill) !important;
     box-shadow: 0 0 0.0 0.3em rgba(192,192,192,0.15), inset 0 0 0.6em rgba(192,192,192,0.075);
