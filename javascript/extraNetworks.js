@@ -172,7 +172,11 @@ function extraNetworksTabSelected(tabname, id, showPrompt, showNegativePrompt, t
 
 function applyExtraNetworkFilter(tabname_full) {
     var doFilter = function() {
-        extraNetworksApplyFilter[tabname_full](true);
+        var applyFunction = extraNetworksApplyFilter[tabname_full];
+
+        if (applyFunction) {
+            applyFunction(true);
+        }
     };
     setTimeout(doFilter, 1);
 }
