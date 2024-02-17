@@ -66,6 +66,7 @@ def is_using_v_parameterization_for_sd2(state_dict):
 
 
 def guess_model_config_from_state_dict(sd, filename):
+    print("Found Checkpoint info using state_dict")
     sd2_cond_proj_weight = sd.get('cond_stage_model.model.transformer.resblocks.0.attn.in_proj_weight', None)
     diffusion_model_input = sd.get('model.diffusion_model.input_blocks.0.0.weight', None)
     sd2_variations_weight = sd.get('embedder.model.ln_final.weight', None)
@@ -121,6 +122,7 @@ def find_checkpoint_config_near_filename(info):
 
     config = f"{os.path.splitext(info.filename)[0]}.yaml"
     if os.path.exists(config):
+        print("Found Checkpoint info using file_name")
         return config
 
     return None

@@ -32,7 +32,7 @@ checkpoints_loaded = collections.OrderedDict()
 
 model_size = {}
 available_storage = int(os.environ.get('storage', 10))
-ram_cached_models = int(os.environ.get('models_cache', 10))
+ram_cached_models = int(os.environ.get('models_cache', 4))
 
 
 def get_current_cache_size(directory):
@@ -47,13 +47,33 @@ def get_current_cache_size(directory):
     return files_and_sizes
 
 
+def lfu_model():
+    if shared.model_runs:
+        min_element = min(shared.model_runs.items(),
+                          key=lambda x: x[1])
+        model_name_with_lowest_count = min_element[0]
+        return model_name_with_lowest_count
+    else:
+        last_added_model = shared.model_state_dicts.popitem()[
+            0]
+        return last_added_model
+
+
+def write_state_dict_threaded(state_dict, state_dict_path):
+    def write_to_file():
+        write_state_dict_to_file(state_dict, state_dict_path)
+
+    write_thread = threading.Thread(target=write_to_file)
+    write_thread.start()
+
+
 def state_dict_manager(checkpoint_info, timer):
     model_name = checkpoint_info.model_name
     state_dict_path = create_cache_path(model_name)
     runpod_state_dict_path = create_cache_path(
         model_name, '/runpod-volume/cache/')
     t1 = Timer()
-    if model_name in shared.model_state_dicts:
+    if model_name in shared.model_state_dicts:  # Check in Ram
         lock.acquire()
         try:
             print("Using Ram Cache")
@@ -63,39 +83,40 @@ def state_dict_manager(checkpoint_info, timer):
             return state_dict, checkpoint_config
         finally:
             lock.release()
-    elif os.path.exists(state_dict_path):
+    elif os.path.exists(state_dict_path):  # Check in Local Storage
+        print('Using Local Cache')
         state_dict = load_state_dict_from_file(state_dict_path)
         if len(shared.model_state_dicts) > ram_cached_models:
             print("deleting ram cache")
-            if shared.model_runs:
-                min_element = min(shared.model_runs.items(),
-                                  key=lambda x: x[1])
-                model_name_with_lowest_count = min_element[0]
-            else:
-                model_name_with_lowest_count = shared.model_state_dicts.popitem()[
-                    0]
+            model_name_with_lowest_count = lfu_model()
             lock.acquire()
             try:
                 shared.model_state_dicts.pop(model_name_with_lowest_count)
             finally:
                 lock.release()
-        shared.model_state_dicts[model_name] = copy.deepcopy(state_dict)
+        lock.acquire()
+        try:
+            shared.model_state_dicts[model_name] = copy.deepcopy(
+                state_dict)
+        finally:
+            lock.release()
         checkpoint_config = sd_models_config.find_checkpoint_config(
             state_dict, checkpoint_info)
         return state_dict, checkpoint_config
-    elif os.path.exists(runpod_state_dict_path):
+    elif os.path.exists(runpod_state_dict_path):  # Check in RUnpod
+        print('Using Runpod Volume Cache')
         state_dict = load_state_dict_from_file(runpod_state_dict_path)
         cache_memory = check_cache_memory(state_dict)
         while cache_memory is False:
             cache_memory = check_cache_memory(state_dict)
-        write_state_dict_to_file(state_dict, state_dict_path)
+        write_state_dict_threaded(state_dict, state_dict_path)
         checkpoint_config = sd_models_config.find_checkpoint_config(
             state_dict, checkpoint_info)
         return state_dict, checkpoint_config
-    else:
-        print("Creating Cache")  # 8-20 / 15 -20 / 10 - 7 8 sec
+    else:  # Create Cache If Not Exist
+        print("Creating Cache")
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
-        write_state_dict_to_file(state_dict, state_dict_path)
+        write_state_dict_threaded(state_dict, runpod_state_dict_path)
     t1.record("Create Cache time")
     checkpoint_config = sd_models_config.find_checkpoint_config(
         state_dict, checkpoint_info)
@@ -107,7 +128,6 @@ def state_dict_manager(checkpoint_info, timer):
 
 
 def check_cache_memory(state_dict):
-    print("Using Local Storage cache")
     current_cache = get_current_cache_size(shared.default_path)
     total_cache_size_gb = sum(current_cache.values())
     state_dict_size = sys.getsizeof(state_dict)
@@ -116,8 +136,7 @@ def check_cache_memory(state_dict):
     print(total_cache_size_gb + rounded_state_dict_size_gb)
     if available_storage < (total_cache_size_gb + rounded_state_dict_size_gb):
         if shared.model_runs:
-            min_element = min(shared.model_runs.items(), key=lambda x: x[1])
-            model_name_with_lowest_count = min_element[0]
+            model_name_with_lowest_count = lfu_model()
             shared.model_runs.pop(model_name_with_lowest_count)
             print("Lowest count model "+model_name_with_lowest_count)
             delete_cache_path = create_cache_path(model_name_with_lowest_count)
@@ -132,13 +151,7 @@ def check_cache_memory(state_dict):
                 status_code=500, detail="Error with cache inform website owners")
 
 
-
-
-
 def write_state_dict_to_file(state_dict, file_path):
-    cache_memory = check_cache_memory(state_dict)
-    while cache_memory is False:
-        cache_memory = check_cache_memory(state_dict)
     print("Saving File to cache")
     with open(file_path, 'wb') as f:
         torch.save(state_dict, f)
@@ -152,7 +165,7 @@ def create_cache_path(file_name, path=shared.default_path):
     default_path = path
     if not os.path.exists(default_path):
         os.makedirs(default_path)
-    file_path = f'{default_path}{file_name}.pt'
+    file_path = f'{default_path}{file_name}.pth'
     return file_path
 
 
