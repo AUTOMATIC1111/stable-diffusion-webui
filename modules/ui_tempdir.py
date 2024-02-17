@@ -81,3 +81,18 @@ def cleanup_tmpdr():
 
             filename = os.path.join(root, name)
             os.remove(filename)
+
+
+def is_gradio_temp_path(path):
+    """
+    Check if the path is a temp dir used by gradio
+    """
+    path = Path(path)
+    if shared.opts.temp_dir and path.is_relative_to(shared.opts.temp_dir):
+        return True
+    if gradio_temp_dir := os.environ.get("GRADIO_TEMP_DIR"):
+        if path.is_relative_to(gradio_temp_dir):
+            return True
+    if path.is_relative_to(Path(tempfile.gettempdir()) / "gradio"):
+        return True
+    return False
