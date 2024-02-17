@@ -284,8 +284,7 @@ options_templates.update(options_section(('ui_gallery', "Gallery", "ui"), {
     "sd_webui_modal_lightbox_icon_opacity": OptionInfo(1, "Full page image viewer: control icon unfocused opacity", gr.Slider, {"minimum": 0.0, "maximum": 1, "step": 0.01}, onchange=shared.reload_gradio_theme).info('for mouse only').needs_reload_ui(),
     "sd_webui_modal_lightbox_toolbar_opacity": OptionInfo(0.9, "Full page image viewer: tool bar opacity", gr.Slider, {"minimum": 0.0, "maximum": 1, "step": 0.01}, onchange=shared.reload_gradio_theme).info('for mouse only').needs_reload_ui(),
     "gallery_height": OptionInfo("", "Gallery height", gr.Textbox).info("can be any valid CSS value, for example 768px or 20em").needs_reload_ui(),
-    "button_open_image_actual_dir": OptionInfo(True, '"Open images output directory" button opens the actual directory of the image rather than the output root folder'),
-    "button_open_image_actual_dir_temp": OptionInfo(False, '"Open images output directory" button opens the actual directory even for temp images'),
+    "open_dir_button_choice": OptionInfo("Subdirectory", "What directory the [📂] button opens", gr.Radio, {"choices": ["Output Root", "Subdirectory", "Subdirectory (even temp dir)"]}),
 }))
 
 options_templates.update(options_section(('ui_alternatives', "UI alternatives", "ui"), {
