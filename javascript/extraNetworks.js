@@ -622,10 +622,13 @@ function scheduleAfterScriptsCallbacks() {
     }, 200);
 }
 
-document.addEventListener("DOMContentLoaded", function() {
+onUiLoaded(function() {
     var mutationObserver = new MutationObserver(function(m) {
-        if (!executedAfterScripts &&
-            gradioApp().querySelectorAll("[id$='_extra_search']").length >= 6) {
+        let existingSearchfields = gradioApp().querySelectorAll("[id$='_extra_search']").length;
+        let neededSearchfields = gradioApp().querySelectorAll("[id$='_extra_tabs'] > .tab-nav > button").length - 2;
+
+        if (!executedAfterScripts && existingSearchfields >= neededSearchfields) {
+            mutationObserver.disconnect();
             executedAfterScripts = true;
             scheduleAfterScriptsCallbacks();
         }
