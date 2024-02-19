@@ -22,6 +22,8 @@ class NetworkModuleOFT(network.NetworkModule):
         self.org_module: list[torch.Module] = [self.sd_module]
 
         self.scale = 1.0
+        self.is_kohya = False
+        self.is_boft = False
 
         # kohya-ss
         if "oft_blocks" in weights.w.keys():
@@ -31,13 +33,11 @@ class NetworkModuleOFT(network.NetworkModule):
             self.dim = self.oft_blocks.shape[0] # lora dim
         # LyCORIS OFT
         elif "oft_diag" in weights.w.keys():
-            self.is_kohya = False
             self.oft_blocks = weights.w["oft_diag"]
             # self.alpha is unused
             self.dim = self.oft_blocks.shape[1] # (num_blocks, block_size, block_size)
 
             # LyCORIS BOFT
-            self.is_boft = False
             if weights.w["oft_diag"].dim() == 4:
                 self.is_boft = True
         self.rescale = weights.w.get('rescale', None)
