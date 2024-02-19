@@ -74,16 +74,18 @@ def uncrop(image, dest_size, paste_loc):
 
 def apply_overlay(image, paste_loc, overlay):
     if overlay is None:
-        return image
+        return image, image.copy()
 
     if paste_loc is not None:
         image = uncrop(image, (overlay.width, overlay.height), paste_loc)
+
+    original_denoised_image = image.copy()
 
     image = image.convert('RGBA')
     image.alpha_composite(overlay)
     image = image.convert('RGB')
 
-    return image
+    return image, original_denoised_image
 
 def create_binary_mask(image, round=True):
     if image.mode == 'RGBA' and image.getextrema()[-1] != (255, 255):
@@ -1021,7 +1023,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
                 if p.color_corrections is not None and i < len(p.color_corrections):
                     if save_samples and opts.save_images_before_color_correction:
-                        image_without_cc = apply_overlay(image, p.paste_to, overlay_image)
+                        image_without_cc, _ = apply_overlay(image, p.paste_to, overlay_image)
                         images.save_image(image_without_cc, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p, suffix="-before-color-correction")
                     image = apply_color_correction(p.color_corrections[i], image)
 
@@ -1029,12 +1031,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 # that is being composited over the original image,
                 # we need to keep the original image around
                 # and use it in the composite step.
-                original_denoised_image = image.copy()
-
-                if p.paste_to is not None:
-                    original_denoised_image = uncrop(original_denoised_image, (overlay_image.width, overlay_image.height), p.paste_to)
-
-                image = apply_overlay(image, p.paste_to, overlay_image)
+                image, original_denoised_image = apply_overlay(image, p.paste_to, overlay_image)
 
                 if p.scripts is not None:
                     pp = scripts.PostprocessImageArgs(image)
