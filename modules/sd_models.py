@@ -74,7 +74,7 @@ def state_dict_manager(checkpoint_info, timer):
         state_dict = copy.deepcopy(
             shared.model_name_state_dict_map[model_name])
     elif os.path.exists(local_storage_state_dict_path):  # Check in Local Storage
-        print('Using Local Cache')
+        print('Using Local Storage Cache')
         state_dict = load_state_dict_from_file(local_storage_state_dict_path)
         write_to_ram(model_name, state_dict)
     elif os.path.exists(runpod_state_dict_path):  # Check in Runpod
