@@ -1,3 +1,5 @@
+import logging
+import os
 import sys
 
 import gradio as gr
@@ -5,6 +7,36 @@ import gradio as gr
 from modules import shared_cmd_options, shared_gradio_themes, options, shared_items, sd_models_types
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir  # noqa: F401
 from modules import util
+from collections import OrderedDict
+
+
+class LRUCache:
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.cache = OrderedDict()
+
+    # def get(self, model):
+    #     if model in self.cache:
+    #         # Move the model to the end to indicate it was recently used
+    #         self.cache.move_to_end(model)
+    #         return True
+    #     else:
+    #         return False
+
+    def put(self, model):
+        if model in self.cache:
+            # If the model is already in the cache, move it to the end
+            self.cache.move_to_end(model)
+        elif len(self.cache) >= self.capacity:
+            # If the cache is full, remove the first (least recently used) item
+            return self.cache.popitem(last=False)
+        # Add the model to the cache
+        self.cache[model] = None
+        return None
+
+    def evict(self):
+        return self.cache.popitem(last=False)
+
 
 cmd_opts = shared_cmd_options.cmd_opts
 parser = shared_cmd_options.parser
@@ -15,8 +47,12 @@ styles_filename = cmd_opts.styles_file
 config_filename = cmd_opts.ui_settings_file
 hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
 default_path = '/stable-diffusion-webui/cache/'
-model_runs = {}
-model_state_dicts = {}
+ram_lru_model_cache = LRUCache(int(os.environ.get('max_models_on_ram', 0)))
+local_storage_lru_model_cache = LRUCache(
+    int(os.environ.get('max_models_on_local', 0)))
+runpod_volume_lru_model_cache = LRUCache(
+    int(os.environ.get('max_models_on_runpod', 0)))
+model_name_state_dict_map = {}
 demo = None
 
 device = None
@@ -87,3 +123,9 @@ list_checkpoint_tiles = shared_items.list_checkpoint_tiles
 refresh_checkpoints = shared_items.refresh_checkpoints
 list_samplers = shared_items.list_samplers
 reload_hypernetworks = shared_items.reload_hypernetworks
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+if not logger.handlers:
+    stream_handler = logging.StreamHandler(sys.stdout)
+    logger.addHandler(stream_handler)

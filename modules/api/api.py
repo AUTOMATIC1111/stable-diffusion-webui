@@ -61,12 +61,10 @@ def check_model(model_name, self):
 
 def validate_model(model_name, self):
     checkpoint_list = Api.get_sd_models(self)
-    if (len(checkpoint_list) == 0):
+    if (len(checkpoint_list) == 0):  # automatic has a test. if the checkpoint_list has length 0, then they just download a default model from hugging face
         return True
     for checkpoint in checkpoint_list:
         if model_name == checkpoint.get("title"):
-            shared.model_runs[checkpoint.get('model_name')] = shared.model_runs.get(
-                model_name, 0) + 1
             return True
     return False
 

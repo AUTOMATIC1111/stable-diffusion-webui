@@ -29,12 +29,12 @@ checkpoints_list = {}
 checkpoint_aliases = {}
 checkpoint_alisases = checkpoint_aliases  # for compatibility with old name
 checkpoints_loaded = collections.OrderedDict()
-
+runpod_path = '/runpod-volume/cache/'
 model_size = {}
-available_storage = int(os.environ.get('storage', 10))
-ram_cached_models = int(os.environ.get('models_cache', 4))
+local_storage = int(os.environ.get('storage', 0))
 
 
+# gets the size of a directory. used for keeping track of how large our cache on local storage is.
 def get_current_cache_size(directory):
     files_and_sizes = {}
     for filename in os.listdir(directory):
@@ -47,18 +47,6 @@ def get_current_cache_size(directory):
     return files_and_sizes
 
 
-def lfu_model():
-    if shared.model_runs:
-        min_element = min(shared.model_runs.items(),
-                          key=lambda x: x[1])
-        model_name_with_lowest_count = min_element[0]
-        return model_name_with_lowest_count
-    else:
-        last_added_model = shared.model_state_dicts.popitem()[
-            0]
-        return last_added_model
-
-
 def write_state_dict_threaded(state_dict, state_dict_path):
     def write_to_file():
         write_state_dict_to_file(state_dict, state_dict_path)
@@ -69,86 +57,98 @@ def write_state_dict_threaded(state_dict, state_dict_path):
 
 def state_dict_manager(checkpoint_info, timer):
     model_name = checkpoint_info.model_name
-    state_dict_path = create_cache_path(model_name)
+    local_storage_state_dict_path = create_cache_path(model_name)
     runpod_state_dict_path = create_cache_path(
-        model_name, '/runpod-volume/cache/')
+        model_name, runpod_path)
     t1 = Timer()
-    if model_name in shared.model_state_dicts:  # Check in Ram
-        lock.acquire()
-        try:
-            print("Using Ram Cache")
-            state_dict = copy.deepcopy(shared.model_state_dicts[model_name])
-            checkpoint_config = sd_models_config.find_checkpoint_config(
-                state_dict, checkpoint_info)
-            return state_dict, checkpoint_config
-        finally:
-            lock.release()
-    elif os.path.exists(state_dict_path):  # Check in Local Storage
+    if model_name in shared.model_name_state_dict_map:  # Check in Ram
+        print("Using Ram Cache")
+        state_dict = copy.deepcopy(
+            shared.model_name_state_dict_map[model_name])
+    elif os.path.exists(local_storage_state_dict_path):  # Check in Local Storage
         print('Using Local Cache')
-        state_dict = load_state_dict_from_file(state_dict_path)
-        if len(shared.model_state_dicts) > ram_cached_models:
-            print("deleting ram cache")
-            model_name_with_lowest_count = lfu_model()
-            lock.acquire()
-            try:
-                shared.model_state_dicts.pop(model_name_with_lowest_count)
-            finally:
-                lock.release()
-        lock.acquire()
-        try:
-            shared.model_state_dicts[model_name] = copy.deepcopy(
-                state_dict)
-        finally:
-            lock.release()
-        checkpoint_config = sd_models_config.find_checkpoint_config(
-            state_dict, checkpoint_info)
-        return state_dict, checkpoint_config
-    elif os.path.exists(runpod_state_dict_path):  # Check in RUnpod
+        state_dict = load_state_dict_from_file(local_storage_state_dict_path)
+        write_to_ram(model_name, state_dict)
+    elif os.path.exists(runpod_state_dict_path):  # Check in Runpod
         print('Using Runpod Volume Cache')
         state_dict = load_state_dict_from_file(runpod_state_dict_path)
-        cache_memory = check_cache_memory(state_dict)
-        while cache_memory is False:
-            cache_memory = check_cache_memory(state_dict)
-        write_state_dict_threaded(state_dict, state_dict_path)
-        checkpoint_config = sd_models_config.find_checkpoint_config(
-            state_dict, checkpoint_info)
-        return state_dict, checkpoint_config
+        write_to_local_storage(
+            state_dict, local_storage_state_dict_path, model_name)
     else:  # Create Cache If Not Exist
         print("Creating Cache")
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
-        write_state_dict_threaded(state_dict, runpod_state_dict_path)
+        # Pro is that we save on the time of processing the model into a state_dict.
+        # Con is that we double the amount of storage needed in runpod volume bc the state_dict is the same size as a model
+        write_to_runpod_volume(model_name, state_dict, runpod_state_dict_path)
     t1.record("Create Cache time")
-    checkpoint_config = sd_models_config.find_checkpoint_config(
-        state_dict, checkpoint_info)
     t1.record("Find Checkpoint config")
     print(f' Time Taken for Find Checkpoint config {t1.summary()}')
     timer.record("find config")
-    print(shared.model_runs)
+    checkpoint_config = sd_models_config.find_checkpoint_config(
+        state_dict, checkpoint_info)
     return state_dict, checkpoint_config
 
 
-def check_cache_memory(state_dict):
-    current_cache = get_current_cache_size(shared.default_path)
-    total_cache_size_gb = sum(current_cache.values())
+def write_to_ram(model_name, state_dict):
+    evicted_model = shared.ram_lru_model_cache.put(model_name)
+    if evicted_model is not None:
+        shared.model_name_state_dict_map.pop(evicted_model)
+    shared.model_name_state_dict_map[model_name] = copy.deepcopy(
+        state_dict)
+
+
+""" 
+write to runpod volumn is different than write to local storage in that it doesn't keep track of the curretn size of the models stored, 
+only the number of model stored. this is ok since we chose the number of models we are able to store in the runpod volumne much 
+lower than the maximum volumne of the runpod volumne so it doesn't overfill
+"""
+
+
+def write_to_runpod_volume(model_name, state_dict, runpod_state_dict_path):
+    evicted_model = shared.runpod_volume_lru_model_cache.put(model_name)
+    if evicted_model is not None:
+        evicted_model_path = create_cache_path(evicted_model, runpod_path)
+        if os.path.exists(evicted_model_path):
+            os.remove(evicted_model_path)
+
+    write_state_dict_threaded(state_dict, runpod_state_dict_path)
+
+
+def write_to_local_storage(state_dict, state_dict_path, model_name):
     state_dict_size = sys.getsizeof(state_dict)
     rounded_state_dict_size_gb = int((state_dict_size // 10) % 10)
-    print(total_cache_size_gb)
-    print(total_cache_size_gb + rounded_state_dict_size_gb)
-    if available_storage < (total_cache_size_gb + rounded_state_dict_size_gb):
-        if shared.model_runs:
-            model_name_with_lowest_count = lfu_model()
-            shared.model_runs.pop(model_name_with_lowest_count)
-            print("Lowest count model "+model_name_with_lowest_count)
-            delete_cache_path = create_cache_path(model_name_with_lowest_count)
-            print(delete_cache_path)
-            if os.path.exists(delete_cache_path):
-                os.remove(delete_cache_path)
-                print('Deleting cache for '+model_name_with_lowest_count)
-                return False
-            return True
-        else:
-            raise HTTPException(
-                status_code=500, detail="Error with cache inform website owners")
+    if local_storage < rounded_state_dict_size_gb:
+        return
+    found = True
+    while not has_enough_space_in_local_storage(state_dict) and found:
+        found = evict_model_from_local_storage()
+    if has_enough_space_in_local_storage():
+        shared.local_storage_lru_model_cache.put(model_name)
+        write_state_dict_threaded(state_dict, state_dict_path)
+    else:
+        shared.logger.warning("local storage issue check config")
+
+
+def evict_model_from_local_storage():
+    model_name_with_lowest_count, _ = shared.local_storage_lru_model_cache.evict()
+    print("LRU Model " + model_name_with_lowest_count)
+    delete_cache_path = create_cache_path(model_name_with_lowest_count)
+    if os.path.exists(delete_cache_path):
+        os.remove(delete_cache_path)
+        print('Deleting cache for '+model_name_with_lowest_count)
+    else:
+        shared.logger.warning(
+            f"cant find {delete_cache_path} in local storage")
+    return True
+
+
+def has_enough_space_in_local_storage(state_dict):
+    current_cache = get_current_cache_size(shared.default_path)
+    current_cache_size_gb = sum(current_cache.values())
+    state_dict_size = sys.getsizeof(state_dict)
+    rounded_state_dict_size_gb = int((state_dict_size // 10) % 10)
+    print(current_cache_size_gb + rounded_state_dict_size_gb)
+    return local_storage > (current_cache_size_gb + rounded_state_dict_size_gb)
 
 
 def write_state_dict_to_file(state_dict, file_path):
