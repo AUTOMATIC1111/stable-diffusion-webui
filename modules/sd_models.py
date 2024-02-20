@@ -56,6 +56,14 @@ def write_state_dict_threaded(state_dict, state_dict_path):
 
 
 def state_dict_manager(checkpoint_info, timer):
+    '''
+    Checks for a state_dict in ram, then local_storage, then in runpod volume,
+    if it doesn't exist. pulls the model from runpod volume,
+    converts it to state dict and stores it in runpod volume.
+    for each cache hit, the state_dict gets moved up one level of caching.
+    the least recently used model gets evicted from each level of cache when more room is needed.
+    '''
+
     model_name = checkpoint_info.model_name
     local_storage_state_dict_path = create_cache_path(model_name)
     runpod_state_dict_path = create_cache_path(
@@ -97,14 +105,12 @@ def write_to_ram(model_name, state_dict):
         state_dict)
 
 
-""" 
-write to runpod volumn is different than write to local storage in that it doesn't keep track of the curretn size of the models stored, 
-only the number of model stored. this is ok since we chose the number of models we are able to store in the runpod volumne much 
-lower than the maximum volumne of the runpod volumne so it doesn't overfill
-"""
-
-
 def write_to_runpod_volume(model_name, state_dict, runpod_state_dict_path):
+    """
+    write to runpod volumn is different than write to local storage in that it doesn't keep track of the curretn size of the models stored,
+    only the number of model stored. this is ok since we chose the number of models we are able to store in the runpod volumne much
+    lower than the maximum volumne of the runpod volumne so it doesn't overfill
+    """
     evicted_model = shared.runpod_volume_lru_model_cache.put(model_name)
     if evicted_model is not None:
         evicted_model_path = create_cache_path(evicted_model, runpod_path)
@@ -155,6 +161,7 @@ def write_state_dict_to_file(state_dict, file_path):
     print("Saving File to cache")
     with open(file_path, 'wb') as f:
         torch.save(state_dict, f)
+
 
 def load_state_dict_from_file(file_path):
     print("Loading File From cache")
