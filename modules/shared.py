@@ -28,7 +28,7 @@ class LRUCache:
             # If the model is already in the cache, move it to the end
             self.cache.move_to_end(model)
         elif len(self.cache) >= self.capacity:
-            if self.capacity is 0:
+            if self.capacity == 0:
                 return None
             # If the cache is full, remove the first (least recently used) item
             return self.cache.popitem(last=False)
@@ -37,7 +37,7 @@ class LRUCache:
         return None
 
     def evict(self):
-        if self.capacity is 0:
+        if self.capacity == 0:
             return None
         return self.cache.popitem(last=False)
 
@@ -51,9 +51,9 @@ styles_filename = cmd_opts.styles_file
 config_filename = cmd_opts.ui_settings_file
 hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
 default_path = '/stable-diffusion-webui/cache/'
-ram_lru_model_cache = LRUCache(int(os.environ.get('max_models_on_ram', 0)))
+ram_lru_model_cache = LRUCache(int(os.environ.get('max_models_on_ram', 4)))
 local_storage_lru_model_cache = LRUCache(
-    int(os.environ.get('max_models_on_local', 0)))
+    int(os.environ.get('max_models_on_local', 5)))
 runpod_volume_lru_model_cache = LRUCache(
     int(os.environ.get('max_models_on_runpod', 0)))
 model_name_state_dict_map = {}
