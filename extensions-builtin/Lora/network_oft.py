@@ -1,6 +1,5 @@
 import torch
 import network
-from lyco_helpers import factorization
 from einops import rearrange
 
 
