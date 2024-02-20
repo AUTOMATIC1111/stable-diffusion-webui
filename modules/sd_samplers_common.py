@@ -155,7 +155,7 @@ def replace_torchsde_browinan():
 replace_torchsde_browinan()
 
 
-def apply_refiner(cfg_denoiser):
+def apply_refiner(cfg_denoiser, sigma):
     if opts.refiner_switch_by_sample_steps:
         completed_ratio = cfg_denoiser.step / cfg_denoiser.total_steps
     else:
