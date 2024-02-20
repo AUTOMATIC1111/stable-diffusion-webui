@@ -28,6 +28,8 @@ class LRUCache:
             # If the model is already in the cache, move it to the end
             self.cache.move_to_end(model)
         elif len(self.cache) >= self.capacity:
+            if self.capacity is 0:
+                return None
             # If the cache is full, remove the first (least recently used) item
             return self.cache.popitem(last=False)
         # Add the model to the cache
@@ -35,6 +37,8 @@ class LRUCache:
         return None
 
     def evict(self):
+        if self.capacity is 0:
+            return None
         return self.cache.popitem(last=False)
 
 
