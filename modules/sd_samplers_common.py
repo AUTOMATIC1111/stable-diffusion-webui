@@ -181,8 +181,12 @@ def apply_refiner(cfg_denoiser):
     cfg_denoiser.p.extra_generation_params['Refiner'] = refiner_checkpoint_info.short_title
     cfg_denoiser.p.extra_generation_params['Refiner switch at'] = refiner_switch_at
 
+    alphas_cumprod_original = cfg_denoiser.p.sd_model.alphas_cumprod_original
+    alphas_cumprod = cfg_denoiser.p.sd_model.alphas_cumprod
     with sd_models.SkipWritingToConfig():
         sd_models.reload_model_weights(info=refiner_checkpoint_info)
+    cfg_denoiser.p.sd_model.alphas_cumprod_original = alphas_cumprod_original
+    cfg_denoiser.p.sd_model.alphas_cumprod = alphas_cumprod
 
     devices.torch_gc()
     cfg_denoiser.p.setup_conds()
