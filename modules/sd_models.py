@@ -34,16 +34,6 @@ model_size = {}
 local_storage = int(os.environ.get('storage', 0))
 
 
-# gets the size of a directory. used for keeping track of how large our cache on local storage is.
-
-def write_state_dict_threaded(state_dict, state_dict_path):
-    def write_to_file():
-        write_state_dict_to_file(state_dict, state_dict_path)
-
-    write_thread = threading.Thread(target=write_to_file)
-    write_thread.start()
-
-
 def state_dict_manager(checkpoint_info, timer):
     '''
     Checks for a state_dict in ram, then local_storage, then in runpod volume,
@@ -67,17 +57,17 @@ def state_dict_manager(checkpoint_info, timer):
         print('Using Local Storage Cache')
         state_dict = load_state_dict_from_file(local_storage_state_dict_path)
         write_to_ram(model_name, state_dict)
-    elif os.path.exists(runpod_state_dict_path):  # Check in Runpod
-        print('Using Runpod Volume Cache')
-        state_dict = load_state_dict_from_file(runpod_state_dict_path)
-        write_to_local_storage(
-            state_dict, local_storage_state_dict_path, model_name)
+    # elif os.path.exists(runpod_state_dict_path):  # Check in Runpod
+    #     print('Using Runpod Volume Cache')
+    #     state_dict = load_state_dict_from_file(runpod_state_dict_path)
+    #     write_to_local_storage(
+    #         state_dict, local_storage_state_dict_path, model_name)
     else:  # Create Cache If Not Exist
         print("Creating Cache")
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
         # Pro is that we save on the time of processing the model into a state_dict.
         # Con is that we double the amount of storage needed in runpod volume bc the state_dict is the same size as a model
-        write_to_runpod_volume(model_name, state_dict, runpod_state_dict_path)
+        write_to_local_storage(model_name, state_dict, runpod_state_dict_path)
     t1.record("Create Cache time")
     t1.record("Find Checkpoint config")
     print(f' Time Taken for Find Checkpoint config {t1.summary()}')
@@ -85,6 +75,14 @@ def state_dict_manager(checkpoint_info, timer):
     checkpoint_config = sd_models_config.find_checkpoint_config(
         state_dict, checkpoint_info)
     return state_dict, checkpoint_config
+
+
+def write_state_dict_threaded(state_dict, state_dict_path):
+    def write_to_file():
+        write_state_dict_to_file(state_dict, state_dict_path)
+
+    write_thread = threading.Thread(target=write_to_file)
+    write_thread.start()
 
 
 def write_to_ram(model_name, state_dict):
