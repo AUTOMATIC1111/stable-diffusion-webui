@@ -67,7 +67,7 @@ def state_dict_manager(checkpoint_info, timer):
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
         # Pro is that we save on the time of processing the model into a state_dict.
         # Con is that we double the amount of storage needed in runpod volume bc the state_dict is the same size as a model
-        write_to_local_storage(model_name, state_dict, runpod_state_dict_path)
+        write_to_local_storage(model_name, state_dict, model_name)
     t1.record("Create Cache time")
     t1.record("Find Checkpoint config")
     print(f' Time Taken for Find Checkpoint config {t1.summary()}')
