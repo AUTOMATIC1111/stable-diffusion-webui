@@ -69,7 +69,8 @@ def state_dict_manager(checkpoint_info, timer):
     runpod_state_dict_path = create_cache_path(
         model_name, runpod_path)
     t1 = Timer()
-    if model_name in shared.model_name_state_dict_map:  # Check in Ram
+    # Check in Ram
+    if shared.ram_lru_model_cache.get(model_name):
         print("Using Ram Cache")
         state_dict = copy.deepcopy(
             shared.model_name_state_dict_map[model_name])
@@ -100,7 +101,9 @@ def state_dict_manager(checkpoint_info, timer):
 def write_to_ram(model_name, state_dict):
     evicted_model = shared.ram_lru_model_cache.put(model_name)
     if evicted_model is not None:
-        shared.model_name_state_dict_map.pop(evicted_model)
+        shared.model_name_state_dict_map.pop(
+            evicted_model[0])  # evicted model is a tuple when not none
+        print(f'Evicted {evicted_model[0]}')
     shared.model_name_state_dict_map[model_name] = copy.deepcopy(
         state_dict)
 
@@ -127,8 +130,9 @@ def write_to_local_storage(state_dict, state_dict_path, model_name):
         return
     found = True
     while not has_enough_space_in_local_storage(state_dict) and found:
+        print("Dosent Have enough space")
         found = evict_model_from_local_storage()
-    if has_enough_space_in_local_storage():
+    if has_enough_space_in_local_storage(state_dict):
         shared.local_storage_lru_model_cache.put(model_name)
         write_state_dict_threaded(state_dict, state_dict_path)
     else:
@@ -153,18 +157,17 @@ def has_enough_space_in_local_storage(state_dict):
     current_cache_size_gb = sum(current_cache.values())
     state_dict_size = sys.getsizeof(state_dict)
     rounded_state_dict_size_gb = int((state_dict_size // 10) % 10)
-    print(current_cache_size_gb + rounded_state_dict_size_gb)
     return local_storage > (current_cache_size_gb + rounded_state_dict_size_gb)
 
 
 def write_state_dict_to_file(state_dict, file_path):
-    print("Saving File to cache")
+    print("Saving File to "+file_path)
     with open(file_path, 'wb') as f:
         torch.save(state_dict, f)
 
 
 def load_state_dict_from_file(file_path):
-    print("Loading File From cache")
+    print("Loading File From "+file_path)
     return torch.load(file_path)
 
 

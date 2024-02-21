@@ -15,13 +15,13 @@ class LRUCache:
         self.capacity = capacity
         self.cache = OrderedDict()
 
-    # def get(self, model):
-    #     if model in self.cache:
-    #         # Move the model to the end to indicate it was recently used
-    #         self.cache.move_to_end(model)
-    #         return True
-    #     else:
-    #         return False
+    def get(self, model):
+        if model in self.cache:
+            # Move the model to the end to indicate it was recently used
+            self.cache.move_to_end(model)
+            return True
+        else:
+            return False
 
     def put(self, model):
         if model in self.cache:
@@ -51,9 +51,9 @@ styles_filename = cmd_opts.styles_file
 config_filename = cmd_opts.ui_settings_file
 hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
 default_path = '/stable-diffusion-webui/cache/'
-ram_lru_model_cache = LRUCache(int(os.environ.get('max_models_on_ram', 4)))
+ram_lru_model_cache = LRUCache(int(os.environ.get('max_models_on_ram', 0)))
 local_storage_lru_model_cache = LRUCache(
-    int(os.environ.get('max_models_on_local', 5)))
+    int(os.environ.get('max_models_on_local', 0)))
 runpod_volume_lru_model_cache = LRUCache(
     int(os.environ.get('max_models_on_runpod', 0)))
 model_name_state_dict_map = {}
