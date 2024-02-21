@@ -1,6 +1,5 @@
 from contextlib import contextmanager, nullcontext
 import torch
-from torch.utils.weak import WeakIdKeyDictionary
 from modules import devices, shared, patches
 
 module_in_gpu = None
@@ -86,7 +85,7 @@ class RTTensorMoverPatches:
             self.stash[id(after_calc_event)] = (weight, bias, after_calc_event)
 
         to_remove = []
-        for k, (w, b, e) in self.stash.items():
+        for k, (_, _, e) in self.stash.items():
             if e.query():
                 to_remove.append(k)
 
