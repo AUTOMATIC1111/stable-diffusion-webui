@@ -649,13 +649,18 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
     related_tabs = []
 
-    for page in ui.stored_extra_pages:
+    def create_html():
+        ui.pages_contents = [pg.create_html(ui.tabname) for pg in ui.stored_extra_pages]
+
+    create_html()
+
+    for i, page in enumerate(ui.stored_extra_pages):
         with gr.Tab(page.title, elem_id=f"{tabname}_{page.extra_networks_tabname}", elem_classes=["extra-page"]) as tab:
             with gr.Column(elem_id=f"{tabname}_{page.extra_networks_tabname}_prompts", elem_classes=["extra-page-prompts"]):
                 pass
 
             elem_id = f"{tabname}_{page.extra_networks_tabname}_cards_html"
-            page_elem = gr.HTML('Loading...', elem_id=elem_id)
+            page_elem = gr.HTML(ui.pages_contents[i], elem_id=elem_id)
             ui.pages.append(page_elem)
             editor = page.create_user_metadata_editor(ui, tabname)
             editor.create_ui()
@@ -685,16 +690,6 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
         button_refresh = gr.Button("Refresh", elem_id=f"{tabname}_{page.extra_networks_tabname}_extra_refresh_internal", visible=False)
         button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages).then(fn=lambda: None, _js="function(){ " + f"applyExtraNetworkFilter('{tabname}_{page.extra_networks_tabname}');" + " }")
-
-    def create_html():
-        ui.pages_contents = [pg.create_html(ui.tabname) for pg in ui.stored_extra_pages]
-
-    def pages_html():
-        if not ui.pages_contents:
-            create_html()
-        return ui.pages_contents
-
-    interface.load(fn=pages_html, inputs=[], outputs=ui.pages)
 
     return ui
 
