@@ -35,17 +35,6 @@ local_storage = int(os.environ.get('storage', 0))
 
 
 # gets the size of a directory. used for keeping track of how large our cache on local storage is.
-def get_current_cache_size(directory):
-    files_and_sizes = {}
-    for filename in os.listdir(directory):
-        filepath = os.path.join(directory, filename)
-        if os.path.isfile(filepath):
-            size = os.path.getsize(filepath)
-            size_gb = size / (1024**3)
-            rounded_size_gb = int(size_gb) + (size_gb % 1 > 0)
-            files_and_sizes[filename] = rounded_size_gb
-    return files_and_sizes
-
 
 def write_state_dict_threaded(state_dict, state_dict_path):
     def write_to_file():
@@ -150,6 +139,18 @@ def evict_model_from_local_storage():
         shared.logger.warning(
             f"cant find {delete_cache_path} in local storage")
     return True
+
+
+def get_current_cache_size(directory):
+    files_and_sizes = {}
+    for filename in os.listdir(directory):
+        filepath = os.path.join(directory, filename)
+        if os.path.isfile(filepath):
+            size = os.path.getsize(filepath)
+            size_gb = size / (1024**3)
+            rounded_size_gb = int(size_gb) + (size_gb % 1 > 0)
+            files_and_sizes[filename] = rounded_size_gb
+    return files_and_sizes
 
 
 def has_enough_space_in_local_storage(state_dict):
