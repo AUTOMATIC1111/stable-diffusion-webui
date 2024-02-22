@@ -115,7 +115,7 @@
                     evt.preventDefault();
                 }
                 evt.stopPropagation();
-                
+
                 let delta = 0;
                 if (eventType.startsWith('mouse')) {
                     delta = R.screenX - evt.screenX;
