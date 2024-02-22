@@ -3,6 +3,15 @@ import gradio as gr
 
 from modules import localization, shared, scripts, util
 from modules.paths import script_path, data_path
+from modules.shared import cmd_opts
+
+
+css_hide_progressbar = """
+.margin svg { display:none!important; }
+.margin::before { content:"Loading..." }
+.progress-bar { display:none!important; }
+.progress-text { display:none!important; }
+"""
 
 
 def webpath(fn):
@@ -40,6 +49,9 @@ def css_html():
     user_css = os.path.join(data_path, "user.css")
     if os.path.exists(user_css):
         head += stylesheet(user_css)
+
+    if not cmd_opts.no_progressbar_hiding:
+        head += f'<style>{css_hide_progressbar}</style>'
 
     return head
 
