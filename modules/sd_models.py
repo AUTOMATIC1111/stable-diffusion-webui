@@ -6,6 +6,7 @@ import random
 import sys
 import threading
 from fastapi.exceptions import HTTPException
+import psutil
 
 import torch
 import re
@@ -92,6 +93,7 @@ def write_state_dict_threaded(state_dict, state_dict_path):
 
 
 def write_to_ram(model_name, state_dict):
+    print('RAM Used (GB):', psutil.virtual_memory()[3]/1000000000)
     evicted_model = shared.ram_lru_model_cache.put(model_name)
     if evicted_model is not None:
         shared.model_name_state_dict_map.pop(
