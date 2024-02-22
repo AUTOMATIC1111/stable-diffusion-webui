@@ -2,6 +2,7 @@ import collections
 import copy
 from functools import lru_cache
 import os.path
+import random
 import sys
 import threading
 from fastapi.exceptions import HTTPException
@@ -57,6 +58,10 @@ def state_dict_manager(checkpoint_info, timer):
         print('Using Local Storage Cache')
         state_dict = load_state_dict_from_file(local_storage_state_dict_path)
         write_to_ram(model_name, state_dict)
+        model_present_in_cache = shared.local_storage_lru_model_cache.get(
+            model_name)
+        if model_present_in_cache is False:
+            shared.local_storage_lru_model_cache.put(model_name)
     # elif os.path.exists(runpod_state_dict_path):  # Check in Runpod
     #     print('Using Runpod Volume Cache')
     #     state_dict = load_state_dict_from_file(runpod_state_dict_path)
@@ -128,12 +133,26 @@ def write_to_local_storage(state_dict, state_dict_path, model_name):
 
 
 def evict_model_from_local_storage():
-    model_name_with_lowest_count, _ = shared.local_storage_lru_model_cache.evict()
-    print("LRU Model " + model_name_with_lowest_count)
-    delete_cache_path = create_cache_path(model_name_with_lowest_count)
+    try:
+        model_name_with_lowest_count, _ = shared.local_storage_lru_model_cache.evict()
+        delete_cache_path = create_cache_path(model_name_with_lowest_count)
+        print("LRU Model " + model_name_with_lowest_count)
+    except KeyError as e:
+        shared.logger.warning(
+            f'the dictionary for lru local cache and storage is out of sync {e}')
+        files_in_local_storage = os.listdir(shared.default_path)
+        if files_in_local_storage:
+            # using os, create a dictionary to get file and their creation time
+            file_creation_times = {file: os.path.getctime(
+                os.path.join(shared.default_path, file)) for file in files_in_local_storage}
+            earliest_created_file = min(
+                file_creation_times, key=file_creation_times.get)
+            delete_cache_path = create_cache_path(earliest_created_file)
+            shared.logger.warning(
+                f'deleting earliest created file {earliest_created_file}')
     if os.path.exists(delete_cache_path):
         os.remove(delete_cache_path)
-        print('Deleting cache for '+model_name_with_lowest_count)
+        print('Deleting cache '+str(delete_cache_path))
     else:
         shared.logger.warning(
             f"cant find {delete_cache_path} in local storage")
