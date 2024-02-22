@@ -65,21 +65,31 @@
         resizeHandle.classList.add('resize-handle');
         parent.insertBefore(resizeHandle, rightCol);
 
-        resizeHandle.addEventListener('mousedown', (evt) => {
-            if (evt.button !== 0) return;
+        ['mousedown', 'touchstart'].forEach((eventType) => {
+            resizeHandle.addEventListener(eventType, (evt) => {
+                if (eventType.startsWith('mouse')) {
+                    if (evt.button !== 0) return;
+                } else {
+                    if (evt.changedTouches.length !== 1) return;
+                }
 
-            evt.preventDefault();
-            evt.stopPropagation();
+                evt.preventDefault();
+                evt.stopPropagation();
 
-            document.body.classList.add('resizing');
+                document.body.classList.add('resizing');
 
-            R.tracking = true;
-            R.parent = parent;
-            R.parentWidth = parent.offsetWidth;
-            R.handle = resizeHandle;
-            R.leftCol = leftCol;
-            R.leftColStartWidth = leftCol.offsetWidth;
-            R.screenX = evt.screenX;
+                R.tracking = true;
+                R.parent = parent;
+                R.parentWidth = parent.offsetWidth;
+                R.handle = resizeHandle;
+                R.leftCol = leftCol;
+                R.leftColStartWidth = leftCol.offsetWidth;
+                if (eventType.startsWith('mouse')) {
+                    R.screenX = evt.screenX;
+                } else {
+                    R.screenX = evt.changedTouches[0].screenX;
+                }
+            });
         });
 
         resizeHandle.addEventListener('dblclick', (evt) => {
@@ -92,30 +102,49 @@
         afterResize(parent);
     }
 
-    window.addEventListener('mousemove', (evt) => {
-        if (evt.button !== 0) return;
+    ['mousemove', 'touchmove'].forEach((eventType) => {
+        window.addEventListener(eventType, (evt) => {
+            if (eventType.startsWith('mouse')) {
+                if (evt.button !== 0) return;
+            } else {
+                if (evt.changedTouches.length !== 1) return;
+            }
 
-        if (R.tracking) {
-            evt.preventDefault();
-            evt.stopPropagation();
+            if (R.tracking) {
+                if (eventType.startsWith('mouse')) {
+                    evt.preventDefault();
+                }
+                evt.stopPropagation();
 
-            const delta = R.screenX - evt.screenX;
-            const leftColWidth = Math.max(Math.min(R.leftColStartWidth - delta, R.parent.offsetWidth - GRADIO_MIN_WIDTH - PAD), GRADIO_MIN_WIDTH);
-            setLeftColGridTemplate(R.parent, leftColWidth);
-        }
+                let delta = 0;
+                if (eventType.startsWith('mouse')) {
+                    delta = R.screenX - evt.screenX;
+                } else {
+                    delta = R.screenX - evt.changedTouches[0].screenX;
+                }
+                const leftColWidth = Math.max(Math.min(R.leftColStartWidth - delta, R.parent.offsetWidth - GRADIO_MIN_WIDTH - PAD), GRADIO_MIN_WIDTH);
+                setLeftColGridTemplate(R.parent, leftColWidth);
+            }
+        });
     });
 
-    window.addEventListener('mouseup', (evt) => {
-        if (evt.button !== 0) return;
+    ['mouseup', 'touchend'].forEach((eventType) => {
+        window.addEventListener(eventType, (evt) => {
+            if (eventType.startsWith('mouse')) {
+                if (evt.button !== 0) return;
+            } else {
+                if (evt.changedTouches.length !== 1) return;
+            }
 
-        if (R.tracking) {
-            evt.preventDefault();
-            evt.stopPropagation();
+            if (R.tracking) {
+                evt.preventDefault();
+                evt.stopPropagation();
 
-            R.tracking = false;
+                R.tracking = false;
 
-            document.body.classList.remove('resizing');
-        }
+                document.body.classList.remove('resizing');
+            }
+        });
     });
 
 
