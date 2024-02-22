@@ -140,16 +140,7 @@ def evict_model_from_local_storage():
     except KeyError as e:
         shared.logger.warning(
             f'the dictionary for lru local cache and storage is out of sync {e}')
-        files_in_local_storage = os.listdir(shared.default_path)
-        if files_in_local_storage:
-            # using os, create a dictionary to get file and their creation time
-            file_creation_times = {file: os.path.getctime(
-                os.path.join(shared.default_path, file)) for file in files_in_local_storage}
-            earliest_created_file = min(
-                file_creation_times, key=file_creation_times.get)
-            delete_cache_path = create_cache_path(earliest_created_file)
-            shared.logger.warning(
-                f'deleting earliest created file {earliest_created_file}')
+        delete_cache_path = get_earliest_created_file_in_local_storage()
     if os.path.exists(delete_cache_path):
         os.remove(delete_cache_path)
         print('Deleting cache '+str(delete_cache_path))
@@ -157,6 +148,20 @@ def evict_model_from_local_storage():
         shared.logger.warning(
             f"cant find {delete_cache_path} in local storage")
     return True
+
+
+def get_earliest_created_file_in_local_storage():
+    files_in_local_storage = os.listdir(shared.default_path)
+    if files_in_local_storage:
+        # using os, create a dictionary to get file and their creation time
+        file_creation_times = {file: os.path.getctime(
+            os.path.join(shared.default_path, file)) for file in files_in_local_storage}
+        earliest_created_file = min(
+            file_creation_times, key=file_creation_times.get)
+        delete_cache_path = create_cache_path(earliest_created_file)
+        shared.logger.warning(
+            f'deleting earliest created file {earliest_created_file}')
+        return delete_cache_path
 
 
 def get_current_cache_size(directory):
