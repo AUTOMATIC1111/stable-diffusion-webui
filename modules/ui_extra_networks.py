@@ -289,12 +289,16 @@ class ExtraNetworksPage:
                 }
             )
 
+        description = (item.get("description", "") or "" if shared.opts.extra_networks_card_show_desc else "")
+        if not shared.opts.extra_networks_card_description_is_html:
+            description = html.escape(description)
+
         # Some items here might not be used depending on HTML template used.
         args = {
             "background_image": background_image,
             "card_clicked": onclick,
             "copy_path_button": btn_copy_path,
-            "description": (item.get("description", "") or "" if shared.opts.extra_networks_card_show_desc else ""),
+            "description": description,
             "edit_button": btn_edit_item,
             "local_preview": quote_js(item["local_preview"]),
             "metadata_button": btn_metadata,
