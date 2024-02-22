@@ -472,7 +472,7 @@ class ExtraNetworksPage:
 
         return f"<ul class='tree-list tree-list--tree'>{res}</ul>"
 
-    def create_card_view_html(self, tabname: str) -> str:
+    def create_card_view_html(self, tabname: str, *, none_message) -> str:
         """Generates HTML for the network Card View section for a tab.
 
         This HTML goes into the `extra-networks-pane.html` <div> with
@@ -480,6 +480,7 @@ class ExtraNetworksPage:
 
         Args:
             tabname: The name of the active tab.
+            none_message: HTML text to show when there are no cards.
 
         Returns:
             HTML formatted string.
@@ -490,24 +491,28 @@ class ExtraNetworksPage:
 
         if res == "":
             dirs = "".join([f"<li>{x}</li>" for x in self.allowed_directories_for_previews()])
-            res = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
+            res = none_message or shared.html("extra-networks-no-cards.html").format(dirs=dirs)
 
         return res
 
-    def create_html(self, tabname):
+    def create_html(self, tabname, *, empty=False):
         """Generates an HTML string for the current pane.
 
         The generated HTML uses `extra-networks-pane.html` as a template.
 
         Args:
             tabname: The name of the active tab.
+            empty: create an empty HTML page with no items
 
         Returns:
             HTML formatted string.
         """
         self.lister.reset()
         self.metadata = {}
-        self.items = {x["name"]: x for x in self.list_items()}
+
+        items_list = [] if empty else self.list_items()
+        self.items = {x["name"]: x for x in items_list}
+
         # Populate the instance metadata for each item.
         for item in self.items.values():
             metadata = item.get("metadata")
@@ -536,7 +541,7 @@ class ExtraNetworksPage:
                 "tree_view_btn_extra_class": tree_view_btn_extra_class,
                 "tree_view_div_extra_class": tree_view_div_extra_class,
                 "tree_html": self.create_tree_view_html(tabname),
-                "items_html": self.create_card_view_html(tabname),
+                "items_html": self.create_card_view_html(tabname, none_message="Loading..." if empty else None),
             }
         )
 
@@ -655,7 +660,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
                 pass
 
             elem_id = f"{tabname}_{page.extra_networks_tabname}_cards_html"
-            page_elem = gr.HTML('Loading...', elem_id=elem_id)
+            page_elem = gr.HTML(page.create_html(tabname, empty=True), elem_id=elem_id)
             ui.pages.append(page_elem)
             editor = page.create_user_metadata_editor(ui, tabname)
             editor.create_ui()
