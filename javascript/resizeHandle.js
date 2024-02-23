@@ -23,12 +23,14 @@
     function displayResizeHandle(parent) {
         if (window.innerWidth < GRADIO_MIN_WIDTH * 2 + PAD * 4) {
             parent.style.display = 'flex';
+            parent.querySelector('.resize-handle').style.display = "none";
             if (R.handle != null) {
                 R.handle.style.opacity = '0';
             }
             return false;
         } else {
             parent.style.display = 'grid';
+            parent.querySelector('.resize-handle').style.display = 'block';
             if (R.handle != null) {
                 R.handle.style.opacity = '100';
             }
