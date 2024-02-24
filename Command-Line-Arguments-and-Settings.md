@@ -158,6 +158,7 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/10516
 --disable-safe-unpickle | None | False				| Disable checking PyTorch models for malicious code. |
 --ngrok | NGROK | None         				 | ngrok authtoken, alternative to gradio `--share`.
 --ngrok-region | NGROK_REGION | us			 | The region in which ngrok should start.
+--ngrok-options | NGROK_OPTIONS | None | The options to pass to ngrok in JSON format, e.g.: `{"authtoken_from_env":true, "basic_auth":"user:password", "oauth_provider":"google", "oauth_allow_emails":"user@asdf.com"}`
 --update-check | None | None | On startup, notifies whether or not your web UI version (commit) is up-to-date with the current master branch.
 --update-all-extensions | None | None | On startup, it pulls the latest updates for all extensions you have installed.
 --reinstall-xformers | None | False | Force-reinstall xformers. Useful for upgrading - but remove it after upgrading or you'll reinstall xformers perpetually. |
