@@ -9,7 +9,7 @@ stream_impl = devices.get_stream_impl()
 stream_wrapper = devices.get_stream_wrapper()
 
 
-use_streamlined_lowvram = not shared.opts.use_non_streamlined_lowvram and stream_impl is not None and stream_wrapper is not None
+use_streamlined_lowvram = torch.cuda.is_available() and not shared.opts.use_non_streamlined_lowvram and stream_impl is not None and stream_wrapper is not None
 
 
 def is_same_device(device1, device2):
