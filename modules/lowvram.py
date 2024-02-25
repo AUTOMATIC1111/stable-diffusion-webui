@@ -96,19 +96,19 @@ class RTTensorMoverPatches:
             del self.stash[k]
 
     def _wrapper_default(self, original):
-        def wrapper(input, weight, bias, *args, **kwargs):
+        def wrapper(input, weight, bias=None, *args, **kwargs):
             with self.wrap_weight_biases(input, weight, bias) as (w, b):
                 return original(input, w, b, *args, **kwargs)
         return wrapper
 
     def _wrapper_group_norm(self, original):
-        def wrapper(input, num_groups, weight, bias, *args, **kwargs):
+        def wrapper(input, num_groups, weight=None, bias=None, *args, **kwargs):
             with self.wrap_weight_biases(input, weight, bias) as (w, b):
                 return original(input, num_groups, w, b, *args, **kwargs)
         return wrapper
 
     def _wrapper_layer_norm(self, original):
-        def wrapper(input, normalized_shape, weight, bias, *args, **kwargs):
+        def wrapper(input, normalized_shape, weight=None, bias=None, *args, **kwargs):
             with self.wrap_weight_biases(input, weight, bias) as (w, b):
                 return original(input, normalized_shape, w, b, *args, **kwargs)
         return wrapper
