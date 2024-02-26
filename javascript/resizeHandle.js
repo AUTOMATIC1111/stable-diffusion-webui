@@ -1,6 +1,5 @@
 (function() {
     const GRADIO_MIN_WIDTH = 320;
-    const GRID_TEMPLATE_COLUMNS = '1fr 16px 1fr';
     const PAD = 16;
     const DEBOUNCE_TIME = 100;
 
@@ -37,7 +36,7 @@
     }
 
     function afterResize(parent) {
-        if (displayResizeHandle(parent) && parent.style.gridTemplateColumns != GRID_TEMPLATE_COLUMNS) {
+        if (displayResizeHandle(parent) && parent.style.gridTemplateColumns != parent.style.originalGridTemplateColumns) {
             const oldParentWidth = R.parentWidth;
             const newParentWidth = parent.offsetWidth;
             const widthL = parseInt(parent.style.gridTemplateColumns.split(' ')[0]);
@@ -59,7 +58,9 @@
 
         parent.style.display = 'grid';
         parent.style.gap = '0';
-        parent.style.gridTemplateColumns = GRID_TEMPLATE_COLUMNS;
+        const gridTemplateColumns = `${parent.children[0].style.flexGrow}fr ${PAD}px ${parent.children[1].style.flexGrow}fr`;
+        parent.style.gridTemplateColumns = gridTemplateColumns;
+        parent.style.originalGridTemplateColumns = gridTemplateColumns;
 
         const resizeHandle = document.createElement('div');
         resizeHandle.classList.add('resize-handle');
@@ -96,7 +97,7 @@
             evt.preventDefault();
             evt.stopPropagation();
 
-            parent.style.gridTemplateColumns = GRID_TEMPLATE_COLUMNS;
+            parent.style.gridTemplateColumns = parent.style.originalGridTemplateColumns;
         });
 
         afterResize(parent);
