@@ -22,15 +22,11 @@
     function displayResizeHandle(parent) {
         if (window.innerWidth < GRADIO_MIN_WIDTH * 2 + PAD * 4) {
             parent.style.display = 'flex';
-            if (R.handle != null) {
-                R.handle.style.opacity = '0';
-            }
+            parent.resizeHandle.style.display = "none";
             return false;
         } else {
             parent.style.display = 'grid';
-            if (R.handle != null) {
-                R.handle.style.opacity = '100';
-            }
+            parent.resizeHandle.style.display = "block";
             return true;
         }
     }
@@ -65,6 +61,7 @@
         const resizeHandle = document.createElement('div');
         resizeHandle.classList.add('resize-handle');
         parent.insertBefore(resizeHandle, rightCol);
+        parent.resizeHandle = resizeHandle;
 
         ['mousedown', 'touchstart'].forEach((eventType) => {
             resizeHandle.addEventListener(eventType, (evt) => {
@@ -82,7 +79,6 @@
                 R.tracking = true;
                 R.parent = parent;
                 R.parentWidth = parent.offsetWidth;
-                R.handle = resizeHandle;
                 R.leftCol = leftCol;
                 R.leftColStartWidth = leftCol.offsetWidth;
                 if (eventType.startsWith('mouse')) {
