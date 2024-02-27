@@ -452,7 +452,7 @@ function extraNetworksControlTreeViewOnClick(event, tabname, extra_networks_tabn
     let resizeHandle = parent.querySelector('.resize-handle');
     tree.classList.toggle("hidden");
 
-    if (tree.classList.contains("hidden")){
+    if (tree.classList.contains("hidden")) {
         tree.style.display = 'none';
         resizeHandle.style.display = 'none';
         parent.style.display = 'flex';
