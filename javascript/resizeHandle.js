@@ -166,18 +166,15 @@
     setupResizeHandle = setup;
 })();
 
-onUiLoaded(function() {
-    for (var elem of gradioApp().querySelectorAll('.resize-handle-row')) {
-        if (!elem.querySelector('.resize-handle')) {
-            setupResizeHandle(elem);
-        }
-    }
-});
 
-function setupExtraNetworksResizeHandle() {
-    for (var elem of document.body.querySelectorAll('.resize-handle-row')) {
+function setupAllResizeHandles() {
+    for (var elem of gradioApp().querySelectorAll('.resize-handle-row')) {
         if (!elem.querySelector('.resize-handle') && !elem.children[0].classList.contains("hidden")) {
             setupResizeHandle(elem);
         }
     }
 }
+
+
+onUiLoaded(setupAllResizeHandles);
+

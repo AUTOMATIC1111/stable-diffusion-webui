@@ -454,16 +454,18 @@ function extraNetworksControlTreeViewOnClick(event, tabname, extra_networks_tabn
 
     if (tree.classList.contains("hidden")) {
         tree.style.display = 'none';
-        resizeHandle.style.display = 'none';
         parent.style.display = 'flex';
+        if (resizeHandle) {
+            resizeHandle.style.display = 'none';
+        }
     } else {
         tree.style.display = 'block';
+        parent.style.display = 'grid';
         if (!resizeHandle) {
             setupResizeHandle(parent);
             resizeHandle = parent.querySelector('.resize-handle');
         }
         resizeHandle.style.display = 'block';
-        parent.style.display = 'grid';
     }
     event.currentTarget.classList.toggle("extra-network-control--enabled");
 }
