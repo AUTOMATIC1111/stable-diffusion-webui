@@ -20,6 +20,9 @@
     }
 
     function displayResizeHandle(parent) {
+        if (!parent.needHideOnMoblie) {
+            return true;
+        }
         if (window.innerWidth < GRADIO_MIN_WIDTH * 2 + PAD * 4) {
             parent.style.display = 'flex';
             parent.resizeHandle.style.display = "none";
@@ -58,9 +61,13 @@
         if (parent.children[0].style.flexGrow) {
             leftColTemplate = `${parent.children[0].style.flexGrow}fr`;
             parent.minLeftColWidth = GRADIO_MIN_WIDTH;
+            parent.minRightColWidth = GRADIO_MIN_WIDTH;
+            parent.needHideOnMoblie = true;
         } else {
             leftColTemplate = parent.children[0].style.flexBasis;
             parent.minLeftColWidth = parent.children[0].style.flexBasis.slice(0, -2);
+            parent.minRightColWidth = 0;
+            parent.needHideOnMoblie = false;
         }
         const gridTemplateColumns = `${leftColTemplate} ${PAD}px ${parent.children[1].style.flexGrow}fr`;
         parent.style.gridTemplateColumns = gridTemplateColumns;
@@ -127,7 +134,7 @@
                 } else {
                     delta = R.screenX - evt.changedTouches[0].screenX;
                 }
-                const leftColWidth = Math.max(Math.min(R.leftColStartWidth - delta, R.parent.offsetWidth - GRADIO_MIN_WIDTH - PAD), R.parent.minLeftColWidth);
+                const leftColWidth = Math.max(Math.min(R.leftColStartWidth - delta, R.parent.offsetWidth - R.parent.minRightColWidth - PAD), R.parent.minLeftColWidth);
                 setLeftColGridTemplate(R.parent, leftColWidth);
             }
         });
