@@ -531,9 +531,13 @@ class ExtraNetworksPage:
         data_sortkey = f"{data_sortmode}-{data_sortdir}-{len(self.items)}"
         tree_view_btn_extra_class = ""
         tree_view_div_extra_class = "hidden"
+        tree_view_div_default_display = "none"
+        extra_network_pane_content_default_display = "flex"
         if shared.opts.extra_networks_tree_view_default_enabled:
             tree_view_btn_extra_class = "extra-network-control--enabled"
             tree_view_div_extra_class = ""
+            tree_view_div_default_display = "block"
+            extra_network_pane_content_default_display = "grid"
 
         return self.pane_tpl.format(
             **{
@@ -546,6 +550,9 @@ class ExtraNetworksPage:
                 "tree_view_div_extra_class": tree_view_div_extra_class,
                 "tree_html": self.create_tree_view_html(tabname),
                 "items_html": self.create_card_view_html(tabname, none_message="Loading..." if empty else None),
+                "extra_networks_tree_view_min_width": shared.opts.extra_networks_tree_view_min_width,
+                "tree_view_div_default_display": tree_view_div_default_display,
+                "extra_network_pane_content_default_display": extra_network_pane_content_default_display,
             }
         )
 
@@ -703,7 +710,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             create_html()
         return ui.pages_contents
 
-    interface.load(fn=pages_html, inputs=[], outputs=ui.pages)
+    interface.load(fn=pages_html, inputs=[], outputs=ui.pages).then(fn=lambda: None, _js='setupExtraNetworksResizeHandle')
 
     return ui
 

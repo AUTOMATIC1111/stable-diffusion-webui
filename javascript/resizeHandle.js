@@ -39,7 +39,7 @@
 
             const ratio = newParentWidth / oldParentWidth;
 
-            const newWidthL = Math.max(Math.floor(ratio * widthL), GRADIO_MIN_WIDTH);
+            const newWidthL = Math.max(Math.floor(ratio * widthL), parent.minLeftColWidth);
             setLeftColGridTemplate(parent, newWidthL);
 
             R.parentWidth = newParentWidth;
@@ -54,7 +54,15 @@
 
         parent.style.display = 'grid';
         parent.style.gap = '0';
-        const gridTemplateColumns = `${parent.children[0].style.flexGrow}fr ${PAD}px ${parent.children[1].style.flexGrow}fr`;
+        let leftColTemplate = "";
+        if (parent.children[0].style.flexGrow) {
+            leftColTemplate = `${parent.children[0].style.flexGrow}fr`;
+            parent.minLeftColWidth = GRADIO_MIN_WIDTH;
+        } else {
+            leftColTemplate = parent.children[0].style.flexBasis;
+            parent.minLeftColWidth = parent.children[0].style.flexBasis.slice(0, -2);
+        }
+        const gridTemplateColumns = `${leftColTemplate} ${PAD}px ${parent.children[1].style.flexGrow}fr`;
         parent.style.gridTemplateColumns = gridTemplateColumns;
         parent.style.originalGridTemplateColumns = gridTemplateColumns;
 
@@ -119,7 +127,7 @@
                 } else {
                     delta = R.screenX - evt.changedTouches[0].screenX;
                 }
-                const leftColWidth = Math.max(Math.min(R.leftColStartWidth - delta, R.parent.offsetWidth - GRADIO_MIN_WIDTH - PAD), GRADIO_MIN_WIDTH);
+                const leftColWidth = Math.max(Math.min(R.leftColStartWidth - delta, R.parent.offsetWidth - GRADIO_MIN_WIDTH - PAD), R.parent.minLeftColWidth);
                 setLeftColGridTemplate(R.parent, leftColWidth);
             }
         });
@@ -165,3 +173,11 @@ onUiLoaded(function() {
         }
     }
 });
+
+function setupExtraNetworksResizeHandle() {
+    for (var elem of document.body.querySelectorAll('.resize-handle-row')) {
+        if (!elem.querySelector('.resize-handle') && !elem.children[0].classList.contains("hidden")) {
+            setupResizeHandle(elem);
+        }
+    }
+}
