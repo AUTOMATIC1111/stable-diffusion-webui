@@ -57,7 +57,7 @@ class VideoRenditionTaskHandler(Txt2ImgTaskHandler):
             yield progress
 
             progress = TaskProgress.new_finish(task, {
-                    'rednition_video_key': oss_key
+                    'video_key': oss_key
                 })
             progress.task_desc = f'VideoRendition task:{task.id} finished.'
             yield progress
