@@ -131,7 +131,7 @@ class TaskType(IntEnum):
     OnePress = 8
     ClothesRepair = 9
     ModelCheck = 10
-
+    VideoRendition=11 # 视频转绘
 
 class TaskStatus(IntEnum):
     Waiting = 0

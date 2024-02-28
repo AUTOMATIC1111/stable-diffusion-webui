@@ -1,0 +1,38 @@
+{
+  "add_prefix_space": false,
+  "added_tokens_decoder": {
+    "0": {
+      "content": "!",
+      "lstrip": false,
+      "normalized": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    },
+    "49406": {
+      "content": "<|startoftext|>",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    },
+    "49407": {
+      "content": "<|endoftext|>",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    }
+  },
+  "bos_token": "<|startoftext|>",
+  "clean_up_tokenization_spaces": true,
+  "do_lower_case": true,
+  "eos_token": "<|endoftext|>",
+  "errors": "replace",
+  "model_max_length": 77,
+  "pad_token": "!",
+  "tokenizer_class": "CLIPTokenizer",
+  "unk_token": "<|endoftext|>"
+}

@@ -1,0 +1,34 @@
+{
+  "add_prefix_space": false,
+  "bos_token": {
+    "__type": "AddedToken",
+    "content": "<|startoftext|>",
+    "lstrip": false,
+    "normalized": true,
+    "rstrip": false,
+    "single_word": false
+  },
+  "do_lower_case": true,
+  "eos_token": {
+    "__type": "AddedToken",
+    "content": "<|endoftext|>",
+    "lstrip": false,
+    "normalized": true,
+    "rstrip": false,
+    "single_word": false
+  },
+  "errors": "replace",
+  "model_max_length": 77,
+  "name_or_path": "openai/clip-vit-large-patch14",
+  "pad_token": "<|endoftext|>",
+  "special_tokens_map_file": "./special_tokens_map.json",
+  "tokenizer_class": "CLIPTokenizer",
+  "unk_token": {
+    "__type": "AddedToken",
+    "content": "<|endoftext|>",
+    "lstrip": false,
+    "normalized": true,
+    "rstrip": false,
+    "single_word": false
+  }
+}
