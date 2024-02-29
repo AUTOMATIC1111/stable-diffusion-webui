@@ -550,7 +550,7 @@ class ExtraNetworksPage:
                 "tree_view_div_extra_class": tree_view_div_extra_class,
                 "tree_html": self.create_tree_view_html(tabname),
                 "items_html": self.create_card_view_html(tabname, none_message="Loading..." if empty else None),
-                "extra_networks_tree_view_min_width": shared.opts.extra_networks_tree_view_min_width,
+                "extra_networks_tree_view_default_width": shared.opts.extra_networks_tree_view_default_width,
                 "tree_view_div_default_display": tree_view_div_default_display,
                 "extra_network_pane_content_default_display": extra_network_pane_content_default_display,
             }

@@ -65,7 +65,7 @@
             parent.needHideOnMoblie = true;
         } else {
             leftColTemplate = parent.children[0].style.flexBasis;
-            parent.minLeftColWidth = parent.children[0].style.flexBasis.slice(0, -2);
+            parent.minLeftColWidth = parent.children[0].style.flexBasis.slice(0, -2) / 2;
             parent.minRightColWidth = 0;
             parent.needHideOnMoblie = false;
         }
