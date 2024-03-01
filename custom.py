@@ -29,3 +29,17 @@ def llul():
 
 def ControlNet():
        os.system('git clone https://github.com/Mikubill/sd-webui-controlnet.git')
+
+def installRegionalPrompter():
+       os.system('git clone https://github.com/hako-mikan/sd-webui-regional-prompter')
+
+def installUltimateSDUpscale():
+       os.system('git clone https://github.com/Coyote-A/ultimate-upscale-for-automatic1111')
+
+def installOpenPoseEditor():
+       os.system('git clone https://github.com/fkunn1326/openpose-editor')
+
+def installADetailer():
+       os.system('git clone https://github.com/Bing-su/adetailer')
+
+
