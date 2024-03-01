@@ -43,3 +43,28 @@ def installADetailer():
        os.system('git clone https://github.com/Bing-su/adetailer')
 
 
+def installExt():
+        os.system('git clone https://github.com/modelscope/facechain.git')
+        os.system('git clone https://github.com/aigc-apps/sd-webui-EasyPhoto.git')
+        os.system('git clone https://github.com/Scholar01/sd-webui-mov2mov.git')
+        os.system('git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-wildcards.git')
+        os.system('git clone https://github.com/OpenTalker/SadTalker.git')
+        os.system('git clone https://github.com/CiaraStrawberry/TemporalKit')
+        os.system('git clone https://github.com/s0md3v/sd-webui-roop')
+        os.system('git clone https://github.com/huchenlei/sd-webui-openpose-editor.git')
+        os.system('git clone https://github.com/continue-revolution/sd-webui-segment-anything.git')
+        os.system('git clone https://github.com/Bing-su/adetailer.git')
+        os.system('git clone https://github.com/Physton/sd-webui-prompt-all-in-one')
+        os.system('git clone https://github.com/zanllp/sd-webui-infinite-image-browsing.git')
+        os.system('git clone https://github.com/v8hid/infinite-zoom-automatic1111-webui.git')
+        os.system('git clone https://github.com/hako-mikan/sd-webui-regional-prompter.git')
+        os.system('git clone https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111.git')
+        os.system('git clone https://github.com/s9roll7/ebsynth_utility.git')
+        os.system('git clone https://github.com/fkunn1326/openpose-editor.git')
+        os.system('git clone https://github.com/mcmonkeyprojects/sd-dynamic-thresholding.git')
+        os.system('git clone https://github.com/Coyote-A/ultimate-upscale-for-automatic1111.git')
+        os.system('git clone https://github.com/kohya-ss/sd-webui-additional-networks.git')
+        os.system('git clone https://github.com/thygate/stable-diffusion-webui-depthmap-script.git')
+        os.system('git clone https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git')
+      
+
