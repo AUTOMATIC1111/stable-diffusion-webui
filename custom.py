@@ -28,4 +28,4 @@ def llul():
        os.system('git clone https://github.com/hnmr293/sd-webui-llul.git')
 
 def ControlNet():
-       os.system('git clone https://github.com/lllyasviel/ControlNet.git')
+       os.system('git clone https://github.com/Mikubill/sd-webui-controlnet.git')
