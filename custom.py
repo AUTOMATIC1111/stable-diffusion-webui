@@ -48,12 +48,14 @@ def installSadtalker():
 def installFacechain():
         os.system('git clone https://github.com/modelscope/facechain.git')
 
+def installRoop():
+        os.system('git clone https://github.com/s0md3v/sd-webui-roop')
+      
 def installExt():
         os.system('git clone https://github.com/aigc-apps/sd-webui-EasyPhoto.git')
         os.system('git clone https://github.com/Scholar01/sd-webui-mov2mov.git')
         os.system('git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-wildcards.git')
         os.system('git clone https://github.com/CiaraStrawberry/TemporalKit')
-        os.system('git clone https://github.com/s0md3v/sd-webui-roop')
         os.system('git clone https://github.com/huchenlei/sd-webui-openpose-editor.git')
         os.system('git clone https://github.com/continue-revolution/sd-webui-segment-anything.git')
         os.system('git clone https://github.com/Bing-su/adetailer.git')
