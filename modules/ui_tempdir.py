@@ -14,30 +14,30 @@ from modules import shared
 Savedfile = namedtuple("Savedfile", ["name"])
 
 
-def register_tmp_file(gradio, filename):
-    if hasattr(gradio, 'temp_file_sets'):  # gradio 3.15
+def register_tmp_file(gradio_app, filename):
+    if hasattr(gradio_app, 'temp_file_sets'):  # gradio 3.15
         if hasattr(gr.utils, 'abspath'):  # gradio 4.19
             filename = gr.utils.abspath(filename)
         else:
             filename = os.path.abspath(filename)
 
-        gradio.temp_file_sets[0] = gradio.temp_file_sets[0] | {filename}
+        gradio_app.temp_file_sets[0] = gradio_app.temp_file_sets[0] | {filename}
 
-    if hasattr(gradio, 'temp_dirs'):  # gradio 3.9
-        gradio.temp_dirs = gradio.temp_dirs | {os.path.abspath(os.path.dirname(filename))}
+    if hasattr(gradio_app, 'temp_dirs'):  # gradio 3.9
+        gradio_app.temp_dirs = gradio_app.temp_dirs | {os.path.abspath(os.path.dirname(filename))}
 
 
-def check_tmp_file(gradio, filename):
-    if hasattr(gradio, 'temp_file_sets'):
+def check_tmp_file(gradio_app, filename):
+    if hasattr(gradio_app, 'temp_file_sets'):
         if hasattr(gr.utils, 'abspath'):  # gradio 4.19
             filename = gr.utils.abspath(filename)
         else:
             filename = os.path.abspath(filename)
 
-        return any(filename in fileset for fileset in gradio.temp_file_sets)
+        return any(filename in fileset for fileset in gradio_app.temp_file_sets)
 
-    if hasattr(gradio, 'temp_dirs'):
-        return any(Path(temp_dir).resolve() in Path(filename).resolve().parents for temp_dir in gradio.temp_dirs)
+    if hasattr(gradio_app, 'temp_dirs'):
+        return any(Path(temp_dir).resolve() in Path(filename).resolve().parents for temp_dir in gradio_app.temp_dirs)
 
     return False
 
