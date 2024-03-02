@@ -74,16 +74,18 @@ def uncrop(image, dest_size, paste_loc):
 
 def apply_overlay(image, paste_loc, overlay):
     if overlay is None:
-        return image
+        return image, image.copy()
 
     if paste_loc is not None:
         image = uncrop(image, (overlay.width, overlay.height), paste_loc)
+
+    original_denoised_image = image.copy()
 
     image = image.convert('RGBA')
     image.alpha_composite(overlay)
     image = image.convert('RGB')
 
-    return image
+    return image, original_denoised_image
 
 def create_binary_mask(image, round=True):
     if image.mode == 'RGBA' and image.getextrema()[-1] != (255, 255):
@@ -455,6 +457,7 @@ class StableDiffusionProcessing:
             self.height,
             opts.fp8_storage,
             opts.cache_fp16_weight,
+            opts.emphasis,
         )
 
     def get_conds_with_caching(self, function, required_prompts, steps, caches, extra_network_data, hires_steps=None):
@@ -912,33 +915,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
-            def rescale_zero_terminal_snr_abar(alphas_cumprod):
-                alphas_bar_sqrt = alphas_cumprod.sqrt()
-
-                # Store old values.
-                alphas_bar_sqrt_0 = alphas_bar_sqrt[0].clone()
-                alphas_bar_sqrt_T = alphas_bar_sqrt[-1].clone()
-
-                # Shift so the last timestep is zero.
-                alphas_bar_sqrt -= (alphas_bar_sqrt_T)
-
-                # Scale so the first timestep is back to the old value.
-                alphas_bar_sqrt *= alphas_bar_sqrt_0 / (alphas_bar_sqrt_0 - alphas_bar_sqrt_T)
-
-                # Convert alphas_bar_sqrt to betas
-                alphas_bar = alphas_bar_sqrt**2  # Revert sqrt
-                alphas_bar[-1] = 4.8973451890853435e-08
-                return alphas_bar
-
-            if hasattr(p.sd_model, 'alphas_cumprod') and hasattr(p.sd_model, 'alphas_cumprod_original'):
-                p.sd_model.alphas_cumprod = p.sd_model.alphas_cumprod_original.to(shared.device)
-
-                if opts.use_downcasted_alpha_bar:
-                    p.extra_generation_params['Downcast alphas_cumprod'] = opts.use_downcasted_alpha_bar
-                    p.sd_model.alphas_cumprod = p.sd_model.alphas_cumprod.half().to(shared.device)
-                if opts.sd_noise_schedule == "Zero Terminal SNR":
-                    p.extra_generation_params['Noise Schedule'] = opts.sd_noise_schedule
-                    p.sd_model.alphas_cumprod = rescale_zero_terminal_snr_abar(p.sd_model.alphas_cumprod).to(shared.device)
+            sd_models.apply_alpha_schedule_override(p.sd_model, p)
 
             with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
                 samples_ddim = p.sample(conditioning=p.c, unconditional_conditioning=p.uc, seeds=p.seeds, subseeds=p.subseeds, subseed_strength=p.subseed_strength, prompts=p.prompts)
@@ -1020,7 +997,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
                 if p.color_corrections is not None and i < len(p.color_corrections):
                     if save_samples and opts.save_images_before_color_correction:
-                        image_without_cc = apply_overlay(image, p.paste_to, overlay_image)
+                        image_without_cc, _ = apply_overlay(image, p.paste_to, overlay_image)
                         images.save_image(image_without_cc, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p, suffix="-before-color-correction")
                     image = apply_color_correction(p.color_corrections[i], image)
 
@@ -1028,12 +1005,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 # that is being composited over the original image,
                 # we need to keep the original image around
                 # and use it in the composite step.
-                original_denoised_image = image.copy()
-
-                if p.paste_to is not None:
-                    original_denoised_image = uncrop(original_denoised_image, (overlay_image.width, overlay_image.height), p.paste_to)
-
-                image = apply_overlay(image, p.paste_to, overlay_image)
+                image, original_denoised_image = apply_overlay(image, p.paste_to, overlay_image)
 
                 if p.scripts is not None:
                     pp = scripts.PostprocessImageArgs(image)

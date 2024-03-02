@@ -187,8 +187,7 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
 
         samples = self.launch_sampling(t_enc + 1, lambda: self.func(self.model_wrap_cfg, xi, extra_args=self.sampler_extra_args, disable=False, callback=self.callback_state, **extra_params_kwargs))
 
-        if self.model_wrap_cfg.padded_cond_uncond:
-            p.extra_generation_params["Pad conds"] = True
+        self.add_infotext(p)
 
         return samples
 
@@ -234,8 +233,7 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
 
         samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, x, extra_args=self.sampler_extra_args, disable=False, callback=self.callback_state, **extra_params_kwargs))
 
-        if self.model_wrap_cfg.padded_cond_uncond:
-            p.extra_generation_params["Pad conds"] = True
+        self.add_infotext(p)
 
         return samples
 

@@ -223,6 +223,10 @@ input[type="checkbox"].input-accordion-checkbox{
     top: -0.75em;
 }
 
+.block.token-counter-visible{
+    display: block !important;
+}
+
 .block.token-counter span{
     background: var(--input-background-fill) !important;
     box-shadow: 0 0 0.0 0.3em rgba(192,192,192,0.15), inset 0 0 0.6em rgba(192,192,192,0.075);
@@ -332,17 +336,17 @@ input[type="checkbox"].input-accordion-checkbox{
 .generate-box{
     position: relative;
 }
-.gradio-button.generate-box-skip, .gradio-button.generate-box-interrupt{
+.gradio-button.generate-box-skip, .gradio-button.generate-box-interrupt, .gradio-button.generate-box-interrupting{
     position: absolute;
     width: 50%;
     height: 100%;
     display: none;
     background: #b4c0cc;
 }
-.gradio-button.generate-box-skip:hover, .gradio-button.generate-box-interrupt:hover{
+.gradio-button.generate-box-skip:hover, .gradio-button.generate-box-interrupt:hover, .gradio-button.generate-box-interrupting:hover{
     background: #c2cfdb;
 }
-.gradio-button.generate-box-interrupt{
+.gradio-button.generate-box-interrupt, .gradio-button.generate-box-interrupting{
     left: 0;
     border-radius: 0.5rem 0 0 0.5rem;
 }
@@ -845,6 +849,20 @@ table.popup-table .link{
 #available_extensions .star_count{
     margin-left: auto;
     display: inline-block;
+}
+
+/* extensions tab table row hover highlight */
+
+#extensions tr:hover td,
+#config_state_extensions tr:hover td,
+#available_extensions tr:hover td {
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.dark #extensions tr:hover td ,
+.dark #config_state_extensions tr:hover td ,
+.dark #available_extensions tr:hover td {
+    background: rgba(255, 255, 255, 0.15);
 }
 
 /* replace original footer with ours */
@@ -1496,12 +1514,12 @@ body.resizing .resize-handle {
     background-color: var(--input-placeholder-color);
 }
 
-.dark .extra-network-control .extra-network-control--enabled {
-    background-color: var(--neutral-700);
+.extra-network-control .extra-network-control--enabled {
+    background-color: rgba(0, 0, 0, 0.15);
 }
 
 .dark .extra-network-control .extra-network-control--enabled {
-    background-color: var(--neutral-300);
+    background-color: rgba(255, 255, 255, 0.15);
 }
 
 /* ==== REFRESH ICON ACTIONS ==== */
@@ -1594,9 +1612,10 @@ body.resizing .resize-handle {
     display: inline-flex;
     visibility: hidden;
     color: var(--button-secondary-text-color);
-
+    width: 0;
 }
 
 .extra-network-tree .tree-list-content:hover .button-row {
     visibility: visible;
+    width: auto;
 }

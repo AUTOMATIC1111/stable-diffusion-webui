@@ -365,6 +365,12 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "Cache FP16 weight for LoRA" not in res and res["FP8 weight"] != "Disable":
         res["Cache FP16 weight for LoRA"] = False
 
+    if "Emphasis" not in res:
+        res["Emphasis"] = "Original"
+
+    if "Refiner switch by sampling steps" not in res:
+        res["Refiner switch by sampling steps"] = False
+
     infotext_versions.backcompat(res)
 
     for key in skip_fields:

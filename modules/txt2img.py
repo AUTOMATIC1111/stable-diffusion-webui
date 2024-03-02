@@ -60,10 +60,10 @@ def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, g
     assert len(gallery) > 0, 'No image to upscale'
     assert 0 <= gallery_index < len(gallery), f'Bad image index: {gallery_index}'
 
-    p = txt2img_create_processing(id_task, request, *args)
-    p.enable_hr = True
+    p = txt2img_create_processing(id_task, request, *args, force_enable_hr=True)
     p.batch_size = 1
     p.n_iter = 1
+    # txt2img_upscale attribute that signifies this is called by txt2img_upscale
     p.txt2img_upscale = True
 
     geninfo = json.loads(generation_info)

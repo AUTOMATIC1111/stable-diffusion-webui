@@ -61,7 +61,7 @@ class ScriptPostprocessingSplitOversized(scripts_postprocessing.ScriptPostproces
             ratio = (pp.image.height * width) / (pp.image.width * height)
             inverse_xy = True
 
-        if ratio >= 1.0 and ratio > split_threshold:
+        if ratio >= 1.0 or ratio > split_threshold:
             return
 
         result, *others = split_pic(pp.image, inverse_xy, width, height, overlap_ratio)

@@ -48,11 +48,6 @@ function setupTokenCounting(id, id_counter, id_button) {
     var counter = gradioApp().getElementById(id_counter);
     var textarea = gradioApp().querySelector(`#${id} > label > textarea`);
 
-    if (opts.disable_token_counters) {
-        counter.style.display = "none";
-        return;
-    }
-
     if (counter.parentElement == prompt.parentElement) {
         return;
     }
@@ -61,15 +56,32 @@ function setupTokenCounting(id, id_counter, id_button) {
     prompt.parentElement.style.position = "relative";
 
     var func = onEdit(id, textarea, 800, function() {
-        gradioApp().getElementById(id_button)?.click();
+        if (counter.classList.contains("token-counter-visible")) {
+            gradioApp().getElementById(id_button)?.click();
+        }
     });
     promptTokenCountUpdateFunctions[id] = func;
     promptTokenCountUpdateFunctions[id_button] = func;
 }
 
-function setupTokenCounters() {
-    setupTokenCounting('txt2img_prompt', 'txt2img_token_counter', 'txt2img_token_button');
-    setupTokenCounting('txt2img_neg_prompt', 'txt2img_negative_token_counter', 'txt2img_negative_token_button');
-    setupTokenCounting('img2img_prompt', 'img2img_token_counter', 'img2img_token_button');
-    setupTokenCounting('img2img_neg_prompt', 'img2img_negative_token_counter', 'img2img_negative_token_button');
+function toggleTokenCountingVisibility(id, id_counter, id_button) {
+    var counter = gradioApp().getElementById(id_counter);
+
+    counter.style.display = opts.disable_token_counters ? "none" : "block";
+    counter.classList.toggle("token-counter-visible", !opts.disable_token_counters);
 }
+
+function runCodeForTokenCounters(fun) {
+    fun('txt2img_prompt', 'txt2img_token_counter', 'txt2img_token_button');
+    fun('txt2img_neg_prompt', 'txt2img_negative_token_counter', 'txt2img_negative_token_button');
+    fun('img2img_prompt', 'img2img_token_counter', 'img2img_token_button');
+    fun('img2img_neg_prompt', 'img2img_negative_token_counter', 'img2img_negative_token_button');
+}
+
+onUiLoaded(function() {
+    runCodeForTokenCounters(setupTokenCounting);
+});
+
+onOptionsChanged(function() {
+    runCodeForTokenCounters(toggleTokenCountingVisibility);
+});

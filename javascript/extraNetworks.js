@@ -48,7 +48,7 @@ function setupExtraNetworksForTab(tabname) {
             return; // `return` is equivalent of `continue` but for forEach loops.
         }
 
-        var applyFilter = function() {
+        var applyFilter = function(force) {
             var searchTerm = search.value.toLowerCase();
             gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card').forEach(function(elem) {
                 var searchOnly = elem.querySelector('.search_only');
@@ -67,17 +67,17 @@ function setupExtraNetworksForTab(tabname) {
                 }
             });
 
-            applySort();
+            applySort(force);
         };
 
-        var applySort = function() {
+        var applySort = function(force) {
             var cards = gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card');
             var reverse = sort_dir.dataset.sortdir == "Descending";
             var sortKey = sort_mode.dataset.sortmode.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim() || "name";
             sortKey = "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1);
             var sortKeyStore = sortKey + "-" + (reverse ? "Descending" : "Ascending") + "-" + cards.length;
 
-            if (sortKeyStore == sort_mode.dataset.sortkey) {
+            if (sortKeyStore == sort_mode.dataset.sortkey && !force) {
                 return;
             }
             sort_mode.dataset.sortkey = sortKeyStore;
@@ -114,6 +114,10 @@ function setupExtraNetworksForTab(tabname) {
 
         var controls = gradioApp().querySelector("#" + tabname_full + "_controls");
         controlsDiv.insertBefore(controls, null);
+
+        if (elem.style.display != "none") {
+            extraNetworksShowControlsForPage(tabname, tabname_full);
+        }
     });
 
     registerPrompt(tabname, tabname + "_prompt");
@@ -167,11 +171,21 @@ function extraNetworksTabSelected(tabname, id, showPrompt, showNegativePrompt, t
 }
 
 function applyExtraNetworkFilter(tabname_full) {
-    setTimeout(extraNetworksApplyFilter[tabname_full], 1);
+    var doFilter = function() {
+        var applyFunction = extraNetworksApplyFilter[tabname_full];
+
+        if (applyFunction) {
+            applyFunction(true);
+        }
+    };
+    setTimeout(doFilter, 1);
 }
 
 function applyExtraNetworkSort(tabname_full) {
-    setTimeout(extraNetworksApplySort[tabname_full], 1);
+    var doSort = function() {
+        extraNetworksApplySort[tabname_full](true);
+    };
+    setTimeout(doSort, 1);
 }
 
 var extraNetworksApplyFilter = {};
@@ -433,7 +447,26 @@ function extraNetworksControlTreeViewOnClick(event, tabname, extra_networks_tabn
      * @param tabname                   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
      * @param extra_networks_tabname    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
      */
-    gradioApp().getElementById(tabname + "_" + extra_networks_tabname + "_tree").classList.toggle("hidden");
+    const tree = gradioApp().getElementById(tabname + "_" + extra_networks_tabname + "_tree");
+    const parent = tree.parentElement;
+    let resizeHandle = parent.querySelector('.resize-handle');
+    tree.classList.toggle("hidden");
+
+    if (tree.classList.contains("hidden")) {
+        tree.style.display = 'none';
+        parent.style.display = 'flex';
+        if (resizeHandle) {
+            resizeHandle.style.display = 'none';
+        }
+    } else {
+        tree.style.display = 'block';
+        parent.style.display = 'grid';
+        if (!resizeHandle) {
+            setupResizeHandle(parent);
+            resizeHandle = parent.querySelector('.resize-handle');
+        }
+        resizeHandle.style.display = 'block';
+    }
     event.currentTarget.classList.toggle("extra-network-control--enabled");
 }
 
@@ -450,7 +483,7 @@ function extraNetworksControlRefreshOnClick(event, tabname, extra_networks_tabna
      * @param tabname                   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
      * @param extra_networks_tabname    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
      */
-    var btn_refresh_internal = gradioApp().getElementById(tabname + "_extra_refresh_internal");
+    var btn_refresh_internal = gradioApp().getElementById(tabname + "_" + extra_networks_tabname + "_extra_refresh_internal");
     btn_refresh_internal.dispatchEvent(new Event("click"));
 }
 
@@ -616,10 +649,13 @@ function scheduleAfterScriptsCallbacks() {
     }, 200);
 }
 
-document.addEventListener("DOMContentLoaded", function() {
+onUiLoaded(function() {
     var mutationObserver = new MutationObserver(function(m) {
-        if (!executedAfterScripts &&
-            gradioApp().querySelectorAll("[id$='_extra_search']").length == 8) {
+        let existingSearchfields = gradioApp().querySelectorAll("[id$='_extra_search']").length;
+        let neededSearchfields = gradioApp().querySelectorAll("[id$='_extra_tabs'] > .tab-nav > button").length - 2;
+
+        if (!executedAfterScripts && existingSearchfields >= neededSearchfields) {
+            mutationObserver.disconnect();
             executedAfterScripts = true;
             scheduleAfterScriptsCallbacks();
         }

@@ -5,6 +5,7 @@ import re
 
 v160 = version.parse("1.6.0")
 v170_tsnr = version.parse("v1.7.0-225")
+v180 = version.parse("1.8.0")
 
 
 def parse_version(text):
@@ -31,9 +32,14 @@ def backcompat(d):
     if ver is None:
         return
 
-    if ver < v160:
+    if ver < v160 and '[' in d.get('Prompt', ''):
         d["Old prompt editing timelines"] = True
+
+    if ver < v160 and d.get('Sampler', '') in ('DDIM', 'PLMS'):
+        d["Pad conds v0"] = True
 
     if ver < v170_tsnr:
         d["Downcast alphas_cumprod"] = True
 
+    if ver < v180 and d.get('Refiner'):
+        d["Refiner switch by sampling steps"] = True

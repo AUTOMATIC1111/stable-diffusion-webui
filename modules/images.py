@@ -321,13 +321,16 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
     return res
 
 
-invalid_filename_chars = '#<>:"/\\|?*\n\r\t'
+if not shared.cmd_opts.unix_filenames_sanitization:
+    invalid_filename_chars = '#<>:"/\\|?*\n\r\t'
+else:
+    invalid_filename_chars = '/'
 invalid_filename_prefix = ' '
 invalid_filename_postfix = ' .'
 re_nonletters = re.compile(r'[\s' + string.punctuation + ']+')
 re_pattern = re.compile(r"(.*?)(?:\[([^\[\]]+)\]|$)")
 re_pattern_arg = re.compile(r"(.*)<([^>]*)>$")
-max_filename_part_length = 128
+max_filename_part_length = shared.cmd_opts.filenames_max_length
 NOTHING_AND_SKIP_PREVIOUS_TEXT = object()
 
 
