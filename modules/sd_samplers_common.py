@@ -155,14 +155,16 @@ def replace_torchsde_browinan():
 replace_torchsde_browinan()
 
 
-def apply_refiner(cfg_denoiser, sigma):
-    if opts.refiner_switch_by_sample_steps:
+def apply_refiner(cfg_denoiser, sigma=None):
+    if opts.refiner_switch_by_sample_steps or not sigma:
         completed_ratio = cfg_denoiser.step / cfg_denoiser.total_steps
+        cfg_denoiser.p.extra_generation_params["Refiner switch by sampling steps"] = True
+
     else:
         # torch.max(sigma) only to handle rare case where we might have different sigmas in the same batch
         try:
             timestep = torch.argmin(torch.abs(cfg_denoiser.inner_model.sigmas - torch.max(sigma)))
-        except AttributeError: # for samplers that dont use sigmas (DDIM) sigma is actually the timestep
+        except AttributeError:  # for samplers that don't use sigmas (DDIM) sigma is actually the timestep
             timestep = torch.max(sigma).to(dtype=int)
         completed_ratio = (999 - timestep) / 1000
 
