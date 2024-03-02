@@ -2,6 +2,7 @@
     const GRADIO_MIN_WIDTH = 320;
     const PAD = 16;
     const DEBOUNCE_TIME = 100;
+    const DOUBLE_TAP_DELAY = 200; //ms
 
     const R = {
         tracking: false,
@@ -10,6 +11,7 @@
         leftCol: null,
         leftColStartWidth: null,
         screenX: null,
+        lastTapTime: null,
     };
 
     let resizeTimer;
@@ -47,6 +49,14 @@
     }
 
     function setup(parent) {
+
+        function onDoubleClick(evt) {
+            evt.preventDefault();
+            evt.stopPropagation();
+
+            parent.style.gridTemplateColumns = parent.style.originalGridTemplateColumns;
+        }
+
         const leftCol = parent.firstElementChild;
         const rightCol = parent.lastElementChild;
 
@@ -69,6 +79,14 @@
                     if (evt.button !== 0) return;
                 } else {
                     if (evt.changedTouches.length !== 1) return;
+
+                    const currentTime = new Date().getTime();
+                    if (R.lastTapTime && currentTime - R.lastTapTime <= DOUBLE_TAP_DELAY) {
+                        onDoubleClick(evt);
+                        return;
+                    }
+
+                    R.lastTapTime = currentTime;
                 }
 
                 evt.preventDefault();
@@ -89,12 +107,7 @@
             });
         });
 
-        resizeHandle.addEventListener('dblclick', (evt) => {
-            evt.preventDefault();
-            evt.stopPropagation();
-
-            parent.style.gridTemplateColumns = parent.style.originalGridTemplateColumns;
-        });
+        resizeHandle.addEventListener('dblclick', onDoubleClick);
 
         afterResize(parent);
     }
