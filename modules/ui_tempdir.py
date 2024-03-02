@@ -103,20 +103,21 @@ def move_files_to_cache(data, block, postprocess=False, add_urls=False, check_in
         if payload.url and postprocess:
             payload.path = payload.url
         elif not block.proxy_url:
-            # If the file is on a remote server, do not move it to cache.
-            if check_in_upload_folder and not client_utils.is_http_url_like(
-                payload.path
-            ):
-                path = os.path.abspath(payload.path)
-                if not is_in_or_equal(path, get_upload_folder()):
-                    raise ValueError(
-                        f"File {path} is not in the upload folder and cannot be accessed."
-                    )
 
             # EDITED
             if check_tmp_file(shared.demo, payload.path):
                 temp_file_path = payload.path
             else:
+                # If the file is on a remote server, do not move it to cache.
+                if check_in_upload_folder and not client_utils.is_http_url_like(
+                    payload.path
+                ):
+                    path = os.path.abspath(payload.path)
+                    if not is_in_or_equal(path, get_upload_folder()):
+                        raise ValueError(
+                            f"File {path} is not in the upload folder and cannot be accessed."
+                        )
+
                 temp_file_path = block.move_resource_to_block_cache(payload.path)
 
             if temp_file_path is None:
