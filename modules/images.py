@@ -61,12 +61,17 @@ def image_grid(imgs, batch_size=1, rows=None):
     return grid
 
 
-Grid = namedtuple("Grid", ["tiles", "tile_w", "tile_h", "image_w", "image_h", "overlap"])
+class Grid(namedtuple("_Grid", ["tiles", "tile_w", "tile_h", "image_w", "image_h", "overlap"])):
+    @property
+    def tile_count(self) -> int:
+        """
+        The total number of tiles in the grid.
+        """
+        return sum(len(row[2]) for row in self.tiles)
 
 
-def split_grid(image, tile_w=512, tile_h=512, overlap=64):
-    w = image.width
-    h = image.height
+def split_grid(image: Image.Image, tile_w: int = 512, tile_h: int = 512, overlap: int = 64) -> Grid:
+    w, h = image.size
 
     non_overlap_width = tile_w - overlap
     non_overlap_height = tile_h - overlap
@@ -316,7 +321,7 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
     return res
 
 
-invalid_filename_chars = '<>:"/\\|?*\n\r\t'
+invalid_filename_chars = '#<>:"/\\|?*\n\r\t'
 invalid_filename_prefix = ' '
 invalid_filename_postfix = ' .'
 re_nonletters = re.compile(r'[\s' + string.punctuation + ']+')
@@ -791,3 +796,4 @@ def flatten(img, bgcolor):
         img = background
 
     return img.convert('RGB')
+

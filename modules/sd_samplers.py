@@ -1,4 +1,4 @@
-from modules import sd_samplers_kdiffusion, sd_samplers_timesteps, shared
+from modules import sd_samplers_kdiffusion, sd_samplers_timesteps, sd_samplers_lcm, shared
 
 # imports for functions that previously were here and are used by other modules
 from modules.sd_samplers_common import samples_to_image_grid, sample_to_image  # noqa: F401
@@ -6,6 +6,7 @@ from modules.sd_samplers_common import samples_to_image_grid, sample_to_image  #
 all_samplers = [
     *sd_samplers_kdiffusion.samplers_data_k_diffusion,
     *sd_samplers_timesteps.samplers_data_timesteps,
+    *sd_samplers_lcm.samplers_data_lcm,
 ]
 all_samplers_map = {x.name: x for x in all_samplers}
 

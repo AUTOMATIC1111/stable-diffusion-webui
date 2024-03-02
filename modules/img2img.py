@@ -7,7 +7,7 @@ from PIL import Image, ImageOps, ImageFilter, ImageEnhance, UnidentifiedImageErr
 import gradio as gr
 
 from modules import images as imgutil
-from modules.generation_parameters_copypaste import create_override_settings_dict, parse_generation_parameters
+from modules.infotext_utils import create_override_settings_dict, parse_generation_parameters
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
 from modules.shared import opts, state
 from modules.sd_models import get_closet_checkpoint_match
@@ -51,7 +51,7 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
         if state.skipped:
             state.skipped = False
 
-        if state.interrupted:
+        if state.interrupted or state.stopping_generation:
             break
 
         try:
@@ -221,9 +221,6 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
 
     if shared.opts.enable_console_prompts:
         print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
-
-    if mask:
-        p.extra_generation_params["Mask blur"] = mask_blur
 
     with closing(p):
         if is_batch:

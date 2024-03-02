@@ -1,3 +1,4 @@
+import gradio as gr
 import logging
 import os
 import re
@@ -259,11 +260,11 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
 
     loaded_networks.clear()
 
-    networks_on_disk = [available_network_aliases.get(name, None) for name in names]
+    networks_on_disk = [available_networks.get(name, None) if name.lower() in forbidden_network_aliases else available_network_aliases.get(name, None) for name in names]
     if any(x is None for x in networks_on_disk):
         list_available_networks()
 
-        networks_on_disk = [available_network_aliases.get(name, None) for name in names]
+        networks_on_disk = [available_networks.get(name, None) if name.lower() in forbidden_network_aliases else available_network_aliases.get(name, None) for name in names]
 
     failed_to_load_networks = []
 
@@ -314,7 +315,12 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
                 emb_db.skipped_embeddings[name] = embedding
 
     if failed_to_load_networks:
-        sd_hijack.model_hijack.comments.append("Networks not found: " + ", ".join(failed_to_load_networks))
+        lora_not_found_message = f'Lora not found: {", ".join(failed_to_load_networks)}'
+        sd_hijack.model_hijack.comments.append(lora_not_found_message)
+        if shared.opts.lora_not_found_warning_console:
+            print(f'\n{lora_not_found_message}\n')
+        if shared.opts.lora_not_found_gradio_warning:
+            gr.Warning(lora_not_found_message)
 
     purge_networks_from_memory()
 
@@ -389,18 +395,26 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
             if module is not None and hasattr(self, 'weight'):
                 try:
                     with torch.no_grad():
-                        updown, ex_bias = module.calc_updown(self.weight)
+                        if getattr(self, 'fp16_weight', None) is None:
+                            weight = self.weight
+                            bias = self.bias
+                        else:
+                            weight = self.fp16_weight.clone().to(self.weight.device)
+                            bias = getattr(self, 'fp16_bias', None)
+                            if bias is not None:
+                                bias = bias.clone().to(self.bias.device)
+                        updown, ex_bias = module.calc_updown(weight)
 
-                        if len(self.weight.shape) == 4 and self.weight.shape[1] == 9:
+                        if len(weight.shape) == 4 and weight.shape[1] == 9:
                             # inpainting model. zero pad updown to make channel[1]  4 to 9
                             updown = torch.nn.functional.pad(updown, (0, 0, 0, 0, 0, 5))
 
-                        self.weight += updown
+                        self.weight.copy_((weight.to(dtype=updown.dtype) + updown).to(dtype=self.weight.dtype))
                         if ex_bias is not None and hasattr(self, 'bias'):
                             if self.bias is None:
-                                self.bias = torch.nn.Parameter(ex_bias)
+                                self.bias = torch.nn.Parameter(ex_bias).to(self.weight.dtype)
                             else:
-                                self.bias += ex_bias
+                                self.bias.copy_((bias + ex_bias).to(dtype=self.bias.dtype))
                 except RuntimeError as e:
                     logging.debug(f"Network {net.name} layer {network_layer_name}: {e}")
                     extra_network_lora.errors[net.name] = extra_network_lora.errors.get(net.name, 0) + 1
@@ -444,23 +458,23 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
         self.network_current_names = wanted_names
 
 
-def network_forward(module, input, original_forward):
+def network_forward(org_module, input, original_forward):
     """
     Old way of applying Lora by executing operations during layer's forward.
     Stacking many loras this way results in big performance degradation.
     """
 
     if len(loaded_networks) == 0:
-        return original_forward(module, input)
+        return original_forward(org_module, input)
 
     input = devices.cond_cast_unet(input)
 
-    network_restore_weights_from_backup(module)
-    network_reset_cached_weight(module)
+    network_restore_weights_from_backup(org_module)
+    network_reset_cached_weight(org_module)
 
-    y = original_forward(module, input)
+    y = original_forward(org_module, input)
 
-    network_layer_name = getattr(module, 'network_layer_name', None)
+    network_layer_name = getattr(org_module, 'network_layer_name', None)
     for lora in loaded_networks:
         module = lora.modules.get(network_layer_name, None)
         if module is None:

@@ -1,6 +1,7 @@
 import gradio as gr
 
 from modules import scripts, sd_models
+from modules.infotext_utils import PasteField
 from modules.ui_common import create_refresh_button
 from modules.ui_components import InputAccordion
 
@@ -31,9 +32,9 @@ class ScriptRefiner(scripts.ScriptBuiltinUI):
             return None if info is None else info.title
 
         self.infotext_fields = [
-            (enable_refiner, lambda d: 'Refiner' in d),
-            (refiner_checkpoint, lambda d: lookup_checkpoint(d.get('Refiner'))),
-            (refiner_switch_at, 'Refiner switch at'),
+            PasteField(enable_refiner, lambda d: 'Refiner' in d),
+            PasteField(refiner_checkpoint, lambda d: lookup_checkpoint(d.get('Refiner')), api="refiner_checkpoint"),
+            PasteField(refiner_switch_at, 'Refiner switch at', api="refiner_switch_at"),
         ]
 
         return enable_refiner, refiner_checkpoint, refiner_switch_at
