@@ -45,6 +45,9 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
 
     p.user = request.username
 
+    pre_generation_info_text = p.processing_infotext()
+    print(pre_generation_info_text)
+
     if shared.opts.enable_console_prompts:
         print(f"\ntxt2img: {prompt}", file=shared.progress_print_out)
 

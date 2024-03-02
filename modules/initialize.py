@@ -52,6 +52,7 @@ def initialize():
     initialize_util.fix_asyncio_event_loop_policy()
     initialize_util.validate_tls_options()
     initialize_util.configure_sigint_handler()
+    # Theme is initialized here
     initialize_util.configure_opts_onchange()
 
     from modules import modelloader

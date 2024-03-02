@@ -202,6 +202,52 @@ class StableDiffusionProcessing:
 
     is_api: bool = field(default=False, init=False)
 
+    def processing_infotext(self):
+        self.setup_prompts()
+
+        return create_infotext(self, self.all_prompts, ['-1'], self.all_subseeds, [], iteration=self.iteration, position_in_batch=0)
+
+    def processing_js(self):
+        # not fully implemented
+        self.setup_prompts()
+
+        obj = {
+            "prompt": self.all_prompts[0],
+            "all_prompts": self.all_prompts,
+            "negative_prompt": self.all_negative_prompts[0],
+            "all_negative_prompts": self.all_negative_prompts,
+            "seed": self.seed,
+            "all_seeds": self.all_seeds or [self.seed],
+            "subseed": self.subseed,
+            "all_subseeds": self.all_subseeds,
+            "subseed_strength": self.subseed_strength,
+            "width": self.width,
+            "height": self.height,
+            "sampler_name": self.sampler_name,
+            "cfg_scale": self.cfg_scale,
+            "steps": self.steps,
+            "batch_size": self.batch_size,
+            "restore_faces": self.restore_faces,
+            "face_restoration_model": self.face_restoration_model if self.restore_faces else None,
+            "sd_model_name": self.sd_model_name,
+            "sd_model_hash": self.sd_model_hash,
+            "sd_vae_name": self.sd_vae_name,
+            "sd_vae_hash": self.sd_vae_hash,
+            "seed_resize_from_w": self.seed_resize_from_w,
+            "seed_resize_from_h": self.seed_resize_from_h,
+            "denoising_strength": self.denoising_strength,
+            "extra_generation_params": self.extra_generation_params,
+            "index_of_first_image": 0,
+            "infotexts": self.infotexts,
+            "styles": self.styles,
+            "job_timestamp": self.job_timestamp,
+            "clip_skip": self.clip_skip,
+            "is_using_inpainting_conditioning": self.is_using_inpainting_conditioning,
+            "version": self.version,
+        }
+
+        return json.dumps(obj)
+
     def __post_init__(self):
         if self.sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
