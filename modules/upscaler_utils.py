@@ -69,10 +69,8 @@ def upscale_with_model(
         for y, h, row in grid.tiles:
             newrow = []
             for x, w, tile in row:
-                logger.debug("Tile (%d, %d) %s...", x, y, tile)
                 output = upscale_pil_patch(model, tile)
                 scale_factor = output.width // tile.width
-                logger.debug("=> %s (scale factor %s)", output, scale_factor)
                 newrow.append([x * scale_factor, w * scale_factor, output])
                 p.update(1)
             newtiles.append([y * scale_factor, h * scale_factor, newrow])
