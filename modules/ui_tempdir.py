@@ -4,6 +4,7 @@ from collections import namedtuple
 from pathlib import Path
 
 import gradio.components
+import gradio as gr
 
 from PIL import PngImagePlugin
 
@@ -15,7 +16,12 @@ Savedfile = namedtuple("Savedfile", ["name"])
 
 def register_tmp_file(gradio, filename):
     if hasattr(gradio, 'temp_file_sets'):  # gradio 3.15
-        gradio.temp_file_sets[0] = gradio.temp_file_sets[0] | {os.path.abspath(filename)}
+        if hasattr(gr.utils, 'abspath'):  # gradio 4.19
+            filename = gr.utils.abspath(filename)
+        else:
+            filename = os.path.abspath(filename)
+
+        gradio.temp_file_sets[0] = gradio.temp_file_sets[0] | {filename}
 
     if hasattr(gradio, 'temp_dirs'):  # gradio 3.9
         gradio.temp_dirs = gradio.temp_dirs | {os.path.abspath(os.path.dirname(filename))}
@@ -23,6 +29,11 @@ def register_tmp_file(gradio, filename):
 
 def check_tmp_file(gradio, filename):
     if hasattr(gradio, 'temp_file_sets'):
+        if hasattr(gr.utils, 'abspath'):  # gradio 4.19
+            filename = gr.utils.abspath(filename)
+        else:
+            filename = os.path.abspath(filename)
+
         return any(filename in fileset for fileset in gradio.temp_file_sets)
 
     if hasattr(gradio, 'temp_dirs'):
@@ -60,8 +71,9 @@ def save_pil_to_file(pil_image, cache_dir=None, format="png"):
     return file_obj.name
 
 
-def move_files_to_cache(data, block, postprocess=False):
-    """Move files to cache and replace the file path with the cache path.
+def move_files_to_cache(data, block, postprocess=False, add_urls=False, check_in_upload_folder=False):
+    """Move any files in `data` to cache and (optionally), adds URL prefixes (/file=...) needed to access the cached file.
+    Also handles the case where the file is on an external Gradio app (/proxy=...).
 
     Runs after postprocess and before preprocess.
 
@@ -69,35 +81,64 @@ def move_files_to_cache(data, block, postprocess=False):
 
     Args:
         data: The input or output data for a component. Can be a dictionary or a dataclass
-        block: The component
+        block: The component whose data is being processed
         postprocess: Whether its running from postprocessing
+        add_urls: Whether to add URLs to the payload
+        check_in_upload_folder: If True, instead of moving the file to cache, checks if the file is in already in cache (exception if not).
     """
 
     from gradio import FileData
-    from gradio.processing_utils import move_resource_to_block_cache
     from gradio.data_classes import GradioRootModel
     from gradio.data_classes import GradioModel
     from gradio_client import utils as client_utils
+    from gradio.utils import get_upload_folder, is_in_or_equal
 
     def _move_to_cache(d: dict):
         payload = FileData(**d)
+
+        # EDITED
+        payload.path = payload.path.rsplit('?', 1)[0]
+
         # If the gradio app developer is returning a URL from
         # postprocess, it means the component can display a URL
         # without it being served from the gradio server
         # This makes it so that the URL is not downloaded and speeds up event processing
-
-        payload.path = payload.path.rsplit('?', 1)[0]
-
         if payload.url and postprocess:
-            temp_file_path = payload.url
-        else:
+            payload.path = payload.url
+        elif not block.proxy_url:
+            # If the file is on a remote server, do not move it to cache.
+            if check_in_upload_folder and not client_utils.is_http_url_like(
+                payload.path
+            ):
+                path = os.path.abspath(payload.path)
+                if not is_in_or_equal(path, get_upload_folder()):
+                    raise ValueError(
+                        f"File {path} is not in the upload folder and cannot be accessed."
+                    )
 
+            # EDITED
             if check_tmp_file(shared.demo, payload.path):
                 temp_file_path = payload.path
             else:
-                temp_file_path = move_resource_to_block_cache(payload.path, block)
-        assert temp_file_path is not None
-        payload.path = temp_file_path
+                temp_file_path = block.move_resource_to_block_cache(payload.path)
+
+            if temp_file_path is None:
+                raise ValueError("Did not determine a file path for the resource.")
+            payload.path = temp_file_path
+
+        if add_urls:
+            url_prefix = "/stream/" if payload.is_stream else "/file="
+            if block.proxy_url:
+                proxy_url = block.proxy_url.rstrip("/")
+                url = f"/proxy={proxy_url}{url_prefix}{payload.path}"
+            elif client_utils.is_http_url_like(payload.path) or payload.path.startswith(
+                f"{url_prefix}"
+            ):
+                url = payload.path
+            else:
+                url = f"{url_prefix}{payload.path}"
+            payload.url = url
+
         return payload.model_dump()
 
     if isinstance(data, (GradioRootModel, GradioModel)):

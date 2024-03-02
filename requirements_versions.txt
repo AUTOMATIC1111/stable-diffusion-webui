@@ -6,7 +6,7 @@ clean-fid==0.1.35
 einops==0.4.1
 facexlib==0.3.0
 fastapi==0.104.1
-gradio==4.16.0
+gradio==4.19.2
 httpcore==0.15
 inflection==0.5.1
 jsonmerge==1.8.0

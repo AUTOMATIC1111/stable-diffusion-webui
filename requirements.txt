@@ -7,7 +7,7 @@ clean-fid
 einops
 facexlib
 fastapi>=0.90.1
-gradio==4.16.0
+gradio==4.19.2
 inflection
 jsonmerge
 kornia
