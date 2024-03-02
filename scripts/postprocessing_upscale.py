@@ -15,7 +15,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
     order = 1000
 
     def ui(self):
-        selected_tab = gr.State(value=0)
+        selected_tab = gr.Number(value=0, visible=False)
 
         with gr.Column():
             with FormRow():
@@ -26,8 +26,8 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
                     with gr.TabItem('Scale to', elem_id="extras_scale_to_tab") as tab_scale_to:
                         with FormRow():
                             with gr.Column(elem_id="upscaling_column_size", scale=4):
-                                upscaling_resize_w = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="extras_upscaling_resize_w")
-                                upscaling_resize_h = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="extras_upscaling_resize_h")
+                                upscaling_resize_w = gr.Slider(minimum=64, maximum=8192, step=8, label="Width", value=512, elem_id="extras_upscaling_resize_w")
+                                upscaling_resize_h = gr.Slider(minimum=64, maximum=8192, step=8, label="Height", value=512, elem_id="extras_upscaling_resize_h")
                             with gr.Column(elem_id="upscaling_dimensions_row", scale=1, elem_classes="dimensions-tools"):
                                 upscaling_res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="upscaling_res_switch_btn", tooltip="Switch width/height")
                                 upscaling_crop = gr.Checkbox(label='Crop to fit', value=True, elem_id="extras_upscaling_crop")

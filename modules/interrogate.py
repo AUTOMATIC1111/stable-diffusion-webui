@@ -10,14 +10,14 @@ import torch.hub
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 
-from modules import devices, paths, shared, lowvram, modelloader, errors
+from modules import devices, paths, shared, lowvram, modelloader, errors, torch_utils
 
 blip_image_eval_size = 384
 clip_model_name = 'ViT-L/14'
 
 Category = namedtuple("Category", ["name", "topn", "items"])
 
-re_topn = re.compile(r"\.top(\d+)\.")
+re_topn = re.compile(r"\.top(\d+)$")
 
 def category_types():
     return [f.stem for f in Path(shared.interrogator.content_dir).glob('*.txt')]
@@ -131,7 +131,7 @@ class InterrogateModels:
 
         self.clip_model = self.clip_model.to(devices.device_interrogate)
 
-        self.dtype = next(self.clip_model.parameters()).dtype
+        self.dtype = torch_utils.get_param(self.clip_model).dtype
 
     def send_clip_to_ram(self):
         if not shared.opts.interrogate_keep_models_in_memory:

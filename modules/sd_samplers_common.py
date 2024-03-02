@@ -335,3 +335,10 @@ class Sampler:
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
         raise NotImplementedError()
+
+    def add_infotext(self, p):
+        if self.model_wrap_cfg.padded_cond_uncond:
+            p.extra_generation_params["Pad conds"] = True
+
+        if self.model_wrap_cfg.padded_cond_uncond_v0:
+            p.extra_generation_params["Pad conds v0"] = True

@@ -28,7 +28,7 @@ def multicrop_pic(image: Image, mindim, maxdim, minarea, maxarea, objective, thr
 
 class ScriptPostprocessingAutosizedCrop(scripts_postprocessing.ScriptPostprocessing):
     name = "Auto-sized crop"
-    order = 4000
+    order = 4020
 
     def ui(self):
         with ui_components.InputAccordion(False, label="Auto-sized crop") as enable:

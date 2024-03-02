@@ -2,8 +2,11 @@
 function extensions_apply(_disabled_list, _update_list, disable_all) {
     var disable = [];
     var update = [];
-
-    gradioApp().querySelectorAll('#extensions input[type="checkbox"]').forEach(function(x) {
+    const extensions_input = gradioApp().querySelectorAll('#extensions input[type="checkbox"]');
+    if (extensions_input.length == 0) {
+        throw Error("Extensions page not yet loaded.");
+    }
+    extensions_input.forEach(function(x) {
         if (x.name.startsWith("enable_") && !x.checked) {
             disable.push(x.name.substring(7));
         }

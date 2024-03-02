@@ -1,5 +1,6 @@
 import importlib
 import logging
+import os
 import sys
 import warnings
 from threading import Thread
@@ -18,6 +19,7 @@ def imports():
     warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
     warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
 
+    os.environ.setdefault('GRADIO_ANALYTICS_ENABLED', 'False')
     import gradio  # noqa: F401
     startup_timer.record("import gradio")
 
@@ -53,9 +55,6 @@ def initialize():
     initialize_util.validate_tls_options()
     initialize_util.configure_sigint_handler()
     initialize_util.configure_opts_onchange()
-
-    from modules import modelloader
-    modelloader.cleanup_models()
 
     from modules import sd_models
     sd_models.setup_model()
@@ -143,13 +142,14 @@ def initialize_rest(*, reload_script_modules=False):
         its optimization may be None because the list of optimizaers has neet been filled
         by that time, so we apply optimization again.
         """
+        from modules import devices
+        devices.torch_npu_set_device()
 
         shared.sd_model  # noqa: B018
 
         if sd_hijack.current_optimizer is None:
             sd_hijack.apply_optimizations()
 
-        from modules import devices
         devices.first_time_calculation()
     if not shared.cmd_opts.skip_load_model_at_start:
         Thread(target=load_model).start()
