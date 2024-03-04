@@ -33,7 +33,11 @@ pause
 </p>
 </details> 
 
-
+# Launching as root
+Running as root is not recommended, but can be overriden by adding `-f` to your arguments.
+```bash
+./webui.sh -f
+```
 
 # Low VRAM Video-cards
 When running on video cards with a low amount of VRAM (<=4GB), out of memory errors may arise.
