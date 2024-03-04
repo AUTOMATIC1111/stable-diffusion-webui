@@ -30,7 +30,7 @@ def factorization(dimension: int, factor:int=-1) -> tuple[int, int]:
     In LoRA with Kroneckor Product, first value is a value for weight scale.
     secon value is a value for weight.
 
-    Becuase of non-commutative property, A⊗B ≠ B⊗A. Meaning of two matrices is slightly different.
+    Because of non-commutative property, A⊗B ≠ B⊗A. Meaning of two matrices is slightly different.
 
     examples)
     factor

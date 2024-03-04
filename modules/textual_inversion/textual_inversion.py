@@ -172,7 +172,7 @@ class EmbeddingDatabase:
                 if data:
                     name = data.get('name', name)
                 else:
-                    # if data is None, means this is not an embeding, just a preview image
+                    # if data is None, means this is not an embedding, just a preview image
                     return
         elif ext in ['.BIN', '.PT']:
             data = torch.load(path, map_location="cpu")

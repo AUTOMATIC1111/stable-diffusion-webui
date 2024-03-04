@@ -92,7 +92,7 @@ class Script:
     """If true, the script setup will only be run in Gradio UI, not in API"""
 
     controls = None
-    """A list of controls retured by the ui()."""
+    """A list of controls returned by the ui()."""
 
     def title(self):
         """this function should return the title of the script. This is what will be displayed in the dropdown menu."""
@@ -109,7 +109,7 @@ class Script:
 
     def show(self, is_img2img):
         """
-        is_img2img is True if this function is called for the img2img interface, and Fasle otherwise
+        is_img2img is True if this function is called for the img2img interface, and False otherwise
 
         This function should return:
          - False if the script should not be shown in UI at all

@@ -35,7 +35,7 @@ class EmphasisIgnore(Emphasis):
 
 class EmphasisOriginal(Emphasis):
     name = "Original"
-    description = "the orginal emphasis implementation"
+    description = "the original emphasis implementation"
 
     def after_transformers(self):
         original_mean = self.z.mean()
@@ -48,7 +48,7 @@ class EmphasisOriginal(Emphasis):
 
 class EmphasisOriginalNoNorm(EmphasisOriginal):
     name = "No norm"
-    description = "same as orginal, but without normalization (seems to work better for SDXL)"
+    description = "same as original, but without normalization (seems to work better for SDXL)"
 
     def after_transformers(self):
         self.z = self.z * self.multipliers.reshape(self.multipliers.shape + (1,)).expand(self.z.shape)

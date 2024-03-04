@@ -360,7 +360,7 @@ class Api:
         return script_args
 
     def apply_infotext(self, request, tabname, *, script_runner=None, mentioned_script_args=None):
-        """Processes `infotext` field from the `request`, and sets other fields of the `request` accoring to what's in infotext.
+        """Processes `infotext` field from the `request`, and sets other fields of the `request` according to what's in infotext.
 
         If request already has a field set, and that field is encountered in infotext too, the value from infotext is ignored.
 
@@ -409,8 +409,8 @@ class Api:
         if request.override_settings is None:
             request.override_settings = {}
 
-        overriden_settings = infotext_utils.get_override_settings(params)
-        for _, setting_name, value in overriden_settings:
+        overridden_settings = infotext_utils.get_override_settings(params)
+        for _, setting_name, value in overridden_settings:
             if setting_name not in request.override_settings:
                 request.override_settings[setting_name] = value
 
