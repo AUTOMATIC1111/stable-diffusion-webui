@@ -551,6 +551,12 @@ def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_p
         else:
             pnginfo_data = None
 
+        # Error handling for unsupported transparency in RGB mode
+        if (image.mode == "RGB" and
+            "transparency" in image.info and
+            isinstance(image.info["transparency"], bytes)):
+            del image.info["transparency"]
+
         image.save(filename, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
 
     elif extension.lower() in (".jpg", ".jpeg", ".webp"):
