@@ -146,6 +146,18 @@ The documentation was moved from this README over to the project's [wiki](https:
 
 For the purposes of getting Google and other search engines to crawl the wiki, here's a link to the (not for humans) [crawlable wiki](https://github-wiki-see.page/m/AUTOMATIC1111/stable-diffusion-webui/wiki).
 
+## Common Errors
+
+### ERROR: This script must not be launched as root, aborting...
+This error occurs when attempting to run the script with root privileges, which is not allowed for security reasons.
+
+**Solution**:
+Run the script with the `-f` flag under a non-root user:
+```bash
+bash webui.sh -f
+```
+Credit: https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/9093#issuecomment-1501091702
+
 ## Credits
 Licenses for borrowed code can be found in `Settings -> Licenses` screen, and also in `html/licenses.html` file.
 
