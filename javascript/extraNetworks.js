@@ -290,7 +290,7 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, extra_netwo
      * Processes `onclick` events when user clicks on directories in tree.
      *
      * Here is how the tree reacts to clicks for various states:
-     * unselected unopened directory: Diretory is selected and expanded.
+     * unselected unopened directory: Directory is selected and expanded.
      * unselected opened directory: Directory is selected.
      * selected opened directory: Directory is collapsed and deselected.
      * chevron is clicked: Directory is expanded or collapsed. Selected state unchanged.

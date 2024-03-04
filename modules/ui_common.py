@@ -105,7 +105,7 @@ def save_files(js_data, images, do_make_zip, index):
     logfile_path = os.path.join(shared.opts.outdir_save, "log.csv")
 
     # NOTE: ensure csv integrity when fields are added by
-    # updating headers and padding with delimeters where needed
+    # updating headers and padding with delimiters where needed
     if os.path.exists(logfile_path):
         update_logfile(logfile_path, fields)
 

@@ -355,7 +355,7 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
     """
     Applies the currently selected set of networks to the weights of torch layer self.
     If weights already have this particular set of networks applied, does nothing.
-    If not, restores orginal weights from backup and alters weights according to networks.
+    If not, restores original weights from backup and alters weights according to networks.
     """
 
     network_layer_name = getattr(self, 'network_layer_name', None)

@@ -104,7 +104,7 @@ def latent_blend(settings, a, b, t):
 
 def get_modified_nmask(settings, nmask, sigma):
     """
-    Converts a negative mask representing the transparency of the original latent vectors being overlayed
+    Converts a negative mask representing the transparency of the original latent vectors being overlaid
     to a mask that is scaled according to the denoising strength for this step.
 
     Where:
