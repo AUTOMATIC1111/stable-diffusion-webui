@@ -49,6 +49,7 @@ Env_Worker_State_File = "WORKER_STATE_FILE_PATH"
 Env_GSS_Count_API = "GSS_COUNT_API"
 Env_HostName = "hostname"
 Env_TaskGroupQueueOnly = "WORKER_GROUP_QUEUE_ONLY"
+Env_TaskGroupQueueName = "WORKER_GROUP_QUEUE_NAME"
 Env_WorkerRunTrainRatio = "RUN_TRAIN_RATIO"
 # 不开启定期清除未使用模型文件
 Env_DontCleanModels = "DONT_CLEAN_MODELS"
@@ -115,6 +116,10 @@ def is_task_group_queue_only():
     cache[Env_TaskGroupQueueOnly] = x
 
     return x == "1"
+
+
+def get_env_group_queue_name():
+    return cache.get(Env_TaskGroupQueueName)
 
 
 def get_run_train_time_cfg():

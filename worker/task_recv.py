@@ -30,7 +30,7 @@ from modules.shared import mem_mon as vram_mon
 from apscheduler.schedulers.background import BackgroundScheduler
 from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api, run_train_ratio, \
     Env_Run_Train_Time_Start, Env_Run_Train_Time_End, is_flexible_worker, get_worker_state_dump_path, \
-    is_task_group_queue_only, get_maintain_env
+    is_task_group_queue_only, get_maintain_env, get_env_group_queue_name
 
 try:
     from collections.abc import Iterable  # >=py3.10
@@ -168,8 +168,10 @@ class TaskReceiver:
         logger.info(
             f"worker id:{self.worker_id}, train work receive clock:"
             f"{self.run_train_time_start} - {self.run_train_time_end}")
+        self.group_queue_name = ""
         if is_task_group_queue_only:
-            logger.warning(f"only search task queue by resource:{worker_info['resource']}")
+            self.group_queue_name = get_env_group_queue_name() or worker_info['resource']
+            logger.warning(f"only search task queue by resource:{self.group_queue_name}")
 
     def _worker_id(self):
         info = self._worker_info()
@@ -263,10 +265,7 @@ class TaskReceiver:
         '''
         搜索指定资源的队列。
         '''
-        info = self._worker_info()
-        resource_name = info['resource']
-
-        return self._get_queue_task(resource_name)
+        return self._get_queue_task(self.group_queue_name)
 
     def _search_train_task(self):
         # 弹性不训练
