@@ -230,7 +230,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
             for fixes in self.hijack.fixes:
                 for _position, embedding in fixes:
                     used_embeddings[embedding.name] = embedding
-
+            devices.torch_npu_set_device()
             z = self.process_tokens(tokens, multipliers)
             zs.append(z)
 
