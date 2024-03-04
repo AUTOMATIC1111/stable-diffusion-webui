@@ -181,7 +181,8 @@ class TaskReceiver:
     @timed_lru_cache(300)
     def _worker_info(self):
         group_id = get_worker_group()
-        gpu_names = '&'.join(GpuInfo().names)
+        gpu_info = GpuInfo()
+        gpu_names = '&'.join(gpu_info.names)
         nvidia_video_card_id = gpu_names
 
         # int(str(uuid.uuid1())[-4:], 16)
@@ -224,7 +225,7 @@ class TaskReceiver:
             'video_id': nvidia_video_card_id,
             'group': group_id,
             'max_task_score': self.task_score_limit,
-            'resource': gpu_names.replace(' ', "-"),
+            'resource': gpu_info.first_name.replace(' ', "-"),
             'exec_train_task': exec_train,
             'model_hash_list': model_hash_list,
         }

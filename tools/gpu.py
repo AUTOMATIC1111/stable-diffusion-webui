@@ -27,6 +27,7 @@ class GpuInfo:
                 uuid = pynvml.nvmlDeviceGetUUID(handle)
                 device_mem_total.append(meminfo.total)
                 names.append(f"{name}({uuid})")
+                self.first_name = name if i == 0 else self.first_name
             pynvml.nvmlShutdown()
             self.driver = driver_version
             self.mem_total = [x / 1024 / 1024 for x in device_mem_total]  # MB
@@ -35,6 +36,7 @@ class GpuInfo:
             self.names = []
             self.mem_total = 0
             self.driver = ''
+            self.first_name = ''
 
     def __new__(cls, *args, **kwargs):
         if cls.instance is not None:

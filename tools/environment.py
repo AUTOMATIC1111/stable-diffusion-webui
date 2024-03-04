@@ -119,7 +119,7 @@ def is_task_group_queue_only():
 
 
 def get_env_group_queue_name():
-    return cache.get(Env_TaskGroupQueueName)
+    return os.getenv(Env_TaskGroupQueueName)
 
 
 def get_run_train_time_cfg():
