@@ -50,7 +50,7 @@ class ExtraOptionsSection(scripts.Script):
                             with FormColumn():
                                 try:
                                     comp = ui_settings.create_setting_component(setting_name)
-                                except KeyError as e:
+                                except KeyError:
                                     errors.report(f"Can't add extra options for {setting_name} in ui")
                                     continue
 
