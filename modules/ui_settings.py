@@ -98,6 +98,9 @@ class UiSettings:
 
         return get_value_for_setting(key), opts.dumpjson()
 
+    def register_settings(self):
+        script_callbacks.ui_settings_callback()
+
     def create_ui(self, loadsave, dummy_component):
         self.components = []
         self.component_dict = {}
@@ -105,7 +108,6 @@ class UiSettings:
 
         shared.settings_components = self.component_dict
 
-        script_callbacks.ui_settings_callback()
         opts.reorder()
 
         with gr.Blocks(analytics_enabled=False) as settings_interface:

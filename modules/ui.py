@@ -269,6 +269,9 @@ def create_ui():
 
     parameters_copypaste.reset()
 
+    settings = ui_settings.UiSettings()
+    settings.register_settings()
+
     scripts.scripts_current = scripts.scripts_txt2img
     scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
 
@@ -1116,7 +1119,6 @@ def create_ui():
     loadsave = ui_loadsave.UiLoadsave(cmd_opts.ui_config_file)
     ui_settings_from_file = loadsave.ui_settings.copy()
 
-    settings = ui_settings.UiSettings()
     settings.create_ui(loadsave, dummy_component)
 
     interfaces = [
