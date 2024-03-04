@@ -10,7 +10,7 @@ from random import shuffle, choices
 
 import random
 import tqdm
-from modules import devices, shared
+from modules import devices, shared, images
 import re
 
 from ldm.modules.distributions.distributions import DiagonalGaussianDistribution
@@ -61,7 +61,7 @@ class PersonalizedBase(Dataset):
             if shared.state.interrupted:
                 raise Exception("interrupted")
             try:
-                image = Image.open(path)
+                image = images.read(path)
                 #Currently does not work for single color transparency
                 #We would need to read image.info['transparency'] for that
                 if use_weight and 'A' in image.getbands():

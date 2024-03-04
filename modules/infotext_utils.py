@@ -8,7 +8,7 @@ import sys
 
 import gradio as gr
 from modules.paths import data_path
-from modules import shared, ui_tempdir, script_callbacks, processing, infotext_versions
+from modules import shared, ui_tempdir, script_callbacks, processing, infotext_versions, images
 from PIL import Image
 
 sys.modules['modules.generation_parameters_copypaste'] = sys.modules[__name__]  # alias for old name
@@ -83,7 +83,7 @@ def image_from_url_text(filedata):
         assert is_in_right_dir, 'trying to open image file outside of allowed directories'
 
         filename = filename.rsplit('?', 1)[0]
-        return Image.open(filename)
+        return images.read(filename)
 
     if type(filedata) == list:
         if len(filedata) == 0:
@@ -95,7 +95,7 @@ def image_from_url_text(filedata):
         filedata = filedata[len("data:image/png;base64,"):]
 
     filedata = base64.decodebytes(filedata.encode('utf-8'))
-    image = Image.open(io.BytesIO(filedata))
+    image = images.read(io.BytesIO(filedata))
     return image
 
 

@@ -12,7 +12,7 @@ import re
 import numpy as np
 import piexif
 import piexif.helper
-from PIL import Image, ImageFont, ImageDraw, ImageColor, PngImagePlugin
+from PIL import Image, ImageFont, ImageDraw, ImageColor, PngImagePlugin, ImageOps
 import string
 import json
 import hashlib
@@ -551,12 +551,6 @@ def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_p
         else:
             pnginfo_data = None
 
-        # Error handling for unsupported transparency in RGB mode
-        if (image.mode == "RGB" and
-            "transparency" in image.info and
-            isinstance(image.info["transparency"], bytes)):
-            del image.info["transparency"]
-
         image.save(filename, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
 
     elif extension.lower() in (".jpg", ".jpeg", ".webp"):
@@ -779,7 +773,7 @@ def image_data(data):
     import gradio as gr
 
     try:
-        image = Image.open(io.BytesIO(data))
+        image = read(io.BytesIO(data))
         textinfo, _ = read_info_from_image(image)
         return textinfo, None
     except Exception:
@@ -807,51 +801,29 @@ def flatten(img, bgcolor):
     return img.convert('RGB')
 
 
-# https://www.exiv2.org/tags.html
-_EXIF_ORIENT = 274  # exif 'Orientation' tag
+def read(fp, **kwargs):
+    image = Image.open(fp, **kwargs)
+    image = fix_image(image)
 
-def apply_exif_orientation(image):
-    """
-    Applies the exif orientation correctly.
+    return image
 
-    This code exists per the bug:
-      https://github.com/python-pillow/Pillow/issues/3973
-    with the function `ImageOps.exif_transpose`. The Pillow source raises errors with
-    various methods, especially `tobytes`
 
-    Function based on:
-      https://github.com/wkentaro/labelme/blob/v4.5.4/labelme/utils/image.py#L59
-      https://github.com/python-pillow/Pillow/blob/7.1.2/src/PIL/ImageOps.py#L527
-
-    Args:
-        image (PIL.Image): a PIL image
-
-    Returns:
-        (PIL.Image): the PIL image with exif orientation applied, if applicable
-    """
-    if not hasattr(image, "getexif"):
-        return image
+def fix_image(image: Image.Image):
+    if image is None:
+        return None
 
     try:
-        exif = image.getexif()
-    except Exception:  # https://github.com/facebookresearch/detectron2/issues/1885
-        exif = None
+        image = ImageOps.exif_transpose(image)
+        image = fix_png_transparency(image)
+    except Exception:
+        pass
 
-    if exif is None:
+    return image
+
+
+def fix_png_transparency(image: Image.Image):
+    if image.mode not in ("RGB", "P") or not isinstance(image.info.get("transparency"), bytes):
         return image
 
-    orientation = exif.get(_EXIF_ORIENT)
-
-    method = {
-        2: Image.FLIP_LEFT_RIGHT,
-        3: Image.ROTATE_180,
-        4: Image.FLIP_TOP_BOTTOM,
-        5: Image.TRANSPOSE,
-        6: Image.ROTATE_270,
-        7: Image.TRANSVERSE,
-        8: Image.ROTATE_90,
-    }.get(orientation)
-
-    if method is not None:
-        return image.transpose(method)
+    image = image.convert("RGBA")
     return image
