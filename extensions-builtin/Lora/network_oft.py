@@ -27,7 +27,7 @@ class NetworkModuleOFT(network.NetworkModule):
         # kohya-ss/New LyCORIS OFT/BOFT
         if "oft_blocks" in weights.w.keys():
             self.oft_blocks = weights.w["oft_blocks"] # (num_blocks, block_size, block_size)
-            self.alpha = weights.w.get("alpha", None) # alpha is constraint
+            self.rescale = weights.w.get('rescale', torch.tensor([1.0])) # Improved default handling
             self.dim = self.oft_blocks.shape[0] # lora dim
         # Old LyCORIS OFT
         elif "oft_diag" in weights.w.keys():
