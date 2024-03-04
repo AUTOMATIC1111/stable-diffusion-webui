@@ -86,6 +86,7 @@ def decode_base64_to_image(encoding):
         response = requests.get(encoding, timeout=30, headers=headers)
         try:
             image = Image.open(BytesIO(response.content))
+            image = images.apply_exif_orientation(image)
             return image
         except Exception as e:
             raise HTTPException(status_code=500, detail="Invalid image url") from e
@@ -94,6 +95,7 @@ def decode_base64_to_image(encoding):
         encoding = encoding.split(";")[1].split(",")[1]
     try:
         image = Image.open(BytesIO(base64.b64decode(encoding)))
+        image = images.apply_exif_orientation(image)
         return image
     except Exception as e:
         raise HTTPException(status_code=500, detail="Invalid encoded image") from e
