@@ -588,7 +588,9 @@ function extraNetworksShowMetadata(text) {
             popup(table);
             return;
         }
-    } catch (error) { console.debug(error); }
+    } catch (error) {
+        console.eror(error);
+    }
 
     var elem = document.createElement('pre');
     elem.classList.add('popup-metadata');
