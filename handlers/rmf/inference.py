@@ -53,7 +53,7 @@ def rmf_seg(path, net=None):
     pretrained_path = os.path.join(scripts.basedir(), "models" + os.path.sep + "RMFormer" +
                               os.path.sep + "pretrain"+ os.path.sep + "swin_base_patch4_window12_384_22k.pth")
     model_dir=os.path.join(scripts.basedir(), "models" + os.path.sep + "RMFormer" +
-                              os.path.sep + "Atemp"+ os.path.sep + "model_UH_final.pth")
+                              os.path.sep + "Atemp"+ os.path.sep + "model_DH_final.pth")
     args.pretrained_path=pretrained_path
     net = myNet1(args)
     net.load_state_dict(torch.load(model_dir)['net'], strict=True)

@@ -33,6 +33,8 @@ import tempfile
 from handlers.rmf.inference import rmf_seg
 
 from timeout_decorator import timeout
+from filestorage.__init__ import push_local_path
+import datetime
 
 # conversion_action={"线稿":'line',"黑白":'black_white',"色块":'color','草图':'sketch','蜡笔':'crayon'}
 
@@ -195,6 +197,7 @@ class OnePressTaskType(Txt2ImgTask):
     ImgToGif = 3  # 静态图片转动图
     ArtWord = 4  # 艺术字
     LaternFair = 5  # 灯会变身
+    SegImg = 6 # 抠图
 
 
 class ConversionTask(Txt2ImgTask):
@@ -784,6 +787,9 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
             yield from self._exec_artword(task)
         if task.minor_type == OnePressTaskType.LaternFair:
             yield from self._exec_laternfair(task)
+        if task.minor_type == OnePressTaskType.SegImg:
+            yield from self._exec_segimage(task)
+        
 
     def _build_gen_canny_i2i_args(self, t, processed: Processed):
         denoising_strength = 0.5
@@ -1194,3 +1200,36 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         progress = TaskProgress.new_finish(task, images)
         progress.update_seed(processed.all_seeds, processed.all_subseeds)
         yield progress
+    
+    def _exec_segimage(self, task: Task) -> typing.Iterable[TaskProgress]:
+        #输入：需要抠的图片
+        logger.info(f"onepress segimage beigin.....,{task['task_id']}")
+        progress = TaskProgress.new_ready(
+            task, f'get_local_file finished, run seg image...')
+        yield progress
+        target_path=task['image']
+        logger.info(f"onepress segimage get_local_file.....,{target_path}")
+        target_face = get_tmp_local_path(target_path)
+        progress.status = TaskStatus.Running
+        progress.task_desc = f'onepress segimage task({task.id}) running'
+        seg_image = rmf_seg(target_face)
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+        file_path = temp_file.name
+        seg_image.save(file_path)
+        try:
+            progress.status = TaskStatus.Uploading
+            current_date = datetime.datetime.now()
+            formatted_date = current_date.strftime('%Y-%m-%d')
+            remoting,local=f'media/{formatted_date}/{os.path.basename(file_path)}',file_path
+            oss_key=push_local_path(remoting,local)
+            yield progress
+            progress = TaskProgress.new_finish(task, {
+                    'image_key': oss_key
+                })
+            progress.task_desc = f'onepress segimage task:{task.id} finished.'
+            yield progress
+
+        except Exception as e:
+            progress.status = TaskStatus.Failed
+            progress.task_desc = f'onepress segimage task:{task.id} failed.{e}'
+            yield progress
