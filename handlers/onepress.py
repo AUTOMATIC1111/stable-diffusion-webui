@@ -1224,7 +1224,9 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
             oss_key=push_local_path(remoting,local)
             yield progress
             progress = TaskProgress.new_finish(task, {
-                    'image_key': oss_key
+                    "all": {
+                        "high": [oss_key]
+                    }
                 })
             progress.task_desc = f'onepress segimage task:{task.id} finished.'
             yield progress
