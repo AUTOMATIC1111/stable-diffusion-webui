@@ -528,12 +528,76 @@ function popupId(id) {
     popup(storedPopupIds[id]);
 }
 
+function extraNetworksFlattenMetadata(obj) {
+    const result = {};
+
+    // Convert any stringified JSON objects to actual objects
+    for (const key of Object.keys(obj)) {
+        if (typeof obj[key] === 'string') {
+            try {
+                const parsed = JSON.parse(obj[key]);
+                if (parsed && typeof parsed === 'object') {
+                    obj[key] = parsed;
+                }
+            } catch (error) {
+                continue;
+            }
+        }
+    }
+
+    // Flatten the object
+    for (const key of Object.keys(obj)) {
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+            const nested = extraNetworksFlattenMetadata(obj[key]);
+            for (const nestedKey of Object.keys(nested)) {
+                result[`${key}/${nestedKey}`] = nested[nestedKey];
+            }
+        } else {
+            result[key] = obj[key];
+        }
+    }
+
+    // Special case for handling modelspec keys
+    for (const key of Object.keys(result)) {
+        if (key.startsWith("modelspec.")) {
+            result[key.replaceAll(".", "/")] = result[key];
+            delete result[key];
+        }
+    }
+
+    // Add empty keys to designate hierarchy
+    for (const key of Object.keys(result)) {
+        const parts = key.split("/");
+        for (let i = 1; i < parts.length; i++) {
+            const parent = parts.slice(0, i).join("/");
+            if (!result[parent]) {
+                result[parent] = "";
+            }
+        }
+    }
+
+    return result;
+}
+
 function extraNetworksShowMetadata(text) {
+    try {
+        let parsed = JSON.parse(text);
+        if (parsed && typeof parsed === 'object') {
+            parsed = extraNetworksFlattenMetadata(parsed);
+            const table = createVisualizationTable(parsed, 0);
+            popup(table);
+            return;
+        }
+    } catch (error) {
+        console.eror(error);
+    }
+
     var elem = document.createElement('pre');
     elem.classList.add('popup-metadata');
     elem.textContent = text;
 
     popup(elem);
+    return;
 }
 
 function requestGet(url, data, handler, errorHandler) {
