@@ -34,7 +34,7 @@ def randn_local(seed, shape):
 
 
 def randn_like(x):
-    """Generate a tensor with random numbers from a normal distribution using the previously initialized genrator.
+    """Generate a tensor with random numbers from a normal distribution using the previously initialized generator.
 
     Use either randn() or manual_seed() to initialize the generator."""
 
@@ -48,7 +48,7 @@ def randn_like(x):
 
 
 def randn_without_seed(shape, generator=None):
-    """Generate a tensor with random numbers from a normal distribution using the previously initialized genrator.
+    """Generate a tensor with random numbers from a normal distribution using the previously initialized generator.
 
     Use either randn() or manual_seed() to initialize the generator."""
 

@@ -26,8 +26,9 @@ class UiLoadsave:
         self.ui_defaults_review = None
 
         try:
-            if os.path.exists(self.filename):
-                self.ui_settings = self.read_from_file()
+            self.ui_settings = self.read_from_file()
+        except FileNotFoundError:
+            pass
         except Exception as e:
             self.error_loading = True
             errors.display(e, "loading settings")
@@ -144,7 +145,7 @@ class UiLoadsave:
             json.dump(current_ui_settings, file, indent=4, ensure_ascii=False)
 
     def dump_defaults(self):
-        """saves default values to a file unless tjhe file is present and there was an error loading default values at start"""
+        """saves default values to a file unless the file is present and there was an error loading default values at start"""
 
         if self.error_loading and os.path.exists(self.filename):
             return

@@ -380,7 +380,7 @@ def install_extension_from_url(dirname, url, branch_name=None):
         except OSError as err:
             if err.errno == errno.EXDEV:
                 # Cross device link, typical in docker or when tmp/ and extensions/ are on different file systems
-                # Since we can't use a rename, do the slower but more versitile shutil.move()
+                # Since we can't use a rename, do the slower but more versatile shutil.move()
                 shutil.move(tmpdir, target_dir)
             else:
                 # Something else, not enough free space, permissions, etc.  rethrow it so that it gets handled.
@@ -548,6 +548,7 @@ def create_ui():
                     extensions_disable_all = gr.Radio(label="Disable all extensions", choices=["none", "extra", "all"], value=shared.opts.disable_all_extensions, elem_id="extensions_disable_all")
                     extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False, container=False)
                     extensions_update_list = gr.Text(elem_id="extensions_update_list", visible=False, container=False)
+                    refresh = gr.Button(value='Refresh', variant="compact")
 
                 html = ""
 
@@ -566,7 +567,8 @@ def create_ui():
                 with gr.Row(elem_classes="progress-container"):
                     extensions_table = gr.HTML('Loading...', elem_id="extensions_installed_html")
 
-                ui.load(fn=extension_table, inputs=[], outputs=[extensions_table])
+                ui.load(fn=extension_table, inputs=[], outputs=[extensions_table], show_progress=False)
+                refresh.click(fn=extension_table, inputs=[], outputs=[extensions_table], show_progress=False)
 
                 apply.click(
                     fn=apply_and_restart,

@@ -22,9 +22,12 @@ def save_style(name, prompt, negative_prompt):
     if not name:
         return gr.update(visible=False)
 
-    style = styles.PromptStyle(name, prompt, negative_prompt)
+    existing_style = shared.prompt_styles.styles.get(name)
+    path = existing_style.path if existing_style is not None else None
+
+    style = styles.PromptStyle(name, prompt, negative_prompt, path)
     shared.prompt_styles.styles[style.name] = style
-    shared.prompt_styles.save_styles(shared.styles_filename)
+    shared.prompt_styles.save_styles()
 
     return gr.update(visible=True)
 
@@ -34,7 +37,7 @@ def delete_style(name):
         return
 
     shared.prompt_styles.styles.pop(name, None)
-    shared.prompt_styles.save_styles(shared.styles_filename)
+    shared.prompt_styles.save_styles()
 
     return '', '', ''
 
@@ -64,7 +67,7 @@ class UiPromptStyles:
             with gr.Row():
                 self.selection = gr.Dropdown(label="Styles", elem_id=f"{tabname}_styles_edit_select", choices=list(shared.prompt_styles.styles), value=[], allow_custom_value=True, info="Styles allow you to add custom text to prompt. Use the {prompt} token in style text, and it will be replaced with user's prompt when applying style. Otherwise, style's text will be added to the end of the prompt.")
                 ui_common.create_refresh_button([self.dropdown, self.selection], shared.prompt_styles.reload, lambda: {"choices": list(shared.prompt_styles.styles)}, f"refresh_{tabname}_styles")
-                self.materialize = ui_components.ToolButton(value=styles_materialize_symbol, elem_id=f"{tabname}_style_apply_dialog", tooltip="Apply all selected styles from the style selction dropdown in main UI to the prompt.")
+                self.materialize = ui_components.ToolButton(value=styles_materialize_symbol, elem_id=f"{tabname}_style_apply_dialog", tooltip="Apply all selected styles from the style selection dropdown in main UI to the prompt.")
                 self.copy = ui_components.ToolButton(value=styles_copy_symbol, elem_id=f"{tabname}_style_copy", tooltip="Copy main UI prompt to style.")
 
             with gr.Row():

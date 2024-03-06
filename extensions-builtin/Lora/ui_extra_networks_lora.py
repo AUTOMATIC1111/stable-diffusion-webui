@@ -24,13 +24,16 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
 
         alias = lora_on_disk.get_alias()
 
+        search_terms = [self.search_terms_from_path(lora_on_disk.filename)]
+        if lora_on_disk.hash:
+            search_terms.append(lora_on_disk.hash)
         item = {
             "name": name,
             "filename": lora_on_disk.filename,
             "shorthash": lora_on_disk.shorthash,
             "preview": self.find_preview(path),
             "description": self.find_description(path),
-            "search_term": self.search_terms_from_path(lora_on_disk.filename) + " " + (lora_on_disk.hash or ""),
+            "search_terms": search_terms,
             "local_preview": f"{path}.{shared.opts.samples_format}",
             "metadata": lora_on_disk.metadata,
             "sort_keys": {'default': index, **self.get_sort_keys(lora_on_disk.filename)},
@@ -44,6 +47,11 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
 
         if activation_text:
             item["prompt"] += " + " + quote_js(" " + activation_text)
+
+        negative_prompt = item["user_metadata"].get("negative text")
+        item["negative_prompt"] = quote_js("")
+        if negative_prompt:
+            item["negative_prompt"] = quote_js('(' + negative_prompt + ':1)')
 
         sd_version = item["user_metadata"].get("sd version")
         if sd_version in network.SdVersion.__members__:

@@ -55,8 +55,8 @@ onOptionsChanged(function() {
     });
 
     opts._categories.forEach(function(x) {
-        var section = x[0];
-        var category = x[1];
+        var section = localization[x[0]] ?? x[0];
+        var category = localization[x[1]] ?? x[1];
 
         var span = document.createElement('SPAN');
         span.textContent = category;

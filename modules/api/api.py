@@ -17,13 +17,13 @@ from fastapi.encoders import jsonable_encoder
 from secrets import compare_digest
 
 import modules.shared as shared
-from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors, restart, shared_items, script_callbacks, generation_parameters_copypaste, sd_models
+from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors, restart, shared_items, script_callbacks, infotext_utils, sd_models
 from modules.api import models
 from modules.shared import opts
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.textual_inversion.textual_inversion import create_embedding, train_embedding
 from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
-from PIL import PngImagePlugin, Image
+from PIL import PngImagePlugin
 from modules.sd_models_config import find_checkpoint_config_near_filename
 from modules.realesrgan_model import get_realesrgan_models
 from modules import devices
@@ -31,7 +31,7 @@ from typing import Any
 import piexif
 import piexif.helper
 from contextlib import closing
-
+from modules.progress import create_task_id, add_task_to_queue, start_task, finish_task, current_task
 
 def script_name_to_index(name, scripts):
     try:
@@ -85,7 +85,7 @@ def decode_base64_to_image(encoding):
         headers = {'user-agent': opts.api_useragent} if opts.api_useragent else {}
         response = requests.get(encoding, timeout=30, headers=headers)
         try:
-            image = Image.open(BytesIO(response.content))
+            image = images.read(BytesIO(response.content))
             return image
         except Exception as e:
             raise HTTPException(status_code=500, detail="Invalid image url") from e
@@ -93,7 +93,7 @@ def decode_base64_to_image(encoding):
     if encoding.startswith("data:image/"):
         encoding = encoding.split(";")[1].split(",")[1]
     try:
-        image = Image.open(BytesIO(base64.b64decode(encoding)))
+        image = images.read(BytesIO(base64.b64decode(encoding)))
         return image
     except Exception as e:
         raise HTTPException(status_code=500, detail="Invalid encoded image") from e
@@ -230,6 +230,7 @@ class Api:
         self.add_api_route("/sdapi/v1/realesrgan-models", self.get_realesrgan_models, methods=["GET"], response_model=list[models.RealesrganItem])
         self.add_api_route("/sdapi/v1/prompt-styles", self.get_prompt_styles, methods=["GET"], response_model=list[models.PromptStyleItem])
         self.add_api_route("/sdapi/v1/embeddings", self.get_embeddings, methods=["GET"], response_model=models.EmbeddingsResponse)
+        self.add_api_route("/sdapi/v1/refresh-embeddings", self.refresh_embeddings, methods=["POST"])
         self.add_api_route("/sdapi/v1/refresh-checkpoints", self.refresh_checkpoints, methods=["POST"])
         self.add_api_route("/sdapi/v1/refresh-vae", self.refresh_vae, methods=["POST"])
         self.add_api_route("/sdapi/v1/create/embedding", self.create_embedding, methods=["POST"], response_model=models.CreateResponse)
@@ -250,6 +251,24 @@ class Api:
 
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
+
+        txt2img_script_runner = scripts.scripts_txt2img
+        img2img_script_runner = scripts.scripts_img2img
+
+        if not txt2img_script_runner.scripts or not img2img_script_runner.scripts:
+            ui.create_ui()
+
+        if not txt2img_script_runner.scripts:
+            txt2img_script_runner.initialize_scripts(False)
+        if not self.default_script_arg_txt2img:
+            self.default_script_arg_txt2img = self.init_default_script_args(txt2img_script_runner)
+
+        if not img2img_script_runner.scripts:
+            img2img_script_runner.initialize_scripts(True)
+        if not self.default_script_arg_img2img:
+            self.default_script_arg_img2img = self.init_default_script_args(img2img_script_runner)
+
+
 
     def add_api_route(self, path: str, endpoint, **kwargs):
         if shared.cmd_opts.api_auth:
@@ -312,8 +331,13 @@ class Api:
                     script_args[script.args_from:script.args_to] = ui_default_values
         return script_args
 
-    def init_script_args(self, request, default_script_args, selectable_scripts, selectable_idx, script_runner):
+    def init_script_args(self, request, default_script_args, selectable_scripts, selectable_idx, script_runner, *, input_script_args=None):
         script_args = default_script_args.copy()
+
+        if input_script_args is not None:
+            for index, value in input_script_args.items():
+                script_args[index] = value
+
         # position 0 in script_arg is the idx+1 of the selectable script that is going to be run when using scripts.scripts_*2img.run()
         if selectable_scripts:
             script_args[selectable_scripts.args_from:selectable_scripts.args_to] = request.script_args
@@ -335,13 +359,83 @@ class Api:
                         script_args[alwayson_script.args_from + idx] = request.alwayson_scripts[alwayson_script_name]["args"][idx]
         return script_args
 
+    def apply_infotext(self, request, tabname, *, script_runner=None, mentioned_script_args=None):
+        """Processes `infotext` field from the `request`, and sets other fields of the `request` according to what's in infotext.
+
+        If request already has a field set, and that field is encountered in infotext too, the value from infotext is ignored.
+
+        Additionally, fills `mentioned_script_args` dict with index: value pairs for script arguments read from infotext.
+        """
+
+        if not request.infotext:
+            return {}
+
+        possible_fields = infotext_utils.paste_fields[tabname]["fields"]
+        set_fields = request.model_dump(exclude_unset=True) if hasattr(request, "request") else request.dict(exclude_unset=True)  # pydantic v1/v2 have differenrt names for this
+        params = infotext_utils.parse_generation_parameters(request.infotext)
+
+        def get_field_value(field, params):
+            value = field.function(params) if field.function else params.get(field.label)
+            if value is None:
+                return None
+
+            if field.api in request.__fields__:
+                target_type = request.__fields__[field.api].type_
+            else:
+                target_type = type(field.component.value)
+
+            if target_type == type(None):
+                return None
+
+            if isinstance(value, dict) and value.get('__type__') == 'generic_update':  # this is a gradio.update rather than a value
+                value = value.get('value')
+
+            if value is not None and not isinstance(value, target_type):
+                value = target_type(value)
+
+            return value
+
+        for field in possible_fields:
+            if not field.api:
+                continue
+
+            if field.api in set_fields:
+                continue
+
+            value = get_field_value(field, params)
+            if value is not None:
+                setattr(request, field.api, value)
+
+        if request.override_settings is None:
+            request.override_settings = {}
+
+        overridden_settings = infotext_utils.get_override_settings(params)
+        for _, setting_name, value in overridden_settings:
+            if setting_name not in request.override_settings:
+                request.override_settings[setting_name] = value
+
+        if script_runner is not None and mentioned_script_args is not None:
+            indexes = {v: i for i, v in enumerate(script_runner.inputs)}
+            script_fields = ((field, indexes[field.component]) for field in possible_fields if field.component in indexes)
+
+            for field, index in script_fields:
+                value = get_field_value(field, params)
+
+                if value is None:
+                    continue
+
+                mentioned_script_args[index] = value
+
+        return params
+
     def text2imgapi(self, txt2imgreq: models.StableDiffusionTxt2ImgProcessingAPI):
+        task_id = txt2imgreq.force_task_id or create_task_id("txt2img")
+
         script_runner = scripts.scripts_txt2img
-        if not script_runner.scripts:
-            script_runner.initialize_scripts(False)
-            ui.create_ui()
-        if not self.default_script_arg_txt2img:
-            self.default_script_arg_txt2img = self.init_default_script_args(script_runner)
+
+        infotext_script_args = {}
+        self.apply_infotext(txt2imgreq, "txt2img", script_runner=script_runner, mentioned_script_args=infotext_script_args)
+
         selectable_scripts, selectable_script_idx = self.get_selectable_script(txt2imgreq.script_name, script_runner)
 
         populate = txt2imgreq.copy(update={  # Override __init__ params
@@ -356,11 +450,14 @@ class Api:
         args.pop('script_name', None)
         args.pop('script_args', None) # will refeed them to the pipeline directly after initializing them
         args.pop('alwayson_scripts', None)
+        args.pop('infotext', None)
 
-        script_args = self.init_script_args(txt2imgreq, self.default_script_arg_txt2img, selectable_scripts, selectable_script_idx, script_runner)
+        script_args = self.init_script_args(txt2imgreq, self.default_script_arg_txt2img, selectable_scripts, selectable_script_idx, script_runner, input_script_args=infotext_script_args)
 
         send_images = args.pop('send_images', True)
         args.pop('save_images', None)
+
+        add_task_to_queue(task_id)
 
         with self.queue_lock:
             with closing(StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)) as p:
@@ -371,12 +468,14 @@ class Api:
 
                 try:
                     shared.state.begin(job="scripts_txt2img")
+                    start_task(task_id)
                     if selectable_scripts is not None:
                         p.script_args = script_args
                         processed = scripts.scripts_txt2img.run(p, *p.script_args) # Need to pass args as list here
                     else:
                         p.script_args = tuple(script_args) # Need to pass args as tuple here
                         processed = process_images(p)
+                    finish_task(task_id)
                 finally:
                     shared.state.end()
                     shared.total_tqdm.clear()
@@ -386,6 +485,8 @@ class Api:
         return models.TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
     def img2imgapi(self, img2imgreq: models.StableDiffusionImg2ImgProcessingAPI):
+        task_id = img2imgreq.force_task_id or create_task_id("img2img")
+
         init_images = img2imgreq.init_images
         if init_images is None:
             raise HTTPException(status_code=404, detail="Init image not found")
@@ -395,11 +496,10 @@ class Api:
             mask = decode_base64_to_image(mask)
 
         script_runner = scripts.scripts_img2img
-        if not script_runner.scripts:
-            script_runner.initialize_scripts(True)
-            ui.create_ui()
-        if not self.default_script_arg_img2img:
-            self.default_script_arg_img2img = self.init_default_script_args(script_runner)
+
+        infotext_script_args = {}
+        self.apply_infotext(img2imgreq, "img2img", script_runner=script_runner, mentioned_script_args=infotext_script_args)
+
         selectable_scripts, selectable_script_idx = self.get_selectable_script(img2imgreq.script_name, script_runner)
 
         populate = img2imgreq.copy(update={  # Override __init__ params
@@ -416,11 +516,14 @@ class Api:
         args.pop('script_name', None)
         args.pop('script_args', None)  # will refeed them to the pipeline directly after initializing them
         args.pop('alwayson_scripts', None)
+        args.pop('infotext', None)
 
-        script_args = self.init_script_args(img2imgreq, self.default_script_arg_img2img, selectable_scripts, selectable_script_idx, script_runner)
+        script_args = self.init_script_args(img2imgreq, self.default_script_arg_img2img, selectable_scripts, selectable_script_idx, script_runner, input_script_args=infotext_script_args)
 
         send_images = args.pop('send_images', True)
         args.pop('save_images', None)
+
+        add_task_to_queue(task_id)
 
         with self.queue_lock:
             with closing(StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)) as p:
@@ -432,12 +535,14 @@ class Api:
 
                 try:
                     shared.state.begin(job="scripts_img2img")
+                    start_task(task_id)
                     if selectable_scripts is not None:
                         p.script_args = script_args
                         processed = scripts.scripts_img2img.run(p, *p.script_args) # Need to pass args as list here
                     else:
                         p.script_args = tuple(script_args) # Need to pass args as tuple here
                         processed = process_images(p)
+                    finish_task(task_id)
                 finally:
                     shared.state.end()
                     shared.total_tqdm.clear()
@@ -480,7 +585,7 @@ class Api:
         if geninfo is None:
             geninfo = ""
 
-        params = generation_parameters_copypaste.parse_generation_parameters(geninfo)
+        params = infotext_utils.parse_generation_parameters(geninfo)
         script_callbacks.infotext_pasted_callback(geninfo, params)
 
         return models.PNGInfoResponse(info=geninfo, items=items, parameters=params)
@@ -511,7 +616,7 @@ class Api:
         if shared.state.current_image and not req.skip_current_image:
             current_image = encode_pil_to_base64(shared.state.current_image)
 
-        return models.ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image, textinfo=shared.state.textinfo)
+        return models.ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image, textinfo=shared.state.textinfo, current_task=current_task)
 
     def interrogateapi(self, interrogatereq: models.InterrogateRequest):
         image_b64 = interrogatereq.image
@@ -642,6 +747,10 @@ class Api:
             "loaded": convert_embeddings(db.word_embeddings),
             "skipped": convert_embeddings(db.skipped_embeddings),
         }
+
+    def refresh_embeddings(self):
+        with self.queue_lock:
+            sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)
 
     def refresh_checkpoints(self):
         with self.queue_lock:
@@ -775,7 +884,15 @@ class Api:
 
     def launch(self, server_name, port, root_path):
         self.app.include_router(self.router)
-        uvicorn.run(self.app, host=server_name, port=port, timeout_keep_alive=shared.cmd_opts.timeout_keep_alive, root_path=root_path)
+        uvicorn.run(
+            self.app,
+            host=server_name,
+            port=port,
+            timeout_keep_alive=shared.cmd_opts.timeout_keep_alive,
+            root_path=root_path,
+            ssl_keyfile=shared.cmd_opts.tls_keyfile,
+            ssl_certfile=shared.cmd_opts.tls_certfile
+        )
 
     def kill_webui(self):
         restart.stop_program()

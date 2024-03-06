@@ -3,7 +3,7 @@ from collections import namedtuple
 
 import torch
 
-from modules import prompt_parser, devices, sd_hijack
+from modules import prompt_parser, devices, sd_hijack, sd_emphasis
 from modules.shared import opts
 
 
@@ -23,7 +23,7 @@ class PromptChunk:
 
 PromptChunkFix = namedtuple('PromptChunkFix', ['offset', 'embedding'])
 """An object of this type is a marker showing that textual inversion embedding's vectors have to placed at offset in the prompt
-chunk. Thos objects are found in PromptChunk.fixes and, are placed into FrozenCLIPEmbedderWithCustomWordsBase.hijack.fixes, and finally
+chunk. Those objects are found in PromptChunk.fixes and, are placed into FrozenCLIPEmbedderWithCustomWordsBase.hijack.fixes, and finally
 are applied by sd_hijack.EmbeddingsWithFixes's forward function."""
 
 
@@ -66,7 +66,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
 
     def encode_with_transformers(self, tokens):
         """
-        converts a batch of token ids (in python lists) into a single tensor with numeric respresentation of those tokens;
+        converts a batch of token ids (in python lists) into a single tensor with numeric representation of those tokens;
         All python lists with tokens are assumed to have same length, usually 77.
         if input is a list with B elements and each element has T tokens, expected output shape is (B, T, C), where C depends on
         model - can be 768 and 1024.
@@ -88,7 +88,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
         Returns the list and the total number of tokens in the prompt.
         """
 
-        if opts.enable_emphasis:
+        if opts.emphasis != "None":
             parsed = prompt_parser.parse_prompt_attention(line)
         else:
             parsed = [[line, 1.0]]
@@ -136,7 +136,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
                 if token == self.comma_token:
                     last_comma = len(chunk.tokens)
 
-                # this is when we are at the end of alloted 75 tokens for the current chunk, and the current token is not a comma. opts.comma_padding_backtrack
+                # this is when we are at the end of allotted 75 tokens for the current chunk, and the current token is not a comma. opts.comma_padding_backtrack
                 # is a setting that specifies that if there is a comma nearby, the text after the comma should be moved out of this chunk and into the next.
                 elif opts.comma_padding_backtrack != 0 and len(chunk.tokens) == self.chunk_length and last_comma != -1 and len(chunk.tokens) - last_comma <= opts.comma_padding_backtrack:
                     break_location = last_comma + 1
@@ -206,7 +206,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
         be a multiple of 77; and C is dimensionality of each token - for SD1 it's 768, for SD2 it's 1024, and for SDXL it's 1280.
         An example shape returned by this function can be: (2, 77, 768).
         For SDXL, instead of returning one tensor avobe, it returns a tuple with two: the other one with shape (B, 1280) with pooled values.
-        Webui usually sends just one text at a time through this function - the only time when texts is an array with more than one elemenet
+        Webui usually sends just one text at a time through this function - the only time when texts is an array with more than one element
         is when you do prompt editing: "a picture of a [cat:dog:0.4] eating ice cream"
         """
 
@@ -230,7 +230,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
             for fixes in self.hijack.fixes:
                 for _position, embedding in fixes:
                     used_embeddings[embedding.name] = embedding
-
+            devices.torch_npu_set_device()
             z = self.process_tokens(tokens, multipliers)
             zs.append(z)
 
@@ -248,6 +248,9 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
                 if self.hijack.extra_generation_params.get("TI hashes"):
                     hashes.append(self.hijack.extra_generation_params.get("TI hashes"))
                 self.hijack.extra_generation_params["TI hashes"] = ", ".join(hashes)
+
+        if any(x for x in texts if "(" in x or "[" in x) and opts.emphasis != "Original":
+            self.hijack.extra_generation_params["Emphasis"] = opts.emphasis
 
         if getattr(self.wrapped, 'return_pooled', False):
             return torch.hstack(zs), zs[0].pooled
@@ -274,12 +277,14 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
 
         pooled = getattr(z, 'pooled', None)
 
-        # restoring original mean is likely not correct, but it seems to work well to prevent artifacts that happen otherwise
-        batch_multipliers = torch.asarray(batch_multipliers).to(devices.device)
-        original_mean = z.mean()
-        z = z * batch_multipliers.reshape(batch_multipliers.shape + (1,)).expand(z.shape)
-        new_mean = z.mean()
-        z = z * (original_mean / new_mean)
+        emphasis = sd_emphasis.get_current_option(opts.emphasis)()
+        emphasis.tokens = remade_batch_tokens
+        emphasis.multipliers = torch.asarray(batch_multipliers).to(devices.device)
+        emphasis.z = z
+
+        emphasis.after_transformers()
+
+        z = emphasis.z
 
         if pooled is not None:
             z.pooled = pooled

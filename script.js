@@ -121,16 +121,22 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 /**
- * Add a ctrl+enter as a shortcut to start a generation
+ * Add keyboard shortcuts:
+ * Ctrl+Enter to start/restart a generation
+ * Alt/Option+Enter to skip a generation
+ * Esc to interrupt a generation
  */
 document.addEventListener('keydown', function(e) {
     const isEnter = e.key === 'Enter' || e.keyCode === 13;
-    const isModifierKey = e.metaKey || e.ctrlKey || e.altKey;
+    const isCtrlKey = e.metaKey || e.ctrlKey;
+    const isAltKey = e.altKey;
+    const isEsc = e.key === 'Escape';
 
-    const interruptButton = get_uiCurrentTabContent().querySelector('button[id$=_interrupt]');
     const generateButton = get_uiCurrentTabContent().querySelector('button[id$=_generate]');
+    const interruptButton = get_uiCurrentTabContent().querySelector('button[id$=_interrupt]');
+    const skipButton = get_uiCurrentTabContent().querySelector('button[id$=_skip]');
 
-    if (isEnter && isModifierKey) {
+    if (isCtrlKey && isEnter) {
         if (interruptButton.style.display === 'block') {
             interruptButton.click();
             const callback = (mutationList) => {
@@ -149,6 +155,23 @@ document.addEventListener('keydown', function(e) {
             generateButton.click();
         }
         e.preventDefault();
+    }
+
+    if (isAltKey && isEnter) {
+        skipButton.click();
+        e.preventDefault();
+    }
+
+    if (isEsc) {
+        const globalPopup = document.querySelector('.global-popup');
+        const lightboxModal = document.querySelector('#lightboxModal');
+        if (!globalPopup || globalPopup.style.display === 'none') {
+            if (document.activeElement === lightboxModal) return;
+            if (interruptButton.style.display === 'block') {
+                interruptButton.click();
+                e.preventDefault();
+            }
+        }
     }
 });
 

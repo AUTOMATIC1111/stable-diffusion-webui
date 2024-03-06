@@ -12,7 +12,7 @@ import re
 import numpy as np
 import piexif
 import piexif.helper
-from PIL import Image, ImageFont, ImageDraw, ImageColor, PngImagePlugin
+from PIL import Image, ImageFont, ImageDraw, ImageColor, PngImagePlugin, ImageOps
 import string
 import json
 import hashlib
@@ -61,12 +61,17 @@ def image_grid(imgs, batch_size=1, rows=None):
     return grid
 
 
-Grid = namedtuple("Grid", ["tiles", "tile_w", "tile_h", "image_w", "image_h", "overlap"])
+class Grid(namedtuple("_Grid", ["tiles", "tile_w", "tile_h", "image_w", "image_h", "overlap"])):
+    @property
+    def tile_count(self) -> int:
+        """
+        The total number of tiles in the grid.
+        """
+        return sum(len(row[2]) for row in self.tiles)
 
 
-def split_grid(image, tile_w=512, tile_h=512, overlap=64):
-    w = image.width
-    h = image.height
+def split_grid(image: Image.Image, tile_w: int = 512, tile_h: int = 512, overlap: int = 64) -> Grid:
+    w, h = image.size
 
     non_overlap_width = tile_w - overlap
     non_overlap_height = tile_h - overlap
@@ -316,13 +321,16 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
     return res
 
 
-invalid_filename_chars = '<>:"/\\|?*\n\r\t'
+if not shared.cmd_opts.unix_filenames_sanitization:
+    invalid_filename_chars = '#<>:"/\\|?*\n\r\t'
+else:
+    invalid_filename_chars = '/'
 invalid_filename_prefix = ' '
 invalid_filename_postfix = ' .'
 re_nonletters = re.compile(r'[\s' + string.punctuation + ']+')
 re_pattern = re.compile(r"(.*?)(?:\[([^\[\]]+)\]|$)")
 re_pattern_arg = re.compile(r"(.*)<([^>]*)>$")
-max_filename_part_length = 128
+max_filename_part_length = shared.cmd_opts.filenames_max_length
 NOTHING_AND_SKIP_PREVIOUS_TEXT = object()
 
 
@@ -765,7 +773,7 @@ def image_data(data):
     import gradio as gr
 
     try:
-        image = Image.open(io.BytesIO(data))
+        image = read(io.BytesIO(data))
         textinfo, _ = read_info_from_image(image)
         return textinfo, None
     except Exception:
@@ -791,3 +799,31 @@ def flatten(img, bgcolor):
         img = background
 
     return img.convert('RGB')
+
+
+def read(fp, **kwargs):
+    image = Image.open(fp, **kwargs)
+    image = fix_image(image)
+
+    return image
+
+
+def fix_image(image: Image.Image):
+    if image is None:
+        return None
+
+    try:
+        image = ImageOps.exif_transpose(image)
+        image = fix_png_transparency(image)
+    except Exception:
+        pass
+
+    return image
+
+
+def fix_png_transparency(image: Image.Image):
+    if image.mode not in ("RGB", "P") or not isinstance(image.info.get("transparency"), bytes):
+        return image
+
+    image = image.convert("RGBA")
+    return image

@@ -155,8 +155,19 @@ def replace_torchsde_browinan():
 replace_torchsde_browinan()
 
 
-def apply_refiner(cfg_denoiser):
-    completed_ratio = cfg_denoiser.step / cfg_denoiser.total_steps
+def apply_refiner(cfg_denoiser, sigma=None):
+    if opts.refiner_switch_by_sample_steps or sigma is None:
+        completed_ratio = cfg_denoiser.step / cfg_denoiser.total_steps
+        cfg_denoiser.p.extra_generation_params["Refiner switch by sampling steps"] = True
+
+    else:
+        # torch.max(sigma) only to handle rare case where we might have different sigmas in the same batch
+        try:
+            timestep = torch.argmin(torch.abs(cfg_denoiser.inner_model.sigmas - torch.max(sigma)))
+        except AttributeError:  # for samplers that don't use sigmas (DDIM) sigma is actually the timestep
+            timestep = torch.max(sigma).to(dtype=int)
+        completed_ratio = (999 - timestep) / 1000
+
     refiner_switch_at = cfg_denoiser.p.refiner_switch_at
     refiner_checkpoint_info = cfg_denoiser.p.refiner_checkpoint_info
 
@@ -335,3 +346,10 @@ class Sampler:
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
         raise NotImplementedError()
+
+    def add_infotext(self, p):
+        if self.model_wrap_cfg.padded_cond_uncond:
+            p.extra_generation_params["Pad conds"] = True
+
+        if self.model_wrap_cfg.padded_cond_uncond_v0:
+            p.extra_generation_params["Pad conds v0"] = True

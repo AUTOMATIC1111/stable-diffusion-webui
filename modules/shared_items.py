@@ -8,6 +8,11 @@ def realesrgan_models_names():
     return [x.name for x in modules.realesrgan_model.get_realesrgan_models(None)]
 
 
+def dat_models_names():
+    import modules.dat_model
+    return [x.name for x in modules.dat_model.get_dat_models(None)]
+
+
 def postprocessing_scripts():
     import modules.scripts
 
@@ -67,14 +72,14 @@ def reload_hypernetworks():
 
 
 def get_infotext_names():
-    from modules import generation_parameters_copypaste, shared
+    from modules import infotext_utils, shared
     res = {}
 
     for info in shared.opts.data_labels.values():
         if info.infotext:
             res[info.infotext] = 1
 
-    for tab_data in generation_parameters_copypaste.paste_fields.values():
+    for tab_data in infotext_utils.paste_fields.values():
         for _, name in tab_data.get("fields") or []:
             if isinstance(name, str):
                 res[name] = 1

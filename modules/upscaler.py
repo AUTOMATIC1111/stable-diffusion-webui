@@ -98,6 +98,9 @@ class UpscalerData:
         self.scale = scale
         self.model = model
 
+    def __repr__(self):
+        return f"<UpscalerData name={self.name} path={self.data_path} scale={self.scale}>"
+
 
 class UpscalerNone(Upscaler):
     name = "None"
