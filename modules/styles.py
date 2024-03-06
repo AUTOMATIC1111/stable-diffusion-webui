@@ -42,7 +42,7 @@ def extract_style_text_from_prompt(style_text, prompt):
     stripped_style_text = style_text.strip()
 
     if "{prompt}" in stripped_style_text:
-        left, right = stripped_style_text.split("{prompt}", 2)
+        left, _, right = stripped_style_text.partition("{prompt}")
         if stripped_prompt.startswith(left) and stripped_prompt.endswith(right):
             prompt = stripped_prompt[len(left):len(stripped_prompt)-len(right)]
             return True, prompt
