@@ -266,7 +266,12 @@ class TaskReceiver:
         '''
         搜索指定资源的队列。
         '''
-        return self._get_queue_task(self.group_queue_name)
+
+        task = self._extract_queue_task(self.group_queue_name, 3)
+        if task:
+            return task
+
+        return None
 
     def _search_train_task(self):
         # 弹性不训练
