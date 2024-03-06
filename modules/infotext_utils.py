@@ -8,7 +8,7 @@ import sys
 
 import gradio as gr
 from modules.paths import data_path
-from modules import shared, ui_tempdir, script_callbacks, processing, infotext_versions
+from modules import shared, ui_tempdir, script_callbacks, processing, infotext_versions, images, prompt_parser
 from PIL import Image
 
 sys.modules['modules.generation_parameters_copypaste'] = sys.modules[__name__]  # alias for old name
@@ -83,7 +83,7 @@ def image_from_url_text(filedata):
         assert is_in_right_dir, 'trying to open image file outside of allowed directories'
 
         filename = filename.rsplit('?', 1)[0]
-        return Image.open(filename)
+        return images.read(filename)
 
     if type(filedata) == list:
         if len(filedata) == 0:
@@ -95,7 +95,7 @@ def image_from_url_text(filedata):
         filedata = filedata[len("data:image/png;base64,"):]
 
     filedata = base64.decodebytes(filedata.encode('utf-8'))
-    image = Image.open(io.BytesIO(filedata))
+    image = images.read(io.BytesIO(filedata))
     return image
 
 
@@ -356,8 +356,14 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "Cache FP16 weight for LoRA" not in res and res["FP8 weight"] != "Disable":
         res["Cache FP16 weight for LoRA"] = False
 
-    if "Emphasis" not in res:
+    prompt_attention = prompt_parser.parse_prompt_attention(prompt)
+    prompt_attention += prompt_parser.parse_prompt_attention(negative_prompt)
+    prompt_uses_emphasis = len(prompt_attention) != len([p for p in prompt_attention if p[1] == 1.0 or p[0] == 'BREAK'])
+    if "Emphasis" not in res and prompt_uses_emphasis:
         res["Emphasis"] = "Original"
+
+    if "Refiner switch by sampling steps" not in res:
+        res["Refiner switch by sampling steps"] = False
 
     infotext_versions.backcompat(res)
 

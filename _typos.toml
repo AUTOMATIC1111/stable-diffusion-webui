@@ -1,0 +1,5 @@
+[default.extend-words]
+# Part of "RGBa" (Pillow's pre-multiplied alpha RGB mode)
+Ba = "Ba"
+# HSA is something AMD uses for their GPUs
+HSA = "HSA"

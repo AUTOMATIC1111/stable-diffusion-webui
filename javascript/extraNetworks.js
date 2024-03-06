@@ -290,7 +290,7 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, extra_netwo
      * Processes `onclick` events when user clicks on directories in tree.
      *
      * Here is how the tree reacts to clicks for various states:
-     * unselected unopened directory: Diretory is selected and expanded.
+     * unselected unopened directory: Directory is selected and expanded.
      * unselected opened directory: Directory is selected.
      * selected opened directory: Directory is collapsed and deselected.
      * chevron is clicked: Directory is expanded or collapsed. Selected state unchanged.
@@ -447,7 +447,26 @@ function extraNetworksControlTreeViewOnClick(event, tabname, extra_networks_tabn
      * @param tabname                   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
      * @param extra_networks_tabname    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
      */
-    gradioApp().getElementById(tabname + "_" + extra_networks_tabname + "_tree").classList.toggle("hidden");
+    const tree = gradioApp().getElementById(tabname + "_" + extra_networks_tabname + "_tree");
+    const parent = tree.parentElement;
+    let resizeHandle = parent.querySelector('.resize-handle');
+    tree.classList.toggle("hidden");
+
+    if (tree.classList.contains("hidden")) {
+        tree.style.display = 'none';
+        parent.style.display = 'flex';
+        if (resizeHandle) {
+            resizeHandle.style.display = 'none';
+        }
+    } else {
+        tree.style.display = 'block';
+        parent.style.display = 'grid';
+        if (!resizeHandle) {
+            setupResizeHandle(parent);
+            resizeHandle = parent.querySelector('.resize-handle');
+        }
+        resizeHandle.style.display = 'block';
+    }
     event.currentTarget.classList.toggle("extra-network-control--enabled");
 }
 
@@ -509,12 +528,76 @@ function popupId(id) {
     popup(storedPopupIds[id]);
 }
 
+function extraNetworksFlattenMetadata(obj) {
+    const result = {};
+
+    // Convert any stringified JSON objects to actual objects
+    for (const key of Object.keys(obj)) {
+        if (typeof obj[key] === 'string') {
+            try {
+                const parsed = JSON.parse(obj[key]);
+                if (parsed && typeof parsed === 'object') {
+                    obj[key] = parsed;
+                }
+            } catch (error) {
+                continue;
+            }
+        }
+    }
+
+    // Flatten the object
+    for (const key of Object.keys(obj)) {
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+            const nested = extraNetworksFlattenMetadata(obj[key]);
+            for (const nestedKey of Object.keys(nested)) {
+                result[`${key}/${nestedKey}`] = nested[nestedKey];
+            }
+        } else {
+            result[key] = obj[key];
+        }
+    }
+
+    // Special case for handling modelspec keys
+    for (const key of Object.keys(result)) {
+        if (key.startsWith("modelspec.")) {
+            result[key.replaceAll(".", "/")] = result[key];
+            delete result[key];
+        }
+    }
+
+    // Add empty keys to designate hierarchy
+    for (const key of Object.keys(result)) {
+        const parts = key.split("/");
+        for (let i = 1; i < parts.length; i++) {
+            const parent = parts.slice(0, i).join("/");
+            if (!result[parent]) {
+                result[parent] = "";
+            }
+        }
+    }
+
+    return result;
+}
+
 function extraNetworksShowMetadata(text) {
+    try {
+        let parsed = JSON.parse(text);
+        if (parsed && typeof parsed === 'object') {
+            parsed = extraNetworksFlattenMetadata(parsed);
+            const table = createVisualizationTable(parsed, 0);
+            popup(table);
+            return;
+        }
+    } catch (error) {
+        console.eror(error);
+    }
+
     var elem = document.createElement('pre');
     elem.classList.add('popup-metadata');
     elem.textContent = text;
 
     popup(elem);
+    return;
 }
 
 function requestGet(url, data, handler, errorHandler) {

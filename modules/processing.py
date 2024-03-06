@@ -896,6 +896,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if p.scripts is not None:
                 p.scripts.process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
 
+            p.setup_conds()
+
+            p.extra_generation_params.update(model_hijack.extra_generation_params)
+
             # params.txt should be saved after scripts.process_batch, since the
             # infotext could be modified by that callback
             # Example: a wildcard processed by process_batch sets an extra model
@@ -905,12 +909,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     processed = Processed(p, [])
                     file.write(processed.infotext(p, 0))
 
-            p.setup_conds()
-
             for comment in model_hijack.comments:
                 p.comment(comment)
-
-            p.extra_generation_params.update(model_hijack.extra_generation_params)
 
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"

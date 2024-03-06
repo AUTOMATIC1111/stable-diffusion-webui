@@ -95,6 +95,7 @@ class HypernetworkModule(torch.nn.Module):
                         zeros_(b)
                     else:
                         raise KeyError(f"Key {weight_init} is not defined as initialization!")
+        devices.torch_npu_set_device()
         self.to(devices.device)
 
     def fix_old_state_dict(self, state_dict):
