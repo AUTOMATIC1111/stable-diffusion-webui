@@ -169,7 +169,7 @@ class TaskReceiver:
             f"worker id:{self.worker_id}, train work receive clock:"
             f"{self.run_train_time_start} - {self.run_train_time_end}")
         self.group_queue_name = ""
-        if is_task_group_queue_only:
+        if self.is_task_group_queue_only:
             self.group_queue_name = get_env_group_queue_name() or worker_info['resource']
             logger.warning(f"only search task queue by resource:{self.group_queue_name}")
 
