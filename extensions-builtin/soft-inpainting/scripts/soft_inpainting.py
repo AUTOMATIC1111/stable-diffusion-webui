@@ -169,7 +169,7 @@ def apply_adaptive_masks(
                 half_weighted_distance = settings.composite_difference_threshold * mask_scalar[i]
             else:
                 half_weighted_distance = settings.composite_difference_threshold * mask_scalar[0]
-        else: # len(mask_scalar.shape) == 3:
+        else:
             half_weighted_distance = settings.composite_difference_threshold * mask_scalar
 
         converted_mask = converted_mask / half_weighted_distance
