@@ -6,11 +6,13 @@ from modules.ui_components import FormColumn
 
 
 class ExtraOptionsSection(scripts.Script):
+    class ExtraOptionsSection(scripts.Script):
     section = "extra_options"
 
     def __init__(self):
-        self.comps = None
-        self.setting_names = None
+        self.comps = []
+        self.setting_names = []
+
 
     def title(self):
         return "Extra options"
