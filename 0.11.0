@@ -1,0 +1,19 @@
+Collecting seaborn
+  Downloading seaborn-0.13.2-py3-none-any.whl (294 kB)
+     ------------------------------------ 294.9/294.9 kB 467.4 kB/s eta 0:00:00
+Requirement already satisfied: pandas>=1.2 in e:\aigc\stable-diffusion-webui\venv\lib\site-packages (from seaborn) (2.2.0)
+Requirement already satisfied: numpy!=1.24.0,>=1.20 in e:\aigc\stable-diffusion-webui\venv\lib\site-packages (from seaborn) (1.23.5)
+Requirement already satisfied: matplotlib!=3.6.1,>=3.4 in e:\aigc\stable-diffusion-webui\venv\lib\site-packages (from seaborn) (3.8.2)
+Requirement already satisfied: python-dateutil>=2.7 in e:\aigc\stable-diffusion-webui\venv\lib\site-packages (from matplotlib!=3.6.1,>=3.4->seaborn) (2.8.2)
+Requirement already satisfied: kiwisolver>=1.3.1 in e:\aigc\stable-diffusion-webui\venv\lib\site-packages (from matplotlib!=3.6.1,>=3.4->seaborn) (1.4.5)
+Requirement already satisfied: pillow>=8 in e:\aigc\stable-diffusion-webui\venv\lib\site-packages (from matplotlib!=3.6.1,>=3.4->seaborn) (9.5.0)
+Requirement already satisfied: pyparsing>=2.3.1 in e:\aigc\stable-diffusion-webui\venv\lib\site-packages (from matplotlib!=3.6.1,>=3.4->seaborn) (3.1.1)
+Requirement already satisfied: contourpy>=1.0.1 in e:\aigc\stable-diffusion-webui\venv\lib\site-packages (from matplotlib!=3.6.1,>=3.4->seaborn) (1.2.0)
+Requirement already satisfied: cycler>=0.10 in e:\aigc\stable-diffusion-webui\venv\lib\site-packages (from matplotlib!=3.6.1,>=3.4->seaborn) (0.12.1)
+Requirement already satisfied: packaging>=20.0 in e:\aigc\stable-diffusion-webui\venv\lib\site-packages (from matplotlib!=3.6.1,>=3.4->seaborn) (23.2)
+Requirement already satisfied: fonttools>=4.22.0 in e:\aigc\stable-diffusion-webui\venv\lib\site-packages (from matplotlib!=3.6.1,>=3.4->seaborn) (4.47.2)
+Requirement already satisfied: tzdata>=2022.7 in e:\aigc\stable-diffusion-webui\venv\lib\site-packages (from pandas>=1.2->seaborn) (2023.4)
+Requirement already satisfied: pytz>=2020.1 in e:\aigc\stable-diffusion-webui\venv\lib\site-packages (from pandas>=1.2->seaborn) (2023.4)
+Requirement already satisfied: six>=1.5 in e:\aigc\stable-diffusion-webui\venv\lib\site-packages (from python-dateutil>=2.7->matplotlib!=3.6.1,>=3.4->seaborn) (1.16.0)
+Installing collected packages: seaborn
+Successfully installed seaborn-0.13.2
