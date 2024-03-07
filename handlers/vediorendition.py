@@ -51,17 +51,18 @@ class VideoRenditionTaskHandler(Txt2ImgTaskHandler):
         yield progress
 
         try:
-            video_rendition(base_model_path,input_video_path,output_video_path)
+            output_filename_music=video_rendition(base_model_path,input_video_path,output_video_path)
             progress.status = TaskStatus.Uploading
             current_date = datetime.datetime.now()
             formatted_date = current_date.strftime('%Y-%m-%d')
-            file_name= os.path.basename(output_video_path)
-            remoting,local=f'media/{formatted_date}/{file_name}',output_video_path
+            file_name= os.path.basename(output_filename_music)
+            remoting,local=f'media/{formatted_date}/{file_name}',output_filename_music
             oss_key=push_local_path(remoting,local)
+            logger.info(f"VideoRendition push_local_path.....,{oss_key}")
             yield progress
 
             progress = TaskProgress.new_finish(task, {
-                    'video_key': oss_key
+                    'video_key': remoting
                 })
             progress.task_desc = f'VideoRendition task:{task.id} finished.'
             yield progress
