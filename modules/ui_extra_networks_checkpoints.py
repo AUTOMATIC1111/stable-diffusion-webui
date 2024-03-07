@@ -2,6 +2,7 @@ import html
 import os
 
 from modules import shared, ui_extra_networks, sd_models
+from modules.ui_extra_networks import quote_js
 from modules.ui_extra_networks_checkpoints_user_metadata import CheckpointUserMetadataEditor
 
 
@@ -20,17 +21,14 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
             return
 
         path, ext = os.path.splitext(checkpoint.filename)
-        search_terms = [self.search_terms_from_path(checkpoint.filename)]
-        if checkpoint.sha256:
-            search_terms.append(checkpoint.sha256)
         return {
             "name": checkpoint.name_for_extra,
             "filename": checkpoint.filename,
             "shorthash": checkpoint.shorthash,
             "preview": self.find_preview(path),
             "description": self.find_description(path),
-            "search_terms": search_terms,
-            "onclick": html.escape(f"return selectCheckpoint({ui_extra_networks.quote_js(name)})"),
+            "search_term": self.search_terms_from_path(checkpoint.filename) + " " + (checkpoint.sha256 or ""),
+            "onclick": '"' + html.escape(f"""return selectCheckpoint({quote_js(name)})""") + '"',
             "local_preview": f"{path}.{shared.opts.samples_format}",
             "metadata": checkpoint.metadata,
             "sort_keys": {'default': index, **self.get_sort_keys(checkpoint.filename)},

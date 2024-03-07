@@ -14,7 +14,7 @@ class UserMetadataEditor:
         self.ui = ui
         self.tabname = tabname
         self.page = page
-        self.id_part = f"{self.tabname}_{self.page.extra_networks_tabname}_edit_user_metadata"
+        self.id_part = f"{self.tabname}_{self.page.id_page}_edit_user_metadata"
 
         self.box = None
 
@@ -200,6 +200,5 @@ class UserMetadataEditor:
             inputs=[self.edit_name_input],
             outputs=[]
         )
-
 
 
