@@ -1,6 +1,6 @@
 /* temporary fix to load default gradio font in frontend instead of backend */
 
-@import url('webui-assets/css/sourcesanspro.css');
+@import url('/webui-assets/css/sourcesanspro.css');
 
 
 /* temporary fix to hide gradio crop tool until it's fixed https://github.com/gradio-app/gradio/issues/3810 */
