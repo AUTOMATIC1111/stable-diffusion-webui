@@ -72,7 +72,7 @@ function setupExtraNetworksForTab(tabname) {
 
         var applySort = function(force) {
             var cards = gradioApp().querySelectorAll('#' + tabname_full + ' div.card');
-            var parent = gradioApp().querySelector('#' + tabname_full + "_cards" );
+            var parent = gradioApp().querySelector('#' + tabname_full + "_cards");
             var reverse = sort_dir.dataset.sortdir == "Descending";
             var sortKey = sort_mode.dataset.sortmode.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim() || "name";
             sortKey = "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1);
