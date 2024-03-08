@@ -106,7 +106,9 @@ function setupExtraNetworksForTab(tabname) {
             });
         };
 
-        search.addEventListener("input", applyFilter);
+        search.addEventListener("input", function() {
+            applyFilter();
+        });
         applySort();
         applyFilter();
         extraNetworksApplySort[tabname_full] = applySort;
@@ -458,7 +460,7 @@ function extraNetworksControlTreeViewOnClick(event, tabname, extra_networks_tabn
      */
     var button = event.currentTarget;
     button.classList.toggle("extra-network-control--enabled");
-    var show = ! button.classList.contains("extra-network-control--enabled");
+    var show = !button.classList.contains("extra-network-control--enabled");
 
     var pane = gradioApp().getElementById(tabname + "_" + extra_networks_tabname + "_pane");
     pane.classList.toggle("extra-network-dirs-hidden", show);
