@@ -37,7 +37,8 @@ class NetworkOnDisk:
             try:
                 self.metadata = cache.cached_data_for_file('safetensors-metadata', "lora/" + self.name, filename, read_metadata)
             except Exception as e:
-                errors.display(e, f"reading lora {filename}")
+                #errors.display(e, f"reading lora {filename}")
+                pass
 
         if self.metadata:
             m = {}

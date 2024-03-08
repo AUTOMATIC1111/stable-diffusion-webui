@@ -71,7 +71,8 @@ function setupExtraNetworksForTab(tabname) {
         };
 
         var applySort = function(force) {
-            var cards = gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card');
+            var cards = gradioApp().querySelectorAll('#' + tabname_full + ' div.card');
+            var parent = gradioApp().querySelector('#' + tabname_full + "_cards" );
             var reverse = sort_dir.dataset.sortdir == "Descending";
             var sortKey = sort_mode.dataset.sortmode.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim() || "name";
             sortKey = "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1);
@@ -82,9 +83,6 @@ function setupExtraNetworksForTab(tabname) {
             }
             sort_mode.dataset.sortkey = sortKeyStore;
 
-            cards.forEach(function(card) {
-                card.originalParentElement = card.parentElement;
-            });
             var sortedCards = Array.from(cards);
             sortedCards.sort(function(cardA, cardB) {
                 var a = cardA.dataset[sortKey];
@@ -95,15 +93,18 @@ function setupExtraNetworksForTab(tabname) {
 
                 return (a < b ? -1 : (a > b ? 1 : 0));
             });
+
             if (reverse) {
                 sortedCards.reverse();
             }
-            cards.forEach(function(card) {
-                card.remove();
-            });
+
+            parent.innerHTML = '';
+
+            var frag = document.createDocumentFragment();
             sortedCards.forEach(function(card) {
-                card.originalParentElement.appendChild(card);
+                frag.appendChild(card);
             });
+            parent.appendChild(frag);
         };
 
         search.addEventListener("input", function() {
