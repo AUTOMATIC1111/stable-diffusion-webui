@@ -65,10 +65,10 @@ function keyupEditAttention(event) {
         }
 
         // deselect surrounding whitespace
-        while (target.value.slice(selectionStart, selectionStart + 1) == " " && selectionStart < selectionEnd) {
+        while (text[selectionStart] == " " && selectionStart < selectionEnd) {
             selectionStart++;
         }
-        while (target.value.slice(selectionEnd - 1, selectionEnd) == " " && selectionEnd > selectionStart) {
+        while (text[selectionEnd - 1] == " " && selectionEnd > selectionStart) {
             selectionEnd--;
         }
 
