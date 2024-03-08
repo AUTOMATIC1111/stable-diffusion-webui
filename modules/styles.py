@@ -78,22 +78,29 @@ def extract_original_prompts(style: PromptStyle, prompt, negative_prompt):
     return True, extracted_positive, extracted_negative
 
 
+def _format_divider(file: str) -> str:
+    """
+    Creates a divider for the style list.
+    """
+    half_len = round(len(file) / 2)
+    divider = f"{'-' * (20 - half_len)} {file.upper()}"
+    divider = f"{divider} {'-' * (40 - len(divider))}"
+    return divider
+
+
 class StyleDatabase:
     def __init__(self, paths: list[str | Path]):
         self.no_style = PromptStyle("None", "", "", None)
         self.styles = {}
-        self.paths = paths
-        self.all_styles_files: list[Path] = []
-
-        folder, file = os.path.split(self.paths[0])
-        if '*' in file or '?' in file:
-            # if the first path is a wildcard pattern, find the first match else use "folder/styles.csv" as the default path
-            self.default_path = next(Path(folder).glob(file), Path(os.path.join(folder, 'styles.csv')))
-            self.paths.insert(0, self.default_path)
-        else:
-            self.default_path = Path(self.paths[0])
-
+        self.path = path
         self.prompt_fields = [field for field in PromptStyle._fields if field != "path"]
+
+        # The default path will be self.path with any wildcard removed. If it
+        # doesn't exist, the reload() method updates this to be 'styles.csv'.
+        self.default_file = "styles.csv"
+        folder, file = os.path.split(self.path)
+        filename, _, ext = file.partition('*')
+        self.default_path = os.path.join(folder, filename + ext)
 
         self.reload()
 
@@ -115,36 +122,54 @@ class StyleDatabase:
                 # if os.path.exists(pattern):
                 all_styles_files.append(Path(pattern))
 
-        # Remove any duplicate entries
-        seen = set()
-        self.all_styles_files = [s for s in all_styles_files if not (s in seen or seen.add(s))]
-
-        for styles_file in self.all_styles_files:
-            if len(all_styles_files) > 1:
-                # add divider when more than styles file
-                # '---------------- STYLES ----------------'
-                divider = f' {styles_file.stem.upper()} '.center(40, '-')
-                self.styles[divider] = PromptStyle(f"{divider}", None, None, "do_not_save")
-            if styles_file.is_file():
-                self.load_from_csv(styles_file)
-
-    def load_from_csv(self, path: str | Path):
-        try:
-            with open(path, "r", encoding="utf-8-sig", newline="") as file:
-                reader = csv.DictReader(file, skipinitialspace=True)
-                for row in reader:
-                    # Ignore empty rows or rows starting with a comment
-                    if not row or row["name"].startswith("#"):
-                        continue
-                    # Support loading old CSV format with "name, text"-columns
-                    prompt = row["prompt"] if "prompt" in row else row["text"]
-                    negative_prompt = row.get("negative_prompt", "")
-                    # Add style to database
-                    self.styles[row["name"]] = PromptStyle(
-                        row["name"], prompt, negative_prompt, str(path)
+        if "*" in filename:
+            fileglob = filename.split("*")[0] + "*.csv"
+            filelist = []
+            for file in os.listdir(path):
+                if fnmatch.fnmatch(file, fileglob):
+                    filelist.append(file)
+                    # Add a visible divider to the style list
+                    divider = _format_divider(file)
+                    self.styles[divider] = PromptStyle(
+                        f"{divider}", None, None, "do_not_save"
                     )
-        except Exception:
-            errors.report(f'Error loading styles from {path}: ', exc_info=True)
+                    # Add styles from this CSV file
+                    self.load_from_csv(os.path.join(path, file))
+
+            # Ensure the default file is loaded, else its contents may be lost:
+            if os.path.split(self.default_path)[1] not in filelist:
+                self.default_path = os.path.join(path, self.default_file)
+                divider = _format_divider(self.default_file)
+                self.styles[divider] = PromptStyle(
+                    f"{divider}", None, None, "do_not_save"
+                )
+                self.load_from_csv(os.path.join(path, self.default_file))
+
+            if len(filelist) == 0:
+                print(f"No styles found in {path} matching {fileglob}")
+                self.load_from_csv(self.default_path)
+                return
+
+        elif not os.path.exists(self.path):
+            print(f"Style database not found: {self.path}")
+            return
+        else:
+            self.load_from_csv(self.path)
+
+    def load_from_csv(self, path: str):
+        with open(path, "r", encoding="utf-8-sig", newline="") as file:
+            reader = csv.DictReader(file, skipinitialspace=True)
+            for row in reader:
+                # Ignore empty rows or rows starting with a comment
+                if not row or row["name"].startswith("#"):
+                    continue
+                # Support loading old CSV format with "name, text"-columns
+                prompt = row["prompt"] if "prompt" in row else row["text"]
+                negative_prompt = row.get("negative_prompt", "")
+                # Add style to database
+                self.styles[row["name"]] = PromptStyle(
+                    row["name"], prompt, negative_prompt, path
+                )
 
     def get_style_paths(self) -> set:
         """Returns a set of all distinct paths of files that styles are loaded from."""
