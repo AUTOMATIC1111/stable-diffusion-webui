@@ -64,6 +64,14 @@ function keyupEditAttention(event) {
             selectionEnd++;
         }
 
+        // deselect surrounding whitespace
+        while (text[selectionStart] == " " && selectionStart < selectionEnd) {
+            selectionStart++;
+        }
+        while (text[selectionEnd - 1] == " " && selectionEnd > selectionStart) {
+            selectionEnd--;
+        }
+
         target.setSelectionRange(selectionStart, selectionEnd);
         return true;
     }
