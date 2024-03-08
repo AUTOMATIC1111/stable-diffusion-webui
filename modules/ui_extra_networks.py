@@ -164,6 +164,8 @@ class ExtraNetworksPage:
         self.lister = util.MassFileLister()
         # HTML Templates
         self.pane_tpl = shared.html("extra-networks-pane.html")
+        self.pane_content_tree_tpl = shared.html("extra-networks-pane-tree.html")
+        self.pane_content_dirs_tpl = shared.html("extra-networks-pane-dirs.html")
         self.card_tpl = shared.html("extra-networks-card.html")
         self.btn_tree_tpl = shared.html("extra-networks-tree-button.html")
         self.btn_copy_path_tpl = shared.html("extra-networks-copy-path-button.html")
@@ -476,6 +478,47 @@ class ExtraNetworksPage:
 
         return f"<ul class='tree-list tree-list--tree'>{res}</ul>"
 
+    def create_dirs_view_html(self, tabname: str) -> str:
+        """Generates HTML for displaying folders."""
+
+        subdirs = {}
+        for parentdir in [os.path.abspath(x) for x in self.allowed_directories_for_previews()]:
+            for root, dirs, _ in sorted(os.walk(parentdir, followlinks=True), key=lambda x: shared.natural_sort_key(x[0])):
+                for dirname in sorted(dirs, key=shared.natural_sort_key):
+                    x = os.path.join(root, dirname)
+
+                    if not os.path.isdir(x):
+                        continue
+
+                    subdir = os.path.abspath(x)[len(parentdir):]
+
+                    if shared.opts.extra_networks_dir_button_function:
+                        if not subdir.startswith(os.path.sep):
+                            subdir = os.path.sep + subdir
+                    else:
+                        while subdir.startswith(os.path.sep):
+                            subdir = subdir[1:]
+
+                    is_empty = len(os.listdir(x)) == 0
+                    if not is_empty and not subdir.endswith(os.path.sep):
+                        subdir = subdir + os.path.sep
+
+                    if (os.path.sep + "." in subdir or subdir.startswith(".")) and not shared.opts.extra_networks_show_hidden_directories:
+                        continue
+
+                    subdirs[subdir] = 1
+
+        if subdirs:
+            subdirs = {"": 1, **subdirs}
+
+        subdirs_html = "".join([f"""
+        <button class='lg secondary gradio-button custom-button{" search-all" if subdir == "" else ""}' onclick='extraNetworksSearchButton("{tabname}", "{self.extra_networks_tabname}", event)'>
+        {html.escape(subdir if subdir != "" else "all")}
+        </button>
+        """ for subdir in subdirs])
+
+        return subdirs_html
+
     def create_card_view_html(self, tabname: str, *, none_message) -> str:
         """Generates HTML for the network Card View section for a tab.
 
@@ -529,32 +572,27 @@ class ExtraNetworksPage:
         data_sortdir = shared.opts.extra_networks_card_order
         data_sortmode = shared.opts.extra_networks_card_order_field.lower().replace("sort", "").replace(" ", "_").rstrip("_").strip()
         data_sortkey = f"{data_sortmode}-{data_sortdir}-{len(self.items)}"
-        tree_view_btn_extra_class = ""
-        tree_view_div_extra_class = "hidden"
-        tree_view_div_default_display = "none"
-        extra_network_pane_content_default_display = "flex"
-        if shared.opts.extra_networks_tree_view_default_enabled:
-            tree_view_btn_extra_class = "extra-network-control--enabled"
-            tree_view_div_extra_class = ""
-            tree_view_div_default_display = "block"
-            extra_network_pane_content_default_display = "grid"
 
-        return self.pane_tpl.format(
-            **{
-                "tabname": tabname,
-                "extra_networks_tabname": self.extra_networks_tabname,
-                "data_sortmode": data_sortmode,
-                "data_sortkey": data_sortkey,
-                "data_sortdir": data_sortdir,
-                "tree_view_btn_extra_class": tree_view_btn_extra_class,
-                "tree_view_div_extra_class": tree_view_div_extra_class,
-                "tree_html": self.create_tree_view_html(tabname),
-                "items_html": self.create_card_view_html(tabname, none_message="Loading..." if empty else None),
-                "extra_networks_tree_view_default_width": shared.opts.extra_networks_tree_view_default_width,
-                "tree_view_div_default_display": tree_view_div_default_display,
-                "extra_network_pane_content_default_display": extra_network_pane_content_default_display,
-            }
-        )
+        show_tree = shared.opts.extra_networks_tree_view_default_enabled
+
+        page_params = {
+            "tabname": tabname,
+            "extra_networks_tabname": self.extra_networks_tabname,
+            "data_sortmode": data_sortmode,
+            "data_sortkey": data_sortkey,
+            "data_sortdir": data_sortdir,
+            "tree_view_btn_extra_class": "extra-network-control--enabled" if show_tree else "",
+            "items_html": self.create_card_view_html(tabname, none_message="Loading..." if empty else None),
+            "extra_networks_tree_view_default_width": shared.opts.extra_networks_tree_view_default_width,
+            "tree_view_div_default_display_class": "" if show_tree else "extra-network-dirs-hidden",
+        }
+
+        if shared.opts.extra_networks_tree_view_style == "Tree":
+            pane_content = self.pane_content_tree_tpl.format(**page_params, tree_html=self.create_tree_view_html(tabname))
+        else:
+            pane_content = self.pane_content_dirs_tpl.format(**page_params, dirs_html=self.create_dirs_view_html(tabname))
+
+        return self.pane_tpl.format(**page_params, pane_content=pane_content)
 
     def create_item(self, name, index=None):
         raise NotImplementedError()

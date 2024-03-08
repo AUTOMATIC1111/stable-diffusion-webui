@@ -1205,11 +1205,23 @@ body.resizing .resize-handle {
     overflow: hidden;
 }
 
-.extra-network-pane .extra-network-pane-content {
+.extra-network-pane .extra-network-pane-content-dirs {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.extra-network-pane .extra-network-pane-content-tree {
     display: flex;
     flex: 1;
     overflow: hidden;
 }
+
+.extra-network-dirs-hidden .extra-network-dirs{ display: none; }
+.extra-network-dirs-hidden .extra-network-tree{ display: none; }
+.extra-network-dirs-hidden .resize-handle { display: none; }
+.extra-network-dirs-hidden .resize-handle-row { display: flex !important; }
 
 .extra-network-pane .extra-network-tree {
     flex: 1;

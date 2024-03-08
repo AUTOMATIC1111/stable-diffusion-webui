@@ -272,6 +272,15 @@ function saveCardPreview(event, tabname, filename) {
     event.preventDefault();
 }
 
+function extraNetworksSearchButton(tabname, extra_networks_tabname, event) {
+    var searchTextarea = gradioApp().querySelector("#" + tabname + "_" + extra_networks_tabname + "_extra_search");
+    var button = event.target;
+    var text = button.classList.contains("search-all") ? "" : button.textContent.trim();
+
+    searchTextarea.value = text;
+    updateInput(searchTextarea);
+}
+
 function extraNetworksTreeProcessFileClick(event, btn, tabname, extra_networks_tabname) {
     /**
      * Processes `onclick` events when user clicks on files in tree.
@@ -447,27 +456,12 @@ function extraNetworksControlTreeViewOnClick(event, tabname, extra_networks_tabn
      * @param tabname                   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
      * @param extra_networks_tabname    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
      */
-    const tree = gradioApp().getElementById(tabname + "_" + extra_networks_tabname + "_tree");
-    const parent = tree.parentElement;
-    let resizeHandle = parent.querySelector('.resize-handle');
-    tree.classList.toggle("hidden");
+    var button = event.currentTarget;
+    button.classList.toggle("extra-network-control--enabled");
+    var show = ! button.classList.contains("extra-network-control--enabled");
 
-    if (tree.classList.contains("hidden")) {
-        tree.style.display = 'none';
-        parent.style.display = 'flex';
-        if (resizeHandle) {
-            resizeHandle.style.display = 'none';
-        }
-    } else {
-        tree.style.display = 'block';
-        parent.style.display = 'grid';
-        if (!resizeHandle) {
-            setupResizeHandle(parent);
-            resizeHandle = parent.querySelector('.resize-handle');
-        }
-        resizeHandle.style.display = 'block';
-    }
-    event.currentTarget.classList.toggle("extra-network-control--enabled");
+    var pane = gradioApp().getElementById(tabname + "_" + extra_networks_tabname + "_pane");
+    pane.classList.toggle("extra-network-dirs-hidden", show);
 }
 
 function extraNetworksControlRefreshOnClick(event, tabname, extra_networks_tabname) {

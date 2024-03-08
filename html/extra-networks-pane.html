@@ -1,4 +1,4 @@
-<div id='{tabname}_{extra_networks_tabname}_pane' class='extra-network-pane'>
+<div id='{tabname}_{extra_networks_tabname}_pane' class='extra-network-pane {tree_view_div_default_display_class}'>
     <div class="extra-network-control" id="{tabname}_{extra_networks_tabname}_controls" style="display:none" >
         <div class="extra-network-control--search">
             <input
@@ -44,12 +44,5 @@
             <i class="extra-network-control--refresh-icon"></i>
         </div>
     </div>
-    <div class="extra-network-pane-content resize-handle-row" style="display: {extra_network_pane_content_default_display};">
-        <div id='{tabname}_{extra_networks_tabname}_tree' class='extra-network-tree {tree_view_div_extra_class}' style='flex-basis: {extra_networks_tree_view_default_width}px; display: {tree_view_div_default_display};'>
-            {tree_html}
-        </div>
-        <div id='{tabname}_{extra_networks_tabname}_cards' class='extra-network-cards' style='flex-grow: 1;'>
-            {items_html}
-        </div>
-    </div>
+    {pane_content}
 </div>
