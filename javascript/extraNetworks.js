@@ -71,7 +71,8 @@ function setupExtraNetworksForTab(tabname) {
         };
 
         var applySort = function(force) {
-            var cards = gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card');
+            var cards = gradioApp().querySelectorAll('#' + tabname_full + ' div.card');
+            var parent = gradioApp().querySelector('#' + tabname_full + "_cards");
             var reverse = sort_dir.dataset.sortdir == "Descending";
             var sortKey = sort_mode.dataset.sortmode.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim() || "name";
             sortKey = "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1);
@@ -82,9 +83,6 @@ function setupExtraNetworksForTab(tabname) {
             }
             sort_mode.dataset.sortkey = sortKeyStore;
 
-            cards.forEach(function(card) {
-                card.originalParentElement = card.parentElement;
-            });
             var sortedCards = Array.from(cards);
             sortedCards.sort(function(cardA, cardB) {
                 var a = cardA.dataset[sortKey];
@@ -95,18 +93,23 @@ function setupExtraNetworksForTab(tabname) {
 
                 return (a < b ? -1 : (a > b ? 1 : 0));
             });
+
             if (reverse) {
                 sortedCards.reverse();
             }
-            cards.forEach(function(card) {
-                card.remove();
-            });
+
+            parent.innerHTML = '';
+
+            var frag = document.createDocumentFragment();
             sortedCards.forEach(function(card) {
-                card.originalParentElement.appendChild(card);
+                frag.appendChild(card);
             });
+            parent.appendChild(frag);
         };
 
-        search.addEventListener("input", applyFilter);
+        search.addEventListener("input", function() {
+            applyFilter();
+        });
         applySort();
         applyFilter();
         extraNetworksApplySort[tabname_full] = applySort;
@@ -272,6 +275,15 @@ function saveCardPreview(event, tabname, filename) {
     event.preventDefault();
 }
 
+function extraNetworksSearchButton(tabname, extra_networks_tabname, event) {
+    var searchTextarea = gradioApp().querySelector("#" + tabname + "_" + extra_networks_tabname + "_extra_search");
+    var button = event.target;
+    var text = button.classList.contains("search-all") ? "" : button.textContent.trim();
+
+    searchTextarea.value = text;
+    updateInput(searchTextarea);
+}
+
 function extraNetworksTreeProcessFileClick(event, btn, tabname, extra_networks_tabname) {
     /**
      * Processes `onclick` events when user clicks on files in tree.
@@ -290,7 +302,7 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname, extra_netwo
      * Processes `onclick` events when user clicks on directories in tree.
      *
      * Here is how the tree reacts to clicks for various states:
-     * unselected unopened directory: Diretory is selected and expanded.
+     * unselected unopened directory: Directory is selected and expanded.
      * unselected opened directory: Directory is selected.
      * selected opened directory: Directory is collapsed and deselected.
      * chevron is clicked: Directory is expanded or collapsed. Selected state unchanged.
@@ -447,8 +459,12 @@ function extraNetworksControlTreeViewOnClick(event, tabname, extra_networks_tabn
      * @param tabname                   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
      * @param extra_networks_tabname    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
      */
-    gradioApp().getElementById(tabname + "_" + extra_networks_tabname + "_tree").classList.toggle("hidden");
-    event.currentTarget.classList.toggle("extra-network-control--enabled");
+    var button = event.currentTarget;
+    button.classList.toggle("extra-network-control--enabled");
+    var show = !button.classList.contains("extra-network-control--enabled");
+
+    var pane = gradioApp().getElementById(tabname + "_" + extra_networks_tabname + "_pane");
+    pane.classList.toggle("extra-network-dirs-hidden", show);
 }
 
 function extraNetworksControlRefreshOnClick(event, tabname, extra_networks_tabname) {
@@ -509,12 +525,76 @@ function popupId(id) {
     popup(storedPopupIds[id]);
 }
 
+function extraNetworksFlattenMetadata(obj) {
+    const result = {};
+
+    // Convert any stringified JSON objects to actual objects
+    for (const key of Object.keys(obj)) {
+        if (typeof obj[key] === 'string') {
+            try {
+                const parsed = JSON.parse(obj[key]);
+                if (parsed && typeof parsed === 'object') {
+                    obj[key] = parsed;
+                }
+            } catch (error) {
+                continue;
+            }
+        }
+    }
+
+    // Flatten the object
+    for (const key of Object.keys(obj)) {
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+            const nested = extraNetworksFlattenMetadata(obj[key]);
+            for (const nestedKey of Object.keys(nested)) {
+                result[`${key}/${nestedKey}`] = nested[nestedKey];
+            }
+        } else {
+            result[key] = obj[key];
+        }
+    }
+
+    // Special case for handling modelspec keys
+    for (const key of Object.keys(result)) {
+        if (key.startsWith("modelspec.")) {
+            result[key.replaceAll(".", "/")] = result[key];
+            delete result[key];
+        }
+    }
+
+    // Add empty keys to designate hierarchy
+    for (const key of Object.keys(result)) {
+        const parts = key.split("/");
+        for (let i = 1; i < parts.length; i++) {
+            const parent = parts.slice(0, i).join("/");
+            if (!result[parent]) {
+                result[parent] = "";
+            }
+        }
+    }
+
+    return result;
+}
+
 function extraNetworksShowMetadata(text) {
+    try {
+        let parsed = JSON.parse(text);
+        if (parsed && typeof parsed === 'object') {
+            parsed = extraNetworksFlattenMetadata(parsed);
+            const table = createVisualizationTable(parsed, 0);
+            popup(table);
+            return;
+        }
+    } catch (error) {
+        console.eror(error);
+    }
+
     var elem = document.createElement('pre');
     elem.classList.add('popup-metadata');
     elem.textContent = text;
 
     popup(elem);
+    return;
 }
 
 function requestGet(url, data, handler, errorHandler) {

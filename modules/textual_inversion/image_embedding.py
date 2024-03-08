@@ -193,11 +193,11 @@ if __name__ == '__main__':
 
     embedded_image = insert_image_data_embed(cap_image, test_embed)
 
-    retrived_embed = extract_image_data_embed(embedded_image)
+    retrieved_embed = extract_image_data_embed(embedded_image)
 
-    assert str(retrived_embed) == str(test_embed)
+    assert str(retrieved_embed) == str(test_embed)
 
-    embedded_image2 = insert_image_data_embed(cap_image, retrived_embed)
+    embedded_image2 = insert_image_data_embed(cap_image, retrieved_embed)
 
     assert embedded_image == embedded_image2
 

@@ -23,7 +23,7 @@ from modules.shared import opts
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.textual_inversion.textual_inversion import create_embedding, train_embedding
 from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
-from PIL import PngImagePlugin, Image
+from PIL import PngImagePlugin
 from modules.sd_models_config import find_checkpoint_config_near_filename
 from modules.realesrgan_model import get_realesrgan_models
 from modules import devices
@@ -85,7 +85,7 @@ def decode_base64_to_image(encoding):
         headers = {'user-agent': opts.api_useragent} if opts.api_useragent else {}
         response = requests.get(encoding, timeout=30, headers=headers)
         try:
-            image = Image.open(BytesIO(response.content))
+            image = images.read(BytesIO(response.content))
             return image
         except Exception as e:
             raise HTTPException(status_code=500, detail="Invalid image url") from e
@@ -93,7 +93,7 @@ def decode_base64_to_image(encoding):
     if encoding.startswith("data:image/"):
         encoding = encoding.split(";")[1].split(",")[1]
     try:
-        image = Image.open(BytesIO(base64.b64decode(encoding)))
+        image = images.read(BytesIO(base64.b64decode(encoding)))
         return image
     except Exception as e:
         raise HTTPException(status_code=500, detail="Invalid encoded image") from e
@@ -360,7 +360,7 @@ class Api:
         return script_args
 
     def apply_infotext(self, request, tabname, *, script_runner=None, mentioned_script_args=None):
-        """Processes `infotext` field from the `request`, and sets other fields of the `request` accoring to what's in infotext.
+        """Processes `infotext` field from the `request`, and sets other fields of the `request` according to what's in infotext.
 
         If request already has a field set, and that field is encountered in infotext too, the value from infotext is ignored.
 
@@ -409,8 +409,8 @@ class Api:
         if request.override_settings is None:
             request.override_settings = {}
 
-        overriden_settings = infotext_utils.get_override_settings(params)
-        for _, setting_name, value in overriden_settings:
+        overridden_settings = infotext_utils.get_override_settings(params)
+        for _, setting_name, value in overridden_settings:
             if setting_name not in request.override_settings:
                 request.override_settings[setting_name] = value
 

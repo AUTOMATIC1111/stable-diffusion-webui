@@ -164,6 +164,8 @@ class ExtraNetworksPage:
         self.lister = util.MassFileLister()
         # HTML Templates
         self.pane_tpl = shared.html("extra-networks-pane.html")
+        self.pane_content_tree_tpl = shared.html("extra-networks-pane-tree.html")
+        self.pane_content_dirs_tpl = shared.html("extra-networks-pane-dirs.html")
         self.card_tpl = shared.html("extra-networks-card.html")
         self.btn_tree_tpl = shared.html("extra-networks-tree-button.html")
         self.btn_copy_path_tpl = shared.html("extra-networks-copy-path-button.html")
@@ -289,12 +291,16 @@ class ExtraNetworksPage:
                 }
             )
 
+        description = (item.get("description", "") or "" if shared.opts.extra_networks_card_show_desc else "")
+        if not shared.opts.extra_networks_card_description_is_html:
+            description = html.escape(description)
+
         # Some items here might not be used depending on HTML template used.
         args = {
             "background_image": background_image,
             "card_clicked": onclick,
             "copy_path_button": btn_copy_path,
-            "description": (item.get("description", "") or "" if shared.opts.extra_networks_card_show_desc else ""),
+            "description": description,
             "edit_button": btn_edit_item,
             "local_preview": quote_js(item["local_preview"]),
             "metadata_button": btn_metadata,
@@ -472,7 +478,48 @@ class ExtraNetworksPage:
 
         return f"<ul class='tree-list tree-list--tree'>{res}</ul>"
 
-    def create_card_view_html(self, tabname: str) -> str:
+    def create_dirs_view_html(self, tabname: str) -> str:
+        """Generates HTML for displaying folders."""
+
+        subdirs = {}
+        for parentdir in [os.path.abspath(x) for x in self.allowed_directories_for_previews()]:
+            for root, dirs, _ in sorted(os.walk(parentdir, followlinks=True), key=lambda x: shared.natural_sort_key(x[0])):
+                for dirname in sorted(dirs, key=shared.natural_sort_key):
+                    x = os.path.join(root, dirname)
+
+                    if not os.path.isdir(x):
+                        continue
+
+                    subdir = os.path.abspath(x)[len(parentdir):]
+
+                    if shared.opts.extra_networks_dir_button_function:
+                        if not subdir.startswith(os.path.sep):
+                            subdir = os.path.sep + subdir
+                    else:
+                        while subdir.startswith(os.path.sep):
+                            subdir = subdir[1:]
+
+                    is_empty = len(os.listdir(x)) == 0
+                    if not is_empty and not subdir.endswith(os.path.sep):
+                        subdir = subdir + os.path.sep
+
+                    if (os.path.sep + "." in subdir or subdir.startswith(".")) and not shared.opts.extra_networks_show_hidden_directories:
+                        continue
+
+                    subdirs[subdir] = 1
+
+        if subdirs:
+            subdirs = {"": 1, **subdirs}
+
+        subdirs_html = "".join([f"""
+        <button class='lg secondary gradio-button custom-button{" search-all" if subdir == "" else ""}' onclick='extraNetworksSearchButton("{tabname}", "{self.extra_networks_tabname}", event)'>
+        {html.escape(subdir if subdir != "" else "all")}
+        </button>
+        """ for subdir in subdirs])
+
+        return subdirs_html
+
+    def create_card_view_html(self, tabname: str, *, none_message) -> str:
         """Generates HTML for the network Card View section for a tab.
 
         This HTML goes into the `extra-networks-pane.html` <div> with
@@ -480,34 +527,39 @@ class ExtraNetworksPage:
 
         Args:
             tabname: The name of the active tab.
+            none_message: HTML text to show when there are no cards.
 
         Returns:
             HTML formatted string.
         """
-        res = ""
+        res = []
         for item in self.items.values():
-            res += self.create_item_html(tabname, item, self.card_tpl)
+            res.append(self.create_item_html(tabname, item, self.card_tpl))
 
-        if res == "":
+        if not res:
             dirs = "".join([f"<li>{x}</li>" for x in self.allowed_directories_for_previews()])
-            res = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
+            res = [none_message or shared.html("extra-networks-no-cards.html").format(dirs=dirs)]
 
-        return res
+        return "".join(res)
 
-    def create_html(self, tabname):
+    def create_html(self, tabname, *, empty=False):
         """Generates an HTML string for the current pane.
 
         The generated HTML uses `extra-networks-pane.html` as a template.
 
         Args:
             tabname: The name of the active tab.
+            empty: create an empty HTML page with no items
 
         Returns:
             HTML formatted string.
         """
         self.lister.reset()
         self.metadata = {}
-        self.items = {x["name"]: x for x in self.list_items()}
+
+        items_list = [] if empty else self.list_items()
+        self.items = {x["name"]: x for x in items_list}
+
         # Populate the instance metadata for each item.
         for item in self.items.values():
             metadata = item.get("metadata")
@@ -520,25 +572,27 @@ class ExtraNetworksPage:
         data_sortdir = shared.opts.extra_networks_card_order
         data_sortmode = shared.opts.extra_networks_card_order_field.lower().replace("sort", "").replace(" ", "_").rstrip("_").strip()
         data_sortkey = f"{data_sortmode}-{data_sortdir}-{len(self.items)}"
-        tree_view_btn_extra_class = ""
-        tree_view_div_extra_class = "hidden"
-        if shared.opts.extra_networks_tree_view_default_enabled:
-            tree_view_btn_extra_class = "extra-network-control--enabled"
-            tree_view_div_extra_class = ""
 
-        return self.pane_tpl.format(
-            **{
-                "tabname": tabname,
-                "extra_networks_tabname": self.extra_networks_tabname,
-                "data_sortmode": data_sortmode,
-                "data_sortkey": data_sortkey,
-                "data_sortdir": data_sortdir,
-                "tree_view_btn_extra_class": tree_view_btn_extra_class,
-                "tree_view_div_extra_class": tree_view_div_extra_class,
-                "tree_html": self.create_tree_view_html(tabname),
-                "items_html": self.create_card_view_html(tabname),
-            }
-        )
+        show_tree = shared.opts.extra_networks_tree_view_default_enabled
+
+        page_params = {
+            "tabname": tabname,
+            "extra_networks_tabname": self.extra_networks_tabname,
+            "data_sortmode": data_sortmode,
+            "data_sortkey": data_sortkey,
+            "data_sortdir": data_sortdir,
+            "tree_view_btn_extra_class": "extra-network-control--enabled" if show_tree else "",
+            "items_html": self.create_card_view_html(tabname, none_message="Loading..." if empty else None),
+            "extra_networks_tree_view_default_width": shared.opts.extra_networks_tree_view_default_width,
+            "tree_view_div_default_display_class": "" if show_tree else "extra-network-dirs-hidden",
+        }
+
+        if shared.opts.extra_networks_tree_view_style == "Tree":
+            pane_content = self.pane_content_tree_tpl.format(**page_params, tree_html=self.create_tree_view_html(tabname))
+        else:
+            pane_content = self.pane_content_dirs_tpl.format(**page_params, dirs_html=self.create_dirs_view_html(tabname))
+
+        return self.pane_tpl.format(**page_params, pane_content=pane_content)
 
     def create_item(self, name, index=None):
         raise NotImplementedError()
@@ -655,7 +709,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
                 pass
 
             elem_id = f"{tabname}_{page.extra_networks_tabname}_cards_html"
-            page_elem = gr.HTML('Loading...', elem_id=elem_id)
+            page_elem = gr.HTML(page.create_html(tabname, empty=True), elem_id=elem_id)
             ui.pages.append(page_elem)
             editor = page.create_user_metadata_editor(ui, tabname)
             editor.create_ui()
@@ -684,7 +738,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             return ui.pages_contents
 
         button_refresh = gr.Button("Refresh", elem_id=f"{tabname}_{page.extra_networks_tabname}_extra_refresh_internal", visible=False)
-        button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages).then(fn=lambda: None, _js="function(){ " + f"applyExtraNetworkFilter('{tabname}_{page.extra_networks_tabname}');" + " }")
+        button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages).then(fn=lambda: None, _js="function(){ " + f"applyExtraNetworkFilter('{tabname}_{page.extra_networks_tabname}');" + " }").then(fn=lambda: None, _js='setupAllResizeHandles')
 
     def create_html():
         ui.pages_contents = [pg.create_html(ui.tabname) for pg in ui.stored_extra_pages]
@@ -694,7 +748,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             create_html()
         return ui.pages_contents
 
-    interface.load(fn=pages_html, inputs=[], outputs=ui.pages)
+    interface.load(fn=pages_html, inputs=[], outputs=ui.pages).then(fn=lambda: None, _js='setupAllResizeHandles')
 
     return ui
 

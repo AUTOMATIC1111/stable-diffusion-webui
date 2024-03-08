@@ -139,7 +139,7 @@ def initialize_rest(*, reload_script_modules=False):
         """
         Accesses shared.sd_model property to load model.
         After it's available, if it has been loaded before this access by some extension,
-        its optimization may be None because the list of optimizaers has neet been filled
+        its optimization may be None because the list of optimizers has not been filled
         by that time, so we apply optimization again.
         """
         from modules import devices
