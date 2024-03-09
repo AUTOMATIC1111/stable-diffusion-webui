@@ -401,7 +401,7 @@ function extraNetworksControlSortOnClick(event, tabname, extra_networks_tabname)
     var self = event.currentTarget;
     var parent = event.currentTarget.parentElement;
 
-    parent.querySelectorAll('.extra-network-control--sort').forEach(function(x){
+    parent.querySelectorAll('.extra-network-control--sort').forEach(function(x) {
         x.classList.remove('extra-network-control--enabled');
     });
 
