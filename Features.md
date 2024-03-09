@@ -539,6 +539,8 @@ A convenience option to partially render your image at a lower resolution, upsca
 
 By default, SD1/2 based models create horrible images at very high resolutions, as these models were only trained at 512px or 768px. This method makes it possible to avoid this issue by utilizing the small picture's composition in the denoising process of the larger version. Enabled by checking the "Hires. fix" checkbox on the txt2img page.
 
+**1.8.0 Update**: Images can now be upscaled with hires. fix as a separate process after the initial generation by clicking on the [✨] button while the relevant image is selected in the image viewer.
+
 | Without                      | With                |
 |-------------------------------|---------------------------------|
 | ![00262-836728130](https://user-images.githubusercontent.com/20920490/191177752-ad983e62-8e1c-4197-8f3b-3165a6a6c31d.png) | ![00261-836728130](https://user-images.githubusercontent.com/20920490/191177785-395a951e-0d2e-4db7-9645-4c5af9321772.png) |
