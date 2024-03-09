@@ -478,36 +478,38 @@ Prompt editing allows you to start sampling one picture, but in the middle swap 
 [from:to:when]
 ```
 
-Where `from` and `to` are arbitrary texts, and `when` is a number that defines how late in the sampling cycle should the switch be made. The later it is, the less power the model has to draw the `to` text in place of `from` text. If `when` is a number between 0 and 1, it's a fraction of the number of steps after which to make the switch. If it's an integer greater than zero, it's just the step after which to make the switch.
+Where `from` and `to` are arbitrary texts, and `when` is a number that defines how late in the sampling cycle should the switch be made. The later it is, the less power the model has to draw the `to` text in place of `from` text. If `when` is a number from `0.0` to `1.0`, it's a fraction of the number of steps after which to make the switch. If it's an integer (no decimal point) greater than zero, it's just the step after which to make the switch.
 
-Nesting one prompt editing inside another does work.
+Nesting one prompt editing inside another also works.
 
 Additionally:
 - `[to:when]` - adds `to` to the prompt after a fixed number of steps (`when`)
 - `[from::when]` - removes `from` from the prompt after a fixed number of steps (`when`)
 
-Example:
+**1.6.0 Update**: For numbers with a fractional point in a range of `1.0` to `2.0`, this now targets the second pass AKA hires fix pass. More information can be found on the [seed breaking changes page](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Seed-breaking-changes#160-2023-08-24---prompt-editing-timeline-has-separate-range-for-first-pass-and-hires-fix-pass) and the [relevant PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12457).
+
+**Example**:
 `a [fantasy:cyberpunk:16] landscape`
 
 - At start, the model will be drawing `a fantasy landscape`.
 - After step 16, it will switch to drawing `a cyberpunk landscape`, continuing from where it stopped with fantasy.
 
 Here's a more complex example with multiple edits:
-`fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]` (sampler has 100 steps)
+`fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]` (sampler has `100` steps)
 
-- at start, `fantasy landscape with a mountain and an oak in foreground shoddy`
-- after step 25, `fantasy landscape with a lake and an oak in foreground in background shoddy`
-- after step 50, `fantasy landscape with a lake and an oak in foreground in background masterful`
-- after step 60, `fantasy landscape with a lake and an oak in background masterful`
-- after step 75, `fantasy landscape with a lake and a christmas tree in background masterful`
+- at start (step `0`), `fantasy landscape with a mountain and an oak in foreground shoddy`
+- after step `25`, `fantasy landscape with a lake and an oak in foreground in background shoddy`
+- after step `50`, `fantasy landscape with a lake and an oak in foreground in background masterful`
+- after step `60`, `fantasy landscape with a lake and an oak in background masterful`
+- after step `75`, `fantasy landscape with a lake and a christmas tree in background masterful`
 
 The picture at the top was made with the prompt:
 
 `Official portrait of a smiling world war ii general, [male:female:0.99], cheerful, happy, detailed face, 20th century, highly detailed, cinematic lighting, digital art painting by Greg Rutkowski`
 
-And the number 0.99 is replaced with whatever you see in column labels on the image.
+And the number `0.99` is replaced with whatever you see in column labels on the image.
 
-The last column in the picture is [male:female:0.0], which essentially means that you are asking the model to draw a female from the start, without starting with a male general, and that is why it looks so different from others.
+The last column in the picture is `[male:female:0.0]`, which essentially means that you are asking the model to draw a female from the start, without starting with a male general, and that is why it looks so different from others.
 
 **Note**: This syntax does _not_ work with extra networks, such as LoRA. See [this discussion post](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/10897#discussioncomment-6055184) for details. For similar functionality, see the [sd-webui-loractl extension](https://github.com/cheald/sd-webui-loractl).
 
