@@ -770,6 +770,8 @@ CLIP is a very advanced neural network that transforms your prompt text into a n
 
 Some models were trained with this kind of tweak, so setting this value helps produce better results on those models.
 
+**Note**: All SDXL models are trained with the next to last (penultimate) layer. This is why Clip Skip intentionally does not change the result of the model, as it would simply make the result worse. The option is only provided due to the fact early SDv1 models do not provide any way to determine the correct layer to use.
+
 ## Extra noise
 Adds additional noise from the random seed, determined by the setting, defaulting to `0`. Implemented in version 1.6.0 via [#12564](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12564), available in settings under `img2img` -> `Extra noise multiplier for img2img and hires fix`. As noted in the UI, **this parameter should always be lower than the denoising strength used to yield the best results**.
 
