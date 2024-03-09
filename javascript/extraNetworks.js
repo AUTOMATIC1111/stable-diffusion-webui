@@ -406,25 +406,21 @@ function extraNetworksControlSortOnClick(event, tabname, extra_networks_tabname)
      * @param extra_networks_tabname    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
      */
     var curr_mode = event.currentTarget.dataset.sortmode;
-    var el_sort_dir = gradioApp().querySelector("#" + tabname + "_" + extra_networks_tabname + "_extra_sort_dir");
-    var sort_dir = el_sort_dir.dataset.sortdir;
-    if (curr_mode == "path") {
+
+    if (curr_mode == "default") {
         event.currentTarget.dataset.sortmode = "name";
-        event.currentTarget.dataset.sortkey = "sortName-" + sort_dir + "-640";
         event.currentTarget.setAttribute("title", "Sort by filename");
     } else if (curr_mode == "name") {
         event.currentTarget.dataset.sortmode = "date_created";
-        event.currentTarget.dataset.sortkey = "sortDate_created-" + sort_dir + "-640";
         event.currentTarget.setAttribute("title", "Sort by date created");
     } else if (curr_mode == "date_created") {
         event.currentTarget.dataset.sortmode = "date_modified";
-        event.currentTarget.dataset.sortkey = "sortDate_modified-" + sort_dir + "-640";
         event.currentTarget.setAttribute("title", "Sort by date modified");
     } else {
-        event.currentTarget.dataset.sortmode = "path";
-        event.currentTarget.dataset.sortkey = "sortPath-" + sort_dir + "-640";
+        event.currentTarget.dataset.sortmode = "default";
         event.currentTarget.setAttribute("title", "Sort by path");
     }
+
     applyExtraNetworkSort(tabname + "_" + extra_networks_tabname);
 }
 
