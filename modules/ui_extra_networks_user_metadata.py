@@ -133,8 +133,10 @@ class UserMetadataEditor:
         filename = item.get("filename", None)
         basename, ext = os.path.splitext(filename)
 
-        with open(basename + '.json', "w", encoding="utf8") as file:
+        metadata_path = basename + '.json'
+        with open(metadata_path, "w", encoding="utf8") as file:
             json.dump(metadata, file, indent=4, ensure_ascii=False)
+        self.page.lister.update_file_entry(metadata_path)
 
     def save_user_metadata(self, name, desc, notes):
         user_metadata = self.get_user_metadata(name)
@@ -200,6 +202,3 @@ class UserMetadataEditor:
             inputs=[self.edit_name_input],
             outputs=[]
         )
-
-
-
