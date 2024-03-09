@@ -39,12 +39,12 @@ function setupExtraNetworksForTab(tabname) {
         // tabname_full = {tabname}_{extra_networks_tabname}
         var tabname_full = elem.id;
         var search = gradioApp().querySelector("#" + tabname_full + "_extra_search");
-        var sort_mode = gradioApp().querySelector("#" + tabname_full + "_extra_sort");
         var sort_dir = gradioApp().querySelector("#" + tabname_full + "_extra_sort_dir");
         var refresh = gradioApp().querySelector("#" + tabname_full + "_extra_refresh");
+        var currentSort = '';
 
         // If any of the buttons above don't exist, we want to skip this iteration of the loop.
-        if (!search || !sort_mode || !sort_dir || !refresh) {
+        if (!search || !sort_dir || !refresh) {
             return; // `return` is equivalent of `continue` but for forEach loops.
         }
 
@@ -74,19 +74,20 @@ function setupExtraNetworksForTab(tabname) {
             var cards = gradioApp().querySelectorAll('#' + tabname_full + ' div.card');
             var parent = gradioApp().querySelector('#' + tabname_full + "_cards");
             var reverse = sort_dir.dataset.sortdir == "Descending";
-            var sortKey = sort_mode.dataset.sortmode.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim() || "name";
-            sortKey = "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1);
-            var sortKeyStore = sortKey + "-" + (reverse ? "Descending" : "Ascending") + "-" + cards.length;
+            var activeSearchElem = gradioApp().querySelector('#' + tabname_full + "_controls .extra-network-control--sort.extra-network-control--enabled");
+            var sortKey = activeSearchElem ? activeSearchElem.dataset.sortkey : "default";
+            var sortKeyDataField = "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1);
+            var sortKeyStore = sortKey + "-" + sort_dir.dataset.sortdir + "-" + cards.length;
 
-            if (sortKeyStore == sort_mode.dataset.sortkey && !force) {
+            if (sortKeyStore == currentSort && !force) {
                 return;
             }
-            sort_mode.dataset.sortkey = sortKeyStore;
+            currentSort = sortKeyStore;
 
             var sortedCards = Array.from(cards);
             sortedCards.sort(function(cardA, cardB) {
-                var a = cardA.dataset[sortKey];
-                var b = cardB.dataset[sortKey];
+                var a = cardA.dataset[sortKeyDataField];
+                var b = cardB.dataset[sortKeyDataField];
                 if (!isNaN(a) && !isNaN(b)) {
                     return parseInt(a) - parseInt(b);
                 }
@@ -395,31 +396,16 @@ function extraNetworksTreeOnClick(event, tabname, extra_networks_tabname) {
 }
 
 function extraNetworksControlSortOnClick(event, tabname, extra_networks_tabname) {
-    /**
-     * Handles `onclick` events for the Sort Mode button.
-     *
-     * Modifies the data attributes of the Sort Mode button to cycle between
-     * various sorting modes.
-     *
-     * @param event                     The generated event.
-     * @param tabname                   The name of the active tab in the sd webui. Ex: txt2img, img2img, etc.
-     * @param extra_networks_tabname    The id of the active extraNetworks tab. Ex: lora, checkpoints, etc.
-     */
-    var curr_mode = event.currentTarget.dataset.sortmode;
+    /** Handles `onclick` events for Sort Mode buttons. */
 
-    if (curr_mode == "default") {
-        event.currentTarget.dataset.sortmode = "name";
-        event.currentTarget.setAttribute("title", "Sort by filename");
-    } else if (curr_mode == "name") {
-        event.currentTarget.dataset.sortmode = "date_created";
-        event.currentTarget.setAttribute("title", "Sort by date created");
-    } else if (curr_mode == "date_created") {
-        event.currentTarget.dataset.sortmode = "date_modified";
-        event.currentTarget.setAttribute("title", "Sort by date modified");
-    } else {
-        event.currentTarget.dataset.sortmode = "default";
-        event.currentTarget.setAttribute("title", "Sort by path");
-    }
+    var self = event.currentTarget;
+    var parent = event.currentTarget.parentElement;
+
+    parent.querySelectorAll('.extra-network-control--sort').forEach(function(x){
+        x.classList.remove('extra-network-control--enabled');
+    });
+
+    self.classList.add('extra-network-control--enabled');
 
     applyExtraNetworkSort(tabname + "_" + extra_networks_tabname);
 }
