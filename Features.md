@@ -735,6 +735,16 @@ Example outputs using the above settings and prompts below (Red hair/pony not pi
 "A frowning woman with red hair." Works.
 "A frowning woman with red hair riding a horse." Seems to replace the woman entirely, and now we have a ginger pony.
 
+# Soft inpainting
+
+To quote [CodeHatchling](https://github.com/CodeHatchling):
+
+> Soft inpainting allows the denoiser to work directly with soft-edged (i.e. non-binary) masks, whereby unmasked content is blended seamlessly with inpainted content with gradual transitions. It is conceptually similar to per-pixel denoising strength.
+
+![alt text](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/7232874/1a2a4ba0-e292-4720-a852-0b312e4a3a2b)
+
+This is a fully independent implementation developed specifically for the webui and was graciously provided by this user. More information can be found via the built-in help in the webui, or the [relevant PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14208).
+
 # user.css
 Create a file named `user.css` near `webui.py` and put custom CSS code into it. For example, this makes the gallery taller:
 
