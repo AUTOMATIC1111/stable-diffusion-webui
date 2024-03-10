@@ -52,7 +52,7 @@ function setupExtraNetworksForTab(tabname) {
             var searchTerm = search.value.toLowerCase();
             gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card').forEach(function(elem) {
                 var searchOnly = elem.querySelector('.search_only');
-                var text = Array.prototype.map.call(elem.querySelectorAll('.search_terms'), function(t) {
+                var text = Array.prototype.map.call(elem.querySelectorAll('.search_terms, .description'), function(t) {
                     return t.textContent.toLowerCase();
                 }).join(" ");
 
