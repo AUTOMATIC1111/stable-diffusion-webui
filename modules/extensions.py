@@ -186,6 +186,7 @@ class Extension:
 
 def list_extensions():
     extensions.clear()
+    extension_paths.clear()
 
     if shared.cmd_opts.disable_all_extensions:
         print("*** \"--disable-all-extensions\" arg was used, will not load any extensions ***")
@@ -220,6 +221,7 @@ def list_extensions():
             is_builtin = dirname == extensions_builtin_dir
             extension = Extension(name=extension_dirname, path=path, enabled=extension_dirname not in shared.opts.disabled_extensions, is_builtin=is_builtin, metadata=metadata)
             extensions.append(extension)
+            extension_paths[extension.path] = extension
             loaded_extensions[canonical_name] = extension
 
     # check for requirements
@@ -238,4 +240,19 @@ def list_extensions():
                 continue
 
 
+def find_extension(filename):
+    parentdir = os.path.dirname(os.path.realpath(filename))
+
+    while parentdir != filename:
+        extension = extension_paths.get(parentdir)
+        if extension is not None:
+            return extension
+
+        filename = parentdir
+        parentdir = os.path.dirname(filename)
+
+    return None
+
+
 extensions: list[Extension] = []
+extension_paths: dict[str, Extension] = {}
