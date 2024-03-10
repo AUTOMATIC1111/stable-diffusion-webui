@@ -448,7 +448,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
                         module.fp16_bias = module.bias.data.clone().cpu().half()
                 module.to(torch.float8_e4m3fn)._apply(
                     lambda x: (
-                        x.pin_memory()
+                        x.pin_memory(device=devices.device)
                         if not x.is_sparse and x.device.type == "cpu"
                         else x
                     )

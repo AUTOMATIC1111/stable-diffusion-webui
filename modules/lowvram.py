@@ -27,6 +27,10 @@ class RTTensorMoverPatches:
         self.mover_stream = stream_impl(device=devices.device)
         self.calc_stream = stream_impl(device=devices.device)
         self.stash = {}
+        self.speed_limit_loop_len = shared.opts.lowvram_max_loaded_module or 3
+        self.speed_limit_loop_head = 0
+        self.speed_limit_loop = [None] * self.speed_limit_loop_len
+
 
         self.linear_original = patches.patch(
             __name__,
@@ -94,6 +98,12 @@ class RTTensorMoverPatches:
 
         for k in to_remove:
             del self.stash[k]
+
+        if self.speed_limit_loop[self.speed_limit_loop_head] is not None:
+            self.mover_stream.wait_event(self.speed_limit_loop[self.speed_limit_loop_head])
+        
+        self.speed_limit_loop_head = (self.speed_limit_loop_head + 1) % self.speed_limit_loop_len
+        self.speed_limit_loop[self.speed_limit_loop_head] = after_calc_event
 
     def _wrapper_default(self, original):
         def wrapper(input, weight, bias=None, *args, **kwargs):
@@ -271,12 +281,12 @@ def setup_for_low_vram(sd_model, use_medvram):
 
         if use_streamlined_lowvram:
             # put it into pinned memory to achieve data transfer overlap
-            diff_model.time_embed._apply(lambda x: x.pin_memory())
+            diff_model.time_embed._apply(lambda x: x.pin_memory(device=devices.device))
             for block in diff_model.input_blocks:
-                block._apply(lambda x: x.pin_memory())
-            diff_model.middle_block._apply(lambda x: x.pin_memory())
+                block._apply(lambda x: x.pin_memory(device=devices.device))
+            diff_model.middle_block._apply(lambda x: x.pin_memory(device=devices.device))
             for block in diff_model.output_blocks:
-                block._apply(lambda x: x.pin_memory())
+                block._apply(lambda x: x.pin_memory(device=devices.device))
         else:
             diff_model.time_embed.register_forward_pre_hook(send_me_to_gpu)
             for block in diff_model.input_blocks:
