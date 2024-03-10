@@ -136,3 +136,27 @@ class MassFileLister:
     def reset(self):
         """Clear the cache of all directories."""
         self.cached_dirs.clear()
+
+
+def topological_sort(dependencies):
+    """Accepts a dictionary mapping name to its dependencies, returns a list of names ordered according to dependencies.
+    Ignores errors relating to missing dependeencies or circular dependencies
+    """
+
+    visited = {}
+    result = []
+
+    def inner(name):
+        visited[name] = True
+
+        for dep in dependencies.get(name, []):
+            if dep in dependencies and dep not in visited:
+                inner(dep)
+
+        result.append(name)
+
+    for depname in dependencies:
+        if depname not in visited:
+            inner(depname)
+
+    return result

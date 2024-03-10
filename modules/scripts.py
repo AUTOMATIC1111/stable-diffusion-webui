@@ -7,7 +7,9 @@ from dataclasses import dataclass
 
 import gradio as gr
 
-from modules import shared, paths, script_callbacks, extensions, script_loading, scripts_postprocessing, errors, timer
+from modules import shared, paths, script_callbacks, extensions, script_loading, scripts_postprocessing, errors, timer, util
+
+topological_sort = util.topological_sort
 
 AlwaysVisible = object()
 
@@ -367,29 +369,6 @@ ScriptFile = namedtuple("ScriptFile", ["basedir", "filename", "path"])
 scripts_data = []
 postprocessing_scripts_data = []
 ScriptClassData = namedtuple("ScriptClassData", ["script_class", "path", "basedir", "module"])
-
-def topological_sort(dependencies):
-    """Accepts a dictionary mapping name to its dependencies, returns a list of names ordered according to dependencies.
-    Ignores errors relating to missing dependeencies or circular dependencies
-    """
-
-    visited = {}
-    result = []
-
-    def inner(name):
-        visited[name] = True
-
-        for dep in dependencies.get(name, []):
-            if dep in dependencies and dep not in visited:
-                inner(dep)
-
-        result.append(name)
-
-    for depname in dependencies:
-        if depname not in visited:
-            inner(depname)
-
-    return result
 
 
 @dataclass

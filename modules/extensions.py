@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import configparser
+import dataclasses
 import os
 import threading
 import re
@@ -20,6 +21,13 @@ def active():
         return [x for x in extensions if x.enabled and x.is_builtin]
     else:
         return [x for x in extensions if x.enabled]
+
+
+@dataclasses.dataclass
+class CallbackOrderInfo:
+    name: str
+    before: list
+    after: list
 
 
 class ExtensionMetadata:
@@ -64,6 +72,22 @@ class ExtensionMetadata:
 
         # both "," and " " are accepted as separator
         return [x for x in re.split(r"[,\s]+", text.strip()) if x]
+
+    def list_callback_order_instructions(self):
+        for section in self.config.sections():
+            if not section.startswith("callbacks/"):
+                continue
+
+            callback_name = section[10:]
+
+            if not callback_name.startswith(self.canonical_name):
+                errors.report(f"Callback order section for extension {self.canonical_name} is referencing the wrong extension: {section}")
+                continue
+
+            before = self.parse_list(self.config.get(section, 'Before', fallback=''))
+            after = self.parse_list(self.config.get(section, 'After', fallback=''))
+
+            yield CallbackOrderInfo(callback_name, before, after)
 
 
 class Extension:
