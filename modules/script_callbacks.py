@@ -120,7 +120,7 @@ class BeforeTokenCounterParams:
 @dataclasses.dataclass
 class ScriptCallback:
     script: str
-    callback: ''
+    callback: any
     name: str = None
 
 
