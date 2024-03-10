@@ -1,79 +1,48 @@
 import os
-
-from modules import modelloader, errors
-from modules.shared import cmd_opts, opts
+from modules import modelloader, devices, errors
+from modules.shared import opts, cmd_opts
 from modules.upscaler import Upscaler, UpscalerData
 from modules.upscaler_utils import upscale_with_model
 
 
 class UpscalerDAT(Upscaler):
-    def __init__(self, user_path):
+    def __init__(self, dirname):
         self.name = "DAT"
-        self.user_path = user_path
         self.scalers = []
+        self.user_path = dirname
         super().__init__()
-
-        for file in self.find_models(ext_filter=[".pt", ".pth"]):
+        for file in self.find_models(ext_filter=[".pt", ".pth", ".safetensors"]):
             name = modelloader.friendly_name(file)
-            scaler_data = UpscalerData(name, file, upscaler=self, scale=None)
+            scale = None
+            scaler_data = UpscalerData(name, file, upscaler=self, scale=scale)
             self.scalers.append(scaler_data)
 
-        for model in get_dat_models(self):
-            if model.name in opts.dat_enabled_models:
-                self.scalers.append(model)
-
-    def do_upscale(self, img, path):
+    def do_upscale(self, img, selected_model):
         try:
-            info = self.load_model(path)
+            model = self.load_model(selected_model)
         except Exception:
-            errors.report(f"Unable to load DAT model {path}", exc_info=True)
+            errors.report(f"Unable to load DAT model {selected_model}", exc_info=True)
             return img
+        model.to(devices.device_dat)
+        return dat_upscale(model, img)
 
-        model_descriptor = modelloader.load_spandrel_model(
-            info.local_data_path,
-            device=self.device,
+    def load_model(self, path: str):
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f"Model file {path} not found")
+        else:
+            filename = path
+        return modelloader.load_spandrel_model(
+            filename,
+            device=('cpu' if devices.device_dat.type == 'mps' else None),
             prefer_half=(not cmd_opts.no_half and not cmd_opts.upcast_sampling),
-            expected_architecture="DAT",
+            expected_architecture='DAT',
         )
+
+
+def dat_upscale(model, img):
         return upscale_with_model(
-            model_descriptor,
+            model,
             img,
             tile_size=opts.DAT_tile,
             tile_overlap=opts.DAT_tile_overlap,
         )
-
-    def load_model(self, path):
-        for scaler in self.scalers:
-            if scaler.data_path == path:
-                if scaler.local_data_path.startswith("http"):
-                    scaler.local_data_path = modelloader.load_file_from_url(
-                        scaler.data_path,
-                        model_dir=self.model_download_path,
-                    )
-                if not os.path.exists(scaler.local_data_path):
-                    raise FileNotFoundError(f"DAT data missing: {scaler.local_data_path}")
-                return scaler
-        raise ValueError(f"Unable to find model info: {path}")
-
-
-def get_dat_models(scaler):
-    return [
-        UpscalerData(
-            name="DAT x2",
-            path="https://github.com/n0kovo/dat_upscaler_models/raw/main/DAT/DAT_x2.pth",
-            scale=2,
-            upscaler=scaler,
-        ),
-        UpscalerData(
-            name="DAT x3",
-            path="https://github.com/n0kovo/dat_upscaler_models/raw/main/DAT/DAT_x3.pth",
-            scale=3,
-            upscaler=scaler,
-        ),
-        UpscalerData(
-            name="DAT x4",
-            path="https://github.com/n0kovo/dat_upscaler_models/raw/main/DAT/DAT_x4.pth",
-            scale=4,
-            upscaler=scaler,
-        ),
-    ]

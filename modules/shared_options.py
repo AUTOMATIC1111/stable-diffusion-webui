@@ -94,13 +94,25 @@ options_templates.update(options_section(('saving-to-dirs', "Saving to a directo
 }))
 
 options_templates.update(options_section(('upscaling', "Upscaling", "postprocessing"), {
-    "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}).info("0 = no tiling"),
-    "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap for ESRGAN upscalers.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}).info("Low values = visible seam"),
-    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Select which Real-ESRGAN models to show in the web UI.", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
-    "dat_enabled_models": OptionInfo(["DAT x2", "DAT x3", "DAT x4"], "Select which DAT models to show in the web UI.", gr.CheckboxGroup, lambda: {"choices": shared_items.dat_models_names()}),
-    "DAT_tile": OptionInfo(192, "Tile size for DAT upscalers.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}).info("0 = no tiling"),
-    "DAT_tile_overlap": OptionInfo(8, "Tile overlap for DAT upscalers.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}).info("Low values = visible seam"),
     "upscaler_for_img2img": OptionInfo(None, "Upscaler for img2img", gr.Dropdown, lambda: {"choices": [x.name for x in shared.sd_upscalers]}),
+    "unload_sd_during_upscale": OptionInfo(False, "Unload SD Model from VRAM to RAM during upscale"),
+    "ESRGAN_tile": OptionInfo(256, "Tile size for ESRGAN upscalers.", gr.Slider, {"minimum": 0, "maximum": 4096, "step": 16}).info("0 = no tiling"),
+    "ESRGAN_tile_overlap": OptionInfo(32, "Tile overlap for ESRGAN upscalers.", gr.Slider, {"minimum": 0, "maximum": 2048, "step": 8}).info("Low values = visible seam"),
+    "DAT_tile": OptionInfo(256, "Tile size for DAT upscalers.", gr.Slider, {"minimum": 0, "maximum": 4096, "step": 32}).info("0 = no tiling"),
+    "DAT_tile_overlap": OptionInfo(32, "Tile overlap for DAT upscalers.", gr.Slider, {"minimum": 0, "maximum": 2048, "step": 32}).info("Low values = visible seam"),
+    "HAT_tile": OptionInfo(256, "Tile size for HAT upscalers.", gr.Slider, {"minimum": 0, "maximum": 4096, "step": 16}).info("0 = no tiling"),
+    "HAT_tile_overlap": OptionInfo(32, "Tile overlap for HAT upscalers.", gr.Slider, {"minimum": 0, "maximum": 2048, "step": 16}).info("Low values = visible seam"),
+    "SRFormer_tile": OptionInfo(176, "Tile size for SRFormer upscalers. Recommended: Multiple of 22 for SRFormer, Multiple of 16 for SRFormerLight", gr.Slider, {"minimum": 0, "maximum": 4096, "step": 2}).info("0 = no tiling"),
+    "SRFormer_tile_overlap": OptionInfo(32, "Tile overlap for SRFormer upscalers. Recommended: Multiple of 22 for SRFormer, Multiple of 16 for SRFormerLight", gr.Slider, {"minimum": 0, "maximum": 2048, "step": 2}).info("Low values = visible seam"),
+    "GRL_tile": OptionInfo(256, "Tile size for GRL upscalers.", gr.Slider, {"minimum": 0, "maximum": 4096, "step": 8}).info("0 = no tiling"),
+    "GRL_tile_overlap": OptionInfo(32, "Tile overlap for GRL upscalers.", gr.Slider, {"minimum": 0, "maximum": 2048, "step": 8}).info("Low values = visible seam"),
+    "OmniSR_tile": OptionInfo(256, "Tile size for OmniSR upscalers.", gr.Slider, {"minimum": 0, "maximum": 4096, "step": 8}).info("0 = no tiling"),
+    "OmniSR_tile_overlap": OptionInfo(32, "Tile overlap for OmniSR upscalers.", gr.Slider, {"minimum": 0, "maximum": 2048, "step": 8}).info("Low values = visible seam"),
+    "SPAN_tile": OptionInfo(256, "Tile size for SPAN upscalers.", gr.Slider, {"minimum": 0, "maximum": 4096, "step": 32}).info("0 = no tiling"),
+    "SPAN_tile_overlap": OptionInfo(32, "Tile overlap for SPAN upscalers.", gr.Slider, {"minimum": 0, "maximum": 2048, "step": 32}).info("Low values = visible seam"),
+    "COMPACT_tile": OptionInfo(0, "Tile size for COMPACT upscalers.", gr.Slider, {"minimum": 0, "maximum": 4096, "step": 16}).info("0 = no tiling"),
+    "COMPACT_tile_overlap": OptionInfo(32, "Tile overlap for COMPACT upscalers.", gr.Slider, {"minimum": 0, "maximum": 2048, "step": 16}).info("Low values = visible seam"),
+    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Select which Real-ESRGAN models to show in the web UI.", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
 }))
 
 options_templates.update(options_section(('face-restoration', "Face restoration", "postprocessing"), {

@@ -1,3 +1,4 @@
+import logging
 import os
 from abc import abstractmethod
 
@@ -5,7 +6,9 @@ import PIL
 from PIL import Image
 
 import modules.shared
-from modules import modelloader, shared
+from modules import modelloader, shared, devices
+
+logger = logging.getLogger(__name__)
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 NEAREST = (Image.Resampling.NEAREST if hasattr(Image, 'Resampling') else Image.NEAREST)
@@ -25,8 +28,8 @@ class Upscaler:
 
     def __init__(self, create_dirs=False):
         self.mod_pad_h = None
-        self.tile_size = modules.shared.opts.ESRGAN_tile
-        self.tile_pad = modules.shared.opts.ESRGAN_tile_overlap
+        self.tile_size = None
+        self.tile_pad = None
         self.device = modules.shared.device
         self.img = None
         self.output = None
@@ -56,8 +59,16 @@ class Upscaler:
         dest_w = int((img.width * scale) // 8 * 8)
         dest_h = int((img.height * scale) // 8 * 8)
 
+        if shared.opts.unload_sd_during_upscale:
+            shared.sd_model.to(devices.cpu)
+            devices.torch_gc()
+            logger.info("Stable Diffusion Model weights are being unloaded from VRAM to RAM prior to upscale")
+
         for _ in range(3):
-            if img.width >= dest_w and img.height >= dest_h:
+            # Do not break the loop prior to do_upscale when img and dest are the same size.
+            # This is required for 1x scale post-processing models to produce an output image.
+            # FIXME: Only allow this behavior when a 1x scale model is selected.
+            if img.width > dest_w and img.height > dest_h:
                 break
 
             shape = (img.width, img.height)
@@ -67,8 +78,15 @@ class Upscaler:
             if shape == (img.width, img.height):
                 break
 
+            if img.width >= dest_w and img.height >= dest_h:
+                break
+
         if img.width != dest_w or img.height != dest_h:
             img = img.resize((int(dest_w), int(dest_h)), resample=LANCZOS)
+
+        if shared.opts.unload_sd_during_upscale:
+            shared.sd_model.to(shared.device)
+            logger.info("Stable Diffusion Model weights are being reloaded from RAM to VRAM after upscale")
 
         return img
 

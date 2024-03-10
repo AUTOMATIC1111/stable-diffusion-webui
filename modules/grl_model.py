@@ -5,9 +5,9 @@ from modules.upscaler import Upscaler, UpscalerData
 from modules.upscaler_utils import upscale_with_model
 
 
-class UpscalerHAT(Upscaler):
+class UpscalerGRL(Upscaler):
     def __init__(self, dirname):
-        self.name = "HAT"
+        self.name = "GRL"
         self.scalers = []
         self.user_path = dirname
         super().__init__()
@@ -21,10 +21,10 @@ class UpscalerHAT(Upscaler):
         try:
             model = self.load_model(selected_model)
         except Exception:
-            errors.report(f"Unable to load HAT model {selected_model}", exc_info=True)
+            errors.report(f"Unable to load GRL model {selected_model}", exc_info=True)
             return img
-        model.to(devices.device_hat)
-        return hat_upscale(model, img)
+        model.to(devices.device_grl)
+        return grl_upscale(model, img)
 
     def load_model(self, path: str):
         if not os.path.isfile(path):
@@ -33,16 +33,16 @@ class UpscalerHAT(Upscaler):
             filename = path
         return modelloader.load_spandrel_model(
             filename,
-            device=('cpu' if devices.device_hat.type == 'mps' else None),
+            device=('cpu' if devices.device_grl.type == 'mps' else None),
             prefer_half=(not cmd_opts.no_half and not cmd_opts.upcast_sampling),
-            expected_architecture='HAT',
+            expected_architecture='GRL',
         )
 
 
-def hat_upscale(model, img):
+def grl_upscale(model, img):
         return upscale_with_model(
             model,
             img,
-            tile_size=opts.HAT_tile,
-            tile_overlap=opts.HAT_tile_overlap,
+            tile_size=opts.GRL_tile,
+            tile_overlap=opts.GRL_tile_overlap,
         )
