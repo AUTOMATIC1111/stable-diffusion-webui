@@ -1,8 +1,8 @@
 import os
 import re
 
-from modules import shared
-from modules.paths_internal import script_path, cwd
+from modules import shared, scripts, errors
+from modules.paths_internal import cwd
 
 
 def natural_sort_key(s, regex=re.compile('([0-9]+)')):
@@ -15,16 +15,27 @@ def listfiles(dirname):
 
 
 def html_path(filename):
-    return os.path.join(script_path, "html", filename)
+    paths = scripts.list_files_with_name(os.path.join("html", filename))
+
+    if len(paths) == 0:
+        errors.report(f'File "{filename}" is not found')
+        return None
+    elif len(paths) != 1:
+        errors.report(f'Html file "{filename}" is ambiguous')
+
+    return paths[0]
 
 
 def html(filename):
     path = html_path(filename)
+    if path is None:
+        return ""
 
     try:
         with open(path, encoding="utf8") as file:
             return file.read()
-    except OSError:
+    except OSError as e:
+        errors.report(f'File "{filename}" can\'t be opened: {e}')
         return ""
 
 
