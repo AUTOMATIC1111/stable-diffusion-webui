@@ -2,12 +2,16 @@ import datetime
 import logging
 import threading
 import time
+import os
 
 from modules import errors, shared, devices
 from typing import Optional
 
 log = logging.getLogger(__name__)
-if shared.cmd_opts.allow_interrupt_generation_in_command_line:
+
+if shared.cmd_opts.allow_interrupt_generation_in_command_line\
+        and shared.cmd_opts.loglevel is None\
+        and not os.environ.get("SD_WEBUI_LOG_LEVEL"):
     log.setLevel(logging.INFO)
 
 
