@@ -653,6 +653,24 @@ Stable Diffusion has a limit for input text length. If your prompt is too long, 
 # PNG info
 Adds information about generation parameters to PNG as a text chunk. You can view this information later using any software that supports viewing PNG chunk info, for example: https://www.nayuki.io/page/png-file-chunk-inspector
 
+# Prompt comments
+Starting in [version 1.8.0](https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases/tag/v1.8.0), comments are now supported and enabled by default. Comments function similarly to single-line comments in Python, using the hash symbol (`#`). When generating an image, the webui will ignore any text following a `#` symbol on the same line. Comments are not included in the PNG info of generated images.
+
+Here's an example of how to use comments in a prompt:
+
+```
+This part of the prompt will be processed # while this part will be ignored
+# This entire line is a comment and will be ignored
+```
+
+When viewing the PNG info of an image generated with the above prompt, the end-user will see:
+
+```
+This part of the prompt will be processed
+```
+
+The comments will not be visible in the PNG info, as they are only meant for the user's reference within the webui.
+
 # Settings
 A tab with settings, allows you to use UI to edit more than half of parameters that previously were commandline. Settings are saved to `config.js`. Settings that remain as commandline options are ones that are required at startup.
 
