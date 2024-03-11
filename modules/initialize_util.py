@@ -161,7 +161,7 @@ def configure_sigint_handler():
 
         os._exit(0)
 
-    if not os.environ.get("COVERAGE_RUN"):
+    if not (os.environ.get("COVERAGE_RUN") or shared.cmd_opts.allow_interrupt_generation_in_command_line):
         # Don't install the immediate-quit handler when running under coverage,
         # as then the coverage report won't be generated.
         signal.signal(signal.SIGINT, sigint_handler)

@@ -121,17 +121,25 @@ def webui():
         timer.startup_record = startup_timer.dump()
         print(f"Startup time: {startup_timer.summary()}.")
 
-        try:
-            while True:
-                server_command = shared.state.wait_for_server_command(timeout=5)
-                if server_command:
-                    if server_command in ("stop", "restart"):
-                        break
-                    else:
-                        print(f"Unknown server command: {server_command}")
-        except KeyboardInterrupt:
-            print('Caught KeyboardInterrupt, stopping...')
-            server_command = "stop"
+        while True:
+            try:
+                while True:
+                    server_command = shared.state.wait_for_server_command(timeout=5)
+                    if server_command:
+                        if server_command in ("stop", "restart"):
+                            break
+                        else:
+                            print(f"Unknown server command: {server_command}")
+                break
+            except KeyboardInterrupt:
+                if shared.cmd_opts.allow_interrupt_generation_in_command_line and shared.state.job != "" and not shared.state.interrupted:
+                    print('Caught KeyboardInterrupt, interrupting generation...')
+                    shared.state.interrupt()
+                else:
+                    print('Caught KeyboardInterrupt, stopping...')
+                    server_command = "stop"
+                    break
+
 
         if server_command == "stop":
             print("Stopping server...")
