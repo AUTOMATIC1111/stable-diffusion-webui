@@ -45,7 +45,7 @@ def rendition_video(base_model_path,input_video_path,width=0,height=0,fps=0):
             ControlNetConfigUnit(
                 processor_id="tile",
                 model_path=model_dir+ os.path.sep +"ControlNet/control_v11f1e_sd15_tile.pth",
-                scale=0.5
+                scale=1
             )
         ]
     )
@@ -77,11 +77,11 @@ def rendition_video(base_model_path,input_video_path,width=0,height=0,fps=0):
         torch.manual_seed(0)
         output_video_path_split=temp_dir+"/"+"_"+str(index)+".mp4"
         output_video = pipe(
-            prompt="best quality, perfect anime illustration,light,",
+            prompt="masterpiece,best quality, HD Quality,8k,nsanely detailed,ultra-detailed,highly detailed",
             negative_prompt="verybadimagenegative_v1.3",
             cfg_scale=3, clip_skip=2,
             controlnet_frames=input_video, num_frames=len(input_video),
-            num_inference_steps=7, height=height, width=width,
+            num_inference_steps=8, height=height, width=width,
             animatediff_batch_size=32, animatediff_stride=16,
             vram_limit_level=0,
         )
@@ -120,8 +120,13 @@ def size_control(input_video_path):
     width= cap.get(cv2.CAP_PROP_FRAME_WIDTH)
     height= cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
     fps = cap.get(cv2.CAP_PROP_FPS)
-    width=int((width//64)*64)
-    height=int((height//64)*64)
+
+    ratio = max(1024/width, 1024/height)
+    new_width = int(width * ratio)
+    new_height = int(height * ratio)
+    width=int((new_width//64)*64)
+    height=int((new_height//64)*64)
+
     return width,height,fps
 
     
