@@ -784,7 +784,7 @@ class KidDrawingTask(Txt2ImgTask):
         extra_args = deepcopy(task['args'])
         full_task = deepcopy(task)
         full_task.pop("args")
-        full_task.pop("images")
+        # full_task.pop("images")
         full_task.update(extra_args)
 
         img_batch =[]
