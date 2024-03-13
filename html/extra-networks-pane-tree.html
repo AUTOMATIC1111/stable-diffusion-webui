@@ -1,8 +1,11 @@
     <div class="extra-network-pane-content-tree resize-handle-row">
-        <div id='{tabname}_{extra_networks_tabname}_tree' class='extra-network-tree' style='flex-basis: {extra_networks_tree_view_default_width}px'>
-            {tree_html}
+        <div
+            id='{tabname}_{extra_networks_tabname}_tree_scroll_area'
+            class='extra-network-tree clusterize-scroll {tree_scroll_area_div_extra_class}'
+            style='flex-basis: {extra_networks_tree_view_default_width}px'>
+            <div id='{tabname}_{extra_networks_tabname}_tree_content_area' class='clusterize-content'></div>
         </div>
-        <div id='{tabname}_{extra_networks_tabname}_cards' class='extra-network-cards' style='flex-grow: 1;'>
-            {items_html}
+        <div id='{tabname}_{extra_networks_tabname}_cards_scroll_area' class='extra-network-cards clusterize-scroll' style='flex-grow: 1;'>
+            <div id='{tabname}_{extra_networks_tabname}_cards_content_area' class='clusterize-content'></div>
         </div>
     </div>

@@ -25,6 +25,9 @@ def javascript_html():
     if shared.cmd_opts.theme:
         head += f'<script type="text/javascript">set_theme(\"{shared.cmd_opts.theme}\");</script>\n'
 
+    # Allows for very large scrollable regions without bloating DOM.
+    head += '<script src="https://cdn.jsdelivr.net/npm/clusterize.js@1.0.0/clusterize.min.js"></script>\n'
+
     return head
 
 
@@ -36,6 +39,9 @@ def css_html():
 
     for cssfile in scripts.list_files_with_name("style.css"):
         head += stylesheet(cssfile)
+
+    # Used by clusterize.js
+    head += '<link href="https://cdn.jsdelivr.net/npm/clusterize.js@1.0.0/clusterize.min.css" rel="stylesheet">'
 
     user_css = os.path.join(data_path, "user.css")
     if os.path.exists(user_css):

@@ -1,48 +1,57 @@
 <div id='{tabname}_{extra_networks_tabname}_pane' class='extra-network-pane {tree_view_div_default_display_class}'>
-    <div class="extra-network-control" id="{tabname}_{extra_networks_tabname}_controls" style="display:none" >
+    <div id="{tabname}_{extra_networks_tabname}_controls" class="extra-network-control" style="display:none">
         <div class="extra-network-control--search">
+            <span class="extra-network-control--search-icon">
+                <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16">
+                    <path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z"></path>
+                </svg>
+            </span>
             <input
                 id="{tabname}_{extra_networks_tabname}_extra_search"
                 class="extra-network-control--search-text"
-                type="search"
+                type="text"
                 placeholder="Search"
             >
+            <button role="button" class="extra-network-control--search-clear" onclick="extraNetworksControlSearchClearOnClick(event, '{tabname}_{extra_networks_tabname}');">
+                <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16">
+                    <path d="M2.343 13.657A8 8 0 1 1 13.658 2.343 8 8 0 0 1 2.343 13.657ZM6.03 4.97a.751.751 0 0 0-1.042.018.751.751 0 0 0-.018 1.042L6.94 8 4.97 9.97a.749.749 0 0 0 .326 1.275.749.749 0 0 0 .734-.215L8 9.06l1.97 1.97a.749.749 0 0 0 1.275-.326.749.749 0 0 0-.215-.734L9.06 8l1.97-1.97a.749.749 0 0 0-.326-1.275.749.749 0 0 0-.734.215L8 6.94Z"></path>
+                </svg>
+            </button>
         </div>
-
         <small>Sort: </small>
         <div 
             id="{tabname}_{extra_networks_tabname}_extra_sort_path"
             class="extra-network-control--sort{sort_path_active}"
-            data-sortkey="default"
+            data-sort-mode="default"
             title="Sort by path"
-            onclick="extraNetworksControlSortOnClick(event, '{tabname}', '{extra_networks_tabname}');"
+            onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');"
         >
             <i class="extra-network-control--icon extra-network-control--sort-icon"></i>
         </div>
         <div
             id="{tabname}_{extra_networks_tabname}_extra_sort_name"
             class="extra-network-control--sort{sort_name_active}"
-            data-sortkey="name"
+            data-sort-mode="name"
             title="Sort by name"
-            onclick="extraNetworksControlSortOnClick(event, '{tabname}', '{extra_networks_tabname}');"
+            onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');"
         >
             <i class="extra-network-control--icon extra-network-control--sort-icon"></i>
         </div>
         <div
             id="{tabname}_{extra_networks_tabname}_extra_sort_date_created"
             class="extra-network-control--sort{sort_date_created_active}"
-            data-sortkey="date_created"
+            data-sort-mode="date_created"
             title="Sort by date created"
-            onclick="extraNetworksControlSortOnClick(event, '{tabname}', '{extra_networks_tabname}');"
+            onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');"
         >
             <i class="extra-network-control--icon extra-network-control--sort-icon"></i>
         </div>
         <div
             id="{tabname}_{extra_networks_tabname}_extra_sort_date_modified"
             class="extra-network-control--sort{sort_date_modified_active}"
-            data-sortkey="date_modified"
+            data-sort-mode="date_modified"
             title="Sort by date modified"
-            onclick="extraNetworksControlSortOnClick(event, '{tabname}', '{extra_networks_tabname}');"
+            onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');"
         >
             <i class="extra-network-control--icon extra-network-control--sort-icon"></i>
         </div>
@@ -51,9 +60,9 @@
         <div
             id="{tabname}_{extra_networks_tabname}_extra_sort_dir"
             class="extra-network-control--sort-dir"
-            data-sortdir="{data_sortdir}"
+            data-sort-dir="{data_sortdir}"
             title="Sort ascending"
-            onclick="extraNetworksControlSortDirOnClick(event, '{tabname}', '{extra_networks_tabname}');"
+            onclick="extraNetworksControlSortDirOnClick(event, '{tabname}_{extra_networks_tabname}');"
         >
             <i class="extra-network-control--icon extra-network-control--sort-dir-icon"></i>
         </div>
@@ -64,7 +73,7 @@
             id="{tabname}_{extra_networks_tabname}_extra_tree_view"
             class="extra-network-control--tree-view {tree_view_btn_extra_class}"
             title="Enable Tree View"
-            onclick="extraNetworksControlTreeViewOnClick(event, '{tabname}', '{extra_networks_tabname}');"
+            onclick="extraNetworksControlTreeViewOnClick(event, '{tabname}_{extra_networks_tabname}');"
         >
             <i class="extra-network-control--icon extra-network-control--tree-view-icon"></i>
         </div>
@@ -72,7 +81,7 @@
             id="{tabname}_{extra_networks_tabname}_extra_refresh"
             class="extra-network-control--refresh"
             title="Refresh page"
-            onclick="extraNetworksControlRefreshOnClick(event, '{tabname}', '{extra_networks_tabname}');"
+            onclick="extraNetworksControlRefreshOnClick(event, '{tabname}_{extra_networks_tabname}');"
         >
             <i class="extra-network-control--icon extra-network-control--refresh-icon"></i>
         </div>

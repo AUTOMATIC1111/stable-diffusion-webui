@@ -949,9 +949,6 @@ footer {
     display: inline-flex;
     visibility: hidden;
     color: white;
-}
-
-.extra-network-pane .card .button-row {
     position: absolute;
     right: 0;
     z-index: 1;
@@ -963,6 +960,11 @@ footer {
 
 .extra-network-pane .card-button{
     color: white;
+    width: 1.5em;
+    text-shadow: 2px 2px 3px black;
+    color: white;
+    padding: 0.25em 0.1em;
+    font-size: 2rem;
 }
 
 .extra-network-pane .copy-path-button::before {
@@ -977,23 +979,8 @@ footer {
     content: "🛠";
 }
 
-.extra-network-pane .card-button {
-    width: 1.5em;
-    text-shadow: 2px 2px 3px black;
-    color: white;
-    padding: 0.25em 0.1em;
-}
-
 .extra-network-pane .card-button:hover{
     color: red;
-}
-
-.extra-network-pane .card .card-button {
-    font-size: 2rem;
-}
-
-.extra-network-pane .card-minimal .card-button {
-    font-size: 1rem;
 }
 
 .standalone-card-preview.card .preview{
@@ -1196,6 +1183,26 @@ body.resizing .resize-handle {
 }
 
 /* ========================= */
+.clusterize-scroll::-webkit-scrollbar {
+    background-color: transparent;
+    width: 16px;
+}
+
+.clusterize-scroll::-webkit-scrollbar-track {
+    background-color: transparent;
+    background-clip: content-box;
+}
+
+.clusterize-scroll::-webkit-scrollbar-thumb {
+    background-color: var(--border-color-primary);
+    border-radius: 16px;
+    border: 4px solid var(--background-fill-primary);
+}
+
+.clusterize-scroll::-webkit-scrollbar-button {
+    display: none;
+}
+
 .extra-network-pane {
     display: flex;
     height: calc(100vh - 24rem);
@@ -1295,53 +1302,6 @@ body.resizing .resize-handle {
     margin: 0 0.5rem 0 0.75rem;
 }
 
-.extra-network-tree .tree-list--tree {}
-
-/* Remove auto indentation from tree. Will be overridden later. */
-.extra-network-tree .tree-list--subgroup {
-    margin: 0 !important;
-    padding: 0 !important;
-    box-shadow: 0.5rem 0 0 var(--body-background-fill) inset,
-                0.7rem 0 0 var(--neutral-800) inset;
-}
-
-/* Set indentation for each depth of tree. */
-.extra-network-tree .tree-list--subgroup > .tree-list-item {
-    margin-left: 0.4rem !important;
-    padding-left: 0.4rem !important;
-}
-
-/* Styles for tree <li> elements. */
-.extra-network-tree .tree-list-item {
-    list-style: none;
-    position: relative;
-    background-color: transparent;
-}
-
-/* Directory <ul> visibility based on data-expanded attribute. */
-.extra-network-tree .tree-list-content+.tree-list--subgroup {
-    height: 0;
-    visibility: hidden;
-    opacity: 0;
-}
-
-.extra-network-tree .tree-list-content[data-expanded]+.tree-list--subgroup {
-    height: auto;
-    visibility: visible;
-    opacity: 1;
-}
-
-/* File <li> */
-.extra-network-tree .tree-list-item--subitem {
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
-
-/* <li> containing <ul> */
-.extra-network-tree .tree-list-item--has-subitem {}
-
 /* BUTTON ELEMENTS */
 /* <button> */
 .extra-network-tree .tree-list-content {
@@ -1351,8 +1311,7 @@ body.resizing .resize-handle {
     padding: 0 !important;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
-    font-size: 1rem;
-    text-align: left;
+    font-size: 1em;
     user-select: none;
     background-color: transparent;
     border: none;
@@ -1360,23 +1319,24 @@ body.resizing .resize-handle {
     grid-template-rows: min-content;
     grid-template-areas: "leading-action leading-visual label trailing-visual trailing-action";
     grid-template-columns: min-content min-content minmax(0, auto) min-content min-content;
-    grid-gap: 0.1rem;
-    align-items: start;
+    grid-gap: 0.1em;
+    place-items: center stretch;
+    text-align: center;
     flex-grow: 1;
     flex-basis: 100%;
 }
-/* Buttons for directories. */
-.extra-network-tree .tree-list-content-dir {}   
 
 /* Buttons for files. */
-.extra-network-tree .tree-list-item--has-subitem .tree-list--subgroup > li:first-child {
-    padding-top: 0.5rem !important;
-}
-
 .dark .extra-network-tree div.tree-list-content:hover {
     -webkit-transition: all 0.05s ease-in-out;
 	transition: all 0.05s ease-in-out;
     background-color: var(--neutral-800);
+}
+
+.extra-network-tree div.tree-list-content:hover {
+    -webkit-transition: all 0.05s ease-in-out;
+	transition: all 0.05s ease-in-out;
+    background-color: var(--neutral-200);
 }
 
 .dark .extra-network-tree div.tree-list-content[data-selected] {
@@ -1387,83 +1347,104 @@ body.resizing .resize-handle {
     background-color: var(--neutral-300);
 }
 
-.extra-network-tree div.tree-list-content:hover {
-    -webkit-transition: all 0.05s ease-in-out;
-	transition: all 0.05s ease-in-out;
-    background-color: var(--neutral-200);
+.tree-list-item {
+    position: relative;
+    background: transparent;
+    margin: 0;
+    padding: 0;
 }
 
 /* ==== CHEVRON ICON ACTIONS ==== */
 /* Define the animation for the arrow when it is clicked. */
-.extra-network-tree .tree-list-content-dir .tree-list-item-action-chevron {
-    -ms-transform: rotate(135deg);
-    -webkit-transform: rotate(135deg);
-    transform: rotate(135deg);
-    transition: transform 0.2s;
+.tree-list-item-action-chevron {
+    display: inline-flex;
+    height: 1em;
+    width: 1em;
+    mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M7 7H17V17" stroke="%23000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>');
+    mask-repeat: no-repeat;
+    mask-position: center center;
+    mask-size: 100%;
+    background-color: var(--input-placeholder-color);
+    transform: rotate(45deg);
 }
 
-.extra-network-tree .tree-list-content-dir[data-expanded] .tree-list-item-action-chevron {
+.tree-list-item[data-expanded] .tree-list-item-action-chevron {
     -ms-transform: rotate(225deg);
     -webkit-transform: rotate(225deg);
     transform: rotate(225deg);
-    transition: transform 0.2s;
-}
-
-.tree-list-item-action-chevron {
-    display: inline-flex;
-    /* Uses box shadow to generate a pseudo chevron `>` icon. */
-    padding: 0.3rem;
-    box-shadow: 0.1rem 0.1rem 0 0 var(--neutral-200) inset;
-    transform: rotate(135deg);
+    transition: transform 0.2s; /* currently broken since we remove/add elements to clusterize.js list */
 }
 
 /* ==== SEARCH INPUT ACTIONS ==== */
 /* Add icon to left side of <input> */
-.extra-network-control .extra-network-control--search::before {
-    content: "🔎︎";
-    position: absolute;
-    margin: 0.5rem;
-    font-size: 1rem;
-    color: var(--input-placeholder-color);
-}
-
-.extra-network-control .extra-network-control--search {
-    display: inline-flex;
+.extra-network-control--search {
+    display: flex;
+    flex-direction: row;
     position: relative;
+    outline: var(--input-border-width) solid var(--input-border-color);
+    border-radius: var(--input-radius);
+    align-items: center;
+    place-content: center;
+    gap: var(--spacing-sm);
+    box-sizing: border-box;
+    background: var(--input-background-fill);
 }
 
-.extra-network-control .extra-network-control--search .extra-network-control--search-text {
-    border: 1px solid var(--button-secondary-border-color);
-    border-radius: 0.5rem;
-    color: var(--button-secondary-text-color);
-    background-color: transparent;
-    width: 100%;
-    padding-left: 2rem;
-    line-height: 1rem;
+/* Add outline to the contianer when the inner search-text <input> has focus. */
+.extra-network-control--search:focus-within {
+    outline: calc(var(--input-border-width) * 2) solid var(--input-border-color-focus);
 }
 
-
-.extra-network-control .extra-network-control--search .extra-network-control--search-text::placeholder {
-    color: var(--input-placeholder-color);
+/* Search icon on left of container. */
+.extra-network-control--search .extra-network-control--search-icon {
+    fill: var(--input-placeholder-color);
+    background: transparent;
+    user-select: none;
+    padding: var(--input-padding) var(--spacing-sm) var(--input-padding) var(--input-padding);
+    margin: 0;
 }
 
+/* <input> text in container. */
+.extra-network-control--search .extra-network-control--search-text {
+    display: flex;
+    color: var(--body-text-color);
+    background: transparent;
+    font-weight: var(--input-text-weight);
+    font-size: var(--input-text-size);
+    line-height: var(--line-sm);
+    padding: var(--input-padding) var(--spacing-sm) var(--input-padding) var(--spacing-sm);
+    margin: 0;
+    border: none;
+    outline: none;
+}
 
-/* <input> clear button (x on right side) styling */
-.extra-network-control .extra-network-control--search .extra-network-control--search-text::-webkit-search-cancel-button {
-    -webkit-appearance: none;
-    appearance: none;
+/* Make "clear" button visible when user has entered text in search-text <input>. */
+.extra-network-control--search .extra-network-control--search-text:not(:placeholder-shown)+.extra-network-control--search-clear {
+    visibility: visible;
+}
+
+/* "Clear" button on right of container. Invisible until user enters text in <input>. */
+.extra-network-control--search .extra-network-control--search-clear {
+    display: flex;
+    visibility: hidden;
+    fill: var(--input-placeholder-color);
+    background: transparent;
+    border: var(--input-border-width) solid transparent;
+    border-radius: 0 var(--input-radius) var(--input-radius) 0;
+    transition: background var(--button-transition);
+    user-select: none;
     cursor: pointer;
-    height: 1rem;
-    width: 1rem;
-    mask-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>');
-    mask-repeat: no-repeat;
-    mask-position: center center;
-    mask-size: 100%;
-    background-color: var(--input-placeholder-color);
+    align-self: stretch; /* forces button to fill vertical */
+    align-items: center;
+    padding: var(--input-padding);
+}
+
+.extra-network-control--search .extra-network-control--search-clear:hover {
+    background: var(--button-secondary-background-fill-hover);
 }
 
 /* ==== SORT ICON ACTIONS ==== */
-.extra-network-control .extra-network-control--sort {
+.extra-network-control--sort-mode {
     padding: 0.25rem;
     display: inline-flex;
     cursor: pointer;
@@ -1471,7 +1452,7 @@ body.resizing .resize-handle {
     align-self: center;
 }
 
-.extra-network-control .extra-network-control--sort .extra-network-control--sort-icon {
+.extra-network-control--sort-mode-icon {
     height: 1.5rem;
     width: 1.5rem;
     mask-repeat: no-repeat;
@@ -1480,24 +1461,24 @@ body.resizing .resize-handle {
     background-color: var(--input-placeholder-color);
 }
 
-.extra-network-control .extra-network-control--sort[data-sortkey="default"] .extra-network-control--sort-icon {
+.extra-network-control--sort-mode[data-sort-mode="path"] .extra-network-control--sort-mode-icon {
     mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill-rule="evenodd" clip-rule="evenodd" d="M1 5C1 3.34315 2.34315 2 4 2H8.43845C9.81505 2 11.015 2.93689 11.3489 4.27239L11.7808 6H13.5H20C21.6569 6 23 7.34315 23 9V11C23 11.5523 22.5523 12 22 12C21.4477 12 21 11.5523 21 11V9C21 8.44772 20.5523 8 20 8H13.5H11.7808H4C3.44772 8 3 8.44772 3 9V10V19C3 19.5523 3.44772 20 4 20H9C9.55228 20 10 20.4477 10 21C10 21.5523 9.55228 22 9 22H4C2.34315 22 1 20.6569 1 19V10V9V5ZM3 6.17071C3.31278 6.06015 3.64936 6 4 6H9.71922L9.40859 4.75746C9.2973 4.3123 8.89732 4 8.43845 4H4C3.44772 4 3 4.44772 3 5V6.17071ZM20.1716 18.7574C20.6951 17.967 21 17.0191 21 16C21 13.2386 18.7614 11 16 11C13.2386 11 11 13.2386 11 16C11 18.7614 13.2386 21 16 21C17.0191 21 17.967 20.6951 18.7574 20.1716L21.2929 22.7071C21.6834 23.0976 22.3166 23.0976 22.7071 22.7071C23.0976 22.3166 23.0976 21.6834 22.7071 21.2929L20.1716 18.7574ZM13 16C13 14.3431 14.3431 13 16 13C17.6569 13 19 14.3431 19 16C19 17.6569 17.6569 19 16 19C14.3431 19 13 17.6569 13 16Z" fill="%23000000"></path></g></svg>');
 }
 
-.extra-network-control .extra-network-control--sort[data-sortkey="name"] .extra-network-control--sort-icon {
+.extra-network-control--sort-mode[data-sort-mode="name"] .extra-network-control--sort-mode-icon {
     mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill-rule="evenodd" clip-rule="evenodd" d="M17.1841 6.69223C17.063 6.42309 16.7953 6.25 16.5002 6.25C16.2051 6.25 15.9374 6.42309 15.8162 6.69223L11.3162 16.6922C11.1463 17.07 11.3147 17.514 11.6924 17.6839C12.0701 17.8539 12.5141 17.6855 12.6841 17.3078L14.1215 14.1136H18.8789L20.3162 17.3078C20.4862 17.6855 20.9302 17.8539 21.308 17.6839C21.6857 17.514 21.8541 17.07 21.6841 16.6922L17.1841 6.69223ZM16.5002 8.82764L14.7965 12.6136H18.2039L16.5002 8.82764Z" fill="%231C274C"></path><path opacity="0.5" fill-rule="evenodd" clip-rule="evenodd" d="M2.25 7C2.25 6.58579 2.58579 6.25 3 6.25H13C13.4142 6.25 13.75 6.58579 13.75 7C13.75 7.41421 13.4142 7.75 13 7.75H3C2.58579 7.75 2.25 7.41421 2.25 7Z" fill="%231C274C"></path><path opacity="0.5" d="M2.25 12C2.25 11.5858 2.58579 11.25 3 11.25H10C10.4142 11.25 10.75 11.5858 10.75 12C10.75 12.4142 10.4142 12.75 10 12.75H3C2.58579 12.75 2.25 12.4142 2.25 12Z" fill="%231C274C"></path><path opacity="0.5" d="M2.25 17C2.25 16.5858 2.58579 16.25 3 16.25H8C8.41421 16.25 8.75 16.5858 8.75 17C8.75 17.4142 8.41421 17.75 8 17.75H3C2.58579 17.75 2.25 17.4142 2.25 17Z" fill="%231C274C"></path></g></svg>');
 }
 
-.extra-network-control .extra-network-control--sort[data-sortkey="date_created"] .extra-network-control--sort-icon {
+.extra-network-control--sort-mode[data-sort-mode="date_created"] .extra-network-control--sort-mode-icon {
     mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M17 11C14.2386 11 12 13.2386 12 16C12 18.7614 14.2386 21 17 21C19.7614 21 22 18.7614 22 16C22 13.2386 19.7614 11 17 11ZM17 11V9M2 9V15.8C2 16.9201 2 17.4802 2.21799 17.908C2.40973 18.2843 2.71569 18.5903 3.09202 18.782C3.51984 19 4.0799 19 5.2 19H13M2 9V8.2C2 7.0799 2 6.51984 2.21799 6.09202C2.40973 5.71569 2.71569 5.40973 3.09202 5.21799C3.51984 5 4.0799 5 5.2 5H13.8C14.9201 5 15.4802 5 15.908 5.21799C16.2843 5.40973 16.5903 5.71569 16.782 6.09202C17 6.51984 17 7.0799 17 8.2V9M2 9H17M5 3V5M14 3V5M15 16H17M17 16H19M17 16V14M17 16V18" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>');
 }
 
-.extra-network-control .extra-network-control--sort[data-sortkey="date_modified"] .extra-network-control--sort-icon {
+.extra-network-control--sort-mode[data-sort-mode="date_modified"] .extra-network-control--sort-mode-icon {
     mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M10 21H6.2C5.0799 21 4.51984 21 4.09202 20.782C3.71569 20.5903 3.40973 20.2843 3.21799 19.908C3 19.4802 3 18.9201 3 17.8V8.2C3 7.0799 3 6.51984 3.21799 6.09202C3.40973 5.71569 3.71569 5.40973 4.09202 5.21799C4.51984 5 5.0799 5 6.2 5H17.8C18.9201 5 19.4802 5 19.908 5.21799C20.2843 5.40973 20.5903 5.71569 20.782 6.09202C21 6.51984 21 7.0799 21 8.2V10M7 3V5M17 3V5M3 9H21M13.5 13.0001L7 13M10 17.0001L7 17M14 21L16.025 20.595C16.2015 20.5597 16.2898 20.542 16.3721 20.5097C16.4452 20.4811 16.5147 20.4439 16.579 20.399C16.6516 20.3484 16.7152 20.2848 16.8426 20.1574L21 16C21.5523 15.4477 21.5523 14.5523 21 14C20.4477 13.4477 19.5523 13.4477 19 14L14.8426 18.1574C14.7152 18.2848 14.6516 18.3484 14.601 18.421C14.5561 18.4853 14.5189 18.5548 14.4903 18.6279C14.458 18.7102 14.4403 18.7985 14.405 18.975L14 21Z" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>');
 }
 
 /* ==== SORT DIRECTION ICON ACTIONS ==== */
-.extra-network-control .extra-network-control--sort-dir {
+.extra-network-control--sort-dir {
     padding: 0.25rem;
     display: inline-flex;
     cursor: pointer;
@@ -1505,7 +1486,7 @@ body.resizing .resize-handle {
     align-self: center;
 }
 
-.extra-network-control .extra-network-control--sort-dir .extra-network-control--sort-dir-icon {
+.extra-network-control--sort-dir-icon {
     height: 1.5rem;
     width: 1.5rem;
     mask-repeat: no-repeat;
@@ -1514,11 +1495,11 @@ body.resizing .resize-handle {
     background-color: var(--input-placeholder-color);
 }
 
-.extra-network-control .extra-network-control--sort-dir[data-sortdir="Ascending"] .extra-network-control--sort-dir-icon {
+.extra-network-control--sort-dir[data-sort-dir="ascending"] .extra-network-control--sort-dir-icon {
     mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M13 12H21M13 8H21M13 16H21M6 7V17M6 7L3 10M6 7L9 10" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>');
 }
 
-.extra-network-control .extra-network-control--sort-dir[data-sortdir="Descending"] .extra-network-control--sort-dir-icon {
+.extra-network-control--sort-dir[data-sort-dir="descending"] .extra-network-control--sort-dir-icon {
     mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M13 12H21M13 8H21M13 16H21M6 7V17M6 17L3 14M6 17L9 14" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>');
 }
 
@@ -1583,24 +1564,25 @@ body.resizing .resize-handle {
 /* ==== TREE GRID CONFIG ==== */
 
 /* Text for button. */
-.extra-network-tree .tree-list-item-label {
+.tree-list-item-label {
     position: relative;
-    line-height: 1.25rem;
+    line-height: 1.25em;
     color: var(--button-secondary-text-color);
     grid-area: label;
-    padding-left: 0.5rem;
+    padding-left: 0.25em;
+    text-align: start;
 }
 
 /* Text for button truncated. */
-.extra-network-tree .tree-list-item-label--truncate {
+.tree-list-item-label--truncate {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 /* Icon for button. */
-.extra-network-tree .tree-list-item-visual {
-    min-height: 1rem;
+.tree-list-item-visual {
+    min-height: 1em;
     color: var(--button-secondary-text-color);
     pointer-events: none;
     align-items: right;
@@ -1608,46 +1590,41 @@ body.resizing .resize-handle {
 
 
 /* Icon for button when it is before label. */
-.extra-network-tree .tree-list-item-visual--leading {
+.tree-list-item-visual--leading {
     grid-area: leading-visual;
-    width: 1rem;
+    width: 1em;
     text-align: right;
 }
 
 /* Icon for button when it is after label. */
-.extra-network-tree .tree-list-item-visual--trailing {
+.tree-list-item-visual--trailing {
     grid-area: trailing-visual;
-    width: 1rem;
+    width: 1em;
     text-align: right;
 }
 
 /* Dropdown arrow for button. */
-.extra-network-tree .tree-list-item-action--leading {
-    margin-right: 0.5rem;
-    margin-left: 0.2rem;
+.tree-list-item-action--leading {
+    grid-area: leading-action;
+    margin-right: 0.5em;
+    margin-left: 0.2em;
 }
 
-.extra-network-tree .tree-list-content-file .tree-list-item-action--leading {
+.tree-list-content-file .tree-list-item-action--leading {
     visibility: hidden;
 }
 
-.extra-network-tree .tree-list-item-action--leading {
-    grid-area: leading-action;
-}
-
-.extra-network-tree .tree-list-item-action--trailing {
+.tree-list-item-action--trailing {
     grid-area: trailing-action;
     display: inline-flex;
 }
 
-.extra-network-tree .tree-list-content .button-row {
+.tree-list-content .button-row {
     display: inline-flex;
     visibility: hidden;
     color: var(--button-secondary-text-color);
-    width: 0;
 }
 
-.extra-network-tree .tree-list-content:hover .button-row {
+.tree-list-content:hover .button-row {
     visibility: visible;
-    width: auto;
 }
