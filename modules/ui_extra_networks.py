@@ -569,18 +569,16 @@ class ExtraNetworksPage:
             if "user_metadata" not in item:
                 self.read_user_metadata(item)
 
-        data_sortdir = shared.opts.extra_networks_card_order
-        data_sortmode = shared.opts.extra_networks_card_order_field.lower().replace("sort", "").replace(" ", "_").rstrip("_").strip()
-        data_sortkey = f"{data_sortmode}-{data_sortdir}-{len(self.items)}"
-
         show_tree = shared.opts.extra_networks_tree_view_default_enabled
 
         page_params = {
             "tabname": tabname,
             "extra_networks_tabname": self.extra_networks_tabname,
-            "data_sortmode": data_sortmode,
-            "data_sortkey": data_sortkey,
-            "data_sortdir": data_sortdir,
+            "data_sortdir": shared.opts.extra_networks_card_order,
+            "sort_path_active": ' extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Path' else '',
+            "sort_name_active": ' extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Name' else '',
+            "sort_date_created_active": ' extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Date Created' else '',
+            "sort_date_modified_active": ' extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Date Modified' else '',
             "tree_view_btn_extra_class": "extra-network-control--enabled" if show_tree else "",
             "items_html": self.create_card_view_html(tabname, none_message="Loading..." if empty else None),
             "extra_networks_tree_view_default_width": shared.opts.extra_networks_tree_view_default_width,
