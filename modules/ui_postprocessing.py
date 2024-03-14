@@ -5,6 +5,9 @@ from modules.ui_components import ResizeHandleRow
 
 
 def hook_scale_update(inputs):
+    import re
+    pattern = r'(\d)[xX]|[xX](\d)'
+
     resize = upscaler = None
     for script in inputs:
         if script.label == "Resize":
@@ -15,14 +18,17 @@ def hook_scale_update(inputs):
             break
 
     def update_scale(upscaler: str, slider: float):
-        if upscaler[1] in ('x', 'X'):
-            try:
-                scale = int(upscaler[0])
-                return gr.update(value=scale)
-            except ValueError:
-                return gr.update(value=slider)
+        match = re.search(pattern, upscaler)
 
-        return gr.update(value=slider)
+        if match:
+            if match.group(1):
+                return gr.update(value=int(match.group(1)))
+
+            else:
+                return gr.update(value=int(match.group(2)))
+
+        else:
+            return gr.update(value=slider)
 
     if resize and upscaler:
         upscaler.input(update_scale, inputs=[upscaler, resize], outputs=[resize])
