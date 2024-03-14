@@ -53,7 +53,8 @@ def create_ui():
                     show_extras_results = gr.Checkbox(label='Show result images', value=True, elem_id="extras_show_extras_results")
 
             script_inputs = scripts.scripts_postproc.setup_ui()
-            hook_scale_update(script_inputs)
+            if getattr(shared.opts, 'scaleBy_from_upscaler', False):
+                hook_scale_update(script_inputs)
 
         with gr.Column():
             toprow = ui_toprow.Toprow(is_compact=True, is_img2img=False, id_part="extras")
