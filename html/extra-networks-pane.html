@@ -2,7 +2,7 @@
     <div id="{tabname}_{extra_networks_tabname}_controls" class="extra-network-control" style="display:none">
         <div class="extra-network-control--search">
             <span class="extra-network-control--search-icon">
-                <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16">
+                <svg height="16" viewBox="0 0 16 16" version="1.1" width="16">
                     <path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z"></path>
                 </svg>
             </span>
@@ -13,7 +13,7 @@
                 placeholder="Search"
             >
             <button role="button" class="extra-network-control--search-clear" onclick="extraNetworksControlSearchClearOnClick(event, '{tabname}_{extra_networks_tabname}');">
-                <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16">
+                <svg height="16" viewBox="0 0 16 16" version="1.1" width="16">
                     <path d="M2.343 13.657A8 8 0 1 1 13.658 2.343 8 8 0 0 1 2.343 13.657ZM6.03 4.97a.751.751 0 0 0-1.042.018.751.751 0 0 0-.018 1.042L6.94 8 4.97 9.97a.749.749 0 0 0 .326 1.275.749.749 0 0 0 .734-.215L8 9.06l1.97 1.97a.749.749 0 0 0 1.275-.326.749.749 0 0 0-.215-.734L9.06 8l1.97-1.97a.749.749 0 0 0-.326-1.275.749.749 0 0 0-.734.215L8 6.94Z"></path>
                 </svg>
             </button>
@@ -21,50 +21,50 @@
         <small>Sort: </small>
         <div 
             id="{tabname}_{extra_networks_tabname}_extra_sort_path"
-            class="extra-network-control--sort{sort_path_active}"
-            data-sort-mode="default"
+            class="extra-network-control--sort-mode {sort_path_active}"
+            data-sort-mode="path"
             title="Sort by path"
             onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');"
         >
-            <i class="extra-network-control--icon extra-network-control--sort-icon"></i>
+            <i class="extra-network-control--icon"></i>
         </div>
         <div
             id="{tabname}_{extra_networks_tabname}_extra_sort_name"
-            class="extra-network-control--sort{sort_name_active}"
+            class="extra-network-control--sort-mode {sort_name_active}"
             data-sort-mode="name"
             title="Sort by name"
             onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');"
         >
-            <i class="extra-network-control--icon extra-network-control--sort-icon"></i>
+            <i class="extra-network-control--icon"></i>
         </div>
         <div
             id="{tabname}_{extra_networks_tabname}_extra_sort_date_created"
-            class="extra-network-control--sort{sort_date_created_active}"
+            class="extra-network-control--sort-mode {sort_date_created_active}"
             data-sort-mode="date_created"
             title="Sort by date created"
             onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');"
         >
-            <i class="extra-network-control--icon extra-network-control--sort-icon"></i>
+            <i class="extra-network-control--icon"></i>
         </div>
         <div
             id="{tabname}_{extra_networks_tabname}_extra_sort_date_modified"
-            class="extra-network-control--sort{sort_date_modified_active}"
+            class="extra-network-control--sort-mode {sort_date_modified_active}"
             data-sort-mode="date_modified"
             title="Sort by date modified"
             onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');"
         >
-            <i class="extra-network-control--icon extra-network-control--sort-icon"></i>
+            <i class="extra-network-control--icon"></i>
         </div>
 
         <small> </small>
         <div
             id="{tabname}_{extra_networks_tabname}_extra_sort_dir"
             class="extra-network-control--sort-dir"
-            data-sort-dir="{data_sortdir}"
+            data-sort-dir="{data_sort_dir}"
             title="Sort ascending"
             onclick="extraNetworksControlSortDirOnClick(event, '{tabname}_{extra_networks_tabname}');"
         >
-            <i class="extra-network-control--icon extra-network-control--sort-dir-icon"></i>
+            <i class="extra-network-control--icon extra-network-control--icon"></i>
         </div>
 
 

@@ -85,12 +85,22 @@ function toggleCss(key, css, enable) {
 }
 
 function extraNetworksRefreshTab(tabname_full) {
+    // Reapply controls since they don't change on refresh.
+    let btn_tree_view = gradioApp().querySelector(`#${tabname_full}_extra_tree_view`);
+    let div_tree_list = gradioApp().getElementById(`${tabname_full}_tree_list_scroll_area`);
+
+    if (btn_tree_view.classList.contains("extra-network-control--enabled")) {
+        div_tree_list.classList.toggle("hidden", false); // unhide
+    } else {
+        div_tree_list.classList.toggle("hidden", true); // hide
+    }
+
+    // Don't do anything else if clusterizers isnt initialized.
     if (!(tabname_full in clusterizers)) {
         return;
     }
 
     for (_tabname_full of Object.keys(clusterizers)) {
-
         if (_tabname_full === tabname_full) {
             // Set the selected tab as active since it is now visible on page.
             clusterizers[_tabname_full].tree_list.enable();
@@ -102,12 +112,14 @@ function extraNetworksRefreshTab(tabname_full) {
         }
     }
 
-    clusterizers[tabname_full].tree_list.rebuild();
-    clusterizers[tabname_full].cards_list.rebuild();
-
+    // Force check update of data.
     for (var elem of gradioApp().querySelectorAll('.extra-networks-script-data')) {
         extra_networks_proxy_listener[`${elem.dataset.tabnameFull}_${elem.dataset.proxyName}`] = elem;
     }
+
+    // Rebuild to both update the data and to refresh the sizes of rows.
+    clusterizers[tabname_full].tree_list.rebuild();
+    clusterizers[tabname_full].cards_list.rebuild();
 }
 
 function setupExtraNetworksForTab(tabname) {
@@ -133,9 +145,6 @@ function setupExtraNetworksForTab(tabname) {
     this_tab.querySelectorAll(`:scope > [id^="${tabname}_"]`).forEach(function(elem) {
         let tabname_full = elem.id;
         let txt_search;
-        let btn_sort_mode;
-        let btn_sort_dir;
-        let btn_refresh;
 
         var applyFilter = function() {
             if (!(tabname_full in clusterizers)) {
@@ -143,8 +152,6 @@ function setupExtraNetworksForTab(tabname) {
                 return;
             }
             // Only touch cards_list. tree_list remains static.
-            clusterizers[tabname_full].cards_list.setSortMode(btn_sort_mode);
-            clusterizers[tabname_full].cards_list.setSortDir(btn_sort_dir);
             clusterizers[tabname_full].cards_list.applyFilter(txt_search.value);
         };
         extraNetworksApplyFilter[tabname_full] = applyFilter;
@@ -155,8 +162,6 @@ function setupExtraNetworksForTab(tabname) {
                 return;
             }
             // Only touch cards_list. tree_list remains static.
-            clusterizers[tabname_full].cards_list.setSortMode(btn_sort_mode);
-            clusterizers[tabname_full].cards_list.setSortDir(btn_sort_dir);
             clusterizers[tabname_full].cards_list.applyFilter(txt_search.value); // filter also sorts
         };
         extraNetworksApplySort[tabname_full] = applySort;
@@ -175,18 +180,6 @@ function setupExtraNetworksForTab(tabname) {
                 txt_search = el;
             })
             .then(() => {
-                waitForElement(`#${tabname_full}_extra_sort_mode`)
-                    .then((el) => { btn_sort_mode = el; });
-            })
-            .then(() => {
-                waitForElement(`#${tabname_full}_extra_sort_dir`)
-                    .then((el) => { btn_sort_dir = el; });
-            })
-            .then(() => {
-                waitForElement(`#${tabname_full}_extra_refresh`)
-                    .then((el) => { btn_refresh = el; });
-            })
-            .then(() => {
                 waitForElement(`#${tabname_full}_tree_list_scroll_area > #${tabname_full}_tree_list_content_area`)
                     .then(() => { return; });
             })
@@ -195,7 +188,6 @@ function setupExtraNetworksForTab(tabname) {
                     .then(() => { return; });
             })
             .then(() => {
-                console.log("LOADING TAB:", tabname_full, clusterizers[tabname_full]);
                 // Now that we have our elements in DOM, we create the clusterize lists.
                 clusterizers[tabname_full] = {
                     tree_list: new ExtraNetworksClusterizeTreeList({
@@ -208,8 +200,6 @@ function setupExtraNetworksForTab(tabname) {
                     }),
                 };
 
-                applyFilter();
-
                 // Debounce search text input. This way we only search after user is done typing.
                 let typing_timer;
                 let done_typing_interval_ms = 250;
@@ -219,7 +209,7 @@ function setupExtraNetworksForTab(tabname) {
                         typing_timer = setTimeout(applyFilter, done_typing_interval_ms);
                     }
                 });
-                // Triggered on "enter" key or when "x" is clicked to clear search.
+
                 txt_search.addEventListener("extra-network-control--search-clear", applyFilter);
 
                 // Insert the controls into the page.
@@ -488,7 +478,7 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname_full) {
         var search_input_elem = gradioApp().querySelector("#" + tabname_full + "_extra_search");
         search_input_elem.value = _search_text;
         updateInput(search_input_elem);
-        applyExtraNetworksFilter(tabname_full);
+        applyExtraNetworkFilter(tabname_full);
     }
 
 
@@ -544,13 +534,16 @@ function extraNetworksControlSortModeOnClick(event, tabname_full) {
     var self = event.currentTarget;
     var parent = event.currentTarget.parentElement;
 
-    parent.querySelectorAll('.extra-network-control--sort').forEach(function(x) {
+    parent.querySelectorAll('.extra-network-control--sort-mode').forEach(function(x) {
         x.classList.remove('extra-network-control--enabled');
     });
 
     self.classList.add('extra-network-control--enabled');
 
-    applyExtraNetworkSort(tabname_full);
+    if (tabname_full in clusterizers) {
+        clusterizers[tabname_full].cards_list.setSortMode(self);
+        applyExtraNetworkSort(tabname_full);
+    }
 }
 
 function extraNetworksControlSortDirOnClick(event, tabname_full) {
@@ -571,7 +564,11 @@ function extraNetworksControlSortDirOnClick(event, tabname_full) {
         event.currentTarget.dataset.sortDir = "ascending";
         event.currentTarget.setAttribute("title", "Sort ascending");
     }
-    applyExtraNetworkSort(tabname_full);
+
+    if (tabname_full in clusterizers) {
+        clusterizers[tabname_full].cards_list.setSortDir(event.currentTarget);
+        applyExtraNetworkSort(tabname_full);
+    }
 }
 
 function extraNetworksControlTreeViewOnClick(event, tabname_full) {
@@ -588,8 +585,11 @@ function extraNetworksControlTreeViewOnClick(event, tabname_full) {
     button.classList.toggle("extra-network-control--enabled");
     var show = !button.classList.contains("extra-network-control--enabled");
 
-    var pane = gradioApp().getElementById(`${tabname_full}_pane`);
-    pane.classList.toggle("extra-network-dirs-hidden", show);
+    gradioApp().getElementById(`${tabname_full}_tree_list_scroll_area`).classList.toggle("hidden", show);
+
+    // The pane sizes have changed. We need to recalc the sizes for our clusterizers.
+    clusterizers[tabname_full].tree_list.updateRows();
+    clusterizers[tabname_full].cards_list.updateRows();
 }
 
 function extraNetworksControlRefreshOnClick(event, tabname_full) {
@@ -707,7 +707,7 @@ function extraNetworksShowMetadata(text) {
             return;
         }
     } catch (error) {
-        console.eror(error);
+        console.error(error);
     }
 
     var elem = document.createElement('pre');
@@ -744,7 +744,7 @@ function requestGet(url, data, handler, errorHandler) {
     xhr.send(js);
 }
 
-function extraNetworksCopyCardPathToClipboard(event, path) {
+function extraNetworksCopyPathToClipboard(event, path) {
     navigator.clipboard.writeText(path);
     event.stopPropagation();
 }

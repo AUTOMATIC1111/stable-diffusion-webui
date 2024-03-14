@@ -98,6 +98,7 @@ class ExtraNetworksClusterize {
             callbacks: {},
         }
     ) {
+        console.log(`scroll_id: ${scroll_id}, content_id: ${content_id}`);
         if (scroll_id === undefined) {
             console.error("scroll_id is undefined!");
         }
@@ -281,16 +282,20 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         let res = "";
         var style = getComputedStyle(document.body);
         let bg = style.getPropertyValue("--body-background-fill");
-        let fg = style.getPropertyValue("--neutral-800");
+        let fg = style.getPropertyValue("--border-color-primary");
+        let text_size = style.getPropertyValue("--button-large-text-size");
         for (let i = 1; i <= depth; i++) {
-            res += `${i - 0.6}rem 0 0 ${bg} inset,`;
-            res += `${i - 0.4}rem 0 0 ${fg} inset`;
+            res += `calc((${i} * ${text_size}) - (${text_size} * 0.6)) 0 0 ${bg} inset,`;
+            res += `calc((${i} * ${text_size}) - (${text_size} * 0.4)) 0 0 ${fg} inset`;
             res += (i+1 > depth) ? "" : ", ";
         }
         return res;
     }
 
     updateJson(json) {
+        var style = getComputedStyle(document.body);
+        //let spacing_sm = style.getPropertyValue("--spacing-sm");
+        let text_size = style.getPropertyValue("--button-large-text-size");
         for (const [k, v] of Object.entries(json)) {
             let div_id = k;
             let parsed_html = parseHtml(v)[0];
@@ -298,8 +303,9 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             let parent_id = "parentId" in parsed_html.dataset ? parsed_html.dataset.parentId : -1;
             let expanded = "expanded" in parsed_html.dataset;
             let depth = Number(parsed_html.dataset.depth);
-            parsed_html.style.paddingLeft = `${depth}em`;
+            parsed_html.style.paddingLeft = `calc(${depth} * ${text_size})`;
             parsed_html.style.boxShadow = this.getBoxShadow(depth);
+            
             // Add the updated html to the data object.
             this.data_obj[div_id] = {
                 element: parsed_html,
@@ -360,7 +366,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
     constructor(...args) {
         super(...args);
 
-        this.sort_mode_str = "default";
+        this.sort_mode_str = "path";
         this.sort_dir_str = "ascending";
         this.filter_str = "";
     }

@@ -57,31 +57,29 @@ def build_row(
     if btn_type not in ["file", "dir"]:
         raise ValueError("Invalid button type:", btn_type)
 
-    subitem = "has-subitem"
     action_list_item_action_leading = "<i class='tree-list-item-action-chevron'></i>"
     action_list_item_visual_leading = "🗀"
-    action_list_item_action_trailing = ""
     action_list_item_visual_trailing = ""
+    action_list_item_action_trailing = ""
 
     if btn_type == "file":
-        subitem = "subitem"
         action_list_item_visual_leading = "🗎"
         # Action buttons
-        action_list_item_visual_trailing += '<div class="button-row">'
-        action_list_item_visual_trailing += btn_copy_path_tpl.format(
+        action_list_item_action_trailing += '<div class="button-row">'
+        action_list_item_action_trailing += btn_copy_path_tpl.format(
             **{"filename": data_path}
         )
-        action_list_item_visual_trailing += btn_edit_item_tpl.format(
+        action_list_item_action_trailing += btn_edit_item_tpl.format(
             **{
                 "tabname": tabname,
                 "extra_networks_tabname": extra_networks_tabname,
                 "name": label,
             }
         )
-        action_list_item_visual_trailing += btn_metadata_tpl.format(
+        action_list_item_action_trailing += btn_metadata_tpl.format(
             **{"extra_networks_tabname": extra_networks_tabname, "name": label}
         )
-        action_list_item_visual_trailing += "</div>"
+        action_list_item_action_trailing += "</div>"
 
     data_attributes = ""
     data_attributes += f"data-path={data_path} " if data_path is not None else ""
@@ -102,7 +100,6 @@ def build_row(
     res = tree_row_tpl.format(
         **{
             "data_attributes": data_attributes,
-            "subitem": subitem,
             "search_terms": "",
             "btn_type": btn_type,
             "tabname": tabname,
@@ -504,7 +501,7 @@ class ExtraNetworksPage:
         else:
             return args
 
-    def create_tree_view_html(self, tabname: str) -> str:
+    def generate_tree_view_data_div(self, tabname: str) -> str:
         """Generates HTML for displaying folders in a tree view.
 
         Args:
@@ -578,11 +575,12 @@ class ExtraNetworksPage:
             self.btn_dirs_view_tpl.format(**{
                 "extra_class": "search-all" if subdir == "" else "",
                 "tabname_full": f"{tabname}_{self.extra_networks_tabname}",
+                "path": html.escape(subdir),
             }) for subdir in subdirs
         ])
         return subdirs_html
 
-    def create_card_view_html(self, tabname: str, *, none_message) -> str:
+    def generate_cards_view_data_div(self, tabname: str, *, none_message) -> str:
         """Generates HTML for the network Card View section for a tab.
 
         This HTML goes into the `extra-networks-pane.html` <div> with
@@ -596,7 +594,7 @@ class ExtraNetworksPage:
             HTML formatted string.
         """
         res = {}
-        for i, item in self.items.values():
+        for i, item in enumerate(self.items.values()):
             res[i] = self.create_item_html(tabname, item, self.card_tpl, div_id=i)
 
         res = base64.b64encode(gzip.compress(json.dumps(res).encode("utf-8"))).decode("utf-8")
@@ -636,18 +634,19 @@ class ExtraNetworksPage:
             "extra_networks_tabname": self.extra_networks_tabname,
             "data_sort_dir": shared.opts.extra_networks_card_order.lower().strip(),
             "data_sort_mode": shared.opts.extra_networks_card_order_field.lower().strip(),
-            "sort_path_active": ' extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Path' else '',
-            "sort_name_active": ' extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Name' else '',
-            "sort_date_created_active": ' extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Date Created' else '',
-            "sort_date_modified_active": ' extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Date Modified' else '',
+            "sort_path_active": 'extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Path' else '',
+            "sort_name_active": 'extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Name' else '',
+            "sort_date_created_active": 'extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Date Created' else '',
+            "sort_date_modified_active": 'extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Date Modified' else '',
             "tree_view_btn_extra_class": "extra-network-control--enabled" if show_tree else "",
-            "cards_html": self.create_card_view_html(tabname, none_message="Loading..." if empty else None),
+            "tree_list_scroll_area_div_extra_class": "",
+            "cards_data_div": self.generate_cards_view_data_div(tabname, none_message="Loading..." if empty else None),
             "extra_networks_tree_view_default_width": shared.opts.extra_networks_tree_view_default_width,
-            "tree_view_div_default_display_class": "" if show_tree else "extra-network-dirs-hidden",
+            "tree_view_div_default_display_class": "" if show_tree else "hidden",
         }
 
         if shared.opts.extra_networks_tree_view_style == "Tree":
-            pane_content = self.pane_content_tree_tpl.format(**page_params, tree_html=self.create_tree_view_html(tabname))
+            pane_content = self.pane_content_tree_tpl.format(**page_params, tree_data_div=self.generate_tree_view_data_div(tabname))
         else:
             pane_content = self.pane_content_dirs_tpl.format(**page_params, dirs_html=self.create_dirs_view_html(tabname))
 
