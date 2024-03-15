@@ -1209,7 +1209,7 @@ body.resizing .resize-handle {
 
 .clusterize-scroll::-webkit-scrollbar {
     background-color: transparent;
-    width: 16px;
+    width: var(--text-lg);
 }
 
 .clusterize-scroll::-webkit-scrollbar-track {
@@ -1219,8 +1219,8 @@ body.resizing .resize-handle {
 
 .clusterize-scroll::-webkit-scrollbar-thumb {
     background-color: var(--border-color-primary);
-    border-radius: 16px;
-    border: 4px solid var(--background-fill-primary);
+    border-radius: var(--radius-xl);
+    border: calc(var(--button-border-width) * 4) solid var(--background-fill-primary);
 }
 
 .clusterize-scroll::-webkit-scrollbar-button {
@@ -1495,7 +1495,7 @@ body.resizing .resize-handle {
     transition: background 33.333ms linear;
     grid-template-rows: min-content;
     grid-template-areas: "leading-action leading-visual label trailing-visual trailing-action";
-    grid-template-columns: min-content min-content minmax(calc(var(--body-text-size) * 4), auto) min-content min-content;
+    grid-template-columns: min-content min-content minmax(calc(var(--body-text-size) * 1), auto) min-content min-content;
     grid-gap: var(--spacing-sm);
     place-items: center stretch;
     text-align: center;

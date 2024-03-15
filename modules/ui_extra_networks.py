@@ -45,6 +45,7 @@ def build_row(
     btn_edit_item_tpl: str,
     btn_metadata_tpl: str,
     tree_row_tpl: str,
+    dir_is_empty: bool = False,
     parent_id: Optional[int] = None,
     data_depth: Optional[int] = None,
     data_path: Optional[str] = None,
@@ -61,6 +62,9 @@ def build_row(
     action_list_item_visual_leading = "🗀"
     action_list_item_visual_trailing = ""
     action_list_item_action_trailing = ""
+
+    if dir_is_empty:
+        action_list_item_action_leading = "<i class='tree-list-item-action-chevron' style='visibility: hidden'></i>"
 
     if btn_type == "file":
         action_list_item_visual_leading = "🗎"
@@ -137,6 +141,17 @@ def build_tree(
             if div_id in res:
                 raise KeyError("div_id already in res:", div_id)
 
+            dir_is_empty = True
+            for _v in v.values():
+                if shared.opts.extra_networks_tree_view_show_files:
+                    dir_is_empty = False
+                    break
+                elif not isinstance(_v, (ExtraNetworksItem,)):
+                    dir_is_empty = False
+                    break
+                else:
+                    dir_is_empty = True
+
             res[div_id] = build_row(
                 div_id=div_id,
                 parent_id=parent_id,
@@ -146,6 +161,7 @@ def build_tree(
                 data_depth=depth,
                 data_path=k,
                 btn_type="dir",
+                dir_is_empty=dir_is_empty,
                 btn_copy_path_tpl=btn_copy_path_tpl,
                 btn_edit_item_tpl=btn_edit_item_tpl,
                 btn_metadata_tpl=btn_metadata_tpl,
@@ -168,6 +184,10 @@ def build_tree(
             div_id = last_div_id
         else:
             # file
+            if not shared.opts.extra_networks_tree_view_show_files:
+                # Don't add file if showing files is disabled in options.
+                continue
+
             if div_id in res:
                 raise KeyError("div_id already in res:", div_id)
 
@@ -261,7 +281,6 @@ def get_tree(paths: Union[str, list[str]], items: dict[str, ExtraNetworksItem]) 
 
 def register_page(page):
     """registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions"""
-
     extra_pages.append(page)
     allowed_dirs.clear()
     allowed_dirs.update(set(sum([x.allowed_directories_for_previews() for x in extra_pages], [])))
@@ -535,7 +554,7 @@ class ExtraNetworksPage:
             tree_row_tpl=self.tree_row_tpl,
         )
         res = base64.b64encode(gzip.compress(json.dumps(res).encode("utf-8"))).decode("utf-8")
-        return f'<div class="extra-networks-script-data" data-tabname-full={tabname}_{self.extra_networks_tabname} data-proxy-name=tree_list data-json={res} hidden></div>'
+        return f'<div class="extra-network-script-data" data-tabname-full={tabname}_{self.extra_networks_tabname} data-proxy-name=tree_list data-json={res} hidden></div>'
 
     # FIXME
     def create_dirs_view_html(self, tabname: str) -> str:
@@ -598,7 +617,7 @@ class ExtraNetworksPage:
             res[i] = self.create_item_html(tabname, item, self.card_tpl, div_id=i)
 
         res = base64.b64encode(gzip.compress(json.dumps(res).encode("utf-8"))).decode("utf-8")
-        return f'<div class="extra-networks-script-data" data-tabname-full={tabname}_{self.extra_networks_tabname} data-proxy-name=cards_list data-json={res} hidden></div>'
+        return f'<div class="extra-network-script-data" data-tabname-full={tabname}_{self.extra_networks_tabname} data-proxy-name=cards_list data-json={res} hidden></div>'
 
     def create_html(self, tabname, *, empty=False):
         """Generates an HTML string for the current pane.

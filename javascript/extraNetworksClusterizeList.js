@@ -98,7 +98,6 @@ class ExtraNetworksClusterize {
             callbacks: {},
         }
     ) {
-        console.log(`scroll_id: ${scroll_id}, content_id: ${content_id}`);
         if (scroll_id === undefined) {
             console.error("scroll_id is undefined!");
         }

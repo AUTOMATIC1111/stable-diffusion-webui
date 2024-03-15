@@ -18,7 +18,7 @@
     let parents = [];
 
     function setLeftColGridTemplate(el, width) {
-        el.style.gridTemplateColumns = `${width}px 16px 1fr`;
+        el.style.gridTemplateColumns = `${width}px ${PAD}px 1fr`;
     }
 
     function displayResizeHandle(parent) {
@@ -58,6 +58,18 @@
             evt.stopPropagation();
 
             parent.style.gridTemplateColumns = parent.style.originalGridTemplateColumns;
+
+            // Fire custom event to modify left column width externally.
+            parent.dispatchEvent(
+                new CustomEvent("resizeHandleDblClick", {
+                    bubbles: true,
+                    detail: {
+                        setLeftColGridTemplate: setLeftColGridTemplate,
+                        pad: PAD,
+                        minLeftColWidth: parent.minLeftColWidth,
+                    },
+                }),
+            );
         }
 
         const leftCol = parent.firstElementChild;
