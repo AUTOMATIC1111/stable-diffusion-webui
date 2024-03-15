@@ -772,18 +772,31 @@ Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}
 def image_data(data):
     import gradio as gr
 
-    try:
-        image = read(io.BytesIO(data))
-        textinfo, _ = read_info_from_image(image)
-        return textinfo, None
-    except Exception:
-        pass
+    if not data:
+        return gr.update(), None
 
-    try:
-        text = data.decode('utf8')
-        assert len(text) < 10000
-        return text, None
+    if isinstance(data, bytes):
+        try:
+            image = Image.open(io.BytesIO(data))
+            textinfo, _ = read_info_from_image(image)
+            return textinfo, None
+        except Exception:
+            pass
 
+        try:
+            text = data.decode('utf8')
+            assert len(text) < 10000
+            return text, None
+        except Exception:
+            pass
+
+    import requests
+    try:
+        r = requests.get(data, timeout=5)
+        if r.status_code == 200:
+            image = Image.open(io.BytesIO(r.content))
+            textinfo, _ = read_info_from_image(image)
+            return textinfo, None
     except Exception:
         pass
 

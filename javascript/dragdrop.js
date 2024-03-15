@@ -56,6 +56,10 @@ function eventHasFiles(e) {
     return false;
 }
 
+function getEventUrl(e) {
+    return e?.dataTransfer?.getData('URL') || e?.dataTransfer?.getData('text/html')?.match(/(?:src|href)=["'](.*?)["']/)?.[1];
+}
+
 function dragDropTargetIsPrompt(target) {
     if (target?.placeholder && target?.placeholder.indexOf("Prompt") >= 0) return true;
     if (target?.parentNode?.parentNode?.className?.indexOf("prompt") > 0) return true;
@@ -76,20 +80,29 @@ window.document.addEventListener('dragover', e => {
 
 window.document.addEventListener('drop', e => {
     const target = e.composedPath()[0];
-    if (!eventHasFiles(e)) return;
+    const url = getEventUrl(e);
+    if (!eventHasFiles(e) && !url) return;
 
     if (dragDropTargetIsPrompt(target)) {
         e.stopPropagation();
         e.preventDefault();
 
-        let prompt_target = get_tab_index('tabs') == 1 ? "img2img_prompt_image" : "txt2img_prompt_image";
+        const isImg2img = get_tab_index('tabs') == 1;
+        let prompt_image_target = isImg2img ? "img2img_prompt_image" : "txt2img_prompt_image";
+        let prompt_url_target = isImg2img ? "img2img_prompt_url" : "txt2img_prompt_url";
 
-        const imgParent = gradioApp().getElementById(prompt_target);
+        const imgParent = gradioApp().getElementById(prompt_image_target);
+        const urlParent = gradioApp().getElementById(prompt_url_target);
         const files = e.dataTransfer.files;
         const fileInput = imgParent.querySelector('input[type="file"]');
-        if (fileInput) {
+        const urlInput = urlParent.querySelector('textarea');
+        if (files && fileInput) {
             fileInput.files = files;
             fileInput.dispatchEvent(new Event('change'));
+        }
+        if (url && urlInput) {
+            urlInput.value = url;
+            urlInput.dispatchEvent(new Event('input'));
         }
     }
 

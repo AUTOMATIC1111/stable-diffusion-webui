@@ -82,6 +82,7 @@ class Toprow:
             with gr.Row(elem_id=f"{self.id_part}_prompt_row", elem_classes=["prompt-row"]):
                 self.prompt = gr.Textbox(label="Prompt", elem_id=f"{self.id_part}_prompt", show_label=False, lines=3, placeholder="Prompt\n(Press Ctrl+Enter to generate, Alt+Enter to skip, Esc to interrupt)", elem_classes=["prompt"])
                 self.prompt_img = gr.File(label="", elem_id=f"{self.id_part}_prompt_image", file_count="single", type="binary", visible=False)
+                self.prompt_url = gr.Textbox(label="", elem_id=f"{self.id_part}_prompt_url", visible=False)
 
             with gr.Row(elem_id=f"{self.id_part}_neg_prompt_row", elem_classes=["prompt-row"]):
                 self.negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{self.id_part}_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt\n(Press Ctrl+Enter to generate, Alt+Enter to skip, Esc to interrupt)", elem_classes=["prompt"])
@@ -90,6 +91,13 @@ class Toprow:
             fn=modules.images.image_data,
             inputs=[self.prompt_img],
             outputs=[self.prompt, self.prompt_img],
+            show_progress=False,
+        )
+
+        self.prompt_url.input(
+            fn=modules.images.image_data,
+            inputs=[self.prompt_url],
+            outputs=[self.prompt, self.prompt_url],
             show_progress=False,
         )
 
