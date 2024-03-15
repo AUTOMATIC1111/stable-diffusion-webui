@@ -966,3 +966,26 @@ onUiLoaded(async() => {
     // Add integration with Inpaint Anything
     // applyZoomAndPanIntegration("None", ["#ia_sam_image", "#ia_sel_mask"]);
 });
+
+
+onUiLoaded(function() {
+    let isAltPressed = false;
+
+    function handleAltKeyDown(e) {
+        if (e.code === "AltLeft" || e.code === "AltRight") {
+            isAltPressed = true;
+        } else {
+            isAltPressed = false;
+        }
+    }
+
+    function handleAltKeyUp(e) {
+        if (isAltPressed) {
+            e.preventDefault();
+        }
+        isAltPressed = false;
+    }
+
+    document.addEventListener("keydown", handleAltKeyDown);
+    document.addEventListener("keyup", handleAltKeyUp);
+});
