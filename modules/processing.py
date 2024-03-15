@@ -702,7 +702,7 @@ def program_version():
     return res
 
 
-def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0, use_main_prompt=False, index=None, all_negative_prompts=None):
+def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0, use_main_prompt=False, index=None, all_negative_prompts=None, all_hr_prompts=None, all_hr_negative_prompts=None):
     if index is None:
         index = position_in_batch + iteration * p.batch_size
 
@@ -745,10 +745,17 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "RNG": opts.randn_source if opts.randn_source != "GPU" else None,
         "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
         "Tiling": "True" if p.tiling else None,
+        "Hires prompt": None,  # This is set later, insert here to keep order
+        "Hires negative prompt": None,  # This is set later, insert here to keep order
         **p.extra_generation_params,
         "Version": program_version() if opts.add_version_to_infotext else None,
         "User": p.user if opts.add_user_name_to_info else None,
     }
+
+    if all_hr_prompts := all_hr_prompts or getattr(p, 'all_hr_prompts', None):
+        generation_params['Hires prompt'] = all_hr_prompts[index] if all_hr_prompts[index] != all_prompts[index] else None
+    if all_hr_negative_prompts := all_hr_negative_prompts or getattr(p, 'all_hr_negative_prompts', None):
+        generation_params['Hires negative prompt'] = all_hr_negative_prompts[index] if all_hr_negative_prompts[index] != all_negative_prompts[index] else None
 
     generation_params_text = ", ".join([k if k == v else f'{k}: {infotext_utils.quote(v)}' for k, v in generation_params.items() if v is not None])
 
@@ -1193,12 +1200,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
             if self.hr_sampler_name is not None and self.hr_sampler_name != self.sampler_name:
                 self.extra_generation_params["Hires sampler"] = self.hr_sampler_name
-
-            if tuple(self.hr_prompt) != tuple(self.prompt):
-                self.extra_generation_params["Hires prompt"] = self.hr_prompt
-
-            if tuple(self.hr_negative_prompt) != tuple(self.negative_prompt):
-                self.extra_generation_params["Hires negative prompt"] = self.hr_negative_prompt
 
             self.latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "nearest")
             if self.enable_hr and self.latent_scale_mode is None:
