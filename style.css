@@ -1208,17 +1208,17 @@ body.resizing .resize-handle {
 }
 
 .clusterize-scroll::-webkit-scrollbar {
-    background-color: transparent;
+    background: transparent;
     width: var(--text-lg);
 }
 
 .clusterize-scroll::-webkit-scrollbar-track {
-    background-color: transparent;
+    background: transparent;
     background-clip: content-box;
 }
 
 .clusterize-scroll::-webkit-scrollbar-thumb {
-    background-color: var(--border-color-primary);
+    background: var(--border-color-primary);
     border-radius: var(--radius-xl);
     border: calc(var(--button-border-width) * 4) solid var(--background-fill-primary);
 }
@@ -1237,20 +1237,19 @@ body.resizing .resize-handle {
     overflow: hidden;
 }
 
-.extra-network-pane .extra-network-pane-content-dirs {
+.extra-network-content {
     display: flex;
-    flex-direction: column;
     flex-wrap: nowrap;
     width: 100%;
     height: 100%;
 }
 
-.extra-network-pane .extra-network-pane-content-tree {
-    display: flex;
+.extra-network-content--tree {
     flex-direction: row;
-    flex-wrap: nowrap;
-    width: 100%;
-    height: 100%;
+}
+
+.extra-network-content--dirs {
+    flex-direction: column;
 }
 
 .resize-handle-row:has(> .extra-network-tree.hidden) {
@@ -1276,7 +1275,7 @@ body.resizing .resize-handle {
     font-size: var(--body-text-size);
     text-align: left;
     user-select: none;
-    background-color: transparent;
+    background: transparent;
     border: none;
     gap: var(--spacing-sm);
     align-items: start;
@@ -1424,20 +1423,20 @@ body.resizing .resize-handle {
     mask-repeat: no-repeat;
     mask-position: center center;
     mask-size: 100%;
-    background-color: var(--input-placeholder-color);
+    background: var(--input-placeholder-color);
 }
 
 .extra-network-control .extra-network-control--enabled {
-    background-color: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.1);
     border-radius: 0.25rem;
 }
 
 .dark .extra-network-control .extra-network-control--enabled {
-    background-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .extra-network-control .extra-network-control--enabled .extra-network-control--icon{
-    background-color: var(--button-secondary-text-color);
+    background: var(--button-secondary-text-color);
 }
 
 /* ==== REFRESH ICON ACTIONS ==== */
@@ -1508,7 +1507,7 @@ body.resizing .resize-handle {
 }
 
 .tree-list-item[data-selected] {
-    background-color: var(--button-secondary-background-fill);
+    background: var(--button-secondary-background-fill);
 }
 
 .tree-list-item > span {
@@ -1609,4 +1608,20 @@ body.resizing .resize-handle {
     color: var(--button-secondary-text-color);
     padding: 0;
     margin: 0;
+}
+
+.extra-network-dirs-view {
+    display: flex;
+    flex-direction: row;
+    gap: var(--spacing-sm);
+}
+
+.extra-network-dirs-view-button:hover {
+    -webkit-transition: all 0.05s ease-in-out;
+	transition: all 0.05s ease-in-out;
+    background: var(--button-secondary-background-fill-hover);
+}
+
+.extra-network-dirs-view-button[data-selected] {
+    background: var(--button-primary-background-fill);
 }

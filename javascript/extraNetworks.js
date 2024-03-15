@@ -617,16 +617,51 @@ function extraNetworksTreeOnClick(event, tabname_full) {
 }
 
 function extraNetworkDirsOnClick(event, tabname_full) {
-    // Update search input with select button's path.
-    var search_input_elem = gradioApp().querySelector(`#${tabname_full}_extra_search`);
-    search_input_elem.value = event.target.textContent.trim();
-    updateInput(search_input_elem);
+    var txt_search = gradioApp().querySelector(`#${tabname_full}_extra_search`);
+
+    function _deselect_all() {
+        // deselect all buttons
+        gradioApp().querySelectorAll(".extra-network-dirs-view-button").forEach((elem) => {
+            delete elem.dataset.selected;
+        });
+    }
+
+    function _select_button(elem) {
+        _deselect_all();
+        // Update search input with select button's path.
+        elem.dataset.selected = "";
+        txt_search.value = elem.textContent.trim();
+    }
+
+    function _deselect_button(elem) {
+        delete elem.dataset.selected;
+        txt_search.value = "";
+    }
+
+
+    if ("selected" in event.target.dataset) {
+        _deselect_button(event.target);
+    } else {
+        _select_button(event.target);
+    }
+    
+    updateInput(txt_search);
     applyExtraNetworkFilter(tabname_full);
 }
 
 function extraNetworksControlSearchClearOnClick(event, tabname_full) {
     /** Clears the search <input> text. */
     let clear_btn = event.target.closest(".extra-network-control--search-clear");
+
+    // Deselect all buttons from both dirs view and tree view
+    gradioApp().querySelectorAll(".extra-network-dirs-view-button").forEach((elem) => {
+        delete elem.dataset.selected;
+    });
+
+    gradioApp().querySelectorAll(".tree-list-item").forEach((elem) => {
+        delete elem.dataset.selected;
+    });
+
     let txt_search = clear_btn.previousElementSibling;
     txt_search.value = "";
     txt_search.dispatchEvent(new CustomEvent("extra-network-control--search-clear", {}));

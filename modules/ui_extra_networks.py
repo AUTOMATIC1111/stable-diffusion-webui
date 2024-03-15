@@ -588,7 +588,7 @@ class ExtraNetworksPage:
                     subdirs[subdir] = 1
 
         if subdirs:
-            subdirs = {"": 1, **subdirs}
+            subdirs = {**subdirs}
 
         subdirs_html = "".join([
             self.btn_dirs_view_tpl.format(**{
