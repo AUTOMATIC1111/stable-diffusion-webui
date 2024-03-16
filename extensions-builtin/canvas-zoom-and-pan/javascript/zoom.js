@@ -252,6 +252,7 @@ onUiLoaded(async() => {
     let isMoving = false;
     let mouseX, mouseY;
     let activeElement;
+    let interactedWithAltKey = false;
 
     const elements = Object.fromEntries(
         Object.keys(elementIDs).map(id => [
@@ -507,6 +508,10 @@ onUiLoaded(async() => {
         function changeZoomLevel(operation, e) {
             if (isModifierKey(e, hotkeysConfig.canvas_hotkey_zoom)) {
                 e.preventDefault();
+
+                if(hotkeysConfig.canvas_hotkey_zoom === "Alt"){
+                    interactedWithAltKey = true;
+                }
 
                 let zoomPosX, zoomPosY;
                 let delta = 0.2;
@@ -800,6 +805,10 @@ onUiLoaded(async() => {
             if (isModifierKey(e, hotkeysConfig.canvas_hotkey_adjust)) {
                 e.preventDefault();
 
+                if(hotkeysConfig.canvas_hotkey_adjust === "Alt"){
+                    interactedWithAltKey = true;
+                }
+
                 // Increase or decrease brush size based on scroll direction
                 adjustBrushSize(elemId, e.deltaY);
             }
@@ -840,28 +849,16 @@ onUiLoaded(async() => {
         document.addEventListener("keyup", handleMoveKeyUp);
 
 
-        // Prevent firefox to open toolbar on pressing alt
-        let wasAltPressed = false;
-
-        function handleAltKeyDown(e) {
-            if (!activeElement) return;
-            if (hotkeysConfig.canvas_hotkey_zoom !== "Alt") return;
-            if (e.key === "Alt") {
-                wasAltPressed = true;
-            } else {
-                wasAltPressed = false;
-            }
-        }
-
+        // Prevent firefox from opening main menu when alt is used as a hotkey for zoom or brush size
         function handleAltKeyUp(e) {
-            if (hotkeysConfig.canvas_hotkey_zoom !== "Alt") return;
-            if (wasAltPressed || (activeElement && e.key === "Alt")) {
-                e.preventDefault();
+            if (e.key !== "Alt" || !interactedWithAltKey) {
+                return;
             }
-            wasAltPressed = false;
+
+            e.preventDefault();
+            interactedWithAltKey = false;
         }
 
-        document.addEventListener("keydown", handleAltKeyDown);
         document.addEventListener("keyup", handleAltKeyUp);
 
 
