@@ -841,24 +841,24 @@ onUiLoaded(async() => {
 
 
         // Prevent firefox to open toolbar on pressing alt
-        let isAltPressed = false;
+        let wasAltPressed = false;
 
         function handleAltKeyDown(e) {
             if (!activeElement) return;
             if (hotkeysConfig.canvas_hotkey_zoom !== "Alt") return;
             if (e.code === "AltLeft" || e.code === "AltRight") {
-                isAltPressed = true;
+                wasAltPressed = true;
             } else {
-                isAltPressed = false;
+                wasAltPressed = false;
             }
         }
 
         function handleAltKeyUp(e) {
             if (hotkeysConfig.canvas_hotkey_zoom !== "Alt") return;
-            if (isAltPressed) {
+            if (wasAltPressed || (activeElement && e.key === "Alt")) {
                 e.preventDefault();
             }
-            isAltPressed = false;
+            wasAltPressed = false;
         }
 
         document.addEventListener("keydown", handleAltKeyDown);
