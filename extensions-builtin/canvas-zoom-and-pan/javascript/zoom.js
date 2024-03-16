@@ -846,7 +846,7 @@ onUiLoaded(async() => {
         function handleAltKeyDown(e) {
             if (!activeElement) return;
             if (hotkeysConfig.canvas_hotkey_zoom !== "Alt") return;
-            if (e.code === "AltLeft" || e.code === "AltRight") {
+            if (e.key === "Alt") {
                 wasAltPressed = true;
             } else {
                 wasAltPressed = false;
