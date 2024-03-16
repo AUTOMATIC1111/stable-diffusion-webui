@@ -839,29 +839,30 @@ onUiLoaded(async() => {
         document.addEventListener("keydown", handleMoveKeyDown);
         document.addEventListener("keyup", handleMoveKeyUp);
 
+
         // Prevent firefox to open toolbar on pressing alt
-        if (hotkeysConfig.canvas_hotkey_zoom === "Alt") {
-            let isAltPressed = false;
+        let isAltPressed = false;
 
-            function handleAltKeyDown(e) {
-                if (!activeElement) return;
-                if (e.code === "AltLeft" || e.code === "AltRight") {
-                    isAltPressed = true;
-                } else {
-                    isAltPressed = false;
-                }
-            }
-
-            function handleAltKeyUp(e) {
-                if (isAltPressed) {
-                    e.preventDefault();
-                }
+        function handleAltKeyDown(e) {
+            if (!activeElement) return;
+            if (hotkeysConfig.canvas_hotkey_zoom !== "Alt") return;
+            if (e.code === "AltLeft" || e.code === "AltRight") {
+                isAltPressed = true;
+            } else {
                 isAltPressed = false;
             }
-
-            document.addEventListener("keydown", handleAltKeyDown);
-            document.addEventListener("keyup", handleAltKeyUp);
         }
+
+        function handleAltKeyUp(e) {
+            if (hotkeysConfig.canvas_hotkey_zoom !== "Alt") return;
+            if (isAltPressed) {
+                e.preventDefault();
+            }
+            isAltPressed = false;
+        }
+
+        document.addEventListener("keydown", handleAltKeyDown);
+        document.addEventListener("keyup", handleAltKeyUp);
 
 
         // Detect zoom level and update the pan speed.
