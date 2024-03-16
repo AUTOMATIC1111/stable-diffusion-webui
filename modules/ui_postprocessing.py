@@ -4,36 +4,6 @@ import modules.infotext_utils as parameters_copypaste
 from modules.ui_components import ResizeHandleRow
 
 
-def hook_scale_update(inputs):
-    import re
-    pattern = r'(\d)[xX]|[xX](\d)'
-
-    resize = upscaler = None
-    for script in inputs:
-        if script.label == "Resize":
-            resize = script
-        elif script.label == "Upscaler 1":
-            upscaler = script
-        elif resize and upscaler:
-            break
-
-    def update_scale(upscaler: str, slider: float):
-        match = re.search(pattern, upscaler)
-
-        if match:
-            if match.group(1):
-                return gr.update(value=int(match.group(1)))
-
-            else:
-                return gr.update(value=int(match.group(2)))
-
-        else:
-            return gr.update(value=slider)
-
-    if resize and upscaler:
-        upscaler.input(update_scale, inputs=[upscaler, resize], outputs=[resize])
-
-
 def create_ui():
     dummy_component = gr.Label(visible=False)
     tab_index = gr.Number(value=0, visible=False)
@@ -53,8 +23,6 @@ def create_ui():
                     show_extras_results = gr.Checkbox(label='Show result images', value=True, elem_id="extras_show_extras_results")
 
             script_inputs = scripts.scripts_postproc.setup_ui()
-            if getattr(shared.opts, 'scaleBy_from_upscaler', False):
-                hook_scale_update(script_inputs)
 
         with gr.Column():
             toprow = ui_toprow.Toprow(is_compact=True, is_img2img=False, id_part="extras")

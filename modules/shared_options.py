@@ -101,7 +101,7 @@ options_templates.update(options_section(('upscaling', "Upscaling", "postprocess
     "DAT_tile": OptionInfo(192, "Tile size for DAT upscalers.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}).info("0 = no tiling"),
     "DAT_tile_overlap": OptionInfo(8, "Tile overlap for DAT upscalers.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}).info("Low values = visible seam"),
     "upscaler_for_img2img": OptionInfo(None, "Upscaler for img2img", gr.Dropdown, lambda: {"choices": [x.name for x in shared.sd_upscalers]}),
-    "scaleBy_from_upscaler": OptionInfo(False, "Automatically set the Scale by factor based on the name of the selected Upscaler.").info("Will not change the value when no matching pattern is found."),
+    "set_scale_by_when_changing_upscaler": OptionInfo(False, "Automatically set the Scale by factor based on the name of the selected Upscaler."),
 }))
 
 options_templates.update(options_section(('face-restoration', "Face restoration", "postprocessing"), {
