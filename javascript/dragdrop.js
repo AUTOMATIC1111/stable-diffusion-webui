@@ -57,7 +57,7 @@ function eventHasFiles(e) {
 }
 
 function getEventUrl(e) {
-    return e?.dataTransfer?.getData('URL') || e?.dataTransfer?.getData('text/html')?.match(/(?:src|href)=["'](.*?)["']/)?.[1];
+    return e.dataTransfer?.getData('text/uri-list') || e.dataTransfer?.getData('text/plain');
 }
 
 function dragDropTargetIsPrompt(target) {
@@ -96,13 +96,12 @@ window.document.addEventListener('drop', e => {
         const files = e.dataTransfer.files;
         const fileInput = imgParent.querySelector('input[type="file"]');
         const urlInput = urlParent.querySelector('textarea');
-        if (files && fileInput) {
-            fileInput.files = files;
-            fileInput.dispatchEvent(new Event('change'));
-        }
         if (url && urlInput) {
             urlInput.value = url;
             urlInput.dispatchEvent(new Event('input'));
+        } else if (files && fileInput) {
+            fileInput.files = files;
+            fileInput.dispatchEvent(new Event('change'));
         }
     }
 
