@@ -185,7 +185,7 @@ class NetworkModule:
         )
 
         dora_merged = (
-            merged_scale1 * (dora_scale / merged_scale1_norm) 
+            merged_scale1 * (dora_scale / merged_scale1_norm)
         )
         final_updown = dora_merged - orig_weight
         return final_updown
