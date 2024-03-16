@@ -793,7 +793,7 @@ onUiLoaded(async() => {
 
         targetElement.addEventListener("wheel", e => {
             // change zoom level
-            const operation = e.deltaY > 0 ? "-" : "+";
+            const operation = (e.deltaY || -e.wheelDelta) > 0 ? "-" : "+";
             changeZoomLevel(operation, e);
 
             // Handle brush size adjustment with ctrl key pressed
