@@ -56,10 +56,6 @@ function eventHasFiles(e) {
     return false;
 }
 
-function getEventUrl(e) {
-    return e.dataTransfer?.getData('text/uri-list') || e.dataTransfer?.getData('text/plain');
-}
-
 function dragDropTargetIsPrompt(target) {
     if (target?.placeholder && target?.placeholder.indexOf("Prompt") >= 0) return true;
     if (target?.parentNode?.parentNode?.className?.indexOf("prompt") > 0) return true;
@@ -78,9 +74,9 @@ window.document.addEventListener('dragover', e => {
     e.dataTransfer.dropEffect = 'copy';
 });
 
-window.document.addEventListener('drop', e => {
+window.document.addEventListener('drop', async e => {
     const target = e.composedPath()[0];
-    const url = getEventUrl(e);
+    const url = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
     if (!eventHasFiles(e) && !url) return;
 
     if (dragDropTargetIsPrompt(target)) {
@@ -89,18 +85,18 @@ window.document.addEventListener('drop', e => {
 
         const isImg2img = get_tab_index('tabs') == 1;
         let prompt_image_target = isImg2img ? "img2img_prompt_image" : "txt2img_prompt_image";
-        let prompt_url_target = isImg2img ? "img2img_prompt_url" : "txt2img_prompt_url";
 
         const imgParent = gradioApp().getElementById(prompt_image_target);
-        const urlParent = gradioApp().getElementById(prompt_url_target);
         const files = e.dataTransfer.files;
         const fileInput = imgParent.querySelector('input[type="file"]');
-        const urlInput = urlParent.querySelector('textarea');
-        if (url && urlInput) {
-            urlInput.value = url;
-            urlInput.dispatchEvent(new Event('input'));
-        } else if (files && fileInput) {
+        if (eventHasFiles(e) && fileInput) {
             fileInput.files = files;
+            fileInput.dispatchEvent(new Event('change'));
+        } else if (url) {
+            const request = await fetch(url);
+            const data = new DataTransfer();
+            data.items.add(new File([await request.blob()], 'image.png'));
+            fileInput.files = data.files;
             fileInput.dispatchEvent(new Event('change'));
         }
     }
