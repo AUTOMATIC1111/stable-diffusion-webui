@@ -156,6 +156,8 @@ class Extension:
     def check_updates(self):
         repo = Repo(self.path)
         for fetch in repo.remote().fetch(dry_run=True):
+            if self.branch and fetch.name != f'{repo.remote().name}/{self.branch}':
+                continue
             if fetch.flags != fetch.HEAD_UPTODATE:
                 self.can_update = True
                 self.status = "new commits"
