@@ -145,6 +145,21 @@ Before = another-extension, yet-another-extension/another-script.py, xyz_grid.py
 # Other details are the same as `Before` key.
 After = another-extension, yet-another-extension/another-script.py, xyz_grid.py
 
+# A section starting with "callbacks/" allows you to change the position of
+# the mentioned callback relative to others.
+#
+# Each callback is identified by its extension's canonical name, its filename,
+# its category (here, it's ui_settings for all of them), and, optionally, by a user-specified name.
+#
+# You can see identifiers for existing callbacks in settings (see screenshot below).
+[callbacks/swinir/swinir_model.py/ui_settings]
+
+# This makes our swinir_model.py/ui_settings callback happen before ldsr_model.py/ui_settings
+Before = ldsr/ldsr_model.py/ui_settings
+
+# This makes our swinir_model.py/ui_settings callback happen after hypertile_script.py/ui_settings
+After = hypertile/hypertile_script.py/ui_settings
+
 ```
 
 When authoring a metadata file, please note that while the section names are case-insensitive, the keys are not.
