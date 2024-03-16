@@ -839,6 +839,31 @@ onUiLoaded(async() => {
         document.addEventListener("keydown", handleMoveKeyDown);
         document.addEventListener("keyup", handleMoveKeyUp);
 
+        // Prevent firefox to open toolbar on pressing alt
+        if (hotkeysConfig.canvas_hotkey_zoom === "Alt") {
+            let isAltPressed = false;
+
+            function handleAltKeyDown(e) {
+                if (!activeElement) return;
+                if (e.code === "AltLeft" || e.code === "AltRight") {
+                    isAltPressed = true;
+                } else {
+                    isAltPressed = false;
+                }
+            }
+
+            function handleAltKeyUp(e) {
+                if (isAltPressed) {
+                    e.preventDefault();
+                }
+                isAltPressed = false;
+            }
+
+            document.addEventListener("keydown", handleAltKeyDown);
+            document.addEventListener("keyup", handleAltKeyUp);
+        }
+
+
         // Detect zoom level and update the pan speed.
         function updatePanPosition(movementX, movementY) {
             let panSpeed = 2;
@@ -965,27 +990,4 @@ onUiLoaded(async() => {
 
     // Add integration with Inpaint Anything
     // applyZoomAndPanIntegration("None", ["#ia_sam_image", "#ia_sel_mask"]);
-});
-
-
-onUiLoaded(function() {
-    let isAltPressed = false;
-
-    function handleAltKeyDown(e) {
-        if (e.code === "AltLeft" || e.code === "AltRight") {
-            isAltPressed = true;
-        } else {
-            isAltPressed = false;
-        }
-    }
-
-    function handleAltKeyUp(e) {
-        if (isAltPressed) {
-            e.preventDefault();
-        }
-        isAltPressed = false;
-    }
-
-    document.addEventListener("keydown", handleAltKeyDown);
-    document.addEventListener("keyup", handleAltKeyUp);
 });
