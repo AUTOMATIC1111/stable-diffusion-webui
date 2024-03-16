@@ -6,7 +6,7 @@ import re
 v160 = version.parse("1.6.0")
 v170_tsnr = version.parse("v1.7.0-225")
 v180 = version.parse("1.8.0")
-v180_hr_styles = version.parse("1.8.0-136")  # todo: change to the actual version number after merge
+v180_hr_styles = version.parse("1.8.0-139")
 
 
 def parse_version(text):
