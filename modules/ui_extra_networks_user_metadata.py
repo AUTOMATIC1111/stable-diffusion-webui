@@ -133,8 +133,10 @@ class UserMetadataEditor:
         filename = item.get("filename", None)
         basename, ext = os.path.splitext(filename)
 
-        with open(basename + '.json', "w", encoding="utf8") as file:
+        metadata_path = basename + '.json'
+        with open(metadata_path, "w", encoding="utf8") as file:
             json.dump(metadata, file, indent=4, ensure_ascii=False)
+        self.page.lister.update_file_entry(metadata_path)
 
     def save_user_metadata(self, name, desc, notes):
         user_metadata = self.get_user_metadata(name)
@@ -185,7 +187,8 @@ class UserMetadataEditor:
         geninfo, items = images.read_info_from_image(image)
 
         images.save_image_with_geninfo(image, geninfo, item["local_preview"])
-
+        self.page.lister.update_file_entry(item["local_preview"])
+        item['preview'] = self.page.find_preview(item["local_preview"])
         return self.get_card_html(name), ''
 
     def setup_ui(self, gallery):
@@ -200,6 +203,3 @@ class UserMetadataEditor:
             inputs=[self.edit_name_input],
             outputs=[]
         )
-
-
-

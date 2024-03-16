@@ -252,6 +252,7 @@ onUiLoaded(async() => {
     let isMoving = false;
     let mouseX, mouseY;
     let activeElement;
+    let interactedWithAltKey = false;
 
     const elements = Object.fromEntries(
         Object.keys(elementIDs).map(id => [
@@ -507,6 +508,10 @@ onUiLoaded(async() => {
         function changeZoomLevel(operation, e) {
             if (isModifierKey(e, hotkeysConfig.canvas_hotkey_zoom)) {
                 e.preventDefault();
+
+                if(hotkeysConfig.canvas_hotkey_zoom === "Alt"){
+                    interactedWithAltKey = true;
+                }
 
                 let zoomPosX, zoomPosY;
                 let delta = 0.2;
@@ -793,12 +798,16 @@ onUiLoaded(async() => {
 
         targetElement.addEventListener("wheel", e => {
             // change zoom level
-            const operation = e.deltaY > 0 ? "-" : "+";
+            const operation = (e.deltaY || -e.wheelDelta) > 0 ? "-" : "+";
             changeZoomLevel(operation, e);
 
             // Handle brush size adjustment with ctrl key pressed
             if (isModifierKey(e, hotkeysConfig.canvas_hotkey_adjust)) {
                 e.preventDefault();
+
+                if(hotkeysConfig.canvas_hotkey_adjust === "Alt"){
+                    interactedWithAltKey = true;
+                }
 
                 // Increase or decrease brush size based on scroll direction
                 adjustBrushSize(elemId, e.deltaY);
@@ -838,6 +847,20 @@ onUiLoaded(async() => {
 
         document.addEventListener("keydown", handleMoveKeyDown);
         document.addEventListener("keyup", handleMoveKeyUp);
+
+
+        // Prevent firefox from opening main menu when alt is used as a hotkey for zoom or brush size
+        function handleAltKeyUp(e) {
+            if (e.key !== "Alt" || !interactedWithAltKey) {
+                return;
+            }
+
+            e.preventDefault();
+            interactedWithAltKey = false;
+        }
+
+        document.addEventListener("keyup", handleAltKeyUp);
+
 
         // Detect zoom level and update the pan speed.
         function updatePanPosition(movementX, movementY) {
