@@ -265,17 +265,6 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         else:
             prompt += ("" if prompt == "" else "\n") + line
 
-    if shared.opts.infotext_styles != "Ignore":
-        found_styles, prompt, negative_prompt = shared.prompt_styles.extract_styles_from_prompt(prompt, negative_prompt)
-
-        if shared.opts.infotext_styles == "Apply":
-            res["Styles array"] = found_styles
-        elif shared.opts.infotext_styles == "Apply if any" and found_styles:
-            res["Styles array"] = found_styles
-
-    res["Prompt"] = prompt
-    res["Negative prompt"] = negative_prompt
-
     for k, v in re_param.findall(lastline):
         try:
             if v[0] == '"' and v[-1] == '"':
@@ -289,6 +278,26 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
                 res[k] = v
         except Exception:
             print(f"Error parsing \"{k}: {v}\"")
+
+    # Extract styles from prompt
+    if shared.opts.infotext_styles != "Ignore":
+        found_styles, prompt_no_styles, negative_prompt_no_styles = shared.prompt_styles.extract_styles_from_prompt(prompt, negative_prompt)
+
+        same_hr_styles = True
+        if ("Hires prompt" in res or "Hires negative prompt" in res) and (infotext_ver > infotext_versions.v180_hr_styles if (infotext_ver := infotext_versions.parse_version(res.get("Version"))) else True):
+            hr_prompt, hr_negative_prompt = res.get("Hires prompt", prompt), res.get("Hires negative prompt", negative_prompt)
+            hr_found_styles, hr_prompt_no_styles, hr_negative_prompt_no_styles = shared.prompt_styles.extract_styles_from_prompt(hr_prompt, hr_negative_prompt)
+            if same_hr_styles := found_styles == hr_found_styles:
+                res["Hires prompt"] = '' if hr_prompt_no_styles == prompt_no_styles else hr_prompt_no_styles
+                res['Hires negative prompt'] = '' if hr_negative_prompt_no_styles == negative_prompt_no_styles else hr_negative_prompt_no_styles
+
+        if same_hr_styles:
+            prompt, negative_prompt = prompt_no_styles, negative_prompt_no_styles
+            if (shared.opts.infotext_styles == "Apply if any" and found_styles) or shared.opts.infotext_styles == "Apply":
+                res['Styles array'] = found_styles
+
+    res["Prompt"] = prompt
+    res["Negative prompt"] = negative_prompt
 
     # Missing CLIP skip means it was set to 1 (the default)
     if "Clip skip" not in res:
