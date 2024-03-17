@@ -82,8 +82,6 @@ Name = demo-extension
 # to be installed and enabled.
 # The loader will generate a warning if any of the extensions in this list is
 # not installed or disabled.
-Requires = another-extension, yet-another-extension
-
 # Vertical pipe can be used to list a requirement that's satisfied by
 # either one of multiple extensions. No spaces between pipes and extension names.
 Requires = sd-webui-controlnet|sd_forge_controlnet, sd-webui-buttons, this|that|other
