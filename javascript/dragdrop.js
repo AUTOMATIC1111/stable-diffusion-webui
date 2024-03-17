@@ -93,11 +93,20 @@ window.document.addEventListener('drop', async e => {
             fileInput.files = files;
             fileInput.dispatchEvent(new Event('change'));
         } else if (url) {
-            const request = await fetch(url);
-            const data = new DataTransfer();
-            data.items.add(new File([await request.blob()], 'image.png'));
-            fileInput.files = data.files;
-            fileInput.dispatchEvent(new Event('change'));
+            try {
+                const request = await fetch(url);
+                if (!request.ok) {
+                    console.error('Error fetching URL:', url, request.status);
+                    return;
+                }
+                const data = new DataTransfer();
+                data.items.add(new File([await request.blob()], 'image.png'));
+                fileInput.files = data.files;
+                fileInput.dispatchEvent(new Event('change'));
+            } catch (error) {
+                console.error('Error fetching URL:', url, error);
+                return;
+            }
         }
     }
 
