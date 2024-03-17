@@ -121,7 +121,7 @@ class BeforeTokenCounterParams:
 class ScriptCallback:
     script: str
     callback: any
-    name: str = None
+    name: str = "unnamed"
 
 
 def add_callback(callbacks, fun, *, name=None, category='unknown', filename=None):
