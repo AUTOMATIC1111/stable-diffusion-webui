@@ -84,6 +84,10 @@ Name = demo-extension
 # not installed or disabled.
 Requires = another-extension, yet-another-extension
 
+# Vertical pipe can be used to list a requirement that's satisfied by
+# either one of multiple extensions. No spaces between pipes and extension names.
+Requires = sd-webui-controlnet|sd_forge_controlnet, sd-webui-buttons, this|that|other
+
 # Declaring relationships of folders
 # 
 # This section declares relations of all files in `scripts` directory.
