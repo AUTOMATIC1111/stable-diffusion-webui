@@ -29,6 +29,7 @@ onUiLoaded(async() => {
     });
 
     function getActiveTab(elements, all = false) {
+        if (!elements.img2imgTabs) return null;
         const tabs = elements.img2imgTabs.querySelectorAll("button");
 
         if (all) return tabs;
@@ -43,6 +44,7 @@ onUiLoaded(async() => {
     // Get tab ID
     function getTabId(elements) {
         const activeTab = getActiveTab(elements);
+        if (!activeTab) return null;
         return tabNameToElementId[activeTab.innerText];
     }
 
@@ -366,9 +368,9 @@ onUiLoaded(async() => {
 
         // In the course of research, it was found that the tag img is very harmful when zooming and creates white canvases. This hack allows you to almost never think about this problem, it has no effect on webui.
         function fixCanvas() {
-            const activeTab = getActiveTab(elements).textContent.trim();
+            const activeTab = getActiveTab(elements)?.textContent.trim();
 
-            if (activeTab !== "img2img") {
+            if (activeTab && activeTab !== "img2img") {
                 const img = targetElement.querySelector(`${elemId} img`);
 
                 if (img && img.style.display !== "none") {
@@ -788,13 +790,15 @@ onUiLoaded(async() => {
         targetElement.addEventListener("mouseleave", handleMouseLeave);
 
         // Reset zoom when click on another tab
-        elements.img2imgTabs.addEventListener("click", resetZoom);
-        elements.img2imgTabs.addEventListener("click", () => {
-            // targetElement.style.width = "";
-            if (parseInt(targetElement.style.width) > 865) {
-                setTimeout(fitToElement, 0);
-            }
-        });
+        if (elements.img2imgTabs) {
+            elements.img2imgTabs.addEventListener("click", resetZoom);
+            elements.img2imgTabs.addEventListener("click", () => {
+                // targetElement.style.width = "";
+                if (parseInt(targetElement.style.width) > 865) {
+                    setTimeout(fitToElement, 0);
+                }
+            });
+        }
 
         targetElement.addEventListener("wheel", e => {
             // change zoom level
@@ -935,9 +939,9 @@ onUiLoaded(async() => {
 
     }
 
-    applyZoomAndPan(elementIDs.sketch, false);
-    applyZoomAndPan(elementIDs.inpaint, false);
-    applyZoomAndPan(elementIDs.inpaintSketch, false);
+    elementIDs.sketch && applyZoomAndPan(elementIDs.sketch, false);
+    elementIDs.inpaint && applyZoomAndPan(elementIDs.inpaint, false);
+    elementIDs.inpaintSketch && applyZoomAndPan(elementIDs.inpaintSketch, false);
 
     // Make the function global so that other extensions can take advantage of this solution
     const applyZoomAndPanIntegration = async(id, elementIDs) => {
