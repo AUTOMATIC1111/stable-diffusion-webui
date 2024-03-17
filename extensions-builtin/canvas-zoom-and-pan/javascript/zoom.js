@@ -509,7 +509,7 @@ onUiLoaded(async() => {
             if (isModifierKey(e, hotkeysConfig.canvas_hotkey_zoom)) {
                 e.preventDefault();
 
-                if(hotkeysConfig.canvas_hotkey_zoom === "Alt"){
+                if (hotkeysConfig.canvas_hotkey_zoom === "Alt") {
                     interactedWithAltKey = true;
                 }
 
@@ -805,7 +805,7 @@ onUiLoaded(async() => {
             if (isModifierKey(e, hotkeysConfig.canvas_hotkey_adjust)) {
                 e.preventDefault();
 
-                if(hotkeysConfig.canvas_hotkey_adjust === "Alt"){
+                if (hotkeysConfig.canvas_hotkey_adjust === "Alt") {
                     interactedWithAltKey = true;
                 }
 
