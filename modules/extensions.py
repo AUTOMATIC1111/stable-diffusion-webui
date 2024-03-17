@@ -66,33 +66,15 @@ class ExtensionMetadata:
         if extra_section:
             x = x + ', ' + self.config.get(extra_section, field, fallback='')
 
-        tmp_list = self.parse_list(x.lower())
+        listed_requirements = self.parse_list(x.lower())
+        res = []
 
-        if len(tmp_list) >= 3:
-            names_variants = []
-            i = 0
-            while i < len(tmp_list) - 2:
-                if tmp_list[i] != "|":
-                    names_variants.append([tmp_list[i]])
-                    i += 1
-                else:
-                    names_variants[-1].append(tmp_list[i + 1])
-                    i += 2
-            while i < len(tmp_list):
-                names_variants.append([tmp_list[i]])
-                i += 1
+        for requirement in listed_requirements:
+            loaded_requirements = (x for x in requirement.split("|") if x in loaded_extensions)
+            relevant_requirement = next(loaded_requirements, listed_requirements[0])
+            res.append(relevant_requirement)
 
-            result_list = []
-
-            for name_variants in names_variants:
-                for variant in name_variants:
-                    if variant in loaded_extensions.keys():
-                        break
-                result_list.append(variant)
-        else:
-            result_list = tmp_list
-
-        return result_list
+        return res
 
     def parse_list(self, text):
         """converts a line from config ("ext1 ext2, ext3  ") into a python list (["ext1", "ext2", "ext3"])"""
