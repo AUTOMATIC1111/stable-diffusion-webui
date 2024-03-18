@@ -46,7 +46,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
                         upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=4, elem_id="extras_upscaling_resize")
                         if shared.opts.show_limit_target_resolution_in_extras_upscale:
                             limit_target_resolution = gr.Slider(minimum=0, maximum=10000, step=8, label="Limit target resolution", value=8000, elem_id="extras_upscale_limit_target_resolution",
-                                    tooltip="0 = no limit. Limit target resolution by one demension. Useful for batches where can be big images.")
+                                    tooltip="0 = no limit. Limit maximal target resolution by the biggest demension. Useful for batches where can be big images.")
                         else:
                             limit_target_resolution = gr.Number(0, visible=False)
 
