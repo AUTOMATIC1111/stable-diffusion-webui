@@ -71,7 +71,7 @@ class ExtensionMetadata:
 
         for requirement in listed_requirements:
             loaded_requirements = (x for x in requirement.split("|") if x in loaded_extensions)
-            relevant_requirement = next(loaded_requirements, listed_requirements[0])
+            relevant_requirement = next(loaded_requirements, requirement)
             res.append(relevant_requirement)
 
         return res
