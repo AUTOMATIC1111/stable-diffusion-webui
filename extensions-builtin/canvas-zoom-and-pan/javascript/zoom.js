@@ -454,23 +454,29 @@ onUiLoaded(async() => {
             withoutValue = false,
             percentage = 5
         ) {
-            const input =
-                gradioApp().querySelector(
-                    `${elemId} input[aria-label='Brush radius']`
-                ) ||
-                gradioApp().querySelector(
-                    `${elemId} button[aria-label="Use brush"]`
-                );
+            // Directly select the specific canvas element
+            const canvas = document.querySelector('canvas[key="interface"].svelte-yigbas.tb'); // Adjust this selector as needed
 
-            if (input) {
-                input.click();
+            // Use elemId to select the input related to brush size
+            const input = document.querySelector(`${elemId} input[aria-label='Brush radius']`) ||
+                        document.querySelector(`${elemId} button[aria-label="Use brush"]`);
+
+            if (input && canvas) {
+
+                input.click()
+                // Dynamically calculate and update the max attribute of the input
+                // Use the canvas's dimensions to determine the newMaxValue
+                const scalingFactor = 0.75; // Adjust this factor based on your needs
+                const newMaxValue = Math.round(Math.min(canvas.offsetWidth, canvas.offsetHeight) * scalingFactor);
+
+                // Update the max attribute of the input
+                input.setAttribute("max", newMaxValue.toString());
+
                 if (!withoutValue) {
-                    const maxValue =
-                        parseFloat(input.getAttribute("max")) || 100;
+                    // Now, use the updated max attribute for calculations
+                    const maxValue = parseFloat(input.getAttribute("max"));
                     const changeAmount = maxValue * (percentage / 100);
-                    const newValue =
-                        parseFloat(input.value) +
-                        (deltaY > 0 ? -changeAmount : changeAmount);
+                    const newValue = parseFloat(input.value) + (deltaY > 0 ? -changeAmount : changeAmount);
                     input.value = Math.min(Math.max(newValue, 0), maxValue);
                     input.dispatchEvent(new Event("change"));
                 }
