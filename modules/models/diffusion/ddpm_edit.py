@@ -9,6 +9,7 @@ https://github.com/CompVis/taming-transformers
 # File modified by authors of InstructPix2Pix from original (https://github.com/CompVis/stable-diffusion).
 # See more details in LICENSE.
 
+import sys
 import torch
 import torch.nn as nn
 import numpy as np
@@ -19,6 +20,8 @@ from contextlib import contextmanager
 from functools import partial
 from tqdm import tqdm
 from torchvision.utils import make_grid
+import pytorch_lightning.utilities.rank_zero
+sys.modules['pytorch_lightning.utilities.distributed'] = sys.modules['pytorch_lightning.utilities.rank_zero']
 from pytorch_lightning.utilities.rank_zero import rank_zero_only
 
 from ldm.util import log_txt_as_img, exists, default, ismap, isimage, mean_flat, count_params, instantiate_from_config
