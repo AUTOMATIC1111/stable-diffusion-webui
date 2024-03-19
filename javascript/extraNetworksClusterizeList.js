@@ -83,10 +83,12 @@ const calcRowsPerCol = function(container, parent) {
 }
 
 class ExtraNetworksClusterize {
+    /** Base class for a clusterize list. Cannot be used directly. */
     constructor(
         {
             scroll_id,
             content_id,
+            txt_search_elem,
             rows_in_block = 10,
             blocks_in_cluster = 4,
             show_no_data_row = true,
@@ -107,6 +109,7 @@ class ExtraNetworksClusterize {
 
         this.scroll_id = scroll_id;
         this.content_id = content_id;
+        this.txt_search_elem = txt_search_elem;
         this.rows_in_block = rows_in_block;
         this.blocks_in_cluster = blocks_in_cluster;
         this.show_no_data_row = show_no_data_row;
@@ -144,15 +147,18 @@ class ExtraNetworksClusterize {
         );
     }
 
-    enable() {
-        this.enabled = true;
-    }
-
-    disable() {
-        this.enabled = false;
+    enable(enabled) {
+        if (enabled === undefined || enabled === null) {
+            this.enabled = true;
+        } else if (typeof enabled !== "boolean") {
+            console.error("Invalid type. Expected boolean, got", typeof enabled);
+        } else {
+            this.enabled = enabled;
+        }
     }
 
     parseJson(encoded_str) {
+        // Skip parsing if the string hasnt actually updated.
         if (this.encoded_str === encoded_str) {
             return;
         }
@@ -162,6 +168,11 @@ class ExtraNetworksClusterize {
             .then(v => JSON.parse(v))
             .then(v => this.updateJson(v))
             .then(() => this.encoded_str = encoded_str);
+    }
+
+    updateJson(json) {
+        /** Must be overridden by inherited class. */
+        return;
     }
 
     sortByDivId() {
@@ -211,6 +222,7 @@ class ExtraNetworksClusterize {
     }
 
     updateRows() {
+        this.updateItemDims();
         this.clusterize.update(this.filterRows(this.data_obj));
         this.clusterize.refresh();
     }
@@ -228,6 +240,13 @@ class ExtraNetworksClusterize {
             // If there is no data then just skip.
             return;
         }
+
+        if (!this.content_elem.isConnected || this.content_elem.firstElementChild === undefined || this.content_elem.firstElementChild === null) {
+            // Elements do not exist on page yet or content is empty. Skip.
+            console.log('first elem undefined');
+            return;
+        }
+
         // Calculate the visible rows and colums for the clusterize-content area.
         let n_cols = calcColsPerRow(this.content_elem);
         let n_rows = calcRowsPerCol(this.content_elem.parentElement, this.content_elem);
@@ -243,30 +262,40 @@ class ExtraNetworksClusterize {
         }
     }
 
-    rebuild() {
-        this.clusterize.destroy();
+    rebuild(force) {
+        /** Rebuilds the clusterize object.
+         *  When force=true, the existing Clusterize instance is destroyed then
+         *  re-instantiated. When force=false or isnt passed, then we just
+         *  update the DOM's scroll element with this instance's scroll_elem.
+         */
+        if (force) {
+            this.clusterize.destroy();
 
-        // Get new references to elements since they may have changed.
-        this.scroll_elem = document.getElementById(this.scroll_id);
-        this.content_elem = document.getElementById(this.content_id);
-        this.clusterize = new Clusterize(
-            {
-                rows: this.filterRows(this.data_obj),
-                scrollId: this.scroll_id,
-                contentId: this.content_id,
-                rows_in_block: this.rows_in_block,
-                blocks_in_cluster: this.blocks_in_cluster,
-                show_no_data_row: this.show_no_data_row,
-                no_data_text: this.no_data_text,
-                no_data_class: this.no_data_class,
-                callbacks: this.callbacks,
+            // Get new references to elements since they may have changed.
+            this.scroll_elem = document.getElementById(this.scroll_id);
+            this.content_elem = document.getElementById(this.content_id);
+            this.clusterize = new Clusterize(
+                {
+                    rows: this.filterRows(this.data_obj),
+                    scrollId: this.scroll_id,
+                    contentId: this.content_id,
+                    rows_in_block: this.rows_in_block,
+                    blocks_in_cluster: this.blocks_in_cluster,
+                    show_no_data_row: this.show_no_data_row,
+                    no_data_text: this.no_data_text,
+                    no_data_class: this.no_data_class,
+                    callbacks: this.callbacks,
+                }
+            );
+        } else {
+            // If association for elements is broken, replace them with this version.
+            if (!this.scroll_elem.isConnected || !this.content_elem.isConnected) {
+                document.getElementById(this.scroll_id).replaceWith(this.scroll_elem);
             }
-        );
+        }
 
-        // Apply existing sort mode.
+        // Apply existing sort/filter.
         this.applyFilter();
-
-        this.updateItemDims();
         this.updateRows();
     }
 }
@@ -461,8 +490,10 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
     }
 
     applyFilter(filter_str) {
-        if (filter_str !== undefined) {
+        if (filter_str !== undefined && filter_str !== null) {
             this.filter_str = filter_str.toLowerCase();
+        } else {
+            this.filter_str = this.txt_search_elem.value.toLowerCase();
         }
 
         for (const [k, v] of Object.entries(this.data_obj)) {

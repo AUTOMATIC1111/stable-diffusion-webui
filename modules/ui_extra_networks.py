@@ -35,200 +35,6 @@ class ExtraNetworksItem:
     """Wrapper for dictionaries representing ExtraNetworks items."""
     item: dict
 
-def build_row(
-    div_id: int,
-    tabname: str,
-    extra_networks_tabname: str,
-    label: str,
-    btn_type: str,
-    btn_copy_path_tpl: str,
-    btn_edit_item_tpl: str,
-    btn_metadata_tpl: str,
-    tree_row_tpl: str,
-    dir_is_empty: bool = False,
-    parent_id: Optional[int] = None,
-    data_depth: Optional[int] = None,
-    data_path: Optional[str] = None,
-    data_hash: Optional[str] = None,
-    data_prompt: Optional[str] = None,
-    data_neg_prompt: Optional[str] = None,
-    data_allow_neg: Optional[str] = None,
-    onclick_extra: Optional[str] = None,
-) -> str:
-    if btn_type not in ["file", "dir"]:
-        raise ValueError("Invalid button type:", btn_type)
-
-    action_list_item_action_leading = "<i class='tree-list-item-action-chevron'></i>"
-    action_list_item_visual_leading = "🗀"
-    action_list_item_visual_trailing = ""
-    action_list_item_action_trailing = ""
-
-    if dir_is_empty:
-        action_list_item_action_leading = "<i class='tree-list-item-action-chevron' style='visibility: hidden'></i>"
-
-    if btn_type == "file":
-        action_list_item_visual_leading = "🗎"
-        # Action buttons
-        action_list_item_action_trailing += '<div class="button-row">'
-        action_list_item_action_trailing += btn_copy_path_tpl.format(
-            **{"filename": data_path}
-        )
-        action_list_item_action_trailing += btn_edit_item_tpl.format(
-            **{
-                "tabname": tabname,
-                "extra_networks_tabname": extra_networks_tabname,
-                "name": label,
-            }
-        )
-        action_list_item_action_trailing += btn_metadata_tpl.format(
-            **{"extra_networks_tabname": extra_networks_tabname, "name": label}
-        )
-        action_list_item_action_trailing += "</div>"
-
-    data_attributes = ""
-    data_attributes += f"data-path={data_path} " if data_path is not None else ""
-    data_attributes += f"data-hash={data_hash} " if data_hash is not None else ""
-    data_attributes += f"data-prompt={data_prompt} " if data_prompt else ""
-    data_attributes += f"data-neg-prompt={data_neg_prompt} " if data_neg_prompt else ""
-    data_attributes += f"data-allow-neg={data_allow_neg} " if data_allow_neg else ""
-    data_attributes += (
-        f"data-tree-entry-type={btn_type} " if btn_type is not None else ""
-    )
-    data_attributes += f"data-div-id={div_id} " if div_id is not None else ""
-    data_attributes += f"data-parent-id={parent_id} " if parent_id is not None else ""
-    data_attributes += f"data-depth={data_depth} " if data_depth is not None else ""
-    data_attributes += (
-        "data-expanded " if parent_id is None else ""
-    )  # inverted to expand root
-
-    res = tree_row_tpl.format(
-        **{
-            "data_attributes": data_attributes,
-            "search_terms": "",
-            "btn_type": btn_type,
-            "tabname": tabname,
-            "onclick_extra": onclick_extra if onclick_extra else "",
-            "extra_networks_tabname": extra_networks_tabname,
-            "action_list_item_action_leading": action_list_item_action_leading,
-            "action_list_item_visual_leading": action_list_item_visual_leading,
-            "action_list_item_label": label,
-            "action_list_item_visual_trailing": action_list_item_visual_trailing,
-            "action_list_item_action_trailing": action_list_item_action_trailing,
-        }
-    )
-    res = res.strip()
-    res = re.sub(" +", " ", res.replace("\n", ""))
-    return res
-
-
-def build_tree(
-    tree: dict,
-    res: dict,
-    tabname: str,
-    extra_networks_tabname: str,
-    div_id: int,
-    depth: int,
-    btn_copy_path_tpl: str,
-    btn_edit_item_tpl: str,
-    btn_metadata_tpl: str,
-    tree_row_tpl: str,
-    allow_negative_prompt: Optional[bool] = None,
-    parent_id: Optional[int] = None,
-) -> int:
-    for k, v in sorted(tree.items(), key=lambda x: shared.natural_sort_key(x[0])):
-        if not isinstance(v, (ExtraNetworksItem,)):
-            # dir
-            if div_id in res:
-                raise KeyError("div_id already in res:", div_id)
-
-            dir_is_empty = True
-            for _v in v.values():
-                if shared.opts.extra_networks_tree_view_show_files:
-                    dir_is_empty = False
-                    break
-                elif not isinstance(_v, (ExtraNetworksItem,)):
-                    dir_is_empty = False
-                    break
-                else:
-                    dir_is_empty = True
-
-            res[div_id] = build_row(
-                div_id=div_id,
-                parent_id=parent_id,
-                tabname=tabname,
-                extra_networks_tabname=extra_networks_tabname,
-                label=k,
-                data_depth=depth,
-                data_path=k,
-                btn_type="dir",
-                dir_is_empty=dir_is_empty,
-                btn_copy_path_tpl=btn_copy_path_tpl,
-                btn_edit_item_tpl=btn_edit_item_tpl,
-                btn_metadata_tpl=btn_metadata_tpl,
-                tree_row_tpl=tree_row_tpl,
-            )
-            last_div_id = build_tree(
-                tree=v,
-                res=res,
-                depth=depth + 1,
-                div_id=div_id + 1,
-                parent_id=div_id,
-                tabname=tabname,
-                extra_networks_tabname=extra_networks_tabname,
-                allow_negative_prompt=allow_negative_prompt,
-                btn_copy_path_tpl=btn_copy_path_tpl,
-                btn_edit_item_tpl=btn_edit_item_tpl,
-                btn_metadata_tpl=btn_metadata_tpl,
-                tree_row_tpl=tree_row_tpl,
-            )
-            div_id = last_div_id
-        else:
-            # file
-            if not shared.opts.extra_networks_tree_view_show_files:
-                # Don't add file if showing files is disabled in options.
-                continue
-
-            if div_id in res:
-                raise KeyError("div_id already in res:", div_id)
-
-            onclick = v.item.get("onclick", None)
-            if onclick is None:
-                # Don't quote prompt/neg_prompt since they are stored as js strings already.
-                onclick_js_tpl = (
-                    "cardClicked('{tabname}', {prompt}, {neg_prompt}, {allow_neg});"
-                )
-                onclick = onclick_js_tpl.format(
-                    **{
-                        "tabname": tabname,
-                        "prompt": v.item["prompt"],
-                        "neg_prompt": v.item.get("negative_prompt", "''"),
-                        "allow_neg": str(allow_negative_prompt).lower(),
-                    }
-                )
-                onclick = html.escape(onclick)
-
-            res[div_id] = build_row(
-                div_id=div_id,
-                parent_id=parent_id,
-                tabname=tabname,
-                extra_networks_tabname=extra_networks_tabname,
-                label=v.item["name"],
-                data_depth=depth,
-                data_path=v.item["filename"],
-                data_hash=v.item["shorthash"],
-                data_prompt=html.escape(v.item.get("prompt", "''")),
-                data_neg_prompt=html.escape(v.item.get("negative_prompt", "''")),
-                data_allow_neg=str(allow_negative_prompt).lower(),
-                onclick_extra=onclick,
-                btn_type="file",
-                btn_copy_path_tpl=btn_copy_path_tpl,
-                btn_edit_item_tpl=btn_edit_item_tpl,
-                btn_metadata_tpl=btn_metadata_tpl,
-                tree_row_tpl=tree_row_tpl,
-            )
-        div_id += 1
-    return div_id
-
 def get_tree(paths: Union[str, list[str]], items: dict[str, ExtraNetworksItem]) -> dict:
     """Recursively builds a directory tree.
 
@@ -395,6 +201,176 @@ class ExtraNetworksPage:
 
         return ""
 
+    def build_row(
+        self,
+        div_id: int,
+        tabname: str,
+        label: str,
+        btn_type: str,
+        dir_is_empty: bool = False,
+        parent_id: Optional[int] = None,
+        data_depth: Optional[int] = None,
+        data_path: Optional[str] = None,
+        data_hash: Optional[str] = None,
+        data_prompt: Optional[str] = None,
+        data_neg_prompt: Optional[str] = None,
+        data_allow_neg: Optional[str] = None,
+        onclick_extra: Optional[str] = None,
+    ) -> str:
+        if btn_type not in ["file", "dir"]:
+            raise ValueError("Invalid button type:", btn_type)
+
+        action_list_item_action_leading = "<i class='tree-list-item-action-chevron'></i>"
+        action_list_item_visual_leading = "🗀"
+        action_list_item_visual_trailing = ""
+        action_list_item_action_trailing = ""
+
+        if dir_is_empty:
+            action_list_item_action_leading = "<i class='tree-list-item-action-chevron' style='visibility: hidden'></i>"
+
+        if btn_type == "file":
+            action_list_item_visual_leading = "🗎"
+            # Action buttons
+            action_list_item_action_trailing += '<div class="button-row">'
+            action_list_item_action_trailing += self.btn_copy_path_tpl.format(
+                **{"filename": data_path}
+            )
+            action_list_item_action_trailing += self.btn_edit_item_tpl.format(
+                **{
+                    "tabname": tabname,
+                    "extra_networks_tabname": self.extra_networks_tabname,
+                    "name": label,
+                }
+            )
+            action_list_item_action_trailing += self.btn_metadata_tpl.format(
+                **{"extra_networks_tabname": self.extra_networks_tabname, "name": label}
+            )
+            action_list_item_action_trailing += "</div>"
+
+        data_attributes = ""
+        data_attributes += f"data-path={data_path} " if data_path is not None else ""
+        data_attributes += f"data-hash={data_hash} " if data_hash is not None else ""
+        data_attributes += f"data-prompt={data_prompt} " if data_prompt else ""
+        data_attributes += f"data-neg-prompt={data_neg_prompt} " if data_neg_prompt else ""
+        data_attributes += f"data-allow-neg={data_allow_neg} " if data_allow_neg else ""
+        data_attributes += (
+            f"data-tree-entry-type={btn_type} " if btn_type is not None else ""
+        )
+        data_attributes += f"data-div-id={div_id} " if div_id is not None else ""
+        data_attributes += f"data-parent-id={parent_id} " if parent_id is not None else ""
+        data_attributes += f"data-depth={data_depth} " if data_depth is not None else ""
+        data_attributes += (
+            "data-expanded " if parent_id is None else ""
+        )  # inverted to expand root
+
+        res = self.tree_row_tpl.format(
+            **{
+                "data_attributes": data_attributes,
+                "search_terms": "",
+                "btn_type": btn_type,
+                "tabname": tabname,
+                "onclick_extra": onclick_extra if onclick_extra else "",
+                "extra_networks_tabname": self.extra_networks_tabname,
+                "action_list_item_action_leading": action_list_item_action_leading,
+                "action_list_item_visual_leading": action_list_item_visual_leading,
+                "action_list_item_label": label,
+                "action_list_item_visual_trailing": action_list_item_visual_trailing,
+                "action_list_item_action_trailing": action_list_item_action_trailing,
+            }
+        )
+        res = res.strip()
+        res = re.sub(" +", " ", res.replace("\n", ""))
+        return res
+
+
+    def build_tree(
+        self,
+        tree: dict,
+        res: dict,
+        tabname: str,
+        div_id: int,
+        depth: int,
+        parent_id: Optional[int] = None,
+    ) -> int:
+        for k, v in sorted(tree.items(), key=lambda x: shared.natural_sort_key(x[0])):
+            if not isinstance(v, (ExtraNetworksItem,)):
+                # dir
+                if div_id in res:
+                    raise KeyError("div_id already in res:", div_id)
+
+                dir_is_empty = True
+                for _v in v.values():
+                    if shared.opts.extra_networks_tree_view_show_files:
+                        dir_is_empty = False
+                        break
+                    elif not isinstance(_v, (ExtraNetworksItem,)):
+                        dir_is_empty = False
+                        break
+                    else:
+                        dir_is_empty = True
+
+                res[div_id] = self.build_row(
+                    div_id=div_id,
+                    parent_id=parent_id,
+                    tabname=tabname,
+                    label=k,
+                    data_depth=depth,
+                    data_path=k,
+                    btn_type="dir",
+                    dir_is_empty=dir_is_empty,
+                )
+                last_div_id = self.build_tree(
+                    tree=v,
+                    res=res,
+                    depth=depth + 1,
+                    div_id=div_id + 1,
+                    parent_id=div_id,
+                    tabname=tabname,
+                )
+                div_id = last_div_id
+            else:
+                # file
+                if not shared.opts.extra_networks_tree_view_show_files:
+                    # Don't add file if showing files is disabled in options.
+                    continue
+
+                if div_id in res:
+                    raise KeyError("div_id already in res:", div_id)
+
+                onclick = v.item.get("onclick", None)
+                if onclick is None:
+                    # Don't quote prompt/neg_prompt since they are stored as js strings already.
+                    onclick_js_tpl = (
+                        "cardClicked('{tabname}_{extra_networks_tabname}', {prompt}, {neg_prompt}, {allow_neg});"
+                    )
+                    onclick = onclick_js_tpl.format(
+                        **{
+                            "tabname": tabname,
+                            "extra_networks_tabname": self.extra_networks_tabname,
+                            "prompt": v.item["prompt"],
+                            "neg_prompt": v.item.get("negative_prompt", "''"),
+                            "allow_neg": str(self.allow_negative_prompt).lower(),
+                        }
+                    )
+                    onclick = html.escape(onclick)
+
+                res[div_id] = self.build_row(
+                    div_id=div_id,
+                    parent_id=parent_id,
+                    tabname=tabname,
+                    label=v.item["name"],
+                    data_depth=depth,
+                    data_path=v.item["filename"],
+                    data_hash=v.item["shorthash"],
+                    data_prompt=html.escape(v.item.get("prompt", "''")),
+                    data_neg_prompt=html.escape(v.item.get("negative_prompt", "''")),
+                    data_allow_neg=str(self.allow_negative_prompt).lower(),
+                    onclick_extra=onclick,
+                    btn_type="file",
+                )
+            div_id += 1
+        return div_id
+
     def create_item_html(
         self,
         tabname: str,
@@ -424,10 +400,11 @@ class ExtraNetworksPage:
         onclick = item.get("onclick", None)
         if onclick is None:
             # Don't quote prompt/neg_prompt since they are stored as js strings already.
-            onclick_js_tpl = "cardClicked('{tabname}', {prompt}, {neg_prompt}, {allow_neg});"
+            onclick_js_tpl = "cardClicked('{tabname}_{extra_networks_tabname}', {prompt}, {neg_prompt}, {allow_neg});"
             onclick = onclick_js_tpl.format(
                 **{
                     "tabname": tabname,
+                    "extra_networks_tabname": self.extra_networks_tabname,
                     "prompt": item["prompt"],
                     "neg_prompt": item.get("negative_prompt", "''"),
                     "allow_neg": str(self.allow_negative_prompt).lower(),
@@ -539,19 +516,13 @@ class ExtraNetworksPage:
         if not tree:
             return res
 
-        build_tree(
+        self.build_tree(
             tree=tree,
             res=res,
             depth=0,
             div_id=0,
             parent_id=None,
             tabname=tabname,
-            extra_networks_tabname=self.extra_networks_tabname,
-            allow_negative_prompt=self.allow_negative_prompt,
-            btn_copy_path_tpl=self.btn_copy_path_tpl,
-            btn_edit_item_tpl=self.btn_edit_item_tpl,
-            btn_metadata_tpl=self.btn_metadata_tpl,
-            tree_row_tpl=self.tree_row_tpl,
         )
         res = base64.b64encode(gzip.compress(json.dumps(res).encode("utf-8"))).decode("utf-8")
         return f'<div class="extra-network-script-data" data-tabname-full={tabname}_{self.extra_networks_tabname} data-proxy-name=tree_list data-json={res} hidden></div>'
@@ -648,7 +619,13 @@ class ExtraNetworksPage:
 
         show_tree = shared.opts.extra_networks_tree_view_default_enabled
 
-        page_params = {
+        cards_data_div = self.generate_cards_view_data_div(tabname, none_message="Loading..." if empty else None)
+        tree_data_div = self.generate_tree_view_data_div(tabname)
+        dirs_html = self.create_dirs_view_html(tabname)
+
+        show_dirs = shared.opts.extra_networks_dirs_view_default_enabled
+        show_tree = shared.opts.extra_networks_tree_view_default_enabled
+        return self.pane_tpl.format(**{
             "tabname": tabname,
             "extra_networks_tabname": self.extra_networks_tabname,
             "data_sort_dir": shared.opts.extra_networks_card_order.lower().strip(),
@@ -657,19 +634,15 @@ class ExtraNetworksPage:
             "sort_name_active": 'extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Name' else '',
             "sort_date_created_active": 'extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Date Created' else '',
             "sort_date_modified_active": 'extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Date Modified' else '',
-            "tree_view_btn_extra_class": "extra-network-control--enabled" if show_tree else "",
-            "tree_list_scroll_area_div_extra_class": "",
-            "cards_data_div": self.generate_cards_view_data_div(tabname, none_message="Loading..." if empty else None),
+            "btn_dirs_view_enabled_class": "extra-network-control--enabled" if show_dirs else "",
+            "btn_tree_view_enabled_class": "extra-network-control--enabled" if show_tree else "",
             "extra_networks_tree_view_default_width": shared.opts.extra_networks_tree_view_default_width,
-            "tree_view_div_default_display_class": "" if show_tree else "hidden",
-        }
-
-        if shared.opts.extra_networks_tree_view_style == "Tree":
-            pane_content = self.pane_content_tree_tpl.format(**page_params, tree_data_div=self.generate_tree_view_data_div(tabname))
-        else:
-            pane_content = self.pane_content_dirs_tpl.format(**page_params, dirs_html=self.create_dirs_view_html(tabname))
-
-        return self.pane_tpl.format(**page_params, pane_content=pane_content)
+            "dirs_default_display_class": "" if show_dirs else "hidden",
+            "tree_default_display_class": "" if show_tree else "hidden",
+            "dirs_html": dirs_html,
+            "cards_data_div": cards_data_div,
+            "tree_data_div": tree_data_div,
+        })
 
     def create_item(self, name, index=None):
         raise NotImplementedError()
@@ -785,7 +758,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             with gr.Column(elem_id=f"{tabname}_{page.extra_networks_tabname}_prompts", elem_classes=["extra-page-prompts"]):
                 pass
 
-            elem_id = f"{tabname}_{page.extra_networks_tabname}_cards_html"
+            elem_id = f"{tabname}_{page.extra_networks_tabname}_pane_container"
             page_elem = gr.HTML(page.create_html(tabname, empty=True), elem_id=elem_id)
             ui.pages.append(page_elem)
             editor = page.create_user_metadata_editor(ui, tabname)
@@ -803,7 +776,6 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
         jscode = (
             "function(){"
             f"extraNetworksTabSelected('{tabname}', '{tabname}_{page.extra_networks_tabname}_prompts', {str(page.allow_prompt).lower()}, {str(page.allow_negative_prompt).lower()}, '{tabname}_{page.extra_networks_tabname}');"
-            f"applyExtraNetworkFilter('{tabname}_{page.extra_networks_tabname}');"
             "}"
         )
         tab.select(fn=None, _js=jscode, inputs=[], outputs=[], show_progress=False)
@@ -844,7 +816,9 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
         _js="setupAllResizeHandles",
     ).then(
         fn=lambda: None,
-        _js="setupExtraNetworksData",
+        _js="extraNetworksSetupData",
+    ).then(
+        fn=lambda: print("DONE")
     )
 
     return ui
