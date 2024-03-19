@@ -463,7 +463,7 @@ onUiLoaded(async() => {
 
             if (input && canvas) {
 
-                input.click()
+                input.click();
                 // Dynamically calculate and update the max attribute of the input
                 // Use the canvas's dimensions to determine the newMaxValue
                 const scalingFactor = 0.75; // Adjust this factor based on your needs
