@@ -9,13 +9,13 @@ import torch
 import torch.nn as nn
 import numpy as np
 import pytorch_lightning as pl
+import pytorch_lightning.utilities.rank_zero
 from torch.optim.lr_scheduler import LambdaLR
 from einops import rearrange, repeat
 from contextlib import contextmanager
 from functools import partial
 from tqdm import tqdm
 from torchvision.utils import make_grid
-import pytorch_lightning.utilities.rank_zero
 sys.modules['pytorch_lightning.utilities.distributed'] = sys.modules['pytorch_lightning.utilities.rank_zero']
 from pytorch_lightning.utilities.rank_zero import rank_zero_only
 
