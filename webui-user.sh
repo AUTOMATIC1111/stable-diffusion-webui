@@ -10,16 +10,16 @@
 #clone_dir="stable-diffusion-webui"
 
 # Commandline arguments for webui.py, for example: export COMMANDLINE_ARGS="--medvram --opt-split-attention"
-export COMMANDLINE_ARGS="--listen --no-gradio-queue --no-half-vae --reinstall-torch --xformers --enable-insecure-extension-access --skip-torch-cuda-test --api --port 7890 --autolaunch"
+export COMMANDLINE_ARGS="--listen --no-gradio-queue --no-half-vae --xformers --enable-insecure-extension-access --skip-torch-cuda-test --api --port 7890 --autolaunch"
 
 # python3 executable
-python_cmd="/home/evanhu/.pyenv/versions/3.10.13/envs/venv/bin/python3.10"
+python_cmd="/home/evanhu/.pyenv/versions/3.10.13/bin/python3.10"
 
 # git executable
 #export GIT="git"
 
 # python3 venv without trailing slash (defaults to ${install_dir}/${clone_dir}/venv)
-venv_dir="/home/evanhu/.pyenv/versions/3.10.13/envs/venv"
+# venv_dir="/home/evanhu/.pyenv/versions/3.10.13/envs/venv"
 
 # script to launch to start the app
 #export LAUNCH_SCRIPT="launch.py"
