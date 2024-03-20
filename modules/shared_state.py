@@ -157,10 +157,12 @@ class State:
             self.current_image_sampling_step = self.sampling_step
 
         except Exception:
-            # when switching models during genration, VAE would be on CPU, so creating an image will fail.
+            # when switching models during generation, VAE would be on CPU, so creating an image will fail.
             # we silently ignore this error
             errors.record_exception()
 
     def assign_current_image(self, image):
+        if shared.opts.live_previews_image_format == 'jpeg' and image.mode == 'RGBA':
+            image = image.convert('RGB')
         self.current_image = image
         self.id_live_preview += 1

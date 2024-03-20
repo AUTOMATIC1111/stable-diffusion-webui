@@ -26,6 +26,13 @@ class ScriptStripComments(scripts.Script):
         p.main_prompt = strip_comments(p.main_prompt)
         p.main_negative_prompt = strip_comments(p.main_negative_prompt)
 
+        if getattr(p, 'enable_hr', False):
+            p.all_hr_prompts = [strip_comments(x) for x in p.all_hr_prompts]
+            p.all_hr_negative_prompts = [strip_comments(x) for x in p.all_hr_negative_prompts]
+
+            p.hr_prompt = strip_comments(p.hr_prompt)
+            p.hr_negative_prompt = strip_comments(p.hr_negative_prompt)
+
 
 def before_token_counter(params: script_callbacks.BeforeTokenCounterParams):
     if not shared.opts.enable_prompt_comments:

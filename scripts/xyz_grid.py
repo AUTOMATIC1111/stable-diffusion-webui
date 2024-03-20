@@ -45,7 +45,7 @@ def apply_prompt(p, x, xs):
 def apply_order(p, x, xs):
     token_order = []
 
-    # Initally grab the tokens from the prompt, so they can be replaced in order of earliest seen
+    # Initially grab the tokens from the prompt, so they can be replaced in order of earliest seen
     for token in x:
         token_order.append((p.prompt.find(token), token))
 
