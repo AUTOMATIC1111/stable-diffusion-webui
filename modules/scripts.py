@@ -352,6 +352,9 @@ class ScriptBuiltinUI(Script):
 
         return f'{tabname}{item_id}'
 
+    def show(self, is_img2img):
+        return AlwaysVisible
+
 
 current_basedir = paths.script_path
 
