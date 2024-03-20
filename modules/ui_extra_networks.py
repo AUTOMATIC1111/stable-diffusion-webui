@@ -243,14 +243,12 @@ class ExtraNetworksPage:
             btn_metadata = self.btn_metadata_tpl.format(
                 **{
                     "extra_networks_tabname": self.extra_networks_tabname,
-                    "name": html.escape(item["name"]),
                 }
             )
         btn_edit_item = self.btn_edit_item_tpl.format(
             **{
                 "tabname": tabname,
                 "extra_networks_tabname": self.extra_networks_tabname,
-                "name": html.escape(item["name"]),
             }
         )
 
