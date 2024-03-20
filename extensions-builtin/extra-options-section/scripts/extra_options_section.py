@@ -1,7 +1,7 @@
 import math
 
 import gradio as gr
-from modules import scripts, shared, ui_components, ui_settings, infotext_utils
+from modules import scripts, shared, ui_components, ui_settings, infotext_utils, errors
 from modules.ui_components import FormColumn
 
 
@@ -42,7 +42,11 @@ class ExtraOptionsSection(scripts.Script):
                             setting_name = extra_options[index]
 
                             with FormColumn():
-                                comp = ui_settings.create_setting_component(setting_name)
+                                try:
+                                    comp = ui_settings.create_setting_component(setting_name)
+                                except KeyError:
+                                    errors.report(f"Can't add extra options for {setting_name} in ui")
+                                    continue
 
                             self.comps.append(comp)
                             self.setting_names.append(setting_name)

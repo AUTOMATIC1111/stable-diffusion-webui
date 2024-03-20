@@ -14,7 +14,7 @@
 * Add support for DAT upscaler models ([#14690](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14690), [#15039](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15039))
 * Extra Networks Tree View ([#14588](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14588), [#14900](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14900))
 * NPU Support ([#14801](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14801))
-* Propmpt comments support
+* Prompt comments support
 
 ### Minor:
 * Allow pasting in WIDTHxHEIGHT strings into the width/height fields ([#14296](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14296))
@@ -59,7 +59,7 @@
 * modules/api/api.py: add api endpoint to refresh embeddings list ([#14715](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14715))
 * set_named_arg ([#14773](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14773))
 * add before_token_counter callback and use it for prompt comments
-* ResizeHandleRow - allow overriden column scale parameter ([#15004](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15004))
+* ResizeHandleRow - allow overridden column scale parameter ([#15004](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15004))
 
 ### Performance
 * Massive performance improvement for extra networks directories with a huge number of files in them in an attempt to tackle #14507 ([#14528](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14528))
@@ -101,7 +101,7 @@
 * Gracefully handle mtime read exception from cache ([#14933](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14933))
 * Only trigger interrupt on `Esc` when interrupt button visible ([#14932](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14932))
 * Disable prompt token counters option actually disables token counting rather than just hiding results.
-* avoid doble upscaling in inpaint ([#14966](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14966))
+* avoid double upscaling in inpaint ([#14966](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14966))
 * Fix #14591 using translated content to do categories mapping ([#14995](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14995))
 * fix: the `split_threshold` parameter does not work when running Split oversized images ([#15006](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15006))
 * Fix resize-handle for mobile ([#15010](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15010), [#15065](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15065))
@@ -171,7 +171,7 @@
 * infotext updates: add option to disregard certain infotext fields, add option to not include VAE in infotext, add explanation to infotext settings page, move some options to infotext settings page
 * add FP32 fallback support on sd_vae_approx ([#14046](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14046))
 * support XYZ scripts / split hires path from unet ([#14126](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14126))
-* allow use of mutiple styles csv files ([#14125](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14125))
+* allow use of multiple styles csv files ([#14125](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14125))
 * make extra network card description plaintext by default, with an option (Treat card description as HTML) to re-enable HTML as it was (originally by [#13241](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/13241))
 
 ### Extensions and API:
@@ -308,7 +308,7 @@
  * new samplers: Restart, DPM++ 2M SDE Exponential, DPM++ 2M SDE Heun, DPM++ 2M SDE Heun Karras, DPM++ 2M SDE Heun Exponential, DPM++ 3M SDE, DPM++ 3M SDE Karras, DPM++ 3M SDE Exponential ([#12300](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12300), [#12519](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12519), [#12542](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12542))
  * rework DDIM, PLMS, UniPC to use CFG denoiser same as in k-diffusion samplers:
    * makes all of them work with img2img
-   * makes prompt composition posssible (AND)
+   * makes prompt composition possible (AND)
    * makes them available for SDXL
  * always show extra networks tabs in the UI ([#11808](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/11808))
  * use less RAM when creating models ([#11958](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/11958), [#12599](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12599))
@@ -484,7 +484,7 @@
  * user metadata system for custom networks
  * extended Lora metadata editor: set activation text, default weight, view tags, training info
  * Lora extension rework to include other types of networks (all that were previously handled by LyCORIS extension)
- * show github stars for extenstions
+ * show github stars for extensions
  * img2img batch mode can read extra stuff from png info
  * img2img batch works with subdirectories
  * hotkeys to move prompt elements: alt+left/right
@@ -703,7 +703,7 @@
  * do not wait for Stable Diffusion model to load at startup
  * add filename patterns: `[denoising]`
  * directory hiding for extra networks: dirs starting with `.` will hide their cards on extra network tabs unless specifically searched for
- * LoRA: for the `<...>` text in prompt, use name of LoRA that is in the metdata of the file, if present, instead of filename (both can be used to activate LoRA)
+ * LoRA: for the `<...>` text in prompt, use name of LoRA that is in the metadata of the file, if present, instead of filename (both can be used to activate LoRA)
  * LoRA: read infotext params from kohya-ss's extension parameters if they are present and if his extension is not active
  * LoRA: fix some LoRAs not working (ones that have 3x3 convolution layer)
  * LoRA: add an option to use old method of applying LoRAs (producing same results as with kohya-ss)
@@ -733,7 +733,7 @@
  * fix gamepad navigation
  * make the lightbox fullscreen image function properly
  * fix squished thumbnails in extras tab
- * keep "search" filter for extra networks when user refreshes the tab (previously it showed everthing after you refreshed)
+ * keep "search" filter for extra networks when user refreshes the tab (previously it showed everything after you refreshed)
  * fix webui showing the same image if you configure the generation to always save results into same file
  * fix bug with upscalers not working properly
  * fix MPS on PyTorch 2.0.1, Intel Macs
@@ -751,7 +751,7 @@
  * switch to PyTorch 2.0.0 (except for AMD GPUs)
  * visual improvements to custom code scripts
  * add filename patterns: `[clip_skip]`, `[hasprompt<>]`, `[batch_number]`, `[generation_number]`
- * add support for saving init images in img2img, and record their hashes in infotext for reproducability
+ * add support for saving init images in img2img, and record their hashes in infotext for reproducibility
  * automatically select current word when adjusting weight with ctrl+up/down
  * add dropdowns for X/Y/Z plot
  * add setting: Stable Diffusion/Random number generator source: makes it possible to make images generated from a given manual seed consistent across different GPUs

@@ -5,6 +5,8 @@ import re
 
 v160 = version.parse("1.6.0")
 v170_tsnr = version.parse("v1.7.0-225")
+v180 = version.parse("1.8.0")
+v180_hr_styles = version.parse("1.8.0-139")
 
 
 def parse_version(text):
@@ -40,3 +42,5 @@ def backcompat(d):
     if ver < v170_tsnr:
         d["Downcast alphas_cumprod"] = True
 
+    if ver < v180 and d.get('Refiner'):
+        d["Refiner switch by sampling steps"] = True
