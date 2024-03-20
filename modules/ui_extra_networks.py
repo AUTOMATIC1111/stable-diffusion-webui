@@ -239,7 +239,7 @@ class ExtraNetworksPage:
             )
             onclick = html.escape(onclick)
 
-        btn_copy_path = self.btn_copy_path_tpl.format(**{"filename": quote_js(item["filename"])})
+        btn_copy_path = self.btn_copy_path_tpl.format(**{"filename": item["filename"]})
         btn_metadata = ""
         metadata = item.get("metadata")
         if metadata:
