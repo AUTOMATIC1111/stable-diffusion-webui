@@ -99,7 +99,7 @@ def decode_base64_to_image(encoding):
         raise HTTPException(status_code=500, detail="Invalid encoded image") from e
 
 
-def encode_pil_to_base64(image):
+def encode_pil_to_base64(image: Image.Image):
     with io.BytesIO() as output_bytes:
         if isinstance(image, str):
             return image
