@@ -95,7 +95,8 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
         else:
             sigmas_kwargs = {'sigma_min': sigma_min, 'sigma_max': sigma_max}
 
-            p.extra_generation_params["Schedule type"] = scheduler.label
+            if scheduler.label != 'Automatic':
+                p.extra_generation_params["Schedule type"] = scheduler.label
 
             if opts.sigma_min != 0 and opts.sigma_min != m_sigma_min:
                 sigmas_kwargs['sigma_min'] = opts.sigma_min
