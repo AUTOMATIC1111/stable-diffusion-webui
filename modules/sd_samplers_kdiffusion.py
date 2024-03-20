@@ -113,10 +113,6 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
             if scheduler.need_inner_model:
                 sigmas_kwargs['inner_model'] = self.model_wrap
 
-            if scheduler.name == "sgm_uniform":  # XXX check this
-                # Ensure the "step" will be target step + 1
-                steps += 1 if not discard_next_to_last_sigma else 0
-
             sigmas = scheduler.function(n=steps, **sigmas_kwargs, device=shared.device)
 
         if discard_next_to_last_sigma:
