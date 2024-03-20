@@ -16,6 +16,10 @@ class Scheduler:
     aliases: list = None
 
 
+def uniform(n, sigma_min, sigma_max, inner_model, device):
+    return inner_model.get_sigmas(n)
+
+
 def sgm_uniform(n, sigma_min, sigma_max, inner_model, device):
     start = inner_model.sigma_to_t(torch.tensor(sigma_max))
     end = inner_model.sigma_to_t(torch.tensor(sigma_min))
@@ -29,6 +33,7 @@ def sgm_uniform(n, sigma_min, sigma_max, inner_model, device):
 
 schedulers = [
     Scheduler('automatic', 'Automatic', None),
+    Scheduler('uniform', 'Uniform', uniform, need_inner_model=True),
     Scheduler('karras', 'Karras', k_diffusion.sampling.get_sigmas_karras, default_rho=7.0),
     Scheduler('exponential', 'Exponential', k_diffusion.sampling.get_sigmas_exponential),
     Scheduler('polyexponential', 'Polyexponential', k_diffusion.sampling.get_sigmas_polyexponential, default_rho=1.0),
