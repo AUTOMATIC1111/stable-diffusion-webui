@@ -1,6 +1,6 @@
 // Collators used for sorting.
-const INT_COLLATOR = new Intl.Collator([], {numeric: true});
-const STR_COLLATOR = new Intl.Collator("en", {numeric: true, sensitivity: "base"});
+const INT_COLLATOR = new Intl.Collator([], { numeric: true });
+const STR_COLLATOR = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
 
 function compress(string) {
     /** Compresses a string into a base64 encoded GZipped string. */
@@ -30,13 +30,13 @@ function decompress(base64string) {
     });
 }
 
-const parseHtml = function(str) {
+const parseHtml = function (str) {
     const tmp = document.implementation.createHTMLDocument('');
     tmp.body.innerHTML = str;
     return [...tmp.body.childNodes];
 }
 
-const getComputedValue = function(container, css_property) {
+const getComputedValue = function (container, css_property) {
     return parseInt(
         window.getComputedStyle(container, null)
             .getPropertyValue(css_property)
@@ -44,17 +44,17 @@ const getComputedValue = function(container, css_property) {
     );
 };
 
-const calcColsPerRow = function(parent) {
+const calcColsPerRow = function (parent) {
     // Returns the number of columns in a row of a flexbox.
     //const parent = document.querySelector(selector);
     const parent_width = getComputedValue(parent, "width");
-    const parent_padding_left = getComputedValue(parent,"padding-left");
-    const parent_padding_right = getComputedValue(parent,"padding-right");
+    const parent_padding_left = getComputedValue(parent, "padding-left");
+    const parent_padding_right = getComputedValue(parent, "padding-right");
 
     const child = parent.firstElementChild;
-    const child_width = getComputedValue(child,"width");
-    const child_margin_left = getComputedValue(child,"margin-left");
-    const child_margin_right = getComputedValue(child,"margin-right");
+    const child_width = getComputedValue(child, "width");
+    const child_margin_left = getComputedValue(child, "margin-left");
+    const child_margin_right = getComputedValue(child, "margin-right");
 
     var parent_width_no_padding = parent_width - parent_padding_left - parent_padding_right;
     const child_width_with_margin = child_width + child_margin_left + child_margin_right;
@@ -63,17 +63,17 @@ const calcColsPerRow = function(parent) {
     return parseInt(parent_width_no_padding / child_width_with_margin);
 }
 
-const calcRowsPerCol = function(container, parent) {
+const calcRowsPerCol = function (container, parent) {
     // Returns the number of columns in a row of a flexbox.
     //const parent = document.querySelector(selector);
     const parent_height = getComputedValue(container, "height");
-    const parent_padding_top = getComputedValue(container,"padding-top");
-    const parent_padding_bottom = getComputedValue(container,"padding-bottom");
+    const parent_padding_top = getComputedValue(container, "padding-top");
+    const parent_padding_bottom = getComputedValue(container, "padding-bottom");
 
     const child = parent.firstElementChild;
-    const child_height = getComputedValue(child,"height");
-    const child_margin_top = getComputedValue(child,"margin-top");
-    const child_margin_bottom = getComputedValue(child,"margin-bottom");
+    const child_height = getComputedValue(child, "height");
+    const child_margin_top = getComputedValue(child, "margin-top");
+    const child_margin_bottom = getComputedValue(child, "margin-bottom");
 
     var parent_height_no_padding = parent_height - parent_padding_top - parent_padding_bottom;
     const child_height_with_margin = child_height + child_margin_top + child_margin_bottom;
@@ -94,11 +94,11 @@ class ExtraNetworksClusterize {
             show_no_data_row = true,
             callbacks = {},
         } = {
-            rows_in_block: 10,
-            blocks_in_cluster: 4,
-            show_no_data_row: true,
-            callbacks: {},
-        }
+                rows_in_block: 10,
+                blocks_in_cluster: 4,
+                show_no_data_row: true,
+                callbacks: {},
+            }
     ) {
         if (scroll_id === undefined) {
             console.error("scroll_id is undefined!");
@@ -191,7 +191,6 @@ class ExtraNetworksClusterize {
     applyFilter() {
         // the base class filter just sorts the values and updates the rows.
         this.applySort();
-        this.updateRows();
     }
 
     filterRows(obj) {
@@ -221,10 +220,36 @@ class ExtraNetworksClusterize {
         return false;
     }
 
+    fixElementDOM() {
+        /** Fixes element association in DOM. Returns true if element was replaced in DOM. */
+        // If association for elements is broken, replace them with instance version.
+        if (!this.scroll_elem.isConnected || !this.content_elem.isConnected) {
+            document.getElementById(this.scroll_id).replaceWith(this.scroll_elem);
+            return true;
+        }
+        return false;
+    }
+
     updateRows() {
-        this.updateItemDims();
-        this.clusterize.update(this.filterRows(this.data_obj));
         this.clusterize.refresh();
+
+        // If we don't have any entries to the list, then just clear the clusterize
+        // area and return.
+        if (this.data_obj_keys_sorted.length === 0 || !(this.data_obj_keys_sorted[0] in this.data_obj)) {
+            this.clusterize.clear();
+            return;
+        }
+
+        if (this.fixElementDOM()) {
+            // Add single item so we can calculate the dimensions without wasting time.
+            this.clusterize.clear();
+            this.clusterize.update([this.data_obj[this.data_obj_keys_sorted[0]].element.outerHTML]);
+        }
+
+        this.updateItemDims();
+        // Clear the list before adding new items to prevent weird scrolling issues.
+        this.clusterize.clear();
+        this.clusterize.update(this.filterRows(this.data_obj));
     }
 
     nrows() {
@@ -243,7 +268,6 @@ class ExtraNetworksClusterize {
 
         if (!this.content_elem.isConnected || this.content_elem.firstElementChild === undefined || this.content_elem.firstElementChild === null) {
             // Elements do not exist on page yet or content is empty. Skip.
-            console.log('first elem undefined');
             return;
         }
 
@@ -296,7 +320,6 @@ class ExtraNetworksClusterize {
 
         // Apply existing sort/filter.
         this.applyFilter();
-        this.updateRows();
     }
 }
 
@@ -315,7 +338,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         for (let i = 1; i <= depth; i++) {
             res += `calc((${i} * ${text_size}) - (${text_size} * 0.6)) 0 0 ${bg} inset,`;
             res += `calc((${i} * ${text_size}) - (${text_size} * 0.4)) 0 0 ${fg} inset`;
-            res += (i+1 > depth) ? "" : ", ";
+            res += (i + 1 > depth) ? "" : ", ";
         }
         return res;
     }
@@ -333,7 +356,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             let depth = Number(parsed_html.dataset.depth);
             parsed_html.style.paddingLeft = `calc(${depth} * ${text_size})`;
             parsed_html.style.boxShadow = this.getBoxShadow(depth);
-            
+
             // Add the updated html to the data object.
             this.data_obj[div_id] = {
                 element: parsed_html,
@@ -469,7 +492,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
     applySort() {
         this.sort_reverse = this.sort_dir_str === "descending";
 
-        switch(this.sort_mode_str) {
+        switch (this.sort_mode_str) {
             case "name":
                 this.sort_fn = this.sortByName;
                 break;
@@ -498,7 +521,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
 
         for (const [k, v] of Object.entries(this.data_obj)) {
             let search_only = v.element.querySelector(".search_only");
-            let text = Array.prototype.map.call(v.element.querySelectorAll(".search_terms"), function(t) {
+            let text = Array.prototype.map.call(v.element.querySelectorAll(".search_terms"), function (t) {
                 return t.textContent.toLowerCase();
             }).join(" ");
 

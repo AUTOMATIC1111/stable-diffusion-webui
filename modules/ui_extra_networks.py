@@ -817,8 +817,6 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
     ).then(
         fn=lambda: None,
         _js="extraNetworksSetupData",
-    ).then(
-        fn=lambda: print("DONE")
     )
 
     return ui
