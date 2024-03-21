@@ -4,12 +4,10 @@
 # Some models such as LDSR require VQ to work correctly
 # The classes are suffixed with "V1" and added back to the "ldm.models.diffusion.ddpm" module
 
-import sys
 import torch
 import torch.nn as nn
 import numpy as np
 import pytorch_lightning as pl
-import pytorch_lightning.utilities.rank_zero
 from torch.optim.lr_scheduler import LambdaLR
 from einops import rearrange, repeat
 from contextlib import contextmanager
