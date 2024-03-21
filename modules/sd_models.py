@@ -801,7 +801,7 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
             timer.record("send model to trash")
 
         if shared.opts.sd_checkpoints_keep_in_cpu:
-            send_model_to_cpu(sd_model)
+            send_model_to_cpu(loaded_model)
             timer.record("send model to cpu")
 
     if already_loaded is not None:
