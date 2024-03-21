@@ -149,6 +149,8 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
 
             v = random.random() * max_count
             if count > v:
+                for x in "({[]})":
+                    tag = tag.replace(x, '\\' + x)
                 res.append(tag)
 
         return ", ".join(sorted(res))
