@@ -9,12 +9,10 @@ https://github.com/CompVis/taming-transformers
 # File modified by authors of InstructPix2Pix from original (https://github.com/CompVis/stable-diffusion).
 # See more details in LICENSE.
 
-import sys
 import torch
 import torch.nn as nn
 import numpy as np
 import pytorch_lightning as pl
-import pytorch_lightning.utilities.rank_zero
 from torch.optim.lr_scheduler import LambdaLR
 from einops import rearrange, repeat
 from contextlib import contextmanager
