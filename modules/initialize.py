@@ -51,6 +51,7 @@ def check_versions():
 def initialize():
     from modules import initialize_util
     initialize_util.fix_torch_version()
+    initialize_util.fix_pytorch_lightning()
     initialize_util.fix_asyncio_event_loop_policy()
     initialize_util.validate_tls_options()
     initialize_util.configure_sigint_handler()
