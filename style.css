@@ -1181,7 +1181,7 @@ body.resizing .resize-handle {
 .clusterize-scroll {
     width: 100%;
     height: 100%;
-    overflow: auto;
+    overflow: clip auto;
 }
 
 .clusterize-content {
@@ -1241,6 +1241,10 @@ body.resizing .resize-handle {
 }
 
 .extra-network-content--container {
+    display: flex;
+    flex-wrap: nowrap;
+    width: 100%;
+    height: 100%;
     flex-direction: column;
 }
 
@@ -1254,6 +1258,7 @@ body.resizing .resize-handle {
 .extra-network-content--cards {
     flex: 1;
     flex-direction: row;
+    min-height: 0; /* prevent children from oversizing this container */
 }
 
 .extra-network-content.resize-handle-col {

@@ -1,8 +1,8 @@
 (function() {
     const GRADIO_MIN_WIDTH = 320;
     const PAD = 16;
-    const DEBOUNCE_TIME = 100;
-    const DOUBLE_TAP_DELAY = 200; //ms
+    const DEBOUNCE_TIME_MS = 250;
+    const DOUBLE_TAP_DELAY_MS = 250;
 
     const R = {
         tracking: false,
@@ -113,7 +113,7 @@
                     if (evt.changedTouches.length !== 1) return;
 
                     const currentTime = new Date().getTime();
-                    if (R.lastTapTime && currentTime - R.lastTapTime <= DOUBLE_TAP_DELAY) {
+                    if (R.lastTapTime && currentTime - R.lastTapTime <= DOUBLE_TAP_DELAY_MS) {
                         onDoubleClick(evt);
                         return;
                     }
@@ -204,7 +204,7 @@
             for (const parent of parents) {
                 afterResize(parent);
             }
-        }, DEBOUNCE_TIME);
+        }, DEBOUNCE_TIME_MS);
     });
 
     setupResizeHandle = setup;

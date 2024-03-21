@@ -208,6 +208,7 @@ class ExtraNetworksPage:
         label: str,
         btn_type: str,
         dir_is_empty: bool = False,
+        metadata: Optional[str] = None,
         parent_id: Optional[int] = None,
         data_depth: Optional[int] = None,
         data_path: Optional[str] = None,
@@ -242,9 +243,10 @@ class ExtraNetworksPage:
                     "name": label,
                 }
             )
-            action_list_item_action_trailing += self.btn_metadata_tpl.format(
-                **{"extra_networks_tabname": self.extra_networks_tabname, "name": label}
-            )
+            if metadata:
+                action_list_item_action_trailing += self.btn_metadata_tpl.format(
+                    **{"extra_networks_tabname": self.extra_networks_tabname, "name": label}
+                )
             action_list_item_action_trailing += "</div>"
 
         data_attributes = ""
@@ -341,7 +343,7 @@ class ExtraNetworksPage:
                 if onclick is None:
                     # Don't quote prompt/neg_prompt since they are stored as js strings already.
                     onclick_js_tpl = (
-                        "cardClicked('{tabname}_{extra_networks_tabname}', {prompt}, {neg_prompt}, {allow_neg});"
+                        "cardClicked('{tabname}', {prompt}, {neg_prompt}, {allow_neg});"
                     )
                     onclick = onclick_js_tpl.format(
                         **{
@@ -359,6 +361,7 @@ class ExtraNetworksPage:
                     parent_id=parent_id,
                     tabname=tabname,
                     label=v.item["name"],
+                    metadata=v.item.get("metadata", None),
                     data_depth=depth,
                     data_path=v.item["filename"],
                     data_hash=v.item["shorthash"],
@@ -400,7 +403,7 @@ class ExtraNetworksPage:
         onclick = item.get("onclick", None)
         if onclick is None:
             # Don't quote prompt/neg_prompt since they are stored as js strings already.
-            onclick_js_tpl = "cardClicked('{tabname}_{extra_networks_tabname}', {prompt}, {neg_prompt}, {allow_neg});"
+            onclick_js_tpl = "cardClicked('{tabname}', {prompt}, {neg_prompt}, {allow_neg});"
             onclick = onclick_js_tpl.format(
                 **{
                     "tabname": tabname,
@@ -525,7 +528,7 @@ class ExtraNetworksPage:
             tabname=tabname,
         )
         res = base64.b64encode(gzip.compress(json.dumps(res).encode("utf-8"))).decode("utf-8")
-        return f'<div class="extra-network-script-data" data-tabname-full={tabname}_{self.extra_networks_tabname} data-proxy-name=tree_list data-json={res} hidden></div>'
+        return f'<div id="{tabname}_{self.extra_networks_tabname}_tree_list_data" class="extra-network-script-data" data-tabname-full={tabname}_{self.extra_networks_tabname} data-proxy-name=tree_list data-json={res} hidden></div>'
 
     # FIXME
     def create_dirs_view_html(self, tabname: str) -> str:
@@ -588,7 +591,7 @@ class ExtraNetworksPage:
             res[i] = self.create_item_html(tabname, item, self.card_tpl, div_id=i)
 
         res = base64.b64encode(gzip.compress(json.dumps(res).encode("utf-8"))).decode("utf-8")
-        return f'<div class="extra-network-script-data" data-tabname-full={tabname}_{self.extra_networks_tabname} data-proxy-name=cards_list data-json={res} hidden></div>'
+        return f'<div id="{tabname}_{self.extra_networks_tabname}_cards_list_data" class="extra-network-script-data" data-tabname-full={tabname}_{self.extra_networks_tabname} data-proxy-name=cards_list data-json={res} hidden></div>'
 
     def create_html(self, tabname, *, empty=False):
         """Generates an HTML string for the current pane.
@@ -814,9 +817,6 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
     ).then(
         fn=lambda: None,
         _js="setupAllResizeHandles",
-    ).then(
-        fn=lambda: None,
-        _js="extraNetworksSetupData",
     )
 
     return ui

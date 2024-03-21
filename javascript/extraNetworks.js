@@ -11,13 +11,6 @@ const storedPopupIds = {};
 const extraPageUserMetadataEditors = {};
 // A flag used by the `waitForBool` promise to determine when we first load Ui Options.
 const initialUiOptionsLoaded = { state: false };
-// A proxy listener to detect and handle changes on JSON Data
-const extra_networks_json_proxy = {};
-const extra_networks_proxy_listener = setupProxyListener(
-    extra_networks_json_proxy,
-    () => { },
-    proxyJsonUpdated,
-);
 
 function waitForElement(selector) {
     /** Promise that waits for an element to exist in DOM. */
@@ -104,30 +97,6 @@ function waitForValueInObject(o) {
     });
 }
 
-function setupProxyListener(target, pre_handler, post_handler) {
-    /** Sets up a listener for variable changes. */
-    var proxy = new Proxy(target, {
-        set: function (t, k, v) {
-            pre_handler.call(t, k, v);
-            t[k] = v;
-            post_handler.call(t, k, v);
-            return true;
-        }
-    });
-    return proxy
-}
-
-function proxyJsonUpdated(k, v) {
-    /** Callback triggered when JSON data is updated by the proxy listener. */
-    // use `this` for current object
-    if (!(v.dataset.tabnameFull in clusterizers)) {
-        // Clusterizers not yet initialized.
-        return;
-    }
-    clusterizers[v.dataset.tabnameFull][v.dataset.proxyName].parseJson(v.dataset.json);
-    clusterizers_initial_load[v.dataset.tabnameFull].state = true;
-}
-
 function toggleCss(key, css, enable) {
     var style = document.getElementById(key);
     if (enable && !style) {
@@ -159,9 +128,7 @@ function extraNetworksRefreshTab(tabname_full) {
     div_tree.classList.toggle("hidden", !btn_tree_view.classList.contains("extra-network-control--enabled"));
 
     waitForKeyInObject({ k: tabname_full, v: clusterizers }).then(() => {
-        extraNetworksClusterizersEnable(tabname_full);
-        extraNetworksForceUpdateData(tabname_full);
-        extraNetworksClusterizersRebuild(tabname_full, false);
+        extraNetworkClusterizersOnTabLoad(tabname_full);
     });
 }
 
@@ -189,14 +156,16 @@ function extraNetworksSetupTabContent(tabname, pane, controls_div) {
     ]).then(() => {
         // Now that we have our elements in DOM, we create the clusterize lists.
         clusterizers[tabname_full] = {
-            cards_list: new ExtraNetworksClusterizeCardsList({
-                scroll_id: `${tabname_full}_cards_list_scroll_area`,
-                content_id: `${tabname_full}_cards_list_content_area`,
-                txt_search_elem: txt_search,
-            }),
             tree_list: new ExtraNetworksClusterizeTreeList({
+                data_id: `${tabname_full}_tree_list_data`,
                 scroll_id: `${tabname_full}_tree_list_scroll_area`,
                 content_id: `${tabname_full}_tree_list_content_area`,
+                txt_search_elem: txt_search,
+            }),
+            cards_list: new ExtraNetworksClusterizeCardsList({
+                data_id: `${tabname_full}_cards_list_data`,
+                scroll_id: `${tabname_full}_cards_list_scroll_area`,
+                content_id: `${tabname_full}_cards_list_content_area`,
                 txt_search_elem: txt_search,
             }),
         };
@@ -225,6 +194,23 @@ function extraNetworksSetupTabContent(tabname, pane, controls_div) {
         if (pane.style.display != "none") {
             extraNetworksShowControlsForPage(tabname, tabname_full);
         }
+
+        // Handle extra-network-pane resize events.
+        let resize_observer_timer;
+        let done_resize_observer_interval_ms = 250;
+        let resize_observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                if (entry.target === pane) {
+                    clearTimeout(resize_observer_timer);
+                    resize_observer_timer = setTimeout(
+                        () => extraNetworksClusterizersOnResize(tabname_full),
+                        done_resize_observer_interval_ms,
+                    );
+                    break;
+                }
+            }
+        });
+        resize_observer.observe(pane);
     })
 }
 
@@ -291,15 +277,20 @@ function extraNetworksTabSelected(tabname, id, showPrompt, showNegativePrompt, t
     extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt);
     extraNetworksShowControlsForPage(tabname, tabname_full);
 
+    console.log("HERE!!!:", clusterizers[tabname_full].cards_list.scroll_elem.isConnected);
+
     Promise.all([
         waitForKeyInObject({ obj: clusterizers, k: tabname_full }),
         waitForKeyInObject({ obj: clusterizers_initial_load, k: tabname_full }).then(() => {
-            waitForBool(clusterizers_initial_load[tabname_full]).then(() => { return; });
+            waitForBool(clusterizers_initial_load[tabname_full]).then(() => {
+                Promise.all([
+                    clusterizers[tabname_full].tree_list.waitForElements(),
+                    clusterizers[tabname_full].cards_list.waitForElements(),
+                ]).then(() => {return;});
+            });
         }),
     ]).then(() => {
-        extraNetworksClusterizersEnable(tabname_full);
-        extraNetworksForceUpdateData(tabname_full);
-        extraNetworksClusterizersRebuild(tabname_full, false);
+        extraNetworkClusterizersOnTabLoad(tabname_full);
     });
 }
 
@@ -313,35 +304,6 @@ function extraNetworksApplyFilter(tabname_full) {
     clusterizers[tabname_full].cards_list.applyFilter();
 }
 
-function extraNetworksForceUpdateData(tabname_full) {
-    for (const elem of gradioApp().querySelectorAll(`.extra-network-script-data[data-tabname-full="${tabname_full}"]`)) {
-        extra_networks_proxy_listener[`${elem.dataset.tabnameFull}_${elem.dataset.proxyName}`] = elem;
-    }
-}
-
-function extraNetworksSetupData() {
-    // Manually force read the json data.
-    for (const elem of gradioApp().querySelectorAll(".extra-network-script-data")) {
-        extra_networks_proxy_listener[`${elem.dataset.tabnameFull}_${elem.dataset.proxyName}`] = elem;
-    }
-}
-
-function extraNetworksClusterizersUpdateRows(tabname_full) {
-    if (tabname_full !== undefined && tabname_full in clusterizers) {
-        for (const v of Object.values(clusterizers[tabname_full])) {
-            v.updateRows();
-        }
-        return;
-    }
-    // iterate over tabnames
-    for (const [_tabname_full, tab_clusterizers] of Object.entries(clusterizers)) {
-        // iterate over clusterizers in tab
-        for (const v of Object.values(tab_clusterizers)) {
-            v.updateRows();
-        }
-    }
-}
-
 function extraNetworksClusterizersEnable(tabname_full) {
     // iterate over tabnames
     for (const [_tabname_full, tab_clusterizers] of Object.entries(clusterizers)) {
@@ -349,6 +311,22 @@ function extraNetworksClusterizersEnable(tabname_full) {
         for (const v of Object.values(tab_clusterizers)) {
             // Enable the active tab, disable all others.
             v.enable(_tabname_full === tabname_full);
+        }
+    }
+}
+
+function extraNetworksClusterizersUpdateRows(tabname_full) {
+    if (tabname_full !== undefined && tabname_full in clusterizers) {
+        for (const v of Object.values(clusterizers[tabname_full])) {
+            //v.updateRows();
+        }
+        return;
+    }
+    // iterate over tabnames
+    for (const [_tabname_full, tab_clusterizers] of Object.entries(clusterizers)) {
+        // iterate over clusterizers in tab
+        for (const v of Object.values(tab_clusterizers)) {
+            //v.updateRows();
         }
     }
 }
@@ -370,26 +348,42 @@ function extraNetworksClusterizersRebuild(tabname_full, force) {
     }
 }
 
+function extraNetworkClusterizersOnTabLoad(tabname_full) {
+    /** Enables a tab's clusterizer, updates its data, and rebuilds it. */
+    if (!(tabname_full in clusterizers)) {
+        return;
+    }
+
+    extraNetworksClusterizersEnable(tabname_full);
+    for (const v of Object.values(clusterizers[tabname_full])) {
+        v.load();
+    }
+}
+
+function extraNetworksClusterizersOnResize(tabname_full) {
+    extraNetworksClusterizersUpdateRows(tabname_full);
+}
+
 function extraNetworksSetupEventHandlers() {
     // Handle window resizes. Delay of 500ms after resize before firing an event
     // as a way of "debouncing" resizes.
     var resize_timer;
+    var resize_timeout_ms = 500;
     window.addEventListener("resize", () => {
         clearTimeout(resize_timer);
-        resize_timer = setTimeout(function () {
-            // Update rows for each list.
-            extraNetworksClusterizersUpdateRows();
-        }, 500); // ms
+        resize_timer = setTimeout(() => {extraNetworksClusterizersOnResize();}, resize_timeout_ms);
     });
 
     // Handle resizeHandle resizes. Only fires on mouseup after resizing.
     window.addEventListener("resizeHandleResized", (e) => {
+        e.stopPropagation();
         const tabname_full = e.target.closest(".extra-network-pane").id.replace("_pane", "");
         // Force update rows after resizing.
-        extraNetworksClusterizersUpdateRows(tabname_full);
+        extraNetworksClusterizersOnResize(tabname_full);
     });
 
     window.addEventListener("resizeHandleDblClick", (e) => {
+        e.stopPropagation();
         const tabname_full = e.target.closest(".extra-network-pane").id.replace("_pane", "");
         // This event is only applied to the currently selected tab if has clusterize list.
         if (!(tabname_full in clusterizers)) {
@@ -405,12 +399,14 @@ function extraNetworksSetupEventHandlers() {
         content.querySelectorAll(".tree-list-item").forEach((row) => {
             // Temporarily set the grid columns to maximize column width
             // so we can calculate the full width of the row.
+            const row_style = window.getComputedStyle(row, null);
             const prev_grid_template_columns = row.style.gridTemplateColumns;
-            row.style.gridTemplateColumns = "repeat(5, max-content)";
+            const n_cols = row_style.getPropertyValue("grid-template-columns").split(" ").length;
+            row.style.gridTemplateColumns = `repeat(${n_cols}, max-content)`;
             if (row.scrollWidth > max_width) {
                 max_width = row.scrollWidth;
             }
-            row.style.gridTemplateColumns = prev_grid_template_columns;
+            //row.style.gridTemplateColumns = prev_grid_template_columns;
         });
         if (max_width <= 0) {
             return;
@@ -425,7 +421,7 @@ function extraNetworksSetupEventHandlers() {
 
         e.detail.setLeftColGridTemplate(e.target, max_width);
 
-        extraNetworksClusterizersUpdateRows(tabname_full);
+        extraNetworksClusterizersOnResize(tabname_full);
     });
 }
 
@@ -733,7 +729,7 @@ function extraNetworksControlTreeViewOnClick(event, tabname_full) {
     var show = !button.classList.contains("extra-network-control--enabled");
 
     gradioApp().getElementById(`${tabname_full}_tree_list_scroll_area`).parentElement.classList.toggle("hidden", show);
-    extraNetworksClusterizersUpdateRows(tabname_full);
+    extraNetworksClusterizersonResize(tabname_full);
 }
 
 function extraNetworksControlDirsViewOnClick(event, tabname_full) {
@@ -751,7 +747,7 @@ function extraNetworksControlDirsViewOnClick(event, tabname_full) {
     var show = !button.classList.contains("extra-network-control--enabled");
 
     gradioApp().getElementById(`${tabname_full}_dirs`).classList.toggle("hidden", show);
-    extraNetworksClusterizersUpdateRows(tabname_full);
+    extraNetworksClusterizersOnResize(tabname_full);
 }
 
 function extraNetworksControlRefreshOnClick(event, tabname_full) {
