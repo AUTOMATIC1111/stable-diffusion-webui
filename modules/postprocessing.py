@@ -66,7 +66,7 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
         if parameters:
             existing_pnginfo["parameters"] = parameters
 
-        initial_pp = scripts_postprocessing.PostprocessedImage(image_data.convert("RGB"))
+        initial_pp = scripts_postprocessing.PostprocessedImage(image_data.convert("RGBA")) if image_data.mode == "RGBA" else scripts_postprocessing.PostprocessedImage(image_data.convert("RGB"))
 
         scripts.scripts_postproc.run(initial_pp, args)
 
