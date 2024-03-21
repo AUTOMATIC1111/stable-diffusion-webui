@@ -25,7 +25,6 @@ def fix_torch_version():
         torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
 
 def fix_pytorch_lightning():
-    import pytorch_lightning
     # Checks if pytorch_lightning.utilities.distributed already exists in the sys.modules cache
     if 'pytorch_lightning.utilities.distributed' not in sys.modules:
         # Lets the user know that the library was not found and then will set it to pytorch_lightning.utilities.rank_zero
