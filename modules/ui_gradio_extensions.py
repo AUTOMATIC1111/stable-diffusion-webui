@@ -25,9 +25,6 @@ def javascript_html():
     if shared.cmd_opts.theme:
         head += f'<script type="text/javascript">set_theme(\"{shared.cmd_opts.theme}\");</script>\n'
 
-    # Allows for very large scrollable regions without bloating DOM.
-    head += '<script src="https://cdn.jsdelivr.net/npm/clusterize.js@1.0.0/clusterize.min.js"></script>\n'
-
     return head
 
 
