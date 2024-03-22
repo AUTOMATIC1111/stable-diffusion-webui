@@ -4,13 +4,40 @@ const re_extranet_neg = /\(([^:^>]+:[\d.]+)\)/;
 const re_extranet_g_neg = /\(([^:^>]+:[\d.]+)\)/g;
 const activePromptTextarea = {};
 const clusterizers = {};
-const clusterizers_initial_load = {};
 var globalPopup = null;
 var globalPopupInner = null;
 const storedPopupIds = {};
+const tab_setup_complete = {};
 const extraPageUserMetadataEditors = {};
 // A flag used by the `waitForBool` promise to determine when we first load Ui Options.
 const initialUiOptionsLoaded = { state: false };
+
+const debounce = (handler, timeout_ms) => {
+    /** Debounces a function call.
+     * 
+     *  NOTE: This will NOT work if called from within a class.
+     *  It will drop `this` from scope.
+     * 
+     *  Repeated calls to the debounce handler will not call the handler until there are
+     *  no new calls to the debounce handler for timeout_ms time.
+     * 
+     *  Example:
+     *  function add(x, y) { return x + y; }
+     *  let debounce_handler = debounce(add, 5000);
+     *  let res;
+     *  for (let i = 0; i < 10; i++) {
+     *      res = debounce_handler(i, 100);
+     *  }
+     *  console.log("Result:", res);
+     * 
+     *  This example will print "Result: 109".
+     */
+    let timer = null;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => handler(...args), timeout_ms);
+    };
+}
 
 function waitForElement(selector) {
     /** Promise that waits for an element to exist in DOM. */
@@ -85,7 +112,7 @@ function waitForValueInObject(o) {
      *  Resolves when obj[k] == v
      */
     return new Promise(resolve => {
-        waitForKeyInObject({ k: o.k, v: o.obj }).then(() => {
+        waitForKeyInObject({ k: o.k, obj: o.obj }).then(() => {
             (function _waitForValueInObject() {
 
                 if (o.k in o.obj && o.obj[o.k] == o.v) {
@@ -115,7 +142,6 @@ function toggleCss(key, css, enable) {
 }
 
 function extraNetworksRefreshTab(tabname_full) {
-    clusterizers_initial_load[tabname_full].state = false;
     // Reapply controls since they don't change on refresh.
     let btn_dirs_view = gradioApp().querySelector(`#${tabname_full}_extra_dirs_view`);
     let btn_tree_view = gradioApp().querySelector(`#${tabname_full}_extra_tree_view`);
@@ -127,9 +153,8 @@ function extraNetworksRefreshTab(tabname_full) {
     div_dirs.classList.toggle("hidden", !btn_dirs_view.classList.contains("extra-network-control--enabled"));
     div_tree.classList.toggle("hidden", !btn_tree_view.classList.contains("extra-network-control--enabled"));
 
-    waitForKeyInObject({ k: tabname_full, v: clusterizers }).then(() => {
-        extraNetworkClusterizersOnTabLoad(tabname_full);
-    });
+    waitForKeyInObject({ k: tabname_full, obj: clusterizers })
+        .then(() => extraNetworkClusterizersOnTabLoad(tabname_full));
 }
 
 function extraNetworksRegisterPromptForTab(tabname, id) {
@@ -170,20 +195,13 @@ function extraNetworksSetupTabContent(tabname, pane, controls_div) {
             }),
         };
 
-        clusterizers_initial_load[tabname_full] = { state: false };
-
         // Debounce search text input. This way we only search after user is done typing.
-        let typing_timer;
-        let done_typing_interval_ms = 250;
-        txt_search.addEventListener("keyup", () => {
-            clearTimeout(typing_timer);
+        let search_input_debounce = debounce(() => {
             if (txt_search.value) {
-                typing_timer = setTimeout(
-                    () => extraNetworksApplyFilter(tabname_full),
-                    done_typing_interval_ms,
-                );
+                extraNetworksApplyFilter(tabname_full);
             }
-        });
+        }, 250);
+        txt_search.addEventListener("keyup", search_input_debounce);
 
         // Update search filter whenever the search input's clear button is pressed.
         txt_search.addEventListener("extra-network-control--search-clear", () => extraNetworksApplyFilter(tabname_full));
@@ -194,24 +212,9 @@ function extraNetworksSetupTabContent(tabname, pane, controls_div) {
         if (pane.style.display != "none") {
             extraNetworksShowControlsForPage(tabname, tabname_full);
         }
-
-        // Handle extra-network-pane resize events.
-        let resize_observer_timer;
-        let done_resize_observer_interval_ms = 250;
-        let resize_observer = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-                if (entry.target === pane) {
-                    clearTimeout(resize_observer_timer);
-                    resize_observer_timer = setTimeout(
-                        () => extraNetworksClusterizersOnResize(tabname_full),
-                        done_resize_observer_interval_ms,
-                    );
-                    break;
-                }
-            }
-        });
-        resize_observer.observe(pane);
-    })
+    }).then(() => {
+        tab_setup_complete[tabname_full] = true;
+    });
 }
 
 function extraNetworksSetupTab(tabname) {
@@ -277,21 +280,8 @@ function extraNetworksTabSelected(tabname, id, showPrompt, showNegativePrompt, t
     extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt);
     extraNetworksShowControlsForPage(tabname, tabname_full);
 
-    console.log("HERE!!!:", clusterizers[tabname_full].cards_list.scroll_elem.isConnected);
-
-    Promise.all([
-        waitForKeyInObject({ obj: clusterizers, k: tabname_full }),
-        waitForKeyInObject({ obj: clusterizers_initial_load, k: tabname_full }).then(() => {
-            waitForBool(clusterizers_initial_load[tabname_full]).then(() => {
-                Promise.all([
-                    clusterizers[tabname_full].tree_list.waitForElements(),
-                    clusterizers[tabname_full].cards_list.waitForElements(),
-                ]).then(() => {return;});
-            });
-        }),
-    ]).then(() => {
-        extraNetworkClusterizersOnTabLoad(tabname_full);
-    });
+    waitForKeyInObject({ k: tabname_full, obj: clusterizers })
+        .then(() => extraNetworkClusterizersOnTabLoad(tabname_full));
 }
 
 function extraNetworksApplyFilter(tabname_full) {
@@ -302,6 +292,24 @@ function extraNetworksApplyFilter(tabname_full) {
 
     // We only want to filter/sort the cards list.
     clusterizers[tabname_full].cards_list.applyFilter();
+
+    // If the search input has changed since selecting a button to populate it
+    // then we want to disable the button that previously populated the search input.
+    const txt_search = gradioApp().querySelector(`#${tabname_full}_extra_search`);
+    if (!txt_search) {
+        return;
+    }
+
+    // tree view buttons
+    let btn = gradioApp().querySelector(`#${tabname_full}_tree_list_content_area .tree-list-item[data-selected=""]`);
+    if (btn && btn.dataset.path !== txt_search.value) {
+        delete btn.dataset.selected;
+    }
+    // dirs view buttons
+    btn = gradioApp().querySelector(`#${tabname_full}_dirs .extra-network-dirs-view-button[data-selected=""]`);
+    if (btn && btn.textContent.trim() !== txt_search.value) {
+        delete btn.dataset.selected;
+    }
 }
 
 function extraNetworksClusterizersEnable(tabname_full) {
@@ -349,15 +357,21 @@ function extraNetworksClusterizersRebuild(tabname_full, force) {
 }
 
 function extraNetworkClusterizersOnTabLoad(tabname_full) {
-    /** Enables a tab's clusterizer, updates its data, and rebuilds it. */
-    if (!(tabname_full in clusterizers)) {
-        return;
-    }
-
-    extraNetworksClusterizersEnable(tabname_full);
-    for (const v of Object.values(clusterizers[tabname_full])) {
-        v.load();
-    }
+    return new Promise(resolve => {
+        /** Enables a tab's clusterizer, updates its data, and rebuilds it. */
+        if (!(tabname_full in clusterizers)) {
+            return resolve();
+        }
+        
+        (async () => {
+            extraNetworksClusterizersEnable(tabname_full);
+            for (const v of Object.values(clusterizers[tabname_full])) {
+                await v.load();
+            }
+        })().then(() => {
+            return resolve();
+        });
+    });
 }
 
 function extraNetworksClusterizersOnResize(tabname_full) {
@@ -365,23 +379,8 @@ function extraNetworksClusterizersOnResize(tabname_full) {
 }
 
 function extraNetworksSetupEventHandlers() {
-    // Handle window resizes. Delay of 500ms after resize before firing an event
-    // as a way of "debouncing" resizes.
-    var resize_timer;
-    var resize_timeout_ms = 500;
-    window.addEventListener("resize", () => {
-        clearTimeout(resize_timer);
-        resize_timer = setTimeout(() => {extraNetworksClusterizersOnResize();}, resize_timeout_ms);
-    });
-
-    // Handle resizeHandle resizes. Only fires on mouseup after resizing.
-    window.addEventListener("resizeHandleResized", (e) => {
-        e.stopPropagation();
-        const tabname_full = e.target.closest(".extra-network-pane").id.replace("_pane", "");
-        // Force update rows after resizing.
-        extraNetworksClusterizersOnResize(tabname_full);
-    });
-
+    // Handle doubleclick events from the resize handle.
+    // This will automatically fit the left pane to the size of its largest loaded row.
     window.addEventListener("resizeHandleDblClick", (e) => {
         e.stopPropagation();
         const tabname_full = e.target.closest(".extra-network-pane").id.replace("_pane", "");
@@ -390,38 +389,19 @@ function extraNetworksSetupEventHandlers() {
             return;
         }
 
-        let max_width = 0;
-        const scroll_area = e.target.querySelector(".extra-network-tree");
-        const content = e.target.querySelector(".extra-network-tree-content");
-        const style = window.getComputedStyle(content, null);
-        const content_lpad = parseInt(style.getPropertyValue("padding-left"));
-        const content_rpad = parseInt(style.getPropertyValue("padding-right"));
-        content.querySelectorAll(".tree-list-item").forEach((row) => {
-            // Temporarily set the grid columns to maximize column width
-            // so we can calculate the full width of the row.
-            const row_style = window.getComputedStyle(row, null);
-            const prev_grid_template_columns = row.style.gridTemplateColumns;
-            const n_cols = row_style.getPropertyValue("grid-template-columns").split(" ").length;
-            row.style.gridTemplateColumns = `repeat(${n_cols}, max-content)`;
-            if (row.scrollWidth > max_width) {
-                max_width = row.scrollWidth;
-            }
-            //row.style.gridTemplateColumns = prev_grid_template_columns;
-        });
-        if (max_width <= 0) {
+        // Shouldn't be possible, but if tree is hidden then we want to ignore this event
+        // since there wouldn't be any content to calculate row width. When hidden,
+        // the resize handle shouldn't exist on page but just in case...
+        if (gradioApp().getElementById(`${tabname_full}_tree_list_scroll_area`).parentElement.classList.contains("hidden")) {
             return;
         }
 
-        // Add the container's padding to the result.
-        max_width += content_lpad + content_rpad;
-        // Add the scrollbar's width to the result. Will add 0 if scrollbar isnt present.
-        max_width += scroll_area.offsetWidth - scroll_area.clientWidth;
+        // We know that the tree list is the left column. That is the only one we want to resize.
+        let max_width = clusterizers[tabname_full].tree_list.getMaxRowWidth();
         // Add the resize handle's padding to the result and default to minLeftColWidth if necessary.
         max_width = Math.max(max_width + e.detail.pad, e.detail.minLeftColWidth);
 
         e.detail.setLeftColGridTemplate(e.target, max_width);
-
-        extraNetworksClusterizersOnResize(tabname_full);
     });
 }
 
@@ -726,10 +706,10 @@ function extraNetworksControlTreeViewOnClick(event, tabname_full) {
      */
     var button = event.currentTarget;
     button.classList.toggle("extra-network-control--enabled");
-    var show = !button.classList.contains("extra-network-control--enabled");
+    var show = button.classList.contains("extra-network-control--enabled");
 
-    gradioApp().getElementById(`${tabname_full}_tree_list_scroll_area`).parentElement.classList.toggle("hidden", show);
-    extraNetworksClusterizersonResize(tabname_full);
+    gradioApp().getElementById(`${tabname_full}_tree_list_scroll_area`).parentElement.classList.toggle("hidden", !show);
+    clusterizers[tabname_full].tree_list.enable(show);
 }
 
 function extraNetworksControlDirsViewOnClick(event, tabname_full) {
@@ -744,10 +724,9 @@ function extraNetworksControlDirsViewOnClick(event, tabname_full) {
      */
     var button = event.currentTarget;
     button.classList.toggle("extra-network-control--enabled");
-    var show = !button.classList.contains("extra-network-control--enabled");
+    var show = button.classList.contains("extra-network-control--enabled");
 
-    gradioApp().getElementById(`${tabname_full}_dirs`).classList.toggle("hidden", show);
-    extraNetworksClusterizersOnResize(tabname_full);
+    gradioApp().getElementById(`${tabname_full}_dirs`).classList.toggle("hidden", !show);
 }
 
 function extraNetworksControlRefreshOnClick(event, tabname_full) {
@@ -763,9 +742,11 @@ function extraNetworksControlRefreshOnClick(event, tabname_full) {
      * @param tabname_full  The full active tabname.
      *                      i.e. txt2img_lora, img2img_checkpoints, etc.
      */
+    // reset states
     initialUiOptionsLoaded.state = false;
-    var btn_refresh_internal = gradioApp().getElementById(`${tabname_full}_extra_refresh_internal`);
-    btn_refresh_internal.dispatchEvent(new Event("click"));
+    tab_setup_complete = {};
+    // Fire an event for this button click.
+    gradioApp().getElementById(`${tabname_full}_extra_refresh_internal`).dispatchEvent(new Event("click"));
 }
 
 function closePopup() {

@@ -42,6 +42,58 @@ const querySelectorLogError = x => {
     return elem;
 }
 
+const getComputedPropertyDims = (elem, prop) => {
+    /** Returns the top/left/bottom/right float dimensions of an element for the specified property. */
+    const style = window.getComputedStyle(elem, null);
+    return {
+        top: parseFloat(style.getPropertyValue(`${prop}-top`)),
+        left: parseFloat(style.getPropertyValue(`${prop}-left`)),
+        bottom: parseFloat(style.getPropertyValue(`${prop}-bottom`)),
+        right: parseFloat(style.getPropertyValue(`${prop}-right`)),
+    };
+}
+
+const getComputedMarginDims = elem => {
+    const dims = getComputedPropertyDims(elem, "margin");
+    return {
+        width: dims.left + dims.right,
+        height: dims.top + dims.bottom,
+    };
+}
+
+const getComputedPaddingDims = elem => {
+    const dims = getComputedPropertyDims(elem, "padding");
+    return {
+        width: dims.left + dims.right,
+        height: dims.top + dims.bottom,
+    };
+}
+
+const getComputedBorderDims = elem => {
+    // computed border will always start with the pixel width so thankfully
+    // the parseFloat() conversion will just give us the width and ignore the rest.
+    // Otherwise we'd have to use border-<pos>-width instead.
+    const dims = getComputedPropertyDims(elem, "border");
+    return {
+        width: dims.left + dims.right,
+        height: dims.top + dims.bottom,
+    };
+}
+
+const getComputedDims = elem => {
+    /** Returns the full width and height of an element including its margin, padding, and border. */
+    const width = elem.scrollWidth;
+    const height = elem.scrollHeight;
+    const margin = getComputedMarginDims(elem);
+    const padding = getComputedPaddingDims(elem);
+    const border = getComputedBorderDims(elem);
+    return {
+        width: width + margin.width + padding.width + border.width,
+        height: height + margin.height + padding.height + border.height,
+    }
+    
+}
+
 function compress(string) {
     /** Compresses a string into a base64 encoded GZipped string. */
     const cs = new CompressionStream('gzip');
@@ -84,42 +136,17 @@ const getComputedValue = function (container, css_property) {
     );
 };
 
-const calcColsPerRow = function (parent) {
-    // Returns the number of columns in a row of a flexbox.
-    //const parent = document.querySelector(selector);
-    const parent_width = getComputedValue(parent, "width");
-    const parent_padding_left = getComputedValue(parent, "padding-left");
-    const parent_padding_right = getComputedValue(parent, "padding-right");
+const calcColsPerRow = function (parent, child) {
+    /** Calculates the number of columns of children that can fit in a parent's visible width. */
+    const parent_inner_width = parent.offsetWidth - getComputedPaddingDims(parent).width;
+    return parseInt(parent_inner_width / getComputedDims(child).width);
 
-    const child = parent.firstElementChild;
-    const child_width = getComputedValue(child, "width");
-    const child_margin_left = getComputedValue(child, "margin-left");
-    const child_margin_right = getComputedValue(child, "margin-right");
-
-    var parent_width_no_padding = parent_width - parent_padding_left - parent_padding_right;
-    const child_width_with_margin = child_width + child_margin_left + child_margin_right;
-    parent_width_no_padding += child_margin_left + child_margin_right;
-
-    return parseInt(parent_width_no_padding / child_width_with_margin);
 }
 
-const calcRowsPerCol = function (container, parent) {
-    // Returns the number of columns in a row of a flexbox.
-    //const parent = document.querySelector(selector);
-    const parent_height = getComputedValue(container, "height");
-    const parent_padding_top = getComputedValue(container, "padding-top");
-    const parent_padding_bottom = getComputedValue(container, "padding-bottom");
-
-    const child = parent.firstElementChild;
-    const child_height = getComputedValue(child, "height");
-    const child_margin_top = getComputedValue(child, "margin-top");
-    const child_margin_bottom = getComputedValue(child, "margin-bottom");
-
-    var parent_height_no_padding = parent_height - parent_padding_top - parent_padding_bottom;
-    const child_height_with_margin = child_height + child_margin_top + child_margin_bottom;
-    parent_height_no_padding += child_margin_top + child_margin_bottom;
-
-    return parseInt(parent_height_no_padding / child_height_with_margin);
+const calcRowsPerCol = function (parent, child) {
+    /** Calculates the number of rows of children that can fit in a parent's visible height. */
+    const parent_inner_height = parent.offsetHeight - getComputedPaddingDims(parent).height;
+    return parseInt(parent_inner_height / getComputedDims(child).height);
 }
 
 class ExtraNetworksClusterize {
@@ -166,6 +193,8 @@ class ExtraNetworksClusterize {
         this.resize_observer_timer = null;
         this.resize_observer_timeout_ms = 250;
         this.element_observer = null;
+        this.data_update_timer = null
+        this.data_update_timeout_ms = 1000;
 
         this.enabled = false;
 
@@ -204,33 +233,35 @@ class ExtraNetworksClusterize {
     }
 
     load() {
-        return waitForElement(`#${this.data_id}`)
-            .then((elem) => this.data_elem = elem)
-            .then(() => this.parseJson(this.data_elem.dataset.json))
-            .then(() => this.init())
-            .then(() => this.repair())
-            .then(() => this.applyFilter());
+        return new Promise(resolve => {
+            waitForElement(`#${this.data_id}`)
+                .then((elem) => this.data_elem = elem)
+                .then(() => this.parseJson(this.data_elem.dataset.json))
+                .then(() => { return resolve(); });
+        });
     }
 
     parseJson(encoded_str) { /** promise */
         return new Promise(resolve => {
             // Skip parsing if the string hasnt actually updated.
             if (this.encoded_str === encoded_str) {
-                console.log("no change");
                 return resolve();
             }
-            return resolve(
-                Promise.resolve(encoded_str)
-                    .then(v => decompress(v))
-                    .then(v => JSON.parse(v))
-                    .then(v => this.updateJson(v))
-                    .then(() => {console.log("parse json done"); this.encoded_str = encoded_str; })
-            );
+            Promise.resolve(encoded_str)
+                .then(v => decompress(v))
+                .then(v => JSON.parse(v))
+                .then(v => this.updateJson(v))
+                .then(() => this.encoded_str = encoded_str)
+                .then(() => this.init())
+                .then(() => this.repair())
+                .then(() => this.applyFilter())
+                .then(() => { return resolve(); });
         });
     }
 
     updateJson(json) { /** promise */
         /** Must be overridden by inherited class. */
+        console.error("Base class method called. Must be overridden by child.");
         return new Promise(resolve => {return resolve();});
     }
 
@@ -285,10 +316,15 @@ class ExtraNetworksClusterize {
             return;
         }
 
-        this.refresh();
+        this.refresh(true);
 
         // Rebuild with `force=false` so we only rebuild if dimensions change.
         this.rebuild(false);
+    }
+
+    getMaxRowWidth() {
+        // impliment in subclasses
+        return;
     }
 
     recalculateDims() {
@@ -312,11 +348,23 @@ class ExtraNetworksClusterize {
             clear_before_return = true;
         }
         
+        const child = this.content_elem.querySelector(":not(.clusterize-extra-row)");
+        if (isNullOrUndefined(child)) {
+            if (clear_before_return) {
+                this.clear();
+                return rebuild_required;
+            }
+        }
+        
         // Calculate the visible rows and colums for the clusterize-content area.
-        let n_cols = calcColsPerRow(this.content_elem);
-        let n_rows = calcRowsPerCol(this.scroll_elem, this.content_elem);
+        let n_cols = calcColsPerRow(this.content_elem, child);
+        let n_rows = calcRowsPerCol(this.scroll_elem, child);
         n_cols = (isNaN(n_cols) || n_cols <= 0) ? 1 : n_cols;
         n_rows = (isNaN(n_rows) || n_rows <= 0) ? 1 : n_rows;
+
+        // Add two extra rows to account for partial row visibility on top and bottom
+        // of the content element view region.
+        n_rows += 2;
 
         if (n_cols != this.n_cols || n_rows != this.n_rows) {
             // Sizes have changed. Update the instance values.
@@ -372,15 +420,12 @@ class ExtraNetworksClusterize {
 
         if (isNullOrUndefined(this.clusterize)) {
             // If we have already initialized, don't do it again.
-            console.log("rebuild:: init");
             this.init();
         } else if (this.recalculateDims() || force) {
-            console.log("rebuild:: full", this.scroll_id);
             this.destroy();
             this.clusterize = null;
             this.init();
         } else {
-            console.log("rebuild:: update", this.scroll_id);
             this.update();
         }
     }
@@ -419,7 +464,6 @@ class ExtraNetworksClusterize {
     }
 
     onResize(elem_id) {
-        console.log("element resized:", elem_id);
         this.updateRows();
     }
 
@@ -437,7 +481,6 @@ class ExtraNetworksClusterize {
             default:
                 break;
         }
-        console.log("onElementAdded::", elem_id, document.body.contains(this.scroll_elem));
     }
 
     onElementRemoved(elem_id) {
@@ -454,48 +497,65 @@ class ExtraNetworksClusterize {
             default:
                 break;
         }
-        console.log("onElementRemoved::", elem_id, document.body.contains(this.scroll_elem));
+    }
+
+    onElementUpdated(elem_id) {
+        switch(elem_id) {
+            case this.data_id:
+                waitForElement(`#${this.data_id}`).then((elem) => this.data_elem = elem);
+                break;
+            case this.scroll_id:
+                this.repair();
+                break;
+            case this.content_id:
+                this.repair();
+                break;
+            default:
+                break;
+        }
     }
 
     onDataChanged(data) {
-        console.log("onDataChanged::", this.data_id);
         this.parseJson(data);
     }
 
     setupElementObservers() {
         this.element_observer = new MutationObserver((mutations) => {
-            for (const mutation of mutations) {
-                if (mutation.type === "childList") {
-                    // added
-                    if (mutation.addedNodes.length > 0) {
-                        for (const node of mutation.addedNodes) {
-                            if (node.id === this.data_id || node.id === this.scroll_id || node.id === this.content_id) {
-                                this.onElementAdded(node.id);
-                            }
-                        }
-                    }
-                    // removed
-                    if (mutation.removedNodes.length > 0) {
-                        for (const node of mutation.removedNodes) {
-                            if (node.id === this.data_id || node.id === this.scroll_id || node.id === this.content_id) {
-                                this.onElementRemoved(node.id);
-                            }
-                        }
-                    }
-                } else if (mutation.type === "attributes") {
-                    if (mutation.target.id === this.data_id && mutation.attributeName === "data-json") {
-                        this.onDataChanged(mutation.target.dataset.json);
-                    }
-                }
+            // don't waste time if this object isn't enabled.
+            if (!this.enabled) {
+                return;
+            }
+
+            let data_elem = gradioApp().getElementById(this.data_id);
+            if (data_elem && data_elem !== this.data_elem) {
+                this.onElementUpdated(data_elem.id);
+            } else if (data_elem && data_elem.dataset.json !== this.encoded_str) {
+                // we don't want to get blasted with data updates so just wait for
+                // the data to settle down before updating.
+                clearTimeout(this.data_update_timer);
+                this.data_update_timer = setTimeout(() => {
+                    this.onDataChanged(data_elem.dataset.json);
+                }, this.data_update_timeout_ms);
+            }
+
+            let scroll_elem = gradioApp().getElementById(this.scroll_id);
+            if (scroll_elem && scroll_elem !== this.scroll_elem) {
+                this.onElementUpdated(scroll_elem.id);
+            }
+
+            let content_elem = gradioApp().getElementById(this.content_id);
+            if (content_elem && content_elem !== this.content_elem) {
+                this.onElementUpdated(content_elem.id);
             }
         });
         this.element_observer.observe(gradioApp(), {subtree: true, childList: true, attributes: true});
     }
 
     setupResizeHandlers() {
+        // Handle element resizes. Delay of `resize_observer_timeout_ms` after resize 
+        // before firing an event as a way of "debouncing" resizes.
         this.resize_observer = new ResizeObserver((entries) => {
             for (const entry of entries) {
-                console.log("resizeObserver:", entry.target.id);
                 if (entry.target.id === this.scroll_id || entry.target.id === this.content_id) {
                     clearTimeout(this.resize_observer_timer);
                     this.resize_observer_timer = setTimeout(() => this.onResize(entry.id), this.resize_observer_timeout_ms);
@@ -619,8 +679,6 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
                     this.data_obj[k].active = false;
                 }
             }
-            //this.applyFilter();
-            console.log("updateJson:: done", this.scroll_id);
             return resolve();
         });
     }
@@ -641,6 +699,42 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
                 this.addChildRows(child_id);
             }
         }
+    }
+
+    getMaxRowWidth() {
+        if (!this.enabled) {
+            // Inactive list is not displayed on screen. Can't calculate size.
+            return false;
+        }
+        if (this.rowCount() === 0) {
+            // If there is no data then just skip.
+            return false;
+        }
+
+        let max_width = 0;
+        for (let i = 0; i < this.content_elem.children.length; i += this.n_cols) {
+            let row_width = 0;
+            for (let j = 0; j < this.n_cols; j++) {
+                const child = this.content_elem.children[i + j];
+                const child_style = window.getComputedStyle(child, null);
+                const prev_style = child.style.cssText;
+                const n_cols = child_style.getPropertyValue("grid-template-columns").split(" ").length;
+                child.style.gridTemplateColumns = `repeat(${n_cols}, max-content)`;
+                row_width += getComputedDims(child).width;
+                // Re-apply previous style.
+                child.style.cssText = prev_style;
+            }
+            max_width = Math.max(max_width, row_width);
+        }
+        if (max_width <= 0) {
+            return;
+        }
+
+        // Add the container's padding to the result.
+        max_width += getComputedPaddingDims(this.content_elem).width;
+        // Add the scrollbar's width to the result. Will add 0 if scrollbar isnt present.
+        max_width += this.scroll_elem.offsetWidth - this.scroll_elem.clientWidth;
+        return max_width;
     }
 }
 
@@ -664,9 +758,6 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
                     active: true,
                 };
             }
-            //this.applyFilter();
-            console.log("updateJson:: done", this.scroll_id);
-            if (this.scroll_id.includes("textual")) { console.log(this.data_obj); }
             return resolve();
         });
     }
@@ -769,5 +860,34 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
 
         this.applySort();
         this.updateRows();
+    }
+
+    getMaxRowWidth() {
+        if (!this.enabled) {
+            // Inactive list is not displayed on screen. Can't calculate size.
+            return false;
+        }
+        if (this.rowCount() === 0) {
+            // If there is no data then just skip.
+            return false;
+        }
+
+        let max_width = 0;
+        for (let i = 0; i < this.content_elem.children.length; i += this.n_cols) {
+            let row_width = 0;
+            for (let j = 0; j < this.n_cols; j++) {
+                row_width += getComputedDims(this.content_elem.children[i + j]).width;
+            }
+            max_width = Math.max(max_width, row_width);
+        }
+        if (max_width <= 0) {
+            return;
+        }
+
+        // Add the container's padding to the result.
+        max_width += getComputedPaddingDims(this.content_elem).width;
+        // Add the scrollbar's width to the result. Will add 0 if scrollbar isnt present.
+        max_width += this.scroll_elem.offsetWidth - this.scroll_elem.clientWidth;
+        return max_width;
     }
 }
