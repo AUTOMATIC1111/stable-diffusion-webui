@@ -722,7 +722,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
     generation_params = {
         "Steps": p.steps,
         "Sampler": p.sampler_name,
-        "Schedule type": None,
+        "Schedule type": p.scheduler,
         "CFG scale": p.cfg_scale,
         "Image CFG scale": getattr(p, 'image_cfg_scale', None),
         "Seed": p.all_seeds[0] if use_main_prompt else all_seeds[index],
