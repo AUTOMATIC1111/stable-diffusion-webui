@@ -32,6 +32,26 @@ def vram_check():
     else:
         return 3
 
+# Function to write new args to webui-user.bat file
+def write_commandline_args():
+    bat_file = "./webui-user.bat"
+    ## TODO: Switch this to use actual dynamic commandline args from user options and system info
+    new_commandline_args = ""
+
+    # Read webui-user.bat file and save lines
+    with open(bat_file, 'r') as file:
+        lines = file.readlines()
+
+    # Modify lines to have new commandline args
+    for i, line in enumerate(lines):
+        if line.strip().startswith('set COMMANDLINE_ARGS='):
+            lines[i] = f'set COMMANDLINE_ARGS={new_commandline_args}\n'
+            break
+
+    # Write lines back to file
+    with open(bat_file, 'w') as file:
+        file.writelines(lines)
+
 ## Main starting check sequence
 def start_check_sequence():
     print("Running system checks")
