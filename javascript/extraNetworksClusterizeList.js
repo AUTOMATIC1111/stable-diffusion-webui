@@ -1,6 +1,10 @@
+const JSON_UPDATE_DEBOUNCE_TIME_MS = 1000;
+const RESIZE_DEBOUNCE_TIME_MS = 250;
 // Collators used for sorting.
 const INT_COLLATOR = new Intl.Collator([], { numeric: true });
 const STR_COLLATOR = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+
+/** Helper functions for checking types and simplifying logging. */
 
 const isString = x => typeof x === "string" || x instanceof String;
 const isStringLogError = x => {
@@ -16,11 +20,12 @@ const isUndefined = x => typeof x === "undefined" || x === undefined;
 const isNullOrUndefined = x => isNull(x) || isUndefined(x);
 const isNullOrUndefinedLogError = x => {
     if (isNullOrUndefined(x)) {
+        console.error("Variable is null/undefined.");
         return true;
     }
-    console.error("Variable is null/undefined.");
     return false;
 };
+
 const isElement = x => x instanceof Element;
 const isElementLogError = x => {
     if (isElement(x)) {
@@ -30,14 +35,14 @@ const isElementLogError = x => {
     return false;
 }
 
-const getElementByIdLogError = x => {
-    let elem = gradioApp().getElementById(x);
+const getElementByIdLogError = selector => {
+    let elem = gradioApp().getElementById(selector);
     isElementLogError(elem);
     return elem;
 };
 
-const querySelectorLogError = x => {
-    let elem = gradioApp().querySelector(x);
+const querySelectorLogError = selector => {
+    let elem = gradioApp().querySelector(selector);
     isElementLogError(elem);
     return elem;
 }
@@ -54,6 +59,7 @@ const getComputedPropertyDims = (elem, prop) => {
 }
 
 const getComputedMarginDims = elem => {
+    /** Returns the width/height of the computed margin of an element. */
     const dims = getComputedPropertyDims(elem, "margin");
     return {
         width: dims.left + dims.right,
@@ -62,6 +68,7 @@ const getComputedMarginDims = elem => {
 }
 
 const getComputedPaddingDims = elem => {
+    /** Returns the width/height of the computed padding of an element. */
     const dims = getComputedPropertyDims(elem, "padding");
     return {
         width: dims.left + dims.right,
@@ -70,6 +77,7 @@ const getComputedPaddingDims = elem => {
 }
 
 const getComputedBorderDims = elem => {
+    /** Returns the width/height of the computed border of an element. */
     // computed border will always start with the pixel width so thankfully
     // the parseFloat() conversion will just give us the width and ignore the rest.
     // Otherwise we'd have to use border-<pos>-width instead.
@@ -123,12 +131,14 @@ function decompress(base64string) {
 }
 
 const parseHtml = function (str) {
+    /** Converts an HTML string into an Element type. */
     const tmp = document.implementation.createHTMLDocument('');
     tmp.body.innerHTML = str;
     return [...tmp.body.childNodes];
 }
 
 const getComputedValue = function (container, css_property) {
+    /** Gets a property value for the computed style of an element. */
     return parseInt(
         window.getComputedStyle(container, null)
             .getPropertyValue(css_property)
@@ -191,17 +201,16 @@ class ExtraNetworksClusterize {
 
         this.resize_observer = null;
         this.resize_observer_timer = null;
-        this.resize_observer_timeout_ms = 250;
         this.element_observer = null;
         this.data_update_timer = null
-        this.data_update_timeout_ms = 1000;
 
+        // Used to control logic. Many functions immediately return when disabled.
         this.enabled = false;
 
+        // Stores the current encoded string so we can compare against future versions.
         this.encoded_str = "";
 
         this.no_data_text = "Directory is empty.";
-        this.no_data_class = "nocards";
 
         this.n_rows = 1;
         this.n_cols = 1;
@@ -212,6 +221,7 @@ class ExtraNetworksClusterize {
         this.sort_fn = this.sortByDivId;
         this.sort_reverse = false;
 
+        // Setup our event handlers only after our elements exist in DOM.
         Promise.all([
             waitForElement(`#${this.data_id}`).then((elem) => this.data_elem = elem),
             waitForElement(`#${this.scroll_id}`).then((elem) => this.scroll_elem = elem),
@@ -223,16 +233,17 @@ class ExtraNetworksClusterize {
     }
 
     enable(enabled) {
-        if (enabled === undefined || enabled === null) {
-            this.enabled = true;
-        } else if (typeof enabled !== "boolean") {
-            console.error("Invalid type. Expected boolean, got", typeof enabled);
-        } else {
-            this.enabled = enabled;
-        }
+        /** Enables or disabled this instance. */
+        // All values other than `true` for `enabled` result in this.enabled=false.
+        this.enabled = !(enabled !== true);
     }
 
-    load() {
+    load() { /** promise */
+        /** Loads this instance into the view.
+         *  
+         *  Calling this function should be all that is needed in order to fully update
+         *  and display the clusterize list.
+        */
         return new Promise(resolve => {
             waitForElement(`#${this.data_id}`)
                 .then((elem) => this.data_elem = elem)
@@ -242,6 +253,7 @@ class ExtraNetworksClusterize {
     }
 
     parseJson(encoded_str) { /** promise */
+    /** Parses a base64 encoded and gzipped JSON string and sets up a clusterize instance. */
         return new Promise(resolve => {
             // Skip parsing if the string hasnt actually updated.
             if (this.encoded_str === encoded_str) {
@@ -252,25 +264,30 @@ class ExtraNetworksClusterize {
                 .then(v => JSON.parse(v))
                 .then(v => this.updateJson(v))
                 .then(() => this.encoded_str = encoded_str)
-                .then(() => this.init())
-                .then(() => this.repair())
+                .then(() => this.rebuild())
+                //.then(() => this.init())
+                //.then(() => this.repair())
                 .then(() => this.applyFilter())
                 .then(() => { return resolve(); });
         });
     }
 
     updateJson(json) { /** promise */
-        /** Must be overridden by inherited class. */
-        console.error("Base class method called. Must be overridden by child.");
+        console.error("Base class method called. Must be overridden by subclass.");
         return new Promise(resolve => {return resolve();});
     }
 
     sortByDivId() {
-        // Sort data_obj keys (div_id) as numbers.
+        /** Sort data_obj keys (div_id) as numbers. */
         this.data_obj_keys_sorted = Object.keys(this.data_obj).sort((a, b) => INT_COLLATOR.compare(a, b));
     }
 
     applySort() {
+        /** Sorts the rows using the instance's `sort_fn`.
+         * 
+         *  It is expected that a subclass will override this function to update the
+         *  instance's `sort_fn` then call `super.applySort()` to apply the sorting.
+         */
         this.sort_fn()
         if (this.sort_reverse) {
             this.data_obj_keys_sorted = this.data_obj_keys_sorted.reverse();
@@ -278,12 +295,16 @@ class ExtraNetworksClusterize {
     }
 
     applyFilter() {
-        /** Must be implemented by subclasses. */
+        /** Sorts then updates the rows.
+         * 
+         *  Should be overridden by subclass. Base class doesn't apply any filters.
+         */
         this.applySort();
         this.updateRows();
     }
 
-    filterRows(obj) {
+    getRows(obj) {
+        /** Returns an array of html strings of all active rows. */
         var results = [];
         for (const div_id of this.data_obj_keys_sorted) {
             if (obj[div_id].active) {
@@ -294,7 +315,13 @@ class ExtraNetworksClusterize {
     }
 
     updateDivContent(div_id, content) {
-        /** Updates an element in the dataset. Does not call update_rows(). */
+        /** Updates an element's html in the dataset.
+         *
+         *  NOTE: This function only updates the dataset. Calling function must call
+         *  updateRows() to apply these changes to the view. Adding this call to this
+         *  function would be very slow in the case where many divs need their content
+         *  updated at the same time.
+        */
         if (!(div_id in this.data_obj)) {
             console.error("div_id not in data_obj:", div_id);
         } else if (typeof content === "object") {
@@ -311,7 +338,11 @@ class ExtraNetworksClusterize {
     }
 
     updateRows() {
-        // If we don't have any entries in the dataset, then just clear the list and return.
+        /** Updates the instance using the stored rows in our data object.
+         * 
+         *  Should be called whenever we change order or number of rows.
+         */
+        // If we don't have any entries in the dataset, then just return.
         if (this.data_obj_keys_sorted.length === 0 || Object.keys(this.data_obj).length === 0) {
             return;
         }
@@ -323,11 +354,15 @@ class ExtraNetworksClusterize {
     }
 
     getMaxRowWidth() {
-        // impliment in subclasses
+        console.error("getMaxRowWidth:: Not implemented in base class. Must be overridden.");
         return;
     }
 
     recalculateDims() {
+        /** Recalculates the number of rows and columns that can fit within the scroll view.
+         * 
+         *  Returns whether the rows/columns have changed indicating that we need to rebuild.
+        */
         let rebuild_required = false;
         let clear_before_return = false;
 
@@ -382,20 +417,8 @@ class ExtraNetworksClusterize {
         return rebuild_required;
     }
 
-    waitForElements() {
-        return new Promise(resolve => {
-            Promise.all([
-                waitForElement(`#${this.data_id}`),
-                waitForElement(`#${this.scroll_id}`),
-                waitForElement(`#${this.content_id}`),
-            ]).then(() => {
-                return resolve();
-            });
-        });
-    }
-
     repair() {
-        /** Fixes element association in DOM. Returns true if element was replaced in DOM. */
+        /** Fixes element association in DOM. Returns whether a fix was performed. */
         // If association for elements is broken, replace them with instance version.
         if (!this.scroll_elem.isConnected || !this.content_elem.isConnected) {
             gradioApp().getElementById(this.scroll_id).replaceWith(this.scroll_elem);
@@ -413,13 +436,25 @@ class ExtraNetworksClusterize {
     }
 
     rebuild(force) {
+        /** Rebuilds, updates, or initializes a clusterize instance.
+         * 
+         *  TODO: Possibly rename this function to make its purpose more clear.
+         * 
+         *  Performs one of the following:
+         *      1. Initializes a new instance if we haven't already.
+         *      2. Destroys and reinitializes an instance if we pass `force=true` or if
+         *          the size of the elements has changed causing the number of items
+         *          that we can show on screen to be updated.
+         *      3. Simply updates the clusterize instance's rows with our current data
+         *          if none of the other conditions are met.
+         * 
+        */
         // Only accept boolean values for `force` parameter. Default to false.
         if (force !== true) {
             force = false;
         }
 
         if (isNullOrUndefined(this.clusterize)) {
-            // If we have already initialized, don't do it again.
             this.init();
         } else if (this.recalculateDims() || force) {
             this.destroy();
@@ -431,6 +466,7 @@ class ExtraNetworksClusterize {
     }
 
     init(rows) {
+        /** Initializes a Clusterize.js instance. */
         if (!isNullOrUndefined(this.clusterize)) {
             // If we have already initialized, don't do it again.
             return;
@@ -442,6 +478,7 @@ class ExtraNetworksClusterize {
         }
 
         if (isNullOrUndefined(rows)) {
+            // if we aren't passed any rows, use the instance's data object.
             rows = this.data_obj;
         } else if (Array.isArray(rows) && !(rows.every(row => isString(row)))) {
             console.error("Invalid data type for rows. Expected array[string].");
@@ -450,56 +487,25 @@ class ExtraNetworksClusterize {
 
         this.clusterize = new Clusterize(
             {
-                rows: this.filterRows(rows),
+                rows: this.getRows(rows),
                 scrollId: this.scroll_id,
                 contentId: this.content_id,
                 rows_in_block: this.rows_in_block,
                 blocks_in_cluster: this.blocks_in_cluster,
                 show_no_data_row: this.show_no_data_row,
                 no_data_text: this.no_data_text,
-                no_data_class: this.no_data_class,
                 callbacks: this.callbacks,
             }
         );
     }
 
     onResize(elem_id) {
+        /** Callback whenever one of our visible elements is resized. */
         this.updateRows();
     }
 
-    onElementAdded(elem_id) {
-        switch(elem_id) {
-            case this.data_id:
-                waitForElement(`#${this.data_id}`).then((elem) => this.data_elem = elem);
-                break;
-            case this.scroll_id:
-                this.repair();
-                break;
-            case this.content_id:
-                this.repair();
-                break;
-            default:
-                break;
-        }
-    }
-
-    onElementRemoved(elem_id) {
-        switch(elem_id) {
-            case this.data_id:
-                waitForElement(`#${this.data_id}`).then((elem) => this.data_elem = elem);
-                break;
-            case this.scroll_id:
-                this.repair();
-                break;
-            case this.content_id:
-                this.repair();
-                break;
-            default:
-                break;
-        }
-    }
-
-    onElementUpdated(elem_id) {
+    onElementDetached(elem_id) {
+        /** Callback whenever one of our elements has become detached from the DOM. */
         switch(elem_id) {
             case this.data_id:
                 waitForElement(`#${this.data_id}`).then((elem) => this.data_elem = elem);
@@ -516,10 +522,22 @@ class ExtraNetworksClusterize {
     }
 
     onDataChanged(data) {
+        /** Callback whenever the data element is modified. */
         this.parseJson(data);
     }
 
     setupElementObservers() {
+        /** Listens for changes to the data, scroll, and content elements.
+         * 
+         *  During testing, the scroll/content elements would frequently get removed from
+         *  the DOM. Our clusterize instance stores a reference to these elements
+         *  which breaks whenever these elements are removed from the DOM. To fix this,
+         *  we need to check for these changes and re-attach our stores elements by
+         *  replacing the ones in the DOM with the ones in our clusterize instance.
+         * 
+         *  We also use an observer to detect whenever the data element gets a new set
+         *  of JSON data so that we can update our dataset.
+         */
         this.element_observer = new MutationObserver((mutations) => {
             // don't waste time if this object isn't enabled.
             if (!this.enabled) {
@@ -528,37 +546,37 @@ class ExtraNetworksClusterize {
 
             let data_elem = gradioApp().getElementById(this.data_id);
             if (data_elem && data_elem !== this.data_elem) {
-                this.onElementUpdated(data_elem.id);
+                this.onElementDetached(data_elem.id);
             } else if (data_elem && data_elem.dataset.json !== this.encoded_str) {
                 // we don't want to get blasted with data updates so just wait for
                 // the data to settle down before updating.
                 clearTimeout(this.data_update_timer);
                 this.data_update_timer = setTimeout(() => {
                     this.onDataChanged(data_elem.dataset.json);
-                }, this.data_update_timeout_ms);
+                }, JSON_UPDATE_DEBOUNCE_TIME_MS);
             }
 
             let scroll_elem = gradioApp().getElementById(this.scroll_id);
             if (scroll_elem && scroll_elem !== this.scroll_elem) {
-                this.onElementUpdated(scroll_elem.id);
+                this.onElementDetached(scroll_elem.id);
             }
 
             let content_elem = gradioApp().getElementById(this.content_id);
             if (content_elem && content_elem !== this.content_elem) {
-                this.onElementUpdated(content_elem.id);
+                this.onElementDetached(content_elem.id);
             }
         });
         this.element_observer.observe(gradioApp(), {subtree: true, childList: true, attributes: true});
     }
 
     setupResizeHandlers() {
-        // Handle element resizes. Delay of `resize_observer_timeout_ms` after resize 
-        // before firing an event as a way of "debouncing" resizes.
+        /** Handles any updates to the size of both the Scroll and Content elements. */
         this.resize_observer = new ResizeObserver((entries) => {
             for (const entry of entries) {
                 if (entry.target.id === this.scroll_id || entry.target.id === this.content_id) {
+                    // debounce the event
                     clearTimeout(this.resize_observer_timer);
-                    this.resize_observer_timer = setTimeout(() => this.onResize(entry.id), this.resize_observer_timeout_ms);
+                    this.resize_observer_timer = setTimeout(() => this.onResize(entry.id), RESIZE_DEBOUNCE_TIME_MS);
                 }
             }
         });
@@ -569,7 +587,10 @@ class ExtraNetworksClusterize {
 
     /* ==== Clusterize.Js FUNCTION WRAPPERS ==== */
     refresh(force) {
-        /** Refreshes the clusterize instance so that it can recalculate its dims. */
+        /** Refreshes the clusterize instance so that it can recalculate its dims.
+         * `force` [boolean]: If true, tells clusterize to refresh regardless of whether
+         *      its dimensions have changed.
+        */
         if (isNullOrUndefined(this.clusterize)) {
             return;
         }
@@ -587,7 +608,7 @@ class ExtraNetworksClusterize {
     }
 
     clear() {
-        /** Removes all rows. */
+        /** Removes all rows from the clusterize dataset. */
         this.clusterize.clear();
     }
 
@@ -595,7 +616,7 @@ class ExtraNetworksClusterize {
         /** Adds rows from a list of element strings. */
         if (rows === undefined || rows === null) {
             // If not passed, use the default method of getting rows.
-            rows = this.filterRows(this.data_obj);
+            rows = this.getRows(this.data_obj);
         } else if (!Array.isArray(rows) || !(rows.every(row => typeof row === "string"))) {
             console.error("Invalid data type for rows. Expected array[string].");
             return;
@@ -605,19 +626,22 @@ class ExtraNetworksClusterize {
 
     destroy() {
         /** Destroys a clusterize instance and removes its rows from the page. */
-        // If `true` isnt passed, then clusterize dumps every row to the DOM.
-        // This kills performance so we never want to do this.
+        // Passing `true` prevents clusterize from dumping every row in its dataset
+        // to the DOM. This kills performance so we never want to do this.
         this.clusterize.destroy(true);
     }
 }
 
 class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
+    /** Subclass used to display a directories/files in the Tree View. */
     constructor(...args) {
         super(...args);
     }
 
     getBoxShadow(depth) {
-        // Generates style for a multi-level box shadow for vertical indentation lines.
+        /** Generates style for a multi-level box shadow for vertical indentation lines.
+         * This is used to indicate the depth of a directory/file within a directory tree.
+        */
         let res = "";
         var style = getComputedStyle(document.body);
         let bg = style.getPropertyValue("--body-background-fill");
@@ -632,6 +656,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
     }
 
     updateJson(json) {
+        /** Processes JSON object and adds each entry to our data object. */
         return new Promise(resolve => {
             var style = getComputedStyle(document.body);
             //let spacing_sm = style.getPropertyValue("--spacing-sm");
@@ -684,6 +709,10 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
     }
 
     removeChildRows(div_id) {
+        /** Removes rows from the list that are children of the passed div.
+         * The rows aren't removed from the data object, just set to active=false
+         * so they aren't displayed.
+        */
         for (const child_id of this.data_obj[div_id].children) {
             this.data_obj[child_id].active = false;
             this.data_obj[child_id].expanded = false;
@@ -693,6 +722,10 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
     }
 
     addChildRows(div_id) {
+        /** Adds rows to the list that are children of the passed div. 
+         * The rows aren't removed from the data object, just set to active=true
+         * so they are displayed.
+        */
         for (const child_id of this.data_obj[div_id].children) {
             this.data_obj[child_id].active = true;
             if (this.data_obj[child_id].expanded) {
@@ -702,6 +735,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
     }
 
     getMaxRowWidth() {
+        /** Calculates the width of the widest row in the list. */
         if (!this.enabled) {
             // Inactive list is not displayed on screen. Can't calculate size.
             return false;
@@ -739,6 +773,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
 }
 
 class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
+    /** Subclass used to display cards in the Cards View. */
     constructor(...args) {
         super(...args);
 
@@ -748,6 +783,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
     }
 
     updateJson(json) {
+        /** Processes JSON object and adds each entry to our data object. */
         return new Promise(resolve => {
             for (const [k, v] of Object.entries(json)) {
                 let div_id = k;
@@ -762,11 +798,16 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         });
     }
 
-    filterRows(obj) {
-        let filtered_rows = super.filterRows(obj);
+    getRows(obj) {
+        /** Returns array of rows as html strings after combining into pseudo-columns.
+         * Since Clusterize.js doesn't support columns, we need to manually calculate
+         * the number of columns that can fit in our view space then combine those
+         * elements into a single entry as a "row" string to pass to Clusterize.js.
+        */
+        let rows = super.getRows(obj);
         let res = [];
-        for (let i = 0; i < filtered_rows.length; i += this.n_cols) {
-            res.push(filtered_rows.slice(i, i + this.n_cols).join(""));
+        for (let i = 0; i < rows.length; i += this.n_cols) {
+            res.push(rows.slice(i, i + this.n_cols).join(""));
         }
         return res;
     }
@@ -807,12 +848,12 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         });
     }
 
-    setSortMode(btn_sort_mode) {
-        this.sort_mode_str = btn_sort_mode.dataset.sortMode.toLowerCase();
+    setSortMode(sort_mode_str) {
+        this.sort_mode_str = sort_mode_str;
     }
 
-    setSortDir(btn_sort_dir) {
-        this.sort_dir_str = btn_sort_dir.dataset.sortDir.toLowerCase();
+    setSortDir(sort_dir_str) {
+        this.sort_dir_str = sort_dir_str;
     }
 
     applySort() {
@@ -839,6 +880,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
     }
 
     applyFilter(filter_str) {
+        /** Filters our data object by setting each member's `active` attribute then sorts the result. */
         if (filter_str !== undefined && filter_str !== null) {
             this.filter_str = filter_str.toLowerCase();
         } else {
@@ -863,6 +905,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
     }
 
     getMaxRowWidth() {
+        /** Calculates the width of the widest pseudo-row in the list. */
         if (!this.enabled) {
             // Inactive list is not displayed on screen. Can't calculate size.
             return false;

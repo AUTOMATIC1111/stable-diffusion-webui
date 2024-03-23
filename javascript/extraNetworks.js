@@ -323,39 +323,6 @@ function extraNetworksClusterizersEnable(tabname_full) {
     }
 }
 
-function extraNetworksClusterizersUpdateRows(tabname_full) {
-    if (tabname_full !== undefined && tabname_full in clusterizers) {
-        for (const v of Object.values(clusterizers[tabname_full])) {
-            //v.updateRows();
-        }
-        return;
-    }
-    // iterate over tabnames
-    for (const [_tabname_full, tab_clusterizers] of Object.entries(clusterizers)) {
-        // iterate over clusterizers in tab
-        for (const v of Object.values(tab_clusterizers)) {
-            //v.updateRows();
-        }
-    }
-}
-
-function extraNetworksClusterizersRebuild(tabname_full, force) {
-    // rebuild only the specified tab
-    if (tabname_full in clusterizers) {
-        for (const v of Object.values(clusterizers[tabname_full])) {
-            v.rebuild(force);
-        }
-        return;
-    }
-
-    // rebuild all
-    for (const [_tabname_full, tab_clusterizers] of Object.entries(clusterizers)) {
-        for (const v of Object.values(tab_clusterizers)) {
-            v.rebuild(force);
-        }
-    }
-}
-
 function extraNetworkClusterizersOnTabLoad(tabname_full) {
     return new Promise(resolve => {
         /** Enables a tab's clusterizer, updates its data, and rebuilds it. */
@@ -372,10 +339,6 @@ function extraNetworkClusterizersOnTabLoad(tabname_full) {
             return resolve();
         });
     });
-}
-
-function extraNetworksClusterizersOnResize(tabname_full) {
-    extraNetworksClusterizersUpdateRows(tabname_full);
 }
 
 function extraNetworksSetupEventHandlers() {
@@ -653,18 +616,16 @@ function extraNetworksControlSearchClearOnClick(event, tabname_full) {
 
 function extraNetworksControlSortModeOnClick(event, tabname_full) {
     /** Handles `onclick` events for Sort Mode buttons. */
-
-    var self = event.currentTarget;
-    var parent = event.currentTarget.parentElement;
-
-    parent.querySelectorAll('.extra-network-control--sort-mode').forEach(function (x) {
+    event.currentTarget.parentElement.querySelectorAll('.extra-network-control--sort-mode').forEach(function (x) {
         x.classList.remove('extra-network-control--enabled');
     });
 
-    self.classList.add('extra-network-control--enabled');
+    event.currentTarget.classList.add('extra-network-control--enabled');
 
     if (tabname_full in clusterizers) {
-        clusterizers[tabname_full].cards_list.setSortMode(self);
+        clusterizers[tabname_full].cards_list.setSortMode(
+            event.currentTarget.dataset.sortMode.toLowerCase()
+        );
         extraNetworksApplyFilter(tabname_full);
     }
 }
