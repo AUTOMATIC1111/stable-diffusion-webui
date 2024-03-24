@@ -383,8 +383,7 @@ onUiLoaded(async() => {
 
         // Create tooltip
         function createTooltip() {
-            const toolTipElement =
-                targetElement.querySelector(".image-container");
+            const toolTipElement = targetElement.querySelector(".image-container");
             const tooltip = document.createElement("div");
             tooltip.className = "canvas-tooltip";
 
@@ -447,25 +446,15 @@ onUiLoaded(async() => {
 
             // Add a hint element to the target element
             toolTipElement.appendChild(tooltip);
+
+            return tooltip;
         }
 
         //Show tool tip if setting enable
-        if (hotkeysConfig.canvas_show_tooltip) {
-            createTooltip();
-        }
+        const canvasTooltip = createTooltip();
 
-        // In the course of research, it was found that the tag img is very harmful when zooming and creates white canvases. This hack allows you to almost never think about this problem, it has no effect on webui.
-        function fixCanvas() {
-            const activeTab = getActiveTab(elements)?.textContent.trim();
-
-            if (activeTab && activeTab !== "img2img") {
-                const img = targetElement.querySelector(`${elemId} img`);
-
-                if (img && img.style.display !== "none") {
-                    img.style.display = "none";
-                    img.style.visibility = "hidden";
-                }
-            }
+        if (!hotkeysConfig.canvas_show_tooltip) {
+            canvasTooltip.style.display = "none";
         }
 
         // Reset the zoom level and pan position of the target element to their initial values
@@ -785,15 +774,7 @@ onUiLoaded(async() => {
         targetElement.addEventListener("mouseleave", handleMouseLeave);
 
         // Reset zoom when click on another tab
-        if (elements.img2imgTabs) {
-            elements.img2imgTabs.addEventListener("click", resetZoom);
-            elements.img2imgTabs.addEventListener("click", () => {
-                // targetElement.style.width = "";
-                if (parseInt(targetElement.style.width) > 865) {
-                    setTimeout(fitToElement, 0);
-                }
-            });
-        }
+        elements.img2imgTabs.addEventListener("click", resetZoom);
 
         targetElement.addEventListener("wheel", e => {
             // change zoom level
