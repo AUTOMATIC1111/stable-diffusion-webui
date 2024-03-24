@@ -106,6 +106,17 @@ def apply_upscale_latent_space(p, x, xs):
         opts.data["use_scale_latent_for_hires_fix"] = False
 
 
+def apply_size(p, x: str, xs) -> None:
+    try:
+        width, _, height = x.partition('x')
+        width = int(width.strip())
+        height = int(height.strip())
+        p.width = width
+        p.height = height
+    except ValueError:
+        print(f"Invalid size in XYZ plot: {x}")
+
+
 def find_vae(name: str):
     if name.lower() in ['auto', 'automatic']:
         return modules.sd_vae.unspecified
@@ -271,6 +282,7 @@ axis_options = [
     AxisOption("Refiner switch at", float, apply_field('refiner_switch_at')),
     AxisOption("RNG source", str, apply_override("randn_source"), choices=lambda: ["GPU", "CPU", "NV"]),
     AxisOption("FP8 mode", str, apply_override("fp8_storage"), cost=0.9, choices=lambda: ["Disable", "Enable for SDXL", "Enable"]),
+    AxisOption("Size", str, apply_size),
 ]
 
 
