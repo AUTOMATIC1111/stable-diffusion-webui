@@ -131,19 +131,15 @@ function setupImageForLightbox(e) {
     e.style.cursor = 'pointer';
     e.style.userSelect = 'none';
 
-    var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-
-    // For Firefox, listening on click first switched to next image then shows the lightbox.
-    // If you know how to fix this without switching to mousedown event, please.
-    // For other browsers the event is click to make it possiblr to drag picture.
-    var event = isFirefox ? 'mousedown' : 'click';
-
-    e.addEventListener(event, function(evt) {
+    e.addEventListener('mousedown', function(evt) {
         if (evt.button == 1) {
             open(evt.target.src);
             evt.preventDefault();
             return;
         }
+    }, true);
+
+    e.addEventListener('click', function(evt) {
         if (!opts.js_modal_lightbox || evt.button != 0) return;
 
         modalZoomSet(gradioApp().getElementById('modalImage'), opts.js_modal_lightbox_initially_zoomed);

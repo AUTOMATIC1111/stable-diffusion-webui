@@ -13,8 +13,8 @@ def get_learned_conditioning(self: sgm.models.diffusion.DiffusionEngine, batch: 
     for embedder in self.conditioner.embedders:
         embedder.ucg_rate = 0.0
 
-    width = getattr(batch, 'width', 1024)
-    height = getattr(batch, 'height', 1024)
+    width = getattr(batch, 'width', 1024) or 1024
+    height = getattr(batch, 'height', 1024) or 1024
     is_negative_prompt = getattr(batch, 'is_negative_prompt', False)
     aesthetic_score = shared.opts.sdxl_refiner_low_aesthetic_score if is_negative_prompt else shared.opts.sdxl_refiner_high_aesthetic_score
 

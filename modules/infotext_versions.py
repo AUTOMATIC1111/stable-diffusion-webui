@@ -6,6 +6,7 @@ import re
 v160 = version.parse("1.6.0")
 v170_tsnr = version.parse("v1.7.0-225")
 v180 = version.parse("1.8.0")
+v180_hr_styles = version.parse("1.8.0-139")
 
 
 def parse_version(text):

@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 # before torch version 1.13, has_mps is only available in nightly pytorch and macOS 12.3+,
 # use check `getattr` and try it for compatibility.
-# in torch version 1.13, backends.mps.is_available() and backends.mps.is_built() are introduced in to check mps availabilty,
+# in torch version 1.13, backends.mps.is_available() and backends.mps.is_built() are introduced in to check mps availability,
 # since torch 2.0.1+ nightly build, getattr(torch, 'has_mps', False) was deprecated, see https://github.com/pytorch/pytorch/pull/103279
 def check_for_mps() -> bool:
     if version.parse(torch.__version__) <= version.parse("2.0.1"):

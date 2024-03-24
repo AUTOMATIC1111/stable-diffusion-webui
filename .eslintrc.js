@@ -78,6 +78,8 @@ module.exports = {
         //extraNetworks.js
         requestGet: "readonly",
         popup: "readonly",
+        // profilerVisualization.js
+        createVisualizationTable: "readonly",
         // from python
         localization: "readonly",
         // progrssbar.js

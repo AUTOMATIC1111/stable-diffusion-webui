@@ -11,7 +11,7 @@ import numpy as np
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images, sd_samplers, processing, sd_models, sd_vae, sd_samplers_kdiffusion, errors
+from modules import images, sd_samplers, processing, sd_models, sd_vae, sd_schedulers, errors
 from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
 from modules.shared import opts, state
 import modules.shared as shared
@@ -45,7 +45,7 @@ def apply_prompt(p, x, xs):
 def apply_order(p, x, xs):
     token_order = []
 
-    # Initally grab the tokens from the prompt, so they can be replaced in order of earliest seen
+    # Initially grab the tokens from the prompt, so they can be replaced in order of earliest seen
     for token in x:
         token_order.append((p.prompt.find(token), token))
 
@@ -104,6 +104,17 @@ def apply_upscale_latent_space(p, x, xs):
         opts.data["use_scale_latent_for_hires_fix"] = True
     else:
         opts.data["use_scale_latent_for_hires_fix"] = False
+
+
+def apply_size(p, x: str, xs) -> None:
+    try:
+        width, _, height = x.partition('x')
+        width = int(width.strip())
+        height = int(height.strip())
+        p.width = width
+        p.height = height
+    except ValueError:
+        print(f"Invalid size in XYZ plot: {x}")
 
 
 def find_vae(name: str):
@@ -248,7 +259,7 @@ axis_options = [
     AxisOption("Sigma min", float, apply_field("s_tmin")),
     AxisOption("Sigma max", float, apply_field("s_tmax")),
     AxisOption("Sigma noise", float, apply_field("s_noise")),
-    AxisOption("Schedule type", str, apply_override("k_sched_type"), choices=lambda: list(sd_samplers_kdiffusion.k_diffusion_scheduler)),
+    AxisOption("Schedule type", str, apply_field("scheduler"), choices=lambda: [x.label for x in sd_schedulers.schedulers]),
     AxisOption("Schedule min sigma", float, apply_override("sigma_min")),
     AxisOption("Schedule max sigma", float, apply_override("sigma_max")),
     AxisOption("Schedule rho", float, apply_override("rho")),
@@ -271,6 +282,7 @@ axis_options = [
     AxisOption("Refiner switch at", float, apply_field('refiner_switch_at')),
     AxisOption("RNG source", str, apply_override("randn_source"), choices=lambda: ["GPU", "CPU", "NV"]),
     AxisOption("FP8 mode", str, apply_override("fp8_storage"), cost=0.9, choices=lambda: ["Disable", "Enable for SDXL", "Enable"]),
+    AxisOption("Size", str, apply_size),
 ]
 
 

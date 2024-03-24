@@ -102,7 +102,7 @@ def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.0
     shaped_noise_fft = _fft2(noise_rgb)
     shaped_noise_fft[:, :, :] = np.absolute(shaped_noise_fft[:, :, :]) ** 2 * (src_dist ** noise_q) * src_phase  # perform the actual shaping
 
-    brightness_variation = 0.  # color_variation # todo: temporarily tieing brightness variation to color variation for now
+    brightness_variation = 0.  # color_variation # todo: temporarily tying brightness variation to color variation for now
     contrast_adjusted_np_src = _np_src_image[:] * (brightness_variation + 1.) - brightness_variation * 2.
 
     # scikit-image is used for histogram matching, very convenient!
