@@ -8,12 +8,15 @@ import sys
 
 import gradio as gr
 import subprocess as sp
+from PIL import Image
 
 from modules import call_queue, shared, ui_tempdir
-from modules.infotext_utils import image_from_url_text
 import modules.images
 from modules.ui_components import ToolButton
 import modules.infotext_utils as parameters_copypaste
+
+
+image_from_url_text = parameters_copypaste.image_from_url_text
 
 folder_symbol = '\U0001f4c2'  # 📂
 refresh_symbol = '\U0001f504'  # 🔄
@@ -116,7 +119,7 @@ def save_files(js_data, images, do_make_zip, index):
             writer.writerow(fields)
 
         for image_index, filedata in enumerate(images, start_index):
-            image = image_from_url_text(filedata)
+            image = Image.open(filedata)
 
             is_grid = image_index < p.index_of_first_image
 
@@ -208,7 +211,7 @@ Requested path was: {f}
 
         with gr.Column(variant='panel', elem_id=f"{tabname}_results_panel"):
             with gr.Group(elem_id=f"{tabname}_gallery_container"):
-                res.gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery", columns=4, preview=True, height=shared.opts.gallery_height or None)
+                res.gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery", columns=4, preview=True, height=shared.opts.gallery_height or None, interactive=False)
 
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
                 open_folder_button = ToolButton(folder_symbol, elem_id=f'{tabname}_open_folder', visible=not shared.cmd_opts.hide_ui_dir_config, tooltip="Open images output directory.")

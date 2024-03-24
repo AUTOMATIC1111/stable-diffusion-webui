@@ -13,6 +13,9 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
 
     outputs = []
 
+    if isinstance(image, dict):
+        image = image["composite"]
+
     def get_images(extras_mode, image, image_folder, input_dir):
         if extras_mode == 1:
             for img in image_folder:
