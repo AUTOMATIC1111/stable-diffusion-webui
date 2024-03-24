@@ -29,7 +29,6 @@ class NetworkOnDisk:
 
         def read_metadata():
             metadata = sd_models.read_metadata_from_safetensors(filename)
-            metadata.pop('ssmd_cover_images', None)  # those are cover images, and they are too big to display in UI as text
 
             return metadata
 
