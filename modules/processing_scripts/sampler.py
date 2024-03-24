@@ -1,42 +1,8 @@
 import gradio as gr
-import functools
 
 from modules import scripts, sd_samplers, sd_schedulers, shared
 from modules.infotext_utils import PasteField
 from modules.ui_components import FormRow, FormGroup
-
-
-def get_sampler_from_infotext(d: dict):
-    return get_sampler_and_scheduler(d.get("Sampler"), d.get("Schedule type"))[0]
-
-
-def get_scheduler_from_infotext(d: dict):
-    return get_sampler_and_scheduler(d.get("Sampler"), d.get("Schedule type"))[1]
-
-
-@functools.cache
-def get_sampler_and_scheduler(sampler_name, scheduler_name):
-    default_sampler = sd_samplers.samplers[0]
-    found_scheduler = sd_schedulers.schedulers_map.get(scheduler_name, sd_schedulers.schedulers[0])
-
-    name = sampler_name or default_sampler.name
-
-    for scheduler in sd_schedulers.schedulers:
-        name_options = [scheduler.label, scheduler.name, *(scheduler.aliases or [])]
-
-        for name_option in name_options:
-            if name.endswith(" " + name_option):
-                found_scheduler = scheduler
-                name = name[0:-(len(name_option) + 1)]
-                break
-
-    sampler = sd_samplers.all_samplers_map.get(name, default_sampler)
-
-    # revert back to Automatic if it's the default scheduler for the selected sampler
-    if sampler.options.get('scheduler', None) == found_scheduler.name:
-        found_scheduler = sd_schedulers.schedulers[0]
-
-    return sampler.name, found_scheduler.label
 
 
 class ScriptSampler(scripts.ScriptBuiltinUI):
@@ -67,8 +33,8 @@ class ScriptSampler(scripts.ScriptBuiltinUI):
 
         self.infotext_fields = [
             PasteField(self.steps, "Steps", api="steps"),
-            PasteField(self.sampler_name, get_sampler_from_infotext, api="sampler_name"),
-            PasteField(self.scheduler, get_scheduler_from_infotext, api="scheduler"),
+            PasteField(self.sampler_name, sd_samplers.get_sampler_from_infotext, api="sampler_name"),
+            PasteField(self.scheduler, sd_samplers.get_scheduler_from_infotext, api="scheduler"),
         ]
 
         return self.steps, self.sampler_name, self.scheduler

@@ -1115,6 +1115,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     hr_resize_y: int = 0
     hr_checkpoint_name: str = None
     hr_sampler_name: str = None
+    hr_scheduler: str = None
     hr_prompt: str = ''
     hr_negative_prompt: str = ''
     force_task_id: str = None
@@ -1202,6 +1203,11 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
             if self.hr_sampler_name is not None and self.hr_sampler_name != self.sampler_name:
                 self.extra_generation_params["Hires sampler"] = self.hr_sampler_name
+
+            self.extra_generation_params["Hires schedule type"] = None  # to be set in sd_samplers_kdiffusion.py
+
+            if self.hr_scheduler is None:
+                self.hr_scheduler = self.scheduler
 
             self.latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "nearest")
             if self.enable_hr and self.latent_scale_mode is None:
