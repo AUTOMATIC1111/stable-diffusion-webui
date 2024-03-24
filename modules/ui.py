@@ -12,7 +12,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import gradio_extensons  # noqa: F401
+from modules import gradio_extensons, sd_schedulers  # noqa: F401
 from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, shared_items, ui_settings, timer, sysinfo, ui_checkpoint_merger, scripts, sd_samplers, processing, ui_extra_networks, ui_toprow, launch_utils
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML, InputAccordion, ResizeHandleRow
 from modules.paths import script_path
@@ -229,19 +229,6 @@ def create_output_panel(tabname, outdir, toprow=None):
     return ui_common.create_output_panel(tabname, outdir, toprow)
 
 
-def create_sampler_and_steps_selection(choices, tabname):
-    if opts.samplers_in_dropdown:
-        with FormRow(elem_id=f"sampler_selection_{tabname}"):
-            sampler_name = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling", choices=choices, value=choices[0])
-            steps = gr.Slider(minimum=1, maximum=150, step=1, elem_id=f"{tabname}_steps", label="Sampling steps", value=20)
-    else:
-        with FormGroup(elem_id=f"sampler_selection_{tabname}"):
-            steps = gr.Slider(minimum=1, maximum=150, step=1, elem_id=f"{tabname}_steps", label="Sampling steps", value=20)
-            sampler_name = gr.Radio(label='Sampling method', elem_id=f"{tabname}_sampling", choices=choices, value=choices[0])
-
-    return steps, sampler_name
-
-
 def ordered_ui_categories():
     user_order = {x.strip(): i * 2 + 1 for i, x in enumerate(shared.opts.ui_reorder_list)}
 
@@ -294,9 +281,6 @@ def create_ui():
                 for category in ordered_ui_categories():
                     if category == "prompt":
                         toprow.create_inline_toprow_prompts()
-
-                    if category == "sampler":
-                        steps, sampler_name = create_sampler_and_steps_selection(sd_samplers.visible_sampler_names(), "txt2img")
 
                     elif category == "dimensions":
                         with FormRow():
@@ -396,8 +380,6 @@ def create_ui():
                 toprow.prompt,
                 toprow.negative_prompt,
                 toprow.ui_styles.dropdown,
-                steps,
-                sampler_name,
                 batch_count,
                 batch_size,
                 cfg_scale,
@@ -461,8 +443,6 @@ def create_ui():
             txt2img_paste_fields = [
                 PasteField(toprow.prompt, "Prompt", api="prompt"),
                 PasteField(toprow.negative_prompt, "Negative prompt", api="negative_prompt"),
-                PasteField(steps, "Steps", api="steps"),
-                PasteField(sampler_name, "Sampler", api="sampler_name"),
                 PasteField(cfg_scale, "CFG scale", api="cfg_scale"),
                 PasteField(width, "Size-1", api="width"),
                 PasteField(height, "Size-2", api="height"),
@@ -488,11 +468,13 @@ def create_ui():
                 paste_button=toprow.paste, tabname="txt2img", source_text_component=toprow.prompt, source_image_component=None,
             ))
 
+            steps = scripts.scripts_txt2img.script('Sampler').steps
+
             txt2img_preview_params = [
                 toprow.prompt,
                 toprow.negative_prompt,
                 steps,
-                sampler_name,
+                scripts.scripts_txt2img.script('Sampler').sampler_name,
                 cfg_scale,
                 scripts.scripts_txt2img.script('Seed').seed,
                 width,
@@ -623,9 +605,6 @@ def create_ui():
                         with FormRow():
                             resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
 
-                    if category == "sampler":
-                        steps, sampler_name = create_sampler_and_steps_selection(sd_samplers.visible_sampler_names(), "img2img")
-
                     elif category == "dimensions":
                         with FormRow():
                             with gr.Column(elem_id="img2img_column_size", scale=4):
@@ -754,8 +733,6 @@ def create_ui():
                     inpaint_color_sketch_orig,
                     init_img_inpaint,
                     init_mask_inpaint,
-                    steps,
-                    sampler_name,
                     mask_blur,
                     mask_alpha,
                     inpainting_fill,
@@ -840,6 +817,8 @@ def create_ui():
                 **interrogate_args,
             )
 
+            steps = scripts.scripts_img2img.script('Sampler').steps
+
             toprow.ui_styles.dropdown.change(fn=wrap_queued_call(update_token_counter), inputs=[toprow.prompt, steps, toprow.ui_styles.dropdown], outputs=[toprow.token_counter])
             toprow.ui_styles.dropdown.change(fn=wrap_queued_call(update_negative_prompt_token_counter), inputs=[toprow.negative_prompt, steps, toprow.ui_styles.dropdown], outputs=[toprow.negative_token_counter])
             toprow.token_button.click(fn=update_token_counter, inputs=[toprow.prompt, steps, toprow.ui_styles.dropdown], outputs=[toprow.token_counter])
@@ -848,8 +827,6 @@ def create_ui():
             img2img_paste_fields = [
                 (toprow.prompt, "Prompt"),
                 (toprow.negative_prompt, "Negative prompt"),
-                (steps, "Steps"),
-                (sampler_name, "Sampler"),
                 (cfg_scale, "CFG scale"),
                 (image_cfg_scale, "Image CFG scale"),
                 (width, "Size-1"),
