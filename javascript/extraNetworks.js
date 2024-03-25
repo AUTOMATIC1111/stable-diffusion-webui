@@ -13,6 +13,49 @@ const extraPageUserMetadataEditors = {};
 // A flag used by the `waitForBool` promise to determine when we first load Ui Options.
 const initialUiOptionsLoaded = { state: false };
 
+/** Helper functions for checking types and simplifying logging. */
+
+const isString = x => typeof x === "string" || x instanceof String;
+const isStringLogError = x => {
+    if (isString(x)) {
+        return true;
+    }
+    console.error("expected string, got:", typeof x);
+    return false;
+};
+const isNull = x => typeof x === "null" || x === null;
+const isUndefined = x => typeof x === "undefined" || x === undefined;
+// checks both null and undefined for simplicity sake.
+const isNullOrUndefined = x => isNull(x) || isUndefined(x);
+const isNullOrUndefinedLogError = x => {
+    if (isNullOrUndefined(x)) {
+        console.error("Variable is null/undefined.");
+        return true;
+    }
+    return false;
+};
+
+const isElement = x => x instanceof Element;
+const isElementLogError = x => {
+    if (isElement(x)) {
+        return true;
+    }
+    console.error("expected element type, got:", typeof x);
+    return false;
+}
+
+const getElementByIdLogError = selector => {
+    let elem = gradioApp().getElementById(selector);
+    isElementLogError(elem);
+    return elem;
+};
+
+const querySelectorLogError = selector => {
+    let elem = gradioApp().querySelector(selector);
+    isElementLogError(elem);
+    return elem;
+}
+
 const debounce = (handler, timeout_ms) => {
     /** Debounces a function call.
      * 
@@ -40,7 +83,7 @@ const debounce = (handler, timeout_ms) => {
     };
 }
 
-function waitForElement(selector) {
+const waitForElement = selector => {
     /** Promise that waits for an element to exist in DOM. */
     return new Promise(resolve => {
         if (document.querySelector(selector)) {
@@ -61,7 +104,7 @@ function waitForElement(selector) {
     });
 }
 
-function waitForBool(o) {
+const waitForBool = o => {
     /** Promise that waits for a boolean to be true.
      * 
      *  `o` must be an Object of the form:
@@ -79,7 +122,7 @@ function waitForBool(o) {
     });
 }
 
-function waitForKeyInObject(o) {
+const waitForKeyInObject = o =>  {
     /** Promise that waits for a key to exist in an object.
      *  
      *  `o` must be an Object of the form:
@@ -100,7 +143,7 @@ function waitForKeyInObject(o) {
     });
 }
 
-function waitForValueInObject(o) {
+const waitForValueInObject = o => {
     /** Promise that waits for a key value pair in an Object.
      *  
      *  `o` must be an Object of the form:
@@ -171,7 +214,7 @@ function extraNetworksRegisterPromptForTab(tabname, id) {
 }
 
 function extraNetworksSetupTabContent(tabname, pane, controls_div) {
-    let tabname_full = pane.id;
+    const tabname_full = pane.id;
     let txt_search;
 
     Promise.all([
@@ -197,7 +240,7 @@ function extraNetworksSetupTabContent(tabname, pane, controls_div) {
         };
 
         // Debounce search text input. This way we only search after user is done typing.
-        let search_input_debounce = debounce(() => {
+        const search_input_debounce = debounce(() => {
             extraNetworksApplyFilter(tabname_full);
         }, SEARCH_INPUT_DEBOUNCE_TIME_MS);
         txt_search.addEventListener("keyup", search_input_debounce);
@@ -208,7 +251,7 @@ function extraNetworksSetupTabContent(tabname, pane, controls_div) {
         });
 
         // Insert the controls into the page.
-        var controls = gradioApp().querySelector(`#${tabname_full}_controls`);
+        const controls = gradioApp().querySelector(`#${tabname_full}_controls`);
         controls_div.insertBefore(controls, null);
         if (pane.style.display != "none") {
             extraNetworksShowControlsForPage(tabname, tabname_full);
@@ -231,7 +274,6 @@ function extraNetworksSetupTab(tabname) {
         this_tab.querySelectorAll(`:scope > .tabitem[id^="${tabname}_"]`).forEach((elem) => {
             extraNetworksSetupTabContent(tabname, elem, controls_div);
         });
-    }).then(() => {
         extraNetworksRegisterPromptForTab(tabname, `${tabname}_prompt`);
         extraNetworksRegisterPromptForTab(tabname, `${tabname}_neg_prompt`);
     });
@@ -295,29 +337,28 @@ function extraNetworksApplyFilter(tabname_full) {
     // If the search input has changed since selecting a button to populate it
     // then we want to disable the button that previously populated the search input.
     const txt_search = gradioApp().querySelector(`#${tabname_full}_extra_search`);
-    if (!txt_search) {
+    if (!isElementLogError(txt_search)) {
         return;
     }
 
     // tree view buttons
     let btn = gradioApp().querySelector(`#${tabname_full}_tree_list_content_area .tree-list-item[data-selected=""]`);
-    if (btn && btn.dataset.path !== txt_search.value) {
-        delete btn.dataset.selected;
+    if (isElement(btn) && btn.dataset.path !== txt_search.value && "selected" in btn.dataset) {
+        clusterizers[tabname_full].tree_list.onRowSelected(btn.dataset.divId, btn, false);
     }
     // dirs view buttons
     btn = gradioApp().querySelector(`#${tabname_full}_dirs .extra-network-dirs-view-button[data-selected=""]`);
-    if (btn && btn.textContent.trim() !== txt_search.value) {
+    if (isElement(btn) && btn.textContent.trim() !== txt_search.value) {
         delete btn.dataset.selected;
     }
 }
 
 function extraNetworksClusterizersEnable(tabname_full) {
-    /** Enables the selected tab's clusterizer and disables all others. */
+    /** Enables the selected tab's clusterize lists and disables all others. */
     // iterate over tabnames
     for (const [_tabname_full, tab_clusterizers] of Object.entries(clusterizers)) {
         // iterate over clusterizers in tab
         for (const v of Object.values(tab_clusterizers)) {
-            // Enable the active tab, disable all others.
             v.enable(_tabname_full === tabname_full);
         }
     }
@@ -346,6 +387,7 @@ function extraNetworksSetupEventHandlers() {
     // Handle doubleclick events from the resize handle.
     // This will automatically fit the left pane to the size of its largest loaded row.
     window.addEventListener("resizeHandleDblClick", (e) => {
+        // See resizeHandle.js::onDoubleClick() for event detail.
         e.stopPropagation();
         const tabname_full = e.target.closest(".extra-network-pane").dataset.tabnameFull;
         // This event is only applied to the currently selected tab if has clusterize list.
@@ -373,7 +415,6 @@ function setupExtraNetworks() {
     waitForBool(initialUiOptionsLoaded).then(() => {
         extraNetworksSetupTab('txt2img');
         extraNetworksSetupTab('img2img');
-    }).then(() => {
         extraNetworksSetupEventHandlers();
     });
 }
@@ -448,15 +489,6 @@ function saveCardPreview(event, tabname, filename) {
     event.preventDefault();
 }
 
-function extraNetworksSearchButton(event, tabname_full) {
-    var searchTextarea = gradioApp().querySelector("#" + tabname_full + "_extra_search");
-    var button = event.target;
-    var text = button.classList.contains("search-all") ? "" : button.textContent.trim();
-
-    searchTextarea.value = text;
-    updateInput(searchTextarea);
-}
-
 function extraNetworksTreeProcessFileClick(event, btn, tabname_full) {
     /**
      * Processes `onclick` events when user clicks on files in tree.
@@ -503,7 +535,7 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname_full) {
         let prev_selected_elem = gradioApp().querySelector(".tree-list-item[data-selected='']");
         clusterizers[tabname_full].tree_list.onRowExpandClick(div_id, btn);
         let selected_elem = gradioApp().querySelector(".tree-list-item[data-selected='']");
-        if (prev_selected_elem instanceof Element && !(selected_elem instanceof Element)) {
+        if (isElement(prev_selected_elem) && !isElement(selected_elem)) {
             // if a selected element was removed, clear filter.
             _updateSearch("");
         }
@@ -535,7 +567,8 @@ function extraNetworksTreeOnClick(event, tabname_full) {
 }
 
 function extraNetworkDirsOnClick(event, tabname_full) {
-    var txt_search = gradioApp().querySelector(`#${tabname_full}_extra_search`);
+    /** Handles `onclick` events for buttons in the directory view. */
+    let txt_search = gradioApp().querySelector(`#${tabname_full}_extra_search`);
 
     function _deselect_all() {
         // deselect all buttons
@@ -568,18 +601,14 @@ function extraNetworkDirsOnClick(event, tabname_full) {
 }
 
 function extraNetworksControlSearchClearOnClick(event, tabname_full) {
-    /** Clears the search <input> text. */
+    /** Dispatches custom event when the `clear` button in a search input is clicked. */
     let clear_btn = event.target.closest(".extra-network-control--search-clear");
     let txt_search = clear_btn.previousElementSibling;
     txt_search.value = "";
     txt_search.dispatchEvent(
         new CustomEvent(
             "extra-network-control--search-clear",
-            {
-                detail: {
-                    tabname_full: tabname_full
-                }
-            }
+            { detail: { tabname_full: tabname_full } },
         )
     );
 }
@@ -601,15 +630,10 @@ function extraNetworksControlSortModeOnClick(event, tabname_full) {
 }
 
 function extraNetworksControlSortDirOnClick(event, tabname_full) {
-    /**
-     * Handles `onclick` events for the Sort Direction button.
+    /** Handles `onclick` events for the Sort Direction button.
      *
      * Modifies the data attributes of the Sort Direction button to cycle between
      * ascending and descending sort directions.
-     *
-     * @param event         The generated event.
-     * @param tabname_full  The full active tabname.
-     *                      i.e. txt2img_lora, img2img_checkpoints, etc.
      */
     if (event.currentTarget.dataset.sortDir.toLowerCase() == "ascending") {
         event.currentTarget.dataset.sortDir = "descending";
@@ -626,14 +650,9 @@ function extraNetworksControlSortDirOnClick(event, tabname_full) {
 }
 
 function extraNetworksControlTreeViewOnClick(event, tabname_full) {
-    /**
-     * Handles `onclick` events for the Tree View button.
+    /** Handles `onclick` events for the Tree View button.
      *
      * Toggles the tree view in the extra networks pane.
-     *
-     * @param event         The generated event.
-     * @param tabname_full  The full active tabname.
-     *                      i.e. txt2img_lora, img2img_checkpoints, etc.
      */
     var button = event.currentTarget;
     button.classList.toggle("extra-network-control--enabled");
@@ -644,14 +663,9 @@ function extraNetworksControlTreeViewOnClick(event, tabname_full) {
 }
 
 function extraNetworksControlDirsViewOnClick(event, tabname_full) {
-    /**
-     * Handles `onclick` events for the Dirs View button.
+    /** Handles `onclick` events for the Dirs View button.
      *
      * Toggles the directory view in the extra networks pane.
-     *
-     * @param event         The generated event.
-     * @param tabname_full  The full active tabname.
-     *                      i.e. txt2img_lora, img2img_checkpoints, etc.
      */
     var button = event.currentTarget;
     button.classList.toggle("extra-network-control--enabled");
@@ -661,17 +675,12 @@ function extraNetworksControlDirsViewOnClick(event, tabname_full) {
 }
 
 function extraNetworksControlRefreshOnClick(event, tabname_full) {
-    /**
-     * Handles `onclick` events for the Refresh Page button.
+    /** Handles `onclick` events for the Refresh Page button.
      *
      * In order to actually call the python functions in `ui_extra_networks.py`
      * to refresh the page, we created an empty gradio button in that file with an
      * event handler that refreshes the page. So what this function here does
      * is it manually raises a `click` event on that button.
-     *
-     * @param event         The generated event.
-     * @param tabname_full  The full active tabname.
-     *                      i.e. txt2img_lora, img2img_checkpoints, etc.
      */
     // reset states
     initialUiOptionsLoaded.state = false;

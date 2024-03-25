@@ -4,49 +4,6 @@ const RESIZE_DEBOUNCE_TIME_MS = 250;
 const INT_COLLATOR = new Intl.Collator([], { numeric: true });
 const STR_COLLATOR = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
 
-/** Helper functions for checking types and simplifying logging. */
-
-const isString = x => typeof x === "string" || x instanceof String;
-const isStringLogError = x => {
-    if (isString(x)) {
-        return true;
-    }
-    console.error("expected string, got:", typeof x);
-    return false;
-};
-const isNull = x => typeof x === "null" || x === null;
-const isUndefined = x => typeof x === "undefined" || x === undefined;
-// checks both null and undefined for simplicity sake.
-const isNullOrUndefined = x => isNull(x) || isUndefined(x);
-const isNullOrUndefinedLogError = x => {
-    if (isNullOrUndefined(x)) {
-        console.error("Variable is null/undefined.");
-        return true;
-    }
-    return false;
-};
-
-const isElement = x => x instanceof Element;
-const isElementLogError = x => {
-    if (isElement(x)) {
-        return true;
-    }
-    console.error("expected element type, got:", typeof x);
-    return false;
-}
-
-const getElementByIdLogError = selector => {
-    let elem = gradioApp().getElementById(selector);
-    isElementLogError(elem);
-    return elem;
-};
-
-const querySelectorLogError = selector => {
-    let elem = gradioApp().querySelector(selector);
-    isElementLogError(elem);
-    return elem;
-}
-
 const getComputedPropertyDims = (elem, prop) => {
     /** Returns the top/left/bottom/right float dimensions of an element for the specified property. */
     const style = window.getComputedStyle(elem, null);
@@ -99,7 +56,6 @@ const getComputedDims = elem => {
         width: width + margin.width + padding.width + border.width,
         height: height + margin.height + padding.height + border.height,
     }
-    
 }
 
 function compress(string) {
@@ -130,7 +86,7 @@ function decompress(base64string) {
     });
 }
 
-const parseHtml = function (str) {
+const htmlStringToElement = function (str) {
     /** Converts an HTML string into an Element type. */
     let parser = new DOMParser();
     let tmp = parser.parseFromString(str, "text/html");
@@ -210,7 +166,8 @@ class ExtraNetworksClusterize {
         // Stores the current encoded string so we can compare against future versions.
         this.encoded_str = "";
 
-        this.no_data_text = "Directory is empty.";
+        this.no_data_text = "No results.";
+        this.no_data_class = "clusterize-no-data";
 
         this.n_rows = 1;
         this.n_cols = 1;
@@ -253,14 +210,21 @@ class ExtraNetworksClusterize {
     }
 
     parseJson(encoded_str) { /** promise */
-    /** Parses a base64 encoded and gzipped JSON string and sets up a clusterize instance. */
+        /** Parses a base64 encoded and gzipped JSON string and sets up a clusterize instance. */
         return new Promise(resolve => {
             // Skip parsing if the string hasnt actually updated.
             if (this.encoded_str === encoded_str) {
                 return resolve();
             }
             Promise.resolve(encoded_str)
-                .then(v => { if (!isNullOrUndefined(this.clusterize)) {this.clear();} return v; })
+                .then(v => {
+                    if (!isNullOrUndefined(this.clusterize)) {
+                        this.data_obj = {};
+                        this.data_obj_keys_sorted = [];
+                        this.clear();
+                    }
+                    return v;
+                })
                 .then(v => decompress(v))
                 .then(v => JSON.parse(v))
                 .then(v => this.updateJson(v))
@@ -273,7 +237,7 @@ class ExtraNetworksClusterize {
 
     updateJson(json) { /** promise */
         console.error("Base class method called. Must be overridden by subclass.");
-        return new Promise(resolve => {return resolve();});
+        return new Promise(resolve => { return resolve(); });
     }
 
     sortByDivId() {
@@ -376,12 +340,12 @@ class ExtraNetworksClusterize {
 
         // If no rows exist, we need to add one so we can calculate rows/cols.
         // We remove this row before returning.
-        if (this.rowCount() === 0){// || this.content_elem.innerHTML === "") {
+        if (this.rowCount() === 0) {// || this.content_elem.innerHTML === "") {
             this.clear();
             this.update([this.data_obj[this.data_obj_keys_sorted[0]].html]);
             clear_before_return = true;
         }
-        
+
         const child = this.content_elem.querySelector(":not(.clusterize-extra-row)");
         if (isNullOrUndefined(child)) {
             if (clear_before_return) {
@@ -389,7 +353,7 @@ class ExtraNetworksClusterize {
                 return rebuild_required;
             }
         }
-        
+
         // Calculate the visible rows and colums for the clusterize-content area.
         let n_cols = calcColsPerRow(this.content_elem, child);
         let n_rows = calcRowsPerCol(this.scroll_elem, child);
@@ -493,6 +457,7 @@ class ExtraNetworksClusterize {
                 blocks_in_cluster: this.blocks_in_cluster,
                 show_no_data_row: this.show_no_data_row,
                 no_data_text: this.no_data_text,
+                no_data_class: this.no_data_class,
                 callbacks: this.callbacks,
             }
         );
@@ -505,7 +470,7 @@ class ExtraNetworksClusterize {
 
     onElementDetached(elem_id) {
         /** Callback whenever one of our elements has become detached from the DOM. */
-        switch(elem_id) {
+        switch (elem_id) {
             case this.data_id:
                 waitForElement(`#${this.data_id}`).then((elem) => this.data_elem = elem);
                 break;
@@ -565,7 +530,7 @@ class ExtraNetworksClusterize {
                 this.onElementDetached(content_elem.id);
             }
         });
-        this.element_observer.observe(gradioApp(), {subtree: true, childList: true, attributes: true});
+        this.element_observer.observe(gradioApp(), { subtree: true, childList: true, attributes: true });
     }
 
     setupResizeHandlers() {
@@ -636,6 +601,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
     constructor(...args) {
         super(...args);
 
+        this.no_data_text = "No directories/files";
         this.selected_div_id = null;
     }
 
@@ -663,7 +629,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             let text_size = style.getPropertyValue("--button-large-text-size");
             for (const [k, v] of Object.entries(json)) {
                 let div_id = k;
-                let parsed_html = parseHtml(v);
+                let parsed_html = htmlStringToElement(v);
                 // parent_id = -1 if item is at root level
                 let parent_id = "parentId" in parsed_html.dataset ? parsed_html.dataset.parentId : -1;
                 let expanded = "expanded" in parsed_html.dataset;
@@ -722,7 +688,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             this.data_obj[child_id].active = false;
             if (this.data_obj[child_id].selected) {
                 // deselect the child only if it is selected.
-                let elem = parseHtml(this.data_obj[child_id].html);
+                let elem = htmlStringToElement(this.data_obj[child_id].html);
                 delete elem.dataset.selected;
                 this.data_obj[child_id].selected = false;
                 this.updateDivContent(child_id, elem);
@@ -759,7 +725,17 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         this.updateRows();
     }
 
-    onRowSelected(div_id, elem) {
+    _setRowSelectedState(div_id, elem, new_state) {
+        if (new_state) {
+            elem.dataset.selected = "";
+        } else {
+            delete elem.dataset.selected;
+        }
+        this.data_obj[div_id].selected = new_state;
+        this.updateDivContent(div_id, elem);
+    }
+
+    onRowSelected(div_id, elem, override) {
         /** Selects a row and deselects all others. */
         if (!isElementLogError(elem)) {
             return;
@@ -769,27 +745,27 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             return;
         }
 
-        if (!isNullOrUndefined(this.selected_div_id) && div_id !== this.selected_div_id) {
-            let prev_elem = parseHtml(this.data_obj[this.selected_div_id].html);
-            delete prev_elem.dataset.selected;
-            this.updateDivContent(this.selected_div_id, prev_elem);
-            this.data_obj[this.selected_div_id].selected = false;
+        if (!isNullOrUndefined(override)) {
+            override = (override === true);
+        }
 
+        if (!isNullOrUndefined(this.selected_div_id) && div_id !== this.selected_div_id) {
+            // deselect the current selected row
+            let prev_elem = htmlStringToElement(this.data_obj[this.selected_div_id].html);
+            this._setRowSelectedState(this.selected_div_id, prev_elem, false);
+
+            // select the new row
+            this._setRowSelectedState(div_id, elem, true);
             this.selected_div_id = div_id;
-            elem.dataset.selected = "";
-            this.data_obj[div_id].selected = true;
-            this.updateDivContent(this.selected_div_id, elem);
         } else {
-            if ("selected" in elem.dataset) {
-                delete elem.dataset.selected;
-                this.data_obj[div_id].selected = false;
+            // toggle the passed row's selected state.
+            if (this.data_obj[div_id].selected) {
+                this._setRowSelectedState(div_id, elem, false);
                 this.selected_div_id = null;
             } else {
-                elem.dataset.selected = "";
-                this.data_obj[div_id].selected = true;
+                this._setRowSelectedState(div_id, elem, true);
                 this.selected_div_id = div_id;
             }
-            this.updateDivContent(div_id, elem);
         }
         this.updateRows();
     }
@@ -837,6 +813,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
     constructor(...args) {
         super(...args);
 
+        this.no_data_text = "No files matching filter.";
         this.sort_mode_str = "path";
         this.sort_dir_str = "ascending";
         this.filter_str = "";
@@ -847,7 +824,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         return new Promise(resolve => {
             for (const [i, [k, v]] of Object.entries(Object.entries(json))) {
                 let div_id = k;
-                let parsed_html = parseHtml(v);
+                let parsed_html = htmlStringToElement(v);
                 let search_only = isElement(parsed_html.querySelector(".search_only"));
                 let search_terms_elem = parsed_html.querySelector(".search_terms");
                 let search_terms = "";
