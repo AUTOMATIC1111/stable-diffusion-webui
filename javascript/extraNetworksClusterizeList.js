@@ -1,4 +1,4 @@
-const JSON_UPDATE_DEBOUNCE_TIME_MS = 1000;
+const JSON_UPDATE_DEBOUNCE_TIME_MS = 250;
 const RESIZE_DEBOUNCE_TIME_MS = 250;
 // Collators used for sorting.
 const INT_COLLATOR = new Intl.Collator([], { numeric: true });
@@ -132,9 +132,9 @@ function decompress(base64string) {
 
 const parseHtml = function (str) {
     /** Converts an HTML string into an Element type. */
-    const tmp = document.implementation.createHTMLDocument('');
-    tmp.body.innerHTML = str;
-    return [...tmp.body.childNodes];
+    let parser = new DOMParser();
+    let tmp = parser.parseFromString(str, "text/html");
+    return tmp.body.firstElementChild;
 }
 
 const getComputedValue = function (container, css_property) {
@@ -260,13 +260,12 @@ class ExtraNetworksClusterize {
                 return resolve();
             }
             Promise.resolve(encoded_str)
+                .then(v => { if (!isNullOrUndefined(this.clusterize)) {this.clear();} return v; })
                 .then(v => decompress(v))
                 .then(v => JSON.parse(v))
                 .then(v => this.updateJson(v))
                 .then(() => this.encoded_str = encoded_str)
                 .then(() => this.rebuild())
-                //.then(() => this.init())
-                //.then(() => this.repair())
                 .then(() => this.applyFilter())
                 .then(() => { return resolve(); });
         });
@@ -308,7 +307,7 @@ class ExtraNetworksClusterize {
         var results = [];
         for (const div_id of this.data_obj_keys_sorted) {
             if (obj[div_id].active) {
-                results.push(obj[div_id].element.outerHTML);
+                results.push(obj[div_id].html);
             }
         }
         return results;
@@ -324,11 +323,11 @@ class ExtraNetworksClusterize {
         */
         if (!(div_id in this.data_obj)) {
             console.error("div_id not in data_obj:", div_id);
-        } else if (typeof content === "object") {
-            this.data_obj[div_id].element = parseHtml(content.outerHTML)[0];
+        } else if (isElement(content)) {
+            this.data_obj[div_id].html = content.outerHTML;
             return true;
-        } else if (typeof content === "string") {
-            this.data_obj[div_id].element = parseHtml(content)[0];
+        } else if (isString(content)) {
+            this.data_obj[div_id].html = content;
             return true;
         } else {
             console.error("Invalid content:", div_id, content);
@@ -379,7 +378,7 @@ class ExtraNetworksClusterize {
         // We remove this row before returning.
         if (this.rowCount() === 0){// || this.content_elem.innerHTML === "") {
             this.clear();
-            this.update([this.data_obj[this.data_obj_keys_sorted[0]].element.outerHTML]);
+            this.update([this.data_obj[this.data_obj_keys_sorted[0]].html]);
             clear_before_return = true;
         }
         
@@ -636,6 +635,8 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
     /** Subclass used to display a directories/files in the Tree View. */
     constructor(...args) {
         super(...args);
+
+        this.selected_div_id = null;
     }
 
     getBoxShadow(depth) {
@@ -659,26 +660,30 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         /** Processes JSON object and adds each entry to our data object. */
         return new Promise(resolve => {
             var style = getComputedStyle(document.body);
-            //let spacing_sm = style.getPropertyValue("--spacing-sm");
             let text_size = style.getPropertyValue("--button-large-text-size");
             for (const [k, v] of Object.entries(json)) {
                 let div_id = k;
-                let parsed_html = parseHtml(v)[0];
+                let parsed_html = parseHtml(v);
                 // parent_id = -1 if item is at root level
                 let parent_id = "parentId" in parsed_html.dataset ? parsed_html.dataset.parentId : -1;
                 let expanded = "expanded" in parsed_html.dataset;
+                let selected = "selected" in parsed_html.dataset;
                 let depth = Number(parsed_html.dataset.depth);
                 parsed_html.style.paddingLeft = `calc(${depth} * ${text_size})`;
                 parsed_html.style.boxShadow = this.getBoxShadow(depth);
 
                 // Add the updated html to the data object.
                 this.data_obj[div_id] = {
-                    element: parsed_html,
+                    html: parsed_html.outerHTML,
                     active: parent_id === -1, // always show root
                     expanded: expanded || (parent_id === -1), // always expand root
+                    selected: selected,
                     parent: parent_id,
                     children: [], // populated later
                 };
+
+                // maybe not necessary.
+                parsed_html = null;
             }
 
             // Build list of children for each element in dataset.
@@ -715,15 +720,20 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         */
         for (const child_id of this.data_obj[div_id].children) {
             this.data_obj[child_id].active = false;
-            this.data_obj[child_id].expanded = false;
-            delete this.data_obj[child_id].element.dataset.expanded;
+            if (this.data_obj[child_id].selected) {
+                // deselect the child only if it is selected.
+                let elem = parseHtml(this.data_obj[child_id].html);
+                delete elem.dataset.selected;
+                this.data_obj[child_id].selected = false;
+                this.updateDivContent(child_id, elem);
+            }
             this.removeChildRows(child_id);
         }
     }
 
     addChildRows(div_id) {
-        /** Adds rows to the list that are children of the passed div. 
-         * The rows aren't removed from the data object, just set to active=true
+        /** Adds rows to the list that are children of the passed div.
+         * The rows aren't added to the data object, just set to active=true
          * so they are displayed.
         */
         for (const child_id of this.data_obj[div_id].children) {
@@ -732,6 +742,56 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
                 this.addChildRows(child_id);
             }
         }
+    }
+
+    onRowExpandClick(div_id, elem) {
+        /** Toggles expand/collapse of a row's children. */
+        if ("expanded" in elem.dataset) {
+            this.data_obj[div_id].expanded = false;
+            delete elem.dataset.expanded;
+            this.removeChildRows(div_id)
+        } else {
+            this.data_obj[div_id].expanded = true;
+            elem.dataset.expanded = "";
+            this.addChildRows(div_id)
+        }
+        this.updateDivContent(div_id, elem);
+        this.updateRows();
+    }
+
+    onRowSelected(div_id, elem) {
+        /** Selects a row and deselects all others. */
+        if (!isElementLogError(elem)) {
+            return;
+        }
+        if (!(div_id in this.data_obj)) {
+            console.error("div_id not in dataset:", div_id);
+            return;
+        }
+
+        if (!isNullOrUndefined(this.selected_div_id) && div_id !== this.selected_div_id) {
+            let prev_elem = parseHtml(this.data_obj[this.selected_div_id].html);
+            delete prev_elem.dataset.selected;
+            this.updateDivContent(this.selected_div_id, prev_elem);
+            this.data_obj[this.selected_div_id].selected = false;
+
+            this.selected_div_id = div_id;
+            elem.dataset.selected = "";
+            this.data_obj[div_id].selected = true;
+            this.updateDivContent(this.selected_div_id, elem);
+        } else {
+            if ("selected" in elem.dataset) {
+                delete elem.dataset.selected;
+                this.data_obj[div_id].selected = false;
+                this.selected_div_id = null;
+            } else {
+                elem.dataset.selected = "";
+                this.data_obj[div_id].selected = true;
+                this.selected_div_id = div_id;
+            }
+            this.updateDivContent(div_id, elem);
+        }
+        this.updateRows();
     }
 
     getMaxRowWidth() {
@@ -785,14 +845,33 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
     updateJson(json) {
         /** Processes JSON object and adds each entry to our data object. */
         return new Promise(resolve => {
-            for (const [k, v] of Object.entries(json)) {
+            for (const [i, [k, v]] of Object.entries(Object.entries(json))) {
                 let div_id = k;
-                let parsed_html = parseHtml(v)[0];
+                let parsed_html = parseHtml(v);
+                let search_only = isElement(parsed_html.querySelector(".search_only"));
+                let search_terms_elem = parsed_html.querySelector(".search_terms");
+                let search_terms = "";
+                if (isElement(search_terms_elem)) {
+                    search_terms = Array.prototype.map.call(
+                        parsed_html.querySelectorAll(".search_terms"),
+                        (elem) => { return elem.textContent.toLowerCase(); }
+                    ).join(" ");
+                }
+
                 // Add the updated html to the data object.
                 this.data_obj[div_id] = {
-                    element: parsed_html,
                     active: true,
+                    html: v,
+                    sort_name: parsed_html.dataset.sortName,
+                    sort_path: parsed_html.dataset.sortPath,
+                    sort_created: parsed_html.dataset.sortCreated,
+                    sort_modified: parsed_html.dataset.sortModified,
+                    search_only: search_only,
+                    search_terms: search_terms,
                 };
+
+                // maybe not necessary
+                parsed_html = null;
             }
             return resolve();
         });
@@ -815,8 +894,8 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
     sortByName() {
         this.data_obj_keys_sorted = Object.keys(this.data_obj).sort((a, b) => {
             return STR_COLLATOR.compare(
-                this.data_obj[a].element.dataset.sortName,
-                this.data_obj[b].element.dataset.sortName,
+                this.data_obj[a].sort_name,
+                this.data_obj[b].sort_name,
             );
         });
     }
@@ -824,8 +903,8 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
     sortByPath() {
         this.data_obj_keys_sorted = Object.keys(this.data_obj).sort((a, b) => {
             return STR_COLLATOR.compare(
-                this.data_obj[a].element.dataset.sortPath,
-                this.data_obj[b].element.dataset.sortPath,
+                this.data_obj[a].sort_path,
+                this.data_obj[b].sort_path,
             );
         });
     }
@@ -833,8 +912,8 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
     sortByCreated() {
         this.data_obj_keys_sorted = Object.keys(this.data_obj).sort((a, b) => {
             return INT_COLLATOR.compare(
-                this.data_obj[a].element.dataset.sortCreated,
-                this.data_obj[b].element.dataset.sortCreated,
+                this.data_obj[a].sort_created,
+                this.data_obj[b].sort_created,
             );
         });
     }
@@ -842,8 +921,8 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
     sortByModified() {
         this.data_obj_keys_sorted = Object.keys(this.data_obj).sort((a, b) => {
             return INT_COLLATOR.compare(
-                this.data_obj[a].element.dataset.sortModified,
-                this.data_obj[b].element.dataset.sortModified,
+                this.data_obj[a].sort_modified,
+                this.data_obj[b].sort_modified,
             );
         });
     }
@@ -888,13 +967,8 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         }
 
         for (const [k, v] of Object.entries(this.data_obj)) {
-            let search_only = v.element.querySelector(".search_only");
-            let text = Array.prototype.map.call(v.element.querySelectorAll(".search_terms"), function (t) {
-                return t.textContent.toLowerCase();
-            }).join(" ");
-
-            let visible = text.indexOf(this.filter_str) != -1;
-            if (search_only && this.filter_str.length < 4) {
+            let visible = v.search_terms.indexOf(this.filter_str) != -1;
+            if (v.search_only && this.filter_str.length < 4) {
                 visible = false;
             }
             this.data_obj[k].active = visible;

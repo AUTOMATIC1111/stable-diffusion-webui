@@ -1,3 +1,5 @@
+const SEARCH_INPUT_DEBOUNCE_TIME_MS = 250;
+
 const re_extranet = /<([^:^>]+:[^:]+):[\d.]+>(.*)/;
 const re_extranet_g = /<([^:^>]+:[^:]+):[\d.]+>/g;
 const re_extranet_neg = /\(([^:^>]+:[\d.]+)\)/;
@@ -7,7 +9,6 @@ const clusterizers = {};
 var globalPopup = null;
 var globalPopupInner = null;
 const storedPopupIds = {};
-const tab_setup_complete = {};
 const extraPageUserMetadataEditors = {};
 // A flag used by the `waitForBool` promise to determine when we first load Ui Options.
 const initialUiOptionsLoaded = { state: false };
@@ -197,14 +198,14 @@ function extraNetworksSetupTabContent(tabname, pane, controls_div) {
 
         // Debounce search text input. This way we only search after user is done typing.
         let search_input_debounce = debounce(() => {
-            if (txt_search.value) {
-                extraNetworksApplyFilter(tabname_full);
-            }
-        }, 250);
+            extraNetworksApplyFilter(tabname_full);
+        }, SEARCH_INPUT_DEBOUNCE_TIME_MS);
         txt_search.addEventListener("keyup", search_input_debounce);
 
         // Update search filter whenever the search input's clear button is pressed.
-        txt_search.addEventListener("extra-network-control--search-clear", () => extraNetworksApplyFilter(tabname_full));
+        txt_search.addEventListener("extra-network-control--search-clear", () => {
+            extraNetworksApplyFilter(tabname_full);
+        });
 
         // Insert the controls into the page.
         var controls = gradioApp().querySelector(`#${tabname_full}_controls`);
@@ -212,8 +213,6 @@ function extraNetworksSetupTabContent(tabname, pane, controls_div) {
         if (pane.style.display != "none") {
             extraNetworksShowControlsForPage(tabname, tabname_full);
         }
-    }).then(() => {
-        tab_setup_complete[tabname_full] = true;
     });
 }
 
@@ -313,6 +312,7 @@ function extraNetworksApplyFilter(tabname_full) {
 }
 
 function extraNetworksClusterizersEnable(tabname_full) {
+    /** Enables the selected tab's clusterizer and disables all others. */
     // iterate over tabnames
     for (const [_tabname_full, tab_clusterizers] of Object.entries(clusterizers)) {
         // iterate over clusterizers in tab
@@ -323,14 +323,15 @@ function extraNetworksClusterizersEnable(tabname_full) {
     }
 }
 
-function extraNetworkClusterizersOnTabLoad(tabname_full) {
+function extraNetworkClusterizersOnTabLoad(tabname_full) { /** promise */
     return new Promise(resolve => {
-        /** Enables a tab's clusterizer, updates its data, and rebuilds it. */
+        // Enables a tab's clusterizer, updates its data, and rebuilds it.
         if (!(tabname_full in clusterizers)) {
             return resolve();
         }
         
         (async () => {
+            // Enable then load the selected tab's clusterize lists.
             extraNetworksClusterizersEnable(tabname_full);
             for (const v of Object.values(clusterizers[tabname_full])) {
                 await v.load();
@@ -346,7 +347,7 @@ function extraNetworksSetupEventHandlers() {
     // This will automatically fit the left pane to the size of its largest loaded row.
     window.addEventListener("resizeHandleDblClick", (e) => {
         e.stopPropagation();
-        const tabname_full = e.target.closest(".extra-network-pane").id.replace("_pane", "");
+        const tabname_full = e.target.closest(".extra-network-pane").dataset.tabnameFull;
         // This event is only applied to the currently selected tab if has clusterize list.
         if (!(tabname_full in clusterizers)) {
             return;
@@ -489,34 +490,6 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname_full) {
     var true_targ = event.target;
     const div_id = btn.dataset.divId;
 
-    function _expandOrCollapse(_btn) {
-        // Expands/Collapses all children of the button.
-        if ("expanded" in _btn.dataset) {
-            delete _btn.dataset.expanded;
-            clusterizers[tabname_full].tree_list.removeChildRows(div_id);
-        } else {
-            _btn.dataset.expanded = "";
-            clusterizers[tabname_full].tree_list.addChildRows(div_id);
-        }
-        // update html after changing attr.
-        clusterizers[tabname_full].tree_list.updateDivContent(div_id, _btn.outerHTML);
-        clusterizers[tabname_full].tree_list.updateRows();
-    }
-
-    function _removeSelectedFromAll() {
-        // Removes the `selected` attribute from all buttons.
-        var sels = document.querySelectorAll(".tree-list-item");
-        [...sels].forEach(el => {
-            delete el.dataset.selected;
-        });
-    }
-
-    function _selectButton(_btn) {
-        // Removes `data-selected` attribute from all buttons then adds to passed button.
-        _removeSelectedFromAll();
-        _btn.dataset.selected = "";
-    }
-
     function _updateSearch(_search_text) {
         // Update search input with select button's path.
         var search_input_elem = gradioApp().querySelector(`#${tabname_full}_extra_search`);
@@ -525,21 +498,19 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname_full) {
         extraNetworksApplyFilter(tabname_full);
     }
 
-
-    // If user clicks on the chevron, then we do not select the folder.
     if (true_targ.matches(".tree-list-item-action--leading, .tree-list-item-action-chevron")) {
-        _expandOrCollapse(btn);
-    } else {
-        // User clicked anywhere else on the button.
-        if ("selected" in btn.dataset) {
-            // If folder is selected, deselect button.
-            delete btn.dataset.selected;
+        // If user clicks on the chevron, then we do not select the folder.
+        let prev_selected_elem = gradioApp().querySelector(".tree-list-item[data-selected='']");
+        clusterizers[tabname_full].tree_list.onRowExpandClick(div_id, btn);
+        let selected_elem = gradioApp().querySelector(".tree-list-item[data-selected='']");
+        if (prev_selected_elem instanceof Element && !(selected_elem instanceof Element)) {
+            // if a selected element was removed, clear filter.
             _updateSearch("");
-        } else {
-            // If folder is not selected, select it.
-            _selectButton(btn);
-            _updateSearch(btn.dataset.path);
         }
+    } else {
+        // user clicked anywhere else on row.
+        clusterizers[tabname_full].tree_list.onRowSelected(div_id, btn);
+        _updateSearch("selected" in btn.dataset ? btn.dataset.path : "");
     }
 }
 
@@ -599,19 +570,18 @@ function extraNetworkDirsOnClick(event, tabname_full) {
 function extraNetworksControlSearchClearOnClick(event, tabname_full) {
     /** Clears the search <input> text. */
     let clear_btn = event.target.closest(".extra-network-control--search-clear");
-
-    // Deselect all buttons from both dirs view and tree view
-    gradioApp().querySelectorAll(".extra-network-dirs-view-button").forEach((elem) => {
-        delete elem.dataset.selected;
-    });
-
-    gradioApp().querySelectorAll(".tree-list-item").forEach((elem) => {
-        delete elem.dataset.selected;
-    });
-
     let txt_search = clear_btn.previousElementSibling;
     txt_search.value = "";
-    txt_search.dispatchEvent(new CustomEvent("extra-network-control--search-clear", {}));
+    txt_search.dispatchEvent(
+        new CustomEvent(
+            "extra-network-control--search-clear",
+            {
+                detail: {
+                    tabname_full: tabname_full
+                }
+            }
+        )
+    );
 }
 
 function extraNetworksControlSortModeOnClick(event, tabname_full) {
@@ -650,7 +620,7 @@ function extraNetworksControlSortDirOnClick(event, tabname_full) {
     }
 
     if (tabname_full in clusterizers) {
-        clusterizers[tabname_full].cards_list.setSortDir(event.currentTarget);
+        clusterizers[tabname_full].cards_list.setSortDir(event.currentTarget.dataset.sortDir.toLowerCase());
         extraNetworksApplyFilter(tabname_full);
     }
 }
@@ -705,7 +675,6 @@ function extraNetworksControlRefreshOnClick(event, tabname_full) {
      */
     // reset states
     initialUiOptionsLoaded.state = false;
-    tab_setup_complete = {};
     // Fire an event for this button click.
     gradioApp().getElementById(`${tabname_full}_extra_refresh_internal`).dispatchEvent(new Event("click"));
 }
