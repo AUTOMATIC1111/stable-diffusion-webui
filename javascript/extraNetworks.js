@@ -605,15 +605,17 @@ function requestGet(url, data, handler, errorHandler) {
     xhr.send(js);
 }
 
-function extraNetworksCopyCardPath(event, path) {
-    navigator.clipboard.writeText(path);
+function extraNetworksCopyCardPath(event) {
+    navigator.clipboard.writeText(event.target.getAttribute("data-clipboard-text"));
     event.stopPropagation();
 }
 
-function extraNetworksRequestMetadata(event, extraPage, cardName) {
+function extraNetworksRequestMetadata(event, extraPage) {
     var showError = function() {
         extraNetworksShowMetadata("there was an error getting metadata");
     };
+
+    var cardName = event.target.parentElement.parentElement.getAttribute("data-name");
 
     requestGet("./sd_extra_networks/metadata", {page: extraPage, item: cardName}, function(data) {
         if (data && data.metadata) {
@@ -628,7 +630,7 @@ function extraNetworksRequestMetadata(event, extraPage, cardName) {
 
 var extraPageUserMetadataEditors = {};
 
-function extraNetworksEditUserMetadata(event, tabname, extraPage, cardName) {
+function extraNetworksEditUserMetadata(event, tabname, extraPage) {
     var id = tabname + '_' + extraPage + '_edit_user_metadata';
 
     var editor = extraPageUserMetadataEditors[id];
@@ -640,6 +642,7 @@ function extraNetworksEditUserMetadata(event, tabname, extraPage, cardName) {
         extraPageUserMetadataEditors[id] = editor;
     }
 
+    var cardName = event.target.parentElement.parentElement.getAttribute("data-name");
     editor.nameTextarea.value = cardName;
     updateInput(editor.nameTextarea);
 
