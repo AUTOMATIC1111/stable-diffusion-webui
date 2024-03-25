@@ -315,7 +315,7 @@ class ExtraNetworksPage:
                     div_id=div_id,
                     parent_id=parent_id,
                     tabname=tabname,
-                    label=k,
+                    label=os.path.basename(k),
                     data_depth=depth,
                     data_path=k,
                     btn_type="dir",
@@ -601,6 +601,10 @@ class ExtraNetworksPage:
         Args:
             tabname: The name of the active tab.
             empty: create an empty HTML page with no items
+            controls_state: Dictonary specifying controls on the page and
+                its `enabled` status. If a control is not specified then the default
+                setting will be used. Useful when refreshing a page so we can
+                retain the previous settings.
 
         Returns:
             HTML formatted string.
@@ -620,28 +624,29 @@ class ExtraNetworksPage:
             if "user_metadata" not in item:
                 self.read_user_metadata(item)
 
-        show_tree = shared.opts.extra_networks_tree_view_default_enabled
-
         cards_data_div = self.generate_cards_view_data_div(tabname, none_message="Loading..." if empty else None)
         tree_data_div = self.generate_tree_view_data_div(tabname)
         dirs_html = self.create_dirs_view_html(tabname)
 
-        show_dirs = shared.opts.extra_networks_dirs_view_default_enabled
-        show_tree = shared.opts.extra_networks_tree_view_default_enabled
+        sort_mode = shared.opts.extra_networks_card_order_field.lower().strip().replace(" ", "_")
+        sort_dir = shared.opts.extra_networks_card_order.lower().strip()
+        dirs_view_en = shared.opts.extra_networks_dirs_view_default_enabled
+        tree_view_en = shared.opts.extra_networks_tree_view_default_enabled
+
         return self.pane_tpl.format(**{
             "tabname": tabname,
             "extra_networks_tabname": self.extra_networks_tabname,
-            "data_sort_dir": shared.opts.extra_networks_card_order.lower().strip(),
-            "data_sort_mode": shared.opts.extra_networks_card_order_field.lower().strip(),
-            "sort_path_active": 'extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Path' else '',
-            "sort_name_active": 'extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Name' else '',
-            "sort_date_created_active": 'extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Date Created' else '',
-            "sort_date_modified_active": 'extra-network-control--enabled' if shared.opts.extra_networks_card_order_field == 'Date Modified' else '',
-            "btn_dirs_view_enabled_class": "extra-network-control--enabled" if show_dirs else "",
-            "btn_tree_view_enabled_class": "extra-network-control--enabled" if show_tree else "",
-            "extra_networks_tree_view_default_width": shared.opts.extra_networks_tree_view_default_width,
-            "dirs_default_display_class": "" if show_dirs else "hidden",
-            "tree_default_display_class": "" if show_tree else "hidden",
+            "data_sort_dir": sort_dir,
+            "btn_sort_mode_path_data_attributes": "data-selected" if sort_mode == "path" else "",
+            "btn_sort_mode_name_data_attributes": "data-selected" if sort_mode == "name" else "",
+            "btn_sort_mode_date_created_data_attributes": "data-selected" if sort_mode == "date_created" else "",
+            "btn_sort_mode_date_modified_data_attributes": "data-selected" if sort_mode == "date_modified" else "",
+            "btn_dirs_view_data_attributes": "data-selected" if dirs_view_en else "",
+            "btn_tree_view_data_attributes": "data-selected" if tree_view_en else "",
+            "dirs_view_hidden_cls": "" if dirs_view_en else "hidden",
+            "tree_view_hidden_cls": "" if tree_view_en else "hidden",
+            "tree_view_style": f"flex-basis: {shared.opts.extra_networks_tree_view_default_width}px;",
+            "cards_view_style": "flex-grow: 1;",
             "dirs_html": dirs_html,
             "cards_data_div": cards_data_div,
             "tree_data_div": tree_data_div,

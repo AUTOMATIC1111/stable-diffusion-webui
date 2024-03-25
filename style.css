@@ -1353,11 +1353,11 @@ body.resizing .resize-handle {
     color: var(--button-secondary-text-color-hover);
 }
 
-.extra-network-control--enabled {
+.extra-network-control[data-selected] {
     background: var(--button-secondary-background-fill);
 }
 
-.extra-network-control--enabled .extra-network-control--icon {
+.extra-network-control[data-selected] .extra-network-control--icon {
     color: var(--button-secondary-text-color);
 }
 

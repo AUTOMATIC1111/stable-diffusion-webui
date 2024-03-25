@@ -222,16 +222,19 @@ class ExtraNetworksClusterize {
                         this.data_obj = {};
                         this.data_obj_keys_sorted = [];
                         this.clear();
+                        this.content_elem.innerHTML = "<div class='clusterize-no-data'>Loading...</div>";
                     }
                     return v;
                 })
                 .then(v => decompress(v))
                 .then(v => JSON.parse(v))
                 .then(v => this.updateJson(v))
-                .then(() => this.encoded_str = encoded_str)
-                .then(() => this.rebuild())
-                .then(() => this.applyFilter())
-                .then(() => { return resolve(); });
+                .then(() => {
+                    this.encoded_str = encoded_str;
+                    this.rebuild();
+                    this.applyFilter();
+                    return resolve(); 
+                });
         });
     }
 
@@ -454,6 +457,7 @@ class ExtraNetworksClusterize {
                 scrollId: this.scroll_id,
                 contentId: this.content_id,
                 rows_in_block: this.rows_in_block,
+                tag: "div",
                 blocks_in_cluster: this.blocks_in_cluster,
                 show_no_data_row: this.show_no_data_row,
                 no_data_text: this.no_data_text,
@@ -822,6 +826,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
     updateJson(json) {
         /** Processes JSON object and adds each entry to our data object. */
         return new Promise(resolve => {
+            this.data_obj = {};
             for (const [i, [k, v]] of Object.entries(Object.entries(json))) {
                 let div_id = k;
                 let parsed_html = htmlStringToElement(v);

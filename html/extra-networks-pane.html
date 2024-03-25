@@ -20,9 +20,11 @@
         <div class="extra-network-controls--container">
             <div class="extra-network-controls--header">Sort Mode</div>
             <div class="extra-network-controls--buttons">
-                <button class="extra-network-control extra-network-control--sort-mode {sort_path_active}"
-                    data-sort-mode="path" title="Sort by path"
-                    onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');">
+                <button class="extra-network-control extra-network-control--sort-mode"
+                    title="Sort by path"
+                    onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');"
+                    data-sort-mode="path"
+                    {btn_sort_mode_path_data_attributes}>
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                         stroke-width="1">
@@ -32,18 +34,22 @@
                         <line x1="9" y1="10" x2="10.5" y2="11.5" />
                     </svg>
                 </button>
-                <button class="extra-network-control extra-network-control--sort-mode {sort_name_active}"
-                    data-sort-mode="name" title="Sort by name"
-                    onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');">
+                <button class="extra-network-control extra-network-control--sort-mode"
+                    title="Sort by name"
+                    onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');"
+                    data-sort-mode="name"
+                    {btn_sort_mode_name_data_attributes}>
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                         <path stroke-width="1" d="M 2 12 L 6 3 L 10 12 M 3.5 9 L 8.5 9" />
                         <path stroke-width="1" d="M 8 3 L 15 3 M 9.5 6 L 15 6 M 11 9 L 15 9 M 12.5 12 L 15 12">
                     </svg>
                 </button>
-                <button class="extra-network-control extra-network-control--sort-mode {sort_date_created_active}"
-                    data-sort-mode="date_created" title="Sort by date created"
-                    onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');">
+                <button class="extra-network-control extra-network-control--sort-mode"
+                    title="Sort by date created"
+                    onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');"
+                    data-sort-mode="date_created"
+                    {btn_sort_mode_date_created_data_attributes}>
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1">
                         <rect x="1" y="2" width="14" height="12" rx="2" fill="none" />
@@ -55,9 +61,11 @@
                         <line x1="12" y1="1" x2="12" y2="3" />
                     </svg>
                 </button>
-                <button class="extra-network-control extra-network-control--sort-mode {sort_date_modified_active}"
-                    data-sort-mode="date_modified" title="Sort by date modified"
-                    onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');">
+                <button class="extra-network-control extra-network-control--sort-mode"
+                    title="Sort by date modified"
+                    onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');"
+                    data-sort-mode="date_modified"
+                    {btn_sort_mode_date_modified_data_attributes}>
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         fill="none" stroke="currentColor" stroke-width="1">
                         <g stroke-linecap="round" stroke-linejoin="round">
@@ -77,9 +85,10 @@
         <div class="extra-network-controls--container">
             <div class="extra-network-controls--header">Sort Order</div>
             <div class="extra-network-controls--buttons">
-                <button class="extra-network-control extra-network-control--sort-dir" data-sort-dir="ascending"
-                    title="Sort ascending"
-                    onclick="extraNetworksControlSortDirOnClick(event, '{tabname}_{extra_networks_tabname}');">
+                <button class="extra-network-control extra-network-control--sort-dir"
+                    title="Sort {data_sort_dir}"
+                    onclick="extraNetworksControlSortDirOnClick(event, '{tabname}_{extra_networks_tabname}');"
+                    data-sort-dir="{data_sort_dir}">
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         fill="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
                         <path id="extra-network-control--sort-dir-icon-ascending" d="M 8 1 L 3 7 L 13 7 Z" />
@@ -92,9 +101,10 @@
             <div class="extra-network-controls--header">View Mode</div>
             <div class="extra-network-controls--buttons">
                 <button id="{tabname}_{extra_networks_tabname}_extra_dirs_view"
-                    class="extra-network-control extra-network-control--dirs-view {btn_dirs_view_enabled_class}"
+                    class="extra-network-control extra-network-control--dirs-view"
                     title="Enable Directory View"
-                    onclick="extraNetworksControlDirsViewOnClick(event, '{tabname}_{extra_networks_tabname}');">
+                    onclick="extraNetworksControlDirsViewOnClick(event, '{tabname}_{extra_networks_tabname}');"
+                    {btn_dirs_view_data_attributes}>
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         fill="currentColor" stroke="none">
                         <rect x="0" y="6" width="4" height="4" rx="1" />
@@ -103,9 +113,10 @@
                     </svg>
                 </button>
                 <button id="{tabname}_{extra_networks_tabname}_extra_tree_view"
-                    class="extra-network-control extra-network-control--tree-view {btn_tree_view_enabled_class}"
+                    class="extra-network-control extra-network-control--tree-view"
                     title="Enable Tree View"
-                    onclick="extraNetworksControlTreeViewOnClick(event, '{tabname}_{extra_networks_tabname}');">
+                    onclick="extraNetworksControlTreeViewOnClick(event, '{tabname}_{extra_networks_tabname}');"
+                    {btn_tree_view_data_attributes}>
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         fill="currentColor" stroke="none">
                         <rect x="3" y="0" width="4" height="4" rx="1" />
@@ -135,21 +146,20 @@
     <div id="{tabname}_{extra_networks_tabname}_pane_content"
         class="extra-network-content--container">
         <div id='{tabname}_{extra_networks_tabname}_dirs'
-            class="extra-network-content extra-network-content--dirs {dirs_default_display_class}">
+            class="extra-network-content extra-network-content--dirs {dirs_view_hidden_cls}">
             {dirs_html}
         </div>
         <div class="extra-network-content extra-network-content--cards resize-handle-row">
-            <div class="extra-network-content resize-handle-col"
-                style='flex-basis: {extra_networks_tree_view_default_width}px;'>
+            <div class="extra-network-content resize-handle-col {tree_view_hidden_cls}" style="{tree_view_style}">
                 <div id='{tabname}_{extra_networks_tabname}_tree_list_scroll_area'
-                    class='extra-network-tree clusterize-scroll {tree_default_display_class}'>
+                    class='extra-network-tree clusterize-scroll'>
                     <div id='{tabname}_{extra_networks_tabname}_tree_list_content_area'
                         class='extra-network-tree-content clusterize-content'>
                         <div class="clusterize-no-data">Loading...</div>
                     </div>
                 </div>
             </div>
-            <div class="extra-network-content resize-handle-col" style='flex-grow: 1;'>
+            <div class="extra-network-content resize-handle-col" style="{cards_view_style}">
                 <div id='{tabname}_{extra_networks_tabname}_cards_list_scroll_area'
                     class='extra-network-cards clusterize-scroll'>
                     <div id='{tabname}_{extra_networks_tabname}_cards_list_content_area'

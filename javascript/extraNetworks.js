@@ -191,11 +191,11 @@ function extraNetworksRefreshTab(tabname_full) {
     let btn_tree_view = gradioApp().querySelector(`#${tabname_full}_extra_tree_view`);
 
     let div_dirs = gradioApp().querySelector(`#${tabname_full}_dirs`);
-    let div_tree = gradioApp().querySelector(`#${tabname_full}_tree_list_scroll_area`);
+    let div_tree = gradioApp().querySelector(`.extra-network-content.resize-handle-col:has(> #${tabname_full}_tree_list_scroll_area)`);
 
     // Remove "hidden" class if button is enabled, otherwise add it.
-    div_dirs.classList.toggle("hidden", !btn_dirs_view.classList.contains("extra-network-control--enabled"));
-    div_tree.classList.toggle("hidden", !btn_tree_view.classList.contains("extra-network-control--enabled"));
+    div_dirs.classList.toggle("hidden", !("selected" in btn_dirs_view.dataset));
+    div_tree.classList.toggle("hidden", !("selected" in btn_tree_view.dataset));
 
     waitForKeyInObject({ k: tabname_full, obj: clusterizers })
         .then(() => extraNetworkClusterizersOnTabLoad(tabname_full));
@@ -615,11 +615,11 @@ function extraNetworksControlSearchClearOnClick(event, tabname_full) {
 
 function extraNetworksControlSortModeOnClick(event, tabname_full) {
     /** Handles `onclick` events for Sort Mode buttons. */
-    event.currentTarget.parentElement.querySelectorAll('.extra-network-control--sort-mode').forEach(function (x) {
-        x.classList.remove('extra-network-control--enabled');
+    event.currentTarget.parentElement.querySelectorAll('.extra-network-control--sort-mode').forEach(elem => {
+        delete elem.dataset.selected;
     });
 
-    event.currentTarget.classList.add('extra-network-control--enabled');
+    event.currentTarget.dataset.selected = "";
 
     if (tabname_full in clusterizers) {
         clusterizers[tabname_full].cards_list.setSortMode(
@@ -654,9 +654,14 @@ function extraNetworksControlTreeViewOnClick(event, tabname_full) {
      *
      * Toggles the tree view in the extra networks pane.
      */
-    var button = event.currentTarget;
-    button.classList.toggle("extra-network-control--enabled");
-    var show = button.classList.contains("extra-network-control--enabled");
+    let show;
+    if ("selected" in event.currentTarget.dataset) {
+        delete event.currentTarget.dataset.selected;
+        show = false;
+    } else {
+        event.currentTarget.dataset.selected = "";
+        show = true;
+    }
 
     gradioApp().getElementById(`${tabname_full}_tree_list_scroll_area`).parentElement.classList.toggle("hidden", !show);
     clusterizers[tabname_full].tree_list.enable(show);
@@ -667,9 +672,14 @@ function extraNetworksControlDirsViewOnClick(event, tabname_full) {
      *
      * Toggles the directory view in the extra networks pane.
      */
-    var button = event.currentTarget;
-    button.classList.toggle("extra-network-control--enabled");
-    var show = button.classList.contains("extra-network-control--enabled");
+    let show;
+    if ("selected" in event.currentTarget.dataset) {
+        delete event.currentTarget.dataset.selected;
+        show = false;
+    } else {
+        event.currentTarget.dataset.selected = "";
+        show = true;
+    }
 
     gradioApp().getElementById(`${tabname_full}_dirs`).classList.toggle("hidden", !show);
 }
