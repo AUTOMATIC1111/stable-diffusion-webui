@@ -779,7 +779,6 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
 
     return sd_model
 
-# GPU memory usage check
 def is_gpu_meory_usage_above_threshold(threshold=0):
     if threshold <= 0 or not torch.cuda.is_available():
         return False
@@ -788,11 +787,20 @@ def is_gpu_meory_usage_above_threshold(threshold=0):
         result = subprocess.run(['nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits'], capture_output=True, text=True)
         if result.stdout:
             # Parse the command output
+            all_used = 0
+            all_total = 0
             memory_info = result.stdout.strip().split('\n')
             for info in memory_info:
                 used, total = map(int, info.split(','))
+                all_used = all_used + used
+                all_total = all_total + total
                 # Calculate the usage percentage
                 usage_percentage = (used / total) * 100
+                # Check if the usage exceeds the threshold
+                if usage_percentage > threshold:
+                    return True
+            if all_total > 0:
+                usage_percentage = (all_used / all_total) * 100
                 # Check if the usage exceeds the threshold
                 if usage_percentage > threshold:
                     return True
@@ -838,32 +846,35 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
     """
 
     already_loaded = None
+    memory_reach_limit = False
+    current_already_release = None
     for i in reversed(range(len(model_data.loaded_sd_models))):
         loaded_model = model_data.loaded_sd_models[i]
         if loaded_model.sd_checkpoint_info.filename == checkpoint_info.filename:
             already_loaded = loaded_model
             continue
 
-        memory_reach_limit = False
         if shared.opts.sd_checkpoints_memory_threshold > 0 and len(model_data.loaded_sd_models) > 1:
             memory_reach_limit = is_meory_usage_above_threshold(shared.opts.sd_checkpoints_memory_threshold)
 
         # Unload model if it is not the one currently loaded and it is over the limit
-        release_model_filename = None
         if (memory_reach_limit and len(model_data.loaded_sd_models) > 1) or \
             len(model_data.loaded_sd_models) > shared.opts.sd_checkpoints_limit > 0:
             if memory_reach_limit:
-                print("Memory usage is above threshold, will clearing cache, threshold is", shared.opts.sd_checkpoints_gpu_memory_threshold, "%")
+                print("Memory usage is above threshold, will clearing cache, threshold is", shared.opts.sd_checkpoints_memory_threshold, "%")
             print(f"Unloading model {len(model_data.loaded_sd_models)} over the limit of {shared.opts.sd_checkpoints_limit}: {loaded_model.sd_checkpoint_info.title}")
             model_data.loaded_sd_models.pop()
             send_model_to_trash(loaded_model)
             timer.record("send model to trash")
-            release_model_filename = loaded_model.sd_checkpoint_info.filename
+            if sd_model.sd_checkpoint_info.filename == loaded_model.sd_checkpoint_info.filename:
+                current_already_release = True
 
-        if shared.opts.sd_checkpoints_keep_in_cpu and (not memory_reach_limit):
-            if sd_model.sd_checkpoint_info.filename != release_model_filename:
-              send_model_to_cpu(sd_model)
-              timer.record("send model to cpu")
+    if shared.opts.sd_checkpoints_memory_threshold > 0:
+        memory_reach_limit = is_meory_usage_above_threshold(shared.opts.sd_checkpoints_memory_threshold)
+
+    if shared.opts.sd_checkpoints_keep_in_cpu and (not current_already_release) and (not memory_reach_limit):
+        send_model_to_cpu(sd_model)
+        timer.record("send model to cpu")
 
     if already_loaded is not None:
         send_model_to_device(already_loaded)
