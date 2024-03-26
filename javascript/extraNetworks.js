@@ -845,10 +845,12 @@ function extraNetworksCopyPathToClipboard(event, path) {
     event.stopPropagation();
 }
 
-function extraNetworksRequestMetadata(event, extraPage, cardName) {
+function extraNetworksRequestMetadata(event, extraPage) {
     var showError = function() {
         extraNetworksShowMetadata("there was an error getting metadata");
     };
+
+    var cardName = event.target.parentElement.parentElement.getAttribute("data-name");
 
     requestGet("./sd_extra_networks/metadata", {page: extraPage, item: cardName}, function(data) {
         if (data && data.metadata) {
@@ -873,6 +875,7 @@ function extraNetworksEditUserMetadata(event, tabname, extraPage, cardName) {
         extraPageUserMetadataEditors[id] = editor;
     }
 
+    var cardName = event.target.parentElement.parentElement.getAttribute("data-name");
     editor.nameTextarea.value = cardName;
     updateInput(editor.nameTextarea);
 

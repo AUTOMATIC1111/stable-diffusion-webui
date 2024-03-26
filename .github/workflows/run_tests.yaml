@@ -11,9 +11,9 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python 3.10
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.10.6
           cache: pip
@@ -22,7 +22,7 @@ jobs:
             launch.py
       - name: Cache models
         id: cache-models
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: models
           key: "2023-12-30"
@@ -68,13 +68,13 @@ jobs:
           python -m coverage report -i
           python -m coverage html -i
       - name: Upload main app output
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: output
           path: output.txt
       - name: Upload coverage HTML
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: htmlcov

@@ -528,6 +528,10 @@ table.popup-table .link{
     opacity: 0.75;
 }
 
+.settings-comment .info ol{
+    margin: 0.4em 0 0.8em 1em;
+}
+
 #sysinfo_download a.sysinfo_big_link{
     font-size: 24pt;
 }

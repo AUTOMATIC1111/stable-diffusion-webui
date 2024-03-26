@@ -3,6 +3,7 @@ Pillow==9.5.0
 accelerate==0.21.0
 blendmodes==2022
 clean-fid==0.1.35
+diskcache==5.6.3
 einops==0.4.1
 facexlib==0.3.0
 fastapi==0.94.0

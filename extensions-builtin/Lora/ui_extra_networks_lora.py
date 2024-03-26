@@ -31,7 +31,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
             "name": name,
             "filename": lora_on_disk.filename,
             "shorthash": lora_on_disk.shorthash,
-            "preview": self.find_preview(path),
+            "preview": self.find_preview(path) or self.find_embedded_preview(path, name, lora_on_disk.metadata),
             "description": self.find_description(path),
             "search_terms": search_terms,
             "local_preview": f"{path}.{shared.opts.samples_format}",

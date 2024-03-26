@@ -22,7 +22,7 @@ class ScriptPostprocessingGfpGan(scripts_postprocessing.ScriptPostprocessing):
         if gfpgan_visibility == 0 or not enable:
             return
 
-        restored_img = gfpgan_model.gfpgan_fix_faces(np.array(pp.image, dtype=np.uint8))
+        restored_img = gfpgan_model.gfpgan_fix_faces(np.array(pp.image.convert("RGB"), dtype=np.uint8))
         res = Image.fromarray(restored_img)
 
         if gfpgan_visibility < 1.0:
