@@ -4,7 +4,7 @@ import urllib.parse
 from pathlib import Path
 from typing import Optional, Union
 from dataclasses import dataclass
-import gzip
+import zlib
 import base64
 import re
 
@@ -162,6 +162,7 @@ class ExtraNetworksPage:
         self.allow_negative_prompt = False
         self.metadata = {}
         self.items = {}
+        self.tree = {}
         self.lister = util.MassFileLister()
         # HTML Templates
         self.pane_tpl = shared.html("extra-networks-pane.html")
@@ -201,7 +202,7 @@ class ExtraNetworksPage:
 
         return ""
 
-    def build_row(
+    def build_tree_html_dict_row(
         self,
         div_id: int,
         tabname: str,
@@ -285,7 +286,7 @@ class ExtraNetworksPage:
         return res
 
 
-    def build_tree(
+    def build_tree_html_dict(
         self,
         tree: dict,
         res: dict,
@@ -311,7 +312,7 @@ class ExtraNetworksPage:
                     else:
                         dir_is_empty = True
 
-                res[div_id] = self.build_row(
+                res[div_id] = self.build_tree_html_dict_row(
                     div_id=div_id,
                     parent_id=parent_id,
                     tabname=tabname,
@@ -321,7 +322,7 @@ class ExtraNetworksPage:
                     btn_type="dir",
                     dir_is_empty=dir_is_empty,
                 )
-                last_div_id = self.build_tree(
+                last_div_id = self.build_tree_html_dict(
                     tree=v,
                     res=res,
                     depth=depth + 1,
@@ -356,7 +357,7 @@ class ExtraNetworksPage:
                     )
                     onclick = html.escape(onclick)
 
-                res[div_id] = self.build_row(
+                res[div_id] = self.build_tree_html_dict_row(
                     div_id=div_id,
                     parent_id=parent_id,
                     tabname=tabname,
@@ -511,67 +512,43 @@ class ExtraNetworksPage:
         """
         res = {}
 
-        # Setup the tree dictionary.
-        roots = self.allowed_directories_for_previews()
-        tree_items = {v["filename"]: ExtraNetworksItem(v) for v in self.items.values()}
-        tree = get_tree([os.path.abspath(x) for x in roots], items=tree_items)
-
-        if not tree:
+        if not self.tree:
             return res
 
-        self.build_tree(
-            tree=tree,
+        self.build_tree_html_dict(
+            tree=self.tree,
             res=res,
             depth=0,
             div_id=0,
             parent_id=None,
             tabname=tabname,
         )
-        res = base64.b64encode(gzip.compress(json.dumps(res).encode("utf-8"))).decode("utf-8")
+
+        res = base64.b64encode(zlib.compress(json.dumps(res, separators=(",", ":")).encode("utf-8"))).decode("utf-8")
         return f'<div id="{tabname}_{self.extra_networks_tabname}_tree_list_data" class="extra-network-script-data" data-tabname-full={tabname}_{self.extra_networks_tabname} data-proxy-name=tree_list data-json={res} hidden></div>'
 
-    # FIXME
     def create_dirs_view_html(self, tabname: str) -> str:
         """Generates HTML for displaying folders."""
 
-        subdirs = {}
-        for parentdir in [os.path.abspath(x) for x in self.allowed_directories_for_previews()]:
-            for root, dirs, _ in sorted(os.walk(parentdir, followlinks=True), key=lambda x: shared.natural_sort_key(x[0])):
-                for dirname in sorted(dirs, key=shared.natural_sort_key):
-                    x = os.path.join(root, dirname)
+        def _get_dirs_buttons(tree: dict, res: list) -> None:
+            """ Builds a list of directory names from a tree. """
+            for k, v in sorted(tree.items(), key=lambda x: shared.natural_sort_key(x[0])):
+                if not isinstance(v, (ExtraNetworksItem,)):
+                    # dir
+                    res.append(k)
+                    _get_dirs_buttons(tree=v, res=res)
 
-                    if not os.path.isdir(x):
-                        continue
+        dirs = []
+        _get_dirs_buttons(tree=self.tree, res=dirs)
 
-                    subdir = os.path.abspath(x)[len(parentdir):]
-
-                    if shared.opts.extra_networks_dir_button_function:
-                        if not subdir.startswith(os.path.sep):
-                            subdir = os.path.sep + subdir
-                    else:
-                        while subdir.startswith(os.path.sep):
-                            subdir = subdir[1:]
-
-                    is_empty = len(os.listdir(x)) == 0
-                    if not is_empty and not subdir.endswith(os.path.sep):
-                        subdir = subdir + os.path.sep
-
-                    if (os.path.sep + "." in subdir or subdir.startswith(".")) and not shared.opts.extra_networks_show_hidden_directories:
-                        continue
-
-                    subdirs[subdir] = 1
-
-        if subdirs:
-            subdirs = {**subdirs}
-
-        subdirs_html = "".join([
+        dirs_html = "".join([
             self.btn_dirs_view_tpl.format(**{
-                "extra_class": "search-all" if subdir == "" else "",
+                "extra_class": "search-all" if d == "" else "",
                 "tabname_full": f"{tabname}_{self.extra_networks_tabname}",
-                "path": html.escape(subdir),
-            }) for subdir in subdirs
+                "path": html.escape(d),
+            }) for d in dirs
         ])
-        return subdirs_html
+        return dirs_html
 
     def generate_cards_view_data_div(self, tabname: str, *, none_message) -> str:
         """Generates HTML for the network Card View section for a tab.
@@ -590,7 +567,7 @@ class ExtraNetworksPage:
         for i, item in enumerate(self.items.values()):
             res[i] = self.create_item_html(tabname, item, self.card_tpl, div_id=i)
 
-        res = base64.b64encode(gzip.compress(json.dumps(res).encode("utf-8"))).decode("utf-8")
+        res = base64.b64encode(zlib.compress(json.dumps(res, separators=(",", ":")).encode("utf-8"))).decode("utf-8")
         return f'<div id="{tabname}_{self.extra_networks_tabname}_cards_list_data" class="extra-network-script-data" data-tabname-full={tabname}_{self.extra_networks_tabname} data-proxy-name=cards_list data-json={res} hidden></div>'
 
     def create_html(self, tabname, *, empty=False):
@@ -601,10 +578,6 @@ class ExtraNetworksPage:
         Args:
             tabname: The name of the active tab.
             empty: create an empty HTML page with no items
-            controls_state: Dictonary specifying controls on the page and
-                its `enabled` status. If a control is not specified then the default
-                setting will be used. Useful when refreshing a page so we can
-                retain the previous settings.
 
         Returns:
             HTML formatted string.
@@ -624,8 +597,16 @@ class ExtraNetworksPage:
             if "user_metadata" not in item:
                 self.read_user_metadata(item)
 
-        cards_data_div = self.generate_cards_view_data_div(tabname, none_message="Loading..." if empty else None)
+        # Setup the tree dictionary.
+        roots = self.allowed_directories_for_previews()
+        tree_items = {v["filename"]: ExtraNetworksItem(v) for v in self.items.values()}
+        tree = get_tree([os.path.abspath(x) for x in roots], items=tree_items)
+        self.tree = tree
+
+        # Generate the data payloads for tree and cards views
         tree_data_div = self.generate_tree_view_data_div(tabname)
+        cards_data_div = self.generate_cards_view_data_div(tabname, none_message="Loading..." if empty else None)
+        # Generate the html for displaying directory buttons
         dirs_html = self.create_dirs_view_html(tabname)
 
         sort_mode = shared.opts.extra_networks_card_order_field.lower().strip().replace(" ", "_")
