@@ -4,6 +4,12 @@ const RESIZE_DEBOUNCE_TIME_MS = 250;
 const INT_COLLATOR = new Intl.Collator([], { numeric: true });
 const STR_COLLATOR = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
 
+class InvalidCompressedJsonDataError extends Error {
+    constructor(message, options) {
+        super(message, options);
+    }
+}
+
 const getComputedPropertyDims = (elem, prop) => {
     /** Returns the top/left/bottom/right float dimensions of an element for the specified property. */
     const style = window.getComputedStyle(elem, null);
@@ -58,32 +64,22 @@ const getComputedDims = elem => {
     }
 }
 
-function compress(string) {
-    /** Compresses a string into a base64 encoded GZipped string. */
-    const cs = new CompressionStream('gzip');
-    const writer = cs.writable.getWriter();
-
-    const blobToBase64 = blob => new Promise((resolve, _) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-        reader.readAsDataURL(blob);
-    });
-    const byteArray = new TextEncoder().encode(string);
-    writer.write(byteArray);
-    writer.close();
-    return new Response(cs.readable).blob().then(blobToBase64);
-};
-
-function decompress(base64string) {
-    /** Decompresses a base64 encoded GZipped string. */
-    const ds = new DecompressionStream('gzip');
-    const writer = ds.writable.getWriter();
-    const bytes = Uint8Array.from(atob(base64string), c => c.charCodeAt(0));
-    writer.write(bytes);
-    writer.close();
-    return new Response(ds.readable).arrayBuffer().then(function (arrayBuffer) {
+async function decompress(base64string) {
+    /** Decompresses a base64 encoded ZLIB compressed string. */
+    try {
+        if (isNullOrUndefined(base64string) || base64string === "") {
+            throw new Error("invalid base64 string");
+        }
+        const ds = new DecompressionStream("deflate");
+        const writer = ds.writable.getWriter();
+        const bytes = Uint8Array.from(atob(base64string), c => c.charCodeAt(0));
+        writer.write(bytes);
+        writer.close();
+        const arrayBuffer = await new Response(ds.readable).arrayBuffer();
         return new TextDecoder().decode(arrayBuffer);
-    });
+    } catch (error) {
+        throw new InvalidCompressedJsonDataError(error);
+    }
 }
 
 const htmlStringToElement = function (str) {
@@ -211,12 +207,14 @@ class ExtraNetworksClusterize {
 
     parseJson(encoded_str) { /** promise */
         /** Parses a base64 encoded and gzipped JSON string and sets up a clusterize instance. */
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             // Skip parsing if the string hasnt actually updated.
             if (this.encoded_str === encoded_str) {
                 return resolve();
             }
             Promise.resolve(encoded_str)
+                .then(v => decompress(v))
+                .then(v => JSON.parse(v))
                 .then(v => {
                     if (!isNullOrUndefined(this.clusterize)) {
                         this.data_obj = {};
@@ -226,14 +224,15 @@ class ExtraNetworksClusterize {
                     }
                     return v;
                 })
-                .then(v => decompress(v))
-                .then(v => JSON.parse(v))
                 .then(v => this.updateJson(v))
                 .then(() => {
                     this.encoded_str = encoded_str;
                     this.rebuild();
                     this.applyFilter();
-                    return resolve(); 
+                    return resolve();
+                })
+                .catch(error => {
+                    return reject(error);
                 });
         });
     }
@@ -489,9 +488,26 @@ class ExtraNetworksClusterize {
         }
     }
 
-    onDataChanged(data) {
+    onDataChanged(elem) {
         /** Callback whenever the data element is modified. */
-        this.parseJson(data);
+        return new Promise((resolve) => {
+            this.parseJson(elem.dataset.json)
+                .then(() => {
+                    return resolve();
+                })
+                .catch(error => {
+                    if (error instanceof InvalidCompressedJsonDataError) {
+                        // on error, roll back to the previous data string.
+                        // this prevents an infinite loop whenever the data string
+                        // is invalid.
+                        console.error("rolling back json data due to invalid data:", error);
+                        elem.dataset.json = this.encoded_str;
+                    } else {
+                        console.error("unhandled error caused by updated json data field:", error);
+                    }
+                    return resolve();
+                });
+        });
     }
 
     setupElementObservers() {
@@ -520,7 +536,7 @@ class ExtraNetworksClusterize {
                 // the data to settle down before updating.
                 clearTimeout(this.data_update_timer);
                 this.data_update_timer = setTimeout(() => {
-                    this.onDataChanged(data_elem.dataset.json);
+                    this.onDataChanged(data_elem);
                 }, JSON_UPDATE_DEBOUNCE_TIME_MS);
             }
 
