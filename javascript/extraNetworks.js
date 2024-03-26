@@ -11,7 +11,7 @@ var globalPopupInner = null;
 const storedPopupIds = {};
 const extraPageUserMetadataEditors = {};
 // A flag used by the `waitForBool` promise to determine when we first load Ui Options.
-const initialUiOptionsLoaded = { state: false };
+const initialUiOptionsLoaded = {state: false};
 
 /** Helper functions for checking types and simplifying logging. */
 
@@ -42,7 +42,7 @@ const isElementLogError = x => {
     }
     console.error("expected element type, got:", typeof x);
     return false;
-}
+};
 
 const getElementByIdLogError = selector => {
     let elem = gradioApp().getElementById(selector);
@@ -54,17 +54,17 @@ const querySelectorLogError = selector => {
     let elem = gradioApp().querySelector(selector);
     isElementLogError(elem);
     return elem;
-}
+};
 
 const debounce = (handler, timeout_ms) => {
     /** Debounces a function call.
-     * 
+     *
      *  NOTE: This will NOT work if called from within a class.
      *  It will drop `this` from scope.
-     * 
+     *
      *  Repeated calls to the debounce handler will not call the handler until there are
      *  no new calls to the debounce handler for timeout_ms time.
-     * 
+     *
      *  Example:
      *  function add(x, y) { return x + y; }
      *  let debounce_handler = debounce(add, 5000);
@@ -73,7 +73,7 @@ const debounce = (handler, timeout_ms) => {
      *      res = debounce_handler(i, 100);
      *  }
      *  console.log("Result:", res);
-     * 
+     *
      *  This example will print "Result: 109".
      */
     let timer = null;
@@ -81,7 +81,7 @@ const debounce = (handler, timeout_ms) => {
         clearTimeout(timer);
         timer = setTimeout(() => handler(...args), timeout_ms);
     };
-}
+};
 
 const waitForElement = selector => {
     /** Promise that waits for an element to exist in DOM. */
@@ -102,14 +102,14 @@ const waitForElement = selector => {
             subtree: true
         });
     });
-}
+};
 
 const waitForBool = o => {
     /** Promise that waits for a boolean to be true.
-     * 
+     *
      *  `o` must be an Object of the form:
      *  { state: <bool value> }
-     * 
+     *
      *  Resolves when (state === true)
      */
     return new Promise(resolve => {
@@ -120,17 +120,17 @@ const waitForBool = o => {
             setTimeout(_waitForBool, 100);
         })();
     });
-}
+};
 
-const waitForKeyInObject = o =>  {
+const waitForKeyInObject = o => {
     /** Promise that waits for a key to exist in an object.
-     *  
+     *
      *  `o` must be an Object of the form:
      *  {
      *      obj: <object to watch for key>,
-     *      k: <key to watch for>, 
+     *      k: <key to watch for>,
      *  }
-     * 
+     *
      *  Resolves when (k in obj)
      */
     return new Promise(resolve => {
@@ -141,22 +141,22 @@ const waitForKeyInObject = o =>  {
             setTimeout(_waitForKeyInObject, 100);
         })();
     });
-}
+};
 
 const waitForValueInObject = o => {
     /** Promise that waits for a key value pair in an Object.
-     *  
+     *
      *  `o` must be an Object of the form:
      *  {
      *      obj: <object containing value>,
      *      k: <key in object>,
      *      v: <value at key for comparison>
      *  }
-     * 
+     *
      *  Resolves when obj[k] == v
      */
     return new Promise(resolve => {
-        waitForKeyInObject({ k: o.k, obj: o.obj }).then(() => {
+        waitForKeyInObject({k: o.k, obj: o.obj}).then(() => {
             (function _waitForValueInObject() {
 
                 if (o.k in o.obj && o.obj[o.k] == o.v) {
@@ -166,7 +166,7 @@ const waitForValueInObject = o => {
             })();
         });
     });
-}
+};
 
 function toggleCss(key, css, enable) {
     var style = document.getElementById(key);
@@ -197,7 +197,7 @@ function extraNetworksRefreshTab(tabname_full) {
     div_dirs.classList.toggle("hidden", !("selected" in btn_dirs_view.dataset));
     div_tree.classList.toggle("hidden", !("selected" in btn_tree_view.dataset));
 
-    waitForKeyInObject({ k: tabname_full, obj: clusterizers })
+    waitForKeyInObject({k: tabname_full, obj: clusterizers})
         .then(() => extraNetworkClusterizersOnTabLoad(tabname_full));
 }
 
@@ -208,7 +208,7 @@ function extraNetworksRegisterPromptForTab(tabname, id) {
         activePromptTextarea[tabname] = textarea;
     }
 
-    textarea.addEventListener("focus", function () {
+    textarea.addEventListener("focus", function() {
         activePromptTextarea[tabname] = textarea;
     });
 }
@@ -321,7 +321,7 @@ function extraNetworksTabSelected(tabname, id, showPrompt, showNegativePrompt, t
     extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt);
     extraNetworksShowControlsForPage(tabname, tabname_full);
 
-    waitForKeyInObject({ k: tabname_full, obj: clusterizers })
+    waitForKeyInObject({k: tabname_full, obj: clusterizers})
         .then(() => extraNetworkClusterizersOnTabLoad(tabname_full));
 }
 
@@ -370,8 +370,8 @@ function extraNetworkClusterizersOnTabLoad(tabname_full) { /** promise */
         if (!(tabname_full in clusterizers)) {
             return resolve();
         }
-        
-        (async () => {
+
+        (async() => {
             // Enable then load the selected tab's clusterize lists.
             extraNetworksClusterizersEnable(tabname_full);
             for (const v of Object.values(clusterizers[tabname_full])) {
@@ -428,7 +428,7 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text, isNeg) {
         var extraTextAfterNet = m[2];
         var partToSearch = m[1];
         var foundAtPosition = -1;
-        newTextareaText = textarea.value.replaceAll(isNeg ? re_extranet_g_neg : re_extranet_g, function (found, net, pos) {
+        newTextareaText = textarea.value.replaceAll(isNeg ? re_extranet_g_neg : re_extranet_g, function(found, net, pos) {
             m = found.match(isNeg ? re_extranet_neg : re_extranet);
             if (m[1] == partToSearch) {
                 replaced = true;
@@ -608,7 +608,7 @@ function extraNetworksControlSearchClearOnClick(event, tabname_full) {
     txt_search.dispatchEvent(
         new CustomEvent(
             "extra-network-control--search-clear",
-            { detail: { tabname_full: tabname_full } },
+            {detail: {tabname_full: tabname_full}},
         )
     );
 }
@@ -809,12 +809,12 @@ function extraNetworksShowMetadata(text) {
 
 function requestGet(url, data, handler, errorHandler) {
     var xhr = new XMLHttpRequest();
-    var args = Object.keys(data).map(function (k) {
+    var args = Object.keys(data).map(function(k) {
         return encodeURIComponent(k) + '=' + encodeURIComponent(data[k]);
     }).join('&');
     xhr.open("GET", url + "?" + args, true);
 
-    xhr.onreadystatechange = function () {
+    xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
             if (xhr.status === 200) {
                 try {
@@ -839,11 +839,11 @@ function extraNetworksCopyPathToClipboard(event, path) {
 }
 
 function extraNetworksRequestMetadata(event, extraPage, cardName) {
-    var showError = function () {
+    var showError = function() {
         extraNetworksShowMetadata("there was an error getting metadata");
     };
 
-    requestGet("./sd_extra_networks/metadata", { page: extraPage, item: cardName }, function (data) {
+    requestGet("./sd_extra_networks/metadata", {page: extraPage, item: cardName}, function(data) {
         if (data && data.metadata) {
             extraNetworksShowMetadata(data.metadata);
         } else {
@@ -877,7 +877,7 @@ function extraNetworksEditUserMetadata(event, tabname, extraPage, cardName) {
 }
 
 function extraNetworksRefreshSingleCard(page, tabname, name) {
-    requestGet("./sd_extra_networks/get-single-card", { page: page, tabname: tabname, name: name }, function (data) {
+    requestGet("./sd_extra_networks/get-single-card", {page: page, tabname: tabname, name: name}, function(data) {
         if (data && data.html) {
             var card = gradioApp().querySelector(`#${tabname}_${page.replace(" ", "_")}_cards > .card[data-name="${name}"]`);
 
@@ -892,7 +892,7 @@ function extraNetworksRefreshSingleCard(page, tabname, name) {
     });
 }
 
-window.addEventListener("keydown", function (event) {
+window.addEventListener("keydown", function(event) {
     if (event.key == "Escape") {
         closePopup();
     }

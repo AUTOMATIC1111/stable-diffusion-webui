@@ -1,8 +1,8 @@
 const JSON_UPDATE_DEBOUNCE_TIME_MS = 250;
 const RESIZE_DEBOUNCE_TIME_MS = 250;
 // Collators used for sorting.
-const INT_COLLATOR = new Intl.Collator([], { numeric: true });
-const STR_COLLATOR = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+const INT_COLLATOR = new Intl.Collator([], {numeric: true});
+const STR_COLLATOR = new Intl.Collator("en", {numeric: true, sensitivity: "base"});
 
 class InvalidCompressedJsonDataError extends Error {
     constructor(message, options) {
@@ -19,7 +19,7 @@ const getComputedPropertyDims = (elem, prop) => {
         bottom: parseFloat(style.getPropertyValue(`${prop}-bottom`)),
         right: parseFloat(style.getPropertyValue(`${prop}-right`)),
     };
-}
+};
 
 const getComputedMarginDims = elem => {
     /** Returns the width/height of the computed margin of an element. */
@@ -28,7 +28,7 @@ const getComputedMarginDims = elem => {
         width: dims.left + dims.right,
         height: dims.top + dims.bottom,
     };
-}
+};
 
 const getComputedPaddingDims = elem => {
     /** Returns the width/height of the computed padding of an element. */
@@ -37,7 +37,7 @@ const getComputedPaddingDims = elem => {
         width: dims.left + dims.right,
         height: dims.top + dims.bottom,
     };
-}
+};
 
 const getComputedBorderDims = elem => {
     /** Returns the width/height of the computed border of an element. */
@@ -49,7 +49,7 @@ const getComputedBorderDims = elem => {
         width: dims.left + dims.right,
         height: dims.top + dims.bottom,
     };
-}
+};
 
 const getComputedDims = elem => {
     /** Returns the full width and height of an element including its margin, padding, and border. */
@@ -61,8 +61,8 @@ const getComputedDims = elem => {
     return {
         width: width + margin.width + padding.width + border.width,
         height: height + margin.height + padding.height + border.height,
-    }
-}
+    };
+};
 
 async function decompress(base64string) {
     /** Decompresses a base64 encoded ZLIB compressed string. */
@@ -82,14 +82,14 @@ async function decompress(base64string) {
     }
 }
 
-const htmlStringToElement = function (str) {
+const htmlStringToElement = function(str) {
     /** Converts an HTML string into an Element type. */
     let parser = new DOMParser();
     let tmp = parser.parseFromString(str, "text/html");
     return tmp.body.firstElementChild;
-}
+};
 
-const getComputedValue = function (container, css_property) {
+const getComputedValue = function(container, css_property) {
     /** Gets a property value for the computed style of an element. */
     return parseInt(
         window.getComputedStyle(container, null)
@@ -98,18 +98,18 @@ const getComputedValue = function (container, css_property) {
     );
 };
 
-const calcColsPerRow = function (parent, child) {
+const calcColsPerRow = function(parent, child) {
     /** Calculates the number of columns of children that can fit in a parent's visible width. */
     const parent_inner_width = parent.offsetWidth - getComputedPaddingDims(parent).width;
     return parseInt(parent_inner_width / getComputedDims(child).width);
 
-}
+};
 
-const calcRowsPerCol = function (parent, child) {
+const calcRowsPerCol = function(parent, child) {
     /** Calculates the number of rows of children that can fit in a parent's visible height. */
     const parent_inner_height = parent.offsetHeight - getComputedPaddingDims(parent).height;
     return parseInt(parent_inner_height / getComputedDims(child).height);
-}
+};
 
 class ExtraNetworksClusterize {
     /** Base class for a clusterize list. Cannot be used directly. */
@@ -124,17 +124,25 @@ class ExtraNetworksClusterize {
             show_no_data_row = true,
             callbacks = {},
         } = {
-                rows_in_block: 10,
-                blocks_in_cluster: 4,
-                show_no_data_row: true,
-                callbacks: {},
-            }
+            rows_in_block: 10,
+            blocks_in_cluster: 4,
+            show_no_data_row: true,
+            callbacks: {},
+        }
     ) {
         // Do not continue if any of the required parameters are invalid.
-        if (!isStringLogError(data_id)) { return; }
-        if (!isStringLogError(scroll_id)) { return; }
-        if (!isStringLogError(content_id)) { return; }
-        if (!isElementLogError(txt_search_elem)) { return; }
+        if (!isStringLogError(data_id)) {
+            return;
+        }
+        if (!isStringLogError(scroll_id)) {
+            return;
+        }
+        if (!isStringLogError(content_id)) {
+            return;
+        }
+        if (!isElementLogError(txt_search_elem)) {
+            return;
+        }
 
         this.data_id = data_id;
         this.scroll_id = scroll_id;
@@ -154,7 +162,7 @@ class ExtraNetworksClusterize {
         this.resize_observer = null;
         this.resize_observer_timer = null;
         this.element_observer = null;
-        this.data_update_timer = null
+        this.data_update_timer = null;
 
         // Used to control logic. Many functions immediately return when disabled.
         this.enabled = false;
@@ -193,7 +201,7 @@ class ExtraNetworksClusterize {
 
     load() { /** promise */
         /** Loads this instance into the view.
-         *  
+         *
          *  Calling this function should be all that is needed in order to fully update
          *  and display the clusterize list.
         */
@@ -201,7 +209,9 @@ class ExtraNetworksClusterize {
             waitForElement(`#${this.data_id}`)
                 .then((elem) => this.data_elem = elem)
                 .then(() => this.parseJson(this.data_elem.dataset.json))
-                .then(() => { return resolve(); });
+                .then(() => {
+                    return resolve();
+                });
         });
     }
 
@@ -239,7 +249,9 @@ class ExtraNetworksClusterize {
 
     updateJson(json) { /** promise */
         console.error("Base class method called. Must be overridden by subclass.");
-        return new Promise(resolve => { return resolve(); });
+        return new Promise(resolve => {
+            return resolve();
+        });
     }
 
     sortByDivId() {
@@ -249,11 +261,11 @@ class ExtraNetworksClusterize {
 
     applySort() {
         /** Sorts the rows using the instance's `sort_fn`.
-         * 
+         *
          *  It is expected that a subclass will override this function to update the
          *  instance's `sort_fn` then call `super.applySort()` to apply the sorting.
          */
-        this.sort_fn()
+        this.sort_fn();
         if (this.sort_reverse) {
             this.data_obj_keys_sorted = this.data_obj_keys_sorted.reverse();
         }
@@ -261,7 +273,7 @@ class ExtraNetworksClusterize {
 
     applyFilter() {
         /** Sorts then updates the rows.
-         * 
+         *
          *  Should be overridden by subclass. Base class doesn't apply any filters.
          */
         this.applySort();
@@ -304,7 +316,7 @@ class ExtraNetworksClusterize {
 
     updateRows() {
         /** Updates the instance using the stored rows in our data object.
-         * 
+         *
          *  Should be called whenever we change order or number of rows.
          */
         // If we don't have any entries in the dataset, then just return.
@@ -325,7 +337,7 @@ class ExtraNetworksClusterize {
 
     recalculateDims() {
         /** Recalculates the number of rows and columns that can fit within the scroll view.
-         * 
+         *
          *  Returns whether the rows/columns have changed indicating that we need to rebuild.
         */
         let rebuild_required = false;
@@ -342,7 +354,7 @@ class ExtraNetworksClusterize {
 
         // If no rows exist, we need to add one so we can calculate rows/cols.
         // We remove this row before returning.
-        if (this.rowCount() === 0) {// || this.content_elem.innerHTML === "") {
+        if (this.rowCount() === 0) { // || this.content_elem.innerHTML === "") {
             this.clear();
             this.update([this.data_obj[this.data_obj_keys_sorted[0]].html]);
             clear_before_return = true;
@@ -402,9 +414,9 @@ class ExtraNetworksClusterize {
 
     rebuild(force) {
         /** Rebuilds, updates, or initializes a clusterize instance.
-         * 
+         *
          *  TODO: Possibly rename this function to make its purpose more clear.
-         * 
+         *
          *  Performs one of the following:
          *      1. Initializes a new instance if we haven't already.
          *      2. Destroys and reinitializes an instance if we pass `force=true` or if
@@ -412,7 +424,7 @@ class ExtraNetworksClusterize {
          *          that we can show on screen to be updated.
          *      3. Simply updates the clusterize instance's rows with our current data
          *          if none of the other conditions are met.
-         * 
+         *
         */
         // Only accept boolean values for `force` parameter. Default to false.
         if (force !== true) {
@@ -474,17 +486,17 @@ class ExtraNetworksClusterize {
     onElementDetached(elem_id) {
         /** Callback whenever one of our elements has become detached from the DOM. */
         switch (elem_id) {
-            case this.data_id:
-                waitForElement(`#${this.data_id}`).then((elem) => this.data_elem = elem);
-                break;
-            case this.scroll_id:
-                this.repair();
-                break;
-            case this.content_id:
-                this.repair();
-                break;
-            default:
-                break;
+        case this.data_id:
+            waitForElement(`#${this.data_id}`).then((elem) => this.data_elem = elem);
+            break;
+        case this.scroll_id:
+            this.repair();
+            break;
+        case this.content_id:
+            this.repair();
+            break;
+        default:
+            break;
         }
     }
 
@@ -512,13 +524,13 @@ class ExtraNetworksClusterize {
 
     setupElementObservers() {
         /** Listens for changes to the data, scroll, and content elements.
-         * 
+         *
          *  During testing, the scroll/content elements would frequently get removed from
          *  the DOM. Our clusterize instance stores a reference to these elements
          *  which breaks whenever these elements are removed from the DOM. To fix this,
          *  we need to check for these changes and re-attach our stores elements by
          *  replacing the ones in the DOM with the ones in our clusterize instance.
-         * 
+         *
          *  We also use an observer to detect whenever the data element gets a new set
          *  of JSON data so that we can update our dataset.
          */
@@ -550,7 +562,7 @@ class ExtraNetworksClusterize {
                 this.onElementDetached(content_elem.id);
             }
         });
-        this.element_observer.observe(gradioApp(), { subtree: true, childList: true, attributes: true });
+        this.element_observer.observe(gradioApp(), {subtree: true, childList: true, attributes: true});
     }
 
     setupResizeHandlers() {
@@ -735,11 +747,11 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         if ("expanded" in elem.dataset) {
             this.data_obj[div_id].expanded = false;
             delete elem.dataset.expanded;
-            this.removeChildRows(div_id)
+            this.removeChildRows(div_id);
         } else {
             this.data_obj[div_id].expanded = true;
             elem.dataset.expanded = "";
-            this.addChildRows(div_id)
+            this.addChildRows(div_id);
         }
         this.updateDivContent(div_id, elem);
         this.updateRows();
@@ -852,7 +864,9 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
                 if (isElement(search_terms_elem)) {
                     search_terms = Array.prototype.map.call(
                         parsed_html.querySelectorAll(".search_terms"),
-                        (elem) => { return elem.textContent.toLowerCase(); }
+                        (elem) => {
+                            return elem.textContent.toLowerCase();
+                        }
                     ).join(" ");
                 }
 
@@ -937,21 +951,21 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         this.sort_reverse = this.sort_dir_str === "descending";
 
         switch (this.sort_mode_str) {
-            case "name":
-                this.sort_fn = this.sortByName;
-                break;
-            case "path":
-                this.sort_fn = this.sortByPath;
-                break;
-            case "created":
-                this.sort_fn = this.sortByCreated;
-                break;
-            case "modified":
-                this.sort_fn = this.sortByModified;
-                break;
-            default:
-                this.sort_fn = this.sortByDivId;
-                break;
+        case "name":
+            this.sort_fn = this.sortByName;
+            break;
+        case "path":
+            this.sort_fn = this.sortByPath;
+            break;
+        case "created":
+            this.sort_fn = this.sortByCreated;
+            break;
+        case "modified":
+            this.sort_fn = this.sortByModified;
+            break;
+        default:
+            this.sort_fn = this.sortByDivId;
+            break;
         }
         super.applySort();
     }

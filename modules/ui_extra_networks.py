@@ -35,6 +35,7 @@ class ExtraNetworksItem:
     """Wrapper for dictionaries representing ExtraNetworks items."""
     item: dict
 
+
 def get_tree(paths: Union[str, list[str]], items: dict[str, ExtraNetworksItem]) -> dict:
     """Recursively builds a directory tree.
 
@@ -85,8 +86,12 @@ def get_tree(paths: Union[str, list[str]], items: dict[str, ExtraNetworksItem]) 
 
     return res
 
+
 def register_page(page):
-    """registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions"""
+    """registers extra networks page for the UI
+
+    recommend doing it in on_before_ui() callback for extensions
+    """
     extra_pages.append(page)
     allowed_dirs.clear()
     allowed_dirs.update(set(sum([x.allowed_directories_for_previews() for x in extra_pages], [])))
