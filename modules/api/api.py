@@ -214,6 +214,7 @@ class Api:
         self.add_api_route("/sdapi/v1/extra-batch-images", self.extras_batch_images_api, methods=["POST"], response_model=models.ExtrasBatchImagesResponse)
         self.add_api_route("/sdapi/v1/png-info", self.pnginfoapi, methods=["POST"], response_model=models.PNGInfoResponse)
         self.add_api_route("/sdapi/v1/progress", self.progressapi, methods=["GET"], response_model=models.ProgressResponse)
+        self.add_api_route("/sdapi/v1/generate_task_id", self.generate_task_id, methods=["GET"])
         self.add_api_route("/sdapi/v1/interrogate", self.interrogateapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/interrupt", self.interruptapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/skip", self.skip, methods=["POST"])
@@ -617,6 +618,12 @@ class Api:
             current_image = encode_pil_to_base64(shared.state.current_image)
 
         return models.ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image, textinfo=shared.state.textinfo, current_task=current_task)
+
+    def generate_task_id(self, task_type: str):
+        if task_type not in ['txt2img', 'img2img']:
+            raise HTTPException(status_code=500, detail="The task_type not allowed")
+        task_id = create_task_id(task_type)
+        return {'task_id': task_id}
 
     def interrogateapi(self, interrogatereq: models.InterrogateRequest):
         image_b64 = interrogatereq.image
