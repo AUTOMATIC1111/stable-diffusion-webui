@@ -1,3 +1,20 @@
+// Prevent eslint errors on functions defined in other files.
+/*global
+    isString,
+    isStringLogError,
+    isNull,
+    isUndefined,
+    isNullOrUndefined,
+    isNullOrUndefinedLogError,
+    isElement,
+    isElementLogError,
+    getElementByIdLogError,
+    querySelectorLogError,
+    waitForElement,
+    Clusterize
+*/
+/*eslint no-undef: "error"*/
+
 const JSON_UPDATE_DEBOUNCE_TIME_MS = 250;
 const RESIZE_DEBOUNCE_TIME_MS = 250;
 // Collators used for sorting.
@@ -87,15 +104,6 @@ const htmlStringToElement = function(str) {
     let parser = new DOMParser();
     let tmp = parser.parseFromString(str, "text/html");
     return tmp.body.firstElementChild;
-};
-
-const getComputedValue = function(container, css_property) {
-    /** Gets a property value for the computed style of an element. */
-    return parseInt(
-        window.getComputedStyle(container, null)
-            .getPropertyValue(css_property)
-            .split("px")[0]
-    );
 };
 
 const calcColsPerRow = function(parent, child) {

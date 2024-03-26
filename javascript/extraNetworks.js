@@ -1,3 +1,10 @@
+// Prevent eslint errors on functions defined in other files.
+/*global
+    ExtraNetworksClusterizeTreeList,
+    ExtraNetworksClusterizeCardsList,
+*/
+/*eslint no-undef: "error"*/
+
 const SEARCH_INPUT_DEBOUNCE_TIME_MS = 250;
 
 const re_extranet = /<([^:^>]+:[^:]+):[\d.]+>(.*)/;
@@ -23,7 +30,7 @@ const isStringLogError = x => {
     console.error("expected string, got:", typeof x);
     return false;
 };
-const isNull = x => typeof x === "null" || x === null;
+const isNull = x => x === null;
 const isUndefined = x => typeof x === "undefined" || x === undefined;
 // checks both null and undefined for simplicity sake.
 const isNullOrUndefined = x => isNull(x) || isUndefined(x);
