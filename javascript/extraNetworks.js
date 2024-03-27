@@ -194,11 +194,13 @@ function toggleCss(key, css, enable) {
 
 function extraNetworksRefreshTab(tabname_full) {
     // Reapply controls since they don't change on refresh.
-    let btn_dirs_view = gradioApp().querySelector(`#${tabname_full}_extra_dirs_view`);
-    let btn_tree_view = gradioApp().querySelector(`#${tabname_full}_extra_tree_view`);
+    const controls = gradioApp().getElementById(`${tabname_full}_controls`);
+    let btn_dirs_view = controls.querySelector(".extra-network-control--dirs-view");
+    let btn_tree_view = controls.querySelector(".extra-network-control--tree-view");
 
-    let div_dirs = gradioApp().querySelector(`#${tabname_full}_dirs`);
-    let div_tree = gradioApp().querySelector(`.extra-network-content.resize-handle-col:has(> #${tabname_full}_tree_list_scroll_area)`);
+    const pane = gradioApp().getElementById(`${tabname_full}_pane`);
+    let div_dirs = pane.querySelector(".extra-network-content--dirs-view");
+    let div_tree = pane.querySelector(`.extra-network-content.resize-handle-col:has(> #${tabname_full}_tree_list_scroll_area)`);
 
     // Remove "hidden" class if button is enabled, otherwise add it.
     div_dirs.classList.toggle("hidden", !("selected" in btn_dirs_view.dataset));
@@ -222,44 +224,33 @@ function extraNetworksRegisterPromptForTab(tabname, id) {
 
 function extraNetworksSetupTabContent(tabname, pane, controls_div) {
     const tabname_full = pane.id;
-    let txt_search;
+    let controls;
 
     Promise.all([
-        waitForElement(`#${tabname_full}_extra_search`).then((elem) => txt_search = elem),
-        waitForElement(`#${tabname_full}_dirs`),
+        waitForElement(`#${tabname_full}_pane .extra-network-controls`).then(elem => controls = elem),
+        waitForElement(`#${tabname_full}_pane .extra-network-content--dirs-view`),
         waitForElement(`#${tabname_full}_tree_list_scroll_area > #${tabname_full}_tree_list_content_area`),
         waitForElement(`#${tabname_full}_cards_list_scroll_area > #${tabname_full}_cards_list_content_area`),
     ]).then(() => {
+        // Insert the controls into the page.
+        // add an ID since we will be moving this element elsewhere.
+        controls.id = `${tabname_full}_controls`;
+        controls_div.insertBefore(controls, null);
+
         // Now that we have our elements in DOM, we create the clusterize lists.
         clusterizers[tabname_full] = {
             tree_list: new ExtraNetworksClusterizeTreeList({
                 data_id: `${tabname_full}_tree_list_data`,
                 scroll_id: `${tabname_full}_tree_list_scroll_area`,
                 content_id: `${tabname_full}_tree_list_content_area`,
-                txt_search_elem: txt_search,
             }),
             cards_list: new ExtraNetworksClusterizeCardsList({
                 data_id: `${tabname_full}_cards_list_data`,
                 scroll_id: `${tabname_full}_cards_list_scroll_area`,
                 content_id: `${tabname_full}_cards_list_content_area`,
-                txt_search_elem: txt_search,
             }),
         };
 
-        // Debounce search text input. This way we only search after user is done typing.
-        const search_input_debounce = debounce(() => {
-            extraNetworksApplyFilter(tabname_full);
-        }, SEARCH_INPUT_DEBOUNCE_TIME_MS);
-        txt_search.addEventListener("keyup", search_input_debounce);
-
-        // Update search filter whenever the search input's clear button is pressed.
-        txt_search.addEventListener("extra-network-control--search-clear", () => {
-            extraNetworksApplyFilter(tabname_full);
-        });
-
-        // Insert the controls into the page.
-        const controls = gradioApp().querySelector(`#${tabname_full}_controls`);
-        controls_div.insertBefore(controls, null);
         if (pane.style.display != "none") {
             extraNetworksShowControlsForPage(tabname, tabname_full);
         }
@@ -314,7 +305,8 @@ function extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePromp
 
 function extraNetworksShowControlsForPage(tabname, tabname_full) {
     gradioApp().querySelectorAll(`#${tabname}_extra_tabs .extra-network-controls-div > div`).forEach((elem) => {
-        elem.style.display = `${tabname_full}_controls` === elem.id ? "" : "none";
+        let show = `${tabname_full}_controls` === elem.id;
+        elem.classList.toggle("hidden", !show);
     });
 }
 
@@ -338,23 +330,24 @@ function extraNetworksApplyFilter(tabname_full) {
         return;
     }
 
-    // We only want to filter/sort the cards list.
-    clusterizers[tabname_full].cards_list.applyFilter();
-
-    // If the search input has changed since selecting a button to populate it
-    // then we want to disable the button that previously populated the search input.
-    const txt_search = gradioApp().querySelector(`#${tabname_full}_extra_search`);
+    const pane = gradioApp().getElementById(`${tabname_full}_pane`);
+    const txt_search = gradioApp().querySelector(`#${tabname_full}_controls .extra-network-control--search-text`);
     if (!isElementLogError(txt_search)) {
         return;
     }
 
+    // We only want to filter/sort the cards list.
+    clusterizers[tabname_full].cards_list.applyFilter(txt_search.value.toLowerCase());
+
+    // If the search input has changed since selecting a button to populate it
+    // then we want to disable the button that previously populated the search input.
     // tree view buttons
-    let btn = gradioApp().querySelector(`#${tabname_full}_tree_list_content_area .tree-list-item[data-selected=""]`);
+    let btn = pane.querySelector(".tree-list-item[data-selected='']");
     if (isElement(btn) && btn.dataset.path !== txt_search.value && "selected" in btn.dataset) {
         clusterizers[tabname_full].tree_list.onRowSelected(btn.dataset.divId, btn, false);
     }
     // dirs view buttons
-    btn = gradioApp().querySelector(`#${tabname_full}_dirs .extra-network-dirs-view-button[data-selected=""]`);
+    btn = pane.querySelector(".extra-network-dirs-view-button[data-selected='']");
     if (isElement(btn) && btn.textContent.trim() !== txt_search.value) {
         delete btn.dataset.selected;
     }
@@ -390,31 +383,79 @@ function extraNetworkClusterizersOnTabLoad(tabname_full) { /** promise */
     });
 }
 
-function extraNetworksSetupEventHandlers() {
-    // Handle doubleclick events from the resize handle.
-    // This will automatically fit the left pane to the size of its largest loaded row.
-    window.addEventListener("resizeHandleDblClick", (e) => {
+function extraNetworksAutoSetTreeWidth(pane) {
+    if (!isElementLogError(pane)) {
+        return;
+    }
+
+    const tabname_full = pane.dataset.tabnameFull;
+
+    // This event is only applied to the currently selected tab if has clusterize lists.
+    if (!(tabname_full in clusterizers)) {
+        return;
+    }
+
+    const row = pane.querySelector(".resize-handle-row");
+    if (!isElementLogError(row)) {
+        return;
+    }
+
+    const left_col = row.firstElementChild;
+    if (!isElementLogError(left_col)) {
+        return;
+    }
+
+    if (left_col.classList.contains("hidden")) {
+        // If the left column is hidden then we don't want to do anything.
+        return;
+    }
+    const pad = parseFloat(row.style.gridTemplateColumns.split(" ")[1]);
+    const min_left_col_width = parseFloat(left_col.style.flexBasis.slice(0, -2));
+    // We know that the tree list is the left column. That is the only one we want to resize.
+    let max_width = clusterizers[tabname_full].tree_list.getMaxRowWidth();
+    // Add the resize handle's padding to the result and default to minLeftColWidth if necessary.
+    max_width = Math.max(max_width + pad, min_left_col_width);
+
+    // Mimicks resizeHandle.js::setLeftColGridTemplate().
+    row.style.gridTemplateColumns = `${max_width}px ${pad}px 1fr`;
+}
+
+function extraNetworksSetupEventDelegators() {
+    /** Sets up event delegators for all extraNetworks tabs.
+     * 
+     *  These event handlers are not tied to any specific elements on the page.
+     *  We do this because elements within each tab may be removed and replaced
+     *  which would break references to elements in DOM and thus prevent any event
+     *  listeners from firing.
+     */
+
+     window.addEventListener("resizeHandleDblClick", event => {
         // See resizeHandle.js::onDoubleClick() for event detail.
-        e.stopPropagation();
-        const tabname_full = e.target.closest(".extra-network-pane").dataset.tabnameFull;
-        // This event is only applied to the currently selected tab if has clusterize list.
-        if (!(tabname_full in clusterizers)) {
-            return;
+        event.stopPropagation();
+        extraNetworksAutoSetTreeWidth(event.target.closest(".extra-network-pane"));
+    });
+
+    // Update search filter whenever the search input's clear button is pressed.
+    window.addEventListener("extra-network-control--search-clear", event => {
+        event.stopPropagation();
+        extraNetworksApplyFilter(event.detail.tabname_full);
+    });
+
+    // Debounce search text input. This way we only search after user is done typing.
+    const search_input_debounce = debounce((tabname_full) => {
+        extraNetworksApplyFilter(tabname_full);
+    }, SEARCH_INPUT_DEBOUNCE_TIME_MS);
+
+    window.addEventListener("keyup", event => {
+        const controls = event.target.closest(".extra-network-controls");
+        if (isElement(controls)) {
+            const tabname_full = controls.dataset.tabnameFull;
+            const target = event.target.closest(".extra-network-control--search-text");
+            if (isElement(target)) {
+                search_input_debounce.call(target, tabname_full);
+            }
         }
-
-        // Shouldn't be possible, but if tree is hidden then we want to ignore this event
-        // since there wouldn't be any content to calculate row width. When hidden,
-        // the resize handle shouldn't exist on page but just in case...
-        if (gradioApp().getElementById(`${tabname_full}_tree_list_scroll_area`).parentElement.classList.contains("hidden")) {
-            return;
-        }
-
-        // We know that the tree list is the left column. That is the only one we want to resize.
-        let max_width = clusterizers[tabname_full].tree_list.getMaxRowWidth();
-        // Add the resize handle's padding to the result and default to minLeftColWidth if necessary.
-        max_width = Math.max(max_width + e.detail.pad, e.detail.minLeftColWidth);
-
-        e.detail.setLeftColGridTemplate(e.target, max_width);
+        
     });
 }
 
@@ -422,7 +463,7 @@ function setupExtraNetworks() {
     waitForBool(initialUiOptionsLoaded).then(() => {
         extraNetworksSetupTab('txt2img');
         extraNetworksSetupTab('img2img');
-        extraNetworksSetupEventHandlers();
+        extraNetworksSetupEventDelegators();
     });
 }
 
@@ -531,9 +572,9 @@ function extraNetworksTreeProcessDirectoryClick(event, btn, tabname_full) {
 
     function _updateSearch(_search_text) {
         // Update search input with select button's path.
-        var search_input_elem = gradioApp().querySelector(`#${tabname_full}_extra_search`);
-        search_input_elem.value = _search_text;
-        updateInput(search_input_elem);
+        const txt_search = gradioApp().querySelector(`#${tabname_full}_controls .extra-network-control--search-text`);
+        txt_search.value = _search_text;
+        updateInput(txt_search);
         extraNetworksApplyFilter(tabname_full);
     }
 
@@ -573,10 +614,9 @@ function extraNetworksTreeOnClick(event, tabname_full) {
     event.stopPropagation();
 }
 
-function extraNetworkDirsOnClick(event, tabname_full) {
+function extraNetworksDirsOnClick(event, tabname_full) {
     /** Handles `onclick` events for buttons in the directory view. */
-    let txt_search = gradioApp().querySelector(`#${tabname_full}_extra_search`);
-
+    const txt_search = gradioApp().querySelector(`#${tabname_full}_controls .extra-network-control--search-text`);
     function _deselect_all() {
         // deselect all buttons
         gradioApp().querySelectorAll(".extra-network-dirs-view-button").forEach((elem) => {
@@ -615,7 +655,10 @@ function extraNetworksControlSearchClearOnClick(event, tabname_full) {
     txt_search.dispatchEvent(
         new CustomEvent(
             "extra-network-control--search-clear",
-            {detail: {tabname_full: tabname_full}},
+            {
+                bubbles: true,
+                detail: {tabname_full: tabname_full}
+            },
         )
     );
 }
@@ -688,7 +731,8 @@ function extraNetworksControlDirsViewOnClick(event, tabname_full) {
         show = true;
     }
 
-    gradioApp().getElementById(`${tabname_full}_dirs`).classList.toggle("hidden", !show);
+    const pane = gradioApp().getElementById(`${tabname_full}_pane`);
+    pane.querySelector(".extra-network-content--dirs-view").classList.toggle("hidden", !show);
 }
 
 function extraNetworksControlRefreshOnClick(event, tabname_full) {

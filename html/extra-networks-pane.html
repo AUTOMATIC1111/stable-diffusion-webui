@@ -1,13 +1,12 @@
 <div id='{tabname}_{extra_networks_tabname}_pane' class='extra-network-pane', data-tabname-full="{tabname}_{extra_networks_tabname}">
-    <div id="{tabname}_{extra_networks_tabname}_controls" class="extra-network-controls" style="display:none">
+    <div class="extra-network-controls hidden" data-tabname-full="{tabname}_{extra_networks_tabname}">
         <div class="extra-network-control--search">
             <svg class="extra-network-control--search-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                 fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1">
                 <circle cx="6" cy="6" r="5" />
                 <line x1="9.75" y1="9.75" x2="13" y2="13" />
             </svg>
-            <input id="{tabname}_{extra_networks_tabname}_extra_search" class="extra-network-control--search-text"
-                type="text" placeholder="Search">
+            <input class="extra-network-control--search-text" type="text" placeholder="Search">
             <button role="button" class="extra-network-control extra-network-control--search-clear"
                 onclick="extraNetworksControlSearchClearOnClick(event, '{tabname}_{extra_networks_tabname}');">
                 <svg class="extra-network-control--search-clear-icon" viewBox="0 0 16 16"
@@ -91,8 +90,8 @@
                     data-sort-dir="{data_sort_dir}">
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         fill="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                        <path id="extra-network-control--sort-dir-icon-ascending" d="M 8 1 L 3 7 L 13 7 Z" />
-                        <path id="extra-network-control--sort-dir-icon-descending" d="M 8 15 L 3 9 L 13 9 Z" />
+                        <path class="extra-network-control--sort-dir-icon-ascending" d="M 8 1 L 3 7 L 13 7 Z" />
+                        <path class="extra-network-control--sort-dir-icon-descending" d="M 8 15 L 3 9 L 13 9 Z" />
                     </svg>
                 </button>
             </div>
@@ -100,8 +99,7 @@
         <div class="extra-network-controls--container">
             <div class="extra-network-controls--header">View Mode</div>
             <div class="extra-network-controls--buttons">
-                <button id="{tabname}_{extra_networks_tabname}_extra_dirs_view"
-                    class="extra-network-control extra-network-control--dirs-view"
+                <button class="extra-network-control extra-network-control--dirs-view"
                     title="Enable Directory View"
                     onclick="extraNetworksControlDirsViewOnClick(event, '{tabname}_{extra_networks_tabname}');"
                     {btn_dirs_view_data_attributes}>
@@ -112,8 +110,7 @@
                         <rect x="12" y="6" width="4" height="4" rx="1" />
                     </svg>
                 </button>
-                <button id="{tabname}_{extra_networks_tabname}_extra_tree_view"
-                    class="extra-network-control extra-network-control--tree-view"
+                <button class="extra-network-control extra-network-control--tree-view"
                     title="Enable Tree View"
                     onclick="extraNetworksControlTreeViewOnClick(event, '{tabname}_{extra_networks_tabname}');"
                     {btn_tree_view_data_attributes}>
@@ -131,8 +128,7 @@
         <div class="extra-network-controls--container">
             <div class="extra-network-controls--header">Refresh</div>
             <div class="extra-network-controls--buttons">
-                <button id="{tabname}_{extra_networks_tabname}_extra_refresh"
-                    class="extra-network-control extra-network-control--refresh" title="Refresh tab"
+                <button class="extra-network-control extra-network-control--refresh" title="Refresh tab"
                     onclick="extraNetworksControlRefreshOnClick(event, '{tabname}_{extra_networks_tabname}');">
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
@@ -143,10 +139,8 @@
             </div>
         </div>
     </div>
-    <div id="{tabname}_{extra_networks_tabname}_pane_content"
-        class="extra-network-content--container">
-        <div id='{tabname}_{extra_networks_tabname}_dirs'
-            class="extra-network-content extra-network-content--dirs {dirs_view_hidden_cls}">
+    <div class="extra-network-content--container">
+        <div class="extra-network-content extra-network-content--dirs-view {dirs_view_hidden_cls}">
             {dirs_html}
         </div>
         <div class="extra-network-content extra-network-content--cards resize-handle-row">

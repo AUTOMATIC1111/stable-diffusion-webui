@@ -126,7 +126,6 @@ class ExtraNetworksClusterize {
             data_id,
             scroll_id,
             content_id,
-            txt_search_elem,
             rows_in_block = 10,
             blocks_in_cluster = 4,
             show_no_data_row = true,
@@ -148,14 +147,10 @@ class ExtraNetworksClusterize {
         if (!isStringLogError(content_id)) {
             return;
         }
-        if (!isElementLogError(txt_search_elem)) {
-            return;
-        }
 
         this.data_id = data_id;
         this.scroll_id = scroll_id;
         this.content_id = content_id;
-        this.txt_search_elem = txt_search_elem;
         this.rows_in_block = rows_in_block;
         this.blocks_in_cluster = blocks_in_cluster;
         this.show_no_data_row = show_no_data_row;
@@ -830,8 +825,8 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
                 const prev_style = child.style.cssText;
                 const n_cols = child_style.getPropertyValue("grid-template-columns").split(" ").length;
                 child.style.gridTemplateColumns = `repeat(${n_cols}, max-content)`;
-                row_width += getComputedDims(child).width;
-                // Re-apply previous style.
+                row_width += child.scrollWidth;
+                // Restore previous style.
                 child.style.cssText = prev_style;
             }
             max_width = Math.max(max_width, row_width);
@@ -840,9 +835,8 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             return;
         }
 
-        // Add the container's padding to the result.
-        max_width += getComputedPaddingDims(this.content_elem).width;
-        // Add the scrollbar's width to the result. Will add 0 if scrollbar isnt present.
+        // Adds the scroll element's border and the scrollbar's width to the result.
+        // If scrollbar isn't visible, then only the element border is added.
         max_width += this.scroll_elem.offsetWidth - this.scroll_elem.clientWidth;
         return max_width;
     }
@@ -856,7 +850,8 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         this.no_data_text = "No files matching filter.";
         this.sort_mode_str = "path";
         this.sort_dir_str = "ascending";
-        this.filter_str = "";
+        this.default_filter_str = "";
+        this.filter_str = this.default_filter_str;
     }
 
     updateJson(json) {
@@ -980,10 +975,10 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
 
     applyFilter(filter_str) {
         /** Filters our data object by setting each member's `active` attribute then sorts the result. */
-        if (filter_str !== undefined && filter_str !== null) {
+        if (!isNullOrUndefined(filter_str)) {
             this.filter_str = filter_str.toLowerCase();
-        } else {
-            this.filter_str = this.txt_search_elem.value.toLowerCase();
+        } else if (isNullOrUndefined(this.filter_str)) {
+            this.filter_str = this.default_filter_str;
         }
 
         for (const [k, v] of Object.entries(this.data_obj)) {

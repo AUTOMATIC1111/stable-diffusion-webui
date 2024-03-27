@@ -59,17 +59,8 @@
 
             parent.style.gridTemplateColumns = parent.style.originalGridTemplateColumns;
 
-            // Fire custom event to modify left column width externally.
-            parent.dispatchEvent(
-                new CustomEvent("resizeHandleDblClick", {
-                    bubbles: true,
-                    detail: {
-                        setLeftColGridTemplate: setLeftColGridTemplate,
-                        pad: PAD,
-                        minLeftColWidth: parent.minLeftColWidth,
-                    },
-                }),
-            );
+            // Fire a custom event so user can perform additional tasks on double click.
+            parent.dispatchEvent(new CustomEvent("resizeHandleDblClick", {bubbles: true}));
         }
 
         const leftCol = parent.firstElementChild;
@@ -164,7 +155,13 @@
                 } else {
                     delta = R.screenX - evt.changedTouches[0].screenX;
                 }
-                const leftColWidth = Math.max(Math.min(R.leftColStartWidth - delta, R.parent.offsetWidth - R.parent.minRightColWidth - PAD), R.parent.minLeftColWidth);
+                const leftColWidth = Math.max(
+                    Math.min(
+                        R.leftColStartWidth - delta,
+                        R.parent.offsetWidth - R.parent.minRightColWidth - PAD,
+                    ),
+                    R.parent.minLeftColWidth,
+                );
                 setLeftColGridTemplate(R.parent, leftColWidth);
             }
         });

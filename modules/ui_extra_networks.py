@@ -245,6 +245,7 @@ class ExtraNetworksPage:
         tabname: str,
         label: str,
         btn_type: str,
+        btn_title: str,
         dir_is_empty: bool = False,
         metadata: Optional[str] = None,
         parent_id: Optional[int] = None,
@@ -258,6 +259,9 @@ class ExtraNetworksPage:
     ) -> str:
         if btn_type not in ["file", "dir"]:
             raise ValueError("Invalid button type:", btn_type)
+        
+        label = label.strip()
+        btn_title = btn_title.strip()
 
         action_list_item_action_leading = "<i class='tree-list-item-action-chevron'></i>"
         action_list_item_visual_leading = "🗀"
@@ -308,6 +312,7 @@ class ExtraNetworksPage:
                 "data_attributes": data_attributes,
                 "search_terms": "",
                 "btn_type": btn_type,
+                "btn_title": btn_title,
                 "tabname": tabname,
                 "onclick_extra": onclick_extra if onclick_extra else "",
                 "extra_networks_tabname": self.extra_networks_tabname,
@@ -357,6 +362,7 @@ class ExtraNetworksPage:
                     data_depth=depth,
                     data_path=k,
                     btn_type="dir",
+                    btn_title=k,
                     dir_is_empty=dir_is_empty,
                 )
                 last_div_id = self.build_tree_html_dict(
@@ -408,6 +414,7 @@ class ExtraNetworksPage:
                     data_allow_neg=str(self.allow_negative_prompt).lower(),
                     onclick_extra=onclick,
                     btn_type="file",
+                    btn_title=v.item["name"],
                 )
             div_id += 1
         return div_id

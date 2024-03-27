@@ -1252,7 +1252,7 @@ body.resizing .resize-handle {
     flex-direction: column;
 }
 
-.extra-network-content--dirs {
+.extra-network-content--dirs-view {
     flex: 0 1 0%;
     flex-direction: row;
     flex-wrap: wrap;
@@ -1345,20 +1345,12 @@ body.resizing .resize-handle {
     background: var(--button-secondary-background-fill-hover);
 }
 
-.extra-network-control:hover .extra-network-control--icon {
-    color: var(--button-secondary-text-color-hover);
-}
-
 .extra-network-control:active {
     background: var(--button-secondary-background-fill);
 }
 
 .extra-network-control:active .extra-network-control--icon {
     color: var(--button-secondary-text-color-hover);
-}
-
-.extra-network-control[data-selected] {
-    background: var(--button-secondary-background-fill);
 }
 
 .extra-network-control[data-selected] .extra-network-control--icon {
@@ -1443,32 +1435,33 @@ body.resizing .resize-handle {
 }
 
 /* Customize behavior or sort direction button icon. */
-.extra-network-control--sort-dir[data-sort-dir="ascending"] #extra-network-control--sort-dir-icon-ascending {
+.extra-network-control--sort-dir[data-sort-dir="ascending"] .extra-network-control--sort-dir-icon-ascending {
     fill: var(--button-secondary-text-color);
     stroke: var(--button-secondary-text-color);
 }
 
-.extra-network-control--sort-dir[data-sort-dir="ascending"] #extra-network-control--sort-dir-icon-descending {
+.extra-network-control--sort-dir[data-sort-dir="ascending"] .extra-network-control--sort-dir-icon-descending {
     stroke: var(--input-placeholder-color);
 }
 
-.extra-network-control--sort-dir[data-sort-dir="descending"] #extra-network-control--sort-dir-icon-descending {
+.extra-network-control--sort-dir[data-sort-dir="descending"] .extra-network-control--sort-dir-icon-descending {
     fill: var(--button-secondary-text-color);
     stroke: var(--button-secondary-text-color);
 }
 
-.extra-network-control--sort-dir[data-sort-dir="descending"] #extra-network-control--sort-dir-icon-ascending {
+.extra-network-control--sort-dir[data-sort-dir="descending"] .extra-network-control--sort-dir-icon-ascending {
     stroke: var(--input-placeholder-color);
 }
 
 /* ==== ICONS ==== */
 .extra-network-control--refresh:hover .extra-network-control--icon {
-    animation: rotate 3s infinite;
+    animation: extra-network-control--refresh-keyframe-rotate 3s infinite;
     transform-origin: 50% 50%;
     transform-box: fill-box;
+    color: var(--button-secondary-text-color);
 }
 
-@keyframes rotate {
+@keyframes extra-network-control--refresh-keyframe-rotate {
     from {
         transform: rotate(0deg);
     }
@@ -1480,7 +1473,7 @@ body.resizing .resize-handle {
 
 .extra-network-tree-content {
     padding: var(--spacing-md);
-    width: 100%;
+    flex: 1;
 }
 
 .extra-network-cards-content {
