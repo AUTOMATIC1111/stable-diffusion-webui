@@ -129,7 +129,7 @@ case "$gpu_info" in
         export HSA_OVERRIDE_GFX_VERSION=10.3.0
         if [[ -z "${TORCH_COMMAND}" ]]
         then
-            pyv="$(${python_cmd} -c 'import sys; print(".".join(map(str, sys.version_info[0:2])))')"
+            pyv="$(${python_cmd} -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]:02d}")')"
             if [[ $(bc <<< "$pyv <= 3.10") -eq 1 ]] 
             then
                 # Navi users will still use torch 1.13 because 2.0 does not seem to work.
