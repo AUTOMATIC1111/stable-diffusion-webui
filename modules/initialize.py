@@ -57,6 +57,9 @@ def initialize():
     initialize_util.configure_sigint_handler()
     initialize_util.configure_opts_onchange()
 
+    from modules import startup_checks
+    startup_checks.start_check_sequence()
+
     from modules import sd_models
     sd_models.setup_model()
     startup_timer.record("setup SD model")
