@@ -58,7 +58,7 @@ const isFunctionLogError = x => {
     }
     console.error("expected function type, got:", typeof x);
     return false;
-}
+};
 
 const getElementByIdLogError = selector => {
     let elem = gradioApp().getElementById(selector);
@@ -222,7 +222,7 @@ function extraNetworksRefreshTab(tabname_full) {
             for (const _tabname_full of Object.keys(clusterizers)) {
                 let selected = _tabname_full === tabname_full;
                 extraNetworkClusterizersLoadTab({
-                    tabname_full:_tabname_full,
+                    tabname_full: _tabname_full,
                     selected: selected,
                     fetch_data: true
                 });
@@ -407,9 +407,9 @@ function extraNetworkClusterizersLoadTab({
     tabname_full = "",
     selected = false,
     fetch_data = false,
-}={}) {
+} = {}) {
     /** Loads clusterize data for a tab.
-     * 
+     *
      *  Args:
      *      tabname_full [str]: The clusterize tab to load. Does not need to be the active
      *          tab however if it isn't the active tab then `selected` should be set to
@@ -482,14 +482,14 @@ function extraNetworksAutoSetTreeWidth(pane) {
 
 function extraNetworksSetupEventDelegators() {
     /** Sets up event delegators for all extraNetworks tabs.
-     * 
+     *
      *  These event handlers are not tied to any specific elements on the page.
      *  We do this because elements within each tab may be removed and replaced
      *  which would break references to elements in DOM and thus prevent any event
      *  listeners from firing.
      */
 
-     window.addEventListener("resizeHandleDblClick", event => {
+    window.addEventListener("resizeHandleDblClick", event => {
         // See resizeHandle.js::onDoubleClick() for event detail.
         event.stopPropagation();
         extraNetworksAutoSetTreeWidth(event.target.closest(".extra-network-pane"));
@@ -515,7 +515,6 @@ function extraNetworksSetupEventDelegators() {
                 search_input_debounce.call(target, tabname_full);
             }
         }
-        
     });
 }
 
@@ -578,7 +577,7 @@ function extraNetworksCardOnClick(event, tabname) {
     const elem = event.currentTarget;
     const prompt_elem = gradioApp().querySelector(`#${tabname}_prompt > label > textarea`);
     const neg_prompt_elem = gradioApp().querySelector(`#${tabname}_neg_prompt > label > textarea`);
-    if ("negPrompt" in elem.dataset){
+    if ("negPrompt" in elem.dataset) {
         updatePromptArea(elem.dataset.prompt, prompt_elem);
         updatePromptArea(elem.dataset.negPrompt, neg_prompt_elem);
     } else if ("allowNeg" in elem.dataset) {

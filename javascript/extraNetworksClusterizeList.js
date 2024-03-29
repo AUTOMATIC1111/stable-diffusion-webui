@@ -8,6 +8,8 @@
     isNullOrUndefinedLogError,
     isElement,
     isElementLogError,
+    isFunction,
+    isFunctionLogError,
     getElementByIdLogError,
     querySelectorLogError,
     waitForElement,
@@ -979,7 +981,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
             this.data_obj[k].active = visible;
         }
 
-        super.applyFilter()
+        super.applyFilter();
     }
 
     getMaxRowWidth() {

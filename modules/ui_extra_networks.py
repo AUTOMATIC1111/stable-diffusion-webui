@@ -281,7 +281,7 @@ class ExtraNetworksPage:
         tabname: str,
         label: str,
         btn_type: str,
-        data_attributes: dict = {},
+        data_attributes: Optional[dict] = None,
         btn_title: Optional[str] = None,
         dir_is_empty: bool = False,
         item: Optional[dict] = None,
@@ -289,7 +289,10 @@ class ExtraNetworksPage:
     ) -> str:
         if btn_type not in ["file", "dir"]:
             raise ValueError("Invalid button type:", btn_type)
-        
+
+        if data_attributes is None:
+            data_attributes = {}
+
         label = label.strip()
         # If not specified, title will just reflect the label
         btn_title = btn_title.strip() if btn_title else label
@@ -697,8 +700,6 @@ class ExtraNetworksPage:
             "tree_view_style": f"flex-basis: {shared.opts.extra_networks_tree_view_default_width}px;",
             "cards_view_style": "flex-grow: 1;",
             "dirs_html": dirs_html,
-
-            
         })
 
     def create_item(self, name, index=None):
