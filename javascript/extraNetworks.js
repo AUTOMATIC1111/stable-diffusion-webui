@@ -51,6 +51,15 @@ const isElementLogError = x => {
     return false;
 };
 
+const isFunction = x => typeof x === "function";
+const isFunctionLogError = x => {
+    if (isFunction(x)) {
+        return true;
+    }
+    console.error("expected function type, got:", typeof x);
+    return false;
+}
+
 const getElementByIdLogError = selector => {
     let elem = gradioApp().getElementById(selector);
     isElementLogError(elem);
@@ -207,7 +216,18 @@ function extraNetworksRefreshTab(tabname_full) {
     div_tree.classList.toggle("hidden", !("selected" in btn_tree_view.dataset));
 
     waitForKeyInObject({k: tabname_full, obj: clusterizers})
-        .then(() => extraNetworkClusterizersOnTabLoad(tabname_full));
+        .then(() => {
+            // We want to reload all tabs when refresh is clicked, but we only want to
+            // enable the tab on which the refresh button was clicked.
+            for (const _tabname_full of Object.keys(clusterizers)) {
+                let selected = _tabname_full === tabname_full;
+                extraNetworkClusterizersLoadTab({
+                    tabname_full:_tabname_full,
+                    selected: selected,
+                    fetch_data: true
+                });
+            }
+        });
 }
 
 function extraNetworksRegisterPromptForTab(tabname, id) {
@@ -224,6 +244,7 @@ function extraNetworksRegisterPromptForTab(tabname, id) {
 
 function extraNetworksSetupTabContent(tabname, pane, controls_div) {
     const tabname_full = pane.id;
+    const extra_networks_tabname = tabname_full.replace(`${tabname}_`, "");
     let controls;
 
     Promise.all([
@@ -240,20 +261,31 @@ function extraNetworksSetupTabContent(tabname, pane, controls_div) {
         // Now that we have our elements in DOM, we create the clusterize lists.
         clusterizers[tabname_full] = {
             tree_list: new ExtraNetworksClusterizeTreeList({
-                data_id: `${tabname_full}_tree_list_data`,
+                tabname: tabname,
+                extra_networks_tabname: extra_networks_tabname,
                 scroll_id: `${tabname_full}_tree_list_scroll_area`,
                 content_id: `${tabname_full}_tree_list_content_area`,
+                data_request_callback: extraNetworksRequestListData,
             }),
             cards_list: new ExtraNetworksClusterizeCardsList({
-                data_id: `${tabname_full}_cards_list_data`,
+                tabname: tabname,
+                extra_networks_tabname: extra_networks_tabname,
                 scroll_id: `${tabname_full}_cards_list_scroll_area`,
                 content_id: `${tabname_full}_cards_list_content_area`,
+                data_request_callback: extraNetworksRequestListData,
             }),
         };
 
         if (pane.style.display != "none") {
             extraNetworksShowControlsForPage(tabname, tabname_full);
         }
+        (async() => {
+            await extraNetworkClusterizersLoadTab({
+                tabname_full: tabname_full,
+                selected: false,
+                fetch_data: true
+            });
+        })();
     });
 }
 
@@ -321,7 +353,13 @@ function extraNetworksTabSelected(tabname, id, showPrompt, showNegativePrompt, t
     extraNetworksShowControlsForPage(tabname, tabname_full);
 
     waitForKeyInObject({k: tabname_full, obj: clusterizers})
-        .then(() => extraNetworkClusterizersOnTabLoad(tabname_full));
+        .then(() => {
+            extraNetworkClusterizersLoadTab({
+                tabname_full: tabname_full,
+                selected: true,
+                fetch_data: false,
+            });
+        });
 }
 
 function extraNetworksApplyFilter(tabname_full) {
@@ -338,6 +376,7 @@ function extraNetworksApplyFilter(tabname_full) {
 
     // We only want to filter/sort the cards list.
     clusterizers[tabname_full].cards_list.applyFilter(txt_search.value.toLowerCase());
+    clusterizers[tabname_full].cards_list.update();
 
     // If the search input has changed since selecting a button to populate it
     // then we want to disable the button that previously populated the search input.
@@ -364,21 +403,42 @@ function extraNetworksClusterizersEnable(tabname_full) {
     }
 }
 
-function extraNetworkClusterizersOnTabLoad(tabname_full) { /** promise */
-    return new Promise(resolve => {
-        // Enables a tab's clusterizer, updates its data, and rebuilds it.
+function extraNetworkClusterizersLoadTab({
+    tabname_full = "",
+    selected = false,
+    fetch_data = false,
+}={}) {
+    /** Loads clusterize data for a tab.
+     * 
+     *  Args:
+     *      tabname_full [str]: The clusterize tab to load. Does not need to be the active
+     *          tab however if it isn't the active tab then `selected` should be set to
+     *          `false` to prevent oddities caused by the tab not being visible in the page.
+     *      selected [bool]: Whether the tab is selected. This controls whether the
+     *          clusterize list will be enabled which affects its operations.
+     *      fetch_data [bool]: Whether to fetch new data for the clusterize list.
+    */
+    return new Promise((resolve, reject) => {
         if (!(tabname_full in clusterizers)) {
             return resolve();
         }
 
         (async() => {
-            // Enable then load the selected tab's clusterize lists.
-            extraNetworksClusterizersEnable(tabname_full);
+            if (selected) {
+                extraNetworksClusterizersEnable(tabname_full);
+            }
             for (const v of Object.values(clusterizers[tabname_full])) {
-                await v.load();
+                if (fetch_data) {
+                    await v.setup();
+                } else {
+                    await v.load();
+                }
             }
         })().then(() => {
             return resolve();
+        }).catch(error => {
+            console.error("Error loading tab:", error);
+            return reject(error);
         });
     });
 }
@@ -514,13 +574,17 @@ function updatePromptArea(text, textArea, isNeg) {
     updateInput(textArea);
 }
 
-function cardClicked(tabname, textToAdd, textToAddNegative, allowNegativePrompt) {
-    if (textToAddNegative.length > 0) {
-        updatePromptArea(textToAdd, gradioApp().querySelector(`#${tabname}_prompt > label > textarea`));
-        updatePromptArea(textToAddNegative, gradioApp().querySelector(`#${tabname}_neg_prompt > label > textarea`), true);
+function extraNetworksCardOnClick(event, tabname) {
+    const elem = event.currentTarget;
+    const prompt_elem = gradioApp().querySelector(`#${tabname}_prompt > label > textarea`);
+    const neg_prompt_elem = gradioApp().querySelector(`#${tabname}_neg_prompt > label > textarea`);
+    if ("negPrompt" in elem.dataset){
+        updatePromptArea(elem.dataset.prompt, prompt_elem);
+        updatePromptArea(elem.dataset.negPrompt, neg_prompt_elem);
+    } else if ("allowNeg" in elem.dataset) {
+        updatePromptArea(elem.dataset.prompt, activePromptTextarea[tabname]);
     } else {
-        var textarea = allowNegativePrompt ? activePromptTextarea[tabname] : gradioApp().querySelector(`#${tabname}_prompt > label > textarea`);
-        updatePromptArea(textToAdd, textarea);
+        updatePromptArea(elem.dataset.prompt, prompt_elem);
     }
 }
 
@@ -745,6 +809,15 @@ function extraNetworksControlRefreshOnClick(event, tabname_full) {
      */
     // reset states
     initialUiOptionsLoaded.state = false;
+
+    // We want to reset all clusterizers on refresh click so that the viewing area
+    // shows that it is loading new data.
+    for (const _tabname_full of Object.keys(clusterizers)) {
+        for (const v of Object.values(clusterizers[_tabname_full])) {
+            v.reset();
+        }
+    }
+
     // Fire an event for this button click.
     gradioApp().getElementById(`${tabname_full}_extra_refresh_internal`).dispatchEvent(new Event("click"));
 }
@@ -858,6 +931,31 @@ function extraNetworksShowMetadata(text) {
     return;
 }
 
+function requestGetPromise(url, data) {
+    return new Promise((resolve, reject) => {
+        let xhr = new XMLHttpRequest();
+        let args = Object.keys(data).map(k => {
+            return encodeURIComponent(k) + "=" + encodeURIComponent(data[k]);
+        }).join("&");
+        xhr.open("GET", url + "?" + args, true);
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        resolve(xhr.responseText);
+                    } catch (error) {
+                        reject(error);
+                    }
+                } else {
+                    reject({status: this.status, statusText: xhr.statusText});
+                }
+            }
+        };
+        xhr.send(JSON.stringify(data));
+    });
+}
+
 function requestGet(url, data, handler, errorHandler) {
     var xhr = new XMLHttpRequest();
     var args = Object.keys(data).map(function(k) {
@@ -889,44 +987,57 @@ function extraNetworksCopyPathToClipboard(event, path) {
     event.stopPropagation();
 }
 
-function extraNetworksRequestMetadata(event, extraPage) {
+async function extraNetworksRequestListData(tabname, extra_networks_tabname, class_name) {
+    return await requestGetPromise(
+        "./sd_extra_networks/get-list-data",
+        {
+            tabname: tabname,
+            extra_networks_tabname: extra_networks_tabname,
+            list_type: class_name,
+        },
+    );
+}
+
+function extraNetworksRequestMetadata(extra_networks_tabname, card_name) {
     var showError = function() {
         extraNetworksShowMetadata("there was an error getting metadata");
     };
 
-    var cardName = event.target.parentElement.parentElement.getAttribute("data-name");
-
-    requestGet("./sd_extra_networks/metadata", {page: extraPage, item: cardName}, function(data) {
+    requestGet("./sd_extra_networks/metadata", {page: extra_networks_tabname, item: card_name}, function(data) {
         if (data && data.metadata) {
             extraNetworksShowMetadata(data.metadata);
         } else {
             showError();
         }
     }, showError);
+}
 
+function extraNetworksMetadataButtonOnClick(event, extra_networks_tabname, card_name) {
+    extraNetworksRequestMetadata(extra_networks_tabname, card_name);
     event.stopPropagation();
 }
 
-function extraNetworksEditUserMetadata(event, tabname, extraPage, cardName) {
-    var id = tabname + '_' + extraPage + '_edit_user_metadata';
-
-    var editor = extraPageUserMetadataEditors[id];
+function extraNetworksEditUserMetadata(tabname_full, card_name) {
+    const id = `${tabname_full}_edit_user_metadata`;
+    let editor = extraPageUserMetadataEditors[id];
     if (!editor) {
         editor = {};
         editor.page = gradioApp().getElementById(id);
-        editor.nameTextarea = gradioApp().querySelector("#" + id + "_name" + ' textarea');
-        editor.button = gradioApp().querySelector("#" + id + "_button");
+        editor.nameTextarea = gradioApp().querySelector(`#${id}_name textarea`);
+        editor.button = gradioApp().querySelector(`#${id}_button`);
         extraPageUserMetadataEditors[id] = editor;
     }
 
-    var cardName = event.target.parentElement.parentElement.getAttribute("data-name");
-    editor.nameTextarea.value = cardName;
+    editor.nameTextarea.value = card_name;
     updateInput(editor.nameTextarea);
 
     editor.button.click();
 
     popup(editor.page);
+}
 
+function extraNetworksEditItemOnClick(event, tabname_full, card_name) {
+    extraNetworksEditUserMetadata(tabname_full, card_name);
     event.stopPropagation();
 }
 

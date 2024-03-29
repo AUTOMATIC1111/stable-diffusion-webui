@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import zlib
 import base64
 import re
+from starlette.responses import JSONResponse, PlainTextResponse
 
 from modules import shared, ui_extra_networks_user_metadata, errors, extra_networks, util
 from modules.images import read_info_from_image, save_image_with_geninfo
@@ -142,9 +143,47 @@ def fetch_cover_images(page: str = "", item: str = "", index: int = 0):
         raise ValueError(f"File cannot be fetched: {item}. Failed to load cover image.") from err
 
 
-def get_metadata(page: str = "", item: str = ""):
-    from starlette.responses import JSONResponse
+def get_list_data(
+    tabname: str = "",
+    extra_networks_tabname: str = "",
+    list_type: Optional[str] = None,
+) -> PlainTextResponse:
+    """Responds to API GET requests on /sd_extra_networks/get-list-data with list data.
 
+    Args:
+        tabname:                The primary tab name containing the data.
+                                (i.e. txt2img, img2img)
+        extra_networks_tabname: The selected extra networks tabname.
+                                (i.e. lora, hypernetworks, etc.)
+        list_type:              The type of list data to retrieve. This reflects the
+                                class name used in `extraNetworksClusterizeList.js`.
+
+    Returns:
+        The string data result along with a status code.
+        A status_code of 501 is returned on error, 200 on success.
+    """
+    res = ""
+    status_code = 200
+
+    page = next(iter([
+        x for x in extra_pages
+        if x.extra_networks_tabname == extra_networks_tabname
+    ]), None)
+
+    if page is None:
+        return PlainTextResponse(res, status_code=501)
+
+    if list_type == "ExtraNetworksClusterizeTreeList":
+        res = page.generate_tree_view_data(tabname)
+    elif list_type == "ExtraNetworksClusterizeCardsList":
+        res = page.generate_cards_view_data(tabname)
+    else:
+        status_code = 501  # HTTP_501_NOT_IMPLEMENTED
+
+    return PlainTextResponse(res, status_code=status_code)
+
+
+def get_metadata(page: str = "", item: str = "") -> JSONResponse:
     page = next(iter([x for x in extra_pages if x.name == page]), None)
     if page is None:
         return JSONResponse({})
@@ -158,9 +197,7 @@ def get_metadata(page: str = "", item: str = ""):
     return JSONResponse({"metadata": json.dumps(metadata, indent=4, ensure_ascii=False)})
 
 
-def get_single_card(page: str = "", tabname: str = "", name: str = ""):
-    from starlette.responses import JSONResponse
-
+def get_single_card(page: str = "", tabname: str = "", name: str = "") -> JSONResponse:
     page = next(iter([x for x in extra_pages if x.name == page]), None)
 
     try:
@@ -171,16 +208,16 @@ def get_single_card(page: str = "", tabname: str = "", name: str = ""):
         item = page.items.get(name)
 
     page.read_user_metadata(item, use_cache=False)
-    item_html = page.create_item_html(tabname, item, shared.html("extra-networks-card.html"))
+    item_html = page.create_card_html(tabname=tabname, item=item)
 
     return JSONResponse({"html": item_html})
-
 
 def add_pages_to_demo(app):
     app.add_api_route("/sd_extra_networks/thumb", fetch_file, methods=["GET"])
     app.add_api_route("/sd_extra_networks/cover-images", fetch_cover_images, methods=["GET"])
     app.add_api_route("/sd_extra_networks/metadata", get_metadata, methods=["GET"])
     app.add_api_route("/sd_extra_networks/get-single-card", get_single_card, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/get-list-data", get_list_data, methods=["GET"])
 
 
 def quote_js(s):
@@ -241,27 +278,21 @@ class ExtraNetworksPage:
 
     def build_tree_html_dict_row(
         self,
-        div_id: int,
         tabname: str,
         label: str,
         btn_type: str,
-        btn_title: str,
+        data_attributes: dict = {},
+        btn_title: Optional[str] = None,
         dir_is_empty: bool = False,
-        metadata: Optional[str] = None,
-        parent_id: Optional[int] = None,
-        data_depth: Optional[int] = None,
-        data_path: Optional[str] = None,
-        data_hash: Optional[str] = None,
-        data_prompt: Optional[str] = None,
-        data_neg_prompt: Optional[str] = None,
-        data_allow_neg: Optional[str] = None,
+        item: Optional[dict] = None,
         onclick_extra: Optional[str] = None,
     ) -> str:
         if btn_type not in ["file", "dir"]:
             raise ValueError("Invalid button type:", btn_type)
         
         label = label.strip()
-        btn_title = btn_title.strip()
+        # If not specified, title will just reflect the label
+        btn_title = btn_title.strip() if btn_title else label
 
         action_list_item_action_leading = "<i class='tree-list-item-action-chevron'></i>"
         action_list_item_visual_leading = "🗀"
@@ -274,42 +305,21 @@ class ExtraNetworksPage:
         if btn_type == "file":
             action_list_item_visual_leading = "🗎"
             # Action buttons
-            action_list_item_action_trailing += '<div class="button-row">'
-            action_list_item_action_trailing += self.btn_copy_path_tpl.format(
-                **{"filename": data_path}
-            )
-            action_list_item_action_trailing += self.btn_edit_item_tpl.format(
-                **{
-                    "tabname": tabname,
-                    "extra_networks_tabname": self.extra_networks_tabname,
-                    "name": label,
-                }
-            )
-            if metadata:
-                action_list_item_action_trailing += self.btn_metadata_tpl.format(
-                    **{"extra_networks_tabname": self.extra_networks_tabname, "name": label}
-                )
-            action_list_item_action_trailing += "</div>"
+            if item is not None:
+                action_list_item_action_trailing += self.get_button_row(tabname, item)
 
-        data_attributes = ""
-        data_attributes += f"data-path={data_path} " if data_path is not None else ""
-        data_attributes += f"data-hash={data_hash} " if data_hash is not None else ""
-        data_attributes += f"data-prompt={data_prompt} " if data_prompt else ""
-        data_attributes += f"data-neg-prompt={data_neg_prompt} " if data_neg_prompt else ""
-        data_attributes += f"data-allow-neg={data_allow_neg} " if data_allow_neg else ""
-        data_attributes += (
-            f"data-tree-entry-type={btn_type} " if btn_type is not None else ""
-        )
-        data_attributes += f"data-div-id={div_id} " if div_id is not None else ""
-        data_attributes += f"data-parent-id={parent_id} " if parent_id is not None else ""
-        data_attributes += f"data-depth={data_depth} " if data_depth is not None else ""
-        data_attributes += (
-            "data-expanded " if parent_id is None else ""
-        )  # inverted to expand root
+        data_attributes_str = ""
+        for k, v in data_attributes.items():
+            if isinstance(v, (bool,)):
+                # Boolean data attributes only need a key when true.
+                if v:
+                    data_attributes_str += f"{k} "
+            elif v not in [None, "", "\'\'", "\"\""]:
+                data_attributes_str += f"{k}={v} "
 
         res = self.tree_row_tpl.format(
             **{
-                "data_attributes": data_attributes,
+                "data_attributes": data_attributes_str,
                 "search_terms": "",
                 "btn_type": btn_type,
                 "btn_title": btn_title,
@@ -326,7 +336,6 @@ class ExtraNetworksPage:
         res = res.strip()
         res = re.sub(" +", " ", res.replace("\n", ""))
         return res
-
 
     def build_tree_html_dict(
         self,
@@ -355,15 +364,19 @@ class ExtraNetworksPage:
                         dir_is_empty = True
 
                 res[div_id] = self.build_tree_html_dict_row(
-                    div_id=div_id,
-                    parent_id=parent_id,
                     tabname=tabname,
                     label=os.path.basename(k),
-                    data_depth=depth,
-                    data_path=k,
                     btn_type="dir",
                     btn_title=k,
                     dir_is_empty=dir_is_empty,
+                    data_attributes={
+                        "data-div-id": div_id,
+                        "data-parent-id": parent_id,
+                        "data-tree-entry-type": "dir",
+                        "data-depth": depth,
+                        "data-path": k,
+                        "data-expanded": parent_id is None,  # Expand root directories
+                    },
                 )
                 last_div_id = self.build_tree_html_dict(
                     tree=v,
@@ -386,46 +399,63 @@ class ExtraNetworksPage:
                 onclick = v.item.get("onclick", None)
                 if onclick is None:
                     # Don't quote prompt/neg_prompt since they are stored as js strings already.
-                    onclick_js_tpl = (
-                        "cardClicked('{tabname}', {prompt}, {neg_prompt}, {allow_neg});"
-                    )
-                    onclick = onclick_js_tpl.format(
-                        **{
-                            "tabname": tabname,
-                            "extra_networks_tabname": self.extra_networks_tabname,
-                            "prompt": v.item["prompt"],
-                            "neg_prompt": v.item.get("negative_prompt", "''"),
-                            "allow_neg": str(self.allow_negative_prompt).lower(),
-                        }
-                    )
-                    onclick = html.escape(onclick)
+                    onclick = html.escape(f"extraNetworksCardOnClick(event, '{tabname}');")
 
                 res[div_id] = self.build_tree_html_dict_row(
-                    div_id=div_id,
-                    parent_id=parent_id,
                     tabname=tabname,
-                    label=v.item["name"],
-                    metadata=v.item.get("metadata", None),
-                    data_depth=depth,
-                    data_path=v.item["filename"],
-                    data_hash=v.item["shorthash"],
-                    data_prompt=html.escape(v.item.get("prompt", "''")),
-                    data_neg_prompt=html.escape(v.item.get("negative_prompt", "''")),
-                    data_allow_neg=str(self.allow_negative_prompt).lower(),
-                    onclick_extra=onclick,
+                    label=html.escape(v.item.get("name", "").strip()),
                     btn_type="file",
-                    btn_title=v.item["name"],
+                    data_attributes={
+                        "data-div-id": div_id,
+                        "data-parent-id": parent_id,
+                        "data-tree-entry-type": "file",
+                        "data-name": v.item.get("name", "").strip(),
+                        "data-depth": depth,
+                        "data-path": v.item.get("filename", "").strip(),
+                        "data-hash": v.item.get("shorthash", None),
+                        "data-prompt": v.item.get("prompt", "").strip(),
+                        "data-neg-prompt": v.item.get("negative_prompt", "").strip(),
+                        "data-allow-neg": self.allow_negative_prompt,
+                    },
+                    item=v.item,
+                    onclick_extra=onclick,
                 )
             div_id += 1
         return div_id
 
-    def create_item_html(
+    def get_button_row(self, tabname: str, item: dict) -> str:
+        metadata = item.get("metadata", None)
+        name = item.get("name", "")
+        filename = item.get("filename", "")
+
+        button_row_tpl = '<div class="button-row">{btn_copy_path}{btn_edit_item}{btn_metadata}</div>'
+
+        btn_copy_path = self.btn_copy_path_tpl.format(filename=filename)
+        btn_edit_item = self.btn_edit_item_tpl.format(
+            tabname=tabname,
+            extra_networks_tabname=self.extra_networks_tabname,
+            name=name,
+        )
+        btn_metadata = ""
+        if metadata:
+            btn_metadata = self.btn_metadata_tpl.format(
+                extra_networks_tabname=self.extra_networks_tabname,
+                name=name,
+            )
+
+        return button_row_tpl.format(
+            btn_copy_path=btn_copy_path,
+            btn_edit_item=btn_edit_item,
+            btn_metadata=btn_metadata,
+        )
+
+
+    def create_card_html(
         self,
         tabname: str,
         item: dict,
-        template: Optional[str] = None,
         div_id: Optional[int] = None,
-    ) -> Union[str, dict]:
+    ) -> str:
         """Generates HTML for a single ExtraNetworks Item.
 
         Args:
@@ -434,47 +464,21 @@ class ExtraNetworksPage:
             template: Optional template string to use.
 
         Returns:
-            If a template is passed: HTML string generated for this item.
-                Can be empty if the item is not meant to be shown.
-            If no template is passed: A dictionary containing the generated item's attributes.
+            HTML string generated for this item. Can be empty if the item is not meant to be shown.
         """
         preview = item.get("preview", None)
         style_height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
         style_width = f"width: {shared.opts.extra_networks_card_width}px;" if shared.opts.extra_networks_card_width else ''
         style_font_size = f"font-size: {shared.opts.extra_networks_card_text_scale*100}%;"
-        card_style = style_height + style_width + style_font_size
+        style = style_height + style_width + style_font_size
         background_image = f'<img src="{html.escape(preview)}" class="preview" loading="lazy">' if preview else ''
 
         onclick = item.get("onclick", None)
         if onclick is None:
             # Don't quote prompt/neg_prompt since they are stored as js strings already.
-            onclick_js_tpl = "cardClicked('{tabname}', {prompt}, {neg_prompt}, {allow_neg});"
-            onclick = onclick_js_tpl.format(
-                **{
-                    "tabname": tabname,
-                    "extra_networks_tabname": self.extra_networks_tabname,
-                    "prompt": item["prompt"],
-                    "neg_prompt": item.get("negative_prompt", "''"),
-                    "allow_neg": str(self.allow_negative_prompt).lower(),
-                }
-            )
-            onclick = html.escape(onclick)
+            onclick = html.escape(f"extraNetworksCardOnClick(event, '{tabname}');")
 
-        btn_copy_path = self.btn_copy_path_tpl.format(**{"filename": item["filename"]})
-        btn_metadata = ""
-        metadata = item.get("metadata")
-        if metadata:
-            btn_metadata = self.btn_metadata_tpl.format(
-                **{
-                    "extra_networks_tabname": self.extra_networks_tabname,
-                }
-            )
-        btn_edit_item = self.btn_edit_item_tpl.format(
-            **{
-                "tabname": tabname,
-                "extra_networks_tabname": self.extra_networks_tabname,
-            }
-        )
+        button_row = self.get_button_row(tabname, item)
 
         local_path = ""
         filename = item.get("filename", "")
@@ -502,9 +506,9 @@ class ExtraNetworksPage:
         ).strip()
 
         search_terms_html = ""
-        search_term_template = "<span class='hidden {class}'>{search_term}</span>"
+        search_terms_tpl = "<span class='hidden {class}'>{search_term}</span>"
         for search_term in item.get("search_terms", []):
-            search_terms_html += search_term_template.format(
+            search_terms_html += search_terms_tpl.format(
                 **{
                     "class": f"search_terms{' search_only' if search_only else ''}",
                     "search_term": search_term,
@@ -515,33 +519,56 @@ class ExtraNetworksPage:
         if not shared.opts.extra_networks_card_description_is_html:
             description = html.escape(description)
 
-        # Some items here might not be used depending on HTML template used.
-        args = {
-            "div_id": "" if div_id is None else div_id,
-            "background_image": background_image,
-            "card_clicked": onclick,
-            "copy_path_button": btn_copy_path,
-            "description": description,
-            "edit_button": btn_edit_item,
-            "local_preview": quote_js(item["local_preview"]),
-            "metadata_button": btn_metadata,
-            "name": html.escape(item["name"]),
-            "save_card_preview": html.escape(f"return saveCardPreview(event, '{tabname}', '{item['local_preview']}');"),
-            "search_only": " search_only" if search_only else "",
-            "search_terms": search_terms_html,
-            "sort_keys": sort_keys,
-            "style": card_style,
-            "tabname": tabname,
-            "extra_networks_tabname": self.extra_networks_tabname,
-            "data_prompt": item.get("prompt", "''"),
-            "data_neg_prompt": item.get("negative_prompt", "''"),
-            "data_allow_neg": str(self.allow_negative_prompt).lower(),
+        data_attributes = {
+            "data-div-id": div_id if div_id else "",
+            "data-name": item.get("name", "").strip(),
+            "data-path": item.get("filename", "").strip(),
+            "data-hash": item.get("shorthash", None),
+            "data-prompt": item.get("prompt", "").strip(),
+            "data-neg-prompt": item.get("negative_prompt", "").strip(),
+            "data-allow-neg": self.allow_negative_prompt,
         }
 
-        if template:
-            return template.format(**args)
-        else:
-            return args
+        data_attributes_str = ""
+        for k, v in data_attributes.items():
+            if isinstance(v, (bool,)):
+                # Boolean data attributes only need a key when true.
+                if v:
+                    data_attributes_str += f"{k} "
+            elif v not in [None, "", "\'\'", "\"\""]:
+                data_attributes_str += f"{k}={v} "
+
+        return self.card_tpl.format(
+            style=style,
+            onclick=onclick,
+            data_attributes=data_attributes_str,
+            sort_keys=sort_keys,
+            background_image=background_image,
+            button_row=button_row,
+            search_terms=search_terms_html,
+            name=html.escape(item["name"].strip()),
+            description=description,
+        )
+
+    def generate_tree_view_data(self, tabname: str) -> str:
+        """Generates tree view HTML as a base64 encoded zlib compressed json string."""
+        res = {}
+
+        if self.tree:
+            self.build_tree_html_dict(
+                tree=self.tree,
+                res=res,
+                depth=0,
+                div_id=0,
+                parent_id=None,
+                tabname=tabname,
+            )
+
+        return base64.b64encode(
+            zlib.compress(
+                json.dumps(res, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+            )
+        ).decode("utf-8")
 
     def generate_tree_view_data_div(self, tabname: str) -> str:
         """Generates HTML for displaying folders in a tree view.
@@ -552,22 +579,16 @@ class ExtraNetworksPage:
         Returns:
             HTML string generated for this tree view.
         """
-        res = {}
-
-        if not self.tree:
-            return res
-
-        self.build_tree_html_dict(
-            tree=self.tree,
-            res=res,
-            depth=0,
-            div_id=0,
-            parent_id=None,
-            tabname=tabname,
+        tpl = """<div id="{tabname_full}_tree_list_data"
+            class="extra-network-script-data"
+            data-tabname-full={tabname_full}
+            data-proxy-name=tree_list
+            data-json={data}
+            hidden></div>"""
+        return tpl.format(
+            tabname_full=f"{tabname}_{self.extra_networks_tabname}",
+            data=self.generate_tree_view_data(tabname),
         )
-
-        res = base64.b64encode(zlib.compress(json.dumps(res, separators=(",", ":")).encode("utf-8"))).decode("utf-8")
-        return f'<div id="{tabname}_{self.extra_networks_tabname}_tree_list_data" class="extra-network-script-data" data-tabname-full={tabname}_{self.extra_networks_tabname} data-proxy-name=tree_list data-json={res} hidden></div>'
 
     def create_dirs_view_html(self, tabname: str) -> str:
         """Generates HTML for displaying folders."""
@@ -592,7 +613,18 @@ class ExtraNetworksPage:
         ])
         return dirs_html
 
-    def generate_cards_view_data_div(self, tabname: str, *, none_message) -> str:
+    def generate_cards_view_data(self, tabname: str) -> str:
+        res = {}
+        for i, item in enumerate(self.items.values()):
+            res[i] = self.create_card_html(tabname=tabname, item=item, div_id=i)
+
+        return base64.b64encode(
+            zlib.compress(
+                json.dumps(res, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+            )
+        ).decode("utf-8")
+
+    def generate_cards_view_data_div(self, tabname: str, none_message: Optional[str]) -> str:
         """Generates HTML for the network Card View section for a tab.
 
         This HTML goes into the `extra-networks-pane.html` <div> with
@@ -605,11 +637,8 @@ class ExtraNetworksPage:
         Returns:
             HTML formatted string.
         """
-        res = {}
-        for i, item in enumerate(self.items.values()):
-            res[i] = self.create_item_html(tabname, item, self.card_tpl, div_id=i)
+        res = self.generate_cards_view_data(tabname)
 
-        res = base64.b64encode(zlib.compress(json.dumps(res, separators=(",", ":")).encode("utf-8"))).decode("utf-8")
         return f'<div id="{tabname}_{self.extra_networks_tabname}_cards_list_data" class="extra-network-script-data" data-tabname-full={tabname}_{self.extra_networks_tabname} data-proxy-name=cards_list data-json={res} hidden></div>'
 
     def create_html(self, tabname, *, empty=False):
@@ -645,9 +674,6 @@ class ExtraNetworksPage:
         tree = get_tree([os.path.abspath(x) for x in roots], items=tree_items)
         self.tree = tree
 
-        # Generate the data payloads for tree and cards views
-        tree_data_div = self.generate_tree_view_data_div(tabname)
-        cards_data_div = self.generate_cards_view_data_div(tabname, none_message="Loading..." if empty else None)
         # Generate the html for displaying directory buttons
         dirs_html = self.create_dirs_view_html(tabname)
 
@@ -671,8 +697,8 @@ class ExtraNetworksPage:
             "tree_view_style": f"flex-basis: {shared.opts.extra_networks_tree_view_default_width}px;",
             "cards_view_style": "flex-grow: 1;",
             "dirs_html": dirs_html,
-            "cards_data_div": cards_data_div,
-            "tree_data_div": tree_data_div,
+
+            
         })
 
     def create_item(self, name, index=None):

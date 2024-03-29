@@ -93,7 +93,7 @@ async function decompress(base64string) {
         writer.write(bytes);
         writer.close();
         const arrayBuffer = await new Response(ds.readable).arrayBuffer();
-        return new TextDecoder().decode(arrayBuffer);
+        return await JSON.parse(new TextDecoder().decode(arrayBuffer));
     } catch (error) {
         throw new InvalidCompressedJsonDataError(error);
     }
@@ -123,9 +123,11 @@ class ExtraNetworksClusterize {
     /** Base class for a clusterize list. Cannot be used directly. */
     constructor(
         {
-            data_id,
+            tabname,
+            extra_networks_tabname,
             scroll_id,
             content_id,
+            data_request_callback,
             rows_in_block = 10,
             blocks_in_cluster = 4,
             show_no_data_row = true,
@@ -138,7 +140,10 @@ class ExtraNetworksClusterize {
         }
     ) {
         // Do not continue if any of the required parameters are invalid.
-        if (!isStringLogError(data_id)) {
+        if (!isStringLogError(tabname)) {
+            return;
+        }
+        if (!isStringLogError(extra_networks_tabname)) {
             return;
         }
         if (!isStringLogError(scroll_id)) {
@@ -147,10 +152,15 @@ class ExtraNetworksClusterize {
         if (!isStringLogError(content_id)) {
             return;
         }
+        if (!isFunctionLogError(data_request_callback)) {
+            return;
+        }
 
-        this.data_id = data_id;
+        this.tabname = tabname;
+        this.extra_networks_tabname = extra_networks_tabname;
         this.scroll_id = scroll_id;
         this.content_id = content_id;
+        this.data_request_callback = data_request_callback;
         this.rows_in_block = rows_in_block;
         this.blocks_in_cluster = blocks_in_cluster;
         this.show_no_data_row = show_no_data_row;
@@ -158,14 +168,13 @@ class ExtraNetworksClusterize {
 
         this.clusterize = null;
 
-        this.data_elem = null;
         this.scroll_elem = null;
         this.content_elem = null;
 
+        this.element_observer = null;
+
         this.resize_observer = null;
         this.resize_observer_timer = null;
-        this.element_observer = null;
-        this.data_update_timer = null;
 
         // Used to control logic. Many functions immediately return when disabled.
         this.enabled = false;
@@ -176,7 +185,7 @@ class ExtraNetworksClusterize {
         this.no_data_text = "No results.";
         this.no_data_class = "clusterize-no-data";
 
-        this.n_rows = 1;
+        this.n_rows = this.rows_in_block;
         this.n_cols = 1;
 
         this.data_obj = {};
@@ -184,70 +193,212 @@ class ExtraNetworksClusterize {
 
         this.sort_fn = this.sortByDivId;
         this.sort_reverse = false;
-
-        // Setup our event handlers only after our elements exist in DOM.
-        Promise.all([
-            waitForElement(`#${this.data_id}`).then((elem) => this.data_elem = elem),
-            waitForElement(`#${this.scroll_id}`).then((elem) => this.scroll_elem = elem),
-            waitForElement(`#${this.content_id}`).then((elem) => this.content_elem = elem),
-        ]).then(() => {
-            this.setupElementObservers();
-            this.setupResizeHandlers();
-        });
     }
 
-    enable(enabled) {
-        /** Enables or disabled this instance. */
-        // All values other than `true` for `enabled` result in this.enabled=false.
-        this.enabled = !(enabled !== true);
+    reset() {
+        /** Destroy clusterize instance and set all instance variables to defaults. */
+        this.destroy();
+
+        this.teardownElementObservers();
+        this.teardownResizeObservers();
+
+        this.clusterize = null;
+        this.scroll_elem = null;
+        this.content_elem = null;
+        this.enabled = false;
+        this.encoded_str = "";
+        this.n_rows = this.rows_in_block;
+        this.n_cols = 1;
+        this.data_obj = {};
+        this.data_obj_keys_sorted = [];
+        this.sort_fn = this.sortByDivId;
+        this.sort_reverse = false;
     }
 
-    load() { /** promise */
-        /** Loads this instance into the view.
-         *
-         *  Calling this function should be all that is needed in order to fully update
-         *  and display the clusterize list.
-        */
+    async setup() {
         return new Promise(resolve => {
-            waitForElement(`#${this.data_id}`)
-                .then((elem) => this.data_elem = elem)
-                .then(() => this.parseJson(this.data_elem.dataset.json))
-                .then(() => {
+            // Setup our event handlers only after our elements exist in DOM.
+            Promise.all([
+                waitForElement(`#${this.scroll_id}`).then((elem) => this.scroll_elem = elem),
+                waitForElement(`#${this.content_id}`).then((elem) => this.content_elem = elem),
+            ]).then(() => {
+                this.setupElementObservers();
+                this.setupResizeObservers();
+                return this.fetchData();
+            }).then(encoded_str => {
+                if (isNullOrUndefined(encoded_str)) {
+                    // no new data to load. break from chain.
                     return resolve();
-                });
+                }
+                return this.parseJson(encoded_str);
+            }).then(json => {
+                if (isNullOrUndefined(json)) {
+                    return resolve();
+                }
+                this.clear();
+                this.updateJson(json);
+            }).then(() => {
+                this.sortData();
+            }).then(() => {
+                // since calculateDims manually adds an element from our data_obj,
+                // we don't need clusterize initialzied to calculate dims.
+                this.calculateDims();
+                this.applyFilter();
+                this.rebuild(this.getFilteredRows());
+                return resolve();
+            }).catch(error => {
+                console.error("setup:: error in promise:", error);
+                return resolve();
+            });
         });
     }
 
-    parseJson(encoded_str) { /** promise */
+    async load() {
+        return new Promise(resolve => {
+            if (isNullOrUndefined(this.clusterize)) {
+                // This occurs whenever we click on a tab before initialization and setup
+                // have fully completed for this instance.
+                return resolve(this.setup());
+            }
+            if (this.calculateDims()) {
+                // Since dimensions updated, we need to apply the filter and rebuild.
+                this.applyFilter();
+                this.rebuild(this.getFilteredRows());
+            } else {
+                this.refresh(true);
+            }
+            return resolve();
+        });
+    }
+
+    async fetchData() {
+        let encoded_str = await this.data_request_callback(
+            this.tabname,
+            this.extra_networks_tabname,
+            this.constructor.name,
+        );
+        if (this.encoded_str === encoded_str) {
+            // no change to the data since last call. ignore.
+            return null;
+        }
+        this.encoded_str = encoded_str;
+        return this.encoded_str;
+    }
+
+    async parseJson(encoded_str) { /** promise */
         /** Parses a base64 encoded and gzipped JSON string and sets up a clusterize instance. */
         return new Promise((resolve, reject) => {
-            // Skip parsing if the string hasnt actually updated.
-            if (this.encoded_str === encoded_str) {
-                return resolve();
-            }
             Promise.resolve(encoded_str)
                 .then(v => decompress(v))
-                .then(v => JSON.parse(v))
-                .then(v => {
-                    if (!isNullOrUndefined(this.clusterize)) {
-                        this.data_obj = {};
-                        this.data_obj_keys_sorted = [];
-                        this.clear();
-                        this.content_elem.innerHTML = "<div class='clusterize-no-data'>Loading...</div>";
-                    }
-                    return v;
-                })
-                .then(v => this.updateJson(v))
-                .then(() => {
-                    this.encoded_str = encoded_str;
-                    this.rebuild();
-                    this.applyFilter();
-                    return resolve();
-                })
+                .then(v => resolve(v))
                 .catch(error => {
                     return reject(error);
                 });
         });
+    }
+
+    calculateDims() {
+        let res = false;
+        // Cannot calculate dims if not enabled since our elements won't be visible.
+        if (!this.enabled) {
+            return res;
+        }
+
+        // Cannot do anything if we have no data.
+        if (this.data_obj_keys_sorted.length <= 0) {
+            return res;
+        }
+
+        // Repair before anything else so we can actually get dimensions.
+        this.repair();
+
+        // Add an element to the container manually so we can calculate dims.
+        const child = htmlStringToElement(this.data_obj[this.data_obj_keys_sorted[0]].html);
+        this.content_elem.prepend(child);
+
+        let n_cols = calcColsPerRow(this.content_elem, child);
+        let n_rows = calcRowsPerCol(this.scroll_elem, child);
+        n_cols = (isNaN(n_cols) || n_cols <= 0) ? 1 : n_cols;
+        n_rows = (isNaN(n_rows) || n_rows <= 0) ? 1 : n_rows;
+        n_rows += 2;
+        if (n_cols != this.n_cols || n_rows != this.n_rows) {
+            // Sizes have changed. Update the instance values.
+            this.n_cols = n_cols;
+            this.n_rows = n_rows;
+            this.rows_in_block = this.n_rows;
+            res = true;
+        }
+
+        // Remove the temporary element from DOM.
+        child.remove();
+
+        return res;
+    }
+
+    sortData() {
+        /** Sorts the rows using the instance's `sort_fn`.
+                 *
+                 *  It is expected that a subclass will override this function to update the
+                 *  instance's `sort_fn` then call `super.sortData()` to apply the sorting.
+                 */
+        this.sort_fn();
+        if (this.sort_reverse) {
+            this.data_obj_keys_sorted = this.data_obj_keys_sorted.reverse();
+        }
+    }
+
+    applyFilter() {
+        /** Should be overridden by child class. */
+        this.sortData();
+        if (!isNullOrUndefined(this.clusterize)) {
+            this.update(this.getFilteredRows());
+        }
+        //this.rebuild(this.getFilteredRows());
+    }
+
+    getFilteredRows() {
+        let rows = [];
+        let active_keys = this.data_obj_keys_sorted.filter(k => this.data_obj[k].active);
+        for (let i = 0; i < active_keys.length; i += this.n_cols) {
+            rows.push(
+                active_keys.slice(i, i + this.n_cols)
+                    .map(k => this.data_obj[k].html)
+                    .join("")
+            );
+        }
+        return rows;
+    }
+
+    rebuild(rows) {
+        if (!isNullOrUndefined(this.clusterize)) {
+            this.clusterize.destroy(true);
+            this.clusterize = null;
+        }
+
+        if (isNullOrUndefined(rows) || !Array.isArray(rows)) {
+            rows = [];
+        }
+
+        this.clusterize = new Clusterize(
+            {
+                rows: rows,
+                scrollId: this.scroll_id,
+                contentId: this.content_id,
+                rows_in_block: this.rows_in_block,
+                tag: "div",
+                blocks_in_cluster: this.blocks_in_cluster,
+                show_no_data_row: this.show_no_data_row,
+                no_data_text: this.no_data_text,
+                no_data_class: this.no_data_class,
+                callbacks: this.callbacks,
+            }
+        );
+    }
+
+    enable(enabled) {
+        /** Enables or disables this instance. */
+        // All values other than `true` for `enabled` result in this.enabled=false.
+        this.enabled = !(enabled !== true);
     }
 
     updateJson(json) { /** promise */
@@ -262,43 +413,11 @@ class ExtraNetworksClusterize {
         this.data_obj_keys_sorted = Object.keys(this.data_obj).sort((a, b) => INT_COLLATOR.compare(a, b));
     }
 
-    applySort() {
-        /** Sorts the rows using the instance's `sort_fn`.
-         *
-         *  It is expected that a subclass will override this function to update the
-         *  instance's `sort_fn` then call `super.applySort()` to apply the sorting.
-         */
-        this.sort_fn();
-        if (this.sort_reverse) {
-            this.data_obj_keys_sorted = this.data_obj_keys_sorted.reverse();
-        }
-    }
-
-    applyFilter() {
-        /** Sorts then updates the rows.
-         *
-         *  Should be overridden by subclass. Base class doesn't apply any filters.
-         */
-        this.applySort();
-        this.updateRows();
-    }
-
-    getRows(obj) {
-        /** Returns an array of html strings of all active rows. */
-        var results = [];
-        for (const div_id of this.data_obj_keys_sorted) {
-            if (obj[div_id].active) {
-                results.push(obj[div_id].html);
-            }
-        }
-        return results;
-    }
-
     updateDivContent(div_id, content) {
         /** Updates an element's html in the dataset.
          *
          *  NOTE: This function only updates the dataset. Calling function must call
-         *  updateRows() to apply these changes to the view. Adding this call to this
+         *  rebuild() to apply these changes to the view. Adding this call to this
          *  function would be very slow in the case where many divs need their content
          *  updated at the same time.
         */
@@ -317,88 +436,19 @@ class ExtraNetworksClusterize {
         return false;
     }
 
-    updateRows() {
-        /** Updates the instance using the stored rows in our data object.
-         *
-         *  Should be called whenever we change order or number of rows.
-         */
-        // If we don't have any entries in the dataset, then just return.
-        if (this.data_obj_keys_sorted.length === 0 || Object.keys(this.data_obj).length === 0) {
-            return;
-        }
-
-        this.refresh(true);
-
-        // Rebuild with `force=false` so we only rebuild if dimensions change.
-        this.rebuild(false);
-    }
-
     getMaxRowWidth() {
         console.error("getMaxRowWidth:: Not implemented in base class. Must be overridden.");
         return;
     }
 
-    recalculateDims() {
-        /** Recalculates the number of rows and columns that can fit within the scroll view.
-         *
-         *  Returns whether the rows/columns have changed indicating that we need to rebuild.
-        */
-        let rebuild_required = false;
-        let clear_before_return = false;
-
-        if (!this.enabled) {
-            // Inactive list is not displayed on screen. Would error if trying to resize.
-            return false;
-        }
-        if (Object.keys(this.data_obj).length === 0 || this.data_obj_keys_sorted.length === 0) {
-            // If there is no data then just skip.
-            return false;
-        }
-
-        // If no rows exist, we need to add one so we can calculate rows/cols.
-        // We remove this row before returning.
-        if (this.rowCount() === 0) { // || this.content_elem.innerHTML === "") {
-            this.clear();
-            this.update([this.data_obj[this.data_obj_keys_sorted[0]].html]);
-            clear_before_return = true;
-        }
-
-        const child = this.content_elem.querySelector(":not(.clusterize-extra-row)");
-        if (isNullOrUndefined(child)) {
-            if (clear_before_return) {
-                this.clear();
-                return rebuild_required;
-            }
-        }
-
-        // Calculate the visible rows and colums for the clusterize-content area.
-        let n_cols = calcColsPerRow(this.content_elem, child);
-        let n_rows = calcRowsPerCol(this.scroll_elem, child);
-        n_cols = (isNaN(n_cols) || n_cols <= 0) ? 1 : n_cols;
-        n_rows = (isNaN(n_rows) || n_rows <= 0) ? 1 : n_rows;
-
-        // Add two extra rows to account for partial row visibility on top and bottom
-        // of the content element view region.
-        n_rows += 2;
-
-        if (n_cols != this.n_cols || n_rows != this.n_rows) {
-            // Sizes have changed. Update the instance values.
-            this.n_cols = n_cols;
-            this.n_rows = n_rows;
-            this.rows_in_block = this.n_rows;
-            rebuild_required = true;
-        }
-
-        // If we added a temporary row earlier, remove before returning.
-        if (clear_before_return) {
-            this.clear();
-        }
-
-        return rebuild_required;
-    }
-
     repair() {
         /** Fixes element association in DOM. Returns whether a fix was performed. */
+        if (!this.enabled) {
+            return false;
+        }
+        if (!isElement(this.scroll_elem) || !isElement(this.content_elem)) {
+            return false;
+        }
         // If association for elements is broken, replace them with instance version.
         if (!this.scroll_elem.isConnected || !this.content_elem.isConnected) {
             gradioApp().getElementById(this.scroll_id).replaceWith(this.scroll_elem);
@@ -415,83 +465,20 @@ class ExtraNetworksClusterize {
         return false;
     }
 
-    rebuild(force) {
-        /** Rebuilds, updates, or initializes a clusterize instance.
-         *
-         *  TODO: Possibly rename this function to make its purpose more clear.
-         *
-         *  Performs one of the following:
-         *      1. Initializes a new instance if we haven't already.
-         *      2. Destroys and reinitializes an instance if we pass `force=true` or if
-         *          the size of the elements has changed causing the number of items
-         *          that we can show on screen to be updated.
-         *      3. Simply updates the clusterize instance's rows with our current data
-         *          if none of the other conditions are met.
-         *
-        */
-        // Only accept boolean values for `force` parameter. Default to false.
-        if (force !== true) {
-            force = false;
-        }
-
-        if (isNullOrUndefined(this.clusterize)) {
-            this.init();
-        } else if (this.recalculateDims() || force) {
-            this.destroy();
-            this.clusterize = null;
-            this.init();
-        } else {
-            this.update();
-        }
-    }
-
-    init(rows) {
-        /** Initializes a Clusterize.js instance. */
-        if (!isNullOrUndefined(this.clusterize)) {
-            // If we have already initialized, don't do it again.
-            return;
-        }
-
-        if (isNullOrUndefined(rows) && isNullOrUndefined(this.data_obj)) {
-            // data hasnt been loaded yet and we arent provided any. skip.
-            return;
-        }
-
-        if (isNullOrUndefined(rows)) {
-            // if we aren't passed any rows, use the instance's data object.
-            rows = this.data_obj;
-        } else if (Array.isArray(rows) && !(rows.every(row => isString(row)))) {
-            console.error("Invalid data type for rows. Expected array[string].");
-            return;
-        }
-
-        this.clusterize = new Clusterize(
-            {
-                rows: this.getRows(rows),
-                scrollId: this.scroll_id,
-                contentId: this.content_id,
-                rows_in_block: this.rows_in_block,
-                tag: "div",
-                blocks_in_cluster: this.blocks_in_cluster,
-                show_no_data_row: this.show_no_data_row,
-                no_data_text: this.no_data_text,
-                no_data_class: this.no_data_class,
-                callbacks: this.callbacks,
-            }
-        );
-    }
-
     onResize(elem_id) {
         /** Callback whenever one of our visible elements is resized. */
-        this.updateRows();
+        if (!this.enabled) {
+            return;
+        }
+        this.refresh(true);
+        if (this.calculateDims()) {
+            this.rebuild(this.getFilteredRows());
+        }
     }
 
     onElementDetached(elem_id) {
         /** Callback whenever one of our elements has become detached from the DOM. */
         switch (elem_id) {
-        case this.data_id:
-            waitForElement(`#${this.data_id}`).then((elem) => this.data_elem = elem);
-            break;
         case this.scroll_id:
             this.repair();
             break;
@@ -501,28 +488,6 @@ class ExtraNetworksClusterize {
         default:
             break;
         }
-    }
-
-    onDataChanged(elem) {
-        /** Callback whenever the data element is modified. */
-        return new Promise((resolve) => {
-            this.parseJson(elem.dataset.json)
-                .then(() => {
-                    return resolve();
-                })
-                .catch(error => {
-                    if (error instanceof InvalidCompressedJsonDataError) {
-                        // on error, roll back to the previous data string.
-                        // this prevents an infinite loop whenever the data string
-                        // is invalid.
-                        console.error("rolling back json data due to invalid data:", error);
-                        elem.dataset.json = this.encoded_str;
-                    } else {
-                        console.error("unhandled error caused by updated json data field:", error);
-                    }
-                    return resolve();
-                });
-        });
     }
 
     setupElementObservers() {
@@ -543,18 +508,6 @@ class ExtraNetworksClusterize {
                 return;
             }
 
-            let data_elem = gradioApp().getElementById(this.data_id);
-            if (data_elem && data_elem !== this.data_elem) {
-                this.onElementDetached(data_elem.id);
-            } else if (data_elem && data_elem.dataset.json !== this.encoded_str) {
-                // we don't want to get blasted with data updates so just wait for
-                // the data to settle down before updating.
-                clearTimeout(this.data_update_timer);
-                this.data_update_timer = setTimeout(() => {
-                    this.onDataChanged(data_elem);
-                }, JSON_UPDATE_DEBOUNCE_TIME_MS);
-            }
-
             let scroll_elem = gradioApp().getElementById(this.scroll_id);
             if (scroll_elem && scroll_elem !== this.scroll_elem) {
                 this.onElementDetached(scroll_elem.id);
@@ -568,7 +521,15 @@ class ExtraNetworksClusterize {
         this.element_observer.observe(gradioApp(), {subtree: true, childList: true, attributes: true});
     }
 
-    setupResizeHandlers() {
+    teardownElementObservers() {
+        if (!isNullOrUndefined(this.element_observer)) {
+            this.element_observer.takeRecords();
+            this.element_observer.disconnect();
+        }
+        this.element_observer = null;
+    }
+
+    setupResizeObservers() {
         /** Handles any updates to the size of both the Scroll and Content elements. */
         this.resize_observer = new ResizeObserver((entries) => {
             for (const entry of entries) {
@@ -584,7 +545,39 @@ class ExtraNetworksClusterize {
         this.resize_observer.observe(this.content_elem);
     }
 
+    teardownResizeObservers() {
+        if (!isNullOrUndefined(this.resize_observer)) {
+            this.resize_observer.disconnect();
+        }
+        if (!isNullOrUndefined(this.resize_observer_timer)) {
+            clearTimeout(this.resize_observer_timer);
+            this.resize_observer_timer = null;
+        }
+        this.resize_observer = null;
+        this.resize_observer_timer = null;
+    }
+
     /* ==== Clusterize.Js FUNCTION WRAPPERS ==== */
+    update(rows) {
+        /** Updates the clusterize rows. */
+        if (isNullOrUndefined(rows) || !Array.isArray(rows)) {
+            rows = this.getFilteredRows();
+        }
+        this.clusterize.update(rows);
+    }
+
+    clear() {
+        /** Clears the clusterize list and this instance's data. */
+        if (!isNullOrUndefined(this.clusterize)) {
+            this.clusterize.clear();
+            this.data_obj = {};
+            this.data_obj_keys_sorted = [];
+            if (isElement(this.content_elem)) {
+                this.content_elem.innerHTML = "<div class='clusterize-no-data'>Loading...</div>";
+            }
+        }
+    }
+
     refresh(force) {
         /** Refreshes the clusterize instance so that it can recalculate its dims.
          * `force` [boolean]: If true, tells clusterize to refresh regardless of whether
@@ -606,28 +599,19 @@ class ExtraNetworksClusterize {
         return this.clusterize.getRowsAmount();
     }
 
-    clear() {
-        /** Removes all rows from the clusterize dataset. */
-        this.clusterize.clear();
-    }
-
-    update(rows) {
-        /** Adds rows from a list of element strings. */
-        if (rows === undefined || rows === null) {
-            // If not passed, use the default method of getting rows.
-            rows = this.getRows(this.data_obj);
-        } else if (!Array.isArray(rows) || !(rows.every(row => typeof row === "string"))) {
-            console.error("Invalid data type for rows. Expected array[string].");
-            return;
-        }
-        this.clusterize.update(rows);
-    }
-
     destroy() {
         /** Destroys a clusterize instance and removes its rows from the page. */
         // Passing `true` prevents clusterize from dumping every row in its dataset
         // to the DOM. This kills performance so we never want to do this.
-        this.clusterize.destroy(true);
+        if (!isNullOrUndefined(this.clusterize)) {
+            this.clusterize.destroy(true);
+            this.clusterize = null;
+        }
+        this.data_obj = {};
+        this.data_obj_keys_sorted = [];
+        if (isElement(this.content_elem)) {
+            this.content_elem.innerHTML = "<div class='clusterize-no-data'>Loading...</div>";
+        }
     }
 }
 
@@ -638,6 +622,11 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
 
         this.no_data_text = "No directories/files";
         this.selected_div_id = null;
+    }
+
+    reset() {
+        this.selected_div_id = null;
+        super.reset();
     }
 
     getBoxShadow(depth) {
@@ -757,7 +746,11 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             this.addChildRows(div_id);
         }
         this.updateDivContent(div_id, elem);
-        this.updateRows();
+        if (this.calculateDims()) {
+            this.rebuild(this.getFilteredRows());
+        } else {
+            this.update(this.getFilteredRows());
+        }
     }
 
     _setRowSelectedState(div_id, elem, new_state) {
@@ -802,7 +795,8 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
                 this.selected_div_id = div_id;
             }
         }
-        this.updateRows();
+
+        this.update(this.getFilteredRows());
     }
 
     getMaxRowWidth() {
@@ -848,10 +842,20 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         super(...args);
 
         this.no_data_text = "No files matching filter.";
-        this.sort_mode_str = "path";
-        this.sort_dir_str = "ascending";
+        this.default_sort_mode_str = "path";
+        this.default_sort_dir_str = "ascending";
         this.default_filter_str = "";
+
+        this.sort_mode_str = this.default_sort_mode_str;
+        this.sort_dir_str = this.default_sort_dir_str;
         this.filter_str = this.default_filter_str;
+    }
+
+    reset() {
+        this.sort_mode_str = this.default_sort_mode_str;
+        this.sort_dir_str = this.default_sort_dir_str;
+        this.filter_str = this.default_filter_str;
+        super.reset();
     }
 
     updateJson(json) {
@@ -890,20 +894,6 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
             }
             return resolve();
         });
-    }
-
-    getRows(obj) {
-        /** Returns array of rows as html strings after combining into pseudo-columns.
-         * Since Clusterize.js doesn't support columns, we need to manually calculate
-         * the number of columns that can fit in our view space then combine those
-         * elements into a single entry as a "row" string to pass to Clusterize.js.
-        */
-        let rows = super.getRows(obj);
-        let res = [];
-        for (let i = 0; i < rows.length; i += this.n_cols) {
-            res.push(rows.slice(i, i + this.n_cols).join(""));
-        }
-        return res;
     }
 
     sortByName() {
@@ -950,7 +940,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         this.sort_dir_str = sort_dir_str;
     }
 
-    applySort() {
+    sortData() {
         this.sort_reverse = this.sort_dir_str === "descending";
 
         switch (this.sort_mode_str) {
@@ -970,7 +960,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
             this.sort_fn = this.sortByDivId;
             break;
         }
-        super.applySort();
+        super.sortData();
     }
 
     applyFilter(filter_str) {
@@ -989,8 +979,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
             this.data_obj[k].active = visible;
         }
 
-        this.applySort();
-        this.updateRows();
+        super.applyFilter()
     }
 
     getMaxRowWidth() {

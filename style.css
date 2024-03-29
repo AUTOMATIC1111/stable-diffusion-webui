@@ -1185,12 +1185,15 @@ body.resizing .resize-handle {
 .clusterize-scroll {
     width: 100%;
     height: 100%;
-    overflow: clip auto;
+    /* Use scroll instead of auto so that content size doesn't change when there is no content. */
+    overflow: clip scroll;
 }
 
 .clusterize-content {
+    flex: 1;
     outline: 0;
     counter-reset: clusterize-counter;
+    padding: var(--spacing-md);
 }
 
 .clusterize-extra-row {
@@ -1469,15 +1472,6 @@ body.resizing .resize-handle {
     to {
         transform: rotate(360deg);
     }
-}
-
-.extra-network-tree-content {
-    padding: var(--spacing-md);
-    flex: 1;
-}
-
-.extra-network-cards-content {
-    padding: var(--spacing-md);
 }
 
 /* BUTTON ELEMENTS */
