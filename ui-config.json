@@ -2763,5 +2763,9 @@
     "pbremtools/Memory usage/minimum": 1,
     "pbremtools/Memory usage/maximum": 2048,
     "pbremtools/Memory usage/step": 1,
-    "pbremtools/Submit/visible": true
+    "pbremtools/Submit/visible": true,
+    "customscript/extra_options_section.py/txt2img/SD VAE/visible": true,
+    "customscript/extra_options_section.py/txt2img/SD VAE/value": "None",
+    "customscript/extra_options_section.py/img2img/SD VAE/visible": true,
+    "customscript/extra_options_section.py/img2img/SD VAE/value": "None"
 }
