@@ -1,6 +1,6 @@
 __pycache__
 *.ckpt
-*.safetensors
+# *.safetensors
 *.pth
 /ESRGAN/*
 /SwinIR/*
@@ -8,7 +8,8 @@ __pycache__
 /venv
 /tmp
 /model.ckpt
-/models/**/*
+models/*
+# !models/Stable-diffusion
 /GFPGANv1.3.pth
 /gfpgan/weights/*.pth
 /outputs
