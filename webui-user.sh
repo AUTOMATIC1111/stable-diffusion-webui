@@ -11,6 +11,8 @@
 
 # Commandline arguments for webui.py, for example: export COMMANDLINE_ARGS="--medvram --opt-split-attention"
 export COMMANDLINE_ARGS="--listen --no-gradio-queue --no-half-vae --xformers --enable-insecure-extension-access --skip-torch-cuda-test --api --port 7890 --autolaunch"
+# Use this one below to reinstall pytorch
+# export COMMANDLINE_ARGS="--listen --reinstall-pytorch --no-gradio-queue --no-half-vae --xformers --enable-insecure-extension-access --skip-torch-cuda-test --api --port 7890 --autolaunch"
 
 # python3 executable
 python_cmd="/home/evanhu/.pyenv/versions/3.10.13/bin/python3.10"
