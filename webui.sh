@@ -129,7 +129,7 @@ case "$gpu_info" in
         export HSA_OVERRIDE_GFX_VERSION=10.3.0
         if [[ -z "${TORCH_COMMAND}" ]]
         then
-            pyv="$(${python_cmd} -c 'import sys; print(".".join(map(str, sys.version_info[0:2])))')"
+            pyv="$(${python_cmd} -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]:02d}")')"
             # Using an old nightly compiled against rocm 5.2 for Navi1, see https://github.com/pytorch/pytorch/issues/106728#issuecomment-1749511711
             if [[ $pyv == "3.8" ]]
             then
