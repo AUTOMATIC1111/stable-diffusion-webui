@@ -784,7 +784,7 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
     If it is loaded, returns that (moving it to GPU if necessary, and moving the currently loadded model to CPU if necessary).
     If not, returns the model that can be used to load weights from checkpoint_info's file.
     If no such model exists, returns None.
-    Additionaly deletes loaded models that are over the limit set in settings (sd_checkpoints_limit).
+    Additionally deletes loaded models that are over the limit set in settings (sd_checkpoints_limit).
     """
 
     already_loaded = None

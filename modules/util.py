@@ -81,6 +81,17 @@ class MassFileListerCachedDir:
         self.files = {x[0].lower(): x for x in files}
         self.files_cased = {x[0]: x for x in files}
 
+    def update_entry(self, filename):
+        """Add a file to the cache"""
+        file_path = os.path.join(self.dirname, filename)
+        try:
+            stat = os.stat(file_path)
+            entry = (filename, stat.st_mtime, stat.st_ctime)
+            self.files[filename.lower()] = entry
+            self.files_cased[filename] = entry
+        except FileNotFoundError as e:
+            print(f'MassFileListerCachedDir.add_entry: "{file_path}" {e}')
+
 
 class MassFileLister:
     """A class that provides a way to check for the existence and mtime/ctile of files without doing more than one stat call per file."""
@@ -136,3 +147,27 @@ class MassFileLister:
     def reset(self):
         """Clear the cache of all directories."""
         self.cached_dirs.clear()
+
+
+def topological_sort(dependencies):
+    """Accepts a dictionary mapping name to its dependencies, returns a list of names ordered according to dependencies.
+    Ignores errors relating to missing dependeencies or circular dependencies
+    """
+
+    visited = {}
+    result = []
+
+    def inner(name):
+        visited[name] = True
+
+        for dep in dependencies.get(name, []):
+            if dep in dependencies and dep not in visited:
+                inner(dep)
+
+        result.append(name)
+
+    for depname in dependencies:
+        if depname not in visited:
+            inner(depname)
+
+    return result

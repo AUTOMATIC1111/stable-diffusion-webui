@@ -11,8 +11,8 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.11
           # NB: there's no cache: pip here since we're not installing anything
@@ -20,7 +20,7 @@ jobs:
           #     not to have GHA download an (at the time of writing) 4 GB cache
           #     of PyTorch and other dependencies.
       - name: Install Ruff
-        run: pip install ruff==0.1.6
+        run: pip install ruff==0.3.3
       - name: Run Ruff
         run: ruff .
   lint-js:
@@ -29,9 +29,9 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
       - run: npm i --ci

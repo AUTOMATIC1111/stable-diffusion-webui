@@ -17,10 +17,10 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
         if extras_mode == 1:
             for img in image_folder:
                 if isinstance(img, Image.Image):
-                    image = img
+                    image = images.fix_image(img)
                     fn = ''
                 else:
-                    image = Image.open(os.path.abspath(img.name))
+                    image = images.read(os.path.abspath(img.name))
                     fn = os.path.splitext(img.orig_name)[0]
                 yield image, fn
         elif extras_mode == 2:
@@ -56,7 +56,7 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
 
         if isinstance(image_placeholder, str):
             try:
-                image_data = Image.open(image_placeholder)
+                image_data = images.read(image_placeholder)
             except Exception:
                 continue
         else:
@@ -66,7 +66,7 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
         if parameters:
             existing_pnginfo["parameters"] = parameters
 
-        initial_pp = scripts_postprocessing.PostprocessedImage(image_data.convert("RGB"))
+        initial_pp = scripts_postprocessing.PostprocessedImage(image_data if image_data.mode in ("RGBA", "RGB") else image_data.convert("RGB"))
 
         scripts.scripts_postproc.run(initial_pp, args)
 
@@ -121,8 +121,6 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
 
             if extras_mode != 2 or show_extras_results:
                 outputs.append(pp.image)
-
-        image_data.close()
 
     devices.torch_gc()
     shared.state.end()
