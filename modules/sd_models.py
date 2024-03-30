@@ -787,6 +787,13 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
     Additionally deletes loaded models that are over the limit set in settings (sd_checkpoints_limit).
     """
 
+    if sd_model is not None and sd_model.sd_checkpoint_info.filename == checkpoint_info.filename:
+        return sd_model
+
+    if shared.opts.sd_checkpoints_keep_in_cpu:
+        send_model_to_cpu(sd_model)
+        timer.record("send model to cpu")
+
     already_loaded = None
     for i in reversed(range(len(model_data.loaded_sd_models))):
         loaded_model = model_data.loaded_sd_models[i]
@@ -799,10 +806,6 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
             del model_data.loaded_sd_models[i]
             send_model_to_trash(loaded_model)
             timer.record("send model to trash")
-
-        if shared.opts.sd_checkpoints_keep_in_cpu:
-            send_model_to_cpu(sd_model)
-            timer.record("send model to cpu")
 
     if already_loaded is not None:
         send_model_to_device(already_loaded)
