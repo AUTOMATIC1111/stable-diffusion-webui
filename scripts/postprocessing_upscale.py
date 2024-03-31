@@ -16,7 +16,7 @@ def limit_size_by_one_dimention(w, h, limit):
     if h > w and h > limit:
         w = limit * w // h
         h = limit
-    elif w > h and w > limit:
+    elif w > limit:
         h = limit * h // w
         w = limit
 
